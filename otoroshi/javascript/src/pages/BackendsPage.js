@@ -15,20 +15,22 @@ export const BackendsPage = ({ setTitle }) => {
   const match = useRouteMatch();
 
   useEffect(() => {
-    patchStyle(true)
+    patchStyle(true);
 
-    return () => patchStyle(false)
+    return () => patchStyle(false);
   }, []);
 
-  const patchStyle = applyPatch => {
+  const patchStyle = (applyPatch) => {
     if (applyPatch) {
       document.getElementsByClassName('main')[0].classList.add('patch-main');
-      [...document.getElementsByClassName('row')].map(r => r.classList.add('patch-row', 'g-0'))
+      [...document.getElementsByClassName('row')].map((r) => r.classList.add('patch-row', 'g-0'));
     } else {
       document.getElementsByClassName('main')[0].classList.remove('patch-main');
-      [...document.getElementsByClassName('row')].map(r => r.classList.remove('patch-row', 'g-0'))
+      [...document.getElementsByClassName('row')].map((r) =>
+        r.classList.remove('patch-row', 'g-0')
+      );
     }
-  }
+  };
 
   const BackendsTable = () => (
     <div className="designer">
@@ -42,7 +44,7 @@ export const BackendsPage = ({ setTitle }) => {
         formFlow={null}
         columns={[{ title: 'Name', content: (item) => item.name }]}
         fetchItems={() => nextClient.find(nextClient.ENTITIES.BACKENDS)}
-        deleteItem={item => nextClient.remove(nextClient.ENTITIES.BACKENDS, item)}
+        deleteItem={(item) => nextClient.remove(nextClient.ENTITIES.BACKENDS, item)}
         showActions={true}
         showLink={false}
         extractKey={(item) => item.id}
@@ -95,12 +97,12 @@ export const BackendForm = ({ isCreation, value, setTitle }) => {
   const history = useHistory();
   const [form, setForm] = useState({
     schema: {},
-    flow: []
+    flow: [],
   });
 
-  const [state, setState] = useState({ ...value })
+  const [state, setState] = useState({ ...value });
 
-  useEffect(() => setState({ ...value }), [value])
+  useEffect(() => setState({ ...value }), [value]);
 
   const schema = {
     id: {
@@ -166,15 +168,17 @@ export const BackendForm = ({ isCreation, value, setTitle }) => {
   ];
 
   useEffect(() => {
-    setTitle(() => <div className='page-header d-flex align-item-center justify-content-between ms-0 mb-3'>
-      <h4 className='flex' style={{ margin: 0 }}>
-        {state.name || 'Backend'}
-      </h4>
-      <div className='d-flex align-item-center justify-content-between flex'>
-        {saveButton(false)}
+    setTitle(() => (
+      <div className="page-header d-flex align-item-center justify-content-between ms-0 mb-3">
+        <h4 className="flex" style={{ margin: 0 }}>
+          {state.name || 'Backend'}
+        </h4>
+        <div className="d-flex align-item-center justify-content-between flex">
+          {saveButton(false)}
+        </div>
       </div>
-    </div>)
-  }, [state])
+    ));
+  }, [state]);
 
   useEffect(() => {
     nextClient.form(nextClient.ENTITIES.BACKENDS).then((res) => {
@@ -189,18 +193,20 @@ export const BackendForm = ({ isCreation, value, setTitle }) => {
             flow: DEFAULT_FLOW.Backend('backend').config_flow,
           },
         },
-        flow
+        flow,
       });
     });
   }, []);
 
-  const saveButton = (withMargin = true) => <FeedbackButton
-    className={withMargin ? "d-flex ms-auto my-3" : ""}
-    disabled={isEqual(state, value)}
-    text={isCreation ? 'Create the backend' : 'Update the backend'}
-    icon={() => <i className="fas fa-paper-plane" />}
-    onPress={update}
-  />
+  const saveButton = (withMargin = true) => (
+    <FeedbackButton
+      className={withMargin ? 'd-flex ms-auto my-3' : ''}
+      disabled={isEqual(state, value)}
+      text={isCreation ? 'Create the backend' : 'Update the backend'}
+      icon={() => <i className="fas fa-paper-plane" />}
+      onPress={update}
+    />
+  );
 
   const update = () => {
     if (isCreation)
@@ -208,23 +214,22 @@ export const BackendForm = ({ isCreation, value, setTitle }) => {
         .create(nextClient.ENTITIES.BACKENDS, state)
         .then(() => history.push(`/backends`));
     else
-      return nextClient.update(nextClient.ENTITIES.BACKENDS, state)
-        .then(r => {
-          if (r.error)
-            throw r.error_description
-        })
-  }
+      return nextClient.update(nextClient.ENTITIES.BACKENDS, state).then((r) => {
+        if (r.error) throw r.error_description;
+      });
+  };
 
-  if (!state || Object.keys(state).length === 0)
-    return null
+  if (!state || Object.keys(state).length === 0) return null;
 
-  return <Form
-    schema={form.schema}
-    flow={form.flow}
-    value={state}
-    onError={(e) => console.log(e)}
-    options={{ autosubmit: true }}
-    onSubmit={item => setState({ ...merge({ ...value }, item) })}
-    footer={saveButton}
-  />
+  return (
+    <Form
+      schema={form.schema}
+      flow={form.flow}
+      value={state}
+      onError={(e) => console.log(e)}
+      options={{ autosubmit: true }}
+      onSubmit={(item) => setState({ ...merge({ ...value }, item) })}
+      footer={saveButton}
+    />
+  );
 };

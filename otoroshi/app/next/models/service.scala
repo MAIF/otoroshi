@@ -22,17 +22,20 @@ case class NgMinimalRoute(
     backend: NgMinimalBackend,
     backendRef: Option[String] = None,
     overridePlugins: Boolean,
-    plugins: NgPlugins,
+    plugins: NgPlugins
 ) {
-  def json: JsValue = Json.obj(
-    "frontend"    -> frontend.json,
-    "backend"     -> backend.json,
-    "backend_ref" -> backendRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-  ).applyOnIf(overridePlugins) { obj =>
-    obj ++ Json.obj("override_plugins" -> overridePlugins)
-  }.applyOnIf(plugins.slots.nonEmpty) { obj =>
-    obj ++ Json.obj("plugins" -> plugins.json)
-  }
+  def json: JsValue = Json
+    .obj(
+      "frontend"    -> frontend.json,
+      "backend"     -> backend.json,
+      "backend_ref" -> backendRef.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    )
+    .applyOnIf(overridePlugins) { obj =>
+      obj ++ Json.obj("override_plugins" -> overridePlugins)
+    }
+    .applyOnIf(plugins.slots.nonEmpty) { obj =>
+      obj ++ Json.obj("plugins" -> plugins.json)
+    }
 }
 
 object NgMinimalRoute {
@@ -49,7 +52,7 @@ object NgMinimalRoute {
         },
         backendRef = ref,
         overridePlugins = json.select("override_plugins").asOpt[Boolean].getOrElse(false),
-        plugins = NgPlugins.readFrom(json.select("plugins")),
+        plugins = NgPlugins.readFrom(json.select("plugins"))
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -109,8 +112,8 @@ case class NgService(
           description = description,
           tags = tags,
           metadata = metadata ++ Map(
-            "otoroshi-core-original-route-id" -> id,
-            "otoroshi-core-cacheable-route-id" -> s"$id-$idx",
+            "otoroshi-core-original-route-id"  -> id,
+            "otoroshi-core-cacheable-route-id" -> s"$id-$idx"
           ),
           enabled = enabled,
           capture = capture,
@@ -207,10 +210,10 @@ object NgService {
             targetRefs = Seq.empty,
             root = "/",
             rewrite = false,
-            loadBalancing = RoundRobin,
+            loadBalancing = RoundRobin
           ),
           overridePlugins = false,
-          plugins = NgPlugins.empty,
+          plugins = NgPlugins.empty
         )
       }
       NgService(

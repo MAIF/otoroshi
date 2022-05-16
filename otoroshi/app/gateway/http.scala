@@ -587,7 +587,10 @@ class HttpHandler()(implicit env: Env) {
                       .map(_.as[JsObject])
                       .getOrElse(Json.obj())
                     val newExtraInfos =
-                      extraInfos ++ Json.obj("stateRespInvalid" -> stateRespInvalid.exchangePayload(resp.status, resp.headers.mapValues(_.last)))
+                      extraInfos ++ Json.obj(
+                        "stateRespInvalid" -> stateRespInvalid
+                          .exchangePayload(resp.status, resp.headers.mapValues(_.last))
+                      )
                     attrs.put(otoroshi.plugins.Keys.GatewayEventExtraInfosKey -> newExtraInfos)
                     Errors.craftResponseResult(
                       "Backend server does not seems to be secured. Cancelling request !",

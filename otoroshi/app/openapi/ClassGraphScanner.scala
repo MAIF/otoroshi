@@ -54,7 +54,7 @@ class ClassGraphScanner {
       scanResult = scanResult,
       write = true
     ).runAndMaybeWrite()
-    val flattenedOpenapiSchema = new OpenapiToJson(openApiSchema).run()
+    val flattenedOpenapiSchema      = new OpenapiToJson(openApiSchema).run()
     val asForms                     = new FormsGenerator(flattenedOpenapiSchema).run().applyOn(_ ++ customData.forms)
     val flatFile                    = new File("./conf/schemas/openapi-flat.json")
     val formFile                    = new File("./conf/schemas/openapi-forms.json")

@@ -56,19 +56,19 @@ export const DEFAULT_FLOW = {
       domains: {
         type: type.string,
         array: true,
-        label: 'Domains'
+        label: 'Domains',
       },
       methods: {
         type: 'string',
-        format: "select",
+        format: 'select',
         isMulti: true,
-        label: "methods",
-        options: ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-      }
+        label: 'methods',
+        options: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+      },
     },
     config_flow: ['domains', 'strip_path', 'exact', 'headers', 'methods', 'query'],
   },
-  Backend: parentNode => ({
+  Backend: (parentNode) => ({
     id: 'Backend',
     icon: 'bullseye',
     group: 'Targets',
@@ -78,24 +78,27 @@ export const DEFAULT_FLOW = {
       targets: {
         ...generatedSchema.targets,
         onAfterChange: ({ onChange, getFieldValue }) => {
-          let port = getFieldValue('port')
-          port = port ? `:${port}` : ''
-          const hostname = getFieldValue('hostname') || ''
-          const isSecured = getFieldValue('tls')
+          let port = getFieldValue('port');
+          port = port ? `:${port}` : '';
+          const hostname = getFieldValue('hostname') || '';
+          const isSecured = getFieldValue('tls');
 
-          onChange(
-            'custom_target',
-            `${isSecured ? 'HTTPS' : 'HTTP'}@${hostname}@${port}`
-          );
+          onChange('custom_target', `${isSecured ? 'HTTPS' : 'HTTP'}@${hostname}@${port}`);
         },
         schema: {
           custom_target: {
             label: 'Target',
             type: 'string',
             disabled: true,
-            render: ({ value }) => <div className='d-flex'>
-              {value?.split('@').map((v, i) => <span className="target_information" key={i}>{v}</span>)}
-            </div>
+            render: ({ value }) => (
+              <div className="d-flex">
+                {value?.split('@').map((v, i) => (
+                  <span className="target_information" key={i}>
+                    {v}
+                  </span>
+                ))}
+              </div>
+            ),
           },
           expert_mode: {
             type: 'bool',
@@ -122,8 +125,8 @@ export const DEFAULT_FLOW = {
                   visible: {
                     ref: parentNode,
                     test: (v, idx) => {
-                      return !!v.targets[idx]?.expert_mode
-                    }
+                      return !!v.targets[idx]?.expert_mode;
+                    },
                   },
                 },
               ];
@@ -156,5 +159,5 @@ export const DEFAULT_FLOW = {
       'rewrite',
       'load_balancing',
     ],
-  })
+  }),
 };

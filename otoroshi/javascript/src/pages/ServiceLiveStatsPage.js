@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import { LiveStatTiles } from '../components/LiveStatTiles';
-import DesignerSidebar from './RouteDesigner/Sidebar'
+import DesignerSidebar from './RouteDesigner/Sidebar';
 
 export class ServiceLiveStatsPage extends Component {
   state = {
@@ -13,11 +13,7 @@ export class ServiceLiveStatsPage extends Component {
 
   sidebarContent(name) {
     if (this.onRoutes) {
-      return (
-        <DesignerSidebar
-          route={{ id: this.props.params.routeId, name }}
-        />
-      );
+      return <DesignerSidebar route={{ id: this.props.params.routeId, name }} />;
     }
     return (
       <ServiceSidebar
@@ -29,15 +25,17 @@ export class ServiceLiveStatsPage extends Component {
   }
 
   componentDidMount() {
-    const fu = this.onRoutes ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId) : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
-    fu.then(
-      (service) => {
-        this.onRoute ? this.props.setTitle(`Route Live Stats`) : this.props.setTitle(`Service Live Stats`);
-        this.setState({ service }, () => {
-          this.props.setSidebarContent(this.sidebarContent(service.name));
-        });
-      }
-    );
+    const fu = this.onRoutes
+      ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
+      : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+    fu.then((service) => {
+      this.onRoute
+        ? this.props.setTitle(`Route Live Stats`)
+        : this.props.setTitle(`Service Live Stats`);
+      this.setState({ service }, () => {
+        this.props.setSidebarContent(this.sidebarContent(service.name));
+      });
+    });
     setTimeout(() => window.location.reload(), 120000);
   }
 

@@ -3,39 +3,65 @@ import { Link, useHistory } from 'react-router-dom';
 import { createTooltip } from '../../tooltips';
 import { useEntityFromURI, useQuery } from '../../util';
 
-const LINKS = (entity, route) => [
-  { to: `/${entity}/${route.id}/health`, icon: 'fa-heart', title: 'Health', tooltip: { ...createTooltip(`Show healthcheck report`) } },
-  { to: `/${entity}/${route.id}/stats`, icon: 'fa-chart-bar', title: 'Live metrics', tooltip: { ...createTooltip(`Show live metrics report`) } },
-  { to: `/${entity}/${route.id}/analytics`, icon: 'fa-signal', title: 'Analytics', tooltip: { ...createTooltip(`Show analytics report`) } },
-  { to: `/${entity}/${route.id}/events`, icon: 'fa-list', title: 'Events', tooltip: { ...createTooltip(`Show raw events report`) } },
-  { to: `/${entity}/${route.id}/apikeys`, icon: 'fa-lock', title: 'API Keys', tooltip: { ...createTooltip(`Manage all API keys that can access`) } }
-].filter(link => !link.enabled || link.enabled.includes(entity))
+const LINKS = (entity, route) =>
+  [
+    {
+      to: `/${entity}/${route.id}/health`,
+      icon: 'fa-heart',
+      title: 'Health',
+      tooltip: { ...createTooltip(`Show healthcheck report`) },
+    },
+    {
+      to: `/${entity}/${route.id}/stats`,
+      icon: 'fa-chart-bar',
+      title: 'Live metrics',
+      tooltip: { ...createTooltip(`Show live metrics report`) },
+    },
+    {
+      to: `/${entity}/${route.id}/analytics`,
+      icon: 'fa-signal',
+      title: 'Analytics',
+      tooltip: { ...createTooltip(`Show analytics report`) },
+    },
+    {
+      to: `/${entity}/${route.id}/events`,
+      icon: 'fa-list',
+      title: 'Events',
+      tooltip: { ...createTooltip(`Show raw events report`) },
+    },
+    {
+      to: `/${entity}/${route.id}/apikeys`,
+      icon: 'fa-lock',
+      title: 'API Keys',
+      tooltip: { ...createTooltip(`Manage all API keys that can access`) },
+    },
+  ].filter((link) => !link.enabled || link.enabled.includes(entity));
 
 export default ({ route }) => {
-  const query = useQuery()
-  const history = useHistory()
-  const entity = useEntityFromURI()
+  const query = useQuery();
+  const history = useHistory();
+  const entity = useEntityFromURI();
 
-  const currentTab = query.get('tab')
-  const isActive = tab => currentTab === tab ? 'active' : '';
+  const currentTab = query.get('tab');
+  const isActive = (tab) => (currentTab === tab ? 'active' : '');
 
   return (
     <ul className="nav flex-column nav-sidebar">
-      <li className="nav-item" onClick={() => history.push(`/${entity.link}/${route.id}?tab=flow`)} style={{ cursor: 'pointer' }}>
+      <li
+        className="nav-item"
+        onClick={() => history.push(`/${entity.link}/${route.id}?tab=flow`)}
+        style={{ cursor: 'pointer' }}>
         <h3>
           <span className="fas fa-road" /> {route.name}
         </h3>
       </li>
       {LINKS(entity.link, route).map(({ to, icon, title, tooltip, tab }) => (
         <li className="nav-item" key={title}>
-          <Link
-            to={to}
-            {...(tooltip || {})}
-            className={`nav-link ${isActive(tab)}`}>
+          <Link to={to} {...(tooltip || {})} className={`nav-link ${isActive(tab)}`}>
             <i className={`fas ${icon}`} /> {title}
           </Link>
         </li>
       ))}
     </ul>
   );
-}
+};

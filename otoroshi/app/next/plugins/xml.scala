@@ -284,7 +284,7 @@ class SOAPAction extends NgBackendCall {
   private val configReads: Reads[SOAPActionConfig] = SOAPActionConfig.format
   private val library                              = ImmutableJqLibrary.of()
 
-  override def useDelegates: Boolean = false
+  override def useDelegates: Boolean             = false
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
@@ -315,57 +315,66 @@ class SOAPAction extends NgBackendCall {
   def transformResponseBody(body: String, config: SOAPActionConfig): Either[String, String] = {
     config.jqResponseFilter match {
       case None         => body.right
-      case Some(filter) => Try {
-        val response = ImmutableJqRequest
-          .builder()
-          .lib(library)
-          .input(body)
-          .filter(filter)
-          .build()
-          .execute()
-        if (response.hasErrors) {
-          JsArray(response.getErrors.asScala.map(err => JsString(err))).stringify.left
-        } else {
-          response.getOutput.right
+      case Some(filter) =>
+        Try {
+          val response = ImmutableJqRequest
+            .builder()
+            .lib(library)
+            .input(body)
+            .filter(filter)
+            .build()
+            .execute()
+          if (response.hasErrors) {
+            JsArray(response.getErrors.asScala.map(err => JsString(err))).stringify.left
+          } else {
+            response.getOutput.right
+          }
+        } match {
+          case Failure(e) => Left(Json.obj("error" -> e.getMessage).stringify)
+          case Success(r) => r
         }
-      } match {
-        case Failure(e) => Left(Json.obj("error" -> e.getMessage).stringify)
-        case Success(r) => r
-      }
     }
   }
 
   def transformRequestBody(body: String, config: SOAPActionConfig): Either[String, String] = {
     config.jqRequestFilter match {
       case None         => body.right
-      case Some(filter) => Try {
-        val response = ImmutableJqRequest
-          .builder()
-          .lib(library)
-          .input(body)
-          .filter(filter)
-          .build()
-          .execute()
-        if (response.hasErrors) {
-          JsArray(response.getErrors.asScala.map(err => JsString(err))).stringify.left
-        } else {
-          response.getOutput.right
+      case Some(filter) =>
+        Try {
+          val response = ImmutableJqRequest
+            .builder()
+            .lib(library)
+            .input(body)
+            .filter(filter)
+            .build()
+            .execute()
+          if (response.hasErrors) {
+            JsArray(response.getErrors.asScala.map(err => JsString(err))).stringify.left
+          } else {
+            response.getOutput.right
+          }
+        } match {
+          case Failure(e) => Left(Json.obj("error" -> e.getMessage).stringify)
+          case Success(r) => r
         }
-      } match {
-        case Failure(e) => Left(Json.obj("error" -> e.getMessage).stringify)
-        case Success(r) => r
-      }
     }
   }
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
-    val config = ctx.cachedConfig(internalName)(configReads).getOrElse(throw new RuntimeException("bad config"))
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config                                        = ctx.cachedConfig(internalName)(configReads).getOrElse(throw new RuntimeException("bad config"))
     val bodyF: Future[Either[String, Option[String]]] = if (ctx.request.hasBody) {
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
         val body = bodyRaw.utf8String
         if (config.convertRequestBodyToXml && ctx.request.contentType.exists(_.contains("application/json"))) {
           transformRequestBody(body, config) match {
-            case Left(err) => err.left
+            case Left(err)    => err.left
             case Right(tbody) => otoroshi.utils.xml.Xml.toXml(Json.parse(tbody)).toString().some.right
           }
         } else {
@@ -376,11 +385,16 @@ class SOAPAction extends NgBackendCall {
       None.right.vfuture
     }
     bodyF.flatMap {
-      case Left(err) => bodyResponse(500, Map("Content-Type" -> "application/json"), Source.single(Json.parse(err).stringify.byteString)).future
+      case Left(err)   =>
+        bodyResponse(
+          500,
+          Map("Content-Type" -> "application/json"),
+          Source.single(Json.parse(err).stringify.byteString)
+        ).future
       case Right(body) => {
         val soapEnvelop: String = el(config.envelope, body, ctx, env)
-        val operation = config.action
-        val url = config.url.getOrElse(s"${ctx.route.backend.targets.head.baseUrl}${ctx.route.backend.root}")
+        val operation           = config.action
+        val url                 = config.url.getOrElse(s"${ctx.route.backend.targets.head.baseUrl}${ctx.route.backend.root}")
         env.Ws
           .url(url)
           .withHttpHeaders(
@@ -389,7 +403,7 @@ class SOAPAction extends NgBackendCall {
           .applyOnWithOpt(operation) { case (ws, op) =>
             ws.addHttpHeaders(
               "X-SOAP-RequestAction" -> op,
-              "SOAPAction" -> op
+              "SOAPAction"           -> op
             )
           }
           .withMethod("POST")
@@ -407,10 +421,10 @@ class SOAPAction extends NgBackendCall {
               resp.contentType.contains("text/xml") || resp.contentType.contains("application/xml") || resp.contentType
                 .contains("application/xml+soap")
             ) {
-              val xmlBody = scala.xml.XML.loadString(resp.body)
+              val xmlBody  = scala.xml.XML.loadString(resp.body)
               val jsonBody = otoroshi.utils.xml.Xml.toJson(xmlBody).stringify
-              val headerz = headers :+ ("Content-Length" -> jsonBody.length.toString)
-              val status = if (resp.body.contains(":Fault>") && resp.body.contains(":Client")) {
+              val headerz  = headers :+ ("Content-Length" -> jsonBody.length.toString)
+              val status   = if (resp.body.contains(":Fault>") && resp.body.contains(":Client")) {
                 400
               } else if (resp.body.contains(":Fault>")) {
                 500
@@ -418,19 +432,39 @@ class SOAPAction extends NgBackendCall {
                 200
               }
               transformResponseBody(jsonBody, config) match {
-                case Left(error) =>
-                  bodyResponse(500, headerz.toMap ++ Map("Content-Type" -> "application/json"), Source.single(error.byteString))
+                case Left(error)     =>
+                  bodyResponse(
+                    500,
+                    headerz.toMap ++ Map("Content-Type" -> "application/json"),
+                    Source.single(error.byteString)
+                  )
                 case Right(response) =>
-                  bodyResponse(status, headerz.toMap ++ Map("Content-Type" -> "application/json"), Source.single(response.byteString))
+                  bodyResponse(
+                    status,
+                    headerz.toMap ++ Map("Content-Type" -> "application/json"),
+                    Source.single(response.byteString)
+                  )
               }
             } else {
               val headerz = headers :+ ("Content-Length" -> resp.body.length.toString)
               if (resp.body.contains(":Fault>") && resp.body.contains(":Client")) {
-                bodyResponse(400, headerz.toMap ++ Map("Content-Type" -> "text/xml"), Source.single(resp.body.byteString))
+                bodyResponse(
+                  400,
+                  headerz.toMap ++ Map("Content-Type" -> "text/xml"),
+                  Source.single(resp.body.byteString)
+                )
               } else if (resp.body.contains(":Fault>")) {
-                bodyResponse(500, headerz.toMap ++ Map("Content-Type" -> "text/xml"), Source.single(resp.body.byteString))
+                bodyResponse(
+                  500,
+                  headerz.toMap ++ Map("Content-Type" -> "text/xml"),
+                  Source.single(resp.body.byteString)
+                )
               } else {
-                bodyResponse(200, headerz.toMap ++ Map("Content-Type" -> "text/xml"), Source.single(resp.body.byteString))
+                bodyResponse(
+                  200,
+                  headerz.toMap ++ Map("Content-Type" -> "text/xml"),
+                  Source.single(resp.body.byteString)
+                )
               }
             }
           }

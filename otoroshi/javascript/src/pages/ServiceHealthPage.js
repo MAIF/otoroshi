@@ -5,7 +5,7 @@ import { Histogram } from '../components/recharts';
 import { BooleanInput } from '../components/inputs';
 import { Uptime, formatPercentage } from '../components/Status';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import DesignerSidebar from './RouteDesigner/Sidebar'
+import DesignerSidebar from './RouteDesigner/Sidebar';
 
 import 'antd/dist/antd.css';
 
@@ -28,49 +28,48 @@ export class ServiceHealthPage extends Component {
   };
 
   componentDidMount() {
-    const fu = this.onRoutes ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId) : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
-    fu.then(
-      (service) => {
-        this.setState({ service }, () => {
-          if ((this.onRoute && service.backend.health_check && service.backend.health_check.enabled) || (service.healthCheck && service.healthCheck.enabled)) {
-            this.setState({ health: true });
+    const fu = this.onRoutes
+      ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
+      : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+    fu.then((service) => {
+      this.setState({ service }, () => {
+        if (
+          (this.onRoute && service.backend.health_check && service.backend.health_check.enabled) ||
+          (service.healthCheck && service.healthCheck.enabled)
+        ) {
+          this.setState({ health: true });
 
-            Promise.all([
-              BackOfficeServices.fetchHealthCheckEvents(service.id),
-              BackOfficeServices.fetchServiceStatus(service.id),
-              BackOfficeServices.fetchServiceResponseTime(service.id),
-            ]).then(([evts, status, responsesTime]) => {
-              this.setState({ status, responsesTime }, () => {
-                const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
-                this.title = this.onRoute ? (
-                  <span>
-                    Route health is <i className="fas fa-heart" style={{ color }} />
-                  </span>
-                ) : (
-                  <span>
-                    Service health is <i className="fas fa-heart" style={{ color }} />
-                  </span>
-                );
-                this.props.setTitle(this.title);
-              });
+          Promise.all([
+            BackOfficeServices.fetchHealthCheckEvents(service.id),
+            BackOfficeServices.fetchServiceStatus(service.id),
+            BackOfficeServices.fetchServiceResponseTime(service.id),
+          ]).then(([evts, status, responsesTime]) => {
+            this.setState({ status, responsesTime }, () => {
+              const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
+              this.title = this.onRoute ? (
+                <span>
+                  Route health is <i className="fas fa-heart" style={{ color }} />
+                </span>
+              ) : (
+                <span>
+                  Service health is <i className="fas fa-heart" style={{ color }} />
+                </span>
+              );
+              this.props.setTitle(this.title);
             });
-          } else {
-            this.title = 'No HealthCheck available yet';
-            this.props.setTitle(this.title);
-          }
-          this.props.setSidebarContent(this.sidebarContent(service.name));
-        });
-      }
-    );
+          });
+        } else {
+          this.title = 'No HealthCheck available yet';
+          this.props.setTitle(this.title);
+        }
+        this.props.setSidebarContent(this.sidebarContent(service.name));
+      });
+    });
   }
 
   sidebarContent(name) {
     if (this.onRoutes) {
-      return (
-        <DesignerSidebar
-          route={{ id: this.props.params.routeId, name }}
-        />
-      );
+      return <DesignerSidebar route={{ id: this.props.params.routeId, name }} />;
     }
     return (
       <ServiceSidebar

@@ -16,14 +16,14 @@ case class NgPluginInstanceConfig(raw: JsObject = Json.obj()) extends AnyVal {
 }
 
 case class PluginIndex(
-  sink: Option[Double] = None,
-  preRoute: Option[Double] = None,
-  validateAccess: Option[Double] = None,
-  transformRequest: Option[Double] = None,
-  transformResponse: Option[Double] = None,
-  matchRoute: Option[Double] = None,
-  handlesTunnel: Option[Double] = None,
-  callBackend: Option[Double] = None,
+    sink: Option[Double] = None,
+    preRoute: Option[Double] = None,
+    validateAccess: Option[Double] = None,
+    transformRequest: Option[Double] = None,
+    transformResponse: Option[Double] = None,
+    matchRoute: Option[Double] = None,
+    handlesTunnel: Option[Double] = None,
+    callBackend: Option[Double] = None
 ) {
   def json: JsValue = PluginIndex.format.writes(this)
 }
@@ -34,18 +34,34 @@ object PluginIndex {
       PluginIndex(
         sink = json.select("sink").asOpt[Int].map(_.toDouble).orElse(json.select("sink").asOpt[Double]),
         preRoute = json.select("pre_route").asOpt[Int].map(_.toDouble).orElse(json.select("pre_route").asOpt[Double]),
-        validateAccess = json.select("validate_access").asOpt[Int].map(_.toDouble).orElse(json.select("validate_access").asOpt[Double]),
-        transformRequest = json.select("transform_request").asOpt[Int].map(_.toDouble).orElse(json.select("transform_request").asOpt[Double]),
-        transformResponse = json.select("transform_response").asOpt[Int].map(_.toDouble).orElse(json.select("transform_response").asOpt[Double]),
-        matchRoute = json.select("match_route").asOpt[Int].map(_.toDouble).orElse(json.select("match_route").asOpt[Double]),
-        handlesTunnel = json.select("handles_tunnel").asOpt[Int].map(_.toDouble).orElse(json.select("handles_tunnel").asOpt[Double]),
-        callBackend = json.select("call_backend").asOpt[Int].map(_.toDouble).orElse(json.select("call_backend").asOpt[Double]),
+        validateAccess = json
+          .select("validate_access")
+          .asOpt[Int]
+          .map(_.toDouble)
+          .orElse(json.select("validate_access").asOpt[Double]),
+        transformRequest = json
+          .select("transform_request")
+          .asOpt[Int]
+          .map(_.toDouble)
+          .orElse(json.select("transform_request").asOpt[Double]),
+        transformResponse = json
+          .select("transform_response")
+          .asOpt[Int]
+          .map(_.toDouble)
+          .orElse(json.select("transform_response").asOpt[Double]),
+        matchRoute =
+          json.select("match_route").asOpt[Int].map(_.toDouble).orElse(json.select("match_route").asOpt[Double]),
+        handlesTunnel =
+          json.select("handles_tunnel").asOpt[Int].map(_.toDouble).orElse(json.select("handles_tunnel").asOpt[Double]),
+        callBackend =
+          json.select("call_backend").asOpt[Int].map(_.toDouble).orElse(json.select("call_backend").asOpt[Double])
       )
     } match {
       case Failure(e) => JsError(e.getMessage())
       case Success(v) => JsSuccess(v)
     }
-    override def writes(o: PluginIndex): JsValue = Json.obj()
+    override def writes(o: PluginIndex): JsValue             = Json
+      .obj()
       .applyOnWithOpt(o.sink)((o, v) => o ++ Json.obj("sink" -> JsNumber(v)))
       .applyOnWithOpt(o.preRoute)((o, v) => o ++ Json.obj("pre_route" -> JsNumber(v)))
       .applyOnWithOpt(o.validateAccess)((o, v) => o ++ Json.obj("validate_access" -> JsNumber(v)))
@@ -79,14 +95,16 @@ case class NgPluginInstance(
     config: NgPluginInstanceConfig = NgPluginInstanceConfig(),
     pluginIndex: Option[PluginIndex] = None
 ) {
-  def json: JsValue = Json.obj(
-    "enabled" -> enabled,
-    "debug"   -> debug,
-    "plugin"  -> plugin,
-    "include" -> include,
-    "exclude" -> exclude,
-    "config"  -> config.json
-  ).applyOnWithOpt(pluginIndex)((o, v) => o ++ Json.obj("plugin_index" -> v.json))
+  def json: JsValue = Json
+    .obj(
+      "enabled" -> enabled,
+      "debug"   -> debug,
+      "plugin"  -> plugin,
+      "include" -> include,
+      "exclude" -> exclude,
+      "config"  -> config.json
+    )
+    .applyOnWithOpt(pluginIndex)((o, v) => o ++ Json.obj("plugin_index" -> v.json))
   def matches(request: RequestHeader): Boolean = {
     val uri = request.thePath
     if (!(include.isEmpty && exclude.isEmpty)) {
@@ -122,7 +140,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
   def requestSinkPlugins(
       request: RequestHeader
   )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestSink]] = {
-    val pls = slots
+    val pls                             = slots
       .filter(_.enabled)
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgRequestSink]))
@@ -130,13 +148,15 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
     val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.sink.isDefined))
-    plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.sink.get.compareTo(b.instance.pluginIndex.get.sink.get) < 0) ++ plsWithoutIndex
+    plsWithIndex.sortWith((a, b) =>
+      a.instance.pluginIndex.get.sink.get.compareTo(b.instance.pluginIndex.get.sink.get) < 0
+    ) ++ plsWithoutIndex
   }
 
   def routeMatcherPlugins(
-    request: RequestHeader
+      request: RequestHeader
   )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRouteMatcher]] = {
-    val pls = slots
+    val pls                             = slots
       .filter(_.enabled)
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgRouteMatcher]))
@@ -144,28 +164,43 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
     val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.matchRoute.isDefined))
-    plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.matchRoute.get.compareTo(b.instance.pluginIndex.get.matchRoute.get) < 0) ++ plsWithoutIndex
+    plsWithIndex.sortWith((a, b) =>
+      a.instance.pluginIndex.get.matchRoute.get.compareTo(b.instance.pluginIndex.get.matchRoute.get) < 0
+    ) ++ plsWithoutIndex
   }
 
   def transformerPlugins(
       request: RequestHeader
   )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
-    val pls = slots
+    val pls                                = slots
       .filter(_.enabled)
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
       .collect { case (inst, Some(plugin)) =>
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
-    val (plsWithIndexAll, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(p => p.transformRequest.isDefined || p.transformResponse.isDefined))
-    val plsReq = plsWithIndexAll.filter(v => v.instance.pluginIndex.exists(_.transformRequest.isDefined) && v.plugin.transformsRequest).sortWith((a, b) => a.instance.pluginIndex.get.transformRequest.get.compareTo(b.instance.pluginIndex.get.transformRequest.get) < 0)
-    val plsResp = plsWithIndexAll.filter(v => v.instance.pluginIndex.exists(_.transformResponse.isDefined) && v.plugin.transformsResponse).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
-    val plsErr = plsWithIndexAll.filter(v => v.instance.pluginIndex.exists(_.transformResponse.isDefined) && v.plugin.transformsError).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
+    val (plsWithIndexAll, plsWithoutIndex) =
+      pls.partition(_.instance.pluginIndex.exists(p => p.transformRequest.isDefined || p.transformResponse.isDefined))
+    val plsReq                             = plsWithIndexAll
+      .filter(v => v.instance.pluginIndex.exists(_.transformRequest.isDefined) && v.plugin.transformsRequest)
+      .sortWith((a, b) =>
+        a.instance.pluginIndex.get.transformRequest.get.compareTo(b.instance.pluginIndex.get.transformRequest.get) < 0
+      )
+    val plsResp                            = plsWithIndexAll
+      .filter(v => v.instance.pluginIndex.exists(_.transformResponse.isDefined) && v.plugin.transformsResponse)
+      .sortWith((a, b) =>
+        a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0
+      )
+    val plsErr                             = plsWithIndexAll
+      .filter(v => v.instance.pluginIndex.exists(_.transformResponse.isDefined) && v.plugin.transformsError)
+      .sortWith((a, b) =>
+        a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0
+      )
     plsReq ++ plsResp ++ plsErr ++ plsWithoutIndex
   }
 
   def transformerPluginsThatTransformsError(
-    request: RequestHeader
+      request: RequestHeader
   )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
     transformerPlugins(request).filter(_.plugin.transformsError)
   }
@@ -259,25 +294,40 @@ case class NgContextualPlugins(
     .partition(_.matches(request))
 
   lazy val requestSinkPlugins = {
-    val pls = allPlugins
+    val pls                             = allPlugins
       .map(inst => (inst, inst.getPlugin[NgRequestSink]))
       .collect { case (inst, Some(plugin)) =>
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
     val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.sink.isDefined))
-    plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.sink.get.compareTo(b.instance.pluginIndex.get.sink.get) < 0) ++ plsWithoutIndex
+    plsWithIndex.sortWith((a, b) =>
+      a.instance.pluginIndex.get.sink.get.compareTo(b.instance.pluginIndex.get.sink.get) < 0
+    ) ++ plsWithoutIndex
   }
 
   lazy val transformerPlugins = {
-    val pls = allPlugins
+    val pls                                = allPlugins
       .map(inst => (inst, inst.getPlugin[NgRequestTransformer]))
       .collect { case (inst, Some(plugin)) =>
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
-    val (plsWithIndexAll, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(p => p.transformRequest.isDefined || p.transformResponse.isDefined))
-    val plsReq = plsWithIndexAll.filter(v => v.instance.pluginIndex.exists(_.transformRequest.isDefined) && v.plugin.transformsRequest).sortWith((a, b) => a.instance.pluginIndex.get.transformRequest.get.compareTo(b.instance.pluginIndex.get.transformRequest.get) < 0)
-    val plsResp = plsWithIndexAll.filter(v => v.instance.pluginIndex.exists(_.transformResponse.isDefined) && v.plugin.transformsResponse).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
-    val plsErr = plsWithIndexAll.filter(v => v.instance.pluginIndex.exists(_.transformResponse.isDefined) && v.plugin.transformsError).sortWith((a, b) => a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0)
+    val (plsWithIndexAll, plsWithoutIndex) =
+      pls.partition(_.instance.pluginIndex.exists(p => p.transformRequest.isDefined || p.transformResponse.isDefined))
+    val plsReq                             = plsWithIndexAll
+      .filter(v => v.instance.pluginIndex.exists(_.transformRequest.isDefined) && v.plugin.transformsRequest)
+      .sortWith((a, b) =>
+        a.instance.pluginIndex.get.transformRequest.get.compareTo(b.instance.pluginIndex.get.transformRequest.get) < 0
+      )
+    val plsResp                            = plsWithIndexAll
+      .filter(v => v.instance.pluginIndex.exists(_.transformResponse.isDefined) && v.plugin.transformsResponse)
+      .sortWith((a, b) =>
+        a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0
+      )
+    val plsErr                             = plsWithIndexAll
+      .filter(v => v.instance.pluginIndex.exists(_.transformResponse.isDefined) && v.plugin.transformsError)
+      .sortWith((a, b) =>
+        a.instance.pluginIndex.get.transformResponse.get.compareTo(b.instance.pluginIndex.get.transformResponse.get) < 0
+      )
     plsReq ++ plsResp ++ plsErr ++ plsWithoutIndex
   }
 
@@ -344,13 +394,15 @@ case class NgContextualPlugins(
 
   lazy val preRoutePlugins = {
     val plugs = {
-      val pls = allPlugins
+      val pls                             = allPlugins
         .map(inst => (inst, inst.getPlugin[NgPreRouting]))
         .collect { case (inst, Some(plugin)) =>
           NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
         }
       val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.preRoute.isDefined))
-      plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.preRoute.get.compareTo(b.instance.pluginIndex.get.preRoute.get) < 0) ++ plsWithoutIndex
+      plsWithIndex.sortWith((a, b) =>
+        a.instance.pluginIndex.get.preRoute.get.compareTo(b.instance.pluginIndex.get.preRoute.get) < 0
+      ) ++ plsWithoutIndex
     }
     if (nextPluginsMerge && plugs.size > 1) {
       val new_plugins = plugs
@@ -382,13 +434,15 @@ case class NgContextualPlugins(
 
   lazy val accessValidatorPlugins = {
     val plugs = {
-      val pls = allPlugins
+      val pls                             = allPlugins
         .map(inst => (inst, inst.getPlugin[NgAccessValidator]))
         .collect { case (inst, Some(plugin)) =>
           NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
         }
       val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.validateAccess.isDefined))
-      plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.validateAccess.get.compareTo(b.instance.pluginIndex.get.validateAccess.get) < 0) ++ plsWithoutIndex
+      plsWithIndex.sortWith((a, b) =>
+        a.instance.pluginIndex.get.validateAccess.get.compareTo(b.instance.pluginIndex.get.validateAccess.get) < 0
+      ) ++ plsWithoutIndex
     }
     if (nextPluginsMerge && plugs.size > 1) {
       val new_plugins = plugs
@@ -419,40 +473,46 @@ case class NgContextualPlugins(
   }
 
   lazy val routeMatcherPlugins = {
-    val pls = allPlugins
+    val pls                             = allPlugins
       .map(inst => (inst, inst.getPlugin[NgRouteMatcher]))
       .collect { case (inst, Some(plugin)) =>
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
     val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.matchRoute.isDefined))
-    plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.matchRoute.get.compareTo(b.instance.pluginIndex.get.matchRoute.get) < 0) ++ plsWithoutIndex
+    plsWithIndex.sortWith((a, b) =>
+      a.instance.pluginIndex.get.matchRoute.get.compareTo(b.instance.pluginIndex.get.matchRoute.get) < 0
+    ) ++ plsWithoutIndex
   }
 
   lazy val tunnelHandlerPlugins = {
-    val pls = allPlugins
+    val pls                             = allPlugins
       .map(inst => (inst, inst.getPlugin[NgTunnelHandler]))
       .collect { case (inst, Some(plugin)) =>
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
     val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.handlesTunnel.isDefined))
-    plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.handlesTunnel.get.compareTo(b.instance.pluginIndex.get.handlesTunnel.get) < 0) ++ plsWithoutIndex
+    plsWithIndex.sortWith((a, b) =>
+      a.instance.pluginIndex.get.handlesTunnel.get.compareTo(b.instance.pluginIndex.get.handlesTunnel.get) < 0
+    ) ++ plsWithoutIndex
   }
 
-  lazy val hasTunnelHandlerPlugin = tunnelHandlerPlugins.nonEmpty
-  lazy val tunnelHandlerPlugin = tunnelHandlerPlugins.head
+  lazy val hasTunnelHandlerPlugin    = tunnelHandlerPlugins.nonEmpty
+  lazy val tunnelHandlerPlugin       = tunnelHandlerPlugins.head
   lazy val tunnelHandlerPluginOption = tunnelHandlerPlugins.headOption
 
   lazy val backendCallPlugins = {
-    val pls = allPlugins
+    val pls                             = allPlugins
       .map(inst => (inst, inst.getPlugin[NgBackendCall]))
       .collect { case (inst, Some(plugin)) =>
         NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
       }
     val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.callBackend.isDefined))
-    plsWithIndex.sortWith((a, b) => a.instance.pluginIndex.get.callBackend.get.compareTo(b.instance.pluginIndex.get.callBackend.get) < 0) ++ plsWithoutIndex
+    plsWithIndex.sortWith((a, b) =>
+      a.instance.pluginIndex.get.callBackend.get.compareTo(b.instance.pluginIndex.get.callBackend.get) < 0
+    ) ++ plsWithoutIndex
   }
 
-  lazy val hasBackendCallPlugin = backendCallPlugins.nonEmpty
-  lazy val backendCallPlugin = backendCallPlugins.head
+  lazy val hasBackendCallPlugin    = backendCallPlugins.nonEmpty
+  lazy val backendCallPlugin       = backendCallPlugins.head
   lazy val backendCallPluginOption = backendCallPlugins.headOption
 }

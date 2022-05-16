@@ -613,12 +613,12 @@ class JobManager(env: Env) {
 }
 
 object DefaultJob extends Job {
-  override def uniqueId: JobId          = JobId("otoroshi.script.default.DefaultJob")
+  override def uniqueId: JobId                   = JobId("otoroshi.script.default.DefaultJob")
   override def categories: Seq[NgPluginCategory] = Seq.empty
 }
 
 object CompilingJob extends Job {
-  override def uniqueId: JobId          = JobId("otoroshi.script.default.CompilingJob")
+  override def uniqueId: JobId                   = JobId("otoroshi.script.default.CompilingJob")
   override def categories: Seq[NgPluginCategory] = Seq.empty
 }
 

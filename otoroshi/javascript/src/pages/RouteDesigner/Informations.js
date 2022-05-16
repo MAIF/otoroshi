@@ -10,27 +10,29 @@ import { Collapse } from '../../components/inputs/Collapse';
 
 export const Informations = ({ isCreation, value, setValue, setSaveButton }) => {
   const history = useHistory();
-  const [informations, setInformations] = useState({ ...value })
+  const [informations, setInformations] = useState({ ...value });
 
-  const { capitalize, lowercase, fetchName, link } = useEntityFromURI()
-
-  useEffect(() => {
-    setInformations({ ...value })
-  }, [value])
+  const { capitalize, lowercase, fetchName, link } = useEntityFromURI();
 
   useEffect(() => {
-    setSaveButton(saveButton())
-  }, [informations])
+    setInformations({ ...value });
+  }, [value]);
+
+  useEffect(() => {
+    setSaveButton(saveButton());
+  }, [informations]);
 
   const saveButton = () => {
-    return <FeedbackButton
-      className="ms-2"
-      onPress={saveRoute}
-      text={isCreation ? 'Create route' : 'Save route'}
-      disabled={isEqual(informations, value)}
-      icon={(() => <i className='fas fa-paper-plane' />)}
-    />
-  }
+    return (
+      <FeedbackButton
+        className="ms-2"
+        onPress={saveRoute}
+        text={isCreation ? 'Create route' : 'Save route'}
+        disabled={isEqual(informations, value)}
+        icon={() => <i className="fas fa-paper-plane" />}
+      />
+    );
+  };
 
   const saveRoute = () => {
     if (isCreation) {
@@ -38,12 +40,10 @@ export const Informations = ({ isCreation, value, setValue, setSaveButton }) => 
         .create(nextClient.ENTITIES[fetchName], informations)
         .then(() => history.push(`/${link}/${informations.id}?tab=flow`));
     } else
-      return nextClient.update(nextClient.ENTITIES[fetchName], informations)
-        .then(res => {
-          if (!res.error)
-            setValue(res)
-        })
-  }
+      return nextClient.update(nextClient.ENTITIES[fetchName], informations).then((res) => {
+        if (!res.error) setValue(res);
+      });
+  };
 
   const schema = {
     id: {
@@ -141,45 +141,46 @@ export const Informations = ({ isCreation, value, setValue, setSaveButton }) => 
     },
   ];
 
-  if (!informations || !value)
-    return null
+  if (!informations || !value) return null;
 
-  return <>
-    <Form
-      schema={schema}
-      flow={flow}
-      value={informations}
-      options={{ autosubmit: true }}
-      onSubmit={(item) => setInformations({ ...merge({ ...value }, item) })}
-      footer={() => null}
-    />
-    {!isCreation && <Collapse
-      collapsed={false}
-      initCollapsed={false}
-      label="Delete this route"
-      lineEnd={true}>
-      <div className="row mb-3">
-        <label className="col-xs-12 col-sm-2 col-form-label" />
-        <div className="col-sm-10">
-          <button className="btn btn-sm btn-danger me-3" onClick={() => {
-            window.newConfirm('Are you sure you want to delete that route ?')
-              .then((ok) => {
-                if (ok) {
-                  nextClient.deleteById(nextClient.ENTITIES[fetchName], value.id).then(() => history.push(`/${link}`))
-                }
-              })
-          }}>
-            <i className="fas fa-trash" /> Delete
-          </button>
-        </div>
+  return (
+    <>
+      <Form
+        schema={schema}
+        flow={flow}
+        value={informations}
+        options={{ autosubmit: true }}
+        onSubmit={(item) => setInformations({ ...merge({ ...value }, item) })}
+        footer={() => null}
+      />
+      {!isCreation && (
+        <Collapse collapsed={false} initCollapsed={false} label="Delete this route" lineEnd={true}>
+          <div className="row mb-3">
+            <label className="col-xs-12 col-sm-2 col-form-label" />
+            <div className="col-sm-10">
+              <button
+                className="btn btn-sm btn-danger me-3"
+                onClick={() => {
+                  window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
+                    if (ok) {
+                      nextClient
+                        .deleteById(nextClient.ENTITIES[fetchName], value.id)
+                        .then(() => history.push(`/${link}`));
+                    }
+                  });
+                }}>
+                <i className="fas fa-trash" /> Delete
+              </button>
+            </div>
+          </div>
+        </Collapse>
+      )}
+      <div className="d-flex align-items-center justify-content-end mt-3">
+        <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
+          <i className="fas fa-times" /> Cancel
+        </button>
+        {saveButton()}
       </div>
-    </Collapse>
-    }
-    <div className="d-flex align-items-center justify-content-end mt-3">
-      <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
-        <i className="fas fa-times" /> Cancel
-      </button>
-      {saveButton()}
-    </div>
-  </>
+    </>
+  );
 };

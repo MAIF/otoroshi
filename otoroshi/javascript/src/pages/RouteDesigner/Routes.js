@@ -4,10 +4,10 @@ import { Table } from '../../components/inputs';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useEntityFromURI } from '../../util';
 
-export default ({ }) => {
+export default ({}) => {
   const params = useParams();
   const history = useHistory();
-  const entity = useEntityFromURI()
+  const entity = useEntityFromURI();
 
   const columns = [{ title: 'Name', content: (item) => item.name }];
 

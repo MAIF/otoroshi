@@ -8,7 +8,7 @@ export function FeedbackButton({
   feedbackTimeout = 1500,
   className,
   disabled,
-  style = {}
+  style = {},
 }) {
   const [uploading, setUploading] = useState(false);
   const [result, onResult] = useState('waiting');
@@ -71,7 +71,8 @@ export function FeedbackButton({
             });
         }
       }}>
-      <div className='me-1'
+      <div
+        className="me-1"
         style={{
           width: '16px',
           display: 'inline-block',

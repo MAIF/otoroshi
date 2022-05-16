@@ -24,7 +24,14 @@ class Http2Caller extends NgBackendCall {
 
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val hasBody = ctx.rawRequest.theHasBody
     val bodyF   = if (hasBody) ctx.request.body.runFold(ByteString.empty)(_ ++ _) else ByteString.empty.vfuture
     bodyF.flatMap { bodyRaw =>
@@ -75,10 +82,15 @@ class Http2Caller extends NgBackendCall {
           "Content-Length" -> (body.size - 0).toString
         )
         .withBody(Source(body.grouped(16 * 1024).toList))
-        .execute().map { resp =>
+        .execute()
+        .map { resp =>
           val body    = resp.json
           val bodyOut = ByteString(body.select("body").asString).decodeBase64
-          bodyResponse(body.select("status").asInt, body.select("headers").as[Map[String, String]], Source(bodyOut.grouped(16 * 1024).toList))
+          bodyResponse(
+            body.select("status").asInt,
+            body.select("headers").as[Map[String, String]],
+            Source(bodyOut.grouped(16 * 1024).toList)
+          )
         }
     }
   }

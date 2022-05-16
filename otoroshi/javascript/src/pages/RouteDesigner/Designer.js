@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom';
 import { useParams, useLocation } from 'react-router';
 import {
   nextClient,
@@ -16,25 +16,42 @@ import {
 import Loader from './Loader';
 import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
-import { SelectInput, Form, validate, CodeInput, MarkdownInput, BooleanInput } from '@maif/react-forms';
+import {
+  SelectInput,
+  Form,
+  validate,
+  CodeInput,
+  MarkdownInput,
+  BooleanInput,
+} from '@maif/react-forms';
 import { snakeCase, camelCase, isEqual, over } from 'lodash';
-import { HTTP_COLORS } from './RouteComposition'
+import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
 
-const HeaderNode = ({ selectedNode, text, icon }) => <Dot selectedNode={selectedNode}>
-  <div className='flex-column p-1'>
-    <i className={`fas fa-arrow-${icon}`} style={{ color: '#fff' }} />
-    <span style={{ color: '#fff' }}>{text}</span>
-  </div>
-</Dot>
+const HeaderNode = ({ selectedNode, text, icon }) => (
+  <Dot selectedNode={selectedNode}>
+    <div className="flex-column p-1">
+      <i className={`fas fa-arrow-${icon}`} style={{ color: '#fff' }} />
+      <span style={{ color: '#fff' }}>{text}</span>
+    </div>
+  </Dot>
+);
 
 const Status = ({ value }) => (
-  <div className="status-dot" title={value ? 'plugin enabled' : 'plugin disabled'} style={{ backgroundColor: value ? '#198754' : '#D5443F' }} />
+  <div
+    className="status-dot"
+    title={value ? 'plugin enabled' : 'plugin disabled'}
+    style={{ backgroundColor: value ? '#198754' : '#D5443F' }}
+  />
 );
 
 const Legacy = ({ value }) => (
-  <div className="legacy-dot" title="legacy plugin" style={{ display: !!value ? 'block' : 'none' }} />
+  <div
+    className="legacy-dot"
+    title="legacy plugin"
+    style={{ display: !!value ? 'block' : 'none' }}
+  />
 );
 
 const Dot = ({
@@ -56,7 +73,7 @@ const Dot = ({
     className={`dot ${className}`}
     style={{
       cursor: clickable ? 'pointer' : 'initial',
-      opacity: (!selectedNode || highlighted) ? 1 : 0.25,
+      opacity: !selectedNode || highlighted ? 1 : 0.25,
       backgroundColor: highlighted ? '#f9b000' : '#494948',
       ...style,
     }}
@@ -71,18 +88,22 @@ const Dot = ({
     {icon && <i className={`fas fa-${icon} dot-icon`} />}
     {children && children}
 
-    {highlighted && <div className='flex flex-column node-cursor'>
-      {arrows.up && <i className='fas fa-chevron-up' onClick={onUp} />}
-      {arrows.down && <i className='fas fa-chevron-down' onClick={onDown} />}
-    </div>}
+    {highlighted && (
+      <div className="flex flex-column node-cursor">
+        {arrows.up && <i className="fas fa-chevron-up" onClick={onUp} />}
+        {arrows.down && <i className="fas fa-chevron-down" onClick={onDown} />}
+      </div>
+    )}
   </div>
 );
 
 const RemoveButton = ({ onRemove }) => {
-  return <div onClick={onRemove} className='delete-node-button'>
-    <i className='fas fa-times' />
-  </div>
-}
+  return (
+    <div onClick={onRemove} className="delete-node-button">
+      <i className="fas fa-times" />
+    </div>
+  );
+};
 
 const NodeElement = ({
   className,
@@ -97,10 +118,10 @@ const NodeElement = ({
   onUp,
   onDown,
   onRemove,
-  arrows
+  arrows,
 }) => {
   const { id, name, legacy, nodeId } = element;
-  const highlighted = selectedNode && selectedNode.nodeId === nodeId
+  const highlighted = selectedNode && selectedNode.nodeId === nodeId;
 
   return (
     <>
@@ -124,7 +145,9 @@ const NodeElement = ({
         legacy={legacy}
         enabled={enabled}>
         <span className="dot-text">{name || id}</span>
-        {highlighted && id !== 'Frontend' && id !== 'Backend' && <RemoveButton onRemove={onRemove} />}
+        {highlighted && id !== 'Frontend' && id !== 'Backend' && (
+          <RemoveButton onRemove={onRemove} />
+        )}
       </Dot>
       {!hideLink && <Hr highlighted={!selectedNode} />}
     </>
@@ -142,116 +165,145 @@ const Hr = ({ highlighted = true, flex }) => (
 );
 
 const ServiceView = () => {
-  return <div
-    onClick={(e) => e.stopPropagation()}
-    className="plugins-stack editor-view">
-    <p>You are on a route composition. You can click to the routes button on the navbar to edit the frontends/backends.</p>
-  </div>
-}
+  return (
+    <div onClick={(e) => e.stopPropagation()} className="plugins-stack editor-view">
+      <p>
+        You are on a route composition. You can click to the routes button on the navbar to edit the
+        frontends/backends.
+      </p>
+    </div>
+  );
+};
 
-const FormContainer = ({ selectedNode, route, preview, showPreview, alertModal, serviceMode, ...props }) => {
-  const isOnFrontendBackend = selectedNode && ['Frontend', 'Backend'].includes(selectedNode.id)
+const FormContainer = ({
+  selectedNode,
+  route,
+  preview,
+  showPreview,
+  alertModal,
+  serviceMode,
+  ...props
+}) => {
+  const isOnFrontendBackend = selectedNode && ['Frontend', 'Backend'].includes(selectedNode.id);
 
-  return <div className="col-sm-8 relative-container flex-column flow-container p-3" style={{ paddingRight: 0 }}>
-    <UnselectedNode hideText={selectedNode} route={route} {...props} />
-    {serviceMode && isOnFrontendBackend && <ServiceView />}
-    {selectedNode && (!serviceMode || (serviceMode && !isOnFrontendBackend)) && (
-      <EditView
-        {...props}
-        route={route}
-        selectedNode={selectedNode}
-        hidePreview={() =>
-          showPreview({
-            ...preview,
-            enabled: false,
-          })
-        }
-      />
-    )}
-    {alertModal.show && <Modal {...alertModal} />}
-  </div>
-}
+  return (
+    <div
+      className="col-sm-8 relative-container flex-column flow-container p-3"
+      style={{ paddingRight: 0 }}>
+      <UnselectedNode hideText={selectedNode} route={route} {...props} />
+      {serviceMode && isOnFrontendBackend && <ServiceView />}
+      {selectedNode && (!serviceMode || (serviceMode && !isOnFrontendBackend)) && (
+        <EditView
+          {...props}
+          route={route}
+          selectedNode={selectedNode}
+          hidePreview={() =>
+            showPreview({
+              ...preview,
+              enabled: false,
+            })
+          }
+        />
+      )}
+      {alertModal.show && <Modal {...alertModal} />}
+    </div>
+  );
+};
 
-const Modal = ({ question, onOk, onCancel }) => <div class="designer-modal d-flex align-items-center justify-content-start flex-column p-3 pt-4">
-  <h4>{question}</h4>
-  <div class="d-flex ms-auto">
-    <button type="button" class="btn btn-danger me-1" onClick={onCancel}>Cancel</button>
-    <button type="button" class="btn btn-success" onClick={onOk}>Delete</button>
+const Modal = ({ question, onOk, onCancel }) => (
+  <div class="designer-modal d-flex align-items-center justify-content-start flex-column p-3 pt-4">
+    <h4>{question}</h4>
+    <div class="d-flex ms-auto">
+      <button type="button" class="btn btn-danger me-1" onClick={onCancel}>
+        Cancel
+      </button>
+      <button type="button" class="btn btn-success" onClick={onOk}>
+        Delete
+      </button>
+    </div>
   </div>
-</div>
+);
 
 export default ({ value, setSaveButton, setMenu, ...props }) => {
   const { routeId } = useParams();
   const location = useLocation();
 
-  const viewPlugins = new URLSearchParams(location.search).get('view_plugins')
+  const viewPlugins = new URLSearchParams(location.search).get('view_plugins');
 
-  return <Designer
-    viewPlugins={props.viewPlugins || viewPlugins}
-    routeId={routeId}
-    location={location}
-    value={value}
-    setSaveButton={setSaveButton}
-    setMenu={setMenu}
-    pathname={location.pathname}
-    serviceMode={location.pathname.includes('route-compositions')} />
-}
+  return (
+    <Designer
+      viewPlugins={props.viewPlugins || viewPlugins}
+      routeId={routeId}
+      location={location}
+      value={value}
+      setSaveButton={setSaveButton}
+      setMenu={setMenu}
+      pathname={location.pathname}
+      serviceMode={location.pathname.includes('route-compositions')}
+    />
+  );
+};
 
-const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) => <div className='main-view relative-container'
-  style={{ flex: 'initial' }}>
-  <NodeElement
-    element={frontend}
-    className="frontend-container-button"
-    selectedNode={selectedNode}
-    setSelectedNode={setSelectedNode}
-    bold={true}
-    onRemove={removeNode}
-  />
-  <div
-    className="frontend-button"
-    style={{
-      opacity: (!selectedNode || (selectedNode && selectedNode.id === 'Frontend')) ? 1 : 0.25,
-      background:
-        (selectedNode && selectedNode.id === 'Frontend') ?
-          'linear-gradient(to right, rgb(249, 176, 0) 55%, transparent 1%)' :
-          'linear-gradient(to right, rgb(73, 73, 72) 55%, transparent 1%)'
-    }}>
-    <i className="fas fa-user frontend-button-icon" />
+const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) => (
+  <div className="main-view relative-container" style={{ flex: 'initial' }}>
+    <NodeElement
+      element={frontend}
+      className="frontend-container-button"
+      selectedNode={selectedNode}
+      setSelectedNode={setSelectedNode}
+      bold={true}
+      onRemove={removeNode}
+    />
+    <div
+      className="frontend-button"
+      style={{
+        opacity: !selectedNode || (selectedNode && selectedNode.id === 'Frontend') ? 1 : 0.25,
+        background:
+          selectedNode && selectedNode.id === 'Frontend'
+            ? 'linear-gradient(to right, rgb(249, 176, 0) 55%, transparent 1%)'
+            : 'linear-gradient(to right, rgb(73, 73, 72) 55%, transparent 1%)',
+      }}>
+      <i className="fas fa-user frontend-button-icon" />
+    </div>
   </div>
-</div>
+);
 
 const Container = ({ children, onClick }) => {
-  return <div
-    className="h-100 col-12 hide-overflow route-designer"
-    onClick={(e) => {
-      e.stopPropagation();
-      onClick()
-    }}>
-    {children}
-  </div>
-}
+  return (
+    <div
+      className="h-100 col-12 hide-overflow route-designer"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}>
+      {children}
+    </div>
+  );
+};
 
-const BackendNode = ({ selectedNode, backend, ...props }) => <div
-  className="main-view backend-button"
-  style={{
-    opacity: !selectedNode ? 1 : (selectedNode.nodeId === 'Backend' ? 1 : 0.25)
-  }}>
-  <i className="fas fa-bullseye backend-icon" />
-  <NodeElement
-    element={backend}
-    selectedNode={selectedNode}
-    hideLink={true}
-    disableBorder={true}
-    bold={true}
-    {...props}
-  />
-</div>
+const BackendNode = ({ selectedNode, backend, ...props }) => (
+  <div
+    className="main-view backend-button"
+    style={{
+      opacity: !selectedNode ? 1 : selectedNode.nodeId === 'Backend' ? 1 : 0.25,
+    }}>
+    <i className="fas fa-bullseye backend-icon" />
+    <NodeElement
+      element={backend}
+      selectedNode={selectedNode}
+      hideLink={true}
+      disableBorder={true}
+      bold={true}
+      {...props}
+    />
+  </div>
+);
 
 const BackendCallNode = ({ selectedNode, backendCall, isPluginEnabled, ...props }) => (
   <div
     className="main-view backend-call-button"
     style={{
-      opacity: !selectedNode ? 1 : (selectedNode.id === backendCall.id ? 1 : 0.25)
+      opacity: !selectedNode ? 1 : selectedNode.id === backendCall.id ? 1 : 0.25,
     }}>
     <NodeElement
       element={backendCall}
@@ -263,46 +315,73 @@ const BackendCallNode = ({ selectedNode, backendCall, isPluginEnabled, ...props 
       {...props}
     />
   </div>
-)
+);
 
-const InBoundFlow = props => <div className="col-sm-6 flex-column">
-  <div className="main-view">
-    {props.children}
+const InBoundFlow = (props) => (
+  <div className="col-sm-6 flex-column">
+    <div className="main-view">{props.children}</div>
   </div>
-</div>
+);
 
-const OutBoundFlow = props => <div className="col-sm-6 pe-3 flex-column">
-  <div className="main-view">
-    {props.children}
+const OutBoundFlow = (props) => (
+  <div className="col-sm-6 pe-3 flex-column">
+    <div className="main-view">{props.children}</div>
   </div>
-</div>
+);
 
-const Flow = props => <div className="col-sm-4 pe-3 pb-1 d-flex flex-column">{props.children}</div>
+const Flow = (props) => (
+  <div className="col-sm-4 pe-3 pb-1 d-flex flex-column">{props.children}</div>
+);
 
-const MenuContainer = ({ children }) => <li className='p-2 px-3'>
-  <h4 className='pb-2' style={{
-    borderBottom: "1px solid"
-  }}>Advanced</h4>
-  <div className="d-flex flex-column" style={{ color: "#fff" }}>
-    {children}
-  </div>
-</li>
+const MenuContainer = ({ children }) => (
+  <li className="p-2 px-3">
+    <h4
+      className="pb-2"
+      style={{
+        borderBottom: '1px solid',
+      }}>
+      Advanced
+    </h4>
+    <div className="d-flex flex-column" style={{ color: '#fff' }}>
+      {children}
+    </div>
+  </li>
+);
 
 const PluginsContainer = ({
-  handleSearch, showLegacy, setShowLegacy, onExpandAll,
-  expandAll, searched, plugins, categories, addNode, showPreview, hidePreview }) => <div className="plugins-stack-column">
+  handleSearch,
+  showLegacy,
+  setShowLegacy,
+  onExpandAll,
+  expandAll,
+  searched,
+  plugins,
+  categories,
+  addNode,
+  showPreview,
+  hidePreview,
+}) => (
+  <div className="plugins-stack-column">
     <div className="elements">
       <div className="plugins-background-bar" />
       <SearchBar handleSearch={handleSearch} />
-      <div className='plugins-action-container mb-2'>
-        <button type="button" className="btn btn-sm btn-warning text-light plugins-action" style={{ marginRight: 5 }}
+      <div className="plugins-action-container mb-2">
+        <button
+          type="button"
+          className="btn btn-sm btn-warning text-light plugins-action"
+          style={{ marginRight: 5 }}
           onClick={() => {
-            window.localStorage.setItem('io.otoroshi.next.designer.showLegacy', String(!showLegacy));
+            window.localStorage.setItem(
+              'io.otoroshi.next.designer.showLegacy',
+              String(!showLegacy)
+            );
             setShowLegacy(!showLegacy);
           }}>
           {showLegacy ? 'Hide legacy plugins' : 'Show legacy plugins'}
         </button>
-        <button type="button" className="btn btn-sm btn-warning text-light plugins-action"
+        <button
+          type="button"
+          className="btn btn-sm btn-warning text-light plugins-action"
           onClick={onExpandAll}>
           {expandAll ? 'Collapse all' : 'Expand all'}
         </button>
@@ -311,23 +390,25 @@ const PluginsContainer = ({
         <PluginsStack
           forceOpen={!!searched}
           expandAll={expandAll}
-          elements={plugins.filter(plugin => (showLegacy ? true : !plugin.legacy)).reduce(
-            (acc, plugin) => {
-              if (plugin.selected || plugin.filtered) return acc;
-              return acc.map((group) => {
-                if (plugin.plugin_categories.includes(group.group))
-                  return {
-                    ...group,
-                    elements: [...(group.elements || []), plugin],
-                  };
-                return group;
-              });
-            },
-            categories.map((category) => ({
-              group: category,
-              elements: [],
-            }))
-          )}
+          elements={plugins
+            .filter((plugin) => (showLegacy ? true : !plugin.legacy))
+            .reduce(
+              (acc, plugin) => {
+                if (plugin.selected || plugin.filtered) return acc;
+                return acc.map((group) => {
+                  if (plugin.plugin_categories.includes(group.group))
+                    return {
+                      ...group,
+                      elements: [...(group.elements || []), plugin],
+                    };
+                  return group;
+                });
+              },
+              categories.map((category) => ({
+                group: category,
+                elements: [],
+              }))
+            )}
           addNode={addNode}
           showPreview={showPreview}
           hidePreview={hidePreview}
@@ -335,6 +416,7 @@ const PluginsContainer = ({
       </div>
     </div>
   </div>
+);
 
 class Designer extends React.Component {
   state = {
@@ -348,136 +430,158 @@ class Designer extends React.Component {
     loading: true,
     searched: '',
     expandAll: false,
-    showLegacy: (window.localStorage.getItem('io.otoroshi.next.designer.showLegacy') || 'true') === 'true',
+    showLegacy:
+      (window.localStorage.getItem('io.otoroshi.next.designer.showLegacy') || 'true') === 'true',
     preview: {
-      enabled: false
+      enabled: false,
     },
     frontend: {},
     backend: {},
     alertModal: {
-      show: false
+      show: false,
     },
     hiddenSteps: {
       MatchRoute: true,
       PreRoute: true,
       ValidateAccess: true,
       TransformRequest: true,
-      TransformResponse: true
-    }
-  }
+      TransformResponse: true,
+    },
+  };
 
   componentDidMount() {
-    this.loadData()
-    this.injectSaveButton()
-    this.injectNavbarMenu()
+    this.loadData();
+    this.injectSaveButton();
+    this.injectNavbarMenu();
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.location.pathname !== this.props.location.pathname) {
-      this.loadData()
-      this.injectSaveButton()
-      this.injectNavbarMenu()
+      this.loadData();
+      this.injectSaveButton();
+      this.injectNavbarMenu();
     }
   }
 
   injectSaveButton = () => {
-    this.props.setSaveButton(<FeedbackButton
-      className="ms-2"
-      onPress={this.saveRoute}
-      text="Save route"
-      disabled={isEqual(this.state.route, this.state.originalRoute)}
-      icon={(() => <i className='fas fa-paper-plane' />)}
-    />)
-  }
+    this.props.setSaveButton(
+      <FeedbackButton
+        className="ms-2"
+        onPress={this.saveRoute}
+        text="Save route"
+        disabled={isEqual(this.state.route, this.state.originalRoute)}
+        icon={() => <i className="fas fa-paper-plane" />}
+      />
+    );
+  };
 
-  injectOverrideRoutePluginsForm = () => <MenuContainer>
-    <span className="me-3 mt-2">Override route plugins</span> {/* mt-2 to fix the form lib css ...*/}
-    <BooleanInput
-      value={this.state.route?.overridePlugins}
-      onChange={overridePlugins => {
-        console.log(overridePlugins)
-        this.setState({
-          route: {
-            ...this.state.route,
-            overridePlugins
-          }
-        }, () => {
-          this.injectNavbarMenu()
-          this.injectSaveButton()
-        });
-      }}
-    />
-  </MenuContainer>
+  injectOverrideRoutePluginsForm = () => (
+    <MenuContainer>
+      <span className="me-3 mt-2">Override route plugins</span>{' '}
+      {/* mt-2 to fix the form lib css ...*/}
+      <BooleanInput
+        value={this.state.route?.overridePlugins}
+        onChange={(overridePlugins) => {
+          console.log(overridePlugins);
+          this.setState(
+            {
+              route: {
+                ...this.state.route,
+                overridePlugins,
+              },
+            },
+            () => {
+              this.injectNavbarMenu();
+              this.injectSaveButton();
+            }
+          );
+        }}
+      />
+    </MenuContainer>
+  );
 
-  injectDefaultMenu = () => <MenuContainer>
-    <div className='d-flex-between'>
-      <button type="button" className="btn btn-sm btn-danger me-1" onClick={this.clearPlugins}>
-        Clear plugins
-      </button>
-    </div>
-  </MenuContainer>
+  injectDefaultMenu = () => (
+    <MenuContainer>
+      <div className="d-flex-between">
+        <button type="button" className="btn btn-sm btn-danger me-1" onClick={this.clearPlugins}>
+          Clear plugins
+        </button>
+      </div>
+    </MenuContainer>
+  );
 
   injectNavbarMenu = () => {
     if (this.props.viewPlugins && this.props.viewPlugins !== -1)
-      this.props.setMenu(this.injectOverrideRoutePluginsForm())
-    else
-      this.props.setMenu(this.injectDefaultMenu())
-  }
+      this.props.setMenu(this.injectOverrideRoutePluginsForm());
+    else this.props.setMenu(this.injectDefaultMenu());
+  };
 
-  loadHiddenStepsFromLocalStorage = route => {
-    const data = localStorage.getItem('hidden_steps')
+  loadHiddenStepsFromLocalStorage = (route) => {
+    const data = localStorage.getItem('hidden_steps');
     if (data) {
       try {
-        const hiddenSteps = JSON.parse(data)
+        const hiddenSteps = JSON.parse(data);
         if (hiddenSteps[route.id]) {
           this.setState({
-            hiddenSteps: hiddenSteps[route.id]
-          })
+            hiddenSteps: hiddenSteps[route.id],
+          });
         }
-      } catch (_) { }
+      } catch (_) {}
     }
-  }
+  };
 
-  storeHiddenStepsToLocalStorage = newHiddenSteps => {
-    const data = localStorage.getItem('hidden_steps')
+  storeHiddenStepsToLocalStorage = (newHiddenSteps) => {
+    const data = localStorage.getItem('hidden_steps');
     if (data) {
       try {
-        const hiddenSteps = JSON.parse(data)
-        localStorage.setItem('hidden_steps', JSON.stringify({
-          ...hiddenSteps,
-          [this.state.route.id]: newHiddenSteps
-        }))
-      } catch (_) { }
+        const hiddenSteps = JSON.parse(data);
+        localStorage.setItem(
+          'hidden_steps',
+          JSON.stringify({
+            ...hiddenSteps,
+            [this.state.route.id]: newHiddenSteps,
+          })
+        );
+      } catch (_) {}
     } else {
-      localStorage.setItem('hidden_steps', JSON.stringify({
-        [this.state.route.id]: newHiddenSteps
-      }))
+      localStorage.setItem(
+        'hidden_steps',
+        JSON.stringify({
+          [this.state.route.id]: newHiddenSteps,
+        })
+      );
     }
-  }
+  };
 
   loadData = () => {
     Promise.all([
       nextClient.find(nextClient.ENTITIES.BACKENDS),
-      nextClient.fetch(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES, this.props.routeId),
+      nextClient.fetch(
+        this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
+        this.props.routeId
+      ),
       getCategories(),
       getPlugins(),
       getOldPlugins(),
       nextClient.form(nextClient.ENTITIES.FRONTENDS),
       nextClient.form(nextClient.ENTITIES.BACKENDS),
     ]).then(([backends, r, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
-      let route = (this.props.viewPlugins !== null && this.props.viewPlugins !== -1) ? {
-        ...r,
-        overridePlugins: true,
-        plugins: [],
-        ...r.routes[~~this.props.viewPlugins]
-      } : r
+      let route =
+        this.props.viewPlugins !== null && this.props.viewPlugins !== -1
+          ? {
+              ...r,
+              overridePlugins: true,
+              plugins: [],
+              ...r.routes[~~this.props.viewPlugins],
+            }
+          : r;
 
       if (route.error) {
         this.setState({
           loading: false,
-          notFound: true
-        })
-        return
+          notFound: true,
+        });
+        return;
       }
 
       const formattedPlugins = [
@@ -494,107 +598,128 @@ class Designer extends React.Component {
           config: plugin.default_config || plugin.defaultConfig,
         }));
 
-      const routePlugins = route.plugins.map(ref => ({
+      const routePlugins = route.plugins.map((ref) => ({
         ...ref,
-        plugin_index: Object.fromEntries(Object.entries(ref.plugin_index || {}).map(([key, v]) => [firstLetterUppercase(camelCase(key)), v])),
-        ...formattedPlugins.find(p => p.id === ref.plugin || p.id === ref.config.plugin)
-      }))
-      const pluginsWithNodeId = this.generateInternalNodeId(routePlugins)
+        plugin_index: Object.fromEntries(
+          Object.entries(ref.plugin_index || {}).map(([key, v]) => [
+            firstLetterUppercase(camelCase(key)),
+            v,
+          ])
+        ),
+        ...formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin),
+      }));
+      const pluginsWithNodeId = this.generateInternalNodeId(routePlugins);
 
       const routeWithNodeId = {
         ...route,
         plugins: route.plugins.map((plugin, i) => ({
           ...plugin,
-          nodeId: pluginsWithNodeId[i].nodeId
-        }))
-      }
-
-      this.loadHiddenStepsFromLocalStorage(routeWithNodeId)
-
-      const nodes = pluginsWithNodeId.some(p => Object.keys(p.plugin_index || {}).length > 0) ? pluginsWithNodeId : this.generatedPluginIndex(pluginsWithNodeId)
-
-      this.setState({
-        backends,
-        loading: false,
-        categories: categories.filter((category) => !['Tunnel', 'Job'].includes(category)),
-        route: { ...routeWithNodeId },
-        originalRoute: { ...routeWithNodeId },
-        plugins: formattedPlugins.map((p) => ({
-          ...p,
-          selected: p.plugin_multi_inst ? false : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
+          nodeId: pluginsWithNodeId[i].nodeId,
         })),
-        nodes,
-        frontend: {
-          ...DEFAULT_FLOW.Frontend,
-          ...frontendForm,
-          config_schema: toUpperCaseLabels({
-            ...frontendForm.schema,
-            ...DEFAULT_FLOW.Frontend.config_schema,
-          }),
-          config_flow: DEFAULT_FLOW.Frontend.config_flow,
-          nodeId: 'Frontend'
+      };
+
+      this.loadHiddenStepsFromLocalStorage(routeWithNodeId);
+
+      const nodes = pluginsWithNodeId.some((p) => Object.keys(p.plugin_index || {}).length > 0)
+        ? pluginsWithNodeId
+        : this.generatedPluginIndex(pluginsWithNodeId);
+
+      this.setState(
+        {
+          backends,
+          loading: false,
+          categories: categories.filter((category) => !['Tunnel', 'Job'].includes(category)),
+          route: { ...routeWithNodeId },
+          originalRoute: { ...routeWithNodeId },
+          plugins: formattedPlugins.map((p) => ({
+            ...p,
+            selected: p.plugin_multi_inst
+              ? false
+              : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
+          })),
+          nodes,
+          frontend: {
+            ...DEFAULT_FLOW.Frontend,
+            ...frontendForm,
+            config_schema: toUpperCaseLabels({
+              ...frontendForm.schema,
+              ...DEFAULT_FLOW.Frontend.config_schema,
+            }),
+            config_flow: DEFAULT_FLOW.Frontend.config_flow,
+            nodeId: 'Frontend',
+          },
+          backend: {
+            ...DEFAULT_FLOW.Backend('plugin'),
+            ...backendForm,
+            config_schema: toUpperCaseLabels(
+              DEFAULT_FLOW.Backend('plugin').config_schema(backendForm.schema)
+            ),
+            config_flow: DEFAULT_FLOW.Backend('plugin').config_flow,
+            nodeId: 'Backend',
+          },
         },
-        backend: {
-          ...DEFAULT_FLOW.Backend('plugin'),
-          ...backendForm,
-          config_schema: toUpperCaseLabels(
-            DEFAULT_FLOW.Backend('plugin').config_schema(backendForm.schema)
-          ),
-          config_flow: DEFAULT_FLOW.Backend('plugin').config_flow,
-          nodeId: 'Backend'
-        }
-      }, this.injectNavbarMenu)
+        this.injectNavbarMenu
+      );
     });
-  }
+  };
 
-  generateInternalNodeId = nodes => nodes.reduce((acc, node) => [
-    ...acc,
-    {
-      ...node,
-      nodeId: acc.find(n => n.nodeId == node.id) ?
-        `${node.id}-${acc.reduce((a, c) => a + (c.id.startsWith(node.id) ? 1 : 0), 0)}` :
-        node.id
-    }
-  ], [])
+  generateInternalNodeId = (nodes) =>
+    nodes.reduce(
+      (acc, node) => [
+        ...acc,
+        {
+          ...node,
+          nodeId: acc.find((n) => n.nodeId == node.id)
+            ? `${node.id}-${acc.reduce((a, c) => a + (c.id.startsWith(node.id) ? 1 : 0), 0)}`
+            : node.id,
+        },
+      ],
+      []
+    );
 
-  generateNewInternalNodeId = nodeId => `${nodeId}-${this.state.nodes.reduce((a, c) => a + (c.id.startsWith(nodeId) ? 1 : 0), 0)}`
+  generateNewInternalNodeId = (nodeId) =>
+    `${nodeId}-${this.state.nodes.reduce((a, c) => a + (c.id.startsWith(nodeId) ? 1 : 0), 0)}`;
 
-  generatedPluginIndex = plugins => {
-    const getStep = (step, elements, element, pluginSteps) => [...elements[step], pluginSteps.includes(step) ? element : undefined].filter(f => f)
+  generatedPluginIndex = (plugins) => {
+    const getStep = (step, elements, element, pluginSteps) =>
+      [...elements[step], pluginSteps.includes(step) ? element : undefined].filter((f) => f);
 
-    const pluginsIndexes = plugins.reduce((acc, curr) => {
-      const pluginSteps = curr.plugin_steps || []
-      return {
-        MatchRoute: getStep('MatchRoute', acc, curr, pluginSteps),
-        PreRoute: getStep('PreRoute', acc, curr, pluginSteps),
-        ValidateAccess: getStep('ValidateAccess', acc, curr, pluginSteps),
-        TransformRequest: getStep('TransformRequest', acc, curr, pluginSteps),
-        TransformResponse: getStep('TransformResponse', acc, curr, pluginSteps),
+    const pluginsIndexes = plugins.reduce(
+      (acc, curr) => {
+        const pluginSteps = curr.plugin_steps || [];
+        return {
+          MatchRoute: getStep('MatchRoute', acc, curr, pluginSteps),
+          PreRoute: getStep('PreRoute', acc, curr, pluginSteps),
+          ValidateAccess: getStep('ValidateAccess', acc, curr, pluginSteps),
+          TransformRequest: getStep('TransformRequest', acc, curr, pluginSteps),
+          TransformResponse: getStep('TransformResponse', acc, curr, pluginSteps),
+        };
+      },
+      {
+        MatchRoute: [],
+        PreRoute: [],
+        ValidateAccess: [],
+        TransformRequest: [],
+        TransformResponse: [],
       }
-    }, {
-      MatchRoute: [],
-      PreRoute: [],
-      ValidateAccess: [],
-      TransformRequest: [],
-      TransformResponse: []
-    })
+    );
 
     const pluginsWithIndex = Object.values(
-      Object.fromEntries(Object.entries(pluginsIndexes)
-        .map(([step, plugins]) => {
+      Object.fromEntries(
+        Object.entries(pluginsIndexes).map(([step, plugins]) => {
           return [
             step,
             plugins.map((plugin, idx) => ({
               ...plugin,
               plugin_index: {
                 ...(plugin.plugin_index || {}),
-                [step]: idx
-              }
-            }))
-          ]
-        }))
-    )
-      .flatMap(f => f)
+                [step]: idx,
+              },
+            })),
+          ];
+        })
+      )
+    ).flatMap((f) => f);
 
     return _.chain(pluginsWithIndex)
       .groupBy('nodeId')
@@ -604,41 +729,41 @@ class Designer extends React.Component {
           ...acc,
           plugin_index: {
             ...acc.plugin_index,
-            ...curr.plugin_index
-          }
-        }))
+            ...curr.plugin_index,
+          },
+        })),
       }))
-      .value()
-  }
+      .value();
+  };
 
-  calculateIndexFor = node => {
-    const { nodes } = this.state
+  calculateIndexFor = (node) => {
+    const { nodes } = this.state;
     return Object.entries({
       MatchRoute: nodes
-        .filter(n => n.plugin_index.MatchRoute !== undefined)
+        .filter((n) => n.plugin_index.MatchRoute !== undefined)
         .sort((a, b) => a.plugin_index.MatchRoute - b.plugin_index.MatchRoute),
       PreRoute: nodes
-        .filter(n => n.plugin_index.PreRoute !== undefined)
+        .filter((n) => n.plugin_index.PreRoute !== undefined)
         .sort((a, b) => a.plugin_index.PreRoute - b.plugin_index.PreRoute),
       ValidateAccess: nodes
-        .filter(n => n.plugin_index.ValidateAccess !== undefined)
+        .filter((n) => n.plugin_index.ValidateAccess !== undefined)
         .sort((a, b) => a.plugin_index.ValidateAccess - b.plugin_index.ValidateAccess),
       TransformRequest: nodes
-        .filter(n => n.plugin_index.TransformRequest !== undefined)
+        .filter((n) => n.plugin_index.TransformRequest !== undefined)
         .sort((a, b) => a.plugin_index.TransformRequest - b.plugin_index.TransformRequest),
       TransformResponse: nodes
-        .filter(n => n.plugin_index.TransformResponse !== undefined)
-        .sort((a, b) => a.plugin_index.TransformResponse - b.plugin_index.TransformResponse)
+        .filter((n) => n.plugin_index.TransformResponse !== undefined)
+        .sort((a, b) => a.plugin_index.TransformResponse - b.plugin_index.TransformResponse),
     })
       .filter(([step, _]) => node.plugin_steps.includes(step))
       .reduce((pluginIndex, curr) => {
-        const [step, indexes] = curr
+        const [step, indexes] = curr;
         return {
           ...pluginIndex,
-          [step]: indexes.length === 0 ? 0 : indexes[indexes.length - 1].plugin_index[step] + 1
-        }
-      }, {})
-  }
+          [step]: indexes.length === 0 ? 0 : indexes[indexes.length - 1].plugin_index[step] + 1,
+        };
+      }, {});
+  };
 
   filterSpecificPlugin = (plugin) =>
     !plugin.plugin_steps.includes('Sink') &&
@@ -647,64 +772,69 @@ class Designer extends React.Component {
     !EXCLUDED_PLUGINS.plugin_visibility.includes(plugin.plugin_visibility) &&
     !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''));
 
-  removeNode = e => {
-    if (e && typeof e.stopPropagation === 'function')
-      e.stopPropagation();
+  removeNode = (e) => {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
 
     this.setState({
       alertModal: {
         show: true,
         question: `Delete this node ?`,
-        onCancel: e => {
-          e.stopPropagation()
+        onCancel: (e) => {
+          e.stopPropagation();
           this.setState({
             alertModal: {
-              show: false
-            }
-          })
+              show: false,
+            },
+          });
         },
-        onOk: e => {
-          e.stopPropagation()
-          const { selectedNode, nodes, plugins, route } = this.state
-          const { nodeId, id } = selectedNode
+        onOk: (e) => {
+          e.stopPropagation();
+          const { selectedNode, nodes, plugins, route } = this.state;
+          const { nodeId, id } = selectedNode;
 
-          this.setState({
-            nodes: nodes.filter(node => node.nodeId !== nodeId),
-            plugins: plugins.map(plugin => ({ ...plugin, selected: plugin.id === id ? undefined : plugin.selected })),
-            selectedNode: undefined,
-            alertModal: {
-              show: false
+          this.setState(
+            {
+              nodes: nodes.filter((node) => node.nodeId !== nodeId),
+              plugins: plugins.map((plugin) => ({
+                ...plugin,
+                selected: plugin.id === id ? undefined : plugin.selected,
+              })),
+              selectedNode: undefined,
+              alertModal: {
+                show: false,
+              },
+            },
+            () => {
+              this.updateRoute({
+                ...route,
+                plugins: route.plugins.filter((plugin) => plugin.nodeId !== nodeId),
+              });
             }
-          }, () => {
-            this.updateRoute({
-              ...route,
-              plugins: route.plugins.filter(plugin => plugin.nodeId !== nodeId),
-            });
-          })
-        }
-      }
-    })
+          );
+        },
+      },
+    });
   };
 
   addNode = (node) => {
-    const nodeId = this.generateNewInternalNodeId(node.id)
+    const nodeId = this.generateNewInternalNodeId(node.id);
 
     const newNode = {
       ...node,
       nodeId,
-      plugin_index: this.calculateIndexFor({ ...node, nodeId })
+      plugin_index: this.calculateIndexFor({ ...node, nodeId }),
     };
 
-    const { nodes, plugins, route } = this.state
+    const { nodes, plugins, route } = this.state;
 
     this.setState(
       {
         selectedNode: newNode,
         nodes: [...nodes, newNode],
-        plugins: plugins.map(p => ({
+        plugins: plugins.map((p) => ({
           ...p,
-          selected: p.id === newNode.id ? !p.plugin_multi_inst : p.selected
-        }))
+          selected: p.id === newNode.id ? !p.plugin_multi_inst : p.selected,
+        })),
       },
       () => {
         this.updateRoute({
@@ -722,11 +852,12 @@ class Designer extends React.Component {
               config: {
                 ...newNode.config,
                 plugin: newNode.legacy ? newNode.id : undefined,
-              }
-            }
-          ]
-        })
-      })
+              },
+            },
+          ],
+        });
+      }
+    );
   };
 
   clearPlugins = () => {
@@ -734,184 +865,195 @@ class Designer extends React.Component {
     newRoute.plugins = [];
     this.setState({ route: newRoute, nodes: [] });
     this.updateRoute({ ...newRoute });
-  }
+  };
 
   deleteRoute = () => {
     window.newConfirm('are you sure you want to delete this route ?', (ok) => {
       if (ok) {
         nextClient.deleteById(nextClient.ENTITIES.ROUTES, this.state.route.id).then(() => {
-          window.location = '/bo/dashboard/routes'
-        })
+          window.location = '/bo/dashboard/routes';
+        });
       }
-    })
-  }
+    });
+  };
 
   addNodes = (new_nodes) => {
-    const { plugins, route } = this.state
+    const { plugins, route } = this.state;
 
     let newNodes = [];
     let newRoute = { ...route, plugins: [] };
 
-    new_nodes.filter(node => !!node).map(node => {
-      const nodeId = this.generateNewInternalNodeId(node.id)
-      const newNode = {
-        ...node,
-        nodeId,
-        plugin_index: node.plugin_index
-      };
-      newNodes = [...newNodes, newNode];
-      newRoute = {
-        ...newRoute,
-        plugins: [
-          ...newRoute.plugins,
-          {
-            plugin_index: newNode.plugin_index,
-            nodeId: newNode.nodeId,
-            plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
-            enabled: (node.enabled === false) ? false : true,
-            debug: node.debug || false,
-            include: node.include || [],
-            exclude: node.exclude || [],
-            config: {
-              ...newNode.config,
-              plugin: newNode.legacy ? newNode.id : undefined,
-            }
-          }
-        ]
-      }
-    });
+    new_nodes
+      .filter((node) => !!node)
+      .map((node) => {
+        const nodeId = this.generateNewInternalNodeId(node.id);
+        const newNode = {
+          ...node,
+          nodeId,
+          plugin_index: node.plugin_index,
+        };
+        newNodes = [...newNodes, newNode];
+        newRoute = {
+          ...newRoute,
+          plugins: [
+            ...newRoute.plugins,
+            {
+              plugin_index: newNode.plugin_index,
+              nodeId: newNode.nodeId,
+              plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
+              enabled: node.enabled === false ? false : true,
+              debug: node.debug || false,
+              include: node.include || [],
+              exclude: node.exclude || [],
+              config: {
+                ...newNode.config,
+                plugin: newNode.legacy ? newNode.id : undefined,
+              },
+            },
+          ],
+        };
+      });
     this.setState(
       {
         selectedNode: null,
         nodes: newNodes,
         route: newRoute,
-        plugins: plugins.map(p => ({
+        plugins: plugins.map((p) => ({
           ...p,
-          selected: route.plugins.find(plugin => plugin.id === p.id) ? (p.plugin_multi_inst ? false : true) : false
-        }))
+          selected: route.plugins.find((plugin) => plugin.id === p.id)
+            ? p.plugin_multi_inst
+              ? false
+              : true
+            : false,
+        })),
       },
       () => {
-        this.updateRoute({ ...newRoute }).then(() => console.log("pattern added "));
+        this.updateRoute({ ...newRoute }).then(() => console.log('pattern added '));
       }
-    )
-  }
+    );
+  };
 
   setNodes = (new_nodes) => {
-    const { nodes, plugins, route } = this.state
+    const { nodes, plugins, route } = this.state;
     const newPlugins = [...plugins];
     let newNodes = [];
     let newRoute = { ...route, plugins: [] };
-    new_nodes.filter(node => !!node).map(node => {
-      const nodeId = this.generateNewInternalNodeId(node.id)
-      const newNode = {
-        ...node,
-        nodeId,
-        plugin_index: node.plugin_index
-      };
-      newNodes = [...newNodes, newNode];
-      newRoute = {
-        ...newRoute,
-        plugins: [
-          ...newRoute.plugins,
-          {
-            plugin_index: newNode.plugin_index,
-            nodeId: newNode.nodeId,
-            plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
-            enabled: (node.enabled === false) ? false : true,
-            debug: node.debug || false,
-            include: node.include || [],
-            exclude: node.exclude || [],
-            config: {
-              ...newNode.config,
-              plugin: newNode.legacy ? newNode.id : undefined,
-            }
-          }
-        ]
-      }
-    });
+    new_nodes
+      .filter((node) => !!node)
+      .map((node) => {
+        const nodeId = this.generateNewInternalNodeId(node.id);
+        const newNode = {
+          ...node,
+          nodeId,
+          plugin_index: node.plugin_index,
+        };
+        newNodes = [...newNodes, newNode];
+        newRoute = {
+          ...newRoute,
+          plugins: [
+            ...newRoute.plugins,
+            {
+              plugin_index: newNode.plugin_index,
+              nodeId: newNode.nodeId,
+              plugin: newNode.legacy ? LEGACY_PLUGINS_WRAPPER[newNode.pluginType] : newNode.id,
+              enabled: node.enabled === false ? false : true,
+              debug: node.debug || false,
+              include: node.include || [],
+              exclude: node.exclude || [],
+              config: {
+                ...newNode.config,
+                plugin: newNode.legacy ? newNode.id : undefined,
+              },
+            },
+          ],
+        };
+      });
     this.setState(
       {
         selectedNode: null,
         nodes: newNodes,
         route: newRoute,
-        plugins: newPlugins.map(p => ({
+        plugins: newPlugins.map((p) => ({
           ...p,
-          selected: false
-        }))
+          selected: false,
+        })),
       },
       () => {
-        this.updateRoute({ ...newRoute }).then(() => console.log("pattern added "));
+        this.updateRoute({ ...newRoute }).then(() => console.log('pattern added '));
       }
-    )
-  }
+    );
+  };
 
   swap = (node, step, offset) => {
-    const { nodeId } = node
+    const { nodeId } = node;
 
     const nodes = this.state.nodes
-      .filter(n => n.plugin_index[step] !== undefined)
-      .sort((a, b) => a.plugin_index[step] - b.plugin_index[step])
+      .filter((n) => n.plugin_index[step] !== undefined)
+      .sort((a, b) => a.plugin_index[step] - b.plugin_index[step]);
 
-    const swapIndexNode = nodes.findIndex(n => n.nodeId === nodeId)
+    const swapIndexNode = nodes.findIndex((n) => n.nodeId === nodeId);
 
-    const newNodes = this.state.nodes.map(n => {
+    const newNodes = this.state.nodes.map((n) => {
       if (n.nodeId === nodeId)
         return {
           ...n,
           plugin_index: {
             ...n.plugin_index,
-            [step]: nodes[swapIndexNode + offset].plugin_index[step]
-          }
-        }
+            [step]: nodes[swapIndexNode + offset].plugin_index[step],
+          },
+        };
       else if (n.nodeId === nodes[swapIndexNode + offset].nodeId)
         return {
           ...n,
           plugin_index: {
             ...n.plugin_index,
-            [step]: node.plugin_index[step]
-          }
-        }
-      return n
-    })
+            [step]: node.plugin_index[step],
+          },
+        };
+      return n;
+    });
 
-    this.setState({ nodes: newNodes })
+    this.setState({ nodes: newNodes });
 
     this.updateRoute({
       ...this.state.route,
-      plugins: this.state.route.plugins.map(plugin => ({
+      plugins: this.state.route.plugins.map((plugin) => ({
         ...plugin,
-        plugin_index: newNodes.find(n => n.nodeId === plugin.nodeId)?.plugin_index
-      }))
-    })
-  }
+        plugin_index: newNodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index,
+      })),
+    });
+  };
 
   onUp = (e, node, step) => {
-    e.stopPropagation()
-    this.swap(node, step, -1)
-  }
+    e.stopPropagation();
+    this.swap(node, step, -1);
+  };
 
   onDown = (e, node, step) => {
-    e.stopPropagation()
-    this.swap(node, step, 1)
-  }
+    e.stopPropagation();
+    this.swap(node, step, 1);
+  };
 
-  handleSearch = searched => {
+  handleSearch = (searched) => {
     this.setState({
       searched,
       plugins: this.state.plugins.map((plugin) => ({
         ...plugin,
-        filtered: !(plugin.id.toLowerCase().includes(searched.toLowerCase()) || plugin.name.toLowerCase().includes(searched.toLowerCase())),
-      }))
-    })
+        filtered: !(
+          plugin.id.toLowerCase().includes(searched.toLowerCase()) ||
+          plugin.name.toLowerCase().includes(searched.toLowerCase())
+        ),
+      })),
+    });
   };
 
   updatePlugin = (nodeId, pluginId, item) => {
-    const { route } = this.state
+    const { route } = this.state;
     return this.updateRoute({
       ...route,
       frontend: pluginId === 'Frontend' ? item.plugin : route.frontend,
       backend: pluginId === 'Backend' ? item.plugin : route.backend,
-      plugins: route.plugins.map(plugin => {
+      plugins: route.plugins.map((plugin) => {
         if (plugin.nodeId === nodeId)
           return {
             ...plugin,
@@ -925,9 +1067,9 @@ class Designer extends React.Component {
   };
 
   saveRoute = () => {
-    const { route, originalRoute } = this.state
+    const { route, originalRoute } = this.state;
 
-    let newRoute
+    let newRoute;
 
     if (this.props.viewPlugins !== null && this.props.viewPlugins !== -1) {
       newRoute = {
@@ -937,175 +1079,204 @@ class Designer extends React.Component {
             return {
               ...r,
               plugins: route.plugins,
-              overridePlugins: route.overridePlugins
-            }
-          else
-            return r
-        })
-      }
+              overridePlugins: route.overridePlugins,
+            };
+          else return r;
+        }),
+      };
     } else {
       newRoute = {
         ...route,
-        plugins: route.plugins.map(plugin => ({
+        plugins: route.plugins.map((plugin) => ({
           ...plugin,
-          plugin_index: Object.fromEntries(Object.entries(plugin.plugin_index || this.state.nodes.find(n => n.nodeId === plugin.nodeId)?.plugin_index || {}).map(([key, v]) => [snakeCase(key), v]))
-        }))
-      }
+          plugin_index: Object.fromEntries(
+            Object.entries(
+              plugin.plugin_index ||
+                this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+                {}
+            ).map(([key, v]) => [snakeCase(key), v])
+          ),
+        })),
+      };
     }
-    return nextClient.update(this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES, newRoute)
+    return nextClient
+      .update(
+        this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
+        newRoute
+      )
       .then(() => {
         this.setState({
-          originalRoute: { ...route }
-        })
-        this.injectSaveButton()
+          originalRoute: { ...route },
+        });
+        this.injectSaveButton();
       });
-  }
+  };
 
-  updateRoute = r => new Promise(resolve => {
-    this.setState({ route: r }, () => {
-      this.injectSaveButton()
-      resolve()
-    })
-  })
+  updateRoute = (r) =>
+    new Promise((resolve) => {
+      this.setState({ route: r }, () => {
+        this.injectSaveButton();
+        resolve();
+      });
+    });
 
-  isPluginEnabled = (value) => this.state.route.plugins.find(plugin => plugin.nodeId === value.nodeId)?.enabled
+  isPluginEnabled = (value) =>
+    this.state.route.plugins.find((plugin) => plugin.nodeId === value.nodeId)?.enabled;
 
   renderInBound = () => {
-    let steps = [...REQUEST_STEPS_FLOW]
+    let steps = [...REQUEST_STEPS_FLOW];
 
-    const { selectedNode, nodes, hiddenSteps } = this.state
+    const { selectedNode, nodes, hiddenSteps } = this.state;
 
     const matchRoute = nodes
-      .filter(n => n.plugin_index.MatchRoute !== undefined)
-      .sort((a, b) => a.plugin_index.MatchRoute - b.plugin_index.MatchRoute)
+      .filter((n) => n.plugin_index.MatchRoute !== undefined)
+      .sort((a, b) => a.plugin_index.MatchRoute - b.plugin_index.MatchRoute);
     const preRoute = nodes
-      .filter(n => n.plugin_index.PreRoute !== undefined)
-      .sort((a, b) => a.plugin_index.PreRoute - b.plugin_index.PreRoute)
+      .filter((n) => n.plugin_index.PreRoute !== undefined)
+      .sort((a, b) => a.plugin_index.PreRoute - b.plugin_index.PreRoute);
     const validateAccess = nodes
-      .filter(n => n.plugin_index.ValidateAccess !== undefined)
-      .sort((a, b) => a.plugin_index.ValidateAccess - b.plugin_index.ValidateAccess)
+      .filter((n) => n.plugin_index.ValidateAccess !== undefined)
+      .sort((a, b) => a.plugin_index.ValidateAccess - b.plugin_index.ValidateAccess);
     const transformRequest = nodes
-      .filter(n => n.plugin_index.TransformRequest !== undefined)
-      .sort((a, b) => a.plugin_index.TransformRequest - b.plugin_index.TransformRequest)
+      .filter((n) => n.plugin_index.TransformRequest !== undefined)
+      .sort((a, b) => a.plugin_index.TransformRequest - b.plugin_index.TransformRequest);
 
-    return [matchRoute, preRoute, validateAccess, transformRequest]
-      .map((nodes, i) => {
-        if (nodes.length === 0)
-          return null
+    return [matchRoute, preRoute, validateAccess, transformRequest].map((nodes, i) => {
+      if (nodes.length === 0) return null;
 
-        return <>
+      return (
+        <>
           <>
             <span
-              className='badge bg-warning text-dark'
+              className="badge bg-warning text-dark"
               style={{
-                opacity: selectedNode ? .25 : hiddenSteps[steps[i]] ? 1 : .75,
-                cursor: 'pointer'
+                opacity: selectedNode ? 0.25 : hiddenSteps[steps[i]] ? 1 : 0.75,
+                cursor: 'pointer',
               }}
               onClick={() => {
                 const hidden_steps = {
                   ...hiddenSteps,
-                  [steps[i]]: !hiddenSteps[steps[i]]
-                }
-                this.storeHiddenStepsToLocalStorage(hidden_steps)
+                  [steps[i]]: !hiddenSteps[steps[i]],
+                };
+                this.storeHiddenStepsToLocalStorage(hidden_steps);
                 this.setState({
-                  hiddenSteps: hidden_steps
-                })
+                  hiddenSteps: hidden_steps,
+                });
               }}>
               {steps[i]}
             </span>
             <Hr highlighted={!selectedNode} />
           </>
-          {hiddenSteps[steps[i]] && nodes.map(node => <NodeElement
-            onUp={e => this.onUp(e, node, steps[i])}
-            onDown={e => this.onDown(e, node, steps[i])}
-            enabled={this.isPluginEnabled(node)}
-            element={node}
-            key={`${node.nodeId}-${i}`}
-            selectedNode={selectedNode}
-            setSelectedNode={() => {
-              if (!this.state.alertModal.show)
-                this.setState({ selectedNode: node })
-            }}
-            onRemove={this.removeNode}
-            arrows={this.showArrows(node, steps[i])}
-          />)}
+          {hiddenSteps[steps[i]] &&
+            nodes.map((node) => (
+              <NodeElement
+                onUp={(e) => this.onUp(e, node, steps[i])}
+                onDown={(e) => this.onDown(e, node, steps[i])}
+                enabled={this.isPluginEnabled(node)}
+                element={node}
+                key={`${node.nodeId}-${i}`}
+                selectedNode={selectedNode}
+                setSelectedNode={() => {
+                  if (!this.state.alertModal.show) this.setState({ selectedNode: node });
+                }}
+                onRemove={this.removeNode}
+                arrows={this.showArrows(node, steps[i])}
+              />
+            ))}
         </>
-      })
-  }
+      );
+    });
+  };
 
   renderOutBound = () => {
     const responseNodes = this.state.nodes
-      .filter(n => n.plugin_index.TransformResponse !== undefined)
-      .sort((a, b) => b.plugin_index.TransformResponse - a.plugin_index.TransformResponse)
-    return this.state.hiddenSteps.TransformResponse && responseNodes
-      .map((node, i) => (
+      .filter((n) => n.plugin_index.TransformResponse !== undefined)
+      .sort((a, b) => b.plugin_index.TransformResponse - a.plugin_index.TransformResponse);
+    return (
+      this.state.hiddenSteps.TransformResponse &&
+      responseNodes.map((node, i) => (
         <NodeElement
-          onUp={e => this.onDown(e, node, 'TransformResponse')}
-          onDown={e => this.onUp(e, node, 'TransformResponse')}
+          onUp={(e) => this.onDown(e, node, 'TransformResponse')}
+          onDown={(e) => this.onUp(e, node, 'TransformResponse')}
           enabled={this.isPluginEnabled(node)}
           element={node}
           key={`${node.nodeId}${i}`}
           setSelectedNode={() => {
-            if (!this.state.alertModal.show)
-              this.setState({ selectedNode: node })
+            if (!this.state.alertModal.show) this.setState({ selectedNode: node });
           }}
           selectedNode={this.state.selectedNode}
           onRemove={this.removeNode}
           arrows={this.showArrows(node, 'TransformResponse')}
         />
       ))
-  }
+    );
+  };
 
   transformResponseBadge = () => {
-    const { nodes, hiddenSteps, selectedNode } = this.state
-    return nodes.find(n => n.plugin_index.TransformResponse !== undefined) &&
-      <span
-        className='badge bg-warning text-dark'
-        style={{
-          opacity: selectedNode ? .25 : hiddenSteps.TransformResponse ? 1 : .75,
-          cursor: 'pointer'
-        }}
-        onClick={() => {
-          const hidden_steps = {
-            ...hiddenSteps,
-            'TransformResponse': !hiddenSteps.TransformResponse
-          }
-          this.storeHiddenStepsToLocalStorage(hidden_steps)
-          this.setState({
-            hiddenSteps: hidden_steps
-          })
-        }}>
-        TransformResponse
-      </span>
-  }
+    const { nodes, hiddenSteps, selectedNode } = this.state;
+    return (
+      nodes.find((n) => n.plugin_index.TransformResponse !== undefined) && (
+        <span
+          className="badge bg-warning text-dark"
+          style={{
+            opacity: selectedNode ? 0.25 : hiddenSteps.TransformResponse ? 1 : 0.75,
+            cursor: 'pointer',
+          }}
+          onClick={() => {
+            const hidden_steps = {
+              ...hiddenSteps,
+              TransformResponse: !hiddenSteps.TransformResponse,
+            };
+            this.storeHiddenStepsToLocalStorage(hidden_steps);
+            this.setState({
+              hiddenSteps: hidden_steps,
+            });
+          }}>
+          TransformResponse
+        </span>
+      )
+    );
+  };
 
   showArrows = (node, step) => {
     const nodes = this.state.nodes
-      .filter(n => n.plugin_index[step] !== undefined)
-      .sort((a, b) => a.plugin_index[step] - b.plugin_index[step])
+      .filter((n) => n.plugin_index[step] !== undefined)
+      .sort((a, b) => a.plugin_index[step] - b.plugin_index[step]);
 
-    if (nodes.length === 1)
-      return undefined
+    if (nodes.length === 1) return undefined;
     else {
       const arrows = {
         up: node.plugin_index[step] === 0 ? false : true,
-        down: nodes[nodes.length - 1].nodeId !== node.nodeId ? true : false
-      }
+        down: nodes[nodes.length - 1].nodeId !== node.nodeId ? true : false,
+      };
 
       if (step === 'TransformResponse')
         return {
           up: arrows.down,
-          down: arrows.up
-        }
+          down: arrows.up,
+        };
 
-      return arrows
+      return arrows;
     }
-  }
+  };
 
   render() {
-    const { loading, preview, route, plugins, backends, selectedNode,
-      originalRoute, frontend, categories, alertModal,
-      showLegacy, expandAll, searched, backend } = this.state
+    const {
+      loading,
+      preview,
+      route,
+      plugins,
+      backends,
+      selectedNode,
+      originalRoute,
+      frontend,
+      categories,
+      alertModal,
+      showLegacy,
+      expandAll,
+      searched,
+      backend,
+    } = this.state;
 
     const { serviceMode } = this.props;
 
@@ -1117,177 +1288,200 @@ class Designer extends React.Component {
     //  } else {
     //    return null;
     //  }
-    //})[0] : null; 
+    //})[0] : null;
     //const backendCallDef = backendCallInst ? plugins.filter(pl => pl.id === backendCallInst.plugin)[0] : null;
     //const backendCall = (backendCallInst && backendCallDef) ? { ...backendCallDef, ...backendCallInst } : null;
 
-    const backendCallNodes = (route && route.plugins) ? route.plugins.map(p => {
-      const id = p.plugin;
-      const pluginDef = plugins.filter(pl => pl.id === id)[0];
-      if (pluginDef) {
-        if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-          return { ...p, ...pluginDef }
-        }
-      }
-      return null;
-    }).filter(p => !!p) : [];
+    const backendCallNodes =
+      route && route.plugins
+        ? route.plugins
+            .map((p) => {
+              const id = p.plugin;
+              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+              if (pluginDef) {
+                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                  return { ...p, ...pluginDef };
+                }
+              }
+              return null;
+            })
+            .filter((p) => !!p)
+        : [];
 
-    const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins)
+    const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
 
-    // TODO - better error display  
-    if (!loading && this.state.notFound)
-      return <h1>Route not found</h1>
+    // TODO - better error display
+    if (!loading && this.state.notFound) return <h1>Route not found</h1>;
 
-    return <Loader loading={loading}>
-      <Container onClick={() => {
-        this.setState({
-          selectedNode: undefined
-        })
-      }}>
-        <PluginsContainer
-          handleSearch={this.handleSearch}
-          showLegacy={showLegacy}
-          setShowLegacy={l => this.setState({ showLegacy: l })}
-          onExpandAll={() => this.setState({ expandAll: !expandAll })}
-          expandAll={expandAll}
-          searched={searched}
-          plugins={[...plugins, ...patterns]}
-          categories={[...categories, 'Patterns']}
-          addNode={this.addNode}
-          showPreview={element => this.setState({
-            preview: {
-              enabled: true, element
+    return (
+      <Loader loading={loading}>
+        <Container
+          onClick={() => {
+            this.setState({
+              selectedNode: undefined,
+            });
+          }}>
+          <PluginsContainer
+            handleSearch={this.handleSearch}
+            showLegacy={showLegacy}
+            setShowLegacy={(l) => this.setState({ showLegacy: l })}
+            onExpandAll={() => this.setState({ expandAll: !expandAll })}
+            expandAll={expandAll}
+            searched={searched}
+            plugins={[...plugins, ...patterns]}
+            categories={[...categories, 'Patterns']}
+            addNode={this.addNode}
+            showPreview={(element) =>
+              this.setState({
+                preview: {
+                  enabled: true,
+                  element,
+                },
+              })
             }
-          })}
-          hidePreview={() => this.setState({
-            preview: {
-              ...preview,
-              enabled: false
-            }
-          })}
-        />
-        <div className="relative-container" style={{ flex: 9 }}>
-          {preview.enabled ? (
-            <EditView
-              addNode={this.addNode}
-              hidePreview={() => this.setState({
+            hidePreview={() =>
+              this.setState({
                 preview: {
                   ...preview,
-                  enabled: false
+                  enabled: false,
+                },
+              })
+            }
+          />
+          <div className="relative-container" style={{ flex: 9 }}>
+            {preview.enabled ? (
+              <EditView
+                addNode={this.addNode}
+                hidePreview={() =>
+                  this.setState({
+                    preview: {
+                      ...preview,
+                      enabled: false,
+                    },
+                  })
                 }
-              })}
-              readOnly={true}
-              setRoute={r => this.setState({ route: r })}
-              selectedNode={preview.element}
-              setSelectedNode={n => {
-                if (!this.state.alertModal.show)
-                  this.setState({ selectedNode: n })
-              }}
-              route={route}
-              plugins={plugins}
-              backends={backends}
-            />
-          ) : (
-            <div className="row h-100 mx-1">
-              <Flow>
-                <div className="row" style={{ height: '100%' }}>
-                  <InBoundFlow>
-                    <HeaderNode text="Request" icon="down" selectedNode={selectedNode} />
-                    <Hr highlighted={!selectedNode} />
-                    <FrontendNode
-                      frontend={frontend}
-                      selectedNode={selectedNode}
-                      removeNode={this.removeNode}
-                      setSelectedNode={() => {
-                        if (!this.state.alertModal.show)
-                          this.setState({ selectedNode: frontend })
-                      }}
-                    />
-                    {this.renderInBound()}
-                    <Hr highlighted={!selectedNode} flex={true} />
-                  </InBoundFlow>
-                  <OutBoundFlow>
-                    <HeaderNode text="Response" icon="up" selectedNode={selectedNode} />
-                    <Hr highlighted={!selectedNode} flex={true} />
-                    {this.renderOutBound()}
-                    {this.transformResponseBadge()}
-                    <Hr highlighted={!selectedNode} />
-                  </OutBoundFlow>
-                </div>
-                {backendCallNodes.length > 0 && <>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                    <span
-                      className='badge bg-warning text-dark'
-                      style={{
-                        width: '100%',
-                        opacity: !selectedNode ? 1 : .25,
-                        cursor: 'pointer'
-                      }}>
-                      CallBackend
-                    </span>
-                    <Hr highlighted={!selectedNode} />
-                  </div>
-                  {backendCallNodes.map(node => <BackendCallNode
-                    key={node.id}
-                    isPluginEnabled={this.isPluginEnabled}
-                    backendCall={node}
-                    selectedNode={selectedNode}
-                    hideLink={!node.plugin_backend_call_delegates}
-                    setSelectedNode={() => {
-                      if (!this.state.alertModal.show) {
-                        this.setState({ selectedNode: node })
-                      }
-                    }}
-                    onRemove={this.removeNode}
-                  />)}
-                  {false && !backendCall.plugin_backend_call_delegates && (
-                    <div style={{ height: 10 }}></div>
-                  )}
-                </>}
-                <BackendNode
-                  backend={backend}
-                  selectedNode={selectedNode}
-                  setSelectedNode={() => {
-                    if (!this.state.alertModal.show)
-                      this.setState({ selectedNode: backend })
-                  }}
-                  onRemove={this.removeNode}
-                />
-              </Flow>
-              <FormContainer
-                serviceMode={serviceMode}
-                clearPlugins={this.clearPlugins}
-                deleteRoute={this.deleteRoute}
-                updateRoute={this.updateRoute}
-                saveRoute={this.saveRoute}
-                selectedNode={selectedNode}
-                route={route}
-                setRoute={n => this.setState({ route: n })}
-                setSelectedNode={n => {
-                  if (!this.state.alertModal.show)
-                    this.setState({ selectedNode: n })
+                readOnly={true}
+                setRoute={(r) => this.setState({ route: r })}
+                selectedNode={preview.element}
+                setSelectedNode={(n) => {
+                  if (!this.state.alertModal.show) this.setState({ selectedNode: n });
                 }}
-                updatePlugin={this.updatePlugin}
-                onRemove={this.removeNode}
+                route={route}
                 plugins={plugins}
                 backends={backends}
-                preview={preview}
-                showPreview={element => this.setState({
-                  preview: {
-                    ...this.state.preview,
-                    element
-                  }
-                })}
-                originalRoute={originalRoute}
-                alertModal={alertModal}
-                disabledSaveButton={isEqual(route, originalRoute)}
               />
-            </div>
-          )}
-        </div>
-      </Container>
-    </Loader >
-  };
+            ) : (
+              <div className="row h-100 mx-1">
+                <Flow>
+                  <div className="row" style={{ height: '100%' }}>
+                    <InBoundFlow>
+                      <HeaderNode text="Request" icon="down" selectedNode={selectedNode} />
+                      <Hr highlighted={!selectedNode} />
+                      <FrontendNode
+                        frontend={frontend}
+                        selectedNode={selectedNode}
+                        removeNode={this.removeNode}
+                        setSelectedNode={() => {
+                          if (!this.state.alertModal.show)
+                            this.setState({ selectedNode: frontend });
+                        }}
+                      />
+                      {this.renderInBound()}
+                      <Hr highlighted={!selectedNode} flex={true} />
+                    </InBoundFlow>
+                    <OutBoundFlow>
+                      <HeaderNode text="Response" icon="up" selectedNode={selectedNode} />
+                      <Hr highlighted={!selectedNode} flex={true} />
+                      {this.renderOutBound()}
+                      {this.transformResponseBadge()}
+                      <Hr highlighted={!selectedNode} />
+                    </OutBoundFlow>
+                  </div>
+                  {backendCallNodes.length > 0 && (
+                    <>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          width: '100%',
+                        }}>
+                        <span
+                          className="badge bg-warning text-dark"
+                          style={{
+                            width: '100%',
+                            opacity: !selectedNode ? 1 : 0.25,
+                            cursor: 'pointer',
+                          }}>
+                          CallBackend
+                        </span>
+                        <Hr highlighted={!selectedNode} />
+                      </div>
+                      {backendCallNodes.map((node) => (
+                        <BackendCallNode
+                          key={node.id}
+                          isPluginEnabled={this.isPluginEnabled}
+                          backendCall={node}
+                          selectedNode={selectedNode}
+                          hideLink={!node.plugin_backend_call_delegates}
+                          setSelectedNode={() => {
+                            if (!this.state.alertModal.show) {
+                              this.setState({ selectedNode: node });
+                            }
+                          }}
+                          onRemove={this.removeNode}
+                        />
+                      ))}
+                      {false && !backendCall.plugin_backend_call_delegates && (
+                        <div style={{ height: 10 }}></div>
+                      )}
+                    </>
+                  )}
+                  <BackendNode
+                    backend={backend}
+                    selectedNode={selectedNode}
+                    setSelectedNode={() => {
+                      if (!this.state.alertModal.show) this.setState({ selectedNode: backend });
+                    }}
+                    onRemove={this.removeNode}
+                  />
+                </Flow>
+                <FormContainer
+                  serviceMode={serviceMode}
+                  clearPlugins={this.clearPlugins}
+                  deleteRoute={this.deleteRoute}
+                  updateRoute={this.updateRoute}
+                  saveRoute={this.saveRoute}
+                  selectedNode={selectedNode}
+                  route={route}
+                  setRoute={(n) => this.setState({ route: n })}
+                  setSelectedNode={(n) => {
+                    if (!this.state.alertModal.show) this.setState({ selectedNode: n });
+                  }}
+                  updatePlugin={this.updatePlugin}
+                  onRemove={this.removeNode}
+                  plugins={plugins}
+                  backends={backends}
+                  preview={preview}
+                  showPreview={(element) =>
+                    this.setState({
+                      preview: {
+                        ...this.state.preview,
+                        element,
+                      },
+                    })
+                  }
+                  originalRoute={originalRoute}
+                  alertModal={alertModal}
+                  disabledSaveButton={isEqual(route, originalRoute)}
+                />
+              </div>
+            )}
+          </div>
+        </Container>
+      </Loader>
+    );
+  }
 }
 
 const Element = ({ element, addNode, showPreview, hidePreview }) => (
@@ -1299,7 +1493,13 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
     }}>
     <div className="d-flex-between element-text">
       <div>
-        {element.legacy ? <span className="badge bg-warning text-dark" style={{ marginRight: 5 }}>legacy</span> : ''}
+        {element.legacy ? (
+          <span className="badge bg-warning text-dark" style={{ marginRight: 5 }}>
+            legacy
+          </span>
+        ) : (
+          ''
+        )}
         {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
       </div>
       <i
@@ -1322,12 +1522,12 @@ const Group = ({ group, elements, addNode, ...props }) => {
   const [open, setOpen] = useState(props.forceOpen);
 
   useEffect(() => {
-    setOpen(props.forceOpen)
-  }, [props.forceOpen])
+    setOpen(props.forceOpen);
+  }, [props.forceOpen]);
 
   useEffect(() => {
     setOpen(props.expandAll);
-  }, [props.expandAll])
+  }, [props.expandAll]);
 
   return (
     <div className="group">
@@ -1409,9 +1609,17 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
     const backend = route.backend;
-    const allMethods = (frontend.methods && frontend.methods.length > 0) ?
-      frontend.methods.map((m, i) => <span key={`frontendmethod-${i}`} className={`badge me-1`} style={{ backgroundColor: HTTP_COLORS[m] }}>{m}</span>) :
-      [<span className="badge bg-success">ALL</span>];
+    const allMethods =
+      frontend.methods && frontend.methods.length > 0
+        ? frontend.methods.map((m, i) => (
+            <span
+              key={`frontendmethod-${i}`}
+              className={`badge me-1`}
+              style={{ backgroundColor: HTTP_COLORS[m] }}>
+              {m}
+            </span>
+          ))
+        : [<span className="badge bg-success">ALL</span>];
     return (
       <>
         <div className="d-flex-between dark-background py-2 ps-2">
@@ -1420,28 +1628,57 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
         <div style={{ marginTop: 20 }}>
           <h3 style={{ fontSize: '1.25rem' }}>Frontend</h3>
           <span>this route is exposed on</span>
-          <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 10, marginTop: 10, paddingTop: 10, paddingBottom: 10, backgroundColor: '#555', borderRadius: 3 }}>
-            {frontend.domains.map(domain => {
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              marginBottom: 10,
+              marginTop: 10,
+              paddingTop: 10,
+              paddingBottom: 10,
+              backgroundColor: '#555',
+              borderRadius: 3,
+            }}>
+            {frontend.domains.map((domain) => {
               const exact = frontend.exact;
-              const end = exact ? '' : (domain.indexOf('/') < 0 ? '/*' : '*');
-              const start = 'http://'
-              return (
-                allMethods.map((method, i) => {
-                  return (
-                    <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }} key={`allmethods-${i}`}>
-                      <div style={{ width: 80 }}>{method}</div><span style={{ fontFamily: 'monospace' }}>{start}{domain}{end}</span>
-                    </div>
-                  )
-                })
-              );
+              const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*';
+              const start = 'http://';
+              return allMethods.map((method, i) => {
+                return (
+                  <div
+                    style={{
+                      paddingLeft: 10,
+                      paddingRight: 10,
+                      display: 'flex',
+                      flexDirection: 'row',
+                    }}
+                    key={`allmethods-${i}`}>
+                    <div style={{ width: 80 }}>{method}</div>
+                    <span style={{ fontFamily: 'monospace' }}>
+                      {start}
+                      {domain}
+                      {end}
+                    </span>
+                  </div>
+                );
+              });
             })}
           </div>
           {frontend.query && Object.keys(frontend.query).length > 0 && (
             <div className="">
               <span>this route will match only if the following query params are present</span>
-              <pre style={{ padding: 10, marginTop: 10, backgroundColor: '#555', fontFamily: 'monospace', borderRadius: 3 }}>
+              <pre
+                style={{
+                  padding: 10,
+                  marginTop: 10,
+                  backgroundColor: '#555',
+                  fontFamily: 'monospace',
+                  borderRadius: 3,
+                }}>
                 <code>
-                  {Object.keys(frontend.query).map(key => `${key}: ${frontend.query[key]}`).join('\n')}
+                  {Object.keys(frontend.query)
+                    .map((key) => `${key}: ${frontend.query[key]}`)
+                    .join('\n')}
                 </code>
               </pre>
             </div>
@@ -1449,9 +1686,18 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
           {frontend.headers && Object.keys(frontend.headers).length > 0 && (
             <div className="">
               <span>this route will match only if the following headers are present</span>
-              <pre style={{ padding: 10, marginTop: 10, backgroundColor: '#555', fontFamily: 'monospace', borderRadius: 3 }}>
+              <pre
+                style={{
+                  padding: 10,
+                  marginTop: 10,
+                  backgroundColor: '#555',
+                  fontFamily: 'monospace',
+                  borderRadius: 3,
+                }}>
                 <code>
-                  {Object.keys(frontend.headers).map(key => `${key}: ${frontend.headers[key]}`).join('\n')}
+                  {Object.keys(frontend.headers)
+                    .map((key) => `${key}: ${frontend.headers[key]}`)
+                    .join('\n')}
                 </code>
               </pre>
             </div>
@@ -1460,23 +1706,56 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
         <div style={{ marginTop: 20 }}>
           <h3 style={{ fontSize: '1.25rem' }}>Backend</h3>
           <span>this route will forward requests to</span>
-          <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 10, marginTop: 10, paddingTop: 10, paddingBottom: 10, backgroundColor: '#555', borderRadius: 3 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              marginBottom: 10,
+              marginTop: 10,
+              paddingTop: 10,
+              paddingBottom: 10,
+              backgroundColor: '#555',
+              borderRadius: 3,
+            }}>
             {backend.targets.map((target, i) => {
               const path = backend.root;
               const rewrite = backend.rewrite;
-              const hostname = target.ip_address ? `${target.hostname}@${target.ip_address}` : target.hostname;
-              const end = (rewrite || frontend.strip_path) ? path : `/<request_path>${path}`;
-              const start = target.tls ? 'https://' : 'http://'
-              const mtls = (target.tls_config && target.tls_config.enabled && ([...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0)) ? <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>mTLS</span> : <span></span>;
+              const hostname = target.ip_address
+                ? `${target.hostname}@${target.ip_address}`
+                : target.hostname;
+              const end = rewrite || frontend.strip_path ? path : `/<request_path>${path}`;
+              const start = target.tls ? 'https://' : 'http://';
+              const mtls =
+                target.tls_config &&
+                target.tls_config.enabled &&
+                [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
+                  <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
+                    mTLS
+                  </span>
+                ) : (
+                  <span></span>
+                );
               return (
-                <div style={{ paddingLeft: 10, paddingRight: 10, display: 'flex', flexDirection: 'row' }} key={`backend-targets${i}`}>
-                  <span style={{ fontFamily: 'monospace' }}>{mtls}{start}{hostname}:{target.port}{end}</span>
+                <div
+                  style={{
+                    paddingLeft: 10,
+                    paddingRight: 10,
+                    display: 'flex',
+                    flexDirection: 'row',
+                  }}
+                  key={`backend-targets${i}`}>
+                  <span style={{ fontFamily: 'monospace' }}>
+                    {mtls}
+                    {start}
+                    {hostname}:{target.port}
+                    {end}
+                  </span>
                 </div>
               );
             })}
           </div>
         </div>
-        <div className='d-flex-between mt-3 flex align-items-end'>
+        <div className="d-flex-between mt-3 flex align-items-end">
           <Link className="btn btn-sm btn-info" to="/routes">
             <i className="fas fa-arrow-left" /> Back to routes
           </Link>
@@ -1486,7 +1765,7 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
   } else {
     return null;
   }
-}
+};
 
 const convertTransformer = (obj) => {
   return Object.entries(obj).reduce((acc, [key, value]) => {
@@ -1503,10 +1782,14 @@ const convertTransformer = (obj) => {
   }, {});
 };
 
-const EditViewHeader = ({ icon, name, id, onCloseForm }) =>
+const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
-      <i className={`fas fa-${icon || 'bars'} group-icon designer-group-header-icon editor-view-icon`} />
+      <i
+        className={`fas fa-${
+          icon || 'bars'
+        } group-icon designer-group-header-icon editor-view-icon`}
+      />
       <span className="editor-view-text">{name || id}</span>
     </div>
     <div className="d-flex me-1">
@@ -1519,61 +1802,69 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) =>
       </button>
     </div>
   </div>
+);
 
-const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonClick }) => <div className={`d-flex justify-content-end ${asJsonFormat ? 'mb-3' : ''}`}>
-  <button
-    className="btn btn-sm toggle-form-buttons mt-3"
-    disabled={errors && errors.length > 0}
-    onClick={onFormClick}
-    style={{ backgroundColor: asJsonFormat ? '#373735' : '#f9b000' }}>
-    FORM
-  </button>
-  <button
-    className="btn btn-sm mx-1 toggle-form-buttons mt-3"
-    onClick={onRawJsonClick}
-    style={{ backgroundColor: asJsonFormat ? '#f9b000' : '#373735' }}>
-    RAW JSON
-  </button>
-</div>
+const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonClick }) => (
+  <div className={`d-flex justify-content-end ${asJsonFormat ? 'mb-3' : ''}`}>
+    <button
+      className="btn btn-sm toggle-form-buttons mt-3"
+      disabled={errors && errors.length > 0}
+      onClick={onFormClick}
+      style={{ backgroundColor: asJsonFormat ? '#373735' : '#f9b000' }}>
+      FORM
+    </button>
+    <button
+      className="btn btn-sm mx-1 toggle-form-buttons mt-3"
+      onClick={onRawJsonClick}
+      style={{ backgroundColor: asJsonFormat ? '#f9b000' : '#373735' }}>
+      RAW JSON
+    </button>
+  </div>
+);
 
-const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => <>
-  {value && value.toString().length > 0 && (
-    <CodeInput
-      mode="json"
-      themeStyle={{
-        maxHeight: readOnly ? '300px' : '-1',
-        minHeight: '100px',
-        width: '100%',
-      }}
-      value={value}
-      onChange={e => {
-        if (!readOnly)
-          onChange(e)
-      }}
-    />
-  )}
-  {errors && <div>
-    {(errors || []).map((error, idx) => (
-      <div className="mt-3 ps-3"
-        style={{ borderLeft: '2px solid #D5443F' }}
-        key={`errror${idx}`}>
-        {error}
+const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => (
+  <>
+    {value && value.toString().length > 0 && (
+      <CodeInput
+        mode="json"
+        themeStyle={{
+          maxHeight: readOnly ? '300px' : '-1',
+          minHeight: '100px',
+          width: '100%',
+        }}
+        value={value}
+        onChange={(e) => {
+          if (!readOnly) onChange(e);
+        }}
+      />
+    )}
+    {errors && (
+      <div>
+        {(errors || []).map((error, idx) => (
+          <div
+            className="mt-3 ps-3"
+            style={{ borderLeft: '2px solid #D5443F' }}
+            key={`errror${idx}`}>
+            {error}
+          </div>
+        ))}
       </div>
-    ))}
-  </div>}
-</>
+    )}
+  </>
+);
 
-const EditViewReadOnlyActions = ({ onCancel, onOk }) => <div className="d-flex justify-content-end mt-3">
-  <button className="btn btn-sm btn-danger me-1" onClick={onCancel}>
-    Cancel
-  </button>
-  <button className="btn btn-sm btn-save" onClick={onOk}>
-    Add to flow
-  </button>
-</div>
+const EditViewReadOnlyActions = ({ onCancel, onOk }) => (
+  <div className="d-flex justify-content-end mt-3">
+    <button className="btn btn-sm btn-danger me-1" onClick={onCancel}>
+      Cancel
+    </button>
+    <button className="btn btn-sm btn-save" onClick={onOk}>
+      Add to flow
+    </button>
+  </div>
+);
 
 class EditView extends React.Component {
-
   state = {
     usingExistingBackend: this.props.route.backend_ref,
     asJsonFormat: this.props.selectedNode.legacy || this.props.readOnly,
@@ -1583,19 +1874,18 @@ class EditView extends React.Component {
       value: undefined,
     },
     offset: 0,
-    errors: []
-  }
+    errors: [],
+  };
 
-  formRef = React.createRef()
+  formRef = React.createRef();
 
   componentDidMount() {
-    this.manageScrolling()
-    this.loadForm()
+    this.manageScrolling();
+    this.loadForm();
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.selectedNode.id !== prevProps.selectedNode.id)
-      this.loadForm()
+    if (this.props.selectedNode.id !== prevProps.selectedNode.id) this.loadForm();
   }
 
   manageScrolling = () => {
@@ -1603,13 +1893,13 @@ class EditView extends React.Component {
     window.addEventListener('scroll', this.onScroll, { passive: true });
 
     this.onScroll();
-  }
+  };
 
   onScroll = () => {
     this.setState({
-      offset: window.pageYOffset
-    })
-  }
+      offset: window.pageYOffset,
+    });
+  };
 
   componentWillUnmount() {
     window.removeEventListener('scroll', this.onScroll);
@@ -1626,15 +1916,14 @@ class EditView extends React.Component {
     let formSchema = schema || config_schema;
     let formFlow = [
       isFrontendOrBackend ? undefined : 'status',
-      isPluginWithConfiguration ?
-        {
-          label: isFrontendOrBackend ? null : 'Plugin',
-          flow: ['plugin'],
-          collapsed: false,
-          collapsable: false,
-        } :
-        undefined
-      ,
+      isPluginWithConfiguration
+        ? {
+            label: isFrontendOrBackend ? null : 'Plugin',
+            flow: ['plugin'],
+            collapsed: false,
+            collapsable: false,
+          }
+        : undefined,
     ].filter((f) => f);
 
     if (config_schema) {
@@ -1645,7 +1934,7 @@ class EditView extends React.Component {
           collapsable: true,
           collapsed: isPluginWithConfiguration,
           label: 'Informations',
-          schema: PLUGIN_INFORMATIONS_SCHEMA
+          schema: PLUGIN_INFORMATIONS_SCHEMA,
         },
       };
       if (isPluginWithConfiguration)
@@ -1656,7 +1945,7 @@ class EditView extends React.Component {
             format: 'form',
             label: null,
             schema: { ...convertTransformer(config_schema) },
-            flow: [...(config_flow || flow)]
+            flow: [...(config_flow || flow)],
           },
         };
     }
@@ -1664,7 +1953,8 @@ class EditView extends React.Component {
     let value = route[selectedNode.field]; // matching Frontend and Backend case
 
     if (!value) {
-      const node = route.plugins.find(p => p.nodeId === nodeId) || plugins.find((p) => p.id === id);
+      const node =
+        route.plugins.find((p) => p.nodeId === nodeId) || plugins.find((p) => p.id === id);
       if (node)
         value = {
           plugin: node.config,
@@ -1688,151 +1978,187 @@ class EditView extends React.Component {
         value,
         originalValue: value,
       },
-      asJsonFormat: selectedNode.legacy || readOnly
+      asJsonFormat: selectedNode.legacy || readOnly,
     });
-  }
+  };
 
   onValidate = (newValue) => {
-    const { selectedNode } = this.props
+    const { selectedNode } = this.props;
     const { nodeId } = selectedNode;
 
-    return this.props.updatePlugin(
-      nodeId,
-      selectedNode.id,
-      {
-        plugin: newValue.plugin,
-        status: newValue.status,
-      }
-    )
+    return this.props.updatePlugin(nodeId, selectedNode.id, {
+      plugin: newValue.plugin,
+      status: newValue.status,
+    });
   };
 
   onJsonInputChange = (value) => {
-    const { form } = this.state
+    const { form } = this.state;
     validate([], form.schema, value)
       .then(() => {
         this.setState({
-          errors: []
-        })
-        this.onValidate(JSON.parse(value))
+          errors: [],
+        });
+        this.onValidate(JSON.parse(value));
       })
       .catch((err) => {
         if (err.inner && Array.isArray(err.inner)) {
           this.setState({
-            errors: err.inner.map((r) => r.message)
-          })
+            errors: err.inner.map((r) => r.message),
+          });
         }
       });
   };
 
-  toggleJsonFormat = value => {
+  toggleJsonFormat = (value) => {
     this.setState({
-      asJsonFormat: value
-    })
-  }
+      asJsonFormat: value,
+    });
+  };
 
   render() {
     const {
-      selectedNode, setSelectedNode,
-      route, setRoute,
-      onRemove, backends, readOnly, addNode,
-      hidePreview, disabledSaveButton, saveRoute
-    } = this.props
+      selectedNode,
+      setSelectedNode,
+      route,
+      setRoute,
+      onRemove,
+      backends,
+      readOnly,
+      addNode,
+      hidePreview,
+      disabledSaveButton,
+      saveRoute,
+    } = this.props;
 
-    const { id, name, icon } = selectedNode
-    const { usingExistingBackend, form, offset, asJsonFormat, errors } = this.state
+    const { id, name, icon } = selectedNode;
+    const { usingExistingBackend, form, offset, asJsonFormat, errors } = this.state;
 
-    const showActions = !selectedNode.legacy && !readOnly && 'Backend' !== id
-    const notOnBackendNode = !usingExistingBackend || id !== 'Backend'
+    const showActions = !selectedNode.legacy && !readOnly && 'Backend' !== id;
+    const notOnBackendNode = !usingExistingBackend || id !== 'Backend';
 
-    if (form.flow.length === 0 && Object.keys(form.schema).length === 0)
-      return null
+    if (form.flow.length === 0 && Object.keys(form.schema).length === 0) return null;
 
-    return <div id="form" onClick={(e) => e.stopPropagation()} className="plugins-stack editor-view" style={{ top: offset }}>
-      <EditViewHeader icon={icon} name={name} id={id} onCloseForm={() => {
-        setSelectedNode(undefined);
-        hidePreview();
-      }} />
-      <div style={{ backgroundColor: '#494949' }}>
-        {selectedNode.description &&
-          <Description text={selectedNode.description} legacy={selectedNode.legacy} steps={selectedNode.plugin_steps || []} />}
-        {showActions && <EditViewFormatActions
-          asJsonFormat={asJsonFormat} errors={errors}
-          onFormClick={() => this.toggleJsonFormat(false)}
-          onRawJsonClick={() => {
-            if (this.formRef.current)
-              this.formRef.current.validate()
-                .then(() => {
-                  this.toggleJsonFormat(true);
-                })
-            else
-              this.toggleJsonFormat(true);
+    return (
+      <div
+        id="form"
+        onClick={(e) => e.stopPropagation()}
+        className="plugins-stack editor-view"
+        style={{ top: offset }}>
+        <EditViewHeader
+          icon={icon}
+          name={name}
+          id={id}
+          onCloseForm={() => {
+            setSelectedNode(undefined);
+            hidePreview();
           }}
-        />}
-        <BackendSelector
-          enabled={id === 'Backend'}
-          backends={backends}
-          setUsingExistingBackend={e => {
-            this.setState({
-              usingExistingBackend: e
-            })
-          }}
-          setRoute={setRoute}
-          usingExistingBackend={usingExistingBackend}
-          route={route}
         />
-        {notOnBackendNode && <div className="editor-view-form">
-          {asJsonFormat && <>
-            <EditViewJsonEditor
-              readOnly={readOnly}
-              value={form.value}
-              onChange={this.onJsonInputChange}
-              errors={errors} />
-            {readOnly ? <EditViewReadOnlyActions
-              onCancel={() => {
-                setSelectedNode(undefined);
-                hidePreview();
+        <div style={{ backgroundColor: '#494949' }}>
+          {selectedNode.description && (
+            <Description
+              text={selectedNode.description}
+              legacy={selectedNode.legacy}
+              steps={selectedNode.plugin_steps || []}
+            />
+          )}
+          {showActions && (
+            <EditViewFormatActions
+              asJsonFormat={asJsonFormat}
+              errors={errors}
+              onFormClick={() => this.toggleJsonFormat(false)}
+              onRawJsonClick={() => {
+                if (this.formRef.current)
+                  this.formRef.current.validate().then(() => {
+                    this.toggleJsonFormat(true);
+                  });
+                else this.toggleJsonFormat(true);
               }}
-              onOk={() => {
-                hidePreview();
-                if (selectedNode.shortcut)
-                  selectedNode.shortcut(selectedNode);
-                else
-                  addNode(selectedNode);
-              }} />
-              : <Actions
-                disabledSaveButton={disabledSaveButton}
-                valid={saveRoute}
-                selectedNode={selectedNode}
-                onRemove={onRemove}
-              />}
-          </>}
-          {!asJsonFormat && <Form
-            ref={this.formRef}
-            value={form.value}
-            schema={form.schema}
-            flow={form.flow}
-            onSubmit={this.onValidate}
-            options={{ autosubmit: true }}
-            footer={() => <Actions
-              disabledSaveButton={disabledSaveButton}
-              valid={saveRoute}
-              selectedNode={selectedNode}
-              onRemove={onRemove}
-            />}
-          />}
-        </div>}
-        {!notOnBackendNode && <div className="d-flex justify-content-end p-3">
-          <FeedbackButton
-            text="Save"
-            icon={() => <i className="fas fa-paper-plane" />}
-            onPress={saveRoute}
+            />
+          )}
+          <BackendSelector
+            enabled={id === 'Backend'}
+            backends={backends}
+            setUsingExistingBackend={(e) => {
+              this.setState({
+                usingExistingBackend: e,
+              });
+            }}
+            setRoute={setRoute}
+            usingExistingBackend={usingExistingBackend}
+            route={route}
           />
-          {route.backend_ref && <Link className='btn btn-sm btn-success ms-2' to={`/backends/${route.backend_ref}/`}>
-            Edit this backend
-          </Link>}
-        </div>}
+          {notOnBackendNode && (
+            <div className="editor-view-form">
+              {asJsonFormat && (
+                <>
+                  <EditViewJsonEditor
+                    readOnly={readOnly}
+                    value={form.value}
+                    onChange={this.onJsonInputChange}
+                    errors={errors}
+                  />
+                  {readOnly ? (
+                    <EditViewReadOnlyActions
+                      onCancel={() => {
+                        setSelectedNode(undefined);
+                        hidePreview();
+                      }}
+                      onOk={() => {
+                        hidePreview();
+                        if (selectedNode.shortcut) selectedNode.shortcut(selectedNode);
+                        else addNode(selectedNode);
+                      }}
+                    />
+                  ) : (
+                    <Actions
+                      disabledSaveButton={disabledSaveButton}
+                      valid={saveRoute}
+                      selectedNode={selectedNode}
+                      onRemove={onRemove}
+                    />
+                  )}
+                </>
+              )}
+              {!asJsonFormat && (
+                <Form
+                  ref={this.formRef}
+                  value={form.value}
+                  schema={form.schema}
+                  flow={form.flow}
+                  onSubmit={this.onValidate}
+                  options={{ autosubmit: true }}
+                  footer={() => (
+                    <Actions
+                      disabledSaveButton={disabledSaveButton}
+                      valid={saveRoute}
+                      selectedNode={selectedNode}
+                      onRemove={onRemove}
+                    />
+                  )}
+                />
+              )}
+            </div>
+          )}
+          {!notOnBackendNode && (
+            <div className="d-flex justify-content-end p-3">
+              <FeedbackButton
+                text="Save"
+                icon={() => <i className="fas fa-paper-plane" />}
+                onPress={saveRoute}
+              />
+              {route.backend_ref && (
+                <Link
+                  className="btn btn-sm btn-success ms-2"
+                  to={`/backends/${route.backend_ref}/`}>
+                  Edit this backend
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    );
   }
 }
 
@@ -1857,41 +2183,45 @@ const BackendSelector = ({
   route,
   backends,
 }) => {
-  return enabled && <div className="backend-selector">
-    <div className={`d-flex ${usingExistingBackend ? 'mb-3' : ''}`}>
-      <button
-        className="btn btn-sm new-backend-button"
-        onClick={() => {
-          setUsingExistingBackend(false);
-        }}
-        style={{ backgroundColor: usingExistingBackend ? '#494849' : '#f9b000' }}>
-        Create a new backend
-      </button>
-      <button
-        className="btn btn-sm new-backend-button"
-        onClick={() => setUsingExistingBackend(true)}
-        style={{ backgroundColor: usingExistingBackend ? '#f9b000' : '#494849' }}>
-        Select an existing backend
-      </button>
-    </div>
-    {usingExistingBackend && (
-      <SelectInput
-        id="backend_select"
-        value={route.backend_ref}
-        placeholder="Select an existing backend"
-        label=""
-        onChange={(backend_ref) =>
-          setRoute({
-            ...route,
-            backend_ref,
-          })
-        }
-        possibleValues={backends}
-        transformer={(item) => ({ label: item.name, value: item.id })}
-      />
-    )}
-  </div>
-}
+  return (
+    enabled && (
+      <div className="backend-selector">
+        <div className={`d-flex ${usingExistingBackend ? 'mb-3' : ''}`}>
+          <button
+            className="btn btn-sm new-backend-button"
+            onClick={() => {
+              setUsingExistingBackend(false);
+            }}
+            style={{ backgroundColor: usingExistingBackend ? '#494849' : '#f9b000' }}>
+            Create a new backend
+          </button>
+          <button
+            className="btn btn-sm new-backend-button"
+            onClick={() => setUsingExistingBackend(true)}
+            style={{ backgroundColor: usingExistingBackend ? '#f9b000' : '#494849' }}>
+            Select an existing backend
+          </button>
+        </div>
+        {usingExistingBackend && (
+          <SelectInput
+            id="backend_select"
+            value={route.backend_ref}
+            placeholder="Select an existing backend"
+            label=""
+            onChange={(backend_ref) =>
+              setRoute({
+                ...route,
+                backend_ref,
+              })
+            }
+            possibleValues={backends}
+            transformer={(item) => ({ label: item.name, value: item.id })}
+          />
+        )}
+      </div>
+    )
+  );
+};
 
 const Description = ({ text, steps, legacy }) => {
   const [showMore, setShowMore] = useState(false);
@@ -1906,13 +2236,33 @@ const Description = ({ text, steps, legacy }) => {
 
   return (
     <>
-      {(content && content.toLowerCase() !== '...') && <MarkdownInput className="form-description" readOnly={true} preview={true} value={content} />}
-      {steps.length > 0 && <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
-        active on {steps.map((step, i) => <span className="badge bg-warning text-dark" style={{ marginLeft: 5 }} key={`steps-${i}`}>{step}</span>)}
-      </div>}
+      {content && content.toLowerCase() !== '...' && (
+        <MarkdownInput
+          className="form-description"
+          readOnly={true}
+          preview={true}
+          value={content}
+        />
+      )}
+      {steps.length > 0 && (
+        <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
+          active on{' '}
+          {steps.map((step, i) => (
+            <span
+              className="badge bg-warning text-dark"
+              style={{ marginLeft: 5 }}
+              key={`steps-${i}`}>
+              {step}
+            </span>
+          ))}
+        </div>
+      )}
       {legacy && (
         <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
-          this plugin is a <span className="badge bg-info text-dark" style={{ marginLeft: 5 }}>legacy plugin</span>
+          this plugin is a{' '}
+          <span className="badge bg-info text-dark" style={{ marginLeft: 5 }}>
+            legacy plugin
+          </span>
         </div>
       )}
       {overflows && (

@@ -933,67 +933,67 @@ const possibleExporterConfigFormValues = {
           suffix: 'bytes',
         },
       },
-      'bucket': {
+      bucket: {
         type: 'string',
         props: {
           label: 'S3 bucket name',
         },
       },
-      'endpoint': {
+      endpoint: {
         type: 'string',
         props: {
           label: 'S3 endpoint',
         },
       },
-      'region': {
+      region: {
         type: 'string',
         props: {
           label: 'S3 region',
         },
       },
-      'access': {
+      access: {
         type: 'string',
         props: {
           label: 'S3 access key',
         },
       },
-      'secret': {
+      secret: {
         type: 'string',
         props: {
           label: 'S3 Secret',
         },
       },
-      'key': {
+      key: {
         type: 'string',
         props: {
           label: 'File key',
         },
       },
-      'chunkSize': {
+      chunkSize: {
         type: 'number',
         props: {
           label: 'Chunk size',
         },
       },
-      'v4auth': {
+      v4auth: {
         type: 'bool',
         props: {
           label: 'V4 Auth',
         },
       },
-      'writeEvery': {
+      writeEvery: {
         type: 'number',
         props: {
           label: 'Write every',
-          suffix: 'millis.'
+          suffix: 'millis.',
         },
       },
-      'acl': {
+      acl: {
         type: 'string',
         props: {
           label: 'S3 file ACL',
         },
-      }
+      },
     },
   },
   goreplays3: {
@@ -1009,11 +1009,11 @@ const possibleExporterConfigFormValues = {
       's3.writeEvery',
       's3.acl',
       'maxFileSize',
-      'captureRequests', 
-      'captureResponses', 
-      'preferBackendRequest', 
-      'preferBackendResponse', 
-      'methods'
+      'captureRequests',
+      'captureResponses',
+      'preferBackendRequest',
+      'preferBackendResponse',
+      'methods',
     ],
     schema: {
       maxFileSize: {
@@ -1076,7 +1076,7 @@ const possibleExporterConfigFormValues = {
         type: 'number',
         props: {
           label: 'Write every',
-          suffix: 'millis.'
+          suffix: 'millis.',
         },
       },
       's3.acl': {
@@ -1101,27 +1101,36 @@ const possibleExporterConfigFormValues = {
         type: 'array',
         props: {
           label: 'HTTP methods',
-          help: 'filter only the http methods you want to capture. If none specified, all will be captured !'
-        }
+          help:
+            'filter only the http methods you want to capture. If none specified, all will be captured !',
+        },
       },
       preferBackendRequest: {
         type: 'bool',
         props: {
           label: 'Capture backend requests',
-          help: 'instead on frontend requests'
+          help: 'instead on frontend requests',
         },
       },
       preferBackendResponse: {
         type: 'bool',
         props: {
           label: 'Capture backend responses',
-          help: 'instead on frontend responses'
+          help: 'instead on frontend responses',
         },
       },
     },
   },
   goreplayfile: {
-    flow: ['path', 'maxFileSize', 'captureRequests', 'captureResponses', 'preferBackendRequest', 'preferBackendResponse', 'methods'],
+    flow: [
+      'path',
+      'maxFileSize',
+      'captureRequests',
+      'captureResponses',
+      'preferBackendRequest',
+      'preferBackendResponse',
+      'methods',
+    ],
     schema: {
       path: {
         type: 'string',
@@ -1151,23 +1160,24 @@ const possibleExporterConfigFormValues = {
         type: 'bool',
         props: {
           label: 'Capture backend requests',
-          help: 'instead on frontend requests'
+          help: 'instead on frontend requests',
         },
       },
       preferBackendResponse: {
         type: 'bool',
         props: {
           label: 'Capture backend responses',
-          help: 'instead on frontend responses'
+          help: 'instead on frontend responses',
         },
       },
       methods: {
         type: 'array',
         props: {
           label: 'HTTP methods',
-          help: 'filter only the http methods you want to capture. If none specified, all will be captured !'
-        }
-      }
+          help:
+            'filter only the http methods you want to capture. If none specified, all will be captured !',
+        },
+      },
     },
   },
   console: {

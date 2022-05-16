@@ -339,16 +339,16 @@ case class S3Configuration(
     acl: CannedAcl
 ) {
   def json: JsValue = Json.obj(
-    "bucket" -> bucket,
-    "endpoint" -> endpoint,
-    "region" -> region,
-    "access" -> access,
-    "secret" -> secret,
-    "key" -> key,
-    "chunkSize" -> chunkSize,
-    "v4auth" -> v4auth,
+    "bucket"     -> bucket,
+    "endpoint"   -> endpoint,
+    "region"     -> region,
+    "access"     -> access,
+    "secret"     -> secret,
+    "key"        -> key,
+    "chunkSize"  -> chunkSize,
+    "v4auth"     -> v4auth,
     "writeEvery" -> writeEvery.toMillis,
-    "acl" -> acl.value,
+    "acl"        -> acl.value
   )
 }
 
@@ -365,22 +365,26 @@ object S3Configuration {
         chunkSize = json.select("chunkSize").asOpt[Int].getOrElse(8388608),
         v4auth = json.select("v4auth").asOpt[Boolean].getOrElse(true),
         writeEvery = json.select("writeEvery").asOpt[Long].map(v => v.millis).getOrElse(1.minute),
-        acl = json.select("acl").asOpt[String].map {
-          case "AuthenticatedRead"      => CannedAcl.AuthenticatedRead
-          case "AwsExecRead"            => CannedAcl.AwsExecRead
-          case "BucketOwnerFullControl" => CannedAcl.BucketOwnerFullControl
-          case "BucketOwnerRead"        => CannedAcl.BucketOwnerRead
-          case "Private"                => CannedAcl.Private
-          case "PublicRead"             => CannedAcl.PublicRead
-          case "PublicReadWrite"        => CannedAcl.PublicReadWrite
-          case _                        => CannedAcl.Private
-        }.getOrElse(CannedAcl.Private),
+        acl = json
+          .select("acl")
+          .asOpt[String]
+          .map {
+            case "AuthenticatedRead"      => CannedAcl.AuthenticatedRead
+            case "AwsExecRead"            => CannedAcl.AwsExecRead
+            case "BucketOwnerFullControl" => CannedAcl.BucketOwnerFullControl
+            case "BucketOwnerRead"        => CannedAcl.BucketOwnerRead
+            case "Private"                => CannedAcl.Private
+            case "PublicRead"             => CannedAcl.PublicRead
+            case "PublicReadWrite"        => CannedAcl.PublicReadWrite
+            case _                        => CannedAcl.Private
+          }
+          .getOrElse(CannedAcl.Private)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(e) => JsSuccess(e)
     }
-    override def writes(o: S3Configuration): JsValue = o.json
+    override def writes(o: S3Configuration): JsValue             = o.json
   }
 }
 

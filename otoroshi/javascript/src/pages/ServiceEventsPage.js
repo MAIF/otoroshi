@@ -8,7 +8,7 @@ import queryString from 'query-string';
 
 import { OtoDatePicker } from '../components/datepicker';
 
-import DesignerSidebar from './RouteDesigner/Sidebar'
+import DesignerSidebar from './RouteDesigner/Sidebar';
 
 function readableType(contentType) {
   if (contentType.indexOf('text/html') > -1) {
@@ -233,11 +233,7 @@ export class ServiceEventsPage extends Component {
 
   sidebarContent(name) {
     if (this.onRoutes) {
-      return (
-        <DesignerSidebar
-          route={{ id: this.props.params.routeId, name }}
-        />
-      );
+      return <DesignerSidebar route={{ id: this.props.params.routeId, name }} />;
     }
     return (
       <ServiceSidebar
@@ -249,15 +245,15 @@ export class ServiceEventsPage extends Component {
   }
 
   componentDidMount() {
-    const fu = this.onRoutes ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId) : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
-    fu.then(
-      (service) => {
-        this.onRoute ? this.props.setTitle(`Route Events`) : this.props.setTitle(`Service Events`);
-        this.setState({ service }, () => {
-          this.props.setSidebarContent(this.sidebarContent(service.name));
-        });
-      }
-    );
+    const fu = this.onRoutes
+      ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
+      : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+    fu.then((service) => {
+      this.onRoute ? this.props.setTitle(`Route Events`) : this.props.setTitle(`Service Events`);
+      this.setState({ service }, () => {
+        this.props.setSidebarContent(this.sidebarContent(service.name));
+      });
+    });
   }
 
   fetchEvents = () => {
