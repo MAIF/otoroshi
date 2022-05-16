@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.5.10] - 2022-05-16
+
+https://github.com/MAIF/otoroshi/milestone/41?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.9...v1.5.10
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.10
+
+- redis key conflict between healthcheck and StoredNgTarget (#1145)
+- GraphQL Caller plugin (#1146)
+- Avoid breaking legacy plugins (#1147)
+- Introduce a new kind of plugin to handle backend call (#1149)
+- do not fail ip address validation on `X-Forwarded-For` containing proxy address(es) (#1150)
+- Fix bad regex value for default data exporter (#1151)
+- implements some kind of traffic capture feature (#1152)
+
+
 ## [1.5.9] - 2022-04-22
 
 https://github.com/MAIF/otoroshi/milestone/40?closed=1
