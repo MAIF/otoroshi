@@ -473,7 +473,7 @@ object Exporters {
         .histogramUpdate(MetricId.build("otoroshi.requests.data.in.bytes").tagged("serviceName", "otoroshi"), dataIn)
       env.metrics
         .histogramUpdate(MetricId.build("otoroshi.requests.data.out.bytes").tagged("serviceName", "otoroshi"), dataOut)
-      val perSec = env.metrics.getMeanCallsOf(s"otoroshi.requests.per.sec")
+      val perSec = env.metrics.getMeanCallsOf(s"otoroshi.requests.per.sec.technical")
       env.metrics
         .histogramUpdate(MetricId.build(s"otoroshi.requests.per.sec").tagged("serviceName", "otoroshi"), perSec.toInt)
     }
