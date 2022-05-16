@@ -18,6 +18,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v1.5.10
 - do not fail ip address validation on `X-Forwarded-For` containing proxy address(es) (#1150)
 - Fix bad regex value for default data exporter (#1151)
 - implements some kind of traffic capture feature (#1152)
+- Fix bad export for prometheus metrics (#1153)
 
 
 ## [1.5.9] - 2022-04-22
