@@ -19770,6 +19770,24 @@
           }
         }
       },
+      "otoroshi.next.plugins.GraphQLBackendConfig" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "schema" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "initial_data" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "object"
+            } ],
+            "description" : "???"
+          }
+        }
+      },
       "otoroshi.plugins.apikeys.HasAllowedApiKeyValidator" : {
         "description" : "Plugin that validates apikey",
         "type" : "object",
@@ -21781,6 +21799,24 @@
               "type" : "string"
             },
             "description" : "Rename query params to"
+          }
+        }
+      },
+      "otoroshi.next.plugins.GraphQLBackend" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "schema" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "initial_data" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "object"
+            } ],
+            "description" : "???"
           }
         }
       },
