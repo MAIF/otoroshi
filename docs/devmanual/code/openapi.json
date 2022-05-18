@@ -20223,6 +20223,16 @@
         "type" : "object",
         "properties" : { }
       },
+      "otoroshi.next.plugins.S3BackendConfig" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "s3" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.storage.drivers.inmemory.S3Configuration"
+          }
+        }
+      },
       "otoroshi.next.models.NgTreeRouter" : {
         "description" : "A very efficient router with a tree structure",
         "type" : "object",
@@ -21744,6 +21754,11 @@
           "$ref" : "#/components/schemas/otoroshi.events.HealthCheckEvent"
         }
       },
+      "otoroshi.next.plugins.FileUtils" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : { }
+      },
       "otoroshi.next.plugins.ReadOnlyCalls" : {
         "description" : "Plugin for readonly calls",
         "type" : "object",
@@ -22870,6 +22885,16 @@
           },
           "method" : {
             "description" : "The request method",
+            "type" : "string"
+          }
+        }
+      },
+      "otoroshi.next.plugins.StaticBackendConfig" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "root_path" : {
+            "description" : "???",
             "type" : "string"
           }
         }
@@ -26917,6 +26942,16 @@
         "type" : "object",
         "properties" : { }
       },
+      "otoroshi.next.plugins.StaticBackend" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "root_path" : {
+            "description" : "???",
+            "type" : "string"
+          }
+        }
+      },
       "otoroshi.next.models.RoutingStrategy" : {
         "description" : "The routing strategy",
         "type" : "object",
@@ -27441,6 +27476,49 @@
         "type" : "string",
         "enum" : [ "Legacy", "Latest" ],
         "description" : "Version of the info token"
+      },
+      "otoroshi.next.plugins.S3Backend" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "writeEvery" : {
+            "description" : "???",
+            "type" : "number"
+          },
+          "chunkSize" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "bucket" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "key" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "endpoint" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "v4auth" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "access" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "secret" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "region" : {
+            "description" : "???",
+            "type" : "string"
+          }
+        }
       },
       "otoroshi.plugins.biscuit.BiscuitHelper" : {
         "description" : "Internal api",
