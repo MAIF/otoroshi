@@ -8,7 +8,7 @@ import moment from 'moment';
 
 import { OtoDatePicker } from '../components/datepicker';
 
-import DesignerSidebar from './RouteDesigner/Sidebar'
+import DesignerSidebar from './RouteDesigner/Sidebar';
 
 export class ServiceAnalyticsPage extends Component {
   state = {
@@ -23,11 +23,7 @@ export class ServiceAnalyticsPage extends Component {
 
   sidebarContent(name) {
     if (this.onRoutes) {
-      return (
-        <DesignerSidebar
-          route={{ id: this.props.params.routeId, name }}
-        />
-      );
+      return <DesignerSidebar route={{ id: this.props.params.routeId, name }} />;
     }
     return (
       <ServiceSidebar
@@ -39,16 +35,18 @@ export class ServiceAnalyticsPage extends Component {
   }
 
   componentDidMount() {
-    this.onRoutes ? this.props.setTitle(`Route analytics`) : this.props.setTitle(`Service analytics`);
-    const fu = this.onRoutes ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId) : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
-    fu.then(
-      (service) => {
-        this.setState({ service }, () => {
-          this.update();
-          this.props.setSidebarContent(this.sidebarContent(service.name));
-        });
-      }
-    );
+    this.onRoutes
+      ? this.props.setTitle(`Route analytics`)
+      : this.props.setTitle(`Service analytics`);
+    const fu = this.onRoutes
+      ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
+      : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
+    fu.then((service) => {
+      this.setState({ service }, () => {
+        this.update();
+        this.props.setSidebarContent(this.sidebarContent(service.name));
+      });
+    });
   }
 
   update = () => {

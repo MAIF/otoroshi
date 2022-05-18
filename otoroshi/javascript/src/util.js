@@ -1,7 +1,7 @@
-import React from 'react'
-import { useLocation } from "react-router-dom";
+import React from 'react';
+import { useLocation } from 'react-router-dom';
 
-export const REQUEST_STEPS_FLOW = ['MatchRoute', 'PreRoute', 'ValidateAccess', 'TransformRequest']
+export const REQUEST_STEPS_FLOW = ['MatchRoute', 'PreRoute', 'ValidateAccess', 'TransformRequest'];
 
 export const firstLetterUppercase = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -16,13 +16,13 @@ export const toUpperCaseLabels = (obj) => {
       [key]: !value
         ? null
         : isLabelField
-          ? prefix.charAt(0).toUpperCase() + prefix.slice(1) + ' ' + sequences.join(' ').toLowerCase()
-          : typeof value === 'object' &&
-            value !== null &&
-            key !== 'transformer' &&
-            !Array.isArray(value)
-            ? toUpperCaseLabels(value)
-            : value,
+        ? prefix.charAt(0).toUpperCase() + prefix.slice(1) + ' ' + sequences.join(' ').toLowerCase()
+        : typeof value === 'object' &&
+          value !== null &&
+          key !== 'transformer' &&
+          !Array.isArray(value)
+        ? toUpperCaseLabels(value)
+        : value,
     };
   }, {});
 };
@@ -33,14 +33,14 @@ export function useQuery() {
 }
 
 export const useEntityFromURI = () => {
-  const { pathname } = useLocation()
+  const { pathname } = useLocation();
 
-  let entity = 'routes'
+  let entity = 'routes';
   try {
-    entity = pathname.split('/')[1]
-  } catch (_) { }
+    entity = pathname.split('/')[1];
+  } catch (_) {}
 
-  const isRouteInstance = entity === 'routes'
+  const isRouteInstance = entity === 'routes';
 
   return {
     isRouteInstance,
@@ -48,6 +48,6 @@ export const useEntityFromURI = () => {
     capitalize: isRouteInstance ? 'Route' : 'Route Composition',
     lowercase: isRouteInstance ? 'route' : 'route composition',
     fetchName: isRouteInstance ? 'ROUTES' : 'SERVICES',
-    link: isRouteInstance ? 'routes' : 'route-compositions'
-  }
-}
+    link: isRouteInstance ? 'routes' : 'route-compositions',
+  };
+};

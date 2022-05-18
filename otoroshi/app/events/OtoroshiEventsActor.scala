@@ -103,9 +103,9 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
   def stop(): Unit = {
     env.proxyState.allDataExporters().vfuture.map { exporters =>
       for {
-        _ <- Future.sequence(dataExporters.map {
-          case (key, c) =>  c.stopExporter()
-        })
+        _ <- Future.sequence(dataExporters.map { case (key, c) =>
+               c.stopExporter()
+             })
       } yield ()
     }
   }
@@ -209,7 +209,7 @@ object DataExporter {
         .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
         .filterNot(_.isEmpty)
         .mapAsync(configUnsafe.sendWorkers) { items =>
-          val events = items.map(_._1)
+          val events    = items.map(_._1)
           val rawEvents = items.map(_._2)
           Try(sendWithSource(events, rawEvents).recover { case e: Throwable =>
             val message = s"error while sending events on ${id} of kind ${this.getClass.getName}"
@@ -473,7 +473,7 @@ object Exporters {
         .histogramUpdate(MetricId.build("otoroshi.requests.data.in.bytes").tagged("serviceName", "otoroshi"), dataIn)
       env.metrics
         .histogramUpdate(MetricId.build("otoroshi.requests.data.out.bytes").tagged("serviceName", "otoroshi"), dataOut)
-      val perSec = env.metrics.getMeanCallsOf(s"otoroshi.requests.per.sec")
+      val perSec = env.metrics.getMeanCallsOf(s"otoroshi.requests.per.sec.technical")
       env.metrics
         .histogramUpdate(MetricId.build(s"otoroshi.requests.per.sec").tagged("serviceName", "otoroshi"), perSec.toInt)
     }
@@ -507,76 +507,80 @@ object Exporters {
       }
     }
 
-    override def send(events: Seq[JsValue]): Future[ExportResult] = exporter[MetricsSettings].map { exporterConfig =>
+    override def send(events: Seq[JsValue]): Future[ExportResult] = exporter[MetricsSettings]
+      .map { exporterConfig =>
+        val labels       = exporterConfig.labels // (config.config.toJson \ "labels").as[Map[String, String]]
+        val sortedLabels = labels.partition(_._1.contains("."))
 
-      val labels       = exporterConfig.labels // (config.config.toJson \ "labels").as[Map[String, String]]
-      val sortedLabels = labels.partition(_._1.contains("."))
+        events.foreach { event =>
+          if ((event \ "@type").as[String] == "GatewayEvent") {
+            Try {
+              val duration     = (event \ "duration").asOpt[Long].getOrElse(0L)
+              val dataIn       = (event \ "data" \ "dataIn").asOpt[Long].getOrElse(0L)
+              val dataOut      = (event \ "data" \ "dataOut").asOpt[Long].getOrElse(0L)
+              val overheadWoCb = (event \ "overheadWoCb").asOpt[Long].getOrElse(0L)
+              val cbDuration   = (event \ "cbDuration").asOpt[Long].getOrElse(0L)
+              val overhead     = (event \ "overhead").asOpt[Long].getOrElse(0L)
+              val serviceId    = (event \ "@serviceId").asOpt[String].getOrElse("global")
 
-      events.foreach { event =>
-        if ((event \ "@type").as[String] == "GatewayEvent") {
-          Try {
-            val duration     = (event \ "duration").asOpt[Long].getOrElse(0L)
-            val dataIn       = (event \ "data" \ "dataIn").asOpt[Long].getOrElse(0L)
-            val dataOut      = (event \ "data" \ "dataOut").asOpt[Long].getOrElse(0L)
-            val overheadWoCb = (event \ "overheadWoCb").asOpt[Long].getOrElse(0L)
-            val cbDuration   = (event \ "cbDuration").asOpt[Long].getOrElse(0L)
-            val overhead     = (event \ "overhead").asOpt[Long].getOrElse(0L)
-            val serviceId    = (event \ "@serviceId").asOpt[String].getOrElse("global")
+              var tags: Map[String, String] = Map()
 
-            var tags: Map[String, String] = Map()
+              sortedLabels._1.foreach(objectlabel => {
+                tags += (objectlabel._2.trim -> getValueAt(
+                  event,
+                  objectlabel._1.trim.replace("$at", "@")
+                )) // getValueWithPath(objectlabel._1.trim.replace("$at", "@"), event))
+              })
 
-            sortedLabels._1.foreach(objectlabel => {
-              tags += (objectlabel._2.trim -> getValueAt(
-                event,
-                objectlabel._1.trim.replace("$at", "@")
-              )) // getValueWithPath(objectlabel._1.trim.replace("$at", "@"), event))
-            })
+              sortedLabels._2.foreach(primitiveLabel => {
+                tags += (primitiveLabel._2.trim -> getValueAt(
+                  event,
+                  primitiveLabel._1.trim.replace("$at", "@")
+                )) // getStringOrJsObject(event, primitiveLabel._1.trim.replace("$at", "@")))
+              })
 
-            sortedLabels._2.foreach(primitiveLabel => {
-              tags += (primitiveLabel._2.trim -> getValueAt(
-                event,
-                primitiveLabel._1.trim.replace("$at", "@")
-              )) // getStringOrJsObject(event, primitiveLabel._1.trim.replace("$at", "@")))
-            })
-
-            incGlobalOtoroshiMetrics(duration, overheadWoCb, cbDuration, overhead, dataIn, dataOut)
-            env.metrics.counterInc(MetricId.build(s"otoroshi.service.requests.count").tagged(tags.asJava))
-            env.metrics
-              .histogramUpdate(
-                MetricId.build(s"otoroshi.service.requests.duration.millis").tagged(tags.asJava),
-                duration
-              )
-            env.metrics
-              .histogramUpdate(
-                MetricId.build(s"otoroshi.service.requests.overheadWoCb.millis").tagged(tags.asJava),
-                overheadWoCb
-              )
-            env.metrics
-              .histogramUpdate(
-                MetricId.build(s"otoroshi.service.requests.cbDuration.millis").tagged(tags.asJava),
-                cbDuration
-              )
-            env.metrics
-              .histogramUpdate(
-                MetricId.build(s"otoroshi.service.requests.overhead.millis").tagged(tags.asJava),
-                overhead
-              )
-            env.metrics
-              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.data.in.bytes").tagged(tags.asJava), dataIn)
-            env.metrics
-              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.data.out.bytes").tagged(tags.asJava), dataOut)
-            val perSec = env.metrics.getMeanCallsOf(s"otoroshi.service.requests.per.sec.${serviceId}")
-            env.metrics
-              .histogramUpdate(MetricId.build(s"otoroshi.service.requests.per.sec").tagged(tags.asJava), perSec.toInt)
-          } match {
-            case Failure(e) => logger.error("error while collection tags", e)
-            case _          =>
+              incGlobalOtoroshiMetrics(duration, overheadWoCb, cbDuration, overhead, dataIn, dataOut)
+              env.metrics.counterInc(MetricId.build(s"otoroshi.service.requests.count").tagged(tags.asJava))
+              env.metrics
+                .histogramUpdate(
+                  MetricId.build(s"otoroshi.service.requests.duration.millis").tagged(tags.asJava),
+                  duration
+                )
+              env.metrics
+                .histogramUpdate(
+                  MetricId.build(s"otoroshi.service.requests.overheadWoCb.millis").tagged(tags.asJava),
+                  overheadWoCb
+                )
+              env.metrics
+                .histogramUpdate(
+                  MetricId.build(s"otoroshi.service.requests.cbDuration.millis").tagged(tags.asJava),
+                  cbDuration
+                )
+              env.metrics
+                .histogramUpdate(
+                  MetricId.build(s"otoroshi.service.requests.overhead.millis").tagged(tags.asJava),
+                  overhead
+                )
+              env.metrics
+                .histogramUpdate(MetricId.build(s"otoroshi.service.requests.data.in.bytes").tagged(tags.asJava), dataIn)
+              env.metrics
+                .histogramUpdate(
+                  MetricId.build(s"otoroshi.service.requests.data.out.bytes").tagged(tags.asJava),
+                  dataOut
+                )
+              val perSec = env.metrics.getMeanCallsOf(s"otoroshi.service.requests.per.sec.${serviceId}")
+              env.metrics
+                .histogramUpdate(MetricId.build(s"otoroshi.service.requests.per.sec").tagged(tags.asJava), perSec.toInt)
+            } match {
+              case Failure(e) => logger.error("error while collection tags", e)
+              case _          =>
+            }
           }
         }
-      }
 
-      FastFuture.successful(ExportResult.ExportResultSuccess)
-    }.getOrElse(ExportResult.ExportResultFailure("Bad config.").vfuture)
+        FastFuture.successful(ExportResult.ExportResultSuccess)
+      }
+      .getOrElse(ExportResult.ExportResultFailure("Bad config.").vfuture)
   }
 
   class CustomExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
@@ -664,9 +668,11 @@ object Exporters {
   }
 
   class GoReplayFileAppenderExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-    extends DefaultDataExporter(config)(ec, env) {
+      extends DefaultDataExporter(config)(ec, env) {
 
-    override def send(events: Seq[JsValue]): Future[ExportResult] = throw new RuntimeException("send is not supported !!!")
+    override def send(events: Seq[JsValue]): Future[ExportResult] = throw new RuntimeException(
+      "send is not supported !!!"
+    )
 
     override def sendWithSource(__events: Seq[JsValue], rawEvents: Seq[OtoroshiEvent]): Future[ExportResult] = {
       exporter[GoReplayFileSettings].map { exporterConfig =>
@@ -685,18 +691,24 @@ object Exporters {
           }
         }
 
-        val contentToAppend = rawEvents.collect {
-          case evt: TrafficCaptureEvent if exporterConfig.methods.isEmpty || exporterConfig.methods.contains(evt.request.method) => evt.toGoReplayFormat(
-            exporterConfig.captureRequests,
-            exporterConfig.captureResponses,
-            exporterConfig.preferBackendRequest,
-            exporterConfig.preferBackendResponse,
-          )
-        }.mkString("")
+        val contentToAppend = rawEvents
+          .collect {
+            case evt: TrafficCaptureEvent
+                if exporterConfig.methods.isEmpty || exporterConfig.methods.contains(evt.request.method) =>
+              evt.toGoReplayFormat(
+                exporterConfig.captureRequests,
+                exporterConfig.captureResponses,
+                exporterConfig.preferBackendRequest,
+                exporterConfig.preferBackendResponse
+              )
+          }
+          .mkString("")
 
-        Future.apply(Files.write(path, contentToAppend.getBytes, StandardOpenOption.APPEND))(FileWriting.blockingEc).map { _ =>
-          ExportResult.ExportResultSuccess
-        }
+        Future
+          .apply(Files.write(path, contentToAppend.getBytes, StandardOpenOption.APPEND))(FileWriting.blockingEc)
+          .map { _ =>
+            ExportResult.ExportResultSuccess
+          }
       } getOrElse {
         FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
       }
@@ -728,9 +740,13 @@ object Exporters {
 
         val contentToAppend = events.map(Json.stringify).mkString("\r\n")
 
-        Future.apply(Files.write(path, (prefix + contentToAppend).getBytes, StandardOpenOption.APPEND))(FileWriting.blockingEc).map { _ =>
-          ExportResult.ExportResultSuccess
-        }
+        Future
+          .apply(Files.write(path, (prefix + contentToAppend).getBytes, StandardOpenOption.APPEND))(
+            FileWriting.blockingEc
+          )
+          .map { _ =>
+            ExportResult.ExportResultSuccess
+          }
       } getOrElse {
         FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
       }
@@ -743,10 +759,10 @@ object Exporters {
 
   trait S3Support {
 
-    private val lastS3Write = new AtomicLong(0L)
-    private val suffix: String = s"${System.currentTimeMillis()}${System.nanoTime()}"
+    private val lastS3Write         = new AtomicLong(0L)
+    private val suffix: String      = s"${System.currentTimeMillis()}${System.nanoTime()}"
     private val counter: AtomicLong = new AtomicLong(0L)
-    private val ts: AtomicLong = new AtomicLong(System.currentTimeMillis())
+    private val ts: AtomicLong      = new AtomicLong(System.currentTimeMillis())
     // private val maxFileSize: Long = 10L * 1024L * 1024L
 
     def env: Env
@@ -756,7 +772,7 @@ object Exporters {
     def debug(message: String): Unit = S3Support.logger.debug(message)
 
     def computeKeyAndPath(conf: S3Configuration): (String, java.nio.file.Path) = {
-      val key = s"${conf.key}-${env.clusterConfig.name}-${counter.get()}-${ts.get()}-${suffix}.${extension}"
+      val key  = s"${conf.key}-${env.clusterConfig.name}-${counter.get()}-${ts.get()}-${suffix}.${extension}"
         .replace("{date}", DateTime.now().toString("yyyy-MM-dd"))
         .replace("{year}", DateTime.now().toString("yyyy"))
         .replace("{month}", DateTime.now().toString("MM"))
@@ -770,7 +786,7 @@ object Exporters {
       val awsCredentials = StaticCredentialsProvider.create(
         AwsBasicCredentials.create(conf.access, conf.secret)
       )
-      val settings = S3Settings(
+      val settings       = S3Settings(
         bufferType = MemoryBufferType,
         credentialsProvider = awsCredentials,
         s3RegionProvider = new AwsRegionProvider {
@@ -797,11 +813,12 @@ object Exporters {
     }
 
     def writeToS3WithKeyAndPath(key: String, path: java.nio.file.Path, conf: S3Configuration): Future[Unit] = {
-      val url = s"${conf.endpoint}/${key}?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
+      val url          =
+        s"${conf.endpoint}/${key}?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
       val wholeContent = Files.readString(path).byteString
-      val ctype = ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`)
-      val meta  = MetaHeaders(Map("content-type" -> contentType))
-      val sink  = S3
+      val ctype        = ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`)
+      val meta         = MetaHeaders(Map("content-type" -> contentType))
+      val sink         = S3
         .multipartUpload(
           bucket = conf.bucket,
           key = key,
@@ -819,12 +836,13 @@ object Exporters {
         .map(_ => ())(env.otoroshiExecutionContext)
     }
 
-    def shouldWriteToS3(conf: S3Configuration) = (lastS3Write.get() + conf.writeEvery.toMillis) < System.currentTimeMillis()
+    def shouldWriteToS3(conf: S3Configuration) =
+      (lastS3Write.get() + conf.writeEvery.toMillis) < System.currentTimeMillis()
 
     def ensureFileCreationAndRolling(conf: S3Configuration, maxFileSize: Long): File = {
       implicit val ec = FileWriting.blockingEc
       val (key, path) = computeKeyAndPath(conf)
-      val file = path.toFile
+      val file        = path.toFile
       if (!file.exists()) {
         file.getParentFile.mkdirs()
         file.createNewFile()
@@ -835,7 +853,7 @@ object Exporters {
           counter.incrementAndGet()
           ts.set(System.currentTimeMillis())
           val (_, newpath) = computeKeyAndPath(conf)
-          val newfile = newpath.toFile
+          val newfile      = newpath.toFile
           newfile.getParentFile.mkdirs()
           newfile.createNewFile()
           writeToS3WithKeyAndPath(key, path, conf).map { _ =>
@@ -852,12 +870,15 @@ object Exporters {
 
     def appendToCurrentFile(content: String, conf: S3Configuration): Future[Unit] = {
       implicit val ec = FileWriting.blockingEc
-      val (_, path) = computeKeyAndPath(conf)
+      val (_, path)   = computeKeyAndPath(conf)
       debug(s"appending events to file '${path}'")
       if (shouldWriteToS3(conf)) {
-        Future.apply(Files.write(path, content.getBytes, StandardOpenOption.APPEND)).andThen {
-          case _ => writeToS3(conf)
-        }.map(_ => ())
+        Future
+          .apply(Files.write(path, content.getBytes, StandardOpenOption.APPEND))
+          .andThen { case _ =>
+            writeToS3(conf)
+          }
+          .map(_ => ())
       } else {
         Future.apply(Files.write(path, content.getBytes, StandardOpenOption.APPEND)).map(_ => ())
       }
@@ -865,18 +886,19 @@ object Exporters {
   }
 
   class S3Exporter(config: DataExporterConfig)(implicit ec: ExecutionContext, _env: Env)
-    extends DefaultDataExporter(config)(ec, _env) with S3Support {
+      extends DefaultDataExporter(config)(ec, _env)
+      with S3Support {
 
-    def env: Env = _env
-    def extension: String = "ndjson"
+    def env: Env            = _env
+    def extension: String   = "ndjson"
     def contentType: String = "application/x-ndjson"
 
     override def send(evts: Seq[JsValue]): Future[ExportResult] = {
       exporter[S3ExporterSettings].map { exporterConfig =>
-        val conf = exporterConfig.config
-        val file = ensureFileCreationAndRolling(conf, exporterConfig.maxFileSize)
-        val fileIsNotEmpty = file.length() > 0 && evts.nonEmpty
-        val prefix         = if (fileIsNotEmpty) "\r\n" else ""
+        val conf            = exporterConfig.config
+        val file            = ensureFileCreationAndRolling(conf, exporterConfig.maxFileSize)
+        val fileIsNotEmpty  = file.length() > 0 && evts.nonEmpty
+        val prefix          = if (fileIsNotEmpty) "\r\n" else ""
         val contentToAppend = evts.map(Json.stringify).mkString("\r\n")
         appendToCurrentFile(prefix + contentToAppend, conf).map { _ =>
           ExportResult.ExportResultSuccess
@@ -895,26 +917,33 @@ object Exporters {
   }
 
   class GoReplayS3Exporter(config: DataExporterConfig)(implicit ec: ExecutionContext, _env: Env)
-    extends DefaultDataExporter(config)(ec, _env) with S3Support {
+      extends DefaultDataExporter(config)(ec, _env)
+      with S3Support {
 
-    def env: Env = _env
-    def extension: String = "gor"
+    def env: Env            = _env
+    def extension: String   = "gor"
     def contentType: String = "application/x-goreplay"
 
-    override def send(events: Seq[JsValue]): Future[ExportResult] = throw new RuntimeException("send is not supported !!!")
+    override def send(events: Seq[JsValue]): Future[ExportResult] = throw new RuntimeException(
+      "send is not supported !!!"
+    )
 
     override def sendWithSource(__events: Seq[JsValue], rawEvents: Seq[OtoroshiEvent]): Future[ExportResult] = {
       exporter[GoReplayS3Settings].map { exporterConfig =>
-        val conf = exporterConfig.s3
+        val conf            = exporterConfig.s3
         ensureFileCreationAndRolling(conf, exporterConfig.maxFileSize)
-        val contentToAppend = rawEvents.collect {
-          case evt: TrafficCaptureEvent if exporterConfig.methods.isEmpty || exporterConfig.methods.contains(evt.request.method) => evt.toGoReplayFormat(
-            exporterConfig.captureRequests,
-            exporterConfig.captureResponses,
-            exporterConfig.preferBackendRequest,
-            exporterConfig.preferBackendResponse,
-          )
-        }.mkString("")
+        val contentToAppend = rawEvents
+          .collect {
+            case evt: TrafficCaptureEvent
+                if exporterConfig.methods.isEmpty || exporterConfig.methods.contains(evt.request.method) =>
+              evt.toGoReplayFormat(
+                exporterConfig.captureRequests,
+                exporterConfig.captureResponses,
+                exporterConfig.preferBackendRequest,
+                exporterConfig.preferBackendResponse
+              )
+          }
+          .mkString("")
         appendToCurrentFile(contentToAppend, conf).map { _ =>
           ExportResult.ExportResultSuccess
         }

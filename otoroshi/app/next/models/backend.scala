@@ -507,12 +507,12 @@ object NgTarget {
     )
   }
   def readFrom(obj: JsValue): NgTarget = {
-    val hostname =  obj.select("hostname").as[String]
-    val port = obj.select("port").as[Int]
-    val ipAddress = obj.select("ip_address").asOpt[String].filterNot(_.trim.isEmpty)
+    val hostname   = obj.select("hostname").as[String]
+    val port       = obj.select("port").as[Int]
+    val ipAddress  = obj.select("ip_address").asOpt[String].filterNot(_.trim.isEmpty)
     val fallbackIp = ipAddress.map(ip => s"@$ip").getOrElse("")
-    val tls = obj.select("tls").asOpt[Boolean].getOrElse(false)
-    val scheme = if (tls) "https://" else "http://"
+    val tls        = obj.select("tls").asOpt[Boolean].getOrElse(false)
+    val scheme     = if (tls) "https://" else "http://"
     val fallbackId = s"${scheme}${hostname}${fallbackIp}:${port}"
     NgTarget(
       id = obj.select("id").asOpt[String].getOrElse(fallbackId),

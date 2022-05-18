@@ -55,48 +55,48 @@ object S3ExporterSettings {
       case Failure(e) => JsError(e.getMessage)
       case Success(e) => JsSuccess(e)
     }
-    override def writes(o: S3ExporterSettings): JsValue = o.toJson
+    override def writes(o: S3ExporterSettings): JsValue             = o.toJson
   }
 }
 
 case class GoReplayFileSettings(
-  path: String,
-  maxFileSize: Long = 10L * 1024L * 1024L,
-  captureRequests: Boolean,
-  captureResponses: Boolean,
-  preferBackendRequest: Boolean,
-  preferBackendResponse: Boolean,
-  methods: Seq[String],
+    path: String,
+    maxFileSize: Long = 10L * 1024L * 1024L,
+    captureRequests: Boolean,
+    captureResponses: Boolean,
+    preferBackendRequest: Boolean,
+    preferBackendResponse: Boolean,
+    methods: Seq[String]
 ) extends Exporter {
   override def toJson: JsValue =
     Json.obj(
-      "path"        -> path,
-      "maxFileSize" -> maxFileSize,
-      "captureRequests" -> captureRequests,
-      "captureResponses" -> captureResponses,
-      "preferBackendRequest" -> preferBackendRequest,
+      "path"                  -> path,
+      "maxFileSize"           -> maxFileSize,
+      "captureRequests"       -> captureRequests,
+      "captureResponses"      -> captureResponses,
+      "preferBackendRequest"  -> preferBackendRequest,
       "preferBackendResponse" -> preferBackendResponse,
-      "methods" -> JsArray(methods.map(JsString.apply))
+      "methods"               -> JsArray(methods.map(JsString.apply))
     )
 }
 
 case class GoReplayS3Settings(
-  s3: S3Configuration,
-  maxFileSize: Long = 10L * 1024L * 1024L,
-  captureRequests: Boolean,
-  captureResponses: Boolean,
-  preferBackendRequest: Boolean,
-  preferBackendResponse: Boolean,
-  methods: Seq[String],
+    s3: S3Configuration,
+    maxFileSize: Long = 10L * 1024L * 1024L,
+    captureRequests: Boolean,
+    captureResponses: Boolean,
+    preferBackendRequest: Boolean,
+    preferBackendResponse: Boolean,
+    methods: Seq[String]
 ) extends Exporter {
   override def toJson: JsValue =
     Json.obj(
-      "s3"        -> s3.json,
-      "captureRequests" -> captureRequests,
-      "captureResponses" -> captureResponses,
-      "preferBackendRequest" -> preferBackendRequest,
+      "s3"                    -> s3.json,
+      "captureRequests"       -> captureRequests,
+      "captureResponses"      -> captureResponses,
+      "preferBackendRequest"  -> preferBackendRequest,
       "preferBackendResponse" -> preferBackendResponse,
-      "methods" -> JsArray(methods.map(JsString.apply))
+      "methods"               -> JsArray(methods.map(JsString.apply))
     )
 }
 
@@ -180,24 +180,25 @@ object DataExporterConfig {
             exclude = (json \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
           ),
           config = (json \ "type").as[String] match {
-            case "elastic" => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
-            case "webhook" => Webhook.format.reads((json \ "config").as[JsObject]).get
-            case "kafka"   => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
-            case "pulsar"  => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
-            case "file"    =>
+            case "elastic"      => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
+            case "webhook"      => Webhook.format.reads((json \ "config").as[JsObject]).get
+            case "kafka"        => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
+            case "pulsar"       => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
+            case "file"         =>
               FileSettings((json \ "config" \ "path").as[String], (json \ "config" \ "maxFileSize").as[Long])
-            case "s3"    =>
+            case "s3"           =>
               (json \ "config").as(S3ExporterSettings.format)
-            case "goreplays3"    => GoReplayS3Settings(
-              (json \ "config" \ "s3").as(S3Configuration.format),
-              (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
-              (json \ "config" \ "captureRequests").asOpt[Boolean].getOrElse(true),
-              (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
-              (json \ "config" \ "preferBackendRequest").asOpt[Boolean].getOrElse(false),
-              (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
-              (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty),
-            )
-            case "goreplayfile"    =>
+            case "goreplays3"   =>
+              GoReplayS3Settings(
+                (json \ "config" \ "s3").as(S3Configuration.format),
+                (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
+                (json \ "config" \ "captureRequests").asOpt[Boolean].getOrElse(true),
+                (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
+                (json \ "config" \ "preferBackendRequest").asOpt[Boolean].getOrElse(false),
+                (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
+                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+              )
+            case "goreplayfile" =>
               GoReplayFileSettings(
                 (json \ "config" \ "path").as[String],
                 (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
@@ -205,13 +206,13 @@ object DataExporterConfig {
                 (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendRequest").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
-                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty),
+                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
               )
-            case "mailer"  => MailerSettings.format.reads((json \ "config").as[JsObject]).get
-            case "custom"  => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
-            case "console" => ConsoleSettings()
-            case "metrics" => MetricsSettings((json \ "config" \ "labels").as[Map[String, String]])
-            case _         => throw new RuntimeException("Bad config type")
+            case "mailer"       => MailerSettings.format.reads((json \ "config").as[JsObject]).get
+            case "custom"       => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
+            case "console"      => ConsoleSettings()
+            case "metrics"      => MetricsSettings((json \ "config" \ "labels").as[Map[String, String]])
+            case _              => throw new RuntimeException("Bad config type")
           }
         )
       } match {

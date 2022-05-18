@@ -303,7 +303,6 @@ export class NgArrayRenderer extends Component {
 }
 
 export class NgObjectRenderer extends Component {
-
   // state = { values: this.props.value ? Object.keys(this.props.value).map(key => ({ key, value: this.props.value[key] })) : [] }
 
   render() {

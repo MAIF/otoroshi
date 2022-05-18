@@ -218,7 +218,7 @@ class AzureVault(name: String, env: Env) extends Vault {
               env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client_id").get
             val clientSecret =
               env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client_secret").get
-            val url = s"https://login.microsoftonline.com/${tenant}/oauth2/token"
+            val url          = s"https://login.microsoftonline.com/${tenant}/oauth2/token"
             logger.debug(s"fetching azure access_token from '${url}' ...")
             env.Ws
               .url(url)

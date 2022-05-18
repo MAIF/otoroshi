@@ -51,7 +51,14 @@ class StaticResponse extends NgBackendCall {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config           = ctx.cachedConfig(internalName)(StaticResponseConfig.format).getOrElse(StaticResponseConfig())
     val body: ByteString = config.body match {
       case str if str.startsWith("Base64(") => str.substring(7).init.byteString.decodeBase64
@@ -135,12 +142,24 @@ class MockResponses extends NgBackendCall {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.TrafficControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(MockResponsesConfig.format).getOrElse(MockResponsesConfig())
     config.responses.filter(_.method.toLowerCase == ctx.request.method.toLowerCase).find { resp =>
       resp.path.wildcard.matches(ctx.request.path)
     } match {
-      case None if !config.passThrough => bodyResponse(404, Map("Content-Type" -> "application/json"), Source.single(Json.obj("error" -> "resource not found !").stringify.byteString)).future
+      case None if !config.passThrough =>
+        bodyResponse(
+          404,
+          Map("Content-Type" -> "application/json"),
+          Source.single(Json.obj("error" -> "resource not found !").stringify.byteString)
+        ).future
       case None if config.passThrough  => delegates()
       case Some(response)              => {
         val contentType      = response.headers

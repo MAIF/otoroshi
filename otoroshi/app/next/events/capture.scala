@@ -14,10 +14,19 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.RequestHeader
 
 object TrafficCaptureEvent {
-  val strippedHeaders = Seq("Remote-Address", "Timeout-Access", "Raw-Request-URI", "Tls-Session-Info").map(_.toLowerCase())
+  val strippedHeaders =
+    Seq("Remote-Address", "Timeout-Access", "Raw-Request-URI", "Tls-Session-Info").map(_.toLowerCase())
 }
 
-case class TrafficCaptureEvent(route: NgRoute, request: RequestHeader, backendRequest: NgPluginHttpRequest, backendResponse: NgPluginHttpResponse, response: NgPluginHttpResponse, responseChunks: ByteString, attrs: TypedMap) extends AnalyticEvent {
+case class TrafficCaptureEvent(
+    route: NgRoute,
+    request: RequestHeader,
+    backendRequest: NgPluginHttpRequest,
+    backendResponse: NgPluginHttpResponse,
+    response: NgPluginHttpResponse,
+    responseChunks: ByteString,
+    attrs: TypedMap
+) extends AnalyticEvent {
 
   override def `@service`: String            = route.name
   override def `@serviceId`: String          = route.id
@@ -29,8 +38,13 @@ case class TrafficCaptureEvent(route: NgRoute, request: RequestHeader, backendRe
 
   val timestamp = DateTime.now()
 
-  def toGoReplayFormat(captureRequest: Boolean, captureResponse: Boolean, preferBackendRequest: Boolean, preferBackendResponse: Boolean): String = {
-    var event = Seq.empty[String]
+  def toGoReplayFormat(
+      captureRequest: Boolean,
+      captureResponse: Boolean,
+      preferBackendRequest: Boolean,
+      preferBackendResponse: Boolean
+  ): String = {
+    var event             = Seq.empty[String]
     val responseChunkUtf8 = responseChunks.utf8String
     if (captureRequest && !preferBackendRequest) {
       val requestEvent = Seq(
@@ -39,11 +53,11 @@ case class TrafficCaptureEvent(route: NgRoute, request: RequestHeader, backendRe
         s"${request.method.toUpperCase()} ${request.uri} ${request.version}",
         System.lineSeparator(),
         request.headers.toSimpleMap
-          .filterNot {
-            case (key, _) => TrafficCaptureEvent.strippedHeaders.contains(key.toLowerCase)
+          .filterNot { case (key, _) =>
+            TrafficCaptureEvent.strippedHeaders.contains(key.toLowerCase)
           }
-          .map {
-            case (key, value) => s"${key}: ${value}${System.lineSeparator()}"
+          .map { case (key, value) =>
+            s"${key}: ${value}${System.lineSeparator()}"
           }
           .mkString(""),
         System.lineSeparator(),
@@ -61,15 +75,18 @@ case class TrafficCaptureEvent(route: NgRoute, request: RequestHeader, backendRe
         s"${backendRequest.method.toUpperCase()} ${backendRequest.uri} ${backendRequest.version}",
         System.lineSeparator(),
         backendRequest.headers
-          .filterNot {
-            case (key, _) => TrafficCaptureEvent.strippedHeaders.contains(key.toLowerCase)
+          .filterNot { case (key, _) =>
+            TrafficCaptureEvent.strippedHeaders.contains(key.toLowerCase)
           }
-          .map {
-            case (key, value) => s"${key}: ${value}${System.lineSeparator()}"
+          .map { case (key, value) =>
+            s"${key}: ${value}${System.lineSeparator()}"
           }
           .mkString(""),
         System.lineSeparator(),
-        attrs.get(otoroshi.plugins.Keys.CaptureRequestBodyKey).map(_.utf8String).getOrElse(""), // TODO: backendRequestChunks.utf8String,
+        attrs
+          .get(otoroshi.plugins.Keys.CaptureRequestBodyKey)
+          .map(_.utf8String)
+          .getOrElse(""), // TODO: backendRequestChunks.utf8String,
         System.lineSeparator(),
         s"🐵🙈🙉",
         System.lineSeparator()
@@ -82,9 +99,11 @@ case class TrafficCaptureEvent(route: NgRoute, request: RequestHeader, backendRe
         System.lineSeparator(),
         s"${request.version} ${response.status} ${response.statusText}",
         System.lineSeparator(),
-        response.headers.map {
-          case (key, value) => s"${key}: ${value}${System.lineSeparator()}"
-        }.mkString(""),
+        response.headers
+          .map { case (key, value) =>
+            s"${key}: ${value}${System.lineSeparator()}"
+          }
+          .mkString(""),
         System.lineSeparator(),
         responseChunks.utf8String,
         System.lineSeparator(),
@@ -99,11 +118,13 @@ case class TrafficCaptureEvent(route: NgRoute, request: RequestHeader, backendRe
         System.lineSeparator(),
         s"${request.version} ${backendResponse.status} ${backendResponse.statusText}",
         System.lineSeparator(),
-        backendResponse.headers.map {
-          case (key, value) => s"${key}: ${value}${System.lineSeparator()}"
-        }.mkString(""),
+        backendResponse.headers
+          .map { case (key, value) =>
+            s"${key}: ${value}${System.lineSeparator()}"
+          }
+          .mkString(""),
         System.lineSeparator(),
-        responseChunkUtf8, // TODO: backendResponseChunks.utf8String,
+        responseChunkUtf8,                                                                                                                                                    // TODO: backendResponseChunks.utf8String,
         System.lineSeparator(),
         s"🐵🙈🙉",
         System.lineSeparator()
@@ -121,42 +142,42 @@ case class TrafficCaptureEvent(route: NgRoute, request: RequestHeader, backendRe
   }
 
   override def toJson(implicit env: Env): JsValue = {
-    val inputBody = attrs.get(otoroshi.plugins.Keys.CaptureRequestBodyKey).map(_.utf8String).getOrElse("")
-    val id = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse("").padTo(24, "0").mkString("")
+    val inputBody         = attrs.get(otoroshi.plugins.Keys.CaptureRequestBodyKey).map(_.utf8String).getOrElse("")
+    val id                = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse("").padTo(24, "0").mkString("")
     val responseChunkUtf8 = responseChunks.utf8String
     Json.obj(
-      "@id"        -> `@id`,
-      "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(timestamp),
-      "@type"      -> "TrafficCaptureEvent",
-      "@product"   -> "otoroshi",
-      "@serviceId" -> `@serviceId`,
-      "@service"   -> `@service`,
-      "@env"       -> "prod",
-      "route"      -> Json.obj(
-        "id" -> route.id,
+      "@id"              -> `@id`,
+      "@timestamp"       -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(timestamp),
+      "@type"            -> "TrafficCaptureEvent",
+      "@product"         -> "otoroshi",
+      "@serviceId"       -> `@serviceId`,
+      "@service"         -> `@service`,
+      "@env"             -> "prod",
+      "route"            -> Json.obj(
+        "id"   -> route.id,
         "name" -> route.name
       ),
-      "request"     -> (JsonHelpers.requestToJson(request).asObject ++ Json.obj(
-        "id" -> id,
+      "request"          -> (JsonHelpers.requestToJson(request).asObject ++ Json.obj(
+        "id"     -> id,
         "int_id" -> request.id,
-        "body" -> inputBody,
+        "body"   -> inputBody
       )),
-      "backend_request" -> (backendRequest.json.asObject - "backend" ++ Json.obj(
-        "id" -> id,
+      "backend_request"  -> (backendRequest.json.asObject - "backend" ++ Json.obj(
+        "id"     -> id,
         "int_id" -> request.id,
-        "body" -> inputBody, // TODO: inputBackendBody,
+        "body"   -> inputBody // TODO: inputBackendBody,
       )),
       "backend_response" -> (backendResponse.json.asObject ++ Json.obj(
-        "id" -> id,
-        "status_txt" -> backendResponse.statusText,
+        "id"           -> id,
+        "status_txt"   -> backendResponse.statusText,
         "http_version" -> request.version,
-        "body" -> responseChunkUtf8, // TODO: outputBackendBody
+        "body"         -> responseChunkUtf8 // TODO: outputBackendBody
       )),
-      "response" -> (response.json.asObject ++ Json.obj(
-        "id" -> id,
-        "status_txt" -> response.statusText,
+      "response"         -> (response.json.asObject ++ Json.obj(
+        "id"           -> id,
+        "status_txt"   -> response.statusText,
         "http_version" -> request.version,
-        "body" -> responseChunkUtf8,
+        "body"         -> responseChunkUtf8
       ))
     )
   }

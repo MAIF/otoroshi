@@ -84,22 +84,22 @@ trait StartableAndStoppable {
 }
 
 trait NamedPlugin { self =>
-  def deprecated: Boolean             = false
-  def core: Boolean                   = false
+  def deprecated: Boolean               = false
+  def core: Boolean                     = false
   def pluginType: PluginType
-  def internalName: String            = self.getClass.getName
-  def name: String                    = self.getClass.getName
-  def description: Option[String]     = None
-  def documentation: Option[String]   = None
-  def defaultConfig: Option[JsObject] = None
-  def configRoot: Option[String]      =
+  def internalName: String              = self.getClass.getName
+  def name: String                      = self.getClass.getName
+  def description: Option[String]       = None
+  def documentation: Option[String]     = None
+  def defaultConfig: Option[JsObject]   = None
+  def configRoot: Option[String]        =
     defaultConfig match {
       case None                                   => None
       case Some(config) if config.value.size > 1  => None
       case Some(config) if config.value.isEmpty   => None
       case Some(config) if config.value.size == 1 => config.value.headOption.map(_._1)
     }
-  def configSchema: Option[JsObject]  =
+  def configSchema: Option[JsObject]    =
     defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
       case None         => None
       case Some(config) => {
@@ -144,7 +144,7 @@ trait NamedPlugin { self =>
         Some(genSchema(config, ""))
       }
     }
-  def configFlow: Seq[String]         =
+  def configFlow: Seq[String]           =
     defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
       case None         => Seq.empty
       case Some(config) => {
@@ -160,18 +160,18 @@ trait NamedPlugin { self =>
         genFlow(config, "")
       }
     }
-  def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Custom)
-  def steps: Seq[NgStep] = Seq(
+  def steps: Seq[NgStep]                = Seq(
     if (this.isInstanceOf[RequestSink]) NgStep.Sink.some else None,
     if (this.isInstanceOf[PreRouting]) NgStep.PreRoute.some else None,
     if (this.isInstanceOf[AccessValidator]) NgStep.ValidateAccess.some else None,
     if (this.isInstanceOf[RequestTransformer]) NgStep.TransformRequest.some else None,
-    if (this.isInstanceOf[RequestTransformer]) NgStep.TransformResponse.some else None,
-  ).collect {
-    case Some(step) => step
+    if (this.isInstanceOf[RequestTransformer]) NgStep.TransformResponse.some else None
+  ).collect { case Some(step) =>
+    step
   }
-  def jsonDescription(): JsObject     =
+  def jsonDescription(): JsObject       =
     Try {
       Json.obj(
         "name"          -> name,

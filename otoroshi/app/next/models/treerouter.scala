@@ -262,7 +262,8 @@ case class NgTreeNodePath(
           case Some(ptree)                                          =>
             ptree.find(segments.tail, endsWithSlash, s"$path/$head", pathParams) match {
               case None if routes.isEmpty => None
-              case None                   => NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
+              case None                   =>
+                NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
               case s                      => s
             }
         }

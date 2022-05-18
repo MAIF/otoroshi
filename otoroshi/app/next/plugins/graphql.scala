@@ -25,13 +25,13 @@ import scala.util._
 import sangria.validation.ValueCoercionViolation
 
 case class GraphQLQueryConfig(
-                    url: String,
-                    headers: Map[String, String] = Map.empty,
-                    method: String = "POST",
-                    timeout: Long = 60000L,
-                    query: String = "{\n\n}",
-                    responsePath: Option[String] = None,
-                    responseFilter: Option[String] = None
+    url: String,
+    headers: Map[String, String] = Map.empty,
+    method: String = "POST",
+    timeout: Long = 60000L,
+    query: String = "{\n\n}",
+    responsePath: Option[String] = None,
+    responseFilter: Option[String] = None
 ) extends NgPluginConfig {
   def json: JsValue = GraphQLQueryConfig.format.writes(this)
 }
@@ -46,21 +46,21 @@ object GraphQLQueryConfig {
         timeout = json.select("timeout").asOpt[Long].getOrElse(60000L),
         query = json.select("query").asOpt[String].getOrElse("{\n\n}"),
         responsePath = json.select("response_path").asOpt[String],
-        responseFilter = json.select("response_filter").asOpt[String],
+        responseFilter = json.select("response_filter").asOpt[String]
       )
-    }  match {
+    } match {
       case Failure(ex)    => JsError(ex.getMessage())
       case Success(value) => JsSuccess(value)
     }
 
     override def writes(o: GraphQLQueryConfig): JsValue = Json.obj(
-      "url" -> o.url,
-      "headers" -> o.headers,
-      "method" -> o.method,
-      "query" -> o.query,
-      "timeout" -> o.timeout,
-      "response_path" -> o.responsePath.map(JsString.apply).getOrElse(JsNull).asValue,
-      "response_filter" -> o.responsePath.map(JsString.apply).getOrElse(JsNull).asValue,
+      "url"             -> o.url,
+      "headers"         -> o.headers,
+      "method"          -> o.method,
+      "query"           -> o.query,
+      "timeout"         -> o.timeout,
+      "response_path"   -> o.responsePath.map(JsString.apply).getOrElse(JsNull).asValue,
+      "response_filter" -> o.responsePath.map(JsString.apply).getOrElse(JsNull).asValue
     )
   }
 }
@@ -73,8 +73,10 @@ class GraphQLQuery extends NgBackendCall {
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = false
   override def name: String                                = "GraphQL Query"
-  override def description: Option[String]                 = "This plugin can be used to call GraphQL query endpoints and expose it as a REST endpoint".some
-  override def defaultConfigObject: Option[NgPluginConfig] = GraphQLQueryConfig(url = "https://some.graphql/endpoint").some
+  override def description: Option[String]                 =
+    "This plugin can be used to call GraphQL query endpoints and expose it as a REST endpoint".some
+  override def defaultConfigObject: Option[NgPluginConfig] =
+    GraphQLQueryConfig(url = "https://some.graphql/endpoint").some
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
@@ -97,9 +99,18 @@ class GraphQLQuery extends NgBackendCall {
     }
   }
 
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
-    val config = ctx.cachedConfig(internalName)(GraphQLQueryConfig.format).getOrElse(GraphQLQueryConfig(url = "https://some.graphql/endpoint"))
-    val query = GlobalExpressionLanguage.apply(
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config = ctx
+      .cachedConfig(internalName)(GraphQLQueryConfig.format)
+      .getOrElse(GraphQLQueryConfig(url = "https://some.graphql/endpoint"))
+    val query  = GlobalExpressionLanguage.apply(
       value = config.query,
       req = ctx.rawRequest.some,
       service = ctx.route.legacy.some,
@@ -109,7 +120,8 @@ class GraphQLQuery extends NgBackendCall {
       attrs = ctx.attrs,
       env = env
     )
-    env.Ws.url(config.url)
+    env.Ws
+      .url(config.url)
       .withRequestTimeout(config.timeout.millis)
       .withMethod(config.method)
       .withHttpHeaders(config.headers.toSeq: _*)
@@ -119,11 +131,23 @@ class GraphQLQuery extends NgBackendCall {
         if (resp.status == 200) {
           val partialBody = resp.json.atPath(config.responsePath.getOrElse("$")).asOpt[JsValue].getOrElse(JsNull)
           config.responseFilter match {
-            case None => bodyResponse(200, Map("Content-Type" -> "application/json"), Source.single(partialBody.stringify.byteString))
-            case Some(filter) => applyJq(partialBody, filter) match {
-              case Left(error) => bodyResponse(500, Map("Content-Type" -> "application/json"), Source.single(error.stringify.byteString))
-              case Right(resp) => bodyResponse(200, Map("Content-Type" -> "application/json"), Source.single(resp.stringify.byteString))
-            }
+            case None         =>
+              bodyResponse(
+                200,
+                Map("Content-Type" -> "application/json"),
+                Source.single(partialBody.stringify.byteString)
+              )
+            case Some(filter) =>
+              applyJq(partialBody, filter) match {
+                case Left(error) =>
+                  bodyResponse(
+                    500,
+                    Map("Content-Type" -> "application/json"),
+                    Source.single(error.stringify.byteString)
+                  )
+                case Right(resp) =>
+                  bodyResponse(200, Map("Content-Type" -> "application/json"), Source.single(resp.stringify.byteString))
+              }
           }
         } else {
           bodyResponse(resp.status, Map("Content-Type" -> resp.contentType), resp.bodyAsSource)

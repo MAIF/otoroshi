@@ -12,6 +12,7 @@ import akka.stream.{Attributes, Materializer}
 import akka.util.ByteString
 import com.google.common.base.Charsets
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.NgPluginConfig
 import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.syntax.implicits._
@@ -337,22 +338,34 @@ case class S3Configuration(
     v4auth: Boolean = true,
     writeEvery: FiniteDuration,
     acl: CannedAcl
-) {
+) extends NgPluginConfig {
   def json: JsValue = Json.obj(
-    "bucket" -> bucket,
-    "endpoint" -> endpoint,
-    "region" -> region,
-    "access" -> access,
-    "secret" -> secret,
-    "key" -> key,
-    "chunkSize" -> chunkSize,
-    "v4auth" -> v4auth,
+    "bucket"     -> bucket,
+    "endpoint"   -> endpoint,
+    "region"     -> region,
+    "access"     -> access,
+    "secret"     -> secret,
+    "key"        -> key,
+    "chunkSize"  -> chunkSize,
+    "v4auth"     -> v4auth,
     "writeEvery" -> writeEvery.toMillis,
-    "acl" -> acl.value,
+    "acl"        -> acl.value
   )
 }
 
 object S3Configuration {
+  val default = S3Configuration(
+    bucket = "",
+    endpoint = "",
+    region = "eu-west-1",
+    access = "client",
+    secret = "secret",
+    key = "",
+    chunkSize = 1024 * 1024 * 8,
+    v4auth = true,
+    writeEvery = 1.minute,
+    acl = CannedAcl.Private,
+  )
   val format = new Format[S3Configuration] {
     override def reads(json: JsValue): JsResult[S3Configuration] = Try {
       S3Configuration(
@@ -365,22 +378,26 @@ object S3Configuration {
         chunkSize = json.select("chunkSize").asOpt[Int].getOrElse(8388608),
         v4auth = json.select("v4auth").asOpt[Boolean].getOrElse(true),
         writeEvery = json.select("writeEvery").asOpt[Long].map(v => v.millis).getOrElse(1.minute),
-        acl = json.select("acl").asOpt[String].map {
-          case "AuthenticatedRead"      => CannedAcl.AuthenticatedRead
-          case "AwsExecRead"            => CannedAcl.AwsExecRead
-          case "BucketOwnerFullControl" => CannedAcl.BucketOwnerFullControl
-          case "BucketOwnerRead"        => CannedAcl.BucketOwnerRead
-          case "Private"                => CannedAcl.Private
-          case "PublicRead"             => CannedAcl.PublicRead
-          case "PublicReadWrite"        => CannedAcl.PublicReadWrite
-          case _                        => CannedAcl.Private
-        }.getOrElse(CannedAcl.Private),
+        acl = json
+          .select("acl")
+          .asOpt[String]
+          .map {
+            case "AuthenticatedRead"      => CannedAcl.AuthenticatedRead
+            case "AwsExecRead"            => CannedAcl.AwsExecRead
+            case "BucketOwnerFullControl" => CannedAcl.BucketOwnerFullControl
+            case "BucketOwnerRead"        => CannedAcl.BucketOwnerRead
+            case "Private"                => CannedAcl.Private
+            case "PublicRead"             => CannedAcl.PublicRead
+            case "PublicReadWrite"        => CannedAcl.PublicReadWrite
+            case _                        => CannedAcl.Private
+          }
+          .getOrElse(CannedAcl.Private)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(e) => JsSuccess(e)
     }
-    override def writes(o: S3Configuration): JsValue = o.json
+    override def writes(o: S3Configuration): JsValue             = o.json
   }
 }
 

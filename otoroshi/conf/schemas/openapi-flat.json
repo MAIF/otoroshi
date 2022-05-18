@@ -326,7 +326,7 @@
         "type" : "string"
       },
       "override_plugins" : {
-        "description" : "???",
+        "description" : "Override global plugin list from route composition",
         "type" : "boolean"
       },
       "backend" : {
@@ -6731,16 +6731,16 @@
     }
   },
   "otoroshi.models.FileSettings" : {
-    "description" : "???",
+    "description" : "Settings to export to a file",
     "type" : "object",
     "properties" : {
       "path" : {
-        "description" : "???",
+        "description" : "File path",
         "type" : "string"
       },
       "maxFileSize" : {
         "format" : "int64",
-        "description" : "???",
+        "description" : "Max file size for rolling",
         "type" : "integer"
       },
       "type" : {
@@ -6870,7 +6870,7 @@
         }
       },
       "tlsTrustCertsFilePath" : {
-        "description" : "???",
+        "description" : "Truststore path",
         "type" : "string"
       },
       "apiKeyPrivate" : {
@@ -6887,7 +6887,7 @@
         "type" : "boolean"
       },
       "path" : {
-        "description" : "???",
+        "description" : "File path",
         "type" : "string"
       },
       "password" : {
@@ -6895,7 +6895,7 @@
         "type" : "string"
       },
       "ref" : {
-        "description" : "???",
+        "description" : "Reference to an exporter",
         "type" : "string"
       },
       "servers" : {
@@ -6922,7 +6922,7 @@
         "type" : "boolean"
       },
       "tenant" : {
-        "description" : "???",
+        "description" : "Pulsar tenant",
         "type" : "string"
       },
       "headers" : {
@@ -6938,11 +6938,11 @@
       },
       "maxFileSize" : {
         "format" : "int64",
-        "description" : "???",
+        "description" : "Max file size for rolling",
         "type" : "integer"
       },
       "uri" : {
-        "description" : "???",
+        "description" : "Pulsar access uri",
         "type" : "string"
       },
       "version" : {
@@ -6958,7 +6958,7 @@
         "additionalProperties" : {
           "type" : "string"
         },
-        "description" : "???"
+        "description" : "Exported labels for prometheus"
       },
       "eu" : {
         "description" : "European tenant",
@@ -6973,11 +6973,11 @@
         "type" : "string"
       },
       "namespace" : {
-        "description" : "???",
+        "description" : "Pulsar namespace",
         "type" : "string"
       },
       "topic" : {
-        "description" : "???",
+        "description" : "Pulsar topic",
         "type" : "string"
       },
       "apiKeyPublic" : {
@@ -7006,7 +7006,7 @@
         "type" : "string"
       },
       "config" : {
-        "description" : "???",
+        "description" : "Exporter config.",
         "type" : "object"
       }
     }
@@ -7058,7 +7058,7 @@
               "type" : "string"
             },
             "capture" : {
-              "description" : "???",
+              "description" : "Capture http traffic",
               "type" : "boolean"
             },
             "groups" : {
@@ -7467,7 +7467,7 @@
     "type" : "object",
     "properties" : {
       "filter" : {
-        "description" : "???",
+        "description" : "JQ filter to transform json entity",
         "type" : "string"
       }
     }
@@ -11394,7 +11394,7 @@
     }
   },
   "otoroshi.models.ConsoleSettings" : {
-    "description" : "???",
+    "description" : "Settings to export to console",
     "type" : "object",
     "properties" : {
       "type" : {
@@ -11640,12 +11640,12 @@
     "properties" : { }
   },
   "otoroshi.models.S3ExporterSettings" : {
-    "description" : "???",
+    "description" : "Settings to export to a S3 bucket",
     "type" : "object",
     "properties" : {
       "maxFileSize" : {
         "format" : "int64",
-        "description" : "???",
+        "description" : "Max file size for rolling",
         "type" : "integer"
       },
       "type" : {
@@ -11654,44 +11654,44 @@
         "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
       },
       "config" : {
-        "description" : "???",
+        "description" : "Exporter settings",
         "type" : "object",
         "properties" : {
           "writeEvery" : {
-            "description" : "???",
+            "description" : "Write every n milliseconds",
             "type" : "number"
           },
           "chunkSize" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Upload chunk max size",
             "type" : "integer"
           },
           "bucket" : {
-            "description" : "???",
+            "description" : "Bucket name",
             "type" : "string"
           },
           "key" : {
-            "description" : "???",
+            "description" : "File path in bucket",
             "type" : "string"
           },
           "endpoint" : {
-            "description" : "???",
+            "description" : "Bucket endpoint",
             "type" : "string"
           },
           "v4auth" : {
-            "description" : "???",
+            "description" : "Use V4 auth",
             "type" : "boolean"
           },
           "access" : {
-            "description" : "???",
+            "description" : "Bucket access key",
             "type" : "string"
           },
           "secret" : {
-            "description" : "???",
+            "description" : "Bucket access secret",
             "type" : "string"
           },
           "region" : {
-            "description" : "???",
+            "description" : "Bucket region",
             "type" : "string"
           }
         }
@@ -11976,7 +11976,7 @@
     "properties" : { }
   },
   "otoroshi.models.DataExporterConfigFiltering" : {
-    "description" : "???",
+    "description" : "Filter events to export",
     "type" : "object",
     "properties" : {
       "include" : {
@@ -11984,14 +11984,14 @@
         "items" : {
           "type" : "object"
         },
-        "description" : "???"
+        "description" : "Event include filter"
       },
       "exclude" : {
         "type" : "array",
         "items" : {
           "type" : "object"
         },
-        "description" : "???"
+        "description" : "Event exclude filter"
       }
     }
   },
@@ -12159,7 +12159,7 @@
     "type" : "object",
     "properties" : {
       "filter" : {
-        "description" : "???",
+        "description" : "JQ filter to transform http entity",
         "type" : "string"
       }
     }
@@ -12386,7 +12386,7 @@
     "type" : "object",
     "properties" : {
       "filter" : {
-        "description" : "???",
+        "description" : "JQ filter to transform http entity",
         "type" : "string"
       }
     }
@@ -12481,44 +12481,44 @@
     }
   },
   "otoroshi.storage.drivers.inmemory.S3Configuration" : {
-    "description" : "???",
+    "description" : "S3 bucket settings",
     "type" : "object",
     "properties" : {
       "writeEvery" : {
-        "description" : "???",
+        "description" : "Write every n milliseconds",
         "type" : "number"
       },
       "chunkSize" : {
         "format" : "int32",
-        "description" : "???",
+        "description" : "Upload chunk max size",
         "type" : "integer"
       },
       "bucket" : {
-        "description" : "???",
+        "description" : "Bucket name",
         "type" : "string"
       },
       "key" : {
-        "description" : "???",
+        "description" : "File path in bucket",
         "type" : "string"
       },
       "endpoint" : {
-        "description" : "???",
+        "description" : "Bucket endpoint",
         "type" : "string"
       },
       "v4auth" : {
-        "description" : "???",
+        "description" : "Use V4 auth",
         "type" : "boolean"
       },
       "access" : {
-        "description" : "???",
+        "description" : "Bucket access key",
         "type" : "string"
       },
       "secret" : {
-        "description" : "???",
+        "description" : "Bucket access secret",
         "type" : "string"
       },
       "region" : {
-        "description" : "???",
+        "description" : "Bucket region",
         "type" : "string"
       }
     }
@@ -12949,6 +12949,55 @@
     "description" : "Plugin that validates current user",
     "type" : "object",
     "properties" : { }
+  },
+  "otoroshi.next.plugins.S3BackendConfig" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "s3" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "writeEvery" : {
+            "description" : "Write every n milliseconds",
+            "type" : "number"
+          },
+          "chunkSize" : {
+            "format" : "int32",
+            "description" : "Upload chunk max size",
+            "type" : "integer"
+          },
+          "bucket" : {
+            "description" : "Bucket name",
+            "type" : "string"
+          },
+          "key" : {
+            "description" : "File path in bucket",
+            "type" : "string"
+          },
+          "endpoint" : {
+            "description" : "Bucket endpoint",
+            "type" : "string"
+          },
+          "v4auth" : {
+            "description" : "Use V4 auth",
+            "type" : "boolean"
+          },
+          "access" : {
+            "description" : "Bucket access key",
+            "type" : "string"
+          },
+          "secret" : {
+            "description" : "Bucket access secret",
+            "type" : "string"
+          },
+          "region" : {
+            "description" : "Bucket region",
+            "type" : "string"
+          }
+        }
+      }
+    }
   },
   "otoroshi.next.models.NgTreeRouter" : {
     "description" : "A very efficient router with a tree structure",
@@ -18092,7 +18141,7 @@
               "description" : "The metadata of the service"
             },
             "capture" : {
-              "description" : "???",
+              "description" : "Capture http traffic",
               "type" : "boolean"
             },
             "description" : {
@@ -18153,7 +18202,7 @@
                     "type" : "string"
                   },
                   "override_plugins" : {
-                    "description" : "???",
+                    "description" : "Override global plugin list from route composition",
                     "type" : "boolean"
                   },
                   "backend" : {
@@ -19454,7 +19503,7 @@
               "type" : "string"
             },
             "capture" : {
-              "description" : "???",
+              "description" : "Capture http traffic",
               "type" : "boolean"
             },
             "groups" : {
@@ -22498,7 +22547,7 @@
               "additionalProperties" : {
                 "type" : "string"
               },
-              "description" : "???"
+              "description" : "Entity metadata"
             },
             "type" : {
               "description" : "Type of data exporter",
@@ -22506,7 +22555,7 @@
               "enum" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ]
             },
             "_loc" : {
-              "description" : "???",
+              "description" : "Entity location",
               "type" : "object",
               "properties" : {
                 "teams" : {
@@ -22523,11 +22572,11 @@
               }
             },
             "enabled" : {
-              "description" : "???",
+              "description" : "Is the exporter enabled",
               "type" : "boolean"
             },
             "groupDuration" : {
-              "description" : "???",
+              "description" : "The max duration before sending group",
               "type" : "number"
             },
             "tags" : {
@@ -22535,32 +22584,32 @@
               "items" : {
                 "type" : "string"
               },
-              "description" : "???"
+              "description" : "Entity tags"
             },
             "jsonWorkers" : {
               "format" : "int32",
-              "description" : "???",
+              "description" : "Number of workers that transform events",
               "type" : "integer"
             },
             "name" : {
-              "description" : "???",
+              "description" : "Entity name",
               "type" : "string"
             },
             "groupSize" : {
               "format" : "int32",
-              "description" : "???",
+              "description" : "The max size of events group before sending",
               "type" : "integer"
             },
             "id" : {
-              "description" : "???",
+              "description" : "Id of the exporter",
               "type" : "string"
             },
             "projection" : {
-              "description" : "???",
+              "description" : "Event projection",
               "type" : "object"
             },
             "config" : {
-              "description" : "???",
+              "description" : "Exporter config",
               "type" : "object",
               "properties" : {
                 "clusterUri" : {
@@ -22619,7 +22668,7 @@
                   }
                 },
                 "tlsTrustCertsFilePath" : {
-                  "description" : "???",
+                  "description" : "Truststore path",
                   "type" : "string"
                 },
                 "apiKeyPrivate" : {
@@ -22636,7 +22685,7 @@
                   "type" : "boolean"
                 },
                 "path" : {
-                  "description" : "???",
+                  "description" : "File path",
                   "type" : "string"
                 },
                 "password" : {
@@ -22644,7 +22693,7 @@
                   "type" : "string"
                 },
                 "ref" : {
-                  "description" : "???",
+                  "description" : "Reference to an exporter",
                   "type" : "string"
                 },
                 "servers" : {
@@ -22671,7 +22720,7 @@
                   "type" : "boolean"
                 },
                 "tenant" : {
-                  "description" : "???",
+                  "description" : "Pulsar tenant",
                   "type" : "string"
                 },
                 "headers" : {
@@ -22687,11 +22736,11 @@
                 },
                 "maxFileSize" : {
                   "format" : "int64",
-                  "description" : "???",
+                  "description" : "Max file size for rolling",
                   "type" : "integer"
                 },
                 "uri" : {
-                  "description" : "???",
+                  "description" : "Pulsar access uri",
                   "type" : "string"
                 },
                 "version" : {
@@ -22707,7 +22756,7 @@
                   "additionalProperties" : {
                     "type" : "string"
                   },
-                  "description" : "???"
+                  "description" : "Exported labels for prometheus"
                 },
                 "eu" : {
                   "description" : "European tenant",
@@ -22722,11 +22771,11 @@
                   "type" : "string"
                 },
                 "namespace" : {
-                  "description" : "???",
+                  "description" : "Pulsar namespace",
                   "type" : "string"
                 },
                 "topic" : {
-                  "description" : "???",
+                  "description" : "Pulsar topic",
                   "type" : "string"
                 },
                 "apiKeyPublic" : {
@@ -22755,13 +22804,13 @@
                   "type" : "string"
                 },
                 "config" : {
-                  "description" : "???",
+                  "description" : "Exporter config.",
                   "type" : "object"
                 }
               }
             },
             "filtering" : {
-              "description" : "???",
+              "description" : "Filtering options",
               "type" : "object",
               "properties" : {
                 "include" : {
@@ -22769,29 +22818,29 @@
                   "items" : {
                     "type" : "object"
                   },
-                  "description" : "???"
+                  "description" : "Event include filter"
                 },
                 "exclude" : {
                   "type" : "array",
                   "items" : {
                     "type" : "object"
                   },
-                  "description" : "???"
+                  "description" : "Event exclude filter"
                 }
               }
             },
             "sendWorkers" : {
               "format" : "int32",
-              "description" : "???",
+              "description" : "Number of workers that sends events",
               "type" : "integer"
             },
             "desc" : {
-              "description" : "???",
+              "description" : "Description",
               "type" : "string"
             },
             "bufferSize" : {
               "format" : "int32",
-              "description" : "???",
+              "description" : "Number of events in buffer",
               "type" : "integer"
             }
           }
@@ -23039,7 +23088,7 @@
             "type" : "string"
           },
           "capture" : {
-            "description" : "???",
+            "description" : "Capture http traffic",
             "type" : "boolean"
           },
           "groups" : {
@@ -23692,7 +23741,7 @@
         "type" : "string"
       },
       "capture" : {
-        "description" : "???",
+        "description" : "Capture http traffic",
         "type" : "boolean"
       },
       "groups" : {
@@ -25275,11 +25324,11 @@
     "properties" : { }
   },
   "otoroshi.models.ExporterRef" : {
-    "description" : "???",
+    "description" : "Ref to an exporter id",
     "type" : "object",
     "properties" : {
       "ref" : {
-        "description" : "???",
+        "description" : "Reference to an exporter",
         "type" : "string"
       },
       "type" : {
@@ -25288,7 +25337,7 @@
         "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
       },
       "config" : {
-        "description" : "???",
+        "description" : "Exporter config.",
         "type" : "object"
       }
     }
@@ -25360,6 +25409,11 @@
         }
       }
     }
+  },
+  "otoroshi.next.plugins.FileUtils" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : { }
   },
   "otoroshi.next.plugins.ReadOnlyCalls" : {
     "description" : "Plugin for readonly calls",
@@ -27338,6 +27392,16 @@
       }
     }
   },
+  "otoroshi.next.plugins.StaticBackendConfig" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "root_path" : {
+        "description" : "???",
+        "type" : "string"
+      }
+    }
+  },
   "otoroshi.auth.WebAuthnDetails" : {
     "description" : "Handle and credentials for a webauthn user",
     "type" : "object",
@@ -29178,7 +29242,7 @@
         "description" : "The metadata of the service"
       },
       "capture" : {
-        "description" : "???",
+        "description" : "Capture http traffic",
         "type" : "boolean"
       },
       "description" : {
@@ -29239,7 +29303,7 @@
               "type" : "string"
             },
             "override_plugins" : {
-              "description" : "???",
+              "description" : "Override global plugin list from route composition",
               "type" : "boolean"
             },
             "backend" : {
@@ -37212,54 +37276,54 @@
     "properties" : { }
   },
   "otoroshi.models.GoReplayS3Settings" : {
-    "description" : "???",
+    "description" : "Settings to export to a S3 bucket",
     "type" : "object",
     "properties" : {
       "s3" : {
-        "description" : "???",
+        "description" : "S3 bucket access settings",
         "type" : "object",
         "properties" : {
           "writeEvery" : {
-            "description" : "???",
+            "description" : "Write every n milliseconds",
             "type" : "number"
           },
           "chunkSize" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Upload chunk max size",
             "type" : "integer"
           },
           "bucket" : {
-            "description" : "???",
+            "description" : "Bucket name",
             "type" : "string"
           },
           "key" : {
-            "description" : "???",
+            "description" : "File path in bucket",
             "type" : "string"
           },
           "endpoint" : {
-            "description" : "???",
+            "description" : "Bucket endpoint",
             "type" : "string"
           },
           "v4auth" : {
-            "description" : "???",
+            "description" : "Use V4 auth",
             "type" : "boolean"
           },
           "access" : {
-            "description" : "???",
+            "description" : "Bucket access key",
             "type" : "string"
           },
           "secret" : {
-            "description" : "???",
+            "description" : "Bucket access secret",
             "type" : "string"
           },
           "region" : {
-            "description" : "???",
+            "description" : "Bucket region",
             "type" : "string"
           }
         }
       },
       "captureRequests" : {
-        "description" : "???",
+        "description" : "Enable request capture",
         "type" : "boolean"
       },
       "methods" : {
@@ -37267,11 +37331,11 @@
         "items" : {
           "type" : "string"
         },
-        "description" : "???"
+        "description" : "Filter on http methods"
       },
       "maxFileSize" : {
         "format" : "int64",
-        "description" : "???",
+        "description" : "Max file size for rolling",
         "type" : "integer"
       },
       "type" : {
@@ -37280,15 +37344,15 @@
         "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
       },
       "preferBackendRequest" : {
-        "description" : "???",
+        "description" : "Capture internal requests instead of external",
         "type" : "boolean"
       },
       "captureResponses" : {
-        "description" : "???",
+        "description" : "Enable response capture",
         "type" : "boolean"
       },
       "preferBackendResponse" : {
-        "description" : "???",
+        "description" : "Capture internal responses instead of external",
         "type" : "boolean"
       }
     }
@@ -40520,7 +40584,7 @@
     "properties" : { }
   },
   "otoroshi.models.DataExporterConfig" : {
-    "description" : "???",
+    "description" : "Data exporter settings",
     "type" : "object",
     "properties" : {
       "metadata" : {
@@ -40528,7 +40592,7 @@
         "additionalProperties" : {
           "type" : "string"
         },
-        "description" : "???"
+        "description" : "Entity metadata"
       },
       "type" : {
         "description" : "Type of data exporter",
@@ -40536,7 +40600,7 @@
         "enum" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ]
       },
       "_loc" : {
-        "description" : "???",
+        "description" : "Entity location",
         "type" : "object",
         "properties" : {
           "teams" : {
@@ -40553,11 +40617,11 @@
         }
       },
       "enabled" : {
-        "description" : "???",
+        "description" : "Is the exporter enabled",
         "type" : "boolean"
       },
       "groupDuration" : {
-        "description" : "???",
+        "description" : "The max duration before sending group",
         "type" : "number"
       },
       "tags" : {
@@ -40565,32 +40629,32 @@
         "items" : {
           "type" : "string"
         },
-        "description" : "???"
+        "description" : "Entity tags"
       },
       "jsonWorkers" : {
         "format" : "int32",
-        "description" : "???",
+        "description" : "Number of workers that transform events",
         "type" : "integer"
       },
       "name" : {
-        "description" : "???",
+        "description" : "Entity name",
         "type" : "string"
       },
       "groupSize" : {
         "format" : "int32",
-        "description" : "???",
+        "description" : "The max size of events group before sending",
         "type" : "integer"
       },
       "id" : {
-        "description" : "???",
+        "description" : "Id of the exporter",
         "type" : "string"
       },
       "projection" : {
-        "description" : "???",
+        "description" : "Event projection",
         "type" : "object"
       },
       "filtering" : {
-        "description" : "???",
+        "description" : "Filtering options",
         "type" : "object",
         "properties" : {
           "include" : {
@@ -40598,19 +40662,19 @@
             "items" : {
               "type" : "object"
             },
-            "description" : "???"
+            "description" : "Event include filter"
           },
           "exclude" : {
             "type" : "array",
             "items" : {
               "type" : "object"
             },
-            "description" : "???"
+            "description" : "Event exclude filter"
           }
         }
       },
       "config" : {
-        "description" : "???",
+        "description" : "Exporter config",
         "type" : "object",
         "properties" : {
           "clusterUri" : {
@@ -40669,7 +40733,7 @@
             }
           },
           "tlsTrustCertsFilePath" : {
-            "description" : "???",
+            "description" : "Truststore path",
             "type" : "string"
           },
           "apiKeyPrivate" : {
@@ -40686,7 +40750,7 @@
             "type" : "boolean"
           },
           "path" : {
-            "description" : "???",
+            "description" : "File path",
             "type" : "string"
           },
           "password" : {
@@ -40694,7 +40758,7 @@
             "type" : "string"
           },
           "ref" : {
-            "description" : "???",
+            "description" : "Reference to an exporter",
             "type" : "string"
           },
           "servers" : {
@@ -40721,7 +40785,7 @@
             "type" : "boolean"
           },
           "tenant" : {
-            "description" : "???",
+            "description" : "Pulsar tenant",
             "type" : "string"
           },
           "headers" : {
@@ -40737,11 +40801,11 @@
           },
           "maxFileSize" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Max file size for rolling",
             "type" : "integer"
           },
           "uri" : {
-            "description" : "???",
+            "description" : "Pulsar access uri",
             "type" : "string"
           },
           "version" : {
@@ -40757,7 +40821,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Exported labels for prometheus"
           },
           "eu" : {
             "description" : "European tenant",
@@ -40772,11 +40836,11 @@
             "type" : "string"
           },
           "namespace" : {
-            "description" : "???",
+            "description" : "Pulsar namespace",
             "type" : "string"
           },
           "topic" : {
-            "description" : "???",
+            "description" : "Pulsar topic",
             "type" : "string"
           },
           "apiKeyPublic" : {
@@ -40805,23 +40869,23 @@
             "type" : "string"
           },
           "config" : {
-            "description" : "???",
+            "description" : "Exporter config.",
             "type" : "object"
           }
         }
       },
       "sendWorkers" : {
         "format" : "int32",
-        "description" : "???",
+        "description" : "Number of workers that sends events",
         "type" : "integer"
       },
       "desc" : {
-        "description" : "???",
+        "description" : "Description",
         "type" : "string"
       },
       "bufferSize" : {
         "format" : "int32",
-        "description" : "???",
+        "description" : "Number of events in buffer",
         "type" : "integer"
       }
     }
@@ -41041,7 +41105,7 @@
     }
   },
   "otoroshi.models.MetricsSettings" : {
-    "description" : "???",
+    "description" : "Settings to export to otoroshi metrics",
     "type" : "object",
     "properties" : {
       "type" : {
@@ -41054,7 +41118,7 @@
         "additionalProperties" : {
           "type" : "string"
         },
-        "description" : "???"
+        "description" : "Exported labels for prometheus"
       }
     }
   },
@@ -43505,11 +43569,11 @@
     }
   },
   "otoroshi.events.PulsarConfig" : {
-    "description" : "???",
+    "description" : "Settings for connection to a pulsar cluster",
     "type" : "object",
     "properties" : {
       "mtlsConfig" : {
-        "description" : "???",
+        "description" : "TLS settings to access pulsar",
         "type" : "object",
         "properties" : {
           "mtls" : {
@@ -43541,15 +43605,15 @@
         }
       },
       "namespace" : {
-        "description" : "???",
+        "description" : "Pulsar namespace",
         "type" : "string"
       },
       "tlsTrustCertsFilePath" : {
-        "description" : "???",
+        "description" : "Truststore path",
         "type" : "string"
       },
       "topic" : {
-        "description" : "???",
+        "description" : "Pulsar topic",
         "type" : "string"
       },
       "type" : {
@@ -43558,11 +43622,11 @@
         "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
       },
       "uri" : {
-        "description" : "???",
+        "description" : "Pulsar access uri",
         "type" : "string"
       },
       "tenant" : {
-        "description" : "???",
+        "description" : "Pulsar tenant",
         "type" : "string"
       }
     }
@@ -44181,6 +44245,16 @@
     "type" : "object",
     "properties" : { }
   },
+  "otoroshi.next.plugins.StaticBackend" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "root_path" : {
+        "description" : "???",
+        "type" : "string"
+      }
+    }
+  },
   "otoroshi.next.models.RoutingStrategy" : {
     "description" : "The routing strategy",
     "type" : "object",
@@ -44281,7 +44355,7 @@
             "type" : "string"
           },
           "capture" : {
-            "description" : "???",
+            "description" : "Capture http traffic",
             "type" : "boolean"
           },
           "groups" : {
@@ -45037,7 +45111,7 @@
     "type" : "object",
     "properties" : {
       "filter" : {
-        "description" : "???",
+        "description" : "JQ filter to transform json entity",
         "type" : "string"
       }
     }
@@ -45280,6 +45354,49 @@
     "type" : "string",
     "enum" : [ "Legacy", "Latest" ],
     "description" : "Version of the info token"
+  },
+  "otoroshi.next.plugins.S3Backend" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "writeEvery" : {
+        "description" : "???",
+        "type" : "number"
+      },
+      "chunkSize" : {
+        "format" : "int32",
+        "description" : "???",
+        "type" : "integer"
+      },
+      "bucket" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "key" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "endpoint" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "v4auth" : {
+        "description" : "???",
+        "type" : "boolean"
+      },
+      "access" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "secret" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "region" : {
+        "description" : "???",
+        "type" : "string"
+      }
+    }
   },
   "otoroshi.plugins.biscuit.BiscuitHelper" : {
     "description" : "Internal api",
@@ -46398,15 +46515,15 @@
     }
   },
   "otoroshi.models.GoReplayFileSettings" : {
-    "description" : "???",
+    "description" : "Settings to export to a file",
     "type" : "object",
     "properties" : {
       "path" : {
-        "description" : "???",
+        "description" : "File path",
         "type" : "string"
       },
       "captureRequests" : {
-        "description" : "???",
+        "description" : "Enable request capture",
         "type" : "boolean"
       },
       "methods" : {
@@ -46414,11 +46531,11 @@
         "items" : {
           "type" : "string"
         },
-        "description" : "???"
+        "description" : "Filter on http methods"
       },
       "maxFileSize" : {
         "format" : "int64",
-        "description" : "???",
+        "description" : "Max file size for rolling",
         "type" : "integer"
       },
       "type" : {
@@ -46427,15 +46544,15 @@
         "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
       },
       "preferBackendRequest" : {
-        "description" : "???",
+        "description" : "Capture internal requests instead of external",
         "type" : "boolean"
       },
       "captureResponses" : {
-        "description" : "???",
+        "description" : "Enable response capture",
         "type" : "boolean"
       },
       "preferBackendResponse" : {
-        "description" : "???",
+        "description" : "Capture internal responses instead of external",
         "type" : "boolean"
       }
     }

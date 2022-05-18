@@ -111,12 +111,12 @@ case class NgPluginHttpResponse(
     cookies: Seq[WSCookie] = Seq.empty[WSCookie],
     body: Source[ByteString, _]
 ) {
-  lazy val statusText: String = StatusCodes.getForKey(status).map(_.reason()).getOrElse("NONE")
+  lazy val statusText: String               = StatusCodes.getForKey(status).map(_.reason()).getOrElse("NONE")
   lazy val transferEncoding: Option[String] = header("Transfer-Encoding")
   lazy val isChunked: Boolean               = transferEncoding.exists(h => h.toLowerCase().contains("chunked"))
   lazy val contentType: Option[String]      = header("Content-Type")
   lazy val contentLengthStr: Option[String] = header("Content-Length")
-  lazy val contentLength: Option[Long]       = contentLengthStr.map(_.toLong)
+  lazy val contentLength: Option[Long]      = contentLengthStr.map(_.toLong)
   lazy val hasLength: Boolean               = contentLengthStr.isDefined
   def header(name: String): Option[String]  = headers.get(name).orElse(headers.get(name.toLowerCase()))
   def asResult: Result = {
@@ -694,27 +694,27 @@ trait NgTunnelHandler extends NgNamedPlugin with NgAccessValidator {
 }
 
 case class NgbBackendCallContext(
-  snowflake: String,
-  rawRequest: RequestHeader,
-  request: NgPluginHttpRequest,
-  route: NgRoute,
-  backend: NgTarget,
-  user: Option[PrivateAppsUser],
-  apikey: Option[ApiKey],
-  config: JsValue,
-  globalConfig: JsValue,
-  attrs: TypedMap,
+    snowflake: String,
+    rawRequest: RequestHeader,
+    request: NgPluginHttpRequest,
+    route: NgRoute,
+    backend: NgTarget,
+    user: Option[PrivateAppsUser],
+    apikey: Option[ApiKey],
+    config: JsValue,
+    globalConfig: JsValue,
+    attrs: TypedMap
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
-    "snowflake" -> snowflake,
+    "snowflake"     -> snowflake,
     // "route" -> route.json,
-    "backend" -> backend.json,
-    "apikey"           -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
-    "user"             -> user.map(_.lightJson).getOrElse(JsNull).as[JsValue],
+    "backend"       -> backend.json,
+    "apikey"        -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
+    "user"          -> user.map(_.lightJson).getOrElse(JsNull).as[JsValue],
     "raw_request"   -> JsonHelpers.requestToJson(rawRequest),
-    "config"    -> config,
+    "config"        -> config,
     "global_config" -> globalConfig,
-    "attrs"     -> attrs.json
+    "attrs"         -> attrs.json
   )
 }
 
@@ -722,23 +722,33 @@ case class BackendCallResponse(response: NgPluginHttpResponse, rawResponse: Opti
 
   import otoroshi.utils.http.Implicits._
 
-  def status: Int = rawResponse.map(_.status).getOrElse(response.status)
-  def contentLengthStr: Option[String] = rawResponse.flatMap(_.contentLengthStr).orElse(response.contentLengthStr)
-  def contentLength: Option[Long] = rawResponse.map(_.contentLength).getOrElse(response.contentLength)
-  def headers: Map[String, Seq[String]] = rawResponse.map(_.headers).getOrElse(response.headers.mapValues(v => Seq(v)))
-  def header(name: String): Option[String] = rawResponse.map(_.header(name)).getOrElse(response.headers.getIgnoreCase(name))
-  def isChunked(): Option[Boolean]  = rawResponse.map(_.isChunked()).getOrElse(response.isChunked.some)
+  def status: Int                          = rawResponse.map(_.status).getOrElse(response.status)
+  def contentLengthStr: Option[String]     = rawResponse.flatMap(_.contentLengthStr).orElse(response.contentLengthStr)
+  def contentLength: Option[Long]          = rawResponse.map(_.contentLength).getOrElse(response.contentLength)
+  def headers: Map[String, Seq[String]]    = rawResponse.map(_.headers).getOrElse(response.headers.mapValues(v => Seq(v)))
+  def header(name: String): Option[String] =
+    rawResponse.map(_.header(name)).getOrElse(response.headers.getIgnoreCase(name))
+  def isChunked(): Option[Boolean]         = rawResponse.map(_.isChunked()).getOrElse(response.isChunked.some)
 }
 
 trait NgBackendCall extends NgNamedPlugin {
   def useDelegates: Boolean
-  def bodyResponse(status: Int, headers: Map[String, String], body: Source[ByteString, _]): Either[NgProxyEngineError, BackendCallResponse] = {
+  def bodyResponse(
+      status: Int,
+      headers: Map[String, String],
+      body: Source[ByteString, _]
+  ): Either[NgProxyEngineError, BackendCallResponse] = {
     BackendCallResponse(
       NgPluginHttpResponse(status, headers, Seq.empty, body),
-      None,
+      None
     ).right[NgProxyEngineError]
   }
-  def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(
+      implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     delegates()
   }
 }

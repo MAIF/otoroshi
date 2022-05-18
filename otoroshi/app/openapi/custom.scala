@@ -8,8 +8,8 @@ object CustomForms {
   val forms: Map[String, Form] = Map(
     "otoroshi.next.plugins.ContextValidation" -> Form(
       flow = Seq("validators"),
-      schema = Json.parse(
-        """{
+      schema = Json
+        .parse("""{
           |  "validators" : {
           |    "label" : "validators",
           |    "type" : "object",
@@ -30,12 +30,13 @@ object CustomForms {
           |    "flow" : [ "path", "value" ]
           |  }
           |}
-          |""".stripMargin).asObject
+          |""".stripMargin)
+        .asObject
     ),
-    "otoroshi.next.plugins.GraphQLQuery" -> Form(
-      flow = Seq("url", "method", "headers",  "timeout", "query", "response_filter", "response_path"),
-      schema = Json.parse(
-        """{
+    "otoroshi.next.plugins.GraphQLQuery"      -> Form(
+      flow = Seq("url", "method", "headers", "timeout", "query", "response_filter", "response_path"),
+      schema = Json
+        .parse("""{
           |  "headers" : {
           |    "label" : "headers",
           |    "type" : "object"

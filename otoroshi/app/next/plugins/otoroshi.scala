@@ -23,20 +23,20 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class NgOtoroshiChallengeConfig(
-  secComVersion: SecComVersion,
-  secComTtl: FiniteDuration,
-  requestHeaderName: Option[String],
-  responseHeaderName: Option[String],
-  algoOtoToBackend: AlgoSettings,
-  algoBackendToOto: AlgoSettings,
-  stateRespLeeway: Int
+    secComVersion: SecComVersion,
+    secComTtl: FiniteDuration,
+    requestHeaderName: Option[String],
+    responseHeaderName: Option[String],
+    algoOtoToBackend: AlgoSettings,
+    algoBackendToOto: AlgoSettings,
+    stateRespLeeway: Int
 ) extends NgPluginConfig {
   def json: JsObject = NgOtoroshiChallengeConfig.format.writes(this).asObject
 }
 
 object NgOtoroshiChallengeConfig {
   def apply(raw: JsValue): NgOtoroshiChallengeConfig = format.reads(raw).get
-  val format = new Format[NgOtoroshiChallengeConfig] {
+  val format                                         = new Format[NgOtoroshiChallengeConfig] {
     override def reads(raw: JsValue): JsResult[NgOtoroshiChallengeConfig] = Try {
       lazy val secComVersion: SecComVersion       =
         SecComVersion(raw.select("version").asOpt[String].getOrElse("V2")).getOrElse(SecComVersion.V2)
@@ -57,13 +57,13 @@ object NgOtoroshiChallengeConfig {
         responseHeaderName = responseHeaderName,
         algoOtoToBackend = algoOtoToBackend,
         algoBackendToOto = algoBackendToOto,
-        stateRespLeeway = stateRespLeeway,
+        stateRespLeeway = stateRespLeeway
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage())
       case Success(value) => JsSuccess(value)
     }
-    override def writes(o: NgOtoroshiChallengeConfig): JsValue = Json.obj(
+    override def writes(o: NgOtoroshiChallengeConfig): JsValue            = Json.obj(
       "version"              -> o.secComVersion.json,
       "ttl"                  -> o.secComTtl.toSeconds,
       "request_header_name"  -> o.requestHeaderName,
@@ -76,17 +76,17 @@ object NgOtoroshiChallengeConfig {
 }
 
 case class NgOtoroshiInfoConfig(
-  secComVersion: SecComInfoTokenVersion,
-  secComTtl: FiniteDuration,
-  headerName: Option[String],
-  algo: AlgoSettings,
+    secComVersion: SecComInfoTokenVersion,
+    secComTtl: FiniteDuration,
+    headerName: Option[String],
+    algo: AlgoSettings
 ) extends NgPluginConfig {
   def json: JsObject = NgOtoroshiInfoConfig.format.writes(this).asObject
 }
 
 object NgOtoroshiInfoConfig {
   def apply(raw: JsValue): NgOtoroshiInfoConfig = NgOtoroshiInfoConfig.format.reads(raw).get
-  val format = new Format[NgOtoroshiInfoConfig] {
+  val format                                    = new Format[NgOtoroshiInfoConfig] {
     override def reads(raw: JsValue): JsResult[NgOtoroshiInfoConfig] = Try {
       lazy val secComVersion: SecComInfoTokenVersion = SecComInfoTokenVersion(
         raw.select("version").asOpt[String].getOrElse("Latest")
@@ -100,13 +100,13 @@ object NgOtoroshiInfoConfig {
         secComVersion = secComVersion,
         secComTtl = secComTtl,
         headerName = headerName,
-        algo = algo,
+        algo = algo
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage())
       case Success(value) => JsSuccess(value)
     }
-    override def writes(o: NgOtoroshiInfoConfig): JsValue = Json.obj(
+    override def writes(o: NgOtoroshiInfoConfig): JsValue            = Json.obj(
       "version"     -> o.secComVersion.json,
       "ttl"         -> o.secComTtl.toSeconds,
       "header_name" -> o.headerName,
@@ -338,13 +338,23 @@ class OtoroshiChallenge extends NgRequestTransformer {
             )
             .map(Left.apply)
         } else if (isUp) {
-          logger.error(stateRespInvalid.errorMessage(ctx.response.map(_.status).getOrElse(ctx.rawResponse.status), ctx.response.map(_.headers.mapValues(_.last)).getOrElse(ctx.rawResponse.headers)))
+          logger.error(
+            stateRespInvalid.errorMessage(
+              ctx.response.map(_.status).getOrElse(ctx.rawResponse.status),
+              ctx.response.map(_.headers.mapValues(_.last)).getOrElse(ctx.rawResponse.headers)
+            )
+          )
           val extraInfos    = ctx.attrs
             .get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey)
             .map(_.as[JsObject])
             .getOrElse(Json.obj())
           val newExtraInfos =
-            extraInfos ++ Json.obj("stateRespInvalid" -> stateRespInvalid.exchangePayload(ctx.response.map(_.status).getOrElse(ctx.rawResponse.status), ctx.response.map(_.headers.mapValues(_.last)).getOrElse(ctx.rawResponse.headers)))
+            extraInfos ++ Json.obj(
+              "stateRespInvalid" -> stateRespInvalid.exchangePayload(
+                ctx.response.map(_.status).getOrElse(ctx.rawResponse.status),
+                ctx.response.map(_.headers.mapValues(_.last)).getOrElse(ctx.rawResponse.headers)
+              )
+            )
           ctx.attrs.put(otoroshi.plugins.Keys.GatewayEventExtraInfosKey -> newExtraInfos)
           Errors
             .craftResponseResult(

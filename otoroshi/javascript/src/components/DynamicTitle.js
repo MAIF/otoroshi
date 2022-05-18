@@ -22,10 +22,13 @@ export class DynamicTitle extends Component {
 
   render() {
     if (!this.state.content) return null;
-    return typeof this.state.content === 'function' ? this.state.content() :
+    return typeof this.state.content === 'function' ? (
+      this.state.content()
+    ) : (
       <div className="fixedH3">
         <h3 className="page-header">{this.state.content}</h3>
       </div>
+    );
   }
 
   static getContent() {

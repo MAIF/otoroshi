@@ -2,22 +2,19 @@ package otoroshi.utils.metrics
 
 import akka.actor.Cancellable
 import akka.http.scaladsl.util.FastFuture
-import otoroshi.cluster.{ClusterMode, StatsView}
 import com.codahale.metrics.jmx.JmxReporter
 import com.codahale.metrics.json.MetricsModule
 import com.codahale.metrics.jvm.{GarbageCollectorMetricSet, JvmAttributeGaugeSet, MemoryUsageGaugeSet, ThreadStatesGaugeSet}
-import com.codahale.metrics.{MetricRegistry, _}
+import com.codahale.metrics._
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
+import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry, SemanticMetricSet}
 import com.spotify.metrics.jvm.{CpuGaugeSet, FileDescriptorGaugeSet}
-import io.prometheus.client.CollectorRegistry
-import io.prometheus.client.dropwizard.DropwizardExports
+import io.prometheus.client.exporter.common.TextFormat
+import otoroshi.cluster.{ClusterMode, StatsView}
 import otoroshi.env.Env
 import otoroshi.events.StatsDReporter
-import io.prometheus.client.exporter.common.TextFormat
 import otoroshi.utils.RegexPool
 import otoroshi.utils.prometheus.CustomCollector
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
@@ -31,6 +28,7 @@ import java.util.{Timer => _, _}
 import javax.management.{Attribute, ObjectName}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.{mapAsJavaMapConverter, mapAsScalaMapConverter}
 
 trait TimerMetrics {
   def withTimer[T](name: String, display: Boolean = false)(f: => T): T = f
@@ -83,13 +81,13 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   // metricRegistry.register("jvm.classloading", new ClassLoadingGaugeSet())
   // metricRegistry.register("jvm.files", new FileDescriptorRatioGauge())
 
-  register("jvm.memory", new MemoryUsageGaugeSet())
-  register("jvm.thread", new ThreadStatesGaugeSet())
-  register("jvm.gc", new GarbageCollectorMetricSet())
-  register("jvm.attr", new JvmAttributeGaugeSet())
+  registerSet("jvm.memory", new MemoryUsageGaugeSet())
+  registerSet("jvm.thread", new ThreadStatesGaugeSet())
+  registerSet("jvm.gc", new GarbageCollectorMetricSet())
+  registerSet("jvm.attr", new JvmAttributeGaugeSet())
 
-  metricRegistry.register(MetricId.build("jvm-cpu"), CpuGaugeSet.create)
-  metricRegistry.register(MetricId.build("jvm-fd-ratio"), new FileDescriptorGaugeSet)
+  metricRegistry.register(MetricId.build("jvm.cpu"), CpuGaugeSet.create)
+  metricRegistry.register(MetricId.build("jvm.fd-ratio"), new FileDescriptorGaugeSet)
 
   /*  metricRegistry.register(MetricId.build("jvm.memory"), new MemoryUsageGaugeSet())
   metricRegistry.register(MetricId.build("jvm.thread"), new ThreadStatesMetricSet())
@@ -127,6 +125,15 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   private def register(name: String, obj: Metric): Unit = {
     metricRegistry.register(MetricId.build(name), obj)
+    jmxRegistry.register(name, obj)
+  }
+
+  private def registerSet(name: String, obj: MetricSet): Unit = {
+    metricRegistry.registerAll(new SemanticMetricSet {
+      override def getMetrics: util.Map[MetricId, Metric] = obj.getMetrics.asScala.map {
+        case (key, value) => (MetricId.build(name + "." + key), value)
+      }.asJava
+    })
     jmxRegistry.register(name, obj)
   }
 

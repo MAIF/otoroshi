@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "1.5.9",
+    "version" : "1.5.10",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -17392,14 +17392,6 @@
         "description" : "A route representation with it's minimal attributes",
         "type" : "object",
         "properties" : {
-          "frontend" : {
-            "description" : "The frontend of the route",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgFrontend"
-          },
-          "backend" : {
-            "description" : "The backend of the route",
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgMinimalBackend"
-          },
           "backend_ref" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
@@ -17407,6 +17399,18 @@
               "type" : "string"
             } ],
             "description" : "The backend id of the route (if one)"
+          },
+          "frontend" : {
+            "description" : "The frontend of the route",
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgFrontend"
+          },
+          "override_plugins" : {
+            "description" : "Override global plugin list from route composition",
+            "type" : "boolean"
+          },
+          "backend" : {
+            "description" : "The backend of the route",
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgMinimalBackend"
           }
         }
       },
@@ -18185,7 +18189,7 @@
         }
       },
       "otoroshi.models.FileSettings" : {
-        "description" : "Settings for a file data exporter",
+        "description" : "Settings to export to a file",
         "type" : "object",
         "properties" : {
           "path" : {
@@ -18193,8 +18197,8 @@
             "type" : "string"
           },
           "maxFileSize" : {
-            "format" : "int32",
-            "description" : "Max file size in bytes",
+            "format" : "int64",
+            "description" : "Max file size for rolling",
             "type" : "integer"
           },
           "type" : {
@@ -18311,7 +18315,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "JQ filter for response"
+            "description" : "JQ filter to transform json entity"
           }
         }
       },
@@ -19139,7 +19143,7 @@
         }
       },
       "otoroshi.models.ConsoleSettings" : {
-        "description" : "Data exporter that will log everything to the console",
+        "description" : "Settings to export to console",
         "type" : "object",
         "properties" : {
           "type" : {
@@ -19390,6 +19394,26 @@
         "type" : "object",
         "properties" : { }
       },
+      "otoroshi.models.S3ExporterSettings" : {
+        "description" : "Settings to export to a S3 bucket",
+        "type" : "object",
+        "properties" : {
+          "maxFileSize" : {
+            "format" : "int64",
+            "description" : "Max file size for rolling",
+            "type" : "integer"
+          },
+          "type" : {
+            "description" : "the kind of exporter",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+          },
+          "config" : {
+            "description" : "Exporter settings",
+            "$ref" : "#/components/schemas/otoroshi.storage.drivers.inmemory.S3Configuration"
+          }
+        }
+      },
       "otoroshi.plugins.jobs.kubernetes.ClientSupport" : {
         "description" : "Internal api",
         "type" : "object",
@@ -19410,7 +19434,7 @@
         "properties" : { }
       },
       "otoroshi.models.DataExporterConfigFiltering" : {
-        "description" : "Settings to match otoroshi events",
+        "description" : "Filter events to export",
         "type" : "object",
         "properties" : {
           "include" : {
@@ -19418,14 +19442,14 @@
             "items" : {
               "type" : "object"
             },
-            "description" : "Exclude the events matching one of those filters"
+            "description" : "Event include filter"
           },
           "exclude" : {
             "type" : "array",
             "items" : {
               "type" : "object"
             },
-            "description" : "Include the events matching one of those filters"
+            "description" : "Event exclude filter"
           }
         }
       },
@@ -19497,6 +19521,52 @@
         "type" : "object",
         "properties" : { }
       },
+      "otoroshi.next.plugins.GraphQLQueryConfig" : {
+        "description" : "Configuration for the GraphQLQuery plugin",
+        "type" : "object",
+        "properties" : {
+          "response_path" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "The optional json path to select in response"
+          },
+          "url" : {
+            "description" : "URL of the graphql endpoint",
+            "type" : "string"
+          },
+          "response_filter" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "JQ filter applied on the response"
+          },
+          "headers" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "Headers to pass to the graphql call"
+          },
+          "timeout" : {
+            "format" : "int64",
+            "description" : "Timeout for the call (in ms)",
+            "type" : "integer"
+          },
+          "query" : {
+            "description" : "Graphql query to pass to the graphql call",
+            "type" : "string"
+          },
+          "method" : {
+            "description" : "Method for the graphql call",
+            "type" : "string"
+          }
+        }
+      },
       "otoroshi.plugins.oidc.OIDCThirdPartyApiKeyConfigMode" : {
         "description" : "Internal api",
         "type" : "object",
@@ -19553,7 +19623,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "JQ filter to transform request body"
+            "description" : "JQ filter to transform http entity"
           }
         }
       },
@@ -19767,7 +19837,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "JQ filter to transform response body"
+            "description" : "JQ filter to transform http entity"
           }
         }
       },
@@ -19843,6 +19913,49 @@
           "type" : {
             "description" : "Plugin type",
             "$ref" : "#/components/schemas/otoroshi.script.PluginType"
+          }
+        }
+      },
+      "otoroshi.storage.drivers.inmemory.S3Configuration" : {
+        "description" : "S3 bucket settings",
+        "type" : "object",
+        "properties" : {
+          "writeEvery" : {
+            "description" : "Write every n milliseconds",
+            "type" : "number"
+          },
+          "chunkSize" : {
+            "format" : "int32",
+            "description" : "Upload chunk max size",
+            "type" : "integer"
+          },
+          "bucket" : {
+            "description" : "Bucket name",
+            "type" : "string"
+          },
+          "key" : {
+            "description" : "File path in bucket",
+            "type" : "string"
+          },
+          "endpoint" : {
+            "description" : "Bucket endpoint",
+            "type" : "string"
+          },
+          "v4auth" : {
+            "description" : "Use V4 auth",
+            "type" : "boolean"
+          },
+          "access" : {
+            "description" : "Bucket access key",
+            "type" : "string"
+          },
+          "secret" : {
+            "description" : "Bucket access secret",
+            "type" : "string"
+          },
+          "region" : {
+            "description" : "Bucket region",
+            "type" : "string"
           }
         }
       },
@@ -21277,6 +21390,10 @@
             },
             "description" : "The tags of the route"
           },
+          "capture" : {
+            "description" : "Capture http traffic",
+            "type" : "boolean"
+          },
           "groups" : {
             "type" : "array",
             "items" : {
@@ -21569,11 +21686,11 @@
         "properties" : { }
       },
       "otoroshi.models.ExporterRef" : {
-        "description" : "Reference to a data exporter",
+        "description" : "Ref to an exporter id",
         "type" : "object",
         "properties" : {
           "ref" : {
-            "description" : "Script id",
+            "description" : "Reference to an exporter",
             "type" : "string"
           },
           "type" : {
@@ -21582,7 +21699,7 @@
             "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           },
           "config" : {
-            "description" : "Script config",
+            "description" : "Exporter config.",
             "type" : "object"
           }
         }
@@ -22092,7 +22209,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
-            "description" : "???"
+            "description" : "The validators to pass on the current context"
           }
         }
       },
@@ -23606,6 +23723,10 @@
             "description" : "The id of the service",
             "type" : "string"
           },
+          "capture" : {
+            "description" : "Capture http traffic",
+            "type" : "boolean"
+          },
           "description" : {
             "description" : "The description of the service",
             "type" : "string"
@@ -23786,6 +23907,52 @@
         "description" : "The name ID Format to use for the subject",
         "type" : "object",
         "properties" : { }
+      },
+      "otoroshi.next.plugins.GraphQLQuery" : {
+        "description" : "Plugin to read data from GraphQL endpoints",
+        "type" : "object",
+        "properties" : {
+          "response_path" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "The optional json path to select in response"
+          },
+          "url" : {
+            "description" : "URL of the graphql endpoint",
+            "type" : "string"
+          },
+          "response_filter" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "JQ filter applied on the response"
+          },
+          "headers" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "Headers to pass to the graphql call"
+          },
+          "timeout" : {
+            "format" : "int64",
+            "description" : "Timeout for the call (in ms)",
+            "type" : "integer"
+          },
+          "query" : {
+            "description" : "Graphql query to pass to the graphql call",
+            "type" : "string"
+          },
+          "method" : {
+            "description" : "Method for the graphql call",
+            "type" : "string"
+          }
+        }
       },
       "otoroshi.models.ZoneMatch" : {
         "description" : "Match a target if in the same zone",
@@ -24241,7 +24408,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
-            "description" : "???"
+            "description" : "The validators to pass on the current context"
           }
         }
       },
@@ -24394,6 +24561,11 @@
       },
       "otoroshi.plugins.clientcert.HasClientCertMatchingValidator" : {
         "description" : "Plugin that validates client certificates",
+        "type" : "object",
+        "properties" : { }
+      },
+      "otoroshi.next.models.PluginIndex" : {
+        "description" : "Custom index for plugins",
         "type" : "object",
         "properties" : { }
       },
@@ -24854,6 +25026,14 @@
               "type" : "string"
             },
             "description" : "Excluded paths"
+          },
+          "plugin_index" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "$ref" : "#/components/schemas/otoroshi.next.models.PluginIndex"
+            } ],
+            "description" : "Custom index for plugins"
           },
           "include" : {
             "type" : "array",
@@ -25466,6 +25646,49 @@
         "type" : "object",
         "properties" : { }
       },
+      "otoroshi.models.GoReplayS3Settings" : {
+        "description" : "Settings to export to a S3 bucket",
+        "type" : "object",
+        "properties" : {
+          "s3" : {
+            "description" : "S3 bucket access settings",
+            "$ref" : "#/components/schemas/otoroshi.storage.drivers.inmemory.S3Configuration"
+          },
+          "captureRequests" : {
+            "description" : "Enable request capture",
+            "type" : "boolean"
+          },
+          "methods" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Filter on http methods"
+          },
+          "maxFileSize" : {
+            "format" : "int64",
+            "description" : "Max file size for rolling",
+            "type" : "integer"
+          },
+          "type" : {
+            "description" : "the kind of exporter",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+          },
+          "preferBackendRequest" : {
+            "description" : "Capture internal requests instead of external",
+            "type" : "boolean"
+          },
+          "captureResponses" : {
+            "description" : "Enable response capture",
+            "type" : "boolean"
+          },
+          "preferBackendResponse" : {
+            "description" : "Capture internal responses instead of external",
+            "type" : "boolean"
+          }
+        }
+      },
       "otoroshi.utils.ConcurrentMutableTypedMap" : {
         "description" : "A concurrent map with typed keys",
         "type" : "object",
@@ -25921,7 +26144,7 @@
         "properties" : { }
       },
       "otoroshi.models.DataExporterConfig" : {
-        "description" : "Module to export otoroshi specific events to whatever destination you want",
+        "description" : "Data exporter settings",
         "type" : "object",
         "properties" : {
           "desc" : {
@@ -25929,30 +26152,30 @@
             "type" : "string"
           },
           "_loc" : {
-            "description" : "location",
+            "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "bufferSize" : {
             "format" : "int32",
-            "description" : "buffer size",
+            "description" : "Number of events in buffer",
             "type" : "integer"
           },
           "jsonWorkers" : {
             "format" : "int32",
-            "description" : "nb workers",
+            "description" : "Number of workers that transform events",
             "type" : "integer"
           },
           "groupDuration" : {
-            "description" : "duration",
+            "description" : "The max duration before sending group",
             "type" : "number"
           },
           "groupSize" : {
             "format" : "int32",
-            "description" : "Group size",
+            "description" : "The max size of events group before sending",
             "type" : "integer"
           },
           "type" : {
-            "description" : "Type of data exporter",
+            "description" : "Entity type",
             "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType"
           },
           "tags" : {
@@ -25964,15 +26187,15 @@
           },
           "sendWorkers" : {
             "format" : "int32",
-            "description" : "send workers",
+            "description" : "Number of workers that sends events",
             "type" : "integer"
           },
           "id" : {
-            "description" : "Id",
+            "description" : "Id of the exporter",
             "type" : "string"
           },
           "name" : {
-            "description" : "Name",
+            "description" : "Entity name",
             "type" : "string"
           },
           "metadata" : {
@@ -25980,22 +26203,22 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "Metadata"
+            "description" : "Entity metadata"
           },
           "config" : {
-            "description" : "Data Exporter config",
+            "description" : "Exporter config",
             "$ref" : "#/components/schemas/otoroshi.models.Exporter"
           },
           "projection" : {
-            "description" : "projection",
+            "description" : "Event projection",
             "type" : "object"
           },
           "enabled" : {
-            "description" : "Boolean",
+            "description" : "Is the exporter enabled",
             "type" : "boolean"
           },
           "filtering" : {
-            "description" : "filtering",
+            "description" : "Filtering options",
             "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigFiltering"
           }
         }
@@ -26214,7 +26437,7 @@
         }
       },
       "otoroshi.models.MetricsSettings" : {
-        "description" : "Settings for metrics labels",
+        "description" : "Settings to export to otoroshi metrics",
         "type" : "object",
         "properties" : {
           "type" : {
@@ -26227,7 +26450,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "Exposed labels"
+            "description" : "Exported labels for prometheus"
           }
         }
       },
@@ -26308,7 +26531,7 @@
         "type" : "object",
         "properties" : {
           "mtlsConfig" : {
-            "description" : "TLS config to access the cluster",
+            "description" : "TLS settings to access pulsar",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           },
           "tlsTrustCertsFilePath" : {
@@ -26317,7 +26540,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "Trusted cert path"
+            "description" : "Truststore path"
           },
           "namespace" : {
             "description" : "Pulsar namespace",
@@ -26333,7 +26556,7 @@
             "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           },
           "uri" : {
-            "description" : "Pulsar cluster url",
+            "description" : "Pulsar access uri",
             "type" : "string"
           },
           "tenant" : {
@@ -27006,7 +27229,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "JQ filter for request"
+            "description" : "JQ filter to transform json entity"
           }
         }
       },
@@ -27350,6 +27573,49 @@
           "url" : {
             "description" : "Sender URL",
             "type" : "string"
+          }
+        }
+      },
+      "otoroshi.models.GoReplayFileSettings" : {
+        "description" : "Settings to export to a file",
+        "type" : "object",
+        "properties" : {
+          "path" : {
+            "description" : "File path",
+            "type" : "string"
+          },
+          "captureRequests" : {
+            "description" : "Enable request capture",
+            "type" : "boolean"
+          },
+          "methods" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Filter on http methods"
+          },
+          "maxFileSize" : {
+            "format" : "int64",
+            "description" : "Max file size for rolling",
+            "type" : "integer"
+          },
+          "type" : {
+            "description" : "the kind of exporter",
+            "type" : "string",
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+          },
+          "preferBackendRequest" : {
+            "description" : "Capture internal requests instead of external",
+            "type" : "boolean"
+          },
+          "captureResponses" : {
+            "description" : "Enable response capture",
+            "type" : "boolean"
+          },
+          "preferBackendResponse" : {
+            "description" : "Capture internal responses instead of external",
+            "type" : "boolean"
           }
         }
       },
