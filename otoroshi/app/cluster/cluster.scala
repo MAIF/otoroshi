@@ -1092,6 +1092,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(config.proxy)
             .get()
+            .andThen {
+              case Failure(failure) =>
+                Cluster.logger.error(s"${env.clusterConfig.mode.name}] Failed to check session on leader", failure)
+            }
             .filter { resp =>
               if (resp.status == 200) Cluster.logger.debug(s"Session $id is valid")
               resp.ignoreIf(resp.status != 200)
@@ -1133,8 +1137,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withMaybeProxyServer(config.proxy)
           request
             .post(user.toJson)
-            .andThen { case Failure(_) =>
-              request.ignore()
+            .andThen {
+              case Failure(failure) =>
+                request.ignore()
+                Cluster.logger.error(s"${env.clusterConfig.mode.name}] Failed to create session on leader", failure)
             }
             .filter { resp =>
               Cluster.logger.debug(s"Session for ${user.name} created on the leader ${resp.status}")
