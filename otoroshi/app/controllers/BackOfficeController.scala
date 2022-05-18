@@ -1,5 +1,6 @@
 package otoroshi.controllers
 
+import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Sink, Source}
@@ -1682,5 +1683,33 @@ class BackOfficeController(
     implicit val reqh = ctx.request
     val mode          = ctx.request.body.select("mode").asOpt[String].getOrElse("dark")
     NoContent.addingToSession("ui-mode" -> mode).future
+  }
+
+  def graphqlProxy() = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+    val url = ctx.request.queryString.get("url").map(_.last).get
+    val host = Uri(url).authority.host.toString()
+    val headers = (ctx.request.headers.toSimpleMap ++ Map("Host" -> host)).toSeq
+
+    val builder = env.Ws
+      .url(url)
+      .withHttpHeaders(headers: _*)
+      .withFollowRedirects(false)
+      .withMethod(ctx.request.method)
+      .withQueryStringParameters(ctx.request.queryString.toSeq.filterNot(_._1 == "url").map(t => (t._1, t._2.head)): _*)
+
+    val builderWithBody = if (otoroshi.utils.body.BodyUtils.hasBody(ctx.request)) {
+      builder.withBody(SourceBody(ctx.request.body))
+    } else {
+      builder
+    }
+
+    builderWithBody
+      .execute()
+      .fast
+      .map { res =>
+        Results.Status(res.status)(res.body)
+          .withHeaders(res.headers.mapValues(_.last).toSeq.filterNot(_._1 == "Content-Type"): _*)
+          .as(res.contentType)
+      }
   }
 }

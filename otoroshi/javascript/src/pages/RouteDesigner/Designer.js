@@ -152,7 +152,7 @@ const ServiceView = () => {
 const FormContainer = ({ selectedNode, route, preview, showPreview, alertModal, serviceMode, ...props }) => {
   const isOnFrontendBackend = selectedNode && ['Frontend', 'Backend'].includes(selectedNode.id)
 
-  return <div className="col-sm-8 relative-container flex-column flow-container p-3" style={{ paddingRight: 0 }}>
+  return <div className="col-sm-8 relative-container flex-column flow-container p-3" style={{ paddingRight: 0 }} id="form-container">
     <UnselectedNode hideText={selectedNode} route={route} {...props} />
     {serviceMode && isOnFrontendBackend && <ServiceView />}
     {selectedNode && (!serviceMode || (serviceMode && !isOnFrontendBackend)) && (
@@ -221,11 +221,19 @@ const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) =
 </div>
 
 const Container = ({ children, onClick }) => {
+  const [propagate, setPropagate] = useState()
+
   return <div
     className="h-100 col-12 hide-overflow route-designer"
-    onClick={(e) => {
+    onMouseDown={e => {
+      setPropagate(!document.getElementById('form-container')?.contains(e.target))
+    }}
+    onMouseUp={(e) => {
       e.stopPropagation();
-      onClick()
+      if (propagate)
+        onClick(e)
+
+      setPropagate(false)
     }}>
     {children}
   </div>

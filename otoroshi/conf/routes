@@ -85,6 +85,12 @@ GET    /bo/api/backoffice/flags                               otoroshi.controlle
 
 POST   /bo/api/tryit                                          otoroshi.next.controllers.TryItController.call(entity: Option[String])
 
+GET     /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()
+POST    /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()
+PUT     /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()
+DELETE  /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()
+PATCH   /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()
+
 # Admin API proxy
 GET     /bo/api/proxy/*path                                   otoroshi.controllers.BackOfficeController.proxyAdminApi(path)
 POST    /bo/api/proxy/*path                                   otoroshi.controllers.BackOfficeController.proxyAdminApi(path)

@@ -43,6 +43,7 @@ window.fetch = function (...params) {
     return window
       ._fetch(url, {
         ...options,
+        credentials: 'include',
         headers: { ...options.headers, 'Otoroshi-Tenant': currentTenant },
       })
       .then((r) => {
@@ -66,7 +67,8 @@ window.fetch = function (...params) {
     //   userAdmin: window.__otoroshi__env__latest.userAdmin,
     //   bypassUserRightsCheck: window.__otoroshi__env__latest.bypassUserRightsCheck
     // });
-    return window._fetch(...params);
+    const opts = params[1] || {}
+    return window._fetch(params[0], { ...opts, credentials: 'include' });
   }
 };
 
