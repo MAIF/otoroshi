@@ -12,6 +12,7 @@ import akka.stream.{Attributes, Materializer}
 import akka.util.ByteString
 import com.google.common.base.Charsets
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.NgPluginConfig
 import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.syntax.implicits._
@@ -337,7 +338,7 @@ case class S3Configuration(
     v4auth: Boolean = true,
     writeEvery: FiniteDuration,
     acl: CannedAcl
-) {
+) extends NgPluginConfig {
   def json: JsValue = Json.obj(
     "bucket"     -> bucket,
     "endpoint"   -> endpoint,
@@ -353,6 +354,18 @@ case class S3Configuration(
 }
 
 object S3Configuration {
+  val default = S3Configuration(
+    bucket = "",
+    endpoint = "",
+    region = "eu-west-1",
+    access = "client",
+    secret = "secret",
+    key = "",
+    chunkSize = 1024 * 1024 * 8,
+    v4auth = true,
+    writeEvery = 1.minute,
+    acl = CannedAcl.Private,
+  )
   val format = new Format[S3Configuration] {
     override def reads(json: JsValue): JsResult[S3Configuration] = Try {
       S3Configuration(
