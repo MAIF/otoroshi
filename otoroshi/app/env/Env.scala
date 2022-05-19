@@ -9,6 +9,8 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import otoroshi.auth.{AuthModuleConfig, SessionCookieValues}
 import ch.qos.logback.classic.{Level, LoggerContext}
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.cluster._
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import io.github.classgraph.ClassGraph
@@ -24,20 +26,7 @@ import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
 import otoroshi.jobs.updates.Version
-import otoroshi.models.{
-  EntityLocation,
-  OtoroshiAdminType,
-  SimpleOtoroshiAdmin,
-  Team,
-  TeamAccess,
-  TeamId,
-  Tenant,
-  TenantAccess,
-  TenantId,
-  UserRight,
-  UserRights,
-  WebAuthnOtoroshiAdmin
-}
+import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.openapi.{ClassGraphScanner, FormsGenerator, OpenApiGenerator, OpenapiToJson}
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
@@ -71,6 +60,9 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}
 import otoroshi.script.plugins.Plugins
+
+import javax.crypto.Cipher
+import javax.crypto.spec.SecretKeySpec
 
 case class SidecarConfig(
     serviceId: String,
@@ -1334,18 +1326,48 @@ class Env(
     s"$signature::$id"
   }
 
+  lazy val encryptionKey = new SecretKeySpec(otoroshiSecret.padTo(16, "0").mkString("").take(16).getBytes, "AES")
+
+  def encryptedJwt(user: PrivateAppsUser): String = {
+    val added = clusterConfig.worker.state.pollEvery.millis.toSeconds.toInt * 3
+    val session = aesEncrypt(Json.stringify(user.json))
+    JWT.create()
+      .withIssuer("otoroshi")
+      .withIssuedAt(DateTime.now().toDate)
+      .withExpiresAt(DateTime.now().plusSeconds(added).toDate)
+      .withClaim("sessid", user.randomId)
+      .withClaim("sess", session)
+      .sign(Algorithm.HMAC512(otoroshiSecret))
+  }
+
+  def aesEncrypt(content: String): String = {
+    val cipher: Cipher = Cipher.getInstance("AES")
+    cipher.init(Cipher.ENCRYPT_MODE, encryptionKey)
+    val bytes = cipher.doFinal(content.getBytes)
+    java.util.Base64.getUrlEncoder.encodeToString(bytes)
+  }
+
+  def aesDecrypt(content: String): String = {
+    val bytes = java.util.Base64.getUrlDecoder.decode(content)
+    val cipher: Cipher = Cipher.getInstance("AES")
+    cipher.init(Cipher.DECRYPT_MODE, encryptionKey)
+    new String(cipher.doFinal(bytes))
+  }
+
   def createPrivateSessionCookies(
       host: String,
       id: String,
       desc: ServiceDescriptor,
-      authConfig: AuthModuleConfig
+      authConfig: AuthModuleConfig,
+      userOpt: Option[PrivateAppsUser]
   ): Seq[play.api.mvc.Cookie] = {
     createPrivateSessionCookiesWithSuffix(
       host,
       id,
       authConfig.cookieSuffix(desc),
       authConfig.sessionMaxAge,
-      authConfig.sessionCookieValues
+      authConfig.sessionCookieValues,
+      userOpt
     )
   }
 
@@ -1354,8 +1376,10 @@ class Env(
       id: String,
       suffix: String,
       sessionMaxAge: Int,
-      sessionCookieValues: SessionCookieValues
+      sessionCookieValues: SessionCookieValues,
+      userOpt: Option[PrivateAppsUser]
   ): Seq[play.api.mvc.Cookie] = {
+    val tmpSessionAge = clusterConfig.worker.state.pollEvery.millis.toSeconds.toInt * 3
     if (host.endsWith(sessionDomain)) {
       Seq(
         play.api.mvc.Cookie(
@@ -1367,7 +1391,17 @@ class Env(
           httpOnly = sessionCookieValues.httpOnly,
           secure = sessionCookieValues.secure
         )
-      )
+      ) ++ userOpt.map { user =>
+        play.api.mvc.Cookie(
+          name = "oto-papps-tsess-" + suffix,
+          value = encryptedJwt(user),
+          maxAge = Some(tmpSessionAge),
+          path = "/",
+          domain = Some(sessionDomain),
+          httpOnly = sessionCookieValues.httpOnly,
+          secure = sessionCookieValues.secure
+        )
+      }
     } else {
       Seq(
         play.api.mvc.Cookie(
@@ -1388,7 +1422,27 @@ class Env(
           httpOnly = sessionCookieValues.httpOnly,
           secure = sessionCookieValues.secure
         )
-      )
+      ) ++ userOpt.map { user =>
+        play.api.mvc.Cookie(
+          name = "oto-papps-tsess-" + suffix,
+          value = encryptedJwt(user),
+          maxAge = Some(tmpSessionAge),
+          path = "/",
+          domain = Some(host),
+          httpOnly = sessionCookieValues.httpOnly,
+          secure = sessionCookieValues.secure
+        ),
+      } ++ userOpt.map { user =>
+        play.api.mvc.Cookie(
+          name = "oto-papps-tsess-" + suffix,
+          value = encryptedJwt(user),
+          maxAge = Some(tmpSessionAge),
+          path = "/",
+          domain = Some(sessionDomain),
+          httpOnly = sessionCookieValues.httpOnly,
+          secure = sessionCookieValues.secure
+        )
+      }
     }
   }
 

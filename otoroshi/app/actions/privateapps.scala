@@ -49,7 +49,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
               block(PrivateAppsActionContext(request, Some(user), globalConfig))
             case None if env.clusterConfig.mode == ClusterMode.Worker => {
               Cluster.logger.debug(s"private apps session $id not found locally - from action")
-              env.clusterAgent.isSessionValid(id).flatMap {
+              env.clusterAgent.isSessionValid(id, Some(request)).flatMap {
                 case Some(user) =>
                   user.save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS))
                   block(PrivateAppsActionContext(request, Some(user), globalConfig))

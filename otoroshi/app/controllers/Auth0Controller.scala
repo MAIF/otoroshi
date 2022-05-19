@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit
 import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import cats.implicits.catsSyntaxOptionId
 import otoroshi.auth._
 import otoroshi.env.Env
 import otoroshi.events._
@@ -16,8 +15,10 @@ import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import otoroshi.security.IdGenerator
+
 import javax.crypto.Cipher
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.syntax.implicits._
+
 import javax.crypto.spec.SecretKeySpec
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -111,6 +112,8 @@ class AuthController(
     }
   }
 
+  def computeSec(user: PrivateAppsUser): String = env.aesEncrypt(user.json.stringify)
+
   def confidentialAppLoginPageOptions() =
     PrivateAppsAction.async { ctx =>
       val cors = CorsSettings(
@@ -142,12 +145,12 @@ class AuthController(
       implicit val req = ctx.request
 
       ctx.request.getQueryString("desc") match {
-        case None            => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
+        case None            => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
         case Some(serviceId) => {
           env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-            case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
+            case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
             case Some(descriptor) if !descriptor.privateApp                                                =>
-              NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).asFuture
+              NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
             case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
               withAuthConfig(descriptor, ctx.request) { auth =>
                 val expectedCookieName = s"oto-papps-${auth.cookieSuffix(descriptor)}"
@@ -161,13 +164,14 @@ class AuthController(
                           case None       =>
                             auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor)
                           case Some(user) =>
+                            val sec = computeSec(user)
                             ctx.request
                               .getQueryString("redirect")
                               .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
                               case "urn:ietf:wg:oauth:2.0:oob" => {
                                 val redirection =
                                   s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
-                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&sec=${sec}"
                                 val hash        = env.sign(redirection)
                                 FastFuture.successful(
                                   Redirect(s"$redirection&hash=$hash")
@@ -176,7 +180,7 @@ class AuthController(
                                       "desc"
                                     )
                                     .withCookies(
-                                      env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth): _*
+                                      env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some): _*
                                     )
                                 )
                               }
@@ -188,13 +192,13 @@ class AuthController(
                                   case -1   =>
                                     val redirection =
                                       s"$scheme://$host/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&sec=${sec}"
                                     val hash        = env.sign(redirection)
                                     s"$redirection&hash=$hash"
                                   case port =>
                                     val redirection =
                                       s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&sec=${sec}"
                                     val hash        = env.sign(redirection)
                                     s"$redirection&hash=$hash"
                                 }
@@ -205,7 +209,7 @@ class AuthController(
                                       "desc"
                                     )
                                     .withCookies(
-                                      env.createPrivateSessionCookies(host, user.randomId, descriptor, auth): _*
+                                      env.createPrivateSessionCookies(host, user.randomId, descriptor, auth, user.some): _*
                                     )
                                 )
                               }
@@ -219,7 +223,7 @@ class AuthController(
                 }
               }
             }
-            case _                                                                                         => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).asFuture
+            case _                                                                                         => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
           }
         }
       }
@@ -261,6 +265,7 @@ class AuthController(
         user
           .save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
           .map { paUser =>
+            val sec = computeSec(paUser)
             logger.debug(s"Auth callback, creating session on the leader ${paUser.email}")
             env.clusterAgent.createSession(paUser)
             Alerts.send(
@@ -283,7 +288,7 @@ class AuthController(
 
                 Redirect(redirectTo)
                   .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                  .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth): _*)
+                  .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*)
 
               case _ =>
                 ctx.request.session
@@ -294,12 +299,12 @@ class AuthController(
                   case "urn:ietf:wg:oauth:2.0:oob" =>
                     val redirection =
                       s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
-                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&sec=${sec}"
                     val hash        = env.sign(redirection)
                     Redirect(
                       s"$redirection&hash=$hash"
                     ).removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                      .withCookies(env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth): _*)
+                      .withCookies(env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some): _*)
                   case redirectTo                  =>
                     val url                = new java.net.URL(redirectTo)
                     val host               = url.getHost
@@ -308,24 +313,24 @@ class AuthController(
                       case -1   =>
                         val redirection =
                           s"$scheme://$host/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&sec=${sec}"
                         val hash        = env.sign(redirection)
                         s"$redirection&hash=$hash"
                       case port =>
                         val redirection =
                           s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&sec=${sec}"
                         val hash        = env.sign(redirection)
                         s"$redirection&hash=$hash"
                     }
                     if (webauthn) {
                       Ok(Json.obj("location" -> setCookiesRedirect))
                         .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                        .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth): _*)
+                        .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*)
                     } else {
                       Redirect(setCookiesRedirect)
                         .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                        .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth): _*)
+                        .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*)
                     }
                 }
             }
@@ -342,7 +347,7 @@ class AuthController(
             val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
 
             if (!params.contains("hash") || !params.contains("redirect_uri") || !params.contains("desc"))
-              NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
+              NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
             else
               desc = params("desc").some
           }
@@ -352,9 +357,9 @@ class AuthController(
       def process(serviceId: String) = {
         logger.debug(s"redirect to service descriptor : $serviceId")
         env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-          case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
+          case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
           case Some(descriptor) if !descriptor.privateApp                                                =>
-            NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).asFuture
+            NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
           case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
             withAuthConfig(descriptor, ctx.request) { _auth =>
               verifyHash(descriptor.id, _auth, ctx.request) {
@@ -369,7 +374,7 @@ class AuthController(
                     }
                     case Some("finish") => {
                       authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, descriptor).flatMap {
-                        case Left(error) => BadRequest(Json.obj("error" -> error)).future
+                        case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
                         case Right(user) => saveUser(user, auth, descriptor, true)(ctx.request)
                       }
                     }
@@ -377,7 +382,7 @@ class AuthController(
                       BadRequest(
                         otoroshi.views.html.oto
                           .error(message = s"Missing step", _env = env, title = "Authorization error")
-                      ).asFuture
+                      ).vfuture
                   }
                 }
                 case auth                                                                                => {
@@ -390,7 +395,7 @@ class AuthController(
                             _env = env,
                             title = "Authorization error"
                           )
-                      ).asFuture
+                      ).vfuture
                     }
                     case Right(user) => saveUser(user, auth, descriptor, false)(ctx.request)
                   }
@@ -398,7 +403,7 @@ class AuthController(
               }
             }
           }
-          case _                                                                                         => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).asFuture
+          case _                                                                                         => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
         }
       }
 
@@ -409,9 +414,9 @@ class AuthController(
           val unsignedState = decryptState(ctx.request.requestHeader)
           (unsignedState \ "descriptor").asOpt[String] match {
             case Some(descriptor) => process(descriptor)
-            case _                => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
+            case _                => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
           }
-        case (_, _)               => NotFound(otoroshi.views.html.oto.error("Service not found", env)).asFuture
+        case (_, _)               => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
       }
     }
 

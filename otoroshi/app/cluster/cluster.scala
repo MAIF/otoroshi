@@ -15,6 +15,8 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Compression, Flow, Framing, Sink, Source}
 import akka.util.ByteString
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.AuthConfigsDataStore
 import com.google.common.io.Files
@@ -42,7 +44,7 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer}
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, Result}
+import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, RequestHeader, Result}
 import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
 import otoroshi.security.IdGenerator
@@ -1067,7 +1069,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
-  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = {
+  def isSessionValid(id: String, reqOpt: Option[RequestHeader]): Future[Option[PrivateAppsUser]] = {
     if (env.clusterConfig.mode.isWorker) {
       Retry
         .retry(
@@ -1104,18 +1106,30 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             s"[${env.clusterConfig.mode.name}] Error while checking session with Otoroshi leader cluster"
           )
           workerSessionsCache.getIfPresent(id) match {
-            case None =>
+            case None => {
               Cluster.logger.debug(
                 s"[${env.clusterConfig.mode.name}] no local session found after leader call failed"
               )
-              None
-            case Some(local) =>
+              PrivateAppsUser.fromCookie(id, reqOpt)(env) match {
+                case None =>
+                  Cluster.logger.debug(
+                    s"[${env.clusterConfig.mode.name}] no cookie session found after leader call failed"
+                  )
+                  None
+                case Some(local) =>
+                  Cluster.logger.warn(
+                    s"[${env.clusterConfig.mode.name}] using cookie created session as leader call failed !"
+                  )
+                  local.some
+              }
+            }
+            case Some(local) => {
               Cluster.logger.warn(
                 s"[${env.clusterConfig.mode.name}] Using locally created session as leader call failed !"
               )
               local.some
+            }
           }
-          // None
         }
     } else {
       FastFuture.successful(None)

@@ -2,6 +2,8 @@ package otoroshi.models
 
 import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.util.FastFuture
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.auth.{AuthModuleConfig, GenericOauth2Module, ValidableUser}
 import otoroshi.env.Env
 import org.joda.time.DateTime
@@ -88,6 +90,28 @@ case class PrivateAppsUser(
 }
 
 object PrivateAppsUser {
+
+  def fromCookie(sessionId: String, reqOpt: Option[RequestHeader])(implicit env: Env): Option[PrivateAppsUser] = {
+    reqOpt.map { req =>
+      val verifier = JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).withIssuer("otoroshi").acceptLeeway(10).build()
+      req.cookies
+        .filter(_.name.startsWith("oto-papps-tsess-")).map { cookie =>
+        Try(verifier.verify(cookie.value))
+      }.collect {
+        case Success(decodedToken) => decodedToken
+      }.find { token =>
+        Try(token.getClaim("sessid").asString()).toOption.contains(sessionId)
+      }.flatMap { token =>
+        Try(token.getClaim("sess").asString()).toOption
+      }.flatMap { encryptedSession =>
+        Try(env.aesDecrypt(encryptedSession)).toOption
+      }.flatMap { decryptedSession =>
+        PrivateAppsUser.fmt.reads(Json.parse(decryptedSession)).asOpt
+      }
+    }.collectFirst {
+      case Some(session) => session
+    }
+  }
 
   def select(from: JsValue, selector: String): JsValue = {
     val parts = selector.split("\\|")
@@ -200,7 +224,7 @@ object PrivateAppsUserHelper {
             FastFuture.successful(Some(user))
           case None if env.clusterConfig.mode == ClusterMode.Worker => {
             Cluster.logger.debug(s"private apps session $id not found locally - from helper")
-            env.clusterAgent.isSessionValid(id).map {
+            env.clusterAgent.isSessionValid(id, Some(req)).map {
               case Some(user) =>
                 user.save(
                   Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)
