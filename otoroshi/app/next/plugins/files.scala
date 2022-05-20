@@ -139,9 +139,9 @@ class S3Backend extends NgBackendCall {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def name: String                                = "Static backend"
+  override def name: String                                = "S3 Static backend"
   override def description: Option[String]                 =
-    "This plugin is able to serve a static folder with file content".some
+    "This plugin is able to S3 bucket with file content".some
 
   override def useDelegates: Boolean = true
   override def multiInstance: Boolean = true
@@ -165,6 +165,7 @@ class S3Backend extends NgBackendCall {
   private def fileExists(key: String, config: S3Configuration)(implicit ec: ExecutionContext, mat: Materializer): Future[Boolean] = {
     S3.getObjectMetadata(config.bucket, key).withAttributes(s3ClientSettingsAttrs(config)).runWith(Sink.headOption).map(_.flatten).map {
       case None => false
+      case Some(meta) if meta.contentType.exists(_.contains("x-directory")) => false
       case Some(_) => true
     }
   }
@@ -199,14 +200,14 @@ class S3Backend extends NgBackendCall {
       val askedFilePath = ctx.request.path.replace("//", "")
       val key = s"${config.key}${askedFilePath}"
       val cacheKey =  s"${ctx.route.id}-${key}"
-      normalizeKey(key, config).flatMap { filePath =>
+      normalizeKey(key, config).map(_.replace("//", "/")).flatMap { filePath =>
         fileCache.getIfPresent(cacheKey) match {
           case Some((contentType, content)) => bodyResponse(200, Map("Content-Type" -> contentType), Source(content.grouped(16 * 1024).toList)).vfuture
           case None => {
             fileExists(filePath, config).flatMap {
               case false => bodyResponse(404, Map("Content-Type" -> "text/plain"), Source.single("resource not found".byteString)).vfuture
               case true => {
-                fileContent(key, config).flatMap {
+                fileContent(filePath, config).flatMap {
                   case None => bodyResponse(404, Map("Content-Type" -> "text/plain"), Source.single("resource not found".byteString)).vfuture
                   case Some((contentType, content)) => {
                     fileCache.put(cacheKey, (contentType, content))
