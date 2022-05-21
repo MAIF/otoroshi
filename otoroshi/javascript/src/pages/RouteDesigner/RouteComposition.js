@@ -387,7 +387,7 @@ export default ({ service, setSaveButton, setService, viewPlugins }) => {
     setSaveButton(
       <FeedbackButton
         className="ms-2"
-        disabled={!shouldUpdateRoutes}
+        _disabled={!shouldUpdateRoutes}
         text="Save routes"
         icon={() => <i className="fas fa-paper-plane" />}
         onPress={saveRoute}

@@ -471,7 +471,7 @@ class Designer extends React.Component {
         className="ms-2"
         onPress={this.saveRoute}
         text="Save route"
-        disabled={isEqual(this.state.route, this.state.originalRoute)}
+        _disabled={isEqual(this.state.route, this.state.originalRoute)}
         icon={() => <i className="fas fa-paper-plane" />}
       />
     );
