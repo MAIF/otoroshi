@@ -72,7 +72,7 @@ class GraphQLQuery extends NgBackendCall {
   override def useDelegates: Boolean                       = false
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = false
-  override def name: String                                = "GraphQL Query"
+  override def name: String                                = "GraphQL Query to REST"
   override def description: Option[String]                 =
     "This plugin can be used to call GraphQL query endpoints and expose it as a REST endpoint".some
   override def defaultConfigObject: Option[NgPluginConfig] =
