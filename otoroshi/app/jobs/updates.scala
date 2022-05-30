@@ -24,7 +24,7 @@ class SoftwareUpdatesJobs extends Job {
 
   override def uniqueId: JobId = JobId("io.otoroshi.core.jobs.SoftwareUpdatesJobs")
 
-  override def name: String = "Kubernetes to Otoroshi certs. synchronizer"
+  override def name: String = "Otoroshi version update job"
 
   override def defaultConfig: Option[JsObject] = None
 

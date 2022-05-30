@@ -237,6 +237,8 @@ trait EntityHelper[Entity <: EntityLocationSupport, Error] {
   // def canWrite[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserWrite(entity)
   // def canReadWrite[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserRead(entity) && ctx.canUserWrite(entity)
   def buildError(status: Int, message: String): ApiError[Error]
+
+  def processId(rawId: String, ctx: ApiActionContext[_]): String = rawId
 }
 
 trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[Entity, Error] {
@@ -437,7 +439,8 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                 .stringify
                 .byteString
                 .future
-            case Right((id, patch))  => {
+            case Right((_id, patch))  => {
+              val id = processId(_id, ctx)
               findByIdOps(id).flatMap {
                 case Left(error)                                         =>
                   Json
@@ -560,7 +563,8 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
               .stringify
               .byteString
               .future
-          case Right((_, id))      => {
+          case Right((_, _id))      => {
+            val id = processId(_id, ctx)
             findByIdOps(id).flatMap {
               case Left(err)                                                                        =>
                 Json
@@ -798,7 +802,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     implicit val implEc  = env.otoroshiExecutionContext
     implicit val implMat = env.otoroshiMaterializer
 
-    findByIdOps(id).map {
+    findByIdOps(processId(id, ctx)).map {
       case Left(error)                                                               =>
         Status(error.status)(Json.obj("error" -> "find_error", "error_description" -> error.bodyAsJson))
       case Right(OptionalEntityAndContext(entity, action, message, metadata, alert)) =>
@@ -876,7 +880,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     implicit val implEc  = env.otoroshiExecutionContext
     implicit val implMat = env.otoroshiMaterializer
 
-    findByIdOps(id).flatMap {
+    findByIdOps(processId(id, ctx)).flatMap {
       case Left(error)                                         => NotFound(Json.obj("error" -> "not_found", "error_description" -> "Entity not found")).future
       case Right(OptionalEntityAndContext(option, _, _, _, _)) =>
         option match {
@@ -932,7 +936,8 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     implicit val implMat = env.otoroshiMaterializer
 
     Source(ids.toList)
-      .mapAsync(1) { id =>
+      .mapAsync(1) { _id =>
+        val id = processId(_id, ctx)
         findByIdOps(id).flatMap {
           case Left(err)                                                                        => (id, Some(err)).future
           case Right(optent) if optent.entity.isEmpty                                           => (id, buildError(404, "Entity not found").some).future
