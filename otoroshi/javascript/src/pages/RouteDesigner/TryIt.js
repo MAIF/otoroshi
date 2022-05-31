@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { BooleanInput, CodeInput, SelectInput } from '@maif/react-forms'
-import { tryIt, fetchAllApikeys, findAllCertificates } from '../../services/BackOfficeServices'
+import { tryIt, fetchAllApikeys, findAllCertificates, routeEntries } from '../../services/BackOfficeServices'
 import { firstLetterUppercase } from '../../util'
 import { useLocation } from 'react-router-dom'
 
@@ -52,6 +52,8 @@ export const TryIt = ({ route, serviceMode }) => {
   const [responseBody, setResponseBody] = useState();
   const [loading, setLoading] = useState(false);
 
+  const [playgroundUrl, setPlaygroundUrl] = useState()
+
   useEffect(() => {
     if (route && route.id) {
       setRequest({
@@ -59,6 +61,9 @@ export const TryIt = ({ route, serviceMode }) => {
         route_id: route.id,
       });
       hidePlaygroundStuff(route)
+      
+      routeEntries(route.id)
+        .then(data => setPlaygroundUrl(data.entries[0]))
     }
   }, [route]);
 
@@ -175,34 +180,9 @@ export const TryIt = ({ route, serviceMode }) => {
 
   const receivedResponse = rawResponse && response;
 
-  const graphQLFetcher = graphQLParams => {
-    const URL = `http://otoroshi.oto.tools:9999/bo/api/graphqlproxy?url=http://${encodeURIComponent(route.frontend.domains[0])}:9999`
-
-    return fetch(URL, {
-      method: "post",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(graphQLParams)
-    }).then(response => response.json());
-  }
-
-  const defaultQuery = `{
-  allFilms {
-    edges {
-      node {
-        id
-        title
-        producers
-        episodeID
-        created
-      }
-    }
-  }
-}
-`;
-
   return (
     <Loader loading={!route}>
-      {route && route.plugins.find(f => f.plugin.includes('GraphQLBackend')) ?
+      {route && route.plugins.find(f => f.plugin.includes('GraphQLBackend')) && playgroundUrl ?
         <div className="h-100">
           <Provider store={store}>
             <Playground
@@ -213,7 +193,7 @@ export const TryIt = ({ route, serviceMode }) => {
                 executeButtonBorder: "transparent"
               }}
               tabs={[{
-                endpoint: `http://otoroshi.oto.tools:9999/bo/api/graphqlproxy?url=${encodeURIComponent(`http://${route.frontend.domains[0]}:9999`)}`,
+                endpoint: `http://otoroshi.oto.tools:9999/bo/api/graphqlproxy?url=${encodeURIComponent(playgroundUrl)}`,
                 query: '',
                 name: Date.now()
                 // variables?: string

@@ -1797,6 +1797,11 @@ export function tryIt(content, entity) {
   });
 }
 
+export function routeEntries(routeId) {
+  return fetch(`/bo/api/routes/${routeId}/entries`)
+    .then(r => r.json())
+}
+
 export function graphQLTryIt(url) {
   return fetch(`http://otoroshi.oto.tools:9999/bo/api/graphqlproxy?url=${url}`)
     .then(r => r.json());

@@ -1712,4 +1712,45 @@ class BackOfficeController(
           .as(res.contentType)
       }
   }
+
+  def routeEntries(routeId: String) = BackOfficeActionAuth.async { ctx => 
+    env.datastores.routeDataStore.findById(routeId) flatMap {
+      case None => NotFound(Json.obj("error" -> "route not found")).future
+      case Some(route) => 
+        val isSecured = route.plugins.slots.exists(p => p.plugin.contains("ForceHttpsTraffic"))
+
+        Ok(Json.obj("entries" -> route.frontend.domains.map(d => {
+          Uri(s"http://${d.raw}")
+            .withScheme(if (isSecured) "https" else "http")
+            .withPort(if (isSecured) env.httpsPort else env.port)
+            .toString()
+        })))
+          .future
+    }
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

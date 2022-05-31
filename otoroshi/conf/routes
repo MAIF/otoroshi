@@ -91,6 +91,8 @@ PUT     /bo/api/graphqlproxy                                  otoroshi.controlle
 DELETE  /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()
 PATCH   /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()
 
+GET     /bo/api/routes/:routeId/entries                       otoroshi.controllers.BackOfficeController.routeEntries(routeId: String)
+
 # Admin API proxy
 GET     /bo/api/proxy/*path                                   otoroshi.controllers.BackOfficeController.proxyAdminApi(path)
 POST    /bo/api/proxy/*path                                   otoroshi.controllers.BackOfficeController.proxyAdminApi(path)
