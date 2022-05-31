@@ -433,16 +433,18 @@ class SOAPAction extends NgBackendCall {
               }
               transformResponseBody(jsonBody, config) match {
                 case Left(error)     =>
+                  val rb = error.byteString
                   bodyResponse(
                     500,
-                    headerz.toMap ++ Map("Content-Type" -> "application/json"),
-                    Source.single(error.byteString)
+                    headerz.toMap ++ Map("Content-Type" -> "application/json", "Content-Length" -> rb.size.toString),
+                    Source.single(rb)
                   )
                 case Right(response) =>
+                  val rb = response.byteString
                   bodyResponse(
                     status,
-                    headerz.toMap ++ Map("Content-Type" -> "application/json"),
-                    Source.single(response.byteString)
+                    headerz.toMap ++ Map("Content-Type" -> "application/json", "Content-Length" -> rb.size.toString),
+                    Source.single(rb)
                   )
               }
             } else {
