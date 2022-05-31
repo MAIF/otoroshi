@@ -12,6 +12,7 @@ import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{JsonPathUtils, TypedMap}
 import play.api.libs.json._
+import play.api.libs.ws.WSResponse
 import sangria.ast.{Document, ListType}
 import sangria.execution.deferred.DeferredResolver
 import sangria.execution.{ExceptionHandler, Executor, HandledException, QueryReducer}
@@ -617,12 +618,12 @@ class GraphQLProxy extends NgBackendCall {
   private def executeGraphQLCall(
     schema: Schema[Unit, Any],
     query: String,
-    initialData: JsObject,
+    initialData: JsValue,
     maxDepth: Int,
     complexityThreshold: Double
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[Seq[String], Unit]] = {
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[Seq[String], JsValue]] = {
     QueryParser.parse(query) match {
-      case Failure(error) => Seq(s"Bad query format: ${error.getMessage}").leftf[Unit]
+      case Failure(error) => Seq(s"Bad query format: ${error.getMessage}").leftf[JsValue]
       case Success(queryAst) => {
         Executor.execute(
           schema = schema,
@@ -647,12 +648,13 @@ class GraphQLProxy extends NgBackendCall {
             )
           )
         )
-        .map { _ =>
-          ().right[Seq[String]]
+        .map { res =>
+          val response = Json.toJson(res)
+          response.right[Seq[String]]
         }
-        .recoverWith {
-          case ViolationsException(errors) => errors.leftf[Unit]
-          case e: Exception => Seq(e.getMessage).leftf[Unit]
+        .recover {
+          case ViolationsException(errors) => errors.left[JsValue]
+          case e: Throwable => Seq(e.getMessage).left[JsValue]
         }
       }
     }
@@ -713,20 +715,21 @@ class GraphQLProxy extends NgBackendCall {
     }
   }
 
-  def callBackendApi(body: ByteString, config: GraphQLProxyConfig)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  def callBackendApi(body: ByteString, config: GraphQLProxyConfig)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[WSResponse] = {
     val headers: Seq[(String, String)] = config.headers.toSeq :+ ("Content-Type" -> "application/json")
     env.Ws.url(config.endpoint)
       .withMethod("POST")
       .withHttpHeaders(headers: _*)
       .withBody(body)
       .execute()
-      .map { res =>
-        bodyResponse(res.status, res.headers.mapValues(_.last), res.bodyAsSource)
-      }
+      // .map { res =>
+      //   bodyResponse(res.status, res.headers.mapValues(_.last), res.bodyAsSource)
+      // }
   }
 
   override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     // TODO: fields permissions
+    // TODO: WS timeout
     val path = ctx.request.path
     val method = ctx.request.method
     val config = ctx.cachedConfig(internalName)(GraphQLProxyConfig.format).getOrElse(GraphQLProxyConfig.default)
@@ -743,7 +746,9 @@ class GraphQLProxy extends NgBackendCall {
         val body = bodyRaw.utf8String.parseJson.asObject
         val operationName = body.select("operationName").asOpt[String]
         if (operationName.contains("IntrospectionQuery")) {
-          callBackendApi(bodyRaw, config)
+          callBackendApi(bodyRaw, config).map { res =>
+            bodyResponse(res.status, res.headers.mapValues(_.last), res.bodyAsSource)
+          }
         } else {
           val query = body.select("query").asString
           getSchema(builder, config).flatMap {
@@ -751,7 +756,7 @@ class GraphQLProxy extends NgBackendCall {
               bodyResponse(200,
                 Map("Content-Type" -> "application/json"),
                 Json.obj(
-                  "data" -> Json.arr(),
+                  "data" -> JsNull,
                   "errors" -> JsArray(Seq(Json.obj("message" -> s"unable to fetch schema at '${config.endpoint}'")) ++ errors.map(e => Json.obj("message" -> e)))
                 ).stringify.byteString.chunks(16 * 1024)
               ).vfuture
@@ -762,12 +767,46 @@ class GraphQLProxy extends NgBackendCall {
                   bodyResponse(200,
                     Map("Content-Type" -> "application/json"),
                     Json.obj(
-                      "data" -> Json.arr(),
+                      "data" -> JsNull,
                       "errors" -> JsArray(errors.map(e => Json.obj("message" -> e)))
                     ).stringify.byteString.chunks(16 * 1024)
                   ).future
                 }
-                case Right(_) => callBackendApi(bodyRaw, config)
+                case Right(_) => {
+                  callBackendApi(bodyRaw, config).flatMap { res =>
+                    if (res.status == 200) {
+                      val sa = schema.toAst
+                      val s2 = Schema.buildFromAst(sa, builder.validateSchemaWithException(sa)) // don't know how to avoid that !
+                      executeGraphQLCall(s2, query, res.json.select("data").asValue, config.maxDepth, config.maxComplexity).map {
+                        case Left(errors) => {
+                          bodyResponse(200,
+                            Map("Content-Type" -> "application/json"),
+                            Json.obj(
+                              "data" -> JsNull,
+                              "errors" -> JsArray(errors.map(e => Json.obj("message" -> e)))
+                            ).stringify.byteString.chunks(16 * 1024)
+                          )
+                        }
+                        case Right(response) => {
+                          bodyResponse(
+                            200,
+                            Map("Content-Type" -> "application/json"),
+                            response.stringify.byteString.singleSource
+                          )
+                        }
+                      }
+                    } else {
+                      bodyResponse(
+                        res.status,
+                        res.headers.mapValues(_.last),
+                        res.bodyAsSource
+                      ).vfuture
+                    }
+                  }
+                  //callBackendApi(bodyRaw, config).map { res =>
+                  //  bodyResponse(res.status, res.headers.mapValues(_.last), res.bodyAsSource)
+                  //}
+                }
               }
             }
           }

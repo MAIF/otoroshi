@@ -19574,7 +19574,7 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.GraphQLQueryConfig" : {
-        "description" : "Configuration for the GraphQLQuery plugin",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "response_path" : {
@@ -19583,10 +19583,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "The optional json path to select in response"
+            "description" : "???"
           },
           "url" : {
-            "description" : "URL of the graphql endpoint",
+            "description" : "???",
             "type" : "string"
           },
           "response_filter" : {
@@ -19595,26 +19595,26 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "JQ filter applied on the response"
+            "description" : "???"
           },
           "headers" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "Headers to pass to the graphql call"
+            "description" : "???"
           },
           "timeout" : {
             "format" : "int64",
-            "description" : "Timeout for the call (in ms)",
+            "description" : "???",
             "type" : "integer"
           },
           "query" : {
-            "description" : "Graphql query to pass to the graphql call",
+            "description" : "???",
             "type" : "string"
           },
           "method" : {
-            "description" : "Method for the graphql call",
+            "description" : "???",
             "type" : "string"
           }
         }
@@ -24037,7 +24037,7 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.GraphQLQuery" : {
-        "description" : "Plugin to read data from GraphQL endpoints",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "response_path" : {
