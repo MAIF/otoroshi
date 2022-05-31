@@ -26,20 +26,31 @@ module.exports = (env, argv) => {
       port: process.env.DEV_SERVER_PORT || 3040,
     },
     module: {
-      rules: [{
-          test: /\.js$/,
+      rules: [
+        {
+          type: 'javascript/auto',
+          test: /\.mjs$/,
+          use: [],
+          include: /node_modules/,
+          exclude: /\.(ts|d\.ts|d\.ts\.map)$/,
+        },
+        {
+          test: /\.(js|jsx|ts|tsx)$/,
           loaders: ['babel-loader'],
           include: [
             path.resolve(__dirname, 'src'),
             path.resolve(__dirname, 'node_modules/set-value'),
-            path.resolve(__dirname, 'node_modules/get-value')
-          ]
+            path.resolve(__dirname, 'node_modules/get-value'),
+            path.resolve(__dirname, 'node_modules/graphiql'),
+            path.resolve(__dirname, 'node_modules/graphql'),
+          ],
+          exclude: /\.(d\.ts|d\.ts\.map|spec\.tsx)$/,
         },
         {
           test: /\.css$/,
           use: [{
-              loader: MiniCssExtractPlugin.loader,
-            },
+            loader: MiniCssExtractPlugin.loader,
+          },
             'css-loader'
           ]
         },
@@ -102,8 +113,8 @@ module.exports = (env, argv) => {
     ],
   };
   if (isProd) {
-    return { 
-      ...config, 
+    return {
+      ...config,
       plugins: [
         ...config.plugins,
         new CompressionPlugin()

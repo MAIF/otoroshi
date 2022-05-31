@@ -38,6 +38,10 @@ object GlobalExpressionLanguage {
         val matchedRoute     = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
         Try {
           expressionReplacer.replaceOn(value) {
+            case r"item.$field@(.*)"                                                => 
+              context.getOrElse(s"item.$field", s"no-item-$field")
+            case r"params.$field@(.*)"                                              => 
+              context.getOrElse(s"params.$field", s"no-params-$field")
             case "date"                                                             => DateTime.now().toString()
             case r"date.format\('$format@(.*)'\)"                                   => DateTime.now().toString(format)
             case "service.domain" if service.isDefined                              => service.get._domain

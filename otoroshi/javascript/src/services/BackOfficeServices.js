@@ -1797,6 +1797,11 @@ export function tryIt(content, entity) {
   });
 }
 
+export function graphQLTryIt(url) {
+  return fetch(`http://otoroshi.oto.tools:9999/bo/api/graphqlproxy?url=${url}`)
+    .then(r => r.json());
+}
+
 // NgRoutes
 
 const fetchWrapper = (url, method = 'GET', body) =>

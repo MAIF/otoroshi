@@ -1233,6 +1233,15 @@
     },
     "flow" : [ "json" ]
   },
+  "otoroshi.next.plugins.StaticBackendConfig" : {
+    "schema" : {
+      "root_path" : {
+        "label" : "root_path",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "root_path" ]
+  },
   "otoroshi.plugins.oidc.OIDCAccessTokenAsApikey" : {
     "schema" : { },
     "flow" : [ ]
@@ -2488,6 +2497,10 @@
       }
     },
     "flow" : [ "metadata", "sessionCookieValues", "basicAuth", "type", "userValidators", "_loc", "users", "tags", "sessionMaxAge", "name", "webauthn", "id", "desc" ]
+  },
+  "otoroshi.next.plugins.FileUtils" : {
+    "schema" : { },
+    "flow" : [ ]
   },
   "otoroshi.models.InCookie" : {
     "schema" : {
@@ -32635,6 +32648,15 @@
     },
     "flow" : [ "filter" ]
   },
+  "otoroshi.next.plugins.StaticBackend" : {
+    "schema" : {
+      "root_path" : {
+        "label" : "root_path",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "root_path" ]
+  },
   "otoroshi.models.ErrorTemplate" : {
     "schema" : {
       "template50x" : {
@@ -33293,6 +33315,47 @@
   "otoroshi.plugins.geoloc.GeolocationInfoEndpoint" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.next.plugins.S3Backend" : {
+    "schema" : {
+      "writeEvery" : {
+        "label" : "writeEvery",
+        "type" : "number"
+      },
+      "chunkSize" : {
+        "label" : "chunkSize",
+        "type" : "number"
+      },
+      "bucket" : {
+        "label" : "bucket",
+        "type" : "string"
+      },
+      "key" : {
+        "label" : "key",
+        "type" : "string"
+      },
+      "endpoint" : {
+        "label" : "endpoint",
+        "type" : "string"
+      },
+      "v4auth" : {
+        "label" : "v4auth",
+        "type" : "bool"
+      },
+      "access" : {
+        "label" : "access",
+        "type" : "string"
+      },
+      "secret" : {
+        "label" : "secret",
+        "type" : "string"
+      },
+      "region" : {
+        "label" : "region",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "writeEvery", "chunkSize", "bucket", "key", "endpoint", "v4auth", "access", "secret", "region" ]
   },
   "otoroshi.next.plugins.NgRestrictions" : {
     "schema" : {
@@ -34358,11 +34421,20 @@
     "schema" : {
       "schema" : {
         "label" : "Schema",
+        "type" : "string",
+        "format" : "code"
+      },
+      "initialData" : {
+        "label" : "Predefined data",
         "type" : "object",
         "format" : "code"
+      },
+      "maxDepth" : {
+        "label" : "Max depth",
+        "type" : "number"
       }
     },
-    "flow" : [ "schema" ]
+    "flow" : [ "schema", "initialData" ]
   },
   "otoroshi.utils.mailer.NoneMailerSettings" : {
     "schema" : {
@@ -38968,9 +39040,13 @@
       "initial_data" : {
         "label" : "initial_data",
         "type" : "object"
+      },
+      "max_depth" : {
+        "label" : "max_depth",
+        "type" : "number"
       }
     },
-    "flow" : [ "schema", "initial_data" ]
+    "flow" : [ "schema", "initial_data", "max_depth" ]
   },
   "otoroshi.plugins.apikeys.ClientCredentialFlowExtractor" : {
     "schema" : { },
@@ -41631,6 +41707,57 @@
       }
     },
     "flow" : [ "whitelist", "blacklist" ]
+  },
+  "otoroshi.next.plugins.S3BackendConfig" : {
+    "schema" : {
+      "s3" : {
+        "label" : "s3",
+        "type" : "object",
+        "format" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "writeEvery" : {
+            "label" : "writeEvery",
+            "type" : "number"
+          },
+          "chunkSize" : {
+            "label" : "chunkSize",
+            "type" : "number"
+          },
+          "bucket" : {
+            "label" : "bucket",
+            "type" : "string"
+          },
+          "key" : {
+            "label" : "key",
+            "type" : "string"
+          },
+          "endpoint" : {
+            "label" : "endpoint",
+            "type" : "string"
+          },
+          "v4auth" : {
+            "label" : "v4auth",
+            "type" : "bool"
+          },
+          "access" : {
+            "label" : "access",
+            "type" : "string"
+          },
+          "secret" : {
+            "label" : "secret",
+            "type" : "string"
+          },
+          "region" : {
+            "label" : "region",
+            "type" : "string"
+          }
+        },
+        "flow" : [ "writeEvery", "chunkSize", "bucket", "key", "endpoint", "v4auth", "access", "secret", "region" ]
+      }
+    },
+    "flow" : [ "s3" ]
   },
   "otoroshi.models.JwtAuthConstraints" : {
     "schema" : {

@@ -6,8 +6,8 @@ import { useLocation } from 'react-router-dom'
 
 import { Provider } from 'react-redux'
 import { Playground, store } from 'graphql-playground-react'
-import Loader from './Loader'
 
+import Loader from './Loader'
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'];
 
@@ -17,6 +17,7 @@ const roundNsTo = (ns) => Number.parseFloat(round(ns) / 1000000).toFixed(3);
 const round = (num) => Math.round((num + Number.EPSILON) * 100000) / 100000;
 
 export const TryIt = ({ route, serviceMode }) => {
+
   const [selectedTab, setSelectedTab] = useState('Headers');
   const [selectedResponseTab, setSelectedResponseTab] = useState('Body');
   const [headersStatus, setHeadersStatus] = useState('down');
@@ -57,36 +58,46 @@ export const TryIt = ({ route, serviceMode }) => {
         ...request,
         route_id: route.id,
       });
-
-      hidePlaygroundStuff()
+      hidePlaygroundStuff(route)
     }
   }, [route]);
+
+  useEffect(() => {
+    localStorage.removeItem('graphql-playground')
+  }, [])
+
+  const hidePlaygroundStuff = route => {
+    if (!route)
+      setTimeout(() => hidePlaygroundStuff(route), 250)
+    else if (route.plugins.find(f => f.plugin.includes('GraphQLBackend'))) {
+      const input = document.querySelector(".playground input")
+      if (!input)
+        setTimeout(() => hidePlaygroundStuff(route), 100)
+      else {
+        [
+          ".playground > div",
+          ".graphiql-wrapper > div > div > div"
+        ].forEach(path => document.querySelector(path).style.display = 'none');
+
+        [...document.querySelectorAll('.playground svg')]
+          .filter(svg => svg.textContent === 'Settings')
+          .forEach(svg => svg.style.display = 'none')
+
+        input.style.display = 'none'
+      }
+    }
+  }
 
   useEffect(() => {
     fetchAllApikeys().then(setApikeys);
     findAllCertificates().then(setCertificates);
   }, []);
 
-  const hidePlaygroundStuff = () => {
-    [
-      '[class*=graphiql-wrapper]>div>div>div',
-      '[class*=playground]>div'
-    ].forEach(selector => {
-      const element = document.querySelectorAll(selector)
-      if (element.length > 0)
-        element[0].style.display = 'none'
-    });
-
-    // hide cog
-    [...document.querySelectorAll("svg")]
-      .filter(f => f.textContent.includes("Settings"))
-      .forEach(r => r.style.display = 'none')
-  }
-
   const send = () => {
     setLoading(true);
     setRawResponse(undefined);
     setHeadersStatus('up');
+
     tryIt(
       {
         ...request,
@@ -114,7 +125,7 @@ export const TryIt = ({ route, serviceMode }) => {
           setResponseBody(atob(res.body_base_64).replace(/\n/g, '').trimStart());
         }
       });
-  };
+  }
 
   const bytesToSize = (bytes) => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
@@ -150,425 +161,440 @@ export const TryIt = ({ route, serviceMode }) => {
       ),
       ...(format === 'basic'
         ? {
-            'authorization-header': {
-              key: apikeyHeader || request.apikeyHeader,
-              value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-            },
-          }
+          'authorization-header': {
+            key: apikeyHeader || request.apikeyHeader,
+            value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+          },
+        }
         : {
-            'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
-            'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
-          }),
+          'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
+          'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
+        }),
     };
   };
 
   const receivedResponse = rawResponse && response;
 
-  console.log(route)
+  const graphQLFetcher = graphQLParams => {
+    const URL = `http://otoroshi.oto.tools:9999/bo/api/graphqlproxy?url=http://${encodeURIComponent(route.frontend.domains[0])}:9999`
 
-  return <Loader loading={!route}>
-    {route?.plugins.find(f => f.plugin.includes("GraphQLBackend")) ?
-      <Provider store={store}>
-        <Playground
-          setTitle={false}
-          shareEnabled={false}
-          fixedEndpoint={true}
-          codeTheme={{
-            executeButton: "#f9b000"
-          }}
-          endpoint={`http://otoroshi.oto.tools:9999/bo/api/graphqlproxy?url=${encodeURIComponent(route.frontend.domains[0])}`}
-          settings={{
-            "editor.cursorShape": "line",
-            "editor.fontFamily": "'Source Code Pro', 'Consolas', 'Inconsolata', 'Droid Sans Mono', 'Monaco', monospace",
-            "editor.fontSize": 12,
-            "editor.reuseHeaders": true,
-            "editor.theme": "dark",
-            "general.betaUpdates": false,
-            "prettier.printWidth": 80,
-            "prettier.tabWidth": 2,
-            "prettier.useTabs": false,
-            "request.credentials": "include",
-            "request.globalHeaders": {},
-            "schema.disableComments": true,
-            "schema.polling.enable": true,
-            "schema.polling.endpointFilter": "*localhost*",
-            "schema.polling.interval": 20000,
-            "tracing.hideTracingResponse": true,
-            "tracing.tracingSupported": true
-          }}
-        />
-      </Provider>
-      :
-      <div
-        className="h-100"
-        style={{
-          flexDirection: 'column',
-          background: 'rgb(60,60,60)',
-          padding: '12px',
-          borderRadius: '8px',
-        }}>
-        <div className="d-flex">
-          <div style={{ minWidth: '200px' }}>
-            <SelectInput
-              possibleValues={METHODS}
-              value={request.method}
-              transformer={(item) => ({ value: item, label: item })}
+    return fetch(URL, {
+      method: "post",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(graphQLParams)
+    }).then(response => response.json());
+  }
+
+  const defaultQuery = `{
+  allFilms {
+    edges {
+      node {
+        id
+        title
+        producers
+        episodeID
+        created
+      }
+    }
+  }
+}
+`;
+
+  return (
+    <Loader loading={!route}>
+      {route && route.plugins.find(f => f.plugin.includes('GraphQLBackend')) ?
+        <div className="h-100">
+          <Provider store={store}>
+            <Playground
+              codeTheme={{
+                editorBackground: "#3c3c3c",
+                resultBackground: "#494948",
+                textInactive: "#fff !important",
+                executeButtonBorder: "transparent"
+              }}
+              tabs={[{
+                endpoint: `http://otoroshi.oto.tools:9999/bo/api/graphqlproxy?url=${encodeURIComponent(`http://${route.frontend.domains[0]}:9999`)}`,
+                query: '',
+                name: Date.now()
+                // variables?: string
+                // responses?: string[]
+                // headers?: { [key: string]: string }
+              }]}
             />
-          </div>
-          <input
-            type="text"
-            className="form-control mx-2"
-            placeholder="Enter request URL"
-            value={request.path}
-            onChange={(e) => setRequest({ ...request, path: e.target.value })}
-          />
-          <button
-            className="btn btn-success"
-            style={{ backgroundColor: '#f9b000', borderColor: '#f9b000' }}
-            onClick={send}>
-            Send
-          </button>
+          </Provider>
         </div>
-        <div
+        :
+        <div className="h-100"
           style={{
-            height: headersStatus === 'down' ? '400px' : 'initial',
             flexDirection: 'column',
-            overflowY: 'hidden',
-            paddingBottom: headersStatus === 'down' ? '120px' : 0,
+            background: 'rgb(60,60,60)',
+            padding: '12px',
+            borderRadius: '8px',
           }}>
-          <div className="d-flex-between mt-3">
-            <div className="d-flex">
-              {[
-                { label: 'Authorization', value: 'Authorization' },
-                { label: 'Headers', value: `Headers (${Object.keys(request.headers || {}).length})` },
-                { label: 'Body', value: 'Body' },
-              ].map(({ label, value }) => (
-                <button
-                  onClick={() => {
-                    setHeadersStatus('down');
-                    setSelectedTab(label);
-                  }}
-                  className="pb-2 me-3"
-                  style={{
-                    padding: 0,
-                    border: 0,
-                    borderBottom: selectedTab === label ? '2px solid #f9b000' : 'transparent',
-                    background: 'none',
-                  }}>
-                  {value}
-                </button>
-              ))}
+          <div className="d-flex">
+            <div style={{ minWidth: '200px' }}>
+              <SelectInput
+                possibleValues={METHODS}
+                value={request.method}
+                transformer={(item) => ({ value: item, label: item })}
+              />
             </div>
-            <i
-              className={`tab fas fa-chevron-${headersStatus}`}
-              onClick={() => setHeadersStatus(headersStatus === 'up' ? 'down' : 'up')}
+            <input
+              type="text"
+              className="form-control mx-2"
+              placeholder="Enter request URL"
+              value={request.path}
+              onChange={(e) => setRequest({ ...request, path: e.target.value })}
             />
+            <button
+              className="btn btn-success"
+              style={{ backgroundColor: '#f9b000', borderColor: '#f9b000' }}
+              onClick={send}>
+              Send
+            </button>
           </div>
-          {selectedTab === 'Authorization' && headersStatus === 'down' && (
-            <div className="w-50">
-              <div className="mt-3 d-flex">
-                <div
-                  className="d-flex-between pe-3 me-3"
-                  style={{ flex: 0.5, borderRight: '2px solid #494849' }}>
-                  <span className="me-3">Use an apikey</span>
-                  <BooleanInput
-                    value={request.useApikey}
-                    onChange={() =>
-                      setRequest({
-                        ...request,
-                        useApikey: !request.useApikey,
-                        headers: apikeyToHeader(),
-                      })
-                    }
-                  />
-                </div>
-                {request.useApikey && (
-                  <div className="flex">
-                    <div className="d-flex-between">
-                      <span className="me-3">Apikey</span>
-                      <div className="flex">
-                        <SelectInput
-                          possibleValues={apikeys}
-                          value={request.apikey}
-                          onChange={(k) =>
-                            setRequest({
-                              ...request,
-                              apikey: k,
-                              headers: apikeyToHeader(request.apikeyFormat, k),
-                            })
-                          }
-                          transformer={(item) => ({ value: item, label: item.clientName })}
-                        />
-                      </div>
-                    </div>
-                    {request.apikey && (
-                      <div className="pt-3 mt-3" style={{ borderTop: '2px solid #494849' }}>
-                        <div className="d-flex-between">
-                          <span className="me-3">Apikey format</span>
-                          <div className="flex">
-                            <SelectInput
-                              possibleValues={[
-                                { value: 'basic', label: 'Basic header' },
-                                { value: 'credentials', label: 'Client ID/Secret headers' },
-                              ]}
-                              value={request.apikeyFormat}
-                              onChange={(k) =>
-                                setRequest({
-                                  ...request,
-                                  apikeyFormat: k,
-                                  headers: apikeyToHeader(k),
-                                })
-                              }
-                            />
-                          </div>
-                        </div>
-                        {request.apikeyFormat === 'basic' && (
-                          <div className="d-flex-between mt-3">
-                            <span className="flex">Add to header</span>
-                            <input
-                              type="text"
-                              className="form-control flex"
-                              onChange={(e) => {
-                                setRequest({
-                                  ...request,
-                                  apikeyHeader: e.target.value,
-                                  headers: apikeyToHeader(
-                                    request.apikeyFormat,
-                                    undefined,
-                                    e.target.value
-                                  ),
-                                });
-                              }}
-                              value={request.apikeyHeader}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="mt-3 d-flex">
-                <div
-                  className="d-flex-between pe-3 me-3"
-                  style={{ flex: 0.5, borderRight: '2px solid #494849' }}>
-                  <span className="me-3">Use a certificate client</span>
-                  <BooleanInput
-                    value={request.useCertificate}
-                    onChange={() =>
-                      setRequest({
-                        ...request,
-                        useCertificate: !request.useCertificate,
-                      })
-                    }
-                  />
-                </div>
-                {request.useCertificate && (
-                  <div className="flex">
-                    <div className="d-flex-between">
-                      <span className="me-3">Certificate</span>
-                      <div className="flex">
-                        <SelectInput
-                          possibleValues={certificates}
-                          value={request.client_cert}
-                          onChange={(client_cert) =>
-                            setRequest({
-                              ...request,
-                              client_cert,
-                            })
-                          }
-                          transformer={(item) => ({ value: item.id, label: item.name })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          {selectedTab === 'Headers' && headersStatus === 'down' && (
-            <Headers
-              headers={request.headers}
-              onKeyChange={(id, v) => {
-                const updatedRequest = {
-                  ...request,
-                  headers: {
-                    ...request.headers,
-                    [id]: { key: v, value: request.headers[id].value },
-                  },
-                };
-                let item = {};
-                if (
-                  Object.values(updatedRequest.headers).every(
-                    (r) => r.key.length > 0 || r.value.length > 0
-                  )
-                )
-                  item = { [Date.now()]: { key: '', value: '' } };
-
-                setRequest({ ...updatedRequest, headers: { ...updatedRequest.headers, ...item } });
-              }}
-              onValueChange={(id, v) => {
-                const updatedRequest = {
-                  ...request,
-                  headers: {
-                    ...request.headers,
-                    [id]: { key: request.headers[id].key, value: v },
-                  },
-                };
-
-                let item = {};
-                if (
-                  Object.values(updatedRequest.headers).every(
-                    (r) => r.key.length > 0 || r.value.length > 0
-                  )
-                )
-                  item = { [Date.now()]: { key: '', value: '' } };
-
-                setRequest({ ...updatedRequest, headers: { ...updatedRequest.headers, ...item } });
-              }}
-            />
-          )}
-          {selectedTab === 'Body' && headersStatus === 'down' && (
-            <div className="mt-3">
-              <div className="d-flex align-items-center mb-3">
-                <div className="d-flex">
-                  <BooleanInput
-                    value={!request.body}
-                    onChange={() => setRequest({ ...request, body: undefined })}
-                  />
-                  <span className="ms-1">none</span>
-                </div>
-                <div className="d-flex mx-2">
-                  <BooleanInput
-                    value={request.body === 'raw'}
-                    onChange={() => setRequest({ ...request, body: 'raw', contentType: 'json' })}
-                  />
-                  <span className="ms-1">raw</span>
-                </div>
-                {request.body === 'raw' && (
-                  <div style={{ minWidth: '120px' }}>
-                    <SelectInput
-                      possibleValues={CONTENT_TYPE}
-                      value={request.contentType}
-                      onChange={(contentType) => setRequest({ ...request, contentType })}
-                      transformer={(item) => ({ label: item, value: item })}
-                    />
-                  </div>
-                )}
-              </div>
-              {request.body === 'raw' && (
-                <CodeInput
-                  value={request.bodyContent}
-                  mode={request.contentType}
-                  onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
-                />
-              )}
-            </div>
-          )}
-        </div>
-        {receivedResponse && (
-          <div className="d-flex flex-row-center mt-3">
-            <div className="d-flex flex-row-center justify-content-between flex">
-              <div>
+          <div
+            style={{
+              height: headersStatus === 'down' ? '400px' : 'initial',
+              flexDirection: 'column',
+              overflowY: 'hidden',
+              paddingBottom: headersStatus === 'down' ? '120px' : 0,
+            }}>
+            <div className="d-flex-between mt-3">
+              <div className="d-flex">
                 {[
-                  { label: 'Report', value: 'Report' },
+                  { label: 'Authorization', value: 'Authorization' },
+                  { label: 'Headers', value: `Headers (${Object.keys(request.headers || {}).length})` },
                   { label: 'Body', value: 'Body' },
-                  { label: 'Cookies', value: 'Cookies' },
-                  { label: 'Headers', value: `Headers (${([...rawResponse.headers] || []).length})` },
                 ].map(({ label, value }) => (
                   <button
-                    onClick={() => setSelectedResponseTab(label)}
+                    onClick={() => {
+                      setHeadersStatus('down');
+                      setSelectedTab(label);
+                    }}
                     className="pb-2 me-3"
                     style={{
                       padding: 0,
                       border: 0,
-                      borderBottom:
-                        selectedResponseTab === label ? '2px solid #f9b000' : 'transparent',
+                      borderBottom: selectedTab === label ? '2px solid #f9b000' : 'transparent',
                       background: 'none',
                     }}>
                     {value}
                   </button>
                 ))}
               </div>
-              <div className="d-flex flex-row-center">
-                <div className="d-flex flex-row-center me-3">
-                  <span className="me-1">Status:</span>
-                  <span style={{ color: 'var(--bs-success)' }}>{response.status}</span>
+              <i
+                className={`tab fas fa-chevron-${headersStatus}`}
+                onClick={() => setHeadersStatus(headersStatus === 'up' ? 'down' : 'up')}
+              />
+            </div>
+            {selectedTab === 'Authorization' && headersStatus === 'down' && (
+              <div className="w-50">
+                <div className="mt-3 d-flex">
+                  <div
+                    className="d-flex-between pe-3 me-3"
+                    style={{ flex: 0.5, borderRight: '2px solid #494849' }}>
+                    <span className="me-3">Use an apikey</span>
+                    <BooleanInput
+                      value={request.useApikey}
+                      onChange={() =>
+                        setRequest({
+                          ...request,
+                          useApikey: !request.useApikey,
+                          headers: apikeyToHeader(),
+                        })
+                      }
+                    />
+                  </div>
+                  {request.useApikey && (
+                    <div className="flex">
+                      <div className="d-flex-between">
+                        <span className="me-3">Apikey</span>
+                        <div className="flex">
+                          <SelectInput
+                            possibleValues={apikeys}
+                            value={request.apikey}
+                            onChange={(k) =>
+                              setRequest({
+                                ...request,
+                                apikey: k,
+                                headers: apikeyToHeader(request.apikeyFormat, k),
+                              })
+                            }
+                            transformer={(item) => ({ value: item, label: item.clientName })}
+                          />
+                        </div>
+                      </div>
+                      {request.apikey && (
+                        <div className="pt-3 mt-3" style={{ borderTop: '2px solid #494849' }}>
+                          <div className="d-flex-between">
+                            <span className="me-3">Apikey format</span>
+                            <div className="flex">
+                              <SelectInput
+                                possibleValues={[
+                                  { value: 'basic', label: 'Basic header' },
+                                  { value: 'credentials', label: 'Client ID/Secret headers' },
+                                ]}
+                                value={request.apikeyFormat}
+                                onChange={(k) =>
+                                  setRequest({
+                                    ...request,
+                                    apikeyFormat: k,
+                                    headers: apikeyToHeader(k),
+                                  })
+                                }
+                              />
+                            </div>
+                          </div>
+                          {request.apikeyFormat === 'basic' && (
+                            <div className="d-flex-between mt-3">
+                              <span className="flex">Add to header</span>
+                              <input
+                                type="text"
+                                className="form-control flex"
+                                onChange={(e) => {
+                                  setRequest({
+                                    ...request,
+                                    apikeyHeader: e.target.value,
+                                    headers: apikeyToHeader(
+                                      request.apikeyFormat,
+                                      undefined,
+                                      e.target.value
+                                    ),
+                                  });
+                                }}
+                                value={request.apikeyHeader}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="d-flex flex-row-center me-3">
-                  <span className="me-1">Time:</span>
-                  <span style={{ color: 'var(--bs-success)' }}>
-                    {roundNsTo(response.report?.duration_ns)} ms
-                  </span>
+                <div className="mt-3 d-flex">
+                  <div
+                    className="d-flex-between pe-3 me-3"
+                    style={{ flex: 0.5, borderRight: '2px solid #494849' }}>
+                    <span className="me-3">Use a certificate client</span>
+                    <BooleanInput
+                      value={request.useCertificate}
+                      onChange={() =>
+                        setRequest({
+                          ...request,
+                          useCertificate: !request.useCertificate,
+                        })
+                      }
+                    />
+                  </div>
+                  {request.useCertificate && (
+                    <div className="flex">
+                      <div className="d-flex-between">
+                        <span className="me-3">Certificate</span>
+                        <div className="flex">
+                          <SelectInput
+                            possibleValues={certificates}
+                            value={request.client_cert}
+                            onChange={(client_cert) =>
+                              setRequest({
+                                ...request,
+                                client_cert,
+                              })
+                            }
+                            transformer={(item) => ({ value: item.id, label: item.name })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="d-flex flex-row-center me-3">
-                  <span className="me-1">Size:</span>
-                  <span style={{ color: 'var(--bs-success)' }}>
-                    {bytesToSize(rawResponse.headers.get('content-length'))}
-                  </span>
+              </div>
+            )}
+            {selectedTab === 'Headers' && headersStatus === 'down' && (
+              <Headers
+                headers={request.headers}
+                onKeyChange={(id, v) => {
+                  const updatedRequest = {
+                    ...request,
+                    headers: {
+                      ...request.headers,
+                      [id]: { key: v, value: request.headers[id].value },
+                    },
+                  };
+                  let item = {};
+                  if (
+                    Object.values(updatedRequest.headers).every(
+                      (r) => r.key.length > 0 || r.value.length > 0
+                    )
+                  )
+                    item = { [Date.now()]: { key: '', value: '' } };
+
+                  setRequest({ ...updatedRequest, headers: { ...updatedRequest.headers, ...item } });
+                }}
+                onValueChange={(id, v) => {
+                  const updatedRequest = {
+                    ...request,
+                    headers: {
+                      ...request.headers,
+                      [id]: { key: request.headers[id].key, value: v },
+                    },
+                  };
+
+                  let item = {};
+                  if (
+                    Object.values(updatedRequest.headers).every(
+                      (r) => r.key.length > 0 || r.value.length > 0
+                    )
+                  )
+                    item = { [Date.now()]: { key: '', value: '' } };
+
+                  setRequest({ ...updatedRequest, headers: { ...updatedRequest.headers, ...item } });
+                }}
+              />
+            )}
+            {selectedTab === 'Body' && headersStatus === 'down' && (
+              <div className="mt-3">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="d-flex">
+                    <BooleanInput
+                      value={!request.body}
+                      onChange={() => setRequest({ ...request, body: undefined })}
+                    />
+                    <span className="ms-1">none</span>
+                  </div>
+                  <div className="d-flex mx-2">
+                    <BooleanInput
+                      value={request.body === 'raw'}
+                      onChange={() => setRequest({ ...request, body: 'raw', contentType: 'json' })}
+                    />
+                    <span className="ms-1">raw</span>
+                  </div>
+                  {request.body === 'raw' && (
+                    <div style={{ minWidth: '120px' }}>
+                      <SelectInput
+                        possibleValues={CONTENT_TYPE}
+                        value={request.contentType}
+                        onChange={(contentType) => setRequest({ ...request, contentType })}
+                        transformer={(item) => ({ label: item, value: item })}
+                      />
+                    </div>
+                  )}
                 </div>
-                <button
-                  className="btn btn-sm btn-success"
-                  style={{ backgroundColor: '#f9b000', borderColor: '#f9b000' }}
-                  onClick={saveResponse}>
-                  Save Response
-                </button>
+                {request.body === 'raw' && (
+                  <CodeInput
+                    value={request.bodyContent}
+                    mode={request.contentType}
+                    onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+          {receivedResponse && (
+            <div className="d-flex flex-row-center mt-3">
+              <div className="d-flex flex-row-center justify-content-between flex">
+                <div>
+                  {[
+                    { label: 'Report', value: 'Report' },
+                    { label: 'Body', value: 'Body' },
+                    { label: 'Cookies', value: 'Cookies' },
+                    { label: 'Headers', value: `Headers (${([...rawResponse.headers] || []).length})` },
+                  ].map(({ label, value }) => (
+                    <button
+                      onClick={() => setSelectedResponseTab(label)}
+                      className="pb-2 me-3"
+                      style={{
+                        padding: 0,
+                        border: 0,
+                        borderBottom:
+                          selectedResponseTab === label ? '2px solid #f9b000' : 'transparent',
+                        background: 'none',
+                      }}>
+                      {value}
+                    </button>
+                  ))}
+                </div>
+                <div className="d-flex flex-row-center">
+                  <div className="d-flex flex-row-center me-3">
+                    <span className="me-1">Status:</span>
+                    <span style={{ color: 'var(--bs-success)' }}>{response.status}</span>
+                  </div>
+                  <div className="d-flex flex-row-center me-3">
+                    <span className="me-1">Time:</span>
+                    <span style={{ color: 'var(--bs-success)' }}>
+                      {roundNsTo(response.report?.duration_ns)} ms
+                    </span>
+                  </div>
+                  <div className="d-flex flex-row-center me-3">
+                    <span className="me-1">Size:</span>
+                    <span style={{ color: 'var(--bs-success)' }}>
+                      {bytesToSize(rawResponse.headers.get('content-length'))}
+                    </span>
+                  </div>
+                  <button
+                    className="btn btn-sm btn-success"
+                    style={{ backgroundColor: '#f9b000', borderColor: '#f9b000' }}
+                    onClick={saveResponse}>
+                    Save Response
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-        {receivedResponse && selectedResponseTab === 'Headers' && (
-          <Headers
-            headers={[...rawResponse.headers].reduce(
-              (acc, [key, value], index) => ({
-                ...acc,
-                [`${Date.now()}-${index}`]: { key, value },
-              }),
-              {}
-            )}
-          />
-        )}
-
-        {receivedResponse && responseBody && selectedResponseTab === 'Body' && (
-          <div className="mt-3">
-            {responseBody.startsWith('<!') ? (
-              <iframe srcDoc={responseBody} style={{ flex: 1, minHeight: '750px', width: '100%' }} />
-            ) : (
-              <CodeInput readOnly={true} value={responseBody} width="-1" />
-            )}
-          </div>
-        )}
-        {!receivedResponse && !loading && (
-          <div className="d-flex align-items-center justify-content-center">
-            <span>Enter the URL and click Send to get a response</span>
-          </div>
-        )}
-        {loading && (
-          <div className="d-flex justify-content-center">
-            <i className="fas fa-cog fa-spin" style={{ fontSize: '40px' }} />
-          </div>
-        )}
-
-        {receivedResponse && selectedResponseTab === 'Report' ? (
-          response.report ? (
-            <ReportView
-              report={response.report}
-              search={search}
-              setSearch={setSearch}
-              unit={unit}
-              setUnit={setUnit}
-              sort={sort}
-              setSort={setSort}
-              flow={flow}
-              setFlow={setFlow}
+          )}
+          {receivedResponse && selectedResponseTab === 'Headers' && (
+            <Headers
+              headers={[...rawResponse.headers].reduce(
+                (acc, [key, value], index) => ({
+                  ...acc,
+                  [`${Date.now()}-${index}`]: { key, value },
+                }),
+                {}
+              )}
             />
-          ) : (
-            <span className="mt-3">No report is available</span>
-          )
-        ) : null}
-      </div>}
-  </Loader>
-};
+          )}
+
+          {receivedResponse && responseBody && selectedResponseTab === 'Body' && (
+            <div className="mt-3">
+              {responseBody.startsWith('<!') ? (
+                <iframe srcDoc={responseBody} style={{ flex: 1, minHeight: '750px', width: '100%' }} />
+              ) : (
+                <CodeInput readOnly={true} value={responseBody} width="-1" />
+              )}
+            </div>
+          )}
+          {!receivedResponse && !loading && (
+            <div className="d-flex align-items-center justify-content-center">
+              <span>Enter the URL and click Send to get a response</span>
+            </div>
+          )}
+          {loading && (
+            <div className="d-flex justify-content-center">
+              <i className="fas fa-cog fa-spin" style={{ fontSize: '40px' }} />
+            </div>
+          )}
+
+          {receivedResponse && selectedResponseTab === 'Report' ? (
+            response.report ? (
+              <ReportView
+                report={response.report}
+                search={search}
+                setSearch={setSearch}
+                unit={unit}
+                setUnit={setUnit}
+                sort={sort}
+                setSort={setSort}
+                flow={flow}
+                setFlow={setFlow}
+              />
+            ) : (
+              <span className="mt-3">No report is available</span>
+            )
+          ) : null}
+        </div>
+      }
+    </Loader>
+  )
+}
 
 const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, flow, setFlow }) => {
   const [selectedStep, setSelectedStep] = useState(-1);
@@ -594,9 +620,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     search.length <= 0
       ? true
       : step.task.includes(search) ||
-        [...(step?.ctx?.plugins || [])].find((plugin) =>
-          search.length <= 0 ? true : plugin.name.includes(search)
-        );
+      [...(step?.ctx?.plugins || [])].find((plugin) =>
+        search.length <= 0 ? true : plugin.name.includes(search)
+      );
 
   const isPluginNameMatchingSearch = (plugin) =>
     search.length <= 0 ? true : plugin.name.includes(search);
@@ -616,8 +642,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
       return unit === 'ms'
         ? roundNsTo(report.duration_ns)
         : unit === 'ns'
-        ? report.duration_ns
-        : 100;
+          ? report.duration_ns
+          : 100;
     else {
       const value = [...steps]
         .filter(isOnFlow)
@@ -626,8 +652,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           const userPluginsFlow =
             step.ctx && step.ctx.plugins
               ? [...(step.ctx?.plugins || [])]
-                  .filter(isPluginNameMatchingSearch)
-                  .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
+                .filter(isPluginNameMatchingSearch)
+                .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
               : 0;
 
           if (flow === 'user')
@@ -686,9 +712,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
         </div>
         <div
           onClick={() => setSelectedStep(-1)}
-          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${
-            informations.state === 'Successful' ? 'success' : 'danger'
-          }`}>
+          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${informations.state === 'Successful' ? 'success' : 'danger'
+            }`}>
           <span>Report</span>
           <span>
             {reportDuration()} {unit}
@@ -710,15 +735,13 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                     setSelectedPlugin(-1);
                     setSelectedStep(step.task);
                   }}
-                  className={`d-flex-between mt-1 px-3 py-2 report-step ${
-                    step.task === selectedStep ? 'btn-dark' : ''
-                  }`}>
+                  className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep ? 'btn-dark' : ''
+                    }`}>
                   <div className="d-flex align-items-center">
                     {displaySubList && (
                       <i
-                        className={`fas fa-chevron-${
-                          step.open || flow === 'user' ? 'down' : 'right'
-                        } me-1`}
+                        className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
+                          } me-1`}
                         onClick={() =>
                           setSteps(
                             steps.map((s) =>
@@ -735,8 +758,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                       {unit === 'ms'
                         ? roundNsTo(step.duration_ns)
                         : unit === 'ns'
-                        ? step.duration_ns
-                        : percentage}{' '}
+                          ? step.duration_ns
+                          : percentage}{' '}
                       {unit}
                     </span>
                   )}
@@ -758,18 +781,17 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                           key={plugin.name}
                           style={{ width: 'calc(100% - 12px)', marginLeft: '12px' }}
                           onClick={() => setSelectedPlugin(plugin.name)}
-                          className={`d-flex-between mt-1 px-3 py-2 report-step ${
-                            step.task === selectedStep && plugin.name === selectedPlugin
-                              ? 'btn-dark'
-                              : ''
-                          }`}>
+                          className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep && plugin.name === selectedPlugin
+                            ? 'btn-dark'
+                            : ''
+                            }`}>
                           <span>{firstLetterUppercase(pluginName)}</span>
                           <span style={{ maxWidth: '100px', textAlign: 'right' }}>
                             {unit === 'ms'
                               ? roundNsTo(plugin.duration_ns)
                               : unit === 'ns'
-                              ? plugin.duration_ns
-                              : pluginPercentage}{' '}
+                                ? plugin.duration_ns
+                                : pluginPercentage}{' '}
                             {unit}
                           </span>
                         </div>
@@ -790,8 +812,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                   ? informations
                   : steps.find((t) => t.task === selectedStep)
                 : steps
-                    .find((t) => t.task === selectedStep)
-                    ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+                  .find((t) => t.task === selectedStep)
+                  ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
               null,
               4
             ) +

@@ -12321,6 +12321,11 @@
       "initial_data" : {
         "description" : "???",
         "type" : "object"
+      },
+      "max_depth" : {
+        "format" : "int32",
+        "description" : "???",
+        "type" : "integer"
       }
     }
   },
@@ -25451,6 +25456,11 @@
       "initial_data" : {
         "description" : "???",
         "type" : "object"
+      },
+      "max_depth" : {
+        "format" : "int32",
+        "description" : "???",
+        "type" : "integer"
       }
     }
   },

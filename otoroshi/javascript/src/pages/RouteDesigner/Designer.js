@@ -1447,6 +1447,7 @@ class Designer extends React.Component {
                     }}
                     onRemove={this.removeNode}
                   />
+
                 </Flow>
                 <FormContainer
                   serviceMode={serviceMode}

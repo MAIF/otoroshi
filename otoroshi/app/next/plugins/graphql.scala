@@ -14,15 +14,24 @@ import sangria.ast.{DirectiveLocation, Document, FieldDefinition, ListType, Name
 import sangria.execution.{ExceptionHandler, Executor, HandledException}
 import sangria.macros.LiteralGraphQLStringContext
 import sangria.parser.QueryParser
-import sangria.schema.{Action, AnyFieldResolver, Argument, AstDirectiveContext, AstSchemaBuilder, Directive, DirectiveResolver, FieldResolver, InstanceCheck, IntType, OptionInputType, OptionType, ResolverBasedAstSchemaBuilder, ScalarType, Schema, StringType}
+import sangria.schema.{Action, AnyFieldResolver, Argument, AstDirectiveContext, AstSchemaBuilder, Directive, DirectiveResolver, FieldResolver, InstanceCheck, IntType, OptionInputType, OptionType, ResolverBasedAstSchemaBuilder, ScalarType, Schema, StringType, BooleanType}
 import sangria.marshalling.playJson._
 import sangria.renderer.SchemaRenderer
+import otoroshi.utils.{JsonPathUtils, TypedMap} 
 
 import scala.concurrent.duration.{Duration, DurationLong, FiniteDuration, MILLISECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util._
 import sangria.validation.ValueCoercionViolation
+import akka.http.scaladsl.util.FastFuture
+import sangria.execution.QueryReducer
+
+// [TODO] 
+// ajouter sur chaque directive un parameter paginate=true (pour que ça marche, il faut les arguments optionnels limit et offset)
+// ++ plus tard les mutations
+// ajouter un endpoint dans le backoffice controller pour recuperer l'exposition d'un service depuis son id
+// gérer la secu sur les champs et query (à réfléchir)
 
 case class GraphQLQueryConfig(
     url: String,
@@ -65,6 +74,8 @@ object GraphQLQueryConfig {
   }
 }
 
+
+
 class GraphQLQuery extends NgBackendCall {
 
   private val library = ImmutableJqLibrary.of()
@@ -81,6 +92,7 @@ class GraphQLQuery extends NgBackendCall {
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
+
 
   def applyJq(payload: JsValue, filter: String): Either[JsValue, JsValue] = {
     val request  = ImmutableJqRequest
@@ -120,6 +132,8 @@ class GraphQLQuery extends NgBackendCall {
       attrs = ctx.attrs,
       env = env
     )
+
+
     env.Ws
       .url(config.url)
       .withRequestTimeout(config.timeout.millis)
@@ -159,7 +173,8 @@ class GraphQLQuery extends NgBackendCall {
 
 case class GraphQLBackendConfig(
                                schema: String,
-                               initialData: Option[JsValue] = None
+                               initialData: Option[JsValue] = None,
+                               maxDepth: Int = 15
                              ) extends NgPluginConfig {
   def json: JsValue = GraphQLBackendConfig.format.writes(this)
 }
@@ -169,7 +184,8 @@ object GraphQLBackendConfig {
     override def reads(json: JsValue): JsResult[GraphQLBackendConfig] = Try {
       GraphQLBackendConfig(
         schema = json.select("schema").as[String],
-        initialData = json.select("initialData").asOpt[JsObject]
+        initialData = json.select("initialData").asOpt[JsObject],
+        maxDepth = json.select("maxDepth").as[Int]
       )
     }  match {
       case Failure(ex)    => JsError(ex.getMessage())
@@ -178,7 +194,8 @@ object GraphQLBackendConfig {
 
     override def writes(o: GraphQLBackendConfig): JsValue = Json.obj(
       "schema" -> o.schema,
-      "initialData" -> o.initialData.getOrElse(JsNull).as[JsValue]
+      "initialData" -> o.initialData.getOrElse(JsNull).as[JsValue],
+      "maxDepth" -> o.maxDepth
     )
   }
 }
@@ -213,23 +230,8 @@ class GraphQLBackend extends NgBackendCall {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
 
-  case object MapCoercionViolation extends ValueCoercionViolation("Map value can't be parsed")
+  case object MapCoercionViolation extends ValueCoercionViolation("Exception : map value can't be parsed")
   case object JsonCoercionViolation extends ValueCoercionViolation("Not valid JSON")
-
-  val MapType = ScalarType[Map[String, String]]("Map",
-    coerceOutput = (data, _) =>
-      //Json.stringify(
-    //  JsObject(data.view.mapValues(JsString.apply).toSeq)
-      Json.toJson(data.view).stringify,
-    // ),
-    coerceUserInput = e => e.asInstanceOf[Map[String, String]] match {
-      case r: Map[String, String] => Right(r)
-      case _ => Left(MapCoercionViolation)
-    },
-    coerceInput = {
-      case ObjectValue(fields, _, _) => Right(fields.map(f => (f.name, f.value.toString)).toMap)
-      case _ => Left(MapCoercionViolation)
-    })
 
   val exceptionHandler = ExceptionHandler(
     onException = {
@@ -237,7 +239,9 @@ class GraphQLBackend extends NgBackendCall {
     }
   )
 
-  private def execute(astDocument: Document, query: String, builder: ResolverBasedAstSchemaBuilder[Unit], initialData: JsObject)
+  case object TooComplexQueryError extends Exception("Query is too expensive.")
+
+  private def execute(astDocument: Document, query: String, builder: ResolverBasedAstSchemaBuilder[Unit], initialData: JsObject, maxDepth: Int)
                      (implicit env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     QueryParser.parse(query) match {
       case Failure(error) =>
@@ -246,14 +250,22 @@ class GraphQLBackend extends NgBackendCall {
           Source.single(Json.obj("error" -> error.getMessage).stringify.byteString)
         ).future
       case Success(queryAst) =>
+        val schema = Schema.buildFromAst(astDocument, builder.validateSchemaWithException(astDocument))
+
         Executor.execute(
           schema = Schema.buildFromAst(astDocument, builder.validateSchemaWithException(astDocument)),
           queryAst = queryAst,
           root = initialData,
-          exceptionHandler = exceptionHandler
+          exceptionHandler = exceptionHandler,
+          queryReducers = List(
+            QueryReducer.rejectMaxDepth[Unit](maxDepth),
+            QueryReducer.rejectComplexQueries[Unit](
+                4000,
+                (_, _) => TooComplexQueryError)
+            )
         )
           .map(res => {
-            println(res)
+            // println(res)
             val response = Json.toJson(res)
 
             bodyResponse(200,
@@ -261,6 +273,15 @@ class GraphQLBackend extends NgBackendCall {
               Source.single(response.stringify.byteString)
             )
           })
+            .recoverWith {
+              case e: Exception => bodyResponse(200, 
+                Map("Content-Type" -> "application/json"), 
+                Source.single(
+                  Json.obj("data" -> Json.obj("data" -> Json.arr(), "errors" -> Json.arr(Json.obj(
+                    "message" -> e.getMessage()
+                    )))).stringify.byteString
+              )).future
+            }
     }
   }
 
@@ -272,169 +293,252 @@ class GraphQLBackend extends NgBackendCall {
 
   val urlArg: Argument[String] = Argument("url", StringType)
   val methodArg: Argument[Option[String]] = Argument("method", OptionInputType(StringType))
-  val headersArg: Argument[Option[Map[String, String]]] = Argument("headers", OptionInputType(MapType))
+  val headersArg = Argument("headers", OptionInputType(StringType))
   val timeoutArg: Argument[Int] = Argument("timeout", IntType, defaultValue = 5000)
-  val jsonDataArg: Argument[String] = Argument("data", StringType)
+  val jsonDataArg: Argument[Option[String]] = Argument("data", OptionInputType(StringType))
+  val jsonPathArg: Argument[Option[String]] = Argument("path", OptionInputType(StringType))
   val queryArg: Argument[Option[String]] = Argument("query", OptionInputType(StringType))
   val responsePathArg: Argument[Option[String]] = Argument("response_path", OptionInputType(StringType))
   val responseFilterArg   = Argument("response_filter", OptionInputType(StringType))
-  val arguments     = urlArg :: methodArg :: timeoutArg :: headersArg :: queryArg :: responsePathArg :: responseFilterArg :: Nil
+  val limitArg = Argument("limit", OptionInputType(IntType))
+  val offsetArg = Argument("offset", OptionInputType(IntType))
+  val paginateArg = Argument("paginate", BooleanType, defaultValue = false)
+
+  val arguments = urlArg :: methodArg :: timeoutArg :: headersArg :: queryArg :: responsePathArg :: responseFilterArg :: limitArg :: offsetArg :: paginateArg :: Nil
+
+  def extractLimit(c: AstDirectiveContext[Unit], itemsLength: Option[Int]) = {
+    val queryParameter = c.ctx.argOpt(limitArg)
+    val limitParameterFromDirective = c.argOpt(limitArg)
+    val autoPaginateParameter = c.arg(paginateArg)
+    val defaultLimit = 1
+
+    queryParameter
+      .orElse(limitParameterFromDirective)
+      .orElse(if(autoPaginateParameter) defaultLimit.some else None)
+      .orElse(itemsLength)
+      .orElse(defaultLimit.some)
+      .get
+      .asInstanceOf[Int]
+  }
+
+  def extractOffset(c: AstDirectiveContext[Unit]) = {
+    val offsetParameter = c.ctx.argOpt(offsetArg)
+    val offsetParameterFromDirective = c.argOpt(offsetArg)
+    val autoPaginateParameter = c.arg(paginateArg)
+    
+    offsetParameter
+      .orElse(offsetParameterFromDirective)
+      .orElse(if(autoPaginateParameter) 0.some else None)
+      .orElse(0.some)
+      .get
+      .asInstanceOf[Int]
+  }
+
+  def sliceArrayWithArgs(arr: IndexedSeq[JsValue], c: AstDirectiveContext[Unit]) = {
+    val limit = extractLimit(c, arr.length.some)
+    val offset = extractOffset(c)
+    println(limit, offset, arr.slice(offset, limit))
+    arr.slice(offset, limit)
+  }
 
   def httpRestDirectiveResolver(c: AstDirectiveContext[Unit])(implicit env: Env, ec: ExecutionContext): Action[Unit, Any] = {
     val queryArgs = c.ctx.args.raw.map {
       case (str, Some(v)) =>(str, String.valueOf(v))
       case (k, v) => (k, String.valueOf(v))
     }
-    val url = queryArgs.foldLeft(c.arg(urlArg))((u, value) => GlobalExpressionLanguage.expressionReplacer.replaceOn(u) {
-      case value._1 => value._2
-      case v => v
-    })
+
+    val paramsArgs: Map[String, String] = queryArgs.foldLeft(Map.empty[String, String]) {
+      case (acc, (key, value)) => acc + (s"params.$key" -> value)
+    }
+
+
+    val ctx = 
+      (c.ctx.value.asInstanceOf[JsObject].value.foldLeft(Map.empty[String, String]) {
+      case (acc, (key, value)) => acc + (s"item.$key" -> (value match {
+        case JsObject(_) => ""
+        case v => v.toString()
+      })) 
+      }) ++ paramsArgs
+
+    val url = GlobalExpressionLanguage.apply(
+      c.arg(urlArg),
+      None, None, None, None,
+      ctx,
+      TypedMap.empty,
+      env
+    )
+
+    println(url, ctx)
 
     env.Ws.url(url)
       .withRequestTimeout(FiniteDuration(c.arg(timeoutArg), MILLISECONDS))
       .withMethod(c.arg(methodArg).getOrElse("GET"))
-      .withHttpHeaders(c.argOpt(headersArg).getOrElse(Map.empty[String, String]).asInstanceOf[Map[String, String]].toSeq:_*)
+      .withHttpHeaders(Json.parse(c.arg(headersArg).getOrElse("{}")).as[Map[String, String]].toSeq:_*)
       .execute()
       .map { resp =>
         if (resp.status == 200) {
-          resp.json match {
-            case JsArray(value) => value
-            case v => v
-          }
+            resp.json.atPath(c.arg(responsePathArg).getOrElse("$")).asOpt[JsValue].getOrElse(JsNull) match {
+              case JsArray(value) => 
+                val res = sliceArrayWithArgs(value, c)
+                res.map {
+                  case v: JsObject => v
+                  case JsString(v) => v
+                  case JsNumber(v) => v
+                  case JsBoolean(v) => v
+                  case v => v.toString()
+                }
+
+              case v => v
+            }
         } else {
-          c.ctx.field.toAst.fieldType match {
-            case ListType(_, _) => Seq.empty
-            case _ => JsObject.empty
-          }
+            c.ctx.field.toAst.fieldType match {
+              case ListType(_, _) => Seq.empty
+              case _ => JsObject.empty
+            }
         }
       }
   }
 
-  def jsonDirectiveResolver(c: AstDirectiveContext[Unit]): Action[Unit, Any] = {
-    c.ctx.field.toAst.fieldType match {
-      case ListType(_, _) => Json.parse(c.arg(jsonDataArg)).as[JsArray].value
-      case _ => Json.parse(c.arg(jsonDataArg))
-    }
+  def jsonDirectiveResolver(c: AstDirectiveContext[Unit], config: GraphQLBackendConfig): Action[Unit, Any] = {
+    val data: JsValue = config.initialData.getOrElse(Json.obj())
+
+    c.arg(jsonPathArg) match {
+      case Some(path) =>
+        c.ctx.field.toAst.fieldType match {
+          case ListType(_, __) => sliceArrayWithArgs(JsonPathUtils.getAtPolyJson(data, path).getOrElse(Json.arr()).asInstanceOf[JsArray].value, c)
+          case _ => JsonPathUtils.getAtPolyJson(data, path).getOrElse(Json.obj()).asInstanceOf[JsObject]
+        }
+      case _ => 
+        c.ctx.field.toAst.fieldType match {
+          case ListType(_, __) => sliceArrayWithArgs(
+            Json.parse(c.arg(jsonDataArg).getOrElse("[]")).as[JsArray].value, 
+            c
+          ).asInstanceOf[JsArray].value
+          case _ => c.arg(jsonDataArg)
+        }
+    } 
   }
 
-  case class GraphlCallException(message: String) extends Exception(message)
+      case class GraphlCallException(message: String) extends Exception(message)
 
-  def graphQLDirectiveResolver(c: AstDirectiveContext[Unit], query: String, ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])
-                              (implicit env: Env, ec: ExecutionContext, mat: Materializer): Action[Unit, Any] = {
-    val queryArgs = c.ctx.args.raw.map {
-      case (str, Some(v)) => (str, String.valueOf(v))
-      case (k, v) => (k, String.valueOf(v))
-    }
-    val url = queryArgs.foldLeft(c.arg(urlArg))((u, value) => GlobalExpressionLanguage.expressionReplacer.replaceOn(u) {
-      case value._1 => value._2
-      case v => v
-    })
-
-    val graphqlQuery = env.scriptManager.getAnyScript[GraphQLQuery](s"cp:${classOf[GraphQLQuery].getName}").right.get
-    graphqlQuery.callBackend(ctx.copy(
-      config = Json.obj(
-        "url" -> url,
-        "headers" -> c.argOpt(headersArg).getOrElse(Map.empty[String, String]).asInstanceOf[Map[String, String]],
-        "method" -> JsString(c.arg(methodArg).getOrElse("POST")),
-        "timeout" -> JsNumber(c.argOpt(timeoutArg).getOrElse(60000).toInt),
-        "query" -> query,
-        "responsePath" -> c.argOpt(responsePathArg),
-        "responseFilter" -> c.argOpt(responseFilterArg),
-      )
-    ), delegates)
-      .flatMap {
-        case Left(_) => GraphlCallException("Something happens when calling GraphQL directive").future
-        case Right(value) => bodyToJson(value.response.body).map(body => {
-          if (value.status > 299) {
-            GraphlCallException((body \ "stringified").as[String])
-          } else {
-            ((body \ "json").as[JsObject] \ "data").select(c.ctx.field.toAst.name).asOpt[JsArray] match {
-              case Some(value) => value.value
-              case None => JsArray.empty
-            }
-          }
+      def graphQLDirectiveResolver(c: AstDirectiveContext[Unit], query: String, ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])
+      (implicit env: Env, ec: ExecutionContext, mat: Materializer): Action[Unit, Any] = {
+        val queryArgs = c.ctx.args.raw.map {
+          case (str, Some(v)) => (str, String.valueOf(v))
+          case (k, v) => (k, String.valueOf(v))
+        }
+        val url = queryArgs.foldLeft(c.arg(urlArg))((u, value) => GlobalExpressionLanguage.expressionReplacer.replaceOn(u) {
+          case value._1 => value._2
+          case v => v
         })
-      }
-  }
 
-  def bodyToJson(source: Source[ByteString, _])(implicit mat: Materializer, ec: ExecutionContext) = source
-    .runFold(ByteString.empty)(_ ++ _)
-    .map { rawBody => {
-      val body = rawBody.utf8String
-      val json = Json.parse(if (body.isEmpty) {
-        "{}"
-      } else {
-        body
-      }).as[JsObject]
-
-      Json.obj(
-        "stringified" -> body,
-        "json" -> json
-      )
-    }}
-
-  override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])
-                          (implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
-    val config = ctx.cachedConfig("internalName")(GraphQLBackendConfig.format).getOrElse(GraphQLBackendConfig(schema = DEFAULT_GRAPHQL_SCHEMA))
-
-    bodyToJson(ctx.request.body).flatMap(body => {
-
-      val jsonBody = (body \ "json").as[JsObject]
-      if ((jsonBody \ "operationName").asOpt[String].contains("IntrospectionQuery")) {
-        QueryParser.parse(config.schema) match {
-          case Failure(exception) =>
-            bodyResponse(400,
-              Map("Content-Type" -> "application/json"),
-              Source.single(Json.obj("error" -> exception.getMessage).stringify.byteString))
-              .future
-          case Success(astDocument) =>
-            Executor.execute(Schema.buildFromAst(astDocument), sangria.introspection.introspectionQuery)
-              .map(res => {
-                val response = Json.toJson(res)
-
-                bodyResponse(200,
-                  Map("Content-Type" -> "application/json"),
-                  Source.single(response.stringify.byteString)
-                )
-              })
-        }
-
-      } else {
-        QueryParser.parse(config.schema) match {
-          case Failure(exception) => bodyResponse(400,
-            Map("Content-Type" -> "application/json"),
-            Source.single(Json.obj("error" -> exception.getMessage).stringify.byteString)).future
-          case Success(astDocument: Document) =>
-            val HttpRestDirective = Directive("rest", arguments = arguments, locations = directivesLocations)
-            val GraphQLDirective = Directive("graphql", arguments = arguments, locations = directivesLocations)
-            val OtoroshiRouteDirective = Directive("otoroshi", arguments = arguments, locations = directivesLocations)
-            val JsonDirective = Directive("json", arguments = jsonDataArg :: Nil, locations = directivesLocations)
-
-            val builder: ResolverBasedAstSchemaBuilder[Unit] = AstSchemaBuilder.resolverBased[Unit](
-              InstanceCheck.field[Unit, JsValue],
-
-              DirectiveResolver(HttpRestDirective, resolve = httpRestDirectiveResolver),
-              DirectiveResolver(GraphQLDirective, resolve = c => graphQLDirectiveResolver(c, c.arg(queryArg).getOrElse("{}"), ctx, delegates)),
-              /*DirectiveResolver(OtoroshiRouteDirective, resolve = OtoroshiRouteDirectiveResolver),*/
-              DirectiveResolver(JsonDirective, resolve = jsonDirectiveResolver),
-              FieldResolver.defaultInput[Unit, JsValue]
+        val graphqlQuery = env.scriptManager.getAnyScript[GraphQLQuery](s"cp:${classOf[GraphQLQuery].getName}").right.get
+        graphqlQuery.callBackend(ctx.copy(
+          config = Json.obj(
+            "url" -> url,
+            "headers" -> Json.parse(c.arg(headersArg).getOrElse("{}")).as[Map[String, String]],
+            "method" -> JsString(c.arg(methodArg).getOrElse("POST")),
+            "timeout" -> JsNumber(c.argOpt(timeoutArg).getOrElse(60000).toInt),
+            "query" -> query,
+            "responsePath" -> c.argOpt(responsePathArg),
+            "responseFilter" -> c.argOpt(responseFilterArg),
             )
-
-            (jsonBody \ "query").asOpt[String] match {
-              case Some(value) => execute(
-                astDocument,
-                query = value,
-                builder,
-                config.initialData.map(_.as[JsObject]).getOrElse(JsObject.empty)
-              )
-              case None => bodyResponse(400,
-                Map("Content-Type" -> "application/json"),
-                Source.single(Json.obj("error" -> "query field missing").stringify.byteString)).future
+          ), delegates)
+            .flatMap {
+              case Left(_) => GraphlCallException("Something happens when calling GraphQL directive").future
+              case Right(value) => bodyToJson(value.response.body).map(body => {
+                if (value.status > 299) {
+                  GraphlCallException((body \ "stringified").as[String])
+                } else {
+                  ((body \ "json").as[JsObject] \ "data").select(c.ctx.field.toAst.name).asOpt[JsArray] match {
+                    case Some(value) => sliceArrayWithArgs(value.value, c)
+                    case None => JsArray.empty
+                  }
+                }
+              })
             }
-        }
       }
-    })
-  }
+
+      def bodyToJson(source: Source[ByteString, _])(implicit mat: Materializer, ec: ExecutionContext) = source
+        .runFold(ByteString.empty)(_ ++ _)
+        .map { rawBody => {
+          val body = rawBody.utf8String
+          val json = Json.parse(if (body.isEmpty) {
+            "{}"
+          } else {
+            body
+          }).as[JsObject]
+
+          Json.obj(
+            "stringified" -> body,
+            "json" -> json
+          )
+        }}
+
+        override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])
+        (implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+          val config = ctx.cachedConfig("internalName")(GraphQLBackendConfig.format).getOrElse(GraphQLBackendConfig(schema = DEFAULT_GRAPHQL_SCHEMA))
+
+          bodyToJson(ctx.request.body).flatMap(body => {
+
+            val jsonBody = (body \ "json").as[JsObject]
+            if ((jsonBody \ "operationName").asOpt[String].contains("IntrospectionQuery")) {
+              QueryParser.parse(config.schema) match {
+                case Failure(exception) =>
+                  bodyResponse(400,
+                    Map("Content-Type" -> "application/json"),
+                    Source.single(Json.obj("error" -> exception.getMessage).stringify.byteString))
+                      .future
+                case Success(astDocument) =>
+                  Executor.execute(Schema.buildFromAst(astDocument), sangria.introspection.introspectionQuery)
+                    .map(res => {
+                      val response = Json.toJson(res)
+
+                      bodyResponse(200,
+                        Map("Content-Type" -> "application/json"),
+                        Source.single(response.stringify.byteString)
+                        )
+                    })
+              }
+
+              } else {
+                QueryParser.parse(config.schema) match {
+                  case Failure(exception) => bodyResponse(400,
+                    Map("Content-Type" -> "application/json"),
+                    Source.single(Json.obj("error" -> exception.getMessage).stringify.byteString)).future
+                  case Success(astDocument: Document) =>
+                    val HttpRestDirective = Directive("rest", arguments = arguments, locations = directivesLocations)
+                    val GraphQLDirective = Directive("graphql", arguments = arguments, locations = directivesLocations)
+                    val OtoroshiRouteDirective = Directive("otoroshi", arguments = arguments, locations = directivesLocations)
+                    val JsonDirective = Directive("json", arguments = jsonDataArg :: jsonPathArg :: Nil, locations = directivesLocations)
+
+                    val builder: ResolverBasedAstSchemaBuilder[Unit] = AstSchemaBuilder.resolverBased[Unit](
+                      InstanceCheck.field[Unit, JsValue],
+
+                      DirectiveResolver(HttpRestDirective, resolve = httpRestDirectiveResolver),
+                      DirectiveResolver(GraphQLDirective, resolve = c => graphQLDirectiveResolver(c, c.arg(queryArg).getOrElse("{}"), ctx, delegates)),
+                      /*DirectiveResolver(OtoroshiRouteDirective, resolve = OtoroshiRouteDirectiveResolver),*/
+                     DirectiveResolver(JsonDirective, resolve = c => jsonDirectiveResolver(c, config)),
+                     FieldResolver.defaultInput[Unit, JsValue]
+                   )
+
+
+                 (jsonBody \ "query").asOpt[String] match {
+                   case Some(value) => execute(
+                     astDocument,
+                     query = value,
+                     builder,
+                     config.initialData.map(_.as[JsObject]).getOrElse(JsObject.empty),
+                     config.maxDepth
+                   )
+                 case None => bodyResponse(400,
+                   Map("Content-Type" -> "application/json"),
+                   Source.single(Json.obj("error" -> "query field missing").stringify.byteString)).future
+                 }
+                }
+              }
+          })
+        }
 }
 
 
