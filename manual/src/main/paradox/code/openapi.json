@@ -19785,6 +19785,11 @@
               "type" : "object"
             } ],
             "description" : "???"
+          },
+          "max_depth" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
           }
         }
       },
@@ -21817,6 +21822,11 @@
               "type" : "object"
             } ],
             "description" : "???"
+          },
+          "max_depth" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
           }
         }
       },
