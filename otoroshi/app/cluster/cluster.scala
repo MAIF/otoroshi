@@ -15,6 +15,9 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Compression, Flow, Framing, Sink, Source}
 import akka.util.ByteString
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.AuthConfigsDataStore
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
@@ -28,29 +31,20 @@ import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.jobs.updates.Version
 import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}
-import otoroshi.next.models.{
-  KvNgRouteDataStore,
-  KvNgServiceDataStore,
-  KvStoredNgBackendDataStore,
-  KvStoredNgTargetDataStore,
-  NgRouteDataStore,
-  NgServiceDataStore,
-  StoredNgBackendDataStore,
-  StoredNgTargetDataStore
-}
+import otoroshi.next.models.{KvNgRouteDataStore, KvNgServiceDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils
-import otoroshi.utils.{future, SchedulerHelper}
+import otoroshi.utils.{SchedulerHelper, future}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer}
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, Result}
+import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, RequestHeader, Result}
 import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
 import otoroshi.security.IdGenerator
@@ -904,6 +898,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private val servicesIncrementsRef = new AtomicReference[TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]](
     new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
   )
+  private val workerSessionsCache = Scaffeine()
+    .maximumSize(1000L)
+    .expireAfterWrite(env.clusterConfig.worker.state.pollEvery.millis * 3)
+    .build[String, PrivateAppsUser]()
   /////////////
 
   def lastSync: DateTime = lastPoll.get()
@@ -1071,7 +1069,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
-  def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = {
+  def isSessionValid(id: String, reqOpt: Option[RequestHeader]): Future[Option[PrivateAppsUser]] = {
     if (env.clusterConfig.mode.isWorker) {
       Retry
         .retry(
@@ -1107,7 +1105,31 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           Cluster.logger.debug(
             s"[${env.clusterConfig.mode.name}] Error while checking session with Otoroshi leader cluster"
           )
-          None
+          workerSessionsCache.getIfPresent(id) match {
+            case None => {
+              Cluster.logger.debug(
+                s"[${env.clusterConfig.mode.name}] no local session found after leader call failed"
+              )
+              PrivateAppsUser.fromCookie(id, reqOpt)(env) match {
+                case None =>
+                  Cluster.logger.debug(
+                    s"[${env.clusterConfig.mode.name}] no cookie session found after leader call failed"
+                  )
+                  None
+                case Some(local) =>
+                  Cluster.logger.warn(
+                    s"[${env.clusterConfig.mode.name}] using cookie created session as leader call failed !"
+                  )
+                  local.some
+              }
+            }
+            case Some(local) => {
+              Cluster.logger.warn(
+                s"[${env.clusterConfig.mode.name}] Using locally created session as leader call failed !"
+              )
+              local.some
+            }
+          }
         }
     } else {
       FastFuture.successful(None)
@@ -1117,6 +1139,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def createSession(user: PrivateAppsUser): Future[Option[PrivateAppsUser]] = {
     if (env.clusterConfig.mode.isWorker) {
       Cluster.logger.debug(s"Creating session for ${user.email} on the leader: ${Json.prettyPrint(user.json)}")
+      workerSessionsCache.put(user.randomId, user)
       Retry
         .retry(
           times = config.worker.retries,

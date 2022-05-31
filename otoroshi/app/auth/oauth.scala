@@ -271,8 +271,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       else ""
 
     if (authConfig.noWildcardRedirectURI) {
-      logger.info(s"secret used $redirectUri")
-      logger.info(state)
+      logger.debug(s"secret used $redirectUri")
+      logger.debug(state)
     }
 
     val (loginUrl, sessionParams) = authConfig.pkce match {

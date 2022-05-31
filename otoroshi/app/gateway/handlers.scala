@@ -32,10 +32,11 @@ import play.core.WebCommands
 import otoroshi.security.OtoroshiClaim
 import otoroshi.ssl.{KeyManagerCompatibility, SSLSessionJavaHelper}
 import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits.{BetterConfiguration, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{BetterConfiguration, BetterString, BetterSyntax}
 
 import java.io.File
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 import scala.util.control.NoStackTrace
 
 case class ProxyDone(
@@ -533,6 +534,7 @@ class GatewayRequestHandler(
       val httpOnlyOpt: Option[Boolean]  = req.queryString.get("httpOnly").map(_.last).map(_.toBoolean)
       val secureOpt: Option[Boolean]    = req.queryString.get("secure").map(_.last).map(_.toBoolean)
       val hashOpt: Option[String]       = req.queryString.get("hash").map(_.last)
+      val secOpt: Option[PrivateAppsUser]       = req.queryString.get("sec").map(_.last).flatMap(sec => Try(env.aesDecrypt(sec)).toOption).flatMap(s => PrivateAppsUser.fmt.reads(s.parseJson).asOpt)
 
       (hashOpt.map(h => env.sign(req.theUrl.replace(s"&hash=$h", ""))), hashOpt) match {
         case (Some(hashedUrl), Some(hash)) if hashedUrl == hash =>
@@ -545,7 +547,8 @@ class GatewayRequestHandler(
                     sessionId,
                     cp,
                     ma.getOrElse(86400),
-                    SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true))
+                    SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true)),
+                    secOpt
                   ): _*
                 )
               )
@@ -557,7 +560,8 @@ class GatewayRequestHandler(
                     sessionId,
                     cp,
                     ma.getOrElse(86400),
-                    SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true))
+                    SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true)),
+                    secOpt
                   ): _*
                 )
               )

@@ -228,7 +228,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
         env.clusterConfig.mode match {
           case Off    => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
           case Worker => {
-            env.clusterAgent.isSessionValid(sessionId).map {
+            env.clusterAgent.isSessionValid(sessionId, None).map {
               case Some(user) => Ok(user.toJson)
               case None       => NotFound(Json.obj("error" -> "Session not found"))
             }
