@@ -17848,6 +17848,19 @@
           }
         }
       },
+      "otoroshi.next.plugins.ViolationsException" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "errors" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          }
+        }
+      },
       "TokenResponse" : {
         "type" : "object",
         "description" : "User login token response",
@@ -18059,6 +18072,45 @@
             "description" : "the kind of algosettings",
             "type" : "string",
             "enum" : [ "HSAlgoSettings", "RSAlgoSettings", "ESAlgoSettings", "JWKSAlgoSettings", "RSAKPAlgoSettings", "ESKPAlgoSettings", "KidAlgoSettings" ]
+          }
+        }
+      },
+      "otoroshi.next.plugins.GraphQLProxyConfig" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "max_complexity" : {
+            "format" : "double",
+            "description" : "???",
+            "type" : "number"
+          },
+          "schema" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "path" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "headers" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "endpoint" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "max_depth" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
           }
         }
       },
@@ -23131,6 +23183,11 @@
           }
         }
       },
+      "otoroshi.next.plugins.TooComplexQueryError" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : { }
+      },
       "WebAuthnRegistrationFinishBody" : {
         "type" : "object",
         "description" : ""
@@ -25071,6 +25128,45 @@
           "type" : {
             "type" : "string",
             "enum" : [ "none" ]
+          }
+        }
+      },
+      "otoroshi.next.plugins.GraphQLProxy" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "max_complexity" : {
+            "format" : "double",
+            "description" : "???",
+            "type" : "number"
+          },
+          "schema" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "path" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "headers" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "endpoint" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "max_depth" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
           }
         }
       },
