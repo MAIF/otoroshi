@@ -594,11 +594,11 @@ object GraphQLProxyConfig {
 
 class GraphQLProxy extends NgBackendCall {
 
-  override def useDelegates: Boolean                       = false
+  override def useDelegates: Boolean                       = true
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = false
   override def name: String                                = "GraphQL Proxy"
-  override def description: Option[String]                 = "This plugin can be used to create a GraphQL schema".some
+  override def description: Option[String]                 = "This plugin can apply validations (query, schema, max depth, max complexity) on graphql endpoints".some
   override def defaultConfigObject: Option[NgPluginConfig] = GraphQLProxyConfig.default.some
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
