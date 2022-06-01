@@ -305,7 +305,7 @@ case class DataExporterConfig(
     id: String,
     name: String,
     desc: String,
-    metadata: Map[String, String],
+    metadata: Map[String, String] = Map.empty,
     tags: Seq[String] = Seq.empty,
     location: EntityLocation = EntityLocation(),
     bufferSize: Int = 5000,
