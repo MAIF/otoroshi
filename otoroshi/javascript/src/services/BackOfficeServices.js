@@ -1803,7 +1803,7 @@ export function routeEntries(routeId) {
 }
 
 export function graphQLTryIt(url) {
-  return fetch(`http://otoroshi.oto.tools:9999/bo/api/graphqlproxy?url=${url}`)
+  return fetch(`/bo/api/graphqlproxy?url=${url}`)
     .then(r => r.json());
 }
 

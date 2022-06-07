@@ -193,7 +193,7 @@ export const TryIt = ({ route, serviceMode }) => {
                 executeButtonBorder: "transparent"
               }}
               tabs={[{
-                endpoint: `http://otoroshi.oto.tools:9999/bo/api/graphqlproxy?url=${encodeURIComponent(playgroundUrl)}`,
+                endpoint: `/bo/api/graphqlproxy?url=${encodeURIComponent(playgroundUrl)}`,
                 query: '',
                 name: Date.now()
                 // variables?: string
