@@ -17643,11 +17643,11 @@
         }
       },
       "otoroshi.auth.GroupRights" : {
-        "description" : "User rights associated with a group",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "userRights" : {
-            "description" : "The user rights associated with this group",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.UserRights"
           },
           "users" : {
@@ -17655,7 +17655,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "The users associated with this group"
+            "description" : "???"
           }
         }
       },
@@ -18188,7 +18188,7 @@
         "description" : "organization id"
       },
       "otoroshi.auth.SAMLCanocalizationMethod" : {
-        "description" : "Canonicalization Method for XML Signatures",
+        "description" : "???",
         "type" : "object",
         "properties" : { }
       },
@@ -18376,7 +18376,7 @@
         }
       },
       "otoroshi.auth.LdapAuthModuleConfig" : {
-        "description" : "Authentication module that works with LDAP",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "groupFilters" : {
@@ -18384,33 +18384,33 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.auth.GroupFilter"
             },
-            "description" : "LDAP group filters"
+            "description" : "???"
           },
           "metadata" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "Metadata of the module"
+            "description" : "???"
           },
           "allowEmptyPassword" : {
-            "description" : "Allow empty password access",
+            "description" : "???",
             "type" : "boolean"
           },
           "basicAuth" : {
-            "description" : "Use standard basic auth or web login form",
+            "description" : "???",
             "type" : "boolean"
           },
           "searchBase" : {
-            "description" : "LDAP search base",
+            "description" : "???",
             "type" : "string"
           },
           "nameField" : {
-            "description" : "Field name to get name from user profile",
+            "description" : "???",
             "type" : "string"
           },
           "emailField" : {
-            "description" : "Field name to get email from user profile",
+            "description" : "???",
             "type" : "string"
           },
           "extractProfileFilterNot" : {
@@ -18418,7 +18418,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "Exclude LDAP properties matching"
+            "description" : "???"
           },
           "type" : {
             "description" : "the type of the module",
@@ -18431,14 +18431,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "Field name to get metadata from user profile"
+            "description" : "???"
           },
           "rightsOverride" : {
             "type" : "object",
             "additionalProperties" : {
               "$ref" : "#/components/schemas/otoroshi.models.UserRights"
             },
-            "description" : "Overrides user rights. Object with email as key"
+            "description" : "???"
           },
           "clientSideSessionEnabled" : {
             "description" : "???",
@@ -18449,18 +18449,18 @@
             "additionalProperties" : {
               "$ref" : "#/components/schemas/otoroshi.auth.GroupRights"
             },
-            "description" : "Rights associated with groups"
+            "description" : "???"
           },
           "id" : {
-            "description" : "Unique id of the config",
+            "description" : "???",
             "type" : "string"
           },
           "extraMetadata" : {
-            "description" : "Add metadata to user. Object with email as key",
+            "description" : "???",
             "type" : "object"
           },
           "searchFilter" : {
-            "description" : "Filter for users",
+            "description" : "???",
             "type" : "string"
           },
           "adminPassword" : {
@@ -18469,17 +18469,17 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "The admin password"
+            "description" : "???"
           },
           "extractProfileFilter" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "Only include LDAP properties matching"
+            "description" : "???"
           },
           "sessionCookieValues" : {
-            "description" : "Settings for the session cookie",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
           },
           "dataOverride" : {
@@ -18487,10 +18487,10 @@
             "additionalProperties" : {
               "type" : "object"
             },
-            "description" : "Overiddes user data. Object with email as key"
+            "description" : "???"
           },
           "superAdmins" : {
-            "description" : "This module produces only super admins",
+            "description" : "???",
             "type" : "boolean"
           },
           "userBase" : {
@@ -18499,24 +18499,24 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "LDAP user base DN"
+            "description" : "???"
           },
           "serverUrls" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "LDAP server list of url"
+            "description" : "???"
           },
           "userValidators" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
-            "description" : "Validators that will check if the current user is authorized after successful login"
+            "description" : "???"
           },
           "_loc" : {
-            "description" : "Location of the module",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "tags" : {
@@ -18524,11 +18524,11 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "Entity tags"
+            "description" : "???"
           },
           "sessionMaxAge" : {
             "format" : "int32",
-            "description" : "Max age of the session",
+            "description" : "???",
             "type" : "integer"
           },
           "adminUsername" : {
@@ -18537,18 +18537,18 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "The admin username"
+            "description" : "???"
           },
           "extractProfile" : {
-            "description" : "Extract profile from LDAP profile",
+            "description" : "???",
             "type" : "boolean"
           },
           "name" : {
-            "description" : "Name of the config",
+            "description" : "???",
             "type" : "string"
           },
           "desc" : {
-            "description" : "Description of the config",
+            "description" : "???",
             "type" : "string"
           }
         }
@@ -18910,11 +18910,11 @@
         }
       },
       "otoroshi.auth.GenericOauth2ModuleConfig" : {
-        "description" : "Authentication module that works with OAuth2/OIDC",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "refreshTokens" : {
-            "description" : "Refresh token support",
+            "description" : "???",
             "type" : "boolean"
           },
           "metadata" : {
@@ -18922,26 +18922,26 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "Metadata of the module"
+            "description" : "???"
           },
           "tokenUrl" : {
-            "description" : "OAuth token URL",
+            "description" : "???",
             "type" : "string"
           },
           "otoroshiRightsField" : {
-            "description" : "Field in user profile to find otoroshi UI rights",
+            "description" : "???",
             "type" : "string"
           },
           "mtlsConfig" : {
-            "description" : "TLS config. for the module (for server accessed endpoints like tokenUrl, introspectionUrl, etc)",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           },
           "nameField" : {
-            "description" : "Field name to get name from user profile",
+            "description" : "???",
             "type" : "string"
           },
           "emailField" : {
-            "description" : "Field name to get email from user profile",
+            "description" : "???",
             "type" : "string"
           },
           "type" : {
@@ -18950,15 +18950,15 @@
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
           },
           "introspectionUrl" : {
-            "description" : "URL to introspect access_token",
+            "description" : "???",
             "type" : "string"
           },
           "loginUrl" : {
-            "description" : "OAuth login URL",
+            "description" : "???",
             "type" : "string"
           },
           "scope" : {
-            "description" : "The scope of the token",
+            "description" : "???",
             "type" : "string"
           },
           "rightsOverride" : {
@@ -18966,50 +18966,50 @@
             "additionalProperties" : {
               "$ref" : "#/components/schemas/otoroshi.models.UserRights"
             },
-            "description" : "Overrides user rights. Object with email as key"
+            "description" : "???"
           },
           "clientSideSessionEnabled" : {
             "description" : "???",
             "type" : "boolean"
           },
           "callbackUrl" : {
-            "description" : "Otoroshi callback URL",
+            "description" : "???",
             "type" : "string"
           },
           "clientSecret" : {
-            "description" : "OAuth Client secret",
+            "description" : "???",
             "type" : "string"
           },
           "id" : {
-            "description" : "Unique id of the config",
+            "description" : "???",
             "type" : "string"
           },
           "extraMetadata" : {
-            "description" : "Add metadata to user. Object with email as key",
+            "description" : "???",
             "type" : "object"
           },
           "accessTokenField" : {
-            "description" : "Field name to get access token",
+            "description" : "???",
             "type" : "string"
           },
           "userInfoUrl" : {
-            "description" : "OAuth userinfo to get user profile",
+            "description" : "???",
             "type" : "string"
           },
           "clientId" : {
-            "description" : "OAuth Client id",
+            "description" : "???",
             "type" : "string"
           },
           "useCookie" : {
-            "description" : "Use cookies for redirection",
+            "description" : "???",
             "type" : "boolean"
           },
           "authorizeUrl" : {
-            "description" : "OAuth authorize URL",
+            "description" : "???",
             "type" : "string"
           },
           "sessionCookieValues" : {
-            "description" : "Settings for the session cookie",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
           },
           "dataOverride" : {
@@ -19017,18 +19017,18 @@
             "additionalProperties" : {
               "type" : "object"
             },
-            "description" : "Overiddes user data. Object with email as key"
+            "description" : "???"
           },
           "superAdmins" : {
-            "description" : "This module produces only super admins",
+            "description" : "???",
             "type" : "boolean"
           },
           "apiKeyMetaField" : {
-            "description" : "Field name to extract apikey metadata",
+            "description" : "???",
             "type" : "string"
           },
           "useJson" : {
-            "description" : "Use JSON or URL Form Encoded as payload with the OAuth provider",
+            "description" : "???",
             "type" : "boolean"
           },
           "pkce" : {
@@ -19037,14 +19037,14 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.auth.PKCEConfig"
             } ],
-            "description" : "Use PKCE challenge (OAuth 2.1)"
+            "description" : "???"
           },
           "apiKeyTagsField" : {
-            "description" : "Field name to extract apikey tags",
+            "description" : "???",
             "type" : "string"
           },
           "otoroshiDataField" : {
-            "description" : "Field name to get otoroshi metadata from. You can specify sub fields using | as separator",
+            "description" : "???",
             "type" : "string"
           },
           "userValidators" : {
@@ -19052,10 +19052,10 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
-            "description" : "Validators that will check if the current user is authorized after successful login"
+            "description" : "???"
           },
           "_loc" : {
-            "description" : "Location of the module",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "tags" : {
@@ -19063,7 +19063,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "Entity tags"
+            "description" : "???"
           },
           "jwtVerifier" : {
             "oneOf" : [ {
@@ -19071,11 +19071,11 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
             } ],
-            "description" : "Algo. settings to verify JWT token"
+            "description" : "???"
           },
           "sessionMaxAge" : {
             "format" : "int32",
-            "description" : "max age for the session cookie in seconds",
+            "description" : "???",
             "type" : "integer"
           },
           "proxy" : {
@@ -19084,10 +19084,10 @@
             }, {
               "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
             } ],
-            "description" : "Web proxy configuration for the module's http client"
+            "description" : "???"
           },
           "logoutUrl" : {
-            "description" : "OAuth logout URL",
+            "description" : "???",
             "type" : "string"
           },
           "oidConfig" : {
@@ -19096,26 +19096,26 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "URL of the OIDC config. file"
+            "description" : "???"
           },
           "noWildcardRedirectURI" : {
-            "description" : "Manage redirection without query params for exact string comparison (OAuth 2.1)",
+            "description" : "???",
             "type" : "boolean"
           },
           "readProfileFromToken" : {
-            "description" : "The user profile will be read from the JWT token in id_token",
+            "description" : "???",
             "type" : "boolean"
           },
           "name" : {
-            "description" : "Name of the config",
+            "description" : "???",
             "type" : "string"
           },
           "claims" : {
-            "description" : "The claims of the token",
+            "description" : "???",
             "type" : "string"
           },
           "desc" : {
-            "description" : "Description of the config",
+            "description" : "???",
             "type" : "string"
           }
         }
@@ -19418,15 +19418,15 @@
         }
       },
       "otoroshi.auth.SAMLSignature" : {
-        "description" : "Algorithm and canocalization method used to sign SAML documents",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "algorithm" : {
-            "description" : "Algorithm to sign documents or assertions",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.SAMLSignatureAlgorithm"
           },
           "canocalizationMethod" : {
-            "description" : "Canonicalization Method for XML Signatures",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.SAMLCanocalizationMethod"
           }
         }
@@ -19673,7 +19673,7 @@
         }
       },
       "otoroshi.auth.OAuth1Provider" : {
-        "description" : "Method used to get request and access token",
+        "description" : "???",
         "type" : "object",
         "properties" : { }
       },
@@ -20193,23 +20193,23 @@
         }
       },
       "otoroshi.auth.SAMLCredentials" : {
-        "description" : "Used to sign, encrypt assertions and sign SAML documents",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "signingKey" : {
-            "description" : "Pair of configuration used to sign documents",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.Credential"
           },
           "encryptionKey" : {
-            "description" : "Pair of configuration used to encrypt assertions",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.Credential"
           },
           "signedDocuments" : {
-            "description" : "Indicates if SAML documents have to be sign before sending to identity provider",
+            "description" : "???",
             "type" : "boolean"
           },
           "encryptedAssertions" : {
-            "description" : "Indicates if assertions have to be encrypt before sending to identity provider",
+            "description" : "???",
             "type" : "boolean"
           }
         }
@@ -21517,7 +21517,7 @@
         }
       },
       "otoroshi.auth.SAMLSignatureAlgorithm" : {
-        "description" : "Algorithm to sign SAML requests",
+        "description" : "???",
         "type" : "object",
         "properties" : { }
       },
@@ -21989,15 +21989,15 @@
         }
       },
       "otoroshi.auth.BasicAuthUser" : {
-        "description" : "A user model for the BasicAuthModuleConfig module",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "metadata" : {
-            "description" : "User metadata",
+            "description" : "???",
             "type" : "object"
           },
           "password" : {
-            "description" : "User password (bcrypt hashed)",
+            "description" : "???",
             "type" : "string"
           },
           "tags" : {
@@ -22005,10 +22005,10 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "User tags"
+            "description" : "???"
           },
           "email" : {
-            "description" : "User email",
+            "description" : "???",
             "type" : "string"
           },
           "webauthn" : {
@@ -22017,14 +22017,14 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.auth.WebAuthnDetails"
             } ],
-            "description" : "Webauthn details"
+            "description" : "???"
           },
           "rights" : {
-            "description" : "User rights",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.UserRights"
           },
           "name" : {
-            "description" : "User name",
+            "description" : "???",
             "type" : "string"
           }
         }
@@ -23010,11 +23010,11 @@
         }
       },
       "otoroshi.auth.WebAuthnDetails" : {
-        "description" : "Handle and credentials for a webauthn user",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "handle" : {
-            "description" : "Webauthn user handle",
+            "description" : "???",
             "type" : "string"
           },
           "credentials" : {
@@ -23022,7 +23022,7 @@
             "additionalProperties" : {
               "type" : "object"
             },
-            "description" : "Webauthn credentials"
+            "description" : "???"
           }
         }
       },
@@ -24044,7 +24044,7 @@
         }
       },
       "otoroshi.auth.NameIDFormat" : {
-        "description" : "The name ID Format to use for the subject",
+        "description" : "???",
         "type" : "object",
         "properties" : { }
       },
@@ -24133,19 +24133,19 @@
         "properties" : { }
       },
       "otoroshi.auth.GroupFilter" : {
-        "description" : "Filter for a LDAP group",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "group" : {
-            "description" : "The LDAP group",
+            "description" : "???",
             "type" : "string"
           },
           "tenant" : {
-            "description" : "The tenant associated with this group",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.TenantAccess"
           },
           "team" : {
-            "description" : "The team associated with this group",
+            "description" : "???",
             "type" : "string"
           }
         }
@@ -24804,7 +24804,7 @@
         }
       },
       "otoroshi.auth.BasicAuthModuleConfig" : {
-        "description" : "Authentication module that let you use otoroshi as the identity provider",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "metadata" : {
@@ -24812,14 +24812,14 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "metadata of the module"
+            "description" : "???"
           },
           "sessionCookieValues" : {
-            "description" : "Settings for the session cookie",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
           },
           "basicAuth" : {
-            "description" : "Use standard basic auth or web login form",
+            "description" : "???",
             "type" : "boolean"
           },
           "type" : {
@@ -24832,10 +24832,10 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
-            "description" : "Validators that will check if the current user is authorized after successful login"
+            "description" : "???"
           },
           "_loc" : {
-            "description" : "location of the module",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "users" : {
@@ -24843,26 +24843,26 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.auth.BasicAuthUser"
             },
-            "description" : "Users attached to the module"
+            "description" : "???"
           },
           "tags" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "Entity tags"
+            "description" : "???"
           },
           "sessionMaxAge" : {
             "format" : "int32",
-            "description" : "max age for the session cookie in seconds",
+            "description" : "???",
             "type" : "integer"
           },
           "name" : {
-            "description" : "name of the module",
+            "description" : "???",
             "type" : "string"
           },
           "webauthn" : {
-            "description" : "Use webauthn for login",
+            "description" : "???",
             "type" : "boolean"
           },
           "clientSideSessionEnabled" : {
@@ -24870,11 +24870,11 @@
             "type" : "boolean"
           },
           "id" : {
-            "description" : "id of the module",
+            "description" : "???",
             "type" : "string"
           },
           "desc" : {
-            "description" : "description of the module",
+            "description" : "???",
             "type" : "string"
           }
         }
@@ -25456,15 +25456,15 @@
         }
       },
       "otoroshi.auth.SessionCookieValues" : {
-        "description" : "The configuration for session cookie",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "httpOnly" : {
-            "description" : "Is cookie accessible on server side only",
+            "description" : "???",
             "type" : "boolean"
           },
           "secure" : {
-            "description" : "Is cookie for https only",
+            "description" : "???",
             "type" : "boolean"
           }
         }
@@ -26749,11 +26749,11 @@
         }
       },
       "otoroshi.auth.SamlAuthModuleConfig" : {
-        "description" : "Configuration of SAML Authentication module",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "validateSignature" : {
-            "description" : "Indicates if SAML response signature has to be validate when otoroshi got SAML responses from identity provider",
+            "description" : "???",
             "type" : "boolean"
           },
           "metadata" : {
@@ -26761,14 +26761,14 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "Metadata of the SAML module"
+            "description" : "???"
           },
           "ssoProtocolBinding" : {
-            "description" : "Protocol binding used to send login request to identity provider",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.SAMLProtocolBinding"
           },
           "sessionCookieValues" : {
-            "description" : "Settings for the session cookie",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
           },
           "validatingCertificates" : {
@@ -26776,18 +26776,18 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "Certificates used to validate SAML response signature"
+            "description" : "???"
           },
           "signature" : {
-            "description" : "Algorithm and canonicalization method to sign SAML documents",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.SAMLSignature"
           },
           "credentials" : {
-            "description" : "Certificates and private keys to sign and encrypt SAML documents/assertions",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.SAMLCredentials"
           },
           "validateAssertions" : {
-            "description" : "Indicates if assertions have to be validate when otoroshi got SAML responses from identity provider",
+            "description" : "???",
             "type" : "boolean"
           },
           "type" : {
@@ -26800,14 +26800,14 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
-            "description" : "Validators that will check if the current user is authorized after successful login"
+            "description" : "???"
           },
           "_loc" : {
-            "description" : "Location of the SAML module",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "issuer" : {
-            "description" : "Issuer of the SAML requests",
+            "description" : "???",
             "type" : "string"
           },
           "tags" : {
@@ -26815,23 +26815,23 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "SAML module tags"
+            "description" : "???"
           },
           "sessionMaxAge" : {
             "format" : "int32",
-            "description" : "Max age of the session",
+            "description" : "???",
             "type" : "integer"
           },
           "usedNameIDAsEmail" : {
-            "description" : "Is name ID used as email ?",
+            "description" : "???",
             "type" : "boolean"
           },
           "singleLogoutUrl" : {
-            "description" : "URL used by otoroshi to disconnect users from identity provider",
+            "description" : "???",
             "type" : "string"
           },
           "name" : {
-            "description" : "Name of the SAML module",
+            "description" : "???",
             "type" : "string"
           },
           "emailAttributeName" : {
@@ -26840,30 +26840,30 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "Field name to find email in user profile returned by identity provider"
+            "description" : "???"
           },
           "clientSideSessionEnabled" : {
             "description" : "???",
             "type" : "boolean"
           },
           "singleSignOnUrl" : {
-            "description" : "URL used by otoroshi to redirect users to identity provider login page",
+            "description" : "???",
             "type" : "string"
           },
           "nameIDFormat" : {
-            "description" : "Format of the name ID",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.NameIDFormat"
           },
           "singleLogoutProtocolBinding" : {
-            "description" : "Protocol binding used by identity provider to logout users",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.SAMLProtocolBinding"
           },
           "id" : {
-            "description" : "Id of the SAML Auth module",
+            "description" : "???",
             "type" : "string"
           },
           "desc" : {
-            "description" : "Description of the SAML Auth module",
+            "description" : "???",
             "type" : "string"
           }
         }
@@ -26925,15 +26925,15 @@
         }
       },
       "otoroshi.auth.PKCEConfig" : {
-        "description" : "Settings for PKCE challenge (OAuth 2.1)",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "enabled" : {
-            "description" : "Is PKCE challenge enabled",
+            "description" : "???",
             "type" : "boolean"
           },
           "algorithm" : {
-            "description" : "Hashing algorithm used in PKCE challenge",
+            "description" : "???",
             "type" : "string"
           }
         }
@@ -27209,7 +27209,7 @@
         }
       },
       "otoroshi.auth.SAMLProtocolBinding" : {
-        "description" : "Protocol binding used during SAML requests",
+        "description" : "???",
         "type" : "object",
         "properties" : { }
       },
@@ -27321,11 +27321,11 @@
         } ]
       },
       "otoroshi.auth.Oauth1ModuleConfig" : {
-        "description" : "Configuration of OAuth 1.0 module",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "profileURL" : {
-            "description" : "URL fetch by otoroshi to get user information from identity provider",
+            "description" : "???",
             "type" : "string"
           },
           "metadata" : {
@@ -27333,18 +27333,18 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "The metadata of the OAuth 1 module"
+            "description" : "???"
           },
           "authorizeURL" : {
-            "description" : "The authorize URL used to initiates the authorization flow that authenticates the user with the Identity Provider",
+            "description" : "???",
             "type" : "string"
           },
           "requestTokenURL" : {
-            "description" : "URL fetch to get a request token during the first step of the authorization OAuth 1 flow",
+            "description" : "???",
             "type" : "string"
           },
           "sessionCookieValues" : {
-            "description" : "Settings for the session cookie",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
           },
           "type" : {
@@ -27353,7 +27353,7 @@
             "enum" : [ "saml", "oauth1", "oauth2", "ldap", "basic" ]
           },
           "httpMethod" : {
-            "description" : "Method used to fetch access and request token",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.auth.OAuth1Provider"
           },
           "userValidators" : {
@@ -27361,10 +27361,10 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.utils.JsonPathValidator"
             },
-            "description" : "Validators that will check if the current user is authorized after successful login"
+            "description" : "???"
           },
           "_loc" : {
-            "description" : "The location of the OAuth 1 module",
+            "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "tags" : {
@@ -27372,23 +27372,23 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "OAuth module tags"
+            "description" : "???"
           },
           "sessionMaxAge" : {
             "format" : "int32",
-            "description" : "Max age of the session",
+            "description" : "???",
             "type" : "integer"
           },
           "consumerSecret" : {
-            "description" : "Client secret obtained from identity provider configuration",
+            "description" : "???",
             "type" : "string"
           },
           "accessTokenURL" : {
-            "description" : "Endpoint requested by otoroshi to get access token during the authorization OAuth1 flow",
+            "description" : "???",
             "type" : "string"
           },
           "name" : {
-            "description" : "The name of the OAuth 1 module",
+            "description" : "???",
             "type" : "string"
           },
           "rightsOverride" : {
@@ -27396,26 +27396,26 @@
             "additionalProperties" : {
               "$ref" : "#/components/schemas/otoroshi.models.UserRights"
             },
-            "description" : "Overrides user rights of users connected by OAuth1 module"
+            "description" : "???"
           },
           "clientSideSessionEnabled" : {
             "description" : "???",
             "type" : "boolean"
           },
           "callbackURL" : {
-            "description" : "The location where the identity provider returns a browser after the user finishes authenticating with their IDP",
+            "description" : "???",
             "type" : "string"
           },
           "id" : {
-            "description" : "Id of the module",
+            "description" : "???",
             "type" : "string"
           },
           "consumerKey" : {
-            "description" : "Client ID obtained on identity provider",
+            "description" : "???",
             "type" : "string"
           },
           "desc" : {
-            "description" : "Description of the oauth 1 module",
+            "description" : "???",
             "type" : "string"
           }
         }
@@ -27896,7 +27896,7 @@
         }
       },
       "otoroshi.auth.Credential" : {
-        "description" : "Pair of raw certificate, private key and certId for SAML protocol",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "certificate" : {
@@ -27905,7 +27905,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "PEM certificate used to sign SAML requests send to identity provider"
+            "description" : "???"
           },
           "privateKey" : {
             "oneOf" : [ {
@@ -27913,7 +27913,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "Private key of the certificate used to sign SAML requests send to identity provider"
+            "description" : "???"
           },
           "certId" : {
             "oneOf" : [ {
@@ -27921,10 +27921,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "Id of the certificate used to sign SAML requests send to identity provider"
+            "description" : "???"
           },
           "useOtoroshiCertificate" : {
-            "description" : "Indicates if SAML requests are signed with otoroshi certificate or a PEM certificate",
+            "description" : "???",
             "type" : "boolean"
           }
         }
