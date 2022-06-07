@@ -140,6 +140,7 @@ trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport
   def sessionMaxAge: Int
   def metadata: Map[String, String]
   def sessionCookieValues: SessionCookieValues
+  def clientSideSessionEnabled: Boolean
   def userValidators: Seq[JsonPathValidator]
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   override def internalId: String = id
@@ -227,7 +228,8 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           desc = "New auth. module",
           tags = Seq.empty,
           metadata = Map.empty,
-          sessionCookieValues = SessionCookieValues()
+          sessionCookieValues = SessionCookieValues(),
+          clientSideSessionEnabled = true,
         )
       case Some("oauth2-global") =>
         GenericOauth2ModuleConfig(
@@ -236,7 +238,8 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           desc = "New auth. module",
           tags = Seq.empty,
           metadata = Map.empty,
-          sessionCookieValues = SessionCookieValues()
+          sessionCookieValues = SessionCookieValues(),
+          clientSideSessionEnabled = true,
         )
       case Some("basic")         =>
         BasicAuthModuleConfig(
@@ -245,7 +248,8 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           desc = "New auth. module",
           tags = Seq.empty,
           metadata = Map.empty,
-          sessionCookieValues = SessionCookieValues()
+          sessionCookieValues = SessionCookieValues(),
+          clientSideSessionEnabled = true,
         )
       case Some("ldap")          =>
         LdapAuthModuleConfig(
@@ -259,7 +263,8 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           adminPassword = Some("password"),
           tags = Seq.empty,
           metadata = Map.empty,
-          sessionCookieValues = SessionCookieValues()
+          sessionCookieValues = SessionCookieValues(),
+          clientSideSessionEnabled = true,
         )
       case Some("saml")          =>
         SamlAuthModuleConfig(
@@ -271,7 +276,8 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           singleSignOnUrl = "",
           singleLogoutUrl = "",
           issuer = "",
-          sessionCookieValues = SessionCookieValues()
+          sessionCookieValues = SessionCookieValues(),
+          clientSideSessionEnabled = true,
         )
       case Some("oauth1")        =>
         Oauth1ModuleConfig(
@@ -287,7 +293,8 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           callbackURL = "",
           tags = Seq.empty,
           metadata = Map.empty,
-          sessionCookieValues = SessionCookieValues()
+          sessionCookieValues = SessionCookieValues(),
+          clientSideSessionEnabled = true,
         )
       case _                     =>
         BasicAuthModuleConfig(
@@ -296,7 +303,8 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           desc = "New auth. module",
           tags = Seq.empty,
           metadata = Map.empty,
-          sessionCookieValues = SessionCookieValues()
+          sessionCookieValues = SessionCookieValues(),
+          clientSideSessionEnabled = true,
         )
     }
     env.datastores.globalConfigDataStore

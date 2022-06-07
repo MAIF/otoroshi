@@ -52,6 +52,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
             .getOrElse(Seq.empty),
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
+          clientSideSessionEnabled = (json \ "clientSideSessionEnabled").asOpt[Boolean].getOrElse(true),
           clientId = (json \ "clientId").asOpt[String].getOrElse("client"),
           clientSecret = (json \ "clientSecret").asOpt[String].getOrElse("secret"),
           authorizeUrl = (json \ "authorizeUrl").asOpt[String].getOrElse("http://localhost:8082/oauth/authorize"),
@@ -127,6 +128,7 @@ case class GenericOauth2ModuleConfig(
     id: String,
     name: String,
     desc: String,
+    clientSideSessionEnabled: Boolean,
     sessionMaxAge: Int = 86400,
     userValidators: Seq[JsonPathValidator] = Seq.empty,
     clientId: String = "client",
@@ -178,6 +180,7 @@ case class GenericOauth2ModuleConfig(
       "id"                    -> this.id,
       "name"                  -> this.name,
       "desc"                  -> this.desc,
+      "clientSideSessionEnabled" -> this.clientSideSessionEnabled,
       "sessionMaxAge"         -> this.sessionMaxAge,
       "userValidators"        -> JsArray(userValidators.map(_.json)),
       "clientId"              -> this.clientId,
