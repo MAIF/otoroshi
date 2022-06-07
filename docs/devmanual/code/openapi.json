@@ -17703,6 +17703,10 @@
           "routing" : {
             "description" : "Use apikey for routing",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyMatcher"
+          },
+          "update_quotas" : {
+            "description" : "???",
+            "type" : "boolean"
           }
         }
       },
@@ -28153,6 +28157,10 @@
           "routing" : {
             "description" : "Use apikey for routing",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyMatcher"
+          },
+          "update_quotas" : {
+            "description" : "???",
+            "type" : "boolean"
           }
         }
       }
