@@ -1548,20 +1548,21 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       mat: Materializer
   ): FEither[NgProxyEngineError, RemainingQuotas] = {
-    if (config.applyLegacyChecks) {
-      // increments calls for apikey
-      val quotas = attrs
-        .get(otoroshi.plugins.Keys.ApiKeyKey)
-        .map(_.updateQuotas())
-        .getOrElse(RemainingQuotas().vfuture)
-        .andThen { case Success(value) =>
-          attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> value)
-        }
-        .map(rq => Right.apply[NgProxyEngineError, RemainingQuotas](rq))
-      FEither(quotas)
-    } else {
-      FEither.right(RemainingQuotas())
-    }
+    FEither.right(attrs.get(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey).getOrElse(RemainingQuotas()))
+    // if (config.applyLegacyChecks) {
+    //   // increments calls for apikey
+    //   val quotas = attrs
+    //     .get(otoroshi.plugins.Keys.ApiKeyKey)
+    //     .map(_.updateQuotas())
+    //     .getOrElse(RemainingQuotas().vfuture)
+    //     .andThen { case Success(value) =>
+    //       attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> value)
+    //     }
+    //     .map(rq => Right.apply[NgProxyEngineError, RemainingQuotas](rq))
+    //   FEither(quotas)
+    // } else {
+    //   FEither.right(RemainingQuotas())
+    // }
   }
 
   def handleLegacyChecks(request: RequestHeader, route: NgRoute, config: ProxyEngineConfig)(implicit
