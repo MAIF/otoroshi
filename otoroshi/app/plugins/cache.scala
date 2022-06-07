@@ -174,7 +174,7 @@ class ResponseCache extends RequestTransformer {
             ResponseCacheConfig(service.transformerConfig.select("ResponseCache").asOpt[JsObject].getOrElse(Json.obj()))
           val maxSize = config.maxSize
           if (config.autoClean) {
-            env.datastores.rawDataStore.keys(s"${env.storageRoot}:cache:${service.id}:*").flatMap { keys =>
+            env.datastores.rawDataStore.keys(s"${env.storageRoot}:noclustersync:cache:${service.id}:*").flatMap { keys =>
               if (keys.nonEmpty) {
                 Source(keys.toList)
                   .mapAsync(1) { key =>
@@ -292,7 +292,7 @@ class ResponseCache extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Unit, Option[JsValue]]] = {
     if (filter(ctx.request, config)) {
       get(
-        s"${env.storageRoot}:cache:${ctx.descriptor.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}"
+        s"${env.storageRoot}:noclustersync:cache:${ctx.descriptor.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}"
       ).map {
         case None       => Right(None)
         case Some(json) => Right(Some(Json.parse(json.utf8String)))
@@ -370,7 +370,7 @@ class ResponseCache extends RequestTransformer {
                 s"Storing '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' in cache for the next ${config.ttl} ms."
               )
               set(
-                s"${env.storageRoot}:cache:${ctx.descriptor.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}",
+                s"${env.storageRoot}:noclustersync:cache:${ctx.descriptor.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}",
                 ByteString(Json.stringify(event)),
                 Some(config.ttl)
               )

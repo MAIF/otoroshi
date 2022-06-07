@@ -74,6 +74,7 @@ object Cluster {
   lazy val logger = Logger("otoroshi-cluster")
 
   def filteredKey(key: String, env: Env): Boolean = {
+    key.startsWith(s"${env.storageRoot}:noclustersync:") ||
     key.startsWith(s"${env.storageRoot}:cluster:") ||
     key == s"${env.storageRoot}:events:audit" ||
     key == s"${env.storageRoot}:events:alerts" ||
