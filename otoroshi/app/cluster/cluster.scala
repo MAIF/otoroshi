@@ -786,6 +786,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
                 cacheState()
               } catch {
                 case e: Throwable =>
+                  caching.compareAndSet(true, false)
                   Cluster.logger
                     .error(s"Error while renewing leader state cache of ${env.clusterConfig.leader.name}", e)
               }
@@ -853,11 +854,11 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
         }
         .andThen {
           case Success(stateCache) => {
+            caching.compareAndSet(true, false)
             cachedRef.set(stateCache)
             cachedAt.set(System.currentTimeMillis())
             cacheCount.set(counter.get())
             cacheDigest.set(Hex.encodeHexString(digest.digest()))
-            caching.compareAndSet(true, false)
             env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
             env.clusterConfig.leader.stateDumpPath
               .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
@@ -866,6 +867,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
             )
           }
           case Failure(err)        =>
+            caching.compareAndSet(true, false)
             Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", err)
         }
     }
