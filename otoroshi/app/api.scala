@@ -91,7 +91,7 @@ object OtoroshiLoaderHelper {
     }
 
     def waitForFirstClusterStateCache(): Future[Unit] = {
-      if (components.env.clusterConfig.mode == ClusterMode.Leader && components.env.clusterConfig.autoUpdateState && waitForFirstClusterStateCacheEnabled) {
+      if (components.env.clusterConfig.mode == ClusterMode.Leader /*&& components.env.clusterConfig.autoUpdateState*/ && waitForFirstClusterStateCacheEnabled) {
         logger.info("waiting for first cluster state extraction ...")
         Future.firstCompletedOf(
           Seq(
@@ -99,7 +99,7 @@ object OtoroshiLoaderHelper {
             Source
               .tick(1.second, 1.second, ())
               .map { _ =>
-                if (components.env.clusterConfig.mode == ClusterMode.Leader && components.env.clusterConfig.autoUpdateState)
+                if (components.env.clusterConfig.mode == ClusterMode.Leader/* && components.env.clusterConfig.autoUpdateState*/)
                   components.env.clusterLeaderAgent.cachedTimestamp > 0L
                 else true
               }

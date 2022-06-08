@@ -172,7 +172,8 @@ case class ClusterConfig(
     compression: Int = -1,
     proxy: Option[WSProxyServer],
     mtlsConfig: MtlsConfig,
-    autoUpdateState: Boolean,
+    streamed: Boolean,
+    // autoUpdateState: Boolean,
     retryDelay: Long,
     retryFactor: Long,
     leader: LeaderConfig = LeaderConfig(),
@@ -194,7 +195,8 @@ object ClusterConfig {
       compression = configuration.getOptionalWithFileSupport[Int]("compression").getOrElse(-1),
       retryDelay = configuration.getOptionalWithFileSupport[Long]("retryDelay").getOrElse(300L),
       retryFactor = configuration.getOptionalWithFileSupport[Long]("retryFactor").getOrElse(2L),
-      autoUpdateState = configuration.getOptionalWithFileSupport[Boolean]("autoUpdateState").getOrElse(true),
+      streamed = configuration.getOptionalWithFileSupport[Boolean]("streamed").getOrElse(true),
+      // autoUpdateState = configuration.getOptionalWithFileSupport[Boolean]("autoUpdateState").getOrElse(true),
       mtlsConfig = MtlsConfig(
         certs = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.certs").getOrElse(Seq.empty),
         trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.trustedCerts").getOrElse(Seq.empty),
@@ -777,7 +779,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
           )
         )
       )
-      if (env.clusterConfig.autoUpdateState) {
+      // if (env.clusterConfig.autoUpdateState) {
         Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster state auto update")
         stateUpdaterRef.set(
           env.otoroshiScheduler.scheduleAtFixedRate(1.second, env.clusterConfig.leader.cacheStateFor.millis)(
@@ -793,7 +795,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
             )
           )
         )
-      }
+      // }
     }
   }
   def stop(): Unit = {
@@ -1278,8 +1280,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
               .withMaybeProxyServer(config.proxy)
               .withMethod("GET")
-            request
-              .stream()
+            val response = if (env.clusterConfig.streamed) {
+              request.stream()
+            } else {
+              request.execute()
+            }
+            response
               .filter { resp =>
                 resp.ignoreIf(resp.status != 200)
                 resp.status == 200
@@ -1309,7 +1315,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 val digest         = MessageDigest.getInstance("SHA-256")
                 val from           = new DateTime(responseFrom.getOrElse(0))
 
-                resp.bodyAsSource
+                val responseBody = if (env.clusterConfig.streamed) resp.bodyAsSource else Source.single(resp.bodyAsBytes)
+                responseBody
                   .via(env.clusterConfig.gunzip())
                   .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, true))
                   .alsoTo(Sink.foreach { item =>

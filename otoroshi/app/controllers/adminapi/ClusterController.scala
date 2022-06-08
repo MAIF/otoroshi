@@ -457,6 +457,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
               )
             }
 
+            /*
             def sendAndCache(): Future[Result] = {
               // Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exporting raw state")
               if (caching.compareAndSet(false, true)) {
@@ -555,15 +556,16 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                   .future
               }
             }
-
-            if (env.clusterConfig.autoUpdateState) {
-              Cluster.logger.debug(
-                s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${Option(env.clusterLeaderAgent.cachedCount)
-                  .getOrElse(0L)} items / ${Option(cachedValue).getOrElse(ByteString.empty).size / 1024} Kb) ..."
-              )
+            */
+            // if (env.clusterConfig.autoUpdateState) {
+            Cluster.logger.debug(
+              s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${Option(env.clusterLeaderAgent.cachedCount)
+                .getOrElse(0L)} items / ${Option(cachedValue).getOrElse(ByteString.empty).size / 1024} Kb) ..."
+            )
+            if (env.clusterConfig.streamed) {
               Ok.sendEntity(
                 HttpEntity
-                  .Streamed(Source.single(env.clusterLeaderAgent.cachedState), None, Some("application/x-ndjson"))
+                  .Streamed(env.clusterLeaderAgent.cachedState.chunks(32 * 1024), None, Some("application/x-ndjson"))
               ).withHeaders(
                 "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
                 "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
@@ -571,40 +573,53 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 "X-Data-Digest"                -> env.clusterLeaderAgent.cachedDigest,
                 "X-Data-From"                  -> s"${env.clusterLeaderAgent.cachedTimestamp}",
                 "X-Data-Auto"                  -> "true"
-              ).future
-            } else if (cachedValue == null) {
-              sendAndCache()
-            } else if (caching.get()) {
-              Cluster.logger.debug(
-                s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
-              )
-              Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
-                .withHeaders(
-                  "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
-                  "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
-                  "X-Data-Count"                 -> s"${cachedCount.get()}",
-                  "X-Data-Digest"                -> cachedDigest.get(),
-                  "X-Data-From"                  -> s"${cachedAt.get()}",
-                  "X-Data-From-Cache"            -> "true"
-                )
-                .future
-            } else if ((cachedAt.get() + env.clusterConfig.leader.cacheStateFor) < System.currentTimeMillis()) {
-              sendAndCache()
+              ).vfuture
             } else {
-              Cluster.logger.debug(
-                s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
-              )
-              Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
-                .withHeaders(
-                  "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
-                  "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
-                  "X-Data-Count"                 -> s"${cachedCount.get()}",
-                  "X-Data-Digest"                -> cachedDigest.get(),
-                  "X-Data-From"                  -> s"${cachedAt.get()}",
-                  "X-Data-From-Cache"            -> "true"
-                )
-                .future
+              Ok.sendEntity(
+                HttpEntity
+                  .Strict(env.clusterLeaderAgent.cachedState, Some("application/x-ndjson"))
+              ).withHeaders(
+                "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
+                "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
+                "X-Data-Count"                 -> s"${env.clusterLeaderAgent.cachedCount}",
+                "X-Data-Digest"                -> env.clusterLeaderAgent.cachedDigest,
+                "X-Data-From"                  -> s"${env.clusterLeaderAgent.cachedTimestamp}",
+                "X-Data-Auto"                  -> "true"
+              ).vfuture
             }
+            // } else if (cachedValue == null) {
+            //   sendAndCache()
+            // } else if (caching.get()) {
+            //   Cluster.logger.debug(
+            //     s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
+            //   )
+            //   Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
+            //     .withHeaders(
+            //       "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
+            //       "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
+            //       "X-Data-Count"                 -> s"${cachedCount.get()}",
+            //       "X-Data-Digest"                -> cachedDigest.get(),
+            //       "X-Data-From"                  -> s"${cachedAt.get()}",
+            //       "X-Data-From-Cache"            -> "true"
+            //     )
+            //     .future
+            // } else if ((cachedAt.get() + env.clusterConfig.leader.cacheStateFor) < System.currentTimeMillis()) {
+            //   sendAndCache()
+            // } else {
+            //   Cluster.logger.debug(
+            //     s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
+            //   )
+            //   Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
+            //     .withHeaders(
+            //       "Otoroshi-Leader-Node-Name"    -> env.clusterConfig.leader.name,
+            //       "Otoroshi-Leader-Node-Version" -> env.otoroshiVersion,
+            //       "X-Data-Count"                 -> s"${cachedCount.get()}",
+            //       "X-Data-Digest"                -> cachedDigest.get(),
+            //       "X-Data-From"                  -> s"${cachedAt.get()}",
+            //       "X-Data-From-Cache"            -> "true"
+            //     )
+            //     .future
+            // }
           }
         }
       }
