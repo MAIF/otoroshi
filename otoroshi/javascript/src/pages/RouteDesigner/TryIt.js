@@ -28,6 +28,8 @@ export const TryIt = ({ route, serviceMode }) => {
   const [sort, setSort] = useState('flow');
   const [flow, setFlow] = useState('all');
 
+  const [lastQuery, setLastQuery] = useState()
+
   const [request, setRequest] = useState({
     path: '/',
     headers: { [Date.now()]: { key: '', value: '' } },
@@ -61,15 +63,32 @@ export const TryIt = ({ route, serviceMode }) => {
         route_id: route.id,
       });
       hidePlaygroundStuff(route)
-      
+
       routeEntries(route.id)
         .then(data => setPlaygroundUrl(data.entries[0]))
     }
   }, [route]);
 
   useEffect(() => {
-    localStorage.removeItem('graphql-playground')
+    loadLastQuery()
   }, [])
+
+  useEffect(() => {
+    if (lastQuery)
+      localStorage.removeItem('graphql-playground')
+  }, [lastQuery])
+
+  const loadLastQuery = () => {
+    try {
+      const storedData = JSON.parse(localStorage.getItem("graphql-playground"))
+      const query = Object.entries(Object.entries(storedData.workspaces)[1][1].history)[0][1].query
+      setLastQuery(query)
+      localStorage.setItem("otoroshi-graphql-last-query", query)
+    } catch (_) {
+      const query = localStorage.getItem("otoroshi-graphql-last-query")
+      setLastQuery(query || "{}")
+    }
+  }
 
   const hidePlaygroundStuff = route => {
     if (!route)
@@ -81,8 +100,19 @@ export const TryIt = ({ route, serviceMode }) => {
       else {
         [
           ".playground > div",
-          ".graphiql-wrapper > div > div > div"
-        ].forEach(path => document.querySelector(path).style.display = 'none');
+          ".graphiql-wrapper > div > div > div  "
+        ].forEach(path => {
+          const element = document.querySelector(path)
+          if (element.textContent)
+            element.style.display = 'none'
+        });
+
+        const prettifyButton = [...document.querySelectorAll(".graphiql-wrapper > div > div > div > button")]
+          .find(f => f.textContent === "Prettify")
+        prettifyButton.className = "btn btn-sm btn-success tryit-prettify-button";
+
+        document.querySelector(".graphiql-wrapper > div")
+          .appendChild(prettifyButton);
 
         [...document.querySelectorAll('.playground svg')]
           .filter(svg => svg.textContent === 'Settings')
@@ -182,7 +212,7 @@ export const TryIt = ({ route, serviceMode }) => {
 
   return (
     <Loader loading={!route}>
-      {route && route.plugins.find(f => f.plugin.includes('GraphQLBackend')) && playgroundUrl ?
+      {route && route.plugins.find(f => f.plugin.includes('GraphQLBackend')) && playgroundUrl && lastQuery ?
         <div className="h-100">
           <Provider store={store}>
             <Playground
@@ -193,8 +223,8 @@ export const TryIt = ({ route, serviceMode }) => {
                 executeButtonBorder: "transparent"
               }}
               tabs={[{
-                endpoint: `http://otoroshi.oto.tools:9999/bo/api/graphqlproxy?url=${encodeURIComponent(playgroundUrl)}`,
-                query: '',
+                endpoint: `/bo/api/graphqlproxy?url=${encodeURIComponent(playgroundUrl)}`,
+                query: lastQuery,
                 name: Date.now()
                 // variables?: string
                 // responses?: string[]

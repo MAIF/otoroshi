@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.Try
+import sangria.ast.{Directive, EnumValue, FieldDefinition, FragmentDefinition, InputValueDefinition, ListValue, NamedType, NullValue, ObjectValue, OperationDefinition, Type, TypeSystemDefinition, TypeSystemExtensionDefinition, Value, VariableValue}
 
 case class BackofficeFlags(
     env: Env,
@@ -1713,36 +1714,196 @@ class BackOfficeController(
       }
   }
 
-  def routeEntries(routeId: String) = BackOfficeActionAuth.async { ctx => 
+  def routeEntries(routeId: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.routeDataStore.findById(routeId) flatMap {
       case None => NotFound(Json.obj("error" -> "route not found")).future
-      case Some(route) => 
+      case Some(route) =>
         val isSecured = route.plugins.slots.exists(p => p.plugin.contains("ForceHttpsTraffic"))
 
         Ok(Json.obj("entries" -> route.frontend.domains.map(d => {
           Uri(s"http://${d.raw}")
             .withScheme(if (isSecured) "https" else "http")
-            .withPort(if (isSecured) env.httpsPort else env.port)
+            .withPort(if (isSecured) env.exposedHttpsPortInt else env.exposedHttpPortInt)
             .toString()
         })))
           .future
     }
   }
+
+  def graphQLToJson() = BackOfficeActionAuth.async(parse.json) { ctx =>
+    import sangria.parser.QueryParser
+    import sangria.schema.Schema
+    import sangria.ast.{TypeSystemDefinition, TypeDefinition, ObjectTypeDefinition, IntValue, BigIntValue, FloatValue, BigDecimalValue, StringValue, BooleanValue, ListType, NotNullType}
+    import scala.util.Failure
+    import scala.util.Success
+
+    val schema = ctx.request.body.select("schema").asOpt[String].getOrElse("{}")
+
+    QueryParser.parse(schema) match {
+      case Failure(exception) => BadRequest(Json.obj("error" -> exception.getMessage)).future
+      case Success(astDocument) =>
+
+      val generatedSchema = Schema.buildFromAst(astDocument)
+
+      val res = generatedSchema.toAst.definitions.map {
+        case definition: TypeSystemDefinition =>
+          definition match {
+            case definition: TypeDefinition =>
+              definition match {
+                  case ObjectTypeDefinition(name, interfaces, fields, directives, description, comments, trailingComments, location) =>
+                    Json.obj(
+                    "name" -> JsString(name),
+                    "fields" -> fields.map(field => Json.obj(
+                        "name" -> field.name,
+                        "fieldType" -> Json.obj(
+                          "type" -> field.fieldType.namedType.name,
+                          "isList" -> field.fieldType.isInstanceOf[ListType]
+                        ),
+                        "arguments" -> field.arguments.map(f => {
+                          Json.obj(
+                            "name" -> f.name,
+                            "valueType" -> Json.obj(
+                              "type" -> f.valueType.namedType.name,
+                              "isList" -> f.valueType.isInstanceOf[ListType],
+                              "required" -> f.valueType.isInstanceOf[NotNullType]
+                            ),
+                            // TODO - manage defaultValue
+                          )
+                        }),
+                        "directives" -> field.directives.map(directive => Json.obj(
+                          "name" -> directive.name,
+                          "arguments" -> directive.arguments.map(argument => Json.obj(
+                            "name" -> argument.name,
+                            "value" -> (argument.value match {
+                              case IntValue(value, comments, location) => value
+                              case BigIntValue(value, comments, location) => value
+                              case FloatValue(value, comments, location) => value
+                              case BigDecimalValue(value, comments, location) => value
+                              case StringValue(value, block, blockRawValue, comments, location) => value
+                              case BooleanValue(value, comments, location) => value
+                              case _ => ""
+                            })
+                          ))
+                        ))
+                    )),
+                    "directives" -> directives.map(directive => Json.obj(
+                      "name" -> directive.name,
+                      "arguments" -> directive.arguments.map(argument => Json.obj(
+                        "name" -> argument.name,
+                        "value" -> argument.value.toString()
+                      ))
+                    )))
+                  case _ => Json.obj()
+              }
+            case _ => Json.obj()
+          }
+        case _ => Json.obj()
+      }
+
+      Ok(Json.obj(
+        "types" -> res
+      )).future
+    }
+  }
+
+  def jsonToGraphqlSchema() = BackOfficeActionAuth.async(parse.json) { ctx =>
+    import sangria.parser.QueryParser
+    import sangria.schema.{Schema}
+    import sangria.ast.{
+      TypeDefinition, ObjectTypeDefinition, NotNullType,
+      NamedType, ListType, Argument, StringValue, BooleanValue, BigDecimalValue
+    }
+    import scala.util.Failure
+    import scala.util.Success
+
+    def jsonToArgumentValue(value: JsValue, isJsonDirectiveArgument: Boolean): Value = value match {
+      case JsNull => NullValue()
+      case value: JsBoolean => BooleanValue(value.value)
+      case JsNumber(value) => BigDecimalValue(value)
+      case JsString(value) => StringValue(value)
+      case o: JsArray => if (isJsonDirectiveArgument) StringValue(Json.stringify(o)) else ListValue(values = o.value.map(arg => jsonToArgumentValue(arg, isJsonDirectiveArgument)).toVector) // TODO - manage ListValue recursively
+      case o: JsObject => StringValue(Json.stringify(o))
+      case _ => StringValue("")
+    }
+
+    val schema = ctx.request.body.select("schema").asOpt[String].getOrElse("{}")
+    val types = ctx.request.body.select("types")
+        .as[JsArray]
+        .value
+        .map(customType => ObjectTypeDefinition(
+          name = customType.select("name").as[String],
+          interfaces = Vector.empty,
+          fields = customType.select("fields")
+            .asOpt[JsArray]
+            .getOrElse(Json.arr())
+            .value
+            .map(_.as[JsObject])
+            .map(field => {
+              val fieldType = field.select("fieldType").as[JsObject]
+              val `type` = fieldType.select("type").as[String]
+              val isList = fieldType.select("isList").as[Boolean]
+
+              val directives = field.select("directives").as[JsArray].value.map(_.as[JsObject])
+
+              FieldDefinition(
+                name = field.select("name").as[String],
+                fieldType = if(isList) ListType(NamedType(`type`)) else NamedType(`type`),
+                arguments = field.select("arguments").asOpt[JsArray]
+                  .getOrElse(Json.arr())
+                  .value
+                  .map(_.as[JsObject])
+                  .map(argument => {
+                    val valueType = argument.select("valueType").as[JsObject]
+                    val argumentType = valueType.select("type").as[String]
+                    val argumentIsList = valueType.select("isList").as[Boolean]
+                    val required = valueType.select("required").as[Boolean]
+                    val `type` = if(required) NotNullType(NamedType(argumentType)) else NamedType(argumentType)
+                    InputValueDefinition(
+                      name = argument.select("name").as[String],
+                      valueType = if(argumentIsList) ListType(`type`) else `type`,
+                      defaultValue = None // TODO - manage defautlValue
+                    )
+                 }).toVector,
+                directives = directives.map(directive => {
+                  val directiveName = directive.select("name").as[String]
+                  Directive(
+                    name = directiveName,
+                    arguments = directive.select("arguments")
+                        .as[JsArray]
+                        .value
+                        .map(_.as[JsObject])
+                        .map(argument => {
+                          val name = argument.keys.head
+                          Argument(
+                            name = name,
+                            value = jsonToArgumentValue(argument.values.head, isJsonDirectiveArgument = name == "data" && directiveName == "json")
+                          )
+                        }).toVector
+                  )}
+                ).toVector
+              )
+            }).toVector
+        ))
+
+    QueryParser.parse(schema) match {
+      case Failure(exception) => BadRequest(Json.obj("error" -> exception.getMessage)).future
+      case Success(astDocument) =>
+        val generatedSchema = Schema.buildFromAst(astDocument)
+        val document = generatedSchema.toAst
+        val newDocument = document.copy(
+          definitions = document.definitions.map {
+            case definition: TypeDefinition => types.find(t => t.name == definition.name).getOrElse(definition)
+            case v => v
+          }
+        )
+
+        Ok(Json.obj(
+          "schema" -> Schema.buildFromAst(newDocument).renderPretty
+        )).future
+    }
+
+  }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

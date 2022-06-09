@@ -889,6 +889,10 @@ class Env(
     }
     .getOrElse("")
 
+  lazy val exposedHttpPortInt: Int = configuration
+    .getOptionalWithFileSupport[Int]("app.exposed-ports.http")
+    .getOrElse(port)                                      
+
   lazy val exposedHttpsPort: String = configuration
     .getOptionalWithFileSupport[Int]("app.exposed-ports.https")
     .orElse(httpsPort.some)
@@ -897,6 +901,10 @@ class Env(
       case v   => s":$v"
     }
     .getOrElse("")
+
+  lazy val exposedHttpsPortInt: Int = configuration
+    .getOptionalWithFileSupport[Int]("app.exposed-ports.https")
+    .getOrElse(httpsPort)
 
   lazy val proxyState = new NgProxyState(this)
   lazy val vaults     = new Vaults(this)
