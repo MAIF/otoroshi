@@ -1757,7 +1757,8 @@ class BackOfficeController(
                         "name" -> field.name,
                         "fieldType" -> Json.obj(
                           "type" -> field.fieldType.namedType.name,
-                          "isList" -> field.fieldType.isInstanceOf[ListType]
+                          "isList" -> field.fieldType.isInstanceOf[ListType],
+                          "required" -> field.fieldType.isInstanceOf[NotNullType]
                         ),
                         "arguments" -> field.arguments.map(f => {
                           Json.obj(
@@ -1841,13 +1842,15 @@ class BackOfficeController(
             .map(field => {
               val fieldType = field.select("fieldType").as[JsObject]
               val `type` = fieldType.select("type").as[String]
-              val isList = fieldType.select("isList").as[Boolean]
+              val isList = fieldType.select("isList").asOpt[Boolean].getOrElse(false)
+              val requiredField = fieldType.select("required").asOpt[Boolean].getOrElse(false)
+              val fullFieldType = if (requiredField) NotNullType(NamedType(`type`)) else NamedType(`type`)
 
               val directives = field.select("directives").as[JsArray].value.map(_.as[JsObject])
 
               FieldDefinition(
                 name = field.select("name").as[String],
-                fieldType = if(isList) ListType(NamedType(`type`)) else NamedType(`type`),
+                fieldType = if(isList) ListType(fullFieldType) else fullFieldType,
                 arguments = field.select("arguments").asOpt[JsArray]
                   .getOrElse(Json.arr())
                   .value
@@ -1890,11 +1893,13 @@ class BackOfficeController(
       case Success(astDocument) =>
         val generatedSchema = Schema.buildFromAst(astDocument)
         val document = generatedSchema.toAst
+
+        println(types)
         val newDocument = document.copy(
-          definitions = document.definitions.map {
-            case definition: TypeDefinition => types.find(t => t.name == definition.name).getOrElse(definition)
-            case v => v
-          }
+          definitions = document.definitions.flatMap {
+            case definition: TypeDefinition => None // types.find(t => t.name == definition.name).getOrElse(definition)
+            case v => Some(v)
+          } ++ types
         )
 
         Ok(Json.obj(

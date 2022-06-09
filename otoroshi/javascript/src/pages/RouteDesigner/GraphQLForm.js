@@ -20,6 +20,38 @@ export default class GraphQLForm extends React.Component {
   }
 }
 
+const CreationButton = ({ confirm, text, placeholder }) => {
+  const [onCreationField, setCreationField] = useState(false)
+  const [fieldname, setFieldname] = useState("")
+
+  if (onCreationField)
+    return <div className='d-flex-between' onClick={e => e.stopPropagation()}>
+      <input type="text"
+        onChange={e => setFieldname(e.target.value)}
+        placeholder={placeholder}
+        className="form-control flex" />
+      <button className='btn btn-sm btn-danger mx-1' onClick={e => {
+        e.stopPropagation()
+        setCreationField(false)
+      }} >
+        <i className='fas fa-times' />
+      </button>
+      <button className='btn btn-sm btn-save' onClick={e => {
+        e.stopPropagation()
+        setCreationField(false)
+        confirm(fieldname)
+      }}>
+        <i className='fas fa-check' />
+      </button>
+    </div>
+
+  return <button className='btn btn-sm btn-primary my-2 ms-auto'
+    onClick={e => {
+      e.stopPropagation()
+      setCreationField(true)
+    }}>{text}</button>
+}
+
 class SideView extends React.Component {
   state = {
     types: [],
@@ -70,7 +102,7 @@ class SideView extends React.Component {
     const plugin = this.props.route.plugins.find(p => p.plugin === "cp:otoroshi.next.plugins.GraphQLBackend")?.config
     return jsonToGraphqlSchema(plugin.schema, this.state.types)
       .then(res => {
-        saveRoute({
+        this.props.saveRoute({
           ...this.props.route,
           plugins: this.props.route.plugins.map(p => {
             if (p.plugin === "cp:otoroshi.next.plugins.GraphQLBackend")
@@ -91,18 +123,55 @@ class SideView extends React.Component {
     // const { route, saveRoute } = this.props;
     const { types, selectedField } = this.state;
 
-    console.log(types)
+    console.log(types, selectedField)
 
     return <>
       <div className="row mt-2">
-        <div className="col-md-5">
+        <div className="col-md-5 flex-column">
           {
             types.map((type, i) => <Type {...type} key={`type${i}`}
-              onSelectField={fieldIdx => this.onSelectField(i, fieldIdx)} />)
+              onSelectField={fieldIdx => this.onSelectField(i, fieldIdx)}
+              createField={fieldname => this.setState({
+                types: types.map((type, t) => {
+                  if (t === i)
+                    return ({
+                      ...type,
+                      fields: [...type.fields, {
+                        name: fieldname,
+                        fieldType: {
+                          type: "String",
+                          isList: false
+                        },
+                        arguments: [],
+                        directives: []
+                      }]
+                    })
+                  return type
+                })
+              })} />)
           }
+          <CreationButton
+            text="New type"
+            placeholder="New type name"
+            confirm={newFieldname => this.setState({
+              types: [...this.state.types, {
+                name: newFieldname,
+                directives: [],
+                fields: [{
+                  name: "foo",
+                  fieldType: {
+                    type: "String",
+                    isList: false
+                  },
+                  arguments: [],
+                  directives: []
+                }]
+              }]
+            })} />
         </div>
         <div className="col-md-7">
           {selectedField && <FieldForm {...selectedField}
+            types={types.filter(t => t.name !== "Query" && t.name !== types[selectedField.typeIdx].name).map(t => t.name)}
             onChange={newField => this.setState({
               types: types.map((type, i) => {
                 if (i === selectedField.typeIdx)
@@ -130,9 +199,35 @@ class SideView extends React.Component {
   }
 }
 
-const FieldForm = ({ field, onChange }) => {
+const FieldForm = ({ field, onChange, types }) => {
   const schema = {
-    'arguments': {
+    name: {
+      type: 'string',
+      label: 'Name',
+    },
+    fieldType: {
+      type: 'object',
+      format: 'form',
+      label: 'Type',
+      flow: ['type', 'required', 'isList'],
+      schema: {
+        type: {
+          label: null,
+          format: 'select',
+          type: 'string',
+          options: ['Int', 'String', 'Boolean', 'Float', ...types]
+        },
+        required: {
+          type: 'bool',
+          label: 'Is required ?'
+        },
+        isList: {
+          type: 'bool',
+          label: 'Is a list of ?'
+        }
+      }
+    },
+    arguments: {
       type: 'object',
       label: 'Arguments',
       format: 'form',
@@ -167,7 +262,7 @@ const FieldForm = ({ field, onChange }) => {
         }
       }
     },
-    'directives': {
+    directives: {
       type: 'object',
       label: 'Directives',
       array: true,
@@ -301,11 +396,16 @@ const FieldForm = ({ field, onChange }) => {
   </div>)
 }
 
-const Type = ({ name, kind, fields, onSelectField }) => {
+const Type = ({ name, kind, fields, onSelectField, createField }) => {
   const [open, setOpen] = useState(false);
 
-  return <div onClick={() => setOpen(!open)}>
-    <div className="graphql-form-type d-flex-between p-2 my-2">
+  const selectField = (e, i) => {
+    e.stopPropagation()
+    onSelectField(i)
+  }
+
+  return <div onClick={() => setOpen(!open)} className="mb-1">
+    <div className="graphql-form-type d-flex-between p-2">
       <div className="d-flex-between" style={{ cursor: 'pointer' }}>
         <i className={`fas fa-chevron-${open ? 'down' : 'right'}`} style={{ minWidth: '32px' }}></i>
         <span style={{ color: "#fff" }}>{name}</span>
@@ -314,7 +414,7 @@ const Type = ({ name, kind, fields, onSelectField }) => {
       <span className='badge bg-dark'>{fields ? fields.length : 0} fields</span>
     </div>
     {open && (fields || []).map((field, i) => <div className="d-flex-between element py-1 ps-1 pe-2" key={`field${i}`}>
-      <div className="d-flex-between my-1 ms-2" style={{ flex: .75 }} >
+      <div className="d-flex-between my-1 ms-2" style={{ flex: .75 }} onClick={e => selectField(e, i)}>
         <span className="me-2 flex">{field.name}</span>
         <span className="badge bg-light ms-2" style={{ color: "#000" }}>{field.fieldType.type}</span>
         <span className={`badge ${field.fieldType.isList ? 'bg-dark' : ''} ms-1`} style={{
@@ -323,13 +423,14 @@ const Type = ({ name, kind, fields, onSelectField }) => {
           {field.fieldType.isList ? 'LIST' : '\u00a0\u00a0'}
         </span>
       </div>
-      <button className='btn btn-sm btn-save' onClick={e => {
-        e.stopPropagation()
-        onSelectField(i)
-      }}>
+      <button className='btn btn-sm btn-save' onClick={e => selectField(e, i)}>
         <i className="fas fa-chevron-right" />
       </button>
     </div>)}
+    {open && <CreationButton
+      text="New field"
+      placeholder="New field name"
+      confirm={createField} />}
   </div>
 }
 
