@@ -119,6 +119,35 @@ class SideView extends React.Component {
       })
   }
 
+  removeField = (e, i) => {
+    e.stopPropagation();
+    this.setState({
+      types: this.state.types.map(type => ({
+        ...type,
+        fields: type.fields.filter((_, j) => j !== i)
+      }))
+    })
+  }
+
+  createField = fieldname => this.setState({
+    types: this.state.types.map((type, t) => {
+      if (t === i)
+        return ({
+          ...type,
+          fields: [...type.fields, {
+            name: fieldname,
+            fieldType: {
+              type: "String",
+              isList: false
+            },
+            arguments: [],
+            directives: []
+          }]
+        })
+      return type
+    })
+  })
+
   render() {
     // const { route, saveRoute } = this.props;
     const { types, selectedField } = this.state;
@@ -130,25 +159,10 @@ class SideView extends React.Component {
         <div className="col-md-5 flex-column">
           {
             types.map((type, i) => <Type {...type} key={`type${i}`}
+              isSelected={fieldIdx => selectedField ? selectedField.typeIdx === i && selectedField.fieldIdx === fieldIdx : undefined}
               onSelectField={fieldIdx => this.onSelectField(i, fieldIdx)}
-              createField={fieldname => this.setState({
-                types: types.map((type, t) => {
-                  if (t === i)
-                    return ({
-                      ...type,
-                      fields: [...type.fields, {
-                        name: fieldname,
-                        fieldType: {
-                          type: "String",
-                          isList: false
-                        },
-                        arguments: [],
-                        directives: []
-                      }]
-                    })
-                  return type
-                })
-              })} />)
+              removeField={this.removeField}
+              createField={this.createField} />)
           }
           <CreationButton
             text="New type"
@@ -170,7 +184,8 @@ class SideView extends React.Component {
             })} />
         </div>
         <div className="col-md-7">
-          {selectedField && <FieldForm {...selectedField}
+          {selectedField && <FieldForm
+            {...selectedField}
             types={types.filter(t => t.name !== "Query" && t.name !== types[selectedField.typeIdx].name).map(t => t.name)}
             onChange={newField => this.setState({
               types: types.map((type, i) => {
@@ -396,7 +411,7 @@ const FieldForm = ({ field, onChange, types }) => {
   </div>)
 }
 
-const Type = ({ name, kind, fields, onSelectField, createField }) => {
+const Type = ({ name, kind, fields, onSelectField, createField, isSelected, removeField }) => {
   const [open, setOpen] = useState(false);
 
   const selectField = (e, i) => {
@@ -413,8 +428,11 @@ const Type = ({ name, kind, fields, onSelectField, createField }) => {
       </div>
       <span className='badge bg-dark'>{fields ? fields.length : 0} fields</span>
     </div>
-    {open && (fields || []).map((field, i) => <div className="d-flex-between element py-1 ps-1 pe-2" key={`field${i}`}>
-      <div className="d-flex-between my-1 ms-2" style={{ flex: .75 }} onClick={e => selectField(e, i)}>
+    {open && (fields || []).map((field, i) => <div className="d-flex-between element py-1 ps-1 pe-2" key={`field${i}`} onClick={e => selectField(e, i)} >
+      <div className="d-flex-between my-1 ms-2" style={{
+        flex: .75,
+        opacity: isSelected(i) !== false ? 1 : .5
+      }}>
         <span className="me-2 flex">{field.name}</span>
         <span className="badge bg-light ms-2" style={{ color: "#000" }}>{field.fieldType.type}</span>
         <span className={`badge ${field.fieldType.isList ? 'bg-dark' : ''} ms-1`} style={{
@@ -423,9 +441,14 @@ const Type = ({ name, kind, fields, onSelectField, createField }) => {
           {field.fieldType.isList ? 'LIST' : '\u00a0\u00a0'}
         </span>
       </div>
-      <button className='btn btn-sm btn-save' onClick={e => selectField(e, i)}>
-        <i className="fas fa-chevron-right" />
-      </button>
+      <div className='d-flex-between'>
+        {isSelected(i) === true && <button className='btn btn-sm btn-danger me-1' onClick={e => removeField(e, i)}>
+          <i className='fas fa-trash' />
+        </button>}
+        <button className='btn btn-sm btn-save' onClick={e => selectField(e, i)}>
+          <i className="fas fa-chevron-right" />
+        </button>
+      </div>
     </div>)}
     {open && <CreationButton
       text="New field"
