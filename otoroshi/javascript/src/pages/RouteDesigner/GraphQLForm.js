@@ -1,10 +1,16 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { graphqlSchemaToJson, jsonToGraphqlSchema } from '../../services/BackOfficeServices';
-import { Form } from '@maif/react-forms'
-import { isEqual, merge } from 'lodash';
+import { CodeInput, Form } from '@maif/react-forms'
+import { isEqual } from 'lodash';
 import { FeedbackButton } from './FeedbackButton'
 
 export default class GraphQLForm extends React.Component {
+  state = {
+    schemaView: false,
+    tmpSchema: this.props.route?.plugins
+      .find(p => p.plugin === "cp:otoroshi.next.plugins.GraphQLBackend")?.config.schema
+  }
+
   render() {
     const { route, hide, saveRoute } = this.props
 
@@ -12,9 +18,42 @@ export default class GraphQLForm extends React.Component {
       return null
 
     return (
-      <div className="graphql-form p-3 flex-column">
-        <Header hide={hide} />
-        <SideView route={route} saveRoute={saveRoute} />
+      <div className="graphql-form p-3 flex-column" style={{ overflowY: 'scroll' }}>
+        <Header hide={hide} schemaView={this.state.schemaView}
+          toggleSchema={s => {
+            if (s) {
+              const plugin = route.plugins.find(p => p.plugin === "cp:otoroshi.next.plugins.GraphQLBackend")?.config
+              this.setState({ schemaView: s, tmpSchema: plugin.schema })
+            } else
+              this.setState({ schemaView: s })
+          }} />
+        {this.state.schemaView ? <>
+          <CodeInput
+            value={this.state.tmpSchema}
+            onChange={e => this.setState({ tmpSchema: e })}
+          />
+          <FeedbackButton
+            className="ms-auto me-2 mt-auto mb-2"
+            onPress={() => Promise.resolve(this.props.saveRoute({
+              ...route,
+              plugins: route.plugins.map(p => {
+                if (p.plugin === "cp:otoroshi.next.plugins.GraphQLBackend")
+                  return {
+                    ...p,
+                    config: {
+                      ...p.config,
+                      schema: this.state.tmpSchema
+                    }
+                  }
+                return p
+              })
+            }))}
+            text="Save plugin"
+            icon={() => <i className="fas fa-paper-plane" />}
+          />
+        </>
+          :
+          <SideView route={route} saveRoute={saveRoute} />}
       </div>
     )
   }
@@ -169,7 +208,7 @@ class SideView extends React.Component {
     const { types, selectedField } = this.state;
 
     return <>
-      <div className="row my-3 flex" style={{ overflowY: 'scroll' }}>
+      <div className="row my-3 flex">
         <div className="col-md-5 flex-column">
           {
             types.map((type, i) => <Type {...type} key={`type${i}`}
@@ -482,9 +521,23 @@ const Type = ({ name, kind, fields, onSelectField, createField, isSelected, remo
   </div>
 }
 
-const Header = ({ hide }) => <div className='d-flex-between'>
+const Header = ({ hide, schemaView, toggleSchema }) => <div className='d-flex-between'>
   <div className='flex'>
     <h3>GraphQL Schema Editor</h3>
+    <div className={`d-flex justify-content-end ms-3 ${schemaView ? 'mb-3' : ''}`}>
+      <button
+        className="btn btn-sm toggle-form-buttons mt-3"
+        onClick={() => toggleSchema(false)}
+        style={{ backgroundColor: schemaView ? '#373735' : '#f9b000' }}>
+        FORM
+      </button>
+      <button
+        className="btn btn-sm mx-1 toggle-form-buttons mt-3"
+        onClick={() => toggleSchema(true)}
+        style={{ backgroundColor: schemaView ? '#f9b000' : '#373735' }}>
+        SCHEMA
+      </button>
+    </div>
   </div>
   <div className="d-flex me-1">
     <button
