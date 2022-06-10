@@ -813,6 +813,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   private def cacheState(): Future[Unit] = {
     if (caching.compareAndSet(false, true)) {
       env.metrics.withTimerAsync("otoroshi.core.cluster.cache-state") {
+        // TODO: handle in proxy state ?
         val start = System.currentTimeMillis()
         // var stateCache = ByteString.empty
         val counter = new AtomicLong(0L)
