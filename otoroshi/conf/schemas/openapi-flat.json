@@ -12322,6 +12322,13 @@
         "description" : "???",
         "type" : "object"
       },
+      "permissions" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
       "max_depth" : {
         "format" : "int32",
         "description" : "???",
@@ -25456,6 +25463,13 @@
       "initial_data" : {
         "description" : "???",
         "type" : "object"
+      },
+      "permissions" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
       },
       "max_depth" : {
         "format" : "int32",

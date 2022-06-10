@@ -4633,7 +4633,7 @@ spec:
     schema:
       openAPIV3Schema:
         type: "object"
-        description: "???"
+        description: "Data exporter settings"
         properties:
           apiVersion:
             description: "APIVersion defines the versioned schema of this representation\
@@ -4649,18 +4649,18 @@ spec:
             type: "object"
           spec:
             type: "object"
-            description: "???"
+            description: "Data exporter settings"
             properties:
               metadata:
                 type: "object"
                 additionalProperties:
                   type: "string"
-                description: "???"
+                description: "Entity metadata"
               type:
                 description: "Type of data exporter"
                 type: "string"
               _loc:
-                description: "???"
+                description: "Entity location"
                 type: "object"
                 properties:
                   teams:
@@ -4672,49 +4672,49 @@ spec:
                     description: "Organization of the current entity"
                     type: "string"
               enabled:
-                description: "???"
+                description: "Is the exporter enabled"
                 type: "boolean"
               groupDuration:
-                description: "???"
+                description: "The max duration before sending group"
                 type: "number"
               tags:
                 type: "array"
                 items:
                   type: "string"
-                description: "???"
+                description: "Entity tags"
               jsonWorkers:
                 format: "int32"
-                description: "???"
+                description: "Number of workers that transform events"
                 type: "integer"
               name:
-                description: "???"
+                description: "Entity name"
                 type: "string"
               groupSize:
                 format: "int32"
-                description: "???"
+                description: "The max size of events group before sending"
                 type: "integer"
               id:
-                description: "???"
+                description: "Id of the exporter"
                 type: "string"
               projection:
-                description: "???"
+                description: "Event projection"
                 type: "object"
               filtering:
-                description: "???"
+                description: "Filtering options"
                 type: "object"
                 properties:
                   include:
                     type: "array"
                     items:
                       type: "object"
-                    description: "???"
+                    description: "Event include filter"
                   exclude:
                     type: "array"
                     items:
                       type: "object"
-                    description: "???"
+                    description: "Event exclude filter"
               config:
-                description: "???"
+                description: "Exporter config"
                 type: "object"
                 properties:
                   clusterUri:
@@ -4758,7 +4758,7 @@ spec:
                           type: "string"
                         description: "Trusted cert. ids"
                   tlsTrustCertsFilePath:
-                    description: "???"
+                    description: "Truststore path"
                     type: "string"
                   apiKeyPrivate:
                     description: "Private key"
@@ -4770,13 +4770,13 @@ spec:
                     description: "Enabled TLS hostname validation"
                     type: "boolean"
                   path:
-                    description: "???"
+                    description: "File path"
                     type: "string"
                   password:
                     description: "Elastic password"
                     type: "string"
                   ref:
-                    description: "???"
+                    description: "Reference to an exporter"
                     type: "string"
                   servers:
                     type: "array"
@@ -4796,7 +4796,7 @@ spec:
                     description: "Enable template creation/update"
                     type: "boolean"
                   tenant:
-                    description: "???"
+                    description: "Pulsar tenant"
                     type: "string"
                   headers:
                     type: "object"
@@ -4808,10 +4808,10 @@ spec:
                     type: "string"
                   maxFileSize:
                     format: "int64"
-                    description: "???"
+                    description: "Max file size for rolling"
                     type: "integer"
                   uri:
-                    description: "???"
+                    description: "Pulsar access uri"
                     type: "string"
                   version:
                     description: "Version of Elasticsearch"
@@ -4823,7 +4823,7 @@ spec:
                     type: "object"
                     additionalProperties:
                       type: "string"
-                    description: "???"
+                    description: "Exported labels for prometheus"
                   eu:
                     description: "European tenant"
                     type: "boolean"
@@ -4834,10 +4834,10 @@ spec:
                     description: "Mailgun domain"
                     type: "string"
                   namespace:
-                    description: "???"
+                    description: "Pulsar namespace"
                     type: "string"
                   topic:
-                    description: "???"
+                    description: "Pulsar topic"
                     type: "string"
                   apiKeyPublic:
                     description: "Public key"
@@ -4858,18 +4858,18 @@ spec:
                     description: "Elasticsearch user"
                     type: "string"
                   config:
-                    description: "???"
+                    description: "Exporter config."
                     type: "object"
               sendWorkers:
                 format: "int32"
-                description: "???"
+                description: "Number of workers that sends events"
                 type: "integer"
               desc:
-                description: "???"
+                description: "Description"
                 type: "string"
               bufferSize:
                 format: "int32"
-                description: "???"
+                description: "Number of events in buffer"
                 type: "integer"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
@@ -4929,7 +4929,7 @@ spec:
                 description: "The backend id of the route (if one)"
                 type: "string"
               capture:
-                description: "???"
+                description: "Capture http traffic"
                 type: "boolean"
               groups:
                 type: "array"
@@ -5293,7 +5293,7 @@ spec:
                   type: "string"
                 description: "The metadata of the service"
               capture:
-                description: "???"
+                description: "Capture http traffic"
                 type: "boolean"
               description:
                 description: "The description of the service"
@@ -5340,7 +5340,7 @@ spec:
                       description: "The backend id of the route (if one)"
                       type: "string"
                     override_plugins:
-                      description: "???"
+                      description: "Override global plugin list from route composition"
                       type: "boolean"
                     backend:
                       description: "The backend of the route"

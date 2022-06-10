@@ -70,7 +70,7 @@ object CustomForms {
           |}""".stripMargin).asObject
       ),
     "otoroshi.next.plugins.GraphQLBackend" -> Form(
-      flow = Seq("schema", "initialData", "maxDepth"),
+      flow = Seq("schema", "permissions", "initialData", "maxDepth"),
       schema = Json.parse(
         """{
           |  "schema" : {
@@ -78,6 +78,11 @@ object CustomForms {
           |    "type" : "string",
           |    "format": "code"
           |  },
+          |  "permissions": {
+          |     "label": "Permissions",
+          |     "type": "string",
+          |     "array": true
+          |   },
           |  "initialData": {
           |     "label": "Predefined data",
           |     "type": "object",

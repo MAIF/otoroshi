@@ -11,6 +11,7 @@ import {
   DEFAULT_FLOW,
   EXCLUDED_PLUGINS,
   LEGACY_PLUGINS_WRAPPER,
+  PLUGINS,
   PLUGIN_INFORMATIONS_SCHEMA,
 } from './Graph';
 import Loader from './Loader';
@@ -28,6 +29,7 @@ import { snakeCase, camelCase, isEqual, over } from 'lodash';
 import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
+import GraphQLForm from './GraphQLForm';
 
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode}>
@@ -449,6 +451,7 @@ class Designer extends React.Component {
       TransformRequest: true,
       TransformResponse: true,
     },
+    advancedDesignerView: true
   };
 
   componentDidMount() {
@@ -1278,21 +1281,10 @@ class Designer extends React.Component {
       expandAll,
       searched,
       backend,
+      advancedDesignerView
     } = this.state;
 
     const { serviceMode } = this.props;
-
-    //const backendCallInst = (route && route.plugins) ? route.plugins.filter(p => {
-    //  const id = p.plugin;
-    //  const pluginDef = plugins.filter(pl => pl.id === id)[0];
-    //  if (pluginDef) {
-    //    return pluginDef.plugin_steps.indexOf('CallBackend') > -1;
-    //  } else {
-    //    return null;
-    //  }
-    //})[0] : null;
-    //const backendCallDef = backendCallInst ? plugins.filter(pl => pl.id === backendCallInst.plugin)[0] : null;
-    //const backendCall = (backendCallInst && backendCallDef) ? { ...backendCallDef, ...backendCallInst } : null;
 
     const backendCallNodes =
       route && route.plugins
@@ -1323,6 +1315,16 @@ class Designer extends React.Component {
               selectedNode: undefined,
             });
           }}>
+          <GraphQLForm route={advancedDesignerView ? route : undefined}
+            saveRoute={route => {
+              this.setState({ route }, this.saveRoute)
+            }}
+            hide={e => {
+              e.stopPropagation()
+              this.setState({
+                advancedDesignerView: false
+              })
+            }} />
           <PluginsContainer
             handleSearch={this.handleSearch}
             showLegacy={showLegacy}
@@ -1373,112 +1375,115 @@ class Designer extends React.Component {
                 backends={backends}
               />
             ) : (
-              <div className="row h-100 mx-1">
-                <Flow>
-                  <div className="row" style={{ height: '100%' }}>
-                    <InBoundFlow>
-                      <HeaderNode text="Request" icon="down" selectedNode={selectedNode} />
-                      <Hr highlighted={!selectedNode} />
-                      <FrontendNode
-                        frontend={frontend}
-                        selectedNode={selectedNode}
-                        removeNode={this.removeNode}
-                        setSelectedNode={() => {
-                          if (!this.state.alertModal.show)
-                            this.setState({ selectedNode: frontend });
-                        }}
-                      />
-                      {this.renderInBound()}
-                      <Hr highlighted={!selectedNode} flex={true} />
-                    </InBoundFlow>
-                    <OutBoundFlow>
-                      <HeaderNode text="Response" icon="up" selectedNode={selectedNode} />
-                      <Hr highlighted={!selectedNode} flex={true} />
-                      {this.renderOutBound()}
-                      {this.transformResponseBadge()}
-                      <Hr highlighted={!selectedNode} />
-                    </OutBoundFlow>
-                  </div>
-                  {backendCallNodes.length > 0 && (
-                    <>
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          width: '100%',
-                        }}>
-                        <span
-                          className="badge bg-warning text-dark"
-                          style={{
-                            width: '100%',
-                            opacity: !selectedNode ? 1 : 0.25,
-                            cursor: 'pointer',
-                          }}>
-                          CallBackend
-                        </span>
+              <>
+                <div className="row h-100 mx-1">
+                  <Flow>
+                    <div className="row" style={{ height: '100%' }}>
+                      <InBoundFlow>
+                        <HeaderNode text="Request" icon="down" selectedNode={selectedNode} />
                         <Hr highlighted={!selectedNode} />
-                      </div>
-                      {backendCallNodes.map((node) => (
-                        <BackendCallNode
-                          key={node.id}
-                          isPluginEnabled={this.isPluginEnabled}
-                          backendCall={node}
+                        <FrontendNode
+                          frontend={frontend}
                           selectedNode={selectedNode}
-                          hideLink={!node.plugin_backend_call_delegates}
+                          removeNode={this.removeNode}
                           setSelectedNode={() => {
-                            if (!this.state.alertModal.show) {
-                              this.setState({ selectedNode: node });
-                            }
+                            if (!this.state.alertModal.show)
+                              this.setState({ selectedNode: frontend });
                           }}
-                          onRemove={this.removeNode}
                         />
-                      ))}
-                      {false && !backendCall.plugin_backend_call_delegates && (
-                        <div style={{ height: 10 }}></div>
-                      )}
-                    </>
-                  )}
-                  <BackendNode
-                    backend={backend}
-                    selectedNode={selectedNode}
-                    setSelectedNode={() => {
-                      if (!this.state.alertModal.show) this.setState({ selectedNode: backend });
-                    }}
-                    onRemove={this.removeNode}
-                  />
+                        {this.renderInBound()}
+                        <Hr highlighted={!selectedNode} flex={true} />
+                      </InBoundFlow>
+                      <OutBoundFlow>
+                        <HeaderNode text="Response" icon="up" selectedNode={selectedNode} />
+                        <Hr highlighted={!selectedNode} flex={true} />
+                        {this.renderOutBound()}
+                        {this.transformResponseBadge()}
+                        <Hr highlighted={!selectedNode} />
+                      </OutBoundFlow>
+                    </div>
+                    {backendCallNodes.length > 0 && (
+                      <>
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            width: '100%',
+                          }}>
+                          <span
+                            className="badge bg-warning text-dark"
+                            style={{
+                              width: '100%',
+                              opacity: !selectedNode ? 1 : 0.25,
+                              cursor: 'pointer',
+                            }}>
+                            CallBackend
+                          </span>
+                          <Hr highlighted={!selectedNode} />
+                        </div>
+                        {backendCallNodes.map((node) => (
+                          <BackendCallNode
+                            key={node.id}
+                            isPluginEnabled={this.isPluginEnabled}
+                            backendCall={node}
+                            selectedNode={selectedNode}
+                            hideLink={!node.plugin_backend_call_delegates}
+                            setSelectedNode={() => {
+                              if (!this.state.alertModal.show) {
+                                this.setState({ selectedNode: node });
+                              }
+                            }}
+                            onRemove={this.removeNode}
+                          />
+                        ))}
+                        {false && !backendCall.plugin_backend_call_delegates && (
+                          <div style={{ height: 10 }}></div>
+                        )}
+                      </>
+                    )}
+                    <BackendNode
+                      backend={backend}
+                      selectedNode={selectedNode}
+                      setSelectedNode={() => {
+                        if (!this.state.alertModal.show) this.setState({ selectedNode: backend });
+                      }}
+                      onRemove={this.removeNode}
+                    />
 
-                </Flow>
-                <FormContainer
-                  serviceMode={serviceMode}
-                  clearPlugins={this.clearPlugins}
-                  deleteRoute={this.deleteRoute}
-                  updateRoute={this.updateRoute}
-                  saveRoute={this.saveRoute}
-                  selectedNode={selectedNode}
-                  route={route}
-                  setRoute={(n) => this.setState({ route: n })}
-                  setSelectedNode={(n) => {
-                    if (!this.state.alertModal.show) this.setState({ selectedNode: n });
-                  }}
-                  updatePlugin={this.updatePlugin}
-                  onRemove={this.removeNode}
-                  plugins={plugins}
-                  backends={backends}
-                  preview={preview}
-                  showPreview={(element) =>
-                    this.setState({
-                      preview: {
-                        ...this.state.preview,
-                        element,
-                      },
-                    })
-                  }
-                  originalRoute={originalRoute}
-                  alertModal={alertModal}
-                  disabledSaveButton={isEqual(route, originalRoute)}
-                />
-              </div>
+                  </Flow>
+                  <FormContainer
+                    showAdvancedDesignerView={() => this.setState({ advancedDesignerView: true })}
+                    serviceMode={serviceMode}
+                    clearPlugins={this.clearPlugins}
+                    deleteRoute={this.deleteRoute}
+                    updateRoute={this.updateRoute}
+                    saveRoute={this.saveRoute}
+                    selectedNode={selectedNode}
+                    route={route}
+                    setRoute={(n) => this.setState({ route: n })}
+                    setSelectedNode={(n) => {
+                      if (!this.state.alertModal.show) this.setState({ selectedNode: n });
+                    }}
+                    updatePlugin={this.updatePlugin}
+                    onRemove={this.removeNode}
+                    plugins={plugins}
+                    backends={backends}
+                    preview={preview}
+                    showPreview={(element) =>
+                      this.setState({
+                        preview: {
+                          ...this.state.preview,
+                          element,
+                        },
+                      })
+                    }
+                    originalRoute={originalRoute}
+                    alertModal={alertModal}
+                    disabledSaveButton={isEqual(route, originalRoute)}
+                  />
+                </div>
+              </>
             )}
           </div>
         </Container>
@@ -1950,6 +1955,12 @@ class EditView extends React.Component {
             flow: [...(config_flow || flow)],
           },
         };
+    }
+
+    const overridePlugin = PLUGINS[id]
+
+    if (overridePlugin) {
+      formSchema.plugin = overridePlugin(formSchema.plugin, this.props.showAdvancedDesignerView)
     }
 
     let value = route[selectedNode.field]; // matching Frontend and Backend case

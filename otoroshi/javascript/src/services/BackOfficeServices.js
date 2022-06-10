@@ -174,8 +174,8 @@ export function allServices(env, group) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?filter.groups=${group}`
-    : `/bo/api/proxy/api/services`;
+      ? `/bo/api/proxy/api/services?filter.groups=${group}`
+      : `/bo/api/proxy/api/services`;
   return fetch(url, {
     method: 'GET',
     credentials: 'include',
@@ -1805,6 +1805,36 @@ export function routeEntries(routeId) {
 export function graphQLTryIt(url) {
   return fetch(`/bo/api/graphqlproxy?url=${url}`)
     .then(r => r.json());
+}
+
+export function graphqlSchemaToJson(schema) {
+  return fetch(`/bo/api/graphql_to_json`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      schema
+    })
+  })
+    .then(r => r.json())
+}
+
+export function jsonToGraphqlSchema(schema, types) {
+  return fetch(`/bo/api/json_to_graphql_schema`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      schema, types
+    })
+  })
+    .then(r => r.json())
 }
 
 // NgRoutes

@@ -1,5 +1,6 @@
 import React from 'react';
 import { type } from '@maif/react-forms';
+import GraphQLForm from './GraphQLForm';
 
 export const PLUGIN_INFORMATIONS_SCHEMA = {
   enabled: {
@@ -44,6 +45,49 @@ export const LEGACY_PLUGINS_WRAPPER = {
   exporter: '',
   'request-handler': '',
 };
+
+export const PLUGINS = {
+  "cp:otoroshi.next.plugins.GraphQLBackend": (plugin, showAdvancedDesignerView) => ({
+    ...plugin,
+    schema: {
+      "turn_view": {
+        type: 'bool',
+        label: null,
+        defaultValue: false,
+        render: props => {
+          return (
+            <button
+              type="button"
+              className="btn btn-sm btn-success me-3 mb-3"
+              onClick={showAdvancedDesignerView}>
+              Use form view
+            </button>
+          );
+        },
+      },
+      ...Object.fromEntries(
+        Object.entries(plugin.schema).map(([key, value]) => {
+          return [
+            key,
+            {
+              ...value,
+              visible: {
+                ref: 'turn_view',
+                test: (v, idx) => v
+              },
+            },
+          ];
+        })
+      ),
+      graphQLForm: {
+        label: null,
+        type: 'bool',
+        render: () => <GraphQLForm />
+      }
+    },
+    flow: ["turn_view", ...plugin.flow, "graphQLForm"]
+  })
+}
 
 export const DEFAULT_FLOW = {
   Frontend: {
