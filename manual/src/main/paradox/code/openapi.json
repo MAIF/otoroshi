@@ -19778,6 +19778,13 @@
             "description" : "???",
             "type" : "string"
           },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "initial_data" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
@@ -21814,6 +21821,13 @@
           "schema" : {
             "description" : "???",
             "type" : "string"
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           },
           "initial_data" : {
             "oneOf" : [ {
