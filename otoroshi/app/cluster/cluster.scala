@@ -810,68 +810,72 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   def cachedCount     = cacheCount.get()
   def cachedDigest    = cacheDigest.get()
 
-  private def cacheState(): Unit = {
+  private def cacheState(): Future[Unit] = {
     if (caching.compareAndSet(false, true)) {
-      val start   = System.currentTimeMillis()
-      // var stateCache = ByteString.empty
-      val counter = new AtomicLong(0L)
-      val digest  = MessageDigest.getInstance("SHA-256")
-      env.datastores
-        .rawExport(env.clusterConfig.leader.groupingBy)
-        .map { item =>
-          ByteString(Json.stringify(item) + "\n")
-        }
-        .alsoTo(Sink.foreach { item =>
-          digest.update(item.asByteBuffer)
-          counter.incrementAndGet()
-        })
-        .via(env.clusterConfig.gzip())
-        // .alsoTo(Sink.fold(ByteString.empty)(_ ++ _))
-        // .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
-        // .alsoTo(Sink.onComplete {
-        //   case Success(_) =>
-        //     cachedRef.set(stateCache)
-        //     cachedAt.set(System.currentTimeMillis())
-        //     caching.compareAndSet(true, false)
-        //     env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
-        //     env.clusterConfig.leader.stateDumpPath
-        //       .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
-        //     Cluster.logger.debug(
-        //       s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
-        //     )
-        //   case Failure(e) =>
-        //     Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
-        // })
-        //.runWith(Sink.ignore)
-        .runWith(Sink.fold(ByteString.empty)(_ ++ _))
-        .applyOnIf(env.vaults.leaderFetchOnly) { fu =>
-          fu.flatMap { stateCache =>
-            env.vaults.fillSecretsAsync("cluster-state", stateCache.utf8String).map { filledStateCacheStr =>
-              val bs = filledStateCacheStr.byteString
-              digest.reset()
-              digest.update(bs.asByteBuffer)
-              bs
+      env.metrics.withTimerAsync("otoroshi.core.cluster.cache-state") {
+        val start = System.currentTimeMillis()
+        // var stateCache = ByteString.empty
+        val counter = new AtomicLong(0L)
+        val digest = MessageDigest.getInstance("SHA-256")
+        env.datastores
+          .rawExport(env.clusterConfig.leader.groupingBy)
+          .map { item =>
+            ByteString(Json.stringify(item) + "\n")
+          }
+          .alsoTo(Sink.foreach { item =>
+            digest.update(item.asByteBuffer)
+            counter.incrementAndGet()
+          })
+          .via(env.clusterConfig.gzip())
+          // .alsoTo(Sink.fold(ByteString.empty)(_ ++ _))
+          // .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
+          // .alsoTo(Sink.onComplete {
+          //   case Success(_) =>
+          //     cachedRef.set(stateCache)
+          //     cachedAt.set(System.currentTimeMillis())
+          //     caching.compareAndSet(true, false)
+          //     env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
+          //     env.clusterConfig.leader.stateDumpPath
+          //       .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
+          //     Cluster.logger.debug(
+          //       s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
+          //     )
+          //   case Failure(e) =>
+          //     Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
+          // })
+          //.runWith(Sink.ignore)
+          .runWith(Sink.fold(ByteString.empty)(_ ++ _))
+          .applyOnIf(env.vaults.leaderFetchOnly) { fu =>
+            fu.flatMap { stateCache =>
+              env.vaults.fillSecretsAsync("cluster-state", stateCache.utf8String).map { filledStateCacheStr =>
+                val bs = filledStateCacheStr.byteString
+                digest.reset()
+                digest.update(bs.asByteBuffer)
+                bs
+              }
             }
           }
-        }
-        .andThen {
-          case Success(stateCache) => {
-            caching.compareAndSet(true, false)
-            cachedRef.set(stateCache)
-            cachedAt.set(System.currentTimeMillis())
-            cacheCount.set(counter.get())
-            cacheDigest.set(Hex.encodeHexString(digest.digest()))
-            env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
-            env.clusterConfig.leader.stateDumpPath
-              .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
-            Cluster.logger.debug(
-              s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
-            )
+          .andThen {
+            case Success(stateCache) => {
+              caching.compareAndSet(true, false)
+              cachedRef.set(stateCache)
+              cachedAt.set(System.currentTimeMillis())
+              cacheCount.set(counter.get())
+              cacheDigest.set(Hex.encodeHexString(digest.digest()))
+              env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
+              env.clusterConfig.leader.stateDumpPath
+                .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
+              Cluster.logger.debug(
+                s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
+              )
+            }
+            case Failure(err) =>
+              caching.compareAndSet(true, false)
+              Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", err)
           }
-          case Failure(err)        =>
-            caching.compareAndSet(true, false)
-            Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", err)
-        }
+      }
+    } else {
+      ().vfuture
     }
   }
 }
