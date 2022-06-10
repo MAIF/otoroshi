@@ -1,30 +1,23 @@
 package otoroshi.controllers.adminapi
 
-import java.io.File
-import java.security.MessageDigest
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-import otoroshi.actions.ApiAction
 import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
-import otoroshi.cluster.{Cluster, ClusterAgent, ClusterMode, MemberView}
-import com.google.common.io.Files
-import otoroshi.env.Env
-import otoroshi.models.PrivateAppsUser
-import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
-import otoroshi.models.RightsChecker
+import otoroshi.actions.ApiAction
+import otoroshi.cluster.{Cluster, ClusterAgent, ClusterMode, MemberView}
+import otoroshi.env.Env
+import otoroshi.models.{PrivateAppsUser, RightsChecker}
+import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, Result}
-import otoroshi.utils.syntax.implicits._
+import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 
-import scala.concurrent.Future
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.util.{Failure, Success, Try}
 
 class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
     env: Env

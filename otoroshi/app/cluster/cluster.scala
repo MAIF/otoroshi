@@ -874,6 +874,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
               caching.compareAndSet(true, false)
               Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", err)
           }
+          .map(_ => ())
       }
     } else {
       ().vfuture

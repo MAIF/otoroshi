@@ -31,11 +31,9 @@ import play.api.http.HttpEntity
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
 import play.api.libs.streams.ActorFlow
-import play.api.libs.ws.WSResponse
 import play.api.mvc.Results.Status
 import play.api.mvc._
 
-import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
