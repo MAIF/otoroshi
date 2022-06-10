@@ -1894,10 +1894,9 @@ class BackOfficeController(
         val generatedSchema = Schema.buildFromAst(astDocument)
         val document = generatedSchema.toAst
 
-        println(types)
         val newDocument = document.copy(
           definitions = document.definitions.flatMap {
-            case definition: TypeDefinition => None // types.find(t => t.name == definition.name).getOrElse(definition)
+            case definition: TypeDefinition => None
             case v => Some(v)
           } ++ types
         )

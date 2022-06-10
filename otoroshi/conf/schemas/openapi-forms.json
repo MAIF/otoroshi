@@ -34434,7 +34434,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "schema", "initialData" ]
+    "flow" : [ "schema", "initialData", "maxDepth" ]
   },
   "otoroshi.utils.mailer.NoneMailerSettings" : {
     "schema" : {
@@ -39041,12 +39041,18 @@
         "label" : "initial_data",
         "type" : "object"
       },
+      "permissions" : {
+        "label" : "permissions",
+        "type" : "string",
+        "array" : true,
+        "format" : null
+      },
       "max_depth" : {
         "label" : "max_depth",
         "type" : "number"
       }
     },
-    "flow" : [ "schema", "initial_data", "max_depth" ]
+    "flow" : [ "schema", "initial_data", "permissions", "max_depth" ]
   },
   "otoroshi.plugins.apikeys.ClientCredentialFlowExtractor" : {
     "schema" : { },
