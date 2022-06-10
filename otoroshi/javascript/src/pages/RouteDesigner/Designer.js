@@ -1957,7 +1957,7 @@ class EditView extends React.Component {
         };
     }
 
-    const overridePlugin = PLUGINS["otoroshi.next.plugins.GraphQLBackend"]
+    const overridePlugin = PLUGINS[id]
 
     if (overridePlugin) {
       formSchema.plugin = overridePlugin(formSchema.plugin, this.props.showAdvancedDesignerView)

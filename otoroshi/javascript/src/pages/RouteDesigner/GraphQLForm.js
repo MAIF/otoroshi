@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { graphqlSchemaToJson, jsonToGraphqlSchema } from '../../services/BackOfficeServices';
 import { Form } from '@maif/react-forms'
-import { merge } from 'lodash';
+import { isEqual, merge } from 'lodash';
 import { FeedbackButton } from './FeedbackButton'
 
 export default class GraphQLForm extends React.Component {
@@ -69,9 +69,10 @@ class SideView extends React.Component {
               ...field,
               directives: (field.directives || []).map(directive => ({
                 ...directive,
-                arguments: (directive.arguments || []).map(argument => ({
+                arguments: (directive.arguments || []).reduce((acc, argument) => ({
+                  ...acc,
                   [argument.name]: this.transformValue(argument.value)
-                }))
+                }), {})
               }))
             }))
           }))
@@ -89,18 +90,33 @@ class SideView extends React.Component {
 
   onSelectField = (typeIdx, fieldIdx) => {
     const field = this.state.types[typeIdx].fields[fieldIdx]
-    this.setState({
+    this.setState({ selectedField: undefined }, () => this.setState({
       selectedField: {
         field,
         fieldIdx,
         typeIdx
       }
-    })
+    }))
+  }
+
+  transformTypes = types => {
+    return types.map(type => ({
+      ...type,
+      fields: (type.fields || []).map(field => ({
+        ...field,
+        directives: (field.directives || []).map(directive => ({
+          ...directive,
+          arguments: Object.entries(directive.arguments || []).map(([k, v]) => ({
+            [k]: v
+          }))
+        }))
+      }))
+    }))
   }
 
   savePlugin = () => {
     const plugin = this.props.route.plugins.find(p => p.plugin === "cp:otoroshi.next.plugins.GraphQLBackend")?.config
-    return jsonToGraphqlSchema(plugin.schema, this.state.types)
+    return jsonToGraphqlSchema(plugin.schema, this.transformTypes(this.state.types))
       .then(res => {
         this.props.saveRoute({
           ...this.props.route,
@@ -129,7 +145,7 @@ class SideView extends React.Component {
     })
   }
 
-  createField = fieldname => this.setState({
+  createField = (fieldname, i) => this.setState({
     types: this.state.types.map((type, t) => {
       if (t === i)
         return ({
@@ -152,17 +168,15 @@ class SideView extends React.Component {
     // const { route, saveRoute } = this.props;
     const { types, selectedField } = this.state;
 
-    console.log(types, selectedField)
-
     return <>
-      <div className="row mt-2">
+      <div className="row my-3 flex" style={{ overflowY: 'scroll' }}>
         <div className="col-md-5 flex-column">
           {
             types.map((type, i) => <Type {...type} key={`type${i}`}
               isSelected={fieldIdx => selectedField ? selectedField.typeIdx === i && selectedField.fieldIdx === fieldIdx : undefined}
               onSelectField={fieldIdx => this.onSelectField(i, fieldIdx)}
               removeField={this.removeField}
-              createField={this.createField} />)
+              createField={fieldname => this.createField(fieldname, i)} />)
           }
           <CreationButton
             text="New type"
@@ -214,201 +228,212 @@ class SideView extends React.Component {
   }
 }
 
-const FieldForm = ({ field, onChange, types }) => {
-  const schema = {
-    name: {
-      type: 'string',
-      label: 'Name',
-    },
-    fieldType: {
-      type: 'object',
-      format: 'form',
-      label: 'Type',
-      flow: ['type', 'required', 'isList'],
-      schema: {
-        type: {
-          label: null,
-          format: 'select',
-          type: 'string',
-          options: ['Int', 'String', 'Boolean', 'Float', ...types]
-        },
-        required: {
-          type: 'bool',
-          label: 'Is required ?'
-        },
-        isList: {
-          type: 'bool',
-          label: 'Is a list of ?'
+class FieldForm extends React.Component {
+  state = {
+    schema: {
+      name: {
+        type: 'string',
+        label: 'Name',
+      },
+      fieldType: {
+        type: 'object',
+        format: 'form',
+        label: 'Type',
+        flow: ['type', 'required', 'isList'],
+        schema: {
+          type: {
+            label: null,
+            format: 'select',
+            type: 'string',
+            options: ['Int', 'String', 'Boolean', 'Float', ...this.props.types]
+          },
+          required: {
+            type: 'bool',
+            label: 'Is required ?'
+          },
+          isList: {
+            type: 'bool',
+            label: 'Is a list of ?'
+          }
         }
-      }
-    },
-    arguments: {
-      type: 'object',
-      label: 'Arguments',
-      format: 'form',
-      array: true,
-      flow: ['name', 'valueType'],
-      schema: {
-        name: {
-          type: 'string',
-          label: 'Argument name'
-        },
-        valueType: {
-          label: 'Argument value',
-          format: 'form',
-          type: 'object',
-          flow: ['type', 'required', 'isList'],
-          schema: {
-            type: {
-              label: null,
-              format: 'select',
-              type: 'string',
-              options: ['Int', 'String', 'Boolean', 'Float']
-            },
-            required: {
-              type: 'bool',
-              label: 'Is a required argument ?'
-            },
-            isList: {
-              type: 'bool',
-              label: 'Is a list of ?'
+      },
+      arguments: {
+        type: 'object',
+        label: 'Arguments',
+        format: 'form',
+        array: true,
+        flow: ['name', 'valueType'],
+        schema: {
+          name: {
+            type: 'string',
+            label: 'Argument name'
+          },
+          valueType: {
+            label: 'Argument value',
+            format: 'form',
+            type: 'object',
+            flow: ['type', 'required', 'isList'],
+            schema: {
+              type: {
+                label: null,
+                format: 'select',
+                type: 'string',
+                options: ['Int', 'String', 'Boolean', 'Float']
+              },
+              required: {
+                type: 'bool',
+                label: 'Is a required argument ?'
+              },
+              isList: {
+                type: 'bool',
+                label: 'Is a list of ?'
+              }
+            }
+          }
+        }
+      },
+      directives: {
+        type: 'object',
+        label: 'Directives',
+        array: true,
+        format: 'form',
+        flow: ['name', 'arguments'],
+        schema: {
+          'name': {
+            type: 'string',
+            label: 'Source',
+            format: 'select',
+            options: [
+              'rest', 'graphql', 'json', 'otoroshi (soon)'
+            ]
+          },
+          'arguments': {
+            type: 'object',
+            label: 'Arguments',
+            format: 'form',
+            conditionalSchema: {
+              rawRef: 'name',
+              switch: [
+                {
+                  condition: 'rest',
+                  schema: {
+                    url: {
+                      type: 'string',
+                      label: 'URL'
+                    },
+                    method: {
+                      type: 'string',
+                      label: 'HTTP Method',
+                      format: 'select',
+                      defaultValue: 'GET',
+                      options: ['GET', 'POST']
+                    },
+                    headers: {
+                      type: 'object',
+                      label: 'Header'
+                    },
+                    timeout: {
+                      type: 'number',
+                      label: 'Timeout',
+                      defaultValue: 5000
+                    },
+                    paginate: {
+                      type: 'bool',
+                      label: 'Enable pagination',
+                      help: 'Automatically add limit and offset argument'
+                    }
+                  },
+                  flow: ['url', 'method', 'headers', 'timeout', 'paginate']
+                },
+                {
+                  condition: 'graphql',
+                  schema: {
+                    url: {
+                      type: 'string',
+                      label: 'URL'
+                    },
+                    query: {
+                      type: 'string',
+                      format: 'code',
+                      label: 'GraphQL Query'
+                    },
+                    headers: {
+                      type: 'object',
+                      label: 'Headers'
+                    },
+                    timeout: {
+                      type: 'number',
+                      defaultValue: 5000,
+                      label: 'Timeout'
+                    },
+                    method: {
+                      type: 'string',
+                      format: 'select',
+                      defaultValue: 'GET',
+                      options: ['GET', 'POST'],
+                      label: 'HTTP Method'
+                    },
+                    responsePathArg: {
+                      type: 'string',
+                      label: 'JSON Response path'
+                    },
+                    responseFilterArg: {
+                      type: 'string',
+                      label: 'JSON response filter path'
+                    }
+                  },
+                  flow: ['url', 'query', 'headers', 'timeout', 'method', 'responsePathArg', 'responseFilterArg']
+                },
+                {
+                  condition: 'json',
+                  schema: {
+                    path: {
+                      type: 'string',
+                      label: 'JSON path'
+                    }
+                  }
+                }
+              ]
             }
           }
         }
       }
     },
-    directives: {
-      type: 'object',
-      label: 'Directives',
-      array: true,
-      format: 'form',
-      flow: ['name', 'arguments'],
-      schema: {
-        'name': {
-          type: 'string',
-          label: 'Source',
-          format: 'select',
-          options: [
-            'rest', 'graphql', 'json', 'otoroshi (soon)'
-          ]
-        },
-        'arguments': {
-          type: 'object',
-          label: 'Arguments',
-          array: true,
-          // format: 'form',
-          // conditionalSchema: {
-          //   ref: 'name',
-          //   switch: [
-          //     {
-          //       default: true,
-          //       condition: 'rest',
-          //       schema: {
-          //         // argument: {
-          //         //   type: 'string',
-          //         //   format: 'select',
-          //         //   options: [
-          //         //     'url', 'method', 'headers', 'timeout', 'paginate'
-          //         //   ]
-          //         // },
-          //         url: {
-          //           type: 'string',
-          //           label: 'URL'
-          //         },
-          //         method: {
-          //           // visible: { ref: 'argument', test: v => v === "method" },
-          //           type: 'string',
-          //           label: 'HTTP Method',
-          //           format: 'select',
-          //           defaultValue: 'GET',
-          //           options: ['GET', 'POST']
-          //         },
-          //         headers: {
-          //           // visible: { ref: 'argument', test: v => v === "headers" },
-          //           type: 'object',
-          //           label: 'Header'
-          //         },
-          //         timeout: {
-          //           // visible: { ref: 'argument', test: v => v === "timeout" },
-          //           type: 'number',
-          //           label: 'Timeout',
-          //           defaultValue: 5000
-          //         },
-          //         paginate: {
-          //           // visible: { ref: 'argument', test: v => v === "paginate" },
-          //           type: 'bool',
-          //           label: 'Enable pagination',
-          //           help: 'Automatically add limit and offset argument'
-          //         }
-          //       },
-          //       flow: [/*'argument', */'url', 'method', 'headers', 'timeout', 'paginate']
-          //     },
-          //     {
-          //       condition: 'graphql',
-          //       schema: {
-          //         url: {
-          //           type: 'string',
-          //           label: 'URL'
-          //         },
-          //         query: {
-          //           type: 'string',
-          //           format: 'code',
-          //           label: 'GraphQL Query'
-          //         },
-          //         headers: {
-          //           type: 'object',
-          //           label: 'Headers'
-          //         },
-          //         timeout: {
-          //           type: 'number',
-          //           defaultValue: 5000,
-          //           label: 'Timeout'
-          //         },
-          //         method: {
-          //           type: 'string',
-          //           format: 'select',
-          //           defaultValue: 'GET',
-          //           options: ['GET', 'POST'],
-          //           label: 'HTTP Method'
-          //         },
-          //         responsePathArg: {
-          //           type: 'string',
-          //           label: 'JSON Response path'
-          //         },
-          //         responseFilterArg: {
-          //           type: 'string',
-          //           label: 'JSON response filter path'
-          //         }
-          //       },
-          //       flow: ['url', 'query', 'headers', 'timeout', 'method', 'responsePathArg', 'responseFilterArg']
-          //     }
-          //   ]
-          // }
-        }
-      }
-    }
+    formState: null
   }
 
-  const [state, setState] = useState();
+  componentDidMount() {
+    this.setState({
+      formState: this.props.field
+    })
+  }
 
-  useEffect(() => {
-    setState(field)
-  }, [field]);
+  componentDidUpdate(prevProps) {
+    if (!isEqual(prevProps.field, this.props.field))
+      this.setState({
+        formState: this.props.field
+      })
+  }
 
-  if (!state)
-    return null;
+  render() {
+    if (!this.state.formState)
+      return null;
 
-  return (<div className="p-3" style={{ background: "#373735", borderRadius: '4px' }}>
-    <Form
-      schema={schema}
-      value={state}
-      onError={(e) => console.log(e)}
-      options={{ autosubmit: true }}
-      onSubmit={data => onChange({ ...merge(field, data) })}
-      footer={() => null}
-    />
+    const { field, onChange } = this.props;
 
-  </div>)
+    return <div className="p-3" style={{ background: "#373735", borderRadius: '4px' }}>
+      <Form
+        schema={this.state.schema}
+        value={this.state.formState}
+        onError={() => { }}
+        options={{ autosubmit: true }}
+        onSubmit={data => {
+          // onChange({ ...data })
+        }}
+        footer={() => null}
+      />
+    </div>
+  }
 }
 
 const Type = ({ name, kind, fields, onSelectField, createField, isSelected, removeField }) => {

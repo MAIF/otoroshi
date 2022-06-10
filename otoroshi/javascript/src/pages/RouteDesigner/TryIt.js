@@ -111,7 +111,7 @@ export const TryIt = ({ route, serviceMode }) => {
           .find(f => f.textContent === "Prettify")
         prettifyButton.className = "btn btn-sm btn-success tryit-prettify-button";
 
-        document.querySelector(".graphiql-wrapper > div")
+        document.querySelector(".CodeMirror")
           .appendChild(prettifyButton);
 
         [...document.querySelectorAll('.playground svg')]

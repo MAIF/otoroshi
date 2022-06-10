@@ -47,7 +47,7 @@ export const LEGACY_PLUGINS_WRAPPER = {
 };
 
 export const PLUGINS = {
-  "otoroshi.next.plugins.GraphQLBackend": (plugin, showAdvancedDesignerView) => ({
+  "cp:otoroshi.next.plugins.GraphQLBackend": (plugin, showAdvancedDesignerView) => ({
     ...plugin,
     schema: {
       "turn_view": {
