@@ -1,45 +1,19 @@
 package otoroshi.controllers.adminapi
 
-import otoroshi.actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers
-import org.bouncycastle.asn1.x500.X500Name
-import org.bouncycastle.asn1.x509.{
-  BasicConstraints,
-  ExtendedKeyUsage,
-  Extension,
-  Extensions,
-  ExtensionsGenerator,
-  GeneralName,
-  GeneralNames,
-  KeyPurposeId,
-  KeyUsage
-}
-import org.bouncycastle.cert.X509v3CertificateBuilder
-import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils
-import org.bouncycastle.crypto.util.PrivateKeyFactory
-import org.bouncycastle.jce.ECNamedCurveTable
-import org.bouncycastle.operator.{DefaultDigestAlgorithmIdentifierFinder, DefaultSignatureAlgorithmIdentifierFinder}
-import org.bouncycastle.operator.bc.BcECContentSignerBuilder
-import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder
-import org.joda.time.DateTime
+import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.models.RightsChecker
 import otoroshi.ssl.pki.models.GenCsrQuery
+import otoroshi.ssl.{Cert, CertificateData, P12Helper, PemCertificate}
+import otoroshi.utils.future.Implicits._
 import play.api.Logger
 import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
 import play.api.libs.streams.Accumulator
-import play.api.mvc.{AbstractController, Action, BodyParser, ControllerComponents, RequestHeader, Result}
-import otoroshi.ssl.{Cert, CertificateData, P12Helper, PemCertificate, PemHeaders}
-import otoroshi.utils.future.Implicits._
+import play.api.mvc._
 
-import java.io.{ByteArrayInputStream, File}
-import java.nio.file.Files
-import java.security.{KeyPairGenerator, SecureRandom}
-import java.security.cert.{CertificateFactory, X509Certificate}
-import java.util.{Base64, UUID}
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}

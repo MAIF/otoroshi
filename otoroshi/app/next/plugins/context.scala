@@ -179,7 +179,7 @@ class ContextValidation extends NgAccessValidator {
       "route" -> ctx.route.json,
       "token" -> token
     )
-    java.nio.file.Files.writeString(new java.io.File("./ctx.json").toPath, json.prettify.debugPrintln)
+    // java.nio.file.Files.writeString(new java.io.File("./ctx.json").toPath, json.prettify.debugPrintln)
     config.validators.forall(validator => validator.validate(json))
   }
 

@@ -17703,6 +17703,10 @@
           "routing" : {
             "description" : "Use apikey for routing",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyMatcher"
+          },
+          "update_quotas" : {
+            "description" : "???",
+            "type" : "boolean"
           }
         }
       },
@@ -17845,6 +17849,19 @@
           "enabled" : {
             "description" : "Verifier enabled",
             "type" : "boolean"
+          }
+        }
+      },
+      "otoroshi.next.plugins.ViolationsException" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "errors" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           }
         }
       },
@@ -18059,6 +18076,45 @@
             "description" : "the kind of algosettings",
             "type" : "string",
             "enum" : [ "HSAlgoSettings", "RSAlgoSettings", "ESAlgoSettings", "JWKSAlgoSettings", "RSAKPAlgoSettings", "ESKPAlgoSettings", "KidAlgoSettings" ]
+          }
+        }
+      },
+      "otoroshi.next.plugins.GraphQLProxyConfig" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "max_complexity" : {
+            "format" : "double",
+            "description" : "???",
+            "type" : "number"
+          },
+          "schema" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "path" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "headers" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "endpoint" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "max_depth" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
           }
         }
       },
@@ -18383,6 +18439,10 @@
               "$ref" : "#/components/schemas/otoroshi.models.UserRights"
             },
             "description" : "Overrides user rights. Object with email as key"
+          },
+          "clientSideSessionEnabled" : {
+            "description" : "???",
+            "type" : "boolean"
           },
           "groupRights" : {
             "type" : "object",
@@ -18907,6 +18967,10 @@
               "$ref" : "#/components/schemas/otoroshi.models.UserRights"
             },
             "description" : "Overrides user rights. Object with email as key"
+          },
+          "clientSideSessionEnabled" : {
+            "description" : "???",
+            "type" : "boolean"
           },
           "callbackUrl" : {
             "description" : "Otoroshi callback URL",
@@ -19522,7 +19586,7 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.GraphQLQueryConfig" : {
-        "description" : "Configuration for the GraphQLQuery plugin",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "response_path" : {
@@ -19531,10 +19595,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "The optional json path to select in response"
+            "description" : "???"
           },
           "url" : {
-            "description" : "URL of the graphql endpoint",
+            "description" : "???",
             "type" : "string"
           },
           "response_filter" : {
@@ -19543,26 +19607,26 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "JQ filter applied on the response"
+            "description" : "???"
           },
           "headers" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "Headers to pass to the graphql call"
+            "description" : "???"
           },
           "timeout" : {
             "format" : "int64",
-            "description" : "Timeout for the call (in ms)",
+            "description" : "???",
             "type" : "integer"
           },
           "query" : {
-            "description" : "Graphql query to pass to the graphql call",
+            "description" : "???",
             "type" : "string"
           },
           "method" : {
-            "description" : "Method for the graphql call",
+            "description" : "???",
             "type" : "string"
           }
         }
@@ -23145,6 +23209,11 @@
           }
         }
       },
+      "otoroshi.next.plugins.TooComplexQueryError" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : { }
+      },
       "WebAuthnRegistrationFinishBody" : {
         "type" : "object",
         "description" : ""
@@ -23994,7 +24063,7 @@
         "properties" : { }
       },
       "otoroshi.next.plugins.GraphQLQuery" : {
-        "description" : "Plugin to read data from GraphQL endpoints",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "response_path" : {
@@ -24003,10 +24072,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "The optional json path to select in response"
+            "description" : "???"
           },
           "url" : {
-            "description" : "URL of the graphql endpoint",
+            "description" : "???",
             "type" : "string"
           },
           "response_filter" : {
@@ -24015,26 +24084,26 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "JQ filter applied on the response"
+            "description" : "???"
           },
           "headers" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "Headers to pass to the graphql call"
+            "description" : "???"
           },
           "timeout" : {
             "format" : "int64",
-            "description" : "Timeout for the call (in ms)",
+            "description" : "???",
             "type" : "integer"
           },
           "query" : {
-            "description" : "Graphql query to pass to the graphql call",
+            "description" : "???",
             "type" : "string"
           },
           "method" : {
-            "description" : "Method for the graphql call",
+            "description" : "???",
             "type" : "string"
           }
         }
@@ -24810,6 +24879,10 @@
             "description" : "Use webauthn for login",
             "type" : "boolean"
           },
+          "clientSideSessionEnabled" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
           "id" : {
             "description" : "id of the module",
             "type" : "string"
@@ -25085,6 +25158,45 @@
           "type" : {
             "type" : "string",
             "enum" : [ "none" ]
+          }
+        }
+      },
+      "otoroshi.next.plugins.GraphQLProxy" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "max_complexity" : {
+            "format" : "double",
+            "description" : "???",
+            "type" : "number"
+          },
+          "schema" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "path" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "headers" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "endpoint" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "max_depth" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
           }
         }
       },
@@ -26744,6 +26856,10 @@
             } ],
             "description" : "Field name to find email in user profile returned by identity provider"
           },
+          "clientSideSessionEnabled" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
           "singleSignOnUrl" : {
             "description" : "URL used by otoroshi to redirect users to identity provider login page",
             "type" : "string"
@@ -27295,6 +27411,10 @@
               "$ref" : "#/components/schemas/otoroshi.models.UserRights"
             },
             "description" : "Overrides user rights of users connected by OAuth1 module"
+          },
+          "clientSideSessionEnabled" : {
+            "description" : "???",
+            "type" : "boolean"
           },
           "callbackURL" : {
             "description" : "The location where the identity provider returns a browser after the user finishes authenticating with their IDP",
@@ -28071,6 +28191,10 @@
           "routing" : {
             "description" : "Use apikey for routing",
             "$ref" : "#/components/schemas/otoroshi.next.plugins.NgApikeyMatcher"
+          },
+          "update_quotas" : {
+            "description" : "???",
+            "type" : "boolean"
           }
         }
       }

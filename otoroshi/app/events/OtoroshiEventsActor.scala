@@ -171,6 +171,21 @@ trait CustomDataExporter extends NamedPlugin with StartableAndStoppable {
 
 object DataExporter {
 
+  def acceptEvent(event: JsValue, configUnsafe: DataExporterConfig, logger: Logger): Boolean = {
+    try {
+      (configUnsafe.filtering.include.isEmpty || configUnsafe.filtering.include.exists(i =>
+        otoroshi.utils.Match.matches(event, i)
+      )) &&
+        (configUnsafe.filtering.exclude.isEmpty || !configUnsafe.filtering.exclude.exists(i =>
+          otoroshi.utils.Match.matches(event, i)
+        ))
+    } catch {
+      case t: Throwable =>
+        logger.error("error while accepting event", t)
+        false
+    }
+  }
+
   case class RetryEvent(val raw: JsValue) extends OtoroshiEvent {
     override def `@id`: String                       = raw.select("@id").asOpt[String].getOrElse(IdGenerator.uuid)
     override def `@timestamp`: DateTime              =
@@ -275,18 +290,19 @@ object DataExporter {
     }
 
     def accept(event: JsValue): Boolean = {
-      try {
-        (configUnsafe.filtering.include.isEmpty || configUnsafe.filtering.include.exists(i =>
-          otoroshi.utils.Match.matches(event, i)
-        )) &&
-        (configUnsafe.filtering.exclude.isEmpty || configUnsafe.filtering.exclude.exists(i =>
-          !otoroshi.utils.Match.matches(event, i)
-        ))
-      } catch {
-        case t: Throwable =>
-          logger.error("error while accepting event", t)
-          false
-      }
+      acceptEvent(event, configUnsafe, logger)
+      // try {
+      //   (configUnsafe.filtering.include.isEmpty || configUnsafe.filtering.include.exists(i =>
+      //     otoroshi.utils.Match.matches(event, i)
+      //   )) &&
+      //   (configUnsafe.filtering.exclude.isEmpty || configUnsafe.filtering.exclude.exists(i =>
+      //     !otoroshi.utils.Match.matches(event, i)
+      //   ))
+      // } catch {
+      //   case t: Throwable =>
+      //     logger.error("error while accepting event", t)
+      //     false
+      // }
     }
 
     def project(event: JsValue): JsValue = {

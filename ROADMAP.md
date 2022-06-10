@@ -10,11 +10,19 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - implement tracing plugins
 - [ ] Q2 2022
   - implement views for the new proxy engine
-  - use wizard to help resources creation
   - implement a "try it" view for services
-  - implement SMI spec support  
+    - REST
+    - GraphQL
+    - reporting
+  - implement secret vaults
+  - implement grapql plugins (except federation)
 - [ ] Q3 2022  
-  - use @maif/react-form in UI
+  - rollout new proxy engine
+  - implement k8s SMI spec support  
+  - implement k8s Gateway API support
+- [ ] Q4 2022  
+  - use wizard to help resources creation
+    - use @maif/react-form 
 
 
 ## versioning
@@ -64,6 +72,11 @@ provide the authentication modules needed for most cases and associated tools
   - [x] payload transformations
     - [x] json-to-xml
     - [x] xml-to-json
+- [ ] graphql plugins
+  - [x] graphql query as REST
+  - [x] graphql proxy with validation
+  - [ ] graphql federation
+  - [x] graphql composer
 
 ## backoffice
 
@@ -73,8 +86,8 @@ provide the authentication modules needed for most cases and associated tools
 - [ ] customizable embbeded dashboarding
 - [ ] UX enhancements
   - [ ] introduce simplified wizard to enhance user experience
-  - [ ] introduce graphical service creation/design mode  to enhance user experience
-  - [ ] "try it" feature with debug mode
+  - [x] introduce graphical service creation/design mode  to enhance user experience
+  - [x] "try it" feature with debug mode
 
 ## container orchestrators
 
@@ -82,6 +95,7 @@ provide the authentication modules needed for most cases and associated tools
 - [x] support for custom kubernetes CRDs to configure otoroshi
 - [x] optimize kubernetes CRD job
 - [ ] support for [SMI spec](https://smi-spec.io/)
+- [ ] support [Gateway API](https://gateway-api.sigs.k8s.io/)
 
 ## clustering
 
@@ -132,7 +146,7 @@ at some point we will have the opportunity to rewrite otoroshi with major breaki
   - [ ] rewritte http engine using akka http
 - [ ] split admin api http server and http routing server with default routing for admin api
 - [ ] modular architecture rework  
-  - [ ] default template (customizable) for services with standard plugins
+  - [x] default template (customizable) for services with standard plugins
   - [ ] make it the default
   - [x] powerful reporting mecanism that can support debugging
   - [x] rewrite http handler to be mostly plugin based

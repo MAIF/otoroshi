@@ -1,6 +1,9 @@
 package functional
 
 import org.scalatest.{MustMatchers, OptionValues, WordSpec}
+import otoroshi.events.DataExporter
+import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType, Exporter}
+import play.api.Logger
 import play.api.libs.json.{JsNumber, JsObject, Json}
 
 class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
@@ -621,6 +624,90 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
       val result = otoroshi.utils.Projection.project(source, projection, identity)
       // println(Json.prettyPrint(result))
     }
-  }
+    "filter one or the other" in {
+      val matchExpr = Json.obj("$or" -> Json.arr(Json.obj("@type" -> "AuditEvent"), Json.obj("from" -> "127.0.0.2")))
+      otoroshi.utils.Match.matches(Json.obj(
+        "@type" -> "AuditEvent", "from" -> "127.0.0.1"
+      ), matchExpr) mustBe true
+      otoroshi.utils.Match.matches(Json.obj(
+        "@type" -> "GwEvent", "from" -> "127.0.0.2"
+      ), matchExpr) mustBe true
+      otoroshi.utils.Match.matches(Json.obj(
+        "@type" -> "AuditEvent", "from" -> "127.0.0.2"
+      ), matchExpr) mustBe true
+      otoroshi.utils.Match.matches(Json.obj(
+        "@type" -> "GwEvent", "from" -> "127.0.0.1"
+      ), matchExpr) mustBe false
+    }
 
+    "exclude events with root operator" in {
+      val logger = Logger("exclude-test")
+      val config = DataExporterConfig(
+        enabled = true,
+        typ = DataExporterConfigType.Console,
+        id = "foo",
+        name = "foo",
+        desc = "foo",
+        filtering = DataExporterConfigFiltering(exclude = Seq(Json.obj("$or" -> Json.arr(Json.obj("@type" -> "AuditEvent"), Json.obj("from" -> "127.0.0.2"))))),
+        projection = Json.obj(),
+        config = Exporter.NoneExporter
+      )
+      DataExporter.acceptEvent(Json.obj(
+        "@type" -> "AuditEvent", "from" -> "127.0.0.1"
+      ), config, logger) mustBe false
+      DataExporter.acceptEvent(Json.obj(
+        "@type" -> "GwEvent", "from" -> "127.0.0.2"
+      ), config, logger) mustBe false
+      DataExporter.acceptEvent(Json.obj(
+        "@type" -> "AuditEvent", "from" -> "127.0.0.2"
+      ), config, logger) mustBe false
+      DataExporter.acceptEvent(Json.obj(
+        "@type" -> "GwEvent", "from" -> "127.0.0.1"
+      ), config, logger) mustBe true
+      DataExporter.acceptEvent(Json.obj(
+        "@type" -> "Foo"
+      ), config, logger) mustBe true
+      DataExporter.acceptEvent(Json.obj(
+        "@type" -> "Bar"
+      ), config, logger) mustBe true
+      DataExporter.acceptEvent(Json.obj(
+        "from" -> "128.0.0.1"
+      ), config, logger) mustBe true
+    }
+
+    "exclude events with two exclusions" in {
+      val logger = Logger("exclude-test-2")
+      val config = DataExporterConfig(
+        enabled = true,
+        typ = DataExporterConfigType.Console,
+        id = "foo2",
+        name = "foo2",
+        desc = "foo2",
+        filtering = DataExporterConfigFiltering(exclude = Seq(Json.obj("@type" -> "AuditEvent"), Json.obj("from" -> "127.0.0.2"))),
+        projection = Json.obj(),
+        config = Exporter.NoneExporter
+      )
+      DataExporter.acceptEvent(Json.obj(
+        "@type" -> "AuditEvent", "from" -> "127.0.0.1"
+      ), config, logger) mustBe false
+      DataExporter.acceptEvent(Json.obj(
+        "@type" -> "GwEvent", "from" -> "127.0.0.2"
+      ), config, logger) mustBe false
+      DataExporter.acceptEvent(Json.obj(
+        "@type" -> "AuditEvent", "from" -> "127.0.0.2"
+      ), config, logger) mustBe false
+      DataExporter.acceptEvent(Json.obj(
+        "@type" -> "GwEvent", "from" -> "127.0.0.1"
+      ), config, logger) mustBe true
+      DataExporter.acceptEvent(Json.obj(
+        "@type" -> "Foo"
+      ), config, logger) mustBe true
+      DataExporter.acceptEvent(Json.obj(
+        "@type" -> "Bar"
+      ), config, logger) mustBe true
+      DataExporter.acceptEvent(Json.obj(
+        "from" -> "128.0.0.1"
+      ), config, logger) mustBe true
+    }
+  }
 }

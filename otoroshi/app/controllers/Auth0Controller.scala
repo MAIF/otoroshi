@@ -165,13 +165,14 @@ class AuthController(
                             auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor)
                           case Some(user) =>
                             val sec = computeSec(user)
+                            val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
                             ctx.request
                               .getQueryString("redirect")
                               .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
                               case "urn:ietf:wg:oauth:2.0:oob" => {
                                 val redirection =
                                   s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
-                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&sec=${sec}"
+                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                 val hash        = env.sign(redirection)
                                 FastFuture.successful(
                                   Redirect(s"$redirection&hash=$hash")
@@ -192,13 +193,13 @@ class AuthController(
                                   case -1   =>
                                     val redirection =
                                       s"$scheme://$host/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&sec=${sec}"
+                                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
                                     s"$redirection&hash=$hash"
                                   case port =>
                                     val redirection =
                                       s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&sec=${sec}"
+                                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                                     val hash        = env.sign(redirection)
                                     s"$redirection&hash=$hash"
                                 }
@@ -266,6 +267,7 @@ class AuthController(
           .save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
           .map { paUser =>
             val sec = computeSec(paUser)
+            val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
             logger.debug(s"Auth callback, creating session on the leader ${paUser.email}")
             env.clusterAgent.createSession(paUser)
             Alerts.send(
@@ -299,7 +301,7 @@ class AuthController(
                   case "urn:ietf:wg:oauth:2.0:oob" =>
                     val redirection =
                       s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
-                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&sec=${sec}"
+                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                     val hash        = env.sign(redirection)
                     Redirect(
                       s"$redirection&hash=$hash"
@@ -313,13 +315,13 @@ class AuthController(
                       case -1   =>
                         val redirection =
                           s"$scheme://$host/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&sec=${sec}"
+                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                         val hash        = env.sign(redirection)
                         s"$redirection&hash=$hash"
                       case port =>
                         val redirection =
                           s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&sec=${sec}"
+                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
                         val hash        = env.sign(redirection)
                         s"$redirection&hash=$hash"
                     }

@@ -152,6 +152,11 @@ class DevOtoroshiTests
       new AdminApiSpec("DEV", Configurations.InMemoryConfiguration)
     )
 
+class MapFilterTest
+  extends Suites(
+    new MapFilterSpec()
+  )
+
 class Log4ShellTests
     extends Suites(
       new Log4ShellSpec()

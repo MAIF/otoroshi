@@ -31,11 +31,9 @@ import play.api.http.HttpEntity
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
 import play.api.libs.streams.ActorFlow
-import play.api.libs.ws.WSResponse
 import play.api.mvc.Results.Status
 import play.api.mvc._
 
-import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -366,8 +364,8 @@ class ProxyEngine() extends RequestHandler {
       _         <- callPreRoutePlugins(snowflake, request, route, ctxPlugins)
       _          = report.markDoneAndStart("call-access-validator-plugins")
       _         <- callAccessValidatorPlugins(snowflake, request, route, ctxPlugins)
-      _          = report.markDoneAndStart("update-apikey-quotas")
-      _         <- updateApikeyQuotas(config)
+      // _          = report.markDoneAndStart("update-apikey-quotas")
+      // _         <- updateApikeyQuotas(config)
       _          = report.markDoneAndStart(
                      "handle-legacy-checks",
                      attrs
@@ -551,8 +549,8 @@ class ProxyEngine() extends RequestHandler {
       _         <- callPreRoutePlugins(snowflake, request, route, ctxPlugins)
       _          = report.markDoneAndStart("call-access-validator-plugins")
       _         <- callAccessValidatorPlugins(snowflake, request, route, ctxPlugins)
-      _          = report.markDoneAndStart("update-apikey-quotas")
-      _         <- updateApikeyQuotas(config)
+      // _          = report.markDoneAndStart("update-apikey-quotas")
+      // _         <- updateApikeyQuotas(config)
       _          = report.markDoneAndStart("handle-legacy-checks")
       _         <- handleLegacyChecks(request, route, config)
       _          = report.markDoneAndStart(
@@ -1540,29 +1538,30 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def updateApikeyQuotas(config: ProxyEngineConfig)(implicit
-      ec: ExecutionContext,
-      env: Env,
-      report: NgExecutionReport,
-      globalConfig: GlobalConfig,
-      attrs: TypedMap,
-      mat: Materializer
-  ): FEither[NgProxyEngineError, RemainingQuotas] = {
-    if (config.applyLegacyChecks) {
-      // increments calls for apikey
-      val quotas = attrs
-        .get(otoroshi.plugins.Keys.ApiKeyKey)
-        .map(_.updateQuotas())
-        .getOrElse(RemainingQuotas().vfuture)
-        .andThen { case Success(value) =>
-          attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> value)
-        }
-        .map(rq => Right.apply[NgProxyEngineError, RemainingQuotas](rq))
-      FEither(quotas)
-    } else {
-      FEither.right(RemainingQuotas())
-    }
-  }
+  // def updateApikeyQuotas(config: ProxyEngineConfig)(implicit
+  //     ec: ExecutionContext,
+  //     env: Env,
+  //     report: NgExecutionReport,
+  //     globalConfig: GlobalConfig,
+  //     attrs: TypedMap,
+  //     mat: Materializer
+  // ): FEither[NgProxyEngineError, RemainingQuotas] = {
+  //   FEither.right(attrs.get(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey).getOrElse(RemainingQuotas()))
+  //   // if (config.applyLegacyChecks) {
+  //   //   // increments calls for apikey
+  //   //   val quotas = attrs
+  //   //     .get(otoroshi.plugins.Keys.ApiKeyKey)
+  //   //     .map(_.updateQuotas())
+  //   //     .getOrElse(RemainingQuotas().vfuture)
+  //   //     .andThen { case Success(value) =>
+  //   //       attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> value)
+  //   //     }
+  //   //     .map(rq => Right.apply[NgProxyEngineError, RemainingQuotas](rq))
+  //   //   FEither(quotas)
+  //   // } else {
+  //   //   FEither.right(RemainingQuotas())
+  //   // }
+  // }
 
   def handleLegacyChecks(request: RequestHeader, route: NgRoute, config: ProxyEngineConfig)(implicit
       ec: ExecutionContext,

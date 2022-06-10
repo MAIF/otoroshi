@@ -335,6 +335,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           signature = (json \ "signature").as[SAMLSignature](SAMLSignature.fmt),
           usedNameIDAsEmail = (json \ "usedNameIDAsEmail").asOpt[Boolean].getOrElse(true),
           emailAttributeName = (json \ "emailAttributeName").asOpt[String],
+          clientSideSessionEnabled = (json \ "clientSideSessionEnabled").asOpt[Boolean].getOrElse(true),
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           userValidators = (json \ "userValidators")
@@ -395,7 +396,8 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
                 .toList,
               tags = Seq.empty,
               metadata = Map.empty,
-              sessionCookieValues = SessionCookieValues()
+              sessionCookieValues = SessionCookieValues(),
+              clientSideSessionEnabled = true,
             )
           )
         }
@@ -637,6 +639,7 @@ case class SamlAuthModuleConfig(
     id: String,
     name: String,
     desc: String,
+    clientSideSessionEnabled: Boolean,
     sessionMaxAge: Int = 86400,
     userValidators: Seq[JsonPathValidator] = Seq.empty,
     singleSignOnUrl: String,
@@ -673,6 +676,7 @@ case class SamlAuthModuleConfig(
     "name"                        -> this.name,
     "desc"                        -> this.desc,
     "sessionMaxAge"               -> this.sessionMaxAge,
+    "clientSideSessionEnabled"    -> this.clientSideSessionEnabled,
     "userValidators"              -> JsArray(userValidators.map(_.json)),
     "singleSignOnUrl"             -> this.singleSignOnUrl,
     "singleLogoutUrl"             -> this.singleLogoutUrl,

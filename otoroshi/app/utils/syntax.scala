@@ -1,9 +1,12 @@
 package otoroshi.utils.syntax
 
+import akka.NotUsed
+
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
@@ -87,6 +90,7 @@ object implicits {
         obj
       } else obj
     }
+    def singleSource: Source[A, NotUsed] = Source.single(obj)
   }
   implicit class RegexOps(sc: StringContext) {
     def rr = new scala.util.matching.Regex(sc.parts.mkString)
@@ -111,10 +115,14 @@ object implicits {
     def fromBase64: String       = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
     def sha256: String           = Hex.encodeHexString(BetterString.digest256.digest(obj.getBytes(StandardCharsets.UTF_8)))
     def sha512: String           = Hex.encodeHexString(BetterString.digest512.digest(obj.getBytes(StandardCharsets.UTF_8)))
+    def chunks(size: Int): Source[String, NotUsed] = Source(obj.grouped(size).toList)
     def camelToSnake: String = {
       obj.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase
       // obj.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2").replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase
     }
+  }
+  implicit class BetterByteString(private val obj: ByteString) extends AnyVal {
+    def chunks(size: Int): Source[ByteString, NotUsed] = Source(obj.grouped(size).toList)
   }
   implicit class BetterBoolean(private val obj: Boolean)               extends AnyVal {
     def json: JsValue = JsBoolean(obj)

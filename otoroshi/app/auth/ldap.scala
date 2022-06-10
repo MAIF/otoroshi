@@ -96,6 +96,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
+          clientSideSessionEnabled = (json \ "clientSideSessionEnabled").asOpt[Boolean].getOrElse(true),
           basicAuth = (json \ "basicAuth").asOpt[Boolean].getOrElse(false),
           allowEmptyPassword = (json \ "allowEmptyPassword").asOpt[Boolean].getOrElse(false),
           serverUrls = (json \ "serverUrl").asOpt[String] match {
@@ -208,6 +209,7 @@ case class LdapAuthModuleConfig(
     name: String,
     desc: String,
     sessionMaxAge: Int = 86400,
+    clientSideSessionEnabled: Boolean,
     userValidators: Seq[JsonPathValidator] = Seq.empty,
     basicAuth: Boolean = false,
     allowEmptyPassword: Boolean = false,
@@ -251,6 +253,7 @@ case class LdapAuthModuleConfig(
       "desc"                    -> desc,
       "basicAuth"               -> basicAuth,
       "allowEmptyPassword"      -> allowEmptyPassword,
+      "clientSideSessionEnabled" -> clientSideSessionEnabled,
       "sessionMaxAge"           -> sessionMaxAge,
       "userValidators"          -> JsArray(userValidators.map(_.json)),
       "serverUrls"              -> serverUrls,

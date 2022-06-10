@@ -798,7 +798,8 @@ class BackOfficeController(
                 oidConfig = None,
                 tags = Seq.empty,
                 metadata = Map.empty,
-                sessionCookieValues = sessionCookieValues
+                sessionCookieValues = sessionCookieValues,
+                clientSideSessionEnabled = true,
               ).asJson
             )
           )
@@ -817,7 +818,8 @@ class BackOfficeController(
                     oidConfig = Some(url),
                     tags = Seq.empty,
                     metadata = Map.empty,
-                    sessionCookieValues = sessionCookieValues
+                    sessionCookieValues = sessionCookieValues,
+                    clientSideSessionEnabled = true,
                   )
                   val body             = Json.parse(resp.body)
                   val issuer           = (body \ "issuer").asOpt[String].getOrElse("http://localhost:8082/")
@@ -885,7 +887,8 @@ class BackOfficeController(
                       oidConfig = Some(url),
                       tags = Seq.empty,
                       metadata = Map.empty,
-                      sessionCookieValues = sessionCookieValues
+                      sessionCookieValues = sessionCookieValues,
+                      clientSideSessionEnabled = true,
                     ).asJson
                   )
                 }
@@ -901,7 +904,8 @@ class BackOfficeController(
                     oidConfig = Some(url),
                     tags = Seq.empty,
                     metadata = Map.empty,
-                    sessionCookieValues = sessionCookieValues
+                    sessionCookieValues = sessionCookieValues,
+                    clientSideSessionEnabled = true,
                   ).asJson
                 )
               }

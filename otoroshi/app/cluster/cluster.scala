@@ -74,6 +74,7 @@ object Cluster {
   lazy val logger = Logger("otoroshi-cluster")
 
   def filteredKey(key: String, env: Env): Boolean = {
+    key.startsWith(s"${env.storageRoot}:noclustersync:") ||
     key.startsWith(s"${env.storageRoot}:cluster:") ||
     key == s"${env.storageRoot}:events:audit" ||
     key == s"${env.storageRoot}:events:alerts" ||
@@ -171,7 +172,8 @@ case class ClusterConfig(
     compression: Int = -1,
     proxy: Option[WSProxyServer],
     mtlsConfig: MtlsConfig,
-    autoUpdateState: Boolean,
+    streamed: Boolean,
+    // autoUpdateState: Boolean,
     retryDelay: Long,
     retryFactor: Long,
     leader: LeaderConfig = LeaderConfig(),
@@ -193,7 +195,8 @@ object ClusterConfig {
       compression = configuration.getOptionalWithFileSupport[Int]("compression").getOrElse(-1),
       retryDelay = configuration.getOptionalWithFileSupport[Long]("retryDelay").getOrElse(300L),
       retryFactor = configuration.getOptionalWithFileSupport[Long]("retryFactor").getOrElse(2L),
-      autoUpdateState = configuration.getOptionalWithFileSupport[Boolean]("autoUpdateState").getOrElse(true),
+      streamed = configuration.getOptionalWithFileSupport[Boolean]("streamed").getOrElse(true),
+      // autoUpdateState = configuration.getOptionalWithFileSupport[Boolean]("autoUpdateState").getOrElse(true),
       mtlsConfig = MtlsConfig(
         certs = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.certs").getOrElse(Seq.empty),
         trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.trustedCerts").getOrElse(Seq.empty),
@@ -776,7 +779,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
           )
         )
       )
-      if (env.clusterConfig.autoUpdateState) {
+      // if (env.clusterConfig.autoUpdateState) {
         Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster state auto update")
         stateUpdaterRef.set(
           env.otoroshiScheduler.scheduleAtFixedRate(1.second, env.clusterConfig.leader.cacheStateFor.millis)(
@@ -785,13 +788,14 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
                 cacheState()
               } catch {
                 case e: Throwable =>
+                  caching.compareAndSet(true, false)
                   Cluster.logger
                     .error(s"Error while renewing leader state cache of ${env.clusterConfig.leader.name}", e)
               }
             )
           )
         )
-      }
+      // }
     }
   }
   def stop(): Unit = {
@@ -806,67 +810,74 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   def cachedCount     = cacheCount.get()
   def cachedDigest    = cacheDigest.get()
 
-  private def cacheState(): Unit = {
+  private def cacheState(): Future[Unit] = {
     if (caching.compareAndSet(false, true)) {
-      val start   = System.currentTimeMillis()
-      // var stateCache = ByteString.empty
-      val counter = new AtomicLong(0L)
-      val digest  = MessageDigest.getInstance("SHA-256")
-      env.datastores
-        .rawExport(env.clusterConfig.leader.groupingBy)
-        .map { item =>
-          ByteString(Json.stringify(item) + "\n")
-        }
-        .alsoTo(Sink.foreach { item =>
-          digest.update(item.asByteBuffer)
-          counter.incrementAndGet()
-        })
-        .via(env.clusterConfig.gzip())
-        // .alsoTo(Sink.fold(ByteString.empty)(_ ++ _))
-        // .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
-        // .alsoTo(Sink.onComplete {
-        //   case Success(_) =>
-        //     cachedRef.set(stateCache)
-        //     cachedAt.set(System.currentTimeMillis())
-        //     caching.compareAndSet(true, false)
-        //     env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
-        //     env.clusterConfig.leader.stateDumpPath
-        //       .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
-        //     Cluster.logger.debug(
-        //       s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
-        //     )
-        //   case Failure(e) =>
-        //     Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
-        // })
-        //.runWith(Sink.ignore)
-        .runWith(Sink.fold(ByteString.empty)(_ ++ _))
-        .applyOnIf(env.vaults.leaderFetchOnly) { fu =>
-          fu.flatMap { stateCache =>
-            env.vaults.fillSecretsAsync("cluster-state", stateCache.utf8String).map { filledStateCacheStr =>
-              val bs = filledStateCacheStr.byteString
-              digest.reset()
-              digest.update(bs.asByteBuffer)
-              bs
+      env.metrics.withTimerAsync("otoroshi.core.cluster.cache-state") {
+        // TODO: handle in proxy state ?
+        val start = System.currentTimeMillis()
+        // var stateCache = ByteString.empty
+        val counter = new AtomicLong(0L)
+        val digest = MessageDigest.getInstance("SHA-256")
+        env.datastores
+          .rawExport(env.clusterConfig.leader.groupingBy)
+          .map { item =>
+            ByteString(Json.stringify(item) + "\n")
+          }
+          .alsoTo(Sink.foreach { item =>
+            digest.update(item.asByteBuffer)
+            counter.incrementAndGet()
+          })
+          .via(env.clusterConfig.gzip())
+          // .alsoTo(Sink.fold(ByteString.empty)(_ ++ _))
+          // .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
+          // .alsoTo(Sink.onComplete {
+          //   case Success(_) =>
+          //     cachedRef.set(stateCache)
+          //     cachedAt.set(System.currentTimeMillis())
+          //     caching.compareAndSet(true, false)
+          //     env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
+          //     env.clusterConfig.leader.stateDumpPath
+          //       .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
+          //     Cluster.logger.debug(
+          //       s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
+          //     )
+          //   case Failure(e) =>
+          //     Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
+          // })
+          //.runWith(Sink.ignore)
+          .runWith(Sink.fold(ByteString.empty)(_ ++ _))
+          .applyOnIf(env.vaults.leaderFetchOnly) { fu =>
+            fu.flatMap { stateCache =>
+              env.vaults.fillSecretsAsync("cluster-state", stateCache.utf8String).map { filledStateCacheStr =>
+                val bs = filledStateCacheStr.byteString
+                digest.reset()
+                digest.update(bs.asByteBuffer)
+                bs
+              }
             }
           }
-        }
-        .andThen {
-          case Success(stateCache) => {
-            cachedRef.set(stateCache)
-            cachedAt.set(System.currentTimeMillis())
-            cacheCount.set(counter.get())
-            cacheDigest.set(Hex.encodeHexString(digest.digest()))
-            caching.compareAndSet(true, false)
-            env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
-            env.clusterConfig.leader.stateDumpPath
-              .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
-            Cluster.logger.debug(
-              s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
-            )
+          .andThen {
+            case Success(stateCache) => {
+              caching.compareAndSet(true, false)
+              cachedRef.set(stateCache)
+              cachedAt.set(System.currentTimeMillis())
+              cacheCount.set(counter.get())
+              cacheDigest.set(Hex.encodeHexString(digest.digest()))
+              env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
+              env.clusterConfig.leader.stateDumpPath
+                .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
+              Cluster.logger.debug(
+                s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
+              )
+            }
+            case Failure(err) =>
+              caching.compareAndSet(true, false)
+              Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", err)
           }
-          case Failure(err)        =>
-            Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", err)
-        }
+          .map(_ => ())
+      }
+    } else {
+      ().vfuture
     }
   }
 }
@@ -1275,8 +1286,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
               .withMaybeProxyServer(config.proxy)
               .withMethod("GET")
-            request
-              .stream()
+            val response = if (env.clusterConfig.streamed) {
+              request.stream()
+            } else {
+              request.execute()
+            }
+            response
               .filter { resp =>
                 resp.ignoreIf(resp.status != 200)
                 resp.status == 200
@@ -1306,7 +1321,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 val digest         = MessageDigest.getInstance("SHA-256")
                 val from           = new DateTime(responseFrom.getOrElse(0))
 
-                resp.bodyAsSource
+                val responseBody = if (env.clusterConfig.streamed) resp.bodyAsSource else Source.single(resp.bodyAsBytes)
+                responseBody
                   .via(env.clusterConfig.gunzip())
                   .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, true))
                   .alsoTo(Sink.foreach { item =>

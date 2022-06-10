@@ -425,7 +425,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
                                                  callbackUrl = c.callbackURL,
                                                  tags = Seq.empty,
                                                  metadata = Map.empty,
-                                                 sessionCookieValues = SessionCookieValues()
+                                                 sessionCookieValues = SessionCookieValues(),
+                                                 clientSideSessionEnabled = true,
                                                )
                                              )
                                            )
@@ -448,7 +449,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
                                                  callbackUrl = c.callbackURL,
                                                  tags = Seq.empty,
                                                  metadata = Map.empty,
-                                                 sessionCookieValues = SessionCookieValues()
+                                                 sessionCookieValues = SessionCookieValues(),
+                                                 clientSideSessionEnabled = true,
                                                )
                                              )
                                            )

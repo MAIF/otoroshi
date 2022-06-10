@@ -1751,7 +1751,7 @@ object ApiKeyHelper {
     }
   }
 
-  def passWithApiKeyFromCache(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap, service: String)(
+  def passWithApiKeyFromCache(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap, service: String, incrementQuotas: Boolean)(
       implicit
       ec: ExecutionContext,
       env: Env
@@ -1843,9 +1843,13 @@ object ApiKeyHelper {
                 }
                 attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
                 sendQuotasAlmostExceededError(apikey, quotas)
-                apikey.updateQuotas().map { remainingQuotas =>
-                  attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
-                  apikey.right
+                if (incrementQuotas) {
+                  apikey.updateQuotas().map { remainingQuotas =>
+                    attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> remainingQuotas)
+                    apikey.right
+                  }
+                } else {
+                  apikey.rightf
                 }
               case (false, _, quotas)            =>
                 sendQuotasExceededError(apikey, quotas)

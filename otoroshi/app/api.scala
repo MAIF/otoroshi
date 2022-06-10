@@ -62,6 +62,8 @@ object OtoroshiLoaderHelper {
         .getOrElse(true)
     val waitForFirstClusterFetchEnabled =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForFirstClusterFetch").getOrElse(true)
+    val waitForFirstClusterStateCacheEnabled =
+      components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForFirstClusterStateCache").getOrElse(true)
     val waitProxyStateSync              =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.waitProxyStateSync").getOrElse(true)
 
@@ -75,6 +77,8 @@ object OtoroshiLoaderHelper {
       components.env.configuration.betterGetOptional[Long]("app.boot.waitForTlsInitTimeout").getOrElse(10000)
     val waitForFirstClusterFetchTimeout: Long  =
       components.env.configuration.betterGetOptional[Long]("app.boot.waitForFirstClusterFetchTimeout").getOrElse(10000)
+    val waitForFirstClusterStateCacheTimeout: Long  =
+      components.env.configuration.betterGetOptional[Long]("app.boot.waitForFirstClusterStateCacheTimeout").getOrElse(10000)
     val waitProxyStateSyncTimeout: Long        =
       components.env.configuration.betterGetOptional[Long]("app.boot.waitProxyStateSyncTimeout").getOrElse(10000)
 
@@ -84,6 +88,30 @@ object OtoroshiLoaderHelper {
         promise.trySuccess(())
       }
       promise.future
+    }
+
+    def waitForFirstClusterStateCache(): Future[Unit] = {
+      if (components.env.clusterConfig.mode == ClusterMode.Leader /*&& components.env.clusterConfig.autoUpdateState*/ && waitForFirstClusterStateCacheEnabled) {
+        logger.info("waiting for first cluster state extraction ...")
+        Future.firstCompletedOf(
+          Seq(
+            timeout(waitForFirstClusterStateCacheTimeout.millis),
+            Source
+              .tick(1.second, 1.second, ())
+              .map { _ =>
+                if (components.env.clusterConfig.mode == ClusterMode.Leader/* && components.env.clusterConfig.autoUpdateState*/)
+                  components.env.clusterLeaderAgent.cachedTimestamp > 0L
+                else true
+              }
+              .filter(identity)
+              .take(1)
+              .runWith(Sink.head)(mat)
+              .map(_ => ())
+          )
+        )
+      } else {
+        FastFuture.successful(())
+      }
     }
 
     def waitForFirstClusterFetch(): Future[Unit] = {
@@ -204,6 +232,7 @@ object OtoroshiLoaderHelper {
       val start   = System.currentTimeMillis()
       logger.info("waiting for subsystems initialization ...")
       val waiting = for {
+        _ <- waitForFirstClusterStateCache()
         _ <- waitForFirstClusterFetch()
         _ <- waitForTlsInit()
         _ <- waitForPluginSearch()
