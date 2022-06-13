@@ -213,7 +213,7 @@ export const TryIt = ({ route, serviceMode }) => {
   return (
     <Loader loading={!route}>
       {route && route.plugins.find(f => f.plugin.includes('GraphQLBackend')) && playgroundUrl && lastQuery ?
-        <div className="h-100">
+        <div style={{ minHeight: 'calc(100vh - 162px)' }}>
           <Provider store={store}>
             <Playground
               codeTheme={{
