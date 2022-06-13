@@ -132,15 +132,12 @@ export const TryIt = ({ route, serviceMode }) => {
     setLoading(true);
     setRawResponse(undefined);
     setHeadersStatus('up');
-
+    
     tryIt(
       {
         ...request,
-        headers: Object.fromEntries(
-          Object.entries(Object.fromEntries(Object.values(request.headers))).filter(
-            ([k, _]) => k.length > 0
-          )
-        ),
+        headers: Object.values(request.headers)
+          .filter(d => d.key.length > 0).reduce((a, c) => ({ ...a, [c.key]: c.value }), {})
       },
       pathname.includes('route-compositions') ? 'service' : 'route'
     )
