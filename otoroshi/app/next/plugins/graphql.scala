@@ -190,7 +190,7 @@ object GraphQLBackendConfig {
         schema = json.select("schema").as[String],
         permissions = json.select("permissions").asOpt[Seq[String]].getOrElse(Seq.empty),
         initialData = json.select("initialData").asOpt[JsObject],
-        maxDepth = json.select("maxDepth").as[Int]
+        maxDepth = json.select("maxDepth").asOpt[Int].getOrElse(15)
       )
     }  match {
       case Failure(ex)    => JsError(ex.getMessage())

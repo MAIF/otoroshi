@@ -778,6 +778,8 @@ class Designer extends React.Component {
     !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''));
 
   removeNode = (e) => {
+    console.log("here")
+    
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
 
     this.setState({
