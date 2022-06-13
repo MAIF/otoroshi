@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { BooleanInput, CodeInput, SelectInput } from '@maif/react-forms'
+import { CodeInput, SelectInput } from '@maif/react-forms'
+import { BooleanInput } from '../../components/inputs'
 import { tryIt, fetchAllApikeys, findAllCertificates, routeEntries } from '../../services/BackOfficeServices'
 import { firstLetterUppercase } from '../../util'
 import { useLocation } from 'react-router-dom'
@@ -132,7 +133,7 @@ export const TryIt = ({ route, serviceMode }) => {
     setLoading(true);
     setRawResponse(undefined);
     setHeadersStatus('up');
-    
+
     tryIt(
       {
         ...request,
@@ -301,8 +302,8 @@ export const TryIt = ({ route, serviceMode }) => {
                   <div
                     className="d-flex-between pe-3 me-3"
                     style={{ flex: 0.5, borderRight: '2px solid #494849' }}>
-                    <span className="me-3">Use an apikey</span>
                     <BooleanInput
+                      label="Use an apikey"
                       value={request.useApikey}
                       onChange={() =>
                         setRequest({
@@ -383,8 +384,8 @@ export const TryIt = ({ route, serviceMode }) => {
                   <div
                     className="d-flex-between pe-3 me-3"
                     style={{ flex: 0.5, borderRight: '2px solid #494849' }}>
-                    <span className="me-3">Use a certificate client</span>
                     <BooleanInput
+                      label="Use a certificate client"
                       value={request.useCertificate}
                       onChange={() =>
                         setRequest({
@@ -464,17 +465,17 @@ export const TryIt = ({ route, serviceMode }) => {
                 <div className="d-flex align-items-center mb-3">
                   <div className="d-flex">
                     <BooleanInput
+                      label="none"
                       value={!request.body}
                       onChange={() => setRequest({ ...request, body: undefined })}
                     />
-                    <span className="ms-1">none</span>
                   </div>
                   <div className="d-flex mx-2">
                     <BooleanInput
+                      label="raw"
                       value={request.body === 'raw'}
                       onChange={() => setRequest({ ...request, body: 'raw', contentType: 'json' })}
                     />
-                    <span className="ms-1">raw</span>
                   </div>
                   {request.body === 'raw' && (
                     <div style={{ minWidth: '120px' }}>
