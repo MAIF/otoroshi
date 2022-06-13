@@ -451,7 +451,7 @@ class Designer extends React.Component {
       TransformRequest: true,
       TransformResponse: true,
     },
-    advancedDesignerView: true
+    advancedDesignerView: false
   };
 
   componentDidMount() {
