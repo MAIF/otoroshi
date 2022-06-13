@@ -65,6 +65,11 @@ export const PLUGINS = {
           );
         },
       },
+      permissions: {
+        type: type.string,
+        array: true,
+        label: 'Permissions paths',
+      },
       ...Object.fromEntries(
         Object.entries(plugin.schema).map(([key, value]) => {
           return [
@@ -85,7 +90,7 @@ export const PLUGINS = {
         render: () => <GraphQLForm />
       }
     },
-    flow: ["turn_view", ...plugin.flow, "graphQLForm"]
+    flow: plugin.flow.indexOf('permissions') > -1 ? ["turn_view", ...plugin.flow, "graphQLForm"] : ["turn_view", ...plugin.flow, 'permissions', "graphQLForm"]
   })
 }
 

@@ -1015,6 +1015,35 @@
     "schema" : { },
     "flow" : [ ]
   },
+  "otoroshi.next.plugins.GraphQLProxyConfig" : {
+    "schema" : {
+      "schema" : {
+        "label" : "schema",
+        "type" : "string"
+      },
+      "path" : {
+        "label" : "path",
+        "type" : "string"
+      },
+      "headers" : {
+        "label" : "headers",
+        "type" : "object"
+      },
+      "endpoint" : {
+        "label" : "endpoint",
+        "type" : "string"
+      },
+      "max_depth" : {
+        "label" : "max_depth",
+        "type" : "number"
+      },
+      "max_complexity" : {
+        "label" : "max_complexity",
+        "type" : "number"
+      }
+    },
+    "flow" : [ "schema", "path", "headers", "endpoint", "max_depth", "max_complexity" ]
+  },
   "otoroshi.next.models.StoredNgTarget" : {
     "schema" : {
       "metadata" : {
@@ -1550,6 +1579,10 @@
         "label" : "metadataField",
         "type" : "string"
       },
+      "clientSideSessionEnabled" : {
+        "label" : "clientSideSessionEnabled",
+        "type" : "bool"
+      },
       "rightsOverride" : {
         "label" : "rightsOverride",
         "type" : "object"
@@ -1680,7 +1713,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "groupFilters", "metadata", "allowEmptyPassword", "basicAuth", "searchBase", "nameField", "emailField", "extractProfileFilterNot", "type", "metadataField", "rightsOverride", "id", "groupRights", "extraMetadata", "searchFilter", "adminPassword", "extractProfileFilter", "sessionCookieValues", "dataOverride", "superAdmins", "userBase", "serverUrls", "userValidators", "_loc", "tags", "sessionMaxAge", "adminUsername", "extractProfile", "name", "desc" ]
+    "flow" : [ "groupFilters", "metadata", "allowEmptyPassword", "basicAuth", "searchBase", "nameField", "emailField", "extractProfileFilterNot", "type", "metadataField", "clientSideSessionEnabled", "rightsOverride", "id", "groupRights", "extraMetadata", "searchFilter", "adminPassword", "extractProfileFilter", "sessionCookieValues", "dataOverride", "superAdmins", "userBase", "serverUrls", "userValidators", "_loc", "tags", "sessionMaxAge", "adminUsername", "extractProfile", "name", "desc" ]
   },
   "otoroshi.next.plugins.NgApikeyExtractorClientId" : {
     "schema" : {
@@ -2487,6 +2520,10 @@
         "label" : "webauthn",
         "type" : "bool"
       },
+      "clientSideSessionEnabled" : {
+        "label" : "clientSideSessionEnabled",
+        "type" : "bool"
+      },
       "id" : {
         "label" : "id",
         "type" : "string"
@@ -2496,7 +2533,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "metadata", "sessionCookieValues", "basicAuth", "type", "userValidators", "_loc", "users", "tags", "sessionMaxAge", "name", "webauthn", "id", "desc" ]
+    "flow" : [ "metadata", "sessionCookieValues", "basicAuth", "type", "userValidators", "_loc", "users", "tags", "sessionMaxAge", "name", "webauthn", "clientSideSessionEnabled", "id", "desc" ]
   },
   "otoroshi.next.plugins.FileUtils" : {
     "schema" : { },
@@ -9355,6 +9392,10 @@
         },
         "flow" : [ "none_meta_keys_in", "all_meta_keys_in", "all_meta_in", "none_meta_in", "one_tag_in", "enabled", "one_meta_in", "all_tags_in", "one_meta_key_in", "none_tag_in" ]
       },
+      "update_quotas" : {
+        "label" : "update_quotas",
+        "type" : "bool"
+      },
       "extractors" : {
         "label" : "extractors",
         "type" : "object",
@@ -9478,7 +9519,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "wipe_backend_request", "routing", "extractors", "pass_with_user", "validate" ]
+    "flow" : [ "wipe_backend_request", "routing", "update_quotas", "extractors", "pass_with_user", "validate" ]
   },
   "otoroshi.plugins.oauth1.OAuth1CallerPlugin" : {
     "schema" : { },
@@ -10422,6 +10463,35 @@
   "otoroshi.plugins.clientcert.ClientCertChainHeader" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.next.plugins.GraphQLProxy" : {
+    "schema" : {
+      "schema" : {
+        "label" : "schema",
+        "type" : "string"
+      },
+      "path" : {
+        "label" : "path",
+        "type" : "string"
+      },
+      "headers" : {
+        "label" : "headers",
+        "type" : "object"
+      },
+      "endpoint" : {
+        "label" : "endpoint",
+        "type" : "string"
+      },
+      "max_depth" : {
+        "label" : "max_depth",
+        "type" : "number"
+      },
+      "max_complexity" : {
+        "label" : "max_complexity",
+        "type" : "number"
+      }
+    },
+    "flow" : [ "schema", "path", "headers", "endpoint", "max_depth", "max_complexity" ]
   },
   "otoroshi.models.IndexSettingsInterval" : {
     "schema" : { },
@@ -19629,6 +19699,10 @@
             "label" : "accessTokenURL",
             "type" : "string"
           },
+          "clientSideSessionEnabled" : {
+            "label" : "clientSideSessionEnabled",
+            "type" : "bool"
+          },
           "singleSignOnUrl" : {
             "label" : "singleSignOnUrl",
             "type" : "string"
@@ -19838,7 +19912,7 @@
             "type" : "string"
           }
         },
-        "flow" : [ "tokenUrl", "allowEmptyPassword", "searchBase", "nameField", "emailField", "type", "issuer", "introspectionUrl", "callbackUrl", "clientSecret", "callbackURL", "id", "accessTokenField", "searchFilter", "useCookie", "validatingCertificates", "apiKeyMetaField", "useJson", "userBase", "otoroshiDataField", "tags", "adminUsername", "extractProfile", "logoutUrl", "oidConfig", "name", "webauthn", "claims", "desc", "profileURL", "refreshTokens", "otoroshiRightsField", "basicAuth", "validateAssertions", "extractProfileFilterNot", "metadataField", "consumerSecret", "loginUrl", "scope", "accessTokenURL", "singleSignOnUrl", "consumerKey", "adminPassword", "userInfoUrl", "validateSignature", "clientId", "authorizeUrl", "extractProfileFilter", "authorizeURL", "requestTokenURL", "superAdmins", "apiKeyTagsField", "serverUrls", "sessionMaxAge", "usedNameIDAsEmail", "singleLogoutUrl", "noWildcardRedirectURI", "readProfileFromToken", "emailAttributeName", "metadata", "ssoProtocolBinding", "mtlsConfig", "rightsOverride", "nameIDFormat", "singleLogoutProtocolBinding", "extraMetadata", "sessionCookieValues", "dataOverride", "pkce", "_loc", "users", "proxy", "groupFilters", "signature", "credentials", "httpMethod", "groupRights", "userValidators", "jwtVerifier" ]
+        "flow" : [ "tokenUrl", "allowEmptyPassword", "searchBase", "nameField", "emailField", "type", "issuer", "introspectionUrl", "callbackUrl", "clientSecret", "callbackURL", "id", "accessTokenField", "searchFilter", "useCookie", "validatingCertificates", "apiKeyMetaField", "useJson", "userBase", "otoroshiDataField", "tags", "adminUsername", "extractProfile", "logoutUrl", "oidConfig", "name", "webauthn", "claims", "desc", "profileURL", "refreshTokens", "otoroshiRightsField", "basicAuth", "validateAssertions", "extractProfileFilterNot", "metadataField", "consumerSecret", "loginUrl", "scope", "accessTokenURL", "clientSideSessionEnabled", "singleSignOnUrl", "consumerKey", "adminPassword", "userInfoUrl", "validateSignature", "clientId", "authorizeUrl", "extractProfileFilter", "authorizeURL", "requestTokenURL", "superAdmins", "apiKeyTagsField", "serverUrls", "sessionMaxAge", "usedNameIDAsEmail", "singleLogoutUrl", "noWildcardRedirectURI", "readProfileFromToken", "emailAttributeName", "metadata", "ssoProtocolBinding", "mtlsConfig", "rightsOverride", "nameIDFormat", "singleLogoutProtocolBinding", "extraMetadata", "sessionCookieValues", "dataOverride", "pkce", "_loc", "users", "proxy", "groupFilters", "signature", "credentials", "httpMethod", "groupRights", "userValidators", "jwtVerifier" ]
       },
       "services" : {
         "label" : "services",
@@ -31804,6 +31878,10 @@
         "label" : "accessTokenURL",
         "type" : "string"
       },
+      "clientSideSessionEnabled" : {
+        "label" : "clientSideSessionEnabled",
+        "type" : "bool"
+      },
       "singleSignOnUrl" : {
         "label" : "singleSignOnUrl",
         "type" : "string"
@@ -32013,7 +32091,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "metadata", "tokenUrl", "allowEmptyPassword", "ssoProtocolBinding", "mtlsConfig", "searchBase", "nameField", "emailField", "type", "issuer", "introspectionUrl", "rightsOverride", "nameIDFormat", "callbackUrl", "clientSecret", "callbackURL", "singleLogoutProtocolBinding", "id", "extraMetadata", "accessTokenField", "searchFilter", "useCookie", "sessionCookieValues", "dataOverride", "validatingCertificates", "apiKeyMetaField", "useJson", "pkce", "userBase", "otoroshiDataField", "_loc", "users", "tags", "adminUsername", "proxy", "extractProfile", "logoutUrl", "oidConfig", "name", "webauthn", "claims", "desc", "profileURL", "groupFilters", "refreshTokens", "otoroshiRightsField", "signature", "credentials", "basicAuth", "validateAssertions", "extractProfileFilterNot", "httpMethod", "metadataField", "consumerSecret", "loginUrl", "scope", "accessTokenURL", "singleSignOnUrl", "groupRights", "consumerKey", "adminPassword", "userInfoUrl", "validateSignature", "clientId", "authorizeUrl", "extractProfileFilter", "authorizeURL", "requestTokenURL", "superAdmins", "apiKeyTagsField", "userValidators", "serverUrls", "jwtVerifier", "sessionMaxAge", "usedNameIDAsEmail", "singleLogoutUrl", "noWildcardRedirectURI", "readProfileFromToken", "emailAttributeName" ]
+    "flow" : [ "metadata", "tokenUrl", "allowEmptyPassword", "ssoProtocolBinding", "mtlsConfig", "searchBase", "nameField", "emailField", "type", "issuer", "introspectionUrl", "rightsOverride", "nameIDFormat", "callbackUrl", "clientSecret", "callbackURL", "singleLogoutProtocolBinding", "id", "extraMetadata", "accessTokenField", "searchFilter", "useCookie", "sessionCookieValues", "dataOverride", "validatingCertificates", "apiKeyMetaField", "useJson", "pkce", "userBase", "otoroshiDataField", "_loc", "users", "tags", "adminUsername", "proxy", "extractProfile", "logoutUrl", "oidConfig", "name", "webauthn", "claims", "desc", "profileURL", "groupFilters", "refreshTokens", "otoroshiRightsField", "signature", "credentials", "basicAuth", "validateAssertions", "extractProfileFilterNot", "httpMethod", "metadataField", "consumerSecret", "loginUrl", "scope", "accessTokenURL", "clientSideSessionEnabled", "singleSignOnUrl", "groupRights", "consumerKey", "adminPassword", "userInfoUrl", "validateSignature", "clientId", "authorizeUrl", "extractProfileFilter", "authorizeURL", "requestTokenURL", "superAdmins", "apiKeyTagsField", "userValidators", "serverUrls", "jwtVerifier", "sessionMaxAge", "usedNameIDAsEmail", "singleLogoutUrl", "noWildcardRedirectURI", "readProfileFromToken", "emailAttributeName" ]
   },
   "otoroshi.next.plugins.JQResponse" : {
     "schema" : {
@@ -33965,6 +34043,10 @@
         },
         "flow" : [ "none_meta_keys_in", "all_meta_keys_in", "all_meta_in", "none_meta_in", "one_tag_in", "enabled", "one_meta_in", "all_tags_in", "one_meta_key_in", "none_tag_in" ]
       },
+      "update_quotas" : {
+        "label" : "update_quotas",
+        "type" : "bool"
+      },
       "extractors" : {
         "label" : "extractors",
         "type" : "object",
@@ -34088,7 +34170,7 @@
         "type" : "bool"
       }
     },
-    "flow" : [ "wipe_backend_request", "routing", "extractors", "pass_with_user", "validate" ]
+    "flow" : [ "wipe_backend_request", "routing", "update_quotas", "extractors", "pass_with_user", "validate" ]
   },
   "otoroshi.next.plugins.NgCorsSettings" : {
     "schema" : {
@@ -34424,6 +34506,11 @@
         "type" : "string",
         "format" : "code"
       },
+      "permissions" : {
+        "label" : "Permissions",
+        "type" : "string",
+        "array" : true
+      },
       "initialData" : {
         "label" : "Predefined data",
         "type" : "object",
@@ -34434,7 +34521,7 @@
         "type" : "number"
       }
     },
-    "flow" : [ "schema", "initialData", "maxDepth" ]
+    "flow" : [ "schema", "permissions", "initialData", "maxDepth" ]
   },
   "otoroshi.utils.mailer.NoneMailerSettings" : {
     "schema" : {
@@ -42160,6 +42247,10 @@
     },
     "flow" : [ "json" ]
   },
+  "otoroshi.next.plugins.TooComplexQueryError" : {
+    "schema" : { },
+    "flow" : [ ]
+  },
   "otoroshi.ssl.Cert" : {
     "schema" : {
       "certType" : {
@@ -42508,6 +42599,10 @@
         "label" : "name",
         "type" : "string"
       },
+      "clientSideSessionEnabled" : {
+        "label" : "clientSideSessionEnabled",
+        "type" : "bool"
+      },
       "rightsOverride" : {
         "label" : "rightsOverride",
         "type" : "object"
@@ -42529,7 +42624,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "profileURL", "metadata", "authorizeURL", "requestTokenURL", "sessionCookieValues", "type", "httpMethod", "userValidators", "_loc", "tags", "sessionMaxAge", "consumerSecret", "accessTokenURL", "name", "rightsOverride", "callbackURL", "id", "consumerKey", "desc" ]
+    "flow" : [ "profileURL", "metadata", "authorizeURL", "requestTokenURL", "sessionCookieValues", "type", "httpMethod", "userValidators", "_loc", "tags", "sessionMaxAge", "consumerSecret", "accessTokenURL", "name", "clientSideSessionEnabled", "rightsOverride", "callbackURL", "id", "consumerKey", "desc" ]
   },
   "otoroshi.plugins.izanami.IzanamiCanary" : {
     "schema" : { },
@@ -42757,6 +42852,10 @@
         "label" : "emailAttributeName",
         "type" : "string"
       },
+      "clientSideSessionEnabled" : {
+        "label" : "clientSideSessionEnabled",
+        "type" : "bool"
+      },
       "singleSignOnUrl" : {
         "label" : "singleSignOnUrl",
         "type" : "string"
@@ -42788,7 +42887,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "validateSignature", "metadata", "ssoProtocolBinding", "sessionCookieValues", "validatingCertificates", "signature", "credentials", "validateAssertions", "type", "userValidators", "_loc", "issuer", "tags", "sessionMaxAge", "usedNameIDAsEmail", "singleLogoutUrl", "name", "emailAttributeName", "singleSignOnUrl", "nameIDFormat", "singleLogoutProtocolBinding", "id", "desc" ]
+    "flow" : [ "validateSignature", "metadata", "ssoProtocolBinding", "sessionCookieValues", "validatingCertificates", "signature", "credentials", "validateAssertions", "type", "userValidators", "_loc", "issuer", "tags", "sessionMaxAge", "usedNameIDAsEmail", "singleLogoutUrl", "name", "emailAttributeName", "clientSideSessionEnabled", "singleSignOnUrl", "nameIDFormat", "singleLogoutProtocolBinding", "id", "desc" ]
   },
   "otoroshi.next.plugins.JQConfig" : {
     "schema" : {
@@ -42806,6 +42905,17 @@
   "otoroshi.utils.TypedMap" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.next.plugins.ViolationsException" : {
+    "schema" : {
+      "errors" : {
+        "label" : "errors",
+        "type" : "string",
+        "array" : true,
+        "format" : null
+      }
+    },
+    "flow" : [ "errors" ]
   },
   "otoroshi.models.ZoneMatch" : {
     "schema" : {
@@ -43435,6 +43545,10 @@
         "label" : "scope",
         "type" : "string"
       },
+      "clientSideSessionEnabled" : {
+        "label" : "clientSideSessionEnabled",
+        "type" : "bool"
+      },
       "rightsOverride" : {
         "label" : "rightsOverride",
         "type" : "object"
@@ -43727,7 +43841,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "refreshTokens", "metadata", "tokenUrl", "otoroshiRightsField", "mtlsConfig", "nameField", "emailField", "type", "introspectionUrl", "loginUrl", "scope", "rightsOverride", "callbackUrl", "clientSecret", "id", "extraMetadata", "accessTokenField", "userInfoUrl", "clientId", "useCookie", "authorizeUrl", "sessionCookieValues", "dataOverride", "superAdmins", "apiKeyMetaField", "useJson", "pkce", "apiKeyTagsField", "otoroshiDataField", "userValidators", "_loc", "tags", "jwtVerifier", "sessionMaxAge", "proxy", "logoutUrl", "noWildcardRedirectURI", "readProfileFromToken", "oidConfig", "name", "claims", "desc" ]
+    "flow" : [ "refreshTokens", "metadata", "tokenUrl", "otoroshiRightsField", "mtlsConfig", "nameField", "emailField", "type", "introspectionUrl", "loginUrl", "scope", "clientSideSessionEnabled", "rightsOverride", "callbackUrl", "clientSecret", "id", "extraMetadata", "accessTokenField", "userInfoUrl", "clientId", "useCookie", "authorizeUrl", "sessionCookieValues", "dataOverride", "superAdmins", "apiKeyMetaField", "useJson", "pkce", "apiKeyTagsField", "otoroshiDataField", "userValidators", "_loc", "tags", "jwtVerifier", "sessionMaxAge", "proxy", "logoutUrl", "noWildcardRedirectURI", "readProfileFromToken", "oidConfig", "name", "claims", "desc" ]
   },
   "otoroshi.script.PreRoutingRef" : {
     "schema" : {
