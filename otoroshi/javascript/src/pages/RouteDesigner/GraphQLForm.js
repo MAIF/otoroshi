@@ -121,6 +121,9 @@ class SideView extends React.Component {
 
   transformValue = v => {
     try {
+      console.log(v)
+      if (Array.isArray(v))
+        return v
       return JSON.parse(v);
     } catch (_) {
       return v;
@@ -340,10 +343,10 @@ class FieldForm extends React.Component {
         schema: {
           'name': {
             type: 'string',
-            label: 'Source',
+            label: 'Type',
             format: 'select',
             options: [
-              'rest', 'graphql', 'json', 'otoroshi (soon)'
+              'rest', 'graphql', 'json', 'permission', 'allpermissions', 'onePermissionsOf', 'authorize', 'otoroshi (soon)'
             ]
           },
           'arguments': {
@@ -431,6 +434,64 @@ class FieldForm extends React.Component {
                       label: 'JSON path'
                     }
                   }
+                },
+                {
+                  condition: 'permission',
+                  schema: {
+                    value: {
+                      type: 'string',
+                      label: 'Value'
+                    },
+                    unauthorized_value: {
+                      type: 'string',
+                      label: 'Unauthorized message'
+                    }
+                  }
+                },
+                {
+                  condition: 'allpermissions',
+                  schema: {
+                    values: {
+                      type: 'string',
+                      array: true,
+                      label: 'Values'
+                    },
+                    unauthorized_value: {
+                      type: 'string',
+                      label: 'Unauthorized message'
+                    }
+                  }
+                },
+                {
+                  condition: 'onePermissionsOf',
+                  schema: {
+                    values: {
+                      type: 'string',
+                      array: true,
+                      label: 'Values'
+                    },
+                    unauthorized_value: {
+                      type: 'string',
+                      label: 'Unauthorized message'
+                    }
+                  }
+                },
+                {
+                  condition: 'authorize',
+                  schema: {
+                    path: {
+                      type: 'string',
+                      label: 'JSON Path'
+                    },
+                    value: {
+                      type: 'string',
+                      label: 'Value'
+                    },
+                    unauthorized_value: {
+                      type: 'string',
+                      label: 'Unauthorized message'
+                    }
+                  }
                 }
               ]
             }
@@ -459,6 +520,8 @@ class FieldForm extends React.Component {
       return null;
 
     const { field, onChange } = this.props;
+
+    console.log(this.props.field)
 
     return <div className="p-3" style={{ background: "#373735", borderRadius: '4px' }}>
       <Form

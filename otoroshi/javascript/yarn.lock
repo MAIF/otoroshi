@@ -2028,44 +2028,9 @@
   dependencies:
     "@lezer/lr" "^0.15.0"
 
-"@maif/react-forms@^1.0.37-rc.1":
-  version "1.0.60"
-  resolved "https://registry.yarnpkg.com/@maif/react-forms/-/react-forms-1.0.60.tgz#3fbc4da5e5c7c0e836406aa987b8e78d2a5ebb83"
-  integrity sha512-bEeulYFn24tBN6Ztep0LfMFPsUIwx7GYvJoKAcuuMov0l691wCNhHlhl5mdbIrQXb6mwzQcI8WBEJ9y+YzCTCg==
-  dependencies:
-    "@codemirror/basic-setup" "^0.19.1"
-    "@codemirror/lang-html" "^0.19.4"
-    "@codemirror/lang-javascript" "^0.19.7"
-    "@codemirror/lang-json" "^0.19.2"
-    "@codemirror/lang-markdown" "^0.19.6"
-    "@codemirror/language-data" "^0.19.2"
-    "@codemirror/theme-one-dark" "^0.19.1"
-    "@fortawesome/fontawesome-free" "^5.15.3"
-    "@hookform/resolvers" "2.4.0"
-    "@testing-library/jest-dom" "^5.11.4"
-    "@testing-library/react" "^11.1.0"
-    "@testing-library/user-event" "^12.1.10"
-    "@types/jest" "^26.0.24"
-    "@types/node" "^16.3.0"
-    "@types/react" "^17.0.14"
-    "@types/react-dom" "^17.0.9"
-    classnames "2.3.0"
-    fast-deep-equal "^3.1.3"
-    highlight.js "^11.5.1"
-    moment "2.29.1"
-    object-hash "3.0.0"
-    react-feather "2.0.9"
-    react-hook-form "7.29.0"
-    react-rainbow-components "1.26.0"
-    react-select "5.2.1"
-    react-tooltip "4.2.21"
-    showdown "1.9.1"
-    uuid "8.3.2"
-    yup "0.32.11"
-
 "@maif/react-forms@github:MAIF/react-forms#v2":
   version "1.0.49"
-  resolved "https://codeload.github.com/MAIF/react-forms/tar.gz/88b873afb5a40fa45cb384fca3242f4146f41637"
+  resolved "https://codeload.github.com/MAIF/react-forms/tar.gz/be42f4f5d3bbd37043a699cd1608b499e2c0d587"
   dependencies:
     "@codemirror/basic-setup" "^0.19.1"
     "@codemirror/lang-html" "^0.19.4"
@@ -2076,7 +2041,6 @@
     "@codemirror/theme-one-dark" "^0.19.1"
     "@fortawesome/fontawesome-free" "^5.15.3"
     "@hookform/resolvers" "2.4.0"
-    "@maif/react-forms" "^1.0.37-rc.1"
     "@popperjs/core" "^2.11.2"
     "@testing-library/jest-dom" "^5.11.4"
     "@testing-library/react" "^11.1.0"
@@ -9786,11 +9750,6 @@ object-copy@^0.1.0:
     define-property "^0.2.5"
     kind-of "^3.0.3"
 
-object-hash@3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/object-hash/-/object-hash-3.0.0.tgz#73f97f753e7baffc0e2cc9d6e079079744ac82e9"
-  integrity sha512-RSn9F68PjH9HqtltsSnqYC1XXoWe9Bju5+213R98cNGttag9q9yAOTzdbsqvIa7aNm5WffBZFpWYr2aWrklWAw==
-
 object-inspect@^1.12.0, object-inspect@^1.9.0:
   version "1.12.2"
   resolved "https://registry.yarnpkg.com/object-inspect/-/object-inspect-1.12.2.tgz#c0641f26394532f28ab8d796ab954e43c009a8ea"
@@ -12035,11 +11994,6 @@ react-helmet@^5.2.0:
     prop-types "^15.5.4"
     react-fast-compare "^2.0.2"
     react-side-effect "^1.1.0"
-
-react-hook-form@7.29.0:
-  version "7.29.0"
-  resolved "https://registry.yarnpkg.com/react-hook-form/-/react-hook-form-7.29.0.tgz#5e7e41a483b70731720966ed8be52163ea1fecf1"
-  integrity sha512-NcJqWRF6el5HMW30fqZRt27s+lorvlCCDbTpAyHoodQeYWXgQCvZJJQLC1kRMKdrJknVH0NIg3At6TUzlZJFOQ==
 
 react-input-autosize@^2.1.2, react-input-autosize@^2.2.1:
   version "2.2.2"
