@@ -297,12 +297,13 @@ export const TryIt = ({ route, serviceMode }) => {
               />
             </div>
             {selectedTab === 'Authorization' && headersStatus === 'down' && (
-              <div className="w-50">
+              <div className="w-75">
                 <div className="mt-3 d-flex">
                   <div
                     className="d-flex-between pe-3 me-3"
                     style={{ flex: 0.5, borderRight: '2px solid #494849' }}>
                     <BooleanInput
+                      flex={true}
                       label="Use an apikey"
                       value={request.useApikey}
                       onChange={() =>
@@ -385,6 +386,7 @@ export const TryIt = ({ route, serviceMode }) => {
                     className="d-flex-between pe-3 me-3"
                     style={{ flex: 0.5, borderRight: '2px solid #494849' }}>
                     <BooleanInput
+                      flex={true}
                       label="Use a certificate client"
                       value={request.useCertificate}
                       onChange={() =>

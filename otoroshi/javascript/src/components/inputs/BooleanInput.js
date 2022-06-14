@@ -31,6 +31,24 @@ export class BooleanInput extends Component {
   render() {
     const value = !!this.props.value;
 
+    if (this.props.flex)
+      return (
+        <div className="d-flex align-items-center flex">
+          <label className="flex" style={{ marginTop: '10px' }}>
+            {this.props.label} <Help text={this.props.help} />
+          </label>
+          <div className="">
+            <div>
+              {value && <OnSwitch onChange={this.toggleOff} />}
+              {!value && <OffSwitch onChange={this.toggleOn} />}
+            </div>
+            <div>
+              {this.props.after && <div className="float-end">{this.props.after()}</div>}
+            </div>
+          </div>
+        </div>
+      );
+
     return (
       <div>
         <div className="row mb-3">
