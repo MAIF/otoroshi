@@ -155,19 +155,32 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       }
     }
   }
+  
+  private def findServiceById(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]] = {
+    env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
+      case Some(service) => service.some.vfuture
+      case None => env.datastores.routeDataStore.findById(serviceId) flatMap {
+        case Some(service) => service.legacy.some.vfuture
+        case None => env.datastores.servicesDataStore.findById(serviceId) map {
+          case Some(service) => service.toRoutes.head.legacy.some
+          case None => None
+        }
+      }
+    }
+  }
   /// utils methods
   def canReadService(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     if (id == "global") {
       f
     } else {
-      env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
+      findServiceById(id).flatMap {
         case Some(service) if canUserRead(service) => f
         case _                                     => fforbidden
       }
     }
   }
   def canWriteService(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
+    findServiceById(id).flatMap {
       case Some(service) if canUserWrite(service) => f
       case _                                      => fforbidden
     }

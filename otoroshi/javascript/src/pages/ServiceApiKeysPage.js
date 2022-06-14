@@ -640,9 +640,9 @@ export class ServiceApiKeysPage extends Component {
       ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
       : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
     fu.then((service) => {
-      this.onRoute
-        ? this.props.setTitle(`Routes Api Keys`)
-        : this.props.setTitle(`Service Api Keys`);
+      this.onRoutes
+        ? this.props.setTitle(`Routes Apikeys`)
+        : this.props.setTitle(`Service Apikeys`);
       this.setState({ service }, () => {
         this.props.setSidebarContent(this.sidebarContent(service.name));
         if (this.table) {
@@ -654,28 +654,27 @@ export class ServiceApiKeysPage extends Component {
   }
 
   fetchAllApiKeys = () => {
-    return BackOfficeServices.fetchApiKeysForPage(this.props.params.serviceId);
+    return BackOfficeServices.fetchApiKeysForPage(this.props.params.serviceId || this.props.params.routeId);
   };
 
   createItem = (ak) => {
-    return BackOfficeServices.createApiKey(this.props.params.serviceId, ak);
+    return BackOfficeServices.createApiKey(this.props.params.serviceId || this.props.params.routeId, ak);
   };
 
   updateItem = (ak) => {
-    console.log(ak);
-    return BackOfficeServices.updateApiKey(this.props.params.serviceId, ak);
+    return BackOfficeServices.updateApiKey(this.props.params.serviceId || this.props.params.routeId, ak);
   };
 
   deleteItem = (ak) => {
-    return BackOfficeServices.deleteApiKey(this.props.params.serviceId, ak);
+    return BackOfficeServices.deleteApiKey(this.props.params.serviceId || this.props.params.routeId, ak);
   };
 
   render() {
     return (
       <Table
         parentProps={this.props}
-        selfUrl={`lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`}
-        defaultTitle={this.onRoute ? 'Route Api Keys' : 'Service Api Keys'}
+        selfUrl={this.onRoutes ? `services/${this.props.params.routeId}/apikeys` : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`}
+        defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
         defaultValue={() =>
           BackOfficeServices.createNewApikey().then((apk) => ({
             ...apk,

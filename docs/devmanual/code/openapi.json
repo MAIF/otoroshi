@@ -17931,6 +17931,23 @@
         "type" : "object",
         "description" : "PEM encoded certificate"
       },
+      "otoroshi.controllers.ServiceLike" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "entity" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocationSupport"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          }
+        }
+      },
       "otoroshi.script.PreRoutingContext" : {
         "description" : "Context for preroutes plugins",
         "type" : "object",
