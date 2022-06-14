@@ -175,11 +175,11 @@ class GraphQLQuery extends NgBackendCall {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 case class GraphQLBackendConfig(
-                               schema: String,
-                               permissions: Seq[String] = Seq.empty,
-                               initialData: Option[JsValue] = None,
-                               maxDepth: Int = 15
-                             ) extends NgPluginConfig {
+  schema: String,
+  permissions: Seq[String] = Seq.empty,
+  initialData: Option[JsValue] = None,
+  maxDepth: Int = 15
+) extends NgPluginConfig {
   def json: JsValue = GraphQLBackendConfig.format.writes(this)
 }
 
@@ -189,8 +189,8 @@ object GraphQLBackendConfig {
       GraphQLBackendConfig(
         schema = json.select("schema").as[String],
         permissions = json.select("permissions").asOpt[Seq[String]].getOrElse(Seq.empty),
-        initialData = json.select("initialData").asOpt[JsObject],
-        maxDepth = json.select("maxDepth").asOpt[Int].getOrElse(15)
+        initialData = json.select("initial_data").asOpt[JsObject],
+        maxDepth = json.select("max_depth").asOpt[Int].getOrElse(15)
       )
     }  match {
       case Failure(ex)    => JsError(ex.getMessage())
@@ -200,8 +200,8 @@ object GraphQLBackendConfig {
     override def writes(o: GraphQLBackendConfig): JsValue = Json.obj(
       "schema" -> o.schema,
       "permissions" -> o.permissions,
-      "initialData" -> o.initialData.getOrElse(JsNull).as[JsValue],
-      "maxDepth" -> o.maxDepth
+      "initial_data" -> o.initialData.getOrElse(JsNull).as[JsValue],
+      "max_depth" -> o.maxDepth
     )
   }
 }

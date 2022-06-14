@@ -47,6 +47,28 @@ export const LEGACY_PLUGINS_WRAPPER = {
 };
 
 export const PLUGINS = {
+  "cp:otoroshi.next.plugins.SOAPAction" : (plugin, showAdvancedDesignerView) => ({
+    ...plugin,
+    schema: {
+      ...plugin.schema,
+      envelope: {
+        "label" : "envelope",
+        "type" : "string",
+        "format": "code"
+      }
+    }
+  }),
+  "cp:otoroshi.next.plugins.SOAPActionConfig": (plugin, showAdvancedDesignerView) => ({
+    ...plugin,
+    schema: {
+      ...plugin.schema,
+      envelope: {
+        "label" : "envelope",
+        "type" : "string",
+        "format": "code"
+      }
+    }
+  }),
   "cp:otoroshi.next.plugins.GraphQLBackend": (plugin, showAdvancedDesignerView) => ({
     ...plugin,
     schema: {
@@ -64,6 +86,11 @@ export const PLUGINS = {
             </button>
           );
         },
+      },
+      permissions: {
+        type: type.string,
+        array: true,
+        label: 'Permissions paths',
       },
       ...Object.fromEntries(
         Object.entries(plugin.schema).map(([key, value]) => {
@@ -85,7 +112,7 @@ export const PLUGINS = {
         render: () => <GraphQLForm />
       }
     },
-    flow: ["turn_view", ...plugin.flow, "graphQLForm"]
+    flow: plugin.flow.indexOf('permissions') > -1 ? ["turn_view", ...plugin.flow, "graphQLForm"] : ["turn_view", ...plugin.flow, 'permissions', "graphQLForm"]
   })
 }
 
