@@ -19,16 +19,16 @@ export const Informations = ({ isCreation, value, setValue, setSaveButton }) => 
   }, [value]);
 
   useEffect(() => {
-    setSaveButton(saveButton());
+    setSaveButton(saveButton('ms-2'));
   }, [informations]);
 
-  const saveButton = () => {
+  const saveButton = (className) => {
     return (
       <FeedbackButton
-        className="ms-2"
+        className={className}
         onPress={saveRoute}
         text={isCreation ? 'Create route' : 'Save route'}
-        disabled={isEqual(informations, value)}
+        _disabled={isEqual(informations, value)}
         icon={() => <i className="fas fa-paper-plane" />}
       />
     );
@@ -153,33 +153,26 @@ export const Informations = ({ isCreation, value, setValue, setSaveButton }) => 
         onSubmit={(item) => setInformations({ ...merge({ ...value }, item) })}
         footer={() => null}
       />
-      {!isCreation && (
-        <Collapse collapsed={false} initCollapsed={false} label="Delete this route" lineEnd={true}>
-          <div className="row mb-3">
-            <label className="col-xs-12 col-sm-2 col-form-label" />
-            <div className="col-sm-10">
-              <button
-                className="btn btn-sm btn-danger me-3"
-                onClick={() => {
-                  window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
-                    if (ok) {
-                      nextClient
-                        .deleteById(nextClient.ENTITIES[fetchName], value.id)
-                        .then(() => history.push(`/${link}`));
-                    }
-                  });
-                }}>
-                <i className="fas fa-trash" /> Delete
-              </button>
-            </div>
-          </div>
-        </Collapse>
-      )}
       <div className="d-flex align-items-center justify-content-end mt-3">
-        <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
-          <i className="fas fa-times" /> Cancel
-        </button>
-        {saveButton()}
+        <div className="btn-group">
+          <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
+            <i className="fas fa-times" /> Cancel
+          </button>
+          {!isCreation && <button
+            className="btn btn-sm btn-danger"
+            onClick={() => {
+              window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
+                if (ok) {
+                  nextClient
+                    .deleteById(nextClient.ENTITIES[fetchName], value.id)
+                    .then(() => history.push(`/${link}`));
+                }
+              });
+            }}>
+            <i className="fas fa-trash" /> Delete
+          </button>}
+          {saveButton('')}
+        </div>
       </div>
     </>
   );

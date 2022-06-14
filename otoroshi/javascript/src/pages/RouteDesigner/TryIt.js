@@ -4,6 +4,7 @@ import { BooleanInput } from '../../components/inputs'
 import { tryIt, fetchAllApikeys, findAllCertificates, routeEntries } from '../../services/BackOfficeServices'
 import { firstLetterUppercase } from '../../util'
 import { useLocation } from 'react-router-dom'
+import { FeedbackButton } from './FeedbackButton';
 
 import { Provider } from 'react-redux'
 import { Playground, store } from 'graphql-playground-react'
@@ -17,7 +18,7 @@ const CONTENT_TYPE = ['text', 'javascript', 'json', 'html', 'xml'];
 const roundNsTo = (ns) => Number.parseFloat(round(ns) / 1000000).toFixed(3);
 const round = (num) => Math.round((num + Number.EPSILON) * 100000) / 100000;
 
-export const TryIt = ({ route, serviceMode }) => {
+export const TryIt = ({ route, serviceMode, setSaveButton }) => {
 
   const [selectedTab, setSelectedTab] = useState('Headers');
   const [selectedResponseTab, setSelectedResponseTab] = useState('Body');
@@ -59,6 +60,15 @@ export const TryIt = ({ route, serviceMode }) => {
 
   useEffect(() => {
     if (route && route.id) {
+      setSaveButton(
+        <FeedbackButton
+          className="ms-2"
+          onPress={() => ''}
+          text="Save route"
+          disabled={true}
+          icon={() => <i className="fas fa-paper-plane" />}
+        />
+      );
       setRequest({
         ...request,
         route_id: route.id,

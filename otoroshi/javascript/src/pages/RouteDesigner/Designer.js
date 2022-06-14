@@ -338,21 +338,6 @@ const Flow = (props) => (
   <div className="col-sm-4 pe-3 pb-1 d-flex flex-column">{props.children}</div>
 );
 
-const MenuContainer = ({ children }) => (
-  <li className="p-2 px-3">
-    <h4
-      className="pb-2"
-      style={{
-        borderBottom: '1px solid',
-      }}>
-      Advanced
-    </h4>
-    <div className="d-flex flex-column" style={{ color: '#fff' }}>
-      {children}
-    </div>
-  </li>
-);
-
 const PluginsContainer = ({
   handleSearch,
   showLegacy,
@@ -482,7 +467,7 @@ class Designer extends React.Component {
   };
 
   injectOverrideRoutePluginsForm = () => (
-    <MenuContainer>
+    <>
       <span className="me-3 mt-2">Override route plugins</span>{' '}
       {/* mt-2 to fix the form lib css ...*/}
       <BooleanInput
@@ -502,17 +487,17 @@ class Designer extends React.Component {
           );
         }}
       />
-    </MenuContainer>
+    </>
   );
 
   injectDefaultMenu = () => (
-    <MenuContainer>
+    <>
       <div className="d-flex-between">
         <button type="button" className="btn btn-sm btn-danger me-1" onClick={this.clearPlugins}>
           Clear plugins
         </button>
       </div>
-    </MenuContainer>
+    </>
   );
 
   injectNavbarMenu = () => {
@@ -866,10 +851,14 @@ class Designer extends React.Component {
   };
 
   clearPlugins = () => {
-    const newRoute = this.state.route;
-    newRoute.plugins = [];
-    this.setState({ route: newRoute, nodes: [] });
-    this.updateRoute({ ...newRoute });
+    window.newConfirm('Are you sure you want to delete all current plugins ?').then(ok => {
+      if (ok) {
+        const newRoute = this.state.route;
+        newRoute.plugins = [];
+        this.setState({ route: newRoute, nodes: [] });
+        this.updateRoute({ ...newRoute });
+      }
+    })
   };
 
   deleteRoute = () => {
@@ -1762,6 +1751,9 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
               );
             })}
           </div>
+        </div>
+        <div style={{ marginTop: 20, width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn btn-danger btn-sm" onClick={clearPlugins}>Clear plugins</button>
         </div>
         <div className="d-flex-between mt-3 flex align-items-end">
           <Link className="btn btn-sm btn-info" to="/routes">
