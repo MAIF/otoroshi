@@ -272,7 +272,8 @@ const Container = ({ children, onClick }) => {
   return <div
     className="h-100 col-12 hide-overflow route-designer"
     onMouseDown={e => {
-      setPropagate(!document.getElementById('form-container')?.contains(e.target))
+      setPropagate(!document.getElementById('form-container')?.contains(e.target) &&
+        ![...document.getElementsByClassName("delete-node-button")].find(d => d.contains(e.target)))
     }}
     onMouseUp={(e) => {
       e.stopPropagation();
@@ -779,7 +780,7 @@ class Designer extends React.Component {
 
   removeNode = (e) => {
     console.log("here")
-    
+
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
 
     this.setState({

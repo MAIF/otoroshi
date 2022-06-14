@@ -18,7 +18,7 @@ export default class GraphQLForm extends React.Component {
       return null
 
     return (
-      <div className="graphql-form p-3 flex-column" style={{ overflowY: 'scroll' }}>
+      <div className="graphql-form p-3 pe-2 flex-column" style={{ overflowY: 'scroll' }}>
         <Header hide={hide} schemaView={this.state.schemaView}
           toggleSchema={s => {
             if (s) {
@@ -507,7 +507,7 @@ const Type = ({ name, kind, fields, onSelectField, createField, isSelected, remo
       </div>
       <div className='d-flex-between'>
         {isSelected(i) === true && <button className='btn btn-sm btn-danger me-1' onClick={e => removeField(e, i)}>
-          <i className='fas fa-trash' color="#D5443F" />
+          <i className='fas fa-trash' style={{ color: "#D5443F" }} />
         </button>}
         <button className='btn btn-sm btn-save' onClick={e => selectField(e, i)}>
           <i className="fas fa-chevron-right" />
@@ -523,7 +523,16 @@ const Type = ({ name, kind, fields, onSelectField, createField, isSelected, remo
 
 const Header = ({ hide, schemaView, toggleSchema }) => <div className='d-flex-between'>
   <div className='flex'>
-    <h3>GraphQL Schema Editor</h3>
+    <div className='d-flex-between'>
+      <h3>GraphQL Schema Editor</h3>
+      <button
+        className="btn btn-sm"
+        type="button"
+        style={{ minWidth: '36px' }}
+        onClick={hide}>
+        <i className="fas fa-times" style={{ color: '#fff' }} />
+      </button>
+    </div>
     <div className={`d-flex justify-content-end ms-3 ${schemaView ? 'mb-3' : ''}`}>
       <button
         className="btn btn-sm toggle-form-buttons mt-3"
@@ -538,14 +547,5 @@ const Header = ({ hide, schemaView, toggleSchema }) => <div className='d-flex-be
         SCHEMA
       </button>
     </div>
-  </div>
-  <div className="d-flex me-1">
-    <button
-      className="btn btn-sm"
-      type="button"
-      style={{ minWidth: '36px' }}
-      onClick={hide}>
-      <i className="fas fa-times" style={{ color: '#fff' }} />
-    </button>
   </div>
 </div>
