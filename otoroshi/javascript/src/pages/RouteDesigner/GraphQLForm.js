@@ -121,7 +121,6 @@ class SideView extends React.Component {
 
   transformValue = v => {
     try {
-      console.log(v)
       if (Array.isArray(v))
         return v
       return JSON.parse(v);
@@ -346,7 +345,7 @@ class FieldForm extends React.Component {
             label: 'Type',
             format: 'select',
             options: [
-              'rest', 'graphql', 'json', 'permission', 'allpermissions', 'onePermissionsOf', 'authorize', 'otoroshi (soon)'
+              'rest', 'graphql', 'json', 'soap', 'permission', 'allpermissions', 'onePermissionsOf', 'authorize', 'otoroshi (soon)'
             ]
           },
           'arguments': {
@@ -492,6 +491,40 @@ class FieldForm extends React.Component {
                       label: 'Unauthorized message'
                     }
                   }
+                },
+                {
+                  condition: 'soap',
+                  schema: {
+                    url: {
+                      type: "string",
+                      label: 'URL'
+                    },
+                    envelope: {
+                      type: 'string',
+                      label: 'Envelope'
+                    },
+                    action: {
+                      type: 'string',
+                      label: 'Action'
+                    },
+                    preserve_query: {
+                      type: 'bool',
+                      defaultValue: true,
+                      label: 'Preserve query'
+                    },
+                    charset: {
+                      type: 'string',
+                      label: 'Charset'
+                    },
+                    jq_request_filter: {
+                      type: 'string',
+                      label: 'JQ Request filter'
+                    },
+                    jq_response_filter: {
+                      type: 'string',
+                      label: 'JQ Response filter'
+                    }
+                  }
                 }
               ]
             }
@@ -520,8 +553,6 @@ class FieldForm extends React.Component {
       return null;
 
     const { field, onChange } = this.props;
-
-    console.log(this.props.field)
 
     return <div className="p-3" style={{ background: "#373735", borderRadius: '4px' }}>
       <Form

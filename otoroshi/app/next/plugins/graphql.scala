@@ -1,5 +1,6 @@
 package otoroshi.next.plugins
 
+import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -11,6 +12,7 @@ import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{JsonPathUtils, JsonPathValidator, TypedMap}
+import otoroshi.next.plugins.SOAPAction
 import play.api.libs.json._
 import play.api.libs.ws.WSResponse
 import sangria.ast._
@@ -18,7 +20,8 @@ import sangria.execution.deferred.DeferredResolver
 import sangria.execution.{ExceptionHandler, Executor, HandledException, QueryReducer}
 import sangria.marshalling.playJson._
 import sangria.parser.QueryParser
-import sangria.schema.{Action, Argument, AstDirectiveContext, AstSchemaBuilder, BooleanType, Directive, DirectiveResolver, FieldResolver, InstanceCheck, IntType, IntrospectionSchemaBuilder, ListInputType, OptionInputType, ResolverBasedAstSchemaBuilder, Schema, StringType}
+import sangria.schema
+import sangria.schema.{AbstractType, Action, Argument, AstDirectiveContext, AstSchemaBuilder, BooleanType, CompositeType, Directive, DirectiveResolver, EnumType, FieldResolver, InstanceCheck, IntType, IntrospectionSchemaBuilder, LeafType, ListInputType, MappedAbstractType, ObjectLikeType, OptionInputType, OptionType, ResolverBasedAstSchemaBuilder, ScalarAlias, ScalarType, Schema, StringType, UnionType}
 import sangria.validation.{QueryValidator, ValueCoercionViolation, Violation}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration, MILLISECONDS}
@@ -311,6 +314,15 @@ class GraphQLBackend extends NgBackendCall {
   val pathArg = Argument("path", StringType)
   val unauthorizedValueArg = Argument("unauthorized_value", OptionInputType(StringType))
 
+  val soapEnvelopeArg = Argument("envelope", StringType)
+  val soapUrlArg = Argument("url", OptionInputType(StringType))
+  val soapActionArg = Argument("action", OptionInputType(StringType))
+  val soapPreservereQueryArg = Argument("preserve_query", BooleanType, defaultValue = true)
+  val soapCharsetArg = Argument("charset", OptionInputType(StringType))
+  val soapConvertRequestBodyToXmlArg = Argument("convert_request_body_to_xml", BooleanType, defaultValue = true)
+  val soapJqRequestFilterArg = Argument("jq_request_filter", OptionInputType(StringType))
+  val soapJqResponseFilterArg = Argument("jq_response_filter", OptionInputType(StringType))
+
   val arguments = urlArg :: methodArg :: timeoutArg :: headersArg :: queryArg :: responsePathArg :: responseFilterArg :: limitArg :: offsetArg :: paginateArg :: Nil
 
   def extractLimit(c: AstDirectiveContext[Unit], itemsLength: Option[Int]) = {
@@ -416,9 +428,7 @@ class GraphQLBackend extends NgBackendCall {
       case (acc, (key, value)) => acc + (s"params.$key" -> value)
     }
 
-    val ctx = 
-      // (c.ctx.value.asInstanceOf[JsObject].value.foldLeft(Map.empty[String, String]) {
-      (ResolverBasedAstSchemaBuilder.extractFieldValue(c.ctx) match {
+    val ctx = (ResolverBasedAstSchemaBuilder.extractFieldValue(c.ctx) match {
         case Some(v: JsObject)  => v.value.foldLeft(Map.empty[String, String]) {
           case (acc, (key, value)) => acc + (s"item.$key" -> (value match {
             case JsObject(_) => ""
@@ -462,6 +472,32 @@ class GraphQLBackend extends NgBackendCall {
               case _ => JsObject.empty
             }
         }
+      }
+  }
+
+  def soapDirectiveResolver(c: AstDirectiveContext[Unit], ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]],
+                            body: JsObject)
+                           (implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Object] = {
+    new SOAPAction()
+      .process(ctx.copy(
+        request = ctx.request.copy(
+          body = Source.single(body.stringify.byteString)
+        )
+      ), delegates, SOAPActionConfig(
+        url = c.arg(soapUrlArg),
+        envelope = c.arg(soapEnvelopeArg),
+        action = c.arg(soapActionArg),
+        preserveQuery = c.arg(soapPreservereQueryArg),
+        charset = c.arg(soapCharsetArg),
+        jqRequestFilter = c.arg(soapJqRequestFilterArg),
+        jqResponseFilter = c.arg(soapJqResponseFilterArg)
+      ))
+      .flatMap {
+        case Right(value) =>
+          value.response.body
+            .runFold(ByteString.empty)(_ ++ _)
+            .map(_.utf8String)
+        case Left(error) => FastFuture.successful(error)
       }
   }
 
@@ -622,7 +658,15 @@ class GraphQLBackend extends NgBackendCall {
                 val authorizeDirective = Directive("authorize", arguments = pathArg :: valueArg :: unauthorizedValueArg:: Nil, locations = directivesLocations)
                 val HttpRestDirective = Directive("rest", arguments = arguments, locations = directivesLocations)
                 val GraphQLDirective = Directive("graphql", arguments = arguments, locations = directivesLocations)
-                val OtoroshiRouteDirective = Directive("otoroshi", arguments = arguments, locations = directivesLocations)
+                // val OtoroshiRouteDirective = Directive("otoroshi", arguments = arguments, locations = directivesLocations)
+                val SoapDirective = Directive("soap",
+                  arguments = soapEnvelopeArg :: soapUrlArg :: soapActionArg ::
+                    soapPreservereQueryArg ::
+                    soapCharsetArg ::
+                    soapConvertRequestBodyToXmlArg ::
+                    soapJqRequestFilterArg ::
+                    soapJqResponseFilterArg :: Nil,
+                  locations = directivesLocations)
                 val JsonDirective = Directive("json", arguments = jsonDataArg :: jsonPathArg :: paginateArg :: Nil, locations = directivesLocations)
 
                 val builder: ResolverBasedAstSchemaBuilder[Unit] = AstSchemaBuilder.resolverBased[Unit](
@@ -634,6 +678,7 @@ class GraphQLBackend extends NgBackendCall {
                   DirectiveResolver(authorizeDirective, resolve = c => authorizeDirectiveResolver(c, config, ctx)),
                   DirectiveResolver(HttpRestDirective, resolve = httpRestDirectiveResolver),
                   DirectiveResolver(GraphQLDirective, resolve = c => graphQLDirectiveResolver(c, c.arg(queryArg).getOrElse("{}"), ctx, delegates)),
+                  DirectiveResolver(SoapDirective, resolve = c => soapDirectiveResolver(c, ctx, delegates, body)),
                   /*DirectiveResolver(OtoroshiRouteDirective, resolve = OtoroshiRouteDirectiveResolver),*/
                   DirectiveResolver(JsonDirective, resolve = c => jsonDirectiveResolver(c, config)),
                   FieldResolver.defaultInput[Unit, JsValue]
