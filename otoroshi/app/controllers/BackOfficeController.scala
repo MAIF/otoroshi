@@ -1780,12 +1780,21 @@ class BackOfficeController(
                           "arguments" -> directive.arguments.map(argument => Json.obj(
                             "name" -> argument.name,
                             "value" -> (argument.value match {
-                              case IntValue(value, comments, location) => value
-                              case BigIntValue(value, comments, location) => value
-                              case FloatValue(value, comments, location) => value
-                              case BigDecimalValue(value, comments, location) => value
-                              case StringValue(value, block, blockRawValue, comments, location) => value
-                              case BooleanValue(value, comments, location) => value
+                              case IntValue(value, _, _) => value
+                              case BigIntValue(value, _, _) => value
+                              case FloatValue(value, _, _) => value
+                              case BigDecimalValue(value, _, _) => value
+                              case StringValue(value, _, _, _, _) => value
+                              case BooleanValue(value, _, _) => value
+                              case ListValue(values, _, _) => (values.map {
+                                case IntValue(value, _, _) => JsNumber(value)
+                                case BigIntValue(value, _, _) => JsNumber(value.intValue())
+                                case FloatValue(value, _, _) => JsNumber(value)
+                                case BigDecimalValue(value, _, _) => JsNumber(value)
+                                case StringValue(value, _, _, _, _) => JsString(value)
+                                case BooleanValue(value, _, _) => JsBoolean(value)
+                                case _ => JsString("")
+                              })
                               case _ => ""
                             })
                           ))
