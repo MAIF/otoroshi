@@ -58,6 +58,19 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     withEventStoreAndParser[AnyContent](BodyParsers.utils.ignore(AnyContentAsEmpty: AnyContent))(f)
   }
 
+  def findServiceById(serviceId: String): Future[Option[ServiceDescriptor]] = {
+    env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
+      case Some(service) => service.some.vfuture
+      case None => env.datastores.routeDataStore.findById(serviceId) flatMap {
+        case Some(service) => service.legacy.some.vfuture
+        case None => env.datastores.servicesDataStore.findById(serviceId) map {
+          case Some(service) => service.toRoutes.head.legacy.some
+          case None => None
+        }
+      }
+    }
+  }
+
   def withEventStoreAndParser[A](parser: BodyParser[A])(f: ApiActionContext[A] => Future[Result]): Action[A] = {
     ApiAction.async(parser) { ctx =>
       env.datastores.globalConfigDataStore.singleton().flatMap { config =>
@@ -106,7 +119,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
         ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(9999)
       val paginationPosition      = (paginationPage - 1) * paginationPageSize
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-        env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+        findServiceById(serviceId).flatMap {
           case None       => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).future
           case Some(desc) => {
 
@@ -385,7 +398,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       val toDate                  = to.map(f => new DateTime(f.toLong))
 
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-        env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+        findServiceById(serviceId).flatMap {
           case None       => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).future
           case Some(desc) => {
 
@@ -439,7 +452,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           }
           val futureFilterable: Future[Option[Filterable]] = (serviceId, apiKeyId, groupId) match {
             case (Some(id), _, _) =>
-              env.datastores.serviceDescriptorDataStore.findById(id).map(_.map(ServiceDescriptorFilterable.apply))
+              findServiceById(id).map(_.map(ServiceDescriptorFilterable.apply))
             case (_, Some(id), _) => env.datastores.apiKeyDataStore.findById(id).map(_.map(ApiKeyFilterable.apply))
             case (_, _, Some(id)) =>
               env.datastores.serviceGroupDataStore.findById(id).map(_.map(ServiceGroupFilterable.apply))
@@ -495,7 +508,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           }
           val futureFilterable: Future[Option[Filterable]] = (serviceId, apiKeyId, groupId) match {
             case (Some(id), _, _) =>
-              env.datastores.serviceDescriptorDataStore.findById(id).map(_.map(ServiceDescriptorFilterable.apply))
+              findServiceById(id).map(_.map(ServiceDescriptorFilterable.apply))
             case (_, Some(id), _) => env.datastores.apiKeyDataStore.findById(id).map(_.map(ApiKeyFilterable.apply))
             case (_, _, Some(id)) =>
               env.datastores.serviceGroupDataStore.findById(id).map(_.map(ServiceGroupFilterable.apply))
@@ -621,8 +634,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
         val toDate   = to.map(f => new DateTime(f.toLong))
 
-        env.datastores.serviceDescriptorDataStore
-          .findById(serviceId)
+        findServiceById(serviceId)
           .flatMap {
             case None                                 => NotFound(Json.obj("error" -> s"Service: '$serviceId' not found")).future
             case Some(desc) if !ctx.canUserRead(desc) => ctx.fforbidden
@@ -675,8 +687,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
-        env.datastores.serviceDescriptorDataStore
-          .findById(serviceId)
+        findServiceById(serviceId)
           .flatMap {
             case None                                 => NotFound(Json.obj("error" -> s"Service: '$serviceId' not found")).future
             case Some(desc) if !ctx.canUserRead(desc) => ctx.fforbidden

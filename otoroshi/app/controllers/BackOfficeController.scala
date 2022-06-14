@@ -21,6 +21,7 @@ import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticTemplates, ElasticUti
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models.RightsChecker.SuperAdminOnly
 import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId, _}
+import otoroshi.next.models.{NgRoute, NgService}
 import otoroshi.security._
 import otoroshi.ssl._
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
@@ -42,6 +43,23 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.Try
 import sangria.ast.{Directive, EnumValue, FieldDefinition, FragmentDefinition, InputValueDefinition, ListValue, NamedType, NullValue, ObjectValue, OperationDefinition, Type, TypeSystemDefinition, TypeSystemExtensionDefinition, Value, VariableValue}
+
+case class ServiceLike(entity: EntityLocationSupport, groups: Seq[String]) extends EntityLocationSupport {
+  def id: String = internalId
+  override def internalId: String = entity.internalId
+  override def json: JsValue = entity.json
+  override def theName: String = entity.theName
+  override def theDescription: String = entity.theDescription
+  override def theTags: Seq[String] = entity.theTags
+  override def theMetadata: Map[String, String] = entity.theMetadata
+  override def location: EntityLocation = entity.location
+}
+
+object ServiceLike {
+  def fromService(service: ServiceDescriptor): ServiceLike = ServiceLike(service, service.groups)
+  def fromRoute(service: NgRoute): ServiceLike = ServiceLike(service, service.groups)
+  def fromRouteComposition(service: NgService): ServiceLike = ServiceLike(service, service.groups)
+}
 
 case class BackofficeFlags(
     env: Env,
@@ -1580,9 +1598,22 @@ class BackOfficeController(
       }
     }
 
+  def findServiceLike(serviceId: String): Future[Option[ServiceLike]] = {
+    env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
+      case Some(service) => ServiceLike.fromService(service).some.vfuture
+      case None => env.datastores.routeDataStore.findById(serviceId) flatMap {
+        case Some(service) => ServiceLike.fromRoute(service).some.vfuture
+        case None => env.datastores.servicesDataStore.findById(serviceId) map {
+          case Some(service) => ServiceLike.fromRouteComposition(service).some
+          case None => None
+        }
+      }
+    }
+  }
+
   def fetchApikeysForGroupAndService(serviceId: String) =
     BackOfficeActionAuth.async { ctx =>
-      env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
+      findServiceLike(serviceId) flatMap {
         case None                                       => FastFuture.successful(NotFound(Json.obj("error" -> "service not found")))
         case Some(service) if !ctx.canUserRead(service) => ApiActionContext.fforbidden
         case Some(service)                              => {

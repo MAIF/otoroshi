@@ -238,7 +238,7 @@ export class ServiceEventsPage extends Component {
     return (
       <ServiceSidebar
         env={this.state.service.env}
-        serviceId={this.props.params.serviceId}
+        serviceId={this.props.params.serviceId ||  this.props.params.routeId}
         name={name}
       />
     );
@@ -249,7 +249,7 @@ export class ServiceEventsPage extends Component {
       ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
       : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
     fu.then((service) => {
-      this.onRoute ? this.props.setTitle(`Route Events`) : this.props.setTitle(`Service Events`);
+      this.onRoutes ? this.props.setTitle(`Route Events`) : this.props.setTitle(`Service Events`);
       this.setState({ service }, () => {
         this.props.setSidebarContent(this.sidebarContent(service.name));
       });
@@ -315,7 +315,7 @@ export class ServiceEventsPage extends Component {
         </div>
         <Table
           parentProps={this.props}
-          selfUrl={`lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/events`}
+          selfUrl={this.onRoutes ? `routes/${this.props.params.routeId}/events` : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/events`}
           defaultTitle="Service Events"
           defaultValue={() => ({})}
           defaultSort={this.columns[0].title}
