@@ -305,7 +305,7 @@ class GraphQLBackend extends NgBackendCall {
   val responseFilterArg   = Argument("response_filter", OptionInputType(StringType))
   val limitArg = Argument("limit", OptionInputType(IntType))
   val offsetArg = Argument("offset", OptionInputType(IntType))
-  val paginateArg = Argument("paginate", BooleanType, defaultValue = false)
+  val paginateArg = Argument("paginate", OptionInputType(BooleanType), defaultValue = false)
   val valueArg = Argument("value", StringType)
   val valuesArg = Argument("values", ListInputType(StringType))
   val pathArg = Argument("path", StringType)
@@ -325,7 +325,7 @@ class GraphQLBackend extends NgBackendCall {
   def extractLimit(c: AstDirectiveContext[Unit], itemsLength: Option[Int]) = {
     val queryParameter = c.ctx.argOpt(limitArg)
     val limitParameterFromDirective = c.argOpt(limitArg)
-    val autoPaginateParameter = c.arg(paginateArg)
+    val autoPaginateParameter = c.argOpt(paginateArg).getOrElse(false)
     val defaultLimit = 1
 
     queryParameter
@@ -340,7 +340,7 @@ class GraphQLBackend extends NgBackendCall {
   def extractOffset(c: AstDirectiveContext[Unit]) = {
     val offsetParameter = c.ctx.argOpt(offsetArg)
     val offsetParameterFromDirective = c.argOpt(offsetArg)
-    val autoPaginateParameter = c.arg(paginateArg)
+    val autoPaginateParameter = c.argOpt(paginateArg).getOrElse(false)
     
     offsetParameter
       .orElse(offsetParameterFromDirective)
@@ -417,7 +417,7 @@ class GraphQLBackend extends NgBackendCall {
 
   def httpRestDirectiveResolver(c: AstDirectiveContext[Unit])(implicit env: Env, ec: ExecutionContext): Action[Unit, Any] = {
     val queryArgs = c.ctx.args.raw.map {
-      case (str, Some(v)) =>(str, String.valueOf(v))
+      case (str, Some(v)) => (str, String.valueOf(v))
       case (k, v) => (k, String.valueOf(v))
     }
 
@@ -443,10 +443,30 @@ class GraphQLBackend extends NgBackendCall {
       env
     )
 
-    env.Ws.url(url)
+    var request = env.Ws.url(url)
       .withRequestTimeout(FiniteDuration(c.arg(timeoutArg), MILLISECONDS))
       .withMethod(c.arg(methodArg).getOrElse("GET"))
       .withHttpHeaders(Json.parse(c.arg(headersArg).getOrElse("{}")).as[Map[String, String]].toSeq:_*)
+
+    if (c.arg(methodArg).contains("POST")) {
+      request = request
+          .withHttpHeaders((Map("Content-Type" -> "application/json") ++ Json.parse(c.arg(headersArg).getOrElse("{}")).as[Map[String, String]]).toSeq:_*)
+          .withBody(c.ctx.args.raw.foldLeft(Json.obj()) {
+          case (acc, curr) => acc + (curr._1 -> (curr._2 match {
+            case s: String => JsString(s)
+            case i: Int => JsNumber(i)
+            case f: Float => JsNumber(f)
+            case d: Boolean => JsBoolean(d)
+            case Some(s: String) => JsString(s)
+            case Some(i: Int) => JsNumber(i)
+            case Some(f: Float) => JsNumber(f)
+            case Some(d: Boolean) => JsBoolean(d)
+            case a => JsString(String.valueOf(a))
+          }))
+        })
+    }
+
+    request
       .execute()
       .map { resp =>
         if (resp.status == 200) {
