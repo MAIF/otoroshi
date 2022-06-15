@@ -286,6 +286,7 @@ class FieldForm extends React.Component {
             label: null,
             format: 'select',
             type: 'string',
+            createOption: true,
             options: ['Int', 'String', 'Boolean', 'Float', ...this.props.types]
           },
           required: {
@@ -414,16 +415,16 @@ class FieldForm extends React.Component {
                       options: ['GET', 'POST'],
                       label: 'HTTP Method'
                     },
-                    responsePathArg: {
+                    response_path_arg: {
                       type: 'string',
                       label: 'JSON Response path'
                     },
-                    responseFilterArg: {
+                    response_filter_arg: {
                       type: 'string',
                       label: 'JSON response filter path'
                     }
                   },
-                  flow: ['url', 'query', 'headers', 'timeout', 'method', 'responsePathArg', 'responseFilterArg']
+                  flow: ['url', 'query', 'headers', 'timeout', 'method', 'response_path_arg', 'response_filter_arg']
                 },
                 {
                   condition: 'json',

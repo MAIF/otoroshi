@@ -2,7 +2,7 @@ package otoroshi.next.models
 
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsString, JsSuccess, JsValue, Json}
-import sangria.ast.{Argument, BigDecimalValue, BigIntValue, BooleanValue, Directive, FieldDefinition, FloatValue, InputValueDefinition, IntValue, ListType, ListValue, NamedType, NotNullType, NullValue, ObjectTypeDefinition, StringValue, TypeDefinition, TypeSystemDefinition, Value}
+import sangria.ast.{Argument, BigDecimalValue, BigIntValue, BooleanValue, Directive, FieldDefinition, FloatValue, InputValueDefinition, IntValue, InterfaceTypeDefinition, ListType, ListValue, NamedType, NotNullType, NullValue, ObjectTypeDefinition, StringValue, TypeDefinition, TypeSystemDefinition, Value}
 import sangria.schema.Schema
 
 import scala.util.Try
@@ -87,7 +87,7 @@ object GraphQLFormats {
                   InputValueDefinition(
                     name = argument.select("name").as[String],
                     valueType = if(argumentIsList) ListType(`type`) else `type`,
-                    defaultValue = None // TODO - manage defautlValue
+                    defaultValue = None // TODO - manage defaultValue
                   )
                 }).toVector,
               directives = directives.map(directive => {
@@ -119,13 +119,13 @@ object GraphQLFormats {
     new Format[ObjectTypeDefinition] {
       override def writes(obj: ObjectTypeDefinition) =
         Json.obj(
-          "name" -> JsString(obj.name),
+          "name" -> obj.name,
           "fields" -> obj.fields.map(fieldDefinitionFmt.writes),
           "directives" -> obj.directives.map(directive => Json.obj(
             "name" -> directive.name,
             "arguments" -> directive.arguments.map(argument => Json.obj(
               "name" -> argument.name,
-              "value" -> argument.value.toString()
+              "value" -> argumentValueToJson(argument.value)
             ))
           )))
       override def reads(json: JsValue)     =
@@ -152,12 +152,49 @@ object GraphQLFormats {
         } get
     }
 
+  def interfaceTypeDefinitionFmt =
+    new Format[InterfaceTypeDefinition] {
+      override def writes(obj: InterfaceTypeDefinition) =
+        Json.obj(
+          "name" -> JsString(obj.name),
+          "fields" -> obj.fields.map(fieldDefinitionFmt.writes),
+          "directives" -> obj.directives.map(directive => Json.obj(
+            "name" -> directive.name,
+            "arguments" -> directive.arguments.map(argument => Json.obj(
+              "name" -> argument.name,
+              "value" -> argument.value.toString()
+            ))
+          )))
+      override def reads(json: JsValue)     =
+        Try {
+          JsSuccess(
+            InterfaceTypeDefinition(
+              name = json.select("name").as[String],
+              fields = json.select("fields")
+                .asOpt[JsArray]
+                .getOrElse(Json.arr())
+                .value
+                .map(_.as[JsObject])
+                .map(fieldDefinitionFmt.reads)
+                .flatMap {
+                  case JsSuccess(v, _) => Some(v)
+                  case JsError(_) => None
+                }
+                .toVector
+            )
+          )
+        } recover { case e =>
+          JsError(e.getMessage)
+        } get
+    }
+
   def astDocumentToJson(schema: Schema[Any, Any]) = schema.toAst.definitions.map {
     case definition: TypeSystemDefinition =>
       definition match {
         case definition: TypeDefinition =>
           definition match {
             case obj: ObjectTypeDefinition => objectTypeDefinitionFmt.writes(obj)
+            case i: InterfaceTypeDefinition => interfaceTypeDefinitionFmt.writes(i)
             case _ => Json.obj()
           }
         case _ => Json.obj()

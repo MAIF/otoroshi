@@ -1800,6 +1800,7 @@ class BackOfficeController(
         val newDocument = document.copy(
           definitions = document.definitions.flatMap {
             case _: sangria.ast.TypeDefinition => None
+            case _: sangria.ast.InterfaceTypeDefinition => None
             case v => Some(v)
           } ++ types
         )
