@@ -3058,6 +3058,371 @@ spec:
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"
 metadata:
+  name: "route-compositions.proxy.otoroshi.io"
+  creationTimestamp: null
+spec:
+  group: "proxy.otoroshi.io"
+  names:
+    kind: "RouteComposition"
+    plural: "route-compositions"
+    singular: "route-composition"
+  scope: "Namespaced"
+  versions:
+  - name: "v1alpha1"
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: "object"
+  - name: "v1"
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        description: "A composition of multiple routes with the same plugins"
+        properties:
+          apiVersion:
+            description: "APIVersion defines the versioned schema of this representation\
+              \ of an object. Servers should convert recognized schemas to the latest\
+              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            type: "string"
+          kind:
+            description: "Kind is a string value representing the REST resource this\
+              \ object represents. Servers may infer this from the endpoint the client\
+              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            type: "string"
+          metadata:
+            type: "object"
+          spec:
+            type: "object"
+            description: "A composition of multiple routes with the same plugins"
+            properties:
+              metadata:
+                type: "object"
+                additionalProperties:
+                  type: "string"
+                description: "The metadata of the service"
+              capture:
+                description: "Capture http traffic"
+                type: "boolean"
+              description:
+                description: "The description of the service"
+                type: "string"
+              groups:
+                type: "array"
+                items:
+                  type: "string"
+                description: "The groups of the service"
+              _loc:
+                description: "The location of the service"
+                type: "object"
+                properties:
+                  teams:
+                    description: "Teams of the current entity"
+                    type: "array"
+                    items:
+                      type: "string"
+                  tenant:
+                    description: "Organization of the current entity"
+                    type: "string"
+              enabled:
+                description: "Is the service enabled"
+                type: "boolean"
+              export_reporting:
+                description: "Export the execution reporting through standard data\
+                  \ exporter"
+                type: "boolean"
+              tags:
+                type: "array"
+                items:
+                  type: "string"
+                description: "The tags of the service"
+              debug_flow:
+                description: "Enable report debugging"
+                type: "boolean"
+              routes:
+                description: "The routes of the service"
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    backend_ref:
+                      description: "The backend id of the route (if one)"
+                      type: "string"
+                    override_plugins:
+                      description: "Override global plugin list from route composition"
+                      type: "boolean"
+                    backend:
+                      description: "The backend of the route"
+                      type: "object"
+                      properties:
+                        target_refs:
+                          type: "array"
+                          items:
+                            type: "string"
+                          description: "List of NgStoredBackend ids"
+                        root:
+                          description: "The root path of the backend or the full rewrite\
+                            \ path"
+                          type: "string"
+                        targets:
+                          description: "The targets of the backend"
+                          type: "array"
+                          items:
+                            type: "object"
+                            properties:
+                              predicate:
+                                description: "Predicate to choose this target"
+                                type: "object"
+                                properties:
+                                  rack:
+                                    description: "Rack name"
+                                    type: "string"
+                                  provider:
+                                    description: "Provider name"
+                                    type: "string"
+                                  dataCenter:
+                                    description: "Datacenter name"
+                                    type: "string"
+                                  zone:
+                                    description: "Zone name"
+                                    type: "string"
+                                  positions:
+                                    description: "Possible positions"
+                                    type: "array"
+                                    items:
+                                      type: "object"
+                                      properties:
+                                        latitude:
+                                          format: "double"
+                                          description: "Latitude of the position"
+                                          type: "number"
+                                        longitude:
+                                          format: "double"
+                                          description: "Longitude of the position"
+                                          type: "number"
+                                        radius:
+                                          format: "double"
+                                          description: "Radius of the circle in meters"
+                                          type: "number"
+                                  type:
+                                    description: "the kind of predicate"
+                                    type: "string"
+                                  region:
+                                    description: "Region name"
+                                    type: "string"
+                                  dc:
+                                    description: "DC name"
+                                    type: "string"
+                              protocol:
+                                description: "Protocol for the target"
+                                type: "string"
+                              hostname:
+                                description: "hostname of the target"
+                                type: "string"
+                              port:
+                                format: "int32"
+                                description: "port of the target"
+                                type: "integer"
+                              weight:
+                                format: "int32"
+                                description: "The weight of the target when choosing"
+                                type: "integer"
+                              tls:
+                                description: "Does the target uses TLS"
+                                type: "boolean"
+                              tls_config:
+                                description: "TLS settings to contact this target"
+                                type: "object"
+                                properties:
+                                  enabled:
+                                    description: "Enabled"
+                                    type: "boolean"
+                                  certs:
+                                    type: "array"
+                                    items:
+                                      type: "string"
+                                    description: "Trusted cert. ids"
+                                  loose:
+                                    description: "Loose verification"
+                                    type: "boolean"
+                                  trust_all:
+                                    description: "Trust any certificate"
+                                    type: "boolean"
+                                  trusted_certs:
+                                    type: "array"
+                                    items:
+                                      type: "string"
+                                    description: "Trusted cert. ids"
+                              id:
+                                description: "id of the target"
+                                type: "string"
+                              ip_address:
+                                description: "Target ip address. Usefull to make manual\
+                                  \ DNS resolution without breaking SNI"
+                                type: "string"
+                        rewrite:
+                          description: "Does the backend performs a full url rewrite\
+                            \ ?"
+                          type: "boolean"
+                        load_balancing:
+                          description: "Loadbalancing config og the backend"
+                          type: "object"
+                          properties:
+                            type:
+                              type: "string"
+                            ratio:
+                              type: "number"
+                              format: "double"
+                    frontend:
+                      description: "The frontend of the route"
+                      type: "object"
+                      properties:
+                        headers:
+                          type: "object"
+                          additionalProperties:
+                            type: "string"
+                          description: "the headers that will be matched"
+                        methods:
+                          type: "array"
+                          items:
+                            type: "string"
+                          description: "the http methods that will be matched"
+                        query:
+                          type: "object"
+                          additionalProperties:
+                            type: "string"
+                          description: "the query params that will be matched"
+                        exact:
+                          description: "Match on exact path ?"
+                          type: "boolean"
+                        domains:
+                          description: "The domain and path that will be matched"
+                          type: "array"
+                          items:
+                            type: "string"
+                        strip_path:
+                          description: "Is path stripped from backend request"
+                          type: "boolean"
+              name:
+                description: "The name of the service"
+                type: "string"
+              client:
+                description: "The client config of the service"
+                type: "object"
+                properties:
+                  custom_timeouts:
+                    description: "Custom timeouts per path"
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        connection_timeout:
+                          format: "int64"
+                          description: "Timeout at connection"
+                          type: "integer"
+                        call_and_stream_timeout:
+                          format: "int64"
+                          description: "Specify how long each call should last at\
+                            \ most in milliseconds (hard timeout, connection will\
+                            \ be closed after that duration)"
+                          type: "integer"
+                        path:
+                          description: "path on which this configuration works"
+                          type: "string"
+                        call_timeout:
+                          format: "int64"
+                          description: "Specify how long each call should last at\
+                            \ most in milliseconds (soft timeout as it's enforced\
+                            \ by the circuit breaker)"
+                          type: "integer"
+                        idle_timeout:
+                          format: "int64"
+                          description: "Timeout on idle connection"
+                          type: "integer"
+                        global_timeout:
+                          format: "int64"
+                          description: "Specify how long the global call (with retries)\
+                            \ should last at most in milliseconds"
+                          type: "integer"
+                  global_timeout:
+                    format: "int64"
+                    description: "Specify how long the global call (with retries)\
+                      \ should last at most in milliseconds"
+                    type: "integer"
+                  max_errors:
+                    format: "int32"
+                    description: "Specify how many errors can pass before opening\
+                      \ the circuit breaker"
+                    type: "integer"
+                  retry_initial_delay:
+                    format: "int64"
+                    description: "Specify the delay between two retries. Each retry,\
+                      \ the delay is multiplied by the backoff factor"
+                    type: "integer"
+                  backoff_factor:
+                    format: "int64"
+                    description: "Specify the factor to multiply the delay for each\
+                      \ retry"
+                    type: "integer"
+                  cache_connection_settings:
+                    description: "Cached connection settings"
+                    type: "object"
+                    properties:
+                      queue_size:
+                        format: "int32"
+                        description: "How much request can be queue before dropping\
+                          \ it"
+                        type: "integer"
+                      enabled:
+                        description: "Is cached connection enabled"
+                        type: "boolean"
+                  sample_interval:
+                    format: "int64"
+                    description: "Specify the sliding window time for the circuit\
+                      \ breaker in milliseconds, after this time, error count will\
+                      \ be reseted"
+                    type: "integer"
+                  call_and_stream_timeout:
+                    format: "int64"
+                    description: "Specify how long each call should last at most in\
+                      \ milliseconds (hard timeout, connection will be closed after\
+                      \ that duration)"
+                    type: "integer"
+                  retries:
+                    format: "int32"
+                    description: "Specify how many times the client will try to fetch\
+                      \ the result of the request after an error before giving up."
+                    type: "integer"
+                  proxy:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "Web proxy settings for http client"
+                  call_timeout:
+                    format: "int64"
+                    description: "Specify how long each call should last at most in\
+                      \ milliseconds (soft timeout as it's enforced by the circuit\
+                      \ breaker)"
+                    type: "integer"
+                  idle_timeout:
+                    format: "int64"
+                    description: "Timeout on idle connection"
+                    type: "integer"
+                  connection_timeout:
+                    format: "int64"
+                    description: "Timeout at connection"
+                    type: "integer"
+              id:
+                description: "The id of the service"
+                type: "string"
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
   name: "tcp-services.proxy.otoroshi.io"
   creationTimestamp: null
 spec:
@@ -3957,6 +4322,9 @@ spec:
                 description: "Endpoint requested by otoroshi to get access token during\
                   \ the authorization OAuth1 flow"
                 type: "string"
+              clientSideSessionEnabled:
+                description: "???"
+                type: "boolean"
               singleSignOnUrl:
                 description: "URL used by otoroshi to redirect users to identity provider\
                   \ login page"
@@ -4467,143 +4835,6 @@ spec:
                 type: "array"
                 items:
                   type: "string"
----
-apiVersion: "apiextensions.k8s.io/v1"
-kind: "CustomResourceDefinition"
-metadata:
-  name: "targets.proxy.otoroshi.io"
-  creationTimestamp: null
-spec:
-  group: "proxy.otoroshi.io"
-  names:
-    kind: "Target"
-    plural: "targets"
-    singular: "target"
-  scope: "Namespaced"
-  versions:
-  - name: "v1alpha1"
-    served: true
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: "object"
-  - name: "v1"
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        type: "object"
-        description: "A target where incoming requests will be forwarded"
-        properties:
-          apiVersion:
-            description: "APIVersion defines the versioned schema of this representation\
-              \ of an object. Servers should convert recognized schemas to the latest\
-              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
-            type: "string"
-          kind:
-            description: "Kind is a string value representing the REST resource this\
-              \ object represents. Servers may infer this from the endpoint the client\
-              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
-            type: "string"
-          metadata:
-            type: "object"
-          spec:
-            type: "object"
-            description: "A target where incoming requests will be forwarded"
-            properties:
-              predicate:
-                description: "Predicate to choose this target"
-                type: "object"
-                properties:
-                  rack:
-                    description: "Rack name"
-                    type: "string"
-                  provider:
-                    description: "Provider name"
-                    type: "string"
-                  dataCenter:
-                    description: "Datacenter name"
-                    type: "string"
-                  zone:
-                    description: "Zone name"
-                    type: "string"
-                  positions:
-                    description: "Possible positions"
-                    type: "array"
-                    items:
-                      type: "object"
-                      properties:
-                        latitude:
-                          format: "double"
-                          description: "Latitude of the position"
-                          type: "number"
-                        longitude:
-                          format: "double"
-                          description: "Longitude of the position"
-                          type: "number"
-                        radius:
-                          format: "double"
-                          description: "Radius of the circle in meters"
-                          type: "number"
-                  type:
-                    description: "the kind of predicate"
-                    type: "string"
-                  region:
-                    description: "Region name"
-                    type: "string"
-                  dc:
-                    description: "DC name"
-                    type: "string"
-              protocol:
-                description: "Protocol for the target"
-                type: "string"
-              hostname:
-                description: "hostname of the target"
-                type: "string"
-              port:
-                format: "int32"
-                description: "port of the target"
-                type: "integer"
-              weight:
-                format: "int32"
-                description: "The weight of the target when choosing"
-                type: "integer"
-              tls:
-                description: "Does the target uses TLS"
-                type: "boolean"
-              tls_config:
-                description: "TLS settings to contact this target"
-                type: "object"
-                properties:
-                  enabled:
-                    description: "Enabled"
-                    type: "boolean"
-                  certs:
-                    type: "array"
-                    items:
-                      type: "string"
-                    description: "Trusted cert. ids"
-                  loose:
-                    description: "Loose verification"
-                    type: "boolean"
-                  trust_all:
-                    description: "Trust any certificate"
-                    type: "boolean"
-                  trusted_certs:
-                    type: "array"
-                    items:
-                      type: "string"
-                    description: "Trusted cert. ids"
-              id:
-                description: "id of the target"
-                type: "string"
-              ip_address:
-                description: "Target ip address. Usefull to make manual DNS resolution\
-                  \ without breaking SNI"
-                type: "string"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"
@@ -5240,371 +5471,6 @@ spec:
                   strip_path:
                     description: "Is path stripped from backend request"
                     type: "boolean"
----
-apiVersion: "apiextensions.k8s.io/v1"
-kind: "CustomResourceDefinition"
-metadata:
-  name: "services.proxy.otoroshi.io"
-  creationTimestamp: null
-spec:
-  group: "proxy.otoroshi.io"
-  names:
-    kind: "Service"
-    plural: "services"
-    singular: "service"
-  scope: "Namespaced"
-  versions:
-  - name: "v1alpha1"
-    served: true
-    storage: false
-    deprecated: true
-    schema:
-      openAPIV3Schema:
-        x-kubernetes-preserve-unknown-fields: true
-        type: "object"
-  - name: "v1"
-    served: true
-    storage: true
-    deprecated: false
-    schema:
-      openAPIV3Schema:
-        type: "object"
-        description: "A composition of multiple routes with the same plugins"
-        properties:
-          apiVersion:
-            description: "APIVersion defines the versioned schema of this representation\
-              \ of an object. Servers should convert recognized schemas to the latest\
-              \ internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
-            type: "string"
-          kind:
-            description: "Kind is a string value representing the REST resource this\
-              \ object represents. Servers may infer this from the endpoint the client\
-              \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
-            type: "string"
-          metadata:
-            type: "object"
-          spec:
-            type: "object"
-            description: "A composition of multiple routes with the same plugins"
-            properties:
-              metadata:
-                type: "object"
-                additionalProperties:
-                  type: "string"
-                description: "The metadata of the service"
-              capture:
-                description: "Capture http traffic"
-                type: "boolean"
-              description:
-                description: "The description of the service"
-                type: "string"
-              groups:
-                type: "array"
-                items:
-                  type: "string"
-                description: "The groups of the service"
-              _loc:
-                description: "The location of the service"
-                type: "object"
-                properties:
-                  teams:
-                    description: "Teams of the current entity"
-                    type: "array"
-                    items:
-                      type: "string"
-                  tenant:
-                    description: "Organization of the current entity"
-                    type: "string"
-              enabled:
-                description: "Is the service enabled"
-                type: "boolean"
-              export_reporting:
-                description: "Export the execution reporting through standard data\
-                  \ exporter"
-                type: "boolean"
-              tags:
-                type: "array"
-                items:
-                  type: "string"
-                description: "The tags of the service"
-              debug_flow:
-                description: "Enable report debugging"
-                type: "boolean"
-              routes:
-                description: "The routes of the service"
-                type: "array"
-                items:
-                  type: "object"
-                  properties:
-                    backend_ref:
-                      description: "The backend id of the route (if one)"
-                      type: "string"
-                    override_plugins:
-                      description: "Override global plugin list from route composition"
-                      type: "boolean"
-                    backend:
-                      description: "The backend of the route"
-                      type: "object"
-                      properties:
-                        target_refs:
-                          type: "array"
-                          items:
-                            type: "string"
-                          description: "List of NgStoredBackend ids"
-                        root:
-                          description: "The root path of the backend or the full rewrite\
-                            \ path"
-                          type: "string"
-                        targets:
-                          description: "The targets of the backend"
-                          type: "array"
-                          items:
-                            type: "object"
-                            properties:
-                              predicate:
-                                description: "Predicate to choose this target"
-                                type: "object"
-                                properties:
-                                  rack:
-                                    description: "Rack name"
-                                    type: "string"
-                                  provider:
-                                    description: "Provider name"
-                                    type: "string"
-                                  dataCenter:
-                                    description: "Datacenter name"
-                                    type: "string"
-                                  zone:
-                                    description: "Zone name"
-                                    type: "string"
-                                  positions:
-                                    description: "Possible positions"
-                                    type: "array"
-                                    items:
-                                      type: "object"
-                                      properties:
-                                        latitude:
-                                          format: "double"
-                                          description: "Latitude of the position"
-                                          type: "number"
-                                        longitude:
-                                          format: "double"
-                                          description: "Longitude of the position"
-                                          type: "number"
-                                        radius:
-                                          format: "double"
-                                          description: "Radius of the circle in meters"
-                                          type: "number"
-                                  type:
-                                    description: "the kind of predicate"
-                                    type: "string"
-                                  region:
-                                    description: "Region name"
-                                    type: "string"
-                                  dc:
-                                    description: "DC name"
-                                    type: "string"
-                              protocol:
-                                description: "Protocol for the target"
-                                type: "string"
-                              hostname:
-                                description: "hostname of the target"
-                                type: "string"
-                              port:
-                                format: "int32"
-                                description: "port of the target"
-                                type: "integer"
-                              weight:
-                                format: "int32"
-                                description: "The weight of the target when choosing"
-                                type: "integer"
-                              tls:
-                                description: "Does the target uses TLS"
-                                type: "boolean"
-                              tls_config:
-                                description: "TLS settings to contact this target"
-                                type: "object"
-                                properties:
-                                  enabled:
-                                    description: "Enabled"
-                                    type: "boolean"
-                                  certs:
-                                    type: "array"
-                                    items:
-                                      type: "string"
-                                    description: "Trusted cert. ids"
-                                  loose:
-                                    description: "Loose verification"
-                                    type: "boolean"
-                                  trust_all:
-                                    description: "Trust any certificate"
-                                    type: "boolean"
-                                  trusted_certs:
-                                    type: "array"
-                                    items:
-                                      type: "string"
-                                    description: "Trusted cert. ids"
-                              id:
-                                description: "id of the target"
-                                type: "string"
-                              ip_address:
-                                description: "Target ip address. Usefull to make manual\
-                                  \ DNS resolution without breaking SNI"
-                                type: "string"
-                        rewrite:
-                          description: "Does the backend performs a full url rewrite\
-                            \ ?"
-                          type: "boolean"
-                        load_balancing:
-                          description: "Loadbalancing config og the backend"
-                          type: "object"
-                          properties:
-                            type:
-                              type: "string"
-                            ratio:
-                              type: "number"
-                              format: "double"
-                    frontend:
-                      description: "The frontend of the route"
-                      type: "object"
-                      properties:
-                        headers:
-                          type: "object"
-                          additionalProperties:
-                            type: "string"
-                          description: "the headers that will be matched"
-                        methods:
-                          type: "array"
-                          items:
-                            type: "string"
-                          description: "the http methods that will be matched"
-                        query:
-                          type: "object"
-                          additionalProperties:
-                            type: "string"
-                          description: "the query params that will be matched"
-                        exact:
-                          description: "Match on exact path ?"
-                          type: "boolean"
-                        domains:
-                          description: "The domain and path that will be matched"
-                          type: "array"
-                          items:
-                            type: "string"
-                        strip_path:
-                          description: "Is path stripped from backend request"
-                          type: "boolean"
-              name:
-                description: "The name of the service"
-                type: "string"
-              client:
-                description: "The client config of the service"
-                type: "object"
-                properties:
-                  custom_timeouts:
-                    description: "Custom timeouts per path"
-                    type: "array"
-                    items:
-                      type: "object"
-                      properties:
-                        connection_timeout:
-                          format: "int64"
-                          description: "Timeout at connection"
-                          type: "integer"
-                        call_and_stream_timeout:
-                          format: "int64"
-                          description: "Specify how long each call should last at\
-                            \ most in milliseconds (hard timeout, connection will\
-                            \ be closed after that duration)"
-                          type: "integer"
-                        path:
-                          description: "path on which this configuration works"
-                          type: "string"
-                        call_timeout:
-                          format: "int64"
-                          description: "Specify how long each call should last at\
-                            \ most in milliseconds (soft timeout as it's enforced\
-                            \ by the circuit breaker)"
-                          type: "integer"
-                        idle_timeout:
-                          format: "int64"
-                          description: "Timeout on idle connection"
-                          type: "integer"
-                        global_timeout:
-                          format: "int64"
-                          description: "Specify how long the global call (with retries)\
-                            \ should last at most in milliseconds"
-                          type: "integer"
-                  global_timeout:
-                    format: "int64"
-                    description: "Specify how long the global call (with retries)\
-                      \ should last at most in milliseconds"
-                    type: "integer"
-                  max_errors:
-                    format: "int32"
-                    description: "Specify how many errors can pass before opening\
-                      \ the circuit breaker"
-                    type: "integer"
-                  retry_initial_delay:
-                    format: "int64"
-                    description: "Specify the delay between two retries. Each retry,\
-                      \ the delay is multiplied by the backoff factor"
-                    type: "integer"
-                  backoff_factor:
-                    format: "int64"
-                    description: "Specify the factor to multiply the delay for each\
-                      \ retry"
-                    type: "integer"
-                  cache_connection_settings:
-                    description: "Cached connection settings"
-                    type: "object"
-                    properties:
-                      queue_size:
-                        format: "int32"
-                        description: "How much request can be queue before dropping\
-                          \ it"
-                        type: "integer"
-                      enabled:
-                        description: "Is cached connection enabled"
-                        type: "boolean"
-                  sample_interval:
-                    format: "int64"
-                    description: "Specify the sliding window time for the circuit\
-                      \ breaker in milliseconds, after this time, error count will\
-                      \ be reseted"
-                    type: "integer"
-                  call_and_stream_timeout:
-                    format: "int64"
-                    description: "Specify how long each call should last at most in\
-                      \ milliseconds (hard timeout, connection will be closed after\
-                      \ that duration)"
-                    type: "integer"
-                  retries:
-                    format: "int32"
-                    description: "Specify how many times the client will try to fetch\
-                      \ the result of the request after an error before giving up."
-                    type: "integer"
-                  proxy:
-                    type: "object"
-                    x-kubernetes-preserve-unknown-fields: true
-                    description: "Web proxy settings for http client"
-                  call_timeout:
-                    format: "int64"
-                    description: "Specify how long each call should last at most in\
-                      \ milliseconds (soft timeout as it's enforced by the circuit\
-                      \ breaker)"
-                    type: "integer"
-                  idle_timeout:
-                    format: "int64"
-                    description: "Timeout on idle connection"
-                    type: "integer"
-                  connection_timeout:
-                    format: "int64"
-                    description: "Timeout at connection"
-                    type: "integer"
-              id:
-                description: "The id of the service"
-                type: "string"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"
