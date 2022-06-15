@@ -256,17 +256,6 @@ class BackOfficeAppContainer extends Component {
                           )}
                         />
                         <Route
-                          path="/backends"
-                          component={(props) => (
-                            <BackendsPage
-                              globalEnv={this.state.env}
-                              setTitle={(t) => DynamicTitle.setContent(t)}
-                              getTitle={() => DynamicTitle.getContent()}
-                              {...props}
-                            />
-                          )}
-                        />
-                        <Route
                           path="/ngforms"
                           component={(props) => (
                             <NgFormPlayground
@@ -294,6 +283,18 @@ class BackOfficeAppContainer extends Component {
                           component={(props) =>
                             this.decorate(ApiKeysPage, { ...props, env: this.state.env })
                           }
+                        />
+                        <Route
+                          path="/backends/:taction/:titem"
+                          component={(props) => this.decorate(BackendsPage, { ...props, env: this.state.env })}
+                        />
+                        <Route
+                          path="/backends/:taction"
+                          component={(props) => this.decorate(BackendsPage, { ...props, env: this.state.env })}
+                        />
+                        <Route
+                          path="/backends"
+                          component={(props) => this.decorate(BackendsPage, { ...props, env: this.state.env })}
                         />
                         <Route
                           path="/organizations/:taction/:titem"
