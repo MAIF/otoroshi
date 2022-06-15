@@ -353,7 +353,6 @@ class GraphQLBackend extends NgBackendCall {
   def sliceArrayWithArgs(arr: IndexedSeq[JsValue], c: AstDirectiveContext[Unit]) = {
     val limit = extractLimit(c, arr.length.some)
     val offset = extractOffset(c)
-    // println(limit, offset, arr.slice(offset, limit))
     arr.slice(offset, limit)
   }
 
@@ -377,8 +376,9 @@ class GraphQLBackend extends NgBackendCall {
   def permissionResponse(authorized: Boolean, c: AstDirectiveContext[Unit]) = {
     if (!authorized)
       c.argOpt(unauthorizedValueArg).getOrElse(throw AuthorisationException("You're not authorized"))
-    else
+    else {
       ResolverBasedAstSchemaBuilder.extractFieldValue(c.ctx)
+    }
   }
 
   def permissionDirectiveResolver(c: AstDirectiveContext[Unit], config: GraphQLBackendConfig, ctx: NgbBackendCallContext)
@@ -602,6 +602,17 @@ class GraphQLBackend extends NgBackendCall {
             definition match {
               case o: ObjectTypeDefinition =>
                 o.copy(
+                  directives = o.directives.sortWith {
+                    case (a, b) =>
+                      val containsA = List("permission", "allpermissions", "onePermissionsOf", "authorize").contains(a.name)
+                      val containsB = List("permission", "allpermissions", "onePermissionsOf", "authorize").contains(b.name)
+                      if (containsA && containsB)
+                        true
+                      else if(containsA && !containsB)
+                        true
+                      else
+                        false
+                  },
                   fields = o.fields.map(field => {
                     val limitAndOffsetValues: Vector[InputValueDefinition] = field.directives.flatMap(directive => {
                       if (directive.arguments.exists(a => a.name == "paginate")) {
@@ -621,7 +632,20 @@ class GraphQLBackend extends NgBackendCall {
                       } else
                         Vector()
                     })
-                    field.copy(arguments = field.arguments ++ limitAndOffsetValues)
+                    field.copy(
+                      arguments = field.arguments ++ limitAndOffsetValues,
+                      directives = field.directives.sortWith {
+                        case (a, b) =>
+                          val containsA = List("permission", "allpermissions", "onePermissionsOf", "authorize").contains(a.name)
+                          val containsB = List("permission", "allpermissions", "onePermissionsOf", "authorize").contains(b.name)
+                          if (containsA && containsB)
+                            true
+                          else if(containsA && !containsB)
+                            true
+                          else
+                            false
+                      },
+                    )
                   })
                     .groupBy(_.name)
                     .map(_._2.head)
