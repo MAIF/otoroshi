@@ -1858,13 +1858,27 @@ export const nextClient = {
     SERVICES: 'services',
   },
   find: (entity) => fetchWrapper(`/${entity}`),
+  findAll: (entity) => fetchWrapper(`/${entity}`),
   create: (entity, content) => fetchWrapper(`/${entity}`, 'POST', content),
   update: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
   fetch: (entity, entityId) => fetchWrapper(`/${entity}/${entityId}`),
+  findById: (entity, entityId) => fetchWrapper(`/${entity}/${entityId}`),
   remove: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'DELETE'),
   deleteById: (entity, id) => fetchWrapper(`/${entity}/${id}`, 'DELETE'),
   template: (entity) => fetchWrapper(`/${entity}/_template`),
   form: (entity) => fetchWrapper(`/${entity}/_form`),
+  forEntity: (entity) => {
+    return {
+      findAll: () => fetchWrapper(`/${entity}`),
+      create: (content) => fetchWrapper(`/${entity}`, 'POST', content),
+      update: (content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
+      findById: (entityId) => fetchWrapper(`/${entity}/${entityId}`),
+      delete: (content) => fetchWrapper(`/${entity}/${content.id}`, 'DELETE'),
+      deleteById: (id) => fetchWrapper(`/${entity}/${id}`, 'DELETE'),
+      template: () => fetchWrapper(`/${entity}/_template`),
+      form: () => fetchWrapper(`/${entity}/_form`),
+    }
+  }
 };
 
 export const getPlugins = () => fetchWrapper('/plugins/all');
