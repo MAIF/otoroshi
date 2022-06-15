@@ -23572,6 +23572,11 @@
           }
         }
       },
+      "otoroshi.next.models.GraphQLFormats" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : { }
+      },
       "otoroshi.plugins.biscuit.BiscuitValidator" : {
         "description" : "Internal api",
         "type" : "object",
@@ -26337,6 +26342,16 @@
           }
         }
       },
+      "otoroshi.next.plugins.AuthorisationException" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "description" : "???",
+            "type" : "string"
+          }
+        }
+      },
       "otoroshi.next.models.NgCacheConnectionSettings" : {
         "description" : "The settings for http cached connection at host level",
         "type" : "object",
@@ -27140,6 +27155,16 @@
         "type" : "object",
         "properties" : {
           "root_path" : {
+            "description" : "???",
+            "type" : "string"
+          }
+        }
+      },
+      "otoroshi.next.plugins.GraphlCallException" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "message" : {
             "description" : "???",
             "type" : "string"
           }
