@@ -169,7 +169,8 @@ const Manager = ({ query, entity, ...props }) => {
                           <div className="d-flex-between" style={{ borderTop: '1px solid #666666', marginTop: 10, paddingTop: 10 }}>
                             <button type="button" className="btn btn-sm btn-danger me-1" style={{ marginTop: 5 }} onClick={e => {
                               const part = window.location.pathname.split('/')[3];
-                              window.location = `/bo/dashboard/${part}`
+                              // window.location = `/bo/dashboard/${part}`
+                              history.push(`/${part}`)
                             }}><i class="fas fa-times" /> Cancel</button>
                             <button type="button" className="btn btn-sm btn-danger me-1" style={{ marginTop: 5 }} onClick={e => {
                               const what = window.location.pathname.split('/')[3];
@@ -178,7 +179,8 @@ const Manager = ({ query, entity, ...props }) => {
                               window.newConfirm('are you sure you want to delete this entity ?').then((ok) => {
                                 if (ok) {
                                   nextClient.deleteById(kind, id).then(() => {
-                                    window.location = '/bo/dashboard/' + what;
+                                    // window.location = '/bo/dashboard/' + what;
+                                    history.push('/' + what);
                                   });
                                 }
                               });
@@ -192,7 +194,8 @@ const Manager = ({ query, entity, ...props }) => {
                               window.newConfirm('are you sure you want to duplicate this entity ?').then((ok) => {
                                 if (ok) {
                                   nextClient.create(kind, { ...value, name: value.name + ' (duplicated)', id: newId, enabled: false }).then(() => {
-                                    window.location = '/bo/dashboard/' + what + '/' + newId + '?tab=informations';
+                                    // window.location = '/bo/dashboard/' + what + '/' + newId + '?tab=informations';
+                                    history.push('/' + what + '/' + newId + '?tab=informations');
                                   });
                                 }
                               });
@@ -221,7 +224,7 @@ const Manager = ({ query, entity, ...props }) => {
                               document.body.appendChild(a);
                               a.click();
                               setTimeout(() => document.body.removeChild(a), 300);
-                            }}><i class="far fa-copy" /> Export JSON</button>
+                            }}><i class="fas fa-file-export" /> Export JSON</button>
                             <button type="button" className="btn btn-sm btn-info me-1" style={{ marginTop: 5 }} onClick={e => {
                               const what = window.location.pathname.split('/')[3];
                               const itemName = what === 'routes' ? 'route' : 'route-composition'
@@ -249,7 +252,7 @@ const Manager = ({ query, entity, ...props }) => {
                               document.body.appendChild(a);
                               a.click();
                               setTimeout(() => document.body.removeChild(a), 300);
-                            }}><i class="far fa-copy" /> Export YAML</button>                            
+                            }}><i class="fas fa-file-export" /> Export YAML</button>                            
                           </div>
                         </MenuContainer>
                       </ul>
