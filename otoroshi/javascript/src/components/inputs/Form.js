@@ -12,6 +12,7 @@ import {
 } from '.';
 import { Location } from '../Location';
 const CodeInput = React.lazy(() => Promise.resolve(require('./CodeInput')));
+import { JsonObjectAsCodeInput } from './CodeInput' // TODO: fix
 
 import _ from 'lodash';
 import deepGet from 'get-value';
@@ -232,6 +233,18 @@ export class Form extends Component {
           component = (
             <Suspense fallback={<div>loading ...</div>}>
               <CodeInput
+                disabled={disabled}
+                key={name}
+                value={this.getValue(name, '')}
+                {...props}
+                onChange={(v) => this.changeValue(name, v)}
+              />
+            </Suspense>
+          );
+        } else if (type === 'jsonobjectcode') {
+          component = (
+            <Suspense fallback={<div>loading ...</div>}>
+              <JsonObjectAsCodeInput
                 disabled={disabled}
                 key={name}
                 value={this.getValue(name, '')}

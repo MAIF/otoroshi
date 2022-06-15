@@ -6,6 +6,7 @@ import { TryIt } from './TryIt';
 import RouteCompositions from './RouteComposition';
 import Routes from './Routes';
 import { Informations } from './Informations';
+import { RouteForm } from './form';
 import DesignerSidebar from './Sidebar';
 
 import { ServiceEventsPage } from '../ServiceEventsPage';
@@ -280,6 +281,7 @@ const Manager = ({ query, entity, ...props }) => {
       ),
     },
     { predicate: query && query === 'try-it', render: () => <TryIt route={value} setSaveButton={setSaveButton} /> },
+    { predicate: query && query === 'form', render: () => <RouteForm routeId={p.routeId} /> },
     {
       predicate: query && query === 'routes',
       render: () =>

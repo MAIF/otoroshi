@@ -11,6 +11,7 @@ import 'brace/ext/searchbox';
 
 export class JsonObjectAsCodeInput extends Component {
   render() {
+    console.log('JsonObjectAsCodeInput', this.props.value)
     return (
       <CodeInput
         {...this.props}

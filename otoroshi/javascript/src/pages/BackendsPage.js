@@ -3,7 +3,7 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { nextClient } from '../services/BackOfficeServices';
 import { Table, Form } from '../components/inputs';
 
-class Target extends Component {
+export class Target extends Component {
 
   formSchema = {
     "id": { type: 'string', props: { label: 'Id' }},
@@ -23,8 +23,40 @@ class Target extends Component {
     "tls_config.enabled": { type: 'bool', props: { label: 'Enabled' }},
     "tls_config.loose": { type: 'bool', props: { label: 'Loose' }},
     "tls_config.trust_all": { type: 'bool', props: { label: 'Trust all' }},
-    "tls_config.certs": { type: 'array', props: { label: 'Certificates' }},
-    "tls_config.trusted_certs": { type: 'array', props: { label: 'Trusted Certificates' }},
+    "tls_config.certs": { type: 'array', props: { 
+      label: 'Certificates',
+      valuesFrom: "/bo/api/proxy/api/certificates",
+      transformer: (a) => {
+        return {
+          value: a.id,
+          label: (
+            <span>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }
+      }
+    }},
+    "tls_config.trusted_certs": { type: 'array', props: { 
+      label: 'Trusted Certificates',
+      valuesFrom: "/bo/api/proxy/api/certificates",
+      transformer: (a) => {
+        return {
+          value: a.id,
+          label: (
+            <span>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }
+      }
+    }},
   }
 
   formFlow = [
@@ -66,7 +98,7 @@ class Target extends Component {
   }
 }
 
-class CustomTimeout extends Component {
+export class CustomTimeout extends Component {
 
   formSchema = {
     "path": { type: 'string', props: { label: 'Path' }},
