@@ -561,7 +561,7 @@ class FieldForm extends React.Component {
         onError={() => { }}
         options={{ autosubmit: true }}
         onSubmit={data => {
-          // onChange({ ...data })
+          onChange(data)
         }}
         footer={() => null}
       />

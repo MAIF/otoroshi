@@ -1296,6 +1296,8 @@ class Designer extends React.Component {
     // TODO - better error display
     if (!loading && this.state.notFound) return <h1>Route not found</h1>;
 
+    console.log(backendCallNodes)
+
     return (
       <Loader loading={loading}>
         <Container
@@ -1311,6 +1313,7 @@ class Designer extends React.Component {
             hide={e => {
               e.stopPropagation()
               this.setState({
+                selectedNode: backendCallNodes.find(node => node.id.includes("otoroshi.next.plugins.GraphQLBackend")),
                 advancedDesignerView: false
               })
             }} />

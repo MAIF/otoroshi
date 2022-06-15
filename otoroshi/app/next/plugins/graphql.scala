@@ -12,7 +12,6 @@ import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{JsonPathUtils, JsonPathValidator, TypedMap}
-import otoroshi.next.plugins.SOAPAction
 import play.api.libs.json._
 import play.api.libs.ws.WSResponse
 import sangria.ast._
@@ -20,8 +19,7 @@ import sangria.execution.deferred.DeferredResolver
 import sangria.execution.{ExceptionHandler, Executor, HandledException, QueryReducer}
 import sangria.marshalling.playJson._
 import sangria.parser.QueryParser
-import sangria.schema
-import sangria.schema.{AbstractType, Action, Argument, AstDirectiveContext, AstSchemaBuilder, BooleanType, CompositeType, Directive, DirectiveResolver, EnumType, FieldResolver, InstanceCheck, IntType, IntrospectionSchemaBuilder, LeafType, ListInputType, MappedAbstractType, ObjectLikeType, OptionInputType, OptionType, ResolverBasedAstSchemaBuilder, ScalarAlias, ScalarType, Schema, StringType, UnionType}
+import sangria.schema.{Action, Argument, AstDirectiveContext, AstSchemaBuilder, BooleanType, Directive, DirectiveResolver, FieldResolver, InstanceCheck, IntType, IntrospectionSchemaBuilder, ListInputType, OptionInputType, ResolverBasedAstSchemaBuilder, Schema, StringType}
 import sangria.validation.{QueryValidator, ValueCoercionViolation, Violation}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration, MILLISECONDS}
@@ -30,11 +28,10 @@ import scala.jdk.CollectionConverters._
 import scala.util._
 import scala.util.control.NoStackTrace
 
-// [TODO]
-// @soap directive
-
 case object TooComplexQueryError extends Exception("Query is too expensive.") with NoStackTrace
 case class ViolationsException(errors: Seq[String]) extends Exception with NoStackTrace
+case class GraphlCallException(message: String) extends Exception(message)
+case class AuthorisationException(message: String) extends Exception(message)
 
 case class GraphQLQueryConfig(
     url: String,
@@ -244,7 +241,7 @@ class GraphQLBackend extends NgBackendCall {
 
   val exceptionHandler = ExceptionHandler(
     onException = {
-      case (marshaller, throwable) => HandledException(throwable.getMessage)
+      case (_ , throwable) => HandledException(throwable.getMessage)
     }
   )
 
@@ -520,9 +517,6 @@ class GraphQLBackend extends NgBackendCall {
         }
     } 
   }
-
-  case class GraphlCallException(message: String) extends Exception(message)
-  case class AuthorisationException(message: String) extends Exception(message)
 
   def graphQLDirectiveResolver(c: AstDirectiveContext[Unit], query: String, ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])
   (implicit env: Env, ec: ExecutionContext, mat: Materializer): Action[Unit, Any] = {

@@ -1085,6 +1085,10 @@
           }
         }
       },
+      "update_quotas" : {
+        "description" : "???",
+        "type" : "boolean"
+      },
       "extractors" : {
         "description" : "Configuration of the apikey extraction modes",
         "type" : "object",
@@ -3980,6 +3984,19 @@
       }
     }
   },
+  "otoroshi.next.plugins.ViolationsException" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "errors" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      }
+    }
+  },
   "TokenResponse" : {
     "type" : "object",
     "description" : "User login token response",
@@ -4095,6 +4112,24 @@
   "LetsEncryptCertBody" : {
     "type" : "object",
     "description" : "PEM encoded certificate"
+  },
+  "otoroshi.controllers.ServiceLike" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "groups" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "entity" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : { }
+      }
+    }
   },
   "otoroshi.script.PreRoutingContext" : {
     "description" : "Context for preroutes plugins",
@@ -6568,6 +6603,41 @@
       }
     }
   },
+  "otoroshi.next.plugins.GraphQLProxyConfig" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "schema" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "path" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "headers" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "endpoint" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "max_depth" : {
+        "format" : "int32",
+        "description" : "???",
+        "type" : "integer"
+      },
+      "max_complexity" : {
+        "format" : "double",
+        "description" : "???",
+        "type" : "number"
+      }
+    }
+  },
   "otoroshi.plugins.loggers.ResponseBodyEvent" : {
     "description" : "Internal api",
     "type" : "object",
@@ -7553,6 +7623,10 @@
       "metadataField" : {
         "description" : "Field name to get metadata from user profile",
         "type" : "string"
+      },
+      "clientSideSessionEnabled" : {
+        "description" : "???",
+        "type" : "boolean"
       },
       "rightsOverride" : {
         "description" : "Overrides user rights. Object with email as key",
@@ -10605,6 +10679,10 @@
         "description" : "The scope of the token",
         "type" : "string"
       },
+      "clientSideSessionEnabled" : {
+        "description" : "???",
+        "type" : "boolean"
+      },
       "rightsOverride" : {
         "description" : "Overrides user rights. Object with email as key",
         "additionalProperties" : {
@@ -12058,7 +12136,7 @@
     "properties" : { }
   },
   "otoroshi.next.plugins.GraphQLQueryConfig" : {
-    "description" : "Configuration for the GraphQLQuery plugin",
+    "description" : "???",
     "type" : "object",
     "properties" : {
       "headers" : {
@@ -12066,31 +12144,31 @@
         "additionalProperties" : {
           "type" : "string"
         },
-        "description" : "Headers to pass to the graphql call"
+        "description" : "???"
       },
       "method" : {
-        "description" : "Method for the graphql call",
+        "description" : "???",
         "type" : "string"
       },
       "query" : {
-        "description" : "Graphql query to pass to the graphql call",
+        "description" : "???",
         "type" : "string"
       },
       "response_filter" : {
-        "description" : "JQ filter applied on the response",
+        "description" : "???",
         "type" : "string"
       },
       "response_path" : {
-        "description" : "The optional json path to select in response",
+        "description" : "???",
         "type" : "string"
       },
       "url" : {
-        "description" : "URL of the graphql endpoint",
+        "description" : "???",
         "type" : "string"
       },
       "timeout" : {
         "format" : "int64",
-        "description" : "Timeout for the call (in ms)",
+        "description" : "???",
         "type" : "integer"
       }
     }
@@ -17278,15 +17356,15 @@
         "type" : "array",
         "items" : {
           "oneOfConstraints" : [ {
-            "required" : [ "metadata", "sessionCookieValues", "basicAuth", "type", "userValidators", "_loc", "users", "tags", "sessionMaxAge", "name", "webauthn", "id", "desc" ]
+            "required" : [ "metadata", "sessionCookieValues", "basicAuth", "type", "userValidators", "_loc", "users", "tags", "sessionMaxAge", "name", "webauthn", "clientSideSessionEnabled", "id", "desc" ]
           }, {
-            "required" : [ "refreshTokens", "metadata", "tokenUrl", "otoroshiRightsField", "mtlsConfig", "nameField", "emailField", "type", "introspectionUrl", "loginUrl", "scope", "rightsOverride", "callbackUrl", "clientSecret", "id", "extraMetadata", "accessTokenField", "userInfoUrl", "clientId", "useCookie", "authorizeUrl", "sessionCookieValues", "dataOverride", "superAdmins", "apiKeyMetaField", "useJson", "pkce", "apiKeyTagsField", "otoroshiDataField", "userValidators", "_loc", "tags", "jwtVerifier", "sessionMaxAge", "proxy", "logoutUrl", "noWildcardRedirectURI", "readProfileFromToken", "oidConfig", "name", "claims", "desc" ]
+            "required" : [ "refreshTokens", "metadata", "tokenUrl", "otoroshiRightsField", "mtlsConfig", "nameField", "emailField", "type", "introspectionUrl", "loginUrl", "scope", "clientSideSessionEnabled", "rightsOverride", "callbackUrl", "clientSecret", "id", "extraMetadata", "accessTokenField", "userInfoUrl", "clientId", "useCookie", "authorizeUrl", "sessionCookieValues", "dataOverride", "superAdmins", "apiKeyMetaField", "useJson", "pkce", "apiKeyTagsField", "otoroshiDataField", "userValidators", "_loc", "tags", "jwtVerifier", "sessionMaxAge", "proxy", "logoutUrl", "noWildcardRedirectURI", "readProfileFromToken", "oidConfig", "name", "claims", "desc" ]
           }, {
-            "required" : [ "groupFilters", "metadata", "allowEmptyPassword", "basicAuth", "searchBase", "nameField", "emailField", "extractProfileFilterNot", "type", "metadataField", "rightsOverride", "id", "groupRights", "extraMetadata", "searchFilter", "adminPassword", "extractProfileFilter", "sessionCookieValues", "dataOverride", "superAdmins", "userBase", "serverUrls", "userValidators", "_loc", "tags", "sessionMaxAge", "adminUsername", "extractProfile", "name", "desc" ]
+            "required" : [ "groupFilters", "metadata", "allowEmptyPassword", "basicAuth", "searchBase", "nameField", "emailField", "extractProfileFilterNot", "type", "metadataField", "clientSideSessionEnabled", "rightsOverride", "id", "groupRights", "extraMetadata", "searchFilter", "adminPassword", "extractProfileFilter", "sessionCookieValues", "dataOverride", "superAdmins", "userBase", "serverUrls", "userValidators", "_loc", "tags", "sessionMaxAge", "adminUsername", "extractProfile", "name", "desc" ]
           }, {
-            "required" : [ "profileURL", "metadata", "authorizeURL", "requestTokenURL", "sessionCookieValues", "type", "httpMethod", "userValidators", "_loc", "tags", "sessionMaxAge", "consumerSecret", "accessTokenURL", "name", "rightsOverride", "callbackURL", "id", "consumerKey", "desc" ]
+            "required" : [ "profileURL", "metadata", "authorizeURL", "requestTokenURL", "sessionCookieValues", "type", "httpMethod", "userValidators", "_loc", "tags", "sessionMaxAge", "consumerSecret", "accessTokenURL", "name", "clientSideSessionEnabled", "rightsOverride", "callbackURL", "id", "consumerKey", "desc" ]
           }, {
-            "required" : [ "validateSignature", "metadata", "ssoProtocolBinding", "sessionCookieValues", "validatingCertificates", "signature", "credentials", "validateAssertions", "type", "userValidators", "_loc", "issuer", "tags", "sessionMaxAge", "usedNameIDAsEmail", "singleLogoutUrl", "name", "emailAttributeName", "singleSignOnUrl", "nameIDFormat", "singleLogoutProtocolBinding", "id", "desc" ]
+            "required" : [ "validateSignature", "metadata", "ssoProtocolBinding", "sessionCookieValues", "validatingCertificates", "signature", "credentials", "validateAssertions", "type", "userValidators", "_loc", "issuer", "tags", "sessionMaxAge", "usedNameIDAsEmail", "singleLogoutUrl", "name", "emailAttributeName", "clientSideSessionEnabled", "singleSignOnUrl", "nameIDFormat", "singleLogoutProtocolBinding", "id", "desc" ]
           } ],
           "type" : "object",
           "properties" : {
@@ -17849,6 +17927,10 @@
             "accessTokenURL" : {
               "description" : "Endpoint requested by otoroshi to get access token during the authorization OAuth1 flow",
               "type" : "string"
+            },
+            "clientSideSessionEnabled" : {
+              "description" : "???",
+              "type" : "boolean"
             },
             "singleSignOnUrl" : {
               "description" : "URL used by otoroshi to redirect users to identity provider login page",
@@ -27684,6 +27766,11 @@
       }
     }
   },
+  "otoroshi.next.plugins.TooComplexQueryError" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : { }
+  },
   "WebAuthnRegistrationFinishBody" : {
     "type" : "object",
     "description" : ""
@@ -28597,6 +28684,11 @@
         "type" : "object"
       }
     }
+  },
+  "otoroshi.next.models.GraphQLFormats" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : { }
   },
   "otoroshi.plugins.biscuit.BiscuitValidator" : {
     "description" : "Internal api",
@@ -29904,7 +29996,7 @@
     "properties" : { }
   },
   "otoroshi.next.plugins.GraphQLQuery" : {
-    "description" : "Plugin to read data from GraphQL endpoints",
+    "description" : "???",
     "type" : "object",
     "properties" : {
       "headers" : {
@@ -29912,31 +30004,31 @@
         "additionalProperties" : {
           "type" : "string"
         },
-        "description" : "Headers to pass to the graphql call"
+        "description" : "???"
       },
       "method" : {
-        "description" : "Method for the graphql call",
+        "description" : "???",
         "type" : "string"
       },
       "query" : {
-        "description" : "Graphql query to pass to the graphql call",
+        "description" : "???",
         "type" : "string"
       },
       "response_filter" : {
-        "description" : "JQ filter applied on the response",
+        "description" : "???",
         "type" : "string"
       },
       "response_path" : {
-        "description" : "The optional json path to select in response",
+        "description" : "???",
         "type" : "string"
       },
       "url" : {
-        "description" : "URL of the graphql endpoint",
+        "description" : "???",
         "type" : "string"
       },
       "timeout" : {
         "format" : "int64",
-        "description" : "Timeout for the call (in ms)",
+        "description" : "???",
         "type" : "integer"
       }
     }
@@ -36276,6 +36368,10 @@
         "description" : "Use webauthn for login",
         "type" : "boolean"
       },
+      "clientSideSessionEnabled" : {
+        "description" : "???",
+        "type" : "boolean"
+      },
       "id" : {
         "description" : "id of the module",
         "type" : "string"
@@ -36590,6 +36686,41 @@
       "type" : {
         "type" : "string",
         "enum" : [ "none" ]
+      }
+    }
+  },
+  "otoroshi.next.plugins.GraphQLProxy" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "schema" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "path" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "headers" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "endpoint" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "max_depth" : {
+        "format" : "int32",
+        "description" : "???",
+        "type" : "integer"
+      },
+      "max_complexity" : {
+        "format" : "double",
+        "description" : "???",
+        "type" : "number"
       }
     }
   },
@@ -40587,6 +40718,16 @@
       }
     }
   },
+  "otoroshi.next.plugins.AuthorisationException" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "message" : {
+        "description" : "???",
+        "type" : "string"
+      }
+    }
+  },
   "otoroshi.next.models.NgCacheConnectionSettings" : {
     "description" : "The settings for http cached connection at host level",
     "type" : "object",
@@ -43845,6 +43986,10 @@
         "description" : "Field name to find email in user profile returned by identity provider",
         "type" : "string"
       },
+      "clientSideSessionEnabled" : {
+        "description" : "???",
+        "type" : "boolean"
+      },
       "singleSignOnUrl" : {
         "description" : "URL used by otoroshi to redirect users to identity provider login page",
         "type" : "string"
@@ -44274,6 +44419,16 @@
     "type" : "object",
     "properties" : {
       "root_path" : {
+        "description" : "???",
+        "type" : "string"
+      }
+    }
+  },
+  "otoroshi.next.plugins.GraphlCallException" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "message" : {
         "description" : "???",
         "type" : "string"
       }
@@ -45055,6 +45210,10 @@
         "description" : "The name of the OAuth 1 module",
         "type" : "string"
       },
+      "clientSideSessionEnabled" : {
+        "description" : "???",
+        "type" : "boolean"
+      },
       "rightsOverride" : {
         "description" : "Overrides user rights of users connected by OAuth1 module",
         "additionalProperties" : {
@@ -45609,15 +45768,15 @@
   },
   "otoroshi.auth.AuthModuleConfig" : {
     "oneOfConstraints" : [ {
-      "required" : [ "metadata", "sessionCookieValues", "basicAuth", "type", "userValidators", "_loc", "users", "tags", "sessionMaxAge", "name", "webauthn", "id", "desc" ]
+      "required" : [ "metadata", "sessionCookieValues", "basicAuth", "type", "userValidators", "_loc", "users", "tags", "sessionMaxAge", "name", "webauthn", "clientSideSessionEnabled", "id", "desc" ]
     }, {
-      "required" : [ "refreshTokens", "metadata", "tokenUrl", "otoroshiRightsField", "mtlsConfig", "nameField", "emailField", "type", "introspectionUrl", "loginUrl", "scope", "rightsOverride", "callbackUrl", "clientSecret", "id", "extraMetadata", "accessTokenField", "userInfoUrl", "clientId", "useCookie", "authorizeUrl", "sessionCookieValues", "dataOverride", "superAdmins", "apiKeyMetaField", "useJson", "pkce", "apiKeyTagsField", "otoroshiDataField", "userValidators", "_loc", "tags", "jwtVerifier", "sessionMaxAge", "proxy", "logoutUrl", "noWildcardRedirectURI", "readProfileFromToken", "oidConfig", "name", "claims", "desc" ]
+      "required" : [ "refreshTokens", "metadata", "tokenUrl", "otoroshiRightsField", "mtlsConfig", "nameField", "emailField", "type", "introspectionUrl", "loginUrl", "scope", "clientSideSessionEnabled", "rightsOverride", "callbackUrl", "clientSecret", "id", "extraMetadata", "accessTokenField", "userInfoUrl", "clientId", "useCookie", "authorizeUrl", "sessionCookieValues", "dataOverride", "superAdmins", "apiKeyMetaField", "useJson", "pkce", "apiKeyTagsField", "otoroshiDataField", "userValidators", "_loc", "tags", "jwtVerifier", "sessionMaxAge", "proxy", "logoutUrl", "noWildcardRedirectURI", "readProfileFromToken", "oidConfig", "name", "claims", "desc" ]
     }, {
-      "required" : [ "groupFilters", "metadata", "allowEmptyPassword", "basicAuth", "searchBase", "nameField", "emailField", "extractProfileFilterNot", "type", "metadataField", "rightsOverride", "id", "groupRights", "extraMetadata", "searchFilter", "adminPassword", "extractProfileFilter", "sessionCookieValues", "dataOverride", "superAdmins", "userBase", "serverUrls", "userValidators", "_loc", "tags", "sessionMaxAge", "adminUsername", "extractProfile", "name", "desc" ]
+      "required" : [ "groupFilters", "metadata", "allowEmptyPassword", "basicAuth", "searchBase", "nameField", "emailField", "extractProfileFilterNot", "type", "metadataField", "clientSideSessionEnabled", "rightsOverride", "id", "groupRights", "extraMetadata", "searchFilter", "adminPassword", "extractProfileFilter", "sessionCookieValues", "dataOverride", "superAdmins", "userBase", "serverUrls", "userValidators", "_loc", "tags", "sessionMaxAge", "adminUsername", "extractProfile", "name", "desc" ]
     }, {
-      "required" : [ "profileURL", "metadata", "authorizeURL", "requestTokenURL", "sessionCookieValues", "type", "httpMethod", "userValidators", "_loc", "tags", "sessionMaxAge", "consumerSecret", "accessTokenURL", "name", "rightsOverride", "callbackURL", "id", "consumerKey", "desc" ]
+      "required" : [ "profileURL", "metadata", "authorizeURL", "requestTokenURL", "sessionCookieValues", "type", "httpMethod", "userValidators", "_loc", "tags", "sessionMaxAge", "consumerSecret", "accessTokenURL", "name", "clientSideSessionEnabled", "rightsOverride", "callbackURL", "id", "consumerKey", "desc" ]
     }, {
-      "required" : [ "validateSignature", "metadata", "ssoProtocolBinding", "sessionCookieValues", "validatingCertificates", "signature", "credentials", "validateAssertions", "type", "userValidators", "_loc", "issuer", "tags", "sessionMaxAge", "usedNameIDAsEmail", "singleLogoutUrl", "name", "emailAttributeName", "singleSignOnUrl", "nameIDFormat", "singleLogoutProtocolBinding", "id", "desc" ]
+      "required" : [ "validateSignature", "metadata", "ssoProtocolBinding", "sessionCookieValues", "validatingCertificates", "signature", "credentials", "validateAssertions", "type", "userValidators", "_loc", "issuer", "tags", "sessionMaxAge", "usedNameIDAsEmail", "singleLogoutUrl", "name", "emailAttributeName", "clientSideSessionEnabled", "singleSignOnUrl", "nameIDFormat", "singleLogoutProtocolBinding", "id", "desc" ]
     } ],
     "type" : "object",
     "properties" : {
@@ -46180,6 +46339,10 @@
       "accessTokenURL" : {
         "description" : "Endpoint requested by otoroshi to get access token during the authorization OAuth1 flow",
         "type" : "string"
+      },
+      "clientSideSessionEnabled" : {
+        "description" : "???",
+        "type" : "boolean"
       },
       "singleSignOnUrl" : {
         "description" : "URL used by otoroshi to redirect users to identity provider login page",
@@ -47298,6 +47461,10 @@
             "description" : "Matching on none tags being present"
           }
         }
+      },
+      "update_quotas" : {
+        "description" : "???",
+        "type" : "boolean"
       },
       "extractors" : {
         "description" : "Configuration of the apikey extraction modes",

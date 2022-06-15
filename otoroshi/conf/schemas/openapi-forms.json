@@ -7624,6 +7624,15 @@
     "schema" : { },
     "flow" : [ ]
   },
+  "otoroshi.next.plugins.GraphlCallException" : {
+    "schema" : {
+      "message" : {
+        "label" : "message",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "message" ]
+  },
   "otoroshi.utils.JsonPathValidator" : {
     "schema" : {
       "path" : {
@@ -32102,6 +32111,10 @@
     },
     "flow" : [ "filter" ]
   },
+  "otoroshi.next.models.GraphQLFormats" : {
+    "schema" : { },
+    "flow" : [ ]
+  },
   "otoroshi.next.models.NgMatchedRoutes" : {
     "schema" : {
       "path" : {
@@ -32824,6 +32837,26 @@
       }
     },
     "flow" : [ "oneTagIn", "noneMetaKeysIn", "oneMetaIn", "oneMetaKeyIn", "allMetaKeysIn", "noneTagIn", "allTagsIn", "allMetaIn", "noneMetaIn" ]
+  },
+  "otoroshi.controllers.ServiceLike" : {
+    "schema" : {
+      "groups" : {
+        "label" : "groups",
+        "type" : "string",
+        "array" : true,
+        "format" : null
+      },
+      "entity" : {
+        "label" : "entity",
+        "type" : "object",
+        "format" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : { },
+        "flow" : [ ]
+      }
+    },
+    "flow" : [ "groups", "entity" ]
   },
   "otoroshi.next.plugins.GlobalMaintenanceMode" : {
     "schema" : { },
@@ -42377,6 +42410,15 @@
       }
     },
     "flow" : [ "certType", "metadata", "subject", "letsEncrypt", "keypair", "description", "revoked", "valid", "password", "autoRenew", "exposed", "client", "from", "selfSigned", "id", "ca", "chain", "sans", "_loc", "tags", "privateKey", "caRef", "domain", "name", "to" ]
+  },
+  "otoroshi.next.plugins.AuthorisationException" : {
+    "schema" : {
+      "message" : {
+        "label" : "message",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "message" ]
   },
   "otoroshi.models.Outage" : {
     "schema" : {
