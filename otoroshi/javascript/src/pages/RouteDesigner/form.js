@@ -1,12 +1,143 @@
 import React, { Component } from 'react';
 import { nextClient } from '../../services/BackOfficeServices';
 import { Form } from '../../components/inputs';
-import { Target, CustomTimeout } from '../BackendsPage';
 import { Collapse } from '../../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import { FeedbackButton } from './FeedbackButton';
+import { NgForm } from '../../components/nginputs/form';
 
-const schemas = {
+export class Target extends Component {
+
+  formSchema = {
+    "id": { type: 'string', props: { label: 'Id' }},
+    "hostname": { type: 'string', props: { label: 'Hostname' }},
+    "port": { type: 'number', props: { label: 'Port' }},
+    "tls": { type: 'bool', props: { label: 'TLS' }},
+    "weight": { type: 'number', props: { label: 'Weight' }},
+    "predicate.type": { type: 'select', props: { label: 'Predicate', possibleValues: ['AlwaysMatch', 'GeolocationMatch', 'NetworkLocationMatch'].map(e => ({ label: e, value: e })) }},
+    "predicate.position": { type: 'array', display: (obj) => obj.predicate.type === 'GeolocationMatch', props: { label: 'Predicate positions' }},
+    "predicate.provider": { type: 'string', display: (obj) => obj.predicate.type === 'NetworkLocationMatch', props: { label: 'Predicate provider' }},
+    "predicate.region": { type: 'string', display: (obj) => obj.predicate.type === 'NetworkLocationMatch', props: { label: 'Predicate region' }},
+    "predicate.zone": { type: 'string', display: (obj) => obj.predicate.type === 'NetworkLocationMatch', props: { label: 'Predicate zone' }},
+    "predicate.dataCenter": { type: 'string', display: (obj) => obj.predicate.type === 'NetworkLocationMatch', props: { label: 'Predicate data center' }},
+    "predicate.rack": { type: 'string', display: (obj) => obj.predicate.type === 'NetworkLocationMatch', props: { label: 'Predicate rack' }},
+    "protocol": { type: 'string', props: { label: 'Protocol', possibleValues: ['HTTP/1.0', 'HTTP/1.1', 'HTTP/2.0'].map(e => ({ label: e, value: e })) }},
+    "ip_address": { type: 'string', props: { label: 'IP Address' }},
+    "tls_config.enabled": { type: 'bool', props: { label: 'Enabled' }},
+    "tls_config.loose": { type: 'bool', props: { label: 'Loose' }},
+    "tls_config.trust_all": { type: 'bool', props: { label: 'Trust all' }},
+    "tls_config.certs": { type: 'array', props: { 
+      label: 'Certificates',
+      valuesFrom: "/bo/api/proxy/api/certificates",
+      transformer: (a) => {
+        return {
+          value: a.id,
+          label: (
+            <span>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }
+      }
+    }},
+    "tls_config.trusted_certs": { type: 'array', props: { 
+      label: 'Trusted Certificates',
+      valuesFrom: "/bo/api/proxy/api/certificates",
+      transformer: (a) => {
+        return {
+          value: a.id,
+          label: (
+            <span>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }
+      }
+    }},
+  }
+
+  formFlow = [
+    "id",
+    "hostname",
+    "port",
+    "tls",
+    "weight",
+    "predicate.type",
+    "predicate.position",
+    "predicate.provider",
+    "predicate.region",
+    "predicate.zone",
+    "predicate.dataCenter",
+    "predicate.rack",
+    "protocol",
+    "ip_address",
+    '>>>TLS Settings',
+    "tls_config.enabled",
+    "tls_config.loose",
+    "tls_config.trust_all",
+    "tls_config.certs",
+    "tls_config.trusted_certs",
+  ]
+
+  render() {
+    return (
+      <Form
+        schema={this.formSchema}
+        flow={this.formFlow}
+        value={this.props.itemValue}
+        onChange={e => {
+          const arr = this.props.value;
+          arr[this.props.idx] = e;
+          this.props.onChange(arr)
+        }}
+      />
+    )
+  }
+}
+
+export class CustomTimeout extends Component {
+
+  formSchema = {
+    "path": { type: 'string', props: { label: 'Path' }},
+    "global_timeout": { type: 'number', props: { label: 'global timeout', suffix: 'milliseconds' }},
+    "connection_timeout": { type: 'number', props: { label: 'connection timeout', suffix: 'milliseconds' }},
+    "idle_timeout": { type: 'number', props: { label: 'idle timeout', suffix: 'milliseconds' }},
+    "call_timeout": { type: 'number', props: { label: 'call timeout', suffix: 'milliseconds' }},
+    "call_and_stream_timeout": { type: 'number', props: { label: 'call and stream timeout', suffix: 'milliseconds' }},
+  }
+
+  formFlow = [
+    "path",
+    "global_timeout",       
+    "connection_timeout",
+    "idle_timeout",
+    "call_timeout",
+    "call_and_stream_timeout",
+  ]
+
+  render() {
+    return (
+      <Form
+        schema={this.formSchema}
+        flow={this.formFlow}
+        value={this.props.itemValue}
+        onChange={e => {
+          const arr = this.props.value;
+          arr[this.props.idx] = e;
+          this.props.onChange(arr)
+        }}
+      />
+    )
+  }
+}
+
+export const schemas = {
   route: {
     schema: {
       _loc: {
@@ -228,19 +359,19 @@ const schemas = {
     ]
   },
   plugin: {
-    schema: {
+    schema: (plugins) => ({
       'enabled': { type: 'bool', props: { label: 'enabled' }},
       'debug': { type: 'bool', props: { label: 'debug' }},
-      'plugin': { type: 'select', props: { label: 'plugin', valuesFrom: '/bo/api/proxy/api/experimental/plugins/all', transformer: (a) => ({
+      'plugin': { type: 'select', props: { label: 'plugin', possibleValues: plugins, _valuesFrom: '/bo/api/proxy/api/experimental/plugins/all', _transformer: (a) => ({
         value: a.id, // TODO: preload list here
         label: a.name,
         desc: a.description,
       })} },
       'include': { type: 'array', props: { label: 'included paths', suffix: 'regex' }},
       'exclude': { type: 'array', props: { label: 'excluded paths', suffix: 'regex' }},
-      'config': { type: 'jsonobjectcode', props: { label: 'config' }},
-      'plugin_index': { type: 'jsonobjectcode', props: { label: 'index' }},
-    },
+      'config': { type: 'jsonobjectcode', props: { label: 'plugin configuration' }},
+      'plugin_index': { type: 'jsonobjectcode', props: { label: 'plugin index', height: '50px' }},
+    }),
     flow: [
       'plugin',
       'enabled',
@@ -255,11 +386,12 @@ const schemas = {
 
 export class RouteForm extends Component {
 
-  state = { value: null };
+  state = { value: null, plugins: [] };
 
   componentDidMount() {
     this.client = nextClient.forEntity(nextClient.ENTITIES.ROUTES);
     this.load();
+    this.loadPlugins();
     this.props.setSaveButton(
       <FeedbackButton
         className="ms-2"
@@ -274,6 +406,16 @@ export class RouteForm extends Component {
     this.client.findById(this.props.routeId).then(value => {
       this.setState({ value })
     })
+  }
+
+  loadPlugins = () => {
+    return fetch('/bo/api/proxy/api/experimental/plugins/all', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        accept: 'application/json'
+      }
+    }).then(r => r.json()).then(plugins => this.setState({ plugins }))
   }
 
   save = () => {
@@ -311,20 +453,42 @@ export class RouteForm extends Component {
             onChange={frontend => this.setState({ value: { ...this.state.value, frontend } })}
           />
         </Collapse>
-        <Collapse key="backend" initCollapsed label="Backend">
+        <Collapse key="backend_ref" initCollapsed label="Backend reference">
           <Form
-            schema={schemas.backend.schema}
-            flow={schemas.backend.flow}
+            schema={{ 
+              'backend_ref': { type: 'select', props: { label: 'backend references', valuesFrom: '/bo/api/proxy/api/experimental/backends', transformer: (a) => ({
+              value: a.id,
+              label: a.name,
+              desc: a.description,
+            }) }}}}
+            flow={['backend_ref']}
+            value={{ backend_ref: this.state.value.backend_ref }}
+            onChange={obj => this.setState({ value: { ...this.state.value, backend_ref: obj.backend_ref } })}
+          />
+        </Collapse>
+        {!this.state.value.backend_ref && <Collapse key="backend" initCollapsed label="Backend">
+          <Form
+            schema={{ ...schemas.backend.schema, 'backend_ref': { type: 'select', props: { label: 'backend reference', valuesFrom: '/bo/api/proxy/api/experimental/backends', transformer: (a) => ({
+              value: a.id,
+              label: a.name,
+              desc: a.description,
+            }) }}}}
+            flow={['backend_ref', ...schemas.backend.flow]}
             value={this.state.value.backend}
             onChange={backend => this.setState({ value: { ...this.state.value, backend } })}
           />
-        </Collapse>
+        </Collapse>}
         <Collapse key="plugins" initCollapsed label="Plugins">
           {this.state.value.plugins.map((plugin, idx) => {
             return (
               <Plugin 
+                pluginInfos={this.state.plugins.filter(p => p.id === plugin.plugin)[0]}
                 plugin={plugin} 
-                schema={schemas.plugin.schema} 
+                schema={schemas.plugin.schema(this.state.plugins.map(a => ({ 
+                  value: a.id,
+                  label: a.name,
+                  desc: a.description,
+                })))} 
                 flow={schemas.plugin.flow} 
                 onChange={plugin => {
                   const plugins = this.state.value.plugins;
@@ -400,6 +564,7 @@ class Plugin extends Component {
     if (!plugin) {
       return null;
     }
+    console.log(this.props.pluginInfos)
     return (
       <>
         <div style={{ width: '100%', paddingTop: 5, paddingBottom: 5, marginTop: 40, marginBottom: 10, display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -422,13 +587,29 @@ class Plugin extends Component {
           </div>
         </div>
         {this.state.form && (
-          <Form
-            key={plugin.plugin}
-            schema={this.props.schema}
-            flow={this.props.flow}
-            value={plugin}
-            onChange={p => this.props.onChange(p)}
-          />
+          <>
+            <Form
+              key={plugin.plugin}
+              schema={this.props.schema}
+              flow={this.props.flow}
+              value={plugin}
+              onChange={p => this.props.onChange(p)}
+            />
+            {this.props.pluginInfos.config_flow.length > 0 && <div className="row" style={{ width: '100%' }}>
+              <label className="col-md-2 col-form-label">
+                plugin configuration form
+              </label>
+              <div className="col-md-10">
+                <NgForm 
+                  key={plugin.plugin}
+                  value={plugin.config}
+                  onChange={config => this.props.onChange({ ...plugin, config })}
+                  flow={this.props.pluginInfos.config_flow}
+                  schema={this.props.pluginInfos.config_schema}
+                />
+              </div>
+            </div>}
+          </>
         )}
         {!this.state.form && (
           <form>

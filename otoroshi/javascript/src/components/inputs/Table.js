@@ -496,7 +496,18 @@ export class Table extends Component {
                 })}
               </form>,
             ]}
-            {!this.props.formComponent && (
+            {this.props.formFunction && [
+              this.props.injectToolbar
+                ? this.props.injectToolbar(this.state, (s) => this.setState(s))
+                : null,
+              this.props.formFunction({
+                value: this.state.currentItem,
+                onChange: (currentItem) => this.setState({ currentItem }),
+                flow: this.props.formFlow,
+                schema: this.props.formSchema,
+              })
+            ]}
+            {!this.props.formComponent && !this.props.formFunction && (
               <Form
                 value={this.state.currentItem}
                 onChange={(currentItem) => this.setState({ currentItem })}
@@ -536,7 +547,18 @@ export class Table extends Component {
                 })}
               </form>,
             ]}
-            {!this.props.formComponent && (
+            {this.props.formFunction && [
+              this.props.injectToolbar
+                ? this.props.injectToolbar(this.state, (s) => this.setState(s))
+                : null,
+              this.props.formFunction({
+                value: this.state.currentItem,
+                onChange: (currentItem) => this.setState({ currentItem }),
+                flow: this.props.formFlow,
+                schema: this.props.formSchema,
+              })
+            ]}
+            {!this.props.formComponent && !this.props.formFunction && (
               <Form
                 value={this.state.currentItem}
                 onChange={(currentItem) => this.setState({ currentItem })}

@@ -86,7 +86,7 @@ export class NgFormRenderer extends Component {
         return (
           <div
             style={{
-              outline: '1px solid yellow',
+              outline: '1px solid #41413e',
               padding: 5,
               margin: 5,
               display: 'flex',
@@ -132,7 +132,7 @@ export class NgFormRenderer extends Component {
         return (
           <div
             style={{
-              outline: '1px solid yellow',
+              outline: '1px solid #41413e',
               padding: 5,
               margin: 5,
               display: 'flex',
