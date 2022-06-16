@@ -18,7 +18,7 @@
     "ws": "7.4.6"
   },
   "devDependencies": {
-    "electron": "17.1.0",
+    "electron": "17.2.0",
     "electron-packager": "15.4.0"
   }
 }
