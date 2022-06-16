@@ -176,12 +176,12 @@ class SideView extends React.Component {
       })
   }
 
-  removeField = (e, i) => {
+  removeField = (e, typeIdx, fieldIdx) => {
     e.stopPropagation();
     this.setState({
-      types: this.state.types.map(type => ({
+      types: this.state.types.map((type, i) => ({
         ...type,
-        fields: type.fields.filter((_, j) => j !== i)
+        fields: i === typeIdx ? type.fields.filter((_, j) => j !== fieldIdx) : type.fields
       }))
     })
   }
@@ -216,7 +216,7 @@ class SideView extends React.Component {
             types.map((type, i) => <Type {...type} key={`type${i}`}
               isSelected={fieldIdx => selectedField ? selectedField.typeIdx === i && selectedField.fieldIdx === fieldIdx : undefined}
               onSelectField={fieldIdx => this.onSelectField(i, fieldIdx)}
-              removeField={this.removeField}
+              removeField={(e, fieldIdx) => this.removeField(e, i, fieldIdx)}
               createField={fieldname => this.createField(fieldname, i)} />)
           }
           <CreationButton

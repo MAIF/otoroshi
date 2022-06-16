@@ -164,7 +164,6 @@ class RouteForms extends React.Component {
     const { originalRoute } = this.props;
     const { frontend, backend, backendRef } = this.state;
 
-    console.log(originalRoute.frontend, frontend);
     return (
       isEqual(originalRoute.frontend, frontend) &&
       isEqual(originalRoute.backend, backend) &&
@@ -379,7 +378,6 @@ export default ({ service, setSaveButton, setService, viewPlugins }) => {
   }, []);
 
   useEffect(() => {
-    console.log('set routes from useEffect');
     setRoutes(cloneDeep([...(service.routes || [])]));
   }, [service.id]);
 
@@ -521,7 +519,7 @@ export default ({ service, setSaveButton, setService, viewPlugins }) => {
         <button
           className="btn btn-sm btn-success"
           onClick={() => {
-            const newItem = { ...templates?.routes[0] };
+            const newItem = cloneDeep(templates?.routes[0])
             updateRoute(routes.length, newItem);
           }}>
           <i className="fas fa-road me-1" />
