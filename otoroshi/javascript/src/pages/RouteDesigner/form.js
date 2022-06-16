@@ -1,8 +1,10 @@
 import React, { Component } from 'react';
 import { nextClient } from '../../services/BackOfficeServices';
-import { Table, Form } from '../../components/inputs';
+import { Form } from '../../components/inputs';
 import { Target, CustomTimeout } from '../BackendsPage';
 import { Collapse } from '../../components/inputs/Collapse';
+import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
+import { FeedbackButton } from './FeedbackButton';
 
 const schemas = {
   route: {
@@ -240,8 +242,8 @@ const schemas = {
       'plugin_index': { type: 'jsonobjectcode', props: { label: 'index' }},
     },
     flow: [
-      'enabled',
       'plugin',
+      'enabled',
       'debug',
       'include',
       'exclude',
@@ -258,17 +260,33 @@ export class RouteForm extends Component {
   componentDidMount() {
     this.client = nextClient.forEntity(nextClient.ENTITIES.ROUTES);
     this.load();
+    this.props.setSaveButton(
+      <FeedbackButton
+        className="ms-2"
+        onPress={this.save}
+        text="Save route"
+        icon={() => <i className="fas fa-paper-plane" />}
+      />
+    );
   }
 
   load = () => {
     this.client.findById(this.props.routeId).then(value => {
-      console.log(value)
       this.setState({ value })
     })
   }
 
-  save = (entity) => {
-    this.client.create(entity)
+  save = () => {
+    const entity = this.state.value;
+    if (this.props.isCreating) {
+      this.client.create(entity).then(e => this.props.setValue(e))
+    } else {
+      this.client.update(entity).then(e => this.props.setValue(e))
+    }
+  }
+
+  delete = () => {
+    this.client.deleteById(this.state.value.id)
   }
 
   render() {
@@ -303,29 +321,121 @@ export class RouteForm extends Component {
         </Collapse>
         <Collapse key="plugins" initCollapsed label="Plugins">
           {this.state.value.plugins.map((plugin, idx) => {
-            // TODO: header
-            // TODO: remove
-            // TODO: move
-            // TODO: show json or form
             return (
-              <>
-                <Form
-                  key={plugin.plugin}
-                  schema={schemas.plugin.schema}
-                  flow={schemas.plugin.flow}
-                  value={plugin}
-                  onChange={plugin => {
-                    const plugins = this.state.value.plugins;
-                    plugins[idx] = plugin;
+              <Plugin 
+                plugin={plugin} 
+                schema={schemas.plugin.schema} 
+                flow={schemas.plugin.flow} 
+                onChange={plugin => {
+                  const plugins = this.state.value.plugins;
+                  plugins[idx] = plugin;
+                  this.setState({ value: { ...this.state.value, plugins  } })
+                }} 
+                onDelete={() => {
+                  const plugins = this.state.value.plugins;
+                  plugins.splice(idx, 1);
+                  this.setState({ value: { ...this.state.value, plugins  } })
+                }}
+                onUp={() => {
+                  const plugins = this.state.value.plugins;
+                  if (idx > 0) {
+                    const newIdx = idx - 1;
+                    const prev = plugins[newIdx];
+                    plugins[newIdx] = plugin;
+                    plugins[idx] = prev;
                     this.setState({ value: { ...this.state.value, plugins  } })
-                  }}
-                />
-                <div style={{ width: '100%', height: 5, backgroundColor: 'red' }} />
-              </>
+                  }
+                }}
+                onDown={() => {
+                  const plugins = this.state.value.plugins;
+                  if (idx < (plugins.length - 1)) {
+                    const newIdx = idx + 1;
+                    const prev = plugins[newIdx];
+                    plugins[newIdx] = plugin;
+                    plugins[idx] = prev;
+                    this.setState({ value: { ...this.state.value, plugins  } })
+                  }
+                }}
+                addBefore={() => {
+                  const plugins = this.state.value.plugins;
+                  plugins.splice(idx, 0, {
+                    "enabled": true,
+                    "debug": false,
+                    "plugin": null,
+                    "include": [],
+                    "exclude": [],
+                    "config": {},
+                    "plugin_index": {}
+                  })
+                  this.setState({ value: { ...this.state.value, plugins  } })
+                }}
+                addAfter={() => {
+                  const plugins = this.state.value.plugins;
+                  plugins.splice(idx + 1, 0, {
+                    "enabled": true,
+                    "debug": false,
+                    "plugin": null,
+                    "include": [],
+                    "exclude": [],
+                    "config": {},
+                    "plugin_index": {}
+                  })
+                  this.setState({ value: { ...this.state.value, plugins  } })
+                }}
+              />
             );
           })}
         </Collapse>
       </div>
     )
+  }
+}
+
+class Plugin extends Component {
+
+  state = { form: true }
+
+  render() {
+    const plugin = this.props.plugin;
+    if (!plugin) {
+      return null;
+    }
+    return (
+      <>
+        <div style={{ width: '100%', paddingTop: 5, paddingBottom: 5, marginTop: 40, marginBottom: 10, display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
+          <div className="col-sm-2"></div>
+          <div style={{ width: '100%' }}></div>
+          <div className="btn-group" style={{ marginRight: 10, width: 400 }}>
+            <button type="button" className="btn btn-sm btn-primary" onClick={e => this.props.addBefore()}><i className="fas fa-plus" /> plugin <i className="fas fa-chevron-up" /></button>
+            <button type="button" className="btn btn-sm btn-primary" onClick={e => this.props.addAfter()}><i className="fas fa-plus" /> plugin <i className="fas fa-chevron-down" /></button>
+          </div>
+          <div className="btn-group" style={{ marginRight: 10 }}>
+            <button type="button" className="btn btn-sm btn-primary" onClick={e => this.setState({ form: true })}>form</button>
+            <button type="button" className="btn btn-sm btn-primary" onClick={e => this.setState({ form: false })}>json</button>
+          </div>
+          <div className="btn-group" style={{ marginRight: 10 }}>
+            <button type="button" className="btn btn-sm btn-primary" onClick={e => this.props.onUp(plugin)}><i className="fas fa-chevron-up" /></button>
+            <button type="button" className="btn btn-sm btn-primary" onClick={e => this.props.onDown(plugin)}><i className="fas fa-chevron-down" /></button>
+          </div>
+          <div className="btn-group">
+            <button type="button" className="btn btn-sm btn-danger" onClick={e => this.props.onDelete(plugin)}><i className="fas fa-trash" /></button>
+          </div>
+        </div>
+        {this.state.form && (
+          <Form
+            key={plugin.plugin}
+            schema={this.props.schema}
+            flow={this.props.flow}
+            value={plugin}
+            onChange={p => this.props.onChange(p)}
+          />
+        )}
+        {!this.state.form && (
+          <form>
+            <JsonObjectAsCodeInput label="plugin" value={plugin} onChange={p => this.props.onChange(p)} />
+          </form>
+        )}
+      </>
+    );
   }
 }

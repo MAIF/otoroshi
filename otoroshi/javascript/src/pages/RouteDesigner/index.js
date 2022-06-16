@@ -87,6 +87,13 @@ const Manager = ({ query, entity, ...props }) => {
                   enabled: () => !isOnViewPlugins,
                 },
                 {
+                  to: `/${entity.link}/${value.id}?tab=form`,
+                  icon: 'fa-file-alt',
+                  title: 'Form',
+                  tab: 'form',
+                  enabled: () => !isOnViewPlugins,
+                },
+                {
                   to: `/${entity.link}/${value.id}?tab=routes`,
                   icon: 'fa-road',
                   title: 'Routes',
@@ -281,7 +288,8 @@ const Manager = ({ query, entity, ...props }) => {
       ),
     },
     { predicate: query && query === 'try-it', render: () => <TryIt route={value} setSaveButton={setSaveButton} /> },
-    { predicate: query && query === 'form', render: () => <RouteForm routeId={p.routeId} /> },
+    { predicate: query && query === 'form' && entity.fetchName === 'ROUTES', render: () => <RouteForm setSaveButton={setSaveButton} isCreation={isCreation} routeId={p.routeId} setValue={setValue} /> },
+    { predicate: query && query === 'form' && entity.fetchName === 'SERVICES', render: () => <div>services</div> },
     {
       predicate: query && query === 'routes',
       render: () =>
