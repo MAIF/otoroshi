@@ -5,6 +5,7 @@ import { Collapse } from '../../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import { FeedbackButton } from './FeedbackButton';
 import { NgForm } from '../../components/nginputs/form';
+import { Form as MaifForm } from '@maif/react-forms';
 
 export class Target extends Component {
 
@@ -557,16 +558,23 @@ export class RouteForm extends Component {
 
 class Plugin extends Component {
 
-  state = { form: true }
+  state = { form: true, ngForm: false }
+
+  switchForm = () => {
+    this.setState({ ngForm: !this.state.ngForm })
+  }
 
   render() {
     const plugin = this.props.plugin;
+    const pluginInfos = this.props.pluginInfos;
     if (!plugin) {
       return null;
     }
-    console.log(this.props.pluginInfos)
+    if (plugin.plugin === 'cp:otoroshi.next.plugins.ApikeyCalls') {
+      pluginInfos.config_flow = ['wipe_backend_request', 'pass_with_user', 'validate', 'update_quotas', 'routing', 'extractors']
+    }
     return (
-      <>
+      <Collapse label={`   - ${pluginInfos.name}`} initCollapsed={true}>
         <div style={{ width: '100%', paddingTop: 5, paddingBottom: 5, marginTop: 40, marginBottom: 10, display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
           <div className="col-sm-2"></div>
           <div style={{ width: '100%' }}></div>
@@ -595,18 +603,26 @@ class Plugin extends Component {
               value={plugin}
               onChange={p => this.props.onChange(p)}
             />
-            {this.props.pluginInfos.config_flow.length > 0 && <div className="row" style={{ width: '100%' }}>
-              <label className="col-md-2 col-form-label">
+            {pluginInfos.config_flow.length > 0 && <div className="row" style={{ width: '100%' }}>
+              <label className="col-md-2 col-form-label" onClick={this.switchForm}>
                 plugin configuration form
               </label>
               <div className="col-md-10">
-                <NgForm 
+                {this.state.ngForm && <NgForm 
                   key={plugin.plugin}
                   value={plugin.config}
                   onChange={config => this.props.onChange({ ...plugin, config })}
-                  flow={this.props.pluginInfos.config_flow}
-                  schema={this.props.pluginInfos.config_schema}
-                />
+                  flow={pluginInfos.config_flow}
+                  schema={pluginInfos.config_schema}
+                />}
+                {!this.state.ngForm && <MaifForm
+                  value={plugin.config}
+                  schema={pluginInfos.config_schema}
+                  flow={pluginInfos.config_flow}
+                  onSubmit={config => this.props.onChange({ ...plugin, config })}
+                  options={{ autosubmit: true }}
+                  footer={() => null}
+                />}
               </div>
             </div>}
           </>
@@ -616,7 +632,7 @@ class Plugin extends Component {
             <JsonObjectAsCodeInput label="plugin" value={plugin} onChange={p => this.props.onChange(p)} />
           </form>
         )}
-      </>
+      </Collapse>
     );
   }
 }
