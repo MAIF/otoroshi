@@ -387,7 +387,7 @@ export const schemas = {
 
 export class RouteForm extends Component {
 
-  state = { value: null, plugins: [] };
+  state = { value: null, plugins: [], json: false };
 
   componentDidMount() {
     this.client = nextClient.forEntity(nextClient.ENTITIES.ROUTES);
@@ -436,8 +436,19 @@ export class RouteForm extends Component {
     if (!this.state.value) {
       return null;
     }
+    if (this.state.json) {
+      return (
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+          <button type="button" onClick={e => this.setState({ json: false })}>switch</button>
+          <form>
+              <JsonObjectAsCodeInput editorOnly height={window.innerHeight - 180} label="plugin" value={this.state.value} onChange={value => this.setState({ value })} />
+          </form>
+        </div>
+      )
+    }
     return (
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+        <button type="button" className="hide" onClick={e => this.setState({ json: true })}>switch</button>
         <Collapse key="informations" label="Informations">
           <Form
             schema={schemas.route.schema}
