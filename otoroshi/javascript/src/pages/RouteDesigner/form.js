@@ -404,7 +404,7 @@ export class RouteForm extends Component {
   }
 
   load = () => {
-    this.client.findById(this.props.routeId).then(value => {
+    return this.client.findById(this.props.routeId).then(value => {
       this.setState({ value })
     })
   }
@@ -422,14 +422,14 @@ export class RouteForm extends Component {
   save = () => {
     const entity = this.state.value;
     if (this.props.isCreating) {
-      this.client.create(entity).then(e => this.props.setValue(e))
+      return this.client.create(entity).then(e => this.props.setValue(e))
     } else {
-      this.client.update(entity).then(e => this.props.setValue(e))
+      return this.client.update(entity).then(e => this.props.setValue(e))
     }
   }
 
   delete = () => {
-    this.client.deleteById(this.state.value.id)
+    return this.client.deleteById(this.state.value.id)
   }
 
   render() {
@@ -480,12 +480,8 @@ export class RouteForm extends Component {
         </Collapse>
         {!this.state.value.backend_ref && <Collapse key="backend" initCollapsed label="Backend">
           <Form
-            schema={{ ...schemas.backend.schema, 'backend_ref': { type: 'select', props: { label: 'backend reference', valuesFrom: '/bo/api/proxy/api/experimental/backends', transformer: (a) => ({
-              value: a.id,
-              label: a.name,
-              desc: a.description,
-            }) }}}}
-            flow={['backend_ref', ...schemas.backend.flow]}
+            schema={{ ...schemas.backend.schema }}
+            flow={schemas.backend.flow}
             value={this.state.value.backend}
             onChange={backend => this.setState({ value: { ...this.state.value, backend } })}
           />
@@ -541,7 +537,7 @@ export class RouteForm extends Component {
                     "include": [],
                     "exclude": [],
                     "config": {},
-                    "plugin_index": {}
+                    "plugin_index": null
                   })
                   this.setState({ value: { ...this.state.value, plugins  } })
                 }}
@@ -554,7 +550,7 @@ export class RouteForm extends Component {
                     "include": [],
                     "exclude": [],
                     "config": {},
-                    "plugin_index": {}
+                    "plugin_index": null
                   })
                   this.setState({ value: { ...this.state.value, plugins  } })
                 }}
@@ -577,7 +573,7 @@ class Plugin extends Component {
 
   render() {
     const plugin = this.props.plugin;
-    const pluginInfos = this.props.pluginInfos;
+    const pluginInfos = this.props.pluginInfos || { name: '', config_flow: [], config_schema: {}};
     if (!plugin) {
       return null;
     }
