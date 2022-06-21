@@ -566,8 +566,26 @@
 
     .endpoint {
         background-color: #595959;
-        border-radius: 8px;
+        border-radius: 4px;
         padding: 4px 8px;
+    }
+
+    .card-endpoint {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 125px;
+        min-width: 100px;
+        justify-content: space-around;
+        border: 1px solid #787978;
+        border-radius: 4px;
+        margin-right: 4px;
+        cursor: pointer;
+    }
+
+    .card-endpoint label {
+        font-weight: bold;
+        cursor: pointer;
     }
 
     .generated-endpoint .content-switch-button-off,

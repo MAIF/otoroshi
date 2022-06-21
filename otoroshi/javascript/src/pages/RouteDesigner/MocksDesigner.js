@@ -198,18 +198,13 @@ export default class MocksDesigner extends React.Component {
                     </div>
                     <div className='my-2'>
                         <h3>Resources</h3>
-                        <div className='mt-3'>
+                        <div className='mt-3 d-flex'>
                             {this.state.resources.map((resource, idx) => {
-                                return <div className='d-flex-between mt-1 endpoint' key={resource.name}>
+                                return <div className='mt-1 card-endpoint' key={resource.name} onClick={() => this.showResourceForm(idx)}>
                                     <label>{resource.name}</label>
-                                    <div>
-                                        <button className='btn btn-sm btn-success mx-1' onClick={() => this.showResourceForm(idx)} >
-                                            <i className='fas fa-edit' />
-                                        </button>
-                                        <button className='btn btn-sm btn-danger' onClick={() => this.removeResource(idx)} >
-                                            <i className='fas fa-trash' />
-                                        </button>
-                                    </div>
+                                    <button className='btn btn-sm btn-danger' onClick={() => this.removeResource(idx)}>
+                                        <i className='fas fa-trash' />
+                                    </button>
                                 </div>
                             })}
                         </div>
@@ -367,6 +362,12 @@ class NewResource extends React.Component {
         }, callback)
     }
 
+    emptyField = className => <div className={`row mb-3 flex ${className}`}>
+        <div className='col-sm-12 d-flex'>
+            <label className='flex text-center'>-</label>
+        </div>
+    </div>
+
     render() {
         const { name, schema, objectTemplate } = this.state
 
@@ -383,6 +384,12 @@ class NewResource extends React.Component {
                     Schema (optional) <Help text="Define Resource schema, it will be used to generate mock data." />
                 </label>
                 <div className="col-sm-10">
+                    <div className='d-flex-between mb-2'>
+                        <label className='flex text-center'>Field name</label>
+                        <label className='flex text-center'>Field type</label>
+                        <label className='flex text-center'>Faker value</label>
+                        <label className='flex text-center'>Value</label>
+                    </div>
                     {schema.map(({ field_name, type, value }, i) => (
                         <div className='d-flex-between' key={`schema-${i}`}>
                             <TextInput
@@ -395,14 +402,8 @@ class NewResource extends React.Component {
                                 flex={true}
                                 className="mx-1"
                                 value={type}
-                                onChange={v => {
-                                    this.onSchemaFieldChange(i, "type", v, () => {
-                                        if (v !== 'Faker.js')
-                                            this.onSchemaFieldChange(i, "value", '')
-                                    })
-                                }}
+                                onChange={v => this.onSchemaFieldChange(i, "type", v, () => this.onSchemaFieldChange(i, "value", ''))}
                                 possibleValues={[
-                                    'Faker.js',
                                     'String',
                                     'Number',
                                     'Boolean',
@@ -412,23 +413,25 @@ class NewResource extends React.Component {
                                     'Child'
                                 ]} />
 
-                            {type === "Faker.js" && <SelectInput
+                            {type !== "Child" ? <SelectInput
                                 flex={true}
                                 value={value}
+                                className="me-1"
                                 onChange={v => this.onSchemaFieldChange(i, "value", v)}
-                                possibleValues={FakerOptions} />}
+                                possibleValues={FakerOptions} />
+                                : this.emptyField('me-1')}
                             {type === "Child" && <SelectInput
                                 flex={true}
                                 value={value}
                                 onChange={v => this.onSchemaFieldChange(i, "value", v)}
                                 possibleValues={this.props.resources.map(a => a.name)}
                             />}
-                            {!["Faker.js", "Child"].includes(type) && <TextInput
+                            {!["Child", "Faker.js"].includes(type) ? <TextInput
                                 flex={true}
                                 value={value}
-                                placeholder="default value"
+                                placeholder="or value"
                                 onChange={v => this.onSchemaFieldChange(i, "value", v)}
-                            />}
+                            /> : (type !== 'Child' ? this.emptyField() : null)}
                         </div>
                     ))}
                     <button className='btn btn-sm btn-save' onClick={() => this.setState({
@@ -555,7 +558,7 @@ class NewEndpoint extends React.Component {
 const Header = ({ hide }) => <div className='d-flex-between'>
     <div className='flex'>
         <div className='d-flex-between'>
-            <h3>Charlatan</h3>
+            <h3>Tanuki</h3>
             <button
                 className="btn btn-sm"
                 type="button"
