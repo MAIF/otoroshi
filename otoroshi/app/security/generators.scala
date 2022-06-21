@@ -48,20 +48,24 @@ object IdGenerator {
       (((timestamp - minus) << 22L) | (generatorId << 10L) | counter.incrementAndGet()) + append
     }
 
-  def uuid: String =
+  def uuid: String = {
+    val random = ThreadLocalRandom.current()
     (for {
       c <- 0 to 36
     } yield c match {
       case i if i == 9 || i == 14 || i == 19 || i == 24 => "-"
       case i if i == 15                                 => "4"
-      case i if c == 20                                 => INIT_STRING((ThreadLocalRandom.current().nextDouble() * 4.0).toInt | 8)
-      case i                                            => INIT_STRING((ThreadLocalRandom.current().nextDouble() * 15.0).toInt | 0)
+      case i if c == 20                                 => INIT_STRING((random.nextDouble() * 4.0).toInt | 8)
+      case i                                            => INIT_STRING((random.nextDouble() * 15.0).toInt | 0)
     }).mkString("")
+  }
 
-  def token(characters: Array[String], size: Int): String =
+  def token(characters: Array[String], size: Int): String = {
+    val random = ThreadLocalRandom.current()
     (for {
       i <- 0 to size - 1
-    } yield characters(ThreadLocalRandom.current().nextInt(characters.size))).mkString("")
+    } yield characters(random.nextInt(characters.size))).mkString("")
+  }
 
   def token(size: Int): String                                = token(CHARACTERS, size)
   def token: String                                           = token(64)
