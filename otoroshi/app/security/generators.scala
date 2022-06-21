@@ -3,8 +3,9 @@ package otoroshi.security
 import otoroshi.env.Env
 
 import java.util.UUID
+import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicLong
-import scala.util.{Random, Try}
+import scala.util.Try
 
 class IdGenerator(generatorId: Long) {
   def nextId(): Long          = IdGenerator.nextId(generatorId)
@@ -53,14 +54,14 @@ object IdGenerator {
     } yield c match {
       case i if i == 9 || i == 14 || i == 19 || i == 24 => "-"
       case i if i == 15                                 => "4"
-      case i if c == 20                                 => INIT_STRING((Random.nextDouble() * 4.0).toInt | 8)
-      case i                                            => INIT_STRING((Random.nextDouble() * 15.0).toInt | 0)
+      case i if c == 20                                 => INIT_STRING((ThreadLocalRandom.current().nextDouble() * 4.0).toInt | 8)
+      case i                                            => INIT_STRING((ThreadLocalRandom.current().nextDouble() * 15.0).toInt | 0)
     }).mkString("")
 
   def token(characters: Array[String], size: Int): String =
     (for {
       i <- 0 to size - 1
-    } yield characters(Random.nextInt(characters.size))).mkString("")
+    } yield characters(ThreadLocalRandom.current().nextInt(characters.size))).mkString("")
 
   def token(size: Int): String                                = token(CHARACTERS, size)
   def token: String                                           = token(64)

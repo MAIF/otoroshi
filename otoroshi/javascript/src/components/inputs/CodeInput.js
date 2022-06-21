@@ -121,6 +121,10 @@ export default class CodeInput extends Component {
       />
     );
 
+    if (this.props.editorOnly) {
+      return editor;
+    }
+
     return (
       <div className="row mb-3">
         {!this.props.hideLabel && (

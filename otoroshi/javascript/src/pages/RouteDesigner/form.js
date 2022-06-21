@@ -5,6 +5,7 @@ import { Collapse } from '../../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import { FeedbackButton } from './FeedbackButton';
 import { NgForm } from '../../components/nginputs/form';
+import { Form as MaifForm } from '@maif/react-forms';
 
 export class Target extends Component {
 
@@ -386,7 +387,7 @@ export const schemas = {
 
 export class RouteForm extends Component {
 
-  state = { value: null, plugins: [] };
+  state = { value: null, plugins: [], json: false };
 
   componentDidMount() {
     this.client = nextClient.forEntity(nextClient.ENTITIES.ROUTES);
@@ -403,7 +404,7 @@ export class RouteForm extends Component {
   }
 
   load = () => {
-    this.client.findById(this.props.routeId).then(value => {
+    return this.client.findById(this.props.routeId).then(value => {
       this.setState({ value })
     })
   }
@@ -421,22 +422,33 @@ export class RouteForm extends Component {
   save = () => {
     const entity = this.state.value;
     if (this.props.isCreating) {
-      this.client.create(entity).then(e => this.props.setValue(e))
+      return this.client.create(entity).then(e => this.props.setValue(e))
     } else {
-      this.client.update(entity).then(e => this.props.setValue(e))
+      return this.client.update(entity).then(e => this.props.setValue(e))
     }
   }
 
   delete = () => {
-    this.client.deleteById(this.state.value.id)
+    return this.client.deleteById(this.state.value.id)
   }
 
   render() {
     if (!this.state.value) {
       return null;
     }
+    if (this.state.json) {
+      return (
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+          <button type="button" onClick={e => this.setState({ json: false })}>switch</button>
+          <form>
+              <JsonObjectAsCodeInput editorOnly height={window.innerHeight - 180} label="plugin" value={this.state.value} onChange={value => this.setState({ value })} />
+          </form>
+        </div>
+      )
+    }
     return (
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+        <button type="button" className="hide" onClick={e => this.setState({ json: true })}>switch</button>
         <Collapse key="informations" label="Informations">
           <Form
             schema={schemas.route.schema}
@@ -468,12 +480,8 @@ export class RouteForm extends Component {
         </Collapse>
         {!this.state.value.backend_ref && <Collapse key="backend" initCollapsed label="Backend">
           <Form
-            schema={{ ...schemas.backend.schema, 'backend_ref': { type: 'select', props: { label: 'backend reference', valuesFrom: '/bo/api/proxy/api/experimental/backends', transformer: (a) => ({
-              value: a.id,
-              label: a.name,
-              desc: a.description,
-            }) }}}}
-            flow={['backend_ref', ...schemas.backend.flow]}
+            schema={{ ...schemas.backend.schema }}
+            flow={schemas.backend.flow}
             value={this.state.value.backend}
             onChange={backend => this.setState({ value: { ...this.state.value, backend } })}
           />
@@ -529,7 +537,7 @@ export class RouteForm extends Component {
                     "include": [],
                     "exclude": [],
                     "config": {},
-                    "plugin_index": {}
+                    "plugin_index": null
                   })
                   this.setState({ value: { ...this.state.value, plugins  } })
                 }}
@@ -542,7 +550,7 @@ export class RouteForm extends Component {
                     "include": [],
                     "exclude": [],
                     "config": {},
-                    "plugin_index": {}
+                    "plugin_index": null
                   })
                   this.setState({ value: { ...this.state.value, plugins  } })
                 }}
@@ -557,16 +565,23 @@ export class RouteForm extends Component {
 
 class Plugin extends Component {
 
-  state = { form: true }
+  state = { form: true, ngForm: false }
+
+  switchForm = () => {
+    this.setState({ ngForm: !this.state.ngForm })
+  }
 
   render() {
     const plugin = this.props.plugin;
+    const pluginInfos = this.props.pluginInfos || { name: '', config_flow: [], config_schema: {}};
     if (!plugin) {
       return null;
     }
-    console.log(this.props.pluginInfos)
+    if (plugin.plugin === 'cp:otoroshi.next.plugins.ApikeyCalls') {
+      pluginInfos.config_flow = ['wipe_backend_request', 'pass_with_user', 'validate', 'update_quotas', 'routing', 'extractors']
+    }
     return (
-      <>
+      <Collapse label={`   - ${pluginInfos.name}`} initCollapsed={true}>
         <div style={{ width: '100%', paddingTop: 5, paddingBottom: 5, marginTop: 40, marginBottom: 10, display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
           <div className="col-sm-2"></div>
           <div style={{ width: '100%' }}></div>
@@ -595,18 +610,26 @@ class Plugin extends Component {
               value={plugin}
               onChange={p => this.props.onChange(p)}
             />
-            {this.props.pluginInfos.config_flow.length > 0 && <div className="row" style={{ width: '100%' }}>
-              <label className="col-md-2 col-form-label">
+            {pluginInfos.config_flow.length > 0 && <div className="row" style={{ width: '100%' }}>
+              <label className="col-md-2 col-form-label" onClick={this.switchForm}>
                 plugin configuration form
               </label>
               <div className="col-md-10">
-                <NgForm 
+                {this.state.ngForm && <NgForm 
                   key={plugin.plugin}
                   value={plugin.config}
                   onChange={config => this.props.onChange({ ...plugin, config })}
-                  flow={this.props.pluginInfos.config_flow}
-                  schema={this.props.pluginInfos.config_schema}
-                />
+                  flow={pluginInfos.config_flow}
+                  schema={pluginInfos.config_schema}
+                />}
+                {!this.state.ngForm && <MaifForm
+                  value={plugin.config}
+                  schema={pluginInfos.config_schema}
+                  flow={pluginInfos.config_flow}
+                  onSubmit={config => this.props.onChange({ ...plugin, config })}
+                  options={{ autosubmit: true }}
+                  footer={() => null}
+                />}
               </div>
             </div>}
           </>
@@ -616,7 +639,7 @@ class Plugin extends Component {
             <JsonObjectAsCodeInput label="plugin" value={plugin} onChange={p => this.props.onChange(p)} />
           </form>
         )}
-      </>
+      </Collapse>
     );
   }
 }

@@ -1,7 +1,6 @@
 package otoroshi.utils.clevercloud
 
 import java.util.Base64
-
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import akka.NotUsed
@@ -15,6 +14,7 @@ import play.api.libs.json.{JsArray, JsObject, JsValue}
 import play.utils.UriEncoding
 import otoroshi.utils.clevercloud.CleverCloudClient.CleverSettings
 
+import java.util.concurrent.ThreadLocalRandom
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success}
 
@@ -86,7 +86,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
       Keys.oauth_signature_method -> "PLAINTEXT",
       Keys.oauth_signature        -> s"${settings.apiConsumerSecret}&${tokenSecret.getOrElse("")}",
       Keys.oauth_timestamp        -> s"${Math.floor(System.currentTimeMillis() / 1000).toInt}",
-      Keys.oauth_nonce            -> s"${Random.nextInt(1000000000)}"
+      Keys.oauth_nonce            -> s"${ThreadLocalRandom.current().nextInt(1000000000)}"
     )
 
   def cleverCall(

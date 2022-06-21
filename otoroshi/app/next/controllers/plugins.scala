@@ -99,9 +99,10 @@ class NgPluginsController(
         "plugin_steps"                  -> JsArray(plugin.steps.map(_.json)),
         "plugin_tags"                   -> JsArray(plugin.tags.map(JsString.apply)),
         "plugin_multi_inst"             -> plugin.multiInstance,
-        "plugin_backend_call_delegates" -> (if (plugin.isInstanceOf[NgBackendCall])
-                                              plugin.asInstanceOf[NgBackendCall].useDelegates
-                                            else false),
+        "plugin_backend_call_delegates" -> (plugin match {
+          case call: NgBackendCall => call.useDelegates
+          case _ => false
+        }),
         "on_request"                    -> onRequest,
         "on_response"                   -> onResponse
       )
