@@ -6690,6 +6690,88 @@
     "description" : "Plugin to mock responses",
     "type" : "object",
     "properties" : {
+      "form_data" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "endpoints" : {
+            "description" : "???",
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "resource_list" : {
+                  "description" : "???",
+                  "type" : "boolean"
+                },
+                "path" : {
+                  "description" : "???",
+                  "type" : "string"
+                },
+                "headers" : {
+                  "description" : "???",
+                  "type" : "object"
+                },
+                "method" : {
+                  "description" : "???",
+                  "type" : "string"
+                },
+                "resource" : {
+                  "description" : "???",
+                  "type" : "string"
+                },
+                "body" : {
+                  "description" : "???",
+                  "type" : "object"
+                },
+                "status" : {
+                  "format" : "int32",
+                  "description" : "???",
+                  "type" : "integer"
+                }
+              }
+            }
+          },
+          "resources" : {
+            "description" : "???",
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "schema" : {
+                  "description" : "???",
+                  "type" : "array",
+                  "items" : {
+                    "type" : "object",
+                    "properties" : {
+                      "field_name" : {
+                        "description" : "???",
+                        "type" : "string"
+                      },
+                      "field_type" : {
+                        "description" : "???",
+                        "type" : "string"
+                      },
+                      "value" : {
+                        "description" : "???",
+                        "type" : "object"
+                      }
+                    }
+                  }
+                },
+                "additional_data" : {
+                  "description" : "???",
+                  "type" : "object"
+                },
+                "name" : {
+                  "description" : "???",
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      },
       "pass_through" : {
         "description" : "Pass the call if no mocked response found",
         "type" : "boolean"
@@ -10599,6 +10681,41 @@
       }
     }
   },
+  "otoroshi.next.plugins.MockResource" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "schema" : {
+        "description" : "???",
+        "type" : "array",
+        "items" : {
+          "type" : "object",
+          "properties" : {
+            "field_name" : {
+              "description" : "???",
+              "type" : "string"
+            },
+            "field_type" : {
+              "description" : "???",
+              "type" : "string"
+            },
+            "value" : {
+              "description" : "???",
+              "type" : "object"
+            }
+          }
+        }
+      },
+      "additional_data" : {
+        "description" : "???",
+        "type" : "object"
+      },
+      "name" : {
+        "description" : "???",
+        "type" : "string"
+      }
+    }
+  },
   "otoroshi.auth.GenericOauth2ModuleConfig" : {
     "description" : "Authentication module that works with OAuth2/OIDC",
     "type" : "object",
@@ -12567,6 +12684,41 @@
       "desc" : {
         "description" : "The description of the script",
         "type" : "string"
+      }
+    }
+  },
+  "otoroshi.next.plugins.MockEndpoint" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "resource_list" : {
+        "description" : "???",
+        "type" : "boolean"
+      },
+      "path" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "headers" : {
+        "description" : "???",
+        "type" : "object"
+      },
+      "method" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "resource" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "body" : {
+        "description" : "???",
+        "type" : "object"
+      },
+      "status" : {
+        "format" : "int32",
+        "description" : "???",
+        "type" : "integer"
       }
     }
   },
@@ -25615,6 +25767,88 @@
     "description" : "Configuration for MockResponses",
     "type" : "object",
     "properties" : {
+      "form_data" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "endpoints" : {
+            "description" : "???",
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "resource_list" : {
+                  "description" : "???",
+                  "type" : "boolean"
+                },
+                "path" : {
+                  "description" : "???",
+                  "type" : "string"
+                },
+                "headers" : {
+                  "description" : "???",
+                  "type" : "object"
+                },
+                "method" : {
+                  "description" : "???",
+                  "type" : "string"
+                },
+                "resource" : {
+                  "description" : "???",
+                  "type" : "string"
+                },
+                "body" : {
+                  "description" : "???",
+                  "type" : "object"
+                },
+                "status" : {
+                  "format" : "int32",
+                  "description" : "???",
+                  "type" : "integer"
+                }
+              }
+            }
+          },
+          "resources" : {
+            "description" : "???",
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "schema" : {
+                  "description" : "???",
+                  "type" : "array",
+                  "items" : {
+                    "type" : "object",
+                    "properties" : {
+                      "field_name" : {
+                        "description" : "???",
+                        "type" : "string"
+                      },
+                      "field_type" : {
+                        "description" : "???",
+                        "type" : "string"
+                      },
+                      "value" : {
+                        "description" : "???",
+                        "type" : "object"
+                      }
+                    }
+                  }
+                },
+                "additional_data" : {
+                  "description" : "???",
+                  "type" : "object"
+                },
+                "name" : {
+                  "description" : "???",
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      },
       "pass_through" : {
         "description" : "Pass the call if no mocked response found",
         "type" : "boolean"
@@ -36146,6 +36380,88 @@
       }
     }
   },
+  "otoroshi.next.plugins.MockFormData" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "endpoints" : {
+        "description" : "???",
+        "type" : "array",
+        "items" : {
+          "type" : "object",
+          "properties" : {
+            "resource_list" : {
+              "description" : "???",
+              "type" : "boolean"
+            },
+            "path" : {
+              "description" : "???",
+              "type" : "string"
+            },
+            "headers" : {
+              "description" : "???",
+              "type" : "object"
+            },
+            "method" : {
+              "description" : "???",
+              "type" : "string"
+            },
+            "resource" : {
+              "description" : "???",
+              "type" : "string"
+            },
+            "body" : {
+              "description" : "???",
+              "type" : "object"
+            },
+            "status" : {
+              "format" : "int32",
+              "description" : "???",
+              "type" : "integer"
+            }
+          }
+        }
+      },
+      "resources" : {
+        "description" : "???",
+        "type" : "array",
+        "items" : {
+          "type" : "object",
+          "properties" : {
+            "schema" : {
+              "description" : "???",
+              "type" : "array",
+              "items" : {
+                "type" : "object",
+                "properties" : {
+                  "field_name" : {
+                    "description" : "???",
+                    "type" : "string"
+                  },
+                  "field_type" : {
+                    "description" : "???",
+                    "type" : "string"
+                  },
+                  "value" : {
+                    "description" : "???",
+                    "type" : "object"
+                  }
+                }
+              }
+            },
+            "additional_data" : {
+              "description" : "???",
+              "type" : "object"
+            },
+            "name" : {
+              "description" : "???",
+              "type" : "string"
+            }
+          }
+        }
+      }
+    }
+  },
   "otoroshi.plugins.jsoup.HtmlPatcher" : {
     "description" : "Plugin to transform html response body",
     "type" : "object",
@@ -45513,6 +45829,24 @@
         "description" : "the kind of mailer",
         "type" : "string",
         "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
+      }
+    }
+  },
+  "otoroshi.next.plugins.MockField" : {
+    "description" : "???",
+    "type" : "object",
+    "properties" : {
+      "field_name" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "field_type" : {
+        "description" : "???",
+        "type" : "string"
+      },
+      "value" : {
+        "description" : "???",
+        "type" : "object"
       }
     }
   },

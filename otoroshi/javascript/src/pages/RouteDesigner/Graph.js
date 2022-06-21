@@ -1,6 +1,7 @@
 import React from 'react';
 import { type } from '@maif/react-forms';
 import GraphQLForm from './GraphQLForm';
+import MocksDesigner from './MocksDesigner';
 
 export const PLUGIN_INFORMATIONS_SCHEMA = {
   enabled: {
@@ -47,24 +48,24 @@ export const LEGACY_PLUGINS_WRAPPER = {
 };
 
 export const PLUGINS = {
-  "cp:otoroshi.next.plugins.SOAPAction" : (plugin, showAdvancedDesignerView) => ({
+  "cp:otoroshi.next.plugins.SOAPAction": (plugin) => ({
     ...plugin,
     schema: {
       ...plugin.schema,
       envelope: {
-        "label" : "envelope",
-        "type" : "string",
+        "label": "envelope",
+        "type": "string",
         "format": "code"
       }
     }
   }),
-  "cp:otoroshi.next.plugins.SOAPActionConfig": (plugin, showAdvancedDesignerView) => ({
+  "cp:otoroshi.next.plugins.SOAPActionConfig": (plugin) => ({
     ...plugin,
     schema: {
       ...plugin.schema,
       envelope: {
-        "label" : "envelope",
-        "type" : "string",
+        "label": "envelope",
+        "type": "string",
         "format": "code"
       }
     }
@@ -76,43 +77,43 @@ export const PLUGINS = {
         type: 'bool',
         label: null,
         defaultValue: false,
-        render: props => {
-          return (
-            <button
-              type="button"
-              className="btn btn-sm btn-success me-3 mb-3"
-              onClick={showAdvancedDesignerView}>
-              Use form view
-            </button>
-          );
-        },
+        render: () => <button
+          type="button"
+          className="btn btn-sm btn-success me-3 mb-3"
+          onClick={() => showAdvancedDesignerView(GraphQLForm)}>
+          Use form view
+        </button>
       },
       permissions: {
         type: type.string,
         array: true,
         label: 'Permissions paths',
       },
-      ...Object.fromEntries(
-        Object.entries(plugin.schema).map(([key, value]) => {
-          return [
-            key,
-            {
-              ...value,
-              visible: {
-                ref: 'turn_view',
-                test: (v, idx) => v
-              },
-            },
-          ];
-        })
-      ),
-      graphQLForm: {
-        label: null,
-        type: 'bool',
-        render: () => <GraphQLForm />
-      }
+      ...plugin.schema
     },
-    flow: plugin.flow.indexOf('permissions') > -1 ? ["turn_view", ...plugin.flow, "graphQLForm"] : ["turn_view", ...plugin.flow, 'permissions', "graphQLForm"]
+    flow: plugin.flow.indexOf('permissions') > -1 ? ["turn_view", ...plugin.flow] : ["turn_view", ...plugin.flow, 'permissions']
+  }),
+  "cp:otoroshi.next.plugins.MockResponses": (plugin, showAdvancedDesignerView) => ({
+    ...plugin,
+    schema: {
+      "turn_view": {
+        type: 'bool',
+        label: null,
+        defaultValue: false,
+        render: props => {
+          return (
+            <button
+              type="button"
+              className="btn btn-sm btn-success me-3 mb-3"
+              onClick={() => showAdvancedDesignerView(MocksDesigner)}>
+              Use form view
+            </button>
+          );
+        },
+      },
+      ...plugin.schema
+    },
+    flow: ['turn_view', ...plugin.flow]
   })
 }
 

@@ -116,7 +116,7 @@ const Manager = ({ query, entity, ...props }) => {
                 },
                 {
                   title: 'Actions',
-                  onClick: () => {},
+                  onClick: () => { },
                   enabled: () => !isOnViewPlugins,//isOnViewPlugins || query == 'flow',
                   dropdown: true,
                   style: { marginLeft: 20 },
@@ -134,15 +134,14 @@ const Manager = ({ query, entity, ...props }) => {
                     <button
                       key={title}
                       type="button"
-                      className={`btn btn-sm toggle-form-buttons d-flex align-items-center ${
-                        dropdown ? 'dropdown-toggle' : ''
-                      }`}
+                      className={`btn btn-sm toggle-form-buttons d-flex align-items-center ${dropdown ? 'dropdown-toggle' : ''
+                        }`}
                       onClick={
                         onClick
                           ? onClick
                           : () => {
-                              if (query !== tab || viewPlugins) history.push(to);
-                            }
+                            if (query !== tab || viewPlugins) history.push(to);
+                          }
                       }
                       {...(tooltip || {})}
                       style={{
@@ -162,7 +161,7 @@ const Manager = ({ query, entity, ...props }) => {
                     </button>
                     {dropdown && (
                       <ul
-                        class="dropdown-menu"
+                        className="dropdown-menu"
                         aria-labelledby="designer-menu"
                         style={{
                           overflow: 'initial',
@@ -179,7 +178,7 @@ const Manager = ({ query, entity, ...props }) => {
                               const part = window.location.pathname.split('/')[3];
                               // window.location = `/bo/dashboard/${part}`
                               history.push(`/${part}`)
-                            }}><i class="fas fa-times" /> Cancel</button>
+                            }}><i className="fas fa-times" /> Cancel</button>
                             <button type="button" className="btn btn-sm btn-danger me-1" style={{ marginTop: 5 }} onClick={e => {
                               const what = window.location.pathname.split('/')[3];
                               const id = window.location.pathname.split('/')[4];
@@ -192,7 +191,7 @@ const Manager = ({ query, entity, ...props }) => {
                                   });
                                 }
                               });
-                            }}><i class="fas fa-trash" /> Delete</button>
+                            }}><i className="fas fa-trash" /> Delete</button>
                             <button type="button" className="btn btn-sm btn-info me-1" style={{ marginTop: 5 }} onClick={e => {
                               const what = window.location.pathname.split('/')[3];
                               const id = window.location.pathname.split('/')[4];
@@ -207,7 +206,7 @@ const Manager = ({ query, entity, ...props }) => {
                                   });
                                 }
                               });
-                            }}><i class="far fa-copy" /> Duplicate</button>
+                            }}><i className="far fa-copy" /> Duplicate</button>
                             <button type="button" className="btn btn-sm btn-info me-1" style={{ marginTop: 5 }} onClick={e => {
                               const what = window.location.pathname.split('/')[3];
                               const itemName = what === 'routes' ? 'route' : 'route-composition'
@@ -232,7 +231,7 @@ const Manager = ({ query, entity, ...props }) => {
                               document.body.appendChild(a);
                               a.click();
                               setTimeout(() => document.body.removeChild(a), 300);
-                            }}><i class="fas fa-file-export" /> Export JSON</button>
+                            }}><i className="fas fa-file-export" /> Export JSON</button>
                             <button type="button" className="btn btn-sm btn-info me-1" style={{ marginTop: 5 }} onClick={e => {
                               const what = window.location.pathname.split('/')[3];
                               const itemName = what === 'routes' ? 'route' : 'route-composition'
@@ -260,7 +259,7 @@ const Manager = ({ query, entity, ...props }) => {
                               document.body.appendChild(a);
                               a.click();
                               setTimeout(() => document.body.removeChild(a), 300);
-                            }}><i class="fas fa-file-export" /> Export YAML</button>                            
+                            }}><i className="fas fa-file-export" /> Export YAML</button>
                           </div>
                         </MenuContainer>
                       </ul>

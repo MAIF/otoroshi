@@ -563,6 +563,29 @@
         background-color: #595959;
         border-radius: 4px;
     }
+
+    .endpoint {
+        background-color: #595959;
+        border-radius: 8px;
+        padding: 4px 8px;
+    }
+
+    .generated-endpoint .content-switch-button-off,
+    .generated-endpoint .content-switch-button-on {
+        margin: 0;
+    }
+
+    .endpoint-helper {
+        min-width: 30px;
+    }
+
+    .endpoint-helper i {
+        margin: 0;
+    }
+}
+
+.designer-modal-dialog {
+    max-width: 750px !important;
 }
 
 .patch-main {

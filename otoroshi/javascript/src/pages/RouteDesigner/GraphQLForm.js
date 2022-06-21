@@ -84,7 +84,7 @@ const CreationButton = ({ confirm, text, placeholder }) => {
       </button>
     </div>
 
-  return <button className='btn btn-sm btn-primary my-2 ms-auto'
+  return <button className='btn btn-sm btn-primary my-2'
     onClick={e => {
       e.stopPropagation()
       setCreationField(true)
@@ -382,7 +382,8 @@ class FieldForm extends React.Component {
                     paginate: {
                       type: 'bool',
                       label: 'Enable pagination',
-                      help: 'Automatically add limit and offset argument'
+                      help: 'Automatically add limit and offset argument',
+                      defaultValue: false
                     }
                   },
                   flow: ['url', 'method', 'headers', 'timeout', 'paginate']

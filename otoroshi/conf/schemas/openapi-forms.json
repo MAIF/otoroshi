@@ -5979,6 +5979,86 @@
     "schema" : { },
     "flow" : [ ]
   },
+  "otoroshi.next.plugins.MockFormData" : {
+    "schema" : {
+      "endpoints" : {
+        "label" : "endpoints",
+        "type" : "object",
+        "array" : true,
+        "format" : "form",
+        "schema" : {
+          "resource_list" : {
+            "label" : "resource_list",
+            "type" : "bool"
+          },
+          "path" : {
+            "label" : "path",
+            "type" : "string"
+          },
+          "headers" : {
+            "label" : "headers",
+            "type" : "object"
+          },
+          "method" : {
+            "label" : "method",
+            "type" : "string"
+          },
+          "resource" : {
+            "label" : "resource",
+            "type" : "string"
+          },
+          "body" : {
+            "label" : "body",
+            "type" : "object"
+          },
+          "status" : {
+            "label" : "status",
+            "type" : "number"
+          }
+        },
+        "flow" : [ "resource_list", "path", "method", "resource", "status", "headers", "body" ]
+      },
+      "resources" : {
+        "label" : "resources",
+        "type" : "object",
+        "array" : true,
+        "format" : "form",
+        "schema" : {
+          "schema" : {
+            "label" : "schema",
+            "type" : "object",
+            "array" : true,
+            "format" : "form",
+            "schema" : {
+              "field_name" : {
+                "label" : "field_name",
+                "type" : "string"
+              },
+              "field_type" : {
+                "label" : "field_type",
+                "type" : "string"
+              },
+              "value" : {
+                "label" : "value",
+                "type" : "object"
+              }
+            },
+            "flow" : [ "field_name", "field_type", "value" ]
+          },
+          "additional_data" : {
+            "label" : "additional_data",
+            "type" : "object"
+          },
+          "name" : {
+            "label" : "name",
+            "type" : "string"
+          }
+        },
+        "flow" : [ "name", "schema", "additional_data" ]
+      }
+    },
+    "flow" : [ "endpoints", "resources" ]
+  },
   "otoroshi.plugins.biscuit.BiscuitHelper" : {
     "schema" : { },
     "flow" : [ ]
@@ -8214,6 +8294,40 @@
       }
     },
     "flow" : [ "datadog", "host", "port" ]
+  },
+  "otoroshi.next.plugins.MockResource" : {
+    "schema" : {
+      "schema" : {
+        "label" : "schema",
+        "type" : "object",
+        "array" : true,
+        "format" : "form",
+        "schema" : {
+          "field_name" : {
+            "label" : "field_name",
+            "type" : "string"
+          },
+          "field_type" : {
+            "label" : "field_type",
+            "type" : "string"
+          },
+          "value" : {
+            "label" : "value",
+            "type" : "object"
+          }
+        },
+        "flow" : [ "field_name", "field_type", "value" ]
+      },
+      "additional_data" : {
+        "label" : "additional_data",
+        "type" : "object"
+      },
+      "name" : {
+        "label" : "name",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "schema", "additional_data", "name" ]
   },
   "otoroshi.next.plugins.GlobalPerIpAddressThrottlingQuotas" : {
     "schema" : {
@@ -28584,6 +28698,91 @@
   },
   "otoroshi.next.plugins.MockResponses" : {
     "schema" : {
+      "form_data" : {
+        "label" : "form_data",
+        "type" : "object",
+        "format" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "endpoints" : {
+            "label" : "endpoints",
+            "type" : "object",
+            "array" : true,
+            "format" : "form",
+            "schema" : {
+              "resource_list" : {
+                "label" : "resource_list",
+                "type" : "bool"
+              },
+              "path" : {
+                "label" : "path",
+                "type" : "string"
+              },
+              "headers" : {
+                "label" : "headers",
+                "type" : "object"
+              },
+              "method" : {
+                "label" : "method",
+                "type" : "string"
+              },
+              "resource" : {
+                "label" : "resource",
+                "type" : "string"
+              },
+              "body" : {
+                "label" : "body",
+                "type" : "object"
+              },
+              "status" : {
+                "label" : "status",
+                "type" : "number"
+              }
+            },
+            "flow" : [ "resource_list", "path", "method", "resource", "status", "headers", "body" ]
+          },
+          "resources" : {
+            "label" : "resources",
+            "type" : "object",
+            "array" : true,
+            "format" : "form",
+            "schema" : {
+              "schema" : {
+                "label" : "schema",
+                "type" : "object",
+                "array" : true,
+                "format" : "form",
+                "schema" : {
+                  "field_name" : {
+                    "label" : "field_name",
+                    "type" : "string"
+                  },
+                  "field_type" : {
+                    "label" : "field_type",
+                    "type" : "string"
+                  },
+                  "value" : {
+                    "label" : "value",
+                    "type" : "object"
+                  }
+                },
+                "flow" : [ "field_name", "field_type", "value" ]
+              },
+              "additional_data" : {
+                "label" : "additional_data",
+                "type" : "object"
+              },
+              "name" : {
+                "label" : "name",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "name", "schema", "additional_data" ]
+          }
+        },
+        "flow" : [ "endpoints", "resources" ]
+      },
       "pass_through" : {
         "label" : "pass_through",
         "type" : "bool"
@@ -28622,7 +28821,7 @@
         "flow" : [ "path", "body", "status", "method", "headers" ]
       }
     },
-    "flow" : [ "pass_through", "responses" ]
+    "flow" : [ "form_data", "pass_through", "responses" ]
   },
   "otoroshi.models.TeamAccess" : {
     "schema" : {
@@ -31184,6 +31383,23 @@
       }
     },
     "flow" : [ "mappingSettings", "location" ]
+  },
+  "otoroshi.next.plugins.MockField" : {
+    "schema" : {
+      "field_name" : {
+        "label" : "field_name",
+        "type" : "string"
+      },
+      "field_type" : {
+        "label" : "field_type",
+        "type" : "string"
+      },
+      "value" : {
+        "label" : "value",
+        "type" : "object"
+      }
+    },
+    "flow" : [ "field_name", "field_type", "value" ]
   },
   "otoroshi.plugins.useragent.UserAgentInfoEndpoint" : {
     "schema" : { },
@@ -43885,6 +44101,39 @@
     },
     "flow" : [ "refreshTokens", "metadata", "tokenUrl", "otoroshiRightsField", "mtlsConfig", "nameField", "emailField", "type", "introspectionUrl", "loginUrl", "scope", "clientSideSessionEnabled", "rightsOverride", "callbackUrl", "clientSecret", "id", "extraMetadata", "accessTokenField", "userInfoUrl", "clientId", "useCookie", "authorizeUrl", "sessionCookieValues", "dataOverride", "superAdmins", "apiKeyMetaField", "useJson", "pkce", "apiKeyTagsField", "otoroshiDataField", "userValidators", "_loc", "tags", "jwtVerifier", "sessionMaxAge", "proxy", "logoutUrl", "noWildcardRedirectURI", "readProfileFromToken", "oidConfig", "name", "claims", "desc" ]
   },
+  "otoroshi.next.plugins.MockEndpoint" : {
+    "schema" : {
+      "resource_list" : {
+        "label" : "resource_list",
+        "type" : "bool"
+      },
+      "path" : {
+        "label" : "path",
+        "type" : "string"
+      },
+      "headers" : {
+        "label" : "headers",
+        "type" : "object"
+      },
+      "method" : {
+        "label" : "method",
+        "type" : "string"
+      },
+      "resource" : {
+        "label" : "resource",
+        "type" : "string"
+      },
+      "body" : {
+        "label" : "body",
+        "type" : "object"
+      },
+      "status" : {
+        "label" : "status",
+        "type" : "number"
+      }
+    },
+    "flow" : [ "resource_list", "path", "headers", "method", "resource", "body", "status" ]
+  },
   "otoroshi.script.PreRoutingRef" : {
     "schema" : {
       "enabled" : {
@@ -44326,6 +44575,91 @@
   },
   "otoroshi.next.plugins.MockResponsesConfig" : {
     "schema" : {
+      "form_data" : {
+        "label" : "form_data",
+        "type" : "object",
+        "format" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "endpoints" : {
+            "label" : "endpoints",
+            "type" : "object",
+            "array" : true,
+            "format" : "form",
+            "schema" : {
+              "resource_list" : {
+                "label" : "resource_list",
+                "type" : "bool"
+              },
+              "path" : {
+                "label" : "path",
+                "type" : "string"
+              },
+              "headers" : {
+                "label" : "headers",
+                "type" : "object"
+              },
+              "method" : {
+                "label" : "method",
+                "type" : "string"
+              },
+              "resource" : {
+                "label" : "resource",
+                "type" : "string"
+              },
+              "body" : {
+                "label" : "body",
+                "type" : "object"
+              },
+              "status" : {
+                "label" : "status",
+                "type" : "number"
+              }
+            },
+            "flow" : [ "resource_list", "path", "method", "resource", "status", "headers", "body" ]
+          },
+          "resources" : {
+            "label" : "resources",
+            "type" : "object",
+            "array" : true,
+            "format" : "form",
+            "schema" : {
+              "schema" : {
+                "label" : "schema",
+                "type" : "object",
+                "array" : true,
+                "format" : "form",
+                "schema" : {
+                  "field_name" : {
+                    "label" : "field_name",
+                    "type" : "string"
+                  },
+                  "field_type" : {
+                    "label" : "field_type",
+                    "type" : "string"
+                  },
+                  "value" : {
+                    "label" : "value",
+                    "type" : "object"
+                  }
+                },
+                "flow" : [ "field_name", "field_type", "value" ]
+              },
+              "additional_data" : {
+                "label" : "additional_data",
+                "type" : "object"
+              },
+              "name" : {
+                "label" : "name",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "name", "schema", "additional_data" ]
+          }
+        },
+        "flow" : [ "endpoints", "resources" ]
+      },
       "pass_through" : {
         "label" : "pass_through",
         "type" : "bool"
@@ -44364,6 +44698,6 @@
         "flow" : [ "path", "body", "status", "method", "headers" ]
       }
     },
-    "flow" : [ "pass_through", "responses" ]
+    "flow" : [ "form_data", "pass_through", "responses" ]
   }
 }

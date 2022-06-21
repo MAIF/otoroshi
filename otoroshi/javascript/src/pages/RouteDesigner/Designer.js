@@ -30,9 +30,10 @@ import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
 import GraphQLForm from './GraphQLForm';
+import MocksDesigner from './MocksDesigner';
 
 const HeaderNode = ({ selectedNode, text, icon }) => (
-  <Dot selectedNode={selectedNode}>
+  <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
     <div className="flex-column p-1">
       <i className={`fas fa-arrow-${icon}`} style={{ color: '#fff' }} />
       <span style={{ color: '#fff' }}>{text}</span>
@@ -209,13 +210,13 @@ const FormContainer = ({
 }
 
 const Modal = ({ question, onOk, onCancel }) => (
-  <div class="designer-modal d-flex align-items-center justify-content-start flex-column p-3 pt-4">
+  <div className="designer-modal d-flex align-items-center justify-content-start flex-column p-3 pt-4">
     <h4>{question}</h4>
-    <div class="d-flex ms-auto">
-      <button type="button" class="btn btn-danger me-1" onClick={onCancel}>
+    <div className="d-flex ms-auto">
+      <button type="button" className="btn btn-danger me-1" onClick={onCancel}>
         Cancel
       </button>
-      <button type="button" class="btn btn-success" onClick={onOk}>
+      <button type="button" className="btn btn-success" onClick={onOk}>
         Delete
       </button>
     </div>
@@ -274,6 +275,9 @@ const Container = ({ children, onClick }) => {
     onMouseDown={e => {
       setPropagate(!document.getElementById('form-container')?.contains(e.target) &&
         ![...document.getElementsByClassName("delete-node-button")].find(d => d.contains(e.target)))
+      // && 
+      // ![...document.getElementsByClassName("fa-chevron")].find(d => d.contains(e.target))
+      // )
     }}
     onMouseUp={(e) => {
       e.stopPropagation();
@@ -437,7 +441,7 @@ class Designer extends React.Component {
       TransformRequest: true,
       TransformResponse: true,
     },
-    advancedDesignerView: false
+    advancedDesignerView: MocksDesigner
   };
 
   componentDidMount() {
@@ -494,7 +498,7 @@ class Designer extends React.Component {
     <>
       <div className="d-flex-between">
         <button type="button" className="btn btn-sm btn-danger me-1" onClick={this.clearPlugins}>
-          Clear plugins
+          Remove plugins
         </button>
       </div>
     </>
@@ -768,7 +772,7 @@ class Designer extends React.Component {
     this.setState({
       alertModal: {
         show: true,
-        question: `Delete this node ?`,
+        question: `Delete this plugin ?`,
         onCancel: (e) => {
           e.stopPropagation();
           this.setState({
@@ -1296,6 +1300,8 @@ class Designer extends React.Component {
     // TODO - better error display
     if (!loading && this.state.notFound) return <h1>Route not found</h1>;
 
+    const FullForm = advancedDesignerView
+
     return (
       <Loader loading={loading}>
         <Container
@@ -1304,7 +1310,7 @@ class Designer extends React.Component {
               selectedNode: undefined,
             });
           }}>
-          <GraphQLForm route={advancedDesignerView ? route : undefined}
+          {FullForm && <FullForm route={advancedDesignerView ? route : undefined}
             saveRoute={route => {
               this.setState({ route }, this.saveRoute)
             }}
@@ -1314,7 +1320,7 @@ class Designer extends React.Component {
                 selectedNode: backendCallNodes.find(node => node.id.includes("otoroshi.next.plugins.GraphQLBackend")),
                 advancedDesignerView: false
               })
-            }} />
+            }} />}
           <PluginsContainer
             handleSearch={this.handleSearch}
             showLegacy={showLegacy}
@@ -1443,7 +1449,7 @@ class Designer extends React.Component {
 
                   </Flow>
                   <FormContainer
-                    showAdvancedDesignerView={() => this.setState({ advancedDesignerView: true })}
+                    showAdvancedDesignerView={pluginName => this.setState({ advancedDesignerView: pluginName })}
                     serviceMode={serviceMode}
                     clearPlugins={this.clearPlugins}
                     deleteRoute={this.deleteRoute}
@@ -1754,7 +1760,7 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
           </div>
         </div>
         <div style={{ marginTop: 20, width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-          <button className="btn btn-danger btn-sm" onClick={clearPlugins}>Clear plugins</button>
+          <button className="btn btn-danger btn-sm" onClick={clearPlugins}>Remove plugins</button>
         </div>
         <div className="d-flex-between mt-3 flex align-items-end">
           <Link className="btn btn-sm btn-info" to="/routes">
@@ -2286,6 +2292,6 @@ const Description = ({ text, steps, legacy }) => {
 const RemoveComponent = ({ onRemove }) => (
   <button className="btn btn-sm btn-danger" type="button" onClick={onRemove}>
     <i className="fas fa-trash me-2"></i>
-    Remove this component
+    Remove this plugin
   </button>
 );

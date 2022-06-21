@@ -102,7 +102,121 @@ object MockResponse {
   }
 }
 
-case class MockResponsesConfig(responses: Seq[MockResponse] = Seq.empty, passThrough: Boolean = true)
+case class MockField(fieldName: String, fieldType: String, value: JsValue)
+case class MockResource(name: String, schema: Seq[MockField] = Seq.empty, additionalData: Option[JsObject] = None)
+case class MockEndpoint(method: String,
+                        path: String,
+                        status: Int,
+                        body: Option[JsObject] = None,
+                        resource: Option[String] = None,
+                        resourceList: Boolean = false,
+                        headers: Option[JsObject] = None)
+case class MockFormData(resources: Seq[MockResource] = Seq.empty, endpoints: Seq[MockEndpoint] = Seq.empty)
+
+object MockField {
+  val format = new Format[MockField] {
+    override def writes(o: MockField): JsValue = Json.obj(
+    "field_name" -> o.fieldName,
+      "field_type" -> o.fieldType,
+      "value" -> o.value
+    )
+
+    override def reads(json: JsValue): JsResult[MockField] = Try {
+      MockField(
+        fieldName = json.select("field_name").as[String],
+        fieldType = json.select("field_type").as[String],
+        value = json.select("value").as[JsValue]
+      )
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
+object MockResource {
+  val format = new Format[MockResource] {
+    override def writes(o: MockResource): JsValue = Json.obj(
+      "name" -> o.name,
+      "schema" -> JsArray(o.schema.map(MockField.format.writes)),
+      "additional_data" -> o.additionalData
+    )
+    override def reads(json: JsValue): JsResult[MockResource] = Try {
+      MockResource(
+        name = json.select("name").as[String],
+        schema = json
+          .select("schema")
+          .asOpt[Seq[JsValue]]
+          .map(arr => arr.flatMap(v => MockField.format.reads(v).asOpt))
+          .getOrElse(Seq.empty),
+        additionalData = json.select("additional_data").asOpt[JsObject]
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
+object MockEndpoint {
+  val format = new Format[MockEndpoint] {
+    override def writes(o: MockEndpoint): JsValue             = Json.obj(
+      "method"    -> o.method,
+      "path" -> o.path,
+      "status" -> o.status,
+      "body" -> o.body,
+      "resource" -> o.resource,
+      "resource_list" -> o.resourceList,
+      "headers" -> o.headers
+    )
+    override def reads(json: JsValue): JsResult[MockEndpoint] = Try {
+      MockEndpoint(
+        method = json.select("method").as[String],
+        path = json.select("method").as[String],
+        status = json.select("method").as[Int],
+        body = json.select("method").asOpt[JsObject],
+        resource = json.select("method").asOpt[String],
+        resourceList = json.select("method").as[Boolean],
+        headers = json.select("method").asOpt[JsObject],
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
+object MockFormData {
+  val format = new Format[MockFormData] {
+    override def writes(o: MockFormData): JsValue             = Json.obj(
+      "resources"    -> JsArray(o.resources.map(MockResource.format.writes)),
+      "endpoints" -> JsArray(o.endpoints.map(MockEndpoint.format.writes))
+    )
+    override def reads(json: JsValue): JsResult[MockFormData] = Try {
+      MockFormData(
+        resources = json
+          .select("resources")
+          .asOpt[Seq[JsValue]]
+          .map(arr => arr.flatMap(v => MockResource.format.reads(v).asOpt))
+          .getOrElse(Seq.empty),
+        endpoints = json
+          .select("endpoints")
+          .asOpt[Seq[JsValue]]
+          .map(arr => arr.flatMap(v => MockEndpoint.format.reads(v).asOpt))
+          .getOrElse(Seq.empty)
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
+case class MockResponsesConfig(
+                                responses: Seq[MockResponse] = Seq.empty,
+                                passThrough: Boolean = true,
+                                formData: Option[MockFormData] = None
+                              )
     extends NgPluginConfig {
   def json: JsValue = MockResponsesConfig.format.writes(this)
 }
@@ -120,10 +234,11 @@ object MockResponsesConfig {
           .asOpt[Seq[JsValue]]
           .map(arr => arr.flatMap(v => MockResponse.format.reads(v).asOpt))
           .getOrElse(Seq.empty),
-        passThrough = json.select("pass_through").asOpt[Boolean].getOrElse(true)
+        passThrough = json.select("pass_through").asOpt[Boolean].getOrElse(true),
+        formData = json.select("form_data").asOpt[MockFormData](MockFormData.format.reads)
       )
     } match {
-      case Failure(ex)    => JsError(ex.getMessage())
+      case Failure(ex)    => JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
   }

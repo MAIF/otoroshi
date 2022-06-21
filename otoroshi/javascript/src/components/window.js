@@ -164,7 +164,6 @@ class Prompt extends Component {
 
 class Popup extends Component {
   render() {
-    console.log(this.props);
     return (
       <div
         className="modal"
@@ -284,7 +283,6 @@ export function registerPopup() {
     document.body.appendChild(div);
   }
   window.popup = (title, fn, props = {}) => {
-    console.log('props', props);
     return new Promise((success, failure) => {
       ReactDOM.render(
         <Popup

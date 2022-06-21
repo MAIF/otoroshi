@@ -18197,6 +18197,14 @@
           "pass_through" : {
             "description" : "Pass the call if no mocked response found",
             "type" : "boolean"
+          },
+          "form_data" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "$ref" : "#/components/schemas/otoroshi.next.plugins.MockFormData"
+            } ],
+            "description" : "???"
           }
         }
       },
@@ -18923,6 +18931,31 @@
           "remove" : {
             "description" : "Remove from value",
             "type" : "string"
+          }
+        }
+      },
+      "otoroshi.next.plugins.MockResource" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.next.plugins.MockField"
+            },
+            "description" : "???"
+          },
+          "additional_data" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "object"
+            } ],
+            "description" : "???"
           }
         }
       },
@@ -20024,6 +20057,53 @@
           "type" : {
             "description" : "Plugin type",
             "$ref" : "#/components/schemas/otoroshi.script.PluginType"
+          }
+        }
+      },
+      "otoroshi.next.plugins.MockEndpoint" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "status" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "body" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "object"
+            } ],
+            "description" : "???"
+          },
+          "path" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "resource" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          },
+          "headers" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "object"
+            } ],
+            "description" : "???"
+          },
+          "method" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "resource_list" : {
+            "description" : "???",
+            "type" : "boolean"
           }
         }
       },
@@ -21990,6 +22070,14 @@
           "pass_through" : {
             "description" : "Pass the call if no mocked response found",
             "type" : "boolean"
+          },
+          "form_data" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "$ref" : "#/components/schemas/otoroshi.next.plugins.MockFormData"
+            } ],
+            "description" : "???"
           }
         }
       },
@@ -24803,6 +24891,26 @@
         }, {
           "$ref" : "#/components/schemas/otoroshi.models.RefJwtVerifier"
         } ]
+      },
+      "otoroshi.next.plugins.MockFormData" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "resources" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.next.plugins.MockResource"
+            },
+            "description" : "???"
+          },
+          "endpoints" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.next.plugins.MockEndpoint"
+            },
+            "description" : "???"
+          }
+        }
       },
       "otoroshi.plugins.jsoup.HtmlPatcher" : {
         "description" : "Plugin to transform html response body",
@@ -27674,6 +27782,24 @@
             "description" : "the kind of mailer",
             "type" : "string",
             "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
+          }
+        }
+      },
+      "otoroshi.next.plugins.MockField" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "field_name" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "field_type" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "value" : {
+            "description" : "???",
+            "type" : "object"
           }
         }
       },
