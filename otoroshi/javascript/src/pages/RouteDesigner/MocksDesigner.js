@@ -558,7 +558,7 @@ class NewEndpoint extends React.Component {
 const Header = ({ hide }) => <div className='d-flex-between'>
     <div className='flex'>
         <div className='d-flex-between'>
-            <h3>Tanuki</h3>
+            <h3>Charlatan</h3>
             <button
                 className="btn btn-sm"
                 type="button"

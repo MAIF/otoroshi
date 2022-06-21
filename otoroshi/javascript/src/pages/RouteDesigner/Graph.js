@@ -81,7 +81,7 @@ export const PLUGINS = {
           type="button"
           className="btn btn-sm btn-success me-3 mb-3"
           onClick={() => showAdvancedDesignerView(GraphQLForm)}>
-          Use form view
+          Expand
         </button>
       },
       permissions: {
@@ -106,7 +106,7 @@ export const PLUGINS = {
               type="button"
               className="btn btn-sm btn-success me-3 mb-3"
               onClick={() => showAdvancedDesignerView(MocksDesigner)}>
-              Use form view
+              Expand
             </button>
           );
         },
