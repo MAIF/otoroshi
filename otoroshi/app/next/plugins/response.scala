@@ -6,9 +6,9 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
+import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
-import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Either, Failure, Success, Try}
@@ -265,9 +265,12 @@ class MockResponses extends NgBackendCall {
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    /*
+    NgTreeRouter.build(paths.map(resp => NgFakeRoute.routeFromPath(resp.path)))
+        .find("", ctx.request.path)*/
     val config = ctx.cachedConfig(internalName)(MockResponsesConfig.format).getOrElse(MockResponsesConfig())
-    config.responses.filter(_.method.toLowerCase == ctx.request.method.toLowerCase).find { resp =>
-      resp.path.wildcard.matches(ctx.request.path)
+    config.responses.filter(r => r.method.toLowerCase == ctx.request.method.toLowerCase || r.method.toLowerCase == ctx.rawRequest.method.toLowerCase).find { resp =>
+      resp.path.wildcard.matches(ctx.rawRequest.thePath) || resp.path.wildcard.matches(ctx.request.path)
     } match {
       case None if !config.passThrough =>
         bodyResponse(
@@ -277,11 +280,11 @@ class MockResponses extends NgBackendCall {
         ).future
       case None if config.passThrough  => delegates()
       case Some(response)              => {
-        val contentType      = response.headers
-          .get("Content-Type")
-          .orElse(response.headers.get("content-type"))
-          .getOrElse("application/json")
-        val headers          = response.headers.filterNot(_._1.toLowerCase() == "content-type")
+        // val contentType      = response.headers
+        //   .get("Content-Type")
+        //   .orElse(response.headers.get("content-type"))
+        //   .getOrElse("application/json")
+        // val headers          = response.headers.filterNot(_._1.toLowerCase() == "content-type") ++ ("Content-Type" -> contentType)
         val body: ByteString = response.body match {
           case str if str.startsWith("Base64(") => str.substring(7).init.byteString.decodeBase64
           case str                              => str.byteString

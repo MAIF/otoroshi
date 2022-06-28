@@ -4,6 +4,21 @@ import { CodeInput } from '@maif/react-forms'
 import { FeedbackButton } from './FeedbackButton'
 import { BooleanInput, Help, ObjectInput, SelectInput, SimpleBooleanInput, TextInput } from '../../components/inputs'
 
+const castValue = (value, type) => {
+    if (type === 'String')
+        return value
+    else {
+        try {
+            if (type === 'Number')
+                return parseInt(value)
+            else
+                return JSON.parse(value)
+        } catch (err) {
+            return value
+        }
+    }
+}
+
 export default class MocksDesigner extends React.Component {
     state = {
         resources: [],
@@ -59,7 +74,7 @@ export default class MocksDesigner extends React.Component {
                 { additionalClass: 'designer-modal-dialog' }
             )
             .then(data => {
-                if (data.value) {
+                if (data) {
                     const { value, idx } = data
                     this.setAndSave({
                         [elementName]: Number.isFinite(idx) ? this.state[elementName].map((r, i) => {
@@ -114,22 +129,22 @@ export default class MocksDesigner extends React.Component {
         const newItem = r => (r.schema || []).reduce((acc, item) => ({
             ...acc,
             ...this.calculateField(item)
-        }), JSON.parse((resource.objectTemplate || {})))
+        }), JSON.parse((resource.additional_data || "{}")))
         return newItem(resource)
     }
 
     fakeValue = item => {
         try {
-            return item.value
+            return castValue(item.value
                 .split(".")
-                .reduce((a, c) => a[c], faker)()
+                .reduce((a, c) => a[c], faker)(), item.field_type)
         } catch (err) {
-            return item.value
+            return castValue(item.value, item.field_type)
         }
     }
 
     calculateField = item => ({
-        [item.field_name]: item.type === "Child" ?
+        [item.field_name]: item.field_type === "Child" ?
             this.calculateResource(this.state.resources.find(f => f.name === item.value)) :
             this.fakeValue(item)
     })
@@ -139,10 +154,13 @@ export default class MocksDesigner extends React.Component {
 
         if (endpoint.resource) {
             const resource = this.state.resources.find(f => f.name === endpoint.resource)
+            if (!resource)
+                return {}
+
             const newItem = r => (r.schema || []).reduce((acc, item) => ({
                 ...acc,
                 ...this.calculateField(item)
-            }), JSON.parse((resource.objectTemplate || {})))
+            }), JSON.parse(resource.additional_data || "{}"))
             if (resourceList)
                 return Array.from({ length: 10 }, (_, i) => newItem(resource))
             return newItem(resource)
@@ -188,6 +206,7 @@ export default class MocksDesigner extends React.Component {
                             data: null
                         }))
                     })
+                        .then(this.generateData)
                 }
             })
     }
@@ -231,7 +250,7 @@ export default class MocksDesigner extends React.Component {
                     <div className='my-2'>
                         <h3>Endpoints</h3>
                         {this.state.endpoints.map((endpoint, idx) => {
-                            return <div className='d-flex-between mt-1 endpoint' key={endpoint.path}>
+                            return <div className='d-flex-between mt-1 endpoint' key={`${endpoint.path}${idx}`}>
                                 <div className='d-flex-between'>
                                     <div style={{ minWidth: "60px" }}>
                                         <span className={`badge me-1`}
@@ -281,11 +300,11 @@ const Data = ({ idx, data, confirm, cancel }) => {
             value={res}
             onChange={setRes} />
 
-        <div className='d-flex-between'>
+        <div className='d-flex mt-3'>
+            <button className='btn btn-sm btn-danger me-1 ms-auto' onClick={cancel}>Cancel</button>
             <button className='btn btn-sm btn-save' onClick={() => confirm({
                 data: res, idx
-            })}>Create</button>
-            <button className='btn btn-sm btn-danger' onClick={cancel}>Cancel</button>
+            })}>Save</button>
         </div>
     </div>
 }
@@ -450,7 +469,7 @@ class NewResource extends React.Component {
                                 flex={true}
                                 value={value}
                                 placeholder="or value"
-                                onChange={v => this.onSchemaFieldChange(i, "value", v)}
+                                onChange={v => this.onSchemaFieldChange(i, "value", castValue(v, type))}
                             /> : (type !== 'Child' ? this.emptyField() : null))}
                         </div>
                     })}
@@ -661,15 +680,6 @@ const FakerOptions = [
     { value: "database.type", label: "Type" },
     { value: "database.collation", label: "Collation" },
     { value: "database.engine", label: "Engine" },
-    { value: "datatype.number", label: "Number" },
-    { value: "datatype.float", label: "Float" },
-    { value: "datatype.datetime", label: "Datetime" },
-    { value: "datatype.string", label: "String" },
-    { value: "datatype.uuid", label: "UUID" },
-    { value: "datatype.boolean", label: "Boolean" },
-    { value: "datatype.hexadecimal", label: "Hexa decimal" },
-    { value: "datatype.json", label: "Json" },
-    { value: "datatype.array", label: "Array" },
     { value: "date.past", label: "Past" },
     { value: "date.future", label: "Future" },
     { value: "date.recent", label: "Recent" },
