@@ -27,19 +27,25 @@ export default class MocksDesigner extends React.Component {
     saveRoute = res => Promise.resolve(this.props.saveRoute({
         ...this.props.route,
         plugins: this.props.route.plugins.map(p => {
+            const config = {
+                ...this.state,
+                ...(res || {})
+            }
             if (p.plugin === "cp:otoroshi.next.plugins.MockResponses")
                 return {
                     ...p,
                     config: {
                         ...p.config,
-                        form_data: {
-                            ...this.state,
-                            ...(res || {})
-                        }
+                        responses: this.configToResponses(config),
+                        form_data: config
                     }
                 }
             return p
         })
+    }))
+
+    configToResponses = config => config.endpoints.map(({ path, method, status, headers, data }) => ({
+        path, method, status, headers, body: data
     }))
 
     setAndSave = res => this.saveRoute(res)
@@ -53,15 +59,17 @@ export default class MocksDesigner extends React.Component {
                 { additionalClass: 'designer-modal-dialog' }
             )
             .then(data => {
-                const { value, idx } = data
-                this.setAndSave({
-                    [elementName]: Number.isFinite(idx) ? this.state[elementName].map((r, i) => {
-                        if (i === idx)
-                            return value
-                        return r
-                    }) :
-                        [...this.state[elementName], value]
-                })
+                if (data.value) {
+                    const { value, idx } = data
+                    this.setAndSave({
+                        [elementName]: Number.isFinite(idx) ? this.state[elementName].map((r, i) => {
+                            if (i === idx)
+                                return value
+                            return r
+                        }) :
+                            [...this.state[elementName], value]
+                    })
+                }
             })
     }
 
@@ -110,10 +118,20 @@ export default class MocksDesigner extends React.Component {
         return newItem(resource)
     }
 
+    fakeValue = item => {
+        try {
+            return item.value
+                .split(".")
+                .reduce((a, c) => a[c], faker)()
+        } catch (err) {
+            return item.value
+        }
+    }
+
     calculateField = item => ({
-        [item.field_name]: item.type === "Faker.js" ?
-            item.value.split(".").reduce((a, c) => a[c], faker)() :
-            (item.type === "Child" ? this.calculateResource(this.state.resources.find(f => f.name === item.value)) : item.value)
+        [item.field_name]: item.type === "Child" ?
+            this.calculateResource(this.state.resources.find(f => f.name === item.value)) :
+            this.fakeValue(item)
     })
 
     generateFakerValues = endpoint => {
@@ -349,7 +367,7 @@ class NewResource extends React.Component {
     state = {
         name: this.props.resource?.name || '',
         schema: this.props.resource?.schema || [],
-        objectTemplate: this.props.resource?.objectTemplate || {}
+        objectTemplate: this.props.resource?.additional_data || {}
     }
 
     onSchemaFieldChange = (idx, field, value, callback) => {
@@ -390,8 +408,10 @@ class NewResource extends React.Component {
                         <label className='flex text-center'>Faker value</label>
                         <label className='flex text-center'>Value</label>
                     </div>
-                    {schema.map(({ field_name, type, value }, i) => (
-                        <div className='d-flex-between' key={`schema-${i}`}>
+                    {schema.map((s, i) => {
+                        const { field_name, field_type, value } = s
+                        const type = field_type
+                        return <div className='d-flex-between' key={`schema-${i}`}>
                             <TextInput
                                 flex={true}
                                 value={field_name}
@@ -402,7 +422,7 @@ class NewResource extends React.Component {
                                 flex={true}
                                 className="mx-1"
                                 value={type}
-                                onChange={v => this.onSchemaFieldChange(i, "type", v, () => this.onSchemaFieldChange(i, "value", ''))}
+                                onChange={v => this.onSchemaFieldChange(i, "field_type", v, () => this.onSchemaFieldChange(i, "value", ''))}
                                 possibleValues={[
                                     'String',
                                     'Number',
@@ -413,7 +433,7 @@ class NewResource extends React.Component {
                                     'Child'
                                 ]} />
 
-                            {type !== "Child" ? <SelectInput
+                            {type && type !== "Child" ? <SelectInput
                                 flex={true}
                                 value={value}
                                 className="me-1"
@@ -426,14 +446,14 @@ class NewResource extends React.Component {
                                 onChange={v => this.onSchemaFieldChange(i, "value", v)}
                                 possibleValues={this.props.resources.map(a => a.name)}
                             />}
-                            {!["Child", "Faker.js"].includes(type) ? <TextInput
+                            {!type ? this.emptyField() : (!["Child", "Faker.js"].includes(type) ? <TextInput
                                 flex={true}
                                 value={value}
                                 placeholder="or value"
                                 onChange={v => this.onSchemaFieldChange(i, "value", v)}
-                            /> : (type !== 'Child' ? this.emptyField() : null)}
+                            /> : (type !== 'Child' ? this.emptyField() : null))}
                         </div>
-                    ))}
+                    })}
                     <button className='btn btn-sm btn-save' onClick={() => this.setState({
                         schema: [...schema, {
                             field_name: "",
@@ -447,7 +467,7 @@ class NewResource extends React.Component {
             </div>
             <div className='row mb-3'>
                 <label htmlFor={`input-object-template`} className="col-xs-12 col-sm-2 col-form-label">
-                    Object template (optional) <Help text="To define more complex structure for your data use JSON template. You can reference Faker.js methods using `$`." />
+                    Additional data (optional) <Help text="To define more complex structure for your data use JSON template. You can reference Faker.js methods using `$`." />
                 </label>
                 <div className="col-sm-10">
                     <CodeInput

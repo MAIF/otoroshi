@@ -441,7 +441,7 @@ class Designer extends React.Component {
       TransformRequest: true,
       TransformResponse: true,
     },
-    advancedDesignerView: null
+    advancedDesignerView: MocksDesigner
   };
 
   componentDidMount() {
