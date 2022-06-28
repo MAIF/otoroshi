@@ -101,7 +101,7 @@ export default class MocksDesigner extends React.Component {
             .popup(
                 'Generate an endpoint',
                 (ok, cancel) => <GenerateEndpoint resources={this.state.resources} confirm={ok} cancel={cancel} />,
-                { __style: { width: '100%' } }
+                { additionalClass: 'designer-modal-dialog' }
             )
             .then(generateEndpoints => {
                 this.setAndSave({
@@ -175,7 +175,7 @@ export default class MocksDesigner extends React.Component {
         window.popup(
             'Edit/replace data for users resource. Data must be an array and a valid JSON.',
             (ok, cancel) => <Data data={this.state.endpoints[idx].data} idx={idx} confirm={ok} cancel={cancel} />,
-            { __style: { width: '100%' } }
+            { additionalClass: 'designer-modal-dialog' }
         ).then(res => {
             this.setAndSave({
                 endpoints: this.state.endpoints.map((endpoint, i) => {
@@ -187,14 +187,12 @@ export default class MocksDesigner extends React.Component {
         })
     }
 
-    generateData = () => {
-        this.setAndSave({
-            endpoints: this.state.endpoints.map(endpoint => ({
-                ...endpoint,
-                data: endpoint.data || this.generateFakerValues(endpoint)
-            }))
-        })
-    }
+    generateData = () => this.setAndSave({
+        endpoints: this.state.endpoints.map(endpoint => ({
+            ...endpoint,
+            data: endpoint.data || this.generateFakerValues(endpoint)
+        }))
+    })
 
     resetData = () => {
         window.newConfirm(`Are you sure you reset all data ?`)
@@ -212,7 +210,7 @@ export default class MocksDesigner extends React.Component {
     }
 
     render() {
-        const { route, hide, saveRoute } = this.props
+        const { route, hide } = this.props
 
         if (!route)
             return null
@@ -224,60 +222,89 @@ export default class MocksDesigner extends React.Component {
                 <div className='m-3 ms-0'>
                     <div className='d-flex-between'>
                         <div>
-                            <button className="btn btn-sm btn-info" onClick={() => this.showResourceForm()}>New resource</button>
-                            <button className="btn btn-sm btn-info mx-1" onClick={() => this.showEndpointForm()}>New endpoint</button>
-                            <button className="btn btn-sm btn-info" onClick={() => this.showGenerateEndpointForm()}>Generate endpoint</button>
-                        </div>
-                        <div>
-                            <button className="btn btn-sm btn-save me-1" onClick={() => this.generateData()}>GENERATE ALL</button>
-                            <button className="btn btn-sm btn-save" onClick={() => this.resetData()}>RESET ALL</button>
+                            <button className="btn btn-sm btn-info" onClick={() => this.showResourceForm()}>
+                                <i className="fas fa-plus-circle me-1" />New resource
+                            </button>
+                            <button className="btn btn-sm btn-info mx-1" onClick={() => this.showEndpointForm()}>
+                                <i className="fas fa-plus-circle me-1" />New endpoint
+                            </button>
+                            <button className="btn btn-sm btn-info" onClick={() => this.showGenerateEndpointForm()}>
+                                <i className="fas fa-hammer me-1" />Generate endpoint
+                            </button>
                         </div>
                     </div>
-                    <div className='my-2'>
-                        <h3>Resources</h3>
-                        <div className='mt-3 d-flex'>
-                            {this.state.resources.map((resource, idx) => {
-                                return <div className='mt-1 card-endpoint' key={resource.name} onClick={() => this.showResourceForm(idx)}>
-                                    <label>{resource.name}</label>
-                                    <button className='btn btn-sm btn-danger' onClick={() => this.removeResource(idx)}>
-                                        <i className='fas fa-trash' />
-                                    </button>
-                                </div>
-                            })}
-                        </div>
-                        {this.state.resources.length === 0 && <span>No resources available</span>}
-                    </div>
-                    <div className='my-2'>
-                        <h3>Endpoints</h3>
-                        {this.state.endpoints.map((endpoint, idx) => {
-                            return <div className='d-flex-between mt-1 endpoint' key={`${endpoint.path}${idx}`}>
-                                <div className='d-flex-between'>
-                                    <div style={{ minWidth: "60px" }}>
-                                        <span className={`badge me-1`}
-                                            style={{ backgroundColor: HTTP_COLORS[endpoint.method] }}>
-                                            {endpoint.method}
-                                        </span>
+                    <div className='row my-3'>
+                        <div className='col-md-4'>
+                            <h3>Resources</h3>
+                            <div className='mt-3 flex-column'>
+                                {this.state.resources.map((resource, idx) => {
+                                    return <div className={`mt-${idx === 0 ? 0 : 1} d-flex-between endpoint`} key={resource.name} onClick={() => this.showResourceForm(idx)}>
+                                        <label>{resource.name}</label>
+                                        <button className='btn btn-sm btn-danger' onClick={() => this.removeResource(idx)}>
+                                            <i className='fas fa-trash' />
+                                        </button>
                                     </div>
-                                    <span>{endpoint.path}</span>
-                                </div>
-                                <div className='d-flex-between'>
-                                    {!endpoint.data && !endpoint.body && !endpoint.resource &&
-                                        <div className='mx-1 d-flex-between endpoint-helper'>
-                                            <Help text="Missing data, body or resource" />
-                                        </div>}
-                                    <button className='btn btn-sm btn-info' onClick={() => this.showData(idx)}>
-                                        <i className='fas fa-eye' />
-                                    </button>
-                                    <button className='btn btn-sm btn-success mx-1' onClick={() => this.showEndpointForm(idx)}>
-                                        <i className='fas fa-edit' />
-                                    </button>
-                                    <button className='btn btn-sm btn-danger' onClick={() => this.removeEndpoint(idx)}>
-                                        <i className='fas fa-trash' />
+                                })}
+                            </div>
+                            {this.state.resources.length === 0 && <span>No resources available</span>}
+                        </div>
+                        <div className='col-md-8'>
+                            <div className='d-flex-between'>
+                                <h3>Endpoints</h3>
+                                <div>
+                                    <FeedbackButton
+                                        className="btn btn-sm btn-save me-1"
+                                        onPress={this.generateData}
+                                        icon={() => <i className="fas fa-hammer me-1" />}
+                                        text="GENERATE ALL"
+                                    />
+                                    <button className="btn btn-sm btn-save" onClick={this.resetData}>
+                                        <i className="fas fa-times me-1" />RESET ALL
                                     </button>
                                 </div>
                             </div>
-                        })}
-                        {this.state.endpoints.length === 0 && <span>No endpoints available</span>}
+                            <div className='mt-3'>
+                                {this.state.endpoints
+                                    .sort((a, b) => a.path.localeCompare(b.path))
+                                    .map((endpoint, idx) => {
+                                        return <div className='d-flex-between mt-1 endpoint' key={`${endpoint.path}${idx}`} onClick={() => this.showEndpointForm(idx)}>
+                                            <div className='d-flex-between'>
+                                                <div style={{ minWidth: "60px" }}>
+                                                    <span className={`badge me-1`}
+                                                        style={{ backgroundColor: HTTP_COLORS[endpoint.method] }}>
+                                                        {endpoint.method}
+                                                    </span>
+                                                </div>
+                                                <span>{endpoint.path}</span>
+                                            </div>
+                                            <div className='d-flex-between'>
+                                                {!endpoint.data && !endpoint.body && !endpoint.resource &&
+                                                    <div className='mx-1 d-flex-between endpoint-helper'>
+                                                        <Help text="Missing data, body or resource" icon="fas fa-exclamation-triangle" iconColor="#D5443F" />
+                                                    </div>}
+                                                <button className='btn btn-sm btn-info' onClick={e => {
+                                                    e.stopPropagation();
+                                                    this.showData(idx)
+                                                }}>
+                                                    <i className='fas fa-eye' />
+                                                </button>
+                                                <button className='btn btn-sm btn-danger' onClick={e => {
+                                                    window.newConfirm('Delete this endpoint ?')
+                                                        .then((ok) => {
+                                                            if (ok) {
+                                                                e.stopPropagation();
+                                                                this.removeEndpoint(idx)
+                                                            }
+                                                        })
+                                                }}>
+                                                    <i className='fas fa-trash' />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    })}
+                                {this.state.endpoints.length === 0 && <span>No endpoints available</span>}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -376,8 +403,8 @@ const GenerateEndpoint = ({ resources, confirm, cancel }) => {
             </div>)}
         </div>
         <div className='d-flex-between'>
+            <button className='btn btn-sm btn-danger ms-auto me-1' onClick={cancel}>Cancel</button>
             <button className='btn btn-sm btn-save' onClick={() => confirm(endpoints.filter(d => d.enabled))}>Create</button>
-            <button className='btn btn-sm btn-danger' onClick={cancel}>Cancel</button>
         </div>
     </div>
 }
@@ -496,11 +523,11 @@ class NewResource extends React.Component {
             </div>
 
             <div className='d-flex-between'>
+                <button className='btn btn-sm btn-danger ms-auto me-1' onClick={this.props.cancel}>Cancel</button>
                 <button className='btn btn-sm btn-save' onClick={() => this.props.confirm({
                     value: this.state,
                     idx: this.props.idx
-                })}>Create</button>
-                <button className='btn btn-sm btn-danger' onClick={this.props.cancel}>Cancel</button>
+                })}>{this.props.resource ? 'Save' : 'Create'}</button>
             </div>
         </div>
     }
@@ -584,11 +611,11 @@ class NewEndpoint extends React.Component {
                 value={headers}
                 onChange={v => this.setState({ headers: v })} />
             <div className='d-flex-between'>
+                <button className='btn btn-sm btn-danger ms-auto me-1' onClick={this.props.cancel}>Cancel</button>
                 <button className='btn btn-sm btn-save' onClick={() => this.props.confirm({
                     value: this.state,
                     idx: this.props.idx
-                })}>Create</button>
-                <button className='btn btn-sm btn-danger' onClick={this.props.cancel}>Cancel</button>
+                })}>{this.props.endpoint ? 'Save' : 'Create'}</button>
             </div>
         </div>
     }
