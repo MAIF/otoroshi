@@ -2050,7 +2050,7 @@ case class GlobalJwtVerifier(
     strict: Boolean = true,
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
     algoSettings: AlgoSettings = HSAlgoSettings(512, "secret", false),
-    strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer"))),
+    strategy: VerifierStrategy = PassThrough(VerificationSettings(Map.empty)),
     tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
