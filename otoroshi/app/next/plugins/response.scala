@@ -4,6 +4,8 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.env.Env
+import otoroshi.next.models.{NgDomainAndPath, NgFrontend, NgTreeRouter}
+import otoroshi.next.models.NgTreeRouter_Test.NgFakeRoute
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -176,7 +178,7 @@ object MockEndpoint {
         status = json.select("status").as[Int],
         body = json.select("body").asOpt[JsObject],
         resource = json.select("resource").asOpt[String],
-        resourceList = json.select("resourceList").as[Boolean],
+        resourceList = json.select("resource_list").as[Boolean],
         headers = json.select("headers").asOpt[JsObject],
       )
     } match {
@@ -265,32 +267,39 @@ class MockResponses extends NgBackendCall {
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
-    /*
-    NgTreeRouter.build(paths.map(resp => NgFakeRoute.routeFromPath(resp.path)))
-        .find("", ctx.request.path)*/
     val config = ctx.cachedConfig(internalName)(MockResponsesConfig.format).getOrElse(MockResponsesConfig())
-    config.responses.filter(r => r.method.toLowerCase == ctx.request.method.toLowerCase || r.method.toLowerCase == ctx.rawRequest.method.toLowerCase).find { resp =>
-      resp.path.wildcard.matches(ctx.rawRequest.thePath) || resp.path.wildcard.matches(ctx.request.path)
-    } match {
-      case None if !config.passThrough =>
-        bodyResponse(
-          404,
-          Map("Content-Type" -> "application/json"),
-          Source.single(Json.obj("error" -> "resource not found !").stringify.byteString)
-        ).future
-      case None if config.passThrough  => delegates()
-      case Some(response)              => {
-        // val contentType      = response.headers
-        //   .get("Content-Type")
-        //   .orElse(response.headers.get("content-type"))
-        //   .getOrElse("application/json")
-        // val headers          = response.headers.filterNot(_._1.toLowerCase() == "content-type") ++ ("Content-Type" -> contentType)
-        val body: ByteString = response.body match {
-          case str if str.startsWith("Base64(") => str.substring(7).init.byteString.decodeBase64
-          case str                              => str.byteString
-        }
-        bodyResponse(response.status, response.headers, Source.single(body)).future
+    val paths = config.responses
+      .filter(r => r.method.toLowerCase == ctx.request.method.toLowerCase || r.method.toLowerCase == ctx.rawRequest.method.toLowerCase)
+
+    NgTreeRouter.build(
+      paths.map(resp => {
+        val r = NgFakeRoute.routeFromPath(s"oto.tools${resp.path}")
+        r.copy(
+          metadata = Map("mock" -> resp.json.stringify),
+          frontend = r.frontend.copy(exact = true)
+        )
+      })
+    )
+      .find("oto.tools", ctx.request.path)
+      .filter(_.noMoreSegments)
+      .flatMap { c => c.routes.headOption }
+      .map(route => {
+          val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)
+          val body: ByteString = response.body match {
+            case str if str.startsWith("Base64(") => str.substring(7).init.byteString.decodeBase64
+            case str                              => str.byteString
+          }
+          bodyResponse(response.status, response.headers, Source.single(body)).future
+      })
+      .getOrElse {
+        if (!config.passThrough)
+          bodyResponse(
+            404,
+            Map("Content-Type" -> "application/json"),
+            Source.single(Json.obj("error" -> "resource not found !").stringify.byteString)
+          ).future
+        else
+          delegates()
       }
-    }
   }
 }

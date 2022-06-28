@@ -29,8 +29,6 @@ import { snakeCase, camelCase, isEqual, over } from 'lodash';
 import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
-import GraphQLForm from './GraphQLForm';
-import MocksDesigner from './MocksDesigner';
 
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
@@ -441,7 +439,7 @@ class Designer extends React.Component {
       TransformRequest: true,
       TransformResponse: true,
     },
-    advancedDesignerView: MocksDesigner
+    advancedDesignerView: null
   };
 
   componentDidMount() {

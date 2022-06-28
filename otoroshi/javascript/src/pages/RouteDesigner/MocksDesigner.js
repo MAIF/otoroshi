@@ -31,6 +31,7 @@ export default class MocksDesigner extends React.Component {
                 .plugins
                 .find(p => p.plugin === "cp:otoroshi.next.plugins.MockResponses")?.config
 
+            console.log(plugin)
             if (plugin && plugin.form_data)
                 return { ...plugin.form_data }
         }
@@ -59,8 +60,8 @@ export default class MocksDesigner extends React.Component {
         })
     }))
 
-    configToResponses = config => config.endpoints.map(({ path, method, status, headers, data }) => ({
-        path, method, status, headers, body: data
+    configToResponses = config => config.endpoints.map(({ path, method, status, headers, body }) => ({
+        path, method, status, headers, body: JSON.stringify(body)
     }))
 
     setAndSave = res => this.saveRoute(res)
@@ -174,13 +175,13 @@ export default class MocksDesigner extends React.Component {
     showData = idx => {
         window.popup(
             'Edit/replace data for users resource. Data must be an array and a valid JSON.',
-            (ok, cancel) => <Data data={this.state.endpoints[idx].data} idx={idx} confirm={ok} cancel={cancel} />,
+            (ok, cancel) => <Data body={this.state.endpoints[idx].body} idx={idx} confirm={ok} cancel={cancel} />,
             { additionalClass: 'designer-modal-dialog' }
         ).then(res => {
             this.setAndSave({
                 endpoints: this.state.endpoints.map((endpoint, i) => {
                     if (i === res.idx)
-                        return { ...endpoint, data: res.data }
+                        return { ...endpoint, body: res.body }
                     return endpoint
                 })
             })
@@ -190,7 +191,7 @@ export default class MocksDesigner extends React.Component {
     generateData = () => this.setAndSave({
         endpoints: this.state.endpoints.map(endpoint => ({
             ...endpoint,
-            data: endpoint.data || this.generateFakerValues(endpoint)
+            body: endpoint.body || this.generateFakerValues(endpoint)
         }))
     })
 
@@ -201,7 +202,7 @@ export default class MocksDesigner extends React.Component {
                     this.setAndSave({
                         endpoints: this.state.endpoints.map(endpoint => ({
                             ...endpoint,
-                            data: null
+                            body: null
                         }))
                     })
                         .then(this.generateData)
@@ -278,17 +279,18 @@ export default class MocksDesigner extends React.Component {
                                                 <span>{endpoint.path}</span>
                                             </div>
                                             <div className='d-flex-between'>
-                                                {!endpoint.data && !endpoint.body && !endpoint.resource &&
+                                                {!endpoint.body && !endpoint.resource &&
                                                     <div className='mx-1 d-flex-between endpoint-helper'>
                                                         <Help text="Missing data, body or resource" icon="fas fa-exclamation-triangle" iconColor="#D5443F" />
                                                     </div>}
-                                                <button className='btn btn-sm btn-info' onClick={e => {
+                                                <button className='btn btn-sm btn-info me-1' onClick={e => {
                                                     e.stopPropagation();
                                                     this.showData(idx)
                                                 }}>
                                                     <i className='fas fa-eye' />
                                                 </button>
                                                 <button className='btn btn-sm btn-danger' onClick={e => {
+                                                    e.stopPropagation()
                                                     window.newConfirm('Delete this endpoint ?')
                                                         .then((ok) => {
                                                             if (ok) {
@@ -319,8 +321,8 @@ export default class MocksDesigner extends React.Component {
     }
 }
 
-const Data = ({ idx, data, confirm, cancel }) => {
-    const [res, setRes] = useState(data)
+const Data = ({ idx, body, confirm, cancel }) => {
+    const [res, setRes] = useState(body)
 
     return <div className="designer p-3" style={{ background: "#373735", borderRadius: '4px' }}>
         <CodeInput
@@ -330,7 +332,7 @@ const Data = ({ idx, data, confirm, cancel }) => {
         <div className='d-flex mt-3'>
             <button className='btn btn-sm btn-danger me-1 ms-auto' onClick={cancel}>Cancel</button>
             <button className='btn btn-sm btn-save' onClick={() => confirm({
-                data: res, idx
+                body: res, idx
             })}>Save</button>
         </div>
     </div>
