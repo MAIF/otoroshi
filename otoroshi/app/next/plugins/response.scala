@@ -172,12 +172,12 @@ object MockEndpoint {
     override def reads(json: JsValue): JsResult[MockEndpoint] = Try {
       MockEndpoint(
         method = json.select("method").as[String],
-        path = json.select("method").as[String],
-        status = json.select("method").as[Int],
-        body = json.select("method").asOpt[JsObject],
-        resource = json.select("method").asOpt[String],
-        resourceList = json.select("method").as[Boolean],
-        headers = json.select("method").asOpt[JsObject],
+        path = json.select("path").as[String],
+        status = json.select("status").as[Int],
+        body = json.select("body").asOpt[JsObject],
+        resource = json.select("resource").asOpt[String],
+        resourceList = json.select("resourceList").as[Boolean],
+        headers = json.select("headers").asOpt[JsObject],
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
