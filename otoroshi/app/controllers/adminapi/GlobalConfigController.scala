@@ -75,7 +75,7 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
                   ctx.ua
                 )
               )
-              ak.save().map(_ => Ok(Json.obj("done" -> true))) // TODO : rework
+              ak.save().map(_ => Ok(ak.json))
             }
           }
         }
@@ -116,7 +116,7 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
                   ctx.ua
                 )
               )
-              ak.save().map(_ => Ok(Json.obj("done" -> true))) // TODO : rework
+              ak.save().map(_ => Ok(ak.json))
             }
           }
         }
