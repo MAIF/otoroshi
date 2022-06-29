@@ -31,14 +31,23 @@ import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.jobs.updates.Version
 import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}
-import otoroshi.next.models.{KvNgRouteDataStore, KvNgServiceDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
+import otoroshi.next.models.{
+  KvNgRouteDataStore,
+  KvNgServiceDataStore,
+  KvStoredNgBackendDataStore,
+  KvStoredNgTargetDataStore,
+  NgRouteDataStore,
+  NgServiceDataStore,
+  StoredNgBackendDataStore,
+  StoredNgTargetDataStore
+}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils
-import otoroshi.utils.{SchedulerHelper, future}
+import otoroshi.utils.{future, SchedulerHelper}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -780,21 +789,21 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
         )
       )
       // if (env.clusterConfig.autoUpdateState) {
-        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster state auto update")
-        stateUpdaterRef.set(
-          env.otoroshiScheduler.scheduleAtFixedRate(1.second, env.clusterConfig.leader.cacheStateFor.millis)(
-            utils.SchedulerHelper.runnable(
-              try {
-                cacheState()
-              } catch {
-                case e: Throwable =>
-                  caching.compareAndSet(true, false)
-                  Cluster.logger
-                    .error(s"Error while renewing leader state cache of ${env.clusterConfig.leader.name}", e)
-              }
-            )
+      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster state auto update")
+      stateUpdaterRef.set(
+        env.otoroshiScheduler.scheduleAtFixedRate(1.second, env.clusterConfig.leader.cacheStateFor.millis)(
+          utils.SchedulerHelper.runnable(
+            try {
+              cacheState()
+            } catch {
+              case e: Throwable =>
+                caching.compareAndSet(true, false)
+                Cluster.logger
+                  .error(s"Error while renewing leader state cache of ${env.clusterConfig.leader.name}", e)
+            }
           )
         )
+      )
       // }
     }
   }
@@ -814,10 +823,10 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
     if (caching.compareAndSet(false, true)) {
       env.metrics.withTimerAsync("otoroshi.core.cluster.cache-state") {
         // TODO: handle in proxy state ?
-        val start = System.currentTimeMillis()
+        val start   = System.currentTimeMillis()
         // var stateCache = ByteString.empty
         val counter = new AtomicLong(0L)
-        val digest = MessageDigest.getInstance("SHA-256")
+        val digest  = MessageDigest.getInstance("SHA-256")
         env.datastores
           .rawExport(env.clusterConfig.leader.groupingBy)
           .map { item =>
@@ -870,7 +879,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
                 s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
               )
             }
-            case Failure(err) =>
+            case Failure(err)        =>
               caching.compareAndSet(true, false)
               Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", err)
           }
@@ -909,7 +918,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private val servicesIncrementsRef = new AtomicReference[TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]](
     new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
   )
-  private val workerSessionsCache = Scaffeine()
+  private val workerSessionsCache   = Scaffeine()
     .maximumSize(1000L)
     .expireAfterWrite(env.clusterConfig.worker.state.pollEvery.millis * 3)
     .build[String, PrivateAppsUser]()
@@ -1101,9 +1110,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(config.proxy)
             .get()
-            .andThen {
-              case Failure(failure) =>
-                Cluster.logger.error(s"${env.clusterConfig.mode.name}] Failed to check session on leader", failure)
+            .andThen { case Failure(failure) =>
+              Cluster.logger.error(s"${env.clusterConfig.mode.name}] Failed to check session on leader", failure)
             }
             .filter { resp =>
               if (resp.status == 200) Cluster.logger.debug(s"Session $id is valid")
@@ -1117,12 +1125,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             s"[${env.clusterConfig.mode.name}] Error while checking session with Otoroshi leader cluster"
           )
           workerSessionsCache.getIfPresent(id) match {
-            case None => {
+            case None        => {
               Cluster.logger.debug(
                 s"[${env.clusterConfig.mode.name}] no local session found after leader call failed"
               )
               PrivateAppsUser.fromCookie(id, reqOpt)(env) match {
-                case None =>
+                case None        =>
                   Cluster.logger.debug(
                     s"[${env.clusterConfig.mode.name}] no cookie session found after leader call failed"
                   )
@@ -1171,10 +1179,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withMaybeProxyServer(config.proxy)
           request
             .post(user.toJson)
-            .andThen {
-              case Failure(failure) =>
-                request.ignore()
-                Cluster.logger.error(s"${env.clusterConfig.mode.name}] Failed to create session on leader", failure)
+            .andThen { case Failure(failure) =>
+              request.ignore()
+              Cluster.logger.error(s"${env.clusterConfig.mode.name}] Failed to create session on leader", failure)
             }
             .filter { resp =>
               Cluster.logger.debug(s"Session for ${user.name} created on the leader ${resp.status}")
@@ -1273,7 +1280,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             factor = config.retryFactor,
             ctx = "leader-fetch-state"
           ) { tryCount =>
-            val request = env.MtlsWs
+            val request  = env.MtlsWs
               .url(otoroshiUrl + s"/api/cluster/state?budget=${config.worker.state.timeout}", config.mtlsConfig)
               .withHttpHeaders(
                 "Host"                                    -> config.leader.host,
@@ -1321,7 +1328,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 val digest         = MessageDigest.getInstance("SHA-256")
                 val from           = new DateTime(responseFrom.getOrElse(0))
 
-                val responseBody = if (env.clusterConfig.streamed) resp.bodyAsSource else Source.single(resp.bodyAsBytes)
+                val responseBody =
+                  if (env.clusterConfig.streamed) resp.bodyAsSource else Source.single(resp.bodyAsBytes)
                 responseBody
                   .via(env.clusterConfig.gunzip())
                   .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, true))

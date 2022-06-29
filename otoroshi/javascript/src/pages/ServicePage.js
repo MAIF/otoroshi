@@ -766,7 +766,7 @@ export class ServicePage extends Component {
     fetch('/bo/api/json_to_yaml', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         apiVersion: 'proxy.otoroshi.io/v1alpha1',
@@ -775,18 +775,20 @@ export class ServicePage extends Component {
           name,
         },
         spec: { ...this.state.service, name: undefined },
-      })
-    }).then(r => r.text()).then(yaml => {
-      const blob = new Blob([yaml], { type: 'application/yaml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.download = `service-descriptor-${name}-${Date.now()}.yaml`;
-      a.href = url;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => document.body.removeChild(a), 300);
-    });
+      }),
+    })
+      .then((r) => r.text())
+      .then((yaml) => {
+        const blob = new Blob([yaml], { type: 'application/yaml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.download = `service-descriptor-${name}-${Date.now()}.yaml`;
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => document.body.removeChild(a), 300);
+      });
   };
 
   changeTargetsValue = (value) => {

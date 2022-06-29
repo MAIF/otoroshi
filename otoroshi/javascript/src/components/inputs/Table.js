@@ -302,7 +302,7 @@ export class Table extends Component {
     fetch('/bo/api/json_to_yaml', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         apiVersion: 'proxy.otoroshi.io/v1alpha1',
@@ -311,19 +311,21 @@ export class Table extends Component {
           name,
         },
         spec: this.state.currentItem,
-      })
-    }).then(r => r.text()).then(yaml => {
-      const blob = new Blob([yaml], { type: 'application/yaml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.id = String(Date.now());
-      a.style.display = 'none';
-      a.download = `${itemName}-${name}-${Date.now()}.yaml`;
-      a.href = url;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => document.body.removeChild(a), 300);
-    });
+      }),
+    })
+      .then((r) => r.text())
+      .then((yaml) => {
+        const blob = new Blob([yaml], { type: 'application/yaml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.id = String(Date.now());
+        a.style.display = 'none';
+        a.download = `${itemName}-${name}-${Date.now()}.yaml`;
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => document.body.removeChild(a), 300);
+      });
   };
 
   render() {
@@ -523,7 +525,7 @@ export class Table extends Component {
                 onChange: (currentItem) => this.setState({ currentItem }),
                 flow: this.props.formFlow,
                 schema: this.props.formSchema,
-              })
+              }),
             ]}
             {!this.props.formComponent && !this.props.formFunction && (
               <Form
@@ -574,7 +576,7 @@ export class Table extends Component {
                 onChange: (currentItem) => this.setState({ currentItem }),
                 flow: this.props.formFlow,
                 schema: this.props.formSchema,
-              })
+              }),
             ]}
             {!this.props.formComponent && !this.props.formFunction && (
               <Form

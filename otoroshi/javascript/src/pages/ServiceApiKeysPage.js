@@ -654,26 +654,41 @@ export class ServiceApiKeysPage extends Component {
   }
 
   fetchAllApiKeys = () => {
-    return BackOfficeServices.fetchApiKeysForPage(this.props.params.serviceId || this.props.params.routeId);
+    return BackOfficeServices.fetchApiKeysForPage(
+      this.props.params.serviceId || this.props.params.routeId
+    );
   };
 
   createItem = (ak) => {
-    return BackOfficeServices.createApiKey(this.props.params.serviceId || this.props.params.routeId, ak);
+    return BackOfficeServices.createApiKey(
+      this.props.params.serviceId || this.props.params.routeId,
+      ak
+    );
   };
 
   updateItem = (ak) => {
-    return BackOfficeServices.updateApiKey(this.props.params.serviceId || this.props.params.routeId, ak);
+    return BackOfficeServices.updateApiKey(
+      this.props.params.serviceId || this.props.params.routeId,
+      ak
+    );
   };
 
   deleteItem = (ak) => {
-    return BackOfficeServices.deleteApiKey(this.props.params.serviceId || this.props.params.routeId, ak);
+    return BackOfficeServices.deleteApiKey(
+      this.props.params.serviceId || this.props.params.routeId,
+      ak
+    );
   };
 
   render() {
     return (
       <Table
         parentProps={this.props}
-        selfUrl={this.onRoutes ? `services/${this.props.params.routeId}/apikeys` : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`}
+        selfUrl={
+          this.onRoutes
+            ? `services/${this.props.params.routeId}/apikeys`
+            : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
+        }
         defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
         defaultValue={() =>
           BackOfficeServices.createNewApikey().then((apk) => ({

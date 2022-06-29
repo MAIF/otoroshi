@@ -3,7 +3,14 @@ package otoroshi.controllers.adminapi
 import otoroshi.actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Sink, Source}
-import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig, GenericOauth2ModuleConfig, LdapAuthModuleConfig, Oauth1ModuleConfig, SamlAuthModuleConfig}
+import otoroshi.auth.{
+  AuthModuleConfig,
+  BasicAuthModuleConfig,
+  GenericOauth2ModuleConfig,
+  LdapAuthModuleConfig,
+  Oauth1ModuleConfig,
+  SamlAuthModuleConfig
+}
 import otoroshi.env.Env
 import otoroshi.events.GatewayEvent
 import otoroshi.models._
@@ -444,13 +451,13 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def initiateResources() =
     ApiAction.async(parse.json) { ctx =>
       ctx.request.body.select("content").asOpt[JsValue] match {
-        case Some(JsArray(values)) => {
+        case Some(JsArray(values))                              => {
           Source(values.toList)
             .mapAsync(1) { v => createResource(v) }
             .runWith(Sink.seq)
             .map(created => Ok(Json.obj("created" -> JsArray(created))))
         }
-        case Some(content@JsObject(_)) => createResource(content).map(created => Ok(Json.obj("created" -> created)))
+        case Some(content @ JsObject(_))                        => createResource(content).map(created => Ok(Json.obj("created" -> created)))
         case Some(JsString(content)) if content.contains("---") => {
           Source(splitContent(content).toList)
             .flatMapConcat(s => Source(Yaml.parse(s).toList))
@@ -458,14 +465,15 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             .runWith(Sink.seq)
             .map(created => Ok(Json.obj("created" -> JsArray(created))))
         }
-        case Some(JsString(content)) => Yaml.parseSafe(content) match {
-          case Left(e) =>
-            e.printStackTrace()
-            // Yaml.write(env.datastores.globalConfigDataStore.latest().json).debugPrintln
-            BadRequest(Json.obj("error" -> "Can't create resources")).vfuture
-          case Right(yaml) => createResource(yaml).map(created => Ok(Json.obj("created" -> created)))
-        }
-        case _ => BadRequest(Json.obj("error" -> "Can't create resources")).vfuture
+        case Some(JsString(content))                            =>
+          Yaml.parseSafe(content) match {
+            case Left(e)     =>
+              e.printStackTrace()
+              // Yaml.write(env.datastores.globalConfigDataStore.latest().json).debugPrintln
+              BadRequest(Json.obj("error" -> "Can't create resources")).vfuture
+            case Right(yaml) => createResource(yaml).map(created => Ok(Json.obj("created" -> created)))
+          }
+        case _                                                  => BadRequest(Json.obj("error" -> "Can't create resources")).vfuture
       }
     }
 
@@ -531,7 +539,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           FastFuture.successful(
             Tenant.fromJsons(env.datastores.tenantDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
           )
-        case "Organization"            =>
+        case "Organization"      =>
           FastFuture.successful(
             Tenant.fromJsons(env.datastores.tenantDataStore.template(env).json.as[JsObject].deepMerge(resource)).json
           )
@@ -581,34 +589,34 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               .fromJsons(env.datastores.globalJwtVerifierDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .json
           )
-        case "Admin"       =>
+        case "Admin"             =>
           FastFuture.successful(
-            SimpleOtoroshiAdmin
-              .fmt.reads(env.datastores.simpleAdminDataStore.template(env).json.as[JsObject].deepMerge(resource))
+            SimpleOtoroshiAdmin.fmt
+              .reads(env.datastores.simpleAdminDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .get
               .json
           )
         case "SimpleAdmin"       =>
           FastFuture.successful(
-            SimpleOtoroshiAdmin
-              .fmt.reads(env.datastores.simpleAdminDataStore.template(env).json.as[JsObject].deepMerge(resource))
+            SimpleOtoroshiAdmin.fmt
+              .reads(env.datastores.simpleAdminDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .get
               .json
           )
-        case "Backend"       =>
+        case "Backend"           =>
           FastFuture.successful(
-            NgBackend
-              .fmt.reads(env.datastores.backendsDataStore.template(env).json.as[JsObject].deepMerge(resource))
+            NgBackend.fmt
+              .reads(env.datastores.backendsDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .get
               .json
           )
-        case "Route"       =>
+        case "Route"             =>
           FastFuture.successful(
             NgRoute
               .fromJsons(env.datastores.routeDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .json
           )
-        case "RouteComposition"       =>
+        case "RouteComposition"  =>
           FastFuture.successful(
             NgRoute
               .fromJsons(env.datastores.servicesDataStore.template(env).json.as[JsObject].deepMerge(resource))

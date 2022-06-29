@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { nextClient } from '../services/BackOfficeServices';
 import { Table, Form } from '../components/inputs';
-import { schemas } from './RouteDesigner/form'
+import { schemas } from './RouteDesigner/form';
 
 export class BackendsPage extends Component {
   formSchema = {
@@ -29,15 +29,7 @@ export class BackendsPage extends Component {
     },
   };
 
-  formFlow = [
-    '_loc', 
-    'id', 
-    'name', 
-    'description', 
-    'tags', 
-    'metadata',
-    '---',
-  ];
+  formFlow = ['_loc', 'id', 'name', 'description', 'tags', 'metadata', '---'];
 
   columns = [
     {
@@ -46,7 +38,6 @@ export class BackendsPage extends Component {
     },
     { title: 'Description', content: (item) => item.description },
   ];
-
 
   state = { env: null };
 
@@ -75,30 +66,25 @@ export class BackendsPage extends Component {
         navigateTo={(item) => {
           window.location = `/bo/dashboard/backends/edit/${item.id}`;
         }}
-        itemUrl={(item) =>  `/bo/dashboard/backends/edit/${item.id}`}
+        itemUrl={(item) => `/bo/dashboard/backends/edit/${item.id}`}
         showActions={true}
         rowNavigation={true}
         extractKey={(item) => item.id}
         export={true}
         kubernetesKind="Backend"
-        formFunction={opts => {
+        formFunction={(opts) => {
           const { value, onChange, flow, schema } = opts;
           return (
             <>
-              <Form
-                value={value}
-                onChange={onChange}
-                flow={flow}
-                schema={schema}
-              />
+              <Form value={value} onChange={onChange} flow={flow} schema={schema} />
               <Form
                 value={value.backend}
-                onChange={backend => onChange({ ...value, backend })}
+                onChange={(backend) => onChange({ ...value, backend })}
                 flow={schemas.backend.flow}
                 schema={schemas.backend.schema}
               />
             </>
-          )
+          );
         }}
       />
     );

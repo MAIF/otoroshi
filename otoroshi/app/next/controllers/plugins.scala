@@ -101,7 +101,7 @@ class NgPluginsController(
         "plugin_multi_inst"             -> plugin.multiInstance,
         "plugin_backend_call_delegates" -> (plugin match {
           case call: NgBackendCall => call.useDelegates
-          case _ => false
+          case _                   => false
         }),
         "on_request"                    -> onRequest,
         "on_response"                   -> onResponse

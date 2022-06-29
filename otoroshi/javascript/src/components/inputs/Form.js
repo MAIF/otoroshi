@@ -12,7 +12,7 @@ import {
 } from '.';
 import { Location } from '../Location';
 const CodeInput = React.lazy(() => Promise.resolve(require('./CodeInput')));
-import { JsonObjectAsCodeInput } from './CodeInput' // TODO: fix
+import { JsonObjectAsCodeInput } from './CodeInput'; // TODO: fix
 
 import _ from 'lodash';
 import deepGet from 'get-value';

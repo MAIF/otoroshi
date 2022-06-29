@@ -26,7 +26,20 @@ import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
 import otoroshi.jobs.updates.Version
-import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{
+  EntityLocation,
+  OtoroshiAdminType,
+  SimpleOtoroshiAdmin,
+  Team,
+  TeamAccess,
+  TeamId,
+  Tenant,
+  TenantAccess,
+  TenantId,
+  UserRight,
+  UserRights,
+  WebAuthnOtoroshiAdmin
+}
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.openapi.{ClassGraphScanner, FormsGenerator, OpenApiGenerator, OpenapiToJson}
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
@@ -891,7 +904,7 @@ class Env(
 
   lazy val exposedHttpPortInt: Int = configuration
     .getOptionalWithFileSupport[Int]("app.exposed-ports.http")
-    .getOrElse(port)                                      
+    .getOrElse(port)
 
   lazy val exposedHttpsPort: String = configuration
     .getOptionalWithFileSupport[Int]("app.exposed-ports.https")
@@ -1337,9 +1350,10 @@ class Env(
   lazy val encryptionKey = new SecretKeySpec(otoroshiSecret.padTo(16, "0").mkString("").take(16).getBytes, "AES")
 
   def encryptedJwt(user: PrivateAppsUser): String = {
-    val added = clusterConfig.worker.state.pollEvery.millis.toSeconds.toInt * 3
+    val added   = clusterConfig.worker.state.pollEvery.millis.toSeconds.toInt * 3
     val session = aesEncrypt(Json.stringify(user.json))
-    JWT.create()
+    JWT
+      .create()
       .withIssuer("otoroshi")
       .withIssuedAt(DateTime.now().toDate)
       .withExpiresAt(DateTime.now().plusSeconds(added).toDate)
@@ -1351,12 +1365,12 @@ class Env(
   def aesEncrypt(content: String): String = {
     val cipher: Cipher = Cipher.getInstance("AES")
     cipher.init(Cipher.ENCRYPT_MODE, encryptionKey)
-    val bytes = cipher.doFinal(content.getBytes)
+    val bytes          = cipher.doFinal(content.getBytes)
     java.util.Base64.getUrlEncoder.encodeToString(bytes)
   }
 
   def aesDecrypt(content: String): String = {
-    val bytes = java.util.Base64.getUrlDecoder.decode(content)
+    val bytes          = java.util.Base64.getUrlDecoder.decode(content)
     val cipher: Cipher = Cipher.getInstance("AES")
     cipher.init(Cipher.DECRYPT_MODE, encryptionKey)
     new String(cipher.doFinal(bytes))

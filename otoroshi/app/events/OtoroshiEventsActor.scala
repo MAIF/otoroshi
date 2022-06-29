@@ -176,9 +176,9 @@ object DataExporter {
       (configUnsafe.filtering.include.isEmpty || configUnsafe.filtering.include.exists(i =>
         otoroshi.utils.Match.matches(event, i)
       )) &&
-        (configUnsafe.filtering.exclude.isEmpty || !configUnsafe.filtering.exclude.exists(i =>
-          otoroshi.utils.Match.matches(event, i)
-        ))
+      (configUnsafe.filtering.exclude.isEmpty || !configUnsafe.filtering.exclude.exists(i =>
+        otoroshi.utils.Match.matches(event, i)
+      ))
     } catch {
       case t: Throwable =>
         logger.error("error while accepting event", t)

@@ -33,6 +33,7 @@ GET     /bo/api/lines/:lineId/:serviceId/docframe             otoroshi.controlle
 GET     /bo/api/lines/:lineId/:serviceId/docdesc              otoroshi.controllers.BackOfficeController.documentationFrameDescriptor(lineId, serviceId)
 POST    /bo/api/search/services                               otoroshi.controllers.BackOfficeController.searchServicesApi()
 GET     /bo/api/version                                       otoroshi.controllers.BackOfficeController.version()
+GET     /bo/api/metrics                                       otoroshi.controllers.HealthController.backofficeMetrics()
 GET     /bo/api/env                                           otoroshi.controllers.BackOfficeController.getEnv()
 GET     /bo/api/apps                                          otoroshi.controllers.BackOfficeController.cleverApps()
 # GET     /bo/api/sessions                                    otoroshi.controllers.BackOfficeController.sessions()

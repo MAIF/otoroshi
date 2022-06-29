@@ -158,19 +158,21 @@ export const Informations = ({ isCreation, value, setValue, setSaveButton }) => 
           <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
             <i className="fas fa-times" /> Cancel
           </button>
-          {!isCreation && <button
-            className="btn btn-sm btn-danger"
-            onClick={() => {
-              window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
-                if (ok) {
-                  nextClient
-                    .deleteById(nextClient.ENTITIES[fetchName], value.id)
-                    .then(() => history.push(`/${link}`));
-                }
-              });
-            }}>
-            <i className="fas fa-trash" /> Delete
-          </button>}
+          {!isCreation && (
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={() => {
+                window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
+                  if (ok) {
+                    nextClient
+                      .deleteById(nextClient.ENTITIES[fetchName], value.id)
+                      .then(() => history.push(`/${link}`));
+                  }
+                });
+              }}>
+              <i className="fas fa-trash" /> Delete
+            </button>
+          )}
           {saveButton('')}
         </div>
       </div>

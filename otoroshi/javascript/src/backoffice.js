@@ -67,7 +67,7 @@ window.fetch = function (...params) {
     //   userAdmin: window.__otoroshi__env__latest.userAdmin,
     //   bypassUserRightsCheck: window.__otoroshi__env__latest.bypassUserRightsCheck
     // });
-    const opts = params[1] || {}
+    const opts = params[1] || {};
     return window._fetch(params[0], { ...opts, credentials: 'include' });
   }
 };

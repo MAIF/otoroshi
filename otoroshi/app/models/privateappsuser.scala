@@ -92,25 +92,34 @@ case class PrivateAppsUser(
 object PrivateAppsUser {
 
   def fromCookie(sessionId: String, reqOpt: Option[RequestHeader])(implicit env: Env): Option[PrivateAppsUser] = {
-    reqOpt.map { req =>
-      val verifier = JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).withIssuer("otoroshi").acceptLeeway(10).build()
-      req.cookies
-        .filter(_.name.startsWith("oto-papps-tsess-")).map { cookie =>
-        Try(verifier.verify(cookie.value))
-      }.collect {
-        case Success(decodedToken) => decodedToken
-      }.find { token =>
-        Try(token.getClaim("sessid").asString()).toOption.contains(sessionId)
-      }.flatMap { token =>
-        Try(token.getClaim("sess").asString()).toOption
-      }.flatMap { encryptedSession =>
-        Try(env.aesDecrypt(encryptedSession)).toOption
-      }.flatMap { decryptedSession =>
-        PrivateAppsUser.fmt.reads(Json.parse(decryptedSession)).asOpt
+    reqOpt
+      .map { req =>
+        val verifier =
+          JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).withIssuer("otoroshi").acceptLeeway(10).build()
+        req.cookies
+          .filter(_.name.startsWith("oto-papps-tsess-"))
+          .map { cookie =>
+            Try(verifier.verify(cookie.value))
+          }
+          .collect { case Success(decodedToken) =>
+            decodedToken
+          }
+          .find { token =>
+            Try(token.getClaim("sessid").asString()).toOption.contains(sessionId)
+          }
+          .flatMap { token =>
+            Try(token.getClaim("sess").asString()).toOption
+          }
+          .flatMap { encryptedSession =>
+            Try(env.aesDecrypt(encryptedSession)).toOption
+          }
+          .flatMap { decryptedSession =>
+            PrivateAppsUser.fmt.reads(Json.parse(decryptedSession)).asOpt
+          }
       }
-    }.collectFirst {
-      case Some(session) => session
-    }
+      .collectFirst { case Some(session) =>
+        session
+      }
   }
 
   def select(from: JsValue, selector: String): JsValue = {

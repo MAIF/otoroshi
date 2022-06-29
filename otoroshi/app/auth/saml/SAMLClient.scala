@@ -397,7 +397,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
               tags = Seq.empty,
               metadata = Map.empty,
               sessionCookieValues = SessionCookieValues(),
-              clientSideSessionEnabled = true,
+              clientSideSessionEnabled = true
             )
           )
         }

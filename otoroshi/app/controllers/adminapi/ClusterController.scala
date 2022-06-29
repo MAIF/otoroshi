@@ -549,7 +549,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                   .future
               }
             }
-            */
+             */
             // if (env.clusterConfig.autoUpdateState) {
             Cluster.logger.debug(
               s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${Option(env.clusterLeaderAgent.cachedCount)

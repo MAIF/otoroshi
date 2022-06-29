@@ -102,26 +102,26 @@ object implicits {
   }
   implicit class BetterString(private val obj: String)                 extends AnyVal {
     import otoroshi.utils.string.Implicits._
-    def slugify: String          = obj.slug
-    def slugifyWithSlash: String = obj.slug2
-    def wildcard: Regex          = RegexPool.apply(obj)
-    def regex: Regex             = RegexPool.regex(obj)
-    def byteString: ByteString   = ByteString(obj)
-    def bytes: Array[Byte]       = obj.getBytes(StandardCharsets.UTF_8)
-    def json: JsValue            = JsString(obj)
-    def parseJson: JsValue       = Json.parse(obj)
-    def base64: String           = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
-    def base64UrlSafe: String    = Base64.encodeBase64URLSafeString(obj.getBytes(StandardCharsets.UTF_8))
-    def fromBase64: String       = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
-    def sha256: String           = Hex.encodeHexString(BetterString.digest256.digest(obj.getBytes(StandardCharsets.UTF_8)))
-    def sha512: String           = Hex.encodeHexString(BetterString.digest512.digest(obj.getBytes(StandardCharsets.UTF_8)))
+    def slugify: String                            = obj.slug
+    def slugifyWithSlash: String                   = obj.slug2
+    def wildcard: Regex                            = RegexPool.apply(obj)
+    def regex: Regex                               = RegexPool.regex(obj)
+    def byteString: ByteString                     = ByteString(obj)
+    def bytes: Array[Byte]                         = obj.getBytes(StandardCharsets.UTF_8)
+    def json: JsValue                              = JsString(obj)
+    def parseJson: JsValue                         = Json.parse(obj)
+    def base64: String                             = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
+    def base64UrlSafe: String                      = Base64.encodeBase64URLSafeString(obj.getBytes(StandardCharsets.UTF_8))
+    def fromBase64: String                         = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
+    def sha256: String                             = Hex.encodeHexString(BetterString.digest256.digest(obj.getBytes(StandardCharsets.UTF_8)))
+    def sha512: String                             = Hex.encodeHexString(BetterString.digest512.digest(obj.getBytes(StandardCharsets.UTF_8)))
     def chunks(size: Int): Source[String, NotUsed] = Source(obj.grouped(size).toList)
     def camelToSnake: String = {
       obj.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase
       // obj.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2").replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase
     }
   }
-  implicit class BetterByteString(private val obj: ByteString) extends AnyVal {
+  implicit class BetterByteString(private val obj: ByteString)         extends AnyVal {
     def chunks(size: Int): Source[ByteString, NotUsed] = Source(obj.grouped(size).toList)
   }
   implicit class BetterBoolean(private val obj: Boolean)               extends AnyVal {
