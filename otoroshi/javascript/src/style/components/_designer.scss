@@ -562,6 +562,19 @@
     .graphql-form-type {
         background-color: #595959;
         border-radius: 4px;
+        max-height: 37px;
+    }
+
+    .graphql-form-element {
+        background-color: #595959;
+        margin: 6px;
+        margin-right: 0;
+        display: flex;
+        align-items: center;
+        border-bottom-left-radius: 6px;
+        border-top-left-radius: 6px;
+        overflow: hidden;
+        cursor: pointer;
     }
 
     .endpoint {

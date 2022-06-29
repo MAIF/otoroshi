@@ -65,7 +65,7 @@ const SaveButton = ({ disabled, saveChanges, disablePadding }) => (
   <div className={`d-flex align-items-center justify-content-end ${disablePadding ? '' : 'pt-3'}`}>
     <FeedbackButton
       text="Update the route"
-      disabled={disabled}
+      // disabled={disabled}
       icon={() => <i className="fas fa-paper-plane" />}
       onPress={saveChanges}
     />

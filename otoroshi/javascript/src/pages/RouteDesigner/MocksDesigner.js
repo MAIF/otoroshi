@@ -31,7 +31,6 @@ export default class MocksDesigner extends React.Component {
                 .plugins
                 .find(p => p.plugin === "cp:otoroshi.next.plugins.MockResponses")?.config
 
-            console.log(plugin)
             if (plugin && plugin.form_data)
                 return { ...plugin.form_data }
         }

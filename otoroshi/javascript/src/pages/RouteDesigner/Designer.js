@@ -1310,12 +1310,14 @@ class Designer extends React.Component {
           }}>
           {FullForm && <FullForm route={advancedDesignerView ? route : undefined}
             saveRoute={route => {
-              this.setState({ route }, this.saveRoute)
+              this.setState({ route })
             }}
             hide={e => {
               e.stopPropagation()
               this.setState({
-                selectedNode: backendCallNodes.find(node => node.id.includes("otoroshi.next.plugins.GraphQLBackend")),
+                selectedNode: backendCallNodes.find(node => node.id.includes(FullForm.name !== 'GraphQLForm' ?
+                  "otoroshi.next.plugins.MockResponses" :
+                  "otoroshi.next.plugins.GraphQLBackend")),
                 advancedDesignerView: false
               })
             }} />}
@@ -2178,7 +2180,7 @@ const Actions = ({ selectedNode, onRemove, valid, disabledSaveButton }) => (
     <FeedbackButton
       text="Save"
       className="ms-2"
-      disabled={disabledSaveButton}
+      // disabled={disabledSaveButton}
       icon={() => <i className="far fa-paper-plane" />}
       onPress={valid}
     />

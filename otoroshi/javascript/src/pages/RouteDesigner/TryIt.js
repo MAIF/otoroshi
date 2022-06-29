@@ -220,10 +220,14 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
 
   return (
     <Loader loading={!route}>
-      {route && route.plugins.find(f => f.plugin.includes('GraphQLBackend')) && playgroundUrl && lastQuery ?
+      {route && route.plugins.find(f => f.plugin.includes('GraphQLBackend')) &&
+        route.plugins.find(f => f.plugin.includes('GraphQLBackend')).enabled && playgroundUrl && lastQuery ?
         <div style={{ minHeight: 'calc(100vh - 162px)' }}>
           <Provider store={store}>
             <Playground
+              settings={{
+                "schema.polling.enable": false
+              }}
               codeTheme={{
                 editorBackground: "#3c3c3c",
                 resultBackground: "#494948",
