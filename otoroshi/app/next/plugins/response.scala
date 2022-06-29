@@ -297,14 +297,27 @@ class MockResponses extends NgBackendCall {
           val route = r.routes.headOption.get
           val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)
 
-          def replaceOn(value: String) =
-            Try {
+          def replaceOn(value: String) = {
+            val newValue =  Try
+            {
               expressionReplacer.replaceOn(value) {
                 case r"req.pathparams.$field@(.*):$defaultValue@(.*)" => r.pathParams.getOrElse(field, defaultValue)
                 case r"req.pathparams.$field@(.*)" => r.pathParams.getOrElse(field, s"no-path-param-$field")
                 case r => r
               }
             } recover { case _ => value } get
+
+            GlobalExpressionLanguage.apply(
+              newValue,
+              req = ctx.rawRequest.some,
+              service = ctx.route.legacy.some,
+              apiKey = ctx.apikey,
+              user = ctx.user,
+              context = Map.empty,
+              attrs = ctx.attrs,
+              env = env
+            )
+          }
 
           val body: ByteString = response.body match {
             case str if str.startsWith("Base64(") => replaceOn(str.substring(7).init).byteString.decodeBase64
