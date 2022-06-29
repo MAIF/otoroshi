@@ -643,6 +643,39 @@ object NgRoute {
     )
   )
 
+  def empty = NgRoute(
+    location = EntityLocation.default,
+    id = s"route_${IdGenerator.uuid}",
+    name = "empty route",
+    description = "empty route",
+    tags = Seq.empty,
+    metadata = Map.empty,
+    enabled = true,
+    debugFlow = false,
+    capture = false,
+    exportReporting = false,
+    groups = Seq("default"),
+    frontend = NgFrontend(
+      domains = Seq(NgDomainAndPath("empty.oto.tools")),
+      headers = Map.empty,
+      query = Map.empty,
+      methods = Seq.empty,
+      stripPath = true,
+      exact = false
+    ),
+    backendRef = None,
+    backend = NgBackend(
+      targets = Seq.empty,
+      targetRefs = Seq.empty,
+      root = "/",
+      rewrite = false,
+      loadBalancing = RoundRobin,
+      healthCheck = None,
+      client = NgClientConfig.default
+    ),
+    plugins = NgPlugins.empty
+  )
+
   def fromJsons(value: JsValue): NgRoute =
     try {
       fmt.reads(value).get
@@ -1028,7 +1061,21 @@ object NgRoute {
   }
 }
 
-trait NgRouteDataStore extends BasicStore[NgRoute]
+trait NgRouteDataStore extends BasicStore[NgRoute] {
+  def template(env: Env): NgRoute = {
+    val default = NgRoute.empty
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .route
+      .map { template =>
+        NgRoute.fmt.reads(default.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        default
+      }
+  }
+}
 
 class KvNgRouteDataStore(redisCli: RedisLike, _env: Env) extends NgRouteDataStore with RedisLikeStore[NgRoute] {
   override def redisLike(implicit env: Env): RedisLike = redisCli

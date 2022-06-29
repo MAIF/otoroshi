@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.{YAMLFactory, YAMLGenerator}
 import play.api.libs.json.{JsValue, Json}
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 object Yaml {
 
@@ -21,6 +21,16 @@ object Yaml {
     } recover { case _ =>
       None
     } get
+  }
+
+  def parseSafe(content: String): Either[Throwable, JsValue] = {
+    Try {
+      val obj = yamlReader.readValue(content, classOf[Object])
+      Json.parse(jsonWriter.writeValueAsString(obj))
+    } match {
+      case Success(s) => Right(s)
+      case Failure(e) => Left(e)
+    }
   }
 
   def write(value: JsValue): String = {

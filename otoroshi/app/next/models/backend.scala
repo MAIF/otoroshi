@@ -6,6 +6,7 @@ import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.next.models.NgTarget.readFrom
+import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.http.{CacheConnectionSettings, MtlsConfig}
 import otoroshi.utils.syntax.implicits._
@@ -587,7 +588,29 @@ case class StoredNgBackend(
   )
 }
 
-trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend]
+trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend] {
+  def template(env: Env): StoredNgBackend = {
+    val default = StoredNgBackend(
+      location = EntityLocation.default,
+      id = IdGenerator.namedId("backend", env),
+      name = "New backend",
+      description = "New backend",
+      metadata = Map.empty,
+      tags = Seq.empty,
+      backend = NgBackend.empty,
+    )
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .backend
+      .map { template =>
+        StoredNgBackend.format.reads(default.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        default
+      }
+  }
+}
 
 class KvStoredNgBackendDataStore(redisCli: RedisLike, _env: Env)
     extends StoredNgBackendDataStore

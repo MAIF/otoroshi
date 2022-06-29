@@ -29,6 +29,7 @@ import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.misc.LocalCache
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.yaml.Yaml
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
@@ -1810,6 +1811,10 @@ class BackOfficeController(
         )).future
     }
 
+  }
+
+  def toYaml = BackOfficeActionAuth(parse.json) { ctx =>
+    Ok(Yaml.write(ctx.request.body)).as("application/yaml")
   }
 }
 

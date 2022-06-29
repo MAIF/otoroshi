@@ -39,6 +39,7 @@ module.exports = (env, argv) => {
           loaders: ['babel-loader'],
           include: [
             path.resolve(__dirname, 'src'),
+            // path.resolve(__dirname, 'node_modules', 'yaml'),
             path.resolve(__dirname, 'node_modules/set-value'),
             path.resolve(__dirname, 'node_modules/get-value'),
             path.resolve(__dirname, 'node_modules/graphiql'),

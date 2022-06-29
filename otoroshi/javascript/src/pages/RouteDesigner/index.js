@@ -241,24 +241,39 @@ const Manager = ({ query, entity, ...props }) => {
                                 .replace(/\(/g, '')
                                 .replace(/\)/g, '')
                                 .toLowerCase();
-                              const json = YAML.stringify({
-                                apiVersion: 'proxy.otoroshi.io/v1alpha1',
-                                kind,
-                                metadata: {
-                                  name,
+                              // const json = YAML.stringify({
+                              //   apiVersion: 'proxy.otoroshi.io/v1alpha1',
+                              //   kind,
+                              //   metadata: {
+                              //     name,
+                              //   },
+                              //   spec: value,
+                              // });
+                              fetch('/bo/api/json_to_yaml', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json'
                                 },
-                                spec: value,
-                              });
-                              const blob = new Blob([json], { type: 'application/yaml' });
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.id = String(Date.now());
-                              a.style.display = 'none';
-                              a.download = `${itemName}-${name}-${Date.now()}.yaml`;
-                              a.href = url;
-                              document.body.appendChild(a);
-                              a.click();
-                              setTimeout(() => document.body.removeChild(a), 300);
+                                body: JSON.stringify({
+                                  apiVersion: 'proxy.otoroshi.io/v1alpha1',
+                                  kind,
+                                  metadata: {
+                                    name,
+                                  },
+                                  spec: value,
+                                })
+                              }).then(r => r.text()).then(yaml => {
+                                const blob = new Blob([yaml], { type: 'application/yaml' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.id = String(Date.now());
+                                a.style.display = 'none';
+                                a.download = `${itemName}-${name}-${Date.now()}.yaml`;
+                                a.href = url;
+                                document.body.appendChild(a);
+                                a.click();
+                                setTimeout(() => document.body.removeChild(a), 300);
+                              })
                             }}><i className="fas fa-file-export" /> Export YAML</button>
                           </div>
                         </MenuContainer>
