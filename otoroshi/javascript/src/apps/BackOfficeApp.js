@@ -42,6 +42,7 @@ import { ProvidersDashboardPage } from '../pages/ProvidersDashboardPage';
 import { ResourceLoaderPage } from '../pages/ResourceLoaderPage';
 import RouteDesignerPage from '../pages/RouteDesigner';
 import { BackendsPage } from '../pages/BackendsPage';
+import { MetricsPage } from '../pages/MetricsPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -259,6 +260,17 @@ class BackOfficeAppContainer extends Component {
                           path="/ngforms"
                           component={(props) => (
                             <NgFormPlayground
+                              globalEnv={this.state.env}
+                              setTitle={(t) => DynamicTitle.setContent(t)}
+                              getTitle={() => DynamicTitle.getContent()}
+                              {...props}
+                            />
+                          )}
+                        />
+                        <Route
+                          path="/metrics"
+                          component={(props) => (
+                            <MetricsPage
                               globalEnv={this.state.env}
                               setTitle={(t) => DynamicTitle.setContent(t)}
                               getTitle={() => DynamicTitle.getContent()}
