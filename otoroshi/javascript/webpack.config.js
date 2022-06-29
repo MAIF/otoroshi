@@ -8,6 +8,7 @@ const CompressionPlugin = require("compression-webpack-plugin");
 module.exports = (env, argv) => {
   const isProd = argv.mode === 'production' || process.env.NODE_ENV === 'production';
   const config = {
+    mode: isProd ? 'production' : 'development',
     entry: {
       backoffice: path.resolve(__dirname, 'src/backoffice.js'),
       genericlogin: path.resolve(__dirname, 'src/genericlogin.js'),
@@ -21,7 +22,7 @@ module.exports = (env, argv) => {
     },
     devServer: {
       hot: true,
-      disableHostCheck: true,
+      allowedHosts: "all",
       https: process.env.DEV_SERVER_HTTPS ? true : false,
       port: process.env.DEV_SERVER_PORT || 3040,
     },
@@ -36,7 +37,7 @@ module.exports = (env, argv) => {
         },
         {
           test: /\.(js|jsx|ts|tsx)$/,
-          loaders: ['babel-loader'],
+          use: ['babel-loader'],
           include: [
             path.resolve(__dirname, 'src'),
             path.resolve(__dirname, 'node_modules/set-value'),
@@ -48,11 +49,7 @@ module.exports = (env, argv) => {
         },
         {
           test: /\.css$/,
-          use: [{
-            loader: MiniCssExtractPlugin.loader,
-          },
-            'css-loader'
-          ]
+          use: [MiniCssExtractPlugin.loader, 'css-loader']
         },
         {
           test: /\.scss$/,
@@ -72,35 +69,92 @@ module.exports = (env, argv) => {
         },
         {
           test: /\.gif$/,
-          loader: 'url-loader?limit=1&name=[name]/.[ext]'
+          use: [
+            {
+              loader: 'url-loader',
+              options: {
+                limit: 1,
+              },
+            },
+          ]
         },
         {
           test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
-          loader: 'url-loader?limit=1&name=[name]/[name].[ext]'
+          use: [
+            {
+              loader: 'url-loader',
+              options: {
+                limit: 1,
+              },
+            },
+          ]
         },
         {
           test: /\.woff(\?v=\d+\.\d+\.\d+)?$/,
-          loader: 'url-loader?limit=10000&mimetype=application/font-woff&name=[name]/[name].[ext]'
+          use: [
+            {
+              loader: 'url-loader',
+              options: {
+                limit: 1,
+                mimetype: 'application/font-woff'
+              },
+            },
+          ]
         },
         {
           test: /\.woff2(\?v=\d+\.\d+\.\d+)?$/,
-          loader: 'url-loader?limit=1&name=[name]/[name].[ext]'
+          use: [
+            {
+              loader: 'url-loader',
+              options: {
+                limit: 1,
+              },
+            },
+          ]
         },
         {
           test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/,
-          loader: 'url-loader?limit=1&name=[name]/[name].[ext]'
+          use: [
+            {
+              loader: 'url-loader',
+              options: {
+                limit: 1,
+              },
+            },
+          ]
         },
         {
           test: /\.gif$/,
-          loader: 'url-loader?limit=1&name=[name]/[name].[ext]'
+          use: [
+            {
+              loader: 'url-loader',
+              options: {
+                limit: 1,
+              },
+            },
+          ]
         },
         {
           test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
-          loader: 'url-loader?limit=1&name=[name]/[name].[ext]'
+          use: [
+            {
+              loader: 'url-loader',
+              options: {
+                limit: 1,
+              },
+            },
+          ]
         },
         {
           test: /\.png$/,
-          loader: 'url-loader?limit=1&name=[name]/[name].[ext]'
+          use: [
+            {
+              loader: 'url-loader',
+              options: {
+                limit: 1,
+              },
+            },
+          ]
         },
       ]
     },
@@ -111,6 +165,12 @@ module.exports = (env, argv) => {
         chunkFilename: '[id].css'
       }),
     ],
+    resolve: {
+      fallback: {
+        crypto: require.resolve("crypto-browserify"),
+        stream: require.resolve("stream-browserify")
+      }
+    }
   };
   if (isProd) {
     return {
@@ -123,8 +183,7 @@ module.exports = (env, argv) => {
         minimize: true,
         minimizer: [
           new TerserJSPlugin({
-            parallel: true,
-            cache: true
+            parallel: true
           }),
           new OptimizeCSSAssetsPlugin({})
         ],
