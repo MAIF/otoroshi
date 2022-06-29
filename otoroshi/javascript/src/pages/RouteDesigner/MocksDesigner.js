@@ -61,8 +61,18 @@ export default class MocksDesigner extends React.Component {
     }))
 
     configToResponses = config => config.endpoints.map(({ path, method, status, headers, body }) => ({
-        path, method, status, headers, body: JSON.stringify(body)
+        path, method, status, headers, body: this.stringify(body)
     }))
+
+    stringify = body => {
+        if (typeof body === 'object' && !Array.isArray(body) && body !== null)
+            try {
+                return JSON.stringify(body)
+            } catch (err) {
+                return body
+            }
+        return body
+    }
 
     setAndSave = res => this.saveRoute(res)
 

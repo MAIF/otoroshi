@@ -3,11 +3,14 @@ package otoroshi.next.plugins
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import otoroshi.el.GlobalExpressionLanguage
+import otoroshi.el.GlobalExpressionLanguage.expressionReplacer
 import otoroshi.env.Env
-import otoroshi.next.models.{NgDomainAndPath, NgFrontend, NgTreeRouter}
+import otoroshi.next.models.{NgDomainAndPath, NgFrontend, NgTreeRouter, NgTreeRouter_Test}
 import otoroshi.next.models.NgTreeRouter_Test.NgFakeRoute
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
+import otoroshi.utils.TypedMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -282,12 +285,30 @@ class MockResponses extends NgBackendCall {
     )
       .find("oto.tools", ctx.request.path)
       .filter(_.noMoreSegments)
-      .flatMap { c => c.routes.headOption }
-      .map(route => {
+      .flatMap { c =>
+        if(c.routes.headOption.nonEmpty)
+          Some(c)
+        else
+          None
+      }
+      .map(r => {
+          import kaleidoscope._
+
+          val route = r.routes.headOption.get
           val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)
+
+          def replaceOn(value: String) =
+            Try {
+              expressionReplacer.replaceOn(value) {
+                case r"req.pathparams.$field@(.*):$defaultValue@(.*)" => r.pathParams.getOrElse(field, defaultValue)
+                case r"req.pathparams.$field@(.*)" => r.pathParams.getOrElse(field, s"no-path-param-$field")
+                case r => r
+              }
+            } recover { case _ => value } get
+
           val body: ByteString = response.body match {
-            case str if str.startsWith("Base64(") => str.substring(7).init.byteString.decodeBase64
-            case str                              => str.byteString
+            case str if str.startsWith("Base64(") => replaceOn(str.substring(7).init).byteString.decodeBase64
+            case str                              => replaceOn(str).byteString
           }
           bodyResponse(response.status, response.headers, Source.single(body)).future
       })
