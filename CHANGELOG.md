@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.5.11] - 2022-06-29
+
+https://github.com/MAIF/otoroshi/milestone/42?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.10...v1.5.11
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.11
+
+- Static files/folder based backend (#1154)
+- S3 bucket based backend (#1155)
+- Enhance resilience for auth. module in cluster mode (#1156)
+- Teams DELETE through UI and API return 404 (#1158)
+- event exclusion on multiple predicate fails in dataexporters (#1160)
+- used quotas are not displayed on apikeys anymore (#1163)
+- add option for encrypted client side sessions on auth. modules (#1164)
+- cached items should not be be synced across nodes (#1165)
+- ApikeyCalls plugins decrements 2 calls per call in quotas (#1166)
+- Upgrade playframework to 2.8.16 (#1167)
+- exporter should be able to check 'otoroshi.instance' (#1177)
+- Resource Loader - kind Organization or Tenant (#1173)
+- Resource Loader - Global Config - YAML (#1176)
+- Resource Loader - JwtVerifier (#1178)
+- Resource Loader - Admin (#1179)
+
+
 ## [1.5.10] - 2022-05-16
 
 https://github.com/MAIF/otoroshi/milestone/41?closed=1
