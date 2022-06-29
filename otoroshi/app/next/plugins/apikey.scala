@@ -88,12 +88,14 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
         case None if config.validate && !pass => {
           // Here are 2 + 12 datastore calls to handle quotas
           val routeId = ctx.route.cacheableId // handling route groups
-          ApiKeyHelper.passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId, config.updateQuotas).map {
-            case Left(result)  => NgAccess.NgDenied(result)
-            case Right(apikey) =>
-              ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
-              NgAccess.NgAllowed
-          }
+          ApiKeyHelper
+            .passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId, config.updateQuotas)
+            .map {
+              case Left(result)  => NgAccess.NgDenied(result)
+              case Right(apikey) =>
+                ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
+                NgAccess.NgAllowed
+            }
         }
         case _                                => NgAccess.NgAllowed.vfuture
       }
@@ -415,7 +417,7 @@ case class NgApikeyCallsConfig(
     wipeBackendRequest: Boolean = true,
     validate: Boolean = true,
     passWithUser: Boolean = false,
-    updateQuotas: Boolean = true,
+    updateQuotas: Boolean = true
 ) extends NgPluginConfig {
   def json: JsValue                  = Json.obj(
     "extractors"           -> extractors.json,
@@ -423,7 +425,7 @@ case class NgApikeyCallsConfig(
     "validate"             -> validate,
     "pass_with_user"       -> passWithUser,
     "wipe_backend_request" -> wipeBackendRequest,
-    "update_quotas" -> updateQuotas
+    "update_quotas"        -> updateQuotas
   )
   lazy val legacy: ApiKeyConstraints = ApiKeyConstraints(
     basicAuth = extractors.basic.legacy,
@@ -444,7 +446,7 @@ object NgApikeyCallsConfig {
         validate = (json \ "validate").asOpt[Boolean].getOrElse(true),
         passWithUser = (json \ "pass_with_user").asOpt[Boolean].getOrElse(false),
         wipeBackendRequest = (json \ "wipe_backend_request").asOpt[Boolean].getOrElse(true),
-        updateQuotas = (json \ "update_quotas").asOpt[Boolean].getOrElse(true),
+        updateQuotas = (json \ "update_quotas").asOpt[Boolean].getOrElse(true)
       )
     } match {
       case Success(value) => JsSuccess(value)

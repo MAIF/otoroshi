@@ -155,17 +155,21 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       }
     }
   }
-  
-  private def findServiceById(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]] = {
+
+  private def findServiceById(
+      serviceId: String
+  )(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]] = {
     env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
       case Some(service) => service.some.vfuture
-      case None => env.datastores.routeDataStore.findById(serviceId) flatMap {
-        case Some(service) => service.legacy.some.vfuture
-        case None => env.datastores.servicesDataStore.findById(serviceId) map {
-          case Some(service) => service.toRoutes.head.legacy.some
-          case None => None
+      case None          =>
+        env.datastores.routeDataStore.findById(serviceId) flatMap {
+          case Some(service) => service.legacy.some.vfuture
+          case None          =>
+            env.datastores.servicesDataStore.findById(serviceId) map {
+              case Some(service) => service.toRoutes.head.legacy.some
+              case None          => None
+            }
         }
-      }
     }
   }
   /// utils methods

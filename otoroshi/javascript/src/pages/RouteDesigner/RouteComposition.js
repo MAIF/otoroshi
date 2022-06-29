@@ -519,7 +519,7 @@ export default ({ service, setSaveButton, setService, viewPlugins }) => {
         <button
           className="btn btn-sm btn-success"
           onClick={() => {
-            const newItem = cloneDeep(templates?.routes[0])
+            const newItem = cloneDeep(templates?.routes[0]);
             updateRoute(routes.length, newItem);
           }}>
           <i className="fas fa-road me-1" />

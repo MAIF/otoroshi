@@ -67,12 +67,13 @@ object CustomForms {
           |    "label" : "timeout",
           |    "type" : "number"
           |  }
-          |}""".stripMargin).asObject
-      ),
-    "otoroshi.next.plugins.GraphQLBackend" -> Form(
+          |}""".stripMargin)
+        .asObject
+    ),
+    "otoroshi.next.plugins.GraphQLBackend"    -> Form(
       flow = Seq("schema", "permissions", "initialData", "maxDepth"),
-      schema = Json.parse(
-        """{
+      schema = Json
+        .parse("""{
           |  "schema" : {
           |    "label" : "Schema",
           |    "type" : "string",
@@ -92,7 +93,8 @@ object CustomForms {
           |     "label": "Max depth",
           |     "type": "number"
           |  }
-          |}""".stripMargin).asObject
+          |}""".stripMargin)
+        .asObject
     )
   )
 }

@@ -439,7 +439,7 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                 .stringify
                 .byteString
                 .future
-            case Right((_id, patch))  => {
+            case Right((_id, patch)) => {
               val id = processId(_id, ctx)
               findByIdOps(id).flatMap {
                 case Left(error)                                         =>
@@ -563,7 +563,7 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
               .stringify
               .byteString
               .future
-          case Right((_, _id))      => {
+          case Right((_, _id))     => {
             val id = processId(_id, ctx)
             findByIdOps(id).flatMap {
               case Left(err)                                                                        =>

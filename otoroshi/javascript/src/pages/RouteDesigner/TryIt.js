@@ -1,15 +1,20 @@
-import React, { useEffect, useState } from 'react'
-import { CodeInput, SelectInput } from '@maif/react-forms'
-import { BooleanInput } from '../../components/inputs'
-import { tryIt, fetchAllApikeys, findAllCertificates, routeEntries } from '../../services/BackOfficeServices'
-import { firstLetterUppercase } from '../../util'
-import { useLocation } from 'react-router-dom'
+import React, { useEffect, useState } from 'react';
+import { CodeInput, SelectInput } from '@maif/react-forms';
+import { BooleanInput } from '../../components/inputs';
+import {
+  tryIt,
+  fetchAllApikeys,
+  findAllCertificates,
+  routeEntries,
+} from '../../services/BackOfficeServices';
+import { firstLetterUppercase } from '../../util';
+import { useLocation } from 'react-router-dom';
 import { FeedbackButton } from './FeedbackButton';
 
-import { Provider } from 'react-redux'
-import { Playground, store } from 'graphql-playground-react'
+import { Provider } from 'react-redux';
+import { Playground, store } from 'graphql-playground-react';
 
-import Loader from './Loader'
+import Loader from './Loader';
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'];
 
@@ -19,7 +24,6 @@ const roundNsTo = (ns) => Number.parseFloat(round(ns) / 1000000).toFixed(3);
 const round = (num) => Math.round((num + Number.EPSILON) * 100000) / 100000;
 
 export const TryIt = ({ route, serviceMode, setSaveButton }) => {
-
   const [selectedTab, setSelectedTab] = useState('Headers');
   const [selectedResponseTab, setSelectedResponseTab] = useState('Body');
   const [headersStatus, setHeadersStatus] = useState('down');
@@ -30,7 +34,7 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
   const [sort, setSort] = useState('flow');
   const [flow, setFlow] = useState('all');
 
-  const [lastQuery, setLastQuery] = useState()
+  const [lastQuery, setLastQuery] = useState();
 
   const [request, setRequest] = useState({
     path: '/',
@@ -56,7 +60,7 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
   const [responseBody, setResponseBody] = useState();
   const [loading, setLoading] = useState(false);
 
-  const [playgroundUrl, setPlaygroundUrl] = useState()
+  const [playgroundUrl, setPlaygroundUrl] = useState();
 
   useEffect(() => {
     if (route && route.id) {
@@ -73,66 +77,58 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
         ...request,
         route_id: route.id,
       });
-      hidePlaygroundStuff(route)
+      hidePlaygroundStuff(route);
 
-      routeEntries(route.id)
-        .then(data => setPlaygroundUrl(data.entries[0]))
+      routeEntries(route.id).then((data) => setPlaygroundUrl(data.entries[0]));
     }
   }, [route]);
 
   useEffect(() => {
-    loadLastQuery()
-  }, [])
+    loadLastQuery();
+  }, []);
 
   useEffect(() => {
-    if (lastQuery)
-      localStorage.removeItem('graphql-playground')
-  }, [lastQuery])
+    if (lastQuery) localStorage.removeItem('graphql-playground');
+  }, [lastQuery]);
 
   const loadLastQuery = () => {
     try {
-      const storedData = JSON.parse(localStorage.getItem("graphql-playground"))
-      const query = Object.entries(Object.entries(storedData.workspaces)[1][1].history)[0][1].query
-      setLastQuery(query)
-      localStorage.setItem("otoroshi-graphql-last-query", query)
+      const storedData = JSON.parse(localStorage.getItem('graphql-playground'));
+      const query = Object.entries(Object.entries(storedData.workspaces)[1][1].history)[0][1].query;
+      setLastQuery(query);
+      localStorage.setItem('otoroshi-graphql-last-query', query);
     } catch (_) {
-      const query = localStorage.getItem("otoroshi-graphql-last-query")
-      setLastQuery(query || "{}")
+      const query = localStorage.getItem('otoroshi-graphql-last-query');
+      setLastQuery(query || '{}');
     }
-  }
+  };
 
-  const hidePlaygroundStuff = route => {
-    if (!route)
-      setTimeout(() => hidePlaygroundStuff(route), 250)
-    else if (route.plugins.find(f => f.plugin.includes('GraphQLBackend'))) {
-      const input = document.querySelector(".playground input")
-      if (!input)
-        setTimeout(() => hidePlaygroundStuff(route), 100)
+  const hidePlaygroundStuff = (route) => {
+    if (!route) setTimeout(() => hidePlaygroundStuff(route), 250);
+    else if (route.plugins.find((f) => f.plugin.includes('GraphQLBackend'))) {
+      const input = document.querySelector('.playground input');
+      if (!input) setTimeout(() => hidePlaygroundStuff(route), 100);
       else {
-        [
-          ".playground > div",
-          ".graphiql-wrapper > div > div > div  "
-        ].forEach(path => {
-          const element = document.querySelector(path)
-          if (element.textContent)
-            element.style.display = 'none'
+        ['.playground > div', '.graphiql-wrapper > div > div > div  '].forEach((path) => {
+          const element = document.querySelector(path);
+          if (element.textContent) element.style.display = 'none';
         });
 
-        const prettifyButton = [...document.querySelectorAll(".graphiql-wrapper > div > div > div > button")]
-          .find(f => f.textContent === "Prettify")
-        prettifyButton.className = "btn btn-sm btn-success tryit-prettify-button";
+        const prettifyButton = [
+          ...document.querySelectorAll('.graphiql-wrapper > div > div > div > button'),
+        ].find((f) => f.textContent === 'Prettify');
+        prettifyButton.className = 'btn btn-sm btn-success tryit-prettify-button';
 
-        document.querySelector(".CodeMirror")
-          .appendChild(prettifyButton);
+        document.querySelector('.CodeMirror').appendChild(prettifyButton);
 
         [...document.querySelectorAll('.playground svg')]
-          .filter(svg => svg.textContent === 'Settings')
-          .forEach(svg => svg.style.display = 'none')
+          .filter((svg) => svg.textContent === 'Settings')
+          .forEach((svg) => (svg.style.display = 'none'));
 
-        input.style.display = 'none'
+        input.style.display = 'none';
       }
     }
-  }
+  };
 
   useEffect(() => {
     fetchAllApikeys().then(setApikeys);
@@ -148,7 +144,8 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
       {
         ...request,
         headers: Object.values(request.headers)
-          .filter(d => d.key.length > 0).reduce((a, c) => ({ ...a, [c.key]: c.value }), {})
+          .filter((d) => d.key.length > 0)
+          .reduce((a, c) => ({ ...a, [c.key]: c.value }), {}),
       },
       pathname.includes('route-compositions') ? 'service' : 'route'
     )
@@ -168,7 +165,7 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
           setResponseBody(atob(res.body_base_64).replace(/\n/g, '').trimStart());
         }
       });
-  }
+  };
 
   const bytesToSize = (bytes) => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
@@ -204,15 +201,15 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
       ),
       ...(format === 'basic'
         ? {
-          'authorization-header': {
-            key: apikeyHeader || request.apikeyHeader,
-            value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-          },
-        }
+            'authorization-header': {
+              key: apikeyHeader || request.apikeyHeader,
+              value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+            },
+          }
         : {
-          'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
-          'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
-        }),
+            'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
+            'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
+          }),
     };
   };
 
@@ -220,29 +217,35 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
 
   return (
     <Loader loading={!route}>
-      {route && route.plugins.find(f => f.plugin.includes('GraphQLBackend')) && playgroundUrl && lastQuery ?
+      {route &&
+      route.plugins.find((f) => f.plugin.includes('GraphQLBackend')) &&
+      playgroundUrl &&
+      lastQuery ? (
         <div style={{ minHeight: 'calc(100vh - 162px)' }}>
           <Provider store={store}>
             <Playground
               codeTheme={{
-                editorBackground: "#3c3c3c",
-                resultBackground: "#494948",
-                textInactive: "#fff !important",
-                executeButtonBorder: "transparent"
+                editorBackground: '#3c3c3c',
+                resultBackground: '#494948',
+                textInactive: '#fff !important',
+                executeButtonBorder: 'transparent',
               }}
-              tabs={[{
-                endpoint: `/bo/api/graphqlproxy?url=${encodeURIComponent(playgroundUrl)}`,
-                query: lastQuery,
-                name: Date.now()
-                // variables?: string
-                // responses?: string[]
-                // headers?: { [key: string]: string }
-              }]}
+              tabs={[
+                {
+                  endpoint: `/bo/api/graphqlproxy?url=${encodeURIComponent(playgroundUrl)}`,
+                  query: lastQuery,
+                  name: Date.now(),
+                  // variables?: string
+                  // responses?: string[]
+                  // headers?: { [key: string]: string }
+                },
+              ]}
             />
           </Provider>
         </div>
-        :
-        <div className="h-100"
+      ) : (
+        <div
+          className="h-100"
           style={{
             flexDirection: 'column',
             background: 'rgb(60,60,60)',
@@ -282,7 +285,10 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
               <div className="d-flex">
                 {[
                   { label: 'Authorization', value: 'Authorization' },
-                  { label: 'Headers', value: `Headers (${Object.keys(request.headers || {}).length})` },
+                  {
+                    label: 'Headers',
+                    value: `Headers (${Object.keys(request.headers || {}).length})`,
+                  },
                   { label: 'Body', value: 'Body' },
                 ].map(({ label, value }) => (
                   <button
@@ -449,7 +455,10 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
                   )
                     item = { [Date.now()]: { key: '', value: '' } };
 
-                  setRequest({ ...updatedRequest, headers: { ...updatedRequest.headers, ...item } });
+                  setRequest({
+                    ...updatedRequest,
+                    headers: { ...updatedRequest.headers, ...item },
+                  });
                 }}
                 onValueChange={(id, v) => {
                   const updatedRequest = {
@@ -468,7 +477,10 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
                   )
                     item = { [Date.now()]: { key: '', value: '' } };
 
-                  setRequest({ ...updatedRequest, headers: { ...updatedRequest.headers, ...item } });
+                  setRequest({
+                    ...updatedRequest,
+                    headers: { ...updatedRequest.headers, ...item },
+                  });
                 }}
               />
             )}
@@ -518,7 +530,10 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
                     { label: 'Report', value: 'Report' },
                     { label: 'Body', value: 'Body' },
                     { label: 'Cookies', value: 'Cookies' },
-                    { label: 'Headers', value: `Headers (${([...rawResponse.headers] || []).length})` },
+                    {
+                      label: 'Headers',
+                      value: `Headers (${([...rawResponse.headers] || []).length})`,
+                    },
                   ].map(({ label, value }) => (
                     <button
                       onClick={() => setSelectedResponseTab(label)}
@@ -576,7 +591,10 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
           {receivedResponse && responseBody && selectedResponseTab === 'Body' && (
             <div className="mt-3">
               {responseBody.startsWith('<!') ? (
-                <iframe srcDoc={responseBody} style={{ flex: 1, minHeight: '750px', width: '100%' }} />
+                <iframe
+                  srcDoc={responseBody}
+                  style={{ flex: 1, minHeight: '750px', width: '100%' }}
+                />
               ) : (
                 <CodeInput readOnly={true} value={responseBody} width="-1" />
               )}
@@ -611,10 +629,10 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
             )
           ) : null}
         </div>
-      }
+      )}
     </Loader>
-  )
-}
+  );
+};
 
 const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, flow, setFlow }) => {
   const [selectedStep, setSelectedStep] = useState(-1);
@@ -640,9 +658,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     search.length <= 0
       ? true
       : step.task.includes(search) ||
-      [...(step?.ctx?.plugins || [])].find((plugin) =>
-        search.length <= 0 ? true : plugin.name.includes(search)
-      );
+        [...(step?.ctx?.plugins || [])].find((plugin) =>
+          search.length <= 0 ? true : plugin.name.includes(search)
+        );
 
   const isPluginNameMatchingSearch = (plugin) =>
     search.length <= 0 ? true : plugin.name.includes(search);
@@ -662,8 +680,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
       return unit === 'ms'
         ? roundNsTo(report.duration_ns)
         : unit === 'ns'
-          ? report.duration_ns
-          : 100;
+        ? report.duration_ns
+        : 100;
     else {
       const value = [...steps]
         .filter(isOnFlow)
@@ -672,8 +690,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           const userPluginsFlow =
             step.ctx && step.ctx.plugins
               ? [...(step.ctx?.plugins || [])]
-                .filter(isPluginNameMatchingSearch)
-                .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
+                  .filter(isPluginNameMatchingSearch)
+                  .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
               : 0;
 
           if (flow === 'user')
@@ -732,8 +750,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
         </div>
         <div
           onClick={() => setSelectedStep(-1)}
-          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${informations.state === 'Successful' ? 'success' : 'danger'
-            }`}>
+          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${
+            informations.state === 'Successful' ? 'success' : 'danger'
+          }`}>
           <span>Report</span>
           <span>
             {reportDuration()} {unit}
@@ -755,13 +774,15 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                     setSelectedPlugin(-1);
                     setSelectedStep(step.task);
                   }}
-                  className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep ? 'btn-dark' : ''
-                    }`}>
+                  className={`d-flex-between mt-1 px-3 py-2 report-step ${
+                    step.task === selectedStep ? 'btn-dark' : ''
+                  }`}>
                   <div className="d-flex align-items-center">
                     {displaySubList && (
                       <i
-                        className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
-                          } me-1`}
+                        className={`fas fa-chevron-${
+                          step.open || flow === 'user' ? 'down' : 'right'
+                        } me-1`}
                         onClick={() =>
                           setSteps(
                             steps.map((s) =>
@@ -778,8 +799,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                       {unit === 'ms'
                         ? roundNsTo(step.duration_ns)
                         : unit === 'ns'
-                          ? step.duration_ns
-                          : percentage}{' '}
+                        ? step.duration_ns
+                        : percentage}{' '}
                       {unit}
                     </span>
                   )}
@@ -801,17 +822,18 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                           key={plugin.name}
                           style={{ width: 'calc(100% - 12px)', marginLeft: '12px' }}
                           onClick={() => setSelectedPlugin(plugin.name)}
-                          className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep && plugin.name === selectedPlugin
-                            ? 'btn-dark'
-                            : ''
-                            }`}>
+                          className={`d-flex-between mt-1 px-3 py-2 report-step ${
+                            step.task === selectedStep && plugin.name === selectedPlugin
+                              ? 'btn-dark'
+                              : ''
+                          }`}>
                           <span>{firstLetterUppercase(pluginName)}</span>
                           <span style={{ maxWidth: '100px', textAlign: 'right' }}>
                             {unit === 'ms'
                               ? roundNsTo(plugin.duration_ns)
                               : unit === 'ns'
-                                ? plugin.duration_ns
-                                : pluginPercentage}{' '}
+                              ? plugin.duration_ns
+                              : pluginPercentage}{' '}
                             {unit}
                           </span>
                         </div>
@@ -832,8 +854,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                   ? informations
                   : steps.find((t) => t.task === selectedStep)
                 : steps
-                  .find((t) => t.task === selectedStep)
-                  ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+                    .find((t) => t.task === selectedStep)
+                    ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
               null,
               4
             ) +

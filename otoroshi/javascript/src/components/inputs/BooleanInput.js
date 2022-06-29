@@ -42,9 +42,7 @@ export class BooleanInput extends Component {
               {value && <OnSwitch onChange={this.toggleOff} />}
               {!value && <OffSwitch onChange={this.toggleOn} />}
             </div>
-            <div>
-              {this.props.after && <div className="float-end">{this.props.after()}</div>}
-            </div>
+            <div>{this.props.after && <div className="float-end">{this.props.after()}</div>}</div>
           </div>
         </div>
       );

@@ -141,10 +141,14 @@ export class SelectInput extends Component {
     }
     return (
       <div className={`row mb-3 ${this.props.flex ? 'flex' : ''} ${this.props.className}`}>
-        {!this.props.flex && <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 col-form-label">
-          {this.props.label} <Help text={this.props.help} />
-        </label>}
-        <div className={this.props.flex ? "col-sm-12" : "col-sm-10"}>
+        {!this.props.flex && (
+          <label
+            htmlFor={`input-${this.props.label}`}
+            className="col-xs-12 col-sm-2 col-form-label">
+            {this.props.label} <Help text={this.props.help} />
+          </label>
+        )}
+        <div className={this.props.flex ? 'col-sm-12' : 'col-sm-10'}>
           <div style={{ width: '100%' }}>
             {!this.props.disabled && (
               <Select

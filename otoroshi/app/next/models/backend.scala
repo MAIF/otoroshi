@@ -597,7 +597,7 @@ trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend] {
       description = "New backend",
       metadata = Map.empty,
       tags = Seq.empty,
-      backend = NgBackend.empty,
+      backend = NgBackend.empty
     )
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)

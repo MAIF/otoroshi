@@ -168,19 +168,19 @@ case class BasicAuthModuleConfig(
   override def authModule(config: GlobalConfig): AuthModule            = BasicAuthModule(this)
   override def asJson                                                  =
     location.jsonWithKey ++ Json.obj(
-      "type"                -> "basic",
-      "id"                  -> this.id,
-      "name"                -> this.name,
-      "desc"                -> this.desc,
-      "basicAuth"           -> this.basicAuth,
-      "webauthn"            -> this.webauthn,
-      "clientSideSessionEnabled"       -> this.clientSideSessionEnabled,
-      "sessionMaxAge"       -> this.sessionMaxAge,
-      "metadata"            -> this.metadata,
-      "tags"                -> JsArray(tags.map(JsString.apply)),
-      "users"               -> Writes.seq(BasicAuthUser.fmt).writes(this.users),
-      "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
-      "userValidators"      -> JsArray(userValidators.map(_.json))
+      "type"                     -> "basic",
+      "id"                       -> this.id,
+      "name"                     -> this.name,
+      "desc"                     -> this.desc,
+      "basicAuth"                -> this.basicAuth,
+      "webauthn"                 -> this.webauthn,
+      "clientSideSessionEnabled" -> this.clientSideSessionEnabled,
+      "sessionMaxAge"            -> this.sessionMaxAge,
+      "metadata"                 -> this.metadata,
+      "tags"                     -> JsArray(tags.map(JsString.apply)),
+      "users"                    -> Writes.seq(BasicAuthUser.fmt).writes(this.users),
+      "sessionCookieValues"      -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+      "userValidators"           -> JsArray(userValidators.map(_.json))
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"basic-auth-$id"

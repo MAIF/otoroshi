@@ -109,21 +109,23 @@ object MockResponse {
 
 case class MockField(fieldName: String, fieldType: String, value: JsValue)
 case class MockResource(name: String, schema: Seq[MockField] = Seq.empty, additionalData: Option[JsObject] = None)
-case class MockEndpoint(method: String,
-                        path: String,
-                        status: Int,
-                        body: Option[JsObject] = None,
-                        resource: Option[String] = None,
-                        resourceList: Boolean = false,
-                        headers: Option[JsObject] = None)
+case class MockEndpoint(
+    method: String,
+    path: String,
+    status: Int,
+    body: Option[JsObject] = None,
+    resource: Option[String] = None,
+    resourceList: Boolean = false,
+    headers: Option[JsObject] = None
+)
 case class MockFormData(resources: Seq[MockResource] = Seq.empty, endpoints: Seq[MockEndpoint] = Seq.empty)
 
 object MockField {
   val format = new Format[MockField] {
     override def writes(o: MockField): JsValue = Json.obj(
-    "field_name" -> o.fieldName,
+      "field_name" -> o.fieldName,
       "field_type" -> o.fieldType,
-      "value" -> o.value
+      "value"      -> o.value
     )
 
     override def reads(json: JsValue): JsResult[MockField] = Try {
@@ -133,7 +135,7 @@ object MockField {
         value = json.select("value").as[JsValue]
       )
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex)    => JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
   }
@@ -141,9 +143,9 @@ object MockField {
 
 object MockResource {
   val format = new Format[MockResource] {
-    override def writes(o: MockResource): JsValue = Json.obj(
-      "name" -> o.name,
-      "schema" -> JsArray(o.schema.map(MockField.format.writes)),
+    override def writes(o: MockResource): JsValue             = Json.obj(
+      "name"            -> o.name,
+      "schema"          -> JsArray(o.schema.map(MockField.format.writes)),
       "additional_data" -> o.additionalData
     )
     override def reads(json: JsValue): JsResult[MockResource] = Try {
@@ -166,13 +168,13 @@ object MockResource {
 object MockEndpoint {
   val format = new Format[MockEndpoint] {
     override def writes(o: MockEndpoint): JsValue             = Json.obj(
-      "method"    -> o.method,
-      "path" -> o.path,
-      "status" -> o.status,
-      "body" -> o.body,
-      "resource" -> o.resource,
+      "method"        -> o.method,
+      "path"          -> o.path,
+      "status"        -> o.status,
+      "body"          -> o.body,
+      "resource"      -> o.resource,
       "resource_list" -> o.resourceList,
-      "headers" -> o.headers
+      "headers"       -> o.headers
     )
     override def reads(json: JsValue): JsResult[MockEndpoint] = Try {
       MockEndpoint(
@@ -182,7 +184,7 @@ object MockEndpoint {
         body = json.select("body").asOpt[JsObject],
         resource = json.select("resource").asOpt[String],
         resourceList = json.select("resource_list").as[Boolean],
-        headers = json.select("headers").asOpt[JsObject],
+        headers = json.select("headers").asOpt[JsObject]
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -194,7 +196,7 @@ object MockEndpoint {
 object MockFormData {
   val format = new Format[MockFormData] {
     override def writes(o: MockFormData): JsValue             = Json.obj(
-      "resources"    -> JsArray(o.resources.map(MockResource.format.writes)),
+      "resources" -> JsArray(o.resources.map(MockResource.format.writes)),
       "endpoints" -> JsArray(o.endpoints.map(MockEndpoint.format.writes))
     )
     override def reads(json: JsValue): JsResult[MockFormData] = Try {
@@ -218,11 +220,10 @@ object MockFormData {
 }
 
 case class MockResponsesConfig(
-                                responses: Seq[MockResponse] = Seq.empty,
-                                passThrough: Boolean = true,
-                                formData: Option[MockFormData] = None
-                              )
-    extends NgPluginConfig {
+    responses: Seq[MockResponse] = Seq.empty,
+    passThrough: Boolean = true,
+    formData: Option[MockFormData] = None
+) extends NgPluginConfig {
   def json: JsValue = MockResponsesConfig.format.writes(this)
 }
 
@@ -271,59 +272,61 @@ class MockResponses extends NgBackendCall {
       mat: Materializer
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(MockResponsesConfig.format).getOrElse(MockResponsesConfig())
-    val paths = config.responses
-      .filter(r => r.method.toLowerCase == ctx.request.method.toLowerCase || r.method.toLowerCase == ctx.rawRequest.method.toLowerCase)
+    val paths  = config.responses
+      .filter(r =>
+        r.method.toLowerCase == ctx.request.method.toLowerCase || r.method.toLowerCase == ctx.rawRequest.method.toLowerCase
+      )
 
-    NgTreeRouter.build(
-      paths.map(resp => {
-        val r = NgFakeRoute.routeFromPath(s"oto.tools${resp.path}")
-        r.copy(
-          metadata = Map("mock" -> resp.json.stringify),
-          frontend = r.frontend.copy(exact = true)
-        )
-      })
-    )
+    NgTreeRouter
+      .build(
+        paths.map(resp => {
+          val r = NgFakeRoute.routeFromPath(s"oto.tools${resp.path}")
+          r.copy(
+            metadata = Map("mock" -> resp.json.stringify),
+            frontend = r.frontend.copy(exact = true)
+          )
+        })
+      )
       .find("oto.tools", ctx.request.path)
       .filter(_.noMoreSegments)
       .flatMap { c =>
-        if(c.routes.headOption.nonEmpty)
+        if (c.routes.headOption.nonEmpty)
           Some(c)
         else
           None
       }
       .map(r => {
-          import kaleidoscope._
+        import kaleidoscope._
 
-          val route = r.routes.headOption.get
-          val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)
+        val route    = r.routes.headOption.get
+        val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)
 
-          def replaceOn(value: String) = {
-            val newValue =  Try
-            {
-              expressionReplacer.replaceOn(value) {
-                case r"req.pathparams.$field@(.*):$defaultValue@(.*)" => r.pathParams.getOrElse(field, defaultValue)
-                case r"req.pathparams.$field@(.*)" => r.pathParams.getOrElse(field, s"no-path-param-$field")
-                case r => r
-              }
-            } recover { case _ => value } get
+        def replaceOn(value: String) = {
+          val newValue = Try {
+            expressionReplacer.replaceOn(value) {
+              case r"req.pathparams.$field@(.*):$defaultValue@(.*)" => r.pathParams.getOrElse(field, defaultValue)
+              case r"req.pathparams.$field@(.*)"                    => r.pathParams.getOrElse(field, s"no-path-param-$field")
+              case r                                                => r
+            }
+          } recover { case _ => value } get
 
-            GlobalExpressionLanguage.apply(
-              newValue,
-              req = ctx.rawRequest.some,
-              service = ctx.route.legacy.some,
-              apiKey = ctx.apikey,
-              user = ctx.user,
-              context = Map.empty,
-              attrs = ctx.attrs,
-              env = env
-            )
-          }
+          GlobalExpressionLanguage.apply(
+            newValue,
+            req = ctx.rawRequest.some,
+            service = ctx.route.legacy.some,
+            apiKey = ctx.apikey,
+            user = ctx.user,
+            context = Map.empty,
+            attrs = ctx.attrs,
+            env = env
+          )
+        }
 
-          val body: ByteString = response.body match {
-            case str if str.startsWith("Base64(") => replaceOn(str.substring(7).init).byteString.decodeBase64
-            case str                              => replaceOn(str).byteString
-          }
-          bodyResponse(response.status, response.headers, Source.single(body)).future
+        val body: ByteString = response.body match {
+          case str if str.startsWith("Base64(") => replaceOn(str.substring(7).init).byteString.decodeBase64
+          case str                              => replaceOn(str).byteString
+        }
+        bodyResponse(response.status, response.headers, Source.single(body)).future
       })
       .getOrElse {
         if (!config.passThrough)

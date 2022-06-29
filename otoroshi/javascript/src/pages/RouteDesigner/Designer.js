@@ -187,25 +187,30 @@ const FormContainer = ({
 }) => {
   const isOnFrontendBackend = selectedNode && ['Frontend', 'Backend'].includes(selectedNode.id);
 
-  return <div className="col-sm-8 relative-container flex-column flow-container p-3" style={{ paddingRight: 0 }} id="form-container">
-    <UnselectedNode hideText={selectedNode} route={route} {...props} />
-    {serviceMode && isOnFrontendBackend && <ServiceView />}
-    {selectedNode && (!serviceMode || (serviceMode && !isOnFrontendBackend)) && (
-      <EditView
-        {...props}
-        route={route}
-        selectedNode={selectedNode}
-        hidePreview={() =>
-          showPreview({
-            ...preview,
-            enabled: false,
-          })
-        }
-      />
-    )}
-    {alertModal.show && <Modal {...alertModal} />}
-  </div>
-}
+  return (
+    <div
+      className="col-sm-8 relative-container flex-column flow-container p-3"
+      style={{ paddingRight: 0 }}
+      id="form-container">
+      <UnselectedNode hideText={selectedNode} route={route} {...props} />
+      {serviceMode && isOnFrontendBackend && <ServiceView />}
+      {selectedNode && (!serviceMode || (serviceMode && !isOnFrontendBackend)) && (
+        <EditView
+          {...props}
+          route={route}
+          selectedNode={selectedNode}
+          hidePreview={() =>
+            showPreview({
+              ...preview,
+              enabled: false,
+            })
+          }
+        />
+      )}
+      {alertModal.show && <Modal {...alertModal} />}
+    </div>
+  );
+};
 
 const Modal = ({ question, onOk, onCancel }) => (
   <div className="designer-modal d-flex align-items-center justify-content-start flex-column p-3 pt-4">
@@ -266,26 +271,31 @@ const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) =
 );
 
 const Container = ({ children, onClick }) => {
-  const [propagate, setPropagate] = useState()
+  const [propagate, setPropagate] = useState();
 
-  return <div
-    className="h-100 col-12 hide-overflow route-designer"
-    onMouseDown={e => {
-      setPropagate(!document.getElementById('form-container')?.contains(e.target) &&
-        ![...document.getElementsByClassName("delete-node-button")].find(d => d.contains(e.target)))
-      // && 
-      // ![...document.getElementsByClassName("fa-chevron")].find(d => d.contains(e.target))
-      // )
-    }}
-    onMouseUp={(e) => {
-      e.stopPropagation();
-      if (propagate)
-        onClick(e)
+  return (
+    <div
+      className="h-100 col-12 hide-overflow route-designer"
+      onMouseDown={(e) => {
+        setPropagate(
+          !document.getElementById('form-container')?.contains(e.target) &&
+            ![...document.getElementsByClassName('delete-node-button')].find((d) =>
+              d.contains(e.target)
+            )
+        );
+        // &&
+        // ![...document.getElementsByClassName("fa-chevron")].find(d => d.contains(e.target))
+        // )
+      }}
+      onMouseUp={(e) => {
+        e.stopPropagation();
+        if (propagate) onClick(e);
 
-      setPropagate(false)
-    }}>
-    {children}
-  </div>
+        setPropagate(false);
+      }}>
+      {children}
+    </div>
+  );
 };
 
 const BackendNode = ({ selectedNode, backend, ...props }) => (
@@ -439,7 +449,7 @@ class Designer extends React.Component {
       TransformRequest: true,
       TransformResponse: true,
     },
-    advancedDesignerView: null
+    advancedDesignerView: null,
   };
 
   componentDidMount() {
@@ -518,7 +528,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) { }
+      } catch (_) {}
     }
   };
 
@@ -534,7 +544,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) { }
+      } catch (_) {}
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -561,11 +571,11 @@ class Designer extends React.Component {
       let route =
         this.props.viewPlugins !== null && this.props.viewPlugins !== -1
           ? {
-            ...r,
-            overridePlugins: true,
-            plugins: [],
-            ...r.routes[~~this.props.viewPlugins],
-          }
+              ...r,
+              overridePlugins: true,
+              plugins: [],
+              ...r.routes[~~this.props.viewPlugins],
+            }
           : r;
 
       if (route.error) {
@@ -853,14 +863,14 @@ class Designer extends React.Component {
   };
 
   clearPlugins = () => {
-    window.newConfirm('Are you sure you want to delete all current plugins ?').then(ok => {
+    window.newConfirm('Are you sure you want to delete all current plugins ?').then((ok) => {
       if (ok) {
         const newRoute = this.state.route;
         newRoute.plugins = [];
         this.setState({ route: newRoute, nodes: [] });
         this.updateRoute({ ...newRoute });
       }
-    })
+    });
   };
 
   deleteRoute = () => {
@@ -1088,8 +1098,8 @@ class Designer extends React.Component {
           plugin_index: Object.fromEntries(
             Object.entries(
               plugin.plugin_index ||
-              this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-              {}
+                this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+                {}
             ).map(([key, v]) => [snakeCase(key), v])
           ),
         })),
@@ -1272,7 +1282,7 @@ class Designer extends React.Component {
       expandAll,
       searched,
       backend,
-      advancedDesignerView
+      advancedDesignerView,
     } = this.state;
 
     const { serviceMode } = this.props;
@@ -1280,17 +1290,17 @@ class Designer extends React.Component {
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-          .map((p) => {
-            const id = p.plugin;
-            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-            if (pluginDef) {
-              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                return { ...p, ...pluginDef };
+            .map((p) => {
+              const id = p.plugin;
+              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+              if (pluginDef) {
+                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                  return { ...p, ...pluginDef };
+                }
               }
-            }
-            return null;
-          })
-          .filter((p) => !!p)
+              return null;
+            })
+            .filter((p) => !!p)
         : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
@@ -1298,7 +1308,7 @@ class Designer extends React.Component {
     // TODO - better error display
     if (!loading && this.state.notFound) return <h1>Route not found</h1>;
 
-    const FullForm = advancedDesignerView
+    const FullForm = advancedDesignerView;
 
     return (
       <Loader loading={loading}>
@@ -1308,17 +1318,23 @@ class Designer extends React.Component {
               selectedNode: undefined,
             });
           }}>
-          {FullForm && <FullForm route={advancedDesignerView ? route : undefined}
-            saveRoute={route => {
-              this.setState({ route }, this.saveRoute)
-            }}
-            hide={e => {
-              e.stopPropagation()
-              this.setState({
-                selectedNode: backendCallNodes.find(node => node.id.includes("otoroshi.next.plugins.GraphQLBackend")),
-                advancedDesignerView: false
-              })
-            }} />}
+          {FullForm && (
+            <FullForm
+              route={advancedDesignerView ? route : undefined}
+              saveRoute={(route) => {
+                this.setState({ route }, this.saveRoute);
+              }}
+              hide={(e) => {
+                e.stopPropagation();
+                this.setState({
+                  selectedNode: backendCallNodes.find((node) =>
+                    node.id.includes('otoroshi.next.plugins.GraphQLBackend')
+                  ),
+                  advancedDesignerView: false,
+                });
+              }}
+            />
+          )}
           <PluginsContainer
             handleSearch={this.handleSearch}
             showLegacy={showLegacy}
@@ -1444,10 +1460,11 @@ class Designer extends React.Component {
                       }}
                       onRemove={this.removeNode}
                     />
-
                   </Flow>
                   <FormContainer
-                    showAdvancedDesignerView={pluginName => this.setState({ advancedDesignerView: pluginName })}
+                    showAdvancedDesignerView={(pluginName) =>
+                      this.setState({ advancedDesignerView: pluginName })
+                    }
                     serviceMode={serviceMode}
                     clearPlugins={this.clearPlugins}
                     deleteRoute={this.deleteRoute}
@@ -1614,13 +1631,13 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
     const allMethods =
       frontend.methods && frontend.methods.length > 0
         ? frontend.methods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}>
-            {m}
-          </span>
-        ))
+            <span
+              key={`frontendmethod-${i}`}
+              className={`badge me-1`}
+              style={{ backgroundColor: HTTP_COLORS[m] }}>
+              {m}
+            </span>
+          ))
         : [<span className="badge bg-success">ALL</span>];
     return (
       <>
@@ -1729,8 +1746,8 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
               const start = target.tls ? 'https://' : 'http://';
               const mtls =
                 target.tls_config &&
-                  target.tls_config.enabled &&
-                  [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
+                target.tls_config.enabled &&
+                [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
                   <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
                     mTLS
                   </span>
@@ -1758,7 +1775,9 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
           </div>
         </div>
         <div style={{ marginTop: 20, width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-          <button className="btn btn-danger btn-sm" onClick={clearPlugins}>Remove plugins</button>
+          <button className="btn btn-danger btn-sm" onClick={clearPlugins}>
+            Remove plugins
+          </button>
         </div>
         <div className="d-flex-between mt-3 flex align-items-end">
           <Link className="btn btn-sm btn-info" to="/routes">
@@ -1791,8 +1810,9 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${icon || 'bars'
-          } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${
+          icon || 'bars'
+        } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>
@@ -1922,11 +1942,11 @@ class EditView extends React.Component {
       isFrontendOrBackend ? undefined : 'status',
       isPluginWithConfiguration
         ? {
-          label: isFrontendOrBackend ? null : 'Plugin',
-          flow: ['plugin'],
-          collapsed: false,
-          collapsable: false,
-        }
+            label: isFrontendOrBackend ? null : 'Plugin',
+            flow: ['plugin'],
+            collapsed: false,
+            collapsable: false,
+          }
         : undefined,
     ].filter((f) => f);
 
@@ -1954,10 +1974,10 @@ class EditView extends React.Component {
         };
     }
 
-    const overridePlugin = PLUGINS[id]
+    const overridePlugin = PLUGINS[id];
 
     if (overridePlugin) {
-      formSchema.plugin = overridePlugin(formSchema.plugin, this.props.showAdvancedDesignerView)
+      formSchema.plugin = overridePlugin(formSchema.plugin, this.props.showAdvancedDesignerView);
     }
 
     let value = route[selectedNode.field]; // matching Frontend and Backend case

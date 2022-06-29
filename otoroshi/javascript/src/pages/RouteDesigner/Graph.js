@@ -48,59 +48,64 @@ export const LEGACY_PLUGINS_WRAPPER = {
 };
 
 export const PLUGINS = {
-  "cp:otoroshi.next.plugins.SOAPAction": (plugin) => ({
+  'cp:otoroshi.next.plugins.SOAPAction': (plugin) => ({
     ...plugin,
     schema: {
       ...plugin.schema,
       envelope: {
-        "label": "envelope",
-        "type": "string",
-        "format": "code"
-      }
-    }
+        label: 'envelope',
+        type: 'string',
+        format: 'code',
+      },
+    },
   }),
-  "cp:otoroshi.next.plugins.SOAPActionConfig": (plugin) => ({
+  'cp:otoroshi.next.plugins.SOAPActionConfig': (plugin) => ({
     ...plugin,
     schema: {
       ...plugin.schema,
       envelope: {
-        "label": "envelope",
-        "type": "string",
-        "format": "code"
-      }
-    }
+        label: 'envelope',
+        type: 'string',
+        format: 'code',
+      },
+    },
   }),
-  "cp:otoroshi.next.plugins.GraphQLBackend": (plugin, showAdvancedDesignerView) => ({
+  'cp:otoroshi.next.plugins.GraphQLBackend': (plugin, showAdvancedDesignerView) => ({
     ...plugin,
     schema: {
-      "turn_view": {
+      turn_view: {
         type: 'bool',
         label: null,
         defaultValue: false,
-        render: () => <button
-          type="button"
-          className="btn btn-sm btn-success me-3 mb-3"
-          onClick={() => showAdvancedDesignerView(GraphQLForm)}>
-          Expand
-        </button>
+        render: () => (
+          <button
+            type="button"
+            className="btn btn-sm btn-success me-3 mb-3"
+            onClick={() => showAdvancedDesignerView(GraphQLForm)}>
+            Expand
+          </button>
+        ),
       },
       permissions: {
         type: type.string,
         array: true,
         label: 'Permissions paths',
       },
-      ...plugin.schema
+      ...plugin.schema,
     },
-    flow: plugin.flow.indexOf('permissions') > -1 ? ["turn_view", ...plugin.flow] : ["turn_view", ...plugin.flow, 'permissions']
+    flow:
+      plugin.flow.indexOf('permissions') > -1
+        ? ['turn_view', ...plugin.flow]
+        : ['turn_view', ...plugin.flow, 'permissions'],
   }),
-  "cp:otoroshi.next.plugins.MockResponses": (plugin, showAdvancedDesignerView) => ({
+  'cp:otoroshi.next.plugins.MockResponses': (plugin, showAdvancedDesignerView) => ({
     ...plugin,
     schema: {
-      "turn_view": {
+      turn_view: {
         type: 'bool',
         label: null,
         defaultValue: false,
-        render: props => {
+        render: (props) => {
           return (
             <button
               type="button"
@@ -111,11 +116,11 @@ export const PLUGINS = {
           );
         },
       },
-      ...plugin.schema
+      ...plugin.schema,
     },
-    flow: ['turn_view', ...plugin.flow]
-  })
-}
+    flow: ['turn_view', ...plugin.flow],
+  }),
+};
 
 export const DEFAULT_FLOW = {
   Frontend: {

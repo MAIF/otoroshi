@@ -370,14 +370,19 @@ class SOAPAction extends NgBackendCall {
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
-    val config                                        = ctx.cachedConfig(internalName)(configReads).getOrElse(throw new RuntimeException("bad config"))
+    val config = ctx.cachedConfig(internalName)(configReads).getOrElse(throw new RuntimeException("bad config"))
     process(ctx, delegates, config)
   }
 
-  def process(ctx: NgbBackendCallContext,
-              delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]],
-              config: SOAPActionConfig)
-             (implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  def process(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]],
+      config: SOAPActionConfig
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val bodyF: Future[Either[String, Option[String]]] = if (ctx.request.hasBody) {
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
         val body = bodyRaw.utf8String

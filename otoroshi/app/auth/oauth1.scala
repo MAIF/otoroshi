@@ -153,26 +153,26 @@ case class Oauth1ModuleConfig(
 
   override def asJson =
     location.jsonWithKey ++ Json.obj(
-      "type"                -> "oauth1",
-      "id"                  -> id,
-      "name"                -> name,
-      "desc"                -> desc,
-      "consumerKey"         -> consumerKey,
-      "consumerSecret"      -> consumerSecret,
+      "type"                     -> "oauth1",
+      "id"                       -> id,
+      "name"                     -> name,
+      "desc"                     -> desc,
+      "consumerKey"              -> consumerKey,
+      "consumerSecret"           -> consumerSecret,
       //"signatureMethod"     -> signatureMethod,
-      "requestTokenURL"     -> requestTokenURL,
-      "authorizeURL"        -> authorizeURL,
-      "profileURL"          -> profileURL,
-      "accessTokenURL"      -> accessTokenURL,
-      "callbackURL"         -> callbackURL,
+      "requestTokenURL"          -> requestTokenURL,
+      "authorizeURL"             -> authorizeURL,
+      "profileURL"               -> profileURL,
+      "accessTokenURL"           -> accessTokenURL,
+      "callbackURL"              -> callbackURL,
       "clientSideSessionEnabled" -> clientSideSessionEnabled,
-      "sessionMaxAge"       -> sessionMaxAge,
-      "userValidators"      -> JsArray(userValidators.map(_.json)),
-      "metadata"            -> metadata,
-      "tags"                -> JsArray(tags.map(JsString.apply)),
-      "rightsOverride"      -> JsObject(rightsOverride.mapValues(_.json)),
-      "httpMethod"          -> httpMethod.name,
-      "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues)
+      "sessionMaxAge"            -> sessionMaxAge,
+      "userValidators"           -> JsArray(userValidators.map(_.json)),
+      "metadata"                 -> metadata,
+      "tags"                     -> JsArray(tags.map(JsString.apply)),
+      "rightsOverride"           -> JsObject(rightsOverride.mapValues(_.json)),
+      "httpMethod"               -> httpMethod.name,
+      "sessionCookieValues"      -> SessionCookieValues.fmt.writes(this.sessionCookieValues)
     )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)

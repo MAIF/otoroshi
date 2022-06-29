@@ -153,9 +153,9 @@ class DevOtoroshiTests
     )
 
 class MapFilterTest
-  extends Suites(
-    new MapFilterSpec()
-  )
+    extends Suites(
+      new MapFilterSpec()
+    )
 
 class Log4ShellTests
     extends Suites(

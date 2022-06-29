@@ -1751,8 +1751,13 @@ object ApiKeyHelper {
     }
   }
 
-  def passWithApiKeyFromCache(req: RequestHeader, constraints: ApiKeyConstraints, attrs: TypedMap, service: String, incrementQuotas: Boolean)(
-      implicit
+  def passWithApiKeyFromCache(
+      req: RequestHeader,
+      constraints: ApiKeyConstraints,
+      attrs: TypedMap,
+      service: String,
+      incrementQuotas: Boolean
+  )(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, ApiKey]] = {

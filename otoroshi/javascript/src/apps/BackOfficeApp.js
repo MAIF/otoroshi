@@ -286,15 +286,21 @@ class BackOfficeAppContainer extends Component {
                         />
                         <Route
                           path="/backends/:taction/:titem"
-                          component={(props) => this.decorate(BackendsPage, { ...props, env: this.state.env })}
+                          component={(props) =>
+                            this.decorate(BackendsPage, { ...props, env: this.state.env })
+                          }
                         />
                         <Route
                           path="/backends/:taction"
-                          component={(props) => this.decorate(BackendsPage, { ...props, env: this.state.env })}
+                          component={(props) =>
+                            this.decorate(BackendsPage, { ...props, env: this.state.env })
+                          }
                         />
                         <Route
                           path="/backends"
-                          component={(props) => this.decorate(BackendsPage, { ...props, env: this.state.env })}
+                          component={(props) =>
+                            this.decorate(BackendsPage, { ...props, env: this.state.env })
+                          }
                         />
                         <Route
                           path="/organizations/:taction/:titem"

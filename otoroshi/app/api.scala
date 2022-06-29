@@ -51,35 +51,37 @@ object OtoroshiLoaderHelper {
     implicit val scheduler = components.env.otoroshiScheduler
     implicit val mat       = components.env.otoroshiMaterializer
 
-    val globalWait                      = components.env.configuration.betterGetOptional[Boolean]("app.boot.globalWait").getOrElse(true)
-    val waitForTlsInitEnabled           =
+    val globalWait                           = components.env.configuration.betterGetOptional[Boolean]("app.boot.globalWait").getOrElse(true)
+    val waitForTlsInitEnabled                =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForTlsInit").getOrElse(true)
-    val waitForPluginsSearch            =
+    val waitForPluginsSearch                 =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForPluginsSearch").getOrElse(true)
-    val waitForScriptsCompilation       =
+    val waitForScriptsCompilation            =
       components.env.scriptingEnabled && components.env.configuration
         .betterGetOptional[Boolean]("app.boot.waitForScriptsCompilation")
         .getOrElse(true)
-    val waitForFirstClusterFetchEnabled =
+    val waitForFirstClusterFetchEnabled      =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForFirstClusterFetch").getOrElse(true)
     val waitForFirstClusterStateCacheEnabled =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForFirstClusterStateCache").getOrElse(true)
-    val waitProxyStateSync              =
+    val waitProxyStateSync                   =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.waitProxyStateSync").getOrElse(true)
 
-    val globalWaitTimeout: Long                =
+    val globalWaitTimeout: Long                    =
       components.env.configuration.betterGetOptional[Long]("app.boot.waitTimeout").getOrElse(60000)
-    val waitForPluginsSearchTimeout: Long      =
+    val waitForPluginsSearchTimeout: Long          =
       components.env.configuration.betterGetOptional[Long]("app.boot.waitForPluginsSearchTimeout").getOrElse(20000)
-    val waitForScriptsCompilationTimeout: Long =
+    val waitForScriptsCompilationTimeout: Long     =
       components.env.configuration.betterGetOptional[Long]("app.boot.waitForScriptsCompilationTimeout").getOrElse(30000)
-    val waitForTlsInitTimeout: Long            =
+    val waitForTlsInitTimeout: Long                =
       components.env.configuration.betterGetOptional[Long]("app.boot.waitForTlsInitTimeout").getOrElse(10000)
-    val waitForFirstClusterFetchTimeout: Long  =
+    val waitForFirstClusterFetchTimeout: Long      =
       components.env.configuration.betterGetOptional[Long]("app.boot.waitForFirstClusterFetchTimeout").getOrElse(10000)
-    val waitForFirstClusterStateCacheTimeout: Long  =
-      components.env.configuration.betterGetOptional[Long]("app.boot.waitForFirstClusterStateCacheTimeout").getOrElse(10000)
-    val waitProxyStateSyncTimeout: Long        =
+    val waitForFirstClusterStateCacheTimeout: Long =
+      components.env.configuration
+        .betterGetOptional[Long]("app.boot.waitForFirstClusterStateCacheTimeout")
+        .getOrElse(10000)
+    val waitProxyStateSyncTimeout: Long            =
       components.env.configuration.betterGetOptional[Long]("app.boot.waitProxyStateSyncTimeout").getOrElse(10000)
 
     def timeout(duration: FiniteDuration): Future[Unit] = {
@@ -91,7 +93,9 @@ object OtoroshiLoaderHelper {
     }
 
     def waitForFirstClusterStateCache(): Future[Unit] = {
-      if (components.env.clusterConfig.mode == ClusterMode.Leader /*&& components.env.clusterConfig.autoUpdateState*/ && waitForFirstClusterStateCacheEnabled) {
+      if (
+        components.env.clusterConfig.mode == ClusterMode.Leader /*&& components.env.clusterConfig.autoUpdateState*/ && waitForFirstClusterStateCacheEnabled
+      ) {
         logger.info("waiting for first cluster state extraction ...")
         Future.firstCompletedOf(
           Seq(
@@ -99,7 +103,9 @@ object OtoroshiLoaderHelper {
             Source
               .tick(1.second, 1.second, ())
               .map { _ =>
-                if (components.env.clusterConfig.mode == ClusterMode.Leader/* && components.env.clusterConfig.autoUpdateState*/)
+                if (
+                  components.env.clusterConfig.mode == ClusterMode.Leader /* && components.env.clusterConfig.autoUpdateState*/
+                )
                   components.env.clusterLeaderAgent.cachedTimestamp > 0L
                 else true
               }

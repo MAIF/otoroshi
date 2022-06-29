@@ -174,8 +174,8 @@ export function allServices(env, group) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-      ? `/bo/api/proxy/api/services?filter.groups=${group}`
-      : `/bo/api/proxy/api/services`;
+    ? `/bo/api/proxy/api/services?filter.groups=${group}`
+    : `/bo/api/proxy/api/services`;
   return fetch(url, {
     method: 'GET',
     credentials: 'include',
@@ -1798,13 +1798,11 @@ export function tryIt(content, entity) {
 }
 
 export function routeEntries(routeId) {
-  return fetch(`/bo/api/routes/${routeId}/entries`)
-    .then(r => r.json())
+  return fetch(`/bo/api/routes/${routeId}/entries`).then((r) => r.json());
 }
 
 export function graphQLTryIt(url) {
-  return fetch(`/bo/api/graphqlproxy?url=${url}`)
-    .then(r => r.json());
+  return fetch(`/bo/api/graphqlproxy?url=${url}`).then((r) => r.json());
 }
 
 export function graphqlSchemaToJson(schema) {
@@ -1813,13 +1811,12 @@ export function graphqlSchemaToJson(schema) {
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      schema
-    })
-  })
-    .then(r => r.json())
+      schema,
+    }),
+  }).then((r) => r.json());
 }
 
 export function jsonToGraphqlSchema(schema, types) {
@@ -1828,13 +1825,13 @@ export function jsonToGraphqlSchema(schema, types) {
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      schema, types
-    })
-  })
-    .then(r => r.json())
+      schema,
+      types,
+    }),
+  }).then((r) => r.json());
 }
 
 // NgRoutes
@@ -1877,8 +1874,8 @@ export const nextClient = {
       deleteById: (id) => fetchWrapper(`/${entity}/${id}`, 'DELETE'),
       template: () => fetchWrapper(`/${entity}/_template`),
       form: () => fetchWrapper(`/${entity}/_form`),
-    }
-  }
+    };
+  },
 };
 
 export const getPlugins = () => fetchWrapper('/plugins/all');
