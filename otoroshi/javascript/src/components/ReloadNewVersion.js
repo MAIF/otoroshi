@@ -12,7 +12,7 @@ export class ReloadNewVersion extends Component {
   componentDidMount() {
     // console.log('Mount version loader');
     this.checkVersion();
-    this.interval = setInterval(this.checkVersion, 10000);
+    this.interval = setInterval(this.checkVersion, 60000);
   }
 
   componentWillUnmount() {
