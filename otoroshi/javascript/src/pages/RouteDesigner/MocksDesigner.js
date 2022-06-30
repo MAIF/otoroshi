@@ -160,7 +160,7 @@ export default class MocksDesigner extends React.Component {
     })
 
     generateFakerValues = endpoint => {
-        const { resourceList, body, length } = endpoint
+        const { resource_list, body, length } = endpoint
 
         if (endpoint.resource) {
             const resource = this.state.resources.find(f => f.name === endpoint.resource)
@@ -171,11 +171,11 @@ export default class MocksDesigner extends React.Component {
                 ...acc,
                 ...this.calculateField(item)
             }), JSON.parse(resource.additional_data || "{}"))
-            if (resourceList)
+            if (resource_list)
                 return Array.from({ length: length || 10 }, (_, i) => newItem(resource))
             return newItem(resource)
         } else {
-            if (resourceList)
+            if (resource_list)
                 return Array.from({ length: length || 10 }, (_, i) => body)
             return body
         }
@@ -350,7 +350,7 @@ const GenerateEndpoint = ({ resources, confirm, cancel }) => {
 
     const onResourceChange = (name, resourceName) => {
         setEndpoints([
-            { method: "GET", path: `/${name}s`, enabled: true, resource: resourceName, resourceList: true, status: 200 },
+            { method: "GET", path: `/${name}s`, enabled: true, resource: resourceName, resource_list: true, status: 200 },
             { method: "GET", path: `/${name}s/:id`, enabled: true, resource: resourceName, status: 200 },
             { method: "POST", path: `/${name}s`, enabled: true, resource: resourceName, status: 201 },
             { method: "PUT", path: `/${name}s/:id`, enabled: true, resource: resourceName, status: 204 },
@@ -551,13 +551,15 @@ class NewEndpoint extends React.Component {
         status: 200,
         body: null,
         resource: '',
-        resourceList: false,
+        resource_list: false,
         headers: {},
         length: 10
     }
 
     render() {
-        const { method, path, status, body, headers, resource, resourceList, length } = this.state
+        const { method, path, status, body, headers, resource, resource_list, length } = this.state
+
+        console.log(this.props.endpoint)
 
         return <div className="designer p-3" style={{ background: "#373735", borderRadius: '4px' }}>
             <div className='row'>
@@ -597,10 +599,10 @@ class NewEndpoint extends React.Component {
             </div>
             <BooleanInput
                 label="Is a list of resource ?"
-                value={resourceList}
-                onChange={v => this.setState({ resourceList: v })}
+                value={resource_list}
+                onChange={v => this.setState({ resource_list: v })}
             />
-            {resourceList && <NumberInput
+            {resource_list && <NumberInput
                 label="Array length"
                 min={1}
                 value={length || 10}
