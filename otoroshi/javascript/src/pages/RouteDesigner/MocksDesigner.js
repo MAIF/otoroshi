@@ -532,10 +532,13 @@ class NewResource extends React.Component {
 
             <div className='d-flex-between'>
                 <button className='btn btn-sm btn-danger ms-auto me-1' onClick={this.props.cancel}>Cancel</button>
-                <button className='btn btn-sm btn-save' onClick={() => this.props.confirm({
-                    value: this.state,
-                    idx: this.props.idx
-                })}>{this.props.resource ? 'Save' : 'Create'}</button>
+                <button
+                    className='btn btn-sm btn-save'
+                    disabled={name.length <= 0}
+                    onClick={() => this.props.confirm({
+                        value: this.state,
+                        idx: this.props.idx
+                    })}>{this.props.resource ? 'Save' : 'Create'}</button>
             </div>
         </div>
     }
