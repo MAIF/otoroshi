@@ -116,7 +116,8 @@ case class MockEndpoint(
     body: Option[JsObject] = None,
     resource: Option[String] = None,
     resourceList: Boolean = false,
-    headers: Option[JsObject] = None
+    headers: Option[JsObject] = None,
+    length: Option[Int] = None
 )
 case class MockFormData(resources: Seq[MockResource] = Seq.empty, endpoints: Seq[MockEndpoint] = Seq.empty)
 
@@ -174,7 +175,8 @@ object MockEndpoint {
       "body"          -> o.body,
       "resource"      -> o.resource,
       "resource_list" -> o.resourceList,
-      "headers"       -> o.headers
+      "headers"       -> o.headers,
+      "length"        -> o.length
     )
     override def reads(json: JsValue): JsResult[MockEndpoint] = Try {
       MockEndpoint(
@@ -184,7 +186,8 @@ object MockEndpoint {
         body = json.select("body").asOpt[JsObject],
         resource = json.select("resource").asOpt[String],
         resourceList = json.select("resource_list").as[Boolean],
-        headers = json.select("headers").asOpt[JsObject]
+        headers = json.select("headers").asOpt[JsObject],
+        length = json.select("length").asOpt[Int]
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

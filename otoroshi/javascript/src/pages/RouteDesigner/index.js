@@ -190,7 +190,7 @@ const Manager = ({ query, entity, ...props }) => {
                                 // window.location = `/bo/dashboard/${part}`
                                 history.push(`/${part}`);
                               }}>
-                              <i className="fas fa-times" /> Cancel
+                              <i className="fas fa-times" /> Back to routes
                             </button>
                             <button
                               type="button"

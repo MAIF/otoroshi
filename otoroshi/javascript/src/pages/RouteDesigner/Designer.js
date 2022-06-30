@@ -29,6 +29,7 @@ import { snakeCase, camelCase, isEqual, over } from 'lodash';
 import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
+import MocksDesigner from './MocksDesigner';
 
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
@@ -439,7 +440,7 @@ class Designer extends React.Component {
       TransformRequest: true,
       TransformResponse: true,
     },
-    advancedDesignerView: null
+    advancedDesignerView: MocksDesigner
   };
 
   componentDidMount() {
@@ -1498,7 +1499,7 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
     <div className="d-flex-between element-text">
       <div>
         {element.legacy ? (
-          <span className="badge bg-warning text-dark" style={{ marginRight: 5 }}>
+          <span className="badge bg-info text-dark" style={{ marginRight: 5 }}>
             legacy
           </span>
         ) : (
@@ -1626,8 +1627,14 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
         : [<span className="badge bg-success">ALL</span>];
     return (
       <>
-        <div className="d-flex-between dark-background py-2 ps-2">
-          <span style={{ fontStyle: 'italic' }}> Start by selecting a plugin to configure it</span>
+        <div className="d-flex-center justify-content-start dark-background py-2 ps-2">
+          <span style={{ fontStyle: 'italic' }}> Start by selecting a</span>
+          <Dot style={{ width: 'initial' }} className="mx-1">
+            <div className="flex-column p-1">
+              <span style={{ color: '#fff' }}>plugin</span>
+            </div>
+          </Dot>
+          <span>to configure it</span>
         </div>
         <div style={{ marginTop: 20 }}>
           <h3 style={{ fontSize: '1.25rem' }}>Frontend</h3>

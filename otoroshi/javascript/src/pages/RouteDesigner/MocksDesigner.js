@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import faker from 'faker'
 import { CodeInput } from '@maif/react-forms'
 import { FeedbackButton } from './FeedbackButton'
-import { BooleanInput, Help, ObjectInput, SelectInput, SimpleBooleanInput, TextInput } from '../../components/inputs'
+import { BooleanInput, Help, NumberInput, ObjectInput, SelectInput, SimpleBooleanInput, TextInput } from '../../components/inputs'
 
 const castValue = (value, type) => {
     if (type === 'String')
@@ -160,7 +160,7 @@ export default class MocksDesigner extends React.Component {
     })
 
     generateFakerValues = endpoint => {
-        const { resourceList, body } = endpoint
+        const { resourceList, body, length } = endpoint
 
         if (endpoint.resource) {
             const resource = this.state.resources.find(f => f.name === endpoint.resource)
@@ -172,11 +172,11 @@ export default class MocksDesigner extends React.Component {
                 ...this.calculateField(item)
             }), JSON.parse(resource.additional_data || "{}"))
             if (resourceList)
-                return Array.from({ length: 10 }, (_, i) => newItem(resource))
+                return Array.from({ length: length || 10 }, (_, i) => newItem(resource))
             return newItem(resource)
         } else {
             if (resourceList)
-                return Array.from({ length: 10 }, (_, i) => body)
+                return Array.from({ length: length || 10 }, (_, i) => body)
             return body
         }
     }
@@ -187,13 +187,14 @@ export default class MocksDesigner extends React.Component {
             (ok, cancel) => <Data body={this.state.endpoints[idx].body} idx={idx} confirm={ok} cancel={cancel} />,
             { additionalClass: 'designer-modal-dialog' }
         ).then(res => {
-            this.setAndSave({
-                endpoints: this.state.endpoints.map((endpoint, i) => {
-                    if (i === res.idx)
-                        return { ...endpoint, body: res.body }
-                    return endpoint
+            if (res)
+                this.setAndSave({
+                    endpoints: this.state.endpoints.map((endpoint, i) => {
+                        if (i === res.idx)
+                            return { ...endpoint, body: res.body }
+                        return endpoint
+                    })
                 })
-            })
         })
     }
 
@@ -263,12 +264,12 @@ export default class MocksDesigner extends React.Component {
                                 <h3>Endpoints</h3>
                                 <div>
                                     <FeedbackButton
-                                        className="btn btn-sm btn-save me-1"
+                                        className="btn btn-sm btn-info me-1"
                                         onPress={this.generateData}
                                         icon={() => <i className="fas fa-hammer me-1" />}
                                         text="GENERATE ALL"
                                     />
-                                    <button className="btn btn-sm btn-save" onClick={this.resetData}>
+                                    <button className="btn btn-sm btn-info" onClick={this.resetData}>
                                         <i className="fas fa-times me-1" />RESET ALL
                                     </button>
                                 </div>
@@ -279,7 +280,7 @@ export default class MocksDesigner extends React.Component {
                                     .map((endpoint, idx) => {
                                         return <div className='d-flex-between mt-1 endpoint' key={`${endpoint.path}${idx}`} onClick={() => this.showEndpointForm(idx)}>
                                             <div className='d-flex-between'>
-                                                <div style={{ minWidth: "60px" }}>
+                                                <div style={{ minWidth: "68px" }}>
                                                     <span className={`badge me-1`}
                                                         style={{ backgroundColor: HTTP_COLORS[endpoint.method] }}>
                                                         {endpoint.method}
@@ -318,14 +319,7 @@ export default class MocksDesigner extends React.Component {
                         </div>
                     </div>
                 </div>
-
-                <FeedbackButton
-                    className="ms-auto me-2 mt-auto mb-2"
-                    onPress={this.saveRoute}
-                    text="Save plugin"
-                    icon={() => <i className="fas fa-paper-plane" />}
-                />
-            </div >
+            </div>
         )
     }
 }
@@ -552,11 +546,12 @@ class NewEndpoint extends React.Component {
         body: null,
         resource: '',
         resourceList: false,
-        headers: {}
+        headers: {},
+        length: 10
     }
 
     render() {
-        const { method, path, status, body, headers, resource, resourceList } = this.state
+        const { method, path, status, body, headers, resource, resourceList, length } = this.state
 
         return <div className="designer p-3" style={{ background: "#373735", borderRadius: '4px' }}>
             <div className='row'>
@@ -583,16 +578,6 @@ class NewEndpoint extends React.Component {
             </div>
             <div className='row mb-3'>
                 <label htmlFor={`input-method`} className="col-xs-12 col-sm-2 col-form-label">
-                    Body
-                </label>
-                <div className="col-sm-10">
-                    <CodeInput
-                        value={body}
-                        onChange={v => this.setState({ body: v })} />
-                </div>
-            </div>
-            <div className='row mb-3'>
-                <label htmlFor={`input-method`} className="col-xs-12 col-sm-2 col-form-label">
                     or Resource
                 </label>
                 <div className="col-sm-10">
@@ -609,6 +594,13 @@ class NewEndpoint extends React.Component {
                 value={resourceList}
                 onChange={v => this.setState({ resourceList: v })}
             />
+            {resourceList && <NumberInput
+                label="Array length"
+                min={1}
+                value={length || 10}
+                max={100}
+                className="me-2"
+                onChange={e => this.setState({ length: e })} />}
             <TextInput
                 label="Status"
                 value={status}
@@ -621,6 +613,16 @@ class NewEndpoint extends React.Component {
                 placeholderValue="Header value"
                 value={headers}
                 onChange={v => this.setState({ headers: v })} />
+            <div className='row mb-3'>
+                <label htmlFor={`input-method`} className="col-xs-12 col-sm-2 col-form-label">
+                    Body
+                </label>
+                <div className="col-sm-10">
+                    <CodeInput
+                        value={body}
+                        onChange={v => this.setState({ body: v })} />
+                </div>
+            </div>
             <div className='d-flex-between'>
                 <button className='btn btn-sm btn-danger ms-auto me-1' onClick={this.props.cancel}>Cancel</button>
                 <button className='btn btn-sm btn-save' onClick={() => this.props.confirm({
