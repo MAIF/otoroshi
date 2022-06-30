@@ -160,60 +160,41 @@ export const DEFAULT_FLOW = {
           const hostname = getFieldValue('hostname') || '';
           const isSecured = getFieldValue('tls');
 
-          onChange('custom_target', `${isSecured ? 'HTTPS' : 'HTTP'}@${hostname}@${port}`);
+          onChange('custom_target', `${isSecured ? 'https' : 'http'}://${hostname}${port}${getFieldValue('custom_target')?.endsWith(' ') ? ' ' : ''}`);
         },
         schema: {
           custom_target: {
             label: 'Target',
             type: 'string',
             disabled: true,
-            render: ({ value }) => (
-              <div className="d-flex">
-                {value?.split('@').map((v, i) => (
-                  <span className="target_information" key={i}>
-                    {v}
-                  </span>
-                ))}
-              </div>
-            ),
-          },
-          expert_mode: {
-            type: 'bool',
-            label: null,
-            defaultValue: false,
             render: ({ value, onChange }) => {
-              return (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-success me-3 mb-3"
-                  onClick={() => onChange(!value)}>
-                  {!!value ? 'Show less' : 'Show more'}
-                </button>
-              );
-            },
+              const open = value.endsWith(" ")
+              return <div className="d-flex-center target_information mt-3" onClick={() => onChange(open ? value.slice(0, -1) : `${value} `)}>
+                <i className={`me-2 fas fa-chevron-${open ? 'down' : 'right'}`} />
+                <i className='fas fa-server me-2' />
+                <a>{value}</a>
+              </div>
+            }
           },
-
           ...Object.fromEntries(
-            Object.entries(generatedSchema.targets.schema).map(([key, value]) => {
-              return [
-                key,
-                {
-                  ...value,
-                  visible: {
-                    ref: parentNode,
-                    test: (v, idx) => {
-                      return !!v.targets[idx]?.expert_mode;
-                    },
+            Object.entries(generatedSchema.targets.schema).map(([key, value]) => [
+              key,
+              {
+                ...value,
+                visible: {
+                  ref: parentNode,
+                  test: (v, idx) => {
+                    return !!v.targets[idx]?.custom_target.endsWith(" ");
                   },
                 },
-              ];
-            })
+              },
+            ])
           ),
           hostname: {
             ...generatedSchema.targets.schema.hostname,
             visible: {
               ref: parentNode,
-              test: (v, idx) => !!v.targets[idx]?.expert_mode,
+              test: (v, idx) => !!v.targets[idx]?.custom_target.endsWith(" "),
             },
             constraints: [
               {
@@ -224,7 +205,7 @@ export const DEFAULT_FLOW = {
             ],
           },
         },
-        flow: ['custom_target', 'expert_mode', ...generatedSchema.targets.flow],
+        flow: ['custom_target', ...generatedSchema.targets.flow],
       },
     }),
     config_flow: [

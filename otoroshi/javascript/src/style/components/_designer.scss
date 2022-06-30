@@ -38,6 +38,12 @@
     .d-flex {
         display: flex;
     }
+    
+    .d-flex-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
     .flex-row-center {
         flex-direction: row;
@@ -177,7 +183,7 @@
     .dot {
         color: $grisTexte;
         border: 1px solid #eee;
-        border-radius: 4px;
+        // border-radius: 4px;
         width: 100%;
         display: flex;
         align-items: center;
@@ -381,7 +387,7 @@
         padding: 1px;
         position: relative;
         border: 1px solid #fff;
-        border-radius: 4px;
+        // border-radius: 4px;
     }
 
     .backend-icon {
@@ -485,6 +491,7 @@
         border-radius: 4px;
         margin-right: 4px;
         font-weight: bold;
+        cursor: pointer;
     }
 
     h3 {
