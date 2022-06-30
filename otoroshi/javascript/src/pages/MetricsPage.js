@@ -34,9 +34,14 @@ export class MetricsPage extends Component {
     if (v) {
       if (_.isNumber(v)) {
         if (String(v).indexOf('.') > -1) {
-          return v.toFixed(5);
+          const x = v.toFixed(5);
+          const parts = x.toString().split(".");
+          parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+          return parts.join(".");
         } else {
-          return v;
+          const parts = v.toString().split(".");
+          parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+          return parts.join(".");
         }
       } else if (_.isString(v)) {
         if (v.length > 20) {

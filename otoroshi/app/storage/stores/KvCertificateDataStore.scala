@@ -1,18 +1,17 @@
 package otoroshi.storage.stores
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import akka.actor.Cancellable
 import otoroshi.env.Env
-import otoroshi.models.Key
+import otoroshi.ssl.{Cert, CertificateDataStore, DynamicSSLEngineProvider}
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils
-import otoroshi.utils.{future, SchedulerHelper}
+import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.letsencrypt.LetsEncryptHelper
 import play.api.Logger
 import play.api.libs.json.Format
-import otoroshi.ssl.{Cert, CertificateDataStore, DynamicSSLEngineProvider}
 
-import scala.concurrent.duration.{Duration, _}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends CertificateDataStore with RedisLikeStore[Cert] {
@@ -21,10 +20,10 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
 
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def fmt: Format[Cert]                       = Cert._fmt
-  override def key(id: String): Key                    = Key.Empty / _env.storageRoot / "certs" / id
+  override def key(id: String): String                 = s"${_env.storageRoot}:certs:${id}"
   override def extractId(value: Cert): String          = value.id
 
-  val lastUpdatedKey = (Key.Empty / _env.storageRoot / "certs-last-updated").key
+  val lastUpdatedKey = s"${_env.storageRoot}:certs-last-updated"
 
   val lastUpdatedRef        = new AtomicReference[String]("0")
   val includeJdkCaServerRef = new AtomicBoolean(true)

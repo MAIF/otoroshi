@@ -26,20 +26,7 @@ import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
 import otoroshi.jobs.updates.Version
-import otoroshi.models.{
-  EntityLocation,
-  OtoroshiAdminType,
-  SimpleOtoroshiAdmin,
-  Team,
-  TeamAccess,
-  TeamId,
-  Tenant,
-  TenantAccess,
-  TenantId,
-  UserRight,
-  UserRights,
-  WebAuthnOtoroshiAdmin
-}
+import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.openapi.{ClassGraphScanner, FormsGenerator, OpenApiGenerator, OpenapiToJson}
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
@@ -417,6 +404,8 @@ class Env(
       .get
   lazy val sharedKey: String               = configuration.getOptionalWithFileSupport[String]("app.claim.sharedKey").get
   lazy val env: String                     = configuration.getOptionalWithFileSupport[String]("app.env").getOrElse("prod")
+  lazy val isDev: Boolean                  = env == "dev"
+  lazy val isProd: Boolean                 = !isDev
   lazy val number: Int                     = configuration.getOptionalWithFileSupport[Int]("app.instance.number").getOrElse(0)
   lazy val name: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.name").getOrElse("otoroshi")
   lazy val title: String                   = configuration.getOptionalWithFileSupport[String]("app.instance.title").getOrElse("Otoroshi")

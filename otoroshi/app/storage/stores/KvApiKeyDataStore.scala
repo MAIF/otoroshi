@@ -21,7 +21,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
 
   override def fmt: Format[ApiKey] = ApiKey._fmt
 
-  override def key(id: String): Key = Key.Empty / _env.storageRoot / "apikey" / "coll" / id
+  override def key(id: String): String = s"${_env.storageRoot}:apikey:coll:${id}"
 
   override def extractId(value: ApiKey): String = value.clientId
 

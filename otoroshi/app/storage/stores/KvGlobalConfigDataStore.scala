@@ -29,8 +29,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
   override def fmt: Format[GlobalConfig] = GlobalConfig._fmt
 
-  override def key(id: String): Key =
-    Key.Empty / _env.storageRoot / "config" / "global" // WARN : its a singleton, id is always global
+  override def key(id: String): String =
+    s"${_env.storageRoot}:config:global" // WARN : its a singleton, id is always global
 
   override def extractId(value: GlobalConfig): String = "global" // WARN : its a singleton, id is always global
 
@@ -86,7 +86,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   }
 
   override def isOtoroshiEmpty()(implicit ec: ExecutionContext): Future[Boolean] = {
-    redisCli.keys(key("global").key).map(_.isEmpty)
+    redisCli.keys(key("global")).map(_.isEmpty)
   }
 
   private val throttlingQuotasCache = new java.util.concurrent.atomic.AtomicLong(0L)
@@ -363,7 +363,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
   override def migrate()(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
     val migrationKey = s"${_env.storageRoot}:migrations:globalconfig:before130"
-    redisCli.get(key("global").key).map(_.get).flatMap { configBS =>
+    redisCli.get(key("global")).map(_.get).flatMap { configBS =>
       val json = Json.parse(configBS.utf8String)
       ((json \ "backofficeAuth0Config").asOpt[JsValue], (json \ "privateAppsAuth0Config").asOpt[JsValue]) match {
         case (Some(_), Some(_)) => {

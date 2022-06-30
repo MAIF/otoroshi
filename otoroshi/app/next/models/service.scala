@@ -281,6 +281,6 @@ trait NgServiceDataStore extends BasicStore[NgService] {
 class KvNgServiceDataStore(redisCli: RedisLike, _env: Env) extends NgServiceDataStore with RedisLikeStore[NgService] {
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def fmt: Format[NgService]                  = NgService.fmt
-  override def key(id: String): Key                    = Key.Empty / _env.storageRoot / "ngservices" / id
+  override def key(id: String): String                 = s"${_env.storageRoot}:ngservices:${id}"
   override def extractId(value: NgService): String     = value.id
 }

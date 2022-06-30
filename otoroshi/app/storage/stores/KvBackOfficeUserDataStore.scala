@@ -3,10 +3,9 @@ package otoroshi.storage.stores
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import otoroshi.env.Env
-import otoroshi.models.{BackOfficeUser, BackOfficeUserDataStore, Key}
-import play.api.libs.json.{Format, JsSuccess, JsValue, Json}
-import otoroshi.utils.json.JsonImplicits._
+import otoroshi.models.{BackOfficeUser, BackOfficeUserDataStore}
 import otoroshi.storage.{RedisLike, RedisLikeStore}
+import play.api.libs.json.{Format, JsSuccess, JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -16,7 +15,7 @@ class KvBackOfficeUserDataStore(redisCli: RedisLike, _env: Env)
 
   override def redisLike(implicit env: Env): RedisLike  = redisCli
   override def fmt: Format[BackOfficeUser]              = BackOfficeUser.fmt
-  override def key(id: String): Key                     = Key.Empty / _env.storageRoot / "users" / "backoffice" / id
+  override def key(id: String): String                  = s"${_env.storageRoot}:users:backoffice:${id}"
   override def extractId(value: BackOfficeUser): String = value.randomId
 
   override def blacklisted(email: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =

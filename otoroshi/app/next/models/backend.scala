@@ -444,7 +444,7 @@ class KvStoredNgTargetDataStore(redisCli: RedisLike, _env: Env)
     with RedisLikeStore[StoredNgTarget] {
   override def redisLike(implicit env: Env): RedisLike  = redisCli
   override def fmt: Format[StoredNgTarget]              = StoredNgTarget.format
-  override def key(id: String): Key                     = Key.Empty / _env.storageRoot / "ng-targets" / id
+  override def key(id: String): String                  = s"${_env.storageRoot}:ng-targets:${id}"
   override def extractId(value: StoredNgTarget): String = value.id
 }
 
@@ -617,6 +617,6 @@ class KvStoredNgBackendDataStore(redisCli: RedisLike, _env: Env)
     with RedisLikeStore[StoredNgBackend] {
   override def redisLike(implicit env: Env): RedisLike   = redisCli
   override def fmt: Format[StoredNgBackend]              = StoredNgBackend.format
-  override def key(id: String): Key                      = Key.Empty / _env.storageRoot / "backends" / id
+  override def key(id: String): String                   = s"${_env.storageRoot}:backends:${id}"
   override def extractId(value: StoredNgBackend): String = value.id
 }
