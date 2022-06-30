@@ -558,7 +558,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             Team
               .fromJsons(
                 env.datastores.teamDataStore
-                  .template(TenantId((resource \ "tenant").asOpt[String].getOrElse("default-tenant")))
+                  .template(TenantId((resource \ "tenant").asOpt[String].getOrElse("default")))
                   .json
                   .as[JsObject]
                   .deepMerge(resource)

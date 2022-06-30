@@ -116,6 +116,10 @@ export const PLUGINS = {
           );
         },
       },
+      form_data: {
+        ...plugin.schema.form_data,
+        visible: false
+      },
       ...plugin.schema,
     },
     flow: ['turn_view', ...plugin.flow],
@@ -169,7 +173,7 @@ export const DEFAULT_FLOW = {
             disabled: true,
             render: ({ value, onChange }) => {
               const open = value.endsWith(" ")
-              return <div className="d-flex-center target_information mt-3" onClick={() => onChange(open ? value.slice(0, -1) : `${value} `)}>
+              return <div className="d-flex-center justify-content-start target_information mt-3" onClick={() => onChange(open ? value.slice(0, -1) : `${value} `)}>
                 <i className={`me-2 fas fa-chevron-${open ? 'down' : 'right'}`} />
                 <i className='fas fa-server me-2' />
                 <a>{value}</a>

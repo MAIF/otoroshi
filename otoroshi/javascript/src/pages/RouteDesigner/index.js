@@ -16,7 +16,6 @@ import { ServiceAnalyticsPage } from '../ServiceAnalyticsPage';
 import { ServiceApiKeysPage } from '../ServiceApiKeysPage';
 import { useEntityFromURI } from '../../util';
 import { v4 } from 'uuid';
-import YAML from 'yaml';
 
 const MenuContainer = ({ children }) => (
   <li className="p-2 px-3">
