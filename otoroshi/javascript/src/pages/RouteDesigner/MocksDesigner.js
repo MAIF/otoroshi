@@ -233,11 +233,13 @@ export default class MocksDesigner extends React.Component {
                 <div className='m-3 ms-0'>
                     <div className='d-flex-between'>
                         <div>
-                            <button className="btn btn-sm btn-info" onClick={() => this.showResourceForm()}>
-                                <i className="fas fa-plus-circle me-1" />New resource
-                            </button>
-                            <button className="btn btn-sm btn-info mx-1" onClick={() => this.showEndpointForm()}>
-                                <i className="fas fa-plus-circle me-1" />New endpoint
+                            <FeedbackButton
+                                onPress={this.generateData}
+                                icon={() => <i className="fas fa-hammer me-1" />}
+                                text="Generate missing data"
+                            />
+                            <button className="btn btn-sm btn-info mx-1" onClick={this.resetData}>
+                                <i className="fas fa-times me-1" />Reset all data
                             </button>
                             <button className="btn btn-sm btn-info" onClick={() => this.showGenerateEndpointForm()}>
                                 <i className="fas fa-hammer me-1" />Generate endpoint
@@ -246,7 +248,12 @@ export default class MocksDesigner extends React.Component {
                     </div>
                     <div className='row my-3'>
                         <div className='col-md-4'>
-                            <h3>Resources</h3>
+                            <div className='d-flex-between'>
+                                <h3>Resources</h3>
+                                <button className="btn btn-sm btn-info" onClick={() => this.showResourceForm()}>
+                                    <i className="fas fa-plus-circle me-1" />New resource
+                                </button>
+                            </div>
                             <div className='mt-3 flex-column'>
                                 {this.state.resources.map((resource, idx) => {
                                     return <div className={`mt-${idx === 0 ? 0 : 1} d-flex-between endpoint`} key={resource.name} onClick={() => this.showResourceForm(idx)}>
@@ -262,31 +269,27 @@ export default class MocksDesigner extends React.Component {
                         <div className='col-md-8'>
                             <div className='d-flex-between'>
                                 <h3>Endpoints</h3>
-                                <div>
-                                    <FeedbackButton
-                                        className="btn btn-sm btn-info me-1"
-                                        onPress={this.generateData}
-                                        icon={() => <i className="fas fa-hammer me-1" />}
-                                        text="GENERATE ALL"
-                                    />
-                                    <button className="btn btn-sm btn-info" onClick={this.resetData}>
-                                        <i className="fas fa-times me-1" />RESET ALL
-                                    </button>
-                                </div>
+                                <button className="btn btn-sm btn-info" onClick={() => this.showEndpointForm()}>
+                                    <i className="fas fa-plus-circle me-1" />New endpoint
+                                </button>
                             </div>
                             <div className='mt-3'>
                                 {this.state.endpoints
                                     .sort((a, b) => a.path.localeCompare(b.path))
                                     .map((endpoint, idx) => {
                                         return <div className='d-flex-between mt-1 endpoint' key={`${endpoint.path}${idx}`} onClick={() => this.showEndpointForm(idx)}>
-                                            <div className='d-flex-between'>
+                                            <div className='d-flex-between flex'>
                                                 <div style={{ minWidth: "68px" }}>
-                                                    <span className={`badge me-1`}
+                                                    <span className="badge me-1"
                                                         style={{ backgroundColor: HTTP_COLORS[endpoint.method] }}>
                                                         {endpoint.method}
                                                     </span>
                                                 </div>
-                                                <span>{endpoint.path}</span>
+                                                <span className='flex' style={{ maxWidth: '50%' }}>{endpoint.path}</span>
+
+                                                <span className="badge bg-secondary me-auto">
+                                                    {endpoint.status}
+                                                </span>
                                             </div>
                                             <div className='d-flex-between'>
                                                 {!endpoint.body && !endpoint.resource &&
