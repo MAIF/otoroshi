@@ -1,76 +1,6 @@
 import _ from 'lodash';
 import React, { Component } from 'react';
 
-class Metric extends Component {
-  render() {
-    return (
-      <div style={{ width: '100%', height: 600, outline: '1px solid red' }}>
-        <pre>
-          <code>
-            {JSON.stringify(this.props.metric, null, 2)}
-          </code>
-        </pre>
-      </div>
-    );
-  }
-}
-
-function HistogramMetric() {
-  return null;
-}
-
-function TimerMetric() {
-  return null;
-}
-
-class CounterMetric extends Component  {
-
-  state = { fontSize: 'xx-large', value: null };
-
-  componentDidMount() {
-    this.adjust();
-  }
-
-  // componentDidUpdate() {
-  //   this.adjust();
-  // }
-
-  adjust = () => {
-    if (this.container && this.valueContainer) {
-      const valueContainerInnterWidth = parseInt(this.valueContainer.innerWidth);
-      const valueContainerWidth = parseInt(this.valueContainer.clientWidth);
-      const valueContainerHeight = parseInt(this.valueContainer.clientHeight);
-      const containerWidth = parseInt(this.container.clientWidth);
-      const containerHeight = parseInt(this.container.clientHeight);
-      if ((valueContainerWidth > containerWidth) || (valueContainerInnterWidth > containerWidth) || (valueContainerHeight > containerHeight)) {
-        this.setState({ fontSize: 'large' })
-      }
-      if (_.isNumber(this.props.metric.value)) {
-        const strValue = String(this.props.metric.value);
-        if (strValue.indexOf('.') > -1) {
-          const valueLength = strValue.length
-          if (valueLength > 16) {
-            this.setState({ value: this.props.metric.value.toFixed(10) })
-          }
-        }
-      }
-    }
-  }
-
-  render() {
-    const size = 300;
-    const metric = this.props.metric;
-    return (
-      <div ref={r => this.container = r} style={{ margin: 5, width: size, height: size, borderRadius: 3, backgroundColor: '#595956', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ width: '100%', height: '80%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div ref={r => this.valueContainer = r} style={{ fontSize: this.state.fontSize, textSizeAdjust: 'auto', textAlign: 'center', maxWidth: '100%' }}>{this.state.value || metric.value}</div>
-        </div>
-        <span style={{ fontSize: '1.0em', textAlign: 'center' }}>{metric.name}</span>
-      </div>
-    );
-  }
-}
-
 export class MetricsPage extends Component {
 
   state = { metrics: [] }
@@ -100,22 +30,81 @@ export class MetricsPage extends Component {
     })
   }
 
+  clean = (v) => {
+    if (v) {
+      if (_.isNumber(v)) {
+        if (String(v).indexOf('.') > -1) {
+          const x = v.toFixed(5);
+          const parts = x.toString().split(".");
+          parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+          return parts.join(".");
+        } else {
+          const parts = v.toString().split(".");
+          parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+          return parts.join(".");
+        }
+      } else if (_.isString(v)) {
+        if (v.length > 20) {
+          return <span title={v}>{v.substring(0, 19)}...</span>
+        } else {
+          return v;
+        }
+      } else {
+        return v;
+      }
+    } else {
+      return v
+    }
+  }
+
   render() {
+    const clean = this.clean;
+    const w_units = this.state.metrics.find(m => m.rate_units) || { rate_units: 'calls/second', duration_units: 'milliseconds' };
+    const metrics = _.uniqBy(_.sortBy(this.state.metrics, metric => metric.name).filter(m => m.type !== 'metrics'), m => m.name)
+      .filter(m => this.state.search ? m.name.indexOf(this.state.search) > -1 : true)
     return (
-      <div style={{ marginTop: 20, width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center' }}>
-        <h3>metrics: {this.state.metrics.length}</h3>
+      <div style={{ marginTop: 20, width: '100vw', height: '90vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center' }}>
+        <h3>{metrics.length} metrics - {w_units.rate_units} - {w_units.duration_units}</h3>
+        <input style={{ marginBottom: 10 }} className="form-control" type="text" value={this.state.search} onChange={e => this.setState({ search: e.target.value })}  placeholder="search metric name" />
         <div style={{ width: '100%', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
-          {this.possibleTypes.map(type => {
-            return this.state.metrics.filter(m => m.type === type).map(metric => {
-              if (type === 'histograms') {
-                return <HistogramMetric key={metric.name} metric={metric} />
-              } else if (type === 'timers') {
-                return <TimerMetric key={metric.name} metric={metric} />
-              } else {
-                return <CounterMetric key={metric.name} metric={metric} />
-              }
-            })
-          })}
+          <table className="table table-striped table-hover table-sm">
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'center', position: 'sticky', top: 10 }}>name</th>
+                {/*<th style={{ textAlign: 'center', position: 'sticky', top: 10 }}>kind</th>*/}
+                <th style={{ textAlign: 'center', position: 'sticky', top: 10 }}>value</th>
+                <th style={{ textAlign: 'center', position: 'sticky', top: 10 }}>count</th>
+                <th style={{ textAlign: 'center', position: 'sticky', top: 10 }}>min</th>
+                <th style={{ textAlign: 'center', position: 'sticky', top: 10 }}>mean</th>
+                <th style={{ textAlign: 'center', position: 'sticky', top: 10 }}>max</th>
+                <th style={{ textAlign: 'center', position: 'sticky', top: 10 }}>stddev</th>
+                <th style={{ textAlign: 'center', position: 'sticky', top: 10 }}>m_rate</th>
+                <th style={{ textAlign: 'center', position: 'sticky', top: 10 }}>m1_rate</th>
+                <th style={{ textAlign: 'center', position: 'sticky', top: 10 }}>m5_rate</th>
+                <th style={{ textAlign: 'center', position: 'sticky', top: 10 }}>m15_rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {this.possibleTypes.map(type => {
+                return metrics.filter(m => m.type === type).map(metric => (
+                  <tr key={metric.name}>
+                    <td>{metric.name}</td>
+                    {/*<td>{metric.type}</td>*/}
+                    <td style={{ textAlign: 'center' }}><span style={{ cursor: 'pointer' }} title={`value: ${clean(metric.value) || ''}`}>{clean(metric.value) || ''}</span></td>
+                    <td style={{ textAlign: 'center' }}><span style={{ cursor: 'pointer' }} title={`count: ${clean(metric.count) || ''} calls`}>{clean(metric.count) || ''}</span></td>
+                    <td style={{ textAlign: 'center' }}><span style={{ cursor: 'pointer' }} title={`min: ${clean(metric.min) || ''} ${metric.duration_units}`}>{clean(metric.min) || ''}</span></td>
+                    <td style={{ textAlign: 'center' }}><span style={{ cursor: 'pointer' }} title={`mean: ${clean(metric.mean) || ''} ${metric.duration_units}`}>{clean(metric.mean) || ''}</span></td>
+                    <td style={{ textAlign: 'center' }}><span style={{ cursor: 'pointer' }} title={`max: ${clean(metric.max) || ''} ${metric.duration_units}`}>{clean(metric.max) || ''}</span></td>
+                    <td style={{ textAlign: 'center' }}><span style={{ cursor: 'pointer' }} title={`stddev: ${clean(metric.stddev) || ''}`}>{clean(metric.stddev) || ''}</span></td>
+                    <td style={{ textAlign: 'center' }}><span style={{ cursor: 'pointer' }} title={`mean_rate: ${clean(metric.mean_rate) || ''} ${metric.rate_units}`}>{clean(metric.mean_rate) || ''}</span></td>
+                    <td style={{ textAlign: 'center' }}><span style={{ cursor: 'pointer' }} title={`m1_rate: ${clean(metric.m1_rate) || ''} ${metric.rate_units}`}>{clean(metric.m1_rate) || ''}</span></td>
+                    <td style={{ textAlign: 'center' }}><span style={{ cursor: 'pointer' }} title={`m5_rate: ${clean(metric.m5_rate) || ''} ${metric.rate_units}`}>{clean(metric.m5_rate) || ''}</span></td>
+                    <td style={{ textAlign: 'center' }}><span style={{ cursor: 'pointer' }} title={`m15_rate: ${clean(metric.m15_rate) || ''} ${metric.rate_units}`}>{clean(metric.m15_rate) || ''}</span></td>
+                  </tr>
+                ))
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     );

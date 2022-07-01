@@ -1080,6 +1080,6 @@ trait NgRouteDataStore extends BasicStore[NgRoute] {
 class KvNgRouteDataStore(redisCli: RedisLike, _env: Env) extends NgRouteDataStore with RedisLikeStore[NgRoute] {
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def fmt: Format[NgRoute]                    = NgRoute.fmt
-  override def key(id: String): Key                    = Key.Empty / _env.storageRoot / "routes" / id
+  override def key(id: String): String                 = s"${_env.storageRoot}:routes:${id}"
   override def extractId(value: NgRoute): String       = value.id
 }
