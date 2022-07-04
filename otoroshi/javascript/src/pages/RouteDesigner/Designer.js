@@ -493,15 +493,10 @@ class Designer extends React.Component {
     </>
   );
 
-  injectDefaultMenu = () => (
-    <>
-      <div className="d-flex-between">
-        <button type="button" className="btn btn-sm btn-danger me-1" onClick={this.clearPlugins}>
-          Remove plugins
-        </button>
-      </div>
-    </>
-  );
+  injectDefaultMenu = () => <button type="button" className="btn btn-sm btn-danger mt-1" style={{ width: '100%' }} onClick={this.clearPlugins}>
+    <i className='fas fa-ban me-3' />
+    Remove plugins
+  </button>
 
   injectNavbarMenu = () => {
     if (this.props.viewPlugins && this.props.viewPlugins !== -1)

@@ -20,7 +20,7 @@ const castValue = (value, type) => {
 }
 
 const stringify = body => {
-    if (typeof body === 'object' && !Array.isArray(body) && body !== null)
+    if (typeof body === 'object' && body !== null)
         try {
             return JSON.stringify(body)
         } catch (err) {
