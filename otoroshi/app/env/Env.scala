@@ -408,7 +408,10 @@ class Env(
   lazy val isProd: Boolean                 = !isDev
   lazy val number: Int                     = configuration.getOptionalWithFileSupport[Int]("app.instance.number").getOrElse(0)
   lazy val name: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.name").getOrElse("otoroshi")
-  lazy val title: String                   = configuration.getOptionalWithFileSupport[String]("app.instance.title").getOrElse("Otoroshi")
+  lazy val title: String                   = configuration.getOptionalWithFileSupport[String]("app.instance.title").map {
+    case v if v.startsWith("ReplaceAll(") => v.substring(11, v.length)
+    case v => v
+  }.getOrElse("Otoroshi")
   lazy val rack: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.rack").getOrElse("local")
   lazy val infraProvider: String           =
     configuration.getOptionalWithFileSupport[String]("app.instance.provider").getOrElse("local")

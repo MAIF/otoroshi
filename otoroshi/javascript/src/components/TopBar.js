@@ -487,14 +487,19 @@ export class TopBar extends Component {
 
   brandName = () => {
     if (this.state.env && this.state.env.instanceName) {
-      if (this.state.env.instanceName.toLowerCase() === 'otoroshi') {
+      const instanceName = this.state.env.instanceName;
+      if (instanceName.toLowerCase() === 'otoroshi') {
         return (
           <>
             <span>おとろし</span> &nbsp; {window.__title || 'Otoroshi'}
           </>
         );
       } else {
-        return <>Otoroshi - {this.state.env.instanceName}</>;
+        if (instanceName.startsWith('ReplaceAll(')) {
+          return <>{instanceName.substring(11, instanceName.length - 1)}</>;
+        } else {
+          return <>Otoroshi - {instanceName}</>;
+        }
       }
     } else {
       return (

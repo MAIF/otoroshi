@@ -1,10 +1,6 @@
 package otoroshi.utils.syntax
 
 import akka.NotUsed
-
-import java.io.File
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -12,23 +8,22 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.{Base64, Hex}
-import otoroshi.utils.JsonPathUtils
-import otoroshi.utils.{Regex, RegexPool}
-import play.api.{ConfigLoader, Configuration, Logger}
+import otoroshi.utils.{JsonPathUtils, Regex, RegexPool}
 import play.api.libs.json._
-import otoroshi.utils.Regex
+import play.api.{ConfigLoader, Configuration, Logger}
 
+import java.io.File
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
+import scala.collection.TraversableOnce
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
-import io.kubernetes.client.proto.Meta.Time
-
-import scala.collection.TraversableOnce
-import scala.collection.concurrent.TrieMap
 
 object implicits {
   implicit class BetterSyntax[A](private val obj: A)                   extends AnyVal {
@@ -36,6 +31,7 @@ object implicits {
     def set: Set[A]                                                 = Set(obj)
     def list: List[A]                                               = List(obj)
     def some: Option[A]                                             = Some(obj)
+    def none: Option[A]                                             = None
     def option: Option[A]                                           = Some(obj)
     def left[B]: Either[A, B]                                       = Left(obj)
     def right[B]: Either[B, A]                                      = Right(obj)
