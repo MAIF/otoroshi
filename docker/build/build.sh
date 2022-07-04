@@ -72,6 +72,11 @@ build_jdk19 () {
   docker tag otoroshi-jdk19 "maif/otoroshi:$1-jdk19"
 }
 
+build_jdk20 () {
+  docker build --no-cache -f ./Dockerfile-jdk19-jar -t otoroshi-jdk20 .
+  docker tag otoroshi-jdk20 "maif/otoroshi:$1-jdk20"
+}
+
 build_graal () {
   docker build --no-cache -f ./Dockerfile-graal -t otoroshi-graal .
   docker tag otoroshi-graal "maif/otoroshi:$1-graal"
@@ -106,6 +111,11 @@ case "${1}" in
     build_jdk19 $2
     cleanup
     ;;
+  build-jdk20)
+    prepare_build
+    build_jdk20 $2
+    cleanup
+    ;;
   build-graal)
     prepare_build
     build_graal $2
@@ -117,6 +127,7 @@ case "${1}" in
     build_jdk17 $2
     build_jdk18 $2
     build_jdk19 $2
+    build_jdk20 $2
     build_graal $2
     cleanup
     ;;
@@ -126,6 +137,7 @@ case "${1}" in
     build_jdk17 $2
     build_jdk18 $2
     build_jdk19 $2
+    build_jdk20 $2
     build_graal $2
     cleanup
     echo "\nnow pushing maif/otoroshi:$2\n"
@@ -138,6 +150,8 @@ case "${1}" in
     docker push "maif/otoroshi:$2-jdk18"
     echo "\nnow pushing maif/otoroshi:$2-jdk19\n"
     docker push "maif/otoroshi:$2-jdk19"
+     echo "\nnow pushing maif/otoroshi:$2-jdk20\n"
+    docker push "maif/otoroshi:$2-jdk20"
     echo "\nnow pushing maif/otoroshi:$2-graal\n"
     docker push "maif/otoroshi:$2-graal"
     echo "\nnow pushing maif/otoroshi:latest\n"
@@ -174,6 +188,12 @@ case "${1}" in
     cp ../../otoroshi/target/scala-2.12/otoroshi.jar otoroshi.jar
     docker build --no-cache -f ./Dockerfile-jdk19-jar -t otoroshi-jdk19 .
     docker tag otoroshi-jdk19 "maif/otoroshi:dev19"
+    cleanup
+    ;;
+  build-20)
+    cp ../../otoroshi/target/scala-2.12/otoroshi.jar otoroshi.jar
+    docker build --no-cache -f ./Dockerfile-jdk20-jar -t otoroshi-jdk20 .
+    docker tag otoroshi-jdk20 "maif/otoroshi:dev20"
     cleanup
     ;;
   prepare)
