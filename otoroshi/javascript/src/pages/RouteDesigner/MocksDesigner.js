@@ -576,8 +576,6 @@ class NewEndpoint extends React.Component {
     render() {
         const { method, path, status, body, headers, resource, resource_list, length } = this.state
 
-        console.log(this.props.endpoint)
-
         return <div className="designer p-3" style={{ background: "#373735", borderRadius: '4px' }}>
             <div className='row'>
                 <div className="d-flex-between mb-1">

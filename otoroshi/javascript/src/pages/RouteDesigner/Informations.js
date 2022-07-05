@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { Form, type, constraints, format } from '@maif/react-forms';
 import { Location } from '../../components/Location';
 import { nextClient } from '../../services/BackOfficeServices';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
 import { isEqual, merge } from 'lodash';
 import { FeedbackButton } from './FeedbackButton';
-import { Collapse } from '../../components/inputs/Collapse';
 
-export const Informations = ({ isCreation, value, setValue, setSaveButton }) => {
+export const Informations = forwardRef(({ isCreation, value, setValue, setSaveButton }, ref) => {
   const history = useHistory();
+  const location = useLocation()
   const [informations, setInformations] = useState({ ...value });
 
   const { capitalize, lowercase, fetchName, link } = useEntityFromURI();
@@ -17,6 +17,12 @@ export const Informations = ({ isCreation, value, setValue, setSaveButton }) => 
   useEffect(() => {
     setInformations({ ...value });
   }, [value]);
+
+  useImperativeHandle(ref, () => ({
+    onTestingButtonClick() {
+      history.push(`/routes/${value.id}?tab=flow`, { showTryIt: true })
+    }
+  }))
 
   useEffect(() => {
     setSaveButton(saveButton('ms-2'));
@@ -178,4 +184,4 @@ export const Informations = ({ isCreation, value, setValue, setSaveButton }) => 
       </div>
     </>
   );
-};
+});

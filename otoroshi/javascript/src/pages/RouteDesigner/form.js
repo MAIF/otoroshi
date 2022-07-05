@@ -492,6 +492,10 @@ export class RouteForm extends Component {
     );
   }
 
+  onTestingButtonClick(history, value) {
+    history.push(`/routes/${value.id}?tab=flow`, { showTryIt: true })
+  }
+
   load = () => {
     return this.client.findById(this.props.routeId).then((value) => {
       this.setState({ value });

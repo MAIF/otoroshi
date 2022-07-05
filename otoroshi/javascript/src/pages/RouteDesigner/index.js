@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Route, Switch, useHistory, useLocation, useParams, useRouteMatch } from 'react-router-dom';
 import { nextClient } from '../../services/BackOfficeServices';
 import Designer from './Designer';
-import { TryIt } from './TryIt';
 import RouteCompositions from './RouteComposition';
 import Routes from './Routes';
 import { Informations } from './Informations';
@@ -30,6 +29,7 @@ const Manager = ({ query, entity, ...props }) => {
   const isCreation = p.routeId === 'new';
   const history = useHistory();
   const { url } = useRouteMatch();
+  const location = useLocation()
 
   const rawViewPlugins = new URLSearchParams(location.search).get('view_plugins');
   const viewPlugins = rawViewPlugins !== null ? Number(rawViewPlugins) : -1;
@@ -38,6 +38,8 @@ const Manager = ({ query, entity, ...props }) => {
   const [value, setValue] = useState();
   const [saveButton, setSaveButton] = useState(null);
   const [menu, setMenu] = useState();
+
+  const viewRef = useRef()
 
   useEffect(() => {
     if (p.routeId === 'new') {
@@ -55,7 +57,6 @@ const Manager = ({ query, entity, ...props }) => {
             {
               {
                 flow: 'Designer',
-                'try-it': 'Test routes',
                 informations: 'Informations',
                 routes: 'Routes',
                 route_plugins: 'Route plugins',
@@ -100,10 +101,9 @@ const Manager = ({ query, entity, ...props }) => {
                   enabled: () => !isOnViewPlugins,
                 },
                 {
-                  to: `/${entity.link}/${value.id}?tab=try-it`,
                   icon: 'fa-vials',
                   title: 'Tester',
-                  tab: 'try-it',
+                  onClick: () => viewRef?.current?.onTestingButtonClick(history, value),
                   enabled: () => !isOnViewPlugins,
                 },
                 {
@@ -128,13 +128,12 @@ const Manager = ({ query, entity, ...props }) => {
                       type="button"
                       className={`btn btn-sm toggle-form-buttons d-flex align-items-center ${dropdown ? 'dropdown-toggle' : ''
                         }`}
-                      onClick={
-                        onClick
-                          ? onClick
-                          : () => {
-                            if (query !== tab || viewPlugins) history.push(to);
-                          }
-                      }
+                      onClick={onClick ? onClick : () => {
+                        if (query !== tab || viewPlugins) {
+                          if (!window.location.href.includes(to))
+                            history.push(to);
+                        }
+                      }}
                       {...(tooltip || {})}
                       style={{
                         ...(style || {}),
@@ -329,7 +328,7 @@ const Manager = ({ query, entity, ...props }) => {
         </div>
       ));
     }
-  }, [value, saveButton, menu]);
+  }, [value, saveButton, menu, viewRef]);
 
   const divs = [
     {
@@ -337,6 +336,9 @@ const Manager = ({ query, entity, ...props }) => {
       render: () => (
         <Designer
           {...props}
+          ref={viewRef}
+          tab={query}
+          history={history}
           value={value}
           setSaveButton={setSaveButton}
           viewPlugins={viewPlugins}
@@ -345,17 +347,16 @@ const Manager = ({ query, entity, ...props }) => {
       ),
     },
     {
-      predicate: query && query === 'try-it',
-      render: () => <TryIt route={value} setSaveButton={setSaveButton} />,
-    },
-    {
       predicate: query && query === 'form' && entity.fetchName === 'ROUTES',
       render: () => (
         <RouteForm
+          ref={viewRef}
           setSaveButton={setSaveButton}
           isCreation={isCreation}
           routeId={p.routeId}
           setValue={setValue}
+          history={history}
+          location={location}
         />
       ),
     },
@@ -368,6 +369,7 @@ const Manager = ({ query, entity, ...props }) => {
       render: () =>
         value && (
           <RouteCompositions
+            ref={viewRef}
             service={value}
             setSaveButton={setSaveButton}
             setService={setValue}
@@ -379,12 +381,14 @@ const Manager = ({ query, entity, ...props }) => {
 
   const component = divs.filter((p) => p.predicate);
 
-  if (component.length > 0) return <div className="designer row">{component[0].render()}</div>;
+  if (component.length > 0)
+    return <div className="designer row">{component[0].render()}</div>;
 
   return (
     <div className="designer row ps-3">
       <Informations
         {...props}
+        ref={viewRef}
         isCreation={isCreation}
         value={value}
         setValue={setValue}
