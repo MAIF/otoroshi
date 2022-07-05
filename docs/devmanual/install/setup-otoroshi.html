@@ -1943,6 +1943,31 @@ otoroshi {
     autoUpdateState = true # auto update cluster state with a job (more efficient)
     autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
     autoUpdateState = ${?OTOROSHI_CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
+    regionalRouting {
+      enabled = false # enabled extra regional routing
+      enabled = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_ENABLED} # enabled extra regional routing
+      location {
+        provider = ${?otoroshi.instance.provider}
+        provider = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_LOCATION_PROVIDER}
+        zone = ${?otoroshi.instance.zone}
+        zone = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_LOCATION_ZONE}
+        region = ${?otoroshi.instance.region}
+        region = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_LOCATION_REGION}
+        datacenter = ${?otoroshi.instance.dc}
+        datacenter = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_LOCATION_DATACENTER}
+        rack = ${?otoroshi.instance.rack}
+        rack = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_LOCATION_RACK}
+      }
+      exposition {
+        url = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_URL}
+        urls = []
+        urlsStr = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_URLS}
+        hostname = &quot;otoroshi-api.oto.tools&quot;
+        hostname = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_HOSTNAME}
+        clientId = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_CLIENT_ID}
+        clientSecret = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_CLIENT_SECRET}
+      }
+    }
     mtls {
       # certs = []
       # trustedCerts = []
@@ -2935,6 +2960,28 @@ otoroshi {
     selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the cluster selfAddress
     autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
     autoUpdateState = ${?OTOROSHI_CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
+    regionalRouting {
+      enabled = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_ENABLED} # enabled extra regional routing
+      location {
+        provider = ${?otoroshi.instance.provider}
+        provider = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_LOCATION_PROVIDER}
+        zone = ${?otoroshi.instance.zone}
+        zone = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_LOCATION_ZONE}
+        region = ${?otoroshi.instance.region}
+        region = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_LOCATION_REGION}
+        datacenter = ${?otoroshi.instance.dc}
+        datacenter = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_LOCATION_DATACENTER}
+        rack = ${?otoroshi.instance.rack}
+        rack = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_LOCATION_RACK}
+      }
+      exposition {
+        url = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_URL}
+        urlsStr = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_URLS}
+        hostname = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_HOSTNAME}
+        clientId = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_CLIENT_ID}
+        clientSecret = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_CLIENT_SECRET}
+      }
+    }
     mtls {
       enabled = ${?CLUSTER_MTLS_ENABLED}  # enable mtls
       enabled = ${?OTOROSHI_CLUSTER_MTLS_ENABLED}  # enable mtls
