@@ -351,6 +351,8 @@ class GatewayRequestHandler(
           case env.backOfficeHost if env.exposeAdminDashboard => super.routeRequest(request)
           case env.privateAppsHost                            => super.routeRequest(request)
 
+          case env.adminApiHost if !env.exposeAdminApi && relativeUri.startsWith("/api/cluster/_regional_routing") => super.routeRequest(request)
+
           case h if env.adminApiExposedDomains.contains(h) && relativeUri.startsWith("/.well-known/jwks.json")     =>
             Some(jwks())
           case h if env.backofficeDomains.contains(h) && relativeUri.startsWith("/.well-known/jwks.json")          =>

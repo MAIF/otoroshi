@@ -8,13 +8,15 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.{Base64, Hex}
+import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.{JsonPathUtils, Regex, RegexPool}
 import play.api.libs.json._
 import play.api.{ConfigLoader, Configuration, Logger}
 
-import java.io.File
+import java.io.{ByteArrayInputStream, File}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.security.cert.{CertificateFactory, X509Certificate}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.TraversableOnce
@@ -115,6 +117,12 @@ object implicits {
     def camelToSnake: String = {
       obj.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase
       // obj.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2").replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase
+    }
+    def toCertificate: X509Certificate = {
+      val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
+      certificateFactory
+        .generateCertificate(new ByteArrayInputStream(DynamicSSLEngineProvider.base64Decode(obj)))
+        .asInstanceOf[X509Certificate]
     }
   }
   implicit class BetterByteString(private val obj: ByteString)         extends AnyVal {

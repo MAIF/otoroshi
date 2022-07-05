@@ -186,6 +186,17 @@ case class NgRoute(
   lazy val openapiUrl: Option[String]           = metadata.get("otoroshi-core-openapi-url").filter(_.nonEmpty)
   lazy val originalRouteId: Option[String]      = metadata.get("otoroshi-core-original-route-id").filter(_.nonEmpty)
 
+  lazy val deploymentProviders: Seq[String] = metadata.get("otoroshi-deployment-providers").filter(_.nonEmpty).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+  lazy val hasDeploymentProviders: Boolean = deploymentProviders.nonEmpty
+  lazy val deploymentRegions: Seq[String] = metadata.get("otoroshi-deployment-regions").filter(_.nonEmpty).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+  lazy val hasDeploymentRegions: Boolean = deploymentRegions.nonEmpty
+  lazy val deploymentZones: Seq[String] = metadata.get("otoroshi-deployment-zones").filter(_.nonEmpty).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+  lazy val hasDeploymentZones: Boolean = deploymentZones.nonEmpty
+  lazy val deploymentDatacenters: Seq[String] = metadata.get("otoroshi-deployment-dcs").filter(_.nonEmpty).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+  lazy val hasDeploymentDatacenters: Boolean = deploymentDatacenters.nonEmpty
+  lazy val deploymentRacks: Seq[String] = metadata.get("otoroshi-deployment-racks").filter(_.nonEmpty).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+  lazy val hasDeploymentRacks: Boolean = deploymentRacks.nonEmpty
+
   lazy val legacy: ServiceDescriptor = serviceDescriptor
   lazy val serviceDescriptor: ServiceDescriptor = {
     ServiceDescriptor(

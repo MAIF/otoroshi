@@ -6,7 +6,7 @@ import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}
 
-sealed trait NgProxyEngineError {
+trait NgProxyEngineError {
   def asResult()(implicit ec: ExecutionContext, env: Env): Future[Result]
 }
 object NgProxyEngineError       {

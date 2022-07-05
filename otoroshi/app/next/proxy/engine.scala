@@ -330,6 +330,7 @@ class ProxyEngine() extends RequestHandler {
       _         <- handleConcurrentRequest(request)
       _          = report.markDoneAndStart("find-route")
       route     <- findRoute(useTree, request, request.body, global_plugins__, tryIt)
+      _         <- handleExtraRegionalTraffic(route, request, request.body)
       config     = (route.metadata.get("otoroshi-core-apply-legacy-checks") match {
                      case Some("false") => _config.copy(applyLegacyChecks = false)
                      case Some("true")  => _config.copy(applyLegacyChecks = true)
@@ -426,7 +427,7 @@ class ProxyEngine() extends RequestHandler {
         report.markDurations()
         closeCurrentRequest(env)
         attrs.get(Keys.RouteKey).foreach { route =>
-          callPluginsAfterRequestCallback(snowflake, request, route, attrs.get(Keys.ContextualPluginsKey).get)
+          attrs.get(Keys.ContextualPluginsKey).foreach(ctxplgs =>  callPluginsAfterRequestCallback(snowflake, request, route, ctxplgs))
           handleHighOverhead(request, route.some)
           if (tryIt) {
             tryItId.foreach(id => env.proxyState.addReport(id, report))
@@ -610,6 +611,36 @@ class ProxyEngine() extends RequestHandler {
           }
         }
       }
+  }
+
+  def handleExtraRegionalTraffic(route: NgRoute, req: RequestHeader, body: Source[ByteString, _])(implicit
+      ec: ExecutionContext,
+      env: Env,
+      report: NgExecutionReport,
+      globalConfig: GlobalConfig,
+      attrs: TypedMap,
+      mat: Materializer): FEither[NgProxyEngineError, Done] = {
+    if (env.clusterConfig.regionalRouting.enabled) {
+      val location = env.clusterConfig.regionalRouting.location
+      val matchRack: Boolean = if (route.hasDeploymentRacks) route.deploymentRacks.contains(location.rack) else true
+      val matchDatacenter: Boolean = if (route.hasDeploymentDatacenters) route.deploymentDatacenters.contains(location.datacenter) else true
+      val matchZone: Boolean = if (route.hasDeploymentZones) route.deploymentZones.contains(location.zone) else true
+      val matchRegion: Boolean = if (route.hasDeploymentRegions) route.deploymentRegions.contains(location.region) else true
+      val matchProvider: Boolean = if (route.hasDeploymentProviders) route.deploymentProviders.contains(location.provider) else true
+      val matching: Boolean = matchRack && matchDatacenter && matchZone && matchRegion && matchProvider
+      if (matching) {
+        FEither.right(Done)
+      } else {
+        // Here, choose zone leader and forward the call
+        FEither(env.datastores.clusterStateDataStore.getMembers().flatMap { members =>
+          val possibleLeaders = new PossibleLeaders(members, route)
+          val leader = possibleLeaders.chooseNext(reqCounter)
+          leader.call(req, body)
+        })
+      }
+    } else {
+      FEither.right(Done)
+    }
   }
 
   def extractTrackingId(snowflake: String, req: RequestHeader, reqNumber: Int, route: NgRoute)(implicit

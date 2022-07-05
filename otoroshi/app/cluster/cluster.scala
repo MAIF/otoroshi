@@ -84,7 +84,7 @@ object Cluster {
 
   def filteredKey(key: String, env: Env): Boolean = {
     key.startsWith(s"${env.storageRoot}:noclustersync:") ||
-    key.startsWith(s"${env.storageRoot}:cluster:") ||
+    // key.startsWith(s"${env.storageRoot}:cluster:") ||
     key == s"${env.storageRoot}:events:audit" ||
     key == s"${env.storageRoot}:events:alerts" ||
     key.startsWith(s"${env.storageRoot}:users:backoffice") ||
@@ -166,22 +166,112 @@ case class WorkerConfig(
     swapStrategy: SwapStrategy = SwapStrategy.Replace
     //initialCacert: Option[String] = None
 )
+
 case class LeaderConfig(
-    name: String = s"otoroshi-leader-${IdGenerator.token(16)}",
-    urls: Seq[String] = Seq.empty,
-    host: String = "otoroshi-api.oto.tools",
-    clientId: String = "admin-api-apikey-id",
-    clientSecret: String = "admin-api-apikey-secret",
-    groupingBy: Int = 50,
-    cacheStateFor: Long = 4000,
-    stateDumpPath: Option[String] = None
+  name: String = s"otoroshi-leader-${IdGenerator.token(16)}",
+  urls: Seq[String] = Seq.empty,
+  host: String = "otoroshi-api.oto.tools",
+  clientId: String = "admin-api-apikey-id",
+  clientSecret: String = "admin-api-apikey-secret",
+  groupingBy: Int = 50,
+  cacheStateFor: Long = 4000,
+  stateDumpPath: Option[String] = None
 )
+
+case class RegionalLocation(
+  provider: String,
+  zone: String,
+  region: String,
+  datacenter: String,
+  rack: String
+) {
+  def json: JsValue = Json.obj(
+    "provider" -> provider,
+    "zone" -> zone,
+    "region" -> region,
+    "datacenter" -> datacenter,
+    "rack" -> rack,
+  )
+}
+
+case class RegionalExposition(
+  urls: Seq[String],
+  hostname: String,
+  clientId: Option[String],
+  clientSecret: Option[String],
+) {
+  def json: JsValue = Json.obj(
+    "urls" -> urls,
+    "hostname" -> hostname,
+  )
+  .applyOnWithOpt(clientId) {
+    case (obj, cid) => obj ++ Json.obj("clientId" -> cid)
+  }
+  .applyOnWithOpt(clientSecret) {
+    case (obj, cid) => obj ++ Json.obj("clientSecret" -> cid)
+  }
+}
+
+case class RegionalRouting(
+  enabled: Boolean,
+  location: RegionalLocation,
+  exposition: RegionalExposition
+) {
+  def json: JsValue = Json.obj(
+    "enabled" -> enabled,
+    "location" -> location.json,
+    "exposition" -> exposition.json,
+  )
+}
+
+object RegionalRouting {
+  val default = RegionalRouting(
+    enabled = false,
+    location = RegionalLocation(
+      provider = "locat",
+      zone = "locat",
+      region = "locat",
+      datacenter = "locat",
+      rack = "locat",
+    ),
+    exposition = RegionalExposition(
+      urls = Seq.empty,
+      hostname = "otoroshi-api.oto.tools",
+      clientId = None,
+      clientSecret = None,
+    )
+  )
+  def parse(json: String): Option[RegionalRouting] = Try {
+    val value = Json.parse(json)
+    RegionalRouting(
+      enabled = value.select("enabled").asOpt[Boolean].getOrElse(false),
+      location =  RegionalLocation(
+        provider = value.select("location").select("provider").asOpt[String].getOrElse("local"),
+        zone = value.select("location").select("zone").asOpt[String].getOrElse("local"),
+        region = value.select("location").select("region").asOpt[String].getOrElse("local"),
+        datacenter = value.select("location").select("datacenter").asOpt[String].getOrElse("local"),
+        rack = value.select("location").select("rack").asOpt[String].getOrElse("local"),
+      ),
+      exposition = RegionalExposition(
+        urls = value.select("exposition").select("urls").asOpt[Seq[String]].getOrElse(default.exposition.urls),
+        hostname = value.select("exposition").select("hostname").asOpt[String].getOrElse(default.exposition.hostname),
+        clientId = value.select("exposition").select("clientId").asOpt[String].filter(_.nonEmpty),
+        clientSecret = value.select("exposition").select("clientSecret").asOpt[String].filter(_.nonEmpty),
+      ),
+    )
+  } match {
+    case Failure(e) => None
+    case Success(value) => value.some
+  }
+}
+
 case class ClusterConfig(
     mode: ClusterMode = ClusterMode.Off,
     compression: Int = -1,
     proxy: Option[WSProxyServer],
     mtlsConfig: MtlsConfig,
     streamed: Boolean,
+    regionalRouting: RegionalRouting,
     // autoUpdateState: Boolean,
     retryDelay: Long,
     retryFactor: Long,
@@ -205,6 +295,28 @@ object ClusterConfig {
       retryDelay = configuration.getOptionalWithFileSupport[Long]("retryDelay").getOrElse(300L),
       retryFactor = configuration.getOptionalWithFileSupport[Long]("retryFactor").getOrElse(2L),
       streamed = configuration.getOptionalWithFileSupport[Boolean]("streamed").getOrElse(true),
+      regionalRouting = RegionalRouting(
+        enabled = configuration.getOptionalWithFileSupport[Boolean]("regionalRouting.enabled").getOrElse(false),
+        location =  RegionalLocation(
+          provider = configuration.getOptionalWithFileSupport[String]("regionalRouting.location.provider").getOrElse("local"),
+          zone = configuration.getOptionalWithFileSupport[String]("regionalRouting.location.zone").getOrElse("local"),
+          region = configuration.getOptionalWithFileSupport[String]("regionalRouting.location.region").getOrElse("local"),
+          datacenter = configuration.getOptionalWithFileSupport[String]("regionalRouting.location.datacenter").getOrElse("local"),
+          rack = configuration.getOptionalWithFileSupport[String]("regionalRouting.location.rack").getOrElse("local"),
+        ),
+        exposition = RegionalExposition(
+          urls = configuration.getOptionalWithFileSupport[String]("regionalRouting.exposition.url").map(v => Seq(v)).orElse {
+            configuration.getOptionalWithFileSupport[String]("regionalRouting.exposition.urlsStr")
+              .map(v => v.split(",").toSeq.map(_.trim))
+              .orElse(
+                configuration.getOptionalWithFileSupport[Seq[String]]("regionalRouting.exposition.urls")
+              ).filter(_.nonEmpty)
+          } getOrElse(Seq.empty),
+          hostname = configuration.getOptionalWithFileSupport[String]("regionalRouting.exposition.hostname").getOrElse("otoroshi-api.oto.tools"),
+          clientId = configuration.getOptionalWithFileSupport[String]("regionalRouting.exposition.clientId"),
+          clientSecret = configuration.getOptionalWithFileSupport[String]("regionalRouting.exposition.clientSecret"),
+        )
+      ),
       // autoUpdateState = configuration.getOptionalWithFileSupport[Boolean]("autoUpdateState").getOrElse(true),
       mtlsConfig = MtlsConfig(
         certs = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.certs").getOrElse(Seq.empty),
@@ -297,6 +409,7 @@ case class MemberView(
     lastSeen: DateTime,
     timeout: Duration,
     memberType: ClusterMode,
+    regionalRouting: RegionalRouting,
     stats: JsObject = Json.obj()
 ) {
   def asJson: JsValue =
@@ -306,7 +419,8 @@ case class MemberView(
       "lastSeen" -> lastSeen.getMillis,
       "timeout"  -> timeout.toMillis,
       "type"     -> memberType.name,
-      "stats"    -> stats
+      "stats"    -> stats,
+      "regionalRouting" -> regionalRouting.json,
     )
   def statsView: StatsView = {
     StatsView(
@@ -332,7 +446,7 @@ case class MemberView(
 }
 
 object MemberView {
-  def fromJsonSafe(value: JsValue): JsResult[MemberView] =
+  def fromJsonSafe(value: JsValue)(implicit env: Env): JsResult[MemberView] =
     Try {
       JsSuccess(
         MemberView(
@@ -344,7 +458,23 @@ object MemberView {
             .asOpt[String]
             .map(n => ClusterMode(n).getOrElse(ClusterMode.Off))
             .getOrElse(ClusterMode.Off),
-          stats = (value \ "stats").asOpt[JsObject].getOrElse(Json.obj())
+          stats = (value \ "stats").asOpt[JsObject].getOrElse(Json.obj()),
+          regionalRouting = RegionalRouting(
+            enabled = true,
+            location =  RegionalLocation(
+              provider = value.select("regionalRouting").select("location").select("provider").asOpt[String].getOrElse("local"),
+              zone = value.select("regionalRouting").select("location").select("zone").asOpt[String].getOrElse("local"),
+              region = value.select("regionalRouting").select("location").select("region").asOpt[String].getOrElse("local"),
+              datacenter = value.select("regionalRouting").select("location").select("datacenter").asOpt[String].getOrElse("local"),
+              rack = value.select("regionalRouting").select("location").select("rack").asOpt[String].getOrElse("local"),
+            ),
+            exposition = RegionalExposition(
+              urls = value.select("regionalRouting").select("exposition").select("urls").asOpt[Seq[String]].getOrElse(Seq(s"${env.rootScheme}${env.adminApiExposedHost}")),
+              hostname = value.select("regionalRouting").select("exposition").select("hostname").asOpt[String].getOrElse(env.adminApiExposedHost),
+              clientId = value.select("regionalRouting").select("exposition").select("clientId").asOpt[String].filter(_.nonEmpty),
+              clientSecret = value.select("regionalRouting").select("exposition").select("clientSecret").asOpt[String].filter(_.nonEmpty),
+            ),
+          )
         )
       )
     } recover { case e =>
@@ -597,6 +727,7 @@ object ClusterAgent {
 
   val OtoroshiWorkerNameHeader     = "Otoroshi-Worker-Name"
   val OtoroshiWorkerLocationHeader = "Otoroshi-Worker-Location"
+  val OtoroshiWorkerRegionalRoutingHeader = "Otoroshi-Worker-Regional-Routing"
 
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
 
@@ -767,7 +898,8 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
           location = s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
           lastSeen = DateTime.now(),
           timeout = 120.seconds,
-          stats = stats
+          stats = stats,
+          regionalRouting = env.clusterConfig.regionalRouting
         )
       )
     }
@@ -1287,7 +1419,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 "Accept"                                  -> "application/x-ndjson",
                 // "Accept-Encoding" -> "gzip",
                 ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-                ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
+                ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
+                ClusterAgent.OtoroshiWorkerRegionalRoutingHeader -> env.clusterConfig.regionalRouting.json.stringify,
               )
               .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
               .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
@@ -1509,7 +1642,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   "Content-Type"                            -> "application/x-ndjson",
                   // "Content-Encoding" -> "gzip",
                   ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-                  ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
+                  ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
+                  ClusterAgent.OtoroshiWorkerRegionalRoutingHeader -> env.clusterConfig.regionalRouting.json.stringify,
                 )
                 .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
                 .withRequestTimeout(Duration(config.worker.quotas.timeout, TimeUnit.MILLISECONDS))
@@ -1574,8 +1708,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def warnAboutHttpLeaderUrls(): Unit = {
     if (env.clusterConfig.mode == ClusterMode.Worker) {
       config.leader.urls.filter(_.toLowerCase.contains("http://")) foreach { case url =>
-        Cluster.logger.warn(s"A leader url uses unsecured transport ($url), you should use https instead")
+        Cluster.logger.warn(s"A leader url uses unsecure transport ($url), you should use https instead")
       }
+    }
+    if (env.clusterConfig.regionalRouting.enabled) {
+      Cluster.logger.warn("regional routing is enabled !")
+      Cluster.logger.warn("be aware that this feature is EXPERIMENTAL and might not work as expected.")
     }
   }
 
