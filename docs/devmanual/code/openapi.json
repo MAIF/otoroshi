@@ -27022,6 +27022,16 @@
           }
         }
       },
+      "otoroshi.next.plugins.MockResponseNotFoundException" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "description" : "???",
+            "type" : "string"
+          }
+        }
+      },
       "otoroshi.plugins.jobs.kubernetes.KubernetesCRDsJob" : {
         "description" : "Plugin to import entities from kubernetes CRDs",
         "type" : "object",
@@ -27731,6 +27741,16 @@
         "description" : "Plugin for ip address throttling",
         "type" : "object",
         "properties" : { }
+      },
+      "otoroshi.next.plugins.MissingMockResponsesException" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "description" : "???",
+            "type" : "string"
+          }
+        }
       },
       "otoroshi.events.AuditEvent" : {
         "type" : "object",
