@@ -8,6 +8,8 @@ import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
+import otoroshi.next.models.NgTreeRouter
+import otoroshi.next.models.NgTreeRouter_Test.NgFakeRoute
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.syntax.implicits._
@@ -19,24 +21,7 @@ import sangria.execution.deferred.DeferredResolver
 import sangria.execution.{ExceptionHandler, Executor, HandledException, QueryReducer}
 import sangria.marshalling.playJson._
 import sangria.parser.QueryParser
-import sangria.schema.{
-  Action,
-  Argument,
-  AstDirectiveContext,
-  AstSchemaBuilder,
-  BooleanType,
-  Directive,
-  DirectiveResolver,
-  FieldResolver,
-  InstanceCheck,
-  IntType,
-  IntrospectionSchemaBuilder,
-  ListInputType,
-  OptionInputType,
-  ResolverBasedAstSchemaBuilder,
-  Schema,
-  StringType
-}
+import sangria.schema.{Action, Argument, AstDirectiveContext, AstSchemaBuilder, BooleanType, Directive, DirectiveResolver, FieldResolver, InstanceCheck, IntType, IntrospectionSchemaBuilder, ListInputType, OptionInputType, ResolverBasedAstSchemaBuilder, Schema, StringType}
 import sangria.validation.{QueryValidator, ValueCoercionViolation, Violation}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration, MILLISECONDS}
@@ -49,6 +34,8 @@ case object TooComplexQueryError                    extends Exception("Query is 
 case class ViolationsException(errors: Seq[String]) extends Exception with NoStackTrace
 case class GraphlCallException(message: String)     extends Exception(message)
 case class AuthorisationException(message: String)  extends Exception(message)
+case class MissingMockResponsesException(message: String) extends Exception(message)
+case class MockResponseNotFoundException(message: String) extends Exception(message)
 
 case class GraphQLQueryConfig(
     url: String,
@@ -456,11 +443,8 @@ class GraphQLBackend extends NgBackendCall {
     permissionResponse(authorized, c)
   }
 
-  def authorizeDirectiveResolver(
-      c: AstDirectiveContext[Unit],
-      config: GraphQLBackendConfig,
-      ctx: NgbBackendCallContext
-  )(implicit env: Env, ec: ExecutionContext): Action[Unit, Any] = {
+  def authorizeDirectiveResolver(c: AstDirectiveContext[Unit], ctx: NgbBackendCallContext)
+                                (implicit env: Env, ec: ExecutionContext): Action[Unit, Any] = {
     val context       = buildContext(ctx)
     val value: String = c.arg(valueArg)
     val path: String  = c.arg(pathArg)
@@ -472,36 +456,7 @@ class GraphQLBackend extends NgBackendCall {
   def httpRestDirectiveResolver(
       c: AstDirectiveContext[Unit]
   )(implicit env: Env, ec: ExecutionContext): Action[Unit, Any] = {
-    val queryArgs = c.ctx.args.raw.map {
-      case (str, Some(v)) => (str, String.valueOf(v))
-      case (k, v)         => (k, String.valueOf(v))
-    }
-
-    val paramsArgs: Map[String, String] = queryArgs.foldLeft(Map.empty[String, String]) { case (acc, (key, value)) =>
-      acc + (s"params.$key" -> value)
-    }
-
-    val ctx = (ResolverBasedAstSchemaBuilder.extractFieldValue(c.ctx) match {
-      case Some(v: JsObject) =>
-        v.value.foldLeft(Map.empty[String, String]) { case (acc, (key, value)) =>
-          acc + (s"item.$key" -> (value match {
-            case JsObject(_) => ""
-            case v           => v.toString()
-          }))
-        }
-      case a                 => Map.empty // TODO - throw exception or whatever
-    }) ++ paramsArgs
-
-    val url = GlobalExpressionLanguage.apply(
-      c.arg(urlArg),
-      None,
-      None,
-      None,
-      None,
-      ctx,
-      TypedMap.empty,
-      env
-    )
+    val url = replaceTermsInUrl(c)
 
     var request = env.Ws
       .url(url)
@@ -615,22 +570,111 @@ class GraphQLBackend extends NgBackendCall {
     }
   }
 
+  def mockDirectiveResolver(c: AstDirectiveContext[Unit], rawConfig: Option[JsObject])(implicit env: Env) = {
+    rawConfig match {
+      case None => throw MissingMockResponsesException("Missing mock response plugin")
+      case Some(config) =>
+        MockResponsesConfig.format.reads(config) match {
+        case JsSuccess(value, _) =>
+          val url = replaceTermsInUrl(c)
+
+          NgTreeRouter
+            .build(
+              value.responses.map(resp => {
+                val r = NgFakeRoute.routeFromPath(s"oto.tools${resp.path}")
+                r.copy(
+                  metadata = Map("mock" -> resp.json.stringify),
+                  frontend = r.frontend.copy(exact = true)
+                )
+              })
+            )
+            .find("oto.tools", url)
+            .filter(_.noMoreSegments)
+            .flatMap { c =>
+              if (c.routes.headOption.nonEmpty)
+                Some(c)
+              else
+                None
+            }
+            .map(r => {
+              val route = r.routes.headOption.get
+              val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)
+
+              Json.parse(response.body) match {
+                case JsArray(value) =>
+                  val res = sliceArrayWithArgs(value, c)
+                  res.map {
+                    case v: JsObject => v
+                    case JsString(v) => v
+                    case JsNumber(v) => v
+                    case JsBoolean(v) => v
+                    case v => v.toString()
+                  }
+                case v => v
+              }
+            })
+            .getOrElse {
+              throw MockResponseNotFoundException("Mock response not found for this uri")
+            }
+        case JsError(_) => throw MissingMockResponsesException("Missing mock response plugin")
+      }
+    }
+  }
+
+  def replaceQueryParams(c: AstDirectiveContext[Unit]) = {
+    val queryArgs = c.ctx.args.raw.map {
+      case (str, Some(v)) => (str, String.valueOf(v))
+      case (k, v)         => (k, String.valueOf(v))
+    }
+
+    queryArgs.foldLeft(c.arg(urlArg))((u, value) =>
+      GlobalExpressionLanguage.expressionReplacer.replaceOn(u) {
+        case value._1 => value._2
+        case v        => v
+      }
+    )
+  }
+
+  def replaceTermsInUrl(c: AstDirectiveContext[Unit])(implicit env: Env) = {
+    val queryArgs = c.ctx.args.raw.map {
+      case (str, Some(v)) => (str, String.valueOf(v))
+      case (k, v)         => (k, String.valueOf(v))
+    }
+
+    val paramsArgs: Map[String, String] = queryArgs.foldLeft(Map.empty[String, String]) { case (acc, (key, value)) =>
+      acc + (s"params.$key" -> value)
+    }
+
+    val ctx = (ResolverBasedAstSchemaBuilder.extractFieldValue(c.ctx) match {
+      case Some(v: JsObject) =>
+        v.value.foldLeft(Map.empty[String, String]) { case (acc, (key, value)) =>
+          acc + (s"item.$key" -> (value match {
+            case JsObject(_) => ""
+            case v           => v.toString()
+          }))
+        }
+      case _ => Map.empty // TODO - throw exception or whatever
+    }) ++ paramsArgs
+
+    GlobalExpressionLanguage.apply(
+      c.arg(urlArg),
+      None,
+      None,
+      None,
+      None,
+      ctx,
+      TypedMap.empty,
+      env
+    )
+  }
+
   def graphQLDirectiveResolver(
       c: AstDirectiveContext[Unit],
       query: String,
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Action[Unit, Any] = {
-    val queryArgs = c.ctx.args.raw.map {
-      case (str, Some(v)) => (str, String.valueOf(v))
-      case (k, v)         => (k, String.valueOf(v))
-    }
-    val url       = queryArgs.foldLeft(c.arg(urlArg))((u, value) =>
-      GlobalExpressionLanguage.expressionReplacer.replaceOn(u) {
-        case value._1 => value._2
-        case v        => v
-      }
-    )
+    val url       = replaceQueryParams(c)
 
     val graphqlQuery = env.scriptManager.getAnyScript[GraphQLQuery](s"cp:${classOf[GraphQLQuery].getName}").right.get
     graphqlQuery
@@ -693,12 +737,15 @@ class GraphQLBackend extends NgBackendCall {
           case definition: TypeDefinition =>
             definition match {
               case o: ObjectTypeDefinition =>
+                val containsMockDirective = o.directives.exists(d => d.name == "mock")
                 o.copy(
-                  directives = o.directives.sortWith { case (a, b) =>
+                  directives = o.directives
+                      .filter(d => (containsMockDirective && d.name != "rest") || !containsMockDirective)
+                      .sortWith { case (a, b) =>
                     val containsA =
-                      List("permission", "allpermissions", "onePermissionsOf", "authorize").contains(a.name)
+                      List("permission", "allpermissions", "onePermissionsOf", "authorize", "mock").contains(a.name)
                     val containsB =
-                      List("permission", "allpermissions", "onePermissionsOf", "authorize").contains(b.name)
+                      List("permission", "allpermissions", "onePermissionsOf", "authorize", "mock").contains(b.name)
                     if (containsA && containsB)
                       true
                     else if (containsA && !containsB)
@@ -708,6 +755,7 @@ class GraphQLBackend extends NgBackendCall {
                   },
                   fields = o.fields
                     .map(field => {
+                      val fieldContainsMockDirective = field.directives.exists(d => d.name == "mock")
                       val limitAndOffsetValues: Vector[InputValueDefinition] = field.directives.flatMap(directive => {
                         if (directive.arguments.exists(a => a.name == "paginate")) {
                           val limit  = field.arguments.exists(a => a.name == "limit")
@@ -733,11 +781,13 @@ class GraphQLBackend extends NgBackendCall {
                       })
                       field.copy(
                         arguments = field.arguments ++ limitAndOffsetValues,
-                        directives = field.directives.sortWith { case (a, b) =>
+                        directives = field.directives
+                          .filter(d => (fieldContainsMockDirective && d.name != "rest") || !fieldContainsMockDirective)
+                          .sortWith { case (a, b) =>
                           val containsA =
-                            List("permission", "allpermissions", "onePermissionsOf", "authorize").contains(a.name)
+                            List("permission", "allpermissions", "onePermissionsOf", "authorize", "mock").contains(a.name)
                           val containsB =
-                            List("permission", "allpermissions", "onePermissionsOf", "authorize").contains(b.name)
+                            List("permission", "allpermissions", "onePermissionsOf", "authorize", "mock").contains(b.name)
                           if (containsA && containsB)
                             true
                           else if (containsA && !containsB)
@@ -824,10 +874,10 @@ class GraphQLBackend extends NgBackendCall {
               arguments = pathArg :: valueArg :: unauthorizedValueArg :: Nil,
               locations = directivesLocations
             )
-            val HttpRestDirective        = Directive("rest", arguments = arguments, locations = directivesLocations)
-            val GraphQLDirective         = Directive("graphql", arguments = arguments, locations = directivesLocations)
+            val httpRestDirective        = Directive("rest", arguments = arguments, locations = directivesLocations)
+            val graphQLDirective         = Directive("graphql", arguments = arguments, locations = directivesLocations)
             // val OtoroshiRouteDirective = Directive("otoroshi", arguments = arguments, locations = directivesLocations)
-            val SoapDirective            = Directive(
+            val soapDirective            = Directive(
               "soap",
               arguments = soapEnvelopeArg :: soapUrlArg :: soapActionArg ::
                 soapPreservereQueryArg ::
@@ -837,9 +887,14 @@ class GraphQLBackend extends NgBackendCall {
                 soapJqResponseFilterArg :: Nil,
               locations = directivesLocations
             )
-            val JsonDirective            = Directive(
+            val jsonDirective            = Directive(
               "json",
               arguments = jsonDataArg :: jsonPathArg :: paginateArg :: Nil,
+              locations = directivesLocations
+            )
+            val mockDirective = Directive(
+              "mock",
+              arguments = urlArg :: Nil,
               locations = directivesLocations
             )
 
@@ -851,15 +906,17 @@ class GraphQLBackend extends NgBackendCall {
                 onePermissionOfDirective,
                 resolve = c => onePermissionOfDirectiveResolver(c, config, ctx)
               ),
-              DirectiveResolver(authorizeDirective, resolve = c => authorizeDirectiveResolver(c, config, ctx)),
-              DirectiveResolver(HttpRestDirective, resolve = httpRestDirectiveResolver),
+              DirectiveResolver(authorizeDirective, resolve = c => authorizeDirectiveResolver(c, ctx)),
+              DirectiveResolver(httpRestDirective, resolve = httpRestDirectiveResolver),
               DirectiveResolver(
-                GraphQLDirective,
+                graphQLDirective,
                 resolve = c => graphQLDirectiveResolver(c, c.arg(queryArg).getOrElse("{}"), ctx, delegates)
               ),
-              DirectiveResolver(SoapDirective, resolve = c => soapDirectiveResolver(c, ctx, delegates, body)),
+              DirectiveResolver(soapDirective, resolve = c => soapDirectiveResolver(c, ctx, delegates, body)),
               /*DirectiveResolver(OtoroshiRouteDirective, resolve = OtoroshiRouteDirectiveResolver),*/
-              DirectiveResolver(JsonDirective, resolve = c => jsonDirectiveResolver(c, config)),
+              DirectiveResolver(jsonDirective, resolve = c => jsonDirectiveResolver(c, config)),
+              DirectiveResolver(mockDirective, resolve = c => mockDirectiveResolver(c,
+                ctx.route.plugins.getPluginByClass[MockResponses].map(_.config.raw))),
               FieldResolver.defaultInput[Unit, JsValue]
             )
 
