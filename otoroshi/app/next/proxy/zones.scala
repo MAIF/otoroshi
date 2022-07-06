@@ -97,7 +97,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
     }
     val uriStr = s"$url/api/cluster/relay"
     val uri = Uri(uriStr)
-    env.Ws.urlWithTarget(uriStr, Target(
+    env.Ws.akkaUrlWithTarget(uriStr, Target(
       host  = uri.authority.toString(),
       scheme = uri.scheme,
       protocol = HttpProtocols.`HTTP/1.1`,
