@@ -185,7 +185,7 @@ case class RegionalLocation(
   datacenter: String,
   rack: String
 ) {
-  def desc: String = s"provider: '${provider}', region: '${region}', zone: '${zone}', datacenter: '${datacenter}', rack: ${rack}"
+  def desc: String = s"provider: '${provider}', region: '${region}', zone: '${zone}', datacenter: '${datacenter}', rack: '${rack}''"
   def json: JsValue = Json.obj(
     "provider" -> provider,
     "zone" -> zone,
@@ -1762,7 +1762,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     if (env.clusterConfig.regionalRouting.enabled) {
       Cluster.logger.warn("regional routing is enabled !")
       Cluster.logger.warn("be aware that this feature is EXPERIMENTAL and might not work as expected.")
-      Cluster.logger.info(s"this instance is located at: ${env.clusterConfig.regionalRouting.location.desc}")
+      Cluster.logger.info(s"instance location: ${env.clusterConfig.regionalRouting.location.desc}")
     }
   }
 
