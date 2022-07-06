@@ -12,6 +12,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[The Otoroshi communication protocol](./otoroshi-protocol.md)
 * @ref:[Expression language](./expression-language.md)
 * @ref:[Otoroshi user rights](./user-rights.md)
+* @ref:[GraphQL Composer](./graphql-composer.md)
 
 @@@ index
 
@@ -25,5 +26,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [The Otoroshi communication protocol](./otoroshi-protocol.md)
 * [Expression language](./expression-language.md)
 * [Otoroshi user rights](./user-rights.md)
+* [GraphQL Composer](./graphql-composer.md)
   
 @@@
