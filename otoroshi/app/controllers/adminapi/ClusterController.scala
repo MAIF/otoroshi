@@ -655,8 +655,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 seq.some
               }
             }
-          val internalReq: Request[Source[ByteString, _]] = new RelayRoutingRequest(ctx.request, Cookies(cookies), certs)
-          engine.handle(internalReq, _ => Results.InternalServerError("bad default routing").vfuture).map { resp =>
+          val request = new RelayRoutingRequest(ctx.request, Cookies(cookies), certs)
+          engine.handle(request, _ => Results.InternalServerError("bad default routing").vfuture).map { resp =>
             resp.copy(
               header = resp.header.copy(
                 headers = resp.header.headers.map {
