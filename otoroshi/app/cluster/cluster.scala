@@ -197,8 +197,10 @@ case class RegionalLocation(
 case class RegionalExposition(
   urls: Seq[String],
   hostname: String,
+  ipAddress: Option[String],
   clientId: Option[String],
   clientSecret: Option[String],
+  tls: Option[MtlsConfig],
 ) {
   def json: JsValue = Json.obj(
     "urls" -> urls,
@@ -209,6 +211,12 @@ case class RegionalExposition(
   }
   .applyOnWithOpt(clientSecret) {
     case (obj, cid) => obj ++ Json.obj("clientSecret" -> cid)
+  }
+  .applyOnWithOpt(ipAddress) {
+    case (obj, cid) => obj ++ Json.obj("ipAddress" -> cid)
+  }
+  .applyOnWithOpt(tls) {
+    case (obj, cid) => obj ++ Json.obj("tls" -> cid.json)
   }
 }
 
@@ -239,6 +247,8 @@ object RegionalRouting {
       hostname = "otoroshi-api.oto.tools",
       clientId = None,
       clientSecret = None,
+      ipAddress = None,
+      tls = None,
     )
   )
   def parse(json: String): Option[RegionalRouting] = Try {
@@ -257,6 +267,8 @@ object RegionalRouting {
         hostname = value.select("exposition").select("hostname").asOpt[String].getOrElse(default.exposition.hostname),
         clientId = value.select("exposition").select("clientId").asOpt[String].filter(_.nonEmpty),
         clientSecret = value.select("exposition").select("clientSecret").asOpt[String].filter(_.nonEmpty),
+        ipAddress = value.select("exposition").select("ipAddress").asOpt[String].filter(_.nonEmpty),
+        tls = value.select("exposition").select("tls").asOpt[JsValue].flatMap(v => MtlsConfig.format.reads(v).asOpt),
       ),
     )
   } match {
@@ -286,6 +298,7 @@ case class ClusterConfig(
 }
 
 object ClusterConfig {
+  lazy val clusterNodeId = s"node_${IdGenerator.uuid}"
   def apply(configuration: Configuration): ClusterConfig = {
     // Cluster.logger.debug(configuration.underlying.root().render(ConfigRenderOptions.concise()))
     ClusterConfig(
@@ -315,6 +328,25 @@ object ClusterConfig {
           hostname = configuration.getOptionalWithFileSupport[String]("regionalRouting.exposition.hostname").getOrElse("otoroshi-api.oto.tools"),
           clientId = configuration.getOptionalWithFileSupport[String]("regionalRouting.exposition.clientId"),
           clientSecret = configuration.getOptionalWithFileSupport[String]("regionalRouting.exposition.clientSecret"),
+          ipAddress = configuration.getOptionalWithFileSupport[String]("regionalRouting.exposition.ipAddress"),
+          tls = {
+            val enabled = configuration.getOptionalWithFileSupport[Boolean]("regionalRouting.exposition.tls.mtls").getOrElse(false)
+            if (enabled) {
+              val loose = configuration.getOptionalWithFileSupport[Boolean]("regionalRouting.exposition.tls.loose").getOrElse(false)
+              val trustAll = configuration.getOptionalWithFileSupport[Boolean]("regionalRouting.exposition.tls.loose").getOrElse(false)
+              val certs = configuration.getOptionalWithFileSupport[Seq[String]]("regionalRouting.exposition.tls.certs").getOrElse(Seq.empty)
+              val trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("regionalRouting.exposition.tls.trustedCerts").getOrElse(Seq.empty)
+              MtlsConfig(
+                certs = certs,
+                trustedCerts = trustedCerts,
+                mtls = enabled,
+                loose = loose,
+                trustAll = trustAll,
+              ).some
+            } else {
+              None
+            }
+          }
         )
       ),
       // autoUpdateState = configuration.getOptionalWithFileSupport[Boolean]("autoUpdateState").getOrElse(true),
@@ -404,6 +436,7 @@ case class StatsView(
 )
 
 case class MemberView(
+    id: String,
     name: String,
     location: String,
     lastSeen: DateTime,
@@ -414,6 +447,7 @@ case class MemberView(
 ) {
   def asJson: JsValue =
     Json.obj(
+      "id"     -> id,
       "name"     -> name,
       "location" -> location,
       "lastSeen" -> lastSeen.getMillis,
@@ -450,6 +484,7 @@ object MemberView {
     Try {
       JsSuccess(
         MemberView(
+          id = (value \ "id").as[String],
           name = (value \ "name").as[String],
           location = (value \ "location").as[String],
           lastSeen = new DateTime((value \ "lastSeen").as[Long]),
@@ -473,6 +508,8 @@ object MemberView {
               hostname = value.select("regionalRouting").select("exposition").select("hostname").asOpt[String].getOrElse(env.adminApiExposedHost),
               clientId = value.select("regionalRouting").select("exposition").select("clientId").asOpt[String].filter(_.nonEmpty),
               clientSecret = value.select("regionalRouting").select("exposition").select("clientSecret").asOpt[String].filter(_.nonEmpty),
+              ipAddress = value.select("regionalRouting").select("exposition").select("ipAddress").asOpt[String].filter(_.nonEmpty),
+              tls = value.select("regionalRouting").select("exposition").select("tls").asOpt[JsValue].flatMap(v => MtlsConfig.format.reads(v).asOpt),
             ),
           )
         )
@@ -725,6 +762,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
 
 object ClusterAgent {
 
+  val OtoroshiWorkerIdHeader     = "Otoroshi-Worker-Id"
   val OtoroshiWorkerNameHeader     = "Otoroshi-Worker-Name"
   val OtoroshiWorkerLocationHeader = "Otoroshi-Worker-Location"
   val OtoroshiWorkerRegionalRoutingHeader = "Otoroshi-Worker-Regional-Routing"
@@ -893,6 +931,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
     }).flatMap { stats =>
       env.datastores.clusterStateDataStore.registerMember(
         MemberView(
+          id = ClusterConfig.clusterNodeId,
           name = env.clusterConfig.leader.name,
           memberType = ClusterMode.Leader,
           location = s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
@@ -1081,6 +1120,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .url(otoroshiUrl + s"/api/cluster/login-tokens/$token", config.mtlsConfig)
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
+              ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
@@ -1120,6 +1160,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .url(otoroshiUrl + s"/api/cluster/user-tokens/$token", config.mtlsConfig)
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
+              ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
@@ -1160,6 +1201,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               "Content-Type"                            -> "application/json",
+              ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
@@ -1198,6 +1240,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               "Content-Type"                            -> "application/json",
+              ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
@@ -1235,6 +1278,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .url(otoroshiUrl + s"/api/cluster/sessions/$id", config.mtlsConfig)
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
+              ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
@@ -1303,6 +1347,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               "Content-Type"                            -> "application/json",
+              ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
@@ -1418,6 +1463,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 "Host"                                    -> config.leader.host,
                 "Accept"                                  -> "application/x-ndjson",
                 // "Accept-Encoding" -> "gzip",
+                ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
                 ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
                 ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
                 ClusterAgent.OtoroshiWorkerRegionalRoutingHeader -> env.clusterConfig.regionalRouting.json.stringify,
@@ -1641,6 +1687,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   "Host"                                    -> config.leader.host,
                   "Content-Type"                            -> "application/x-ndjson",
                   // "Content-Encoding" -> "gzip",
+                  ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
                   ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
                   ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
                   ClusterAgent.OtoroshiWorkerRegionalRoutingHeader -> env.clusterConfig.regionalRouting.json.stringify,
