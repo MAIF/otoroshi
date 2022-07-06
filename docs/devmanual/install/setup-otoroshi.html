@@ -1938,7 +1938,7 @@ otoroshi {
     retryFactor = 2 # the retry factor to avoid high load on failing nodes
     retryFactor = ${?CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
     retryFactor = ${?OTOROSHI_CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
-    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster slefAddress
+    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster selfAddress
     selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the cluster selfAddress
     autoUpdateState = true # auto update cluster state with a job (more efficient)
     autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
@@ -1966,6 +1966,7 @@ otoroshi {
         hostname = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_HOSTNAME}
         clientId = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_CLIENT_ID}
         clientSecret = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_CLIENT_SECRET}
+        ipAddress = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_IP_ADDRESS}
       }
     }
     mtls {
@@ -2956,7 +2957,7 @@ otoroshi {
     retryDelay = ${?OTOROSHI_CLUSTER_RETRY_DELAY} # the delay before retrying a request to leader
     retryFactor = ${?CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
     retryFactor = ${?OTOROSHI_CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
-    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster slefAddress
+    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster selfAddress
     selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the cluster selfAddress
     autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
     autoUpdateState = ${?OTOROSHI_CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
@@ -2980,6 +2981,7 @@ otoroshi {
         hostname = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_HOSTNAME}
         clientId = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_CLIENT_ID}
         clientSecret = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_CLIENT_SECRET}
+        ipAddress = ${?OTOROSHI_CLUSTER_REGIONAL_ROUTING_EXPOSITION_IP_ADDRESS}
       }
     }
     mtls {
