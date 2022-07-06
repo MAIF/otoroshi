@@ -1,12 +1,15 @@
 package otoroshi.next.proxy
 
 import akka.Done
+import akka.http.scaladsl.model.{HttpProtocols, Uri}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.cluster.MemberView
 import otoroshi.env.Env
+import otoroshi.models.{Target, TargetPredicate}
 import otoroshi.next.models.NgRoute
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
+import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
@@ -66,7 +69,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
   def call(req: RequestHeader, body: Source[ByteString, _])(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport): Future[Either[NgProxyEngineError, Done]] = {
     val urls = member.regionalRouting.exposition.urls
     val index = counter.get() % (if (urls.nonEmpty) urls.size else 1)
-    val url = urls.apply(index)
+    val url = urls.sortWith((m1, m2) => m1.compareTo(m2) < 0).apply(index)
     val clientId = member.regionalRouting.exposition.clientId.getOrElse(env.backOfficeApiKeyClientId)
     val clientSecret = env.proxyState.apikey(clientId).map(_.clientSecret).getOrElse("secret")
     val ct = req.headers.toSimpleMap.getIgnoreCase("Content-Type")
@@ -88,11 +91,20 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
     }.applyOnWithOpt(cl) {
       case (seq, clt) => seq :+ ("Content-Length", clt)
     }.applyOnWithOpt(req.clientCertificateChain) {
-      case (seq, certs) => seq :+ ("Otoroshi-Regional-Routing-Certs", certs.map(c => c.encoded).mkString(","))
+      case (seq, certs) => seq ++ certs.zipWithIndex.map { case (c, idx) => (s"Otoroshi-Regional-Routing-Certs-${idx}" -> c.encoded) }
     }.applyOnIf(req.cookies.nonEmpty) { seq =>
       seq :+ ("Otoroshi-Regional-Routing-Cookies", Cookies.encodeCookieHeader(req.cookies.toSeq))
     }
-    env.Ws.url(s"$url/api/cluster/_regional_routing")
+    val uriStr = s"$url/api/cluster/relay"
+    val uri = Uri(uriStr)
+    env.Ws.akkaUrlWithTarget(uriStr, Target(
+      host  = uri.authority.toString(),
+      scheme = uri.scheme,
+      protocol = HttpProtocols.`HTTP/1.1`,
+      predicate = TargetPredicate.AlwaysMatch,
+      ipAddress = member.regionalRouting.exposition.ipAddress,
+      mtlsConfig = member.regionalRouting.exposition.tls.getOrElse(MtlsConfig())
+    ))
       .withMethod("POST")
       .withRequestTimeout(route.backend.client.globalTimeout.milliseconds)
       .withBody(body)
@@ -144,7 +156,7 @@ class PossibleLeaders(members: Seq[MemberView], route: NgRoute) {
       }
 
     val index = counter.get() % (if (selectedMembers.nonEmpty) selectedMembers.size else 1)
-    val member = selectedMembers.apply(index)
+    val member = selectedMembers.sortWith((m1, m2) => m1.id.compareTo(m2.id) < 0).apply(index)
     SelectedLeader(member, route, counter)
   }
 }

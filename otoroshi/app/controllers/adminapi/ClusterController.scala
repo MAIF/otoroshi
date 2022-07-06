@@ -7,18 +7,19 @@ import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
-import otoroshi.cluster.{Cluster, ClusterAgent, ClusterMode, MemberView, RegionalRouting}
+import otoroshi.cluster._
 import otoroshi.env.Env
 import otoroshi.models.{PrivateAppsUser, RightsChecker}
-import otoroshi.next.proxy.ProxyEngine
+import otoroshi.next.proxy.{RelayRoutingRequest, ProxyEngine}
 import otoroshi.script.RequestHandler
+import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.libs.typedmap.{TypedKey, TypedMap}
+import play.api.libs.typedmap.TypedMap
 import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, Cookie, Cookies, Headers, Request, Results}
+import play.api.mvc._
 
 import java.net.{InetAddress, URI}
 import java.security.cert.X509Certificate
@@ -351,6 +352,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                         .map { name =>
                           env.datastores.clusterStateDataStore.registerMember(
                             MemberView(
+                              id = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerIdHeader).getOrElse(s"tmpnode_${IdGenerator.uuid}"),
                               name = name,
                               memberType = ClusterMode.Worker,
                               location =
@@ -449,6 +451,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
             ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
               env.datastores.clusterStateDataStore.registerMember(
                 MemberView(
+                  id = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerIdHeader).getOrElse(s"tmpnode_${IdGenerator.uuid}"),
                   name = name,
                   memberType = ClusterMode.Worker,
                   location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
@@ -640,9 +643,20 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
         case _ => {
           val engine = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get
           val cookies = ctx.request.headers.get("Otoroshi-Regional-Routing-Cookies").map(c => Cookies.decodeCookieHeader(c)).getOrElse(Seq.empty[Cookie])
-          val certs = ctx.request.headers.get("Otoroshi-Regional-Routing-Certs").map(c => c.split(",").toSeq.map(_.trim).map(_.toCertificate))
-          val internalReq: Request[Source[ByteString, _]] = new InternalRoutingRequest(ctx.request, Cookies(cookies), certs)
-          engine.handle(internalReq, _ => Results.InternalServerError("bad default routing").vfuture).map { resp =>
+          val certs = ctx.request.headers.headers.filter(_._1.startsWith("Otoroshi-Regional-Routing-Certs-"))
+            .map { case (key, value) => (key.replace("Otoroshi-Regional-Routing-Certs-", "").toInt, value) }
+            .sortWith((a, b) => a._1.compareTo(b._1) < 0)
+            .map {
+              case (_, value) => value.trim.toCertificate
+            }.applyOn { seq =>
+              if (seq.isEmpty) {
+                None
+              } else {
+                seq.some
+              }
+            }
+          val request = new RelayRoutingRequest(ctx.request, Cookies(cookies), certs)
+          engine.handle(request, _ => Results.InternalServerError("bad default routing").vfuture).map { resp =>
             resp.copy(
               header = resp.header.copy(
                 headers = resp.header.headers.map {
@@ -655,47 +669,4 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
   }
-}
-
-class InternalRoutingRequest(req: Request[Source[ByteString, _]], cookies: Cookies, certs: Option[Seq[X509Certificate]]) extends Request[Source[ByteString, _]] {
-
-  lazy val version = req.version
-  lazy val reqId = req.headers.get("Otoroshi-Regional-Routing-Id").get.toLong
-  lazy val method = req.headers.get("Otoroshi-Regional-Routing-Method").get
-  lazy val body = req.body
-  lazy val _remoteAddr = req.headers.get("Otoroshi-Regional-Routing-Remote-Addr").get
-  lazy val _remoteAddrInet = InetAddress.getByName(_remoteAddr)
-  lazy val _remoteSecured = req.headers.get("Otoroshi-Regional-Routing-Secured").get.toBoolean
-  lazy val _remoteHasBody = req.headers.get("Otoroshi-Regional-Routing-Has-Body").get.toBoolean
-  lazy val _remoteUriStr = req.headers.get("Otoroshi-Regional-Routing-Uri").get
-  lazy val attrs = TypedMap.apply(
-    RequestAttrKey.Id -> reqId,
-    RequestAttrKey.Cookies -> Cell(cookies)
-  )
-
-  lazy val headers: Headers = Headers(
-    req.headers.toSimpleMap.toSeq
-      .filterNot(_._1 == "Otoroshi-Regional-Routing-Cookies")
-      .filter(_._1.startsWith("Otoroshi-Regional-Routing-Header-"))
-      .map(v => (v._1.replace("Otoroshi-Regional-Routing-Header-", ""), v._2))
-  : _*)
-  lazy val connection: RemoteConnection = new InternalRoutingRemoteConnection(_remoteAddrInet, _remoteSecured, certs)
-  lazy val target: RequestTarget = new InternalRoutingRequestTarget(_remoteUriStr)
-}
-
-class InternalRoutingRemoteConnection(_remoteAddrInet: InetAddress, _remoteSecured: Boolean, certs: Option[Seq[X509Certificate]]) extends RemoteConnection {
-  override def remoteAddress: InetAddress = _remoteAddrInet
-  override def secure: Boolean = _remoteSecured
-  override def clientCertificateChain: Option[Seq[X509Certificate]] = certs
-}
-
-class InternalRoutingRequestTarget(_remoteUriStr: String) extends RequestTarget {
-
-  lazy val _remoteUri = Uri(_remoteUriStr)
-  lazy val _remoteURI = URI.create(_remoteUriStr)
-
-  override def uri: URI = _remoteURI
-  override def uriString: String = _remoteUriStr
-  override def path: String = _remoteUri.path.toString()
-  override def queryMap: Map[String, Seq[String]] = _remoteUri.query().toMultiMap
 }

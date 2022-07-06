@@ -412,12 +412,17 @@ class Env(
     case v if v.startsWith("ReplaceAll(") => v.substring(11, v.length)
     case v => v
   }.getOrElse("Otoroshi")
-  lazy val rack: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.rack").getOrElse("local")
-  lazy val infraProvider: String           =
-    configuration.getOptionalWithFileSupport[String]("app.instance.provider").getOrElse("local")
-  lazy val dataCenter: String              = configuration.getOptionalWithFileSupport[String]("app.instance.dc").getOrElse("local")
-  lazy val zone: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.zone").getOrElse("local")
-  lazy val region: String                  = configuration.getOptionalWithFileSupport[String]("app.instance.region").getOrElse("local")
+  // lazy val rack: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.rack").getOrElse("local")
+  // lazy val infraProvider: String           =
+  //   configuration.getOptionalWithFileSupport[String]("app.instance.provider").getOrElse("local")
+  // lazy val dataCenter: String              = configuration.getOptionalWithFileSupport[String]("app.instance.dc").getOrElse("local")
+  // lazy val zone: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.zone").getOrElse("local")
+  // lazy val region: String                  = configuration.getOptionalWithFileSupport[String]("app.instance.region").getOrElse("local")
+  lazy val rack: String = clusterConfig.regionalRouting.location.rack
+  lazy val infraProvider: String = clusterConfig.regionalRouting.location.provider
+  lazy val dataCenter: String = clusterConfig.regionalRouting.location.datacenter
+  lazy val zone: String = clusterConfig.regionalRouting.location.zone
+  lazy val region: String = clusterConfig.regionalRouting.location.region
   lazy val liveJs: Boolean                 = configuration
     .getOptionalWithFileSupport[String]("app.env")
     .filter(_ == "dev")

@@ -366,6 +366,9 @@ trait TargetPredicate {
 }
 
 object TargetPredicate {
+  val AlwaysMatch = otoroshi.models.AlwaysMatch
+  val GeolocationMatch = otoroshi.models.GeolocationMatch
+  val NetworkLocationMatch = otoroshi.models.NetworkLocationMatch
   val format: Format[TargetPredicate] = new Format[TargetPredicate] {
     override def writes(o: TargetPredicate): JsValue = o.toJson
     override def reads(json: JsValue): JsResult[TargetPredicate] = {
@@ -443,35 +446,35 @@ object AlwaysMatch extends TargetPredicate {
 case class RegionMatch(region: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "RegionMatch", "region" -> region)
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    env.region.trim.toLowerCase == region.trim.toLowerCase
+    env.clusterConfig.regionalRouting.location.region.trim.toLowerCase == region.trim.toLowerCase
   }
 }
 
 case class ZoneMatch(zone: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "ZoneMatch", "zone" -> zone)
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    env.zone.trim.toLowerCase == zone.trim.toLowerCase
+    env.clusterConfig.regionalRouting.location.zone.trim.toLowerCase == zone.trim.toLowerCase
   }
 }
 
 case class DataCenterMatch(dc: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "DataCenterMatch", "dc" -> dc)
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    env.dataCenter.trim.toLowerCase == dc.trim.toLowerCase
+    env.clusterConfig.regionalRouting.location.datacenter.trim.toLowerCase == dc.trim.toLowerCase
   }
 }
 
 case class InfraProviderMatch(provider: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "InfraProviderMatch", "provider" -> provider)
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    env.infraProvider.trim.toLowerCase == provider.trim.toLowerCase
+    env.clusterConfig.regionalRouting.location.provider.trim.toLowerCase == provider.trim.toLowerCase
   }
 }
 
 case class RackMatch(rack: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "RackMatch", "rack" -> rack)
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    env.rack.trim.toLowerCase == rack.trim.toLowerCase
+    env.clusterConfig.regionalRouting.location.rack.trim.toLowerCase == rack.trim.toLowerCase
   }
 }
 
@@ -492,11 +495,11 @@ case class NetworkLocationMatch(
       "rack"     -> rack
     )
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    otoroshi.utils.RegexPool(provider.trim.toLowerCase).matches(env.infraProvider.trim.toLowerCase) &&
-    otoroshi.utils.RegexPool(region.trim.toLowerCase).matches(env.region.trim.toLowerCase) &&
-    otoroshi.utils.RegexPool(zone.trim.toLowerCase).matches(env.zone.trim.toLowerCase) &&
-    otoroshi.utils.RegexPool(dataCenter.trim.toLowerCase).matches(env.dataCenter.trim.toLowerCase) &&
-    otoroshi.utils.RegexPool(rack.trim.toLowerCase).matches(env.rack.trim.toLowerCase)
+    otoroshi.utils.RegexPool(provider.trim.toLowerCase).matches(env.clusterConfig.regionalRouting.location.provider.trim.toLowerCase) &&
+    otoroshi.utils.RegexPool(region.trim.toLowerCase).matches(env.clusterConfig.regionalRouting.location.region.trim.toLowerCase) &&
+    otoroshi.utils.RegexPool(zone.trim.toLowerCase).matches(env.clusterConfig.regionalRouting.location.zone.trim.toLowerCase) &&
+    otoroshi.utils.RegexPool(dataCenter.trim.toLowerCase).matches(env.clusterConfig.regionalRouting.location.datacenter.trim.toLowerCase) &&
+    otoroshi.utils.RegexPool(rack.trim.toLowerCase).matches(env.clusterConfig.regionalRouting.location.rack.trim.toLowerCase)
   }
 }
 

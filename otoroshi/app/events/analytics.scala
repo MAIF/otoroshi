@@ -211,11 +211,11 @@ trait AnalyticEvent extends OtoroshiEvent {
         "origin-details"     -> originDetails,
         "instance-number"    -> _env.number,
         "instance-name"      -> _env.name,
-        "instance-zone"      -> _env.zone,
-        "instance-region"    -> _env.region,
-        "instance-dc"        -> _env.dataCenter,
-        "instance-provider"  -> _env.infraProvider,
-        "instance-rack"      -> _env.rack,
+        "instance-zone"      -> _env.clusterConfig.regionalRouting.location.zone,
+        "instance-region"    -> _env.clusterConfig.regionalRouting.location.region,
+        "instance-dc"        -> _env.clusterConfig.regionalRouting.location.datacenter,
+        "instance-provider"  -> _env.clusterConfig.regionalRouting.location.provider,
+        "instance-rack"      -> _env.clusterConfig.regionalRouting.location.rack,
         "cluster-mode"       -> _env.clusterConfig.mode.name,
         "cluster-name"       -> (_env.clusterConfig.mode match {
           case ClusterMode.Worker => _env.clusterConfig.worker.name
