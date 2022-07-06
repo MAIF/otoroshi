@@ -10,7 +10,7 @@ import otoroshi.actions.ApiAction
 import otoroshi.cluster._
 import otoroshi.env.Env
 import otoroshi.models.{PrivateAppsUser, RightsChecker}
-import otoroshi.next.proxy.ProxyEngine
+import otoroshi.next.proxy.{RelayRoutingRequest, ProxyEngine}
 import otoroshi.script.RequestHandler
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
@@ -655,7 +655,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 seq.some
               }
             }
-          val internalReq: Request[Source[ByteString, _]] = new InternalRoutingRequest(ctx.request, Cookies(cookies), certs)
+          val internalReq: Request[Source[ByteString, _]] = new RelayRoutingRequest(ctx.request, Cookies(cookies), certs)
           engine.handle(internalReq, _ => Results.InternalServerError("bad default routing").vfuture).map { resp =>
             resp.copy(
               header = resp.header.copy(
@@ -669,47 +669,4 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
   }
-}
-
-class InternalRoutingRequest(req: Request[Source[ByteString, _]], cookies: Cookies, certs: Option[Seq[X509Certificate]]) extends Request[Source[ByteString, _]] {
-
-  lazy val version = req.version
-  lazy val reqId = req.headers.get("Otoroshi-Regional-Routing-Id").get.toLong
-  lazy val method = req.headers.get("Otoroshi-Regional-Routing-Method").get
-  lazy val body = req.body
-  lazy val _remoteAddr = req.headers.get("Otoroshi-Regional-Routing-Remote-Addr").get
-  lazy val _remoteAddrInet = InetAddress.getByName(_remoteAddr)
-  lazy val _remoteSecured = req.headers.get("Otoroshi-Regional-Routing-Secured").get.toBoolean
-  lazy val _remoteHasBody = req.headers.get("Otoroshi-Regional-Routing-Has-Body").get.toBoolean
-  lazy val _remoteUriStr = req.headers.get("Otoroshi-Regional-Routing-Uri").get
-  lazy val attrs = TypedMap.apply(
-    RequestAttrKey.Id -> reqId,
-    RequestAttrKey.Cookies -> Cell(cookies)
-  )
-
-  lazy val headers: Headers = Headers(
-    req.headers.toSimpleMap.toSeq
-      .filterNot(_._1 == "Otoroshi-Regional-Routing-Cookies")
-      .filter(_._1.startsWith("Otoroshi-Regional-Routing-Header-"))
-      .map(v => (v._1.replace("Otoroshi-Regional-Routing-Header-", ""), v._2))
-  : _*)
-  lazy val connection: RemoteConnection = new InternalRoutingRemoteConnection(_remoteAddrInet, _remoteSecured, certs)
-  lazy val target: RequestTarget = new InternalRoutingRequestTarget(_remoteUriStr)
-}
-
-class InternalRoutingRemoteConnection(_remoteAddrInet: InetAddress, _remoteSecured: Boolean, certs: Option[Seq[X509Certificate]]) extends RemoteConnection {
-  override def remoteAddress: InetAddress = _remoteAddrInet
-  override def secure: Boolean = _remoteSecured
-  override def clientCertificateChain: Option[Seq[X509Certificate]] = certs
-}
-
-class InternalRoutingRequestTarget(_remoteUriStr: String) extends RequestTarget {
-
-  lazy val _remoteUri = Uri(_remoteUriStr)
-  lazy val _remoteURI = URI.create(_remoteUriStr)
-
-  override def uri: URI = _remoteURI
-  override def uriString: String = _remoteUriStr
-  override def path: String = _remoteUri.path.toString()
-  override def queryMap: Map[String, Seq[String]] = _remoteUri.query().toMultiMap
 }
