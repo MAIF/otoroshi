@@ -13,6 +13,7 @@ services:
       - "./otoroshi:/tmp/otoroshi"
     networks:
       - relay
+      - zone-1
     environment: 
       - HTTP_PORT=8080
       - HTTPS_PORT=8443
@@ -45,6 +46,7 @@ services:
       - "./otoroshi:/tmp/otoroshi"
     networks:
       - relay
+      - zone-2
     environment: 
       - HTTP_PORT=8080
       - HTTPS_PORT=8443
@@ -77,6 +79,7 @@ services:
       - "./otoroshi:/tmp/otoroshi"
     networks:
       - relay
+      - zone-3
     environment: 
       - HTTP_PORT=8080
       - HTTPS_PORT=8443
@@ -110,7 +113,7 @@ services:
     volumes:
       - "./otoroshi:/tmp/otoroshi"
     networks:
-      - relay
+      - zone-1
     environment: 
       - HTTP_PORT=8080
       - HTTPS_PORT=8443
@@ -143,7 +146,7 @@ services:
     volumes:
       - "./otoroshi:/tmp/otoroshi"
     networks:
-      - relay
+      - zone-2
     environment: 
       - HTTP_PORT=8080
       - HTTPS_PORT=8443
@@ -176,7 +179,7 @@ services:
     volumes:
       - "./otoroshi:/tmp/otoroshi"
     networks:
-      - relay
+      - zone-3
     environment: 
       - HTTP_PORT=8080
       - HTTPS_PORT=8443
@@ -213,7 +216,7 @@ services:
     ports:
       - "8091:80"
     networks:
-      - relay
+      - zone-1
 
   ########################################################################################
   
@@ -226,7 +229,7 @@ services:
     ports:
       - "8092:80"
     networks:
-      - relay
+      - zone-2
 
   ########################################################################################
 
@@ -239,7 +242,7 @@ services:
     ports:
       - "8093:80"
     networks:
-      - relay
+      - zone-3
 
   ########################################################################################
   ########################################################################################
@@ -264,5 +267,23 @@ networks:
     driver: bridge
     ipam:
       driver: default
+      #config:
+      #  - subnet: 172.16.239.30/24
+  zone-1:
+    driver: bridge
+    ipam:
+      driver: default
       config:
-        - subnet: 172.16.239.30/24
+        - subnet: 172.16.241.31/24
+  zone-2:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.242.32/24
+  zone-3:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.243.33/24
