@@ -418,11 +418,11 @@ class Env(
   // lazy val dataCenter: String              = configuration.getOptionalWithFileSupport[String]("app.instance.dc").getOrElse("local")
   // lazy val zone: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.zone").getOrElse("local")
   // lazy val region: String                  = configuration.getOptionalWithFileSupport[String]("app.instance.region").getOrElse("local")
-  lazy val rack: String = clusterConfig.regionalRouting.location.rack
-  lazy val infraProvider: String = clusterConfig.regionalRouting.location.provider
-  lazy val dataCenter: String = clusterConfig.regionalRouting.location.datacenter
-  lazy val zone: String = clusterConfig.regionalRouting.location.zone
-  lazy val region: String = clusterConfig.regionalRouting.location.region
+  lazy val rack: String = clusterConfig.relay.location.rack
+  lazy val infraProvider: String = clusterConfig.relay.location.provider
+  lazy val dataCenter: String = clusterConfig.relay.location.datacenter
+  lazy val zone: String = clusterConfig.relay.location.zone
+  lazy val region: String = clusterConfig.relay.location.region
   lazy val liveJs: Boolean                 = configuration
     .getOptionalWithFileSupport[String]("app.env")
     .filter(_ == "dev")

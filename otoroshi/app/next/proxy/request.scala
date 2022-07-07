@@ -13,14 +13,14 @@ import java.security.cert.X509Certificate
 class RelayRoutingRequest(req: Request[Source[ByteString, _]], cookies: Cookies, certs: Option[Seq[X509Certificate]]) extends Request[Source[ByteString, _]] {
 
   lazy val version = req.version
-  lazy val reqId = req.headers.get("Otoroshi-Regional-Routing-Id").get.toLong
-  lazy val method = req.headers.get("Otoroshi-Regional-Routing-Method").get
+  lazy val reqId = req.headers.get("Otoroshi-Relay-Routing-Id").get.toLong
+  lazy val method = req.headers.get("Otoroshi-Relay-Routing-Method").get
   lazy val body = req.body
-  lazy val _remoteAddr = req.headers.get("Otoroshi-Regional-Routing-Remote-Addr").get
+  lazy val _remoteAddr = req.headers.get("Otoroshi-Relay-Routing-Remote-Addr").get
   lazy val _remoteAddrInet = InetAddress.getByName(_remoteAddr)
-  lazy val _remoteSecured = req.headers.get("Otoroshi-Regional-Routing-Secured").get.toBoolean
-  lazy val _remoteHasBody = req.headers.get("Otoroshi-Regional-Routing-Has-Body").get.toBoolean
-  lazy val _remoteUriStr = req.headers.get("Otoroshi-Regional-Routing-Uri").get
+  lazy val _remoteSecured = req.headers.get("Otoroshi-Relay-Routing-Secured").get.toBoolean
+  lazy val _remoteHasBody = req.headers.get("Otoroshi-Relay-Routing-Has-Body").get.toBoolean
+  lazy val _remoteUriStr = req.headers.get("Otoroshi-Relay-Routing-Uri").get
   lazy val attrs = TypedMap.apply(
     RequestAttrKey.Id -> reqId,
     RequestAttrKey.Cookies -> Cell(cookies)
@@ -28,9 +28,9 @@ class RelayRoutingRequest(req: Request[Source[ByteString, _]], cookies: Cookies,
 
   lazy val headers: Headers = Headers(
     req.headers.toSimpleMap.toSeq
-      .filterNot(_._1 == "Otoroshi-Regional-Routing-Cookies")
-      .filter(_._1.startsWith("Otoroshi-Regional-Routing-Header-"))
-      .map(v => (v._1.replace("Otoroshi-Regional-Routing-Header-", ""), v._2))
+      .filterNot(_._1 == "Otoroshi-Relay-Routing-Cookies")
+      .filter(_._1.startsWith("Otoroshi-Relay-Routing-Header-"))
+      .map(v => (v._1.replace("Otoroshi-Relay-Routing-Header-", ""), v._2))
       : _*)
   lazy val connection: RemoteConnection = new RelayRoutingRemoteConnection(_remoteAddrInet, _remoteSecured, certs)
   lazy val target: RequestTarget = new RelayRoutingRequestTarget(_remoteUriStr)

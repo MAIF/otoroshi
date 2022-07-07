@@ -330,7 +330,7 @@ class ProxyEngine() extends RequestHandler {
       _         <- handleConcurrentRequest(request)
       _          = report.markDoneAndStart("find-route")
       route     <- findRoute(useTree, request, request.body, global_plugins__, tryIt)
-      _         <- handleExtraRegionalTraffic(route, request, request.body)
+      _         <- handleRelayTraffic(route, request, request.body)
       config     = (route.metadata.get("otoroshi-core-apply-legacy-checks") match {
                      case Some("false") => _config.copy(applyLegacyChecks = false)
                      case Some("true")  => _config.copy(applyLegacyChecks = true)
@@ -613,15 +613,15 @@ class ProxyEngine() extends RequestHandler {
       }
   }
 
-  def handleExtraRegionalTraffic(route: NgRoute, req: RequestHeader, body: Source[ByteString, _])(implicit
+  def handleRelayTraffic(route: NgRoute, req: RequestHeader, body: Source[ByteString, _])(implicit
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
       globalConfig: GlobalConfig,
       attrs: TypedMap,
       mat: Materializer): FEither[NgProxyEngineError, Done] = {
-    if (env.clusterConfig.regionalRouting.enabled) {
-      val location = env.clusterConfig.regionalRouting.location
+    if (env.clusterConfig.relay.enabled) {
+      val location = env.clusterConfig.relay.location
       val matchRack: Boolean = if (route.hasDeploymentRacks) route.deploymentRacks.contains(location.rack) else true
       val matchDatacenter: Boolean = if (route.hasDeploymentDatacenters) route.deploymentDatacenters.contains(location.datacenter) else true
       val matchZone: Boolean = if (route.hasDeploymentZones) route.deploymentZones.contains(location.zone) else true

@@ -363,10 +363,10 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                                 TimeUnit.MILLISECONDS
                               ),
                               stats = jsItem.as[JsObject],
-                              regionalRouting = ctx.request.headers
-                                .get(ClusterAgent.OtoroshiWorkerRegionalRoutingHeader)
-                                .flatMap(RegionalRouting.parse)
-                                .getOrElse(RegionalRouting.default)
+                              relay = ctx.request.headers
+                                .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
+                                .flatMap(RelayRouting.parse)
+                                .getOrElse(RelayRouting.default)
                             )
                           )
                         }
@@ -460,10 +460,10 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                     env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
                     TimeUnit.MILLISECONDS
                   ),
-                  regionalRouting = ctx.request.headers
-                    .get(ClusterAgent.OtoroshiWorkerRegionalRoutingHeader)
-                    .flatMap(RegionalRouting.parse)
-                    .getOrElse(RegionalRouting.default)
+                  relay = ctx.request.headers
+                    .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
+                    .flatMap(RelayRouting.parse)
+                    .getOrElse(RelayRouting.default)
                 )
               )
             }
@@ -636,15 +636,15 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
       }
     }
 
-  def regionalRouting() = ApiAction.async(sourceBodyParser) { ctx =>
+  def relayRouting() = ApiAction.async(sourceBodyParser) { ctx =>
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
       env.clusterConfig.mode match {
         case Off => NotFound(Json.obj("error" -> "Cluster API not available")).future
         case _ => {
           val engine = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get
-          val cookies = ctx.request.headers.get("Otoroshi-Regional-Routing-Cookies").map(c => Cookies.decodeCookieHeader(c)).getOrElse(Seq.empty[Cookie])
-          val certs = ctx.request.headers.headers.filter(_._1.startsWith("Otoroshi-Regional-Routing-Certs-"))
-            .map { case (key, value) => (key.replace("Otoroshi-Regional-Routing-Certs-", "").toInt, value) }
+          val cookies = ctx.request.headers.get("Otoroshi-Relay-Routing-Cookies").map(c => Cookies.decodeCookieHeader(c)).getOrElse(Seq.empty[Cookie])
+          val certs = ctx.request.headers.headers.filter(_._1.startsWith("Otoroshi-Relay-Routing-Certs-"))
+            .map { case (key, value) => (key.replace("Otoroshi-Relay-Routing-Certs-", "").toInt, value) }
             .sortWith((a, b) => a._1.compareTo(b._1) < 0)
             .map {
               case (_, value) => value.trim.toCertificate
@@ -660,7 +660,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
             resp.copy(
               header = resp.header.copy(
                 headers = resp.header.headers.map {
-                  case (key, value) => (s"Otoroshi-Regional-Routing-Response-Header-$key", value)
+                  case (key, value) => (s"Otoroshi-Relay-Routing-Response-Header-$key", value)
                 }
               )
             )
