@@ -4,7 +4,8 @@ import akka.Done
 import akka.http.scaladsl.model.{HttpProtocols, Uri}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import otoroshi.cluster.MemberView
+import org.joda.time.DateTime
+import otoroshi.cluster.{ClusterMode, MemberView, RelayRouting}
 import otoroshi.env.Env
 import otoroshi.models.{Target, TargetPredicate}
 import otoroshi.next.models.NgRoute
@@ -13,6 +14,7 @@ import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
+import play.api.libs.json.Json
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
 
@@ -88,6 +90,10 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
       ("Otoroshi-Relay-Routing-Uri", req.relativeUri),
       ("Otoroshi-Relay-Routing-Has-Body", req.theHasBody.toString),
       ("Otoroshi-Relay-Routing-Secured", req.theSecured.toString),
+      ("Otoroshi-Relay-Routing-Route-Id", route.id),
+      ("Otoroshi-Relay-Routing-Route-Name", route.name),
+      ("Otoroshi-Relay-Routing-Caller-Id", env.clusterConfig.id),
+      ("Otoroshi-Relay-Routing-Caller-Name", env.clusterConfig.name),
     ) ++ req.headers.toSimpleMap.toSeq.map {
       case (key, value) => (s"Otoroshi-Relay-Routing-Header-${key}", value)
     }).applyOnWithOpt(ct) {
@@ -101,6 +107,11 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
     }
     val uriStr = s"$url/api/cluster/relay"
     val uri = Uri(uriStr)
+    if (useLeader) {
+      RelayRouting.logger.debug(s"forwarding call to '${route.name}' through local leader '${env.clusterConfig.name}' at '${uriStr}'")
+    } else {
+      RelayRouting.logger.debug(s"forwarding call to '${route.name}' through relay '${uriStr}'")
+    }
     env.Ws.akkaUrlWithTarget(uriStr, Target(
       host  = uri.authority.toString(),
       scheme = uri.scheme,
@@ -121,46 +132,60 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
 }
 
 class PossibleLeaders(members: Seq[MemberView], route: NgRoute) {
-  def chooseNext(counter: AtomicInteger): SelectedLeader = {
-    val selectedMembers = members
-      .filter { member =>
-        if (route.hasDeploymentProviders) {
-          route.deploymentProviders.contains(member.relay.location.provider)
-        } else {
-          true
+  def chooseNext(counter: AtomicInteger)(implicit env: Env): SelectedLeader = {
+    val useLeader = env.clusterConfig.mode.isWorker && env.clusterConfig.relay.leaderOnly
+    if (useLeader) {
+      SelectedLeader(MemberView(
+        id = "tmp",
+        name = "tmp",
+        location = "127.0.0.1",
+        lastSeen = DateTime.now(),
+        timeout = 10.seconds,
+        memberType = ClusterMode.Leader,
+        relay = env.clusterConfig.relay,
+        stats = Json.obj(),
+      ), route, counter)
+    } else {
+      val selectedMembers = members
+        .filter { member =>
+          if (route.hasDeploymentProviders) {
+            route.deploymentProviders.contains(member.relay.location.provider)
+          } else {
+            true
+          }
         }
-      }
-      .filter { member =>
-        if (route.hasDeploymentRegions) {
-          route.deploymentRegions.contains(member.relay.location.region)
-        } else {
-          true
+        .filter { member =>
+          if (route.hasDeploymentRegions) {
+            route.deploymentRegions.contains(member.relay.location.region)
+          } else {
+            true
+          }
         }
-      }
-      .filter { member =>
-        if (route.hasDeploymentZones) {
-          route.deploymentZones.contains(member.relay.location.zone)
-        } else {
-          true
+        .filter { member =>
+          if (route.hasDeploymentZones) {
+            route.deploymentZones.contains(member.relay.location.zone)
+          } else {
+            true
+          }
         }
-      }
-      .filter { member =>
-        if (route.hasDeploymentDatacenters) {
-          route.deploymentDatacenters.contains(member.relay.location.datacenter)
-        } else {
-          true
+        .filter { member =>
+          if (route.hasDeploymentDatacenters) {
+            route.deploymentDatacenters.contains(member.relay.location.datacenter)
+          } else {
+            true
+          }
         }
-      }
-      .filter { member =>
-        if (route.hasDeploymentRacks) {
-          route.deploymentRacks.contains(member.relay.location.rack)
-        } else {
-          true
+        .filter { member =>
+          if (route.hasDeploymentRacks) {
+            route.deploymentRacks.contains(member.relay.location.rack)
+          } else {
+            true
+          }
         }
-      }
 
-    val index = counter.get() % (if (selectedMembers.nonEmpty) selectedMembers.size else 1)
-    val member = selectedMembers.sortWith((m1, m2) => m1.id.compareTo(m2.id) < 0).apply(index)
-    SelectedLeader(member, route, counter)
+      val index = counter.get() % (if (selectedMembers.nonEmpty) selectedMembers.size else 1)
+      val member = selectedMembers.sortWith((m1, m2) => m1.id.compareTo(m2.id) < 0).apply(index)
+      SelectedLeader(member, route, counter)
+    }
   }
 }

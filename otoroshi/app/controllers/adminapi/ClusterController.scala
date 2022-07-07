@@ -656,6 +656,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
               }
             }
           val request = new RelayRoutingRequest(ctx.request, Cookies(cookies), certs)
+          val routeName = ctx.request.headers.get("Otoroshi-Relay-Routing-Route-Name").getOrElse("--")
+          val callerName = ctx.request.headers.get("Otoroshi-Relay-Routing-Caller-Name").getOrElse("--")
+          RelayRouting.logger.debug(s"routing relay call to '${routeName}' from '${callerName}'")
           engine.handle(request, _ => Results.InternalServerError("bad default routing").vfuture).map { resp =>
             resp.copy(
               header = resp.header.copy(

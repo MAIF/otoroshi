@@ -236,6 +236,7 @@ case class RelayRouting(
 }
 
 object RelayRouting {
+  val logger = Logger("otoroshi-relay-routing")
   val default = RelayRouting(
     enabled = false,
     leaderOnly = false,
@@ -295,6 +296,7 @@ case class ClusterConfig(
   leader: LeaderConfig = LeaderConfig(),
   worker: WorkerConfig = WorkerConfig()
 ) {
+  def id: String = ClusterConfig.clusterNodeId
   def name: String                                    = if (mode.isOff) "standalone" else (if (mode.isLeader) leader.name else worker.name)
   def gzip(): Flow[ByteString, ByteString, NotUsed]   =
     if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)

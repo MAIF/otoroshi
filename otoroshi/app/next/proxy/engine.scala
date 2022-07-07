@@ -414,6 +414,7 @@ class ProxyEngine() extends RequestHandler {
           result.vfuture
       }
       .recover { case t: Throwable =>
+        logger.error("last-recover", t)
         report.markFailure("last-recover", t)
         Results.InternalServerError(
           Json.obj("error" -> "internal_server_error", "error_description" -> t.getMessage, "report" -> report.json)
@@ -583,6 +584,7 @@ class ProxyEngine() extends RequestHandler {
           Right(flow).vfuture
       }
       .recover { case t: Throwable =>
+        logger.error("last-recover", t)
         report.markFailure("last-recover", t)
         Results
           .InternalServerError(
