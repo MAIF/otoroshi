@@ -1,4 +1,4 @@
-# relay demo
+# relay routing demo
 
 this demo shows how an otoroshi cluster can be deployed on mutliple network zones where apps can communicate between zones with otoroshi instances acting as relays automatically. In this scenario, each service and otoroshi instance declares where it is located (using metadata) and otoroshi will handle relay routing between instances. In order to make everything work, otoroshi leaders should be able to communicate freely with each others.
 
@@ -12,6 +12,9 @@ in this demo, we do not use a replicated datastore. otoroshi leader instance are
 - `worker-zone-1`: exposed on `127.0.0.1:8084`
 - `worker-zone-2`: exposed on `127.0.0.1:8085`
 - `worker-zone-3`: exposed on `127.0.0.1:8086`
+- `api-zone-1`: exposed on `127.0.0.1:8091`
+- `api-zone-2`: exposed on `127.0.0.1:8092`
+- `api-zone-3`: exposed on `127.0.0.1:8093`
 
 each of the 3 zones  has an otoroshi leader instance, an otoroshi worker instance, and an api instance deployed. Otoroshi instance from one zone cannot directly access apis from other zones as they are not in the same `docker-compose` network. But you can access any api from any otoroshi instance thanks to relay routing.
 
@@ -28,7 +31,7 @@ sbt ';clean;compile;assembly'
 cp ./target/scala-2.12/otoroshi.jar ../demos/relay/otoroshi/otoroshi.jar
 ```
 
-## Start
+## Start everything
 
 start everything with 
 
@@ -48,7 +51,7 @@ sh ./call.sh
 
 everything should work as expected ;)
 
-## Stop
+## Stop everything
 
 shutdown everything with 
 
