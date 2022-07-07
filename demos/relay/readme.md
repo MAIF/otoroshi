@@ -8,7 +8,7 @@ in this demo, we do not use a replicated datastore. otoroshi leader instance are
 
 ## Build otoroshi
 
-to be able to run the demo, you need to build an otoroshi jar file first. Once created, copy the jar file in the `otoroshi` folder
+as there is no release with the relay feature yet, to be able to run the demo, you need to build an otoroshi jar file first. Once created, copy the jar file in the `otoroshi` folder
 
 ```sh
 cd ../../otoroshi/javascript
