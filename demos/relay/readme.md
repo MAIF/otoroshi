@@ -4,7 +4,16 @@ this demo shows how an otoroshi cluster can be deployed on mutliple network zone
 
 ![network-map](./relay.png)
 
-in this demo, we do not use a replicated datastore. otoroshi leader instance are located in their own zone network but also have access to another network where a redis instance is deployed.
+in this demo, we do not use a replicated datastore. otoroshi leader instance are located in their own zone network but also have access to another network where a redis instance is deployed. Also, as it's not easy to access otoroshi instances through a DNS round robin setup, each otoroshi instance is bound to a port on the host machine.
+
+- `leader-zone-1`: exposed on `127.0.0.1:8081`
+- `leader-zone-2`: exposed on `127.0.0.1:8082`
+- `leader-zone-3`: exposed on `127.0.0.1:8083`
+- `worker-zone-1`: exposed on `127.0.0.1:8084`
+- `worker-zone-2`: exposed on `127.0.0.1:8085`
+- `worker-zone-3`: exposed on `127.0.0.1:8086`
+
+each of the 3 zones  has an otoroshi leader instance, an otoroshi worker instance, and an api instance deployed. Otoroshi instance from one zone cannot directly access apis from other zones as they are not in the same `docker-compose` network. But you can access any api from any otoroshi instance thanks to relay routing.
 
 ## Build otoroshi
 
@@ -36,6 +45,8 @@ run test calls with
 ```sh
 sh ./call.sh
 ```
+
+everything should work as expected ;)
 
 ## Stop
 
