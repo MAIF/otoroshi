@@ -4,6 +4,8 @@ this demo shows how an otoroshi cluster can be deployed on mutliple network zone
 
 ![network-map](./relay.png)
 
+in this demo, we do not use a replicated datastore. otoroshi leader instance are located in their own zone network but also have access to another network where a redis instance is deployed.
+
 ## Build otoroshi
 
 to be able to run the demo, you need to build an otoroshi jar file first. Once created, copy the jar file in the `otoroshi` folder

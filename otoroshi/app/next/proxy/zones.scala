@@ -108,7 +108,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
     val uriStr = s"$url/api/cluster/relay"
     val uri = Uri(uriStr)
     if (useLeader) {
-      RelayRouting.logger.debug(s"forwarding call to '${route.name}' through local leader '${env.clusterConfig.name}' at '${uriStr}'")
+      RelayRouting.logger.debug(s"forwarding call to '${route.name}' through local leader '${uriStr}'")
     } else {
       RelayRouting.logger.debug(s"forwarding call to '${route.name}' through relay '${uriStr}'")
     }
