@@ -186,6 +186,17 @@ case class NgRoute(
   lazy val openapiUrl: Option[String]           = metadata.get("otoroshi-core-openapi-url").filter(_.nonEmpty)
   lazy val originalRouteId: Option[String]      = metadata.get("otoroshi-core-original-route-id").filter(_.nonEmpty)
 
+  lazy val deploymentProviders: Seq[String] = metadata.get("otoroshi-deployment-providers").filter(_.nonEmpty).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+  lazy val hasDeploymentProviders: Boolean = deploymentProviders.nonEmpty
+  lazy val deploymentRegions: Seq[String] = metadata.get("otoroshi-deployment-regions").filter(_.nonEmpty).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+  lazy val hasDeploymentRegions: Boolean = deploymentRegions.nonEmpty
+  lazy val deploymentZones: Seq[String] = metadata.get("otoroshi-deployment-zones").filter(_.nonEmpty).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+  lazy val hasDeploymentZones: Boolean = deploymentZones.nonEmpty
+  lazy val deploymentDatacenters: Seq[String] = metadata.get("otoroshi-deployment-dcs").filter(_.nonEmpty).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+  lazy val hasDeploymentDatacenters: Boolean = deploymentDatacenters.nonEmpty
+  lazy val deploymentRacks: Seq[String] = metadata.get("otoroshi-deployment-racks").filter(_.nonEmpty).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+  lazy val hasDeploymentRacks: Boolean = deploymentRacks.nonEmpty
+
   lazy val legacy: ServiceDescriptor = serviceDescriptor
   lazy val serviceDescriptor: ServiceDescriptor = {
     ServiceDescriptor(
@@ -643,6 +654,39 @@ object NgRoute {
     )
   )
 
+  def empty = NgRoute(
+    location = EntityLocation.default,
+    id = s"route_${IdGenerator.uuid}",
+    name = "empty route",
+    description = "empty route",
+    tags = Seq.empty,
+    metadata = Map.empty,
+    enabled = true,
+    debugFlow = false,
+    capture = false,
+    exportReporting = false,
+    groups = Seq("default"),
+    frontend = NgFrontend(
+      domains = Seq(NgDomainAndPath("empty.oto.tools")),
+      headers = Map.empty,
+      query = Map.empty,
+      methods = Seq.empty,
+      stripPath = true,
+      exact = false
+    ),
+    backendRef = None,
+    backend = NgBackend(
+      targets = Seq.empty,
+      targetRefs = Seq.empty,
+      root = "/",
+      rewrite = false,
+      loadBalancing = RoundRobin,
+      healthCheck = None,
+      client = NgClientConfig.default
+    ),
+    plugins = NgPlugins.empty
+  )
+
   def fromJsons(value: JsValue): NgRoute =
     try {
       fmt.reads(value).get
@@ -1028,11 +1072,25 @@ object NgRoute {
   }
 }
 
-trait NgRouteDataStore extends BasicStore[NgRoute]
+trait NgRouteDataStore extends BasicStore[NgRoute] {
+  def template(env: Env): NgRoute = {
+    val default = NgRoute.empty
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .route
+      .map { template =>
+        NgRoute.fmt.reads(default.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        default
+      }
+  }
+}
 
 class KvNgRouteDataStore(redisCli: RedisLike, _env: Env) extends NgRouteDataStore with RedisLikeStore[NgRoute] {
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def fmt: Format[NgRoute]                    = NgRoute.fmt
-  override def key(id: String): Key                    = Key.Empty / _env.storageRoot / "routes" / id
+  override def key(id: String): String                 = s"${_env.storageRoot}:routes:${id}"
   override def extractId(value: NgRoute): String       = value.id
 }

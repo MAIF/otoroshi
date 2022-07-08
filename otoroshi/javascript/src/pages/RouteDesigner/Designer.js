@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useParams, useLocation } from 'react-router';
 import {
@@ -16,7 +16,7 @@ import {
 } from './Graph';
 import Loader from './Loader';
 import { FeedbackButton } from './FeedbackButton';
-import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
+import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase, useQuery } from '../../util';
 import {
   SelectInput,
   Form,
@@ -29,8 +29,7 @@ import { snakeCase, camelCase, isEqual, over } from 'lodash';
 import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
-import GraphQLForm from './GraphQLForm';
-import MocksDesigner from './MocksDesigner';
+import { TryIt } from './TryIt'
 
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
@@ -223,25 +222,43 @@ const Modal = ({ question, onOk, onCancel }) => (
   </div>
 );
 
-export default ({ value, setSaveButton, setMenu, ...props }) => {
+export default forwardRef(({ value, setSaveButton, setTestingButton, setMenu, history, ...props }, ref) => {
   const { routeId } = useParams();
   const location = useLocation();
 
   const viewPlugins = new URLSearchParams(location.search).get('view_plugins');
+  const subTab = new URLSearchParams(location.search).get('sub_tab')
+
+  const childRef = useRef()
+
+  useImperativeHandle(ref, () => ({
+    onTestingButtonClick() {
+      childRef.current.toggleTryIt()
+    }
+  }))
+
+  useEffect(() => {
+    if (location?.state?.showTryIt)
+      childRef.current.toggleTryIt()
+  }, [location.state])
 
   return (
     <Designer
+      ref={childRef}
+      history={history}
       viewPlugins={props.viewPlugins || viewPlugins}
+      subTab={subTab}
       routeId={routeId}
       location={location}
       value={value}
       setSaveButton={setSaveButton}
+      setTestingButton={setTestingButton}
       setMenu={setMenu}
       pathname={location.pathname}
       serviceMode={location.pathname.includes('route-compositions')}
     />
   );
-};
+})
 
 const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) => (
   <div className="main-view relative-container" style={{ flex: 'initial' }}>
@@ -441,7 +458,8 @@ class Designer extends React.Component {
       TransformRequest: true,
       TransformResponse: true,
     },
-    advancedDesignerView: MocksDesigner
+    advancedDesignerView: null,
+    showTryIt: false
   };
 
   componentDidMount() {
@@ -450,12 +468,8 @@ class Designer extends React.Component {
     this.injectNavbarMenu();
   }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.location.pathname !== this.props.location.pathname) {
-      this.loadData();
-      this.injectSaveButton();
-      this.injectNavbarMenu();
-    }
+  toggleTryIt = () => {
+    this.setState({ showTryIt: true })
   }
 
   injectSaveButton = () => {
@@ -494,15 +508,10 @@ class Designer extends React.Component {
     </>
   );
 
-  injectDefaultMenu = () => (
-    <>
-      <div className="d-flex-between">
-        <button type="button" className="btn btn-sm btn-danger me-1" onClick={this.clearPlugins}>
-          Remove plugins
-        </button>
-      </div>
-    </>
-  );
+  injectDefaultMenu = () => <button type="button" className="btn btn-sm btn-danger mt-1" style={{ width: '100%' }} onClick={this.clearPlugins}>
+    <i className='fas fa-ban me-3' />
+    Remove plugins
+  </button>
 
   injectNavbarMenu = () => {
     if (this.props.viewPlugins && this.props.viewPlugins !== -1)
@@ -1274,7 +1283,8 @@ class Designer extends React.Component {
       expandAll,
       searched,
       backend,
-      advancedDesignerView
+      advancedDesignerView,
+      showTryIt
     } = this.state;
 
     const { serviceMode } = this.props;
@@ -1300,7 +1310,7 @@ class Designer extends React.Component {
     // TODO - better error display
     if (!loading && this.state.notFound) return <h1>Route not found</h1>;
 
-    const FullForm = advancedDesignerView
+    const FullForm = showTryIt ? TryIt : advancedDesignerView
 
     return (
       <Loader loading={loading}>
@@ -1312,13 +1322,20 @@ class Designer extends React.Component {
           }}>
           {FullForm && <FullForm route={advancedDesignerView ? route : undefined}
             saveRoute={route => {
-              this.setState({ route }, this.saveRoute)
+              this.setState({ route })
             }}
             hide={e => {
               e.stopPropagation()
               this.setState({
-                selectedNode: backendCallNodes.find(node => node.id.includes("otoroshi.next.plugins.GraphQLBackend")),
+                selectedNode: backendCallNodes.find(node => node.id.includes(FullForm.name !== 'GraphQLForm' ?
+                  (FullForm.name === 'TryIt' ? this.state.selectedNode :
+                    "otoroshi.next.plugins.MockResponses") :
+                  "otoroshi.next.plugins.GraphQLBackend")),
                 advancedDesignerView: false
+              })
+
+              this.setState({
+                showTryIt: false
               })
             }} />}
           <PluginsContainer
@@ -1498,7 +1515,7 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
     <div className="d-flex-between element-text">
       <div>
         {element.legacy ? (
-          <span className="badge bg-warning text-dark" style={{ marginRight: 5 }}>
+          <span className="badge bg-info text-dark" style={{ marginRight: 5 }}>
             legacy
           </span>
         ) : (
@@ -1626,8 +1643,14 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
         : [<span className="badge bg-success">ALL</span>];
     return (
       <>
-        <div className="d-flex-between dark-background py-2 ps-2">
-          <span style={{ fontStyle: 'italic' }}> Start by selecting a plugin to configure it</span>
+        <div className="d-flex-center justify-content-start dark-background py-2 ps-2">
+          <span style={{ fontStyle: 'italic' }}> Start by selecting a</span>
+          <Dot style={{ width: 'initial' }} className="mx-1">
+            <div className="flex-column p-1">
+              <span style={{ color: '#fff' }}>plugin</span>
+            </div>
+          </Dot>
+          <span>to configure it</span>
         </div>
         <div style={{ marginTop: 20 }}>
           <h3 style={{ fontSize: '1.25rem' }}>Frontend</h3>
@@ -2180,7 +2203,7 @@ const Actions = ({ selectedNode, onRemove, valid, disabledSaveButton }) => (
     <FeedbackButton
       text="Save"
       className="ms-2"
-      disabled={disabledSaveButton}
+      // disabled={disabledSaveButton}
       icon={() => <i className="far fa-paper-plane" />}
       onPress={valid}
     />

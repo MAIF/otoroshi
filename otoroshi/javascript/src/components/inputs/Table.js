@@ -253,11 +253,13 @@ export class Table extends Component {
       .replace(/ /g, '-')
       .replace(/\(/g, '')
       .replace(/\)/g, '')
+      .replace(/\./g, '')
       .toLowerCase();
     const itemName = this.props.itemName
       .replace(/ /g, '-')
       .replace(/\(/g, '')
       .replace(/\)/g, '')
+      .replace(/\./g, '')
       .toLowerCase();
     const json = JSON.stringify(
       { ...this.state.currentItem, kind: this.props.kubernetesKind },
@@ -288,7 +290,8 @@ export class Table extends Component {
       .replace(/\(/g, '')
       .replace(/\)/g, '')
       .toLowerCase();
-    const json = YAML.stringify({
+    /*
+    // const json = YAML.stringify({
       apiVersion: 'proxy.otoroshi.io/v1alpha1',
       kind: this.props.kubernetesKind,
       metadata: {
@@ -296,16 +299,35 @@ export class Table extends Component {
       },
       spec: this.state.currentItem,
     });
-    const blob = new Blob([json], { type: 'application/yaml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.id = String(Date.now());
-    a.style.display = 'none';
-    a.download = `${itemName}-${name}-${Date.now()}.yaml`;
-    a.href = url;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => document.body.removeChild(a), 300);
+    */
+
+    fetch('/bo/api/json_to_yaml', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        apiVersion: 'proxy.otoroshi.io/v1alpha1',
+        kind: this.props.kubernetesKind,
+        metadata: {
+          name,
+        },
+        spec: this.state.currentItem,
+      }),
+    })
+      .then((r) => r.text())
+      .then((yaml) => {
+        const blob = new Blob([yaml], { type: 'application/yaml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.id = String(Date.now());
+        a.style.display = 'none';
+        a.download = `${itemName}-${name}-${Date.now()}.yaml`;
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => document.body.removeChild(a), 300);
+      });
   };
 
   render() {
@@ -505,7 +527,7 @@ export class Table extends Component {
                 onChange: (currentItem) => this.setState({ currentItem }),
                 flow: this.props.formFlow,
                 schema: this.props.formSchema,
-              })
+              }),
             ]}
             {!this.props.formComponent && !this.props.formFunction && (
               <Form
@@ -556,7 +578,7 @@ export class Table extends Component {
                 onChange: (currentItem) => this.setState({ currentItem }),
                 flow: this.props.formFlow,
                 schema: this.props.formSchema,
-              })
+              }),
             ]}
             {!this.props.formComponent && !this.props.formFunction && (
               <Form

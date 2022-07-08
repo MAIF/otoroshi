@@ -1288,17 +1288,35 @@ case class AkkaWsClientRequest(
   private def realContentType: Option[ContentType] = {
     headers
       .get(`Content-Type`.name)
-      .map(_.head)
       .orElse(
         headers
-          .get(`Content-Type`.name.toLowerCase())
-          .map(_.head)
+          .get(`Content-Type`.lowercaseName)
       )
+      .flatMap(_.headOption)
       .map { value =>
         HttpHeader.parse("Content-Type", value)
       }
       .flatMap {
-        case ParsingResult.Ok(header, _) => Option(header.asInstanceOf[`Content-Type`].contentType)
+        // case ParsingResult.Ok(header, _) => Option(header.asInstanceOf[`Content-Type`].contentType)
+        case ParsingResult.Ok(header, _) => header match {
+          case `Content-Type`(contentType) => contentType.some
+          case RawHeader(_, value) if value.contains(",") => value.split(",").headOption.map(_.trim).map(v => `Content-Type`.parseFromValueString(v)) match {
+            case Some(Left(errs)) => {
+              ClientConfig.logger.error(s"Error while parsing request content-type: ${errs}")
+              None
+            }
+            case Some(Right(`Content-Type`(contentType))) => contentType.some
+            case None => None
+          }
+          case RawHeader(_, value) => `Content-Type`.parseFromValueString(value) match {
+            case Left(errs) => {
+              ClientConfig.logger.error(s"Error while parsing request content-type: ${errs}")
+              None
+            }
+            case Right(`Content-Type`(contentType) ) => contentType.some
+          }
+          case _ =>  None
+        }
         case _                           => None
       }
   }
@@ -1306,14 +1324,16 @@ case class AkkaWsClientRequest(
   private def realContentLength: Option[Long] = {
     headers
       .get(`Content-Length`.name)
-      .map(_.head.toLong)
+      .orElse(headers.get(`Content-Length`.lowercaseName))
+      .flatMap(_.headOption)
+      .map(_.toLong)
   }
 
   private def realUserAgent: Option[String] = {
     headers
       .get(`User-Agent`.name)
-      .orElse(headers.get(`User-Agent`.name.toLowerCase))
-      .map(_.head)
+      .orElse(headers.get(`User-Agent`.lowercaseName))
+      .flatMap(_.headOption)
   }
 
   lazy val (akkaHttpEntity, updatedHeaders) = {

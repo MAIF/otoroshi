@@ -91,8 +91,12 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
     ),
     "Admin"             -> Json.obj("plural" -> "admins", "singular" -> "admin", "entity" -> "otoroshi.models.SimpleOtoroshiAdmin"),
     "Route"             -> Json.obj("plural" -> "routes", "singular" -> "route", "entity" -> "otoroshi.next.models.NgRoute"),
-    "RouteComposition"           -> Json
-      .obj("plural" -> "route-compositions", "singular" -> "route-composition", "entity" -> "otoroshi.next.models.NgService"),
+    "RouteComposition"  -> Json
+      .obj(
+        "plural"   -> "route-compositions",
+        "singular" -> "route-composition",
+        "entity"   -> "otoroshi.next.models.NgService"
+      ),
     "Backend"           -> Json
       .obj("plural" -> "backends", "singular" -> "backend", "entity" -> "otoroshi.next.models.NgBackend")
   )

@@ -119,6 +119,8 @@
   <ul>
     <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
     <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../next/graphql-composer.html" class="page">GraphQL Composer Proxy</a></li>
+    <li><a href="../next/relay-routing.html" class="page">Relay Routing</a></li>
     <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
 </ul>
@@ -238,6 +240,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
     <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../next/graphql-composer.html" class="page">GraphQL Composer Proxy</a></li>
+    <li><a href="../next/relay-routing.html" class="page">Relay Routing</a></li>
     <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
 </ul>
@@ -1938,11 +1942,39 @@ otoroshi {
     retryFactor = 2 # the retry factor to avoid high load on failing nodes
     retryFactor = ${?CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
     retryFactor = ${?OTOROSHI_CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
-    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster slefAddress
+    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster selfAddress
     selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the cluster selfAddress
     autoUpdateState = true # auto update cluster state with a job (more efficient)
     autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
     autoUpdateState = ${?OTOROSHI_CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
+    relay { # relay routing settings
+      enabled = false # enable relay routing
+      enabled = ${?OTOROSHI_CLUSTER_RELAY_ENABLED} # enable relay routing
+      leaderOnly = false
+      leaderOnly = ${?OTOROSHI_CLUSTER_RELAY_LEADER_ONLY} # workers always pass through leader for relay routing
+      location {
+        provider = ${?otoroshi.instance.provider}
+        provider = ${?OTOROSHI_CLUSTER_RELAY_LOCATION_PROVIDER}
+        zone = ${?otoroshi.instance.zone}
+        zone = ${?OTOROSHI_CLUSTER_RELAY_LOCATION_ZONE}
+        region = ${?otoroshi.instance.region}
+        region = ${?OTOROSHI_CLUSTER_RELAY_LOCATION_REGION}
+        datacenter = ${?otoroshi.instance.dc}
+        datacenter = ${?OTOROSHI_CLUSTER_RELAY_LOCATION_DATACENTER}
+        rack = ${?otoroshi.instance.rack}
+        rack = ${?OTOROSHI_CLUSTER_RELAY_LOCATION_RACK}
+      }
+      exposition {
+        url = ${?OTOROSHI_CLUSTER_RELAY_EXPOSITION_URL}
+        urls = []
+        urlsStr = ${?OTOROSHI_CLUSTER_RELAY_EXPOSITION_URLS}
+        hostname = &quot;otoroshi-api.oto.tools&quot;
+        hostname = ${?OTOROSHI_CLUSTER_RELAY_EXPOSITION_HOSTNAME}
+        clientId = ${?OTOROSHI_CLUSTER_RELAY_EXPOSITION_CLIENT_ID}
+        clientSecret = ${?OTOROSHI_CLUSTER_RELAY_EXPOSITION_CLIENT_SECRET}
+        ipAddress = ${?OTOROSHI_CLUSTER_RELAY_EXPOSITION_IP_ADDRESS}
+      }
+    }
     mtls {
       # certs = []
       # trustedCerts = []
@@ -2931,10 +2963,34 @@ otoroshi {
     retryDelay = ${?OTOROSHI_CLUSTER_RETRY_DELAY} # the delay before retrying a request to leader
     retryFactor = ${?CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
     retryFactor = ${?OTOROSHI_CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
-    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster slefAddress
+    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster selfAddress
     selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the cluster selfAddress
     autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
     autoUpdateState = ${?OTOROSHI_CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
+    relay { # relay routing settings
+      enabled = ${?OTOROSHI_CLUSTER_RELAY_ENABLED} # enable relay routing
+      leaderOnly = ${?OTOROSHI_CLUSTER_RELAY_LEADER_ONLY} # workers always pass through leader for relay routing
+      location {
+        provider = ${?otoroshi.instance.provider}
+        provider = ${?OTOROSHI_CLUSTER_RELAY_LOCATION_PROVIDER}
+        zone = ${?otoroshi.instance.zone}
+        zone = ${?OTOROSHI_CLUSTER_RELAY_LOCATION_ZONE}
+        region = ${?otoroshi.instance.region}
+        region = ${?OTOROSHI_CLUSTER_RELAY_LOCATION_REGION}
+        datacenter = ${?otoroshi.instance.dc}
+        datacenter = ${?OTOROSHI_CLUSTER_RELAY_LOCATION_DATACENTER}
+        rack = ${?otoroshi.instance.rack}
+        rack = ${?OTOROSHI_CLUSTER_RELAY_LOCATION_RACK}
+      }
+      exposition {
+        url = ${?OTOROSHI_CLUSTER_RELAY_EXPOSITION_URL}
+        urlsStr = ${?OTOROSHI_CLUSTER_RELAY_EXPOSITION_URLS}
+        hostname = ${?OTOROSHI_CLUSTER_RELAY_EXPOSITION_HOSTNAME}
+        clientId = ${?OTOROSHI_CLUSTER_RELAY_EXPOSITION_CLIENT_ID}
+        clientSecret = ${?OTOROSHI_CLUSTER_RELAY_EXPOSITION_CLIENT_SECRET}
+        ipAddress = ${?OTOROSHI_CLUSTER_RELAY_EXPOSITION_IP_ADDRESS}
+      }
+    }
     mtls {
       enabled = ${?CLUSTER_MTLS_ENABLED}  # enable mtls
       enabled = ${?OTOROSHI_CLUSTER_MTLS_ENABLED}  # enable mtls

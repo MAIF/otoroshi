@@ -1246,14 +1246,43 @@ export class DangerZonePage extends Component {
 
   exportYaml = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const json = YAML.stringify({
+    fetch('/bo/api/json_to_yaml', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        apiVersion: 'proxy.otoroshi.io/v1alpha1',
+        kind: 'GlobalConfig',
+        metadata: {
+          name: 'global-config',
+        },
+        spec: this.state.value,
+      }),
+    })
+      .then((r) => r.text())
+      .then((yaml) => {
+        const blob = new Blob([yaml], { type: 'application/yaml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.id = String(Date.now());
+        a.style.display = 'none';
+        a.download = `global-config-${Date.now()}.yaml`;
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => document.body.removeChild(a), 300);
+      });
+
+    /*
+    // const json = YAML.stringify({
       apiVersion: 'proxy.otoroshi.io/v1alpha1',
       kind: 'GlobalConfig',
       metadata: {
         name: 'global-config',
       },
       spec: this.state.value,
-    });
+    }, null, { defaultStringType: 'QUOTE_DOUBLE', doubleQuotedAsJSON: true, defaultType: 'QUOTE_DOUBLE' });
     const blob = new Blob([json], { type: 'application/yaml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1264,6 +1293,7 @@ export class DangerZonePage extends Component {
     document.body.appendChild(a);
     a.click();
     setTimeout(() => document.body.removeChild(a), 300);
+    */
   };
 
   importData = (e) => {

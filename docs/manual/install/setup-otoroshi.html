@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.10
+1.5.11
 </div>
 </div>
 <div class="nav-toc">
@@ -154,7 +154,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.10
+1.5.11
 </div>
 </div>
 <div class="nav-toc">
@@ -1029,6 +1029,11 @@ play.http {
     waitForFirstClusterFetch = ${?OTOROSHI_BOOT_WAIT_FOR_FIRST_CLUSTER_FETCH} # should we wait for first cluster initialization before accepting http requests
     waitForFirstClusterFetchTimeout = 10000 # max wait for first cluster initialization before accepting http requests
     waitForFirstClusterFetchTimeout = ${?OTOROSHI_BOOT_WAIT_FOR_FIRST_CLUSTER_TIMEOUT} # max wait for first cluster initialization before accepting http requests
+
+    waitForFirstClusterStateCache = true # should we wait for first cluster initialization before accepting http requests
+    waitForFirstClusterStateCache = ${?OTOROSHI_BOOT_WAIT_FOR_FIRST_CLUSTER_STATE_CACHE} # should we wait for first cluster initialization before accepting http requests
+    waitForFirstClusterStateCacheTimeout = 10000 # max wait for first cluster initialization before accepting http requests
+    waitForFirstClusterStateCacheTimeout =  ${?OTOROSHI_BOOT_WAIT_FOR_FIRST_CLUSTER_STATE_CACHE_TIMEOUT} # max wait for first cluster initialization before accepting http requests
   }
   instance {
     instanceId = ${?OTOROSHI_INSTANCE_ID} # the instance id
@@ -1934,10 +1939,10 @@ otoroshi {
     retryFactor = ${?CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
     retryFactor = ${?OTOROSHI_CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
     selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster slefAddress
-    selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the cluster slefAddress
-    autoUpdateState = true # auto update cluster state with a job (mor efficient)
-    autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (mor efficient
-    autoUpdateState = ${?OTOROSHI_CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (mor efficient
+    selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the cluster selfAddress
+    autoUpdateState = true # auto update cluster state with a job (more efficient)
+    autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
+    autoUpdateState = ${?OTOROSHI_CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
     mtls {
       # certs = []
       # trustedCerts = []
@@ -1969,7 +1974,7 @@ otoroshi {
       groupingBy = 50 # items grouping when streaming state
       groupingBy = ${?CLUSTER_LEADER_GROUP_BY} # items grouping when streaming state
       groupingBy = ${?OTOROSHI_CLUSTER_LEADER_GROUP_BY} # items grouping when streaming state
-      cacheStateFor = 4000 # the ttl for local state cache
+      cacheStateFor = 10000 # the ttl for local state cache
       cacheStateFor = ${?CLUSTER_LEADER_CACHE_STATE_FOR} # the ttl for local state cache
       cacheStateFor = ${?OTOROSHI_CLUSTER_LEADER_CACHE_STATE_FOR} # the ttl for local state cache
       stateDumpPath = ${?CLUSTER_LEADER_DUMP_PATH} # eventually a dump state path for debugging purpose
@@ -1981,7 +1986,7 @@ otoroshi {
       retries = 3 # the number of retries when pushing quotas/pulling state
       retries = ${?CLUSTER_WORKER_RETRIES} # the number of retries when pushing quotas/pulling state
       retries = ${?OTOROSHI_CLUSTER_WORKER_RETRIES} # the number of retries when pushing quotas/pulling state
-      timeout = 2000 # the workers timeout when interacting with leaders
+      timeout = 10000 # the workers timeout when interacting with leaders
       timeout = ${?CLUSTER_WORKER_TIMEOUT} # the workers timeout when interacting with leaders
       timeout = ${?OTOROSHI_CLUSTER_WORKER_TIMEOUT} # the workers timeout when interacting with leaders
       tenants = [] # the list of organization served by this worker. If none, it&#39;s all
@@ -2013,7 +2018,7 @@ otoroshi {
         retries = ${otoroshi.cluster.worker.retries} # the number of retries when pushing quotas
         retries = ${?CLUSTER_WORKER_QUOTAS_RETRIES} # the number of retries when pushing quotas
         retries = ${?OTOROSHI_CLUSTER_WORKER_QUOTAS_RETRIES} # the number of retries when pushing quotas
-        pushEvery = 2000 # pushing interval
+        pushEvery = 10000 # pushing interval
         pushEvery = ${?CLUSTER_WORKER_PUSH_EVERY} # pushing interval
         pushEvery = ${?OTOROSHI_CLUSTER_WORKER_PUSH_EVERY} # pushing interval
         timeout = ${otoroshi.cluster.worker.timeout} # the workers timeout when pushing quotas
@@ -2238,7 +2243,7 @@ play.http {
 
 
 akka { # akka specific configuration
-  version = &quot;2.6.18&quot;
+  version = &quot;2.6.19&quot;
   loglevel = ERROR
   logger-startup-timeout = 60s
   log-dead-letters-during-shutdown = false
@@ -2376,6 +2381,8 @@ akka { # akka specific configuration
     waitForTlsInitTimeout = ${?OTOROSHI_BOOT_WAIT_FOR_TLS_INIT_TIMEOUT} # max wait for first TLS context initialization before accepting http requests
     waitForFirstClusterFetch = ${?OTOROSHI_BOOT_WAIT_FOR_FIRST_CLUSTER_FETCH} # should we wait for first cluster initialization before accepting http requests
     waitForFirstClusterFetchTimeout = ${?OTOROSHI_BOOT_WAIT_FOR_FIRST_CLUSTER_TIMEOUT} # max wait for first cluster initialization before accepting http requests
+    waitForFirstClusterStateCache = ${?OTOROSHI_BOOT_WAIT_FOR_FIRST_CLUSTER_STATE_CACHE} # should we wait for first cluster initialization before accepting http requests
+    waitForFirstClusterStateCacheTimeout =  ${?OTOROSHI_BOOT_WAIT_FOR_FIRST_CLUSTER_STATE_CACHE_TIMEOUT} # max wait for first cluster initialization before accepting http requests
   }
   instance {
     instanceId = ${?OTOROSHI_INSTANCE_ID} # the instance id
@@ -2925,9 +2932,9 @@ otoroshi {
     retryFactor = ${?CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
     retryFactor = ${?OTOROSHI_CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
     selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster slefAddress
-    selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the cluster slefAddress
-    autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (mor efficient
-    autoUpdateState = ${?OTOROSHI_CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (mor efficient
+    selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the cluster selfAddress
+    autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
+    autoUpdateState = ${?OTOROSHI_CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
     mtls {
       enabled = ${?CLUSTER_MTLS_ENABLED}  # enable mtls
       enabled = ${?OTOROSHI_CLUSTER_MTLS_ENABLED}  # enable mtls

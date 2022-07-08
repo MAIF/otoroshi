@@ -20,9 +20,12 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
+import otoroshi.storage.drivers.inmemory.{Memory, SwapStrategy, SwappableRedis}
 import otoroshi.storage.stores.{DataExporterConfigDataStore, TeamDataStore, TenantDataStore}
 import otoroshi.utils.syntax.implicits.BetterSyntax
 
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
@@ -100,24 +103,24 @@ trait RawDataStore {
 }
 
 trait BasicStore[T] {
-  def key(id: String): Key
-  def keyStr(id: String): String                                                                                    = key(id).key
+  def key(id: String): String
+  // def keyStr(id: String): String                                                                                    = key(id).key
   def extractId(value: T): String
-  def extractKey(value: T): Key                                                                                     = key(extractId(value))
+  def extractKey(value: T): String                                                                                     = key(extractId(value))
   def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]]
-  def findAllByKeys(ids: Seq[Key], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] =
-    findAllById(ids.map(_.key), force)
+  //def findAllByKeys(ids: Seq[Key], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] =
+  //  findAllById(ids.map(_.key), force)
   def findAllById(ids: Seq[String], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]]
-  def findByKey(id: Key)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]                                = findById(id.key)
+  // def findByKey(id: Key)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]                                = findById(id.key)
   def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]
   def findByIdAndFillSecrets(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]
-  def deleteByKey(id: Key)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                = delete(id.key)
+  // def deleteByKey(id: Key)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                = delete(id.key)
   def deleteByIds(ids: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def delete(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def delete(value: T)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def deleteAll()(implicit ec: ExecutionContext, env: Env): Future[Long]
   def set(value: T, pxMilliseconds: Option[Duration] = None)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def exists(id: Key)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                     = exists(id.key)
+  // def exists(id: Key)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                     = exists(id.key)
   def exists(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def exists(value: T)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   // Streaming
@@ -240,18 +243,18 @@ trait OptimizedRedisLike {
     import otoroshi.utils.syntax.implicits._
     val ds = env.datastores
     key match {
-      case _ if key.startsWith(ds.serviceDescriptorDataStore.keyStr(""))  => "service-descriptor".some
-      case _ if key.startsWith(ds.apiKeyDataStore.keyStr(""))             => "apikey".some
-      case _ if key.startsWith(ds.certificatesDataStore.keyStr(""))       => "certificate".some
-      case _ if key.startsWith(ds.serviceGroupDataStore.keyStr(""))       => "service-group".some
-      case _ if key.startsWith(ds.globalJwtVerifierDataStore.keyStr(""))  => "jwt-verifier".some
-      case _ if key.startsWith(ds.authConfigsDataStore.keyStr(""))        => "auth-module".some
-      case _ if key.startsWith(ds.scriptDataStore.keyStr(""))             => "script".some
-      case _ if key.startsWith(ds.dataExporterConfigDataStore.keyStr("")) => "data-exporter".some
-      case _ if key.startsWith(ds.teamDataStore.keyStr(""))               => "team".some
-      case _ if key.startsWith(ds.tenantDataStore.keyStr(""))             => "tenant".some
-      case _ if key.startsWith(ds.tcpServiceDataStore.keyStr(""))         => "tcp-service".some
-      case _ if key.startsWith(ds.globalConfigDataStore.keyStr(""))       => "global-config".some
+      case _ if key.startsWith(ds.serviceDescriptorDataStore.key(""))  => "service-descriptor".some
+      case _ if key.startsWith(ds.apiKeyDataStore.key(""))             => "apikey".some
+      case _ if key.startsWith(ds.certificatesDataStore.key(""))       => "certificate".some
+      case _ if key.startsWith(ds.serviceGroupDataStore.key(""))       => "service-group".some
+      case _ if key.startsWith(ds.globalJwtVerifierDataStore.key(""))  => "jwt-verifier".some
+      case _ if key.startsWith(ds.authConfigsDataStore.key(""))        => "auth-module".some
+      case _ if key.startsWith(ds.scriptDataStore.key(""))             => "script".some
+      case _ if key.startsWith(ds.dataExporterConfigDataStore.key("")) => "data-exporter".some
+      case _ if key.startsWith(ds.teamDataStore.key(""))               => "team".some
+      case _ if key.startsWith(ds.tenantDataStore.key(""))             => "tenant".some
+      case _ if key.startsWith(ds.tcpServiceDataStore.key(""))         => "tcp-service".some
+      case _ if key.startsWith(ds.globalConfigDataStore.key(""))       => "global-config".some
       case _                                                              => None
     }
   }
@@ -280,7 +283,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
   private val lastFindAllCache = new java.util.concurrent.atomic.AtomicLong(0L)
 
   def countAll()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
-    redisLike.keys(key("*").key).map(_.size)
+    redisLike.keys(key("*")).map(_.size)
   }
 
   def clearFromCache(id: String)(implicit env: Env): Unit = {
@@ -302,14 +305,15 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     if (ids.isEmpty) {
       FastFuture.successful(true)
     } else {
-      redisLike.del(ids.map(v => keyStr(v)): _*).map(_ > 0)
+      val ks = ids.map(v => key(v))
+      redisLike.del(ks: _*).map(_ > 0)
     }
   }
 
   def findAllAndFillSecrets()(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {
     if (env.vaults.enabled) {
       Source
-        .single(key("*").key)
+        .single(key("*"))
         .mapAsync(1)(redisLike.keys)
         .mapAsync(1) { keys =>
           if (keys.isEmpty) FastFuture.successful(Seq.empty[(Option[ByteString], String)])
@@ -332,7 +336,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
         .runWith(Sink.seq)(env.otoroshiMaterializer)
     } else {
       redisLike
-        .keys(key("*").key)
+        .keys(key("*"))
         .flatMap(keys =>
           if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
           else redisLike.mget(keys: _*)
@@ -360,7 +364,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
         @inline
         def oldSchoolFind() = {
           redisLike
-            .keys(key("*").key)
+            .keys(key("*"))
             .flatMap(keys =>
               if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
               else redisLike.mget(keys: _*)
@@ -374,7 +378,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
 
         if (redisLike.optimized) {
           val optRedis = redisLike.asInstanceOf[OptimizedRedisLike]
-          val kindKey  = keyStr("")
+          val kindKey  = key("")
           optRedis.extractKind(kindKey, env).map { kind =>
             optRedis.findAllOptimized(kind, kindKey).map { seq =>
               seq.map(v => fromJsonSafe(v)).collect { case JsSuccess(i, _) =>
@@ -426,17 +430,17 @@ trait RedisLikeStore[T] extends BasicStore[T] {
         FastFuture.successful(findAllCache.get().filter(s => keys.contains(extractId(s))))
       }
       case keys                                                 =>
-        redisLike.mget(keys.map(keyStr): _*).map { values: Seq[Option[ByteString]] =>
+        redisLike.mget(keys.map(key): _*).map { values: Seq[Option[ByteString]] =>
           values.flatMap { opt =>
             opt.flatMap(bs => fromJsonSafe(Json.parse(bs.utf8String)).asOpt)
           }
         }
     }
   def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]                               =
-    redisLike.get(key(id).key).map(_.flatMap(v => fromJsonSafe(Json.parse(v.utf8String)).asOpt))
+    redisLike.get(key(id)).map(_.flatMap(v => fromJsonSafe(Json.parse(v.utf8String)).asOpt))
 
   def findByIdAndFillSecrets(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]] = {
-    redisLike.get(key(id).key).flatMap {
+    redisLike.get(key(id)).flatMap {
       case None           => None.vfuture
       case Some(rawValue) => {
         val value = rawValue.utf8String
@@ -452,19 +456,19 @@ trait RedisLikeStore[T] extends BasicStore[T] {
   }
 
   def deleteAll()(implicit ec: ExecutionContext, env: Env): Future[Long]                                               =
-    redisLike.keys(key("*").key).flatMap { keys =>
+    redisLike.keys(key("*")).flatMap { keys =>
       redisLike.del(keys: _*)
     }
   def delete(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                     =
-    redisLike.del(key(id).key).map(_ > 0)
+    redisLike.del(key(id)).map(_ > 0)
   def delete(value: T)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                       = delete(extractId(value))
   def set(value: T, pxMilliseconds: Option[Duration] = None)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     redisLike.set(
-      key(extractId(value)).key,
+      key(extractId(value)),
       Json.stringify(toJson(value)),
       pxMilliseconds = pxMilliseconds.map(d => d.toMillis)
     )
-  def exists(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                     = redisLike.exists(key(id).key)
+  def exists(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                     = redisLike.exists(key(id))
   def exists(value: T)(implicit ec: ExecutionContext, env: Env): Future[Boolean]                                       = exists(extractId(value))
   // Streamed
   def streamedFind(predicate: T => Boolean, fetchSize: Int, page: Int = 1, pageSize: Int = Int.MaxValue)(implicit
@@ -478,7 +482,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     val position = (page - 1) * pageSize
     Source
       .future(
-        redisLike.keys(key("*").key)
+        redisLike.keys(key("*"))
       )
       .mapConcat(_.toList)
       .grouped(fetchSize)
@@ -505,23 +509,53 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     streamedFind(predicate, fetchSize, page, pageSize).runWith(Sink.seq[T])
 }
 
-class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
+trait MetricsWrapper {
+
+  def env: Env
+
+  private val logger = Logger("otoroshi-metrics-wrapper")
+
+  private val opsKey = "otoroshi.core.storage.ops"
+  private val opsReadKey = s"$opsKey.read"
+  private val opsWriteKey = s"$opsKey.write"
+
+  logger.warn("Metrics wrapper is enabled !")
+
+  @inline
+  def countRead(key: String): Unit = {
+    env.metrics.counterInc(opsKey)
+    env.metrics.counterInc(opsReadKey)
+  }
+
+  @inline
+  def countWrite(key: String, op: String): Unit = {
+    // logger.info(s"write: ${op} '${key}'")
+    env.metrics.counterInc(opsKey)
+    env.metrics.counterInc(opsWriteKey)
+  }
+}
+
+class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike with MetricsWrapper {
+
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()
   override def start(): Unit                                                    = redis.start()
   override def stop(): Unit                                                     = redis.stop()
 
-  override def rawGet(key: String): Future[Option[Any]] = redis.get(key)
+  override def rawGet(key: String): Future[Option[Any]] = {
+    countRead(key)
+    redis.get(key)
+  }
 
   override def flushall(): Future[Boolean] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite("*", "flushall")
     redis.flushall()
   }
   override def get(key: String): Future[Option[ByteString]] = {
-    env.metrics.counterInc("redis.ops")
+    countRead(key)
     redis.get(key)
   }
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] = {
-    env.metrics.counterInc("redis.ops")
+    countRead(keys.mkString(", "))
     redis.mget(keys: _*)
   }
   override def set(
@@ -530,7 +564,7 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
       exSeconds: Option[Long] = None,
       pxMilliseconds: Option[Long] = None
   ): Future[Boolean] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "set")
     redis.set(key, value, exSeconds, pxMilliseconds)
   }
   override def setBS(
@@ -539,123 +573,329 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
       exSeconds: Option[Long] = None,
       pxMilliseconds: Option[Long] = None
   ): Future[Boolean] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "set")
     redis.setBS(key, value, exSeconds, pxMilliseconds)
   }
   override def del(keys: String*): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(keys.mkString(", "), "del")
     redis.del(keys: _*)
   }
   override def incr(key: String): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "incr")
     redis.incr(key)
   }
   override def incrby(key: String, increment: Long): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "incrby")
     redis.incrby(key, increment)
   }
   override def exists(key: String): Future[Boolean] = {
-    env.metrics.counterInc("redis.ops")
+    countRead(key)
     redis.exists(key)
   }
   override def keys(pattern: String): Future[Seq[String]] = {
-    env.metrics.counterInc("redis.ops")
+    countRead(pattern)
     redis.keys(pattern)
   }
   override def hdel(key: String, fields: String*): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "hdel")
     redis.hdel(key, fields: _*)
   }
   override def hgetall(key: String): Future[Map[String, ByteString]] = {
-    env.metrics.counterInc("redis.ops")
+    countRead(key)
     redis.hgetall(key)
   }
   override def hset(key: String, field: String, value: String): Future[Boolean] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "hset")
     redis.hset(key, field, value)
   }
   override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "hset")
     redis.hsetBS(key, field, value)
   }
   override def llen(key: String): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countRead(key)
     redis.llen(key)
   }
   override def lpush(key: String, values: String*): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "lpush")
     redis.lpush(key, values: _*)
   }
   override def lpushLong(key: String, values: Long*): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "lpush")
     redis.lpushLong(key, values: _*)
   }
   override def lpushBS(key: String, values: ByteString*): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "lpush")
     redis.lpushBS(key, values: _*)
   }
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
-    env.metrics.counterInc("redis.ops")
+    countRead(key)
     redis.lrange(key, start, stop)
   }
   override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "ltrim")
     redis.ltrim(key, start, stop)
   }
   override def pttl(key: String): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countRead(key)
     redis.pttl(key)
   }
   override def ttl(key: String): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countRead(key)
     redis.ttl(key)
   }
   override def expire(key: String, seconds: Int): Future[Boolean] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "expire")
     redis.expire(key, seconds)
   }
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "pexpire")
     redis.pexpire(key, milliseconds)
   }
   override def sadd(key: String, members: String*): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "sadd")
     redis.sadd(key, members: _*)
   }
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "sadd")
     redis.saddBS(key, members: _*)
   }
   override def sismember(key: String, member: String): Future[Boolean] = {
-    env.metrics.counterInc("redis.ops")
+    countRead(key)
     redis.sismember(key, member)
   }
   override def sismemberBS(key: String, member: ByteString): Future[Boolean] = {
-    env.metrics.counterInc("redis.ops")
+    countRead(key)
     redis.sismemberBS(key, member)
   }
   override def smembers(key: String): Future[Seq[ByteString]] = {
-    env.metrics.counterInc("redis.ops")
+    countRead(key)
     redis.smembers(key)
   }
   override def srem(key: String, members: String*): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "srem")
     redis.srem(key, members: _*)
   }
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "srem")
     redis.sremBS(key, members: _*)
   }
   override def scard(key: String): Future[Long] = {
-    env.metrics.counterInc("redis.ops")
+    countRead(key)
     redis.scard(key)
   }
-
   override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
-    env.metrics.counterInc("redis.ops")
+    countWrite(key, "srem")
     redis.setnxBS(key, value, ttl)
+  }
+}
+
+class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val env: Env) extends RedisLike with MetricsWrapper with SwappableRedis {
+
+  private val incropt = new IncrOptimizer(200, 10000)
+
+  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()
+  override def start(): Unit                                                    = redis.start()
+  override def stop(): Unit                                                     = redis.stop()
+
+  override def rawGet(key: String): Future[Option[Any]] = {
+    countRead(key)
+    redis.get(key)
+  }
+
+  override def flushall(): Future[Boolean] = {
+    countWrite("*", "flushall")
+    redis.flushall()
+  }
+  override def get(key: String): Future[Option[ByteString]] = {
+    countRead(key)
+    redis.get(key)
+  }
+  override def mget(keys: String*): Future[Seq[Option[ByteString]]] = {
+    countRead(keys.mkString(", "))
+    redis.mget(keys: _*)
+  }
+  override def set(
+                    key: String,
+                    value: String,
+                    exSeconds: Option[Long] = None,
+                    pxMilliseconds: Option[Long] = None
+                  ): Future[Boolean] = {
+    countWrite(key, "set")
+    redis.set(key, value, exSeconds, pxMilliseconds)
+  }
+  override def setBS(
+                      key: String,
+                      value: ByteString,
+                      exSeconds: Option[Long] = None,
+                      pxMilliseconds: Option[Long] = None
+                    ): Future[Boolean] = {
+    countWrite(key, "set")
+    redis.setBS(key, value, exSeconds, pxMilliseconds)
+  }
+  override def del(keys: String*): Future[Long] = {
+    countWrite(keys.mkString(", "), "del")
+    redis.del(keys: _*)
+  }
+  override def incr(key: String): Future[Long] = {
+    incropt.incrBy(key, 1L) { _ =>
+      countWrite(key, "incr")
+      redis.incr(key)
+    }(env.otoroshiExecutionContext)
+  }
+  override def incrby(key: String, increment: Long): Future[Long] = {
+    incropt.incrBy(key, increment) { _ =>
+      countWrite(key, "incrby")
+      redis.incrby(key, increment)
+    }(env.otoroshiExecutionContext)
+  }
+  override def exists(key: String): Future[Boolean] = {
+    countRead(key)
+    redis.exists(key)
+  }
+  override def keys(pattern: String): Future[Seq[String]] = {
+    countRead(pattern)
+    redis.keys(pattern)
+  }
+  override def hdel(key: String, fields: String*): Future[Long] = {
+    countWrite(key, "hdel")
+    redis.hdel(key, fields: _*)
+  }
+  override def hgetall(key: String): Future[Map[String, ByteString]] = {
+    countRead(key)
+    redis.hgetall(key)
+  }
+  override def hset(key: String, field: String, value: String): Future[Boolean] = {
+    countWrite(key, "hset")
+    redis.hset(key, field, value)
+  }
+  override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] = {
+    countWrite(key, "hset")
+    redis.hsetBS(key, field, value)
+  }
+  override def llen(key: String): Future[Long] = {
+    countRead(key)
+    redis.llen(key)
+  }
+  override def lpush(key: String, values: String*): Future[Long] = {
+    countWrite(key, "lpush")
+    redis.lpush(key, values: _*)
+  }
+  override def lpushLong(key: String, values: Long*): Future[Long] = {
+    countWrite(key, "lpush")
+    redis.lpushLong(key, values: _*)
+  }
+  override def lpushBS(key: String, values: ByteString*): Future[Long] = {
+    countWrite(key, "lpush")
+    redis.lpushBS(key, values: _*)
+  }
+  override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
+    countRead(key)
+    redis.lrange(key, start, stop)
+  }
+  override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = {
+    countWrite(key, "ltrim")
+    redis.ltrim(key, start, stop)
+  }
+  override def pttl(key: String): Future[Long] = {
+    countRead(key)
+    redis.pttl(key)
+  }
+  override def ttl(key: String): Future[Long] = {
+    countRead(key)
+    redis.ttl(key)
+  }
+  override def expire(key: String, seconds: Int): Future[Boolean] = {
+    countWrite(key, "expire")
+    redis.expire(key, seconds)
+  }
+  override def pexpire(key: String, milliseconds: Long): Future[Boolean] = {
+    countWrite(key, "pexpire")
+    redis.pexpire(key, milliseconds)
+  }
+  override def sadd(key: String, members: String*): Future[Long] = {
+    countWrite(key, "sadd")
+    redis.sadd(key, members: _*)
+  }
+  override def saddBS(key: String, members: ByteString*): Future[Long] = {
+    countWrite(key, "sadd")
+    redis.saddBS(key, members: _*)
+  }
+  override def sismember(key: String, member: String): Future[Boolean] = {
+    countRead(key)
+    redis.sismember(key, member)
+  }
+  override def sismemberBS(key: String, member: ByteString): Future[Boolean] = {
+    countRead(key)
+    redis.sismemberBS(key, member)
+  }
+  override def smembers(key: String): Future[Seq[ByteString]] = {
+    countRead(key)
+    redis.smembers(key)
+  }
+  override def srem(key: String, members: String*): Future[Long] = {
+    countWrite(key, "srem")
+    redis.srem(key, members: _*)
+  }
+  override def sremBS(key: String, members: ByteString*): Future[Long] = {
+    countWrite(key, "srem")
+    redis.sremBS(key, members: _*)
+  }
+  override def scard(key: String): Future[Long] = {
+    countRead(key)
+    redis.scard(key)
+  }
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
+                                                                          ec: ExecutionContext,
+                                                                          env: Env
+  ): Future[Boolean] = {
+    countWrite(key, "setnx")
+    redis.setnxBS(key, value, ttl)
+  }
+
+  override def swap(memory: Memory, strategy: SwapStrategy): Unit = redis.swap(memory, strategy)
+}
+
+case class IncrOptimizerItem(ops: Int, time: Int, last: AtomicLong, incr: AtomicLong, current: AtomicLong, curOps: AtomicInteger) {
+  def setCurrent(value: Long): Unit = current.set(value)
+  def incrBy(increment: Long)(f: Long => Future[Long])(implicit ec: ExecutionContext): Future[Long] = {
+    val elapsed = (System.currentTimeMillis() - last.get())
+    val tooMuchOps = curOps.incrementAndGet() > ops
+    val tooMuchTime = elapsed > time
+    if (tooMuchOps || tooMuchTime) {
+      val total = incr.get() + increment
+      f(total).map { r =>
+        last.set(System.currentTimeMillis())
+        incr.addAndGet(0 - total)
+        curOps.addAndGet(0 - ops)
+        current.set(r)
+        r
+      }
+    } else {
+      val c = current.addAndGet(increment)
+      incr.addAndGet(increment)
+      c.vfuture
+    }
+  }
+}
+
+class IncrOptimizer(ops: Int, time: Int) {
+  private val cache = new TrieMap[String, IncrOptimizerItem]()
+  def incrBy(key: String, increment: Long)(f: Long => Future[Long])(implicit ec: ExecutionContext): Future[Long] = {
+    cache.get(key) match {
+      case None => f(increment).map { r =>
+        val item = IncrOptimizerItem(ops, time, new AtomicLong(System.currentTimeMillis()), new AtomicLong(0L), new AtomicLong(r), new AtomicInteger(0))
+        cache.putIfAbsent(key, item) match {
+          case None =>
+            cache.get(key).foreach(i => i.setCurrent(r)) // when already there ....not sure about it !
+            r
+          case Some(_) => r
+        }
+      }
+      case Some(item) => item.incrBy(increment)(f)
+    }
   }
 }

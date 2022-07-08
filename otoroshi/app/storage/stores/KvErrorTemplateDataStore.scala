@@ -10,6 +10,6 @@ class KvErrorTemplateDataStore(redisCli: RedisLike, _env: Env)
     with RedisLikeStore[ErrorTemplate] {
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def fmt: Format[ErrorTemplate]              = ErrorTemplate.format
-  override def key(id: String): Key                    = Key.Empty / _env.storageRoot / "templates" / id
+  override def key(id: String): String                 = s"${_env.storageRoot}:templates:${id}"
   override def extractId(value: ErrorTemplate): String = value.serviceId
 }

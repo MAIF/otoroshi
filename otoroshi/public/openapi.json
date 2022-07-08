@@ -8128,6 +8128,70 @@
         }
       }
     },
+    "/api/cluster/relay" : {
+      "post" : {
+        "tags" : [ "cluster" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.controllers.adminapi.ClusterController.relayRouting",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Unknown"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Unknown"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/scripts/{id}" : {
       "patch" : {
         "tags" : [ "scripts" ],
@@ -17768,19 +17832,19 @@
         }
       },
       "otoroshi.utils.http.MtlsConfig" : {
-        "description" : "TLS settings for the http client",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "mtls" : {
-            "description" : "Enabled",
+            "description" : "???",
             "type" : "boolean"
           },
           "loose" : {
-            "description" : "Loose verification",
+            "description" : "???",
             "type" : "boolean"
           },
           "trustAll" : {
-            "description" : "Trust any certificate",
+            "description" : "???",
             "type" : "boolean"
           },
           "trustedCerts" : {
@@ -17788,14 +17852,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "Trusted cert. ids"
+            "description" : "???"
           },
           "certs" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "Trusted cert. ids"
+            "description" : "???"
           }
         }
       },
@@ -24786,16 +24850,16 @@
         }
       },
       "otoroshi.utils.http.CacheConnectionSettings" : {
-        "description" : "The settings for http cached connection at host level",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "enabled" : {
-            "description" : "Enable Cached connections at host tevel",
+            "description" : "???",
             "type" : "boolean"
           },
           "queueSize" : {
             "format" : "int32",
-            "description" : "The size for the request queue",
+            "description" : "???",
             "type" : "integer"
           }
         }
@@ -27022,6 +27086,16 @@
           }
         }
       },
+      "otoroshi.next.plugins.MockResponseNotFoundException" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "description" : "???",
+            "type" : "string"
+          }
+        }
+      },
       "otoroshi.plugins.jobs.kubernetes.KubernetesCRDsJob" : {
         "description" : "Plugin to import entities from kubernetes CRDs",
         "type" : "object",
@@ -27731,6 +27805,16 @@
         "description" : "Plugin for ip address throttling",
         "type" : "object",
         "properties" : { }
+      },
+      "otoroshi.next.plugins.MissingMockResponsesException" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "description" : "???",
+            "type" : "string"
+          }
+        }
       },
       "otoroshi.events.AuditEvent" : {
         "type" : "object",

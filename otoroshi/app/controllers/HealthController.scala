@@ -1,6 +1,6 @@
 package otoroshi.controllers
 
-import otoroshi.actions.{ApiAction, UnAuthApiAction}
+import otoroshi.actions.{ApiAction, BackOfficeActionAuth, UnAuthApiAction}
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.cluster.{ClusterMode, MemberView}
 import otoroshi.env.Env
@@ -13,7 +13,7 @@ import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.Future
 
-class HealthController(cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
+class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOfficeActionAuth)(implicit env: Env) extends AbstractController(cc) {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
@@ -137,55 +137,59 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
     }
   }
 
-  def processMetrics() =
-    Action.async { req =>
-      val format = req.getQueryString("format")
-
-      def transformToArray(input: String): JsValue = {
-        val metrics = Json.parse(input)
-        metrics match {
-          case JsObject(value) =>
-            value.toSeq.foldLeft(Json.arr()) {
-              case (arr, (key, JsObject(value))) =>
-                arr ++ value.toSeq.foldLeft(Json.arr()) {
-                  case (arr2, (key2, value2 @ JsObject(_))) =>
-                    arr2 ++ Json.arr(
-                      value2 ++ Json.obj(
-                        "name" -> key2.applyOnWithPredicate(_.endsWith(" {}"))(_.replace(" {}", "")),
-                        "type" -> key
-                      )
-                    )
-                  case (arr2, (key2, value2))               => arr2
-                }
-              case (arr, (key, value))           => arr
+  def transformToArray(input: String): JsValue = {
+    val metrics = Json.parse(input)
+    metrics match {
+      case JsObject(value) =>
+        value.toSeq.foldLeft(Json.arr()) {
+          case (arr, (key, JsObject(value))) =>
+            arr ++ value.toSeq.foldLeft(Json.arr()) {
+              case (arr2, (key2, value2 @ JsObject(_))) =>
+                arr2 ++ Json.arr(
+                  value2 ++ Json.obj(
+                    "name" -> key2.applyOnWithPredicate(_.endsWith(" {}"))(_.replace(" {}", "")),
+                    "type" -> key
+                  )
+                )
+              case (arr2, (key2, value2))               => arr2
             }
-          case a               => a
+          case (arr, (key, value))           => arr
         }
-      }
-
-      def fetchMetrics(): Result = {
-        val filter = req.getQueryString("filter")
-        if (format.contains("old_json") || format.contains("old")) {
-          Ok(env.metrics.jsonExport(filter)).as("application/json")
-        } else if (format.contains("json")) {
-          Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
-        } else if (format.contains("prometheus") || format.contains("prom")) {
-          Ok(env.metrics.prometheusExport(filter)).as("text/plain")
-        } else if (req.accepts("application/json")) {
-          Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
-        } else if (req.accepts("application/prometheus")) {
-          Ok(env.metrics.prometheusExport(filter)).as("text/plain")
-        } else {
-          Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
-        }
-      }
-
-      if (env.metricsEnabled) {
-        withSecurity(req, env.metricsAccessKey)(fetchMetrics().future)
-      } else {
-        FastFuture.successful(NotFound(Json.obj("error" -> "metrics not enabled")))
-      }
+      case a               => a
     }
+  }
+
+  def fetchMetrics(format: Option[String], acceptsJson: Boolean, acceptsProm: Boolean, filter: Option[String]): Result = {
+    if (format.contains("old_json") || format.contains("old")) {
+      Ok(env.metrics.jsonExport(filter)).as("application/json")
+    } else if (format.contains("json")) {
+      Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
+    } else if (format.contains("prometheus") || format.contains("prom")) {
+      Ok(env.metrics.prometheusExport(filter)).as("text/plain")
+    } else if (acceptsJson) {
+      Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
+    } else if (acceptsProm) {
+      Ok(env.metrics.prometheusExport(filter)).as("text/plain")
+    } else {
+      Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")
+    }
+  }
+
+  def processMetrics() = Action.async { req =>
+    val format = req.getQueryString("format") 
+    val filter = req.getQueryString("filter")
+    val acceptsJson = req.accepts("application/json")
+    val acceptsProm = req.accepts("application/prometheus")
+    if (env.metricsEnabled) {
+      withSecurity(req, env.metricsAccessKey)(fetchMetrics(format, acceptsJson, acceptsProm, filter).future)
+    } else {
+      FastFuture.successful(NotFound(Json.obj("error" -> "metrics not enabled")))
+    }
+  }
+
+  def backofficeMetrics() = BackOfficeActionAuth { ctx =>
+    fetchMetrics("json".some, true, false, None)
+  }
 
   def health() =
     Action.async { req =>

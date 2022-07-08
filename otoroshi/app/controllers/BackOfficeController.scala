@@ -29,6 +29,7 @@ import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.misc.LocalCache
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.yaml.Yaml
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
@@ -1791,25 +1792,35 @@ class BackOfficeController(
         }
 
     val schema = ctx.request.body.select("schema").asOpt[String].getOrElse("{}")
-    sangria.parser.QueryParser.parse(schema) match {
-      case scala.util.Failure(exception) => BadRequest(Json.obj("error" -> exception.getMessage)).future
-      case scala.util.Success(astDocument) =>
-        val generatedSchema = Schema.buildFromAst(astDocument)
-        val document = generatedSchema.toAst
 
-        val newDocument = document.copy(
-          definitions = document.definitions.flatMap {
-            case _: sangria.ast.TypeDefinition => None
-            case _: sangria.ast.InterfaceTypeDefinition => None
-            case v => Some(v)
-          } ++ types
-        )
+    Try {
+      sangria.parser.QueryParser.parse(schema) match {
+        case scala.util.Failure(exception) => BadRequest(Json.obj("error" -> exception.getMessage)).future
+        case scala.util.Success(astDocument) =>
+          val generatedSchema = Schema.buildFromAst(astDocument)
+          val document = generatedSchema.toAst
 
-        Ok(Json.obj(
-          "schema" -> Schema.buildFromAst(newDocument).renderPretty
-        )).future
-    }
+          val newDocument = document.copy(
+            definitions = document.definitions.flatMap {
+              case _: sangria.ast.TypeDefinition => None
+              case _: sangria.ast.InterfaceTypeDefinition => None
+              case v => Some(v)
+            } ++ types
+          )
 
+          Ok(Json.obj(
+            "schema" -> Schema.buildFromAst(newDocument).renderPretty
+          )).future
+      }
+    } recover {
+      case e => BadRequest(Json.obj(
+        "error" -> e.getMessage
+      )).future
+    } get
+  }
+
+  def toYaml = BackOfficeActionAuth(parse.json) { ctx =>
+    Ok(Yaml.write(ctx.request.body)).as("application/yaml")
   }
 }
 

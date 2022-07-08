@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useImperativeHandle } from 'react';
 
 import { Form, SelectInput } from '@maif/react-forms';
 import { nextClient } from '../../services/BackOfficeServices';
@@ -6,7 +6,7 @@ import { DEFAULT_FLOW } from './Graph';
 import { toUpperCaseLabels } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
 import { isEqual, merge, cloneDeep } from 'lodash';
-import { useHistory, useRouteMatch } from 'react-router-dom';
+import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
 
 export const HTTP_COLORS = {
   GET: 'rgb(52, 170, 182)',
@@ -22,13 +22,13 @@ const Methods = ({ frontend }) => {
   const hasMethods = frontend.methods && frontend.methods.length > 0;
   const methods = hasMethods
     ? frontend.methods.map((m, i) => (
-        <span
-          key={`frontendmethod-${i}`}
-          className={`badge me-1`}
-          style={{ backgroundColor: HTTP_COLORS[m] }}>
-          {m}
-        </span>
-      ))
+      <span
+        key={`frontendmethod-${i}`}
+        className={`badge me-1`}
+        style={{ backgroundColor: HTTP_COLORS[m] }}>
+        {m}
+      </span>
+    ))
     : [<span className="badge bg-dark">ALL</span>];
   return (
     <div className="d-flex-between">
@@ -65,7 +65,7 @@ const SaveButton = ({ disabled, saveChanges, disablePadding }) => (
   <div className={`d-flex align-items-center justify-content-end ${disablePadding ? '' : 'pt-3'}`}>
     <FeedbackButton
       text="Update the route"
-      disabled={disabled}
+      // disabled={disabled}
       icon={() => <i className="fas fa-paper-plane" />}
       onPress={saveChanges}
     />
@@ -274,19 +274,19 @@ const RouteForm = React.memo(
       value={
         usingJsonView
           ? {
-              [dirtyField]: value,
-            }
+            [dirtyField]: value,
+          }
           : value
       }
       schema={
         usingJsonView
           ? {
-              [dirtyField]: {
-                type: 'json',
-                format: 'code',
-                label: null,
-              },
-            }
+            [dirtyField]: {
+              type: 'json',
+              format: 'code',
+              label: null,
+            },
+          }
           : schema
       }
       flow={usingJsonView ? [dirtyField] : flow}
@@ -368,10 +368,11 @@ const Route = (props) => {
   );
 };
 
-export default ({ service, setSaveButton, setService, viewPlugins }) => {
+export default ({ service, setSaveButton, setService, viewPlugins, ref }) => {
   const [routes, setRoutes] = useState([]);
   const [templates, setTemplates] = useState({});
   const [shouldUpdateRoutes, setUpdatesRoutes] = useState(false);
+  const history = useHistory()
 
   useEffect(() => {
     nextClient.template(nextClient.ENTITIES.SERVICES).then(setTemplates);
@@ -380,6 +381,12 @@ export default ({ service, setSaveButton, setService, viewPlugins }) => {
   useEffect(() => {
     setRoutes(cloneDeep([...(service.routes || [])]));
   }, [service.id]);
+
+  useImperativeHandle(ref, () => ({
+    onTestingButtonClick() {
+      history.push(`/routes/${service.id}?tab=flow`, { showTryIt: true })
+    }
+  }))
 
   useEffect(() => {
     setSaveButton(
@@ -519,7 +526,7 @@ export default ({ service, setSaveButton, setService, viewPlugins }) => {
         <button
           className="btn btn-sm btn-success"
           onClick={() => {
-            const newItem = cloneDeep(templates?.routes[0])
+            const newItem = cloneDeep(templates?.routes[0]);
             updateRoute(routes.length, newItem);
           }}>
           <i className="fas fa-road me-1" />

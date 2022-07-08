@@ -1,20 +1,28 @@
 package otoroshi.controllers.adminapi
 
 import akka.NotUsed
+import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
-import otoroshi.cluster.{Cluster, ClusterAgent, ClusterMode, MemberView}
+import otoroshi.cluster._
 import otoroshi.env.Env
 import otoroshi.models.{PrivateAppsUser, RightsChecker}
+import otoroshi.next.proxy.{RelayRoutingRequest, ProxyEngine}
+import otoroshi.script.RequestHandler
+import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
+import play.api.libs.typedmap.TypedMap
+import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
+import play.api.mvc._
 
+import java.net.{InetAddress, URI}
+import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -344,6 +352,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                         .map { name =>
                           env.datastores.clusterStateDataStore.registerMember(
                             MemberView(
+                              id = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerIdHeader).getOrElse(s"tmpnode_${IdGenerator.uuid}"),
                               name = name,
                               memberType = ClusterMode.Worker,
                               location =
@@ -353,7 +362,11 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                                 env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
                                 TimeUnit.MILLISECONDS
                               ),
-                              stats = jsItem.as[JsObject]
+                              stats = jsItem.as[JsObject],
+                              relay = ctx.request.headers
+                                .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
+                                .flatMap(RelayRouting.parse)
+                                .getOrElse(RelayRouting.default)
                             )
                           )
                         }
@@ -438,6 +451,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
             ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
               env.datastores.clusterStateDataStore.registerMember(
                 MemberView(
+                  id = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerIdHeader).getOrElse(s"tmpnode_${IdGenerator.uuid}"),
                   name = name,
                   memberType = ClusterMode.Worker,
                   location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
@@ -445,7 +459,11 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                   timeout = Duration(
                     env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
                     TimeUnit.MILLISECONDS
-                  )
+                  ),
+                  relay = ctx.request.headers
+                    .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
+                    .flatMap(RelayRouting.parse)
+                    .getOrElse(RelayRouting.default)
                 )
               )
             }
@@ -549,7 +567,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                   .future
               }
             }
-            */
+             */
             // if (env.clusterConfig.autoUpdateState) {
             Cluster.logger.debug(
               s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${Option(env.clusterLeaderAgent.cachedCount)
@@ -617,4 +635,41 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
         }
       }
     }
+
+  def relayRouting() = ApiAction.async(sourceBodyParser) { ctx =>
+    ctx.checkRights(RightsChecker.SuperAdminOnly) {
+      env.clusterConfig.mode match {
+        case Off => NotFound(Json.obj("error" -> "Cluster API not available")).future
+        case _ => {
+          val engine = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get
+          val cookies = ctx.request.headers.get("Otoroshi-Relay-Routing-Cookies").map(c => Cookies.decodeCookieHeader(c)).getOrElse(Seq.empty[Cookie])
+          val certs = ctx.request.headers.headers.filter(_._1.startsWith("Otoroshi-Relay-Routing-Certs-"))
+            .map { case (key, value) => (key.replace("Otoroshi-Relay-Routing-Certs-", "").toInt, value) }
+            .sortWith((a, b) => a._1.compareTo(b._1) < 0)
+            .map {
+              case (_, value) => value.trim.toCertificate
+            }.applyOn { seq =>
+              if (seq.isEmpty) {
+                None
+              } else {
+                seq.some
+              }
+            }
+          val request = new RelayRoutingRequest(ctx.request, Cookies(cookies), certs)
+          val routeName = ctx.request.headers.get("Otoroshi-Relay-Routing-Route-Name").getOrElse("--")
+          val callerName = ctx.request.headers.get("Otoroshi-Relay-Routing-Caller-Name").getOrElse("--")
+          RelayRouting.logger.debug(s"routing relay call to '${routeName}' from '${callerName}'")
+          engine.handle(request, _ => Results.InternalServerError("bad default routing").vfuture).map { resp =>
+            resp.copy(
+              header = resp.header.copy(
+                headers = resp.header.headers.map {
+                  case (key, value) => (s"Otoroshi-Relay-Routing-Response-Header-$key", value)
+                }
+              )
+            )
+          }
+        }
+      }
+    }
+  }
 }

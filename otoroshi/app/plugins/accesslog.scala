@@ -631,11 +631,11 @@ class KafkaAccessLog extends RequestTransformer {
                   "user-agent-details" -> userAgentDetails,
                   "origin-details"     -> geolocationDetails,
                   "instance-name"      -> env.name,
-                  "instance-zone"      -> env.zone,
-                  "instance-region"    -> env.region,
-                  "instance-dc"        -> env.dataCenter,
-                  "instance-provider"  -> env.infraProvider,
-                  "instance-rack"      -> env.rack,
+                  "instance-zone"      -> env.clusterConfig.relay.location.zone,
+                  "instance-region"    -> env.clusterConfig.relay.location.region,
+                  "instance-dc"        -> env.clusterConfig.relay.location.datacenter,
+                  "instance-provider"  -> env.clusterConfig.relay.location.asInstanceOf,
+                  "instance-rack"      -> env.clusterConfig.relay.location.rack,
                   "cluster-mode"       -> env.clusterConfig.mode.name,
                   "cluster-name"       -> (env.clusterConfig.mode match {
                     case ClusterMode.Worker => env.clusterConfig.worker.name
@@ -761,11 +761,11 @@ class KafkaAccessLog extends RequestTransformer {
                   "user-agent-details" -> userAgentDetails,
                   "origin-details"     -> geolocationDetails,
                   "instance-name"      -> env.name,
-                  "instance-zone"      -> env.zone,
-                  "instance-region"    -> env.region,
-                  "instance-dc"        -> env.dataCenter,
-                  "instance-provider"  -> env.infraProvider,
-                  "instance-rack"      -> env.rack,
+                  "instance-zone"      -> env.clusterConfig.relay.location.zone,
+                  "instance-region"    -> env.clusterConfig.relay.location.region,
+                  "instance-dc"        -> env.clusterConfig.relay.location.datacenter,
+                  "instance-provider"  -> env.clusterConfig.relay.location.provider,
+                  "instance-rack"      -> env.clusterConfig.relay.location.rack,
                   "cluster-mode"       -> env.clusterConfig.mode.name,
                   "cluster-name"       -> (env.clusterConfig.mode match {
                     case ClusterMode.Worker => env.clusterConfig.worker.name

@@ -4,12 +4,9 @@ import { BooleanInput } from '../../components/inputs'
 import { tryIt, fetchAllApikeys, findAllCertificates, routeEntries } from '../../services/BackOfficeServices'
 import { firstLetterUppercase } from '../../util'
 import { useLocation } from 'react-router-dom'
-import { FeedbackButton } from './FeedbackButton';
 
 import { Provider } from 'react-redux'
 import { Playground, store } from 'graphql-playground-react'
-
-import Loader from './Loader'
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'];
 
@@ -18,7 +15,7 @@ const CONTENT_TYPE = ['text', 'javascript', 'json', 'html', 'xml'];
 const roundNsTo = (ns) => Number.parseFloat(round(ns) / 1000000).toFixed(3);
 const round = (num) => Math.round((num + Number.EPSILON) * 100000) / 100000;
 
-export const TryIt = ({ route, serviceMode, setSaveButton }) => {
+export const TryIt = ({ route, hide }) => {
 
   const [selectedTab, setSelectedTab] = useState('Headers');
   const [selectedResponseTab, setSelectedResponseTab] = useState('Body');
@@ -60,15 +57,6 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
 
   useEffect(() => {
     if (route && route.id) {
-      setSaveButton(
-        <FeedbackButton
-          className="ms-2"
-          onPress={() => ''}
-          text="Save route"
-          disabled={true}
-          icon={() => <i className="fas fa-paper-plane" />}
-        />
-      );
       setRequest({
         ...request,
         route_id: route.id,
@@ -120,10 +108,13 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
 
         const prettifyButton = [...document.querySelectorAll(".graphiql-wrapper > div > div > div > button")]
           .find(f => f.textContent === "Prettify")
-        prettifyButton.className = "btn btn-sm btn-success tryit-prettify-button";
 
-        document.querySelector(".CodeMirror")
-          .appendChild(prettifyButton);
+        if (prettifyButton) {
+          prettifyButton.className = "btn btn-sm btn-success tryit-prettify-button";
+
+          document.querySelector(".CodeMirror")
+            .appendChild(prettifyButton);
+        }
 
         [...document.querySelectorAll('.playground svg')]
           .filter(svg => svg.textContent === 'Settings')
@@ -219,11 +210,29 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
   const receivedResponse = rawResponse && response;
 
   return (
-    <Loader loading={!route}>
-      {route && route.plugins.find(f => f.plugin.includes('GraphQLBackend')) && playgroundUrl && lastQuery ?
+    <div className="graphql-form flex-column" style={{ overflowY: 'scroll' }}>
+      <div className='d-flex-between m-2 mb-0'>
+        <div className='flex'>
+          <div className='d-flex-between'>
+            <h3>Testing</h3>
+            <button
+              className="btn btn-sm"
+              type="button"
+              style={{ minWidth: '36px' }}
+              onClick={hide}>
+              <i className="fas fa-times" style={{ color: '#fff' }} />
+            </button>
+          </div>
+        </div>
+      </div>
+      {route && route.plugins.find(f => f.plugin.includes('GraphQLBackend')) &&
+        route.plugins.find(f => f.plugin.includes('GraphQLBackend')).enabled && playgroundUrl && lastQuery ?
         <div style={{ minHeight: 'calc(100vh - 162px)' }}>
           <Provider store={store}>
             <Playground
+              settings={{
+                "schema.polling.enable": false
+              }}
               codeTheme={{
                 editorBackground: "#3c3c3c",
                 resultBackground: "#494948",
@@ -612,7 +621,7 @@ export const TryIt = ({ route, serviceMode, setSaveButton }) => {
           ) : null}
         </div>
       }
-    </Loader>
+    </div>
   )
 }
 

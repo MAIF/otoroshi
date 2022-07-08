@@ -1,7 +1,6 @@
 package otoroshi.storage.stores
 
 import otoroshi.env.Env
-import otoroshi.models.Key
 import otoroshi.models.{Team, TeamId, Tenant, TenantId}
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils.syntax.implicits.BetterJsReadable
@@ -10,7 +9,7 @@ import play.api.libs.json.Format
 class TenantDataStore(redisCli: RedisLike, env: Env) extends RedisLikeStore[Tenant] {
   override def fmt: Format[Tenant]                     = Tenant.format
   override def redisLike(implicit env: Env): RedisLike = redisCli
-  override def key(id: String): Key                    = Key(s"${env.storageRoot}:tenants:$id")
+  override def key(id: String): String                 = s"${env.storageRoot}:tenants:$id"
   override def extractId(value: Tenant): String        = value.id.value
   def template(env: Env): Tenant = {
     val defaultTenant = Tenant(
@@ -35,7 +34,7 @@ class TenantDataStore(redisCli: RedisLike, env: Env) extends RedisLikeStore[Tena
 class TeamDataStore(redisCli: RedisLike, env: Env) extends RedisLikeStore[Team] {
   override def fmt: Format[Team]                       = Team.format
   override def redisLike(implicit env: Env): RedisLike = redisCli
-  override def key(id: String): Key                    = Key(s"${env.storageRoot}:teams:$id")
+  override def key(id: String): String                 = s"${env.storageRoot}:teams:$id"
   override def extractId(value: Team): String          = s"${value.tenant.value}:${value.id.value}"
   def template(tenant: TenantId): Team = {
     val defaultTeam = Team(

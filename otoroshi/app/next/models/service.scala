@@ -243,13 +243,44 @@ object NgService {
       )
     }
   }
+
+  def empty = NgService(
+    location = EntityLocation.default,
+    id = s"route_${IdGenerator.uuid}",
+    name = "empty route-composition",
+    description = "empty route-composition",
+    tags = Seq.empty,
+    metadata = Map.empty,
+    enabled = true,
+    debugFlow = false,
+    capture = false,
+    exportReporting = false,
+    groups = Seq("default"),
+    routes = Seq.empty,
+    client = NgClientConfig.default,
+    plugins = NgPlugins.empty
+  )
 }
 
-trait NgServiceDataStore extends BasicStore[NgService]
+trait NgServiceDataStore extends BasicStore[NgService] {
+  def template(env: Env): NgService = {
+    val default: NgService = NgService.empty
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .service
+      .map { template =>
+        NgService.fmt.reads(default.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        default
+      }
+  }
+}
 
 class KvNgServiceDataStore(redisCli: RedisLike, _env: Env) extends NgServiceDataStore with RedisLikeStore[NgService] {
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def fmt: Format[NgService]                  = NgService.fmt
-  override def key(id: String): Key                    = Key.Empty / _env.storageRoot / "ngservices" / id
+  override def key(id: String): String                 = s"${_env.storageRoot}:ngservices:${id}"
   override def extractId(value: NgService): String     = value.id
 }

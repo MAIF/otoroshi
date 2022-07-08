@@ -959,6 +959,15 @@
     },
     "flow" : [ "bad_responses_fault_config", "latency_injection_fault_config", "large_response_fault_config", "large_request_fault_config" ]
   },
+  "otoroshi.next.plugins.MissingMockResponsesException" : {
+    "schema" : {
+      "message" : {
+        "label" : "message",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "message" ]
+  },
   "otoroshi.plugins.discovery.DiscoveryTargetsSelector" : {
     "schema" : { },
     "flow" : [ ]
@@ -7703,6 +7712,15 @@
   "otoroshi.next.plugins.NgOtoroshiChallengeKeys" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.next.plugins.MockResponseNotFoundException" : {
+    "schema" : {
+      "message" : {
+        "label" : "message",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "message" ]
   },
   "otoroshi.next.plugins.GraphlCallException" : {
     "schema" : {

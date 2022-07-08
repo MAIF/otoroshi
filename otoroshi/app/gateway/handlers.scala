@@ -351,6 +351,8 @@ class GatewayRequestHandler(
           case env.backOfficeHost if env.exposeAdminDashboard => super.routeRequest(request)
           case env.privateAppsHost                            => super.routeRequest(request)
 
+          case env.adminApiHost if !env.exposeAdminApi && relativeUri.startsWith("/api/cluster/") => super.routeRequest(request)
+
           case h if env.adminApiExposedDomains.contains(h) && relativeUri.startsWith("/.well-known/jwks.json")     =>
             Some(jwks())
           case h if env.backofficeDomains.contains(h) && relativeUri.startsWith("/.well-known/jwks.json")          =>
@@ -526,15 +528,19 @@ class GatewayRequestHandler(
 
   def setPrivateAppsCookies() =
     actionBuilder.async { req =>
-      val redirectToOpt: Option[String] = req.queryString.get("redirectTo").map(_.last)
-      val sessionIdOpt: Option[String]  = req.queryString.get("sessionId").map(_.last)
-      val hostOpt: Option[String]       = req.queryString.get("host").map(_.last)
-      val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
-      val maOpt: Option[Int]            = req.queryString.get("ma").map(_.last).map(_.toInt)
-      val httpOnlyOpt: Option[Boolean]  = req.queryString.get("httpOnly").map(_.last).map(_.toBoolean)
-      val secureOpt: Option[Boolean]    = req.queryString.get("secure").map(_.last).map(_.toBoolean)
-      val hashOpt: Option[String]       = req.queryString.get("hash").map(_.last)
-      val secOpt: Option[PrivateAppsUser]       = req.queryString.get("sec").map(_.last).flatMap(sec => Try(env.aesDecrypt(sec)).toOption).flatMap(s => PrivateAppsUser.fmt.reads(s.parseJson).asOpt)
+      val redirectToOpt: Option[String]   = req.queryString.get("redirectTo").map(_.last)
+      val sessionIdOpt: Option[String]    = req.queryString.get("sessionId").map(_.last)
+      val hostOpt: Option[String]         = req.queryString.get("host").map(_.last)
+      val cookiePrefOpt: Option[String]   = req.queryString.get("cp").map(_.last)
+      val maOpt: Option[Int]              = req.queryString.get("ma").map(_.last).map(_.toInt)
+      val httpOnlyOpt: Option[Boolean]    = req.queryString.get("httpOnly").map(_.last).map(_.toBoolean)
+      val secureOpt: Option[Boolean]      = req.queryString.get("secure").map(_.last).map(_.toBoolean)
+      val hashOpt: Option[String]         = req.queryString.get("hash").map(_.last)
+      val secOpt: Option[PrivateAppsUser] = req.queryString
+        .get("sec")
+        .map(_.last)
+        .flatMap(sec => Try(env.aesDecrypt(sec)).toOption)
+        .flatMap(s => PrivateAppsUser.fmt.reads(s.parseJson).asOpt)
 
       (hashOpt.map(h => env.sign(req.theUrl.replace(s"&hash=$h", ""))), hashOpt) match {
         case (Some(hashedUrl), Some(hash)) if hashedUrl == hash =>

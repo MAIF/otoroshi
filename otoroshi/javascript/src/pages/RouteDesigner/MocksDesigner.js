@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import faker from 'faker'
 import { CodeInput } from '@maif/react-forms'
 import { FeedbackButton } from './FeedbackButton'
-import { BooleanInput, Help, ObjectInput, SelectInput, SimpleBooleanInput, TextInput } from '../../components/inputs'
+import { BooleanInput, Help, NumberInput, ObjectInput, SelectInput, SimpleBooleanInput, TextInput } from '../../components/inputs'
 
 const castValue = (value, type) => {
     if (type === 'String')
@@ -19,13 +19,158 @@ const castValue = (value, type) => {
     }
 }
 
+const stringify = body => {
+    if (typeof body === 'object' && body !== null)
+        try {
+            return JSON.stringify(body)
+        } catch (err) {
+            return body
+        }
+    return body
+}
+
+const generateFakerValues = (resources, endpoint) => {
+    const { resource_list, body, length } = endpoint
+
+    const calculateResource = resource => {
+        const newItem = r => (r.schema || []).reduce((acc, item) => ({
+            ...acc,
+            ...calculateField(item)
+        }), JSON.parse((resource.additional_data || "{}")))
+        return newItem(resource)
+    }
+
+    const fakeValue = item => {
+        try {
+            return castValue(item.value
+                .split(".")
+                .reduce((a, c) => a[c], faker)(), item.field_type)
+        } catch (err) {
+            return castValue(item.value, item.field_type)
+        }
+    }
+
+    const calculateField = item => ({
+        [item.field_name]: item.field_type === "Child" ?
+            calculateResource(resources.find(f => f.name === item.value)) :
+            fakeValue(item)
+    })
+
+    if (endpoint.resource) {
+        const resource = resources.find(f => f.name === endpoint.resource)
+        if (!resource)
+            return {}
+
+        const newItem = r => (r.schema || []).reduce((acc, item) => ({
+            ...acc,
+            ...calculateField(item)
+        }), JSON.parse(resource.additional_data || "{}"))
+        if (resource_list)
+            return Array.from({ length: length || 10 }, (_, i) => newItem(resource))
+        return newItem(resource)
+    } else {
+        if (resource_list)
+            return Array.from({ length: length || 10 }, (_, i) => body)
+        return body
+    }
+}
+
+const CharlatanActions = ({ generateData, resetData, showGenerateEndpointForm }) => <div className='d-flex'>
+    <FeedbackButton
+        onPress={generateData}
+        icon={() => <i className="fas fa-hammer me-1" />}
+        text="Generate missing data"
+    />
+    <button className="btn btn-sm btn-info mx-1" onClick={resetData}>
+        <i className="fas fa-times me-1" />Reset all data
+    </button>
+    <button className="btn btn-sm btn-info" onClick={showGenerateEndpointForm}>
+        <i className="fas fa-hammer me-1" />Generate endpoint
+    </button>
+</div>
+
+const CharlatanResourcesList = ({ showResourceForm, resources, removeResource }) => <div className='col-md-4'>
+    <div className='d-flex-between'>
+        <h3>Resources</h3>
+        <button className="btn btn-sm btn-info" onClick={showResourceForm}>
+            <i className="fas fa-plus-circle me-1" />New resource
+        </button>
+    </div>
+    <div className='mt-3 flex-column'>
+        {resources.map((resource, idx) => {
+            return <div className={`mt-${idx === 0 ? 0 : 1} d-flex-between endpoint`} key={resource.name} onClick={() => showResourceForm(idx)}>
+                <label>{resource.name}</label>
+                <button className='btn btn-sm btn-danger' onClick={() => removeResource(idx)}>
+                    <i className='fas fa-trash' />
+                </button>
+            </div>
+        })}
+    </div>
+    {resources.length === 0 && <span>No resources available</span>}
+</div>
+
+const CharlatanEndpointsList = ({ showEndpointForm, endpoints, removeEndpoint, showData }) => <div className='col-md-8'>
+    <div className='d-flex-between'>
+        <h3>Endpoints</h3>
+        <button className="btn btn-sm btn-info" onClick={showEndpointForm}>
+            <i className="fas fa-plus-circle me-1" />New endpoint
+        </button>
+    </div>
+    <div className='mt-3'>
+        {endpoints
+            .sort((a, b) => a.path.localeCompare(b.path))
+            .map((endpoint, idx) => {
+                return <div className='d-flex-between mt-1 endpoint' key={`${endpoint.path}${idx}`} onClick={() => showEndpointForm(idx)}>
+                    <div className='d-flex-between flex'>
+                        <div style={{ minWidth: "68px" }}>
+                            <span className="badge me-1"
+                                style={{ backgroundColor: HTTP_COLORS[endpoint.method] }}>
+                                {endpoint.method}
+                            </span>
+                        </div>
+                        <span className='flex' style={{ maxWidth: '50%' }}>{endpoint.path}</span>
+
+                        <span className="badge bg-secondary me-auto">
+                            {endpoint.status}
+                        </span>
+                    </div>
+                    <div className='d-flex-between'>
+                        {!endpoint.body && !endpoint.resource &&
+                            <div className='mx-1 d-flex-between endpoint-helper'>
+                                <Help text="Missing data, body or resource" icon="fas fa-exclamation-triangle" iconColor="#D5443F" />
+                            </div>}
+                        <button className='btn btn-sm btn-info me-1' onClick={e => {
+                            e.stopPropagation();
+                            showData(idx)
+                        }}>
+                            <i className='fas fa-eye' />
+                        </button>
+                        <button className='btn btn-sm btn-danger' onClick={e => {
+                            e.stopPropagation()
+                            window.newConfirm('Delete this endpoint ?')
+                                .then((ok) => {
+                                    if (ok) {
+                                        e.stopPropagation();
+                                        removeEndpoint(idx)
+                                    }
+                                })
+                        }}>
+                            <i className='fas fa-trash' />
+                        </button>
+                    </div>
+                </div>
+            })}
+        {endpoints.length === 0 && <span>No endpoints available</span>}
+    </div>
+</div>
+
 export default class MocksDesigner extends React.Component {
     state = {
         resources: [],
         endpoints: []
     }
 
-    static getDerivedStateFromProps(props, state) {
+    static getDerivedStateFromProps(props) {
         if (props.route) {
             const plugin = props.route
                 .plugins
@@ -59,8 +204,8 @@ export default class MocksDesigner extends React.Component {
         })
     }))
 
-    configToResponses = config => config.endpoints.map(({ path, method, status, headers, data }) => ({
-        path, method, status, headers, body: data
+    configToResponses = config => config.endpoints.map(({ path, method, status, headers, body }) => ({
+        path, method, status, headers, body: stringify(body)
     }))
 
     setAndSave = res => this.saveRoute(res)
@@ -88,13 +233,15 @@ export default class MocksDesigner extends React.Component {
             })
     }
 
-    showResourceForm = idx => this.showForm('Create a new resource', idx, "resources", (ok, cancel, resource) => <NewResource confirm={ok} cancel={cancel}
-        resource={resource} idx={idx} resources={this.state.resources} />)
+    showResourceForm = idx => this.showForm('Create a new resource', idx, "resources", (ok, cancel, resource) =>
+        <NewResource confirm={ok} cancel={cancel}
+            resource={resource} idx={idx} resources={this.state.resources} />)
 
-    showEndpointForm = idx => this.showForm('Create a new endpoint', idx, "endpoints", (ok, cancel, endpoint) => <NewEndpoint confirm={ok} cancel={cancel}
-        resources={this.state.resources}
-        endpoint={endpoint}
-        idx={idx} />)
+    showEndpointForm = idx => this.showForm('Create a new endpoint', idx, "endpoints", (ok, cancel, endpoint) =>
+        <NewEndpoint confirm={ok} cancel={cancel}
+            resources={this.state.resources}
+            endpoint={endpoint}
+            idx={idx} />)
 
     showGenerateEndpointForm = () => {
         window
@@ -125,72 +272,27 @@ export default class MocksDesigner extends React.Component {
         })
     }
 
-    calculateResource = resource => {
-        const newItem = r => (r.schema || []).reduce((acc, item) => ({
-            ...acc,
-            ...this.calculateField(item)
-        }), JSON.parse((resource.additional_data || "{}")))
-        return newItem(resource)
-    }
-
-    fakeValue = item => {
-        try {
-            return castValue(item.value
-                .split(".")
-                .reduce((a, c) => a[c], faker)(), item.field_type)
-        } catch (err) {
-            return castValue(item.value, item.field_type)
-        }
-    }
-
-    calculateField = item => ({
-        [item.field_name]: item.field_type === "Child" ?
-            this.calculateResource(this.state.resources.find(f => f.name === item.value)) :
-            this.fakeValue(item)
-    })
-
-    generateFakerValues = endpoint => {
-        const { resourceList, body } = endpoint
-
-        if (endpoint.resource) {
-            const resource = this.state.resources.find(f => f.name === endpoint.resource)
-            if (!resource)
-                return {}
-
-            const newItem = r => (r.schema || []).reduce((acc, item) => ({
-                ...acc,
-                ...this.calculateField(item)
-            }), JSON.parse(resource.additional_data || "{}"))
-            if (resourceList)
-                return Array.from({ length: 10 }, (_, i) => newItem(resource))
-            return newItem(resource)
-        } else {
-            if (resourceList)
-                return Array.from({ length: 10 }, (_, i) => body)
-            return body
-        }
-    }
-
     showData = idx => {
         window.popup(
             'Edit/replace data for users resource. Data must be an array and a valid JSON.',
-            (ok, cancel) => <Data data={this.state.endpoints[idx].data} idx={idx} confirm={ok} cancel={cancel} />,
+            (ok, cancel) => <Data body={this.state.endpoints[idx].body} idx={idx} confirm={ok} cancel={cancel} />,
             { additionalClass: 'designer-modal-dialog' }
         ).then(res => {
-            this.setAndSave({
-                endpoints: this.state.endpoints.map((endpoint, i) => {
-                    if (i === res.idx)
-                        return { ...endpoint, data: res.data }
-                    return endpoint
+            if (res)
+                this.setAndSave({
+                    endpoints: this.state.endpoints.map((endpoint, i) => {
+                        if (i === res.idx)
+                            return { ...endpoint, body: res.body }
+                        return endpoint
+                    })
                 })
-            })
         })
     }
 
     generateData = () => this.setAndSave({
         endpoints: this.state.endpoints.map(endpoint => ({
             ...endpoint,
-            data: endpoint.data || this.generateFakerValues(endpoint)
+            body: endpoint.body || generateFakerValues(this.state.resources, endpoint)
         }))
     })
 
@@ -201,7 +303,7 @@ export default class MocksDesigner extends React.Component {
                     this.setAndSave({
                         endpoints: this.state.endpoints.map(endpoint => ({
                             ...endpoint,
-                            data: null
+                            body: null
                         }))
                     })
                         .then(this.generateData)
@@ -211,6 +313,7 @@ export default class MocksDesigner extends React.Component {
 
     render() {
         const { route, hide } = this.props
+        const { resources, endpoints } = this.state
 
         if (!route)
             return null
@@ -220,107 +323,29 @@ export default class MocksDesigner extends React.Component {
                 <Header hide={hide} />
 
                 <div className='m-3 ms-0'>
-                    <div className='d-flex-between'>
-                        <div>
-                            <button className="btn btn-sm btn-info" onClick={() => this.showResourceForm()}>
-                                <i className="fas fa-plus-circle me-1" />New resource
-                            </button>
-                            <button className="btn btn-sm btn-info mx-1" onClick={() => this.showEndpointForm()}>
-                                <i className="fas fa-plus-circle me-1" />New endpoint
-                            </button>
-                            <button className="btn btn-sm btn-info" onClick={() => this.showGenerateEndpointForm()}>
-                                <i className="fas fa-hammer me-1" />Generate endpoint
-                            </button>
-                        </div>
-                    </div>
+                    <CharlatanActions
+                        generateData={this.generateData}
+                        resetData={this.resetData}
+                        showGenerateEndpointForm={this.showGenerateEndpointForm} />
                     <div className='row my-3'>
-                        <div className='col-md-4'>
-                            <h3>Resources</h3>
-                            <div className='mt-3 flex-column'>
-                                {this.state.resources.map((resource, idx) => {
-                                    return <div className={`mt-${idx === 0 ? 0 : 1} d-flex-between endpoint`} key={resource.name} onClick={() => this.showResourceForm(idx)}>
-                                        <label>{resource.name}</label>
-                                        <button className='btn btn-sm btn-danger' onClick={() => this.removeResource(idx)}>
-                                            <i className='fas fa-trash' />
-                                        </button>
-                                    </div>
-                                })}
-                            </div>
-                            {this.state.resources.length === 0 && <span>No resources available</span>}
-                        </div>
-                        <div className='col-md-8'>
-                            <div className='d-flex-between'>
-                                <h3>Endpoints</h3>
-                                <div>
-                                    <FeedbackButton
-                                        className="btn btn-sm btn-save me-1"
-                                        onPress={this.generateData}
-                                        icon={() => <i className="fas fa-hammer me-1" />}
-                                        text="GENERATE ALL"
-                                    />
-                                    <button className="btn btn-sm btn-save" onClick={this.resetData}>
-                                        <i className="fas fa-times me-1" />RESET ALL
-                                    </button>
-                                </div>
-                            </div>
-                            <div className='mt-3'>
-                                {this.state.endpoints
-                                    .sort((a, b) => a.path.localeCompare(b.path))
-                                    .map((endpoint, idx) => {
-                                        return <div className='d-flex-between mt-1 endpoint' key={`${endpoint.path}${idx}`} onClick={() => this.showEndpointForm(idx)}>
-                                            <div className='d-flex-between'>
-                                                <div style={{ minWidth: "60px" }}>
-                                                    <span className={`badge me-1`}
-                                                        style={{ backgroundColor: HTTP_COLORS[endpoint.method] }}>
-                                                        {endpoint.method}
-                                                    </span>
-                                                </div>
-                                                <span>{endpoint.path}</span>
-                                            </div>
-                                            <div className='d-flex-between'>
-                                                {!endpoint.data && !endpoint.body && !endpoint.resource &&
-                                                    <div className='mx-1 d-flex-between endpoint-helper'>
-                                                        <Help text="Missing data, body or resource" icon="fas fa-exclamation-triangle" iconColor="#D5443F" />
-                                                    </div>}
-                                                <button className='btn btn-sm btn-info' onClick={e => {
-                                                    e.stopPropagation();
-                                                    this.showData(idx)
-                                                }}>
-                                                    <i className='fas fa-eye' />
-                                                </button>
-                                                <button className='btn btn-sm btn-danger' onClick={e => {
-                                                    window.newConfirm('Delete this endpoint ?')
-                                                        .then((ok) => {
-                                                            if (ok) {
-                                                                e.stopPropagation();
-                                                                this.removeEndpoint(idx)
-                                                            }
-                                                        })
-                                                }}>
-                                                    <i className='fas fa-trash' />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    })}
-                                {this.state.endpoints.length === 0 && <span>No endpoints available</span>}
-                            </div>
-                        </div>
+                        <CharlatanResourcesList
+                            showResourceForm={this.showResourceForm}
+                            resources={resources}
+                            removeResource={this.removeResource} />
+                        <CharlatanEndpointsList
+                            showEndpointForm={this.showEndpointForm}
+                            endpoints={endpoints}
+                            removeEndpoint={this.removeEndpoint}
+                            showData={this.showData} />
                     </div>
                 </div>
-
-                <FeedbackButton
-                    className="ms-auto me-2 mt-auto mb-2"
-                    onPress={this.saveRoute}
-                    text="Save plugin"
-                    icon={() => <i className="fas fa-paper-plane" />}
-                />
-            </div >
+            </div>
         )
     }
 }
 
-const Data = ({ idx, data, confirm, cancel }) => {
-    const [res, setRes] = useState(data)
+const Data = ({ idx, body, confirm, cancel }) => {
+    const [res, setRes] = useState(body)
 
     return <div className="designer p-3" style={{ background: "#373735", borderRadius: '4px' }}>
         <CodeInput
@@ -330,7 +355,7 @@ const Data = ({ idx, data, confirm, cancel }) => {
         <div className='d-flex mt-3'>
             <button className='btn btn-sm btn-danger me-1 ms-auto' onClick={cancel}>Cancel</button>
             <button className='btn btn-sm btn-save' onClick={() => confirm({
-                data: res, idx
+                body: res, idx
             })}>Save</button>
         </div>
     </div>
@@ -342,7 +367,7 @@ const GenerateEndpoint = ({ resources, confirm, cancel }) => {
 
     const onResourceChange = (name, resourceName) => {
         setEndpoints([
-            { method: "GET", path: `/${name}s`, enabled: true, resource: resourceName, resourceList: true, status: 200 },
+            { method: "GET", path: `/${name}s`, enabled: true, resource: resourceName, resource_list: true, status: 200 },
             { method: "GET", path: `/${name}s/:id`, enabled: true, resource: resourceName, status: 200 },
             { method: "POST", path: `/${name}s`, enabled: true, resource: resourceName, status: 201 },
             { method: "PUT", path: `/${name}s/:id`, enabled: true, resource: resourceName, status: 204 },
@@ -524,10 +549,13 @@ class NewResource extends React.Component {
 
             <div className='d-flex-between'>
                 <button className='btn btn-sm btn-danger ms-auto me-1' onClick={this.props.cancel}>Cancel</button>
-                <button className='btn btn-sm btn-save' onClick={() => this.props.confirm({
-                    value: this.state,
-                    idx: this.props.idx
-                })}>{this.props.resource ? 'Save' : 'Create'}</button>
+                <button
+                    className='btn btn-sm btn-save'
+                    disabled={name.length <= 0}
+                    onClick={() => this.props.confirm({
+                        value: this.state,
+                        idx: this.props.idx
+                    })}>{this.props.resource ? 'Save' : 'Create'}</button>
             </div>
         </div>
     }
@@ -540,12 +568,13 @@ class NewEndpoint extends React.Component {
         status: 200,
         body: null,
         resource: '',
-        resourceList: false,
-        headers: {}
+        resource_list: false,
+        headers: {},
+        length: 10
     }
 
     render() {
-        const { method, path, status, body, headers, resource, resourceList } = this.state
+        const { method, path, status, body, headers, resource, resource_list, length } = this.state
 
         return <div className="designer p-3" style={{ background: "#373735", borderRadius: '4px' }}>
             <div className='row'>
@@ -572,16 +601,6 @@ class NewEndpoint extends React.Component {
             </div>
             <div className='row mb-3'>
                 <label htmlFor={`input-method`} className="col-xs-12 col-sm-2 col-form-label">
-                    Body
-                </label>
-                <div className="col-sm-10">
-                    <CodeInput
-                        value={body}
-                        onChange={v => this.setState({ body: v })} />
-                </div>
-            </div>
-            <div className='row mb-3'>
-                <label htmlFor={`input-method`} className="col-xs-12 col-sm-2 col-form-label">
                     or Resource
                 </label>
                 <div className="col-sm-10">
@@ -595,9 +614,16 @@ class NewEndpoint extends React.Component {
             </div>
             <BooleanInput
                 label="Is a list of resource ?"
-                value={resourceList}
-                onChange={v => this.setState({ resourceList: v })}
+                value={resource_list}
+                onChange={v => this.setState({ resource_list: v })}
             />
+            {resource_list && <NumberInput
+                label="Array length"
+                min={1}
+                value={length || 10}
+                max={100}
+                className="me-2"
+                onChange={e => this.setState({ length: e })} />}
             <TextInput
                 label="Status"
                 value={status}
@@ -610,6 +636,16 @@ class NewEndpoint extends React.Component {
                 placeholderValue="Header value"
                 value={headers}
                 onChange={v => this.setState({ headers: v })} />
+            <div className='row mb-3'>
+                <label htmlFor={`input-method`} className="col-xs-12 col-sm-2 col-form-label">
+                    Body
+                </label>
+                <div className="col-sm-10">
+                    <CodeInput
+                        value={body}
+                        onChange={v => this.setState({ body: v })} />
+                </div>
+            </div>
             <div className='d-flex-between'>
                 <button className='btn btn-sm btn-danger ms-auto me-1' onClick={this.props.cancel}>Cancel</button>
                 <button className='btn btn-sm btn-save' onClick={() => this.props.confirm({

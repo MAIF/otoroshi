@@ -404,15 +404,25 @@ class Env(
       .get
   lazy val sharedKey: String               = configuration.getOptionalWithFileSupport[String]("app.claim.sharedKey").get
   lazy val env: String                     = configuration.getOptionalWithFileSupport[String]("app.env").getOrElse("prod")
+  lazy val isDev: Boolean                  = env == "dev"
+  lazy val isProd: Boolean                 = !isDev
   lazy val number: Int                     = configuration.getOptionalWithFileSupport[Int]("app.instance.number").getOrElse(0)
   lazy val name: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.name").getOrElse("otoroshi")
-  lazy val title: String                   = configuration.getOptionalWithFileSupport[String]("app.instance.title").getOrElse("Otoroshi")
-  lazy val rack: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.rack").getOrElse("local")
-  lazy val infraProvider: String           =
-    configuration.getOptionalWithFileSupport[String]("app.instance.provider").getOrElse("local")
-  lazy val dataCenter: String              = configuration.getOptionalWithFileSupport[String]("app.instance.dc").getOrElse("local")
-  lazy val zone: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.zone").getOrElse("local")
-  lazy val region: String                  = configuration.getOptionalWithFileSupport[String]("app.instance.region").getOrElse("local")
+  lazy val title: String                   = configuration.getOptionalWithFileSupport[String]("app.instance.title").map {
+    case v if v.startsWith("ReplaceAll(") => v.substring(11, v.length)
+    case v => v
+  }.getOrElse("Otoroshi")
+  // lazy val rack: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.rack").getOrElse("local")
+  // lazy val infraProvider: String           =
+  //   configuration.getOptionalWithFileSupport[String]("app.instance.provider").getOrElse("local")
+  // lazy val dataCenter: String              = configuration.getOptionalWithFileSupport[String]("app.instance.dc").getOrElse("local")
+  // lazy val zone: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.zone").getOrElse("local")
+  // lazy val region: String                  = configuration.getOptionalWithFileSupport[String]("app.instance.region").getOrElse("local")
+  lazy val rack: String = clusterConfig.relay.location.rack
+  lazy val infraProvider: String = clusterConfig.relay.location.provider
+  lazy val dataCenter: String = clusterConfig.relay.location.datacenter
+  lazy val zone: String = clusterConfig.relay.location.zone
+  lazy val region: String = clusterConfig.relay.location.region
   lazy val liveJs: Boolean                 = configuration
     .getOptionalWithFileSupport[String]("app.env")
     .filter(_ == "dev")
@@ -705,7 +715,7 @@ class Env(
       }
     }
 
-    val values = Seq(
+    val values: Seq[String] = Seq(
       checkValue(
         otoroshiSecret,
         "verysecretvaluethatyoumustoverwrite",
@@ -720,9 +730,11 @@ class Env(
         "OTOROSHI_ADMIN_API_SECRET",
         "used to access otoroshi admin api"
       )
-    )
+    ).collect {
+      case Some(mess) => s" - $mess"
+    }
 
-    if (otoroshiSecret == "verysecretvaluethatyoumustoverwrite") {
+    if (!clusterConfig.mode.isWorker && values.nonEmpty) {
       logger.warn("")
       logger.warn("#########################################")
       logger.warn("")
@@ -730,7 +742,7 @@ class Env(
       logger.warn("")
       logger.warn("You are using the default values for the following security involved configs:")
       logger.warn("")
-      values.collect { case Some(mess) => s" - $mess" }.foreach(m => logger.warn(m))
+      values.foreach(m => logger.warn(m))
       logger.warn("")
       logger.warn("You MUST change those values before deploying to production")
       logger.warn("You can change configuration by passing path values with config file or via runtime flags")
@@ -891,7 +903,7 @@ class Env(
 
   lazy val exposedHttpPortInt: Int = configuration
     .getOptionalWithFileSupport[Int]("app.exposed-ports.http")
-    .getOrElse(port)                                      
+    .getOrElse(port)
 
   lazy val exposedHttpsPort: String = configuration
     .getOptionalWithFileSupport[Int]("app.exposed-ports.https")
@@ -1337,9 +1349,10 @@ class Env(
   lazy val encryptionKey = new SecretKeySpec(otoroshiSecret.padTo(16, "0").mkString("").take(16).getBytes, "AES")
 
   def encryptedJwt(user: PrivateAppsUser): String = {
-    val added = clusterConfig.worker.state.pollEvery.millis.toSeconds.toInt * 3
+    val added   = clusterConfig.worker.state.pollEvery.millis.toSeconds.toInt * 3
     val session = aesEncrypt(Json.stringify(user.json))
-    JWT.create()
+    JWT
+      .create()
       .withIssuer("otoroshi")
       .withIssuedAt(DateTime.now().toDate)
       .withExpiresAt(DateTime.now().plusSeconds(added).toDate)
@@ -1351,12 +1364,12 @@ class Env(
   def aesEncrypt(content: String): String = {
     val cipher: Cipher = Cipher.getInstance("AES")
     cipher.init(Cipher.ENCRYPT_MODE, encryptionKey)
-    val bytes = cipher.doFinal(content.getBytes)
+    val bytes          = cipher.doFinal(content.getBytes)
     java.util.Base64.getUrlEncoder.encodeToString(bytes)
   }
 
   def aesDecrypt(content: String): String = {
-    val bytes = java.util.Base64.getUrlDecoder.decode(content)
+    val bytes          = java.util.Base64.getUrlDecoder.decode(content)
     val cipher: Cipher = Cipher.getInstance("AES")
     cipher.init(Cipher.DECRYPT_MODE, encryptionKey)
     new String(cipher.doFinal(bytes))

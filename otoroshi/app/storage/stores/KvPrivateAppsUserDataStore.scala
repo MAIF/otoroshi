@@ -1,10 +1,9 @@
 package otoroshi.storage.stores
 
 import otoroshi.env.Env
-import otoroshi.models.{Key, PrivateAppsUser, PrivateAppsUserDataStore}
-import play.api.libs.json.{Format, Json}
-import otoroshi.utils.json.JsonImplicits._
+import otoroshi.models.{PrivateAppsUser, PrivateAppsUserDataStore}
 import otoroshi.storage.{RedisLike, RedisLikeStore}
+import play.api.libs.json.Format
 
 class KvPrivateAppsUserDataStore(redisCli: RedisLike, _env: Env)
     extends PrivateAppsUserDataStore
@@ -12,6 +11,6 @@ class KvPrivateAppsUserDataStore(redisCli: RedisLike, _env: Env)
   private val _fmt                                       = PrivateAppsUser.fmt
   override def redisLike(implicit env: Env): RedisLike   = redisCli
   override def fmt: Format[PrivateAppsUser]              = _fmt
-  override def key(id: String): Key                      = Key.Empty / _env.storageRoot / "users" / "private" / id
+  override def key(id: String): String                   = s"${_env.storageRoot}:users:private:${id}"
   override def extractId(value: PrivateAppsUser): String = value.randomId
 }

@@ -7,7 +7,21 @@ import com.jayway.jsonpath.{Configuration, JsonPath}
 import net.minidev.json.{JSONArray, JSONObject}
 import otoroshi.api.OtoroshiEnvHolder
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json, Reads, Writes}
+import play.api.libs.json.{
+  Format,
+  JsArray,
+  JsBoolean,
+  JsError,
+  JsNumber,
+  JsObject,
+  JsResult,
+  JsString,
+  JsSuccess,
+  JsValue,
+  Json,
+  Reads,
+  Writes
+}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.jackson.JacksonJson
 
@@ -75,7 +89,7 @@ object JsonPathUtils {
     env.metrics.withTimer("JsonPathUtils.getAtPolyF") {
       Try {
         val docCtx = JsonPath.parse(payload, config)
-        val read = docCtx.read[JsonNode](path)
+        val read   = docCtx.read[JsonNode](path)
         if (read != null) {
           Writes.jsonNodeWrites.writes(read)
         } else {
@@ -83,19 +97,19 @@ object JsonPathUtils {
         }
       } match {
         case Failure(JsonPathReadErrorException(err)) => Left(err)
-        case Failure(e) => Left(JsonPathReadError("error while trying to read", path, payload, e.some))
-        case Success(s) => Right(s)
+        case Failure(e)                               => Left(JsonPathReadError("error while trying to read", path, payload, e.some))
+        case Success(s)                               => Right(s)
       }
     }
   }
 
   def getAtPoly(payload: String, path: String): Option[JsValue] = {
     getAtPolyF(payload, path) match {
-      case Right(value) => value.some
+      case Right(value)                                      => value.some
       case Left(JsonPathReadError(message, _, _, Some(err))) =>
         logger.error(s"${message} : '$path' on '$payload'", err)
         None
-      case Left(JsonPathReadError(message, _, _, _)) =>
+      case Left(JsonPathReadError(message, _, _, _))         =>
         logger.error(message)
         None
     }

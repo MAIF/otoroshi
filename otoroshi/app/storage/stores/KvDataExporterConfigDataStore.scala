@@ -2,29 +2,13 @@ package otoroshi.storage.stores
 
 import otoroshi.env.Env
 import otoroshi.events.{KafkaConfig, PulsarConfig}
-import otoroshi.models.{
-  DataExporterConfig,
-  DataExporterConfigFiltering,
-  DataExporterConfigType,
-  EntityLocation,
-  FileSettings,
-  MetricsSettings
-}
 import otoroshi.models._
-import otoroshi.script.Script
+import otoroshi.security.IdGenerator
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.mailer.{
-  ConsoleMailerSettings,
-  GenericMailerSettings,
-  MailgunSettings,
-  MailjetSettings,
-  NoneMailerSettings,
-  SendgridSettings
-}
-import play.api.libs.json.{Format, Json}
-import otoroshi.security.IdGenerator
+import otoroshi.utils.mailer._
 import otoroshi.utils.syntax.implicits.BetterJsReadable
+import play.api.libs.json.{Format, Json}
 
 import scala.concurrent.duration.DurationInt
 
@@ -33,7 +17,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
 
   override def redisLike(implicit env: Env): RedisLike = redisCli
 
-  override def key(id: String): Key = Key(s"${env.storageRoot}:data-exporters:$id")
+  override def key(id: String): String = s"${env.storageRoot}:data-exporters:$id"
 
   override def extractId(value: DataExporterConfig): String = value.id
 

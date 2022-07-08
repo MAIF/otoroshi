@@ -1,10 +1,6 @@
 package otoroshi.utils.syntax
 
 import akka.NotUsed
-
-import java.io.File
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -12,23 +8,24 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.{Base64, Hex}
-import otoroshi.utils.JsonPathUtils
-import otoroshi.utils.{Regex, RegexPool}
-import play.api.{ConfigLoader, Configuration, Logger}
+import otoroshi.ssl.DynamicSSLEngineProvider
+import otoroshi.utils.{JsonPathUtils, Regex, RegexPool}
 import play.api.libs.json._
-import otoroshi.utils.Regex
+import play.api.{ConfigLoader, Configuration, Logger}
 
+import java.io.{ByteArrayInputStream, File}
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.security.cert.{CertificateFactory, X509Certificate}
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
+import scala.collection.TraversableOnce
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
-import io.kubernetes.client.proto.Meta.Time
-
-import scala.collection.TraversableOnce
-import scala.collection.concurrent.TrieMap
 
 object implicits {
   implicit class BetterSyntax[A](private val obj: A)                   extends AnyVal {
@@ -36,6 +33,7 @@ object implicits {
     def set: Set[A]                                                 = Set(obj)
     def list: List[A]                                               = List(obj)
     def some: Option[A]                                             = Some(obj)
+    def none: Option[A]                                             = None
     def option: Option[A]                                           = Some(obj)
     def left[B]: Either[A, B]                                       = Left(obj)
     def right[B]: Either[B, A]                                      = Right(obj)
@@ -102,26 +100,32 @@ object implicits {
   }
   implicit class BetterString(private val obj: String)                 extends AnyVal {
     import otoroshi.utils.string.Implicits._
-    def slugify: String          = obj.slug
-    def slugifyWithSlash: String = obj.slug2
-    def wildcard: Regex          = RegexPool.apply(obj)
-    def regex: Regex             = RegexPool.regex(obj)
-    def byteString: ByteString   = ByteString(obj)
-    def bytes: Array[Byte]       = obj.getBytes(StandardCharsets.UTF_8)
-    def json: JsValue            = JsString(obj)
-    def parseJson: JsValue       = Json.parse(obj)
-    def base64: String           = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
-    def base64UrlSafe: String    = Base64.encodeBase64URLSafeString(obj.getBytes(StandardCharsets.UTF_8))
-    def fromBase64: String       = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
-    def sha256: String           = Hex.encodeHexString(BetterString.digest256.digest(obj.getBytes(StandardCharsets.UTF_8)))
-    def sha512: String           = Hex.encodeHexString(BetterString.digest512.digest(obj.getBytes(StandardCharsets.UTF_8)))
+    def slugify: String                            = obj.slug
+    def slugifyWithSlash: String                   = obj.slug2
+    def wildcard: Regex                            = RegexPool.apply(obj)
+    def regex: Regex                               = RegexPool.regex(obj)
+    def byteString: ByteString                     = ByteString(obj)
+    def bytes: Array[Byte]                         = obj.getBytes(StandardCharsets.UTF_8)
+    def json: JsValue                              = JsString(obj)
+    def parseJson: JsValue                         = Json.parse(obj)
+    def base64: String                             = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
+    def base64UrlSafe: String                      = Base64.encodeBase64URLSafeString(obj.getBytes(StandardCharsets.UTF_8))
+    def fromBase64: String                         = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
+    def sha256: String                             = Hex.encodeHexString(BetterString.digest256.digest(obj.getBytes(StandardCharsets.UTF_8)))
+    def sha512: String                             = Hex.encodeHexString(BetterString.digest512.digest(obj.getBytes(StandardCharsets.UTF_8)))
     def chunks(size: Int): Source[String, NotUsed] = Source(obj.grouped(size).toList)
     def camelToSnake: String = {
       obj.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase
       // obj.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2").replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase
     }
+    def toCertificate: X509Certificate = {
+      val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
+      certificateFactory
+        .generateCertificate(new ByteArrayInputStream(DynamicSSLEngineProvider.base64Decode(obj)))
+        .asInstanceOf[X509Certificate]
+    }
   }
-  implicit class BetterByteString(private val obj: ByteString) extends AnyVal {
+  implicit class BetterByteString(private val obj: ByteString)         extends AnyVal {
     def chunks(size: Int): Source[ByteString, NotUsed] = Source(obj.grouped(size).toList)
   }
   implicit class BetterBoolean(private val obj: Boolean)               extends AnyVal {

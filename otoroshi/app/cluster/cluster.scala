@@ -31,14 +31,23 @@ import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.jobs.updates.Version
 import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}
-import otoroshi.next.models.{KvNgRouteDataStore, KvNgServiceDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
+import otoroshi.next.models.{
+  KvNgRouteDataStore,
+  KvNgServiceDataStore,
+  KvStoredNgBackendDataStore,
+  KvStoredNgTargetDataStore,
+  NgRouteDataStore,
+  NgServiceDataStore,
+  StoredNgBackendDataStore,
+  StoredNgTargetDataStore
+}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils
-import otoroshi.utils.{SchedulerHelper, future}
+import otoroshi.utils.{future, SchedulerHelper}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -75,7 +84,7 @@ object Cluster {
 
   def filteredKey(key: String, env: Env): Boolean = {
     key.startsWith(s"${env.storageRoot}:noclustersync:") ||
-    key.startsWith(s"${env.storageRoot}:cluster:") ||
+    // key.startsWith(s"${env.storageRoot}:cluster:") ||
     key == s"${env.storageRoot}:events:audit" ||
     key == s"${env.storageRoot}:events:alerts" ||
     key.startsWith(s"${env.storageRoot}:users:backoffice") ||
@@ -157,28 +166,137 @@ case class WorkerConfig(
     swapStrategy: SwapStrategy = SwapStrategy.Replace
     //initialCacert: Option[String] = None
 )
+
 case class LeaderConfig(
-    name: String = s"otoroshi-leader-${IdGenerator.token(16)}",
-    urls: Seq[String] = Seq.empty,
-    host: String = "otoroshi-api.oto.tools",
-    clientId: String = "admin-api-apikey-id",
-    clientSecret: String = "admin-api-apikey-secret",
-    groupingBy: Int = 50,
-    cacheStateFor: Long = 4000,
-    stateDumpPath: Option[String] = None
+  name: String = s"otoroshi-leader-${IdGenerator.token(16)}",
+  urls: Seq[String] = Seq.empty,
+  host: String = "otoroshi-api.oto.tools",
+  clientId: String = "admin-api-apikey-id",
+  clientSecret: String = "admin-api-apikey-secret",
+  groupingBy: Int = 50,
+  cacheStateFor: Long = 4000,
+  stateDumpPath: Option[String] = None
 )
-case class ClusterConfig(
-    mode: ClusterMode = ClusterMode.Off,
-    compression: Int = -1,
-    proxy: Option[WSProxyServer],
-    mtlsConfig: MtlsConfig,
-    streamed: Boolean,
-    // autoUpdateState: Boolean,
-    retryDelay: Long,
-    retryFactor: Long,
-    leader: LeaderConfig = LeaderConfig(),
-    worker: WorkerConfig = WorkerConfig()
+
+case class InstanceLocation(
+  provider: String,
+  zone: String,
+  region: String,
+  datacenter: String,
+  rack: String
 ) {
+  def desc: String = s"provider: '${provider}', region: '${region}', zone: '${zone}', datacenter: '${datacenter}', rack: '${rack}''"
+  def json: JsValue = Json.obj(
+    "provider" -> provider,
+    "zone" -> zone,
+    "region" -> region,
+    "datacenter" -> datacenter,
+    "rack" -> rack,
+  )
+}
+
+case class InstanceExposition(
+  urls: Seq[String],
+  hostname: String,
+  ipAddress: Option[String],
+  clientId: Option[String],
+  clientSecret: Option[String],
+  tls: Option[MtlsConfig],
+) {
+  def json: JsValue = Json.obj(
+    "urls" -> urls,
+    "hostname" -> hostname,
+  )
+  .applyOnWithOpt(clientId) {
+    case (obj, cid) => obj ++ Json.obj("clientId" -> cid)
+  }
+  .applyOnWithOpt(clientSecret) {
+    case (obj, cid) => obj ++ Json.obj("clientSecret" -> cid)
+  }
+  .applyOnWithOpt(ipAddress) {
+    case (obj, cid) => obj ++ Json.obj("ipAddress" -> cid)
+  }
+  .applyOnWithOpt(tls) {
+    case (obj, cid) => obj ++ Json.obj("tls" -> cid.json)
+  }
+}
+
+case class RelayRouting(
+  enabled: Boolean,
+  leaderOnly: Boolean,
+  location: InstanceLocation,
+  exposition: InstanceExposition
+) {
+  def json: JsValue = Json.obj(
+    "enabled" -> enabled,
+    "leaderOnly" -> leaderOnly,
+    "location" -> location.json,
+    "exposition" -> exposition.json,
+  )
+}
+
+object RelayRouting {
+  val logger = Logger("otoroshi-relay-routing")
+  val default = RelayRouting(
+    enabled = false,
+    leaderOnly = false,
+    location = InstanceLocation(
+      provider = "local",
+      zone = "local",
+      region = "local",
+      datacenter = "local",
+      rack = "local",
+    ),
+    exposition = InstanceExposition(
+      urls = Seq.empty,
+      hostname = "otoroshi-api.oto.tools",
+      clientId = None,
+      clientSecret = None,
+      ipAddress = None,
+      tls = None,
+    )
+  )
+  def parse(json: String): Option[RelayRouting] = Try {
+    val value = Json.parse(json)
+    RelayRouting(
+      enabled = value.select("enabled").asOpt[Boolean].getOrElse(false),
+      leaderOnly = value.select("leaderOnly").asOpt[Boolean].getOrElse(false),
+      location =  InstanceLocation(
+        provider = value.select("location").select("provider").asOpt[String].getOrElse("local"),
+        zone = value.select("location").select("zone").asOpt[String].getOrElse("local"),
+        region = value.select("location").select("region").asOpt[String].getOrElse("local"),
+        datacenter = value.select("location").select("datacenter").asOpt[String].getOrElse("local"),
+        rack = value.select("location").select("rack").asOpt[String].getOrElse("local"),
+      ),
+      exposition = InstanceExposition(
+        urls = value.select("exposition").select("urls").asOpt[Seq[String]].getOrElse(default.exposition.urls),
+        hostname = value.select("exposition").select("hostname").asOpt[String].getOrElse(default.exposition.hostname),
+        clientId = value.select("exposition").select("clientId").asOpt[String].filter(_.nonEmpty),
+        clientSecret = value.select("exposition").select("clientSecret").asOpt[String].filter(_.nonEmpty),
+        ipAddress = value.select("exposition").select("ipAddress").asOpt[String].filter(_.nonEmpty),
+        tls = value.select("exposition").select("tls").asOpt[JsValue].flatMap(v => MtlsConfig.format.reads(v).asOpt),
+      ),
+    )
+  } match {
+    case Failure(e) => None
+    case Success(value) => value.some
+  }
+}
+
+case class ClusterConfig(
+  mode: ClusterMode = ClusterMode.Off,
+  compression: Int = -1,
+  proxy: Option[WSProxyServer],
+  mtlsConfig: MtlsConfig,
+  streamed: Boolean,
+  relay: RelayRouting,
+  // autoUpdateState: Boolean,
+  retryDelay: Long,
+  retryFactor: Long,
+  leader: LeaderConfig = LeaderConfig(),
+  worker: WorkerConfig = WorkerConfig()
+) {
+  def id: String = ClusterConfig.clusterNodeId
   def name: String                                    = if (mode.isOff) "standalone" else (if (mode.isLeader) leader.name else worker.name)
   def gzip(): Flow[ByteString, ByteString, NotUsed]   =
     if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)
@@ -187,6 +305,7 @@ case class ClusterConfig(
 }
 
 object ClusterConfig {
+  lazy val clusterNodeId = s"node_${IdGenerator.uuid}"
   def apply(configuration: Configuration): ClusterConfig = {
     // Cluster.logger.debug(configuration.underlying.root().render(ConfigRenderOptions.concise()))
     ClusterConfig(
@@ -196,6 +315,48 @@ object ClusterConfig {
       retryDelay = configuration.getOptionalWithFileSupport[Long]("retryDelay").getOrElse(300L),
       retryFactor = configuration.getOptionalWithFileSupport[Long]("retryFactor").getOrElse(2L),
       streamed = configuration.getOptionalWithFileSupport[Boolean]("streamed").getOrElse(true),
+      relay = RelayRouting(
+        enabled = configuration.getOptionalWithFileSupport[Boolean]("relay.enabled").getOrElse(false),
+        leaderOnly = configuration.getOptionalWithFileSupport[Boolean]("relay.leaderOnly").getOrElse(false),
+        location =  InstanceLocation(
+          provider = configuration.getOptionalWithFileSupport[String]("relay.location.provider").getOrElse("local"),
+          zone = configuration.getOptionalWithFileSupport[String]("relay.location.zone").getOrElse("local"),
+          region = configuration.getOptionalWithFileSupport[String]("relay.location.region").getOrElse("local"),
+          datacenter = configuration.getOptionalWithFileSupport[String]("relay.location.datacenter").getOrElse("local"),
+          rack = configuration.getOptionalWithFileSupport[String]("relay.location.rack").getOrElse("local"),
+        ),
+        exposition = InstanceExposition(
+          urls = configuration.getOptionalWithFileSupport[String]("relay.exposition.url").map(v => Seq(v)).orElse {
+            configuration.getOptionalWithFileSupport[String]("relay.exposition.urlsStr")
+              .map(v => v.split(",").toSeq.map(_.trim))
+              .orElse(
+                configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.urls")
+              ).filter(_.nonEmpty)
+          } getOrElse(Seq.empty),
+          hostname = configuration.getOptionalWithFileSupport[String]("relay.exposition.hostname").getOrElse("otoroshi-api.oto.tools"),
+          clientId = configuration.getOptionalWithFileSupport[String]("relay.exposition.clientId"),
+          clientSecret = configuration.getOptionalWithFileSupport[String]("relay.exposition.clientSecret"),
+          ipAddress = configuration.getOptionalWithFileSupport[String]("relay.exposition.ipAddress"),
+          tls = {
+            val enabled = configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.mtls").getOrElse(false)
+            if (enabled) {
+              val loose = configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.loose").getOrElse(false)
+              val trustAll = configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.loose").getOrElse(false)
+              val certs = configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.certs").getOrElse(Seq.empty)
+              val trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.trustedCerts").getOrElse(Seq.empty)
+              MtlsConfig(
+                certs = certs,
+                trustedCerts = trustedCerts,
+                mtls = enabled,
+                loose = loose,
+                trustAll = trustAll,
+              ).some
+            } else {
+              None
+            }
+          }
+        )
+      ),
       // autoUpdateState = configuration.getOptionalWithFileSupport[Boolean]("autoUpdateState").getOrElse(true),
       mtlsConfig = MtlsConfig(
         certs = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.certs").getOrElse(Seq.empty),
@@ -283,21 +444,25 @@ case class StatsView(
 )
 
 case class MemberView(
-    name: String,
-    location: String,
-    lastSeen: DateTime,
-    timeout: Duration,
-    memberType: ClusterMode,
-    stats: JsObject = Json.obj()
+  id: String,
+  name: String,
+  location: String,
+  lastSeen: DateTime,
+  timeout: Duration,
+  memberType: ClusterMode,
+  relay: RelayRouting,
+  stats: JsObject = Json.obj()
 ) {
   def asJson: JsValue =
     Json.obj(
+      "id"     -> id,
       "name"     -> name,
       "location" -> location,
       "lastSeen" -> lastSeen.getMillis,
       "timeout"  -> timeout.toMillis,
       "type"     -> memberType.name,
-      "stats"    -> stats
+      "stats"    -> stats,
+      "relay"    -> relay.json,
     )
   def statsView: StatsView = {
     StatsView(
@@ -323,10 +488,11 @@ case class MemberView(
 }
 
 object MemberView {
-  def fromJsonSafe(value: JsValue): JsResult[MemberView] =
+  def fromJsonSafe(value: JsValue)(implicit env: Env): JsResult[MemberView] =
     Try {
       JsSuccess(
         MemberView(
+          id = (value \ "id").as[String],
           name = (value \ "name").as[String],
           location = (value \ "location").as[String],
           lastSeen = new DateTime((value \ "lastSeen").as[Long]),
@@ -335,7 +501,26 @@ object MemberView {
             .asOpt[String]
             .map(n => ClusterMode(n).getOrElse(ClusterMode.Off))
             .getOrElse(ClusterMode.Off),
-          stats = (value \ "stats").asOpt[JsObject].getOrElse(Json.obj())
+          stats = (value \ "stats").asOpt[JsObject].getOrElse(Json.obj()),
+          relay = RelayRouting(
+            enabled = true,
+            leaderOnly = false,
+            location =  InstanceLocation(
+              provider = value.select("relay").select("location").select("provider").asOpt[String].getOrElse("local"),
+              zone = value.select("relay").select("location").select("zone").asOpt[String].getOrElse("local"),
+              region = value.select("relay").select("location").select("region").asOpt[String].getOrElse("local"),
+              datacenter = value.select("relay").select("location").select("datacenter").asOpt[String].getOrElse("local"),
+              rack = value.select("relay").select("location").select("rack").asOpt[String].getOrElse("local"),
+            ),
+            exposition = InstanceExposition(
+              urls = value.select("relay").select("exposition").select("urls").asOpt[Seq[String]].getOrElse(Seq(s"${env.rootScheme}${env.adminApiExposedHost}")),
+              hostname = value.select("relay").select("exposition").select("hostname").asOpt[String].getOrElse(env.adminApiExposedHost),
+              clientId = value.select("relay").select("exposition").select("clientId").asOpt[String].filter(_.nonEmpty),
+              clientSecret = value.select("relay").select("exposition").select("clientSecret").asOpt[String].filter(_.nonEmpty),
+              ipAddress = value.select("relay").select("exposition").select("ipAddress").asOpt[String].filter(_.nonEmpty),
+              tls = value.select("relay").select("exposition").select("tls").asOpt[JsValue].flatMap(v => MtlsConfig.format.reads(v).asOpt),
+            ),
+          )
         )
       )
     } recover { case e =>
@@ -586,8 +771,10 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
 
 object ClusterAgent {
 
+  val OtoroshiWorkerIdHeader     = "Otoroshi-Worker-Id"
   val OtoroshiWorkerNameHeader     = "Otoroshi-Worker-Name"
   val OtoroshiWorkerLocationHeader = "Otoroshi-Worker-Location"
+  val OtoroshiWorkerRelayRoutingHeader = "Otoroshi-Worker-Relay-Routing"
 
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
 
@@ -753,12 +940,14 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
     }).flatMap { stats =>
       env.datastores.clusterStateDataStore.registerMember(
         MemberView(
+          id = ClusterConfig.clusterNodeId,
           name = env.clusterConfig.leader.name,
           memberType = ClusterMode.Leader,
           location = s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
           lastSeen = DateTime.now(),
           timeout = 120.seconds,
-          stats = stats
+          stats = stats,
+          relay = env.clusterConfig.relay
         )
       )
     }
@@ -780,21 +969,21 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
         )
       )
       // if (env.clusterConfig.autoUpdateState) {
-        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster state auto update")
-        stateUpdaterRef.set(
-          env.otoroshiScheduler.scheduleAtFixedRate(1.second, env.clusterConfig.leader.cacheStateFor.millis)(
-            utils.SchedulerHelper.runnable(
-              try {
-                cacheState()
-              } catch {
-                case e: Throwable =>
-                  caching.compareAndSet(true, false)
-                  Cluster.logger
-                    .error(s"Error while renewing leader state cache of ${env.clusterConfig.leader.name}", e)
-              }
-            )
+      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster state auto update")
+      stateUpdaterRef.set(
+        env.otoroshiScheduler.scheduleAtFixedRate(1.second, env.clusterConfig.leader.cacheStateFor.millis)(
+          utils.SchedulerHelper.runnable(
+            try {
+              cacheState()
+            } catch {
+              case e: Throwable =>
+                caching.compareAndSet(true, false)
+                Cluster.logger
+                  .error(s"Error while renewing leader state cache of ${env.clusterConfig.leader.name}", e)
+            }
           )
         )
+      )
       // }
     }
   }
@@ -814,10 +1003,10 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
     if (caching.compareAndSet(false, true)) {
       env.metrics.withTimerAsync("otoroshi.core.cluster.cache-state") {
         // TODO: handle in proxy state ?
-        val start = System.currentTimeMillis()
+        val start   = System.currentTimeMillis()
         // var stateCache = ByteString.empty
         val counter = new AtomicLong(0L)
-        val digest = MessageDigest.getInstance("SHA-256")
+        val digest  = MessageDigest.getInstance("SHA-256")
         env.datastores
           .rawExport(env.clusterConfig.leader.groupingBy)
           .map { item =>
@@ -870,7 +1059,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
                 s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
               )
             }
-            case Failure(err) =>
+            case Failure(err)        =>
               caching.compareAndSet(true, false)
               Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", err)
           }
@@ -909,7 +1098,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private val servicesIncrementsRef = new AtomicReference[TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]](
     new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
   )
-  private val workerSessionsCache = Scaffeine()
+  private val workerSessionsCache   = Scaffeine()
     .maximumSize(1000L)
     .expireAfterWrite(env.clusterConfig.worker.state.pollEvery.millis * 3)
     .build[String, PrivateAppsUser]()
@@ -940,6 +1129,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .url(otoroshiUrl + s"/api/cluster/login-tokens/$token", config.mtlsConfig)
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
+              ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
@@ -979,6 +1169,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .url(otoroshiUrl + s"/api/cluster/user-tokens/$token", config.mtlsConfig)
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
+              ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
@@ -1019,6 +1210,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               "Content-Type"                            -> "application/json",
+              ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
@@ -1057,6 +1249,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               "Content-Type"                            -> "application/json",
+              ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
@@ -1094,6 +1287,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .url(otoroshiUrl + s"/api/cluster/sessions/$id", config.mtlsConfig)
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
+              ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
@@ -1101,9 +1295,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
             .withMaybeProxyServer(config.proxy)
             .get()
-            .andThen {
-              case Failure(failure) =>
-                Cluster.logger.error(s"${env.clusterConfig.mode.name}] Failed to check session on leader", failure)
+            .andThen { case Failure(failure) =>
+              Cluster.logger.error(s"${env.clusterConfig.mode.name}] Failed to check session on leader", failure)
             }
             .filter { resp =>
               if (resp.status == 200) Cluster.logger.debug(s"Session $id is valid")
@@ -1117,12 +1310,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             s"[${env.clusterConfig.mode.name}] Error while checking session with Otoroshi leader cluster"
           )
           workerSessionsCache.getIfPresent(id) match {
-            case None => {
+            case None        => {
               Cluster.logger.debug(
                 s"[${env.clusterConfig.mode.name}] no local session found after leader call failed"
               )
               PrivateAppsUser.fromCookie(id, reqOpt)(env) match {
-                case None =>
+                case None        =>
                   Cluster.logger.debug(
                     s"[${env.clusterConfig.mode.name}] no cookie session found after leader call failed"
                   )
@@ -1163,6 +1356,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               "Content-Type"                            -> "application/json",
+              ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
@@ -1171,10 +1365,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withMaybeProxyServer(config.proxy)
           request
             .post(user.toJson)
-            .andThen {
-              case Failure(failure) =>
-                request.ignore()
-                Cluster.logger.error(s"${env.clusterConfig.mode.name}] Failed to create session on leader", failure)
+            .andThen { case Failure(failure) =>
+              request.ignore()
+              Cluster.logger.error(s"${env.clusterConfig.mode.name}] Failed to create session on leader", failure)
             }
             .filter { resp =>
               Cluster.logger.debug(s"Session for ${user.name} created on the leader ${resp.status}")
@@ -1273,14 +1466,16 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             factor = config.retryFactor,
             ctx = "leader-fetch-state"
           ) { tryCount =>
-            val request = env.MtlsWs
+            val request  = env.MtlsWs
               .url(otoroshiUrl + s"/api/cluster/state?budget=${config.worker.state.timeout}", config.mtlsConfig)
               .withHttpHeaders(
                 "Host"                                    -> config.leader.host,
                 "Accept"                                  -> "application/x-ndjson",
                 // "Accept-Encoding" -> "gzip",
+                ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
                 ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-                ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
+                ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
+                ClusterAgent.OtoroshiWorkerRelayRoutingHeader -> env.clusterConfig.relay.json.stringify,
               )
               .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
               .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
@@ -1321,7 +1516,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 val digest         = MessageDigest.getInstance("SHA-256")
                 val from           = new DateTime(responseFrom.getOrElse(0))
 
-                val responseBody = if (env.clusterConfig.streamed) resp.bodyAsSource else Source.single(resp.bodyAsBytes)
+                val responseBody =
+                  if (env.clusterConfig.streamed) resp.bodyAsSource else Source.single(resp.bodyAsBytes)
                 responseBody
                   .via(env.clusterConfig.gunzip())
                   .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, true))
@@ -1500,8 +1696,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   "Host"                                    -> config.leader.host,
                   "Content-Type"                            -> "application/x-ndjson",
                   // "Content-Encoding" -> "gzip",
+                  ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
                   ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-                  ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
+                  ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
+                  ClusterAgent.OtoroshiWorkerRelayRoutingHeader -> env.clusterConfig.relay.json.stringify,
                 )
                 .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
                 .withRequestTimeout(Duration(config.worker.quotas.timeout, TimeUnit.MILLISECONDS))
@@ -1566,8 +1764,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   def warnAboutHttpLeaderUrls(): Unit = {
     if (env.clusterConfig.mode == ClusterMode.Worker) {
       config.leader.urls.filter(_.toLowerCase.contains("http://")) foreach { case url =>
-        Cluster.logger.warn(s"A leader url uses unsecured transport ($url), you should use https instead")
+        Cluster.logger.warn(s"A leader url uses unsecure transport ($url), you should use https instead")
       }
+    }
+    if (env.clusterConfig.relay.enabled) {
+      Cluster.logger.warn("relay routing is enabled !")
+      Cluster.logger.warn("be aware that this feature is EXPERIMENTAL and might not work as expected.")
+      Cluster.logger.info(s"instance location: ${env.clusterConfig.relay.location.desc}")
     }
   }
 

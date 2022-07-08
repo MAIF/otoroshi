@@ -363,9 +363,13 @@ case class WeightedBestResponseTime(ratio: Double) extends LoadBalancing {
 trait TargetPredicate {
   def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean
   def toJson: JsValue
+  def json: JsValue = toJson
 }
 
 object TargetPredicate {
+  val AlwaysMatch = otoroshi.models.AlwaysMatch
+  val GeolocationMatch = otoroshi.models.GeolocationMatch
+  val NetworkLocationMatch = otoroshi.models.NetworkLocationMatch
   val format: Format[TargetPredicate] = new Format[TargetPredicate] {
     override def writes(o: TargetPredicate): JsValue = o.toJson
     override def reads(json: JsValue): JsResult[TargetPredicate] = {
@@ -400,11 +404,11 @@ object TargetPredicate {
         case "NetworkLocationMatch" =>
           JsSuccess(
             NetworkLocationMatch(
-              provider = (json \ "provider").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
-              region = (json \ "region").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
-              zone = (json \ "zone").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
-              dataCenter = (json \ "dc").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
-              rack = (json \ "rack").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*")
+              provider = (json \ "provider").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("local"),
+              region = (json \ "region").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("local"),
+              zone = (json \ "zone").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("local"),
+              dataCenter = (json \ "dc").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("local"),
+              rack = (json \ "rack").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("local")
             )
           )
         case _                      => JsSuccess(AlwaysMatch)
@@ -443,44 +447,44 @@ object AlwaysMatch extends TargetPredicate {
 case class RegionMatch(region: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "RegionMatch", "region" -> region)
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    env.region.trim.toLowerCase == region.trim.toLowerCase
+    env.clusterConfig.relay.location.region.trim.toLowerCase == region.trim.toLowerCase
   }
 }
 
 case class ZoneMatch(zone: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "ZoneMatch", "zone" -> zone)
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    env.zone.trim.toLowerCase == zone.trim.toLowerCase
+    env.clusterConfig.relay.location.zone.trim.toLowerCase == zone.trim.toLowerCase
   }
 }
 
 case class DataCenterMatch(dc: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "DataCenterMatch", "dc" -> dc)
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    env.dataCenter.trim.toLowerCase == dc.trim.toLowerCase
+    env.clusterConfig.relay.location.datacenter.trim.toLowerCase == dc.trim.toLowerCase
   }
 }
 
 case class InfraProviderMatch(provider: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "InfraProviderMatch", "provider" -> provider)
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    env.infraProvider.trim.toLowerCase == provider.trim.toLowerCase
+    env.clusterConfig.relay.location.provider.trim.toLowerCase == provider.trim.toLowerCase
   }
 }
 
 case class RackMatch(rack: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "RackMatch", "rack" -> rack)
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    env.rack.trim.toLowerCase == rack.trim.toLowerCase
+    env.clusterConfig.relay.location.rack.trim.toLowerCase == rack.trim.toLowerCase
   }
 }
 
 case class NetworkLocationMatch(
-    provider: String = "*",
-    region: String = "*",
-    zone: String = "*",
-    dataCenter: String = "*",
-    rack: String = "*"
+    provider: String = "local",
+    region: String = "local",
+    zone: String = "local",
+    dataCenter: String = "local",
+    rack: String = "local"
 ) extends TargetPredicate {
   def toJson: JsValue =
     Json.obj(
@@ -492,11 +496,11 @@ case class NetworkLocationMatch(
       "rack"     -> rack
     )
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    otoroshi.utils.RegexPool(provider.trim.toLowerCase).matches(env.infraProvider.trim.toLowerCase) &&
-    otoroshi.utils.RegexPool(region.trim.toLowerCase).matches(env.region.trim.toLowerCase) &&
-    otoroshi.utils.RegexPool(zone.trim.toLowerCase).matches(env.zone.trim.toLowerCase) &&
-    otoroshi.utils.RegexPool(dataCenter.trim.toLowerCase).matches(env.dataCenter.trim.toLowerCase) &&
-    otoroshi.utils.RegexPool(rack.trim.toLowerCase).matches(env.rack.trim.toLowerCase)
+    otoroshi.utils.RegexPool(provider.trim.toLowerCase).matches(env.clusterConfig.relay.location.provider.trim.toLowerCase) &&
+    otoroshi.utils.RegexPool(region.trim.toLowerCase).matches(env.clusterConfig.relay.location.region.trim.toLowerCase) &&
+    otoroshi.utils.RegexPool(zone.trim.toLowerCase).matches(env.clusterConfig.relay.location.zone.trim.toLowerCase) &&
+    otoroshi.utils.RegexPool(dataCenter.trim.toLowerCase).matches(env.clusterConfig.relay.location.datacenter.trim.toLowerCase) &&
+    otoroshi.utils.RegexPool(rack.trim.toLowerCase).matches(env.clusterConfig.relay.location.rack.trim.toLowerCase)
   }
 }
 

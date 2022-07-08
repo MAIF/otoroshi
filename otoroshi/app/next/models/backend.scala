@@ -6,6 +6,7 @@ import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.next.models.NgTarget.readFrom
+import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.http.{CacheConnectionSettings, MtlsConfig}
 import otoroshi.utils.syntax.implicits._
@@ -443,7 +444,7 @@ class KvStoredNgTargetDataStore(redisCli: RedisLike, _env: Env)
     with RedisLikeStore[StoredNgTarget] {
   override def redisLike(implicit env: Env): RedisLike  = redisCli
   override def fmt: Format[StoredNgTarget]              = StoredNgTarget.format
-  override def key(id: String): Key                     = Key.Empty / _env.storageRoot / "ng-targets" / id
+  override def key(id: String): String                  = s"${_env.storageRoot}:ng-targets:${id}"
   override def extractId(value: StoredNgTarget): String = value.id
 }
 
@@ -587,13 +588,35 @@ case class StoredNgBackend(
   )
 }
 
-trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend]
+trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend] {
+  def template(env: Env): StoredNgBackend = {
+    val default = StoredNgBackend(
+      location = EntityLocation.default,
+      id = IdGenerator.namedId("backend", env),
+      name = "New backend",
+      description = "New backend",
+      metadata = Map.empty,
+      tags = Seq.empty,
+      backend = NgBackend.empty
+    )
+    env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .templates
+      .backend
+      .map { template =>
+        StoredNgBackend.format.reads(default.json.asObject.deepMerge(template)).get
+      }
+      .getOrElse {
+        default
+      }
+  }
+}
 
 class KvStoredNgBackendDataStore(redisCli: RedisLike, _env: Env)
     extends StoredNgBackendDataStore
     with RedisLikeStore[StoredNgBackend] {
   override def redisLike(implicit env: Env): RedisLike   = redisCli
   override def fmt: Format[StoredNgBackend]              = StoredNgBackend.format
-  override def key(id: String): Key                      = Key.Empty / _env.storageRoot / "backends" / id
+  override def key(id: String): String                   = s"${_env.storageRoot}:backends:${id}"
   override def extractId(value: StoredNgBackend): String = value.id
 }

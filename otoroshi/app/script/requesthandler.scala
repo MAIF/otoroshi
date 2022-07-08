@@ -10,16 +10,18 @@ import otoroshi.env.Env
 import otoroshi.events.{DataInOut, GatewayEvent, Header, Location}
 import otoroshi.models.RemainingQuotas
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
+import otoroshi.utils.http.Implicits.BetterStandaloneWSResponse
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
+import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.{Request, RequestHeader, Result, Results}
+import play.api.mvc.Results.Status
+import play.api.mvc._
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.http.websocket.{Message => PlayWSMessage}
 
 trait RequestHandler extends StartableAndStoppable with NamedPlugin {
   override def pluginType: PluginType                                                                       = PluginType.RequestHandlerType
@@ -65,21 +67,7 @@ class ForwardTrafficHandler extends RequestHandler {
     )
     .some
 
-  def hasBody(request: Request[_]): Boolean = {
-    request.theHasBody
-    // (request.method, request.headers.get("Content-Length")) match {
-    //   case ("GET", Some(_))    => true
-    //   case ("GET", None)       => false
-    //   case ("HEAD", Some(_))   => true
-    //   case ("HEAD", None)      => false
-    //   case ("PATCH", _)        => true
-    //   case ("POST", _)         => true
-    //   case ("PUT", _)          => true
-    //   case ("DELETE", Some(_)) => true
-    //   case ("DELETE", None)    => false
-    //   case _                   => true
-    // }
-  }
+  def hasBody(request: Request[_]): Boolean = request.theHasBody
 
   override def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String] = {
     val config                         = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get)
@@ -102,20 +90,23 @@ class ForwardTrafficHandler extends RequestHandler {
         val service     = obj.select("service").asObject
         val serviceId   = service.select("id").asString
         val serviceName = service.select("name").asString
+        val issuer          = obj.select("jwtIssuer").asOpt[String].getOrElse(env.Headers.OtoroshiIssuer)
+        val stateHeaderName = obj.select("stateHeaderName").asOpt[String].getOrElse(env.Headers.OtoroshiState)
+        val claimHeaderName = obj.select("claimHeaderName").asOpt[String].getOrElse(env.Headers.OtoroshiClaim)
         val date        = DateTime.now()
         val reqId       = UUID.randomUUID().toString
         val alg         = Algorithm.HMAC512(secret)
-        val token       = JWT.create().withIssuer(env.Headers.OtoroshiIssuer).sign(alg)
+        val token       = JWT.create().withIssuer(issuer).sign(alg)
         val path        = request.thePath
         val baseUri     = Uri(baseUrl)
         val host        = baseUri.authority.host.toString()
         val headers     = request.headers.toSimpleMap.toSeq
-          .filterNot(_._1.toLowerCase == "content-type")
+          // .filterNot(_._1.toLowerCase == "content-type")
           .filterNot(_._1.toLowerCase == "timeout-access")
           .filterNot(_._1.toLowerCase == "tls-session-info")
           .filterNot(_._1.toLowerCase == "host") ++ Seq(
-          (env.Headers.OtoroshiState -> reqId),
-          (env.Headers.OtoroshiClaim -> token),
+          (stateHeaderName -> reqId),
+          (claimHeaderName -> token),
           ("Host"                    -> host)
         )
         val cookies     = request.cookies.toSeq.map { c =>
@@ -145,8 +136,67 @@ class ForwardTrafficHandler extends RequestHandler {
         builder
           .stream()
           .map { resp =>
-            // TODO : send event
             val duration = System.currentTimeMillis() - start
+            val ctypeOut = resp.headers.get("Content-Type").orElse(resp.headers.get("content-type")).map(_.last)
+            val clenOut = resp.headers.get("Content-Length").orElse(resp.headers.get("content-length")).map(_.last).map(_.toLong)
+            val headersOut = resp.headers.mapValues(_.last)
+              .filterNot {
+                case (key, _) => key.toLowerCase == "content-length"
+              }
+              .filterNot {
+                case (key, _) => key.toLowerCase == "content-type"
+              }
+              .toSeq
+            val transferEncoding = resp.headers.get("Transfer-Encoding").orElse(resp.headers.get("transfer-encoding")).map(_.last)
+            val hasChunkedHeader = transferEncoding.exists(h => h.toLowerCase().contains("chunked"))
+            val isChunked: Boolean = resp.isChunked() match { // don't know if actualy legit ...
+              case Some(chunked)                                                                         => chunked
+              case None if !env.emptyContentLengthIsChunked                                              =>
+                hasChunkedHeader // false
+              case None if env.emptyContentLengthIsChunked && hasChunkedHeader                           =>
+                true
+              case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && clenOut.isEmpty       =>
+                true
+              case _                                                                                     => false
+            }
+            val cookiesOut = resp.cookies.map {
+              case c: WSCookieWithSameSite =>
+                Cookie(
+                  name = c.name,
+                  value = c.value,
+                  maxAge = c.maxAge.map(_.toInt),
+                  path = c.path.getOrElse("/"),
+                  domain = c.domain,
+                  secure = c.secure,
+                  httpOnly = c.httpOnly,
+                  sameSite = c.sameSite
+                )
+              case c                       => {
+                val sameSite: Option[Cookie.SameSite] = resp.headers.get("Set-Cookie").orElse(resp.headers.get("set-cookie")).flatMap { values => // legit
+                  values
+                    .find { sc =>
+                      sc.startsWith(s"${c.name}=${c.value}")
+                    }
+                    .flatMap { sc =>
+                      sc.split(";")
+                        .map(_.trim)
+                        .find(p => p.toLowerCase.startsWith("samesite="))
+                        .map(_.replace("samesite=", "").replace("SameSite=", ""))
+                        .flatMap(Cookie.SameSite.parse)
+                    }
+                }
+                Cookie(
+                  name = c.name,
+                  value = c.value,
+                  maxAge = c.maxAge.map(_.toInt),
+                  path = c.path.getOrElse("/"),
+                  domain = c.domain,
+                  secure = c.secure,
+                  httpOnly = c.httpOnly,
+                  sameSite = sameSite
+                )
+              }
+            }
             GatewayEvent(
               `@id` = reqId,
               `@timestamp` = date,
@@ -194,17 +244,36 @@ class ForwardTrafficHandler extends RequestHandler {
               geolocationInfo = None,
               extraAnalyticsData = None
             ).toAnalytics()
-            Results
-              .Status(resp.status)
-              .sendEntity(
-                HttpEntity.Streamed(
-                  data = resp.bodyAsSource,
-                  contentLength = None,
-                  contentType = Some(resp.contentType)
-                )
-              )
-              .as(resp.contentType)
-              .withHeaders(resp.headers.mapValues(_.last).toSeq.filterNot(_._1.toLowerCase == "content-type"): _*)
+            isChunked match {
+              case true  => {
+                // stream out
+                val res = Status(resp.status)
+                  .chunked(resp.bodyAsSource)
+                  .withHeaders(headersOut: _*)
+                  .withCookies(cookiesOut: _*)
+                ctypeOut match {
+                  case None      => res
+                  case Some(ctp) => res.as(ctp)
+                }
+              }
+              case false => {
+                val res = Results
+                  .Status(resp.status)
+                  .sendEntity(
+                    HttpEntity.Streamed(
+                      resp.bodyAsSource,
+                      clenOut,
+                      ctypeOut
+                    )
+                  )
+                  .withHeaders(headersOut: _*)
+                  .withCookies(cookiesOut: _*)
+                ctypeOut match {
+                  case None      => res
+                  case Some(ctp) => res.as(ctp)
+                }
+              }
+            }
           }
           .recoverWith { case e =>
             defaultRouting(request)

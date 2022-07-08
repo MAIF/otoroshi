@@ -42,6 +42,7 @@ import { ProvidersDashboardPage } from '../pages/ProvidersDashboardPage';
 import { ResourceLoaderPage } from '../pages/ResourceLoaderPage';
 import RouteDesignerPage from '../pages/RouteDesigner';
 import { BackendsPage } from '../pages/BackendsPage';
+import { MetricsPage } from '../pages/MetricsPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -267,6 +268,17 @@ class BackOfficeAppContainer extends Component {
                           )}
                         />
                         <Route
+                          path="/metrics"
+                          component={(props) => (
+                            <MetricsPage
+                              globalEnv={this.state.env}
+                              setTitle={(t) => DynamicTitle.setContent(t)}
+                              getTitle={() => DynamicTitle.getContent()}
+                              {...props}
+                            />
+                          )}
+                        />
+                        <Route
                           path="/apikeys/:taction/:titem"
                           component={(props) =>
                             this.decorate(ApiKeysPage, { ...props, env: this.state.env })
@@ -286,15 +298,21 @@ class BackOfficeAppContainer extends Component {
                         />
                         <Route
                           path="/backends/:taction/:titem"
-                          component={(props) => this.decorate(BackendsPage, { ...props, env: this.state.env })}
+                          component={(props) =>
+                            this.decorate(BackendsPage, { ...props, env: this.state.env })
+                          }
                         />
                         <Route
                           path="/backends/:taction"
-                          component={(props) => this.decorate(BackendsPage, { ...props, env: this.state.env })}
+                          component={(props) =>
+                            this.decorate(BackendsPage, { ...props, env: this.state.env })
+                          }
                         />
                         <Route
                           path="/backends"
-                          component={(props) => this.decorate(BackendsPage, { ...props, env: this.state.env })}
+                          component={(props) =>
+                            this.decorate(BackendsPage, { ...props, env: this.state.env })
+                          }
                         />
                         <Route
                           path="/organizations/:taction/:titem"

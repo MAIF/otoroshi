@@ -174,40 +174,41 @@ class ResponseCache extends RequestTransformer {
             ResponseCacheConfig(service.transformerConfig.select("ResponseCache").asOpt[JsObject].getOrElse(Json.obj()))
           val maxSize = config.maxSize
           if (config.autoClean) {
-            env.datastores.rawDataStore.keys(s"${env.storageRoot}:noclustersync:cache:${service.id}:*").flatMap { keys =>
-              if (keys.nonEmpty) {
-                Source(keys.toList)
-                  .mapAsync(1) { key =>
-                    for {
-                      size <- env.datastores.rawDataStore.strlen(key).map(_.getOrElse(0L))
-                      pttl <- env.datastores.rawDataStore.pttl(key)
-                    } yield (key, size, pttl)
-                  }
-                  .runWith(Sink.seq)
-                  .flatMap { values =>
-                    val globalSize = values.foldLeft(0L)((a, b) => a + b._2)
-                    if (globalSize > maxSize) {
-                      var acc    = 0L
-                      val sorted = values
-                        .sortWith((a, b) => a._3.compareTo(b._3) < 0)
-                        .filter { t =>
-                          if ((globalSize - acc) < maxSize) {
-                            acc = acc + t._2
-                            false
-                          } else {
-                            acc = acc + t._2
-                            true
-                          }
-                        }
-                        .map(_._1)
-                      env.datastores.rawDataStore.del(sorted).map(_ => ())
-                    } else {
-                      ().future
+            env.datastores.rawDataStore.keys(s"${env.storageRoot}:noclustersync:cache:${service.id}:*").flatMap {
+              keys =>
+                if (keys.nonEmpty) {
+                  Source(keys.toList)
+                    .mapAsync(1) { key =>
+                      for {
+                        size <- env.datastores.rawDataStore.strlen(key).map(_.getOrElse(0L))
+                        pttl <- env.datastores.rawDataStore.pttl(key)
+                      } yield (key, size, pttl)
                     }
-                  }
-              } else {
-                ().future
-              }
+                    .runWith(Sink.seq)
+                    .flatMap { values =>
+                      val globalSize = values.foldLeft(0L)((a, b) => a + b._2)
+                      if (globalSize > maxSize) {
+                        var acc    = 0L
+                        val sorted = values
+                          .sortWith((a, b) => a._3.compareTo(b._3) < 0)
+                          .filter { t =>
+                            if ((globalSize - acc) < maxSize) {
+                              acc = acc + t._2
+                              false
+                            } else {
+                              acc = acc + t._2
+                              true
+                            }
+                          }
+                          .map(_._1)
+                        env.datastores.rawDataStore.del(sorted).map(_ => ())
+                      } else {
+                        ().future
+                      }
+                    }
+                } else {
+                  ().future
+                }
             }
           } else {
             ().future

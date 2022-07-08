@@ -317,7 +317,7 @@ class Target extends Component {
             onChange={(e) => this.changeTheValue('mtlsConfig.trustedCerts', e)}
           />
         )}
-        <Separator title="Target filter" />,
+        <Separator title="Target filter" />
         <SelectInput
           label="Predicate"
           placeholder="AlwaysMatch"
@@ -371,14 +371,14 @@ class Target extends Component {
             placeholder="local"
             value={value.predicate.dc}
             help="The data center of this target (based on the dc value in the otoroshi configuration) app.instance"
-            onChange={(e) => this.changeTheValue('dc.dc', e)}
+            onChange={(e) => this.changeTheValue('predicate.dc', e)}
           />,
           <TextInput
             label="Rack"
             placeholder="local"
             value={value.predicate.rack}
             help="The rack of this target (based on the rack value in the otoroshi configuration) app.instance"
-            onChange={(e) => this.changeTheValue('dc.rack', e)}
+            onChange={(e) => this.changeTheValue('predicate.rack', e)}
           />,
         ]}
         {value.predicate.type === 'InfraMatch' && (
@@ -396,7 +396,7 @@ class Target extends Component {
             placeholder="local"
             value={value.predicate.dc}
             help="The data center of this target (based on the dc value in the otoroshi configuration) app.instance"
-            onChange={(e) => this.changeTheValue('dc.dc', e)}
+            onChange={(e) => this.changeTheValue('predicate.dc', e)}
           />
         )}
         {value.predicate.type === 'RackMatch' && (
@@ -405,7 +405,7 @@ class Target extends Component {
             placeholder="local"
             value={value.predicate.rack}
             help="The rack of this target (based on the rack value in the otoroshi configuration) app.instance"
-            onChange={(e) => this.changeTheValue('dc.rack', e)}
+            onChange={(e) => this.changeTheValue('predicate.rack', e)}
           />
         )}
         {value.predicate.type === 'RegionMatch' && (
@@ -755,23 +755,40 @@ export class ServicePage extends Component {
       .replace(/\(/g, '')
       .replace(/\)/g, '')
       .toLowerCase();
-    const json = YAML.stringify({
-      apiVersion: 'proxy.otoroshi.io/v1alpha1',
-      kind: 'ServiceDescriptor',
-      metadata: {
-        name,
+    // const json = YAML.stringify({
+    //   apiVersion: 'proxy.otoroshi.io/v1alpha1',
+    //   kind: 'ServiceDescriptor',
+    //   metadata: {
+    //     name,
+    //   },
+    //   spec: { ...this.state.service, name: undefined },
+    // });
+    fetch('/bo/api/json_to_yaml', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      spec: { ...this.state.service, name: undefined },
-    });
-    const blob = new Blob([json], { type: 'application/yaml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.download = `service-descriptor-${name}-${Date.now()}.yaml`;
-    a.href = url;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => document.body.removeChild(a), 300);
+      body: JSON.stringify({
+        apiVersion: 'proxy.otoroshi.io/v1alpha1',
+        kind: 'ServiceDescriptor',
+        metadata: {
+          name,
+        },
+        spec: { ...this.state.service, name: undefined },
+      }),
+    })
+      .then((r) => r.text())
+      .then((yaml) => {
+        const blob = new Blob([yaml], { type: 'application/yaml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.download = `service-descriptor-${name}-${Date.now()}.yaml`;
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => document.body.removeChild(a), 300);
+      });
   };
 
   changeTargetsValue = (value) => {

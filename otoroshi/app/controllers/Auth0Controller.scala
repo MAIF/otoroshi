@@ -164,7 +164,7 @@ class AuthController(
                           case None       =>
                             auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor)
                           case Some(user) =>
-                            val sec = computeSec(user)
+                            val sec    = computeSec(user)
                             val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
                             ctx.request
                               .getQueryString("redirect")
@@ -181,7 +181,13 @@ class AuthController(
                                       "desc"
                                     )
                                     .withCookies(
-                                      env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some): _*
+                                      env.createPrivateSessionCookies(
+                                        req.theHost,
+                                        user.randomId,
+                                        descriptor,
+                                        auth,
+                                        user.some
+                                      ): _*
                                     )
                                 )
                               }
@@ -210,7 +216,13 @@ class AuthController(
                                       "desc"
                                     )
                                     .withCookies(
-                                      env.createPrivateSessionCookies(host, user.randomId, descriptor, auth, user.some): _*
+                                      env.createPrivateSessionCookies(
+                                        host,
+                                        user.randomId,
+                                        descriptor,
+                                        auth,
+                                        user.some
+                                      ): _*
                                     )
                                 )
                               }
@@ -266,7 +278,7 @@ class AuthController(
         user
           .save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
           .map { paUser =>
-            val sec = computeSec(paUser)
+            val sec    = computeSec(paUser)
             val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
             logger.debug(s"Auth callback, creating session on the leader ${paUser.email}")
             env.clusterAgent.createSession(paUser)
@@ -290,7 +302,9 @@ class AuthController(
 
                 Redirect(redirectTo)
                   .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                  .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*)
+                  .withCookies(
+                    env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
+                  )
 
               case _ =>
                 ctx.request.session
@@ -306,7 +320,9 @@ class AuthController(
                     Redirect(
                       s"$redirection&hash=$hash"
                     ).removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                      .withCookies(env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some): _*)
+                      .withCookies(
+                        env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some): _*
+                      )
                   case redirectTo                  =>
                     val url                = new java.net.URL(redirectTo)
                     val host               = url.getHost
@@ -328,11 +344,15 @@ class AuthController(
                     if (webauthn) {
                       Ok(Json.obj("location" -> setCookiesRedirect))
                         .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                        .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*)
+                        .withCookies(
+                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
+                        )
                     } else {
                       Redirect(setCookiesRedirect)
                         .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
-                        .withCookies(env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*)
+                        .withCookies(
+                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
+                        )
                     }
                 }
             }

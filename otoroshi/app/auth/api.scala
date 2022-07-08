@@ -229,7 +229,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           tags = Seq.empty,
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true,
+          clientSideSessionEnabled = true
         )
       case Some("oauth2-global") =>
         GenericOauth2ModuleConfig(
@@ -239,7 +239,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           tags = Seq.empty,
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true,
+          clientSideSessionEnabled = true
         )
       case Some("basic")         =>
         BasicAuthModuleConfig(
@@ -249,7 +249,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           tags = Seq.empty,
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true,
+          clientSideSessionEnabled = true
         )
       case Some("ldap")          =>
         LdapAuthModuleConfig(
@@ -264,7 +264,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           tags = Seq.empty,
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true,
+          clientSideSessionEnabled = true
         )
       case Some("saml")          =>
         SamlAuthModuleConfig(
@@ -277,7 +277,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           singleLogoutUrl = "",
           issuer = "",
           sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true,
+          clientSideSessionEnabled = true
         )
       case Some("oauth1")        =>
         Oauth1ModuleConfig(
@@ -294,7 +294,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           tags = Seq.empty,
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true,
+          clientSideSessionEnabled = true
         )
       case _                     =>
         BasicAuthModuleConfig(
@@ -304,7 +304,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           tags = Seq.empty,
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true,
+          clientSideSessionEnabled = true
         )
     }
     env.datastores.globalConfigDataStore

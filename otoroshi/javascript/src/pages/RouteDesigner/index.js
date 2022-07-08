@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Route, Switch, useHistory, useLocation, useParams, useRouteMatch } from 'react-router-dom';
 import { nextClient } from '../../services/BackOfficeServices';
 import Designer from './Designer';
-import { TryIt } from './TryIt';
 import RouteCompositions from './RouteComposition';
 import Routes from './Routes';
 import { Informations } from './Informations';
@@ -16,17 +15,9 @@ import { ServiceAnalyticsPage } from '../ServiceAnalyticsPage';
 import { ServiceApiKeysPage } from '../ServiceApiKeysPage';
 import { useEntityFromURI } from '../../util';
 import { v4 } from 'uuid';
-import YAML from 'yaml';
 
 const MenuContainer = ({ children }) => (
   <li className="p-2 px-3">
-    <h4
-      className="pb-2"
-      style={{
-        borderBottom: '1px solid',
-      }}>
-      Actions
-    </h4>
     <div className="d-flex flex-column" style={{ color: '#fff' }}>
       {children}
     </div>
@@ -38,6 +29,7 @@ const Manager = ({ query, entity, ...props }) => {
   const isCreation = p.routeId === 'new';
   const history = useHistory();
   const { url } = useRouteMatch();
+  const location = useLocation()
 
   const rawViewPlugins = new URLSearchParams(location.search).get('view_plugins');
   const viewPlugins = rawViewPlugins !== null ? Number(rawViewPlugins) : -1;
@@ -46,6 +38,8 @@ const Manager = ({ query, entity, ...props }) => {
   const [value, setValue] = useState();
   const [saveButton, setSaveButton] = useState(null);
   const [menu, setMenu] = useState();
+
+  const viewRef = useRef()
 
   useEffect(() => {
     if (p.routeId === 'new') {
@@ -63,7 +57,6 @@ const Manager = ({ query, entity, ...props }) => {
             {
               {
                 flow: 'Designer',
-                'try-it': 'Test routes',
                 informations: 'Informations',
                 routes: 'Routes',
                 route_plugins: 'Route plugins',
@@ -108,16 +101,15 @@ const Manager = ({ query, entity, ...props }) => {
                   enabled: () => !isOnViewPlugins,
                 },
                 {
-                  to: `/${entity.link}/${value.id}?tab=try-it`,
                   icon: 'fa-vials',
                   title: 'Tester',
-                  tab: 'try-it',
+                  onClick: () => viewRef?.current?.onTestingButtonClick(history, value),
                   enabled: () => !isOnViewPlugins,
                 },
                 {
-                  title: 'Actions',
+                  icon: 'fa-cog',
                   onClick: () => { },
-                  enabled: () => !isOnViewPlugins,//isOnViewPlugins || query == 'flow',
+                  enabled: () => !isOnViewPlugins, //isOnViewPlugins || query == 'flow',
                   dropdown: true,
                   style: { marginLeft: 20 },
                   props: {
@@ -130,19 +122,18 @@ const Manager = ({ query, entity, ...props }) => {
               ]
                 .filter((link) => !link.enabled || link.enabled())
                 .map(({ to, icon, title, tooltip, tab, onClick, dropdown, style, props = {} }) => (
-                  <div className={`ms-2 ${dropdown ? 'dropdown dropstart' : ''}`}>
+                  <div className={`ms-2 ${dropdown ? 'dropdown' : ''}`}>
                     <button
                       key={title}
                       type="button"
                       className={`btn btn-sm toggle-form-buttons d-flex align-items-center ${dropdown ? 'dropdown-toggle' : ''
                         }`}
-                      onClick={
-                        onClick
-                          ? onClick
-                          : () => {
-                            if (query !== tab || viewPlugins) history.push(to);
-                          }
-                      }
+                      onClick={onClick ? onClick : () => {
+                        if (query !== tab || viewPlugins) {
+                          if (!window.location.href.includes(to))
+                            history.push(to);
+                        }
+                      }}
                       {...(tooltip || {})}
                       style={{
                         ...(style || {}),
@@ -166,100 +157,166 @@ const Manager = ({ query, entity, ...props }) => {
                         style={{
                           overflow: 'initial',
                           height: 'initial',
-                          minWidth: '420px',
                           background: 'rgb(73, 73, 72)',
                           border: '1px solid',
                         }}
                         onClick={(e) => e.stopPropagation()}>
                         <MenuContainer>
-                          {menu}
-                          <div className="d-flex-between" style={{ borderTop: '1px solid #666666', marginTop: 10, paddingTop: 10 }}>
-                            <button type="button" className="btn btn-sm btn-danger me-1" style={{ marginTop: 5 }} onClick={e => {
-                              const part = window.location.pathname.split('/')[3];
-                              // window.location = `/bo/dashboard/${part}`
-                              history.push(`/${part}`)
-                            }}><i className="fas fa-times" /> Cancel</button>
-                            <button type="button" className="btn btn-sm btn-danger me-1" style={{ marginTop: 5 }} onClick={e => {
-                              const what = window.location.pathname.split('/')[3];
-                              const id = window.location.pathname.split('/')[4];
-                              const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
-                              window.newConfirm('are you sure you want to delete this entity ?').then((ok) => {
-                                if (ok) {
-                                  nextClient.deleteById(kind, id).then(() => {
-                                    // window.location = '/bo/dashboard/' + what;
-                                    history.push('/' + what);
+                          <div
+                            className="d-flex flex-column"
+                            style={{
+                              paddingTop: 10,
+                              minWidth: '160px'
+                            }}>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-info d-flex align-items-center justify-content-start"
+                              style={{ marginTop: 5 }}
+                              onClick={(e) => {
+                                const part = window.location.pathname.split('/')[3];
+                                // window.location = `/bo/dashboard/${part}`
+                                history.push(`/${part}`);
+                              }}>
+                              <i className="fas fa-chevron-left me-3" /> Back to routes
+                            </button>
+                            {menu}
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger d-flex align-items-center justify-content-start"
+                              style={{ marginTop: 5 }}
+                              onClick={(e) => {
+                                const what = window.location.pathname.split('/')[3];
+                                const id = window.location.pathname.split('/')[4];
+                                const kind =
+                                  what === 'routes'
+                                    ? nextClient.ENTITIES.ROUTES
+                                    : nextClient.ENTITIES.SERVICES;
+                                window
+                                  .newConfirm('are you sure you want to delete this entity ?')
+                                  .then((ok) => {
+                                    if (ok) {
+                                      nextClient.deleteById(kind, id).then(() => {
+                                        // window.location = '/bo/dashboard/' + what;
+                                        history.push('/' + what);
+                                      });
+                                    }
                                   });
-                                }
-                              });
-                            }}><i className="fas fa-trash" /> Delete</button>
-                            <button type="button" className="btn btn-sm btn-info me-1" style={{ marginTop: 5 }} onClick={e => {
-                              const what = window.location.pathname.split('/')[3];
-                              const id = window.location.pathname.split('/')[4];
-                              const prefix = (id.split('_')[0] || what) + '_';
-                              const newId = `${prefix}${v4()}`
-                              const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
-                              window.newConfirm('are you sure you want to duplicate this entity ?').then((ok) => {
-                                if (ok) {
-                                  nextClient.create(kind, { ...value, name: value.name + ' (duplicated)', id: newId, enabled: false }).then(() => {
-                                    // window.location = '/bo/dashboard/' + what + '/' + newId + '?tab=informations';
-                                    history.push('/' + what + '/' + newId + '?tab=informations');
+                              }}>
+                              <i className="fas fa-trash me-3" /> Delete
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-info d-flex align-items-center justify-content-start"
+                              style={{ marginTop: 5 }}
+                              onClick={(e) => {
+                                const what = window.location.pathname.split('/')[3];
+                                const id = window.location.pathname.split('/')[4];
+                                const prefix = (id.split('_')[0] || what) + '_';
+                                const newId = `${prefix}${v4()}`;
+                                const kind =
+                                  what === 'routes'
+                                    ? nextClient.ENTITIES.ROUTES
+                                    : nextClient.ENTITIES.SERVICES;
+                                window
+                                  .newConfirm('are you sure you want to duplicate this entity ?')
+                                  .then((ok) => {
+                                    if (ok) {
+                                      nextClient
+                                        .create(kind, {
+                                          ...value,
+                                          name: value.name + ' (duplicated)',
+                                          id: newId,
+                                          enabled: false,
+                                        })
+                                        .then(() => {
+                                          // window.location = '/bo/dashboard/' + what + '/' + newId + '?tab=informations';
+                                          history.push(
+                                            '/' + what + '/' + newId + '?tab=informations'
+                                          );
+                                        });
+                                    }
                                   });
-                                }
-                              });
-                            }}><i className="far fa-copy" /> Duplicate</button>
-                            <button type="button" className="btn btn-sm btn-info me-1" style={{ marginTop: 5 }} onClick={e => {
-                              const what = window.location.pathname.split('/')[3];
-                              const itemName = what === 'routes' ? 'route' : 'route-composition'
-                              const kind = what === 'routes' ? 'Route' : 'RouteComposition'
-                              const name = (value.id)
-                                .replace(/ /g, '-')
-                                .replace(/\(/g, '')
-                                .replace(/\)/g, '')
-                                .toLowerCase();
-                              const json = JSON.stringify(
-                                { ...value, kind },
-                                null,
-                                2
-                              );
-                              const blob = new Blob([json], { type: 'application/json' });
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.id = String(Date.now());
-                              a.style.display = 'none';
-                              a.download = `${itemName}-${name}-${Date.now()}.json`;
-                              a.href = url;
-                              document.body.appendChild(a);
-                              a.click();
-                              setTimeout(() => document.body.removeChild(a), 300);
-                            }}><i className="fas fa-file-export" /> Export JSON</button>
-                            <button type="button" className="btn btn-sm btn-info me-1" style={{ marginTop: 5 }} onClick={e => {
-                              const what = window.location.pathname.split('/')[3];
-                              const itemName = what === 'routes' ? 'route' : 'route-composition'
-                              const kind = what === 'routes' ? 'Route' : 'RouteComposition'
-                              const name = (value.id)
-                                .replace(/ /g, '-')
-                                .replace(/\(/g, '')
-                                .replace(/\)/g, '')
-                                .toLowerCase();
-                              const json = YAML.stringify({
-                                apiVersion: 'proxy.otoroshi.io/v1alpha1',
-                                kind,
-                                metadata: {
-                                  name,
-                                },
-                                spec: value,
-                              });
-                              const blob = new Blob([json], { type: 'application/yaml' });
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.id = String(Date.now());
-                              a.style.display = 'none';
-                              a.download = `${itemName}-${name}-${Date.now()}.yaml`;
-                              a.href = url;
-                              document.body.appendChild(a);
-                              a.click();
-                              setTimeout(() => document.body.removeChild(a), 300);
-                            }}><i className="fas fa-file-export" /> Export YAML</button>
+                              }}>
+                              <i className="far fa-copy me-3" /> Duplicate
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-info d-flex align-items-center justify-content-start"
+                              style={{ marginTop: 5 }}
+                              onClick={(e) => {
+                                const what = window.location.pathname.split('/')[3];
+                                const itemName = what === 'routes' ? 'route' : 'route-composition';
+                                const kind = what === 'routes' ? 'Route' : 'RouteComposition';
+                                const name = value.id
+                                  .replace(/ /g, '-')
+                                  .replace(/\(/g, '')
+                                  .replace(/\)/g, '')
+                                  .toLowerCase();
+                                const json = JSON.stringify({ ...value, kind }, null, 2);
+                                const blob = new Blob([json], { type: 'application/json' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.id = String(Date.now());
+                                a.style.display = 'none';
+                                a.download = `${itemName}-${name}-${Date.now()}.json`;
+                                a.href = url;
+                                document.body.appendChild(a);
+                                a.click();
+                                setTimeout(() => document.body.removeChild(a), 300);
+                              }}>
+                              <i className="fas fa-file-export me-3" /> Export JSON
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-info d-flex align-items-center justify-content-start"
+                              style={{ marginTop: 5 }}
+                              onClick={(e) => {
+                                const what = window.location.pathname.split('/')[3];
+                                const itemName = what === 'routes' ? 'route' : 'route-composition';
+                                const kind = what === 'routes' ? 'Route' : 'RouteComposition';
+                                const name = value.id
+                                  .replace(/ /g, '-')
+                                  .replace(/\(/g, '')
+                                  .replace(/\)/g, '')
+                                  .toLowerCase();
+                                // const json = YAML.stringify({
+                                //   apiVersion: 'proxy.otoroshi.io/v1alpha1',
+                                //   kind,
+                                //   metadata: {
+                                //     name,
+                                //   },
+                                //   spec: value,
+                                // });
+                                fetch('/bo/api/json_to_yaml', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({
+                                    apiVersion: 'proxy.otoroshi.io/v1alpha1',
+                                    kind,
+                                    metadata: {
+                                      name,
+                                    },
+                                    spec: value,
+                                  }),
+                                })
+                                  .then((r) => r.text())
+                                  .then((yaml) => {
+                                    const blob = new Blob([yaml], { type: 'application/yaml' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.id = String(Date.now());
+                                    a.style.display = 'none';
+                                    a.download = `${itemName}-${name}-${Date.now()}.yaml`;
+                                    a.href = url;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    setTimeout(() => document.body.removeChild(a), 300);
+                                  });
+                              }}>
+                              <i className="fas fa-file-export me-3" /> Export YAML
+                            </button>
                           </div>
                         </MenuContainer>
                       </ul>
@@ -271,7 +328,7 @@ const Manager = ({ query, entity, ...props }) => {
         </div>
       ));
     }
-  }, [value, saveButton, menu]);
+  }, [value, saveButton, menu, viewRef]);
 
   const divs = [
     {
@@ -279,6 +336,9 @@ const Manager = ({ query, entity, ...props }) => {
       render: () => (
         <Designer
           {...props}
+          ref={viewRef}
+          tab={query}
+          history={history}
           value={value}
           setSaveButton={setSaveButton}
           viewPlugins={viewPlugins}
@@ -286,14 +346,30 @@ const Manager = ({ query, entity, ...props }) => {
         />
       ),
     },
-    { predicate: query && query === 'try-it', render: () => <TryIt route={value} setSaveButton={setSaveButton} /> },
-    { predicate: query && query === 'form' && entity.fetchName === 'ROUTES', render: () => <RouteForm setSaveButton={setSaveButton} isCreation={isCreation} routeId={p.routeId} setValue={setValue} /> },
-    { predicate: query && query === 'form' && entity.fetchName === 'SERVICES', render: () => <div>services</div> },
+    {
+      predicate: query && query === 'form' && entity.fetchName === 'ROUTES',
+      render: () => (
+        <RouteForm
+          ref={viewRef}
+          setSaveButton={setSaveButton}
+          isCreation={isCreation}
+          routeId={p.routeId}
+          setValue={setValue}
+          history={history}
+          location={location}
+        />
+      ),
+    },
+    {
+      predicate: query && query === 'form' && entity.fetchName === 'SERVICES',
+      render: () => <div>services</div>,
+    },
     {
       predicate: query && query === 'routes',
       render: () =>
         value && (
           <RouteCompositions
+            ref={viewRef}
             service={value}
             setSaveButton={setSaveButton}
             setService={setValue}
@@ -305,12 +381,14 @@ const Manager = ({ query, entity, ...props }) => {
 
   const component = divs.filter((p) => p.predicate);
 
-  if (component.length > 0) return <div className="designer row">{component[0].render()}</div>;
+  if (component.length > 0)
+    return <div className="designer row">{component[0].render()}</div>;
 
   return (
     <div className="designer row ps-3">
       <Informations
         {...props}
+        ref={viewRef}
         isCreation={isCreation}
         value={value}
         setValue={setValue}

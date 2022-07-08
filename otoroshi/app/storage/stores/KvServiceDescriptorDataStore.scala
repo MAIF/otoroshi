@@ -30,7 +30,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
 
   override def fmt: Format[ServiceDescriptor] = ServiceDescriptor._fmt
 
-  override def key(id: String): Key = Key.Empty / _env.storageRoot / "desc" / id
+  override def key(id: String): String = s"${_env.storageRoot}:desc:${id}"
 
   override def extractId(value: ServiceDescriptor): String = value.id
 
@@ -433,5 +433,5 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
   }
 
   override def count()(implicit ec: ExecutionContext, env: Env): Future[Long] =
-    redisCli.keys(key("*").key).map(_.size.toLong)
+    redisCli.keys(key("*")).map(_.size.toLong)
 }

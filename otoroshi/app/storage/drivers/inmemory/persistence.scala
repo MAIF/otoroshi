@@ -364,9 +364,9 @@ object S3Configuration {
     chunkSize = 1024 * 1024 * 8,
     v4auth = true,
     writeEvery = 1.minute,
-    acl = CannedAcl.Private,
+    acl = CannedAcl.Private
   )
-  val format = new Format[S3Configuration] {
+  val format  = new Format[S3Configuration] {
     override def reads(json: JsValue): JsResult[S3Configuration] = Try {
       S3Configuration(
         bucket = json.select("bucket").asOpt[String].getOrElse(""),
