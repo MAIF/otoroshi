@@ -304,6 +304,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   }
 }
 </code></pre>
+<p>also, to make your leaders exposed by zone, do not hesitate to add domain names to the <code>otoroshi-admin-api</code> service and setup your DNS to bind those domains to the right place</p><div class="centered-img">
+<img src="../imgs/relay-api-hostnames.png" /></div>
 <h2><a href="#route-setup-for-an-application-deployed-in-only-one-zone" name="route-setup-for-an-application-deployed-in-only-one-zone" class="anchor"><span class="anchor-link"></span></a>Route setup for an application deployed in only one zone</h2>
 <p>Now, for any route/service deployed in only one zone, you will be able to flag it using its metadata as being deployed in one zone or another. The possible metadata keys are the following</p>
 <ul>
