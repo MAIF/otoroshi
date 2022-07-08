@@ -2888,7 +2888,7 @@ class ProxyEngine() extends RequestHandler {
           sameSite = c.sameSite
         )
       case c                       => {
-        val sameSite: Option[Cookie.SameSite] = rawResponse.headers.get("Set-Cookie").flatMap { values => // legit
+        val sameSite: Option[Cookie.SameSite] = rawResponse.headers.get("Set-Cookie").orElse(rawResponse.headers.get("set-cookie")).flatMap { values => // legit
           values
             .find { sc =>
               sc.startsWith(s"${c.name}=${c.value}")
