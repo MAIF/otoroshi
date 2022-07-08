@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Secure the communication between a backend app and Otoroshi · Otoroshi</title>
+<title>GraphQL Composer Proxy · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -93,7 +93,7 @@
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="active page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -119,7 +119,7 @@
   <ul>
     <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
     <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
-    <li><a href="../next/graphql-composer.html" class="page">GraphQL Composer Proxy</a></li>
+    <li><a href="../next/graphql-composer.html" class="active page">GraphQL Composer Proxy</a></li>
     <li><a href="../next/relay-routing.html" class="page">Relay Routing</a></li>
     <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
@@ -214,7 +214,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
     <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
     <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
-    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="active page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
     <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
@@ -240,7 +240,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
     <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
-    <li><a href="../next/graphql-composer.html" class="page">GraphQL Composer Proxy</a></li>
+    <li><a href="../next/graphql-composer.html" class="active page">GraphQL Composer Proxy</a></li>
     <li><a href="../next/relay-routing.html" class="page">Relay Routing</a></li>
     <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
@@ -258,8 +258,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
-  <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
-  <li>Secure the communication between a backend app and Otoroshi</li>
+  <li><a href="../next/index.html">Otoroshi Next</a></li>
+  <li>GraphQL Composer Proxy</li>
 </ul>
 </div>
 </div>
@@ -267,56 +267,304 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#secure-the-communication-between-a-backend-app-and-otoroshi" name="secure-the-communication-between-a-backend-app-and-otoroshi" class="anchor"><span class="anchor-link"></span></a>Secure the communication between a backend app and Otoroshi</h1><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
-<div id="instructions-toggle">
-<span class="instructions-title">I want to follow the instructions to start an instance of Otorohi</span>
-<button id="instructions-toggle-button">close</button>
-</div>
-<p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
+<h1><a href="#graphql-composer-proxy" name="graphql-composer-proxy" class="anchor"><span class="anchor-link"></span></a>GraphQL Composer Proxy</h1>
+<p>The GraphQL Composer proxy is an useful plugin when you want to build an GraphQL API from multiples differents sources, like rest api, graphql api or mocked apis.</p>
+<p>With this plugin, you can define, assisted by the UI, a graphQL schema with types, queries and mutations. </p>
+<h2><a href="#directives" name="directives" class="anchor"><span class="anchor-link"></span></a>Directives</h2>
+<h3><a href="#rest" name="rest" class="anchor"><span class="anchor-link"></span></a>rest</h3>
+<p><em>Arguments : url, method, headers, timeout, data, response_path, response_filter, limit, offset, paginate</em></p>
+<p>The rest directive is used to expose servers that communicate using the http protocol.</p>
+<p>The only required argument is the <code>url</code>.</p>
+<p><strong>Example</strong></p>
+<pre><code>type Query {
+    users(limit: Int, offset: Int): [User] @rest(url: &quot;http://foo.oto.tools/users&quot;, method: &quot;GET&quot;)
+}
 </code></pre>
-<p>then you can run start Otoroshi :</p>
-<pre class="prettyprint"><code class="language-sh">java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
+<p>It can be placed on the field of a query and type. To custom your url queries, you can use the path parameter and another field with respectively, <code>params</code> and <code>item</code> variables.</p>
+<p><strong>Example</strong></p>
+<pre><code>type Country {
+  name: String
+  phone: String
+  users: [User] @rest(url: &quot;http://foo.oto.tools/users/${item.name}&quot;)
+}
+
+type Query {
+  user(id: String): User @rest(url: &quot;http://foo.oto.tools/users/${params.id}&quot;)
+}
 </code></pre>
-<p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
-<p>Create a service, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/services&#39; \
-  -d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;my-service&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myservice&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
-  -H &quot;Content-type: application/json&quot; \
-  -u admin-api-apikey-id:admin-api-apikey-secret
+<h3><a href="#graphql" name="graphql" class="anchor"><span class="anchor-link"></span></a>graphql</h3>
+<p><em>Arguments : url, method, headers, timeout, query, data, response_path, response_filter, limit, offset, paginate</em></p>
+<p>The rest directive is used to call an other graphql server.</p>
+<p>The required argument are the <code>url</code> and the <code>query</code>.</p>
+<p><strong>Example</strong></p>
+<pre><code>type Query {
+    countries: [Country] @graphql(url: &quot;https://countries.trevorblades.com/&quot;, query: &quot;{ countries { name phone }}&quot;)
+}
+
+type Country {
+    name: String
+    phone: String
+}
 </code></pre>
-<button id="instructions-toggle-confirm">Confirm the installation</button></div>
-<ol>
-  <li>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/services">http://otoroshi.oto.tools:8080/bo/services</a> and create a new service</li>
-  <li>Jump to <code>Service exposition settings</code> and add <a href="http://myservice.oto.tools">http://myservice.oto.tools</a> as <code>Exposed domain</code></li>
-  <li>Jump to <code>Service targets</code> and add <a href="http://localhost:8081/">http://localhost:8081/</a> as <code>Target 1</code></li>
-  <li>Jump to the <code>URL Patterns</code> section</li>
-  <li>Enable your service as <code>Public UI</code></li>
-  <li>Don&rsquo;t forget to save your service</li>
-</ol>
-<p>We need of a simple service which handle the exchange protocol. For this tutorial, we&rsquo;ll use the following application, developed in NodeJS, which supports both versions of the exchange protocol.</p>
-<p>Clone this <a href="https://github.com/MAIF/otoroshi/blob/master/demos/challenge" title="repository">repository</a> and run the installation of the dependencies.</p>
-<pre class="prettyprint"><code class="language-sh">git clone &#39;git@github.com:MAIF/otoroshi.git&#39; --depth=1
-cd ./otoroshi/demos/challenge
-npm install
-PORT=8081 node server.js
+<h3><a href="#soap" name="soap" class="anchor"><span class="anchor-link"></span></a>soap</h3>
+<p><em>Arguments: all following arguments</em></p>
+<p>The soap directive is used to call a soap service. </p>
+<pre><code>type Query {
+    randomNumber: String @soap(
+        jq_response_filter: &quot;.[\&quot;soap:Envelope\&quot;] | .[\&quot;soap:Body\&quot;] | .[\&quot;m:NumberToWordsResponse\&quot;] | .[\&quot;m:NumberToWordsResult\&quot;]&quot;, 
+        url: &quot;https://www.dataaccess.com/webservicesserver/numberconversion.wso&quot;, 
+        envelope: &quot;&lt;?xml version=\&quot;1.0\&quot; encoding=\&quot;utf-8\&quot;?&gt; \n  &lt;soap:Envelope xmlns:soap=\&quot;http://schemas.xmlsoap.org/soap/envelope/\&quot;&gt;   \n  &lt;soap:Body&gt;     \n    &lt;NumberToWords xmlns=\&quot;http://www.dataaccess.com/webservicesserver/\&quot;&gt;       \n      &lt;ubiNum&gt;12&lt;/ubiNum&gt;     \n    &lt;/NumberToWords&gt;   \n  &lt;/soap:Body&gt; \n&lt;/soap:Envelope&gt;&quot;)
+}
 </code></pre>
-<p>The last command should return : </p>
-<pre class="prettyprint"><code class="language-sh">challenge-verifier listening on http://0.0.0.0:8081
+<h5><a href="#specific-arguments" name="specific-arguments" class="anchor"><span class="anchor-link"></span></a>Specific arguments</h5>
+<table>
+  <thead>
+    <tr>
+      <th>Argument </th>
+      <th>Type </th>
+      <th>Optional </th>
+      <th>Default value </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>envelope </td>
+      <td><em>STRING</em> </td>
+      <td>Required </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>url </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>action </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>preserve_query </td>
+      <td><em>BOOLEAN</em> </td>
+      <td>Required </td>
+      <td>true </td>
+    </tr>
+    <tr>
+      <td>charset </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>convert_request_body_to_xml </td>
+      <td><em>BOOLEAN</em> </td>
+      <td>Required </td>
+      <td>true </td>
+    </tr>
+    <tr>
+      <td>jq_request_filter </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>jq_response_filter </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#json" name="json" class="anchor"><span class="anchor-link"></span></a>json</h3>
+<p><em>Arguments: path, json, paginate</em></p>
+<p>The json directive can be used to expose static data or mocked data. The first usage is to defined a raw stringify JSON in the <code>data</code> argument. The second usage is to set data in the predefined field of the GraphQL plugin composer and to specify a path in the <code>path</code> argument.</p>
+<p><strong>Example</strong></p>
+<pre><code>type Query {
+    users_from_raw_data: [User] @json(data: &quot;[{\&quot;firstname\&quot;:\&quot;Foo\&quot;,\&quot;name\&quot;:\&quot;Bar\&quot;}]&quot;)
+    users_from_predefined_data: [User] @json(path: &quot;users&quot;)
+}
 </code></pre>
-<p>This project runs an express client with one middleware. The middleware handles each request, and check if the header <code>State token header</code> is present in headers. By default, the incoming expected header is <code>Otoroshi-State</code> by the application and <code>Otoroshi-State-Resp</code> header in the headers of the return request. </p>
-<p>Try to call your service via <a href="http://myservice.oto.tools:8080/">http://myservice.oto.tools:8080/</a>. This should return a successful response with all headers received by the backend app. </p>
-<p>Now try to disable the middleware in the nodejs file by commenting the following line. </p>
-<pre class="prettyprint"><code class="language-js">// app.use(OtoroshiMiddleware());
+<h3><a href="#mock" name="mock" class="anchor"><span class="anchor-link"></span></a>mock</h3>
+<p><em>Arguments: url</em></p>
+<p>The mock directive is to used with the Mock Responses Plugin, also named <code>Charlatan</code>. This directive can be interesting to mock your schema and start to use your Otoroshi route before starting to develop the underlying service.</p>
+<p><strong>Example</strong></p>
+<pre><code>type Query {
+    users: @mock(url: &quot;/users&quot;)
+}
 </code></pre>
-<p>Try to call again your service. This time, Otoroshi breaks the return response from your backend service, and returns.</p>
-<pre class="prettyprint"><code class="language-sh">Downstream microservice does not seems to be secured. Cancelling request !
+<p>This example supposes that the Mock Responses plugin is set on the route&rsquo;s feed, and that an endpoint <code>/users</code> is available.</p>
+<h3><a href="#permission-directives" name="permission-directives" class="anchor"><span class="anchor-link"></span></a>Permission directives</h3>
+<p>The permission directives has been created to protect the fields of the graphql schema. The validation process starts by create a <code>context</code> for all incoming requests, based on the list of paths defined in the permissions field of the plugin. The permissions paths can refer to the request data (url, headers, etc), user credentials (api key, etc) and informations about the matched route. Then the process can validate that the value or values are present in the <code>context</code>.</p>
+<h3><a href="#permission" name="permission" class="anchor"><span class="anchor-link"></span></a>permission</h3>
+<p><em>Arguments : value and unauthorized_value</em></p>
+<p>The permission directive can be used to secure a field on <strong>one</strong> value. The directive checks that a specific value is present in the <code>context</code>.</p>
+<p>Two arguments are available, the first, named <code>value</code>, is required and designates the value found. The second optional value, <code>unauthorized_value</code>, can be used to indicates, in the outcoming response, the rejection message.</p>
+<p><strong>Example</strong></p>
+<pre><code>type User {
+    id: String @permission(
+        value: &quot;FOO&quot;, 
+        unauthorized_value: &quot;You&#39;re not authorized to get this field&quot;)
+}
 </code></pre>
+<h3><a href="#allpermissions" name="allpermissions" class="anchor"><span class="anchor-link"></span></a>allpermissions</h3>
+<p><em>Arguments : values and unauthorized_value</em></p>
+<p>This directive is presumably the same as the previous one except that it takes a list of values.</p>
+<p><strong>Example</strong></p>
+<pre><code>type User {
+    id: String @allpermissions(
+        values: [&quot;FOO&quot;, &quot;BAR&quot;], 
+        unauthorized_value: &quot;FOO and BAR could not be found&quot;)
+}
+</code></pre>
+<h3><a href="#onepermissionsof" name="onepermissionsof" class="anchor"><span class="anchor-link"></span></a>onePermissionsOf</h3>
+<p><em>Arguments : values and unauthorized_value</em></p>
+<p>This directive takes a list of values and validate that one of them is in the context.</p>
+<p><strong>Example</strong></p>
+<pre><code>type User {
+    id: String @onePermissionsOf(
+        values: [&quot;FOO&quot;, &quot;BAR&quot;], 
+        unauthorized_value: &quot;FOO or BAR could not be found&quot;)
+}
+</code></pre>
+<h3><a href="#authorize" name="authorize" class="anchor"><span class="anchor-link"></span></a>authorize</h3>
+<p><em>Arguments : path, value and unauthorized_value</em></p>
+<p>The authorize directive has one more required argument, named <code>path</code>, which indicates the path to value, in the context. Unlike the last three directives, the authorize directive doesn&rsquo;t search in the entire context but the specified path.</p>
+<p><strong>Example</strong></p>
+<pre><code>type User {
+    id: String @authorize(
+        path: &quot;$.raw_request.headers.foo&quot;, 
+        value: &quot;BAR&quot;, 
+        unauthorized_value: &quot;Bar could not be found in the foo header&quot;)
+}
+</code></pre>
+<h3><a href="#arguments-and-theirs-types" name="arguments-and-theirs-types" class="anchor"><span class="anchor-link"></span></a>Arguments and theirs types</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Argument </th>
+      <th>Type </th>
+      <th>Optional </th>
+      <th>Default value </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>url </td>
+      <td><em>STRING</em> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>method </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td>GET </td>
+    </tr>
+    <tr>
+      <td>headers </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>timeout </td>
+      <td><em>INT</em> </td>
+      <td>x </td>
+      <td>5000 </td>
+    </tr>
+    <tr>
+      <td>data </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>path </td>
+      <td><em>STRING</em> </td>
+      <td>x (only for json directive) </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>query </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>response_path </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>response_filter </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>limit </td>
+      <td><em>INT</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>offset </td>
+      <td><em>INT</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>value </td>
+      <td><em>STRING</em> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>values </td>
+      <td>LIST of <em>STRING</em> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>path </td>
+      <td><em>STRING</em> </td>
+      <td> </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>paginate </td>
+      <td><em>BOOLEAN</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>unauthorized_value </td>
+      <td><em>STRING</em> </td>
+      <td>x </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../how-to-s/tls-termination-using-own-certificates.html">TLS termination using your own certificates</a></p>
+<p><strong>Next:</strong> <a href="../next/relay-routing.html">Relay Routing</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../next/graphql-composer.html#graphql-composer-proxy" class="header">GraphQL Composer Proxy</a>
+  <ul>
+    <li><a href="../next/graphql-composer.html#directives" class="header">Directives</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
