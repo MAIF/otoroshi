@@ -7,6 +7,7 @@ import akka.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.cluster.{ClusterMode, MemberView, RelayRouting}
 import otoroshi.env.Env
+import otoroshi.gateway.Retry
 import otoroshi.models.{Target, TargetPredicate}
 import otoroshi.next.models.NgRoute
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
@@ -69,65 +70,73 @@ class RelayRoutingResult(resp: WSResponse) extends NgProxyEngineError {
 
 case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInteger) {
   def call(req: RequestHeader, body: Source[ByteString, _])(implicit ec: ExecutionContext, env: Env, report: NgExecutionReport): Future[Either[NgProxyEngineError, Done]] = {
-    val useLeader = env.clusterConfig.mode.isWorker && env.clusterConfig.relay.leaderOnly
-    val urls = if (useLeader) env.clusterConfig.leader.urls else member.relay.exposition.urls
-    val index = counter.get() % (if (urls.nonEmpty) urls.size else 1)
-    val url = urls.sortWith((m1, m2) => m1.compareTo(m2) < 0).apply(index)
-    val clientId: String = if (useLeader) env.clusterConfig.leader.clientId else member.relay.exposition.clientId.getOrElse(env.backOfficeApiKeyClientId)
-    val clientSecret: String = env.proxyState.apikey(clientId).map(_.clientSecret).getOrElse("secret")
-    val ct: Option[String] = req.headers.toSimpleMap.getIgnoreCase("Content-Type")
-    val cl: Option[String] = req.headers.toSimpleMap.getIgnoreCase("Content-Length")
-    val host: String = if (useLeader) env.clusterConfig.leader.host else member.relay.exposition.hostname
-    val ipAddress: Option[String] = if (useLeader) None else member.relay.exposition.ipAddress
-    val mtlsConfig: MtlsConfig = if (useLeader) env.clusterConfig.mtlsConfig else member.relay.exposition.tls.getOrElse(MtlsConfig())
-    val headers: Seq[(String, String)] = (Seq(
-      ("Host" -> host),
-      ("Otoroshi-Client-Id", clientId),
-      ("Otoroshi-Client-Secret", clientSecret),
-      ("Otoroshi-Relay-Routing-Remote-Addr", req.remoteAddress),
-      ("Otoroshi-Relay-Routing-Method", req.method),
-      ("Otoroshi-Relay-Routing-Id", req.id.toString),
-      ("Otoroshi-Relay-Routing-Uri", req.relativeUri),
-      ("Otoroshi-Relay-Routing-Has-Body", req.theHasBody.toString),
-      ("Otoroshi-Relay-Routing-Secured", req.theSecured.toString),
-      ("Otoroshi-Relay-Routing-Route-Id", route.id),
-      ("Otoroshi-Relay-Routing-Route-Name", route.name),
-      ("Otoroshi-Relay-Routing-Caller-Id", env.clusterConfig.id),
-      ("Otoroshi-Relay-Routing-Caller-Name", env.clusterConfig.name),
-    ) ++ req.headers.toSimpleMap.toSeq.map {
-      case (key, value) => (s"Otoroshi-Relay-Routing-Header-${key}", value)
-    }).applyOnWithOpt(ct) {
-      case (seq, cty) => seq :+ ("Content-Type", cty)
-    }.applyOnWithOpt(cl) {
-      case (seq, clt) => seq :+ ("Content-Length", clt)
-    }.applyOnWithOpt(req.clientCertificateChain) {
-      case (seq, certs) => seq ++ certs.zipWithIndex.map { case (c, idx) => (s"Otoroshi-Relay-Routing-Certs-${idx}" -> c.encoded) }
-    }.applyOnIf(req.cookies.nonEmpty) { seq =>
-      seq :+ ("Otoroshi-Relay-Routing-Cookies", Cookies.encodeCookieHeader(req.cookies.toSeq))
-    }
-    val uriStr = s"$url/api/cluster/relay"
-    val uri = Uri(uriStr)
-    if (useLeader) {
-      RelayRouting.logger.debug(s"forwarding call to '${route.name}' through local leader '${uriStr}'")
-    } else {
-      RelayRouting.logger.debug(s"forwarding call to '${route.name}' through relay '${uriStr}'")
-    }
-    env.Ws.akkaUrlWithTarget(uriStr, Target(
-      host  = uri.authority.toString(),
-      scheme = uri.scheme,
-      protocol = HttpProtocols.`HTTP/1.1`,
-      predicate = TargetPredicate.AlwaysMatch,
-      ipAddress = ipAddress,
-      mtlsConfig = mtlsConfig
-    ))
-      .withMethod("POST")
-      .withRequestTimeout(route.backend.client.globalTimeout.milliseconds)
-      .withBody(body)
-      .withHttpHeaders(headers: _*)
-      .execute()
-      .map { resp =>
-        Left(new RelayRoutingResult(resp))
+    implicit val sched = env.otoroshiScheduler
+    Retry.retry(
+      times = env.clusterConfig.worker.retries,
+      delay = env.clusterConfig.retryDelay,
+      factor = env.clusterConfig.retryDelay,
+      ctx = "forwarding call through a relay node",
+    ) { attempt =>
+      val useLeader = env.clusterConfig.mode.isWorker && env.clusterConfig.relay.leaderOnly
+      val urls = if (useLeader) env.clusterConfig.leader.urls else member.relay.exposition.urls
+      val index = counter.get() % (if (urls.nonEmpty) urls.size else 1)
+      val url = urls.sortWith((m1, m2) => m1.compareTo(m2) < 0).apply(index)
+      val clientId: String = if (useLeader) env.clusterConfig.leader.clientId else member.relay.exposition.clientId.getOrElse(env.backOfficeApiKeyClientId)
+      val clientSecret: String = env.proxyState.apikey(clientId).map(_.clientSecret).getOrElse("secret")
+      val ct: Option[String] = req.headers.toSimpleMap.getIgnoreCase("Content-Type")
+      val cl: Option[String] = req.headers.toSimpleMap.getIgnoreCase("Content-Length")
+      val host: String = if (useLeader) env.clusterConfig.leader.host else member.relay.exposition.hostname
+      val ipAddress: Option[String] = if (useLeader) None else member.relay.exposition.ipAddress
+      val mtlsConfig: MtlsConfig = if (useLeader) env.clusterConfig.mtlsConfig else member.relay.exposition.tls.getOrElse(MtlsConfig())
+      val headers: Seq[(String, String)] = (Seq(
+        ("Host" -> host),
+        ("Otoroshi-Client-Id", clientId),
+        ("Otoroshi-Client-Secret", clientSecret),
+        ("Otoroshi-Relay-Routing-Remote-Addr", req.remoteAddress),
+        ("Otoroshi-Relay-Routing-Method", req.method),
+        ("Otoroshi-Relay-Routing-Id", req.id.toString),
+        ("Otoroshi-Relay-Routing-Uri", req.relativeUri),
+        ("Otoroshi-Relay-Routing-Has-Body", req.theHasBody.toString),
+        ("Otoroshi-Relay-Routing-Secured", req.theSecured.toString),
+        ("Otoroshi-Relay-Routing-Route-Id", route.id),
+        ("Otoroshi-Relay-Routing-Route-Name", route.name),
+        ("Otoroshi-Relay-Routing-Caller-Id", env.clusterConfig.id),
+        ("Otoroshi-Relay-Routing-Caller-Name", env.clusterConfig.name),
+      ) ++ req.headers.toSimpleMap.toSeq.map {
+        case (key, value) => (s"Otoroshi-Relay-Routing-Header-${key}", value)
+      }).applyOnWithOpt(ct) {
+        case (seq, cty) => seq :+ ("Content-Type", cty)
+      }.applyOnWithOpt(cl) {
+        case (seq, clt) => seq :+ ("Content-Length", clt)
+      }.applyOnWithOpt(req.clientCertificateChain) {
+        case (seq, certs) => seq ++ certs.zipWithIndex.map { case (c, idx) => (s"Otoroshi-Relay-Routing-Certs-${idx}" -> c.encoded) }
+      }.applyOnIf(req.cookies.nonEmpty) { seq =>
+        seq :+ ("Otoroshi-Relay-Routing-Cookies", Cookies.encodeCookieHeader(req.cookies.toSeq))
       }
+      val uriStr = s"$url/api/cluster/relay"
+      val uri = Uri(uriStr)
+      if (useLeader) {
+        RelayRouting.logger.debug(s"forwarding call to '${route.name}' through local leader '${uriStr}' (attempt ${attempt})")
+      } else {
+        RelayRouting.logger.debug(s"forwarding call to '${route.name}' through relay '${uriStr}' (attempt ${attempt})")
+      }
+      env.Ws.akkaUrlWithTarget(uriStr, Target(
+        host = uri.authority.toString(),
+        scheme = uri.scheme,
+        protocol = HttpProtocols.`HTTP/1.1`,
+        predicate = TargetPredicate.AlwaysMatch,
+        ipAddress = ipAddress,
+        mtlsConfig = mtlsConfig
+      ))
+        .withMethod("POST")
+        .withRequestTimeout(route.backend.client.globalTimeout.milliseconds)
+        .withBody(body)
+        .withHttpHeaders(headers: _*)
+        .execute()
+        .map { resp =>
+          Left(new RelayRoutingResult(resp))
+        }
+    }
   }
 }
 
