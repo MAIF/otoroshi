@@ -317,7 +317,7 @@ class Target extends Component {
             onChange={(e) => this.changeTheValue('mtlsConfig.trustedCerts', e)}
           />
         )}
-        <Separator title="Target filter" />,
+        <Separator title="Target filter" />
         <SelectInput
           label="Predicate"
           placeholder="AlwaysMatch"

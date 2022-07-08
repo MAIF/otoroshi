@@ -145,9 +145,9 @@ class PossibleLeaders(members: Seq[MemberView], route: NgRoute) {
     val useLeader = env.clusterConfig.mode.isWorker && env.clusterConfig.relay.leaderOnly
     if (useLeader) {
       SelectedLeader(MemberView(
-        id = "tmp",
-        name = "tmp",
-        location = "127.0.0.1",
+        id = "local-leader",
+        name = "local-leader",
+        location = env.clusterConfig.relay.exposition.urls.headOption.getOrElse("127.0.0.1"),
         lastSeen = DateTime.now(),
         timeout = 10.seconds,
         memberType = ClusterMode.Leader,
