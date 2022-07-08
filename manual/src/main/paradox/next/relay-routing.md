@@ -46,6 +46,12 @@ otoroshi {
 }
 ```
 
+also, to make your leaders exposed by zone, do not hesitate to add domain names to the `otoroshi-admin-api` service and setup your DNS to bind those domains to the right place
+
+@@@ div { .centered-img }
+<img src="../imgs/relay-api-hostnames.png" />
+@@@
+
 ## Route setup for an application deployed in only one zone
 
 Now, for any route/service deployed in only one zone, you will be able to flag it using its metadata as being deployed in one zone or another. The possible metadata keys are the following
