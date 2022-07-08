@@ -715,7 +715,7 @@ class Env(
       }
     }
 
-    val values = Seq(
+    val values: Seq[String] = Seq(
       checkValue(
         otoroshiSecret,
         "verysecretvaluethatyoumustoverwrite",
@@ -730,9 +730,11 @@ class Env(
         "OTOROSHI_ADMIN_API_SECRET",
         "used to access otoroshi admin api"
       )
-    )
+    ).collect {
+      case Some(mess) => s" - $mess"
+    }
 
-    if (otoroshiSecret == "verysecretvaluethatyoumustoverwrite") {
+    if (!clusterConfig.mode.isWorker && values.nonEmpty) {
       logger.warn("")
       logger.warn("#########################################")
       logger.warn("")
@@ -740,7 +742,7 @@ class Env(
       logger.warn("")
       logger.warn("You are using the default values for the following security involved configs:")
       logger.warn("")
-      values.collect { case Some(mess) => s" - $mess" }.foreach(m => logger.warn(m))
+      values.foreach(m => logger.warn(m))
       logger.warn("")
       logger.warn("You MUST change those values before deploying to production")
       logger.warn("You can change configuration by passing path values with config file or via runtime flags")
