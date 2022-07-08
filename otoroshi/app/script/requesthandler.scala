@@ -119,7 +119,9 @@ class ForwardTrafficHandler extends RequestHandler {
           .filterNot(_._1.toLowerCase == "tls-session-info")
           .filterNot(_._1.toLowerCase == "host") ++ Seq(
           (env.Headers.OtoroshiState -> reqId),
+          ("Opun-Gateway-State" -> reqId),
           (env.Headers.OtoroshiClaim -> token),
+          ("Opun-Gateway-Claim" -> token),
           ("Host"                    -> host)
         )
         val cookies     = request.cookies.toSeq.map { c =>

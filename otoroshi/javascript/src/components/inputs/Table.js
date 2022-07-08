@@ -253,11 +253,13 @@ export class Table extends Component {
       .replace(/ /g, '-')
       .replace(/\(/g, '')
       .replace(/\)/g, '')
+      .replace(/\./g, '')
       .toLowerCase();
     const itemName = this.props.itemName
       .replace(/ /g, '-')
       .replace(/\(/g, '')
       .replace(/\)/g, '')
+      .replace(/\./g, '')
       .toLowerCase();
     const json = JSON.stringify(
       { ...this.state.currentItem, kind: this.props.kubernetesKind },
