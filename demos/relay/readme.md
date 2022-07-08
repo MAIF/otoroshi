@@ -12,9 +12,11 @@ in this demo, we do not use a replicated datastore. otoroshi leader instance are
 - `worker-zone-1`: exposed on `127.0.0.1:8084`
 - `worker-zone-2`: exposed on `127.0.0.1:8085`
 - `worker-zone-3`: exposed on `127.0.0.1:8086`
-- `api-zone-1`: exposed on `127.0.0.1:8091`
-- `api-zone-2`: exposed on `127.0.0.1:8092`
-- `api-zone-3`: exposed on `127.0.0.1:8093`
+- `api-a-zone-1`: exposed on `127.0.0.1:8091`
+- `api-b-zone-2`: exposed on `127.0.0.1:8092`
+- `api-c-zone-3`: exposed on `127.0.0.1:8093`
+- `api-d-zone-1`: exposed on `127.0.0.1:8094`
+- `api-d-zone-2`: exposed on `127.0.0.1:8095`
 
 each of the 3 zones  has an otoroshi leader instance, an otoroshi worker instance, and an api instance deployed. Otoroshi instance from one zone cannot directly access apis from other zones as they are not in the same `docker-compose` network. But you can access any api from any otoroshi instance thanks to relay routing.
 

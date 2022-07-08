@@ -371,14 +371,14 @@ class Target extends Component {
             placeholder="local"
             value={value.predicate.dc}
             help="The data center of this target (based on the dc value in the otoroshi configuration) app.instance"
-            onChange={(e) => this.changeTheValue('dc.dc', e)}
+            onChange={(e) => this.changeTheValue('predicate.dc', e)}
           />,
           <TextInput
             label="Rack"
             placeholder="local"
             value={value.predicate.rack}
             help="The rack of this target (based on the rack value in the otoroshi configuration) app.instance"
-            onChange={(e) => this.changeTheValue('dc.rack', e)}
+            onChange={(e) => this.changeTheValue('predicate.rack', e)}
           />,
         ]}
         {value.predicate.type === 'InfraMatch' && (
@@ -396,7 +396,7 @@ class Target extends Component {
             placeholder="local"
             value={value.predicate.dc}
             help="The data center of this target (based on the dc value in the otoroshi configuration) app.instance"
-            onChange={(e) => this.changeTheValue('dc.dc', e)}
+            onChange={(e) => this.changeTheValue('predicate.dc', e)}
           />
         )}
         {value.predicate.type === 'RackMatch' && (
@@ -405,7 +405,7 @@ class Target extends Component {
             placeholder="local"
             value={value.predicate.rack}
             help="The rack of this target (based on the rack value in the otoroshi configuration) app.instance"
-            onChange={(e) => this.changeTheValue('dc.rack', e)}
+            onChange={(e) => this.changeTheValue('predicate.rack', e)}
           />
         )}
         {value.predicate.type === 'RegionMatch' && (

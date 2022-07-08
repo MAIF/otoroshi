@@ -363,6 +363,7 @@ case class WeightedBestResponseTime(ratio: Double) extends LoadBalancing {
 trait TargetPredicate {
   def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean
   def toJson: JsValue
+  def json: JsValue = toJson
 }
 
 object TargetPredicate {
@@ -403,11 +404,11 @@ object TargetPredicate {
         case "NetworkLocationMatch" =>
           JsSuccess(
             NetworkLocationMatch(
-              provider = (json \ "provider").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
-              region = (json \ "region").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
-              zone = (json \ "zone").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
-              dataCenter = (json \ "dc").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*"),
-              rack = (json \ "rack").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*")
+              provider = (json \ "provider").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("local"),
+              region = (json \ "region").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("local"),
+              zone = (json \ "zone").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("local"),
+              dataCenter = (json \ "dc").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("local"),
+              rack = (json \ "rack").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("local")
             )
           )
         case _                      => JsSuccess(AlwaysMatch)
@@ -479,11 +480,11 @@ case class RackMatch(rack: String) extends TargetPredicate {
 }
 
 case class NetworkLocationMatch(
-    provider: String = "*",
-    region: String = "*",
-    zone: String = "*",
-    dataCenter: String = "*",
-    rack: String = "*"
+    provider: String = "local",
+    region: String = "local",
+    zone: String = "local",
+    dataCenter: String = "local",
+    rack: String = "local"
 ) extends TargetPredicate {
   def toJson: JsValue =
     Json.obj(
