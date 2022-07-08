@@ -1,0 +1,9 @@
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Tenant
+metadata:
+  name: default-organization
+spec:
+  id: default
+  name: Default organization
+  description: Default organization created for any otoroshi instance
+  metadata: {}
