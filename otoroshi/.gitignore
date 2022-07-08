@@ -26,4 +26,5 @@ companion.txt
 *.diff
 /tree-router-config.json
 /routescomp-debug.json
+/route-d.json
 /service.json
