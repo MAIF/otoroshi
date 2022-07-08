@@ -67,21 +67,7 @@ class ForwardTrafficHandler extends RequestHandler {
     )
     .some
 
-  def hasBody(request: Request[_]): Boolean = {
-    request.theHasBody
-    // (request.method, request.headers.get("Content-Length")) match {
-    //   case ("GET", Some(_))    => true
-    //   case ("GET", None)       => false
-    //   case ("HEAD", Some(_))   => true
-    //   case ("HEAD", None)      => false
-    //   case ("PATCH", _)        => true
-    //   case ("POST", _)         => true
-    //   case ("PUT", _)          => true
-    //   case ("DELETE", Some(_)) => true
-    //   case ("DELETE", None)    => false
-    //   case _                   => true
-    // }
-  }
+  def hasBody(request: Request[_]): Boolean = request.theHasBody
 
   override def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String] = {
     val config                         = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get)
@@ -114,8 +100,6 @@ class ForwardTrafficHandler extends RequestHandler {
         val path        = request.thePath
         val baseUri     = Uri(baseUrl)
         val host        = baseUri.authority.host.toString()
-        // val ctype       = request.headers.get("Content-Type")
-        // val clen        = request.headers.get("Content-Length").map(_.toLong)
         val headers     = request.headers.toSimpleMap.toSeq
           // .filterNot(_._1.toLowerCase == "content-type")
           .filterNot(_._1.toLowerCase == "timeout-access")
