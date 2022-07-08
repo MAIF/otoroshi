@@ -104,10 +104,13 @@ class ForwardTrafficHandler extends RequestHandler {
         val service     = obj.select("service").asObject
         val serviceId   = service.select("id").asString
         val serviceName = service.select("name").asString
+        val issuer          = obj.select("jwtIssuer").asOpt[String].getOrElse(env.Headers.OtoroshiIssuer)
+        val stateHeaderName = obj.select("stateHeaderName").asOpt[String].getOrElse(env.Headers.OtoroshiState)
+        val claimHeaderName = obj.select("claimHeaderName").asOpt[String].getOrElse(env.Headers.OtoroshiClaim)
         val date        = DateTime.now()
         val reqId       = UUID.randomUUID().toString
         val alg         = Algorithm.HMAC512(secret)
-        val token       = JWT.create().withIssuer(env.Headers.OtoroshiIssuer).sign(alg)
+        val token       = JWT.create().withIssuer(issuer).sign(alg)
         val path        = request.thePath
         val baseUri     = Uri(baseUrl)
         val host        = baseUri.authority.host.toString()
@@ -118,10 +121,8 @@ class ForwardTrafficHandler extends RequestHandler {
           .filterNot(_._1.toLowerCase == "timeout-access")
           .filterNot(_._1.toLowerCase == "tls-session-info")
           .filterNot(_._1.toLowerCase == "host") ++ Seq(
-          (env.Headers.OtoroshiState -> reqId),
-          ("Opun-Gateway-State" -> reqId),
-          (env.Headers.OtoroshiClaim -> token),
-          ("Opun-Gateway-Claim" -> token),
+          (stateHeaderName -> reqId),
+          (claimHeaderName -> token),
           ("Host"                    -> host)
         )
         val cookies     = request.cookies.toSeq.map { c =>
