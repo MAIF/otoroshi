@@ -9,7 +9,7 @@ import { FeedbackButton } from './FeedbackButton';
 
 export const Informations = forwardRef(({ isCreation, value, setValue, setSaveButton }, ref) => {
   const history = useHistory();
-  const location = useLocation()
+  const location = useLocation();
   const [informations, setInformations] = useState({ ...value });
 
   const { capitalize, lowercase, fetchName, link } = useEntityFromURI();
@@ -20,9 +20,9 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
 
   useImperativeHandle(ref, () => ({
     onTestingButtonClick() {
-      history.push(`/routes/${value.id}?tab=flow`, { showTryIt: true })
-    }
-  }))
+      history.push(`/routes/${value.id}?tab=flow`, { showTryIt: true });
+    },
+  }));
 
   useEffect(() => {
     setSaveButton(saveButton('ms-2'));

@@ -168,76 +168,78 @@ case class WorkerConfig(
 )
 
 case class LeaderConfig(
-  name: String = s"otoroshi-leader-${IdGenerator.token(16)}",
-  urls: Seq[String] = Seq.empty,
-  host: String = "otoroshi-api.oto.tools",
-  clientId: String = "admin-api-apikey-id",
-  clientSecret: String = "admin-api-apikey-secret",
-  groupingBy: Int = 50,
-  cacheStateFor: Long = 4000,
-  stateDumpPath: Option[String] = None
+    name: String = s"otoroshi-leader-${IdGenerator.token(16)}",
+    urls: Seq[String] = Seq.empty,
+    host: String = "otoroshi-api.oto.tools",
+    clientId: String = "admin-api-apikey-id",
+    clientSecret: String = "admin-api-apikey-secret",
+    groupingBy: Int = 50,
+    cacheStateFor: Long = 4000,
+    stateDumpPath: Option[String] = None
 )
 
 case class InstanceLocation(
-  provider: String,
-  zone: String,
-  region: String,
-  datacenter: String,
-  rack: String
+    provider: String,
+    zone: String,
+    region: String,
+    datacenter: String,
+    rack: String
 ) {
-  def desc: String = s"provider: '${provider}', region: '${region}', zone: '${zone}', datacenter: '${datacenter}', rack: '${rack}''"
+  def desc: String  =
+    s"provider: '${provider}', region: '${region}', zone: '${zone}', datacenter: '${datacenter}', rack: '${rack}''"
   def json: JsValue = Json.obj(
-    "provider" -> provider,
-    "zone" -> zone,
-    "region" -> region,
+    "provider"   -> provider,
+    "zone"       -> zone,
+    "region"     -> region,
     "datacenter" -> datacenter,
-    "rack" -> rack,
+    "rack"       -> rack
   )
 }
 
 case class InstanceExposition(
-  urls: Seq[String],
-  hostname: String,
-  ipAddress: Option[String],
-  clientId: Option[String],
-  clientSecret: Option[String],
-  tls: Option[MtlsConfig],
+    urls: Seq[String],
+    hostname: String,
+    ipAddress: Option[String],
+    clientId: Option[String],
+    clientSecret: Option[String],
+    tls: Option[MtlsConfig]
 ) {
-  def json: JsValue = Json.obj(
-    "urls" -> urls,
-    "hostname" -> hostname,
-  )
-  .applyOnWithOpt(clientId) {
-    case (obj, cid) => obj ++ Json.obj("clientId" -> cid)
-  }
-  .applyOnWithOpt(clientSecret) {
-    case (obj, cid) => obj ++ Json.obj("clientSecret" -> cid)
-  }
-  .applyOnWithOpt(ipAddress) {
-    case (obj, cid) => obj ++ Json.obj("ipAddress" -> cid)
-  }
-  .applyOnWithOpt(tls) {
-    case (obj, cid) => obj ++ Json.obj("tls" -> cid.json)
-  }
+  def json: JsValue = Json
+    .obj(
+      "urls"     -> urls,
+      "hostname" -> hostname
+    )
+    .applyOnWithOpt(clientId) { case (obj, cid) =>
+      obj ++ Json.obj("clientId" -> cid)
+    }
+    .applyOnWithOpt(clientSecret) { case (obj, cid) =>
+      obj ++ Json.obj("clientSecret" -> cid)
+    }
+    .applyOnWithOpt(ipAddress) { case (obj, cid) =>
+      obj ++ Json.obj("ipAddress" -> cid)
+    }
+    .applyOnWithOpt(tls) { case (obj, cid) =>
+      obj ++ Json.obj("tls" -> cid.json)
+    }
 }
 
 case class RelayRouting(
-  enabled: Boolean,
-  leaderOnly: Boolean,
-  location: InstanceLocation,
-  exposition: InstanceExposition
+    enabled: Boolean,
+    leaderOnly: Boolean,
+    location: InstanceLocation,
+    exposition: InstanceExposition
 ) {
   def json: JsValue = Json.obj(
-    "enabled" -> enabled,
+    "enabled"    -> enabled,
     "leaderOnly" -> leaderOnly,
-    "location" -> location.json,
-    "exposition" -> exposition.json,
+    "location"   -> location.json,
+    "exposition" -> exposition.json
   )
 }
 
 object RelayRouting {
-  val logger = Logger("otoroshi-relay-routing")
-  val default = RelayRouting(
+  val logger                                    = Logger("otoroshi-relay-routing")
+  val default                                   = RelayRouting(
     enabled = false,
     leaderOnly = false,
     location = InstanceLocation(
@@ -245,7 +247,7 @@ object RelayRouting {
       zone = "local",
       region = "local",
       datacenter = "local",
-      rack = "local",
+      rack = "local"
     ),
     exposition = InstanceExposition(
       urls = Seq.empty,
@@ -253,7 +255,7 @@ object RelayRouting {
       clientId = None,
       clientSecret = None,
       ipAddress = None,
-      tls = None,
+      tls = None
     )
   )
   def parse(json: String): Option[RelayRouting] = Try {
@@ -261,12 +263,12 @@ object RelayRouting {
     RelayRouting(
       enabled = value.select("enabled").asOpt[Boolean].getOrElse(false),
       leaderOnly = value.select("leaderOnly").asOpt[Boolean].getOrElse(false),
-      location =  InstanceLocation(
+      location = InstanceLocation(
         provider = value.select("location").select("provider").asOpt[String].getOrElse("local"),
         zone = value.select("location").select("zone").asOpt[String].getOrElse("local"),
         region = value.select("location").select("region").asOpt[String].getOrElse("local"),
         datacenter = value.select("location").select("datacenter").asOpt[String].getOrElse("local"),
-        rack = value.select("location").select("rack").asOpt[String].getOrElse("local"),
+        rack = value.select("location").select("rack").asOpt[String].getOrElse("local")
       ),
       exposition = InstanceExposition(
         urls = value.select("exposition").select("urls").asOpt[Seq[String]].getOrElse(default.exposition.urls),
@@ -274,29 +276,29 @@ object RelayRouting {
         clientId = value.select("exposition").select("clientId").asOpt[String].filter(_.nonEmpty),
         clientSecret = value.select("exposition").select("clientSecret").asOpt[String].filter(_.nonEmpty),
         ipAddress = value.select("exposition").select("ipAddress").asOpt[String].filter(_.nonEmpty),
-        tls = value.select("exposition").select("tls").asOpt[JsValue].flatMap(v => MtlsConfig.format.reads(v).asOpt),
-      ),
+        tls = value.select("exposition").select("tls").asOpt[JsValue].flatMap(v => MtlsConfig.format.reads(v).asOpt)
+      )
     )
   } match {
-    case Failure(e) => None
+    case Failure(e)     => None
     case Success(value) => value.some
   }
 }
 
 case class ClusterConfig(
-  mode: ClusterMode = ClusterMode.Off,
-  compression: Int = -1,
-  proxy: Option[WSProxyServer],
-  mtlsConfig: MtlsConfig,
-  streamed: Boolean,
-  relay: RelayRouting,
-  // autoUpdateState: Boolean,
-  retryDelay: Long,
-  retryFactor: Long,
-  leader: LeaderConfig = LeaderConfig(),
-  worker: WorkerConfig = WorkerConfig()
+    mode: ClusterMode = ClusterMode.Off,
+    compression: Int = -1,
+    proxy: Option[WSProxyServer],
+    mtlsConfig: MtlsConfig,
+    streamed: Boolean,
+    relay: RelayRouting,
+    // autoUpdateState: Boolean,
+    retryDelay: Long,
+    retryFactor: Long,
+    leader: LeaderConfig = LeaderConfig(),
+    worker: WorkerConfig = WorkerConfig()
 ) {
-  def id: String = ClusterConfig.clusterNodeId
+  def id: String                                      = ClusterConfig.clusterNodeId
   def name: String                                    = if (mode.isOff) "standalone" else (if (mode.isLeader) leader.name else worker.name)
   def gzip(): Flow[ByteString, ByteString, NotUsed]   =
     if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)
@@ -318,38 +320,48 @@ object ClusterConfig {
       relay = RelayRouting(
         enabled = configuration.getOptionalWithFileSupport[Boolean]("relay.enabled").getOrElse(false),
         leaderOnly = configuration.getOptionalWithFileSupport[Boolean]("relay.leaderOnly").getOrElse(false),
-        location =  InstanceLocation(
+        location = InstanceLocation(
           provider = configuration.getOptionalWithFileSupport[String]("relay.location.provider").getOrElse("local"),
           zone = configuration.getOptionalWithFileSupport[String]("relay.location.zone").getOrElse("local"),
           region = configuration.getOptionalWithFileSupport[String]("relay.location.region").getOrElse("local"),
           datacenter = configuration.getOptionalWithFileSupport[String]("relay.location.datacenter").getOrElse("local"),
-          rack = configuration.getOptionalWithFileSupport[String]("relay.location.rack").getOrElse("local"),
+          rack = configuration.getOptionalWithFileSupport[String]("relay.location.rack").getOrElse("local")
         ),
         exposition = InstanceExposition(
           urls = configuration.getOptionalWithFileSupport[String]("relay.exposition.url").map(v => Seq(v)).orElse {
-            configuration.getOptionalWithFileSupport[String]("relay.exposition.urlsStr")
+            configuration
+              .getOptionalWithFileSupport[String]("relay.exposition.urlsStr")
               .map(v => v.split(",").toSeq.map(_.trim))
               .orElse(
                 configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.urls")
-              ).filter(_.nonEmpty)
-          } getOrElse(Seq.empty),
-          hostname = configuration.getOptionalWithFileSupport[String]("relay.exposition.hostname").getOrElse("otoroshi-api.oto.tools"),
+              )
+              .filter(_.nonEmpty)
+          } getOrElse (Seq.empty),
+          hostname = configuration
+            .getOptionalWithFileSupport[String]("relay.exposition.hostname")
+            .getOrElse("otoroshi-api.oto.tools"),
           clientId = configuration.getOptionalWithFileSupport[String]("relay.exposition.clientId"),
           clientSecret = configuration.getOptionalWithFileSupport[String]("relay.exposition.clientSecret"),
           ipAddress = configuration.getOptionalWithFileSupport[String]("relay.exposition.ipAddress"),
           tls = {
-            val enabled = configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.mtls").getOrElse(false)
+            val enabled =
+              configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.mtls").getOrElse(false)
             if (enabled) {
-              val loose = configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.loose").getOrElse(false)
-              val trustAll = configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.loose").getOrElse(false)
-              val certs = configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.certs").getOrElse(Seq.empty)
-              val trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.trustedCerts").getOrElse(Seq.empty)
+              val loose        =
+                configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.loose").getOrElse(false)
+              val trustAll     =
+                configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.loose").getOrElse(false)
+              val certs        =
+                configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.certs").getOrElse(Seq.empty)
+              val trustedCerts = configuration
+                .getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.trustedCerts")
+                .getOrElse(Seq.empty)
               MtlsConfig(
                 certs = certs,
                 trustedCerts = trustedCerts,
                 mtls = enabled,
                 loose = loose,
-                trustAll = trustAll,
+                trustAll = trustAll
               ).some
             } else {
               None
@@ -444,25 +456,25 @@ case class StatsView(
 )
 
 case class MemberView(
-  id: String,
-  name: String,
-  location: String,
-  lastSeen: DateTime,
-  timeout: Duration,
-  memberType: ClusterMode,
-  relay: RelayRouting,
-  stats: JsObject = Json.obj()
+    id: String,
+    name: String,
+    location: String,
+    lastSeen: DateTime,
+    timeout: Duration,
+    memberType: ClusterMode,
+    relay: RelayRouting,
+    stats: JsObject = Json.obj()
 ) {
   def asJson: JsValue =
     Json.obj(
-      "id"     -> id,
+      "id"       -> id,
       "name"     -> name,
       "location" -> location,
       "lastSeen" -> lastSeen.getMillis,
       "timeout"  -> timeout.toMillis,
       "type"     -> memberType.name,
       "stats"    -> stats,
-      "relay"    -> relay.json,
+      "relay"    -> relay.json
     )
   def statsView: StatsView = {
     StatsView(
@@ -505,21 +517,39 @@ object MemberView {
           relay = RelayRouting(
             enabled = true,
             leaderOnly = false,
-            location =  InstanceLocation(
+            location = InstanceLocation(
               provider = value.select("relay").select("location").select("provider").asOpt[String].getOrElse("local"),
               zone = value.select("relay").select("location").select("zone").asOpt[String].getOrElse("local"),
               region = value.select("relay").select("location").select("region").asOpt[String].getOrElse("local"),
-              datacenter = value.select("relay").select("location").select("datacenter").asOpt[String].getOrElse("local"),
-              rack = value.select("relay").select("location").select("rack").asOpt[String].getOrElse("local"),
+              datacenter =
+                value.select("relay").select("location").select("datacenter").asOpt[String].getOrElse("local"),
+              rack = value.select("relay").select("location").select("rack").asOpt[String].getOrElse("local")
             ),
             exposition = InstanceExposition(
-              urls = value.select("relay").select("exposition").select("urls").asOpt[Seq[String]].getOrElse(Seq(s"${env.rootScheme}${env.adminApiExposedHost}")),
-              hostname = value.select("relay").select("exposition").select("hostname").asOpt[String].getOrElse(env.adminApiExposedHost),
+              urls = value
+                .select("relay")
+                .select("exposition")
+                .select("urls")
+                .asOpt[Seq[String]]
+                .getOrElse(Seq(s"${env.rootScheme}${env.adminApiExposedHost}")),
+              hostname = value
+                .select("relay")
+                .select("exposition")
+                .select("hostname")
+                .asOpt[String]
+                .getOrElse(env.adminApiExposedHost),
               clientId = value.select("relay").select("exposition").select("clientId").asOpt[String].filter(_.nonEmpty),
-              clientSecret = value.select("relay").select("exposition").select("clientSecret").asOpt[String].filter(_.nonEmpty),
-              ipAddress = value.select("relay").select("exposition").select("ipAddress").asOpt[String].filter(_.nonEmpty),
-              tls = value.select("relay").select("exposition").select("tls").asOpt[JsValue].flatMap(v => MtlsConfig.format.reads(v).asOpt),
-            ),
+              clientSecret =
+                value.select("relay").select("exposition").select("clientSecret").asOpt[String].filter(_.nonEmpty),
+              ipAddress =
+                value.select("relay").select("exposition").select("ipAddress").asOpt[String].filter(_.nonEmpty),
+              tls = value
+                .select("relay")
+                .select("exposition")
+                .select("tls")
+                .asOpt[JsValue]
+                .flatMap(v => MtlsConfig.format.reads(v).asOpt)
+            )
           )
         )
       )
@@ -771,9 +801,9 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
 
 object ClusterAgent {
 
-  val OtoroshiWorkerIdHeader     = "Otoroshi-Worker-Id"
-  val OtoroshiWorkerNameHeader     = "Otoroshi-Worker-Name"
-  val OtoroshiWorkerLocationHeader = "Otoroshi-Worker-Location"
+  val OtoroshiWorkerIdHeader           = "Otoroshi-Worker-Id"
+  val OtoroshiWorkerNameHeader         = "Otoroshi-Worker-Name"
+  val OtoroshiWorkerLocationHeader     = "Otoroshi-Worker-Location"
   val OtoroshiWorkerRelayRoutingHeader = "Otoroshi-Worker-Relay-Routing"
 
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
@@ -1469,13 +1499,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             val request  = env.MtlsWs
               .url(otoroshiUrl + s"/api/cluster/state?budget=${config.worker.state.timeout}", config.mtlsConfig)
               .withHttpHeaders(
-                "Host"                                    -> config.leader.host,
-                "Accept"                                  -> "application/x-ndjson",
+                "Host"                                        -> config.leader.host,
+                "Accept"                                      -> "application/x-ndjson",
                 // "Accept-Encoding" -> "gzip",
-                ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
-                ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-                ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
-                ClusterAgent.OtoroshiWorkerRelayRoutingHeader -> env.clusterConfig.relay.json.stringify,
+                ClusterAgent.OtoroshiWorkerIdHeader           -> ClusterConfig.clusterNodeId,
+                ClusterAgent.OtoroshiWorkerNameHeader         -> config.worker.name,
+                ClusterAgent.OtoroshiWorkerLocationHeader     -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
+                ClusterAgent.OtoroshiWorkerRelayRoutingHeader -> env.clusterConfig.relay.json.stringify
               )
               .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
               .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
@@ -1693,13 +1723,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               val request           = env.MtlsWs
                 .url(otoroshiUrl + s"/api/cluster/quotas?budget=${config.worker.quotas.timeout}", config.mtlsConfig)
                 .withHttpHeaders(
-                  "Host"                                    -> config.leader.host,
-                  "Content-Type"                            -> "application/x-ndjson",
+                  "Host"                                        -> config.leader.host,
+                  "Content-Type"                                -> "application/x-ndjson",
                   // "Content-Encoding" -> "gzip",
-                  ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
-                  ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-                  ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
-                  ClusterAgent.OtoroshiWorkerRelayRoutingHeader -> env.clusterConfig.relay.json.stringify,
+                  ClusterAgent.OtoroshiWorkerIdHeader           -> ClusterConfig.clusterNodeId,
+                  ClusterAgent.OtoroshiWorkerNameHeader         -> config.worker.name,
+                  ClusterAgent.OtoroshiWorkerLocationHeader     -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
+                  ClusterAgent.OtoroshiWorkerRelayRoutingHeader -> env.clusterConfig.relay.json.stringify
                 )
                 .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
                 .withRequestTimeout(Duration(config.worker.quotas.timeout, TimeUnit.MILLISECONDS))

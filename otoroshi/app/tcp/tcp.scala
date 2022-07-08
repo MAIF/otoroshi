@@ -1012,7 +1012,7 @@ class KvTcpServiceDataStoreDataStore(redisCli: RedisLike, env: Env)
 
   override def fmt: Format[TcpService]                 = TcpService.fmt
   override def redisLike(implicit env: Env): RedisLike = redisCli
-  override def key(id: String): String = s"${env.storageRoot}:tcp:services:$id"
+  override def key(id: String): String                 = s"${env.storageRoot}:tcp:services:$id"
   override def extractId(value: TcpService): String    = value.id
 }
 

@@ -106,7 +106,7 @@ trait BasicStore[T] {
   def key(id: String): String
   // def keyStr(id: String): String                                                                                    = key(id).key
   def extractId(value: T): String
-  def extractKey(value: T): String                                                                                     = key(extractId(value))
+  def extractKey(value: T): String = key(extractId(value))
   def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]]
   //def findAllByKeys(ids: Seq[Key], force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] =
   //  findAllById(ids.map(_.key), force)
@@ -255,7 +255,7 @@ trait OptimizedRedisLike {
       case _ if key.startsWith(ds.tenantDataStore.key(""))             => "tenant".some
       case _ if key.startsWith(ds.tcpServiceDataStore.key(""))         => "tcp-service".some
       case _ if key.startsWith(ds.globalConfigDataStore.key(""))       => "global-config".some
-      case _                                                              => None
+      case _                                                           => None
     }
   }
 }
@@ -515,8 +515,8 @@ trait MetricsWrapper {
 
   private val logger = Logger("otoroshi-metrics-wrapper")
 
-  private val opsKey = "otoroshi.core.storage.ops"
-  private val opsReadKey = s"$opsKey.read"
+  private val opsKey      = "otoroshi.core.storage.ops"
+  private val opsReadKey  = s"$opsKey.read"
   private val opsWriteKey = s"$opsKey.write"
 
   logger.warn("Metrics wrapper is enabled !")
@@ -693,7 +693,10 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
 }
 
-class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val env: Env) extends RedisLike with MetricsWrapper with SwappableRedis {
+class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val env: Env)
+    extends RedisLike
+    with MetricsWrapper
+    with SwappableRedis {
 
   private val incropt = new IncrOptimizer(200, 10000)
 
@@ -719,20 +722,20 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
     redis.mget(keys: _*)
   }
   override def set(
-                    key: String,
-                    value: String,
-                    exSeconds: Option[Long] = None,
-                    pxMilliseconds: Option[Long] = None
-                  ): Future[Boolean] = {
+      key: String,
+      value: String,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] = {
     countWrite(key, "set")
     redis.set(key, value, exSeconds, pxMilliseconds)
   }
   override def setBS(
-                      key: String,
-                      value: ByteString,
-                      exSeconds: Option[Long] = None,
-                      pxMilliseconds: Option[Long] = None
-                    ): Future[Boolean] = {
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] = {
     countWrite(key, "set")
     redis.setBS(key, value, exSeconds, pxMilliseconds)
   }
@@ -849,8 +852,8 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
     redis.scard(key)
   }
   override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
-                                                                          ec: ExecutionContext,
-                                                                          env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] = {
     countWrite(key, "setnx")
     redis.setnxBS(key, value, ttl)
@@ -859,11 +862,18 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   override def swap(memory: Memory, strategy: SwapStrategy): Unit = redis.swap(memory, strategy)
 }
 
-case class IncrOptimizerItem(ops: Int, time: Int, last: AtomicLong, incr: AtomicLong, current: AtomicLong, curOps: AtomicInteger) {
+case class IncrOptimizerItem(
+    ops: Int,
+    time: Int,
+    last: AtomicLong,
+    incr: AtomicLong,
+    current: AtomicLong,
+    curOps: AtomicInteger
+) {
   def setCurrent(value: Long): Unit = current.set(value)
   def incrBy(increment: Long)(f: Long => Future[Long])(implicit ec: ExecutionContext): Future[Long] = {
-    val elapsed = (System.currentTimeMillis() - last.get())
-    val tooMuchOps = curOps.incrementAndGet() > ops
+    val elapsed     = System.currentTimeMillis() - last.get()
+    val tooMuchOps  = curOps.incrementAndGet() > ops
     val tooMuchTime = elapsed > time
     if (tooMuchOps || tooMuchTime) {
       val total = incr.get() + increment
@@ -886,15 +896,23 @@ class IncrOptimizer(ops: Int, time: Int) {
   private val cache = new TrieMap[String, IncrOptimizerItem]()
   def incrBy(key: String, increment: Long)(f: Long => Future[Long])(implicit ec: ExecutionContext): Future[Long] = {
     cache.get(key) match {
-      case None => f(increment).map { r =>
-        val item = IncrOptimizerItem(ops, time, new AtomicLong(System.currentTimeMillis()), new AtomicLong(0L), new AtomicLong(r), new AtomicInteger(0))
-        cache.putIfAbsent(key, item) match {
-          case None =>
-            cache.get(key).foreach(i => i.setCurrent(r)) // when already there ....not sure about it !
-            r
-          case Some(_) => r
+      case None       =>
+        f(increment).map { r =>
+          val item = IncrOptimizerItem(
+            ops,
+            time,
+            new AtomicLong(System.currentTimeMillis()),
+            new AtomicLong(0L),
+            new AtomicLong(r),
+            new AtomicInteger(0)
+          )
+          cache.putIfAbsent(key, item) match {
+            case None    =>
+              cache.get(key).foreach(i => i.setCurrent(r)) // when already there ....not sure about it !
+              r
+            case Some(_) => r
+          }
         }
-      }
       case Some(item) => item.incrBy(increment)(f)
     }
   }

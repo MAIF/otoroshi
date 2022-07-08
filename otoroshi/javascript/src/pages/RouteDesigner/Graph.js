@@ -118,7 +118,7 @@ export const PLUGINS = {
       },
       form_data: {
         ...plugin.schema.form_data,
-        visible: false
+        visible: false,
       },
       ...plugin.schema,
     },
@@ -164,7 +164,12 @@ export const DEFAULT_FLOW = {
           const hostname = getFieldValue('hostname') || '';
           const isSecured = getFieldValue('tls');
 
-          onChange('custom_target', `${isSecured ? 'https' : 'http'}://${hostname}${port}${getFieldValue('custom_target')?.endsWith(' ') ? ' ' : ''}`);
+          onChange(
+            'custom_target',
+            `${isSecured ? 'https' : 'http'}://${hostname}${port}${
+              getFieldValue('custom_target')?.endsWith(' ') ? ' ' : ''
+            }`
+          );
         },
         schema: {
           custom_target: {
@@ -172,13 +177,17 @@ export const DEFAULT_FLOW = {
             type: 'string',
             disabled: true,
             render: ({ value, onChange }) => {
-              const open = value.endsWith(" ")
-              return <div className="d-flex-center justify-content-start target_information mt-3" onClick={() => onChange(open ? value.slice(0, -1) : `${value} `)}>
-                <i className={`me-2 fas fa-chevron-${open ? 'down' : 'right'}`} />
-                <i className='fas fa-server me-2' />
-                <a>{value}</a>
-              </div>
-            }
+              const open = value.endsWith(' ');
+              return (
+                <div
+                  className="d-flex-center justify-content-start target_information mt-3"
+                  onClick={() => onChange(open ? value.slice(0, -1) : `${value} `)}>
+                  <i className={`me-2 fas fa-chevron-${open ? 'down' : 'right'}`} />
+                  <i className="fas fa-server me-2" />
+                  <a>{value}</a>
+                </div>
+              );
+            },
           },
           ...Object.fromEntries(
             Object.entries(generatedSchema.targets.schema).map(([key, value]) => [
@@ -188,7 +197,7 @@ export const DEFAULT_FLOW = {
                 visible: {
                   ref: parentNode,
                   test: (v, idx) => {
-                    return !!v.targets[idx]?.custom_target.endsWith(" ");
+                    return !!v.targets[idx]?.custom_target.endsWith(' ');
                   },
                 },
               },
@@ -198,7 +207,7 @@ export const DEFAULT_FLOW = {
             ...generatedSchema.targets.schema.hostname,
             visible: {
               ref: parentNode,
-              test: (v, idx) => !!v.targets[idx]?.custom_target.endsWith(" "),
+              test: (v, idx) => !!v.targets[idx]?.custom_target.endsWith(' '),
             },
             constraints: [
               {

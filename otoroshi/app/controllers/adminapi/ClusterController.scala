@@ -10,7 +10,7 @@ import otoroshi.actions.ApiAction
 import otoroshi.cluster._
 import otoroshi.env.Env
 import otoroshi.models.{PrivateAppsUser, RightsChecker}
-import otoroshi.next.proxy.{RelayRoutingRequest, ProxyEngine}
+import otoroshi.next.proxy.{ProxyEngine, RelayRoutingRequest}
 import otoroshi.script.RequestHandler
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
@@ -352,7 +352,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                         .map { name =>
                           env.datastores.clusterStateDataStore.registerMember(
                             MemberView(
-                              id = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerIdHeader).getOrElse(s"tmpnode_${IdGenerator.uuid}"),
+                              id = ctx.request.headers
+                                .get(ClusterAgent.OtoroshiWorkerIdHeader)
+                                .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
                               name = name,
                               memberType = ClusterMode.Worker,
                               location =
@@ -451,7 +453,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
             ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
               env.datastores.clusterStateDataStore.registerMember(
                 MemberView(
-                  id = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerIdHeader).getOrElse(s"tmpnode_${IdGenerator.uuid}"),
+                  id = ctx.request.headers
+                    .get(ClusterAgent.OtoroshiWorkerIdHeader)
+                    .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
                   name = name,
                   memberType = ClusterMode.Worker,
                   location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
@@ -640,30 +644,35 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
       env.clusterConfig.mode match {
         case Off => NotFound(Json.obj("error" -> "Cluster API not available")).future
-        case _ => {
-          val engine = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get
-          val cookies = ctx.request.headers.get("Otoroshi-Relay-Routing-Cookies").map(c => Cookies.decodeCookieHeader(c)).getOrElse(Seq.empty[Cookie])
-          val certs = ctx.request.headers.headers.filter(_._1.startsWith("Otoroshi-Relay-Routing-Certs-"))
+        case _   => {
+          val engine     = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get
+          val cookies    = ctx.request.headers
+            .get("Otoroshi-Relay-Routing-Cookies")
+            .map(c => Cookies.decodeCookieHeader(c))
+            .getOrElse(Seq.empty[Cookie])
+          val certs      = ctx.request.headers.headers
+            .filter(_._1.startsWith("Otoroshi-Relay-Routing-Certs-"))
             .map { case (key, value) => (key.replace("Otoroshi-Relay-Routing-Certs-", "").toInt, value) }
             .sortWith((a, b) => a._1.compareTo(b._1) < 0)
-            .map {
-              case (_, value) => value.trim.toCertificate
-            }.applyOn { seq =>
+            .map { case (_, value) =>
+              value.trim.toCertificate
+            }
+            .applyOn { seq =>
               if (seq.isEmpty) {
                 None
               } else {
                 seq.some
               }
             }
-          val request = new RelayRoutingRequest(ctx.request, Cookies(cookies), certs)
-          val routeName = ctx.request.headers.get("Otoroshi-Relay-Routing-Route-Name").getOrElse("--")
+          val request    = new RelayRoutingRequest(ctx.request, Cookies(cookies), certs)
+          val routeName  = ctx.request.headers.get("Otoroshi-Relay-Routing-Route-Name").getOrElse("--")
           val callerName = ctx.request.headers.get("Otoroshi-Relay-Routing-Caller-Name").getOrElse("--")
           RelayRouting.logger.debug(s"routing relay call to '${routeName}' from '${callerName}'")
           engine.handle(request, _ => Results.InternalServerError("bad default routing").vfuture).map { resp =>
             resp.copy(
               header = resp.header.copy(
-                headers = resp.header.headers.map {
-                  case (key, value) => (s"Otoroshi-Relay-Routing-Response-Header-$key", value)
+                headers = resp.header.headers.map { case (key, value) =>
+                  (s"Otoroshi-Relay-Routing-Response-Header-$key", value)
                 }
               )
             )

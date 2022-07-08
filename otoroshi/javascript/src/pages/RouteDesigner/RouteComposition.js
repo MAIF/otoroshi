@@ -22,13 +22,13 @@ const Methods = ({ frontend }) => {
   const hasMethods = frontend.methods && frontend.methods.length > 0;
   const methods = hasMethods
     ? frontend.methods.map((m, i) => (
-      <span
-        key={`frontendmethod-${i}`}
-        className={`badge me-1`}
-        style={{ backgroundColor: HTTP_COLORS[m] }}>
-        {m}
-      </span>
-    ))
+        <span
+          key={`frontendmethod-${i}`}
+          className={`badge me-1`}
+          style={{ backgroundColor: HTTP_COLORS[m] }}>
+          {m}
+        </span>
+      ))
     : [<span className="badge bg-dark">ALL</span>];
   return (
     <div className="d-flex-between">
@@ -274,19 +274,19 @@ const RouteForm = React.memo(
       value={
         usingJsonView
           ? {
-            [dirtyField]: value,
-          }
+              [dirtyField]: value,
+            }
           : value
       }
       schema={
         usingJsonView
           ? {
-            [dirtyField]: {
-              type: 'json',
-              format: 'code',
-              label: null,
-            },
-          }
+              [dirtyField]: {
+                type: 'json',
+                format: 'code',
+                label: null,
+              },
+            }
           : schema
       }
       flow={usingJsonView ? [dirtyField] : flow}
@@ -372,7 +372,7 @@ export default ({ service, setSaveButton, setService, viewPlugins, ref }) => {
   const [routes, setRoutes] = useState([]);
   const [templates, setTemplates] = useState({});
   const [shouldUpdateRoutes, setUpdatesRoutes] = useState(false);
-  const history = useHistory()
+  const history = useHistory();
 
   useEffect(() => {
     nextClient.template(nextClient.ENTITIES.SERVICES).then(setTemplates);
@@ -384,9 +384,9 @@ export default ({ service, setSaveButton, setService, viewPlugins, ref }) => {
 
   useImperativeHandle(ref, () => ({
     onTestingButtonClick() {
-      history.push(`/routes/${service.id}?tab=flow`, { showTryIt: true })
-    }
-  }))
+      history.push(`/routes/${service.id}?tab=flow`, { showTryIt: true });
+    },
+  }));
 
   useEffect(() => {
     setSaveButton(

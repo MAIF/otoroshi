@@ -46,19 +46,19 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 case class ServiceLike(entity: EntityLocationSupport, groups: Seq[String]) extends EntityLocationSupport {
-  def id: String = internalId
-  override def internalId: String = entity.internalId
-  override def json: JsValue = entity.json
-  override def theName: String = entity.theName
-  override def theDescription: String = entity.theDescription
-  override def theTags: Seq[String] = entity.theTags
+  def id: String                                = internalId
+  override def internalId: String               = entity.internalId
+  override def json: JsValue                    = entity.json
+  override def theName: String                  = entity.theName
+  override def theDescription: String           = entity.theDescription
+  override def theTags: Seq[String]             = entity.theTags
   override def theMetadata: Map[String, String] = entity.theMetadata
-  override def location: EntityLocation = entity.location
+  override def location: EntityLocation         = entity.location
 }
 
 object ServiceLike {
-  def fromService(service: ServiceDescriptor): ServiceLike = ServiceLike(service, service.groups)
-  def fromRoute(service: NgRoute): ServiceLike = ServiceLike(service, service.groups)
+  def fromService(service: ServiceDescriptor): ServiceLike  = ServiceLike(service, service.groups)
+  def fromRoute(service: NgRoute): ServiceLike              = ServiceLike(service, service.groups)
   def fromRouteComposition(service: NgService): ServiceLike = ServiceLike(service, service.groups)
 }
 
@@ -818,7 +818,7 @@ class BackOfficeController(
                 tags = Seq.empty,
                 metadata = Map.empty,
                 sessionCookieValues = sessionCookieValues,
-                clientSideSessionEnabled = true,
+                clientSideSessionEnabled = true
               ).asJson
             )
           )
@@ -838,7 +838,7 @@ class BackOfficeController(
                     tags = Seq.empty,
                     metadata = Map.empty,
                     sessionCookieValues = sessionCookieValues,
-                    clientSideSessionEnabled = true,
+                    clientSideSessionEnabled = true
                   )
                   val body             = Json.parse(resp.body)
                   val issuer           = (body \ "issuer").asOpt[String].getOrElse("http://localhost:8082/")
@@ -907,7 +907,7 @@ class BackOfficeController(
                       tags = Seq.empty,
                       metadata = Map.empty,
                       sessionCookieValues = sessionCookieValues,
-                      clientSideSessionEnabled = true,
+                      clientSideSessionEnabled = true
                     ).asJson
                   )
                 }
@@ -924,7 +924,7 @@ class BackOfficeController(
                     tags = Seq.empty,
                     metadata = Map.empty,
                     sessionCookieValues = sessionCookieValues,
-                    clientSideSessionEnabled = true,
+                    clientSideSessionEnabled = true
                   ).asJson
                 )
               }
@@ -1602,13 +1602,15 @@ class BackOfficeController(
   def findServiceLike(serviceId: String): Future[Option[ServiceLike]] = {
     env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
       case Some(service) => ServiceLike.fromService(service).some.vfuture
-      case None => env.datastores.routeDataStore.findById(serviceId) flatMap {
-        case Some(service) => ServiceLike.fromRoute(service).some.vfuture
-        case None => env.datastores.servicesDataStore.findById(serviceId) map {
-          case Some(service) => ServiceLike.fromRouteComposition(service).some
-          case None => None
+      case None          =>
+        env.datastores.routeDataStore.findById(serviceId) flatMap {
+          case Some(service) => ServiceLike.fromRoute(service).some.vfuture
+          case None          =>
+            env.datastores.servicesDataStore.findById(serviceId) map {
+              case Some(service) => ServiceLike.fromRouteComposition(service).some
+              case None          => None
+            }
         }
-      }
     }
   }
 
@@ -1723,8 +1725,8 @@ class BackOfficeController(
   }
 
   def graphqlProxy() = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
-    val url = ctx.request.queryString.get("url").map(_.last).get
-    val host = Uri(url).authority.host.toString()
+    val url     = ctx.request.queryString.get("url").map(_.last).get
+    val host    = Uri(url).authority.host.toString()
     val headers = (ctx.request.headers.toSimpleMap ++ Map("Host" -> host)).toSeq
 
     val builder = env.Ws
@@ -1744,7 +1746,8 @@ class BackOfficeController(
       .execute()
       .fast
       .map { res =>
-        Results.Status(res.status)(res.body)
+        Results
+          .Status(res.status)(res.body)
           .withHeaders(res.headers.mapValues(_.last).toSeq.filterNot(_._1 == "Content-Type"): _*)
           .as(res.contentType)
       }
@@ -1752,7 +1755,7 @@ class BackOfficeController(
 
   def routeEntries(routeId: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.routeDataStore.findById(routeId) flatMap {
-      case None => NotFound(Json.obj("error" -> "route not found")).future
+      case None        => NotFound(Json.obj("error" -> "route not found")).future
       case Some(route) =>
         val isSecured = route.plugins.slots.exists(p => p.plugin.contains("ForceHttpsTraffic"))
 
@@ -1761,8 +1764,7 @@ class BackOfficeController(
             .withScheme(if (isSecured) "https" else "http")
             .withPort(if (isSecured) env.exposedHttpsPortInt else env.exposedHttpPortInt)
             .toString()
-        })))
-          .future
+        }))).future
     }
   }
 
@@ -1770,52 +1772,57 @@ class BackOfficeController(
     val schema = ctx.request.body.select("schema").asOpt[String].getOrElse("{}")
 
     sangria.parser.QueryParser.parse(schema) match {
-      case scala.util.Failure(exception) => BadRequest(Json.obj("error" -> exception.getMessage)).future
+      case scala.util.Failure(exception)   => BadRequest(Json.obj("error" -> exception.getMessage)).future
       case scala.util.Success(astDocument) =>
-      val generatedSchema = sangria.schema.Schema.buildFromAst(astDocument)
-      val res = GraphQLFormats.astDocumentToJson(generatedSchema)
+        val generatedSchema = sangria.schema.Schema.buildFromAst(astDocument)
+        val res             = GraphQLFormats.astDocumentToJson(generatedSchema)
 
-      Ok(Json.obj("types" -> res)).future
+        Ok(Json.obj("types" -> res)).future
     }
   }
 
   def jsonToGraphqlSchema() = BackOfficeActionAuth.async(parse.json) { ctx =>
     import sangria.schema.Schema
 
-    val types = ctx.request.body.select("types")
-        .as[JsArray]
-        .value
-        .map(GraphQLFormats.objectTypeDefinitionFmt.reads)
-        .flatMap {
-          case JsSuccess(v, _) => Some(v)
-          case JsError(_) => None
-        }
+    val types = ctx.request.body
+      .select("types")
+      .as[JsArray]
+      .value
+      .map(GraphQLFormats.objectTypeDefinitionFmt.reads)
+      .flatMap {
+        case JsSuccess(v, _) => Some(v)
+        case JsError(_)      => None
+      }
 
     val schema = ctx.request.body.select("schema").asOpt[String].getOrElse("{}")
 
     Try {
       sangria.parser.QueryParser.parse(schema) match {
-        case scala.util.Failure(exception) => BadRequest(Json.obj("error" -> exception.getMessage)).future
+        case scala.util.Failure(exception)   => BadRequest(Json.obj("error" -> exception.getMessage)).future
         case scala.util.Success(astDocument) =>
           val generatedSchema = Schema.buildFromAst(astDocument)
-          val document = generatedSchema.toAst
+          val document        = generatedSchema.toAst
 
           val newDocument = document.copy(
             definitions = document.definitions.flatMap {
-              case _: sangria.ast.TypeDefinition => None
+              case _: sangria.ast.TypeDefinition          => None
               case _: sangria.ast.InterfaceTypeDefinition => None
-              case v => Some(v)
+              case v                                      => Some(v)
             } ++ types
           )
 
-          Ok(Json.obj(
-            "schema" -> Schema.buildFromAst(newDocument).renderPretty
-          )).future
+          Ok(
+            Json.obj(
+              "schema" -> Schema.buildFromAst(newDocument).renderPretty
+            )
+          ).future
       }
-    } recover {
-      case e => BadRequest(Json.obj(
-        "error" -> e.getMessage
-      )).future
+    } recover { case e =>
+      BadRequest(
+        Json.obj(
+          "error" -> e.getMessage
+        )
+      ).future
     } get
   }
 
@@ -1823,14 +1830,3 @@ class BackOfficeController(
     Ok(Yaml.write(ctx.request.body)).as("application/yaml")
   }
 }
-
-
-
-
-
-
-
-
-
-
-

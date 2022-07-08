@@ -14,7 +14,16 @@ import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import otoroshi.models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
-import otoroshi.next.models.{KvNgRouteDataStore, KvNgServiceDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
+import otoroshi.next.models.{
+  KvNgRouteDataStore,
+  KvNgServiceDataStore,
+  KvStoredNgBackendDataStore,
+  KvStoredNgTargetDataStore,
+  NgRouteDataStore,
+  NgServiceDataStore,
+  StoredNgBackendDataStore,
+  StoredNgTargetDataStore
+}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage.stores._
 import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore, SwappableRedisLikeMetricsWrapper}
@@ -54,12 +63,12 @@ class InMemoryDataStores(
   val _optimized       = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.optimized").getOrElse(false)
   val _modern          = configuration.getOptionalWithFileSupport[Boolean]("app.inmemory.modern").getOrElse(false)
   // lazy val redis       = new SwappableInMemoryRedis(_optimized, env, actorSystem)
-  lazy val _redis       = if (_modern) {
+  lazy val _redis      = if (_modern) {
     new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
   } else {
     new SwappableInMemoryRedis(_optimized, env, actorSystem)
   }
-  lazy val redis = if (env.isDev) new SwappableRedisLikeMetricsWrapper(_redis, env) else _redis
+  lazy val redis       = if (env.isDev) new SwappableRedisLikeMetricsWrapper(_redis, env) else _redis
 
   lazy val persistence = persistenceKind match {
     case PersistenceKind.HttpPersistenceKind => new HttpPersistence(this, env)

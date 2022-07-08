@@ -13,7 +13,8 @@ import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.Future
 
-class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOfficeActionAuth)(implicit env: Env) extends AbstractController(cc) {
+class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOfficeActionAuth)(implicit env: Env)
+    extends AbstractController(cc) {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
@@ -159,7 +160,12 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
     }
   }
 
-  def fetchMetrics(format: Option[String], acceptsJson: Boolean, acceptsProm: Boolean, filter: Option[String]): Result = {
+  def fetchMetrics(
+      format: Option[String],
+      acceptsJson: Boolean,
+      acceptsProm: Boolean,
+      filter: Option[String]
+  ): Result = {
     if (format.contains("old_json") || format.contains("old")) {
       Ok(env.metrics.jsonExport(filter)).as("application/json")
     } else if (format.contains("json")) {
@@ -176,8 +182,8 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
   }
 
   def processMetrics() = Action.async { req =>
-    val format = req.getQueryString("format") 
-    val filter = req.getQueryString("filter")
+    val format      = req.getQueryString("format")
+    val filter      = req.getQueryString("filter")
     val acceptsJson = req.accepts("application/json")
     val acceptsProm = req.accepts("application/prometheus")
     if (env.metricsEnabled) {

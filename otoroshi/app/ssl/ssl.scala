@@ -2272,7 +2272,7 @@ class KvClientCertificateValidationDataStore(redisCli: RedisLike, env: Env)
 
   override def fmt: Format[ClientCertificateValidator]              = ClientCertificateValidator.fmt
   override def redisLike(implicit env: Env): RedisLike              = redisCli
-  override def key(id: String): String = s"${env.storageRoot}:certificates:validators:$id"
+  override def key(id: String): String                              = s"${env.storageRoot}:certificates:validators:$id"
   override def extractId(value: ClientCertificateValidator): String = value.id
 }
 

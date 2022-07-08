@@ -29,7 +29,7 @@ const Manager = ({ query, entity, ...props }) => {
   const isCreation = p.routeId === 'new';
   const history = useHistory();
   const { url } = useRouteMatch();
-  const location = useLocation()
+  const location = useLocation();
 
   const rawViewPlugins = new URLSearchParams(location.search).get('view_plugins');
   const viewPlugins = rawViewPlugins !== null ? Number(rawViewPlugins) : -1;
@@ -39,7 +39,7 @@ const Manager = ({ query, entity, ...props }) => {
   const [saveButton, setSaveButton] = useState(null);
   const [menu, setMenu] = useState();
 
-  const viewRef = useRef()
+  const viewRef = useRef();
 
   useEffect(() => {
     if (p.routeId === 'new') {
@@ -108,7 +108,7 @@ const Manager = ({ query, entity, ...props }) => {
                 },
                 {
                   icon: 'fa-cog',
-                  onClick: () => { },
+                  onClick: () => {},
                   enabled: () => !isOnViewPlugins, //isOnViewPlugins || query == 'flow',
                   dropdown: true,
                   style: { marginLeft: 20 },
@@ -126,14 +126,18 @@ const Manager = ({ query, entity, ...props }) => {
                     <button
                       key={title}
                       type="button"
-                      className={`btn btn-sm toggle-form-buttons d-flex align-items-center ${dropdown ? 'dropdown-toggle' : ''
-                        }`}
-                      onClick={onClick ? onClick : () => {
-                        if (query !== tab || viewPlugins) {
-                          if (!window.location.href.includes(to))
-                            history.push(to);
-                        }
-                      }}
+                      className={`btn btn-sm toggle-form-buttons d-flex align-items-center ${
+                        dropdown ? 'dropdown-toggle' : ''
+                      }`}
+                      onClick={
+                        onClick
+                          ? onClick
+                          : () => {
+                              if (query !== tab || viewPlugins) {
+                                if (!window.location.href.includes(to)) history.push(to);
+                              }
+                            }
+                      }
                       {...(tooltip || {})}
                       style={{
                         ...(style || {}),
@@ -166,7 +170,7 @@ const Manager = ({ query, entity, ...props }) => {
                             className="d-flex flex-column"
                             style={{
                               paddingTop: 10,
-                              minWidth: '160px'
+                              minWidth: '160px',
                             }}>
                             <button
                               type="button"
@@ -381,8 +385,7 @@ const Manager = ({ query, entity, ...props }) => {
 
   const component = divs.filter((p) => p.predicate);
 
-  if (component.length > 0)
-    return <div className="designer row">{component[0].render()}</div>;
+  if (component.length > 0) return <div className="designer row">{component[0].render()}</div>;
 
   return (
     <div className="designer row ps-3">

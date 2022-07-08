@@ -367,9 +367,9 @@ trait TargetPredicate {
 }
 
 object TargetPredicate {
-  val AlwaysMatch = otoroshi.models.AlwaysMatch
-  val GeolocationMatch = otoroshi.models.GeolocationMatch
-  val NetworkLocationMatch = otoroshi.models.NetworkLocationMatch
+  val AlwaysMatch                     = otoroshi.models.AlwaysMatch
+  val GeolocationMatch                = otoroshi.models.GeolocationMatch
+  val NetworkLocationMatch            = otoroshi.models.NetworkLocationMatch
   val format: Format[TargetPredicate] = new Format[TargetPredicate] {
     override def writes(o: TargetPredicate): JsValue = o.toJson
     override def reads(json: JsValue): JsResult[TargetPredicate] = {
@@ -496,10 +496,16 @@ case class NetworkLocationMatch(
       "rack"     -> rack
     )
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    otoroshi.utils.RegexPool(provider.trim.toLowerCase).matches(env.clusterConfig.relay.location.provider.trim.toLowerCase) &&
-    otoroshi.utils.RegexPool(region.trim.toLowerCase).matches(env.clusterConfig.relay.location.region.trim.toLowerCase) &&
+    otoroshi.utils
+      .RegexPool(provider.trim.toLowerCase)
+      .matches(env.clusterConfig.relay.location.provider.trim.toLowerCase) &&
+    otoroshi.utils
+      .RegexPool(region.trim.toLowerCase)
+      .matches(env.clusterConfig.relay.location.region.trim.toLowerCase) &&
     otoroshi.utils.RegexPool(zone.trim.toLowerCase).matches(env.clusterConfig.relay.location.zone.trim.toLowerCase) &&
-    otoroshi.utils.RegexPool(dataCenter.trim.toLowerCase).matches(env.clusterConfig.relay.location.datacenter.trim.toLowerCase) &&
+    otoroshi.utils
+      .RegexPool(dataCenter.trim.toLowerCase)
+      .matches(env.clusterConfig.relay.location.datacenter.trim.toLowerCase) &&
     otoroshi.utils.RegexPool(rack.trim.toLowerCase).matches(env.clusterConfig.relay.location.rack.trim.toLowerCase)
   }
 }

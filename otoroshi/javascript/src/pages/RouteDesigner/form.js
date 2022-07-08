@@ -493,7 +493,7 @@ export class RouteForm extends Component {
   }
 
   onTestingButtonClick(history, value) {
-    history.push(`/routes/${value.id}?tab=flow`, { showTryIt: true })
+    history.push(`/routes/${value.id}?tab=flow`, { showTryIt: true });
   }
 
   load = () => {

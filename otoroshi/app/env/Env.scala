@@ -26,7 +26,20 @@ import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
 import otoroshi.jobs.updates.Version
-import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{
+  EntityLocation,
+  OtoroshiAdminType,
+  SimpleOtoroshiAdmin,
+  Team,
+  TeamAccess,
+  TeamId,
+  Tenant,
+  TenantAccess,
+  TenantId,
+  UserRight,
+  UserRights,
+  WebAuthnOtoroshiAdmin
+}
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.openapi.{ClassGraphScanner, FormsGenerator, OpenApiGenerator, OpenapiToJson}
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
@@ -408,21 +421,24 @@ class Env(
   lazy val isProd: Boolean                 = !isDev
   lazy val number: Int                     = configuration.getOptionalWithFileSupport[Int]("app.instance.number").getOrElse(0)
   lazy val name: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.name").getOrElse("otoroshi")
-  lazy val title: String                   = configuration.getOptionalWithFileSupport[String]("app.instance.title").map {
-    case v if v.startsWith("ReplaceAll(") => v.substring(11, v.length)
-    case v => v
-  }.getOrElse("Otoroshi")
+  lazy val title: String                   = configuration
+    .getOptionalWithFileSupport[String]("app.instance.title")
+    .map {
+      case v if v.startsWith("ReplaceAll(") => v.substring(11, v.length)
+      case v                                => v
+    }
+    .getOrElse("Otoroshi")
   // lazy val rack: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.rack").getOrElse("local")
   // lazy val infraProvider: String           =
   //   configuration.getOptionalWithFileSupport[String]("app.instance.provider").getOrElse("local")
   // lazy val dataCenter: String              = configuration.getOptionalWithFileSupport[String]("app.instance.dc").getOrElse("local")
   // lazy val zone: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.zone").getOrElse("local")
   // lazy val region: String                  = configuration.getOptionalWithFileSupport[String]("app.instance.region").getOrElse("local")
-  lazy val rack: String = clusterConfig.relay.location.rack
-  lazy val infraProvider: String = clusterConfig.relay.location.provider
-  lazy val dataCenter: String = clusterConfig.relay.location.datacenter
-  lazy val zone: String = clusterConfig.relay.location.zone
-  lazy val region: String = clusterConfig.relay.location.region
+  lazy val rack: String                    = clusterConfig.relay.location.rack
+  lazy val infraProvider: String           = clusterConfig.relay.location.provider
+  lazy val dataCenter: String              = clusterConfig.relay.location.datacenter
+  lazy val zone: String                    = clusterConfig.relay.location.zone
+  lazy val region: String                  = clusterConfig.relay.location.region
   lazy val liveJs: Boolean                 = configuration
     .getOptionalWithFileSupport[String]("app.env")
     .filter(_ == "dev")
@@ -730,8 +746,8 @@ class Env(
         "OTOROSHI_ADMIN_API_SECRET",
         "used to access otoroshi admin api"
       )
-    ).collect {
-      case Some(mess) => s" - $mess"
+    ).collect { case Some(mess) =>
+      s" - $mess"
     }
 
     if (!clusterConfig.mode.isWorker && values.nonEmpty) {

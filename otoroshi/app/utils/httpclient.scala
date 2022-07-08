@@ -1298,25 +1298,28 @@ case class AkkaWsClientRequest(
       }
       .flatMap {
         // case ParsingResult.Ok(header, _) => Option(header.asInstanceOf[`Content-Type`].contentType)
-        case ParsingResult.Ok(header, _) => header match {
-          case `Content-Type`(contentType) => contentType.some
-          case RawHeader(_, value) if value.contains(",") => value.split(",").headOption.map(_.trim).map(v => `Content-Type`.parseFromValueString(v)) match {
-            case Some(Left(errs)) => {
-              ClientConfig.logger.error(s"Error while parsing request content-type: ${errs}")
-              None
-            }
-            case Some(Right(`Content-Type`(contentType))) => contentType.some
-            case None => None
+        case ParsingResult.Ok(header, _) =>
+          header match {
+            case `Content-Type`(contentType)                => contentType.some
+            case RawHeader(_, value) if value.contains(",") =>
+              value.split(",").headOption.map(_.trim).map(v => `Content-Type`.parseFromValueString(v)) match {
+                case Some(Left(errs))                         => {
+                  ClientConfig.logger.error(s"Error while parsing request content-type: ${errs}")
+                  None
+                }
+                case Some(Right(`Content-Type`(contentType))) => contentType.some
+                case None                                     => None
+              }
+            case RawHeader(_, value)                        =>
+              `Content-Type`.parseFromValueString(value) match {
+                case Left(errs)                         => {
+                  ClientConfig.logger.error(s"Error while parsing request content-type: ${errs}")
+                  None
+                }
+                case Right(`Content-Type`(contentType)) => contentType.some
+              }
+            case _                                          => None
           }
-          case RawHeader(_, value) => `Content-Type`.parseFromValueString(value) match {
-            case Left(errs) => {
-              ClientConfig.logger.error(s"Error while parsing request content-type: ${errs}")
-              None
-            }
-            case Right(`Content-Type`(contentType) ) => contentType.some
-          }
-          case _ =>  None
-        }
         case _                           => None
       }
   }
