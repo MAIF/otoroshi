@@ -1339,7 +1339,7 @@ class Designer extends React.Component {
           }}>
           {FullForm && (
             <FullForm
-              route={advancedDesignerView ? route : undefined}
+              route={route}
               saveRoute={(route) => {
                 this.setState({ route });
               }}
