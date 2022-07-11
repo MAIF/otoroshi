@@ -64,25 +64,27 @@ $(function () {
   setupSearch();
 
   function improveSidebar() {
-    let list = document.getElementsByClassName("active")[1]
-      .parentElement
-      .getElementsByTagName("ul")[0]
-
-    if (!list) {
-      list = document.getElementsByClassName("active")[1]
-        .parentElement
-        .parentElement
-        .parentElement
-        .children[0]
+    if (document.getElementsByClassName("active")[1]) {
+      let list = document.getElementsByClassName("active")[1]
         .parentElement
         .getElementsByTagName("ul")[0]
-    }
 
-    if (list && list.children)
-      for (let i = 0; i < list.children.length; i++) {
-        let r = list.children[i]
-        r.style.display = "block"
+      if (!list) {
+        list = document.getElementsByClassName("active")[1]
+          .parentElement
+          .parentElement
+          .parentElement
+          .children[0]
+          .parentElement
+          .getElementsByTagName("ul")[0]
       }
+
+      if (list && list.children)
+        for (let i = 0; i < list.children.length; i++) {
+          let r = list.children[i]
+          r.style.display = "block"
+        }
+    }
   }
 
   improveSidebar();
@@ -133,10 +135,12 @@ $(function () {
       document.getElementById("instructions-toggle-button").style.backgroundColor = "#fb9000"
       document.getElementById("instructions-toggle-button").style.color = "#fff"
       element.parentNode.classList.add("instructions-closed");
-      document.getElementById("instructions-toggle-confirm").style.display = "none";
+      if (document.getElementById("instructions-toggle-confirm"))
+        document.getElementById("instructions-toggle-confirm").style.display = "none";
     }
     else {
-      document.getElementById("instructions-toggle-confirm").style.display = "flex";
+      if (document.getElementById("instructions-toggle-confirm"))
+        document.getElementById("instructions-toggle-confirm").style.display = "flex";
     }
 
     element.addEventListener('click', function (event) {
@@ -144,7 +148,8 @@ $(function () {
         element.parentNode.classList.remove("instructions-closed")
         if (!instructionsDone) {
           document.getElementById("instructions-toggle-button").innerText = "close"
-          document.getElementById("instructions-toggle-confirm").style.display = "flex"
+          if (document.getElementById("instructions-toggle-confirm"))
+            document.getElementById("instructions-toggle-confirm").style.display = "flex"
         }
       } else {
         element.parentNode.classList.add("instructions-closed")
@@ -155,18 +160,38 @@ $(function () {
           document.getElementById("instructions-toggle-button").style.backgroundColor = "#fb9000"
           document.getElementById("instructions-toggle-button").style.color = "#fff"
         }
-        document.getElementById("instructions-toggle-confirm").style.display = "none"
+        if (document.getElementById("instructions-toggle-confirm"))
+          document.getElementById("instructions-toggle-confirm").style.display = "none"
       }
     })
 
-    document.getElementById("instructions-toggle-confirm").addEventListener('click', event => {
-      instructionsDone = true
-      localStorage.setItem("instructions", true);
-      element.parentNode.classList.add("instructions-closed")
-      document.getElementById("instructions-toggle-button").innerText = "Already done"
-      document.getElementById("instructions-toggle-button").style.backgroundColor = "#fb9000"
-      document.getElementById("instructions-toggle-button").style.color = "#fff"
-      document.getElementById("instructions-toggle-confirm").style.display = "none"
-    });
+    if (document.getElementById("instructions-toggle-confirm"))
+      document.getElementById("instructions-toggle-confirm").addEventListener('click', event => {
+        instructionsDone = true
+
+        localStorage.setItem("instructions", true);
+        element.parentNode.classList.add("instructions-closed")
+        document.getElementById("instructions-toggle-button").innerText = "Already done"
+        document.getElementById("instructions-toggle-button").style.backgroundColor = "#fb9000"
+        document.getElementById("instructions-toggle-button").style.color = "#fff"
+        document.getElementById("instructions-toggle-confirm").style.display = "none"
+      });
   }
+
+  let toggles = [...document.getElementsByClassName("simple-block-toggle")]
+
+  toggles.forEach(element => {
+    element.parentNode.classList.add("instructions-closed")
+    element.getElementsByClassName("simple-block-button")[0].innerText = "Read"
+
+    element.addEventListener('click', function (event) {
+      if (element.parentNode.classList.contains("instructions-closed")) {
+        element.parentNode.classList.remove("instructions-closed")
+        element.getElementsByClassName("simple-block-button")[0].innerText = "Close"
+      } else {
+        element.parentNode.classList.add("instructions-closed")
+        element.getElementsByClassName("simple-block-button")[0].innerText = "Read"
+      }
+    })
+  })
 });
