@@ -266,22 +266,48 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#graphql-composer-proxy" name="graphql-composer-proxy" class="anchor"><span class="anchor-link"></span></a>GraphQL Composer Proxy</h1><div class="callout warning "><div class="callout-title">Warning</div>
 <p>this feature is <strong>EXPERIMENTAL</strong> and might not work as expected. </p>
-<p>If you encounter any bugs, <a href="">please fill an issue</a>, it will help us a lot :)</p></div>
-<p>The GraphQL Composer proxy is an useful plugin when you want to build an GraphQL API from multiples differents sources, like rest api, graphql api or mocked apis.</p>
-<p>With this plugin, you can define, assisted by the UI, a graphQL schema with types, queries and mutations. </p>
-<h2><a href="#directives" name="directives" class="anchor"><span class="anchor-link"></span></a>Directives</h2>
-<h3><a href="#rest" name="rest" class="anchor"><span class="anchor-link"></span></a>rest</h3>
+<p>If you encounter any bugs, <a href="https://github.com/MAIF/otoroshi/issues/new">please fill an issue</a>, it will help us a lot :)</p></div>
+<p>The GraphQL Composer proxy is an useful plugin to build an GraphQL API from multiples differents sources, composed of rest api, graphql api or mocked api.</p><div class="centered-img">
+<img src="../../imgs/graphql-composer.png" width="420px" /></div>
+<p>You can define, assisted by the UI, a graphQL schema with types, queries and mutations. Otoroshi provides a way to override each field and query with a list of custom directives.</p>
+<p>To get a better view of this plugin, you can check the following schema. The goal of this example is to define two types, an user with a name and a password field, and country, which represents all the country with their users. We used three custom directives :</p>
+<ul>
+  <li><a href="graphql-composer.html#directives">rest</a> : to call a http rest service with dynamic path params</li>
+  <li><a href="graphql-composer.html#directives">permission</a> : to restrict the access to the sensitive field</li>
+  <li><a href="graphql-composer.html#directives">graphql</a> : to call a graphQL service by passing a url and the associated query</li>
+</ul>
+<pre class="prettyprint"><code class="language-js">type Country {
+  name: String
+  users: [User] @rest(url: &quot;http://localhost:5000/users/${item.name}&quot;)
+}
+
+type User {
+  name: String
+  password: String @permission(value: &quot;ADMIN&quot;)
+}
+
+type Query {
+  users: [User] @rest(url: &quot;http://localhost:5000/users&quot;, paginate: true)
+  user(id: String): RestrictedUser @rest(url: &quot;http://localhost:5000/users/${params.id}&quot;)
+  countries: [Country] @graphql(url: &quot;https://countries.trevorblades.com&quot;, query: &quot;{ countries { name }}&quot;)
+}
+</code></pre>
+<p>Once created and saved in Otoroshi (admitting the existence of an API exposed on 5000 port and with corresponding users endpoints), you can start to call your new GraphQL route by using any http client or easier with the on-board tester. </p>
+<h2><a href="#directives" name="directives" class="anchor"><span class="anchor-link"></span></a>Directives</h2><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">Rest</span>
+<button class="simple-block-button">Close</button>
+</div>
 <p><em>Arguments : url, method, headers, timeout, data, response_path, response_filter, limit, offset, paginate</em></p>
-<p>The rest directive is used to expose servers that communicate using the http protocol.</p>
-<p>The only required argument is the <code>url</code>.</p>
+<p>The rest directive is used to expose servers that communicate using the http protocol. The only required argument is the <code>url</code>.</p>
 <p><strong>Example</strong></p>
-<pre><code>type Query {
+<pre class="prettyprint"><code class="language-js">type Query {
     users(limit: Int, offset: Int): [User] @rest(url: &quot;http://foo.oto.tools/users&quot;, method: &quot;GET&quot;)
 }
 </code></pre>
 <p>It can be placed on the field of a query and type. To custom your url queries, you can use the path parameter and another field with respectively, <code>params</code> and <code>item</code> variables.</p>
 <p><strong>Example</strong></p>
-<pre><code>type Country {
+<pre class="prettyprint"><code class="language-js">type Country {
   name: String
   phone: String
   users: [User] @rest(url: &quot;http://foo.oto.tools/users/${item.name}&quot;)
@@ -290,13 +316,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 type Query {
   user(id: String): User @rest(url: &quot;http://foo.oto.tools/users/${params.id}&quot;)
 }
-</code></pre>
-<h3><a href="#graphql" name="graphql" class="anchor"><span class="anchor-link"></span></a>graphql</h3>
+</code></pre></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">GraphQL</span>
+<button class="simple-block-button">Close</button>
+</div>
 <p><em>Arguments : url, method, headers, timeout, query, data, response_path, response_filter, limit, offset, paginate</em></p>
 <p>The rest directive is used to call an other graphql server.</p>
 <p>The required argument are the <code>url</code> and the <code>query</code>.</p>
 <p><strong>Example</strong></p>
-<pre><code>type Query {
+<pre class="prettyprint"><code class="language-js">type Query {
     countries: [Country] @graphql(url: &quot;https://countries.trevorblades.com/&quot;, query: &quot;{ countries { name phone }}&quot;)
 }
 
@@ -304,11 +333,14 @@ type Country {
     name: String
     phone: String
 }
-</code></pre>
-<h3><a href="#soap" name="soap" class="anchor"><span class="anchor-link"></span></a>soap</h3>
+</code></pre></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">Soap</span>
+<button class="simple-block-button">Close</button>
+</div>
 <p><em>Arguments: all following arguments</em></p>
 <p>The soap directive is used to call a soap service. </p>
-<pre><code>type Query {
+<pre class="prettyprint"><code class="language-js">type Query {
     randomNumber: String @soap(
         jq_response_filter: &quot;.[\&quot;soap:Envelope\&quot;] | .[\&quot;soap:Body\&quot;] | .[\&quot;m:NumberToWordsResponse\&quot;] | .[\&quot;m:NumberToWordsResult\&quot;]&quot;, 
         url: &quot;https://www.dataaccess.com/webservicesserver/numberconversion.wso&quot;, 
@@ -375,69 +407,87 @@ type Country {
       <td> </td>
     </tr>
   </tbody>
-</table>
-<h3><a href="#json" name="json" class="anchor"><span class="anchor-link"></span></a>json</h3>
+</table></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">JSON</span>
+<button class="simple-block-button">Close</button>
+</div>
 <p><em>Arguments: path, json, paginate</em></p>
 <p>The json directive can be used to expose static data or mocked data. The first usage is to defined a raw stringify JSON in the <code>data</code> argument. The second usage is to set data in the predefined field of the GraphQL plugin composer and to specify a path in the <code>path</code> argument.</p>
 <p><strong>Example</strong></p>
-<pre><code>type Query {
+<pre class="prettyprint"><code class="language-js">type Query {
     users_from_raw_data: [User] @json(data: &quot;[{\&quot;firstname\&quot;:\&quot;Foo\&quot;,\&quot;name\&quot;:\&quot;Bar\&quot;}]&quot;)
     users_from_predefined_data: [User] @json(path: &quot;users&quot;)
 }
-</code></pre>
-<h3><a href="#mock" name="mock" class="anchor"><span class="anchor-link"></span></a>mock</h3>
+</code></pre></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">Mock</span>
+<button class="simple-block-button">Close</button>
+</div>
 <p><em>Arguments: url</em></p>
 <p>The mock directive is to used with the Mock Responses Plugin, also named <code>Charlatan</code>. This directive can be interesting to mock your schema and start to use your Otoroshi route before starting to develop the underlying service.</p>
 <p><strong>Example</strong></p>
-<pre><code>type Query {
+<pre class="prettyprint"><code class="language-js">type Query {
     users: @mock(url: &quot;/users&quot;)
 }
 </code></pre>
-<p>This example supposes that the Mock Responses plugin is set on the route&rsquo;s feed, and that an endpoint <code>/users</code> is available.</p>
+<p>This example supposes that the Mock Responses plugin is set on the route&rsquo;s feed, and that an endpoint <code>/users</code> is available.</p></div>
 <h3><a href="#permission-directives" name="permission-directives" class="anchor"><span class="anchor-link"></span></a>Permission directives</h3>
-<p>The permission directives has been created to protect the fields of the graphql schema. The validation process starts by create a <code>context</code> for all incoming requests, based on the list of paths defined in the permissions field of the plugin. The permissions paths can refer to the request data (url, headers, etc), user credentials (api key, etc) and informations about the matched route. Then the process can validate that the value or values are present in the <code>context</code>.</p>
-<h3><a href="#permission" name="permission" class="anchor"><span class="anchor-link"></span></a>permission</h3>
+<p>The permission directives has been created to protect the fields of the graphql schema. The validation process starts by create a <code>context</code> for all incoming requests, based on the list of paths defined in the permissions field of the plugin. The permissions paths can refer to the request data (url, headers, etc), user credentials (api key, etc) and informations about the matched route. Then the process can validate that the value or values are present in the <code>context</code>.</p><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">Permission</span>
+<button class="simple-block-button">Close</button>
+</div>
 <p><em>Arguments : value and unauthorized_value</em></p>
 <p>The permission directive can be used to secure a field on <strong>one</strong> value. The directive checks that a specific value is present in the <code>context</code>.</p>
 <p>Two arguments are available, the first, named <code>value</code>, is required and designates the value found. The second optional value, <code>unauthorized_value</code>, can be used to indicates, in the outcoming response, the rejection message.</p>
 <p><strong>Example</strong></p>
-<pre><code>type User {
+<pre class="prettyprint"><code class="language-js">type User {
     id: String @permission(
         value: &quot;FOO&quot;, 
         unauthorized_value: &quot;You&#39;re not authorized to get this field&quot;)
 }
-</code></pre>
-<h3><a href="#allpermissions" name="allpermissions" class="anchor"><span class="anchor-link"></span></a>allpermissions</h3>
+</code></pre></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">All permissions</span>
+<button class="simple-block-button">Close</button>
+</div>
 <p><em>Arguments : values and unauthorized_value</em></p>
 <p>This directive is presumably the same as the previous one except that it takes a list of values.</p>
 <p><strong>Example</strong></p>
-<pre><code>type User {
+<pre class="prettyprint"><code class="language-js">type User {
     id: String @allpermissions(
         values: [&quot;FOO&quot;, &quot;BAR&quot;], 
         unauthorized_value: &quot;FOO and BAR could not be found&quot;)
 }
-</code></pre>
-<h3><a href="#onepermissionsof" name="onepermissionsof" class="anchor"><span class="anchor-link"></span></a>onePermissionsOf</h3>
+</code></pre></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">One permissions of</span>
+<button class="simple-block-button">Close</button>
+</div>
 <p><em>Arguments : values and unauthorized_value</em></p>
 <p>This directive takes a list of values and validate that one of them is in the context.</p>
 <p><strong>Example</strong></p>
-<pre><code>type User {
+<pre class="prettyprint"><code class="language-js">type User {
     id: String @onePermissionsOf(
         values: [&quot;FOO&quot;, &quot;BAR&quot;], 
         unauthorized_value: &quot;FOO or BAR could not be found&quot;)
 }
-</code></pre>
-<h3><a href="#authorize" name="authorize" class="anchor"><span class="anchor-link"></span></a>authorize</h3>
+</code></pre></div><div class="simple-block">
+<div class="simple-block-toggle">
+<span class="simple-block-title">Authorize</span>
+<button class="simple-block-button">Close</button>
+</div>
 <p><em>Arguments : path, value and unauthorized_value</em></p>
 <p>The authorize directive has one more required argument, named <code>path</code>, which indicates the path to value, in the context. Unlike the last three directives, the authorize directive doesn&rsquo;t search in the entire context but the specified path.</p>
 <p><strong>Example</strong></p>
-<pre><code>type User {
+<pre class="prettyprint"><code class="language-js">type User {
     id: String @authorize(
         path: &quot;$.raw_request.headers.foo&quot;, 
         value: &quot;BAR&quot;, 
         unauthorized_value: &quot;Bar could not be found in the foo header&quot;)
 }
-</code></pre>
+</code></pre></div>
 <h3><a href="#arguments-and-theirs-types" name="arguments-and-theirs-types" class="anchor"><span class="anchor-link"></span></a>Arguments and theirs types</h3>
 <table>
   <thead>
