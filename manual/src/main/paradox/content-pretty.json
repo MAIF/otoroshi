@@ -312,7 +312,7 @@
     "id": "/includes/experimental.md",
     "url": "/includes/experimental.html",
     "title": "@@@ warning",
-    "content": "@@@ warning\nthis feature is **EXPERIMENTAL** and might not work as expected. \n\nIf you encounter any bugs, [please fill an issue](https://github.com/MAIF/otoroshi/issues/new), it will help us a lot :)\n@@@\n"
+    "content": "@@@ warning\n\nthis feature is **EXPERIMENTAL** and might not work as expected. <br/>\nIf you encounter any bugs, [please fill an issue](https://github.com/MAIF/otoroshi/issues/new), it will help us a lot :)\n\n@@@\n"
   },
   {
     "name": "fetch-and-start.md",
