@@ -30,7 +30,6 @@ class NgProxyState(env: Env) {
 
   private val routes = TrieMap
     .newBuilder[String, NgRoute]
-    .+=(NgRoute.fake.id -> NgRoute.fake)
     .result()
 
   private val apikeys             = new TrieMap[String, ApiKey]()

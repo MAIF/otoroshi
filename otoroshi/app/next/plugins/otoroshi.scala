@@ -38,8 +38,12 @@ object NgOtoroshiChallengeConfig {
   def apply(raw: JsValue): NgOtoroshiChallengeConfig = format.reads(raw).get
   val format                                         = new Format[NgOtoroshiChallengeConfig] {
     override def reads(raw: JsValue): JsResult[NgOtoroshiChallengeConfig] = Try {
-      lazy val secComVersion: SecComVersion       =
-        SecComVersion(raw.select("version").asOpt[String].getOrElse("V2")).getOrElse(SecComVersion.V2)
+      lazy val secComVersion: SecComVersion       = {
+        raw.select("version").asOpt[Int] match {
+          case None => SecComVersion(raw.select("version").asOpt[String].getOrElse("V2")).getOrElse(SecComVersion.V2)
+          case Some(v) => SecComVersion(v).getOrElse(SecComVersion.V2)
+        }
+      }
       lazy val secComTtl: FiniteDuration          = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
       lazy val requestHeaderName: Option[String]  = raw.select("request_header_name").asOpt[String]
       lazy val responseHeaderName: Option[String] = raw.select("response_header_name").asOpt[String]
@@ -183,9 +187,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
     val stateValue                               = ctx.attrs.get(NgOtoroshiChallengeKeys.StateValueKey).get
     val stateRespHeaderName                      = config.responseHeaderName.getOrElse(env.Headers.OtoroshiStateResp)
     val isUp                                     = true
-    val stateResp                                = ctx.request.headers
-      .get(stateRespHeaderName)
-      .orElse(ctx.request.headers.get(stateRespHeaderName.toLowerCase))
+    val stateResp                                = ctx.rawResponse.headers.getIgnoreCase(stateRespHeaderName)
     val at                                       = System.currentTimeMillis()
     val respEith: Either[StateRespInvalid, Done] = stateResp match {
       case None       =>

@@ -1487,7 +1487,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private def pollState(): Unit = {
     try {
       if (isPollingState.compareAndSet(false, true)) {
-        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster")
+        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster (${DateTime.now()})")
         val start = System.currentTimeMillis()
         Retry
           .retry(
@@ -1535,6 +1535,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 predicate
               }
               .flatMap { resp =>
+                Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster done ! (${DateTime.now()})")
                 val store          = new ConcurrentHashMap[String, Any]()
                 val expirations    = new ConcurrentHashMap[String, Long]()
                 val responseFrom   = resp.header("X-Data-From").map(_.toLong)
@@ -1570,7 +1571,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   .flatMap { _ =>
                     val cliDigest = Hex.encodeHexString(digest.digest())
                     Cluster.logger.debug(
-                      s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms at try $tryCount."
+                      s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms at try $tryCount. (${DateTime.now()})"
                     )
                     val valid     = (for {
                       count <- responseCount
@@ -1589,10 +1590,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                       lastPoll.set(DateTime.now())
                       if (!store.isEmpty) {
                         firstSuccessfulStateFetchDone.compareAndSet(false, true)
+                        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] start swap (${DateTime.now()})")
                         env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
+                        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] stop swap (${DateTime.now()})")
                         if (fromVersion.isBefore(env.otoroshiVersionSem)) {
                           // TODO: run other migrations ?
                           if (fromVersion.isBefore(Version("1.4.999"))) {
+                            Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] running exporters migration !")
                             DataExporterConfigMigrationJob
                               .extractExporters(env)
                               .flatMap(c => DataExporterConfigMigrationJob.saveExporters(c, env))

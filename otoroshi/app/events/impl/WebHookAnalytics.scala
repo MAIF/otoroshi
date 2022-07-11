@@ -77,7 +77,7 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
         logger.debug(s"SEND_TO_ANALYTICS_SUCCESS: ${resp.status} - ${resp.headers} - ${resp.body}")
       }
       case Failure(e)    => {
-        logger.error("SEND_TO_ANALYTICS_FAILURE: Error while sending AnalyticEvent", e)
+        logger.error(s"SEND_TO_ANALYTICS_FAILURE: Error while sending AnalyticEvent of '${event.size}' items on '${url}'", e)
       }
     }
     postResponse.map(_ => ())
