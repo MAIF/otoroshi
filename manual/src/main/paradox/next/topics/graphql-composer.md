@@ -1,5 +1,7 @@
 # GraphQL Composer Proxy
 
+@@include[experimental.md](../../includes/experimental.md) { .experimental-feature }
+
 The GraphQL Composer proxy is an useful plugin when you want to build an GraphQL API from multiples differents sources, like rest api, graphql api or mocked apis.
 
 With this plugin, you can define, assisted by the UI, a graphQL schema with types, queries and mutations. 

@@ -1,19 +1,15 @@
-# Otoroshi Next
+# Otoroshi new proxy engine
 
 In this sections, you will find informations about Otoroshi next 
 
 * @ref:[New proxy engine](./engine.md)
-* @ref:[Secrets management](./secrets.md)
-* @ref:[GraphQL Composer](./graphql-composer.md)
-* @ref:[Relay routing](./relay-routing.md)
+* @ref:[Detailed topics](./topics/index.md)
 * @ref:[Built in plugins](./built-in-plugins.md)
 
 @@@ index
 
 * [New proxy engine](./engine.md)
-* [Secrets management](./secrets.md)
-* [GraphQL Composer](./graphql-composer.md)
-* [Relay routing](./relay-routing.md)
+* [Detailed topics](./topics/index.md)
 * [Built in plugins](./built-in-plugins.md)
 
 @@@
