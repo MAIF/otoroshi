@@ -1,5 +1,7 @@
 # GraphQL Composer Proxy
 
+@@include[experimental.md](../../includes/experimental.md) { .experimental-feature }
+
 The GraphQL Composer proxy is an useful plugin to build an GraphQL API from multiples differents sources, composed of rest api, graphql api or mocked api.
 
 @@@ div { .centered-img }
