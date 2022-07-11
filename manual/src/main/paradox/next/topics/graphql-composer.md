@@ -5,7 +5,7 @@
 The GraphQL Composer proxy is an useful plugin to build an GraphQL API from multiples differents sources, composed of rest api, graphql api or mocked api.
 
 @@@ div { .centered-img }
-<img src="../imgs/graphql-composer.png" width="420px" />
+<img src="../../imgs/graphql-composer.png" width="420px" />
 @@@
 
 You can define, assisted by the UI, a graphQL schema with types, queries and mutations. Otoroshi provides a way to override each field and query with a list of custom directives.
