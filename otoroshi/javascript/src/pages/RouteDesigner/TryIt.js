@@ -115,7 +115,6 @@ export const TryIt = ({ route, hide }) => {
   };
 
   const hidePlaygroundStuff = (route, retry) => {
-    console.log("hidePlaygroundStuff")
     if (!route) {
       setTimeout(() => hidePlaygroundStuff(route, true), 500);
     } else if (route.plugins.find((f) => f.plugin.includes('GraphQLBackend'))) {
@@ -246,14 +245,15 @@ export const TryIt = ({ route, hide }) => {
               <i className="fas fa-times" style={{ color: '#fff' }} />
             </button>
           </div>
-          <div className='mt-2'>
-            <button className='btn btn-sm btn-info me-1' type="button" onClick={() => setTesterView('rest')}>
-              REST Tester
-            </button>
-            <button className='btn btn-sm btn-info' type="button" onClick={() => setTesterView('graphql')}>
-              GraphQL Tester
-            </button>
-          </div>
+          {route && route.plugins.find(f => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') &&
+            <div className='mt-2'>
+              <button className='btn btn-sm btn-info me-1' type="button" onClick={() => setTesterView('rest')}>
+                REST Tester
+              </button>
+              <button className='btn btn-sm btn-info' type="button" onClick={() => setTesterView('graphql')}>
+                GraphQL Tester
+              </button>
+            </div>}
         </div>
       </div >
       {testerView === 'graphql' ? (
@@ -262,6 +262,7 @@ export const TryIt = ({ route, hide }) => {
             <Playground
               settings={{
                 'schema.polling.enable': false,
+                'introspection': true
               }}
               codeTheme={{
                 editorBackground: '#3c3c3c',
