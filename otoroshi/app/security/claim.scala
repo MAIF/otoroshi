@@ -2,11 +2,11 @@ package otoroshi.security
 
 import java.nio.charset.StandardCharsets
 import java.util.{Base64, Date}
-
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.env.Env
 import otoroshi.models.AlgoSettings
 import org.joda.time.DateTime
+import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.Logger
 import play.api.libs.json._
 
@@ -46,7 +46,7 @@ case class OtoroshiClaim(
     }
 
   def payload(implicit env: Env): JsObject = Json.obj(
-    "iss" -> env.Headers.OtoroshiIssuer,
+    "iss" -> env.Headers.OtoroshiIssuer, // TODO: maybe using iss is better ?
     "sub" -> sub,
     "aud" -> aud,
     "exp" -> new Date(exp).getTime / 1000,

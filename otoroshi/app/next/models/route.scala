@@ -956,7 +956,7 @@ object NgRoute {
                   Json.obj(
                     "version"     -> service.secComInfoTokenVersion.version,
                     "ttl"         -> service.secComTtl.toSeconds,
-                    "header_name" -> service.secComHeaders.stateRequestName.getOrElse("Otoroshi-Claim").json,
+                    "header_name" -> service.secComHeaders.claimRequestName.getOrElse("Otoroshi-Claim").json,
                     "algo"        -> (if (service.secComUseSameAlgo) service.secComSettings.asJson
                                else service.secComAlgoInfoToken.asJson)
                   )
