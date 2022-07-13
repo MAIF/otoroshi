@@ -138,7 +138,9 @@ object OtoroshiLoaderHelper {
               .runWith(Sink.head)(mat)
               .map(_ => ())
           )
-        )
+        ).flatMap { _ =>
+          components.env.proxyState.sync()
+        }
       } else {
         FastFuture.successful(())
       }
