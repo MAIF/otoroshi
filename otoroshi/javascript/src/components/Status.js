@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import _ from 'lodash';
+// import _ from 'lodash';
 import classNames from 'classnames';
 import { Popover } from 'antd';
 

@@ -1,4 +1,8 @@
-import _ from 'lodash';
+import isNumber from 'lodash/isNumber';
+import uniqBy from 'lodash/uniqBy'
+import sortBy from 'lodash/sortBy';
+import isString from 'lodash/isString'
+
 import React, { Component } from 'react';
 
 export class MetricsPage extends Component {
@@ -33,7 +37,7 @@ export class MetricsPage extends Component {
 
   clean = (v) => {
     if (v) {
-      if (_.isNumber(v)) {
+      if (isNumber(v)) {
         if (String(v).indexOf('.') > -1) {
           const x = v.toFixed(5);
           const parts = x.toString().split('.');
@@ -44,7 +48,7 @@ export class MetricsPage extends Component {
           parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
           return parts.join('.');
         }
-      } else if (_.isString(v)) {
+      } else if (isString(v)) {
         if (v.length > 20) {
           return <span title={v}>{v.substring(0, 19)}...</span>;
         } else {
@@ -64,8 +68,8 @@ export class MetricsPage extends Component {
       rate_units: 'calls/second',
       duration_units: 'milliseconds',
     };
-    const metrics = _.uniqBy(
-      _.sortBy(this.state.metrics, (metric) => metric.name).filter((m) => m.type !== 'metrics'),
+    const metrics = uniqBy(
+      sortBy(this.state.metrics, (metric) => metric.name).filter((m) => m.type !== 'metrics'),
       (m) => m.name
     ).filter((m) => (this.state.search ? m.name.indexOf(this.state.search) > -1 : true));
     return (

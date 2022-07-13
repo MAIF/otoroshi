@@ -4,7 +4,8 @@ import { Location } from '../../components/Location';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
-import { isEqual, merge } from 'lodash';
+import isEqual from 'lodash/isEqual'
+import merge from 'lodash/merge';
 import { FeedbackButton } from './FeedbackButton';
 
 export const Informations = forwardRef(({ isCreation, value, setValue, setSaveButton }, ref) => {

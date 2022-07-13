@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const TerserJSPlugin = require('terser-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
@@ -47,6 +48,7 @@ module.exports = (env, argv) => {
             path.resolve(__dirname, 'node_modules/graphql'),
           ],
           exclude: /\.(d\.ts|d\.ts\.map|spec\.tsx)$/,
+
         },
         {
           test: /\.css$/,
@@ -161,6 +163,10 @@ module.exports = (env, argv) => {
     },
     plugins: [
       // new BundleAnalyzerPlugin(),
+      new webpack.IgnorePlugin({
+        resourceRegExp: /^\.\/locale$/,
+        contextRegExp: /moment$/,
+      }),
       new MiniCssExtractPlugin({
         filename: '[name].css',
         chunkFilename: '[id].css'

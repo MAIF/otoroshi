@@ -5,7 +5,9 @@ import { nextClient } from '../../services/BackOfficeServices';
 import { DEFAULT_FLOW } from './Graph';
 import { toUpperCaseLabels } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
-import { isEqual, merge, cloneDeep } from 'lodash';
+import isEqual from 'lodash/isEqual';
+import merge from 'lodash/merge';
+import cloneDeep from 'lodash/cloneDeep';
 import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
 
 export const HTTP_COLORS = {

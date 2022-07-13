@@ -8,7 +8,8 @@ import moment from 'moment';
 import YAML from 'yaml';
 
 import deepSet from 'set-value';
-import _ from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
+import merge from 'lodash/merge'
 import Select from 'react-select';
 import Creatable from 'react-select/lib/Creatable';
 
@@ -1472,7 +1473,7 @@ class BackOfficeAuthButtons extends Component {
 
 class GlobalScripts extends Component {
   changeTheValue = (name, value) => {
-    const cloned = _.cloneDeep(this.props.value);
+    const cloned = cloneDeep(this.props.value);
     const newCloned = deepSet(cloned, name, value);
     this.props.onChange(newCloned);
   };
@@ -1667,7 +1668,7 @@ class GlobalScripts extends Component {
 
 class GlobalPlugins extends Component {
   changeTheValue = (name, value) => {
-    const cloned = _.cloneDeep(this.props.value);
+    const cloned = cloneDeep(this.props.value);
     const newCloned = deepSet(cloned, name, value);
     this.props.onChange(newCloned);
   };
@@ -1726,17 +1727,17 @@ export class Message extends Component {
 
 export class Migration extends Component {
   migrate = () => {
-    const value = _.cloneDeep(this.props.value);
+    const value = cloneDeep(this.props.value);
     const legacy = this.props.extractLegacy
-      ? _.cloneDeep(this.props.extractLegacy(value))
+      ? cloneDeep(this.props.extractLegacy(value))
       : { enabled: false, refs: [], excluded: [], config: {} };
     const holder = this.props.extractHolder
-      ? _.cloneDeep(this.props.extractHolder(value))
+      ? cloneDeep(this.props.extractHolder(value))
       : { enabled: false, refs: [], excluded: [], config: {} };
-    const newHolder = _.cloneDeep(holder);
+    const newHolder = cloneDeep(holder);
     newHolder.refs = [...newHolder.refs, ...legacy.refs];
     newHolder.excluded = [...newHolder.excluded, ...legacy.excluded];
-    newHolder.config = _.merge({}, newHolder.config, legacy.config);
+    newHolder.config = merge({}, newHolder.config, legacy.config);
     if (!newHolder.enabled && legacy.enabled) {
       newHolder.enabled = true;
     }

@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Select, { Async } from 'react-select';
-import _ from 'lodash';
+import last from 'lodash/last';
+import isString from 'lodash/isString';
 import fuzzy from 'fuzzy';
 import { DefaultAdminPopover } from '../components/inputs';
 
@@ -10,7 +11,7 @@ import { JsonObjectAsCodeInput } from './inputs/CodeInput';
 
 function extractEnv(value = '') {
   const parts = value.split(' ');
-  const env = _.last(parts.filter((i) => i.startsWith(':')));
+  const env = last(parts.filter((i) => i.startsWith(':')));
   const finalValue = parts.filter((i) => !i.startsWith(':')).join(' ');
   if (env) {
     return [env.replace(':', ''), finalValue];
@@ -579,7 +580,7 @@ export class TopBar extends Component {
                   }}
                   optionRenderer={(p) => {
                     const env =
-                      p.env && _.isString(p.env)
+                      p.env && isString(p.env)
                         ? p.env.length > 4
                           ? p.env.substring(0, 4) + '.'
                           : p.env
@@ -593,10 +594,10 @@ export class TopBar extends Component {
                             justifyContent: 'center',
                             alignItems: 'center',
                           }}>
-                          {p.env && _.isString(p.env) && (
+                          {p.env && isString(p.env) && (
                             <span className={`badge ${this.color(p.env)}`}>{env}</span>
                           )}
-                          {p.env && !_.isString(p.env) && p.env}
+                          {p.env && !isString(p.env) && p.env}
                         </div>
                         <span>{p.label}</span>
                       </div>

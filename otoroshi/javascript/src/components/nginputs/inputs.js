@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import _ from 'lodash';
+// import _ from 'lodash';
 import Select from 'react-select';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 

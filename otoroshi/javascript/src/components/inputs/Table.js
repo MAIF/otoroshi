@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Form } from '.';
-import _ from 'lodash';
+import debounce from 'lodash/debounce';
 import { createTooltip } from '../../tooltips';
 import YAML from 'yaml';
 
@@ -73,7 +73,7 @@ export class Table extends Component {
   }
 
   registerSizeChanges = () => {
-    this.sizeListener = _.debounce((e) => {
+    this.sizeListener = debounce((e) => {
       this.forceUpdate();
     }, 400);
     window.addEventListener('resize', this.sizeListener);

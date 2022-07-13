@@ -89,7 +89,6 @@ class PluginsDescription extends Component {
     if (script.defaultConfig) {
       console.log(this.props.config, this.props, script.defaultConfig);
       this.props.onChangeConfig({ ...this.props.config, ...script.defaultConfig });
-      // this.props.onChangeConfig(_.merge({}, this.props.config, script.defaultConfig));
     }
   };
 
