@@ -244,38 +244,10 @@ class NgProxyState(env: Env) {
   def updateNgServices(values: Seq[NgService]): Unit = {
     ngservices.addAll(values.map(v => (v.id, v))).remAll(ngservices.keySet.toSeq.diff(values.map(_.id)))
   }
-}
-
-object NgProxyStateLoaderJob {
-  val firstSync = new AtomicBoolean(false)
-}
-
-class NgProxyStateLoaderJob extends Job {
 
   private val fakeRoutesCount = 10 //10000 // 300000
 
-  override def categories: Seq[NgPluginCategory] = Seq.empty
-
-  override def uniqueId: JobId = JobId("io.otoroshi.next.core.jobs.NgProxyStateLoaderJob")
-
-  override def name: String = "proxy state loader job"
-
-  override def jobVisibility: JobVisibility = JobVisibility.Internal
-
-  override def kind: JobKind = JobKind.ScheduledEvery
-
-  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.millisecond.some
-
-  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = {
-    env.configuration.getOptional[Long]("otoroshi.next.state-sync-interval").getOrElse(10000L).milliseconds.some
-  }
-
-  override def starting: JobStarting = JobStarting.Automatically
-
-  override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
-    JobInstantiation.OneInstancePerOtoroshiInstance
-
-  def generateRoutesByDomain(env: Env): Future[Seq[NgRoute]] = {
+  private def generateRoutesByDomain(env: Env): Future[Seq[NgRoute]] = {
     import NgPluginHelper.pluginId
     if (env.env == "dev") {
       (0 until fakeRoutesCount).map { idx =>
@@ -344,7 +316,7 @@ class NgProxyStateLoaderJob extends Job {
     }
   }
 
-  def generateRoutesByName(env: Env): Future[Seq[NgRoute]] = {
+  private def generateRoutesByName(env: Env): Future[Seq[NgRoute]] = {
     import NgPluginHelper.pluginId
     if (env.env == "dev") {
       (0 until fakeRoutesCount).map { idx =>
@@ -407,7 +379,7 @@ class NgProxyStateLoaderJob extends Job {
     }
   }
 
-  def generateRandomRoutes(env: Env): Future[Seq[NgRoute]] = {
+  private def generateRandomRoutes(env: Env): Future[Seq[NgRoute]] = {
     import NgPluginHelper.pluginId
     if (env.env == "dev") {
       (0 until ((Math.random() * 50) + 10).toInt).map { idx =>
@@ -470,7 +442,7 @@ class NgProxyStateLoaderJob extends Job {
     }
   }
 
-  def soapRoute(env: Env): Seq[NgRoute] = {
+  private def soapRoute(env: Env): Seq[NgRoute] = {
     if (env.env == "dev") {
       Seq(
         NgRoute(
@@ -515,13 +487,13 @@ class NgProxyStateLoaderJob extends Job {
                   SOAPActionConfig(
                     // url = "https://www.dataaccess.com/webservicesserver/numberconversion.wso",
                     envelope = s"""<?xml version="1.0" encoding="utf-8"?>
-                    |<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                    |  <soap:Body>
-                    |    <NumberToWords xmlns="http://www.dataaccess.com/webservicesserver/">
-                    |      <ubiNum>$${req.pathparams.number}</ubiNum>
-                    |    </NumberToWords>
-                    |  </soap:Body>
-                    |</soap:Envelope>""".stripMargin,
+                                  |<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                                  |  <soap:Body>
+                                  |    <NumberToWords xmlns="http://www.dataaccess.com/webservicesserver/">
+                                  |      <ubiNum>$${req.pathparams.number}</ubiNum>
+                                  |    </NumberToWords>
+                                  |  </soap:Body>
+                                  |</soap:Envelope>""".stripMargin,
                     jqResponseFilter =
                       """{number_str: .["soap:Envelope"] | .["soap:Body"] | .["m:NumberToWordsResponse"] | .["m:NumberToWordsResult"] }""".some
                   ).json.asObject
@@ -536,7 +508,8 @@ class NgProxyStateLoaderJob extends Job {
     }
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def sync()(implicit ec: ExecutionContext): Future[Unit] = {
+    implicit val ev = env
     val start        = System.currentTimeMillis()
     val config       = env.datastores.globalConfigDataStore
       .latest()
@@ -558,8 +531,8 @@ class NgProxyStateLoaderJob extends Job {
       descriptors         <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets() // secrets OK
       fakeRoutes           = if (env.env == "dev") Seq(NgRoute.fake) else Seq.empty
       newRoutes            = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
-                               NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
-                             ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
+        NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
+      ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
       apikeys             <- env.datastores.apiKeyDataStore.findAllAndFillSecrets() // secrets OK
       certs               <- env.datastores.certificatesDataStore.findAllAndFillSecrets() // secrets OK
       verifiers           <- env.datastores.globalJwtVerifierDataStore.findAllAndFillSecrets() // secrets OK
@@ -578,39 +551,39 @@ class NgProxyStateLoaderJob extends Job {
       tcpServices         <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets() // secrets OK
       scripts             <- env.datastores.scriptDataStore.findAll() // no need for secrets
       croutes             <- if (env.env == "dev") {
-                               NgService
-                                 .fromOpenApi(
-                                   "oto-api-next-gen.oto.tools",
-                                   "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"
-                                 )
-                                 .map(route => {
-                                   // java.nio.file.Files.writeString(new java.io.File("./service.json").toPath(), route.json.prettify)
-                                   route.toRoutes.map(r =>
-                                     r.copy(
-                                       backend =
-                                         r.backend.copy(targets = r.backend.targets.map(t => t.copy(port = 9999, tls = false))),
-                                       plugins = NgPlugins(
-                                         Seq(
-                                           NgPluginInstance(
-                                             plugin = NgPluginHelper.pluginId[OverrideHost]
-                                           ),
-                                           NgPluginInstance(
-                                             plugin = NgPluginHelper.pluginId[AdditionalHeadersIn],
-                                             config = NgPluginInstanceConfig(
-                                               Json.obj(
-                                                 "headers" -> Json.obj(
-                                                   "Otoroshi-Client-Id"     -> "admin-api-apikey-id",
-                                                   "Otoroshi-Client-Secret" -> "admin-api-apikey-secret"
-                                                 )
-                                               )
-                                             )
-                                           )
-                                         )
-                                       )
-                                     )
-                                   )
-                                 })
-                             } else Seq.empty[NgRoute].vfuture
+        NgService
+          .fromOpenApi(
+            "oto-api-next-gen.oto.tools",
+            "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"
+          )
+          .map(route => {
+            // java.nio.file.Files.writeString(new java.io.File("./service.json").toPath(), route.json.prettify)
+            route.toRoutes.map(r =>
+              r.copy(
+                backend =
+                  r.backend.copy(targets = r.backend.targets.map(t => t.copy(port = 9999, tls = false))),
+                plugins = NgPlugins(
+                  Seq(
+                    NgPluginInstance(
+                      plugin = NgPluginHelper.pluginId[OverrideHost]
+                    ),
+                    NgPluginInstance(
+                      plugin = NgPluginHelper.pluginId[AdditionalHeadersIn],
+                      config = NgPluginInstanceConfig(
+                        Json.obj(
+                          "headers" -> Json.obj(
+                            "Otoroshi-Client-Id"     -> "admin-api-apikey-id",
+                            "Otoroshi-Client-Secret" -> "admin-api-apikey-secret"
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          })
+      } else Seq.empty[NgRoute].vfuture
     } yield {
       env.proxyState.updateRoutes(newRoutes ++ croutes)
       env.proxyState.updateTargets(targets)
@@ -640,6 +613,38 @@ class NgProxyStateLoaderJob extends Job {
   }.andThen { case Failure(e) =>
     e.printStackTrace()
   }.map(_ => ())
+}
+
+object NgProxyStateLoaderJob {
+  val firstSync = new AtomicBoolean(false)
+}
+
+class NgProxyStateLoaderJob extends Job {
+
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+
+  override def uniqueId: JobId = JobId("io.otoroshi.next.core.jobs.NgProxyStateLoaderJob")
+
+  override def name: String = "proxy state loader job"
+
+  override def jobVisibility: JobVisibility = JobVisibility.Internal
+
+  override def kind: JobKind = JobKind.ScheduledEvery
+
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.millisecond.some
+
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = {
+    env.configuration.getOptional[Long]("otoroshi.next.state-sync-interval").getOrElse(10000L).milliseconds.some
+  }
+
+  override def starting: JobStarting = JobStarting.Automatically
+
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
+    JobInstantiation.OneInstancePerOtoroshiInstance
+
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    env.proxyState.sync()
+  }
 }
 
 class NgInternalStateMonitor extends Job {

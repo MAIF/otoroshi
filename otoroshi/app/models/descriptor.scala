@@ -52,7 +52,7 @@ case class ServiceDescriptorQuery(
 
   def asKey(implicit _env: Env): String = s"${_env.storageRoot}:desclookup:$line:$domain:$subdomain:$root"
 
-  def toHost: String =
+  lazy val toHost: String =
     subdomain match {
       case s if s.isEmpty && line == "prod" => s"$domain"
       case s if s.isEmpty                   => s"$line.$domain"
