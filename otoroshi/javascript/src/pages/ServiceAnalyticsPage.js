@@ -22,7 +22,7 @@ export class ServiceAnalyticsPage extends Component {
 
   sidebarContent(name) {
     if (this.onRoutes) {
-      return <DesignerSidebar route={{ id: this.props.params.routeId, name }} />;
+      return <DesignerSidebar route={{ id: this.props.params.routeId, name }} setSidebarContent={this.props.setSidebarContent} />;
     }
     return (
       <ServiceSidebar

@@ -1817,11 +1817,6 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
             Remove plugins
           </button>
         </div>
-        <div className="d-flex-between mt-3 flex align-items-end">
-          <Link className="btn btn-sm btn-info" to="/routes">
-            <i className="fas fa-arrow-left" /> Back to routes
-          </Link>
-        </div>
       </>
     );
   } else {

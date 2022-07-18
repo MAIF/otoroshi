@@ -49,7 +49,7 @@ const Manager = ({ query, entity, ...props }) => {
 
   useEffect(() => {
     if (value && value.id) {
-      props.setSidebarContent(<DesignerSidebar route={value} />);
+      props.setSidebarContent(<DesignerSidebar route={value} setSidebarContent={props.setSidebarContent} />);
 
       props.setTitle(() => (
         <div className="page-header d-flex align-item-center justify-content-between ms-0 mb-3">
@@ -108,7 +108,7 @@ const Manager = ({ query, entity, ...props }) => {
                 },
                 {
                   icon: 'fa-cog',
-                  onClick: () => {},
+                  onClick: () => { },
                   enabled: () => !isOnViewPlugins, //isOnViewPlugins || query == 'flow',
                   dropdown: true,
                   style: { marginLeft: 20 },
@@ -126,17 +126,16 @@ const Manager = ({ query, entity, ...props }) => {
                     <button
                       key={title}
                       type="button"
-                      className={`btn btn-sm toggle-form-buttons d-flex align-items-center ${
-                        dropdown ? 'dropdown-toggle' : ''
-                      }`}
+                      className={`btn btn-sm toggle-form-buttons d-flex align-items-center ${dropdown ? 'dropdown-toggle' : ''
+                        }`}
                       onClick={
                         onClick
                           ? onClick
                           : () => {
-                              if (query !== tab || viewPlugins) {
-                                if (!window.location.href.includes(to)) history.push(to);
-                              }
+                            if (query !== tab || viewPlugins) {
+                              if (!window.location.href.includes(to)) history.push(to);
                             }
+                          }
                       }
                       {...(tooltip || {})}
                       style={{
@@ -172,17 +171,6 @@ const Manager = ({ query, entity, ...props }) => {
                               paddingTop: 10,
                               minWidth: '160px',
                             }}>
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-info d-flex align-items-center justify-content-start"
-                              style={{ marginTop: 5 }}
-                              onClick={(e) => {
-                                const part = window.location.pathname.split('/')[3];
-                                // window.location = `/bo/dashboard/${part}`
-                                history.push(`/${part}`);
-                              }}>
-                              <i className="fas fa-chevron-left me-3" /> Back to routes
-                            </button>
                             {menu}
                             <button
                               type="button"
@@ -403,7 +391,7 @@ const Manager = ({ query, entity, ...props }) => {
 
 export default (props) => {
   const match = useRouteMatch();
-  const { search } = useLocation();
+  const { search, pathname } = useLocation();
   const entity = useEntityFromURI();
   const query = new URLSearchParams(search).get('tab');
 
@@ -412,6 +400,11 @@ export default (props) => {
 
     return () => patchStyle(false);
   }, []);
+
+  useEffect(() => {
+    if (pathname === "/routes" || pathname === "/routes")
+      props.setSidebarContent(null)
+  }, [pathname])
 
   useEffect(() => {
     if (!query) {
