@@ -14,7 +14,9 @@ import { Location } from '../Location';
 const CodeInput = React.lazy(() => Promise.resolve(require('./CodeInput')));
 import { JsonObjectAsCodeInput } from './CodeInput'; // TODO: fix
 
-import _ from 'lodash';
+import isFunction from 'lodash/isFunction';
+import cloneDeep from 'lodash/cloneDeep'
+
 import deepGet from 'get-value';
 import deepSet from 'set-value';
 import { Separator } from '../Separator';
@@ -31,7 +33,7 @@ export class Form extends Component {
   };
 
   theValue = () => {
-    if (_.isFunction(this.props.value)) {
+    if (isFunction(this.props.value)) {
       return this.props.value();
     } else {
       return this.props.value;
@@ -39,7 +41,7 @@ export class Form extends Component {
   };
 
   changeValue = (name, value) => {
-    const newValue = _.cloneDeep(this.theValue());
+    const newValue = cloneDeep(this.theValue());
     deepSet(newValue, name, value);
     this.props.onChange(newValue);
     //if (name.indexOf('.') > -1) {
@@ -71,7 +73,7 @@ export class Form extends Component {
   };
 
   generateStep(name, idx) {
-    if (_.isFunction(name)) {
+    if (isFunction(name)) {
       return React.createElement(name, {});
     } else if (React.isValidElement(name)) {
       return name;
@@ -295,7 +297,7 @@ export class Form extends Component {
               onChange={(v) => this.changeValue(name, v)}
             />
           );
-        } else if (_.isFunction(type)) {
+        } else if (isFunction(type)) {
           component = React.createElement(type, {
             ...props,
             disabled,
@@ -340,7 +342,7 @@ export class Form extends Component {
   }
 
   render() {
-    if (_.isFunction(this.props.flow)) {
+    if (isFunction(this.props.flow)) {
       return (
         <form className={`${this.props.styleName} form-horizontal`} style={this.props.style}>
           {this.props

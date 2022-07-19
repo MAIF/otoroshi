@@ -17,7 +17,7 @@ import {
 const CodeInput = React.lazy(() => Promise.resolve(require('./inputs/CodeInput')));
 
 import deepSet from 'set-value';
-import _ from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
 import { Separator } from './Separator';
 import { Proxy } from './Proxy';
 import { Location } from '../components/Location';
@@ -456,7 +456,7 @@ export class JwtVerifier extends Component {
   changeTheValue = (name, value) => {
     // console.log('changeTheValue', name, value);
     if (this.props.onChange) {
-      const clone = _.cloneDeep(this.props.value || this.props.verifier);
+      const clone = cloneDeep(this.props.value || this.props.verifier);
       const path = name.startsWith('.') ? name.substr(1) : name;
       const newObj = deepSet(clone, path, value);
       // console.log('changeTheValue', name, path, value, newObj)

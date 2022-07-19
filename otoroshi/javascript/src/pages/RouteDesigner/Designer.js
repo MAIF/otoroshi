@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, Suspense, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useParams, useLocation } from 'react-router';
 import {
@@ -25,11 +25,15 @@ import {
   MarkdownInput,
   BooleanInput,
 } from '@maif/react-forms';
-import { snakeCase, camelCase, isEqual, over } from 'lodash';
+import snakeCase from 'lodash/snakeCase'
+import camelCase from 'lodash/camelCase'
+import isEqual from 'lodash/isEqual'
+import _ from 'lodash'
 import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
-import { TryIt } from './TryIt';
+
+const TryItComponent = React.lazy(() => import('./TryIt'))
 
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
@@ -244,6 +248,7 @@ export default forwardRef(
     }));
 
     useEffect(() => {
+      console.log(location)
       if (location?.state?.showTryIt) childRef.current.toggleTryIt();
     }, [location.state]);
 
@@ -299,9 +304,9 @@ const Container = ({ children, onClick }) => {
       onMouseDown={(e) => {
         setPropagate(
           !document.getElementById('form-container')?.contains(e.target) &&
-            ![...document.getElementsByClassName('delete-node-button')].find((d) =>
-              d.contains(e.target)
-            )
+          ![...document.getElementsByClassName('delete-node-button')].find((d) =>
+            d.contains(e.target)
+          )
         );
         // &&
         // ![...document.getElementsByClassName("fa-chevron")].find(d => d.contains(e.target))
@@ -546,7 +551,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) {}
+      } catch (_) { }
     }
   };
 
@@ -562,7 +567,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) {}
+      } catch (_) { }
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -589,11 +594,11 @@ class Designer extends React.Component {
       let route =
         this.props.viewPlugins !== null && this.props.viewPlugins !== -1
           ? {
-              ...r,
-              overridePlugins: true,
-              plugins: [],
-              ...r.routes[~~this.props.viewPlugins],
-            }
+            ...r,
+            overridePlugins: true,
+            plugins: [],
+            ...r.routes[~~this.props.viewPlugins],
+          }
           : r;
 
       if (route.error) {
@@ -1116,8 +1121,8 @@ class Designer extends React.Component {
           plugin_index: Object.fromEntries(
             Object.entries(
               plugin.plugin_index ||
-                this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-                {}
+              this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+              {}
             ).map(([key, v]) => [snakeCase(key), v])
           ),
         })),
@@ -1309,17 +1314,17 @@ class Designer extends React.Component {
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-            .map((p) => {
-              const id = p.plugin;
-              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-              if (pluginDef) {
-                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                  return { ...p, ...pluginDef };
-                }
+          .map((p) => {
+            const id = p.plugin;
+            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+            if (pluginDef) {
+              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                return { ...p, ...pluginDef };
               }
-              return null;
-            })
-            .filter((p) => !!p)
+            }
+            return null;
+          })
+          .filter((p) => !!p)
         : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
@@ -1327,7 +1332,7 @@ class Designer extends React.Component {
     // TODO - better error display
     if (!loading && this.state.notFound) return <h1>Route not found</h1>;
 
-    const FullForm = showTryIt ? TryIt : advancedDesignerView;
+    const FullForm = showTryIt ? TryItComponent : advancedDesignerView;
 
     return (
       <Loader loading={loading}>
@@ -1337,7 +1342,7 @@ class Designer extends React.Component {
               selectedNode: undefined,
             });
           }}>
-          {FullForm && (
+          {FullForm && <Suspense fallback={null}>
             <FullForm
               route={route}
               saveRoute={(route) => {
@@ -1346,15 +1351,14 @@ class Designer extends React.Component {
               hide={(e) => {
                 e.stopPropagation();
                 this.setState({
-                  selectedNode: backendCallNodes.find((node) =>
-                    node.id.includes(
-                      FullForm.name !== 'GraphQLForm'
-                        ? FullForm.name === 'TryIt'
-                          ? this.state.selectedNode
-                          : 'otoroshi.next.plugins.MockResponses'
+                  selectedNode: backendCallNodes.find((node) => {
+                    return node.id.includes(
+                      FullForm.name !== 'GraphQLForm' ?
+                        (FullForm.name === 'MocksDesigner' ? 'otoroshi.next.plugins.MockResponses'
+                          : this.state.selectedNode)
                         : 'otoroshi.next.plugins.GraphQLBackend'
                     )
-                  ),
+                  }),
                   advancedDesignerView: false,
                 });
 
@@ -1363,7 +1367,7 @@ class Designer extends React.Component {
                 });
               }}
             />
-          )}
+          </Suspense>}
           <PluginsContainer
             handleSearch={this.handleSearch}
             showLegacy={showLegacy}
@@ -1660,13 +1664,13 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
     const allMethods =
       frontend.methods && frontend.methods.length > 0
         ? frontend.methods.map((m, i) => (
-            <span
-              key={`frontendmethod-${i}`}
-              className={`badge me-1`}
-              style={{ backgroundColor: HTTP_COLORS[m] }}>
-              {m}
-            </span>
-          ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}>
+            {m}
+          </span>
+        ))
         : [<span className="badge bg-success">ALL</span>];
     return (
       <>
@@ -1781,8 +1785,8 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
               const start = target.tls ? 'https://' : 'http://';
               const mtls =
                 target.tls_config &&
-                target.tls_config.enabled &&
-                [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
+                  target.tls_config.enabled &&
+                  [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
                   <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
                     mTLS
                   </span>
@@ -1814,11 +1818,6 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
             Remove plugins
           </button>
         </div>
-        <div className="d-flex-between mt-3 flex align-items-end">
-          <Link className="btn btn-sm btn-info" to="/routes">
-            <i className="fas fa-arrow-left" /> Back to routes
-          </Link>
-        </div>
       </>
     );
   } else {
@@ -1845,9 +1844,8 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${
-          icon || 'bars'
-        } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${icon || 'bars'
+          } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>
@@ -1977,11 +1975,11 @@ class EditView extends React.Component {
       isFrontendOrBackend ? undefined : 'status',
       isPluginWithConfiguration
         ? {
-            label: isFrontendOrBackend ? null : 'Plugin',
-            flow: ['plugin'],
-            collapsed: false,
-            collapsable: false,
-          }
+          label: isFrontendOrBackend ? null : 'Plugin',
+          flow: ['plugin'],
+          collapsed: false,
+          collapsable: false,
+        }
         : undefined,
     ].filter((f) => f);
 

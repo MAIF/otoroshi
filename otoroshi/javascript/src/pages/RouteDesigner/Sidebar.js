@@ -37,7 +37,7 @@ const LINKS = (entity, route) =>
     },
   ].filter((link) => !link.enabled || link.enabled.includes(entity));
 
-export default ({ route }) => {
+export default ({ route, setSidebarContent }) => {
   const query = useQuery();
   const history = useHistory();
   const entity = useEntityFromURI();
@@ -45,8 +45,11 @@ export default ({ route }) => {
   const currentTab = query.get('tab');
   const isActive = (tab) => (currentTab === tab ? 'active' : '');
 
-  return (
-    <ul className="nav flex-column nav-sidebar">
+  return <div className="d-flex" style={{
+    flex: 1,
+    flexDirection: 'column'
+  }}>
+    <ul className="nav flex-column nav-sidebar" style={{ flex: 1 }}>
       <li
         className="nav-item"
         onClick={() => history.push(`/${entity.link}/${route.id}?tab=flow`)}
@@ -63,5 +66,8 @@ export default ({ route }) => {
         </li>
       ))}
     </ul>
-  );
+    <Link to="/routes" onClick={() => setSidebarContent(null)} style={{ textAlign: 'center' }}>
+      <i className="fas fa-arrow-left me-3" />Back to routes
+    </Link>
+  </div>
 };

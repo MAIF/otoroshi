@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
-export default function Loader({ loading, children, minLoaderTime = 150 }) {
-  const [internalLoading, setInternalLoading] = useState(false);
+export default function Loader({ loading, children, loadingChildren, minLoaderTime = 150 }) {
+  const [internalLoading, setInternalLoading] = useState(true);
   const [startingTime, setStartingTime] = useState(undefined);
 
   useEffect(() => {
@@ -19,11 +19,12 @@ export default function Loader({ loading, children, minLoaderTime = 150 }) {
   }, [loading]);
 
   if (internalLoading)
-    return (
+    return <>
       <div className="d-flex justify-content-center">
         <i className="fas fa-cog fa-spin" style={{ fontSize: '40px' }} />
       </div>
-    );
+      {loadingChildren}
+    </>
 
   return children;
 }

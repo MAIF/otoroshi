@@ -4,18 +4,14 @@ import akka.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthModuleConfig, GenericOauth2ModuleConfig, SessionCookieValues}
 import otoroshi.env.Env
 import otoroshi.models._
-import org.joda.time.DateTime
-import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant, WebAuthnOtoroshiAdmin}
-import otoroshi.next.models.{NgBackend, NgRoute, NgService, NgTarget, StoredNgBackend, StoredNgTarget}
+import otoroshi.next.models.{NgRoute, NgService, StoredNgBackend, StoredNgTarget}
 import otoroshi.script.Script
+import otoroshi.security.Auth0Config
+import otoroshi.ssl.{Cert, ClientCertificateValidator}
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.tcp.TcpService
 import play.api.Logger
 import play.api.libs.json._
-import otoroshi.security.Auth0Config
-import otoroshi.ssl.{Cert, ClientCertificateValidator}
-import otoroshi.utils.json.JsonImplicits._
-import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}

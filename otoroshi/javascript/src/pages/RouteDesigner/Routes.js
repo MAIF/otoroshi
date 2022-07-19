@@ -4,7 +4,7 @@ import { Table } from '../../components/inputs';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useEntityFromURI } from '../../util';
 
-export default ({}) => {
+export default ({ injectTopBar }) => {
   const params = useParams();
   const history = useHistory();
   const entity = useEntityFromURI();
@@ -36,6 +36,7 @@ export default ({}) => {
             <Link className="btn btn-primary" to={`${entity.link}/new?tab=informations`}>
               <i className="fas fa-plus-circle" /> Create new {entity.lowercase}
             </Link>
+            {injectTopBar}
           </div>
         )}
       />

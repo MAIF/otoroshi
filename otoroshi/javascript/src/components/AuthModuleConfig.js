@@ -23,11 +23,12 @@ import { Location } from '../components/Location';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 
 import deepSet from 'set-value';
-import _ from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
 import faker from 'faker';
 import bcrypt from 'bcryptjs';
 import { JsonObjectAsCodeInput } from './inputs/CodeInput';
 import { Form } from './inputs';
+import isString from 'lodash/isString'
 
 function Base64Url() {
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -189,7 +190,7 @@ export class Oauth2ModuleConfig extends Component {
 
   changeTheValue = (name, value) => {
     if (this.props.onChange) {
-      const clone = _.cloneDeep(this.props.value || this.props.settings);
+      const clone = cloneDeep(this.props.value || this.props.settings);
       const path = name.startsWith('.') ? name.substr(1) : name;
       const newObj = deepSet(clone, path, value);
       this.props.onChange(newObj);
@@ -894,7 +895,7 @@ export class BasicModuleConfig extends Component {
 
   changeTheValue = (name, value) => {
     if (this.props.onChange) {
-      const clone = _.cloneDeep(this.props.value || this.props.settings);
+      const clone = cloneDeep(this.props.value || this.props.settings);
       const path = name.startsWith('.') ? name.substr(1) : name;
       const newObj = deepSet(clone, path, value);
       this.props.onChange(newObj);
@@ -904,7 +905,7 @@ export class BasicModuleConfig extends Component {
   };
 
   addUser = () => {
-    const newValue = _.cloneDeep(this.props.value);
+    const newValue = cloneDeep(this.props.value);
     const firstName = faker.name.firstName();
     const lastName = faker.name.lastName();
     newValue.users.push({
@@ -917,13 +918,13 @@ export class BasicModuleConfig extends Component {
   };
 
   removeUser = (email) => {
-    const newValue = _.cloneDeep(this.props.value);
+    const newValue = cloneDeep(this.props.value);
     newValue.users = newValue.users.filter((u) => u.email !== email);
     this.props.onChange(newValue);
   };
 
   hashPassword = (email, password) => {
-    const newValue = _.cloneDeep(this.props.value);
+    const newValue = cloneDeep(this.props.value);
     newValue.users.map((user) => {
       if (user.email === email) {
         user.password = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
@@ -933,7 +934,7 @@ export class BasicModuleConfig extends Component {
   };
 
   changeField = (email, name, value) => {
-    const newValue = _.cloneDeep(this.props.value);
+    const newValue = cloneDeep(this.props.value);
     newValue.users.map((user) => {
       if (user.email === email) {
         user[name] = value;
@@ -1081,7 +1082,7 @@ export class LdapModuleConfig extends Component {
 
   changeTheValue = (name, value) => {
     if (this.props.onChange) {
-      const clone = _.cloneDeep(this.props.value || this.props.settings);
+      const clone = cloneDeep(this.props.value || this.props.settings);
       const path = name.startsWith('.') ? name.substr(1) : name;
       const newObj = deepSet(clone, path, value);
       this.props.onChange(newObj);
@@ -1542,7 +1543,7 @@ class LdapUserLoginTest extends Component {
 export class AuthModuleConfig extends Component {
   changeTheValue = (name, value) => {
     if (this.props.onChange) {
-      const clone = _.cloneDeep(this.props.value || this.props.settings);
+      const clone = cloneDeep(this.props.value || this.props.settings);
       const path = name.startsWith('.') ? name.substr(1) : name;
       const newObj = deepSet(clone, path, value);
       this.props.onChange(newObj);
@@ -1720,7 +1721,7 @@ export class SamlModuleConfig extends Component {
     if (this.props.onChange)
       this.props.onChange(
         deepSet(
-          _.cloneDeep(this.props.value || this.props.settings),
+          cloneDeep(this.props.value || this.props.settings),
           name.startsWith('.') ? name.substr(1) : name,
           value
         )
@@ -1741,7 +1742,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     warning: {
-      type: ({}) => {
+      type: ({ }) => {
         if (this.props.value.warning) {
           const { warning } = this.props.value;
           return (
@@ -1812,7 +1813,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     credentials: {
-      type: ({}) => {
+      type: ({ }) => {
         const {
           signingKey,
           encryptionKey,
@@ -1862,9 +1863,8 @@ export class SamlModuleConfig extends Component {
             config.show && (
               <div key={`config${i}`}>
                 <BooleanInput
-                  label={`${i === 0 ? 'Sign' : 'Validate'} ${
-                    config.element
-                  } with Otoroshi certificate`}
+                  label={`${i === 0 ? 'Sign' : 'Validate'} ${config.element
+                    } with Otoroshi certificate`}
                   value={config.switch.value}
                   onChange={() => config.switch.setValue(!config.switch.value)}
                 />
@@ -1938,7 +1938,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     usedNameIDAsEmail: {
-      type: ({}) => {
+      type: ({ }) => {
         const { emailAttributeName, usedNameIDAsEmail } = this.props.value;
         return (
           <div>
@@ -2080,7 +2080,7 @@ export class OAuth1ModuleConfig extends Component {
     if (this.props.onChange)
       this.props.onChange(
         deepSet(
-          _.cloneDeep(this.props.value || this.props.settings),
+          cloneDeep(this.props.value || this.props.settings),
           name.startsWith('.') ? name.substr(1) : name,
           value
         )
@@ -2165,7 +2165,7 @@ export class OAuth1ModuleConfig extends Component {
       },
     },
     rightsOverride: {
-      type: ({}) => (
+      type: ({ }) => (
         <JsonObjectAsCodeInput
           label="Rights override"
           mode="json"
@@ -2204,7 +2204,7 @@ export class OAuth1ModuleConfig extends Component {
 const SessionCookieConfig = (props) => {
   const changeTheValue = (name, value) => {
     if (props.onChange) {
-      const clone = _.cloneDeep(props.value || props.settings);
+      const clone = cloneDeep(props.value || props.settings);
       const path = name.startsWith('.') ? name.substr(1) : name;
       const newObj = deepSet(clone, path, value);
       console.debug({ newObj });
@@ -2251,7 +2251,6 @@ const UserValidator = (props) => {
     props.onChange(arr);
   }
 
-  console.log(props);
   return (
     <>
       <TextInput
@@ -2263,7 +2262,7 @@ const UserValidator = (props) => {
       />
       <TextInput
         label="Value"
-        value={_.isString(validator.value) ? validator.value : JSON.stringify(validator.value)}
+        value={isString(validator.value) ? validator.value : JSON.stringify(validator.value)}
         help="The value you want to validate"
         onChange={(v) => {
           try {

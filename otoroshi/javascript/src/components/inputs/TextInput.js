@@ -73,6 +73,7 @@ export class TextInput extends Component {
               onChange={this.onChange}
               onDrop={this.props.onDrop || this.onDrop}
               onDragOver={(e) => e.preventDefault()}
+              style={this.props.style || {}}
             />
           )}
           {!!this.props.after && this.props.after()}

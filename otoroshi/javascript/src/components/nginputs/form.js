@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
-import _ from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
+import isFunction from 'lodash/isFunction'
+import isEqual from 'lodash/isEqual';
+import isString from 'lodash/isString'
 
 import {
   NgPasswordRenderer,
@@ -111,7 +114,7 @@ export class NgStep extends Component {
             res.__valid = false;
             res.__errors.push(e.message);
           }
-        } else if (_.isFunction(validator)) {
+        } else if (isFunction(validator)) {
           const r = validator(value);
           if (!r.valid) {
             res.__valid = false;
@@ -132,7 +135,7 @@ export class NgStep extends Component {
     if (this.props.schema.component) {
       return this.props.schema.components;
     } else if (this.props.schema.renderer) {
-      if (_.isString(this.props.schema.renderer)) {
+      if (isString(this.props.schema.renderer)) {
         return Helpers.rendererFor(this.props.schema.renderer, this.props.components);
       } else {
         return this.props.schema.renderer;
@@ -236,9 +239,9 @@ export class NgForm extends Component {
 
   handleTasks = () => {
     if (this.tasks.length > 0) {
-      const tasks = _.cloneDeep(this.tasks);
+      const tasks = cloneDeep(this.tasks);
       this.tasks = [];
-      let currentValidation = _.cloneDeep(this.state.validation);
+      let currentValidation = cloneDeep(this.state.validation);
       const handleNext = () => {
         const task = tasks.pop();
         if (task) {
@@ -258,7 +261,7 @@ export class NgForm extends Component {
           handleNext();
         } else {
           currentValidation.valid = this.isValid(currentValidation.graph);
-          if (!_.isEqual(currentValidation, this.state.validation)) {
+          if (!isEqual(currentValidation, this.state.validation)) {
             this.setState({ validation: currentValidation });
             this.rootOnChange(this.getValue());
           }
@@ -270,7 +273,7 @@ export class NgForm extends Component {
 
   getValue = () => {
     return this.props.value
-      ? _.isFunction(this.props.value)
+      ? isFunction(this.props.value)
         ? this.props.value()
         : this.props.value
       : null;
@@ -357,10 +360,10 @@ export class NgForm extends Component {
 
   render() {
     const value = this.getValue();
-    const flow = (_.isFunction(this.props.flow) ? this.props.flow(value) : this.props.flow) || [];
+    const flow = (isFunction(this.props.flow) ? this.props.flow(value) : this.props.flow) || [];
     const schema =
-      (_.isFunction(this.props.schema) ? this.props.schema(value) : this.props.schema) || {};
-    const propsComponents = _.isFunction(this.props.components)
+      (isFunction(this.props.schema) ? this.props.schema(value) : this.props.schema) || {};
+    const propsComponents = isFunction(this.props.components)
       ? this.props.components(value)
       : this.props.components;
     const components = { ...NgForm.DefaultTheme, ...propsComponents }; // TODO: get theme from context also
@@ -378,7 +381,7 @@ export class NgForm extends Component {
             if (stepSchema) {
               const visible =
                 'visible' in stepSchema
-                  ? _.isFunction(stepSchema.visible)
+                  ? isFunction(stepSchema.visible)
                     ? stepSchema.visible(value)
                     : stepSchema.visible
                   : true;
@@ -442,7 +445,7 @@ export class NgManagedState extends Component {
   };
 
   onChange = (value, validation) => {
-    const isDirty = !_.isEqual(lastValue, value);
+    const isDirty = !isEqual(lastValue, value);
     this.setState({ value, validation, isDirty }, () => {
       if (this.props.onValidationChange) {
         this.props.onValidationChange(validation);

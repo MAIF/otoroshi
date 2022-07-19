@@ -10,6 +10,14 @@ export function DefaultSidebar(props) {
     pathname === `/bo/dashboard/${part}` && search === '' ? 'active' : '';
   const className = (part) =>
     base === pathname && search.indexOf(`env=${part}`) > -1 ? 'active' : '';
+
+  const canShowSidebar = () => {
+    return !['/bo/dashboard/routes/'].some(path => pathname.startsWith(path))
+  }
+
+  if (!canShowSidebar())
+    return null
+
   return (
     <ul className="nav flex-column nav-sidebar">
       <li className="nav-item">

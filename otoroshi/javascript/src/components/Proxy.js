@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
-import _ from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
 import deepSet from 'set-value';
 
 import { ArrayInput, TextInput, PasswordInput, NumberInput } from './inputs';
 
 export class Proxy extends Component {
   changeTheValue = (name, value) => {
-    const proxy = _.cloneDeep(this.props.value || {});
+    const proxy = cloneDeep(this.props.value || {});
     const newProxy = deepSet(proxy, name, value);
     if (this.props.onChange) {
       this.props.onChange(newProxy);

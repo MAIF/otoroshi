@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { SnowMonkeyConfig } from '../components/SnowMonkeyConfig';
-import _ from 'lodash';
+import isEqual from 'lodash/isEqual';
 import { Table } from '../components/inputs';
 import moment from 'moment/moment';
 
 function shallowDiffers(a, b) {
-  return !_.isEqual(a, b);
+  return !isEqual(a, b);
 }
 
 function enrichConfig(config) {

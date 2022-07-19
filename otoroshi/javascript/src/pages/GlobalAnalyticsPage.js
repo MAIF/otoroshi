@@ -3,7 +3,7 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import { RoundChart, Histogram } from '../components/recharts';
 import { converterBase2 } from 'byte-converter';
-import _ from 'lodash';
+// import _ from 'lodash';
 import moment from 'moment';
 
 import { OtoDatePicker } from '../components/datepicker';

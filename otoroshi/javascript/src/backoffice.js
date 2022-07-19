@@ -18,6 +18,7 @@ import { U2FLoginPage } from './pages/U2FLoginPage';
 import { GenericLoginPage, GenericLoginPageWithWebAuthn } from './pages/GenericLoginPage';
 import { SelfUpdatePage } from './pages/SelfUpdatePage';
 import * as BackOfficeServices from './services/BackOfficeServices';
+import isObject from 'lodash/isObject';
 
 import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';
 
@@ -38,7 +39,7 @@ window.fetch = function (...params) {
   const doNotPassTenant =
     window.__otoroshi__env__latest.userAdmin ||
     window.__otoroshi__env__latest.bypassUserRightsCheck;
-  if (!doNotPassTenant && params.length == 2 && _.isObject(options)) {
+  if (!doNotPassTenant && params.length == 2 && isObject(options)) {
     const currentTenant = window.localStorage.getItem('Otoroshi-Tenant') || 'default';
     return window
       ._fetch(url, {
@@ -63,7 +64,7 @@ window.fetch = function (...params) {
   } else {
     // console.log('do not pass tenant for', url, {
     //   plength: params.length,
-    //   iso: _.isObject(options),
+    //   iso: isObject(options),
     //   userAdmin: window.__otoroshi__env__latest.userAdmin,
     //   bypassUserRightsCheck: window.__otoroshi__env__latest.bypassUserRightsCheck
     // });

@@ -3,7 +3,10 @@ import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 import moment from 'moment';
-import _ from 'lodash';
+import groupBy from 'lodash/groupBy';
+import mapValues from 'lodash/mapValues'
+import values from 'lodash/values';
+import orderBy from 'lodash/orderBy'
 
 export class PrivateAppsSessionsPage extends Component {
   columns = [
@@ -149,15 +152,15 @@ export class PrivateAppsSessionsPage extends Component {
         if (ok) {
           BackOfficeServices.fetchPrivateAppsSessions()
             .then((sessions) => {
-              let groups = _.groupBy(sessions, (i) => i.email);
-              groups = _.mapValues(groups, (g) => {
-                const values = _.orderBy(g, (i) => i.expiredAt, 'desc');
+              let groups = groupBy(sessions, (i) => i.email);
+              groups = mapValues(groups, (g) => {
+                const values = orderBy(g, (i) => i.expiredAt, 'desc');
                 const head = values.shift();
                 return Promise.all(
                   values.map((v) => BackOfficeServices.discardPrivateAppsSession(v.randomId))
                 ).then(() => head);
               });
-              return Promise.all(_.values(groups));
+              return Promise.all(values(groups));
             })
             .then(() => window.location.reload());
         }

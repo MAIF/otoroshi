@@ -739,7 +739,6 @@ object NgRoute {
       )
     } match {
       case Failure(exception) =>
-        println(exception)
         JsError(exception.getMessage)
       case Success(route)     => JsSuccess(route)
     }
@@ -934,9 +933,9 @@ object NgRoute {
                   Json.obj(
                     "version"              -> service.secComVersion.str,
                     "ttl"                  -> service.secComTtl.toSeconds,
-                    "request_header_name"  -> service.secComHeaders.stateRequestName.getOrElse("Otoroshi-State").json,
+                    "request_header_name"  -> service.secComHeaders.stateRequestName.getOrElse(env.Headers.OtoroshiState).json,
                     "response_header_name" -> service.secComHeaders.stateResponseName
-                      .getOrElse("Otoroshi-State-Resp")
+                      .getOrElse(env.Headers.OtoroshiStateResp)
                       .json,
                     "algo_to_backend"      -> (if (service.secComUseSameAlgo) service.secComSettings.asJson
                                           else service.secComAlgoChallengeOtoToBack.asJson),
@@ -956,7 +955,7 @@ object NgRoute {
                   Json.obj(
                     "version"     -> service.secComInfoTokenVersion.version,
                     "ttl"         -> service.secComTtl.toSeconds,
-                    "header_name" -> service.secComHeaders.claimRequestName.getOrElse("Otoroshi-Claim").json,
+                    "header_name" -> service.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim).json,
                     "algo"        -> (if (service.secComUseSameAlgo) service.secComSettings.asJson
                                else service.secComAlgoInfoToken.asJson)
                   )

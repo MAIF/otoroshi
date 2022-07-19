@@ -5,7 +5,7 @@ body {
   color: $grisTexte;
 
   // resizes window to fit the width of the scrollbar, when the scrolling use case arrives
-  width: calc(100vw - 34px);
+  // width: calc(100vw - 34px);
 }
 #app{
   padding-top: 60px;
