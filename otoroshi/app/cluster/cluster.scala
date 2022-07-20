@@ -911,6 +911,48 @@ object CpuInfo {
 
 object ClusterLeaderAgent {
   def apply(config: ClusterConfig, env: Env) = new ClusterLeaderAgent(config, env)
+  def getIpAddress(): String = {
+    import java.net._
+    val all = "0.0.0.0"
+    val local = "127.0.0.1"
+    val res1 = Try {
+      val socket = new Socket()
+      socket.connect(new InetSocketAddress("www.otoroshi.io", 443))
+      val ip = socket.getLocalAddress.getHostAddress
+      socket.close()
+      ip
+    } match {
+      case Failure(_) => all
+      case Success(value) => value
+    }
+    val res2 = Try {
+      val socket = new DatagramSocket()
+      socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+      val ip = socket.getLocalAddress.getHostAddress
+      socket.close()
+      ip
+    } match {
+      case Failure(_) => all
+      case Success(value) => value
+    }
+    val res3 = InetAddress.getLocalHost.getHostAddress
+    val res = if (res1 != all && res1 != local) {
+      res1
+    } else if (res2 != all && res2 != local) {
+      res2
+    } else {
+      res3
+    }
+    res
+    // val enumeration = NetworkInterface.getNetworkInterfaces.asScala.toSeq
+    // enumeration.foreach(_.getDisplayName.debugPrintln)
+    // val ipAddresses = enumeration.flatMap(p => p.getInetAddresses.asScala.toSeq)
+    // val address = ipAddresses.find { address =>
+    //   val host = address.getHostAddress
+    //   host.contains(".") && !address.isLoopbackAddress
+    // }.getOrElse(InetAddress.getLocalHost)
+    // address.getHostAddress
+  }
 }
 
 class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
@@ -933,49 +975,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   private lazy val hostAddress: String = {
     env.configuration
       .getOptionalWithFileSupport[String]("otoroshi.cluster.selfAddress")
-      .getOrElse(getIpAddress())
-  }
-
-  def getIpAddress(): String = {
-    import java.net._
-    val all = "0.0.0.0"
-    val res1 = Try {
-      val socket = new Socket()
-      socket.connect(new InetSocketAddress("www.otoroshi.io", 443))
-      val ip = socket.getLocalAddress.getHostAddress
-      socket.close()
-      ip
-    } match {
-      case Failure(_) => all
-      case Success(value) => value
-    }
-    val res2 = Try {
-      val socket = new DatagramSocket()
-      socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
-      val ip = socket.getLocalAddress.getHostAddress
-      socket.close()
-      ip
-    } match {
-      case Failure(_) => all
-      case Success(value) => value
-    }
-    val res3 = InetAddress.getLocalHost.getHostAddress
-    val res = if (res1 != all) {
-      res1
-    } else if (res2 != all) {
-      res2
-    } else {
-      res3
-    }
-    res
-    // val enumeration = NetworkInterface.getNetworkInterfaces.asScala.toSeq
-    // enumeration.foreach(_.getDisplayName.debugPrintln)
-    // val ipAddresses = enumeration.flatMap(p => p.getInetAddresses.asScala.toSeq)
-    // val address = ipAddresses.find { address =>
-    //   val host = address.getHostAddress
-    //   host.contains(".") && !address.isLoopbackAddress
-    // }.getOrElse(InetAddress.getLocalHost)
-    // address.getHostAddress
+      .getOrElse(ClusterLeaderAgent.getIpAddress())
   }
 
   def renewMemberShip(): Unit = {
@@ -1179,9 +1179,11 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private val isPushingQuotas               = new AtomicBoolean(false)
   private val firstSuccessfulStateFetchDone = new AtomicBoolean(false)
 
-  private lazy val hostAddress: String = env.configuration
-    .getOptionalWithFileSupport[String]("otoroshi.cluster.selfAddress")
-    .getOrElse(InetAddress.getLocalHost().getHostAddress.toString)
+  private lazy val hostAddress: String = {
+    env.configuration
+      .getOptionalWithFileSupport[String]("otoroshi.cluster.selfAddress")
+      .getOrElse(ClusterLeaderAgent.getIpAddress())
+  }
 
   /////////////
   private val apiIncrementsRef      = new AtomicReference[TrieMap[String, AtomicLong]](new TrieMap[String, AtomicLong]())
