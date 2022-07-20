@@ -249,7 +249,10 @@ export default forwardRef(
 
     useEffect(() => {
       console.log(location)
-      if (location?.state?.showTryIt) childRef.current.toggleTryIt();
+      if (location?.state?.showTryIt)
+        childRef.current.toggleTryIt();
+      else if (location?.state?.plugin)
+        childRef.current.selectPlugin(location?.state?.plugin)
     }, [location.state]);
 
     return (
@@ -488,6 +491,10 @@ class Designer extends React.Component {
     this.setState({ showTryIt: true });
   };
 
+  selectPlugin = pluginId => {
+    this.setState({ locationPlugin: pluginId })
+  }
+
   injectSaveButton = () => {
     this.props.setSaveButton(
       <FeedbackButton
@@ -682,11 +689,28 @@ class Designer extends React.Component {
             config_flow: DEFAULT_FLOW.Backend('plugin').config_flow,
             nodeId: 'Backend',
           },
+          selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins)
         },
         this.injectNavbarMenu
       );
     });
   };
+
+  getSelectedNodeFromLocation = (routePlugins, plugins) => {
+    const id = this.state.locationPlugin
+    const routePlugin = routePlugins
+      .find(p => p.plugin === id)
+
+    const plugin = plugins.find(p => p.id === id)
+
+    if (routePlugin && plugin)
+      return {
+        ...routePlugin,
+        ...plugin
+      }
+
+    return null
+  }
 
   generateInternalNodeId = (nodes) =>
     nodes.reduce(

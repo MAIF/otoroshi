@@ -34,7 +34,7 @@ const RouteChooser = ({ state, onChange }) => <>
             { kind: 'api', title: 'NEW API', text: 'Add all the plugins you need to expose an api' },
             { kind: 'empty', title: 'EMPTY API', text: 'From scratch, no plugin added' },
             { kind: 'mock', title: 'MOCK API', text: 'Build a mock API with Charlatan' },
-            { kind: 'graphql', title: 'GraphQL Schema', text: 'Start using GraphQL by createing your first schema' },
+            { kind: 'graphql', title: 'GraphQL Schema', text: 'Start using GraphQL by creating your first schema' },
             { kind: 'graphql-proxy', title: 'GRAPHQL API', text: 'Secure a GraphQL API with Otoroshi' },
             { kind: 'webapp', title: 'WEBAPP', text: 'Add all the plugins you need to expose a webapp with authentication' },
         ].map(({ kind, title, text }) => (
@@ -218,10 +218,16 @@ const ProcessStep = ({ state, history }) => {
 
                 <button className='btn btn-save' onClick={() => {
                     if (["mock", "graphql"].includes(state.route.kind))
-                        history.push(`/routes/${createdRoute.id}?tab=flow`);
+                        history.push(`/routes/${createdRoute.id}?tab=flow`, {
+                            plugin: state.route.kind === "mock" ?
+                                "cp:otoroshi.next.plugins.MockResponse" :
+                                "cp:otoroshi.next.plugins.GraphQLBackend"
+                        });
                     else
                         history.push(`/routes/${createdRoute.id}?tab=flow`, { showTryIt: true });
-                }}>Try it</button>
+                }}>
+                    {state.route.kind === 'mock' ? 'Start creating mocks' : state.route.kind === 'graphql' ? 'Start creating schema' : 'Try it'}
+                </button>
             </div>
         </Loader>
     </>
