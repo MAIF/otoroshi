@@ -359,12 +359,15 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                               memberType = ClusterMode.Worker,
                               location =
                                 ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
+                              httpPort = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerHttpPortHeader).map(_.toInt).getOrElse(env.exposedHttpPortInt),
+                              httpsPort = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerHttpsPortHeader).map(_.toInt).getOrElse(env.exposedHttpsPortInt),
                               lastSeen = DateTime.now(),
                               timeout = Duration(
                                 env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
                                 TimeUnit.MILLISECONDS
                               ),
                               stats = jsItem.as[JsObject],
+                              tunnels = Seq.empty,
                               relay = ctx.request.headers
                                 .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
                                 .flatMap(RelayRouting.parse)
@@ -459,11 +462,14 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                   name = name,
                   memberType = ClusterMode.Worker,
                   location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
+                  httpPort = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerHttpPortHeader).map(_.toInt).getOrElse(env.exposedHttpPortInt),
+                  httpsPort = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerHttpsPortHeader).map(_.toInt).getOrElse(env.exposedHttpsPortInt),
                   lastSeen = DateTime.now(),
                   timeout = Duration(
                     env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
                     TimeUnit.MILLISECONDS
                   ),
+                  tunnels = Seq.empty,
                   relay = ctx.request.headers
                     .get(ClusterAgent.OtoroshiWorkerRelayRoutingHeader)
                     .flatMap(RelayRouting.parse)

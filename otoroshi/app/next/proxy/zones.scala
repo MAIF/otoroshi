@@ -165,10 +165,13 @@ class PossibleLeaders(members: Seq[MemberView], route: NgRoute) {
           id = "local-leader",
           name = "local-leader",
           location = env.clusterConfig.relay.exposition.urls.headOption.getOrElse("127.0.0.1"),
+          httpPort = env.exposedHttpPortInt,
+          httpsPort = env.exposedHttpsPortInt,
           lastSeen = DateTime.now(),
           timeout = 10.seconds,
           memberType = ClusterMode.Leader,
           relay = env.clusterConfig.relay,
+          tunnels = Seq.empty,
           stats = Json.obj()
         ),
         route,

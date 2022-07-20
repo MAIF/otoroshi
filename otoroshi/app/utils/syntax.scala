@@ -11,6 +11,8 @@ import org.apache.commons.codec.binary.{Base64, Hex}
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.{JsonPathUtils, Regex, RegexPool}
 import play.api.libs.json._
+import play.api.libs.ws.{DefaultWSCookie, WSCookie}
+import play.api.mvc.Cookie
 import play.api.{ConfigLoader, Configuration, Logger}
 
 import java.io.{ByteArrayInputStream, File}
@@ -24,7 +26,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.ClassTag
-import scala.util.control.NoStackTrace
+import scala.util.control.{NoStackTrace, NonFatal}
 import scala.util.{Failure, Success, Try}
 
 object implicits {
@@ -331,6 +333,14 @@ object implicits {
       configuration.getOptional[A](path)(loader)
     }
 
+    def getOpt[A](path: String)(implicit loader: ConfigLoader[A]): Option[A] = {
+      try {
+        if (configuration.underlying.hasPath(path)) Some(configuration.get[A](path)) else None
+      } catch {
+        case NonFatal(e) => None
+      }
+    }
+
     def getOptionalWithFileSupport[A](
         _path: String
     )(implicit loader: ConfigLoader[A], classTag: ClassTag[A]): Option[A] = {
@@ -404,6 +414,48 @@ object implicits {
         case _ => timeStrings.init.mkString(", ") + " and " + timeStrings.last
       }
     }
+  }
+  implicit class BetterCookie(val cookie: Cookie) extends AnyVal {
+    def wsCookie: WSCookie = DefaultWSCookie(
+      name = cookie.name,
+      value = cookie.value,
+      domain = cookie.domain,
+      path = cookie.path.some,
+      maxAge = cookie.maxAge.map(_.toLong),
+      secure = cookie.secure,
+      httpOnly = cookie.httpOnly,
+    )
+    def json: JsValue = Json.obj(
+      "name" -> cookie.name,
+      "value" -> cookie.value,
+      "maxAge" -> cookie.maxAge.map(n => JsNumber(BigDecimal(n))).getOrElse(JsNull).asValue,
+      "path" -> cookie.path,
+      "domain" -> cookie.domain.map(JsString.apply).getOrElse(JsNull).asValue,
+      "secure" -> cookie.secure,
+      "httpOnly" -> cookie.httpOnly,
+      "sameSite" -> cookie.sameSite.map(_.value.json).getOrElse(JsNull).asValue
+    )
+  }
+  implicit class BetterWSCookie(val cookie: WSCookie) extends AnyVal {
+    def mvcCookie: Cookie = Cookie(
+      name = cookie.name,
+      value = cookie.value,
+      maxAge = cookie.maxAge.map(_.toInt),
+      path = cookie.path.getOrElse("/"),
+      domain = cookie.domain,
+      secure = cookie.secure,
+      httpOnly = cookie.httpOnly,
+      sameSite = None,
+    )
+    def json: JsValue = Json.obj(
+      "name" -> cookie.name,
+      "value" -> cookie.value,
+      "maxAge" -> cookie.maxAge.map(n => JsNumber(BigDecimal(n))).getOrElse(JsNull).asValue,
+      "path" -> cookie.path.map(JsString.apply).getOrElse(JsNull).asValue,
+      "domain" -> cookie.domain.map(JsString.apply).getOrElse(JsNull).asValue,
+      "secure" -> cookie.secure,
+      "httpOnly" -> cookie.httpOnly,
+    )
   }
   implicit class BetterMapOfStringAndB[B](val theMap: Map[String, B])         extends AnyVal {
     def put(key: String, value: B): Map[String, B]                 = theMap.+((key, value))

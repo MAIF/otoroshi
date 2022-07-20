@@ -345,12 +345,14 @@ object ClusterConfig {
           ipAddress = configuration.getOptionalWithFileSupport[String]("relay.exposition.ipAddress"),
           tls = {
             val enabled =
-              configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.mtls").getOrElse(false)
+              configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.mtls")
+                .orElse(configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.enabled"))
+                .getOrElse(false)
             if (enabled) {
               val loose        =
                 configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.loose").getOrElse(false)
               val trustAll     =
-                configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.loose").getOrElse(false)
+                configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.trustAll").getOrElse(false)
               val certs        =
                 configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.certs").getOrElse(Seq.empty)
               val trustedCerts = configuration
@@ -459,10 +461,13 @@ case class MemberView(
     id: String,
     name: String,
     location: String,
+    httpPort: Int,
+    httpsPort: Int,
     lastSeen: DateTime,
     timeout: Duration,
     memberType: ClusterMode,
     relay: RelayRouting,
+    tunnels: Seq[String],
     stats: JsObject = Json.obj()
 ) {
   def asJson: JsValue =
@@ -470,11 +475,14 @@ case class MemberView(
       "id"       -> id,
       "name"     -> name,
       "location" -> location,
+      "httpPort" -> httpPort,
+      "httpsPort" -> httpsPort,
       "lastSeen" -> lastSeen.getMillis,
       "timeout"  -> timeout.toMillis,
       "type"     -> memberType.name,
       "stats"    -> stats,
-      "relay"    -> relay.json
+      "relay"    -> relay.json,
+      "tunnels"  -> tunnels,
     )
   def statsView: StatsView = {
     StatsView(
@@ -514,6 +522,9 @@ object MemberView {
             .map(n => ClusterMode(n).getOrElse(ClusterMode.Off))
             .getOrElse(ClusterMode.Off),
           stats = (value \ "stats").asOpt[JsObject].getOrElse(Json.obj()),
+          tunnels = (value \ "tunnels").asOpt[Seq[String]].map(_.distinct).getOrElse(Seq.empty),
+          httpsPort = (value \ "httpsPort").asOpt[Int].getOrElse(env.exposedHttpsPortInt),
+          httpPort = (value \ "httpPort").asOpt[Int].getOrElse(env.exposedHttpPortInt),
           relay = RelayRouting(
             enabled = true,
             leaderOnly = false,
@@ -804,6 +815,8 @@ object ClusterAgent {
   val OtoroshiWorkerIdHeader           = "Otoroshi-Worker-Id"
   val OtoroshiWorkerNameHeader         = "Otoroshi-Worker-Name"
   val OtoroshiWorkerLocationHeader     = "Otoroshi-Worker-Location"
+  val OtoroshiWorkerHttpPortHeader     = "Otoroshi-Worker-Http-Port"
+  val OtoroshiWorkerHttpsPortHeader    = "Otoroshi-Worker-Https-Port"
   val OtoroshiWorkerRelayRoutingHeader = "Otoroshi-Worker-Relay-Routing"
 
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
@@ -917,9 +930,53 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   private val cacheDigest = new AtomicReference[String]("--")
   private val cachedRef   = new AtomicReference[ByteString](ByteString.empty)
 
-  private lazy val hostAddress: String = env.configuration
-    .getOptionalWithFileSupport[String]("otoroshi.cluster.selfAddress")
-    .getOrElse(InetAddress.getLocalHost().getHostAddress.toString)
+  private lazy val hostAddress: String = {
+    env.configuration
+      .getOptionalWithFileSupport[String]("otoroshi.cluster.selfAddress")
+      .getOrElse(getIpAddress())
+  }
+
+  def getIpAddress(): String = {
+    import java.net._
+    val all = "0.0.0.0"
+    val res1 = Try {
+      val socket = new Socket()
+      socket.connect(new InetSocketAddress("www.otoroshi.io", 443))
+      val ip = socket.getLocalAddress.getHostAddress
+      socket.close()
+      ip
+    } match {
+      case Failure(_) => all
+      case Success(value) => value
+    }
+    val res2 = Try {
+      val socket = new DatagramSocket()
+      socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+      val ip = socket.getLocalAddress.getHostAddress
+      socket.close()
+      ip
+    } match {
+      case Failure(_) => all
+      case Success(value) => value
+    }
+    val res3 = InetAddress.getLocalHost.getHostAddress
+    val res = if (res1 != all) {
+      res1
+    } else if (res2 != all) {
+      res2
+    } else {
+      res3
+    }
+    res
+    // val enumeration = NetworkInterface.getNetworkInterfaces.asScala.toSeq
+    // enumeration.foreach(_.getDisplayName.debugPrintln)
+    // val ipAddresses = enumeration.flatMap(p => p.getInetAddresses.asScala.toSeq)
+    // val address = ipAddresses.find { address =>
+    //   val host = address.getHostAddress
+    //   host.contains(".") && !address.isLoopbackAddress
+    // }.getOrElse(InetAddress.getLocalHost)
+    // address.getHostAddress
+  }
 
   def renewMemberShip(): Unit = {
     (for {
@@ -973,11 +1030,14 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
           id = ClusterConfig.clusterNodeId,
           name = env.clusterConfig.leader.name,
           memberType = ClusterMode.Leader,
-          location = s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
+          location = hostAddress,
+          httpPort = env.exposedHttpPortInt,
+          httpsPort = env.exposedHttpsPortInt,
           lastSeen = DateTime.now(),
           timeout = 120.seconds,
           stats = stats,
-          relay = env.clusterConfig.relay
+          relay = env.clusterConfig.relay,
+          tunnels = env.tunnelManager.currentTunnels.toSeq,
         )
       )
     }
@@ -1161,7 +1221,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               "Host"                                    -> config.leader.host,
               ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress",
+              ClusterAgent.OtoroshiWorkerHttpPortHeader -> env.exposedHttpPortInt.toString,
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString,
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1201,7 +1263,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               "Host"                                    -> config.leader.host,
               ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress",
+              ClusterAgent.OtoroshiWorkerHttpPortHeader -> env.exposedHttpPortInt.toString,
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString,
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1242,7 +1306,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               "Content-Type"                            -> "application/json",
               ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress",
+              ClusterAgent.OtoroshiWorkerHttpPortHeader -> env.exposedHttpPortInt.toString,
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString,
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1281,7 +1347,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               "Content-Type"                            -> "application/json",
               ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress",
+              ClusterAgent.OtoroshiWorkerHttpPortHeader -> env.exposedHttpPortInt.toString,
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString,
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1319,7 +1387,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               "Host"                                    -> config.leader.host,
               ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress",
+              ClusterAgent.OtoroshiWorkerHttpPortHeader -> env.exposedHttpPortInt.toString,
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString,
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1388,7 +1458,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               "Content-Type"                            -> "application/json",
               ClusterAgent.OtoroshiWorkerIdHeader       -> ClusterConfig.clusterNodeId,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress",
+              ClusterAgent.OtoroshiWorkerHttpPortHeader -> env.exposedHttpPortInt.toString,
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString,
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1504,7 +1576,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 // "Accept-Encoding" -> "gzip",
                 ClusterAgent.OtoroshiWorkerIdHeader           -> ClusterConfig.clusterNodeId,
                 ClusterAgent.OtoroshiWorkerNameHeader         -> config.worker.name,
-                ClusterAgent.OtoroshiWorkerLocationHeader     -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
+                ClusterAgent.OtoroshiWorkerLocationHeader     -> s"$hostAddress",
+                ClusterAgent.OtoroshiWorkerHttpPortHeader     -> env.exposedHttpPortInt.toString,
+                ClusterAgent.OtoroshiWorkerHttpsPortHeader    -> env.exposedHttpsPortInt.toString,
                 ClusterAgent.OtoroshiWorkerRelayRoutingHeader -> env.clusterConfig.relay.json.stringify
               )
               .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
@@ -1732,7 +1806,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   // "Content-Encoding" -> "gzip",
                   ClusterAgent.OtoroshiWorkerIdHeader           -> ClusterConfig.clusterNodeId,
                   ClusterAgent.OtoroshiWorkerNameHeader         -> config.worker.name,
-                  ClusterAgent.OtoroshiWorkerLocationHeader     -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
+                  ClusterAgent.OtoroshiWorkerLocationHeader     -> s"$hostAddress",
+                  ClusterAgent.OtoroshiWorkerHttpPortHeader     -> env.exposedHttpPortInt.toString,
+                  ClusterAgent.OtoroshiWorkerHttpsPortHeader    -> env.exposedHttpsPortInt.toString,
                   ClusterAgent.OtoroshiWorkerRelayRoutingHeader -> env.clusterConfig.relay.json.stringify
                 )
                 .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)

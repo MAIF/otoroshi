@@ -364,6 +364,10 @@ POST    /api/cluster/login-tokens/:id                         otoroshi.controlle
 GET     /api/cluster/user-tokens/:id                          otoroshi.controllers.adminapi.ClusterController.getUserToken(id)
 POST    /api/cluster/user-tokens                              otoroshi.controllers.adminapi.ClusterController.setUserToken()
 
+GET     /api/tunnels/register                                 otoroshi.next.tunnel.TunnelController.tunnelEndpoint()
+GET     /api/tunnels/infos                                    otoroshi.next.tunnel.TunnelController.infos()
+POST    /api/tunnels/:tunnelId/relay                          otoroshi.next.tunnel.TunnelController.tunnelRelay(tunnelId)
+
 GET     /api/scripts/_template                                otoroshi.controllers.adminapi.TemplatesController.initiateScript()
 # GET     /api/scripts/:id                                      otoroshi.controllers.adminapi.ScriptApiController.findScriptById(id)
 # PUT     /api/scripts/:id                                      otoroshi.controllers.adminapi.ScriptApiController.updateScript(id)
