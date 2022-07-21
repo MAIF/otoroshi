@@ -27,8 +27,8 @@ const RouteChooser = ({ state, onChange }) => <>
     <h3>Select a route template</h3>
     <div style={{
         display: 'flex',
+        flexDirection: 'column',
         gap: '10px',
-        flexWrap: 'wrap'
     }}>
         {[
             { kind: 'api', title: 'NEW API', text: 'Add all the plugins you need to expose an api' },
@@ -38,14 +38,7 @@ const RouteChooser = ({ state, onChange }) => <>
             { kind: 'graphql-proxy', title: 'GRAPHQL API', text: 'Secure a GraphQL API with Otoroshi' },
             { kind: 'webapp', title: 'WEBAPP', text: 'Add all the plugins you need to expose a webapp with authentication' },
         ].map(({ kind, title, text }) => (
-            <button className={`btn ${state.route.kind === kind ? 'btn-save' : 'btn-dark'} py-3`}
-                style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    minWidth: '30%'
-                }}
+            <button className={`btn ${state.route.kind === kind ? 'btn-save' : 'btn-dark'} py-3 wizard-route-chooser`}
                 onClick={() => onChange(kind)}
                 key={kind}
             >
@@ -240,20 +233,34 @@ export class RouteWizard extends React.Component {
         step: 1,
         route: {
             name: "My new route",
-            domain: "foo-next-gen.oto.tools",
-            url: "https://mirror.otoroshi.io:443/",
+            domain: "",
+            url: "",
             kind: 'api'
         },
         error: undefined
     }
 
-    prevStep = () => this.setState({
-        step: this.state.step - 1
-    })
+    prevStep = () => {
+        if (this.state.step - 1 === 4 && ["mock", "graphql"].includes(this.state.route.kind))
+            this.setState({
+                step: 3
+            })
+        else
+            this.setState({
+                step: this.state.step - 1
+            })
+    }
 
-    nextStep = () => this.setState({
-        step: this.state.step + 1
-    })
+    nextStep = () => {
+        if (this.state.step + 1 === 4 && ["mock", "graphql"].includes(this.state.route.kind))
+            this.setState({
+                step: 5
+            })
+        else
+            this.setState({
+                step: this.state.step + 1
+            })
+    }
 
     onRouteFieldChange = (field, value) => {
         this.setState({
@@ -301,14 +308,6 @@ export class RouteWizard extends React.Component {
                     </div>
                 </div>
                 <div style={{ flex: 1, borderBottom: "4px solid #f9b000" }}>
-                    <img src="/assets/images/maker_launch.svg" className='wizard-img'
-                        style={{
-                            height: step === 2 ? '20%' : '30%',
-                            webkitTransform: `scaleX(${step === 2 ? -1 : 1})`,
-                            transform: `scaleX(${step === 2 ? -1 : 1})`,
-                            left: step === 2 ? 0 : 'initial',
-                            right: step === 2 ? 'initial' : 0
-                        }} />
                 </div>
             </div>
         )
