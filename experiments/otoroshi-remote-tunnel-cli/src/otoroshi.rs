@@ -15,6 +15,7 @@ pub struct OtoroshInfos {
 pub struct Otoroshi {}
 
 impl Otoroshi {
+  
     pub async fn get_infos(opts: Opts) -> Option<OtoroshInfos> {
         let client_id = opts.cid;
         let client_secret = opts.csec;

@@ -2960,7 +2960,7 @@ class ProxyEngine() extends RequestHandler {
         headersOutFiltered.contains(key.toLowerCase())
       }
       .applyOnIf(!isHttp10)(_.filterNot(h => h._1.toLowerCase() == "content-length"))
-      .toSeq
+      .toSeq // ++ Seq(("Connection" -> "keep-alive"), ("X-Connection" -> "keep-alive"))
     val theBody                        = response.body.applyOnIf(engineConfig.capture) { source =>
       var responseChunks = ByteString("")
       source

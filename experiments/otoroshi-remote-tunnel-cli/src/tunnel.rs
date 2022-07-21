@@ -8,7 +8,6 @@ use tokio_tungstenite::{
 use url::Url;
 use base64::{encode, decode};
 use hyper::{Request, Client};
-use clap::{Parser};
 use std::time::Instant;
 
 use crate::opts::Opts;
