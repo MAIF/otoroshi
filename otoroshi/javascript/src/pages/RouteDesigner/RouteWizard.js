@@ -146,7 +146,11 @@ const ProcessStep = ({ state, history }) => {
         Promise.all([getPlugins(), getOldPlugins(), nextClient
             .template(nextClient.ENTITIES.ROUTES)])
             .then(([plugins, oldPlugins, template]) => {
-                const url = new URL(state.route.url)
+                const url = ["mock", "graphql"].includes(state.route.kind) ? {
+                    pahtname: "/",
+                    hostname: "",
+                    protocol: "https://"
+                } : new URL(state.route.url)
                 const secured = url.protocol.includes("https")
 
                 const selectedPlugins = PLUGINS[state.route.kind]

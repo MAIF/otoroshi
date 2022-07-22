@@ -583,7 +583,7 @@ class GraphQLBackend extends NgBackendCall {
             sliceArrayWithArgs(
               Json.parse(c.arg(jsonDataArg).getOrElse("[]")).as[JsArray].value,
               c
-            ).asInstanceOf[JsArray].value
+            )
           case _               => c.arg(jsonDataArg)
         }
     }
