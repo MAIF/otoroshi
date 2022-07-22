@@ -612,7 +612,7 @@ class KvClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterSta
   }
 
   override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
-    if (env.clusterConfig.mode == ClusterMode.Leader) {
+    // if (env.clusterConfig.mode == ClusterMode.Leader) {
       redisLike
         .keys(s"${env.storageRoot}:cluster:members:*")
         .flatMap(keys =>
@@ -624,9 +624,9 @@ class KvClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterSta
             case JsSuccess(i, _) => i
           }
         )
-    } else {
-      FastFuture.successful(Seq.empty)
-    }
+    // } else {
+    //   FastFuture.successful(Seq.empty)
+    // }
   }
 
   override def updateDataIn(in: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
@@ -728,7 +728,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
   }
 
   override def getMembers()(implicit ec: ExecutionContext, env: Env): Future[Seq[MemberView]] = {
-    if (env.clusterConfig.mode == ClusterMode.Leader) {
+    // if (env.clusterConfig.mode == ClusterMode.Leader) {
       redisLike
         .keys(s"${env.storageRoot}:cluster:members:*")
         .flatMap(keys =>
@@ -740,9 +740,9 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
             case JsSuccess(i, _) => i
           }
         )
-    } else {
-      FastFuture.successful(Seq.empty)
-    }
+    // } else {
+    //   FastFuture.successful(Seq.empty)
+    // }
   }
 
   override def updateDataIn(in: Long)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {

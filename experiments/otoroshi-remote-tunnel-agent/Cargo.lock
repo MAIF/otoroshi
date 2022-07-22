@@ -510,7 +510,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "648001efe5d5c0102d8cea768e348da85d90af8ba91f0bea908f157951493cd4"
 
 [[package]]
-name = "otoroshi-remote-tunnel-cli"
+name = "otoroshi-remote-tunnel-agent"
 version = "0.1.0"
 dependencies = [
  "base64",

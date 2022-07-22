@@ -1,7 +1,7 @@
 use clap::{Parser};
 
 #[derive(Parser, Clone, Debug)]
-#[clap(name = "otoroshi_remote_tunnel_cli")]
+#[clap(name = "otoroshi_remote_tunnel_agent")]
 #[clap(version = "0.1.0")]
 #[clap(about = "Route local process to a remote Otoroshi through a tunnel (experimental)", long_about = None)]
 pub struct Opts {

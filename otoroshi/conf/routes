@@ -366,6 +366,7 @@ POST    /api/cluster/user-tokens                              otoroshi.controlle
 
 GET     /api/tunnels/register                                 otoroshi.next.tunnel.TunnelController.tunnelEndpoint()
 GET     /api/tunnels/infos                                    otoroshi.next.tunnel.TunnelController.infos()
+GET     /api/tunnels/:tunnelId/relay                          otoroshi.next.tunnel.TunnelController.tunnelRelayWs(tunnelId)
 POST    /api/tunnels/:tunnelId/relay                          otoroshi.next.tunnel.TunnelController.tunnelRelay(tunnelId)
 
 GET     /api/scripts/_template                                otoroshi.controllers.adminapi.TemplatesController.initiateScript()

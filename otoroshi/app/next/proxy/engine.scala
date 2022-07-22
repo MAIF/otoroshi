@@ -440,7 +440,7 @@ class ProxyEngine() extends RequestHandler {
           }
         }
       }
-      .applyOnIf( /*env.env == "dev" && */ (debug || debugHeaders))(_.map { res =>
+      .applyOnIf( /*env.isDev && */ (debug || debugHeaders))(_.map { res =>
         val addHeaders =
           if (reporting && debugHeaders)
             Seq(

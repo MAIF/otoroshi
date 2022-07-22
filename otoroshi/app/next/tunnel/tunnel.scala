@@ -27,6 +27,7 @@ import play.api.libs.ws.WSCookie
 import play.api.mvc._
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
+import scala.collection.concurrent.TrieMap
 import scala.collection.immutable
 import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -153,6 +154,7 @@ class TunnelAgent(env: Env) {
 
     logger.info(s"connecting tunnel '${tunnelId}' ...")
 
+    // TODO: push routes meta
     val promise = Promise[Unit]()
     val pingSource: Source[akka.http.scaladsl.model.ws.Message, _] = Source.tick(10.seconds, 10.seconds, ()).map(_ => PingMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)).map { pm =>
       akka.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
@@ -210,28 +212,32 @@ class TunnelAgent(env: Env) {
           cookies = Cookies(cookies),
           certs = certs,
         )
-        engine.handle(request, _ => Results.InternalServerError("bad default routing").vfuture).map { result =>
-          val ct = result.body.contentType
-          val cl = result.body.contentLength
-          val cookies = result.header.headers.getIgnoreCase("Cookie").map { c =>
-            Cookies.decodeCookieHeader(c)
-          }.getOrElse(Seq.empty)
-          result.body.dataStream.runFold(ByteString.empty)(_ ++ _).map { br =>
-            val resJson = Json.obj(
-              "request_id" -> requestId,
-              "type" -> "response",
-              "status" -> result.header.status,
-              "headers" -> (result.header.headers ++ Map.empty[String, String].applyOnWithOpt(ct) {
-                case (headers, ctype) => headers ++ Map("Content-Type" -> ctype)
-              }.applyOnWithOpt(cl) {
-                case (headers, clength) => headers ++ Map("Content-Length" -> clength.toString)
-              }),
-              "cookies" -> cookies.map(_.json),
-              "body" -> br.encodeBase64.utf8String
-            )
+        engine.handle(request, _ => Results.InternalServerError("bad default routing").vfuture).flatMap { result =>
+          TunnelActor.resultToJson(result, requestId).map { res =>
             logger.debug(s"sending response back to server on tunnel '${tunnelId}' - ${requestId}")
-            Option(queueRef.get()).foreach(queue => queue.offer(akka.http.scaladsl.model.ws.BinaryMessage.Streamed(resJson.stringify.byteString.chunks(16 * 1024))))
+            Option(queueRef.get()).foreach(queue => queue.offer(akka.http.scaladsl.model.ws.BinaryMessage.Streamed(res.stringify.byteString.chunks(16 * 1024))))
           }
+          // val ct = result.body.contentType
+          // val cl = result.body.contentLength
+          // val cookies = result.header.headers.getIgnoreCase("Cookie").map { c =>
+          //   Cookies.decodeCookieHeader(c)
+          // }.getOrElse(Seq.empty)
+          // result.body.dataStream.runFold(ByteString.empty)(_ ++ _).map { br =>
+          //   val resJson = Json.obj(
+          //     "request_id" -> requestId,
+          //     "type" -> "response",
+          //     "status" -> result.header.status,
+          //     "headers" -> (result.header.headers ++ Map.empty[String, String].applyOnWithOpt(ct) {
+          //       case (headers, ctype) => headers ++ Map("Content-Type" -> ctype)
+          //     }.applyOnWithOpt(cl) {
+          //       case (headers, clength) => headers ++ Map("Content-Length" -> clength.toString)
+          //     }),
+          //     "cookies" -> cookies.map(_.json),
+          //     "body" -> br.encodeBase64.utf8String
+          //   )
+          //   logger.debug(s"sending response back to server on tunnel '${tunnelId}' - ${requestId}")
+          //   Option(queueRef.get()).foreach(queue => queue.offer(akka.http.scaladsl.model.ws.BinaryMessage.Streamed(resJson.stringify.byteString.chunks(16 * 1024))))
+          // }
         }
       }
     } match {
@@ -304,6 +310,7 @@ class TunnelManager(env: Env) {
   private val tunnels = Scaffeine().maximumSize(10000).expireAfterWrite(10.minute).build[String, Seq[Tunnel]]()
   private val counter = new AtomicInteger(0)
   private val tunnelsEnabled = env.configuration.getOptional[Boolean]("otoroshi.tunnels.enabled").getOrElse(false)
+  private val workerWs = env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-ws").getOrElse(false)
   private val logger = Logger(s"otoroshi-tunnel-manager")
 
   private implicit val ec = env.otoroshiExecutionContext
@@ -339,7 +346,7 @@ class TunnelManager(env: Env) {
   def sendLocalRequestRaw(tunnelId: String, request: JsValue): Future[Result] = {
     if (tunnelsEnabled) {
       tunnels.getIfPresent(tunnelId) match {
-        case None => Results.NotFound(Json.obj("error" -> s"missing tunnel '${tunnelId}'")).vfuture
+        case None => Results.NotFound(Json.obj("error" -> s"missing local tunnel '${tunnelId}'")).vfuture
         case Some(tunnels) => {
           val index = counter.incrementAndGet() % (if (tunnels.nonEmpty) tunnels.size else 1)
           val tunnel = tunnels.apply(index)
@@ -359,18 +366,26 @@ class TunnelManager(env: Env) {
       tunnels.getIfPresent(tunnelId) match {
         case None => {
           env.datastores.clusterStateDataStore.getMembers().flatMap { members =>
-            members.filterNot(_.memberType != ClusterMode.Worker).find(_.tunnels.contains(tunnelId)) match {
-              case None => Results.NotFound(Json.obj("error" -> s"missing tunnel '${tunnelId}'")).vfuture
-              case Some(member) => forwardRequest(tunnelId, request, addr, secured, member)
+            val membersWithTunnel = members.filter(_.tunnels.contains(tunnelId))
+            if (membersWithTunnel.isEmpty) {
+              Results.NotFound(Json.obj("error" -> s"missing tunnel '${tunnelId}'")).vfuture
+            } else {
+              val index = counter.incrementAndGet() % (if (membersWithTunnel.nonEmpty) membersWithTunnel.size else 1)
+              val member = membersWithTunnel.apply(index)
+              forwardRequest(tunnelId, request, addr, secured, member)
             }
           }
         }
         case Some(tunnels) => {
-          val index = counter.incrementAndGet() % (if (tunnels.nonEmpty) tunnels.size else 1)
-          val tunnel = tunnels.apply(index)
-          tunnel.actor match {
-            case None => Results.NotFound(Json.obj("error" -> s"missing tunnel connection for tunnel '${tunnelId}'")).vfuture
-            case Some(tunnel) => tunnel.sendRequest(request, addr, secured)
+          if (tunnels.isEmpty) {
+            Results.NotFound(Json.obj("error" -> s"missing tunnel connection for tunnel '${tunnelId}'")).vfuture
+          } else {
+            val index = counter.incrementAndGet() % (if (tunnels.nonEmpty) tunnels.size else 1)
+            val tunnel = tunnels.apply(index)
+            tunnel.actor match {
+              case None => Results.NotFound(Json.obj("error" -> s"missing tunnel connection for tunnel '${tunnelId}'")).vfuture
+              case Some(tunnel) => tunnel.sendRequest(request, addr, secured)
+            }
           }
         }
       }
@@ -380,33 +395,153 @@ class TunnelManager(env: Env) {
   }
 
   private def forwardRequest(tunnelId: String, request: NgPluginHttpRequest, addr: String, secured: Boolean, member: MemberView): Future[Result] = {
-    val requestId: Long = counter.incrementAndGet()
-    logger.debug(s"forwarding request for '${tunnelId}' - ${requestId} to ${member.name}")
-    val requestJson = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
-    val url = Uri(env.clusterConfig.leader.urls.head)
-    val ipAddress = member.location
-    val service = env.proxyState.service(env.backOfficeServiceId).get
-    env.Ws.akkaUrlWithTarget(s"${url.toString()}/api/tunnels/${tunnelId}/relay", Target(
-      host = url.authority.toString(),
-      scheme = url.scheme,
-      ipAddress = ipAddress.some
-    )).withMethod("POST")
-      .withRequestTimeout(service.clientConfig.globalTimeout.milliseconds)
-      .withHttpHeaders(
-        env.Headers.OtoroshiClientId -> env.clusterConfig.leader.clientId,
-        env.Headers.OtoroshiClientSecret -> env.clusterConfig.leader.clientSecret,
-        "Content-Type" -> "application/json"
-      )
-      .withBody(requestJson)
-      .execute()
-      .map { resp =>
-        if (resp.status == 200) {
-          TunnelActor.responseToResult(resp.json)
-        } else {
-          logger.error(s"error while forwarding tunnel request to '${tunnelId}' - ${resp.status} - ${resp.headers} - ${resp.body}")
-          Results.InternalServerError(Json.obj("error" -> s"error while handling request"))
+    if (workerWs) {
+      forwardRequestWs(tunnelId, request, addr, secured, member)
+    } else {
+      val requestId: Long = counter.incrementAndGet()
+      logger.debug(s"forwarding request for '${tunnelId}' - ${requestId} to ${member.name}")
+      val requestJson = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
+      val url = Uri(env.clusterConfig.leader.urls.head)
+      val ipAddress = member.location
+      val service = env.proxyState.service(env.backOfficeServiceId).get
+      env.Ws.akkaUrlWithTarget(s"${url.toString()}/api/tunnels/${tunnelId}/relay", Target(
+        host = url.authority.toString(),
+        scheme = url.scheme,
+        ipAddress = ipAddress.some
+      )).withMethod("POST")
+        .withRequestTimeout(service.clientConfig.globalTimeout.milliseconds)
+        .withHttpHeaders(
+          env.Headers.OtoroshiClientId -> env.clusterConfig.leader.clientId,
+          env.Headers.OtoroshiClientSecret -> env.clusterConfig.leader.clientSecret,
+          "Content-Type" -> "application/json",
+          "Host" -> env.clusterConfig.leader.host,
+          "Accept" -> "application/json",
+        )
+        .withBody(requestJson)
+        .execute()
+        .map { resp =>
+          if (resp.status == 200) {
+            TunnelActor.responseToResult(resp.json)
+          } else {
+            logger.error(s"error while forwarding tunnel request to '${tunnelId}' - ${resp.status} - ${resp.headers} - ${resp.body}")
+            Results.InternalServerError(Json.obj("error" -> s"error while handling request"))
+          }
         }
-      }
+    }
+  }
+
+  private val leaderConnections = new TrieMap[String, LeaderConnection]()
+
+  private def forwardRequestWs(tunnelId: String, request: NgPluginHttpRequest, addr: String, secured: Boolean, member: MemberView): Future[Result] = {
+    implicit val ec = env.otoroshiExecutionContext
+    implicit val mat = env.otoroshiMaterializer
+    implicit val ev = env
+
+    val requestId: Long = counter.incrementAndGet()
+    val requestJson = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
+
+    leaderConnections.get(member.location) match {
+      case Some(conn) =>
+        println("sending ws")
+        conn.push(requestJson, requestId)
+      case None =>
+        println("connecting ws")
+        new LeaderConnection(tunnelId, member, env, c => leaderConnections.put(member.location, c), c => leaderConnections.remove(c.location))
+          .connect(0L)
+          .push(requestJson, requestId)
+    }
+  }
+}
+
+class LeaderConnection(tunnelId: String, member: MemberView, env: Env, register: LeaderConnection => Unit, unregister: LeaderConnection => Unit) {
+
+  private val logger = Logger("otoroshi-tunnel-leader-connection")
+  private implicit val ec  = env.otoroshiExecutionContext
+  private implicit val mat = env.otoroshiMaterializer
+  private implicit val factory = env.otoroshiActorSystem
+
+  def location: String = member.location
+
+  private val pingSource: Source[akka.http.scaladsl.model.ws.Message, _] = Source.tick(10.seconds, 10.seconds, ()).map(_ => PingMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)).map { pm =>
+    akka.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
+  }
+  private val queueRef = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
+  private val pushSource: Source[akka.http.scaladsl.model.ws.Message, SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]] = Source.queue[akka.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue { q =>
+    queueRef.set(q)
+    q
+  }
+  private val source: Source[akka.http.scaladsl.model.ws.Message, _] = pushSource.merge(pingSource, true)
+  private val awaitingResponse = new scala.collection.concurrent.TrieMap[Long, Promise[Result]]()
+
+  def push(req: ByteString, requestId: Long): Future[Result] = {
+    val promise = Promise.apply[Result]()
+    awaitingResponse.put(requestId, promise)
+    Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage.Strict(req)))
+    promise.future
+  }
+
+  def connect(waiting: Long): LeaderConnection = {
+    val url = env.clusterConfig.leader.urls.head
+    val ipAddress = member.location
+    val userpwd = s"${env.clusterConfig.leader.clientId}:${env.clusterConfig.leader.clientSecret}".base64
+    val uri = Uri(url + s"/api/tunnels/$tunnelId/relay").copy(scheme = if (url.startsWith("https")) "wss" else "ws")
+    env.Ws.ws(
+      request = WebSocketRequest(
+        uri = uri,
+        extraHeaders = List(
+          RawHeader("Host", env.clusterConfig.leader.host),
+          RawHeader("Authorization", s"Basic ${userpwd}"),
+          RawHeader(env.Headers.OtoroshiClientId, env.clusterConfig.leader.clientId),
+          RawHeader(env.Headers.OtoroshiClientSecret, env.clusterConfig.leader.clientSecret),
+        ),
+        subprotocols = immutable.Seq.empty[String]
+      ),
+      targetOpt = Target(
+        host = uri.authority.host.toString(),
+        scheme = uri.scheme,
+        ipAddress = ipAddress.some,
+      ).some,
+      clientFlow = Flow.fromSinkAndSource(
+        Sink.foreach[akka.http.scaladsl.model.ws.Message] {
+          case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) => handleResponse(data)
+          case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) => source.runFold(ByteString.empty)(_ ++ _).map(b => handleResponse(b))
+          case _ =>
+        },
+        source,
+      ).alsoTo(Sink.onComplete {
+        case Success(e) =>
+          logger.info(s"tunnel relay '${tunnelId}' disconnected, launching reconnection ...")
+          unregister(this)
+          timeout(waiting.millis).andThen { case _ =>
+            new LeaderConnection(tunnelId, member, env, register, unregister).connect(waiting)
+          }
+        case Failure(e) =>
+          logger.error(s"tunnel relay'${tunnelId}' disconnected, launching reconnection ...", e)
+          unregister(this)
+          timeout(waiting.millis).andThen { case _ =>
+            new LeaderConnection(tunnelId, member, env, register, unregister).connect(waiting * 2)
+          }
+      }),
+      customizer = m => m
+    )._1.map { _ =>
+      register(this)
+    }
+    this
+  }
+
+  private def handleResponse(data: ByteString): Unit = {
+    val json = Json.parse(data.toArray)
+    val requestId = json.select("request_id").asLong
+    val result = TunnelActor.responseToResult(json)
+    awaitingResponse.get(requestId).foreach(_.trySuccess(result))
+  }
+
+  private def timeout(duration: FiniteDuration): Future[Unit] = {
+    val promise = Promise[Unit]
+    env.otoroshiActorSystem.scheduler.scheduleOnce(duration) {
+      promise.trySuccess(())
+    }(env.otoroshiExecutionContext)
+    promise.future
   }
 }
 
@@ -431,7 +566,29 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
   }
 
   def tunnelRelay(tunnelId: String) = ApiAction.async(parse.json) { ctx =>
-    env.tunnelManager.sendLocalRequestRaw(tunnelId, ctx.request.body)
+    if (tunnelsEnabled) {
+      val requestId = ctx.request.body.select("request_id").asLong
+      env.tunnelManager.sendLocalRequestRaw(tunnelId, ctx.request.body).flatMap { res =>
+        TunnelActor.resultToJson(res, requestId).map(v => Ok(v))
+      }
+    } else {
+      NotFound(Json.obj("error" -> "resource not found")).vfuture
+    }
+  }
+
+  def tunnelRelayWs(tunnelId: String) = WebSocket.acceptOrResult[Message, Message] { request =>
+    if (tunnelsEnabled) {
+      validateRequest(request) match {
+        case None => Left(Results.Unauthorized(Json.obj("error" -> "unauthorized"))).vfuture
+        case Some(_) => {
+          Right(ActorFlow.actorRef { out =>
+            TunnelRelayActor.props(out, tunnelId, env)
+          }).vfuture
+        }
+      }
+    } else {
+      Left(Results.NotFound(Json.obj("error" -> "resource not found"))).vfuture
+    }
   }
 
   def tunnelEndpoint() = WebSocket.acceptOrResult[Message, Message] { request =>
@@ -464,12 +621,76 @@ class Tunnel() {
   def flow: Option[Flow[Message, Message, _]] = Option(_flow)
 }
 
+object TunnelRelayActor {
+  def props(out: ActorRef, tunnelId: String, env: Env): Props = {
+    Props(new TunnelRelayActor(out, tunnelId, env))
+  }
+}
+
+class TunnelRelayActor(out: ActorRef, tunnelId: String, env: Env) extends Actor {
+
+  private val logger = Logger("otoroshi-tunnel-relay-actor")
+  private implicit val ec = env.otoroshiExecutionContext
+  private implicit val mat = env.otoroshiMaterializer
+
+  def handleRequest(data: ByteString): Unit = {
+    val request = Json.parse(data.toArray)
+    request.select("type").asString match {
+      case "ping" => {
+        logger.debug(s"ping message from client: ${data.utf8String}")
+        env.tunnelManager.tunnelHeartBeat(tunnelId)
+        out ! BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "pong").stringify.byteString)
+      }
+      case "pong" => {
+        logger.debug(s"pong message from client: ${data.utf8String}")
+        env.tunnelManager.tunnelHeartBeat(tunnelId)
+        out ! BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)
+      }
+      case "request" => {
+        val requestId = request.select("request_id").asLong
+        env.tunnelManager.sendLocalRequestRaw(tunnelId, request).map { res =>
+          TunnelActor.resultToJson(res, requestId).map(v => out ! BinaryMessage(v.stringify.byteString))
+        }
+      }
+      case _ =>
+    }
+  }
+
+  def receive = {
+    case BinaryMessage(data) => handleRequest(data)
+    case _ =>
+  }
+}
+
 object TunnelActor {
+
   def props(out: ActorRef, tunnelId: String, req: RequestHeader, reversePingPong: Boolean, env: Env)(f: TunnelActor => Unit): Props = {
     Props {
       val actor = new TunnelActor(out, tunnelId, req, reversePingPong, env)
       f(actor)
       actor
+    }
+  }
+
+  def resultToJson(result: Result, requestId: Long)(implicit ec: ExecutionContext, mat: Materializer): Future[JsValue] = {
+    val ct = result.body.contentType
+    val cl = result.body.contentLength
+    val cookies = result.header.headers.getIgnoreCase("Cookie").map { c =>
+      Cookies.decodeCookieHeader(c)
+    }.getOrElse(Seq.empty)
+    result.body.dataStream.runFold(ByteString.empty)(_ ++ _).map { br =>
+      Json.obj(
+        "request_id" -> requestId,
+        "type" -> "response",
+        "status" -> result.header.status,
+        "headers" -> (result.header.headers ++ Map.empty[String, String].applyOnWithOpt(ct) {
+          case (headers, ctype) => headers ++ Map("Content-Type" -> ctype)
+        }.applyOnWithOpt(cl) {
+          case (headers, clength) => headers ++ Map("Content-Length" -> clength.toString)
+        }),
+        "cookies" -> cookies.map(_.json),
+        "body" -> br.encodeBase64.utf8String
+      )
     }
   }
 
