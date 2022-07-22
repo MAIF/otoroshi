@@ -2198,14 +2198,16 @@ otoroshi {
   tunnels {
     enabled = true
     enabled = ${?OTOROSHI_TUNNELS_ENABLED}
+    worker-ws = false
+    worker-ws = ${?OTOROSHI_TUNNELS_WORKER_WS}
     default {
-      enabled = true
+      enabled = false
       enabled = ${?OTOROSHI_TUNNELS_DEFAULT_ENABLED}
       id = &quot;default&quot;
       id = ${?OTOROSHI_TUNNELS_DEFAULT_ID}
       name = &quot;default&quot;
       name = ${?OTOROSHI_TUNNELS_DEFAULT_NAME}
-			url = &quot;http://127.0.0.1:9999&quot;
+			url = &quot;http://127.0.0.1:8080&quot;
 			url = ${?OTOROSHI_TUNNELS_DEFAULT_URL}
 			host = &quot;otoroshi-api.oto.tools&quot;
 			host = ${?OTOROSHI_TUNNELS_DEFAULT_HOST}
@@ -3140,6 +3142,7 @@ otoroshi {
   }
   tunnels {
     enabled = ${?OTOROSHI_TUNNELS_ENABLED}
+    worker-ws = ${?OTOROSHI_TUNNELS_WORKER_WS}
     default {
       enabled = ${?OTOROSHI_TUNNELS_DEFAULT_ENABLED}
       id = ${?OTOROSHI_TUNNELS_DEFAULT_ID}

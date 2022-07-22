@@ -13418,6 +13418,65 @@
             }
           }
         }
+      },
+      "get" : {
+        "tags" : [ "tunnels" ],
+        "summary" : "???",
+        "operationId" : "otoroshi.next.tunnel.TunnelController.tunnelRelayWs",
+        "parameters" : [ {
+          "name" : "tunnelId",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "the tunnelId parameter"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Unknown"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/experimental/forms/_single" : {
