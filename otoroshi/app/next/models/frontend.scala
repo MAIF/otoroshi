@@ -26,6 +26,8 @@ case class NgFrontend(
     "query"      -> query,
     "methods"    -> methods
   )
+
+  def tunnelUrl: String = domains.head.raw
 }
 
 object NgFrontend {

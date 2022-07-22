@@ -21,7 +21,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.{Configuration, Logger}
 import play.api.http.HttpEntity
 import play.api.http.websocket._
-import play.api.libs.json.{Format, JsError, JsObject, JsResult, JsSuccess, JsValue, Json}
+import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsResult, JsSuccess, JsValue, Json}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSCookie
 import play.api.mvc._
@@ -112,6 +112,8 @@ class TunnelAgent(env: Env) {
             val clientId = conf.getOptional[String]("clientId").getOrElse("client")
             val clientSecret = conf.getOptional[String]("clientSecret").getOrElse("secret")
             val ipAddress = conf.getOptional[String]("ipAddress")
+            val exportMeta = conf.getOptional[Boolean]("export-metadata").getOrElse(false)
+            val exportTag = conf.getOptional[String]("export-tag")
             val tls = {
               val enabled =
                 conf.getOptionalWithFileSupport[Boolean]("tls.mtls")
@@ -138,7 +140,7 @@ class TunnelAgent(env: Env) {
                 None
               }
             }
-            connect(tunnelId, name, url, hostname, clientId, clientSecret, ipAddress, tls, 200)
+            connect(tunnelId, name, url, hostname, clientId, clientSecret, ipAddress, tls, exportMeta, exportTag, 200)
           }
         }
       }
@@ -146,7 +148,7 @@ class TunnelAgent(env: Env) {
     this
   }
 
-  private def connect(tunnelId: String, name: String, url: String, hostname: String, clientId: String, clientSecret: String, ipAddress: Option[String], tls: Option[MtlsConfig], waiting: Long): Future[Unit] = {
+  private def connect(tunnelId: String, name: String, url: String, hostname: String, clientId: String, clientSecret: String, ipAddress: Option[String], tls: Option[MtlsConfig], exportMeta: Boolean, exportTag: Option[String], waiting: Long): Future[Unit] = {
 
     implicit val ec = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
@@ -154,9 +156,20 @@ class TunnelAgent(env: Env) {
 
     logger.info(s"connecting tunnel '${tunnelId}' ...")
 
-    // TODO: push routes meta
     val promise = Promise[Unit]()
-    val pingSource: Source[akka.http.scaladsl.model.ws.Message, _] = Source.tick(10.seconds, 10.seconds, ()).map(_ => PingMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)).map { pm =>
+    val metadataSource: Source[akka.http.scaladsl.model.ws.Message, _] = if (!exportMeta) Source.empty else Source.tick(1.seconds, 60.seconds, ()).map { _ =>
+      val allRoutes = env.proxyState.allRoutes()
+      val routes = exportTag.map(t => allRoutes.filter(_.tags.contains(t))).getOrElse(allRoutes)
+      akka.http.scaladsl.model.ws.BinaryMessage.Strict(
+        Json.obj(
+          "tunnel_id" -> tunnelId,
+          "type" -> "tunnel_meta",
+          "name" -> name,
+          "routes" -> JsArray(routes.map(r => Json.obj("name" -> r.name, "id" -> r.id, "frontend" -> r.frontend.tunnelUrl)))
+        ).stringify.byteString
+      )
+    }
+    val pingSource: Source[akka.http.scaladsl.model.ws.Message, _] = Source.tick(10.seconds, 10.seconds, ()).map(_ => BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)).map { pm =>
       akka.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
     }
     val queueRef = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
@@ -164,7 +177,7 @@ class TunnelAgent(env: Env) {
       queueRef.set(q)
       q
     }
-    val source: Source[akka.http.scaladsl.model.ws.Message, _] = pushSource.merge(pingSource, true)
+    val source: Source[akka.http.scaladsl.model.ws.Message, _] = pushSource.merge(pingSource, true).merge(metadataSource, true)
 
     def handleRequest(rawRequest: ByteString): Unit = Try {
       val obj = Json.parse(rawRequest.toArray)
@@ -217,27 +230,6 @@ class TunnelAgent(env: Env) {
             logger.debug(s"sending response back to server on tunnel '${tunnelId}' - ${requestId}")
             Option(queueRef.get()).foreach(queue => queue.offer(akka.http.scaladsl.model.ws.BinaryMessage.Streamed(res.stringify.byteString.chunks(16 * 1024))))
           }
-          // val ct = result.body.contentType
-          // val cl = result.body.contentLength
-          // val cookies = result.header.headers.getIgnoreCase("Cookie").map { c =>
-          //   Cookies.decodeCookieHeader(c)
-          // }.getOrElse(Seq.empty)
-          // result.body.dataStream.runFold(ByteString.empty)(_ ++ _).map { br =>
-          //   val resJson = Json.obj(
-          //     "request_id" -> requestId,
-          //     "type" -> "response",
-          //     "status" -> result.header.status,
-          //     "headers" -> (result.header.headers ++ Map.empty[String, String].applyOnWithOpt(ct) {
-          //       case (headers, ctype) => headers ++ Map("Content-Type" -> ctype)
-          //     }.applyOnWithOpt(cl) {
-          //       case (headers, clength) => headers ++ Map("Content-Length" -> clength.toString)
-          //     }),
-          //     "cookies" -> cookies.map(_.json),
-          //     "body" -> br.encodeBase64.utf8String
-          //   )
-          //   logger.debug(s"sending response back to server on tunnel '${tunnelId}' - ${requestId}")
-          //   Option(queueRef.get()).foreach(queue => queue.offer(akka.http.scaladsl.model.ws.BinaryMessage.Streamed(resJson.stringify.byteString.chunks(16 * 1024))))
-          // }
         }
       }
     } match {
@@ -279,13 +271,13 @@ class TunnelAgent(env: Env) {
         case Success(e) =>
           logger.info(s"tunnel '${tunnelId}' disconnected, launching reconnection ...")
           timeout(waiting.millis).andThen { case _ =>
-            connect(tunnelId, name, url, hostname, clientId, clientSecret, ipAddress, tls, waiting * 2)
+            connect(tunnelId, name, url, hostname, clientId, clientSecret, ipAddress, tls, exportMeta, exportTag, waiting * 2)
           }
           promise.trySuccess(())
         case Failure(e) =>
           logger.error(s"tunnel '${tunnelId}' disconnected, launching reconnection ...", e)
           timeout(waiting.millis).andThen { case _ =>
-            connect(tunnelId, name, url, hostname, clientId, clientSecret, ipAddress, tls, waiting * 2)
+            connect(tunnelId, name, url, hostname, clientId, clientSecret, ipAddress, tls, exportMeta, exportTag, waiting * 2)
           }
           promise.trySuccess(())
       }),
@@ -462,7 +454,7 @@ class LeaderConnection(tunnelId: String, member: MemberView, env: Env, register:
 
   def location: String = member.location
 
-  private val pingSource: Source[akka.http.scaladsl.model.ws.Message, _] = Source.tick(10.seconds, 10.seconds, ()).map(_ => PingMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)).map { pm =>
+  private val pingSource: Source[akka.http.scaladsl.model.ws.Message, _] = Source.tick(10.seconds, 10.seconds, ()).map(_ => BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)).map { pm =>
     akka.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
   }
   private val queueRef = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
@@ -801,6 +793,9 @@ class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePi
         logger.debug(s"pong message from client: ${data.utf8String}")
         env.tunnelManager.tunnelHeartBeat(tunnelId)
         out ! BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)
+      }
+      case "tunnel_meta" => {
+        env.datastores.rawDataStore.set(s"${env.storageRoot}:tunnels:${tunnelId}:meta", data, 120.seconds.toMillis.some)(env.otoroshiExecutionContext, env)
       }
       case "response" => Try {
         env.tunnelManager.tunnelHeartBeat(tunnelId)
