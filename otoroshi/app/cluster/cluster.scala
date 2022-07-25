@@ -1047,7 +1047,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
     if (config.mode == ClusterMode.Leader) {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster leader agent")
       membershipRef.set(
-        env.otoroshiScheduler.scheduleAtFixedRate(1.second, 30.seconds)(
+        env.otoroshiScheduler.scheduleAtFixedRate(2.second, 5.seconds)(
           SchedulerHelper.runnable(
             try {
               renewMemberShip()

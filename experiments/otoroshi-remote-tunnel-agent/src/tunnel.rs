@@ -46,7 +46,7 @@ impl Tunnel {
               if msg_type == "request" {
                   // TODO: cookies
                   let start = Instant::now();
-                  let request_id = json.get("request_id").unwrap().as_i64().unwrap();
+                  let request_id = json.get("request_id").unwrap().as_str().unwrap();
                   let addr = json.get("addr").unwrap().as_str().unwrap();
                   let version = json.get("version").unwrap().as_str().unwrap();
                   let path = json.get("path").unwrap().as_str().unwrap();

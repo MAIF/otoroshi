@@ -38,7 +38,7 @@ class RelayRoutingRequest(req: Request[Source[ByteString, _]], cookies: Cookies,
 }
 
 class TunnelRequest(
-  reqId: Long,
+  requestId: Long,
   val version: String,
   val method: String,
   val body: Source[ByteString, _],
@@ -54,7 +54,7 @@ class TunnelRequest(
   lazy val _remoteUri = Uri(_remoteUriStr)
   lazy val _remoteAddrInet = InetAddress.getByName(_remoteAddr)
   lazy val attrs           = TypedMap.apply(
-    RequestAttrKey.Id      -> reqId,
+    RequestAttrKey.Id      -> requestId,
     RequestAttrKey.Cookies -> Cell(cookies)
   )
 

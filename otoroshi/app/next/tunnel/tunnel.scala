@@ -3,8 +3,8 @@ package otoroshi.next.tunnel
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import akka.http.scaladsl.model.{HttpProtocols, Uri}
 import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.ws.WebSocketRequest
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete}
+import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
+import akka.stream.scaladsl.{Flow, Keep, Merge, Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
@@ -15,6 +15,7 @@ import otoroshi.models.{ApiKey, Target, TargetPredicate}
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.{NgProxyEngineError, ProxyEngine, TunnelRequest}
 import otoroshi.script.RequestHandler
+import otoroshi.security.IdGenerator
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
@@ -94,6 +95,8 @@ class TunnelAgent(env: Env) {
 
   private val logger = Logger("otoroshi-tunnel-agent")
 
+  private val counter = new AtomicInteger(0)
+
   def start(): TunnelAgent = {
     env.configuration.getOptional[Configuration]("otoroshi.tunnels").map { config =>
       val genabled = config.getOptional[Boolean]("enabled").getOrElse(false)
@@ -140,7 +143,7 @@ class TunnelAgent(env: Env) {
                 None
               }
             }
-            connect(tunnelId, name, url, hostname, clientId, clientSecret, ipAddress, tls, exportMeta, exportTag, 200)
+            connect(tunnelId, name, url, hostname, clientId, clientSecret, ipAddress, tls, exportMeta, exportTag, 200, 200)
           }
         }
       }
@@ -148,26 +151,36 @@ class TunnelAgent(env: Env) {
     this
   }
 
-  private def connect(tunnelId: String, name: String, url: String, hostname: String, clientId: String, clientSecret: String, ipAddress: Option[String], tls: Option[MtlsConfig], exportMeta: Boolean, exportTag: Option[String], waiting: Long): Future[Unit] = {
+  private def connect(tunnelId: String, name: String, url: String, hostname: String, clientId: String, clientSecret: String, ipAddress: Option[String], tls: Option[MtlsConfig], exportMeta: Boolean, exportTag: Option[String], initialWaiting: Long,  waiting: Long): Future[Unit] = {
 
     implicit val ec = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
     implicit val ev = env
 
-    logger.info(s"connecting tunnel '${tunnelId}' ...")
+    logger.info(s"connecting tunnel '${tunnelId}' $exportMeta ...")
 
     val promise = Promise[Unit]()
-    val metadataSource: Source[akka.http.scaladsl.model.ws.Message, _] = if (!exportMeta) Source.empty else Source.tick(1.seconds, 60.seconds, ()).map { _ =>
-      val allRoutes = env.proxyState.allRoutes()
-      val routes = exportTag.map(t => allRoutes.filter(_.tags.contains(t))).getOrElse(allRoutes)
-      akka.http.scaladsl.model.ws.BinaryMessage.Strict(
-        Json.obj(
-          "tunnel_id" -> tunnelId,
-          "type" -> "tunnel_meta",
-          "name" -> name,
-          "routes" -> JsArray(routes.map(r => Json.obj("name" -> r.name, "id" -> r.id, "frontend" -> r.frontend.tunnelUrl)))
-        ).stringify.byteString
-      )
+    val metadataSource: Source[akka.http.scaladsl.model.ws.Message, _] = Source.tick(10.seconds, 60.seconds, ()).map { _ =>
+      Try {
+        if (exportMeta) {
+          val allRoutes = env.proxyState.allRoutes()
+          val routes = exportTag.map(t => allRoutes.filter(_.tags.contains(t))).getOrElse(allRoutes)
+          akka.http.scaladsl.model.ws.BinaryMessage.Strict(
+            Json.obj(
+              "tunnel_id" -> tunnelId,
+              "type" -> "tunnel_meta",
+              "name" -> name,
+              "routes" -> JsArray(routes.map(r => Json.obj("name" -> r.name, "id" -> r.id, "frontend" -> r.frontend.tunnelUrl)))
+            ).stringify.byteString
+          )
+
+        } else {
+          akka.http.scaladsl.model.ws.BinaryMessage.Strict(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)
+        }
+      }
+    }
+    .collect {
+      case Success(value) => value
     }
     val pingSource: Source[akka.http.scaladsl.model.ws.Message, _] = Source.tick(10.seconds, 10.seconds, ()).map(_ => BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)).map { pm =>
       akka.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
@@ -177,13 +190,15 @@ class TunnelAgent(env: Env) {
       queueRef.set(q)
       q
     }
-    val source: Source[akka.http.scaladsl.model.ws.Message, _] = pushSource.merge(pingSource, true).merge(metadataSource, true)
+    val source: Source[akka.http.scaladsl.model.ws.Message, _] = pushSource.merge(pingSource.merge(metadataSource, true), true)
+    // pushSource.merge(pingSource, true)
 
     def handleRequest(rawRequest: ByteString): Unit = Try {
       val obj = Json.parse(rawRequest.toArray)
       val typ = obj.select("type").asString
       if (typ == "request") {
-        val requestId: Long = obj.select("request_id").asLong
+        val requestId: String = obj.select("request_id").asString
+        val reqId = Try(requestId.split("_").last.toInt).getOrElse(counter.incrementAndGet())
         logger.debug(s"got request from server on tunnel '${tunnelId}' - ${requestId}")
         val url = obj.select("url").asString
         val addr = obj.select("addr").asString
@@ -213,7 +228,7 @@ class TunnelAgent(env: Env) {
         }
         val engine = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get
         val request = new TunnelRequest(
-          reqId = requestId,
+          requestId = reqId,
           version = version,
           method = method,
           body = body,
@@ -233,14 +248,14 @@ class TunnelAgent(env: Env) {
         }
       }
     } match {
-      case Failure(exception) => exception.printStackTrace()
+      case Failure(exception) => logger.error("error while handling request", exception)
       case Success(_) => ()
     }
 
     val userpwd = s"${clientId}:${clientSecret}".base64
     val uri = Uri(url + s"/api/tunnels/register?tunnel_id=${tunnelId}").copy(scheme = if (url.startsWith("https")) "wss" else "ws")
+    val start = System.currentTimeMillis()
     val (fu, _) = env.Ws.ws(
-
       request = WebSocketRequest(
         uri = uri,
         extraHeaders = List(
@@ -269,20 +284,29 @@ class TunnelAgent(env: Env) {
         source,
       ).alsoTo(Sink.onComplete {
         case Success(e) =>
-          logger.info(s"tunnel '${tunnelId}' disconnected, launching reconnection ...")
+          val shouldIncreaseWaiting = (System.currentTimeMillis() - start) < 10000
+          val newWaiting = if (shouldIncreaseWaiting) waiting * 2 else initialWaiting
+          logger.info(s"tunnel '${tunnelId}' disconnected, launching reconnection in ${newWaiting.milliseconds.toHumanReadable} ...")
           timeout(waiting.millis).andThen { case _ =>
-            connect(tunnelId, name, url, hostname, clientId, clientSecret, ipAddress, tls, exportMeta, exportTag, waiting * 2)
+            connect(tunnelId, name, url, hostname, clientId, clientSecret, ipAddress, tls, exportMeta, exportTag, initialWaiting, newWaiting)
           }
           promise.trySuccess(())
         case Failure(e) =>
-          logger.error(s"tunnel '${tunnelId}' disconnected, launching reconnection ...", e)
+          val shouldIncreaseWaiting = (System.currentTimeMillis() - start) < 10000
+          val newWaiting = if (shouldIncreaseWaiting) waiting * 2 else initialWaiting
+          logger.error(s"tunnel '${tunnelId}' disconnected, launching reconnection in ${newWaiting.milliseconds.toHumanReadable} ...", e)
           timeout(waiting.millis).andThen { case _ =>
-            connect(tunnelId, name, url, hostname, clientId, clientSecret, ipAddress, tls, exportMeta, exportTag, waiting * 2)
+            connect(tunnelId, name, url, hostname, clientId, clientSecret, ipAddress, tls, exportMeta, exportTag, initialWaiting, newWaiting)
           }
           promise.trySuccess(())
       }),
       customizer = m => m
     )
+    fu.andThen {
+      case Success(ValidUpgrade(response, chosenSubprotocol)) => logger.debug(s"upgrade successful and valid: ${response} - ${chosenSubprotocol}")
+      case Success(InvalidUpgradeResponse(response, cause)) => logger.error(s"upgrade successful but invalid: ${response} - ${cause}")
+      case Failure(ex) => logger.error(s"upgrade failure", ex)
+    }
     promise.future
   }
 
@@ -302,7 +326,7 @@ class TunnelManager(env: Env) {
   private val tunnels = Scaffeine().maximumSize(10000).expireAfterWrite(10.minute).build[String, Seq[Tunnel]]()
   private val counter = new AtomicInteger(0)
   private val tunnelsEnabled = env.configuration.getOptional[Boolean]("otoroshi.tunnels.enabled").getOrElse(false)
-  private val workerWs = env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-ws").getOrElse(false)
+  private val workerWs = env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-ws").getOrElse(true)
   private val logger = Logger(s"otoroshi-tunnel-manager")
 
   private implicit val ec = env.otoroshiExecutionContext
@@ -319,12 +343,10 @@ class TunnelManager(env: Env) {
   def start(): TunnelManager = this
 
   def closeTunnel(tunnelId: String): Unit = whenEnabled {
-    //println("closing tunnel", tunnelId)
     tunnels.invalidate(tunnelId)
   }
 
   def registerTunnel(tunnelId: String, tunnel: Tunnel): Unit = whenEnabled {
-    //println("registering tunnel", tunnelId)
     tunnels.getIfPresent(tunnelId) match {
       case None => tunnels.put(tunnelId, Seq(tunnel))
       case Some(ts) => tunnels.put(tunnelId, ts :+ tunnel)
@@ -335,7 +357,7 @@ class TunnelManager(env: Env) {
     tunnels.getIfPresent(tunnelId).foreach(ts => tunnels.put(tunnelId, ts)) // yeah, i know :(
   }
 
-  def sendLocalRequestRaw(tunnelId: String, request: JsValue): Future[Result] = {
+  def sendLocalRequestRaw(tunnelId: String, request: JsValue): Future[Result] = Try {
     if (tunnelsEnabled) {
       tunnels.getIfPresent(tunnelId) match {
         case None => Results.NotFound(Json.obj("error" -> s"missing local tunnel '${tunnelId}'")).vfuture
@@ -351,6 +373,11 @@ class TunnelManager(env: Env) {
     } else {
       Results.InternalServerError(Json.obj("error" -> s"tunnels not enabled")).vfuture
     }
+  } match {
+    case Failure(exception) =>
+      logger.error("error while sendLocalRequestRaw", exception)
+      Results.InternalServerError(Json.obj("error" -> s"tunnel error")).vfuture
+    case Success(f) => f
   }
 
   def sendRequest(tunnelId: String, request: NgPluginHttpRequest, addr: String, secured: Boolean): Future[Result] = {
@@ -390,7 +417,7 @@ class TunnelManager(env: Env) {
     if (workerWs) {
       forwardRequestWs(tunnelId, request, addr, secured, member)
     } else {
-      val requestId: Long = counter.incrementAndGet()
+      val requestId: String = TunnelActor.genRequestId(env) // legit !
       logger.debug(s"forwarding request for '${tunnelId}' - ${requestId} to ${member.name}")
       val requestJson = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
       val url = Uri(env.clusterConfig.leader.urls.head)
@@ -429,15 +456,15 @@ class TunnelManager(env: Env) {
     implicit val mat = env.otoroshiMaterializer
     implicit val ev = env
 
-    val requestId: Long = counter.incrementAndGet()
+    val requestId: String = TunnelActor.genRequestId(env) // legit
     val requestJson = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
 
     leaderConnections.get(member.location) match {
       case Some(conn) =>
-        println("sending ws")
+        logger.debug("sending ws")
         conn.push(requestJson, requestId)
       case None =>
-        println("connecting ws")
+        logger.debug("connecting ws")
         new LeaderConnection(tunnelId, member, env, c => leaderConnections.put(member.location, c), c => leaderConnections.remove(c.location))
           .connect(0L)
           .push(requestJson, requestId)
@@ -454,6 +481,7 @@ class LeaderConnection(tunnelId: String, member: MemberView, env: Env, register:
 
   def location: String = member.location
 
+  private val ref = new AtomicLong(0L)
   private val pingSource: Source[akka.http.scaladsl.model.ws.Message, _] = Source.tick(10.seconds, 10.seconds, ()).map(_ => BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)).map { pm =>
     akka.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
   }
@@ -463,9 +491,10 @@ class LeaderConnection(tunnelId: String, member: MemberView, env: Env, register:
     q
   }
   private val source: Source[akka.http.scaladsl.model.ws.Message, _] = pushSource.merge(pingSource, true)
-  private val awaitingResponse = new scala.collection.concurrent.TrieMap[Long, Promise[Result]]()
+  private val awaitingResponse = new scala.collection.concurrent.TrieMap[String, Promise[Result]]()
 
-  def push(req: ByteString, requestId: Long): Future[Result] = {
+  def push(req: ByteString, requestId: String): Future[Result] = {
+    logger.debug(s"pushing request for '${requestId}' - ${(System.currentTimeMillis() - ref.get()).milliseconds.toHumanReadable}")
     val promise = Promise.apply[Result]()
     awaitingResponse.put(requestId, promise)
     Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage.Strict(req)))
@@ -502,13 +531,13 @@ class LeaderConnection(tunnelId: String, member: MemberView, env: Env, register:
         source,
       ).alsoTo(Sink.onComplete {
         case Success(e) =>
-          logger.info(s"tunnel relay '${tunnelId}' disconnected, launching reconnection ...")
+          logger.info(s"tunnel relay ws '${tunnelId}' disconnected, launching reconnection in ${(waiting).milliseconds.toHumanReadable} ...")
           unregister(this)
           timeout(waiting.millis).andThen { case _ =>
             new LeaderConnection(tunnelId, member, env, register, unregister).connect(waiting)
           }
         case Failure(e) =>
-          logger.error(s"tunnel relay'${tunnelId}' disconnected, launching reconnection ...", e)
+          logger.error(s"tunnel relay ws '${tunnelId}' disconnected, launching reconnection in ${(waiting * 2).milliseconds.toHumanReadable} ...", e)
           unregister(this)
           timeout(waiting.millis).andThen { case _ =>
             new LeaderConnection(tunnelId, member, env, register, unregister).connect(waiting * 2)
@@ -516,6 +545,7 @@ class LeaderConnection(tunnelId: String, member: MemberView, env: Env, register:
       }),
       customizer = m => m
     )._1.map { _ =>
+      ref.set(System.currentTimeMillis())
       register(this)
     }
     this
@@ -523,9 +553,13 @@ class LeaderConnection(tunnelId: String, member: MemberView, env: Env, register:
 
   private def handleResponse(data: ByteString): Unit = {
     val json = Json.parse(data.toArray)
-    val requestId = json.select("request_id").asLong
-    val result = TunnelActor.responseToResult(json)
-    awaitingResponse.get(requestId).foreach(_.trySuccess(result))
+    val msgKind = json.select("type").asString
+    if (msgKind == "response") {
+      val requestId = json.select("request_id").asString
+      logger.debug(s"handling response for '${requestId}'")
+      val result = TunnelActor.responseToResult(json)
+      awaitingResponse.get(requestId).foreach(_.trySuccess(result))
+    }
   }
 
   private def timeout(duration: FiniteDuration): Future[Unit] = {
@@ -559,7 +593,7 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
 
   def tunnelRelay(tunnelId: String) = ApiAction.async(parse.json) { ctx =>
     if (tunnelsEnabled) {
-      val requestId = ctx.request.body.select("request_id").asLong
+      val requestId = ctx.request.body.select("request_id").asOpt[String].getOrElse(TunnelActor.genRequestId(env)) // legit
       env.tunnelManager.sendLocalRequestRaw(tunnelId, ctx.request.body).flatMap { res =>
         TunnelActor.resultToJson(res, requestId).map(v => Ok(v))
       }
@@ -625,27 +659,25 @@ class TunnelRelayActor(out: ActorRef, tunnelId: String, env: Env) extends Actor 
   private implicit val ec = env.otoroshiExecutionContext
   private implicit val mat = env.otoroshiMaterializer
 
-  def handleRequest(data: ByteString): Unit = {
+  def handleRequest(data: ByteString): Unit = Try {
     val request = Json.parse(data.toArray)
-    request.select("type").asString match {
+    val reqType = request.select("type").asString
+    reqType match {
       case "ping" => {
         logger.debug(s"ping message from client: ${data.utf8String}")
-        env.tunnelManager.tunnelHeartBeat(tunnelId)
         out ! BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "pong").stringify.byteString)
       }
-      case "pong" => {
-        logger.debug(s"pong message from client: ${data.utf8String}")
-        env.tunnelManager.tunnelHeartBeat(tunnelId)
-        out ! BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)
-      }
       case "request" => {
-        val requestId = request.select("request_id").asLong
+        val requestId = request.select("request_id").asOpt[String].getOrElse(TunnelActor.genRequestId(env)) // legit
         env.tunnelManager.sendLocalRequestRaw(tunnelId, request).map { res =>
           TunnelActor.resultToJson(res, requestId).map(v => out ! BinaryMessage(v.stringify.byteString))
         }
       }
       case _ =>
     }
+  } match {
+    case Failure(exception) => logger.error("error while handling request", exception)
+    case Success(value) => ()
   }
 
   def receive = {
@@ -656,6 +688,15 @@ class TunnelRelayActor(out: ActorRef, tunnelId: String, env: Env) extends Actor 
 
 object TunnelActor {
 
+  private val counter = new AtomicLong(0L)
+
+  def genRequestId(env: Env): String = {
+    val otoroshiId = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).otoroshiId
+    val clusterNodeId = env.clusterConfig.id
+    val requestId = IdGenerator.uuid
+    s"${otoroshiId}-${clusterNodeId}-${requestId}-${counter.incrementAndGet()}"
+  }
+
   def props(out: ActorRef, tunnelId: String, req: RequestHeader, reversePingPong: Boolean, env: Env)(f: TunnelActor => Unit): Props = {
     Props {
       val actor = new TunnelActor(out, tunnelId, req, reversePingPong, env)
@@ -664,7 +705,7 @@ object TunnelActor {
     }
   }
 
-  def resultToJson(result: Result, requestId: Long)(implicit ec: ExecutionContext, mat: Materializer): Future[JsValue] = {
+  def resultToJson(result: Result, requestId: String)(implicit ec: ExecutionContext, mat: Materializer): Future[JsValue] = {
     val ct = result.body.contentType
     val cl = result.body.contentLength
     val cookies = result.header.headers.getIgnoreCase("Cookie").map { c =>
@@ -686,7 +727,7 @@ object TunnelActor {
     }
   }
 
-  def requestToJson(request: NgPluginHttpRequest, addr: String, secured: Boolean, requestId: Long): JsValue = {
+  def requestToJson(request: NgPluginHttpRequest, addr: String, secured: Boolean, requestId: String): JsValue = {
     (request.json.asObject ++ Json.obj(
       "path" -> request.relativeUri,
       "request_id" -> requestId,
@@ -736,8 +777,8 @@ object TunnelActor {
 class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePingPong: Boolean, env: Env) extends Actor {
 
   private val logger = Logger(s"otoroshi-tunnel-actor")
-  private val counter = new AtomicLong(0L)
-  private val awaitingResponse = new scala.collection.concurrent.TrieMap[Long, Promise[Result]]()
+  // private val counter = new AtomicLong(0L)
+  private val awaitingResponse = new scala.collection.concurrent.TrieMap[String, Promise[Result]]()
 
   private def closeTunnel(): Unit = {
     awaitingResponse.values.map(p => p.trySuccess(Results.InternalServerError(Json.obj("error" -> "tunnel closed !"))))
@@ -747,10 +788,8 @@ class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePi
 
   override def preStart(): Unit = {
     if (reversePingPong) {
-      env.otoroshiScheduler.scheduleWithFixedDelay(10.seconds, 10.seconds)(new Runnable {
-        override def run(): Unit = {
-          out ! BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "pong").stringify.byteString)
-        }
+      env.otoroshiScheduler.scheduleWithFixedDelay(10.seconds, 10.seconds)(() => {
+        out ! BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "pong").stringify.byteString)
       })(env.otoroshiExecutionContext)
     }
   }
@@ -760,7 +799,7 @@ class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePi
   }
 
   def sendRequest(request: NgPluginHttpRequest, addr: String, secured: Boolean): Future[Result] = {
-    val requestId: Long = counter.incrementAndGet()
+    val requestId: String = TunnelActor.genRequestId(env) // legit
     logger.debug(s"sending request to remote location through tunnel '${tunnelId}' - ${requestId}")
     val requestJson = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
     val promise = Promise.apply[Result]()
@@ -770,7 +809,7 @@ class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePi
   }
 
   def sendRequestRaw(request: JsValue): Future[Result] = {
-    val requestId: Long = counter.incrementAndGet()
+    val requestId: String = request.select("request_id").asOpt[String].getOrElse(TunnelActor.genRequestId(env)) // legit
     logger.debug(s"sending request to remote location through tunnel '${tunnelId}' - ${requestId}")
     val requestJson = (request.asObject ++ Json.obj("request_id" -> requestId)).stringify.byteString
     val promise = Promise.apply[Result]()
@@ -799,7 +838,7 @@ class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePi
       }
       case "response" => Try {
         env.tunnelManager.tunnelHeartBeat(tunnelId)
-        val requestId: Long = response.select("request_id").asLong
+        val requestId: String = response.select("request_id").asString
         logger.debug(s"got response on tunnel '${tunnelId}' - ${requestId}")
         val result = TunnelActor.responseToResult(response)
         awaitingResponse.get(requestId).foreach { tunnel =>
@@ -809,7 +848,7 @@ class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePi
           ()
         }
       } match {
-        case Failure(exception) => exception.printStackTrace()
+        case Failure(exception) => logger.error("error while handling response", exception)
         case Success(value) => ()
       }
     }
@@ -821,9 +860,9 @@ class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePi
     case BinaryMessage(data) =>
       handleResponse(data)
     case CloseMessage(status, reason) =>
-      logger.info(s"closing tunnel ${tunnelId} - ${status} - ${reason}")
+      logger.info(s"closing tunnel '${tunnelId}' - ${status} - '${reason}'")
       closeTunnel()
-      self ! PoisonPill
+      // self ! PoisonPill
     case PingMessage(data) =>
       logger.debug(s"mping message from client: ${data.utf8String}")
       env.tunnelManager.tunnelHeartBeat(tunnelId)
