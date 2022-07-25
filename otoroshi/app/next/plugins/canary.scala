@@ -112,9 +112,9 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
       val canaryId: String              = maybeCanaryId.getOrElse(IdGenerator.uuid + "-" + reqNumber)
       ctx.attrs.put(otoroshi.plugins.Keys.RequestCanaryIdKey -> canaryId)
       if (maybeCanaryId.isDefined) {
-        logger.debug(s"request already has canary id : $canaryId")
+        if (logger.isDebugEnabled) logger.debug(s"request already has canary id : $canaryId")
       } else {
-        logger.debug(s"request has a new canary id : $canaryId")
+        if (logger.isDebugEnabled) logger.debug(s"request has a new canary id : $canaryId")
       }
       canaryId
     }

@@ -106,7 +106,7 @@ class AuthModule extends NgAccessValidator {
                       env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                         .confidentialAppLoginPage()
                         .url + s"?desc=${descriptor.id}&redirect=${redirect}"
-                    logger.trace("should redirect to " + redirectTo)
+                    if (logger.isTraceEnabled) logger.trace("should redirect to " + redirectTo)
                     NgAccess
                       .NgDenied(
                         Results

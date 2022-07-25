@@ -221,7 +221,7 @@ class KubernetesIngressControllerJob extends Job {
         .runWith(Sink.foreach { group =>
           val now = System.currentTimeMillis()
           if ((lastWatchSync.get() + (conf.watchGracePeriodSeconds * 1000L)) < now) { // 10 sec
-            logger.debug(s"sync triggered by a group of ${group.size} events")
+            if (logger.isDebugEnabled) logger.debug(s"sync triggered by a group of ${group.size} events")
             KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
           }
         })

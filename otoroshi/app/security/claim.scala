@@ -73,7 +73,7 @@ object OtoroshiClaim {
     )
     val payload   = claim.payload
     val signed    = sign(algorithm, header, payload)
-    logger.debug(s"signed: $signed")
+    if (logger.isDebugEnabled) logger.debug(s"signed: $signed")
     signed
   }
 

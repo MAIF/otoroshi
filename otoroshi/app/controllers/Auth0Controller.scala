@@ -58,7 +58,7 @@ class AuthController(
     val hash: String = auth match {
       case module: GenericOauth2ModuleConfig if module.noWildcardRedirectURI =>
         val unsignedState = decryptState(req)
-        logger.debug(s"Decoded state : ${Json.prettyPrint(unsignedState)}")
+        if (logger.isDebugEnabled) logger.debug(s"Decoded state : ${Json.prettyPrint(unsignedState)}")
         (unsignedState \ "hash").asOpt[String].getOrElse("--")
       case _                                                                 =>
         req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse("--")
@@ -280,7 +280,7 @@ class AuthController(
           .map { paUser =>
             val sec    = computeSec(paUser)
             val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
-            logger.debug(s"Auth callback, creating session on the leader ${paUser.email}")
+            if (logger.isDebugEnabled) logger.debug(s"Auth callback, creating session on the leader ${paUser.email}")
             env.clusterAgent.createSession(paUser)
             Alerts.send(
               UserLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, paUser, ctx.from, ctx.ua, auth.id)
@@ -377,7 +377,7 @@ class AuthController(
       }
 
       def process(serviceId: String) = {
-        logger.debug(s"redirect to service descriptor : $serviceId")
+        if (logger.isDebugEnabled) logger.debug(s"redirect to service descriptor : $serviceId")
         env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
           case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
           case Some(descriptor) if !descriptor.privateApp                                                =>
@@ -432,7 +432,7 @@ class AuthController(
       (desc, ctx.request.getQueryString("state")) match {
         case (Some(serviceId), _) => process(serviceId)
         case (_, Some(state))     =>
-          logger.debug(s"Received state : $state")
+          if (logger.isDebugEnabled) logger.debug(s"Received state : $state")
           val unsignedState = decryptState(ctx.request.requestHeader)
           (unsignedState \ "descriptor").asOpt[String] match {
             case Some(descriptor) => process(descriptor)
@@ -645,7 +645,7 @@ class AuthController(
                                 )
                               )
                             case Right(user) =>
-                              logger.debug(s"Login successful for user '${user.email}'")
+                              if (logger.isDebugEnabled) logger.debug(s"Login successful for user '${user.email}'")
                               saveUser(user, auth, false)(ctx.request)
                           }
                         }

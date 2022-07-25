@@ -198,7 +198,7 @@ class KafkaEventProducer(_env: otoroshi.env.Env, config: KafkaConfig, topicFunct
 
   lazy val topic = topicFunction(config)
 
-  logger.debug(s"Initializing kafka event store on topic ${topic}")
+  if (logger.isDebugEnabled) logger.debug(s"Initializing kafka event store on topic ${topic}")
 
   private lazy val producerSettings                        = KafkaSettings.producerSettings(_env, config)
   private lazy val producer: Producer[Array[Byte], String] = producerSettings.createKafkaProducer

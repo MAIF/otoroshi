@@ -66,7 +66,7 @@ object implicits {
       obj
     }
     def debugLogger(logger: Logger): A = {
-      logger.debug(s"$obj")
+      if (logger.isDebugEnabled) logger.debug(s"$obj")
       obj
     }
     def applyOn[B](f: A => B): B                                    = f(obj)

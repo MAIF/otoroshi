@@ -138,27 +138,27 @@ object LetsEncryptHelper {
           .foldLeft(_account)((a, e) => a.addContact(e))
           .create(session)
 
-        logger.debug(s"ordering lets encrypt certificate for $domain")
+        if (logger.isDebugEnabled) logger.debug(s"ordering lets encrypt certificate for $domain")
         orderLetsEncryptCertificate(account, domain).flatMap { order =>
-          logger.debug(s"waiting for challenge challenge $domain")
+          if (logger.isDebugEnabled) logger.debug(s"waiting for challenge challenge $domain")
           doChallenges(order, domain).flatMap {
             case Left(err) =>
-              logger.error(s"challenges failed: $err")
+              if (logger.isDebugEnabled) logger.error(s"challenges failed: $err")
               FastFuture.successful(Left(err))
             case Right(_)  => {
 
-              logger.debug(s"building csr for $domain")
+              if (logger.isDebugEnabled) logger.debug(s"building csr for $domain")
               val keyPair       = KeyPairUtils.createKeyPair(2048)
               val csrByteString = buildCsr(domain, keyPair)
 
-              logger.debug(s"ordering certificate for $domain")
+              if (logger.isDebugEnabled) logger.debug(s"ordering certificate for $domain")
 
               orderCertificate(order, csrByteString).flatMap {
                 case Left(err)       =>
                   logger.error(s"ordering certificate failed: $err")
                   FastFuture.successful(Left(err))
                 case Right(newOrder) => {
-                  logger.debug(s"storing certificate for $domain")
+                  if (logger.isDebugEnabled) logger.debug(s"storing certificate for $domain")
                   Option(newOrder.getCertificate) match {
                     case None    =>
                       logger.error(s"storing certificate failed: No certificate found !")
@@ -188,10 +188,10 @@ object LetsEncryptHelper {
   ): Future[Option[ByteString]] = {
     env.datastores.rawDataStore.get(s"${env.storageRoot}:letsencrypt:challenges:$domain:$token").map {
       case None        =>
-        logger.debug(s"Trying to access token ${token} for domain ${domain} but none found")
+        if (logger.isDebugEnabled) logger.debug(s"Trying to access token ${token} for domain ${domain} but none found")
         None
       case s @ Some(_) =>
-        logger.debug(s"Trying to access token ${token} for domain ${domain}: found !")
+        if (logger.isDebugEnabled) logger.debug(s"Trying to access token ${token} for domain ${domain}: found !")
         s
     }
   }

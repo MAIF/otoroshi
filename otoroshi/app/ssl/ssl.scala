@@ -1147,12 +1147,12 @@ object DynamicSSLEngineProvider {
       val dumpPath: Option[String] =
         optEnv.flatMap(e => e.configuration.getOptionalWithFileSupport[String]("play.server.https.keyStoreDumpPath"))
 
-      logger.debug("Setting up SSL Context ")
+      if (logger.isDebugEnabled) logger.debug("Setting up SSL Context ")
       val sslContext: SSLContext               = SSLContext.getInstance("TLS")
       val keyStore: KeyStore                   = createKeyStore(certificates.values.toSeq)        //.filterNot(_.ca))
       val trustedKeyStore: KeyStore            = createKeyStore(trustedCertificates.values.toSeq) //.filterNot(_.ca))
       dumpPath.foreach { path =>
-        logger.debug(s"Dumping keystore at $dumpPath")
+        if (logger.isDebugEnabled) logger.debug(s"Dumping keystore at $dumpPath")
         keyStore.store(new FileOutputStream(path), EMPTY_PASSWORD)
       }
       val keyManagerFactory: KeyManagerFactory =
@@ -1163,7 +1163,7 @@ object DynamicSSLEngineProvider {
         Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
       trustedkeyManagerFactory.init(trustedKeyStore, EMPTY_PASSWORD)
 
-      logger.debug("SSL Context init ...")
+      if (logger.isDebugEnabled) logger.debug("SSL Context init ...")
       val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map { m =>
         KeyManagerCompatibility.keyManager(
           () => certificates.values.toSeq,
@@ -1230,7 +1230,7 @@ object DynamicSSLEngineProvider {
       //     )
       //   }
       // }
-      logger.debug(s"SSL Context init done ! (${keyStore.size()})")
+      if (logger.isDebugEnabled) logger.debug(s"SSL Context init done ! (${keyStore.size()})")
       SSLContext.setDefault(sslContext)
       sslContext
     }
@@ -1330,13 +1330,13 @@ object DynamicSSLEngineProvider {
         .flatMap(e => e.configuration.getOptionalWithFileSupport[String]("otoroshi.ssl.cacert.password"))
         .getOrElse("changeit")
 
-      logger.debug("Setting up SSL Context ")
+      if (logger.isDebugEnabled) logger.debug("Setting up SSL Context ")
       val sslContext: SSLContext               = SSLContext.getInstance("TLS")
       val keyStore1: KeyStore                  = createKeyStore(certs)
       val keyManagerFactory: KeyManagerFactory =
         Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
       keyManagerFactory.init(keyStore1, EMPTY_PASSWORD)
-      logger.debug("SSL Context init ...")
+      if (logger.isDebugEnabled) logger.debug("SSL Context init ...")
       val keyManagers: Array[KeyManager]       = keyManagerFactory.getKeyManagers.map(m =>
         KeyManagerCompatibility.keyManager(
           () => certs,
@@ -1371,7 +1371,7 @@ object DynamicSSLEngineProvider {
         }
 
       sslContext.init(keyManagers, tm, null)
-      logger.debug(s"SSL Context init done ! (${keyStore1.size()} - ${keyStore2.size()})")
+      if (logger.isDebugEnabled) logger.debug(s"SSL Context init done ! (${keyStore1.size()} - ${keyStore2.size()})")
       SSLContext.setDefault(sslContext)
       sslContext
     }
@@ -1456,7 +1456,7 @@ object DynamicSSLEngineProvider {
 
     import SSLImplicits._
 
-    logger.debug(s"Creating keystore ...")
+    if (logger.isDebugEnabled) logger.debug(s"Creating keystore ...")
     val keyStore: KeyStore = KeyStore.getInstance("JKS")
     keyStore.load(null, null)
     certificates.foreach {
@@ -1496,7 +1496,7 @@ object DynamicSSLEngineProvider {
               if (certificateChain.isEmpty) {
                 logger.error(s"[${cert.id}] Certificate file does not contain any certificates :(")
               } else {
-                logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
+                if (logger.isDebugEnabled) logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
                 val domain = Try {
                   certificateChain.head.maybeDomain.getOrElse(cert.domain)
                 }.toOption.getOrElse(cert.domain)
@@ -1544,7 +1544,7 @@ object DynamicSSLEngineProvider {
       cacertPath: String,
       cacertPassword: String
   ): Array[TrustManager] = {
-    logger.debug(s"Creating truststore ...")
+    if (logger.isDebugEnabled) logger.debug(s"Creating truststore ...")
     val tmf    = TrustManagerFactory.getInstance("SunX509")
     tmf.init(keyStore)
     val javaKs = KeyStore.getInstance("JKS")
@@ -1558,7 +1558,7 @@ object DynamicSSLEngineProvider {
   }
 
   def createTrustStore(keyStore: KeyStore): Array[TrustManager] = {
-    logger.debug(s"Creating truststore ...")
+    if (logger.isDebugEnabled) logger.debug(s"Creating truststore ...")
     val tmf = TrustManagerFactory.getInstance("SunX509")
     tmf.init(keyStore)
     Array[TrustManager](
@@ -1567,7 +1567,7 @@ object DynamicSSLEngineProvider {
   }
 
   def readCertificateChain(id: String, certificateChain: String, log: Boolean = true): Seq[X509Certificate] = {
-    if (log) logger.debug(s"Reading cert chain for $id")
+    if (log && logger.isDebugEnabled) logger.debug(s"Reading cert chain for $id")
     val matcher: Matcher                       = CERT_PATTERN.matcher(certificateChain)
     val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
     var certificates                           = Seq.empty[X509Certificate]
@@ -1596,10 +1596,10 @@ object DynamicSSLEngineProvider {
       keyPassword: Option[String],
       log: Boolean = true
   ): Either[KeyStoreError, KeySpec] = {
-    if (log) logger.debug(s"Reading private key for $id")
+    if (log && logger.isDebugEnabled) logger.debug(s"Reading private key for $id")
     val matcher: Matcher = PRIVATE_KEY_PATTERN.matcher(content)
     if (!matcher.find) {
-      logger.debug(s"[$id] Found no private key :(")
+      if (logger.isDebugEnabled) logger.debug(s"[$id] Found no private key :(")
       Left(s"[$id] Found no private key")
     } else {
       val encodedKey: Array[Byte] = base64Decode(matcher.group(1))
@@ -1624,10 +1624,10 @@ object DynamicSSLEngineProvider {
       keyPassword: Option[String],
       log: Boolean = true
   ): Either[KeyStoreError, PrivateKey] = {
-    if (log) logger.debug(s"Reading private key for $id")
+    if (log && logger.isDebugEnabled) logger.debug(s"Reading private key for $id")
     val matcher: Matcher = PRIVATE_KEY_PATTERN.matcher(content)
     if (!matcher.find) {
-      logger.debug(s"[$id] Found no private key :(")
+      if (logger.isDebugEnabled) logger.debug(s"[$id] Found no private key :(")
       Left(s"[$id] Found no private key")
     } else {
       import otoroshi.utils.syntax.implicits._
@@ -1686,7 +1686,7 @@ object DynamicSSLEngineProvider {
       protocols: Option[Seq[String]]
   ): SSLEngine = {
     val context: SSLContext    = DynamicSSLEngineProvider.currentServer
-    DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
+    if (logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     val rawEngine              = context.createSSLEngine()
     val rawEnabledCipherSuites = rawEngine.getEnabledCipherSuites.toSeq
     val rawEnabledProtocols    = rawEngine.getEnabledProtocols.toSeq
@@ -1712,10 +1712,10 @@ object DynamicSSLEngineProvider {
         sniServerName match {
           case hn: SNIHostName =>
             val hostName = hn.getAsciiName
-            DynamicSSLEngineProvider.logger.debug(s"createSSLEngine - for $hostName")
+            if (logger.isDebugEnabled) logger.debug(s"createSSLEngine - for $hostName")
             engine.setEngineHostName(hostName)
           case _               =>
-            DynamicSSLEngineProvider.logger.debug(s"Not a hostname :( $sniServerName")
+            if (logger.isDebugEnabled) logger.debug(s"Not a hostname :( $sniServerName")
         }
         true
       }
@@ -1749,7 +1749,7 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
       .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.clientAuth")
       .flatMap(ClientAuth.apply)
       .getOrElse(ClientAuth.None)
-    DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
+    if (DynamicSSLEngineProvider.logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
     auth
   }
 
@@ -2123,7 +2123,7 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
   }
 
   def setEngineHostName(hostName: String): Unit = {
-    DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")
+    if (DynamicSSLEngineProvider.logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")
     hostnameHolder.set(hostName)
     // TODO: add try to avoid future issue ? fixed for now with '--add-opens java.base/javax.net.ssl=ALL-UNNAMED' in the java command line
     field.set(this, hostName)

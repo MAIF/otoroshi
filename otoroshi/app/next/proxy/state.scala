@@ -155,7 +155,7 @@ class NgProxyState(env: Env) {
     val s                                            = System.currentTimeMillis()
     domainPathTreeRef.set(NgTreeRouter.build(values))
     val d                                            = System.currentTimeMillis() - s
-    logger.debug(s"built TreeRouter(${values.size} routes) in ${d} ms.")
+    if (logger.isDebugEnabled) logger.debug(s"built TreeRouter(${values.size} routes) in ${d} ms.")
     // java.nio.file.Files.writeString(new java.io.File("./tree-router-config.json").toPath, domainPathTreeRef.get().json.prettify)
   }
 
@@ -678,7 +678,7 @@ class NgInternalStateMonitor extends Job {
     val total    = Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(env.proxyState).totalSize())
     val duration = Milliseconds(System.currentTimeMillis() - start)
     env.metrics.markDouble("ng-proxy-state-size-monitoring", total.value)
-    logger.debug(s"proxy-state: ${total.toMegabytes} mb, in ${duration}")
+    if (logger.isDebugEnabled) logger.debug(s"proxy-state: ${total.toMegabytes} mb, in ${duration}")
   }
 
   def monitorDataStoreState(env: Env): Unit = {
@@ -686,7 +686,7 @@ class NgInternalStateMonitor extends Job {
     val total    = Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(env.datastores).totalSize())
     val duration = Milliseconds(System.currentTimeMillis() - start)
     env.metrics.markDouble("ng-datastore-size-monitoring", total.value)
-    logger.debug(s"datastore: ${total.toMegabytes} mb, in ${duration}")
+    if (logger.isDebugEnabled) logger.debug(s"datastore: ${total.toMegabytes} mb, in ${duration}")
   }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {

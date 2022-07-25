@@ -2147,7 +2147,7 @@ class ProxyEngine() extends RequestHandler {
               !containsWildcard && !containsNamedParams && !containsRegexNamedParams && allPaths.size == 1 && allPaths
                 .contains("/")
             ) {
-              logger.warn("cleanup uri stripping")
+              if (logger.isDebugEnabled) logger.debug("cleanup uri stripping")
               rawUri
             } else {
               // WARNING: this one can cause issue as here path segments can be stripped for the bad reasons

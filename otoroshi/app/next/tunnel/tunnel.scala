@@ -73,9 +73,9 @@ class TunnelPlugin extends NgBackendCall {
   override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(TunnelPluginConfig.format).getOrElse(TunnelPluginConfig.default)
     val tunnelId = config.tunnelId
-    logger.debug(s"routing call through tunnel '${tunnelId}'")
+    if (logger.isDebugEnabled) logger.debug(s"routing call through tunnel '${tunnelId}'")
     env.tunnelManager.sendRequest(tunnelId, ctx.request, ctx.rawRequest.remoteAddress, ctx.rawRequest.theSecured).map { result =>
-      logger.debug(s"response from tunnel '${tunnelId}'")
+      if (logger.isDebugEnabled) logger.debug(s"response from tunnel '${tunnelId}'")
       val setCookieHeader: Seq[WSCookie] = result.header.headers.getIgnoreCase("Set-Cookie").map { sc =>
         Cookies.decodeSetCookieHeader(sc)
       }.getOrElse(Seq.empty).map(_.wsCookie)
@@ -199,7 +199,7 @@ class TunnelAgent(env: Env) {
       if (typ == "request") {
         val requestId: String = obj.select("request_id").asString
         val reqId = Try(requestId.split("_").last.toInt).getOrElse(counter.incrementAndGet())
-        logger.debug(s"got request from server on tunnel '${tunnelId}' - ${requestId}")
+        if (logger.isDebugEnabled) logger.debug(s"got request from server on tunnel '${tunnelId}' - ${requestId}")
         val url = obj.select("url").asString
         val addr = obj.select("addr").asString
         val secured = obj.select("secured").asOpt[Boolean].getOrElse(false)
@@ -242,13 +242,13 @@ class TunnelAgent(env: Env) {
         )
         engine.handle(request, _ => Results.InternalServerError("bad default routing").vfuture).flatMap { result =>
           TunnelActor.resultToJson(result, requestId).map { res =>
-            logger.debug(s"sending response back to server on tunnel '${tunnelId}' - ${requestId}")
+            if (logger.isDebugEnabled) logger.debug(s"sending response back to server on tunnel '${tunnelId}' - ${requestId}")
             Option(queueRef.get()).foreach(queue => queue.offer(akka.http.scaladsl.model.ws.BinaryMessage.Streamed(res.stringify.byteString.chunks(16 * 1024))))
           }
         }
       }
     } match {
-      case Failure(exception) => logger.error("error while handling request", exception)
+      case Failure(exception) => if (logger.isDebugEnabled) logger.error("error while handling request", exception)
       case Success(_) => ()
     }
 
@@ -276,8 +276,8 @@ class TunnelAgent(env: Env) {
       ).some,
       clientFlow = Flow.fromSinkAndSource(
         Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-          case akka.http.scaladsl.model.ws.TextMessage.Strict(data) => logger.warn(s"invalid text message: '${data}'")
-          case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) => source.runFold("")(_ + _).map(b => logger.warn(s"invalid text message: '${b}'"))
+          case akka.http.scaladsl.model.ws.TextMessage.Strict(data) => if (logger.isDebugEnabled) logger.debug(s"invalid text message: '${data}'")
+          case akka.http.scaladsl.model.ws.TextMessage.Streamed(source) => source.runFold("")(_ + _).map(b => if (logger.isDebugEnabled) logger.debug(s"invalid text message: '${b}'"))
           case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data) => handleRequest(data)
           case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) => source.runFold(ByteString.empty)(_ ++ _).map(b => handleRequest(b))
         },
@@ -303,8 +303,8 @@ class TunnelAgent(env: Env) {
       customizer = m => m
     )
     fu.andThen {
-      case Success(ValidUpgrade(response, chosenSubprotocol)) => logger.debug(s"upgrade successful and valid: ${response} - ${chosenSubprotocol}")
-      case Success(InvalidUpgradeResponse(response, cause)) => logger.error(s"upgrade successful but invalid: ${response} - ${cause}")
+      case Success(ValidUpgrade(response, chosenSubprotocol)) => if (logger.isDebugEnabled) logger.debug(s"upgrade successful and valid: ${response} - ${chosenSubprotocol}")
+      case Success(InvalidUpgradeResponse(response, cause)) => if (logger.isDebugEnabled) logger.error(s"upgrade successful but invalid: ${response} - ${cause}")
       case Failure(ex) => logger.error(s"upgrade failure", ex)
     }
     promise.future
@@ -418,7 +418,7 @@ class TunnelManager(env: Env) {
       forwardRequestWs(tunnelId, request, addr, secured, member)
     } else {
       val requestId: String = TunnelActor.genRequestId(env) // legit !
-      logger.debug(s"forwarding request for '${tunnelId}' - ${requestId} to ${member.name}")
+      if (logger.isDebugEnabled) logger.debug(s"forwarding request for '${tunnelId}' - ${requestId} to ${member.name}")
       val requestJson = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
       val url = Uri(env.clusterConfig.leader.urls.head)
       val ipAddress = member.location
@@ -461,10 +461,10 @@ class TunnelManager(env: Env) {
 
     leaderConnections.get(member.location) match {
       case Some(conn) =>
-        logger.debug("sending ws")
+        if (logger.isDebugEnabled) logger.debug("sending ws")
         conn.push(requestJson, requestId)
       case None =>
-        logger.debug("connecting ws")
+        if (logger.isDebugEnabled) logger.debug("connecting ws")
         new LeaderConnection(tunnelId, member, env, c => leaderConnections.put(member.location, c), c => leaderConnections.remove(c.location))
           .connect(0L)
           .push(requestJson, requestId)
@@ -494,7 +494,7 @@ class LeaderConnection(tunnelId: String, member: MemberView, env: Env, register:
   private val awaitingResponse = new scala.collection.concurrent.TrieMap[String, Promise[Result]]()
 
   def push(req: ByteString, requestId: String): Future[Result] = {
-    logger.debug(s"pushing request for '${requestId}' - ${(System.currentTimeMillis() - ref.get()).milliseconds.toHumanReadable}")
+    if (logger.isDebugEnabled) logger.debug(s"pushing request for '${requestId}' - ${(System.currentTimeMillis() - ref.get()).milliseconds.toHumanReadable}")
     val promise = Promise.apply[Result]()
     awaitingResponse.put(requestId, promise)
     Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage.Strict(req)))
@@ -556,7 +556,7 @@ class LeaderConnection(tunnelId: String, member: MemberView, env: Env, register:
     val msgKind = json.select("type").asString
     if (msgKind == "response") {
       val requestId = json.select("request_id").asString
-      logger.debug(s"handling response for '${requestId}'")
+      if (logger.isDebugEnabled) logger.debug(s"handling response for '${requestId}'")
       val result = TunnelActor.responseToResult(json)
       awaitingResponse.get(requestId).foreach(_.trySuccess(result))
     }
@@ -664,7 +664,7 @@ class TunnelRelayActor(out: ActorRef, tunnelId: String, env: Env) extends Actor 
     val reqType = request.select("type").asString
     reqType match {
       case "ping" => {
-        logger.debug(s"ping message from client: ${data.utf8String}")
+        if (logger.isDebugEnabled) logger.debug(s"ping message from client: ${data.utf8String}")
         out ! BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "pong").stringify.byteString)
       }
       case "request" => {
@@ -800,7 +800,7 @@ class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePi
 
   def sendRequest(request: NgPluginHttpRequest, addr: String, secured: Boolean): Future[Result] = {
     val requestId: String = TunnelActor.genRequestId(env) // legit
-    logger.debug(s"sending request to remote location through tunnel '${tunnelId}' - ${requestId}")
+    if (logger.isDebugEnabled) logger.debug(s"sending request to remote location through tunnel '${tunnelId}' - ${requestId}")
     val requestJson = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
     val promise = Promise.apply[Result]()
     awaitingResponse.put(requestId, promise)
@@ -810,7 +810,7 @@ class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePi
 
   def sendRequestRaw(request: JsValue): Future[Result] = {
     val requestId: String = request.select("request_id").asOpt[String].getOrElse(TunnelActor.genRequestId(env)) // legit
-    logger.debug(s"sending request to remote location through tunnel '${tunnelId}' - ${requestId}")
+    if (logger.isDebugEnabled) logger.debug(s"sending request to remote location through tunnel '${tunnelId}' - ${requestId}")
     val requestJson = (request.asObject ++ Json.obj("request_id" -> requestId)).stringify.byteString
     val promise = Promise.apply[Result]()
     awaitingResponse.put(requestId, promise)
@@ -822,14 +822,14 @@ class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePi
     val response = Json.parse(data.toArray)
     response.select("type").asString match {
       case "ping" => {
-        logger.debug(s"ping message from client: ${data.utf8String}")
+        if (logger.isDebugEnabled) logger.debug(s"ping message from client: ${data.utf8String}")
         env.tunnelManager.tunnelHeartBeat(tunnelId)
         if (!reversePingPong) {
           out ! BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "pong").stringify.byteString)
         }
       }
       case "pong" => {
-        logger.debug(s"pong message from client: ${data.utf8String}")
+        if (logger.isDebugEnabled) logger.debug(s"pong message from client: ${data.utf8String}")
         env.tunnelManager.tunnelHeartBeat(tunnelId)
         out ! BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)
       }
@@ -839,10 +839,10 @@ class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePi
       case "response" => Try {
         env.tunnelManager.tunnelHeartBeat(tunnelId)
         val requestId: String = response.select("request_id").asString
-        logger.debug(s"got response on tunnel '${tunnelId}' - ${requestId}")
+        if (logger.isDebugEnabled) logger.debug(s"got response on tunnel '${tunnelId}' - ${requestId}")
         val result = TunnelActor.responseToResult(response)
         awaitingResponse.get(requestId).foreach { tunnel =>
-          logger.debug(s"found the promise for ${requestId}")
+          if (logger.isDebugEnabled) logger.debug(s"found the promise for ${requestId}")
           tunnel.trySuccess(result)
           awaitingResponse.remove(requestId)
           ()
@@ -856,7 +856,7 @@ class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePi
 
   def receive = {
     case TextMessage(text)   =>
-      logger.warn(s"invalid message, '${text}'")
+      if (logger.isDebugEnabled) logger.debug(s"invalid message, '${text}'")
     case BinaryMessage(data) =>
       handleResponse(data)
     case CloseMessage(status, reason) =>
@@ -864,11 +864,11 @@ class TunnelActor(out: ActorRef, tunnelId: String, req: RequestHeader, reversePi
       closeTunnel()
       // self ! PoisonPill
     case PingMessage(data) =>
-      logger.debug(s"mping message from client: ${data.utf8String}")
+      if (logger.isDebugEnabled) logger.debug(s"mping message from client: ${data.utf8String}")
       env.tunnelManager.tunnelHeartBeat(tunnelId)
       out ! PongMessage(Json.obj("tunnel_id" -> tunnelId).stringify.byteString)
     case PongMessage(data) =>
-      logger.debug(s"mpong message from client: ${data.utf8String}")
+      if (logger.isDebugEnabled) logger.debug(s"mpong message from client: ${data.utf8String}")
       env.tunnelManager.tunnelHeartBeat(tunnelId)
       out ! PingMessage(Json.obj("tunnel_id" -> tunnelId).stringify.byteString)
   }

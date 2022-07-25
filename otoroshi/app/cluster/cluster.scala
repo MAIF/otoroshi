@@ -1045,7 +1045,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
 
   def start(): Unit = {
     if (config.mode == ClusterMode.Leader) {
-      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster leader agent")
+      if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster leader agent")
       membershipRef.set(
         env.otoroshiScheduler.scheduleAtFixedRate(2.second, 5.seconds)(
           SchedulerHelper.runnable(
@@ -1059,7 +1059,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
         )
       )
       // if (env.clusterConfig.autoUpdateState) {
-      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster state auto update")
+      if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster state auto update")
       stateUpdaterRef.set(
         env.otoroshiScheduler.scheduleAtFixedRate(1.second, env.clusterConfig.leader.cacheStateFor.millis)(
           utils.SchedulerHelper.runnable(
@@ -1145,7 +1145,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
               env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
               env.clusterConfig.leader.stateDumpPath
                 .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
-              Cluster.logger.debug(
+              if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(
                 s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
               )
             }
@@ -1216,7 +1216,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           factor = config.retryFactor,
           ctx = "leader-login-token-valid"
         ) { tryCount =>
-          Cluster.logger.debug(s"Checking if login token $token is valid with a leader")
+          if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"Checking if login token $token is valid with a leader")
           env.MtlsWs
             .url(otoroshiUrl + s"/api/cluster/login-tokens/$token", config.mtlsConfig)
             .withHttpHeaders(
@@ -1232,14 +1232,14 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withMaybeProxyServer(config.proxy)
             .get()
             .filter { resp =>
-              if (resp.status == 200) Cluster.logger.debug(s"Login token $token is valid")
+              if (resp.status == 200 &&Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"Login token $token is valid")
               resp.ignore() // ignoreIf(resp.status != 200)
               resp.status == 200
             }
             .map(_ => true)
         }
         .recover { case e =>
-          Cluster.logger.debug(
+          if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(
             s"[${env.clusterConfig.mode.name}] Error while checking login token with Otoroshi leader cluster"
           )
           false
@@ -1258,7 +1258,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           factor = config.retryFactor,
           ctx = "leader-user-token-get"
         ) { tryCount =>
-          Cluster.logger.debug(s"Checking if user token $token is valid with a leader")
+          if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"Checking if user token $token is valid with a leader")
           env.MtlsWs
             .url(otoroshiUrl + s"/api/cluster/user-tokens/$token", config.mtlsConfig)
             .withHttpHeaders(
@@ -1274,14 +1274,14 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withMaybeProxyServer(config.proxy)
             .get()
             .filter { resp =>
-              if (resp.status == 200) Cluster.logger.debug(s"User token $token is valid")
+              if (resp.status == 200 && Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"User token $token is valid")
               resp.ignoreIf(resp.status != 200)
               resp.status == 200
             }
             .map(resp => Some(Json.parse(resp.body)))
         }
         .recover { case e =>
-          Cluster.logger.debug(
+          if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(
             s"[${env.clusterConfig.mode.name}] Error while checking user token with Otoroshi leader cluster"
           )
           None
@@ -1293,7 +1293,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def createLoginToken(token: String): Future[Option[String]] = {
     if (env.clusterConfig.mode.isWorker) {
-      Cluster.logger.debug(s"Creating login token for $token on the leader")
+      if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"Creating login token for $token on the leader")
       Retry
         .retry(
           times = config.worker.retries,
@@ -1321,7 +1321,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               request.ignore()
             }
             .filter { resp =>
-              Cluster.logger.debug(s"login token for ${token} created on the leader ${resp.status}")
+              if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"login token for ${token} created on the leader ${resp.status}")
               resp.ignore() // ignoreIf(resp.status != 201)
               resp.status == 201
             }
@@ -1334,7 +1334,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def setUserToken(token: String, user: JsValue): Future[Option[Unit]] = {
     if (env.clusterConfig.mode.isWorker) {
-      Cluster.logger.debug(s"Creating user token for ${token} on the leader: ${Json.prettyPrint(user)}")
+      if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"Creating user token for ${token} on the leader: ${Json.prettyPrint(user)}")
       Retry
         .retry(
           times = config.worker.retries,
@@ -1362,7 +1362,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               request.ignore()
             }
             .filter { resp =>
-              Cluster.logger.debug(s"User token for ${token} created on the leader ${resp.status}")
+              if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"User token for ${token} created on the leader ${resp.status}")
               resp.ignore() // ignoreIf(resp.status != 201)
               resp.status == 201
             }
@@ -1382,7 +1382,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           factor = config.retryFactor,
           ctx = "leader-session-valid"
         ) { tryCount =>
-          Cluster.logger.debug(s"Checking if session $id is valid with a leader")
+          if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"Checking if session $id is valid with a leader")
           env.MtlsWs
             .url(otoroshiUrl + s"/api/cluster/sessions/$id", config.mtlsConfig)
             .withHttpHeaders(
@@ -1401,24 +1401,24 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               Cluster.logger.error(s"${env.clusterConfig.mode.name}] Failed to check session on leader", failure)
             }
             .filter { resp =>
-              if (resp.status == 200) Cluster.logger.debug(s"Session $id is valid")
+              if (resp.status == 200 && Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"Session $id is valid")
               resp.ignoreIf(resp.status != 200)
               resp.status == 200
             }
             .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
         }
         .recover { case e =>
-          Cluster.logger.debug(
+          if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(
             s"[${env.clusterConfig.mode.name}] Error while checking session with Otoroshi leader cluster"
           )
           workerSessionsCache.getIfPresent(id) match {
             case None        => {
-              Cluster.logger.debug(
+              if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(
                 s"[${env.clusterConfig.mode.name}] no local session found after leader call failed"
               )
               PrivateAppsUser.fromCookie(id, reqOpt)(env) match {
                 case None        =>
-                  Cluster.logger.debug(
+                  if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(
                     s"[${env.clusterConfig.mode.name}] no cookie session found after leader call failed"
                   )
                   None
@@ -1444,7 +1444,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def createSession(user: PrivateAppsUser): Future[Option[PrivateAppsUser]] = {
     if (env.clusterConfig.mode.isWorker) {
-      Cluster.logger.debug(s"Creating session for ${user.email} on the leader: ${Json.prettyPrint(user.json)}")
+      if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"Creating session for ${user.email} on the leader: ${Json.prettyPrint(user.json)}")
       workerSessionsCache.put(user.randomId, user)
       Retry
         .retry(
@@ -1474,7 +1474,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               Cluster.logger.error(s"${env.clusterConfig.mode.name}] Failed to create session on leader", failure)
             }
             .filter { resp =>
-              Cluster.logger.debug(s"Session for ${user.name} created on the leader ${resp.status}")
+              if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"Session for ${user.name} created on the leader ${resp.status}")
               resp.ignoreIf(resp.status != 201)
               resp.status == 201
             }
@@ -1487,7 +1487,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def incrementApi(id: String, increment: Long): Unit = {
     if (env.clusterConfig.mode == ClusterMode.Worker) {
-      Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment API $id")
+      if (Cluster.logger.isTraceEnabled) Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment API $id")
       if (!apiIncrementsRef.get().contains(id)) {
         apiIncrementsRef.get().putIfAbsent(id, new AtomicLong(0L))
       }
@@ -1497,7 +1497,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def incrementService(id: String, dataIn: Long, dataOut: Long): Unit = {
     if (env.clusterConfig.mode == ClusterMode.Worker) {
-      Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment Service $id")
+      if (Cluster.logger.isTraceEnabled) Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment Service $id")
       if (!servicesIncrementsRef.get().contains("global")) {
         servicesIncrementsRef.get().putIfAbsent("global", (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
       }
@@ -1561,7 +1561,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private def pollState(): Unit = {
     try {
       if (isPollingState.compareAndSet(false, true)) {
-        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster (${DateTime.now()})")
+        if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster (${DateTime.now()})")
         val start = System.currentTimeMillis()
         Retry
           .retry(
@@ -1611,7 +1611,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 predicate
               }
               .flatMap { resp =>
-                Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster done ! (${DateTime.now()})")
+                if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster done ! (${DateTime.now()})")
                 val store          = new ConcurrentHashMap[String, Any]()
                 val expirations    = new ConcurrentHashMap[String, Long]()
                 val responseFrom   = resp.header("X-Data-From").map(_.toLong)
@@ -1646,7 +1646,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   })
                   .flatMap { _ =>
                     val cliDigest = Hex.encodeHexString(digest.digest())
-                    Cluster.logger.debug(
+                    if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(
                       s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms at try $tryCount. (${DateTime.now()})"
                     )
                     val valid     = (for {
@@ -1666,13 +1666,13 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                       lastPoll.set(DateTime.now())
                       if (!store.isEmpty) {
                         firstSuccessfulStateFetchDone.compareAndSet(false, true)
-                        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] start swap (${DateTime.now()})")
+                        if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] start swap (${DateTime.now()})")
                         env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
-                        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] stop swap (${DateTime.now()})")
+                        if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] stop swap (${DateTime.now()})")
                         if (fromVersion.isBefore(env.otoroshiVersionSem)) {
                           // TODO: run other migrations ?
                           if (fromVersion.isBefore(Version("1.4.999"))) {
-                            Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] running exporters migration !")
+                            if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] running exporters migration !")
                             DataExporterConfigMigrationJob
                               .extractExporters(env)
                               .flatMap(c => DataExporterConfigMigrationJob.saveExporters(c, env))
@@ -1703,7 +1703,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             isPollingState.compareAndSet(true, false)
           }
       } else {
-        Cluster.logger.debug(
+        if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(
           s"[${env.clusterConfig.mode.name}] Still fetching state from Otoroshi leader cluster, retying later ..."
         )
       }
@@ -1730,7 +1730,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             factor = config.retryFactor,
             ctx = "leader-push-quotas"
           ) { tryCount =>
-            Cluster.logger.trace(
+            if (Cluster.logger.isTraceEnabled) Cluster.logger.trace(
               s"[${env.clusterConfig.mode.name}] Pushing api quotas updates to Otoroshi leader cluster"
             )
             val rt = Runtime.getRuntime
@@ -1829,7 +1829,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 }
                 .andThen {
                   case Success(_) =>
-                    Cluster.logger.debug(
+                    if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(
                       s"[${env.clusterConfig.mode.name}] Pushed quotas in ${System.currentTimeMillis() - start} ms at try $tryCount."
                     )
                   case Failure(e) => e.printStackTrace()
@@ -1862,7 +1862,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         //  isPushingQuotas.compareAndSet(true, false)
         //}
       } else {
-        Cluster.logger.debug(
+        if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(
           s"[${env.clusterConfig.mode.name}] Still pushing api quotas updates to Otoroshi leader cluster, retying later ..."
         )
       }
@@ -1890,7 +1890,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def start(): Unit = {
     if (config.mode == ClusterMode.Worker) {
-      Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster agent")
+      if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster agent")
       pollRef.set(
         env.otoroshiScheduler.scheduleAtFixedRate(1.second, config.worker.state.pollEvery.millis)(
           utils.SchedulerHelper.runnable(
@@ -2007,7 +2007,7 @@ class SwappableInMemoryDataStores(
   private val dbPathOpt: Option[String] = env.clusterConfig.worker.dbPath
 
   private def readStateFromDisk(source: Seq[String]): Unit = {
-    Cluster.logger.debug("Reading state from disk ...")
+    if (Cluster.logger.isDebugEnabled) Cluster.logger.debug("Reading state from disk ...")
     val store       = new ConcurrentHashMap[String, Any]()
     val expirations = new ConcurrentHashMap[String, Long]()
     source.foreach { raw =>
@@ -2075,7 +2075,7 @@ class SwappableInMemoryDataStores(
       .map { content =>
         val hash = MurmurHash3.stringHash(content)
         if (hash != lastHash.get()) {
-          Cluster.logger.debug("Writing state to disk ...")
+          if (Cluster.logger.isDebugEnabled) Cluster.logger.debug("Writing state to disk ...")
           java.nio.file.Files.write(file.toPath, content.getBytes(com.google.common.base.Charsets.UTF_8))
           lastHash.set(hash)
         }

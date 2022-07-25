@@ -105,7 +105,7 @@ class HMACCallerPlugin extends RequestTransformer {
     val config = context.configFor("HMACCallerPlugin")
     (config \ "secret").asOpt[String] match {
       case None         =>
-        logger.debug("No api key found and no secret found in configuration of the plugin")
+        if (logger.isDebugEnabled) logger.debug("No api key found and no secret found in configuration of the plugin")
         FastFuture.successful(Left(BadRequest(Json.obj("error" -> "Bad parameters"))))
       case Some(secret) =>
         val algorithm = (config \ "algorithm").asOpt[String].getOrElse("HMAC-SHA512")
@@ -116,11 +116,11 @@ class HMACCallerPlugin extends RequestTransformer {
         val signature     =
           Base64.getEncoder.encodeToString(Signatures.hmac(HMACUtils.Algo(algorithm), signingString, secret))
 
-        logger.debug(s"Secret used : $secret")
-        logger.debug(s"Signature send : $signature")
-        logger.debug(s"Algorithm used : $algorithm")
-        logger.debug(s"Date generated : $signingString")
-        logger.debug(
+        if (logger.isDebugEnabled) logger.debug(s"Secret used : $secret")
+        if (logger.isDebugEnabled) logger.debug(s"Signature send : $signature")
+        if (logger.isDebugEnabled) logger.debug(s"Algorithm used : $algorithm")
+        if (logger.isDebugEnabled) logger.debug(s"Date generated : $signingString")
+        if (logger.isDebugEnabled) logger.debug(
           s"Send Authorization header : ${s"$authorizationHeader" -> s"""hmac algorithm="${algorithm.toLowerCase}", headers="Date", signature="$signature""""}"
         )
 
@@ -199,11 +199,11 @@ class HMACValidator extends AccessValidator {
     val signingValues        = context.request.headers.headers.filter(p => headers.contains(p._1)).map(_._2)
     val signingString        = signingValues.mkString(" ")
 
-    logger.debug(s"Secret used : $secret")
-    logger.debug(s"Signature generated : ${Base64.getEncoder
+    if (logger.isDebugEnabled) logger.debug(s"Secret used : $secret")
+    if (logger.isDebugEnabled) logger.debug(s"Signature generated : ${Base64.getEncoder
       .encodeToString(Signatures.hmac(HMACUtils.Algo(algorithm.toUpperCase), signingString, secret))}")
-    logger.debug(s"Signature received : $signature")
-    logger.debug(s"Algorithm used : $algorithm")
+    if (logger.isDebugEnabled) logger.debug(s"Signature received : $signature")
+    if (logger.isDebugEnabled) logger.debug(s"Algorithm used : $algorithm")
 
     if (signingValues.size != headers.size)
       FastFuture.successful(false)
@@ -223,14 +223,14 @@ class HMACValidator extends AccessValidator {
       case _                             => context.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.clientSecret)
     }) match {
       case None         =>
-        logger.debug("No api key found and no secret found in configuration of the plugin")
+        if (logger.isDebugEnabled) logger.debug("No api key found and no secret found in configuration of the plugin")
         FastFuture.successful(false)
       case Some(secret) =>
         (context.request.headers.get("Authorization"), context.request.headers.get("Proxy-Authorization")) match {
           case (Some(authorization), None) => checkHMACSignature(authorization, context, secret)
           case (None, Some(authorization)) => checkHMACSignature(authorization, context, secret)
           case (_, _)                      =>
-            logger.debug("Missing authorization header")
+            if (logger.isDebugEnabled) logger.debug("Missing authorization header")
             FastFuture.successful(false)
         }
     }

@@ -215,7 +215,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
     if (ref == null) {
       lastConfigCache.set(time)
-      logger.debug("Fetching GlobalConfig for the first time")
+      if (logger.isDebugEnabled) logger.debug("Fetching GlobalConfig for the first time")
       actualCall()
     } else {
       if ((lastConfigCache.get() + 6000) < time) {

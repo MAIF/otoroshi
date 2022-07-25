@@ -226,13 +226,13 @@ object PrivateAppsUserHelper {
         req.headers.get("Otoroshi-Token").flatMap(value => env.extractPrivateSessionIdFromString(value))
       )
       .map { id =>
-        Cluster.logger.debug(s"private apps session checking for $id - from helper")
+        if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"private apps session checking for $id - from helper")
         env.datastores.privateAppsUserDataStore.findById(id).flatMap {
           case Some(user)                                           =>
             GenericOauth2Module.handleTokenRefresh(auth, user)
             FastFuture.successful(Some(user))
           case None if env.clusterConfig.mode == ClusterMode.Worker => {
-            Cluster.logger.debug(s"private apps session $id not found locally - from helper")
+            if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"private apps session $id not found locally - from helper")
             env.clusterAgent.isSessionValid(id, Some(req)).map {
               case Some(user) =>
                 user.save(
@@ -268,7 +268,7 @@ object PrivateAppsUserHelper {
           env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
             .confidentialAppLoginPage()
             .url + s"?desc=${descriptor.id}&redirect=${redirect}"
-        logger.trace("should redirect to " + redirectTo)
+        if (logger.isTraceEnabled) logger.trace("should redirect to " + redirectTo)
         descriptor.authConfigRef match {
           case None      =>
             errorResult(

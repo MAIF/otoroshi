@@ -114,7 +114,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
           writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
         )
         .map { wr =>
-          logger.debug(s"Delete ${wr.n} items ...")
+          if (logger.isDebugEnabled) logger.debug(s"Delete ${wr.n} items ...")
         }
     }
   }
