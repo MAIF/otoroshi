@@ -269,6 +269,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.domain=oto.tools",
   "-Dotoroshi.events.maxSize=0",
   "-Dotoroshi.cluster.mode=Leader",
+  "-Dotoroshi.cluster.leader.name=otoroshi-leader-dev",
   "-Dotoroshi.instance.name=dev",
   "-Dotoroshi.vaults.enabled=true",
   "-Dotoroshi.ssl.fromOutside.clientAuth=Want",

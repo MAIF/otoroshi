@@ -247,9 +247,11 @@ class NgProxyState(env: Env) {
 
   private val fakeRoutesCount = 10 //10000 // 300000
 
+  private val dev = false && env.isDev
+
   private def generateRoutesByDomain(env: Env): Future[Seq[NgRoute]] = {
     import NgPluginHelper.pluginId
-    if (env.isDev) {
+    if (dev) {
       (0 until fakeRoutesCount).map { idx =>
         NgRoute(
           location = EntityLocation.default,
@@ -318,7 +320,7 @@ class NgProxyState(env: Env) {
 
   private def generateRoutesByName(env: Env): Future[Seq[NgRoute]] = {
     import NgPluginHelper.pluginId
-    if (env.isDev) {
+    if (dev) {
       (0 until fakeRoutesCount).map { idx =>
         NgRoute(
           location = EntityLocation.default,
@@ -381,7 +383,7 @@ class NgProxyState(env: Env) {
 
   private def generateRandomRoutes(env: Env): Future[Seq[NgRoute]] = {
     import NgPluginHelper.pluginId
-    if (env.isDev) {
+    if (dev) {
       (0 until ((Math.random() * 50) + 10).toInt).map { idx =>
         NgRoute(
           location = EntityLocation.default,
@@ -443,7 +445,7 @@ class NgProxyState(env: Env) {
   }
 
   private def soapRoute(env: Env): Seq[NgRoute] = {
-    if (env.isDev) {
+    if (dev) {
       Seq(
         NgRoute(
           location = EntityLocation.default,
@@ -529,7 +531,7 @@ class NgProxyState(env: Env) {
       genRoutesPath       <- generateRoutesByName(env)
       genRandom           <- generateRandomRoutes(env)
       descriptors         <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets() // secrets OK
-      fakeRoutes           = if (env.isDev) Seq(NgRoute.fake) else Seq.empty
+      fakeRoutes           = if (dev) Seq(NgRoute.fake) else Seq.empty
       newRoutes            = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
         NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
       ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
@@ -550,7 +552,7 @@ class NgProxyState(env: Env) {
       privateAppsSessions <- env.datastores.privateAppsUserDataStore.findAll() // no need for secrets
       tcpServices         <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets() // secrets OK
       scripts             <- env.datastores.scriptDataStore.findAll() // no need for secrets
-      croutes             <- if (env.isDev) {
+      croutes             <- if (dev) {
         NgService
           .fromOpenApi(
             "oto-api-next-gen.oto.tools",

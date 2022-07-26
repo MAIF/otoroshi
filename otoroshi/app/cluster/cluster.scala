@@ -470,6 +470,7 @@ case class MemberView(
     tunnels: Seq[String],
     stats: JsObject = Json.obj()
 ) {
+  def json: JsValue = asJson
   def asJson: JsValue =
     Json.obj(
       "id"       -> id,

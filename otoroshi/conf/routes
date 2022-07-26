@@ -368,6 +368,7 @@ GET     /api/tunnels/register                                 otoroshi.next.tunn
 GET     /api/tunnels/infos                                    otoroshi.next.tunnel.TunnelController.infos()
 GET     /api/tunnels/:tunnelId/relay                          otoroshi.next.tunnel.TunnelController.tunnelRelayWs(tunnelId)
 POST    /api/tunnels/:tunnelId/relay                          otoroshi.next.tunnel.TunnelController.tunnelRelay(tunnelId)
+GET     /api/tunnels                                          otoroshi.next.tunnel.TunnelController.tunnelInfos()
 
 GET     /api/scripts/_template                                otoroshi.controllers.adminapi.TemplatesController.initiateScript()
 # GET     /api/scripts/:id                                      otoroshi.controllers.adminapi.ScriptApiController.findScriptById(id)
