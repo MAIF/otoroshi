@@ -33,7 +33,7 @@ services:
 
   ########################################################################################
 
-  leader-remote:
+  leader-remote-1:
     image: eclipse-temurin:11
     command: "java -jar /tmp/otoroshi/otoroshi.jar"
     volumes:
@@ -48,7 +48,7 @@ services:
       - OTOROSHI_INITIAL_ADMIN_PASSWORD=password
       - OTOROSHI_STORAGE=lettuce
       - OTOROSHI_REDIS_URL=redis://redis-remote:6379
-      - OTOROSHI_CLUSTER_LEADER_NAME=leader-remote
+      - OTOROSHI_CLUSTER_LEADER_NAME=leader-remote-1
       - OTOROSHI_TUNNELS_ENABLED=true
       - OTOROSHI_TUNNELS_DEFAULT_ENABLED=true
       - OTOROSHI_TUNNELS_DEFAULT_NAME=demo-tunnel
@@ -64,6 +64,40 @@ services:
     ports: 
       - "8081:8080"
       - "8444:8443"
+    depends_on:
+      - redis-remote
+
+  leader-remote-2:
+    image: eclipse-temurin:11
+    command: "java -jar /tmp/otoroshi/otoroshi.jar"
+    volumes:
+      - "./otoroshi:/tmp/otoroshi"
+    networks:
+      - tunnel-zone
+      - exposition-zone
+    environment: 
+      - HTTP_PORT=8080
+      - HTTPS_PORT=8443
+      - OTOROSHI_CLUSTER_MODE=leader
+      - OTOROSHI_INITIAL_ADMIN_PASSWORD=password
+      - OTOROSHI_STORAGE=lettuce
+      - OTOROSHI_REDIS_URL=redis://redis-remote:6379
+      - OTOROSHI_CLUSTER_LEADER_NAME=leader-remote-2
+      - OTOROSHI_TUNNELS_ENABLED=true
+      - OTOROSHI_TUNNELS_DEFAULT_ENABLED=true
+      - OTOROSHI_TUNNELS_DEFAULT_NAME=demo-tunnel
+      - OTOROSHI_TUNNELS_DEFAULT_URL=http://leader:8080
+      - OTOROSHI_INSTANCE_TITLE=tunnel
+      - OTOROSHI_LOGGERS_OTOROSHI_TUNNEL_PLUGIN=INFO
+      - OTOROSHI_LOGGERS_OTOROSHI_TUNNEL_AGENT=INFO
+      - OTOROSHI_LOGGERS_OTOROSHI_TUNNEL_LEADER_CONNECTION=INFO
+      - OTOROSHI_LOGGERS_OTOROSHI_TUNNEL_RELAY_ACTOR=INFO
+    expose:
+      - 8080
+      - 8443
+    ports: 
+      - "8083:8080"
+      - "8446:8443"
     depends_on:
       - redis-remote
 
