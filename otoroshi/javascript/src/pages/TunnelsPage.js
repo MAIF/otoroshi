@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import moment from 'moment';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table, Form } from '../components/inputs';
+import { v4 } from 'uuid';
 
 export class TunnelsPage extends Component {
 
@@ -90,7 +91,7 @@ export class TunnelsPage extends Component {
 
 export class TunnelPage extends Component {
 
-  state = { tunnel: null }
+  state = { tunnel: null, routes: [] }
 
   schema = {
     tunnel_id: { type: 'string', disabled: true, props: { label: 'id', placeholder: '---' } },
@@ -110,7 +111,114 @@ export class TunnelPage extends Component {
         const tunnel = tunnels.filter(t => t.tunnel_id == id)[0];
         this.props.setTitle(`Connected tunnel '${tunnel.name}'`);
         this.setState({ tunnel })
+        BackOfficeServices.nextClient.forEntity('routes').findAll().then(routes => {
+          this.setState({ routes });
+        });
       });
+    });
+  }
+
+  exposeRoute = (originalRoute) => {
+    const routesClient = BackOfficeServices.nextClient.forEntity('routes');
+    const [hostname, ...parts] = (originalRoute.frontend.indexOf('/') > -1) ? originalRoute.frontend.split('/') : [originalRoute.frontend];
+    const root = '/' + parts.join('/');
+    const route = {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": `route_${v4()}`,
+      "name": `tunnel exposed '${originalRoute.name}'`,
+      "description": `route '${originalRoute.name}' exposed through tunnel '${this.state.tunnel.tunnel_id}'`,
+      "tags": [],
+      "metadata": {
+        from_tunnel_id: this.state.tunnel.tunnel_id,
+        from_route_id: originalRoute.id
+      },
+      "enabled": false,
+      "debug_flow": false,
+      "export_reporting": false,
+      "capture": false,
+      "groups": [
+        "default"
+      ],
+      "frontend": {
+        "domains": [
+          `${originalRoute.id}.oto.tools${root}`
+        ],
+        "strip_path": true,
+        "exact": false,
+        "headers": {},
+        "query": {},
+        "methods": []
+      },
+      "backend": {
+        "targets": [
+          {
+            "id": "target_1",
+            "hostname": hostname,
+            "port": 0,
+            "tls": false,
+            "weight": 1,
+            "predicate": {
+              "type": "AlwaysMatch"
+            },
+            "protocol": "HTTP/1.1",
+            "ip_address": null,
+            "tls_config": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          }
+        ],
+        "target_refs": [],
+        "root": root,
+        "rewrite": false,
+        "load_balancing": {
+          "type": "RoundRobin"
+        },
+        "client": {
+          "retries": 1,
+          "max_errors": 20,
+          "retry_initial_delay": 50,
+          "backoff_factor": 2,
+          "call_timeout": 30000,
+          "call_and_stream_timeout": 120000,
+          "connection_timeout": 10000,
+          "idle_timeout": 60000,
+          "global_timeout": 30000,
+          "sample_interval": 2000,
+          "proxy": {},
+          "custom_timeouts": [],
+          "cache_connection_settings": {
+            "enabled": false,
+            "queue_size": 2048
+          }
+        },
+        "health_check": null
+      },
+      "backend_ref": null,
+      "plugins": [
+        {
+          "enabled": true,
+          "debug": false,
+          "plugin": "cp:otoroshi.next.tunnel.TunnelPlugin",
+          "include": [],
+          "exclude": [],
+          "config": {
+            "tunnel_id": this.state.tunnel.tunnel_id
+          },
+          "plugin_index": {}
+        }
+      ],
+    };
+    routesClient.create(route).then(r => {
+      window.location = `/bo/dashboard/routes/${route.id}?tab=flow`;
     });
   }
 
@@ -152,15 +260,26 @@ export class TunnelPage extends Component {
             <th style={{ textAlign: 'center', top: 10 }}>id</th>
             <th style={{ textAlign: 'center', top: 10 }}>name</th>
             <th style={{ textAlign: 'center', top: 10 }}>frontend</th>
+            <th style={{ textAlign: 'center', top: 10 }}>actions</th>
           </thead>
           <tbody>
-            {this.state.tunnel.routes.map(node => (
-              <tr>
-                <td>{node.id}</td>
-                <td>{node.name}</td>
-                <td>{node.frontend}</td>
-              </tr>
-            ))}
+            {this.state.tunnel.routes.map(node => {
+              const route = this.state.routes
+                .filter(r => r.metadata.from_tunnel_id === this.state.tunnel.tunnel_id)
+                .find(r => r.metadata.from_route_id === node.id);
+              const exposed = !!route;
+              return (
+                <tr>
+                  <td>{node.id}</td>
+                  <td>{node.name}</td>
+                  <td>{node.frontend}</td>
+                  <td>
+                    {exposed && <button type="button" className="btn btn-success btn-sm" disabled>expose</button>}
+                    {!exposed && <button type="button" className="btn btn-success btn-sm" onClick={e => this.exposeRoute(node)}>expose</button>}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         <a className="btn btn-info btn-sm" href="/bo/dashboard/tunnels">Back to tunnels</a>

@@ -159,7 +159,7 @@ class TunnelAgent(env: Env) {
     implicit val mat = env.otoroshiMaterializer
     implicit val ev = env
 
-    logger.info(s"connecting tunnel '${tunnelId}' $exportMeta ...")
+    logger.info(s"connecting tunnel '${tunnelId}' ...")
 
     val promise = Promise[Unit]()
     val metadataSource: Source[akka.http.scaladsl.model.ws.Message, _] = Source.tick(1.seconds, 10.seconds, ()).map { _ =>
@@ -201,7 +201,7 @@ class TunnelAgent(env: Env) {
         val requestId: String = obj.select("request_id").asString
         val reqId = Try(requestId.split("_").last.toInt).getOrElse(counter.incrementAndGet())
         if (logger.isDebugEnabled) logger.debug(s"got request from server on tunnel '${tunnelId}' - ${requestId}")
-        println(s"handling request ${requestId}")
+        // println(s"handling request ${requestId}")
         val url = obj.select("url").asString
         val addr = obj.select("addr").asString
         val secured = obj.select("secured").asOpt[Boolean].getOrElse(false)
@@ -356,12 +356,18 @@ class TunnelManager(env: Env) {
       case Some(instances) if instances.isEmpty || instances.size == 1=> tunnels.invalidate(tunnelId)
       case Some(instances) => tunnels.put(tunnelId, instances.filterNot(_.instanceId == instanceId))
     }
+    if (env.clusterConfig.mode.isLeader) {
+      env.clusterLeaderAgent.renewMemberShip()
+    }
   }
 
   def registerTunnel(tunnelId: String, tunnel: Tunnel): Unit = whenEnabled {
     tunnels.getIfPresent(tunnelId) match {
       case None => tunnels.put(tunnelId, Seq(tunnel))
       case Some(ts) => tunnels.put(tunnelId, ts :+ tunnel)
+    }
+    if (env.clusterConfig.mode.isLeader) {
+      env.clusterLeaderAgent.renewMemberShip()
     }
   }
 
@@ -403,7 +409,7 @@ class TunnelManager(env: Env) {
             } else {
               val index = counter.incrementAndGet() % (if (membersWithTunnel.nonEmpty) membersWithTunnel.size else 1)
               val member = membersWithTunnel.apply(index)
-              println(s"choosing between ${membersWithTunnel.size} possible members. selected member ${member.name} located at ${member.location}")
+              // println(s"choosing between ${membersWithTunnel.size} possible members. selected member ${member.name} located at ${member.location}")
               forwardRequest(tunnelId, request, addr, secured, member)
             }
           }
@@ -513,7 +519,7 @@ class LeaderConnection(tunnelId: String, member: MemberView, env: Env, register:
   }
 
   def push(req: ByteString, requestId: String): Future[Result] = {
-    println(s"pushing to ${member.name} - ${member.location}")
+    // println(s"pushing to ${member.name} - ${member.location}")
     if (logger.isDebugEnabled) logger.debug(s"pushing request for '${requestId}' - ${(System.currentTimeMillis() - ref.get()).milliseconds.toHumanReadable}")
     val promise = Promise.apply[Result]()
     awaitingResponse.put(requestId, promise)
@@ -728,7 +734,7 @@ class TunnelRelayActor(out: ActorRef, tunnelId: String, env: Env) extends Actor 
       }
       case "request" => {
         val requestId = request.select("request_id").asOpt[String].getOrElse(TunnelActor.genRequestId(env)) // legit
-        println(s"handling worker request ${requestId}")
+        // println(s"handling worker request ${requestId}")
         env.tunnelManager.sendLocalRequestRaw(tunnelId, request).map { res =>
           TunnelActor.resultToJson(res, requestId).map(v => out ! BinaryMessage(v.stringify.byteString))
         }
