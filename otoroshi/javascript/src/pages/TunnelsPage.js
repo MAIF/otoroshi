@@ -3,6 +3,8 @@ import moment from 'moment';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table, Form } from '../components/inputs';
 import { v4 } from 'uuid';
+import ReactTable from 'react-table';
+import { Collapse } from '../components/inputs/Collapse';
 
 export class TunnelsPage extends Component {
 
@@ -222,6 +224,64 @@ export class TunnelPage extends Component {
     });
   }
 
+  columnBuilder = (c) => {
+    return {
+      Header: c.title,
+      id: c.id || c.title,
+      headerStyle: c.style,
+      width: c.style && c.style.width ? c.style.width : undefined,
+      style: { ...c.style, height: 30 },
+      sortable: !c.notSortable,
+      filterable: !c.notFilterable,
+      accessor: (d) => (c.content ? c.content(d) : d),
+      Filter: (d) => (
+        <input
+          type="text"
+          className="form-control input-sm"
+          value={d.filter ? d.filter.value : ''}
+          onChange={(e) => d.onChange(e.target.value)}
+          placeholder="Search ..."
+        />
+      ),
+      Cell: (r) => {
+        const value = r.value;
+        const original = r.original;
+        if (c.cell) {
+          return c.cell(value, original, this);
+        } else {
+          return value[c.id || c.title];
+        }
+      },
+    }
+  }
+
+  nodeColumns = [
+    { title: 'id' },
+    { title: 'name' },
+    { title: 'location' },
+    { title: 'http_port', style: { width: 80 } },
+    { title: 'https_port', style: { width: 80 } },
+    { title: 'last_seen' },
+    { title: 'type', style: { width: 80 } },
+  ].map(this.columnBuilder)
+
+  routesColumns = [
+    { title: 'id' },
+    { title: 'name' },
+    // { title: 'frontend' },
+    { title: 'actions', notFilterable: true, content: () => '', style: { width: 100 }, cell: (item, node) => {
+      const route = this.state.routes
+        .filter(r => r.metadata.from_tunnel_id === this.state.tunnel.tunnel_id)
+        .find(r => r.metadata.from_route_id === node.id);
+      const exposed = !!route;
+      if (exposed) {
+        return <button type="button" className="btn btn-success btn-sm" disabled>expose</button>;
+      } else {
+        return <button type="button" className="btn btn-success btn-sm" onClick={e => this.exposeRoute(node)}>expose</button>;
+      }
+    }}
+  ].map(this.columnBuilder)
+
   render() {
     if (!this.state.tunnel) {
       return null;
@@ -229,60 +289,51 @@ export class TunnelPage extends Component {
     return (
       <>
         <Form value={this.state.tunnel} onChange={() => ''} flow={this.flow} schema={this.schema} />
-        <h3 style={{ marginTop: 20 }}>Nodes ({this.state.tunnel.nodes.length})</h3>
-        <table className="table table-striped table-hover table-sm">
-          <thead style={{ color: 'white' }}>
-            <th style={{ textAlign: 'center', top: 10 }}>id</th>
-            <th style={{ textAlign: 'center', top: 10 }}>name</th>
-            <th style={{ textAlign: 'center', top: 10 }}>location</th>
-            <th style={{ textAlign: 'center', top: 10 }}>http_port</th>
-            <th style={{ textAlign: 'center', top: 10 }}>https_port</th>
-            <th style={{ textAlign: 'center', top: 10 }}>last_seen</th>
-            <th style={{ textAlign: 'center', top: 10 }}>type</th>
-          </thead>
-          <tbody>
-            {this.state.tunnel.nodes.map(node => (
-              <tr>
-                <td>{node.id}</td>
-                <td>{node.name}</td>
-                <td>{node.location}</td>
-                <td>{node.http_port}</td>
-                <td>{node.https_port}</td>
-                <td>{node.last_seen}</td>
-                <td>{node.type}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <h3 style={{ marginTop: 20 }}>Routes ({this.state.tunnel.routes.length})</h3>
-        <table className="table table-striped table-hover table-sm">
-          <thead style={{ color: 'white' }}>
-            <th style={{ textAlign: 'center', top: 10 }}>id</th>
-            <th style={{ textAlign: 'center', top: 10 }}>name</th>
-            <th style={{ textAlign: 'center', top: 10 }}>frontend</th>
-            <th style={{ textAlign: 'center', top: 10 }}>actions</th>
-          </thead>
-          <tbody>
-            {this.state.tunnel.routes.map(node => {
-              const route = this.state.routes
-                .filter(r => r.metadata.from_tunnel_id === this.state.tunnel.tunnel_id)
-                .find(r => r.metadata.from_route_id === node.id);
-              const exposed = !!route;
-              return (
-                <tr>
-                  <td>{node.id}</td>
-                  <td>{node.name}</td>
-                  <td>{node.frontend}</td>
-                  <td>
-                    {exposed && <button type="button" className="btn btn-success btn-sm" disabled>expose</button>}
-                    {!exposed && <button type="button" className="btn btn-success btn-sm" onClick={e => this.exposeRoute(node)}>expose</button>}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        <a className="btn btn-info btn-sm" href="/bo/dashboard/tunnels">Back to tunnels</a>
+        <Collapse label={`Nodes (${this.state.tunnel.nodes.length})`} noLeftColumn>
+          <ReactTable
+            className="fulltable -striped -highlight"
+            data={this.state.tunnel.nodes}
+            loading={false}
+            filterable={true}
+            filterAll={true}
+            defaultSorted={[ { id: 'desc' } ]}
+            defaultFiltered={[]}
+            defaultPageSize={this.state.tunnel.nodes.length > 20 ? 20 : this.state.tunnel.nodes.length}
+            columns={this.nodeColumns}
+            defaultFilterMethod={(filter, row, column) => {
+              const id = filter.pivotId || filter.id;
+              if (row[id] !== undefined) {
+                const value = String(row[id]);
+                return value.toLowerCase().indexOf(filter.value.toLowerCase()) > -1;
+              } else {
+                return true;
+              }
+            }}
+          />
+        </Collapse>
+        <Collapse label={`Routes (${this.state.tunnel.routes.length})`} noLeftColumn>
+          <ReactTable
+            className="fulltable -striped -highlight"
+            data={this.state.tunnel.routes}
+            loading={false}
+            filterable={true}
+            filterAll={true}
+            defaultSorted={[ { id: 'desc' } ]}
+            defaultFiltered={[]}
+            defaultPageSize={this.state.tunnel.routes.length > 20 ? 20 : this.state.tunnel.routes.length}
+            columns={this.routesColumns}
+            defaultFilterMethod={(filter, row, column) => {
+              const id = filter.pivotId || filter.id;
+              if (row[id] !== undefined) {
+                const value = String(row[id]);
+                return value.toLowerCase().indexOf(filter.value.toLowerCase()) > -1;
+              } else {
+                return true;
+              }
+            }}
+          />
+        </Collapse>
+        <a className="btn btn-info btn-sm" href="/bo/dashboard/tunnels" style={{ marginTop: 30 }}>Back to tunnels</a>
       </>
     );
   }
