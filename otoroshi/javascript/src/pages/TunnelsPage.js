@@ -333,7 +333,9 @@ export class TunnelPage extends Component {
             }}
           />
         </Collapse>
-        <a className="btn btn-info btn-sm" href="/bo/dashboard/tunnels" style={{ marginTop: 30 }}>Back to tunnels</a>
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'flex-end', width: '100%' }}>
+          <a className="btn btn-danger btn-sm" href="/bo/dashboard/tunnels" style={{ marginTop: 30 }}><i className="fas fa-times" /> Cancel</a>
+        </div>
       </>
     );
   }
