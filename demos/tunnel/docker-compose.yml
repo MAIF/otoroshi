@@ -5,7 +5,7 @@ services:
   ########################################################################################
   ########################################################################################
 
-  leader:
+  leader-1:
     # build: ./otoroshi
     image: eclipse-temurin:11
     command: "java -jar /tmp/otoroshi/otoroshi.jar"
@@ -31,6 +31,32 @@ services:
     depends_on:
       - redis
 
+  leader-2:
+    # build: ./otoroshi
+    image: eclipse-temurin:11
+    command: "java -jar /tmp/otoroshi/otoroshi.jar"
+    volumes:
+      - "./otoroshi:/tmp/otoroshi"
+    networks:
+      - exposition-zone
+    environment: 
+      - HTTP_PORT=8080
+      - HTTPS_PORT=8443
+      - OTOROSHI_CLUSTER_MODE=leader
+      - OTOROSHI_INITIAL_ADMIN_PASSWORD=password
+      - OTOROSHI_STORAGE=lettuce
+      - OTOROSHI_REDIS_URL=redis://redis:6379
+      - OTOROSHI_CLUSTER_LEADER_NAME=leader-2
+      - OTOROSHI_INSTANCE_TITLE=exposition
+    expose:
+      - 8080
+      - 8443
+    ports: 
+      - "8087:8080"
+      - "8447:8443"
+    depends_on:
+      - redis
+
   ########################################################################################
 
   leader-remote-1:
@@ -52,7 +78,7 @@ services:
       - OTOROSHI_TUNNELS_ENABLED=true
       - OTOROSHI_TUNNELS_DEFAULT_ENABLED=true
       - OTOROSHI_TUNNELS_DEFAULT_NAME=demo-tunnel
-      - OTOROSHI_TUNNELS_DEFAULT_URL=http://leader:8080
+      - OTOROSHI_TUNNELS_DEFAULT_URL=http://leader-1:8080
       - OTOROSHI_INSTANCE_TITLE=tunnel
       - OTOROSHI_LOGGERS_OTOROSHI_TUNNEL_PLUGIN=INFO
       - OTOROSHI_LOGGERS_OTOROSHI_TUNNEL_AGENT=INFO
@@ -86,7 +112,7 @@ services:
       - OTOROSHI_TUNNELS_ENABLED=true
       - OTOROSHI_TUNNELS_DEFAULT_ENABLED=true
       - OTOROSHI_TUNNELS_DEFAULT_NAME=demo-tunnel
-      - OTOROSHI_TUNNELS_DEFAULT_URL=http://leader:8080
+      - OTOROSHI_TUNNELS_DEFAULT_URL=http://leader-2:8080
       - OTOROSHI_INSTANCE_TITLE=tunnel
       - OTOROSHI_LOGGERS_OTOROSHI_TUNNEL_PLUGIN=INFO
       - OTOROSHI_LOGGERS_OTOROSHI_TUNNEL_AGENT=INFO
@@ -118,7 +144,7 @@ services:
       - OTOROSHI_CLUSTER_MODE=worker
       - OTOROSHI_INITIAL_ADMIN_PASSWORD=password
       - CLUSTER_WORKER_NAME=worker
-      - OTOROSHI_CLUSTER_LEADER_URL=http://leader:8080
+      - OTOROSHI_CLUSTER_LEADER_URL=http://leader-1:8080
       - CLUSTER_LEADER_HOST=otoroshi-api.oto.tools
       - OTOROSHI_LOGGERS_OTOROSHI_TUNNEL_PLUGIN=INFO
       - OTOROSHI_LOGGERS_OTOROSHI_TUNNEL_AGENT=INFO
