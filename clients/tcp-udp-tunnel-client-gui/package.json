@@ -14,7 +14,7 @@
     "https-proxy-agent": "5.0.0",
     "lodash": "4.17.21",
     "moment": "2.29.2",
-    "node-fetch": "2.6.1",
+    "node-fetch": "3.2.10",
     "ws": "7.4.6"
   },
   "devDependencies": {
