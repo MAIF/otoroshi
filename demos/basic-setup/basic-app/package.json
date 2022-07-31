@@ -9,7 +9,7 @@
   "dependencies": {
     "express": "4.17.20",
     "lodash": "4.17.20",
-    "node-fetch": "2.6.1",
+    "node-fetch": "3.2.10",
     "pg": "8.3.3"
   }
 }
