@@ -215,7 +215,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
     case StartHealthCheck()                                                                => {
       val myself = self
       val date   = DateTime.now()
-      logger.trace(s"StartHealthCheck at $date")
+      if (logger.isTraceEnabled) logger.trace(s"StartHealthCheck at $date")
       env.datastores.serviceDescriptorDataStore.findAll().andThen {
         case Success(descs) => myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
         case Failure(error) => myself ! ReStartHealthCheck()
@@ -224,13 +224,13 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
     case ReStartHealthCheck()                                                              => {
       val myself = self
       val date   = DateTime.now()
-      logger.trace(s"StartHealthCheck at $date")
+      if (logger.isTraceEnabled) logger.trace(s"StartHealthCheck at $date")
       env.datastores.serviceDescriptorDataStore.findAll().andThen {
         case Success(descs) => myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
         case Failure(error) => myself ! ReStartHealthCheck()
       }
     }
-    case e                                                                                 => logger.trace(s"Received unknown message $e")
+    case e                                                                                 => if (logger.isTraceEnabled) logger.trace(s"Received unknown message $e")
   }
 }
 

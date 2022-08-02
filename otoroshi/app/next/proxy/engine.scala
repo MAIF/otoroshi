@@ -440,7 +440,7 @@ class ProxyEngine() extends RequestHandler {
           }
         }
       }
-      .applyOnIf( /*env.env == "dev" && */ (debug || debugHeaders))(_.map { res =>
+      .applyOnIf( /*env.isDev && */ (debug || debugHeaders))(_.map { res =>
         val addHeaders =
           if (reporting && debugHeaders)
             Seq(
@@ -2147,7 +2147,7 @@ class ProxyEngine() extends RequestHandler {
               !containsWildcard && !containsNamedParams && !containsRegexNamedParams && allPaths.size == 1 && allPaths
                 .contains("/")
             ) {
-              logger.warn("cleanup uri stripping")
+              if (logger.isDebugEnabled) logger.debug("cleanup uri stripping")
               rawUri
             } else {
               // WARNING: this one can cause issue as here path segments can be stripped for the bad reasons
@@ -2960,7 +2960,7 @@ class ProxyEngine() extends RequestHandler {
         headersOutFiltered.contains(key.toLowerCase())
       }
       .applyOnIf(!isHttp10)(_.filterNot(h => h._1.toLowerCase() == "content-length"))
-      .toSeq
+      .toSeq // ++ Seq(("Connection" -> "keep-alive"), ("X-Connection" -> "keep-alive"))
     val theBody                        = response.body.applyOnIf(engineConfig.capture) { source =>
       var responseChunks = ByteString("")
       source

@@ -17,6 +17,7 @@ import otoroshi.gateway._
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
 import otoroshi.next.controllers.adminapi._
 import otoroshi.next.proxy.NgProxyStateLoaderJob
+import otoroshi.next.tunnel.TunnelController
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.storage.DataStores
 import otoroshi.utils.metrics.Metrics
@@ -389,6 +390,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val frontendsController          = wire[NgFrontendsController]
   lazy val pluginsController            = wire[NgPluginsController]
   lazy val tryItController              = wire[TryItController]
+  lazy val tunnelController             = wire[TunnelController]
 
   override lazy val assets: Assets = wire[Assets]
 
@@ -405,13 +407,17 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
   private lazy val server = components.server
 
   def start(): Otoroshi = {
+    components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
+    components.env.afterListening()
     server.httpPort.get + 1
     this
   }
 
   def startAndStopOnShutdown(): Otoroshi = {
+    components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
+    components.env.afterListening()
     server.httpPort.get + 1
     stopOnShutdown()
   }

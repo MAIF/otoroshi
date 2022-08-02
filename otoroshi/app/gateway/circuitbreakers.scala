@@ -135,7 +135,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   }
 
   def getCircuitBreakerNg(clientConfig: ClientConfig, path: String): AkkaCircuitBreaker = {
-    ClientConfig.logger.debug(
+    if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(
       s"[circuitbreaker] using callTimeout - 1: ${clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout)}"
     )
     new AkkaCircuitBreaker(
@@ -245,7 +245,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
             )
           )
         }
-        ClientConfig.logger.debug(
+        if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(
           s"[circuitbreaker] using callTimeout - 2: ${clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout)}"
         )
         breakers.put(
@@ -272,10 +272,10 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
             cb.resetTimeout != clientConfig.sampleInterval.millis
           }
         ) {
-          ClientConfig.logger.debug("[circuitbreaker] breaker rebuild !!!!!!")
+          if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug("[circuitbreaker] breaker rebuild !!!!!!")
           buildBreaker()
         } else {
-          ClientConfig.logger.debug("[circuitbreaker] no breaker rebuild")
+          if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug("[circuitbreaker] no breaker rebuild")
         }
       }
       val breaker = breakers.apply(target.host)
@@ -334,7 +334,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       env: Env
   ): Future[Either[Result, A]] = {
 
-    ClientConfig.logger.debug(
+    if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(
       s"[circuitbreaker] using globalTimeout: ${clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout)}"
     )
     val failure      = Timeout
@@ -353,7 +353,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
         attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey).map { target =>
           val alreadyFailed = new AtomicBoolean(false)
           getCircuitBreakerNg(clientConfig, path).withCircuitBreaker {
-            logger.debug(s"Try to call target : $target")
+            if (logger.isDebugEnabled) logger.debug(s"Try to call target : $target")
             f(target, attempts, alreadyFailed)
           } andThen { case Failure(_: scala.concurrent.TimeoutException) =>
             alreadyFailed.set(true)
@@ -374,7 +374,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
             case Some((target, breaker)) =>
               val alreadyFailed = new AtomicBoolean(false)
               breaker.withCircuitBreaker {
-                logger.debug(s"Try to call target : $target")
+                if (logger.isDebugEnabled) logger.debug(s"Try to call target : $target")
                 f(target, attempts, alreadyFailed)
               } andThen { case Failure(_: scala.concurrent.TimeoutException) =>
                 alreadyFailed.set(true)

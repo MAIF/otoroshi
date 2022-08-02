@@ -210,7 +210,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         .runWith(Sink.foreach { group =>
           val now = System.currentTimeMillis()
           if ((lastWatchSync.get() + (conf.watchGracePeriodSeconds * 1000L)) < now) { // 10 sec
-            logger.debug(s"sync triggered by a group of ${group.size} events")
+            if (logger.isDebugEnabled) logger.debug(s"sync triggered by a group of ${group.size} events")
             KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
           }
         })
@@ -1764,7 +1764,7 @@ object KubernetesCRDsJob {
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
-    logger.debug("patchCoreDnsConfig")
+    if (logger.isDebugEnabled) logger.debug("patchCoreDnsConfig")
     val client = new KubernetesClient(conf, env)
     val hash   = Seq(
       conf.kubeSystemNamespace,
@@ -1784,7 +1784,7 @@ object KubernetesCRDsJob {
         append: Boolean
     ): Future[Unit] =
       Try {
-        logger.debug("patching coredns config. with otoroshi mesh")
+        if (logger.isDebugEnabled) logger.debug("patching coredns config. with otoroshi mesh")
         val coredns17: Boolean = {
           coredns
             .flatMap { cdns =>
@@ -1834,7 +1834,7 @@ object KubernetesCRDsJob {
           val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (otoMesh + coreFile))
           val newRaw  = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
           if (conf.coreDnsIntegrationDryRun) {
-            logger.debug(s"new coredns config append: ${Json.prettyPrint(newRaw)}")
+            if (logger.isDebugEnabled) logger.debug(s"new coredns config append: ${Json.prettyPrint(newRaw)}")
             ().future
           } else {
             client
@@ -1852,7 +1852,7 @@ object KubernetesCRDsJob {
           val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (head + otoMesh + tail))
           val newRaw  = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
           if (conf.coreDnsIntegrationDryRun) {
-            logger.debug(s"new coredns config: ${Json.prettyPrint(newRaw)}")
+            if (logger.isDebugEnabled) logger.debug(s"new coredns config: ${Json.prettyPrint(newRaw)}")
             ().future
           } else {
             client
@@ -1878,14 +1878,14 @@ object KubernetesCRDsJob {
           logger.error("no coredns config.")
           ().future
         case Some(configMap) if configMap.hasOtoroshiMesh(conf) => {
-          logger.debug(s"configMap 1 ${configMap.corefile}")
+          if (logger.isDebugEnabled) logger.debug(s"configMap 1 ${configMap.corefile}")
           val hashFromConfigMap = configMap.corefile
             .split("\\n")
             .find(_.trim.startsWith("### config-hash: "))
             .map(_.replace("### config-hash: ", "").replace("\n", ""))
             .getOrElse("--")
           val configHasChanged  = hashFromConfigMap != hash
-          logger.debug(
+          if (logger.isDebugEnabled) logger.debug(
             s"current hash: $hash, hash from coredns configmap: $hashFromConfigMap, config has changed: $configHasChanged"
           )
           if (configHasChanged) {
@@ -1897,7 +1897,7 @@ object KubernetesCRDsJob {
           }
         }
         case Some(configMap)                                    => {
-          logger.debug(s"configMap 2 ${configMap.corefile}")
+          if (logger.isDebugEnabled) logger.debug(s"configMap 2 ${configMap.corefile}")
           patchConfig(coredns, configMap, true)
           ().future
         }
@@ -1914,7 +1914,7 @@ object KubernetesCRDsJob {
           val newData        = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (head + tail))
           val newRaw         = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
           if (conf.coreDnsIntegrationDryRun) {
-            logger.debug(s"new coredns config: ${Json.prettyPrint(newRaw)}")
+            if (logger.isDebugEnabled) logger.debug(s"new coredns config: ${Json.prettyPrint(newRaw)}")
             ().future
           } else {
             client
@@ -1963,11 +1963,11 @@ object KubernetesCRDsJob {
           kubeDnsDep.isDefined && kubeDnsCm.isDefined && kubeDnsCm.exists(cm =>
             (cm.stubDomains \ otoDomain).as[Seq[String]].contains(service.map(_.clusterIP).getOrElse("--"))
           )
-        _                    = logger.debug(
+        _                    = if (logger.isDebugEnabled) logger.debug(
                                  s"kube-dns Operator has dns server: ${hasOtoroshiDnsServer} and should not be updated ${shouldNotUpdate}"
                                )
-        _                    = logger.debug(s"kube-dns Operator config: ${kubeDnsCm.map(_.data.prettify).getOrElse("--")}")
-        _                    = logger.debug(s"Otoroshi CoreDNS config: ${service.map(_.spec.prettify).getOrElse("--")}")
+        _                    = if (logger.isDebugEnabled) logger.debug(s"kube-dns Operator config: ${kubeDnsCm.map(_.data.prettify).getOrElse("--")}")
+        _                    = if (logger.isDebugEnabled) logger.debug(s"Otoroshi CoreDNS config: ${service.map(_.spec.prettify).getOrElse("--")}")
         _                   <- if (service.isDefined && kubeDnsDep.isDefined && kubeDnsCm.isDefined && !hasOtoroshiDnsServer) {
                                  val cm          = kubeDnsCm.get
                                  val stubDomains = cm.stubDomains ++ Json.obj(
@@ -2043,11 +2043,11 @@ object KubernetesCRDsJob {
               )
           )
         _                    =
-          logger.debug(
+          if (logger.isDebugEnabled) logger.debug(
             s"Openshift DNS Operator has dns server: ${hasOtoroshiDnsServer} and should not be updated ${shouldNotUpdate}"
           )
-        _                    = logger.debug(s"Openshift DNS Operator config: ${dnsOperator.map(_.spec.prettify).getOrElse("--")}")
-        _                    = logger.debug(s"Otoroshi CoreDNS config: ${service.map(_.spec.prettify).getOrElse("--")}")
+        _                    = if (logger.isDebugEnabled) logger.debug(s"Openshift DNS Operator config: ${dnsOperator.map(_.spec.prettify).getOrElse("--")}")
+        _                    = if (logger.isDebugEnabled) logger.debug(s"Otoroshi CoreDNS config: ${service.map(_.spec.prettify).getOrElse("--")}")
         _                   <- if (service.isDefined && dnsOperator.isDefined && !hasOtoroshiDnsServer) {
                                  val servers = dnsOperator.get.servers.map(_.raw) :+ Json.obj(
                                    "name"          -> conf.openshiftDnsOperatorCoreDnsName,

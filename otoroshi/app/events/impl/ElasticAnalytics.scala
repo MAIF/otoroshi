@@ -404,13 +404,13 @@ object ElasticUtils {
         case ElasticVersion.AboveSevenEight =>
           (ElasticTemplates.indexTemplate_v7_8, "/_index_template/otoroshi-tpl")
       }
-      logger.debug(s"$version, $indexTemplatePath")
+      if (logger.isDebugEnabled) logger.debug(s"$version, $indexTemplatePath")
       val tpl: JsValue                = if (config.indexSettings.clientSide) {
         Json.parse(strTpl.replace("$$$INDEX$$$", index))
       } else {
         Json.parse(strTpl.replace("$$$INDEX$$$-*", index))
       }
-      logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
+      if (logger.isDebugEnabled) logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
       url(urlFromPath(indexTemplatePath, config), config, env)
         .get()
         .flatMap { resp =>
@@ -426,10 +426,10 @@ object ElasticUtils {
                   logger.error("Error creating template", e)
                 case Success(r)                    =>
                   r.ignore()
-                  logger.debug("Otoroshi template updated")
+                  if (logger.isDebugEnabled) logger.debug("Otoroshi template updated")
                   ElasticWritesAnalytics.initialized(config, version)
                 case _                             =>
-                  logger.debug("Otoroshi template updated")
+                  if (logger.isDebugEnabled) logger.debug("Otoroshi template updated")
                   ElasticWritesAnalytics.initialized(config, version)
               }
               tplCreated.map(_ => ())
@@ -443,10 +443,10 @@ object ElasticUtils {
                   logger.error("Error creating template", e)
                 case Success(r)                    =>
                   r.ignore()
-                  logger.debug("Otoroshi template created")
+                  if (logger.isDebugEnabled) logger.debug("Otoroshi template created")
                   ElasticWritesAnalytics.initialized(config, version)
                 case _                             =>
-                  logger.debug("Otoroshi template created")
+                  if (logger.isDebugEnabled) logger.debug("Otoroshi template created")
                   ElasticWritesAnalytics.initialized(config, version)
               }
               tplCreated.map(_ => ())
@@ -647,8 +647,8 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
 
   private def query(query: JsObject, debug: Boolean = false)(implicit ec: ExecutionContext): Future[QueryResponse] = {
     val builder = env.MtlsWs.url(searchUri, config.mtlsConfig)
-    logger.debug(s"Query to Elasticsearch: $searchUri")
-    logger.debug(s"Query to Elasticsearch: ${Json.prettyPrint(query)}")
+    if (logger.isDebugEnabled) logger.debug(s"Query to Elasticsearch: $searchUri")
+    if (logger.isDebugEnabled) logger.debug(s"Query to Elasticsearch: ${Json.prettyPrint(query)}")
 
     authHeader()
       .fold(builder) { h =>
@@ -669,8 +669,8 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
 
   private def count(query: JsObject, debug: Boolean = false)(implicit ec: ExecutionContext): Future[QueryResponse] = {
     val builder = env.MtlsWs.url(countUri, config.mtlsConfig)
-    logger.debug(s"Query to Elasticsearch: $countUri")
-    logger.debug(s"Query to Elasticsearch: ${Json.prettyPrint(query)}")
+    if (logger.isDebugEnabled) logger.debug(s"Query to Elasticsearch: $countUri")
+    if (logger.isDebugEnabled) logger.debug(s"Query to Elasticsearch: ${Json.prettyPrint(query)}")
 
     authHeader()
       .fold(builder) { h =>

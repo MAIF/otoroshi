@@ -203,7 +203,7 @@ class HttpHandler()(implicit env: Env) {
     val promise                                             = Promise[ProxyDone]
 
     val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
-    logger.trace(s"Claim is : $claim")
+    if (logger.isTraceEnabled) logger.trace(s"Claim is : $claim")
     attrs.put(otoroshi.plugins.Keys.OtoTokenKey -> claim.payload)
 
     val stateResponseHeaderName = descriptor.secComHeaders.stateResponseName
@@ -507,7 +507,7 @@ class HttpHandler()(implicit env: Env) {
 
           val extractedTimeout =
             descriptor.clientConfig.extractTimeout(req.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
-          ClientConfig.logger.debug(s"[gateway] using callAndStreamTimeout: $extractedTimeout")
+          if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[gateway] using callAndStreamTimeout: $extractedTimeout")
           val builder          = clientReq
             .withRequestTimeout(extractedTimeout)
             .withFailureIndicator(alreadyFailed)

@@ -1,0 +1,20 @@
+[package]
+name = "otoroshi-remote-tunnel-agent"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+futures = { version = "0.3", features = ["thread-pool"] }
+futures-util = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0.76"
+base64 = "0.13.0"
+clap = { version = "3.2.6", features = ["derive"] }
+hyper = { version = "0.14", features = ["full"] }
+env_logger = "0.9"
+log = "0.4.0"
+tokio-tungstenite = "*"
+url = "2.2.2"
+uuid = { version = "1.1.2", features = ["v4", "fast-rng", "macro-diagnostics"] }
+chrono = "0.4"

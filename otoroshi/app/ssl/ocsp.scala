@@ -53,7 +53,7 @@ object CertParentHelper {
     .build()
 
   def fromOtoroshiRootCa(cert: X509Certificate, level: Int = 0): Boolean = {
-    logger.debug(s"fromOtoroshiRootCa: ${cert.getSerialNumber} - ${DN(cert.getSubjectDN.getName)}")
+    if (logger.isDebugEnabled) logger.debug(s"fromOtoroshiRootCa: ${cert.getSerialNumber} - ${DN(cert.getSubjectDN.getName)}")
     if (level > 100) {
       logger.error(s"failed to find origin for cert ${cert.getSerialNumber} - ${DN(cert.getSubjectDN.getName)}")
       cache.put(cert.getSerialNumber, false)
@@ -61,36 +61,36 @@ object CertParentHelper {
     } else {
       cache.getIfPresent(cert.getSerialNumber) match {
         case Some(res) =>
-          logger.debug("success from cache")
+          if (logger.isDebugEnabled) logger.debug("success from cache")
           res
         case None      => {
-          logger.debug("cache miss")
+          if (logger.isDebugEnabled) logger.debug("cache miss")
           DynamicSSLEngineProvider.certificates.values.find(_.id == Cert.OtoroshiCA) match {
             case None         =>
-              logger.debug("ca not found")
+              if (logger.isDebugEnabled) logger.debug("ca not found")
               false
             case Some(caCert) => {
-              logger.debug("ca found")
+              if (logger.isDebugEnabled) logger.debug("ca found")
               val ca = caCert.certificate.get
               if (ca.getSerialNumber == cert.getSerialNumber) {
                 cache.put(cert.getSerialNumber, true)
                 true
               } else {
                 val issuerDn = DN(cert.getIssuerDN.getName)
-                logger.debug(s"searching for $issuerDn")
+                if (logger.isDebugEnabled) logger.debug(s"searching for $issuerDn")
                 DynamicSSLEngineProvider.certificates.values.find(
                   _.certificate.exists(c => DN(c.getSubjectDN.getName).isEqualsTo(issuerDn))
                 ) match {
                   case None                                                                           =>
-                    logger.debug("issuer not found")
+                    if (logger.isDebugEnabled) logger.debug("issuer not found")
                     cache.put(cert.getSerialNumber, false)
                     false
                   case Some(issuer) if cert.getSerialNumber == issuer.certificate.get.getSerialNumber =>
-                    logger.debug("not from otoroshi")
+                    if (logger.isDebugEnabled) logger.debug("not from otoroshi")
                     cache.put(cert.getSerialNumber, false)
                     false
                   case Some(issuer) if cert.getSerialNumber != issuer.certificate.get.getSerialNumber =>
-                    logger.debug("found issuer")
+                    if (logger.isDebugEnabled) logger.debug("found issuer")
                     fromOtoroshiRootCa(issuer.certificate.get, level + 1)
                 }
               }

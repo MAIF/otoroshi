@@ -47,7 +47,7 @@ class LevelDbDataStores(
 
   lazy val logger = Logger("otoroshi-leveldb-datastores")
 
-  logger.debug(s"path at $dbPath")
+  if (logger.isDebugEnabled) logger.debug(s"path at $dbPath")
 
   lazy val dbPath: String       = configuration.getOptionalWithFileSupport[String]("app.leveldb.path").getOrElse("./leveldb")
   lazy val redisStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.leveldb.windowSize").getOrElse(99)

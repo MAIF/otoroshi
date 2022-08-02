@@ -12,6 +12,7 @@ import otoroshi.gateway._
 import otoroshi.loader.modules._
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
 import otoroshi.next.controllers.adminapi._
+import otoroshi.next.tunnel.TunnelController
 import play.api.ApplicationLoader.Context
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
@@ -28,7 +29,9 @@ class OtoroshiLoader extends ApplicationLoader {
       _.configure(context.environment, context.initialConfiguration, Map.empty)
     }
     val components = new OtoroshiComponentsInstances(context, None, None, false)
+    components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
+    components.env.afterListening()
     components.application
   }
 }
@@ -121,6 +124,7 @@ package object modules {
     lazy val frontendsController          = wire[NgFrontendsController]
     lazy val pluginsController            = wire[NgPluginsController]
     lazy val tryItController              = wire[TryItController]
+    lazy val tunnelController             = wire[TunnelController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

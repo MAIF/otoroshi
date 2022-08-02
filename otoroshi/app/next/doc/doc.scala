@@ -30,7 +30,7 @@ class NgPluginDocumentationGenerator(docPath: String) {
         .enableClassInfo()
         .acceptPackages(allPackages: _*)
         .scan
-      logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")
+      if (logger.isDebugEnabled) logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")
 
       def predicate(c: ClassInfo): Boolean = {
         c.isInterface || c.getName.contains(".NgMerged")

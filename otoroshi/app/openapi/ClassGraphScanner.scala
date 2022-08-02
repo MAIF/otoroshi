@@ -132,7 +132,7 @@ class ClassGraphScanner {
       .enableAllInfo()
       .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws") ++ configurationPackages: _*)
       .scan()
-    val dev        = env.env == "dev"
+    val dev        = env.isDev
     if (dev) {
       scanAndGenerateSchema(scanResult, CustomData(CustomForms.forms))
     } else {

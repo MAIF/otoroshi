@@ -228,7 +228,7 @@ class OAuth1CallerPlugin extends RequestTransformer {
       case (Right(key), Right(secret), Right(token), Right(tokenSecret)) =>
         val signature_method = (config \ "algo").asOpt[String].getOrElse("HmacSHA512")
 
-        logger.debug(s"Algo used : $signature_method")
+        if (logger.isDebugEnabled) logger.debug(s"Algo used : $signature_method")
 
         val inParams = getOauthParams(key, secret, Some(tokenSecret), signature_method)
 
@@ -250,10 +250,10 @@ class OAuth1CallerPlugin extends RequestTransformer {
         ).future
 
       case _ =>
-        logger.debug(s"Consumer key : ${consumerKey.getOrElse("missing")}")
-        logger.debug(s"Consumer secret : ${consumerSecret.getOrElse("missing")}")
-        logger.debug(s"OAuth token : ${oauthToken.getOrElse("missing")}")
-        logger.debug(s"OAuth token secret : ${oauthTokenSecret.getOrElse("missing")}")
+        if (logger.isDebugEnabled) logger.debug(s"Consumer key : ${consumerKey.getOrElse("missing")}")
+        if (logger.isDebugEnabled) logger.debug(s"Consumer secret : ${consumerSecret.getOrElse("missing")}")
+        if (logger.isDebugEnabled) logger.debug(s"OAuth token : ${oauthToken.getOrElse("missing")}")
+        if (logger.isDebugEnabled) logger.debug(s"OAuth token secret : ${oauthTokenSecret.getOrElse("missing")}")
         FastFuture.successful(Left(BadRequest(Json.obj("error" -> "Bad parameters"))))
     }
   }

@@ -456,7 +456,7 @@ class GatewayRequestHandler(
 
   def serveDevAssets() = actionBuilder.async { req =>
     val wholePath = req.relativeUri
-    logger.debug(s"dev serving asset '${wholePath}'")
+    if (logger.isDebugEnabled) logger.debug(s"dev serving asset '${wholePath}'")
     devCache.getIfPresent(wholePath) match {
       case Some((contentType, content)) => Results.Ok(content).as(contentType).future
       case None                         => {
@@ -821,7 +821,7 @@ class GatewayRequestHandler(
                                 env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                                   .confidentialAppLogout()
                                   .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
-                              logger.trace("should redirect to " + redirectTo)
+                              if (logger.isTraceEnabled) logger.trace("should redirect to " + redirectTo)
                               Redirect(redirectTo)
                                 .discardingCookies(env.removePrivateSessionCookies(req.theHost, descriptor, auth): _*)
                             }
@@ -838,7 +838,7 @@ class GatewayRequestHandler(
                                   .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
                               val actualRedirectUrl =
                                 logoutUrl.replace("${redirect}", URLEncoder.encode(redirectTo, "UTF-8"))
-                              logger.trace("should redirect to " + actualRedirectUrl)
+                              if (logger.isTraceEnabled) logger.trace("should redirect to " + actualRedirectUrl)
                               Redirect(actualRedirectUrl)
                                 .discardingCookies(env.removePrivateSessionCookies(req.theHost, descriptor, auth): _*)
                             }
@@ -901,7 +901,7 @@ class GatewayRequestHandler(
     actionBuilder { req =>
       val domain   = req.theDomain
       val protocol = req.theProtocol
-      logger.trace(
+      if (logger.isTraceEnabled) logger.trace(
         s"redirectToHttps from ${protocol}://$domain${req.relativeUri} to ${env.rootScheme}$domain${req.relativeUri}"
       )
       Redirect(s"${env.rootScheme}$domain${req.relativeUri}").withHeaders("otoroshi-redirect-to" -> "https")
@@ -911,7 +911,7 @@ class GatewayRequestHandler(
     actionBuilder { req =>
       val domain: String = env.redirections.foldLeft(req.theDomain)((domain, item) => domain.replace(item, env.domain))
       val protocol       = req.theProtocol
-      logger.debug(
+      if (logger.isDebugEnabled) logger.debug(
         s"redirectToMainDomain from $protocol://${req.theDomain}${req.relativeUri} to $protocol://$domain${req.relativeUri}"
       )
       Redirect(s"$protocol://$domain${req.relativeUri}")

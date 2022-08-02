@@ -342,14 +342,14 @@ case class LdapAuthModuleConfig(
           adminPassword.map(p => p).getOrElse(""),
           url
         )
-        LdapAuthModuleConfig.logger.debug(s"bind user for $username")
+        if (LdapAuthModuleConfig.logger.isDebugEnabled) LdapAuthModuleConfig.logger.debug(s"bind user for $username")
 
         //                          GROUP      TENANT       LIST[TEAM]    LIST[USER]
         val usersInGroup: Map[((String, TenantAccess), Seq[String]), Seq[String]] = groupFilters
           .groupBy(record => (record.group, record.tenant))
           .map { group => (group._1, group._2.map(_.team)) }
           .map { filter =>
-            LdapAuthModuleConfig.logger.debug(s"searching `$searchBase` with filter `${filter._1._1}` ")
+            if (LdapAuthModuleConfig.logger.isDebugEnabled) LdapAuthModuleConfig.logger.debug(s"searching `$searchBase` with filter `${filter._1._1}` ")
             val groupSearch = ctx.search(searchBase, filter._1._1, getDefaultSearchControls())
 
             val uids: Seq[String] = if (groupSearch.hasMore) {
@@ -367,10 +367,10 @@ case class LdapAuthModuleConfig(
             (filter, uids)
           }
 
-        LdapAuthModuleConfig.logger.debug(
+        if (LdapAuthModuleConfig.logger.isDebugEnabled) LdapAuthModuleConfig.logger.debug(
           s"found ${usersInGroup.flatMap(_._2).size} users in group : ${usersInGroup.mkString(", ")}"
         )
-        LdapAuthModuleConfig.logger.debug(
+        if (LdapAuthModuleConfig.logger.isDebugEnabled) LdapAuthModuleConfig.logger.debug(
           s"searching user in ${userBase.map(_ + ",").getOrElse("") + searchBase} with filter ${searchFilter.replace("${username}", username)}"
         )
         val res                                     = ctx.search(
@@ -381,13 +381,13 @@ case class LdapAuthModuleConfig(
         val boundUser: Either[String, LdapAuthUser] = if (res.hasMore) {
           val item = res.next()
           val dn   = item.getNameInNamespace
-          LdapAuthModuleConfig.logger.debug(s"found user with dn `$dn`")
+          if (LdapAuthModuleConfig.logger.isDebugEnabled) LdapAuthModuleConfig.logger.debug(s"found user with dn `$dn`")
 
           val userGroup = usersInGroup
             .find(group => group._2.exists(g => g.contains(dn)))
 
           if (groupFilters.isEmpty) {
-            LdapAuthModuleConfig.logger.debug(s"none groups defined - user found anyway")
+            if (LdapAuthModuleConfig.logger.isDebugEnabled) LdapAuthModuleConfig.logger.debug(s"none groups defined - user found anyway")
             val attrs = item.getAttributes
 
             try {
@@ -452,12 +452,12 @@ case class LdapAuthModuleConfig(
             } catch {
               case _: ServiceUnavailableException | _: CommunicationException => Left(s"Communication error")
               case e: Throwable                                               =>
-                LdapAuthModuleConfig.logger.debug(s"bind failed", e)
+                if (LdapAuthModuleConfig.logger.isDebugEnabled) LdapAuthModuleConfig.logger.debug(s"bind failed", e)
                 Left(s"bind failed ${e.getMessage}")
             }
           } else if (userGroup.isDefined) {
             val group = userGroup.get
-            LdapAuthModuleConfig.logger.debug(s"user found in ${group._1} group")
+            if (LdapAuthModuleConfig.logger.isDebugEnabled) LdapAuthModuleConfig.logger.debug(s"user found in ${group._1} group")
             val attrs = item.getAttributes
 
             try {
@@ -530,15 +530,15 @@ case class LdapAuthModuleConfig(
             } catch {
               case _: ServiceUnavailableException | _: CommunicationException => Left(s"Communication error")
               case e: Throwable                                               =>
-                LdapAuthModuleConfig.logger.debug(s"bind failed", e)
+                if (LdapAuthModuleConfig.logger.isDebugEnabled) LdapAuthModuleConfig.logger.debug(s"bind failed", e)
                 Left(s"bind failed ${e.getMessage}")
             }
           } else {
-            LdapAuthModuleConfig.logger.debug(s"user not found in groups")
+            if (LdapAuthModuleConfig.logger.isDebugEnabled) LdapAuthModuleConfig.logger.debug(s"user not found in groups")
             Left(s"user not found in group")
           }
         } else {
-          LdapAuthModuleConfig.logger.debug(s"no user found")
+          if (LdapAuthModuleConfig.logger.isDebugEnabled) LdapAuthModuleConfig.logger.debug(s"no user found")
           Left(s"no user found")
         }
         res.close()
@@ -548,7 +548,7 @@ case class LdapAuthModuleConfig(
         case _: CommunicationException | _: ServiceUnavailableException =>
           _bindUser(urls.tail, username, password)
         case e: Throwable =>
-          LdapAuthModuleConfig.logger.debug(s"error on LDAP searching method", e)
+          if (LdapAuthModuleConfig.logger.isDebugEnabled) LdapAuthModuleConfig.logger.debug(s"error on LDAP searching method", e)
           Left(s"error on LDAP searching method ${e.getMessage}")
       }
     }

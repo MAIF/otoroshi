@@ -343,7 +343,7 @@ class MailgunMailer(env: Env, config: GlobalConfig, settings: MailgunSettings) e
       )
       .map(_.ignore()(env.otoroshiMaterializer))
     fu.andThen {
-      case Success(res) => logger.debug("Alert email sent")
+      case Success(res) => if (logger.isDebugEnabled) logger.debug("Alert email sent")
       case Failure(e)   => logger.error("Error while sending alert email", e)
     }.fast
       .map(_ => ())
