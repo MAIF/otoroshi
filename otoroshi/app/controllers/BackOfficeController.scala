@@ -22,6 +22,7 @@ import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models.RightsChecker.SuperAdminOnly
 import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId, _}
 import otoroshi.next.models.{GraphQLFormats, NgRoute, NgService}
+import otoroshi.next.plugins.GraphQLBackend
 import otoroshi.security._
 import otoroshi.ssl._
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
@@ -1774,8 +1775,7 @@ class BackOfficeController(
     sangria.parser.QueryParser.parse(schema) match {
       case scala.util.Failure(exception)   => BadRequest(Json.obj("error" -> exception.getMessage)).future
       case scala.util.Success(astDocument) =>
-        val generatedSchema = sangria.schema.Schema.buildFromAst(astDocument)
-        val res             = GraphQLFormats.astDocumentToJson(generatedSchema)
+        val res             = GraphQLFormats.astDocumentToJson(astDocument)
 
         Ok(Json.obj("types" -> res)).future
     }

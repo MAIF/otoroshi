@@ -16,29 +16,14 @@ import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{JsonPathUtils, JsonPathValidator, TypedMap}
 import play.api.libs.json._
 import play.api.libs.ws.WSResponse
+import otoroshi.utils.JsonMarshaller._
+import sangria.ast
 import sangria.ast._
 import sangria.execution.deferred.DeferredResolver
 import sangria.execution.{ExceptionHandler, Executor, HandledException, QueryReducer}
-import sangria.marshalling.playJson._
 import sangria.parser.QueryParser
-import sangria.schema.{
-  Action,
-  Argument,
-  AstDirectiveContext,
-  AstSchemaBuilder,
-  BooleanType,
-  Directive,
-  DirectiveResolver,
-  FieldResolver,
-  InstanceCheck,
-  IntType,
-  IntrospectionSchemaBuilder,
-  ListInputType,
-  OptionInputType,
-  ResolverBasedAstSchemaBuilder,
-  Schema,
-  StringType
-}
+import sangria.schema.{Action, AdditionalTypes, AnyFieldResolver, Argument, AstDirectiveContext, AstSchemaBuilder, AstSchemaMaterializer, BooleanType, DefaultAstSchemaBuilder, Directive, DirectiveResolver, FieldResolver, InstanceCheck, IntType, IntrospectionSchemaBuilder, ListInputType, OptionInputType, ResolverBasedAstSchemaBuilder, ScalarType, Schema, StringType}
+import sangria.util.tag.@@
 import sangria.validation.{QueryValidator, ValueCoercionViolation, Violation}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration, MILLISECONDS}
@@ -259,7 +244,6 @@ class GraphQLBackend extends NgBackendCall {
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
 
   case object MapCoercionViolation  extends ValueCoercionViolation("Exception : map value can't be parsed")
-  case object JsonCoercionViolation extends ValueCoercionViolation("Not valid JSON")
 
   val exceptionHandler = ExceptionHandler(
     onException = { case (_, throwable) =>
@@ -270,9 +254,9 @@ class GraphQLBackend extends NgBackendCall {
   case object TooComplexQueryError extends Exception("Query is too expensive.")
 
   private def execute(
-      astDocument: Document,
+      schema: Schema[Unit, Any],
       query: String,
-      builder: ResolverBasedAstSchemaBuilder[Unit],
+      builder: DefaultAstSchemaBuilder[Unit],
       initialData: JsObject,
       maxDepth: Int,
       variables: JsObject
@@ -287,7 +271,7 @@ class GraphQLBackend extends NgBackendCall {
       case Success(queryAst) =>
         Executor
           .execute(
-            schema = Schema.buildFromAst(astDocument, builder.validateSchemaWithException(astDocument)),
+            schema = schema,
             queryAst = queryAst,
             root = initialData,
             variables = variables,
@@ -297,15 +281,13 @@ class GraphQLBackend extends NgBackendCall {
               QueryReducer.rejectComplexQueries[Unit](4000, (_, _) => TooComplexQueryError)
             )
           )
-          .map(res => {
-            val response = Json.toJson(res)
-
+          .map { res =>
             bodyResponse(
               200,
               Map("Content-Type" -> "application/json"),
-              response.stringify.byteString.chunks(16 * 1024)
+              res.stringify.byteString.chunks(16 * 1024)
             )
-          })
+          }
           .recoverWith { case e: Exception =>
             bodyResponse(
               200,
@@ -363,6 +345,105 @@ class GraphQLBackend extends NgBackendCall {
 
   val arguments =
     urlArg :: methodArg :: timeoutArg :: headersArg :: queryArg :: responsePathArg :: responseFilterArg :: limitArg :: offsetArg :: paginateArg :: Nil
+
+  val permissionDirective      = Directive(
+    "permission",
+    arguments = valueArg :: unauthorizedValueArg :: Nil,
+    locations = directivesLocations
+  )
+  val permissionsDirective     = Directive(
+    "allpermissions",
+    arguments = valuesArg :: unauthorizedValueArg :: Nil,
+    locations = directivesLocations
+  )
+  val onePermissionOfDirective = Directive(
+    "onePermissionsOf",
+    arguments = valuesArg :: unauthorizedValueArg :: Nil,
+    locations = directivesLocations
+  )
+  val authorizeDirective       = Directive(
+    "authorize",
+    arguments = pathArg :: valueArg :: unauthorizedValueArg :: Nil,
+    locations = directivesLocations
+  )
+  val httpRestDirective        = Directive("rest", arguments = arguments, locations = directivesLocations)
+  val graphQLDirective         = Directive("graphql", arguments = arguments, locations = directivesLocations)
+  // val OtoroshiRouteDirective = Directive("otoroshi", arguments = arguments, locations = directivesLocations)
+  val soapDirective            = Directive(
+    "soap",
+    arguments = soapEnvelopeArg :: soapUrlArg :: soapActionArg ::
+      soapPreservereQueryArg ::
+      soapCharsetArg ::
+      soapConvertRequestBodyToXmlArg ::
+      soapJqRequestFilterArg ::
+      soapJqResponseFilterArg :: Nil,
+    locations = directivesLocations
+  )
+  val jsonDirective            = Directive(
+    "json",
+    arguments = jsonDataArg :: jsonPathArg :: paginateArg :: Nil,
+    locations = directivesLocations
+  )
+  val mockDirective            = Directive(
+    "mock",
+    arguments = urlArg :: Nil,
+    locations = directivesLocations
+  )
+
+  case object JsonCoercionViolation extends ValueCoercionViolation("Not valid JSON")
+  case object StringCoercionViolation extends ValueCoercionViolation("Not valid String")
+
+  val JsonType: ScalarType[JsValue] = ScalarType[JsValue]("Json",
+    description = Some("Raw JSON value"),
+    coerceOutput = (value, _) => value,
+    coerceUserInput = {
+      case v: String ⇒ Right(JsString(v))
+      case v: Boolean ⇒ Right(JsBoolean(v))
+      case v: Int ⇒ Right(JsNumber(v))
+      case v: Long ⇒ Right(JsNumber(v))
+      case v: Float ⇒ Right(JsNumber(v))
+      case v: Double ⇒ Right(JsNumber(v))
+      case v: BigInt ⇒ Right(JsNumber(v.intValue()))
+      case v: BigDecimal ⇒ Right(JsNumber(v))
+      case v: JsValue ⇒ Right(v)
+    },
+    coerceInput = {
+      case ast.StringValue(jsonStr, _, _, _, _) =>
+        Right(jsonStr.parseJson)
+      case _ =>
+        Left(JsonCoercionViolation)
+    }
+  )
+
+  def builder(config: GraphQLBackendConfig,
+              ctx: NgbBackendCallContext,
+              delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]],
+              body: JsObject)
+             (implicit env: Env, ec: ExecutionContext, mat: Materializer) = AstSchemaBuilder.resolverBased[Unit](
+    AdditionalTypes(JsonType),
+    InstanceCheck.field[Unit, JsValue],
+    DirectiveResolver(permissionDirective, resolve = c => permissionDirectiveResolver(c, config, ctx)),
+    DirectiveResolver(permissionsDirective, resolve = c => permissionsDirectiveResolver(c, config, ctx)),
+    DirectiveResolver(
+      onePermissionOfDirective,
+      resolve = c => onePermissionOfDirectiveResolver(c, config, ctx)
+    ),
+    DirectiveResolver(authorizeDirective, resolve = c => authorizeDirectiveResolver(c, ctx)),
+    DirectiveResolver(httpRestDirective, resolve = httpRestDirectiveResolver),
+    DirectiveResolver(
+      graphQLDirective,
+      resolve = c => graphQLDirectiveResolver(c, c.arg(queryArg).getOrElse("{}"), ctx, delegates)
+    ),
+    DirectiveResolver(soapDirective, resolve = c => soapDirectiveResolver(c, ctx, delegates, body)),
+    /*DirectiveResolver(OtoroshiRouteDirective, resolve = OtoroshiRouteDirectiveResolver),*/
+    DirectiveResolver(jsonDirective, resolve = c => jsonDirectiveResolver(c, config)),
+    DirectiveResolver(
+      mockDirective,
+      resolve =
+        c => mockDirectiveResolver(c, ctx.route.plugins.getPluginByClass[MockResponses].map(_.config.raw))
+    ),
+    AnyFieldResolver.defaultInput[Unit, JsValue]
+  )
 
   def extractLimit(c: AstDirectiveContext[Unit], itemsLength: Option[Int]) = {
     val queryParameter              = c.ctx.argOpt(limitArg)
@@ -519,7 +600,6 @@ class GraphQLBackend extends NgBackendCall {
                 case JsBoolean(v) => v
                 case v            => v.toString()
               }
-
             case v => v
           }
         } else {
@@ -747,10 +827,8 @@ class GraphQLBackend extends NgBackendCall {
       }
     }
 
-  def manageAutoPagination(document: Document): Document = {
-    val generatedSchema = Schema.buildFromAst(document).toAst
-
-    generatedSchema.copy(definitions = generatedSchema.definitions.map {
+  def manageAutoPagination(document: Document, builder: ResolverBasedAstSchemaBuilder[Unit]): Schema[Unit, Any] = {
+    val patchDoc = document.copy(definitions = document.definitions.map {
       case e: TypeSystemDefinition =>
         e match {
           case definition: TypeDefinition =>
@@ -828,6 +906,30 @@ class GraphQLBackend extends NgBackendCall {
         }
       case t                       => t
     })
+
+    AstSchemaMaterializer.buildSchema(patchDoc, builder)
+  }
+
+  def jsonResponse(status: Int, body: JsValue) =
+    bodyResponse(
+      status,
+      Map("Content-Type" -> "application/json"),
+      Source.single(body.stringify.byteString)
+    )
+
+  def introspectionResponse(config: GraphQLBackendConfig, builder: ResolverBasedAstSchemaBuilder[Unit])
+                           (implicit ec: ExecutionContext) = {
+    QueryParser.parse(config.schema) match {
+      case Failure(exception)   => jsonResponse(400, Json.obj("error" -> exception.getMessage))
+        .future
+      case Success(astDocument) =>
+        Executor
+          .execute(Schema.buildFromAst(astDocument, builder), sangria.introspection.introspectionQuery)
+          .map(res => {
+            val response = Json.toJson(res)
+            jsonResponse(200, response)
+          })
+    }
   }
 
   override def callBackend(
@@ -838,132 +940,35 @@ class GraphQLBackend extends NgBackendCall {
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+
     val config = ctx
       .cachedConfig(internalName)(GraphQLBackendConfig.format)
       .getOrElse(GraphQLBackendConfig(schema = DEFAULT_GRAPHQL_SCHEMA))
 
     bodyToJson(ctx.request.body).flatMap(body => {
       val jsonBody = (body \ "json").as[JsObject]
-      if ((jsonBody \ "operationName").asOpt[String].contains("IntrospectionQuery")) {
+      val customBuilder: ResolverBasedAstSchemaBuilder[Unit] = builder(config, ctx, delegates, body)
+      if ((jsonBody \ "operationName").asOpt[String].contains("IntrospectionQuery"))
+        introspectionResponse(config, customBuilder)
+      else {
         QueryParser.parse(config.schema) match {
-          case Failure(exception)   =>
-            bodyResponse(
-              400,
-              Map("Content-Type" -> "application/json"),
-              Source.single(Json.obj("error" -> exception.getMessage).stringify.byteString)
-            ).future
-          case Success(astDocument) =>
-            Executor
-              .execute(Schema.buildFromAst(astDocument), sangria.introspection.introspectionQuery)
-              .map(res => {
-                val response = Json.toJson(res)
-
-                bodyResponse(
-                  200,
-                  Map("Content-Type" -> "application/json"),
-                  Source.single(response.stringify.byteString)
-                )
-              })
-        }
-
-      } else {
-        QueryParser.parse(config.schema) match {
-          case Failure(exception)             =>
-            bodyResponse(
-              400,
-              Map("Content-Type" -> "application/json"),
-              Source.single(Json.obj("error" -> exception.getMessage).stringify.byteString)
-            ).future
+          case Failure(exception)             => jsonResponse(400, Json.obj("error" -> exception.getMessage))
+            .future
           case Success(astDocument: Document) =>
-            val permissionDirective      = Directive(
-              "permission",
-              arguments = valueArg :: unauthorizedValueArg :: Nil,
-              locations = directivesLocations
-            )
-            val permissionsDirective     = Directive(
-              "allpermissions",
-              arguments = valuesArg :: unauthorizedValueArg :: Nil,
-              locations = directivesLocations
-            )
-            val onePermissionOfDirective = Directive(
-              "onePermissionsOf",
-              arguments = valuesArg :: unauthorizedValueArg :: Nil,
-              locations = directivesLocations
-            )
-            val authorizeDirective       = Directive(
-              "authorize",
-              arguments = pathArg :: valueArg :: unauthorizedValueArg :: Nil,
-              locations = directivesLocations
-            )
-            val httpRestDirective        = Directive("rest", arguments = arguments, locations = directivesLocations)
-            val graphQLDirective         = Directive("graphql", arguments = arguments, locations = directivesLocations)
-            // val OtoroshiRouteDirective = Directive("otoroshi", arguments = arguments, locations = directivesLocations)
-            val soapDirective            = Directive(
-              "soap",
-              arguments = soapEnvelopeArg :: soapUrlArg :: soapActionArg ::
-                soapPreservereQueryArg ::
-                soapCharsetArg ::
-                soapConvertRequestBodyToXmlArg ::
-                soapJqRequestFilterArg ::
-                soapJqResponseFilterArg :: Nil,
-              locations = directivesLocations
-            )
-            val jsonDirective            = Directive(
-              "json",
-              arguments = jsonDataArg :: jsonPathArg :: paginateArg :: Nil,
-              locations = directivesLocations
-            )
-            val mockDirective            = Directive(
-              "mock",
-              arguments = urlArg :: Nil,
-              locations = directivesLocations
-            )
-
-            val builder: ResolverBasedAstSchemaBuilder[Unit] = AstSchemaBuilder.resolverBased[Unit](
-              InstanceCheck.field[Unit, JsValue],
-              DirectiveResolver(permissionDirective, resolve = c => permissionDirectiveResolver(c, config, ctx)),
-              DirectiveResolver(permissionsDirective, resolve = c => permissionsDirectiveResolver(c, config, ctx)),
-              DirectiveResolver(
-                onePermissionOfDirective,
-                resolve = c => onePermissionOfDirectiveResolver(c, config, ctx)
-              ),
-              DirectiveResolver(authorizeDirective, resolve = c => authorizeDirectiveResolver(c, ctx)),
-              DirectiveResolver(httpRestDirective, resolve = httpRestDirectiveResolver),
-              DirectiveResolver(
-                graphQLDirective,
-                resolve = c => graphQLDirectiveResolver(c, c.arg(queryArg).getOrElse("{}"), ctx, delegates)
-              ),
-              DirectiveResolver(soapDirective, resolve = c => soapDirectiveResolver(c, ctx, delegates, body)),
-              /*DirectiveResolver(OtoroshiRouteDirective, resolve = OtoroshiRouteDirectiveResolver),*/
-              DirectiveResolver(jsonDirective, resolve = c => jsonDirectiveResolver(c, config)),
-              DirectiveResolver(
-                mockDirective,
-                resolve =
-                  c => mockDirectiveResolver(c, ctx.route.plugins.getPluginByClass[MockResponses].map(_.config.raw))
-              ),
-              FieldResolver.defaultInput[Unit, JsValue]
-            )
-
-            val document = manageAutoPagination(astDocument)
-
-            val variables = (jsonBody \ "variables").asOpt[JsValue]
-
             (jsonBody \ "query").asOpt[String] match {
               case Some(value) =>
                 execute(
-                  document,
+                  schema = manageAutoPagination(astDocument, customBuilder),
                   query = value,
-                  builder,
-                  config.initialData.map(_.as[JsObject]).getOrElse(JsObject.empty),
-                  config.maxDepth,
-                  variables.getOrElse(Json.obj()).as[JsObject]
+                  builder = customBuilder,
+                  initialData = config.initialData.map(_.as[JsObject]).getOrElse(JsObject.empty),
+                  maxDepth = config.maxDepth,
+                  variables = (jsonBody \ "variables").asOpt[JsValue].getOrElse(Json.obj()).as[JsObject]
                 )
-              case None        =>
-                bodyResponse(
-                  400,
-                  Map("Content-Type" -> "application/json"),
-                  Source.single(Json.obj("error" -> "query field missing").stringify.byteString)
-                ).future
+              case None        => jsonResponse(
+                400,
+                Json.obj("error" -> "query field missing"))
+                .future
             }
         }
       }
@@ -1059,7 +1064,7 @@ class GraphQLProxy extends NgBackendCall {
   )(implicit env: Env, ec: ExecutionContext): Future[Either[Seq[String], JsValue]] = {
     QueryParser.parse(query) match {
       case Failure(error)    => Seq(s"Bad query format: ${error.getMessage}").leftf[JsValue]
-      case Success(queryAst) => {
+      case Success(queryAst) =>
         Executor
           .execute(
             schema = schema,
@@ -1084,15 +1089,11 @@ class GraphQLProxy extends NgBackendCall {
               )
             )
           )
-          .map { res =>
-            val response = Json.toJson(res)
-            response.right[Seq[String]]
-          }
+          .map((res: JsValue) => Right(res))
           .recover {
             case ViolationsException(errors) => errors.left[JsValue]
             case e: Throwable                => Seq(e.getMessage).left[JsValue]
           }
-      }
     }
   }
 
