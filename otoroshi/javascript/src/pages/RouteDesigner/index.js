@@ -389,11 +389,11 @@ const Manager = ({ query, entity, ...props }) => {
   );
 };
 
-const RoutesView = () => {
+const RoutesView = ({ history }) => {
   const [creation, setCreation] = useState(true)
 
   return <>
-    {creation && <RouteWizard hide={() => setCreation(false)} />}
+    {creation && <RouteWizard hide={() => setCreation(false)} history={history} />}
     <Routes injectTopBar={
       <button onClick={() => setCreation(true)}
         className='btn btn-sm btn-save my-auto ms-1'
@@ -469,7 +469,7 @@ export default (props) => {
           />
         );
       })}
-      <Route component={RoutesView} />
+      <Route component={() => <RoutesView history={history} />} />
     </Switch>
   );
 };

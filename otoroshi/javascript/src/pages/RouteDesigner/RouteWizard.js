@@ -67,6 +67,9 @@ const FrontendStep = ({ state, onChange }) => <>
 </>
 
 const BackendStep = ({ state, onChange, onError, error }) => {
+    useEffect(() => {
+        checkChange("")
+    }, [])
     const checkChange = e => {
         try {
             if (!e.includes("://"))
@@ -200,14 +203,33 @@ const ProcessStep = ({ state, history }) => {
             })
     }, [])
 
+    const pluginsLength = PLUGINS[state.route.kind].length
+
+    const timers = PLUGINS[state.route.kind].reduce((acc, _, i) => {
+        if (i === 0)
+            return [100 + Math.floor(Math.random() * 300)]
+        return [
+            ...acc,
+            acc[i - 1] + 100 + Math.floor(Math.random() * 300)
+        ]
+    }, [])
+
     return <>
+        {PLUGINS[state.route.kind]
+            .map((plugin, i) => <LoaderItem
+                timeout={timers[i]}
+                text={`Configure ${plugin.split(".")
+                    .slice(-1)[0]
+                    .replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, str => str.toUpperCase())}`} key={plugin} />)}
         <Loader
             loading={loading}
-            minLoaderTime={1500}
+            minLoaderTime={pluginsLength === 0 ? 1500 : 100 + timers[timers.length - 1]}
             loadingChildren={<h3 style={{ textAlign: 'center' }} className="mt-3">Creation in process ...</h3>}>
-            <button className='btn btn-save mx-auto' style={{ borderRadius: '50%', width: '42px', height: '42px' }}>
+            {pluginsLength === 0 && <button className='btn btn-save mx-auto'
+                style={{ borderRadius: '50%', width: '42px', height: '42px' }}>
                 <i className='fas fa-check' />
-            </button>
+            </button>}
             <div className="mt-3" style={{
                 display: 'flex',
                 justifyContent: 'center',
@@ -231,6 +253,37 @@ const ProcessStep = ({ state, history }) => {
             </div>
         </Loader>
     </>
+}
+
+const LoaderItem = ({ text, timeout }) => {
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timeout = setTimeout(() => setLoading(false), timeout)
+
+        return () => timeout
+    }, [])
+
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '6px' }}>
+        <Loader loading={loading} minLoaderTime={timeout} >
+            <button className='btn btn-save mx-auto'
+                style={{
+                    borderRadius: '50%', width: '32px', height: '32px', display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                <i className='fas fa-check' />
+            </button>
+        </Loader>
+        <div style={{
+            flex: 1,
+            marginLeft: '12px',
+            color: loading ? "#eee" : "#fff",
+            fontWeight: loading ? 'normal' : 'bold'
+        }}>
+            {text}
+        </div>
+    </div >
 }
 
 export class RouteWizard extends React.Component {
@@ -286,8 +339,8 @@ export class RouteWizard extends React.Component {
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
                     <label style={{ fontSize: '1.15rem' }}>
                         <i className='fas fa-times me-3' onClick={() => this.props.hide()} style={{ cursor: 'pointer' }} />
-                        <span>{`Create a new route (Step ${step <= steps ? step : steps} of ${steps})`}</span>
-                    </label>
+                        <span>{`Create a new route(Step ${step <= steps ? step : steps} of ${steps})`}</span>
+                    </label >
 
                     <div className="wizard-content">
                         {step === 1 && <RouteNameStep state={this.state} onChange={n => this.onRouteFieldChange('name', n)} />}
@@ -313,8 +366,8 @@ export class RouteWizard extends React.Component {
                             </button>
                         </div>}
                     </div>
-                </div>
-            </div>
-        </div>
+                </div >
+            </div >
+        </div >
     }
 }
