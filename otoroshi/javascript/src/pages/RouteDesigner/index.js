@@ -389,6 +389,20 @@ const Manager = ({ query, entity, ...props }) => {
   );
 };
 
+const RoutesView = () => {
+  const [creation, setCreation] = useState(true)
+
+  return <>
+    {creation && <RouteWizard hide={() => setCreation(false)} />}
+    <Routes injectTopBar={
+      <button onClick={() => setCreation(true)}
+        className='btn btn-sm btn-save my-auto ms-1'
+        style={{ backgroundColor: '#f9b000', borderColor: '#f9b000' }}>
+        Create
+      </button>} />
+  </>
+}
+
 export default (props) => {
   const match = useRouteMatch();
   const history = useHistory()
@@ -433,7 +447,6 @@ export default (props) => {
         { path: `${match.url}/:routeId/apikeys`, component: ServiceApiKeysPage },
         { path: `${match.url}/:routeId/stats`, component: ServiceLiveStatsPage },
         { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
-        { path: `${match.url}/wizard`, component: RouteWizard },
         {
           path: `${match.url}/:routeId`,
           component: () => <Manager query={query} {...props} entity={entity} />,
@@ -456,12 +469,7 @@ export default (props) => {
           />
         );
       })}
-      <Route component={() => <Routes injectTopBar={
-        <Link to="/routes/wizard"
-          className='btn btn-sm btn-save my-auto ms-1'
-          style={{ backgroundColor: '#f9b000', borderColor: '#f9b000' }}>
-          Create
-        </Link>} />} />
+      <Route component={RoutesView} />
     </Switch>
   );
 };

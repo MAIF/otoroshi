@@ -281,11 +281,11 @@ export class RouteWizard extends React.Component {
     render() {
         const { steps, step, error } = this.state
 
-        return (
-            <div className='wizard-container'>
+        return <div className="wizard">
+            <div className="wizard-container">
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
                     <label style={{ fontSize: '1.15rem' }}>
-                        <i className='fas fa-times me-3' onClick={() => this.props.history.goBack()} style={{ cursor: 'pointer' }} />
+                        <i className='fas fa-times me-3' onClick={() => this.props.hide()} style={{ cursor: 'pointer' }} />
                         <span>{`Create a new route (Step ${step <= steps ? step : steps} of ${steps})`}</span>
                     </label>
 
@@ -314,9 +314,7 @@ export class RouteWizard extends React.Component {
                         </div>}
                     </div>
                 </div>
-                <div style={{ flex: 1, borderBottom: "4px solid #f9b000" }}>
-                </div>
             </div>
-        )
+        </div>
     }
 }

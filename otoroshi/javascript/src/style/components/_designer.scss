@@ -605,14 +605,27 @@
     }
 }
 
+.wizard {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10000;
+    background-color: #494948a6;
+}
+
 .wizard-container {
     position: relative;
     background: rgb(73, 73, 72);
     display: flex;
     flex-direction: column;
     margin: auto;
+    margin-top: 5em;
     overflow: hidden;
     max-width: 50vw;
+    border-radius: 4px;
+    box-shadow: 0px 0 2px 1px #f9b000c2;
 }
 
 .wizard-container h3 {

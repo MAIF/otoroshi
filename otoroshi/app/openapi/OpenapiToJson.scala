@@ -96,7 +96,6 @@ class OpenapiToJson(spec: JsValue) {
                       val field = (rawField \ "$ref").as[String]
                       if (field != nullType) {
                         val obj = getRef(data, field)
-                        println(key, field, obj)
                         (obj \ "oneOf").asOpt[Seq[JsValue]] match {
                           case Some(arr) =>
                             arr.map { f =>
