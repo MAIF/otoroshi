@@ -2033,8 +2033,6 @@ class EditView extends React.Component {
 
     const overridePlugin = PLUGINS[id];
 
-    console.log(formSchema)
-
     if (overridePlugin) {
       formSchema.plugin = overridePlugin(formSchema.plugin, this.props.showAdvancedDesignerView);
     }

@@ -1076,7 +1076,7 @@ class OpenApiGenerator(
       .distinct
 
     entities
-      .filter(f => usedEntities.contains(f.getName))
+      // .filter(f => usedEntities.contains(f.getName))
       .foreach { clazz =>
       if (
         !config.banned.contains(clazz.getName) && !config.banned
@@ -1096,40 +1096,8 @@ class OpenApiGenerator(
     logger.debug(s"total found ${found.get() + resFound.get() + inFound
       .get()}, not found ${notFound.get() + resNotFound.get() + inNotFound.get()}")
 
-    val spec = Json.obj(
-      "openapi"      -> openApiVersion,
-      "info"         -> Json.obj(
-        "title"       -> "Otoroshi Admin API",
-        "description" -> "Admin API of the Otoroshi reverse proxy",
-        "version"     -> "1.5.0-dev",
-        "contact"     -> Json.obj(
-          "name"  -> "Otoroshi Team",
-          "email" -> "oss@maif.fr"
-        ),
-        "license"     -> Json.obj(
-          "name" -> "Apache 2.0",
-          "url"  -> "http://www.apache.org/licenses/LICENSE-2.0.html"
-        )
-      ),
-      "externalDocs" -> Json.obj("url" -> "https://www.otoroshi.io", "description" -> "everything about otoroshi"),
-      "servers"      -> Json.arr(
-        Json.obj(
-          "url"         -> "http://otoroshi-api.oto.tools:8080",
-          "description" -> "your local otoroshi server"
-        )
-      ),
-      "tags"         -> tags,
-      "paths"        -> paths,
-      "components"   -> Json.obj(
-        "schemas"         -> JsObject(result),
-        "securitySchemes" -> Json.obj(
-          "otoroshi_auth" -> Json.obj(
-            "type"   -> "http",
-            "scheme" -> "basic"
-          )
-        )
-      )
-    )
+    // build spec with only used entities
+    val spec = getSpec(tags, paths, result.filter(p => usedEntities.contains(p._1)))
 
     var hasWritten = false
     if (write) {
@@ -1162,7 +1130,45 @@ class OpenApiGenerator(
       logger.debug("")
     }
 
-    (spec, hasWritten)
+    // return spec with full entities (cauz it used by other generators like FormsGenerator)
+    (getSpec(tags, paths, result), hasWritten)
+  }
+
+  def getSpec(tags: JsValue, paths: JsValue, schemas: TrieMap[String, JsValue]) = {
+    Json.obj(
+      "openapi"      -> openApiVersion,
+      "info"         -> Json.obj(
+        "title"       -> "Otoroshi Admin API",
+        "description" -> "Admin API of the Otoroshi reverse proxy",
+        "version"     -> "1.5.0-dev",
+        "contact"     -> Json.obj(
+          "name"  -> "Otoroshi Team",
+          "email" -> "oss@maif.fr"
+        ),
+        "license"     -> Json.obj(
+          "name" -> "Apache 2.0",
+          "url"  -> "http://www.apache.org/licenses/LICENSE-2.0.html"
+        )
+      ),
+      "externalDocs" -> Json.obj("url" -> "https://www.otoroshi.io", "description" -> "everything about otoroshi"),
+      "servers"      -> Json.arr(
+        Json.obj(
+          "url"         -> "http://otoroshi-api.oto.tools:8080",
+          "description" -> "your local otoroshi server"
+        )
+      ),
+      "tags"         -> tags,
+      "paths"        -> paths,
+      "components"   -> Json.obj(
+        "schemas"         -> JsObject(schemas),
+        "securitySchemes" -> Json.obj(
+          "otoroshi_auth" -> Json.obj(
+            "type"   -> "http",
+            "scheme" -> "basic"
+          )
+        )
+      )
+    )
   }
 
   def readOldSpec(oldSpecPath: String): Unit = {
