@@ -31,12 +31,12 @@ const RouteChooser = ({ state, onChange }) => <>
         gap: '10px',
     }}>
         {[
-            { kind: 'api', title: 'NEW API', text: 'Add all the plugins you need to expose an api' },
-            { kind: 'empty', title: 'EMPTY API', text: 'From scratch, no plugin added' },
-            { kind: 'mock', title: 'MOCK API', text: 'Build a mock API with Charlatan' },
-            { kind: 'graphql', title: 'GraphQL Schema', text: 'Start using GraphQL by creating your first schema' },
-            { kind: 'graphql-proxy', title: 'GRAPHQL API', text: 'Secure a GraphQL API with Otoroshi' },
-            { kind: 'webapp', title: 'WEBAPP', text: 'Add all the plugins you need to expose a webapp with authentication' },
+            { kind: 'empty', title: 'BLANK ROUTE', text: 'From scratch, no plugin added' },
+            { kind: 'api', title: 'REST API', text: 'Already setup secured rest api with api management' },
+            { kind: 'webapp', title: 'WEBAPP', text: 'Already setup web application with authentication' },
+            { kind: 'graphql-proxy', title: 'GRAPHQL API', text: 'Already setup grapqhl api with api management and validation' },
+            { kind: 'mock', title: 'QUICKSTART REST API', text: 'Already setup rest api with extended mocking capabilities' },
+            { kind: 'graphql', title: 'GRAPHQL COMPOSER API', text: 'Create a graphql api from scratch from existing sources' },
         ].map(({ kind, title, text }) => (
             <button className={`btn ${state.route.kind === kind ? 'btn-save' : 'btn-dark'} py-3 wizard-route-chooser`}
                 onClick={() => onChange(kind)}
@@ -107,18 +107,19 @@ const ProcessStep = ({ state, history }) => {
     const [loading, setLoading] = useState(true)
     const [createdRoute, setCreatedRoute] = useState({})
 
+    const API_PLUGINS = [
+        'cp:otoroshi.next.plugins.ForceHttpsTraffic',
+        'cp:otoroshi.next.plugins.Cors',
+        'cp:otoroshi.next.plugins.DisableHttp10',
+        'cp:otoroshi.next.plugins.ApikeyCalls',
+        'cp:otoroshi.next.plugins.OverrideHost',
+        'cp:otoroshi.next.plugins.XForwardedHeaders',
+        'cp:otoroshi.next.plugins.OtoroshiInfos',
+        'cp:otoroshi.next.plugins.SendOtoroshiHeadersBack',
+        'cp:otoroshi.next.plugins.OtoroshiChallenge'
+    ]
     const PLUGINS = {
-        api: [
-            'cp:otoroshi.next.plugins.ForceHttpsTraffic',
-            'cp:otoroshi.next.plugins.Cors',
-            'cp:otoroshi.next.plugins.DisableHttp10',
-            'cp:otoroshi.next.plugins.ApikeyCalls',
-            'cp:otoroshi.next.plugins.OverrideHost',
-            'cp:otoroshi.next.plugins.XForwardedHeaders',
-            'cp:otoroshi.next.plugins.OtoroshiInfos',
-            'cp:otoroshi.next.plugins.SendOtoroshiHeadersBack',
-            'cp:otoroshi.next.plugins.OtoroshiChallenge'
-        ],
+        api: API_PLUGINS,
         webapp: [
             'cp:otoroshi.next.plugins.ForceHttpsTraffic',
             'cp:otoroshi.next.plugins.BuildMode',
@@ -135,9 +136,11 @@ const ProcessStep = ({ state, history }) => {
             'cp:otoroshi.next.plugins.GraphQLProxy'
         ],
         graphql: [
+            ...API_PLUGINS,
             'cp:otoroshi.next.plugins.GraphQLBackend'
         ],
         mock: [
+            ...API_PLUGINS,
             'cp:otoroshi.next.plugins.MockResponses'
         ]
     }
