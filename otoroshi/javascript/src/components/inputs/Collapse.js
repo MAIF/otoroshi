@@ -25,8 +25,8 @@ export class Collapse extends Component {
         <div data-screenshot={this.props.dataScreenshot || ''}>
           <hr />
           <div className="row mb-3">
-            <label className="col-sm-2" />
-            <div className="col-sm-10" onClick={this.toggle} role="button">
+          <label className={this.props.noLeftColumn ? "col-sm-0": "col-sm-2"} />
+            <div className={this.props.noLeftColumn ? "col-sm-12": "col-sm-10"} onClick={this.toggle} role="button">
               <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>
                 {this.props.label}
               </span>
@@ -43,8 +43,8 @@ export class Collapse extends Component {
         <div data-screenshot={this.props.dataScreenshot || ''}>
           <hr />
           <div className="row mb-3">
-            <label className="col-sm-2" />
-            <div className="col-sm-10" onClick={this.toggle} role="button">
+            <label className={this.props.noLeftColumn ? "col-sm-0": "col-sm-2"} />
+            <div className={this.props.noLeftColumn ? "col-sm-12": "col-sm-10"} onClick={this.toggle} role="button">
               <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>
                 {this.props.label}
               </span>

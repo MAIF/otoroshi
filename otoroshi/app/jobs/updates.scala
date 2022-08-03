@@ -66,7 +66,7 @@ class SoftwareUpdatesJobs extends Job {
               val latestVersion      = Version(latestVersionRaw)
               val latestVersionClean = (body \ "version_number").as[Double]
               val isAfter            = latestVersion.isAfter(version)
-              logger.debug(
+              if (logger.isDebugEnabled) logger.debug(
                 s"current version is ${version.raw}, latest version is ${latestVersion.raw}. Should update: ${isAfter}"
               )
               SoftwareUpdatesJobs.latestVersionHolder.set(

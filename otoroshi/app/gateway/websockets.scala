@@ -121,7 +121,7 @@ class WebSocketHandler()(implicit env: Env) {
     val start            = attrs.get(otoroshi.plugins.Keys.RequestStartKey).get
     val requestTimestamp = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
 
-    logger.trace("[WEBSOCKET] Call backend !!!")
+    if (logger.isTraceEnabled) logger.trace("[WEBSOCKET] Call backend !!!")
     val stateValue         = IdGenerator.extendedToken(128)
     val stateToken: String = descriptor.secComVersion match {
       case SecComVersion.V1 => stateValue
@@ -167,7 +167,7 @@ class WebSocketHandler()(implicit env: Env) {
     val promise            = Promise[ProxyDone]
 
     val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
-    logger.trace(s"Claim is : $claim")
+    if (logger.isTraceEnabled) logger.trace(s"Claim is : $claim")
     attrs.put(otoroshi.plugins.Keys.OtoTokenKey -> claim.payload)
 
     //val stateRequestHeaderName =
@@ -197,7 +197,7 @@ class WebSocketHandler()(implicit env: Env) {
       jwtInjection = jwtInjection,
       attrs = attrs
     )
-    logger.trace(
+    if (logger.isTraceEnabled) logger.trace(
       s"[WEBSOCKET] calling '$url' with headers \n ${headersIn.map(_.toString()) mkString "\n"}"
     )
     val overhead                         = System.currentTimeMillis() - start
@@ -691,7 +691,7 @@ object WebSocketProxyActor {
     )
     Flow.lazyFutureFlow[PlayWSMessage, PlayWSMessage, NotUsed] { () =>
       connected.flatMap { r =>
-        logger.trace(
+        if (logger.isTraceEnabled) logger.trace(
           s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"
         )
         r match {
@@ -757,7 +757,7 @@ class WebSocketProxyActor(
 
   override def preStart() =
     try {
-      logger.trace("[WEBSOCKET] initializing client call ...")
+      if (logger.isTraceEnabled) logger.trace("[WEBSOCKET] initializing client call ...")
       val _headers                  = headers.toList.filterNot(t => avoid.contains(t._1)).flatMap {
         case (key, value) if key.toLowerCase == "cookie"     =>
           Try(value.split(";").toSeq.map(_.trim).filterNot(_.isEmpty).map { cookie =>
@@ -786,16 +786,16 @@ class WebSocketProxyActor(
           .fromSinkAndSourceMat(
             Sink.foreach[akka.http.scaladsl.model.ws.Message] {
               case akka.http.scaladsl.model.ws.TextMessage.Strict(text)       =>
-                logger.debug(s"[WEBSOCKET] text message from target")
+                if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] text message from target")
                 out ! PlayWSTextMessage(text)
               case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
-                logger.debug(s"[WEBSOCKET] streamed text message from target")
+                if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] streamed text message from target")
                 source.runFold("")((concat, str) => concat + str).map(text => out ! PlayWSTextMessage(text))
               case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     =>
-                logger.debug(s"[WEBSOCKET] binary message from target")
+                if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from target")
                 out ! PlayWSBinaryMessage(data)
               case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
-                logger.debug(s"[WEBSOCKET] binary message from target")
+                if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from target")
                 source
                   .runFold(ByteString.empty)((concat, str) => concat ++ str)
                   .map(data => out ! PlayWSBinaryMessage(data))
@@ -804,7 +804,7 @@ class WebSocketProxyActor(
             source
           )(Keep.both)
           .alsoTo(Sink.onComplete { _ =>
-            logger.trace(s"[WEBSOCKET] target stopped")
+            if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] target stopped")
             Option(queueRef.get()).foreach(_.complete())
             out ! PoisonPill
           }),
@@ -838,11 +838,11 @@ class WebSocketProxyActor(
         case Success(r) => {
           implicit val ec  = env.otoroshiExecutionContext
           implicit val mat = env.otoroshiMaterializer
-          logger.trace(
+          if (logger.isTraceEnabled) logger.trace(
             s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"
           )
           r.response.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bs =>
-            logger.trace(s"[WEBSOCKET] connected to target with response '${bs.utf8String}'")
+            if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] connected to target with response '${bs.utf8String}'")
           }
         }
         case Failure(e) => logger.error(s"[WEBSOCKET] error", e)
@@ -852,30 +852,30 @@ class WebSocketProxyActor(
     }
 
   override def postStop() = {
-    logger.trace(s"[WEBSOCKET] client stopped")
+    if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] client stopped")
     Option(queueRef.get()).foreach(_.complete())
     out ! PoisonPill
   }
 
   def receive = {
     case msg: PlayWSBinaryMessage     => {
-      logger.debug(s"[WEBSOCKET] binary message from client: ${msg.data.utf8String}")
+      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from client: ${msg.data.utf8String}")
       Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
     }
     case msg: PlayWSTextMessage       => {
-      logger.debug(s"[WEBSOCKET] text message from client: ${msg.data}")
+      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] text message from client: ${msg.data}")
       Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.TextMessage(msg.data)))
     }
     case msg: PingMessage             => {
-      logger.debug(s"[WEBSOCKET] Ping message from client: ${msg.data}")
+      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] Ping message from client: ${msg.data}")
       Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
     }
     case msg: PongMessage             => {
-      logger.debug(s"[WEBSOCKET] Pong message from client: ${msg.data}")
+      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] Pong message from client: ${msg.data}")
       Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
     }
     case CloseMessage(status, reason) => {
-      logger.debug(s"[WEBSOCKET] close message from client: $status : $reason")
+      if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] close message from client: $status : $reason")
       Option(queueRef.get()).foreach(_.complete())
       out ! PoisonPill
     }

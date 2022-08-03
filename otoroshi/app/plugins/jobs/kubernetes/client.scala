@@ -51,7 +51,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   private def client(url: String, wildcard: Boolean = true): WSRequest = {
     val _uri = UrlSanitizer.sanitize(config.endpoint + url)
     val uri  = if (wildcard) Uri(_uri.replace("/namespaces/*", "")) else Uri(_uri)
-    logger.debug(s"built uri: $uri")
+    if (logger.isDebugEnabled) logger.debug(s"built uri: $uri")
     env.Ws
       .akkaUrlWithTarget(
         uri.toString(),
@@ -119,7 +119,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             KubernetesNamespace(item)
           })
         } else {
-          logger.debug(s"fetchNamespacesAndFilterLabels: bad status ${resp.status}")
+          if (logger.isDebugEnabled) logger.debug(s"fetchNamespacesAndFilterLabels: bad status ${resp.status}")
           Seq.empty
         }
       }
@@ -139,7 +139,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesService(item)
               }
             } else {
-              logger.debug(s"fetchServices: bad status ${resp.status}")
+              if (logger.isDebugEnabled) logger.debug(s"fetchServices: bad status ${resp.status}")
               Seq.empty
             }
           }
@@ -156,7 +156,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesService(resp.json).some
         } else {
-          logger.debug(s"fetchService: bad status ${resp.status}")
+          if (logger.isDebugEnabled) logger.debug(s"fetchService: bad status ${resp.status}")
           None
         }
       }
@@ -172,7 +172,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesSecret(resp.json).some
         } else {
-          logger.debug(s"fetchSecret: bad status ${resp.status}")
+          if (logger.isDebugEnabled) logger.debug(s"fetchSecret: bad status ${resp.status}")
           None
         }
       }
@@ -192,7 +192,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesEndpoint(item)
               }
             } else {
-              logger.debug(s"fetchEndpoints: bad status ${resp.status}")
+              if (logger.isDebugEnabled) logger.debug(s"fetchEndpoints: bad status ${resp.status}")
               Seq.empty
             }
           }
@@ -209,7 +209,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesEndpoint(resp.json).some
         } else {
-          logger.debug(s"fetchEndpoint: bad status ${resp.status}")
+          if (logger.isDebugEnabled) logger.debug(s"fetchEndpoint: bad status ${resp.status}")
           None
         }
       }
@@ -292,7 +292,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesDeployment(item)
               }
             } else {
-              logger.debug(s"fetchDeployments: bad status ${resp.status}")
+              if (logger.isDebugEnabled) logger.debug(s"fetchDeployments: bad status ${resp.status}")
               Seq.empty
             }
           }
@@ -313,7 +313,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesPod(item)
               }
             } else {
-              logger.debug(s"fetchPods: bad status ${resp.status}")
+              if (logger.isDebugEnabled) logger.debug(s"fetchPods: bad status ${resp.status}")
               Seq.empty
             }
           }
@@ -340,7 +340,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesSecret(item)
               }
             } else {
-              logger.debug(s"fetchSecrets: bad status ${resp.status}")
+              if (logger.isDebugEnabled) logger.debug(s"fetchSecrets: bad status ${resp.status}")
               Seq.empty
             }
           }
@@ -361,7 +361,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesSecret(item)
               })
             } else {
-              logger.debug(s"fetchSecretsAndFilterLabels: bad status ${resp.status}")
+              if (logger.isDebugEnabled) logger.debug(s"fetchSecretsAndFilterLabels: bad status ${resp.status}")
               Seq.empty
             }
           }
@@ -379,7 +379,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesDeployment(resp.json).some
         } else {
-          logger.debug(s"fetchDeployment: bad status ${resp.status}")
+          if (logger.isDebugEnabled) logger.debug(s"fetchDeployment: bad status ${resp.status}")
           None
         }
       }
@@ -396,7 +396,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesConfigMap(resp.json).some
         } else {
-          logger.debug(s"fetchConfigMap: bad status ${resp.status}")
+          if (logger.isDebugEnabled) logger.debug(s"fetchConfigMap: bad status ${resp.status}")
           None
         }
       }
@@ -484,7 +484,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                     OtoResHolder(raw, item)
                   }
               } else {
-                logger.debug(s"fetchOtoroshiResources ${pluralName}: bad status ${resp.status}")
+                if (logger.isDebugEnabled) logger.debug(s"fetchOtoroshiResources ${pluralName}: bad status ${resp.status}")
                 Seq.empty
               }
             } match {
@@ -621,7 +621,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           if (resp.status == 200 || resp.status == 201) {
             KubernetesDeployment(resp.json).some
           } else {
-            logger.debug(s"patchDeployment: bad status ${resp.status}")
+            if (logger.isDebugEnabled) logger.debug(s"patchDeployment: bad status ${resp.status}")
             None
           }
         } match {
@@ -642,7 +642,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesOpenshiftDnsOperator(resp.json).some
         } else {
-          logger.debug(s"fetchOpenshiftDnsOperator: bad status ${resp.status}")
+          if (logger.isDebugEnabled) logger.debug(s"fetchOpenshiftDnsOperator: bad status ${resp.status}")
           None
         }
       }
@@ -664,7 +664,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             if (resp.status == 200) {
               KubernetesOpenshiftDnsOperator(resp.json).some
             } else {
-              logger.debug(s"updateOpenshiftDnsOperator: bad status ${resp.status}")
+              if (logger.isDebugEnabled) logger.debug(s"updateOpenshiftDnsOperator: bad status ${resp.status}")
               None
             }
           }
@@ -683,7 +683,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesMutatingWebhookConfiguration(resp.json).some
         } else {
-          logger.debug(s"fetchMutatingWebhookConfiguration: bad status ${resp.status}")
+          if (logger.isDebugEnabled) logger.debug(s"fetchMutatingWebhookConfiguration: bad status ${resp.status}")
           None
         }
       }
@@ -705,7 +705,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           if (resp.status == 200 || resp.status == 201) {
             KubernetesMutatingWebhookConfiguration(resp.json).some
           } else {
-            logger.debug(s"patchMutatingWebhookConfiguration: bad status ${resp.status}")
+            if (logger.isDebugEnabled) logger.debug(s"patchMutatingWebhookConfiguration: bad status ${resp.status}")
             None
           }
         } match {
@@ -726,7 +726,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesValidatingWebhookConfiguration(resp.json).some
         } else {
-          logger.debug(s"fetchValidatingWebhookConfiguration: bad status ${resp.status}")
+          if (logger.isDebugEnabled) logger.debug(s"fetchValidatingWebhookConfiguration: bad status ${resp.status}")
           None
         }
       }
@@ -748,7 +748,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           if (resp.status == 200 || resp.status == 201) {
             KubernetesValidatingWebhookConfiguration(resp.json).some
           } else {
-            logger.debug(s"patchValidatingWebhookConfiguration: bad status ${resp.status}")
+            if (logger.isDebugEnabled) logger.debug(s"patchValidatingWebhookConfiguration: bad status ${resp.status}")
             None
           }
         } match {
@@ -827,11 +827,11 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .flatMapConcat { _ =>
         val now = System.currentTimeMillis()
         if ((lastTime.get() + 5000) > now) {
-          logger.debug("call too close, waiting for 5 secs")
+          if (logger.isDebugEnabled) logger.debug("call too close, waiting for 5 secs")
           Source.single(Source.empty).delay(5.seconds).flatMapConcat(v => v)
         } else {
           lastTime.set(now)
-          logger.debug(s"watch on ${api} / ${namespace} / ${resource} for ${timeout} seconds ! ")
+          if (logger.isDebugEnabled) logger.debug(s"watch on ${api} / ${namespace} / ${resource} for ${timeout} seconds ! ")
           val lblStart                              = labelSelector.map(s => s"?labelSelector=$s").getOrElse("")
           val cliStart: WSRequest                   = client(s"${root}/$api/namespaces/$namespace/$resource$lblStart")
           val f: Future[Source[Seq[ByteString], _]] = cliStart
@@ -868,7 +868,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                           val name            = (json \ "object" \ "metadata" \ "name").asOpt[String]
                           val ns              = (json \ "object" \ "metadata" \ "namespace").asOpt[String]
                           val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
-                          logger.debug(
+                          if (logger.isDebugEnabled) logger.debug(
                             s"received event for ${api}/${namespace}/${resource} - $typ - $ns/$name($resourceVersion)"
                           )
                           resourceVersion.foreach(v => last.set(v))

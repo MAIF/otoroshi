@@ -842,7 +842,7 @@ object SAMLModule {
           .map { optCert =>
             optCert
               .map { cert =>
-                logger.debug("Using certificate from store")
+                if (logger.isDebugEnabled) logger.debug("Using certificate from store")
 
                 getPrivateKey(cert.privateKey) match {
                   case Left(err)         => Left(err)

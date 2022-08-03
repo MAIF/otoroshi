@@ -39,7 +39,7 @@ class PluginDocumentationGenerator(docPath: String) {
         .acceptPackages(allPackages: _*)
         .scan
 
-      logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")
+      if (logger.isDebugEnabled) logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")
       try {
 
         def predicate(c: ClassInfo): Boolean = {

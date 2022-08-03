@@ -219,7 +219,7 @@ class AzureVault(name: String, env: Env) extends Vault {
             val clientSecret =
               env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client_secret").get
             val url          = s"https://login.microsoftonline.com/${tenant}/oauth2/token"
-            logger.debug(s"fetching azure access_token from '${url}' ...")
+            if (logger.isDebugEnabled) logger.debug(s"fetching azure access_token from '${url}' ...")
             env.Ws
               .url(url)
               .post(
@@ -262,7 +262,7 @@ class AzureVault(name: String, env: Env) extends Vault {
       env: Env,
       ec: ExecutionContext
   ): Future[CachedVaultSecretStatus] = {
-    logger.debug(s"fetching secret at '${url}'")
+    if (logger.isDebugEnabled) logger.debug(s"fetching secret at '${url}'")
     env.Ws
       .url(url)
       .withHttpHeaders("Authorization" -> s"Bearer ${token}")
@@ -271,7 +271,7 @@ class AzureVault(name: String, env: Env) extends Vault {
       .get()
       .map { response =>
         if (response.status == 200) {
-          logger.debug(s"found secret at '${url}'") // with value '${response.json.select("value").asOpt[JsValue]}'")
+          if (logger.isDebugEnabled) logger.debug(s"found secret at '${url}'") // with value '${response.json.select("value").asOpt[JsValue]}'")
           response.json.select("value").asOpt[JsValue] match {
             case Some(JsString(value))  => CachedVaultSecretStatus.SecretReadSuccess(value)
             case Some(JsNumber(value))  => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
@@ -282,11 +282,11 @@ class AzureVault(name: String, env: Env) extends Vault {
             case _                      => CachedVaultSecretStatus.SecretValueNotFound
           }
         } else if (response.status == 401) {
-          logger.debug(s"secret at '$url' not found because of 401: ${response.body}")
+          if (logger.isDebugEnabled) logger.debug(s"secret at '$url' not found because of 401: ${response.body}")
           tokenCache.invalidate(tokenKey)
           CachedVaultSecretStatus.SecretReadUnauthorized
         } else if (response.status == 403) {
-          logger.debug(s"secret at '$url' not found because of 403: ${response.body}")
+          if (logger.isDebugEnabled) logger.debug(s"secret at '$url' not found because of 403: ${response.body}")
           // tokenCache.invalidate(tokenKey) ???
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
@@ -307,7 +307,7 @@ class AzureVault(name: String, env: Env) extends Vault {
       token  <- getToken()
       status <- token match {
                   case Left(err)          =>
-                    logger.debug(s"unable to get access_token: ${err}")
+                    if (logger.isDebugEnabled) logger.debug(s"unable to get access_token: ${err}")
                     CachedVaultSecretStatus.SecretReadError(s"unable to get access_token: ${err}").future
                   case Right(accessToken) => fetchSecret(url, accessToken)
                 }
@@ -749,7 +749,7 @@ class Vaults(env: Env) {
         resolveExpression(expr)
           .map {
             case CachedVaultSecretStatus.SecretReadSuccess(value) =>
-              logger.debug(s"fill secret on '${id}' from '${expr}' successfully") //, secret value is '${value}'")
+              if (logger.isDebugEnabled) logger.debug(s"fill secret on '${id}' from '${expr}' successfully") //, secret value is '${value}'")
               value
             case status                                           =>
               logger.error(s"filling secret on '${id}' from '${expr}' failed because of '${status.value}'")

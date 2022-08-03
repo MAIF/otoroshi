@@ -111,7 +111,7 @@ object ReverseProxyActionHelper {
       service.jwtVerifier.shouldBeVerified(req.path).flatMap {
         case false => f(JwtInjection())
         case true  => {
-          logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
+          if (logger.isDebugEnabled) logger.debug(s"Applying JWT verification for service ${service.id}:${service.name}")
           service.jwtVerifier.verifyGen[A](req, service, apiKey, paUsr, elContext, attrs)(f)
         }
       }
@@ -137,7 +137,7 @@ object ReverseProxyActionHelper {
       case _ if service.id == env.backOfficeDescriptor.id                                               => f(service)
       // when outside container wants to access oustide services through otoroshi
       case Some(config) if chooseRemoteAddress(config) != config.from && config.serviceId != service.id =>
-        logger.debug(
+        if (logger.isDebugEnabled) logger.debug(
           s"Outside container (${chooseRemoteAddress(config)}) wants to access oustide service (${service.id}) through otoroshi"
         )
         Errors
@@ -153,7 +153,7 @@ object ReverseProxyActionHelper {
       // when local service wants to access protected services from other containers
       case Some(config @ SidecarConfig(_, _, _, Some(akid), strict))
           if chooseRemoteAddress(config) == config.from && config.serviceId != service.id => {
-        logger.debug(
+        if (logger.isDebugEnabled) logger.debug(
           s"Local service (${config.from}) wants to access protected service (${config.serviceId}) from other container (${chooseRemoteAddress(config)}) with apikey ${akid}"
         )
         env.datastores.apiKeyDataStore.findById(akid) flatMap {
@@ -186,17 +186,17 @@ object ReverseProxyActionHelper {
       // when local service wants to access unprotected services from other containers
       case Some(config @ SidecarConfig(_, _, _, None, strict))
           if chooseRemoteAddress(config) == config.from && config.serviceId != service.id =>
-        logger.debug(
+        if (logger.isDebugEnabled) logger.debug(
           s"Local service (${config.from}) wants to access unprotected service (${config.serviceId}) from other container (${chooseRemoteAddress(config)}) without apikey"
         )
         f(service.copy(publicPatterns = Seq("/.*"), privatePatterns = Seq.empty))
       // when local service wants to access himself through otoroshi
       case Some(config) if config.serviceId == service.id && chooseRemoteAddress(config) == config.from =>
-        logger.debug(s"Local service (${config.from}) wants to access himself through Otoroshi")
+        if (logger.isDebugEnabled) logger.debug(s"Local service (${config.from}) wants to access himself through Otoroshi")
         f(service.copy(targets = Seq(config.target)))
       // when service from other containers wants to access local service through otoroshi
       case Some(config) if config.serviceId == service.id && chooseRemoteAddress(config) != config.from =>
-        logger.debug(
+        if (logger.isDebugEnabled) logger.debug(
           s"External service (${chooseRemoteAddress(config)}) wants to access local service (${service.id}) through Otoroshi"
         )
         f(service.copy(targets = Seq(config.target)))
@@ -826,9 +826,9 @@ class ReverseProxyAction(env: Env) {
                                         attrs.put(otoroshi.plugins.Keys.RequestTrackingIdKey -> trackingId)
 
                                         if (maybeCanaryId.isDefined) {
-                                          logger.debug(s"request already has canary id : $canaryId")
+                                          if (logger.isDebugEnabled) logger.debug(s"request already has canary id : $canaryId")
                                         } else {
-                                          logger.debug(s"request has a new canary id : $canaryId")
+                                          if (logger.isDebugEnabled) logger.debug(s"request has a new canary id : $canaryId")
                                         }
 
                                         val withTrackingCookies: Seq[Cookie] = {
@@ -1277,7 +1277,7 @@ object ReverseProxyHelper {
         if (!isSecured && descriptor.forceHttps) {
           val theDomain = req.theDomain
           val protocol  = req.theProtocol
-          logger.trace(
+          if (logger.isTraceEnabled) logger.trace(
             s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
           )
           //FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))

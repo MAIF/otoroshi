@@ -67,7 +67,7 @@ class U2FController(
               val password = user.password
               val label    = user.label
               if (BCrypt.checkpw(pass, password)) {
-                logger.debug(s"Login successful for simple admin '$username'")
+                if (logger.isDebugEnabled) logger.debug(s"Login successful for simple admin '$username'")
                 BackOfficeUser(
                   randomId = IdGenerator.token(64),
                   name = username,
@@ -496,7 +496,7 @@ class U2FController(
                         case Success(result) if !result.isSuccess =>
                           FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
                         case Success(result) if result.isSuccess  => {
-                          logger.debug(s"Login successful for user '$username'")
+                          if (logger.isDebugEnabled) logger.debug(s"Login successful for user '$username'")
                           BackOfficeUser(
                             randomId = IdGenerator.token(64),
                             name = username,

@@ -321,7 +321,7 @@ class ResponseCache extends RequestTransformer {
           val body    = ByteString(ResponseCache.base64Decoder.decode((res \ "body").as[String]))
           val headers = (res \ "headers").as[Map[String, String]] ++ Map("X-Otoroshi-Cache" -> "HIT")
           val ctype   = (res \ "ctype").as[String]
-          ResponseCache.logger.debug(
+          if (ResponseCache.logger.isDebugEnabled) ResponseCache.logger.debug(
             s"Serving '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' from cache"
           )
           Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq: _*))
@@ -367,7 +367,7 @@ class ResponseCache extends RequestTransformer {
                 "ctype"   -> ctype,
                 "body"    -> ResponseCache.base64Encoder.encodeToString(ref.get().toArray)
               )
-              ResponseCache.logger.debug(
+              if (ResponseCache.logger.isDebugEnabled) ResponseCache.logger.debug(
                 s"Storing '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' in cache for the next ${config.ttl} ms."
               )
               set(

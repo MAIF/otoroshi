@@ -1,0 +1,948 @@
+{
+  "label": "Otoroshi export",
+  "dateRaw": 1658501802113,
+  "date": "2022-07-22 02:56:42",
+  "stats": {
+    "calls": 9131,
+    "dataIn": 2283723,
+    "dataOut": 7435567
+  },
+  "config": {
+    "tags": [],
+    "letsEncryptSettings": {
+      "enabled": false,
+      "server": "acme://letsencrypt.org/staging",
+      "emails": [],
+      "contacts": [],
+      "publicKey": "",
+      "privateKey": ""
+    },
+    "lines": [
+      "prod"
+    ],
+    "maintenanceMode": false,
+    "enableEmbeddedMetrics": true,
+    "streamEntityOnly": true,
+    "autoLinkToDefaultGroup": true,
+    "limitConcurrentRequests": false,
+    "maxConcurrentRequests": 1000,
+    "maxHttp10ResponseSize": 4194304,
+    "useCircuitBreakers": true,
+    "apiReadOnly": false,
+    "u2fLoginOnly": false,
+    "trustXForwarded": true,
+    "ipFiltering": {
+      "whitelist": [],
+      "blacklist": []
+    },
+    "throttlingQuota": 100000,
+    "perIpThrottlingQuota": 500,
+    "analyticsWebhooks": [],
+    "alertsWebhooks": [],
+    "elasticWritesConfigs": [],
+    "elasticReadsConfig": null,
+    "alertsEmails": [],
+    "logAnalyticsOnServer": false,
+    "useAkkaHttpClient": false,
+    "endlessIpAddresses": [],
+    "statsdConfig": null,
+    "kafkaConfig": {
+      "servers": [],
+      "keyPass": null,
+      "keystore": null,
+      "truststore": null,
+      "topic": "otoroshi-events",
+      "sendEvents": false,
+      "hostValidation": true,
+      "mtlsConfig": {
+        "certs": [],
+        "trustedCerts": [],
+        "mtls": false,
+        "loose": false,
+        "trustAll": false
+      }
+    },
+    "backOfficeAuthRef": null,
+    "mailerSettings": {
+      "type": "none"
+    },
+    "cleverSettings": null,
+    "maxWebhookSize": 100,
+    "middleFingers": false,
+    "maxLogsSize": 1000,
+    "otoroshiId": "4966c1c1d-156a-45c6-94a5-1ab8c72aac1a",
+    "snowMonkeyConfig": {
+      "enabled": false,
+      "outageStrategy": "OneServicePerGroup",
+      "includeUserFacingDescriptors": false,
+      "dryRun": false,
+      "timesPerDay": 1,
+      "startTime": "09:00:00.000",
+      "stopTime": "23:59:59.000",
+      "outageDurationFrom": 600000,
+      "outageDurationTo": 3600000,
+      "targetGroups": [],
+      "chaosConfig": {
+        "enabled": true,
+        "largeRequestFaultConfig": null,
+        "largeResponseFaultConfig": null,
+        "latencyInjectionFaultConfig": {
+          "ratio": 0.2,
+          "from": 500,
+          "to": 5000
+        },
+        "badResponsesFaultConfig": {
+          "ratio": 0.2,
+          "responses": [
+            {
+              "status": 502,
+              "body": "{\"error\":\"Nihonzaru everywhere ...\"}",
+              "headers": {
+                "Content-Type": "application/json"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "scripts": {
+      "enabled": false,
+      "transformersRefs": [],
+      "transformersConfig": {},
+      "validatorRefs": [],
+      "validatorConfig": {},
+      "preRouteRefs": [],
+      "preRouteConfig": {},
+      "sinkRefs": [],
+      "sinkConfig": {},
+      "jobRefs": [],
+      "jobConfig": {}
+    },
+    "geolocationSettings": {
+      "type": "none"
+    },
+    "userAgentSettings": {
+      "enabled": false
+    },
+    "autoCert": {
+      "enabled": false,
+      "replyNicely": false,
+      "caRef": null,
+      "allowed": [],
+      "notAllowed": []
+    },
+    "tlsSettings": {
+      "defaultDomain": null,
+      "randomIfNotFound": false,
+      "includeJdkCaServer": true,
+      "includeJdkCaClient": true,
+      "trustedCAsServer": []
+    },
+    "quotasSettings": {
+      "enabled": false,
+      "dailyQuotasThreshold": 0.8,
+      "monthlyQuotasThreshold": 0.8
+    },
+    "plugins": {
+      "enabled": true,
+      "refs": [
+        "cp:otoroshi.next.proxy.ProxyEngine",
+        "cp:otoroshi.plugins.apikeys.ClientCredentialService"
+      ],
+      "config": {
+        "NextGenProxyEngine": {
+          "enabled": true,
+          "debug": false,
+          "debug_headers": false,
+          "domains": [
+            "*-next-gen.oto.tools"
+          ],
+          "routing_strategy": "tree"
+        },
+        "ClientCredentialService": {
+          "domain": "*",
+          "expiration": 3600000,
+          "defaultKeyPair": "otoroshi-jwt-signing",
+          "secure": true
+        }
+      },
+      "excluded": []
+    },
+    "metadata": {},
+    "templates": {
+      "route": {},
+      "service": {},
+      "backend": {},
+      "target": {},
+      "descriptor": {},
+      "apikey": {},
+      "group": {},
+      "template": {},
+      "verifier": {},
+      "authConfig": {},
+      "certificate": {},
+      "script": {},
+      "tcpService": {},
+      "dataExporter": {},
+      "tenant": {},
+      "team": {}
+    }
+  },
+  "admins": [],
+  "simpleAdmins": [
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "username": "admin@otoroshi.io",
+      "password": "$2a$10$zv4bR6Fw/AzU3fMxxmfOseuOusaQKSuFFZe5CbILdt.zzrUf.xhFe",
+      "label": "Otoroshi Admin",
+      "createdAt": 1658474428540,
+      "type": "SIMPLE",
+      "metadata": {},
+      "tags": [],
+      "rights": [
+        {
+          "tenant": "*:rw",
+          "teams": [
+            "*:rw"
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceGroups": [
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "admin-api-group",
+      "name": "Otoroshi Admin Api group",
+      "description": "No description",
+      "tags": [],
+      "metadata": {}
+    },
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "default",
+      "name": "default-group",
+      "description": "The default service group",
+      "tags": [],
+      "metadata": {}
+    }
+  ],
+  "apiKeys": [
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "clientId": "g2PRCmiUapQarhDv",
+      "clientSecret": "9K6mdXUAbClijuHk7bhS0CEhKWQqYkVmWmKLOGNnpgaf6bwJFE0QeuOUXZeSKPO5",
+      "clientName": "default-apikey",
+      "description": "the default apikey",
+      "authorizedGroup": "default",
+      "authorizedEntities": [
+        "group_default"
+      ],
+      "enabled": true,
+      "readOnly": false,
+      "allowClientIdOnly": false,
+      "throttlingQuota": 10000000,
+      "dailyQuota": 10000000,
+      "monthlyQuota": 10000000,
+      "constrainedServicesOnly": false,
+      "restrictions": {
+        "enabled": false,
+        "allowLast": true,
+        "allowed": [],
+        "forbidden": [],
+        "notFound": []
+      },
+      "rotation": {
+        "enabled": false,
+        "rotationEvery": 744,
+        "gracePeriod": 168,
+        "nextSecret": null
+      },
+      "validUntil": null,
+      "tags": [],
+      "metadata": {}
+    },
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "clientId": "E6Dq5MW8IVik2IwW",
+      "clientSecret": "439EnLkLTGfj2JFWbO0uwrL6BSZDAdbOgEni0uCrWbnyoy309geb4IdhuQLK4uqb",
+      "clientName": "default-apikey",
+      "description": "the default apikey",
+      "authorizedGroup": "default",
+      "authorizedEntities": [
+        "group_default"
+      ],
+      "enabled": true,
+      "readOnly": false,
+      "allowClientIdOnly": false,
+      "throttlingQuota": 10000000,
+      "dailyQuota": 10000000,
+      "monthlyQuota": 10000000,
+      "constrainedServicesOnly": false,
+      "restrictions": {
+        "enabled": false,
+        "allowLast": true,
+        "allowed": [],
+        "forbidden": [],
+        "notFound": []
+      },
+      "rotation": {
+        "enabled": false,
+        "rotationEvery": 744,
+        "gracePeriod": 168,
+        "nextSecret": null
+      },
+      "validUntil": null,
+      "tags": [],
+      "metadata": {}
+    },
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "clientId": "admin-api-apikey-id",
+      "clientSecret": "admin-api-apikey-secret",
+      "clientName": "Otoroshi Backoffice ApiKey",
+      "description": "The apikey use by the Otoroshi UI",
+      "authorizedGroup": "admin-api-group",
+      "authorizedEntities": [
+        "group_admin-api-group"
+      ],
+      "enabled": true,
+      "readOnly": false,
+      "allowClientIdOnly": false,
+      "throttlingQuota": 10000,
+      "dailyQuota": 10000000,
+      "monthlyQuota": 10000000,
+      "constrainedServicesOnly": false,
+      "restrictions": {
+        "enabled": false,
+        "allowLast": true,
+        "allowed": [],
+        "forbidden": [],
+        "notFound": []
+      },
+      "rotation": {
+        "enabled": false,
+        "rotationEvery": 744,
+        "gracePeriod": 168,
+        "nextSecret": null
+      },
+      "validUntil": null,
+      "tags": [],
+      "metadata": {}
+    }
+  ],
+  "serviceDescriptors": [
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "admin-api-service",
+      "groupId": "admin-api-group",
+      "groups": [
+        "admin-api-group"
+      ],
+      "name": "otoroshi-admin-api",
+      "description": "",
+      "env": "prod",
+      "domain": "oto.tools",
+      "subdomain": "otoroshi-api",
+      "targetsLoadBalancing": {
+        "type": "RoundRobin"
+      },
+      "targets": [
+        {
+          "host": "127.0.0.1:8080",
+          "scheme": "http",
+          "weight": 1,
+          "mtlsConfig": {
+            "certs": [],
+            "trustedCerts": [],
+            "mtls": false,
+            "loose": false,
+            "trustAll": false
+          },
+          "tags": [],
+          "metadata": {},
+          "protocol": "HTTP/1.1",
+          "predicate": {
+            "type": "AlwaysMatch"
+          },
+          "ipAddress": null
+        }
+      ],
+      "root": "/",
+      "matchingRoot": null,
+      "stripPath": true,
+      "localHost": "127.0.0.1:8080",
+      "localScheme": "http",
+      "redirectToLocal": false,
+      "enabled": true,
+      "userFacing": false,
+      "privateApp": false,
+      "forceHttps": false,
+      "logAnalyticsOnServer": false,
+      "useAkkaHttpClient": true,
+      "useNewWSClient": false,
+      "tcpUdpTunneling": false,
+      "detectApiKeySooner": false,
+      "maintenanceMode": false,
+      "buildMode": false,
+      "strictlyPrivate": false,
+      "enforceSecureCommunication": true,
+      "sendInfoToken": true,
+      "sendStateChallenge": true,
+      "sendOtoroshiHeadersBack": true,
+      "readOnly": false,
+      "xForwardedHeaders": false,
+      "overrideHost": true,
+      "allowHttp10": true,
+      "letsEncrypt": false,
+      "secComHeaders": {
+        "claimRequestName": null,
+        "stateRequestName": null,
+        "stateResponseName": null
+      },
+      "secComTtl": 30000,
+      "secComVersion": 1,
+      "secComInfoTokenVersion": "Legacy",
+      "secComExcludedPatterns": [],
+      "securityExcludedPatterns": [],
+      "publicPatterns": [
+        "/health",
+        "/metrics"
+      ],
+      "privatePatterns": [],
+      "additionalHeaders": {
+        "Host": "otoroshi-admin-internal-api.oto.tools"
+      },
+      "additionalHeadersOut": {},
+      "missingOnlyHeadersIn": {},
+      "missingOnlyHeadersOut": {},
+      "removeHeadersIn": [],
+      "removeHeadersOut": [],
+      "headersVerification": {},
+      "matchingHeaders": {},
+      "ipFiltering": {
+        "whitelist": [],
+        "blacklist": []
+      },
+      "api": {
+        "exposeApi": false
+      },
+      "healthCheck": {
+        "enabled": false,
+        "url": "/"
+      },
+      "clientConfig": {
+        "useCircuitBreaker": true,
+        "retries": 1,
+        "maxErrors": 20,
+        "retryInitialDelay": 50,
+        "backoffFactor": 2,
+        "callTimeout": 30000,
+        "callAndStreamTimeout": 120000,
+        "connectionTimeout": 10000,
+        "idleTimeout": 60000,
+        "globalTimeout": 30000,
+        "sampleInterval": 2000,
+        "proxy": {},
+        "customTimeouts": [],
+        "cacheConnectionSettings": {
+          "enabled": false,
+          "queueSize": 2048
+        }
+      },
+      "canary": {
+        "enabled": false,
+        "traffic": 0.2,
+        "targets": [],
+        "root": "/"
+      },
+      "gzip": {
+        "enabled": false,
+        "excludedPatterns": [],
+        "whiteList": [
+          "text/*",
+          "application/javascript",
+          "application/json"
+        ],
+        "blackList": [],
+        "bufferSize": 8192,
+        "chunkedThreshold": 102400,
+        "compressionLevel": 5
+      },
+      "metadata": {},
+      "tags": [],
+      "chaosConfig": {
+        "enabled": false,
+        "largeRequestFaultConfig": null,
+        "largeResponseFaultConfig": null,
+        "latencyInjectionFaultConfig": null,
+        "badResponsesFaultConfig": null
+      },
+      "jwtVerifier": {
+        "type": "ref",
+        "ids": [],
+        "id": null,
+        "enabled": false,
+        "excludedPatterns": []
+      },
+      "secComSettings": {
+        "type": "HSAlgoSettings",
+        "size": 512,
+        "secret": "${config.app.claim.sharedKey}",
+        "base64": false
+      },
+      "secComUseSameAlgo": true,
+      "secComAlgoChallengeOtoToBack": {
+        "type": "HSAlgoSettings",
+        "size": 512,
+        "secret": "secret",
+        "base64": false
+      },
+      "secComAlgoChallengeBackToOto": {
+        "type": "HSAlgoSettings",
+        "size": 512,
+        "secret": "secret",
+        "base64": false
+      },
+      "secComAlgoInfoToken": {
+        "type": "HSAlgoSettings",
+        "size": 512,
+        "secret": "secret",
+        "base64": false
+      },
+      "cors": {
+        "enabled": false,
+        "allowOrigin": "*",
+        "exposeHeaders": [],
+        "allowHeaders": [],
+        "allowMethods": [],
+        "excludedPatterns": [],
+        "maxAge": null,
+        "allowCredentials": true
+      },
+      "redirection": {
+        "enabled": false,
+        "code": 303,
+        "to": "https://www.otoroshi.io"
+      },
+      "authConfigRef": null,
+      "clientValidatorRef": null,
+      "transformerRef": null,
+      "transformerRefs": [],
+      "transformerConfig": {},
+      "apiKeyConstraints": {
+        "basicAuth": {
+          "enabled": true,
+          "headerName": null,
+          "queryName": null
+        },
+        "customHeadersAuth": {
+          "enabled": true,
+          "clientIdHeaderName": null,
+          "clientSecretHeaderName": null
+        },
+        "clientIdAuth": {
+          "enabled": true,
+          "headerName": null,
+          "queryName": null
+        },
+        "jwtAuth": {
+          "enabled": true,
+          "secretSigned": true,
+          "keyPairSigned": true,
+          "includeRequestAttributes": false,
+          "maxJwtLifespanSecs": null,
+          "headerName": null,
+          "queryName": null,
+          "cookieName": null
+        },
+        "routing": {
+          "noneTagIn": [],
+          "oneTagIn": [],
+          "allTagsIn": [],
+          "noneMetaIn": {},
+          "oneMetaIn": {},
+          "allMetaIn": {},
+          "noneMetaKeysIn": [],
+          "oneMetaKeyIn": [],
+          "allMetaKeysIn": []
+        }
+      },
+      "restrictions": {
+        "enabled": false,
+        "allowLast": true,
+        "allowed": [],
+        "forbidden": [],
+        "notFound": []
+      },
+      "accessValidator": {
+        "enabled": false,
+        "refs": [],
+        "config": {},
+        "excludedPatterns": []
+      },
+      "preRouting": {
+        "enabled": false,
+        "refs": [],
+        "config": {},
+        "excludedPatterns": []
+      },
+      "plugins": {
+        "enabled": false,
+        "refs": [],
+        "config": {},
+        "excluded": []
+      },
+      "hosts": [
+        "otoroshi-api.oto.tools"
+      ],
+      "paths": [],
+      "handleLegacyDomain": true,
+      "issueCert": false,
+      "issueCertCA": null
+    }
+  ],
+  "errorTemplates": [],
+  "jwtVerifiers": [],
+  "authConfigs": [],
+  "certificates": [
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "otoroshi-wildcard",
+      "domain": "*.oto.tools",
+      "name": "Otoroshi Default Wildcard Certificate",
+      "description": "Otoroshi wildcard certificate (auto-generated)",
+      "chain": "-----BEGIN CERTIFICATE-----\nMIID0zCCArugAwIBAgIIAbeURWTBgWkwDQYJKoZIhvcNAQELBQAwajE1MDMGA1UE\nAwwsT3Rvcm9zaGkgRGVmYXVsdCBJbnRlcm1lZGlhdGUgQ0EgQ2VydGlmaWNhdGUx\nHjAcBgNVBAsMFU90b3Jvc2hpIENlcnRpZmljYXRlczERMA8GA1UECgwIT3Rvcm9z\naGkwHhcNMjIwNzIyMDcyMDM4WhcNMjMwNzIyMDcyMDM4WjB5MRQwEgYDVQQDDAsq\nLm90by50b29sczEuMCwGA1UEBAwlT3Rvcm9zaGkgRGVmYXVsdCBXaWxkY2FyZCBD\nZXJ0aWZpY2F0ZTEeMBwGA1UECwwVT3Rvcm9zaGkgQ2VydGlmaWNhdGVzMREwDwYD\nVQQKDAhPdG9yb3NoaTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAL5a\ntzGNoQpFsZNAD7ziKvy9yuzPbaPtB90vtkMwiUIhshQU0uiSIANdvggqXjVYqH+W\nZEoVIGaqpxVK4QWusv5DZWn0ruJwcbj1AFgHZywwv7ELZ22/K7f8E5KoEyRos2QN\nZI1GkzkOuxwuulT303tSN8wR9oCSvjFxmsjIwbc2Qum0ssM65bVQA6ov9iKbtp/a\nLjwzTtPbqDMi8PdOYN+aW8+VQEcFABPvMbgl4pDih766YQNiSJyuC1jvCxeWc/Et\n4BSCrsUP6a+RvRQrmpauvNbUCielZ7cWFLeWQd1uw4EJgrU1p/xfCdVzgf0KlQfq\noVYvt2QMPqoyH+zZKx0CAwEAAaNuMGwwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8E\nBAMCBaAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwHwYDVR0jBBgwFoAUIbkMIdwik9Fh\nd1m44+ziqK+8+3MwFgYDVR0RBA8wDYILKi5vdG8udG9vbHMwDQYJKoZIhvcNAQEL\nBQADggEBAIwp0ptnBC/3TJr9r4o8P9sJMMljTMVbzWrRBqFr1lp5m2YeJiKoS349\nwR9d2QKZYHpo36/W/HlsSPNYoQRozuS6rZAHy80DmJUYPGWAXzS3R1oK//jZiLSr\nDBJ06wn1RuB5rYK4VkS0DLoWPGYP5KI/8ODU//gI/cvU0SOrB92+RvxRsuPYMpyu\nB6eOjKWkzLQDeQzwPOzCeU51vjN5bKcL6fUyZGOnFI6ntjIalpGJWQX6RzEX5Q8y\nX3WDXoTDPfJO0Qq5OCYjjNfS10XBMR7f6eISDJSak9xvFbv/7Wj9aoNvr/x/26YE\nK5GwHJmD/jeHP0J3naeU7qzchNo97sM=\n-----END CERTIFICATE-----\n\n-----BEGIN CERTIFICATE-----\nMIIDtTCCAp2gAwIBAgIJALJYmYT/lyTUMA0GCSqGSIb3DQEBCwUAMGIxLTArBgNV\nBAMMJE90b3Jvc2hpIERlZmF1bHQgUm9vdCBDQSBDZXJ0aWZpY2F0ZTEeMBwGA1UE\nCwwVT3Rvcm9zaGkgQ2VydGlmaWNhdGVzMREwDwYDVQQKDAhPdG9yb3NoaTAeFw0y\nMjA3MjIwNzIwMzdaFw0zMjA3MTkwNzIwMzdaMGoxNTAzBgNVBAMMLE90b3Jvc2hp\nIERlZmF1bHQgSW50ZXJtZWRpYXRlIENBIENlcnRpZmljYXRlMR4wHAYDVQQLDBVP\ndG9yb3NoaSBDZXJ0aWZpY2F0ZXMxETAPBgNVBAoMCE90b3Jvc2hpMIIBIjANBgkq\nhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtNowA6drKLF3ngzI+IQV8a1+spxzRLrI\n0pHkfjAEKT6HimDchv1AQxBM+HvmddUiSbfMWR38Rwc1xZV1AYOOueJlHcAv4adD\nb7GplOjK71vhvA8YVXJiA4lIY2vRLcHMwoI06byVeB0NJaGlvu4wYpJbF4w2jyUf\nszPglVrmFddLuODIWDykpFwRw9LUwVPYQO4A7xHqzBqsHrxvnPZ4oVLDP5fpnr8E\no9UMVAGYo8LYt7sJmW2uVay+07D+wlDG+dypvx0vGeCsKs40LnewrmgAPvsLCMoX\ny0jup+q1eKqTgkbIpAAGyw94NuVNncDBvw7zyJiiXenSQ5U4L+UCuQIDAQABo2Yw\nZDASBgNVHRMBAf8ECDAGAQH/AgEAMA4GA1UdDwEB/wQEAwIBhjAfBgNVHSMEGDAW\ngBQE3+spOjHRE8z4PscsDMLGdoiFBTAdBgNVHQ4EFgQUIbkMIdwik9Fhd1m44+zi\nqK+8+3MwDQYJKoZIhvcNAQELBQADggEBAJH60BvoM1PhaOjLYYPzEGGSATp8WyJ2\nB26n/EBs3apDSSDGLzu80GRVOoMK5gZUSxFgLBX4X/n6Wcl9RV9aGPDgXvbZKf0V\ntGbsSSVELbw0dcH3WBDFITcOA8RX/pcNg67N5Zt93a67BjPCEg/QBP/jUuGTI5zt\nGKP2NMRwMG6FQ89eojeNMfN6K4JllLtOS7tTsTifveMicDkdhuNQOp7yMv8HzaCs\nCMDKOLulGGQzpxP8zlKbuEj6twhWNTG12DCsgKFTQVwBU47GhKr7qbklss5HQ1nv\nt+ONM0rza3eJZOS1MkY3DD/XwO0qZxoz7NI0FKa/qUSzq9sOh7KynPU=\n-----END CERTIFICATE-----\n\n-----BEGIN CERTIFICATE-----\nMIIEcDCCA1igAwIBAgIIE2colHED8okwDQYJKoZIhvcNAQELBQAwYjEtMCsGA1UE\nAwwkT3Rvcm9zaGkgRGVmYXVsdCBSb290IENBIENlcnRpZmljYXRlMR4wHAYDVQQL\nDBVPdG9yb3NoaSBDZXJ0aWZpY2F0ZXMxETAPBgNVBAoMCE90b3Jvc2hpMB4XDTIy\nMDcyMjA3MjAzNloXDTMyMDcxOTA3MjAzNlowYjEtMCsGA1UEAwwkT3Rvcm9zaGkg\nRGVmYXVsdCBSb290IENBIENlcnRpZmljYXRlMR4wHAYDVQQLDBVPdG9yb3NoaSBD\nZXJ0aWZpY2F0ZXMxETAPBgNVBAoMCE90b3Jvc2hpMIIBIjANBgkqhkiG9w0BAQEF\nAAOCAQ8AMIIBCgKCAQEAxRpdyCYlikezS1b6CLA+2ZwiMcdDknLmpdo9zJVhUWDY\niSUA5CbM8wJiljc7O2ka0T3SQl33VRG3Ni5k5H7izX658SzbXg41IVPYjEYKVoDO\n+J4YKsV7KgoS2XBEM//AdHSeFwYS/KYCbZ+sqQSdVZPqXRVTEZFL4G44DAG9ElJV\nmRH4FGL46l4eOnaIP54fnCU91OBzxTSrFA6VODKGmoLcu3VyWRoGnBOV6U8w8LtC\no1RjTJUDAjnoVxuAj1kTRErIFtR281A7v7ugngx6rg1FOnKHV63hl8wVHaWUlzmP\nx3nPUR6aMA9JAmCJwMzoAoYvb1eNJdBjVgk9HJFXmQIDAQABo4IBKDCCASQwDwYD\nVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAQYwHwYDVR0jBBgwFoAUBN/rKTox\n0RPM+D7HLAzCxnaIhQUwHQYDVR0OBBYEFATf6yk6MdETzPg+xywMwsZ2iIUFMIHA\nBggrBgEFBQcBAQSBszCBsDBkBggrBgEFBQcwAoZYaHR0cDovL290b3Jvc2hpLWFw\naS5vdG8udG9vbHM6ODA4MC8ud2VsbC1rbm93bi9vdG9yb3NoaS9jZXJ0aWZpY2F0\nZXMvMTM5ODEzMDgyNzMzODE4MzMwNTBIBggrBgEFBQcwAYY8aHR0cDovL290b3Jv\nc2hpLWFwaS5vdG8udG9vbHM6ODA4MC8ud2VsbC1rbm93bi9vdG9yb3NoaS9vY3Nw\nMA0GCSqGSIb3DQEBCwUAA4IBAQA5GutIvDPSGSvni6A58e+RuLdaELh9wtsu7HNA\nrWKe48gCAD0zLgepKbwthYfeFUo0zXgUXALYrxA24WW/hhqYZWcPO0B+hW25gAIt\nujHK6V7FZLZ4OytNxVVvXoHzxVkGzJ76qfdeJwNMYTNmOca1bWSJ9gg/PyEipa9u\n/tN99QYj1JHx7hFvKFa23wynNY3vrIaIp4SKgPEYeeL0Bhg21jYCgZ7KIYdxRIEF\nfW37qrsTNL9Shd+FpstIGaFFzRtKlpBpYlaZ/HhroQsWeIMa57fefuiulQXk6Ynf\nyZyvllRLyRbBWlT1e8A6SzlBGVJUWXsMkUSvN1uqKdEc4YP0\n-----END CERTIFICATE-----\n",
+      "caRef": null,
+      "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC+WrcxjaEKRbGT\nQA+84ir8vcrsz22j7QfdL7ZDMIlCIbIUFNLokiADXb4IKl41WKh/lmRKFSBmqqcV\nSuEFrrL+Q2Vp9K7icHG49QBYB2csML+xC2dtvyu3/BOSqBMkaLNkDWSNRpM5Drsc\nLrpU99N7UjfMEfaAkr4xcZrIyMG3NkLptLLDOuW1UAOqL/Yim7af2i48M07T26gz\nIvD3TmDfmlvPlUBHBQAT7zG4JeKQ4oe+umEDYkicrgtY7wsXlnPxLeAUgq7FD+mv\nkb0UK5qWrrzW1AonpWe3FhS3lkHdbsOBCYK1Naf8XwnVc4H9CpUH6qFWL7dkDD6q\nMh/s2SsdAgMBAAECggEAEYk+5jBDfTRFcyjMKlz1k9oSNzW2xorAFjbehhsTEgYT\npzjx4x4PF/BLYOoySpzTzQk4TQDcPskK4nHHACSDddwUnCm/8LlmKKFdej6YWSBW\nkINZ8GjTqLvuu6yDMu/4UsfPExrE1lVOlH6TiN9Z2rsMy959xIOARQLPvR6Nhgiv\nct5KMjHsuDYDA7rv+nBQHkarwlUsPsJHBwHUQRfndToOSUeL6uIvi+OsaN8734zf\nBkaX0chRLbgktMVopamq9ptMOOarlPC8cCx/FoihMFW+CWrO6qYRoOgK6550rcPS\nQyHMzGVI6zxUjl5ocdCwa0Lxh1ymV3lOS2Bo1jblkQKBgQDnN4ksMYvBdheFzTEG\nEGu8etTv1YnvBXnwkvxQDRodWikeus0KNcsY93Dv2eiACzd1q7USvTD2vLWhu0dv\nPJUCQzKE6tg3xxmCvk9Uk5cCQf2lM9KEgph7UMxjcF2dT2IET6aKb2t3v+avpVdF\nbnOpz33b7Qf0ZLxgQbhc7e5mJQKBgQDSwe7uU5peT23zWRYZ+BkZWTRklWQhCI5K\nXZuKQSRcZ82RUa2NrA0sCDHWOsZ67vZfbg1WOtK+nMVy7TdwTlMljpfz4pWE5STh\nJdcZhyS648IEGqCpmmiFPMT2IbN3v4hTSF2b5G6b1F0N8PnLCc2V+VZJNA+ViZlG\nn6cZ6fXzmQKBgAYOwWxD/Apcgq9BufgTtA7jFPMXoB6AATrZTvz16uo783nXoQmU\ncTa9PNs71UiNgq11iy/rfv3n4cZT9sImTy0Y/5jV4kZL1BJF1CQ+HaW0fuW2HtzT\n4xTQABrW1c0KSGIeiBl2Y9VmVK/jYA70ntkjE4QQiLXRcdH/xsnAfg91AoGAcViX\nVVllFf+F1HA+8Kx7YySUhtvJQ/LEA76gHhS2p3O0HMlem2jClMG7e8mUYR0PJ3ea\neJueJ6FMl2h4fk/Ba9tqYWGkpBpQYT3mlvYVjOVcvLRNX6mJOM7b5rttN6Osf43V\nujd6PRhTC2JkFQwqotO70hbLotKjulW2mrs26VECgYBh879BNojjFywCLMpoPoBw\nlrArCNDNQ6h4xUREeHMbpJKHO9fYLKjZQqsRGWjtSYywd0XJRUWWrW2fLh1XNHIl\nXMvBnCtYhf8ujrQm9ummqdGIVCkXhzHfZxaliucWQvo7Oo1AsN8uSdQOoe9Au5aD\nm0L9K7LXlKMJYNuk1jc+4Q==\n-----END PRIVATE KEY-----\n",
+      "selfSigned": false,
+      "ca": false,
+      "valid": true,
+      "exposed": true,
+      "revoked": false,
+      "autoRenew": true,
+      "letsEncrypt": false,
+      "subject": "SURNAME=Otoroshi Default Wildcard Certificate, OU=Otoroshi Certificates, O=Otoroshi, CN=*.oto.tools",
+      "from": 1658474438000,
+      "to": 1690010438000,
+      "client": false,
+      "keypair": false,
+      "sans": [
+        "*.oto.tools"
+      ],
+      "certType": "certificate",
+      "password": null,
+      "metadata": {
+        "csr": "{\"hosts\":[\"*.oto.tools\"],\"key\":{\"algo\":\"rsa\",\"size\":2048},\"name\":{},\"subject\":\"CN=*.oto.tools, SN=Otoroshi Default Wildcard Certificate, OU=Otoroshi Certificates, O=Otoroshi\",\"client\":false,\"ca\":false,\"duration\":31536000000,\"signatureAlg\":\"SHA256WithRSAEncryption\",\"digestAlg\":\"SHA-256\"}"
+      },
+      "tags": []
+    },
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "otoroshi-intermediate-ca",
+      "domain": "Otoroshi Default Intermediate CA Certificate",
+      "name": "Otoroshi Default Intermediate CA Certificate",
+      "description": "Otoroshi intermediate CA (auto-generated)",
+      "chain": "-----BEGIN CERTIFICATE-----\nMIIDtTCCAp2gAwIBAgIJAPXv2haydkn6MA0GCSqGSIb3DQEBCwUAMGIxLTArBgNV\nBAMMJE90b3Jvc2hpIERlZmF1bHQgUm9vdCBDQSBDZXJ0aWZpY2F0ZTEeMBwGA1UE\nCwwVT3Rvcm9zaGkgQ2VydGlmaWNhdGVzMREwDwYDVQQKDAhPdG9yb3NoaTAeFw0y\nMjA3MjIwNzIwMzhaFw0zMjA3MTkwNzIwMzhaMGoxNTAzBgNVBAMMLE90b3Jvc2hp\nIERlZmF1bHQgSW50ZXJtZWRpYXRlIENBIENlcnRpZmljYXRlMR4wHAYDVQQLDBVP\ndG9yb3NoaSBDZXJ0aWZpY2F0ZXMxETAPBgNVBAoMCE90b3Jvc2hpMIIBIjANBgkq\nhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0zpxxxleKJNlQcaIrGYZ0KLjJ0fhYTbY\nxUmCTjA1tLphQW4/PSzJ+K7FuTRcl2BMy2PKPjkSj/ZdZkH0tNeyHCb5tdPWCzL6\ncmP8H1KcQ9iIz/SaPP1mTkrBc3Lep9aXHIoeDhuQaPbYLaKtukhw0CW9a4vAzrnp\niru6RTVTbfiGb+/3h8KIxB9D0ZpzSOYdSIwZjqn3AwpxyMDd3KOAb3FqCMqkHqZJ\n5MTN3SUt6vVrRPSKEy2RBF09uxf1s//zG9MkrY3XQKCEW2ZwpjW8un3Cnm9yi8xl\n0xIgO3KpvCB0rYiXQOUU0S4GhFOvaWUb53/TUmzlfw4WvLpYczeTvwIDAQABo2Yw\nZDASBgNVHRMBAf8ECDAGAQH/AgEAMA4GA1UdDwEB/wQEAwIBhjAfBgNVHSMEGDAW\ngBRfuwoUm0bAsZYCa5tHpJ4hmb1OwTAdBgNVHQ4EFgQUgnpqyouDufipK98M8TC8\nRVGloO0wDQYJKoZIhvcNAQELBQADggEBADFmlvVUhRESjyttoFNU8IvBWV5U915M\nanMuZLyARI1Roy0OzeALRxpQ4Jl7jQP9Hie9SRqmiOLZhTqIKLBpTU/ZPGGM5rFL\nPzibtWXJu07Snl7R21JG/0EH7jH6MFrPhJvBhMhnPDC2ZvSLZTGPhCfCe2vZJU7A\n8XN98bhAdfYq0jZWwM5sBchBookNWAlWgPP/lTev3VT2XRrwiOCvvcuYi/XHLRJa\nz8wtUOVhiil8fKcprq7bgVNecIx41N5aTJrhKfBIP2NKYvpMIq6upLYvctx+ydns\nQa/yYn1POCPqimYbJbVfXxLW1bC7sjrs8Y7ShosYOWFQz/zyvkjKW6Q=\n-----END CERTIFICATE-----\n\n-----BEGIN CERTIFICATE-----\nMIIEcjCCA1qgAwIBAgIJALlZD/ccO5qrMA0GCSqGSIb3DQEBCwUAMGIxLTArBgNV\nBAMMJE90b3Jvc2hpIERlZmF1bHQgUm9vdCBDQSBDZXJ0aWZpY2F0ZTEeMBwGA1UE\nCwwVT3Rvcm9zaGkgQ2VydGlmaWNhdGVzMREwDwYDVQQKDAhPdG9yb3NoaTAeFw0y\nMjA3MjIwNzIwMzdaFw0zMjA3MTkwNzIwMzdaMGIxLTArBgNVBAMMJE90b3Jvc2hp\nIERlZmF1bHQgUm9vdCBDQSBDZXJ0aWZpY2F0ZTEeMBwGA1UECwwVT3Rvcm9zaGkg\nQ2VydGlmaWNhdGVzMREwDwYDVQQKDAhPdG9yb3NoaTCCASIwDQYJKoZIhvcNAQEB\nBQADggEPADCCAQoCggEBAKrSEsArcGZD5avdKhy30uOzZWxTTN/htxsLvFRN3qvj\nvNuceeojknP6WkOw+Mv2FBaCgk60QnA45S24b2Rk7DXlXi7fmYBhNaqPzjwnPpZ+\nh+XVo1gwF743qkrkC8KGlXAAAyI854bTR9d6KJaET9RyN8M8PvhjvQnbtwZ+Lddo\nloxQfpNOg5kodb8NYKlLF6PD9Q/z5DJ8EM1Bp4kco7c8nZJH4aL/HN5KhfhsO0v5\nQkzuXi61b/c5bRHiBSl6h/JcNh+x4akWEhMfRlmGeqR83q321wQFHJOg6YZdEclL\nnFHrx1YcIOdhIsOmISNTJ0kPcAAY7vTbSRM1Vso52+kCAwEAAaOCASkwggElMA8G\nA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMB8GA1UdIwQYMBaAFF+7ChSb\nRsCxlgJrm0ekniGZvU7BMB0GA1UdDgQWBBRfuwoUm0bAsZYCa5tHpJ4hmb1OwTCB\nwQYIKwYBBQUHAQEEgbQwgbEwZQYIKwYBBQUHMAKGWWh0dHA6Ly9vdG9yb3NoaS1h\ncGkub3RvLnRvb2xzOjgwODAvLndlbGwta25vd24vb3Rvcm9zaGkvY2VydGlmaWNh\ndGVzLzEzMzU1NzIzNzIzOTQ4OTIzNTYzMEgGCCsGAQUFBzABhjxodHRwOi8vb3Rv\ncm9zaGktYXBpLm90by50b29sczo4MDgwLy53ZWxsLWtub3duL290b3Jvc2hpL29j\nc3AwDQYJKoZIhvcNAQELBQADggEBAFhFRC/6pBqmzFdqBklo19lhKqAmNKcH+/Os\nvBMjDfa89ynwC9GvSWzMR6LDlgXrzQvMiVRTYfUOiUBABs8bRx2Up1CM3j5i3z7d\nhhHjLGQjs+HezJ/dhH2ikkoDVIAOIzwJUUrv3RLFvmNRytrCrhxad0GFUU72xAsR\nZuja1BPOwqK6pXnW2M5DuN16bNqgscu3LBaBugn2ZpXgCKHwlu+9D9j57Xh6TWk9\nnw1tHeDAN0mPdmxKbiYsVsGcJ4i9qDdgerbR/c7YxcfNGvdBSdl6nn29UkooiyNC\niGHP0cJ2VcPPkaUaXHv+Eta3KfJeENoXpzP1hIBHdO2oQUpVcdU=\n-----END CERTIFICATE-----\n\n",
+      "caRef": null,
+      "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDTOnHHGV4ok2VB\nxoisZhnQouMnR+FhNtjFSYJOMDW0umFBbj89LMn4rsW5NFyXYEzLY8o+ORKP9l1m\nQfS017IcJvm109YLMvpyY/wfUpxD2IjP9Jo8/WZOSsFzct6n1pccih4OG5Bo9tgt\noq26SHDQJb1ri8DOuemKu7pFNVNt+IZv7/eHwojEH0PRmnNI5h1IjBmOqfcDCnHI\nwN3co4BvcWoIyqQepknkxM3dJS3q9WtE9IoTLZEEXT27F/Wz//Mb0yStjddAoIRb\nZnCmNby6fcKeb3KLzGXTEiA7cqm8IHStiJdA5RTRLgaEU69pZRvnf9NSbOV/Dha8\nulhzN5O/AgMBAAECggEAAOggp5N69/70pvz3MTuZo2+k51JDrBXUMGSfDpQzvCbg\nrACRJ5i9n+JVhEoD670aF0rCX39XOQ78WlKw05CUJH12V6AlLGnM8W4ZyE35JcFp\nikWpM9cn9/C84TCpDAdmdqo7yXZiKaaFnwyHumOn4vzb0fkI8YToH78BObLU54VG\nQlmFOqMY3Ea6Z7SjnY1ubsMX+vIJRZotOI1ZyUJO0zagyLXqIiQN4+T4wyNnFGzk\nXLd+QOCyTWxSXZaOoSxfBrC6s2YS5WUjbv6iClRPY7KMqGEOg3pRf3HRT7h0vktm\naeJtA+wHKOLS0dMFRGhMTB/5lCQ32HyTyGut76SwAQKBgQD/7O6UvzVU7bQrE6zG\nbh29Ytz8hO0k7g22F6xhWDh4wkKSZiLsRrnOAKnPhrIN+/GnXbwl1Jjtr3mV0HKV\n5a9m8VAQWAuxQvKrFR0MCvtXEDQ7T0JDF1ihW0S3oAtz6qXbqxS0f0xj58KEY7wl\ncabepmcXMnkTsrNwWg+wQDK9vwKBgQDTSi6pAn3jHmAp8IrOC5MBFgoKMl384Brs\nKn5W9SqmcZ+txc+YP3zVuEAB4JzIvBU/Z/VisZViUBMqbNbrk8YNoGv5howxZMaS\nyKcWFNfFgbLChW1IcntfYCjt4WC4xm3SE+NLYzmtp0/e9aqQjfpC749MZeZ8OmB4\nlhz8h/yqAQKBgQCBO93GUz/VISunzQmkMhrmdbPt+BngWi2mVBICHhB2OnJvhw//\njD9rXT5iwzvKf/0pbNYDrHWFIOUe1+Hk+9U1AIpTloJhAtOTvNesKyd8cXxOrtlh\nE7r30CTFLRZbdJRIdv2/n8CtemzpeYuaxOdk61aHij9FySl/hJsDf4ef9QKBgC04\nMShGuj6DX71aF7rlSz7uQpPQF8FpDRoCNivSKKCarLv6G+XPoJ304u4D7kofxsRd\nMW0/6GK0FIX96Tld1QNRlApBO3vOv5jmjKvzJgLFMUbkW3En3zOYVuoiVBr3jMVr\nMDgQMmXx6uwi07BAUpFEx/xnyp5HuCHWrrl1OSQBAoGAf0yyClH856w+mPdgoerB\nxXVmruNKQVrVtEc419JPj/Qs55M4SWc8ND6Dw5ktdCIo+FAhTy/hJ38wCev2pUG4\nGqIQKKbcHnIcecxUF/uja1RoWhOpGI+oaRHqOEXzPUQCyqf+hIypEqdGsAaTAsKF\ngbDLOaH4N3nNjpUS2e5MMZo=\n-----END PRIVATE KEY-----\n",
+      "selfSigned": false,
+      "ca": true,
+      "valid": true,
+      "exposed": true,
+      "revoked": false,
+      "autoRenew": true,
+      "letsEncrypt": false,
+      "subject": "OU=Otoroshi Certificates, O=Otoroshi, CN=Otoroshi Default Intermediate CA Certificate",
+      "from": 1658474438000,
+      "to": 1973834438000,
+      "client": false,
+      "keypair": false,
+      "sans": [],
+      "certType": "ca",
+      "password": null,
+      "metadata": {
+        "csr": "{\"hosts\":[],\"key\":{\"algo\":\"rsa\",\"size\":2048},\"name\":{},\"subject\":\"CN=Otoroshi Default Intermediate CA Certificate, OU=Otoroshi Certificates, O=Otoroshi\",\"client\":false,\"ca\":true,\"duration\":315360000000,\"signatureAlg\":\"SHA256WithRSAEncryption\",\"digestAlg\":\"SHA-256\"}"
+      },
+      "tags": []
+    },
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "otoroshi-root-ca",
+      "domain": "Otoroshi Default Root CA Certificate",
+      "name": "Otoroshi Default Root CA Certificate",
+      "description": "Otoroshi root CA (auto-generated)",
+      "chain": "-----BEGIN CERTIFICATE-----\nMIIEcjCCA1qgAwIBAgIJALlZD/ccO5qrMA0GCSqGSIb3DQEBCwUAMGIxLTArBgNV\nBAMMJE90b3Jvc2hpIERlZmF1bHQgUm9vdCBDQSBDZXJ0aWZpY2F0ZTEeMBwGA1UE\nCwwVT3Rvcm9zaGkgQ2VydGlmaWNhdGVzMREwDwYDVQQKDAhPdG9yb3NoaTAeFw0y\nMjA3MjIwNzIwMzdaFw0zMjA3MTkwNzIwMzdaMGIxLTArBgNVBAMMJE90b3Jvc2hp\nIERlZmF1bHQgUm9vdCBDQSBDZXJ0aWZpY2F0ZTEeMBwGA1UECwwVT3Rvcm9zaGkg\nQ2VydGlmaWNhdGVzMREwDwYDVQQKDAhPdG9yb3NoaTCCASIwDQYJKoZIhvcNAQEB\nBQADggEPADCCAQoCggEBAKrSEsArcGZD5avdKhy30uOzZWxTTN/htxsLvFRN3qvj\nvNuceeojknP6WkOw+Mv2FBaCgk60QnA45S24b2Rk7DXlXi7fmYBhNaqPzjwnPpZ+\nh+XVo1gwF743qkrkC8KGlXAAAyI854bTR9d6KJaET9RyN8M8PvhjvQnbtwZ+Lddo\nloxQfpNOg5kodb8NYKlLF6PD9Q/z5DJ8EM1Bp4kco7c8nZJH4aL/HN5KhfhsO0v5\nQkzuXi61b/c5bRHiBSl6h/JcNh+x4akWEhMfRlmGeqR83q321wQFHJOg6YZdEclL\nnFHrx1YcIOdhIsOmISNTJ0kPcAAY7vTbSRM1Vso52+kCAwEAAaOCASkwggElMA8G\nA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMB8GA1UdIwQYMBaAFF+7ChSb\nRsCxlgJrm0ekniGZvU7BMB0GA1UdDgQWBBRfuwoUm0bAsZYCa5tHpJ4hmb1OwTCB\nwQYIKwYBBQUHAQEEgbQwgbEwZQYIKwYBBQUHMAKGWWh0dHA6Ly9vdG9yb3NoaS1h\ncGkub3RvLnRvb2xzOjgwODAvLndlbGwta25vd24vb3Rvcm9zaGkvY2VydGlmaWNh\ndGVzLzEzMzU1NzIzNzIzOTQ4OTIzNTYzMEgGCCsGAQUFBzABhjxodHRwOi8vb3Rv\ncm9zaGktYXBpLm90by50b29sczo4MDgwLy53ZWxsLWtub3duL290b3Jvc2hpL29j\nc3AwDQYJKoZIhvcNAQELBQADggEBAFhFRC/6pBqmzFdqBklo19lhKqAmNKcH+/Os\nvBMjDfa89ynwC9GvSWzMR6LDlgXrzQvMiVRTYfUOiUBABs8bRx2Up1CM3j5i3z7d\nhhHjLGQjs+HezJ/dhH2ikkoDVIAOIzwJUUrv3RLFvmNRytrCrhxad0GFUU72xAsR\nZuja1BPOwqK6pXnW2M5DuN16bNqgscu3LBaBugn2ZpXgCKHwlu+9D9j57Xh6TWk9\nnw1tHeDAN0mPdmxKbiYsVsGcJ4i9qDdgerbR/c7YxcfNGvdBSdl6nn29UkooiyNC\niGHP0cJ2VcPPkaUaXHv+Eta3KfJeENoXpzP1hIBHdO2oQUpVcdU=\n-----END CERTIFICATE-----\n",
+      "caRef": null,
+      "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCq0hLAK3BmQ+Wr\n3Soct9Ljs2VsU0zf4bcbC7xUTd6r47zbnHnqI5Jz+lpDsPjL9hQWgoJOtEJwOOUt\nuG9kZOw15V4u35mAYTWqj848Jz6Wfofl1aNYMBe+N6pK5AvChpVwAAMiPOeG00fX\neiiWhE/UcjfDPD74Y70J27cGfi3XaJaMUH6TToOZKHW/DWCpSxejw/UP8+QyfBDN\nQaeJHKO3PJ2SR+Gi/xzeSoX4bDtL+UJM7l4utW/3OW0R4gUpeofyXDYfseGpFhIT\nH0ZZhnqkfN6t9tcEBRyToOmGXRHJS5xR68dWHCDnYSLDpiEjUydJD3AAGO7020kT\nNVbKOdvpAgMBAAECggEASevDqn6B0vdx5cg9B5VzAQ9qhhCcNUwfqWgQNSlHgXn5\nic2yomSHZYIC2sU0PUs9kSokCrwN/jNY1cq5Bah44a/i7ITdkAVBLJCzritLdePG\nmmqzl5+kPrAnFOaPwjvsYj3XHVNe2+UFc1VNSCl0xFozEF07YNEEhsYac4hZ/Rt0\nATmcJW5iseS9t2UbCaiAqVaAy/ZtCS0BoQv8fQfuR6IBZvuaXnJG6lctNRx5O+GV\nz+s74h/NE/JIn/o8P7YfXnOUR2WQuFUJaulHDNM+BrjtpFf/OoWCUYLCY5kQwCLU\n1ptGu7V8ucDy2Y4ct37C1l46S9dBMuz9tKJmbwQs4wKBgQDRoYZCQ/iJcXT0Fbcg\nGxwZ3QEdRi53HUCFpJDt/zTUmE493zBd90AGbtUP9b/+NJDPT9szN5xez0Shvzcm\nEHHAflfOUrUrjV4dHZBAapxHKN3NzRgGUe+jdCtobU7g/D9/S6gsMduvNKxOKJGf\nviLE3TCV3Q3bKVCzSHpB6/xd2wKBgQDQmuPAI5sjXRp2nbwa2B/6JQZaGNexB7E3\ndFZIMzbiVoTlsOznyhaSECw8h90eiZ6DMiResGwUJEP9IlJxySGzcMJRwgVs70vR\n6xO16mq8vga3LaCMfqS347KLF3ZvptGaWdPA/Y1zc5qkrcZM+yq0JbuiGClEPUsY\nVqt5TcSSiwKBgEdbF/xObrc6K3k6Ow9uqu4S0GJKlV5uUpwrHDom+LC0900QP8J8\newq1h0jbefLpqbEnmZGhiFStcMst73PBfTbsyq6scIbWpAZ9HbEPmQqP2pBHE7pz\nAYM989ij/ImQ03xdIG2KuyC0aUJhhNA/RE6GjBc3G5RSR+n+7b6quUipAoGBAMrr\nkNaMDFKXM7Hk+GFIkbqcH5SvC8oKiIpAIdpz71S3AuoIdDt5qwEEuHNdWmxlRIus\n0BJIHapuKLDpnTdQhvbtnik3yl1QXfniabcRRCk71H6F5OImI4c5+Kky9qPfq48x\nCDp4qwt+jhTZccfan4zEE8S3KhVWZmFTldQXITvHAoGBAMMvGgy+PfrI1BYvIgsr\nf5gSEJ+XVH/+H1pdmaXWTNyvShws+1/dlNKfjmnF5dlRmoiSag1Ma71RrLfaQygD\naJ48tOAb5JzYElsdwqGwGfWMF4lMAFLTvr4bWgLTgt24SOx/MwHmT0AtaL1UUjl0\n7EQofN8oICVkAjH75QOBpeqy\n-----END PRIVATE KEY-----\n",
+      "selfSigned": true,
+      "ca": true,
+      "valid": true,
+      "exposed": true,
+      "revoked": false,
+      "autoRenew": true,
+      "letsEncrypt": false,
+      "subject": "OU=Otoroshi Certificates, O=Otoroshi, CN=Otoroshi Default Root CA Certificate",
+      "from": 1658474437000,
+      "to": 1973834437000,
+      "client": false,
+      "keypair": false,
+      "sans": [],
+      "certType": "ca",
+      "password": null,
+      "metadata": {
+        "csr": "{\"hosts\":[],\"key\":{\"algo\":\"rsa\",\"size\":2048},\"name\":{},\"subject\":\"CN=Otoroshi Default Root CA Certificate, OU=Otoroshi Certificates, O=Otoroshi\",\"client\":false,\"ca\":true,\"duration\":315360000000,\"signatureAlg\":\"SHA256WithRSAEncryption\",\"digestAlg\":\"SHA-256\"}"
+      },
+      "tags": []
+    },
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "otoroshi-client",
+      "domain": "Otoroshi Default Client Certificate",
+      "name": "Otoroshi Default Client Certificate",
+      "description": "Otoroshi client certificate (auto-generated)",
+      "chain": "-----BEGIN CERTIFICATE-----\nMIIDuTCCAqGgAwIBAgIJAK6Q3vKVgyzDMA0GCSqGSIb3DQEBCwUAMGoxNTAzBgNV\nBAMMLE90b3Jvc2hpIERlZmF1bHQgSW50ZXJtZWRpYXRlIENBIENlcnRpZmljYXRl\nMR4wHAYDVQQLDBVPdG9yb3NoaSBDZXJ0aWZpY2F0ZXMxETAPBgNVBAoMCE90b3Jv\nc2hpMB4XDTIyMDcyMjA3MjAzOVoXDTIzMDcyMjA3MjAzOVowYTEsMCoGA1UEAwwj\nT3Rvcm9zaGkgRGVmYXVsdCBDbGllbnQgQ2VydGlmaWNhdGUxHjAcBgNVBAsMFU90\nb3Jvc2hpIENlcnRpZmljYXRlczERMA8GA1UECgwIT3Rvcm9zaGkwggEiMA0GCSqG\nSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC+xiSKbkFkfJ9YRI6qOTqkdHhckLzmjEdx\nveE/G+GjaxyTmOkztUEEFEtBO6z/GobqXTwHD010kyxFp0Bssyycx12qnKlfWoU1\nbZk9rABFtq6iKacM9vKxmZQc2H1ooT71reAiuJv5bRy8pqGueacSgxGegN7hZuQi\nw4iIL7yW8PG9HL5P1AkZuUzjsgJ0m/2Ilig44oBkCP1gdYTzZP0IDmQwAz5aafp2\n4mXDGLx6nAEgEAXko/JfBxnbQ0A2CVo0ENR4XXSJzuVhOC/f6/FWvNHIf0EnOV+8\ncGFyyIp9R9ap5zxfu/ruibxDT+KxpqpM1Bl5lGh4M5qf8dm6U05bAgMBAAGjazBp\nMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUF\nBwMCBggrBgEFBQcDATAfBgNVHSMEGDAWgBSCemrKi4O5+Kkr3wzxMLxFUaWg7TAJ\nBgNVHREEAjAAMA0GCSqGSIb3DQEBCwUAA4IBAQA1MKxqE0cBLB6hD52f1jjmyzYF\nmFpiXMjmon8YfnaylBBRMV9QBw1/QXPLdp9M0OYE63R4oQhq//NMPJkOjfMAP5Sz\nQcudFJC535FucXgyk3FjC+r6zGt8wMaLxH/MltdHxH15OBNPv3M2MfZ95KULCraO\n9sivq5OEH/Gx8VbYDMjsS51TCJy/3NrJNJLaubM+DieSjkLb9cNj00xQkC7p+tw7\nCV+iO1jIwze6G7Xjfvm2452zlfpv7sFIhgp3AqPwgNjIPJ3JHpYF/A1OixY1IYOy\nn/uXT3pPue7/xhoDxbvGhWxBUlAl/p5KqzapEXEYH/n3B6NxYKoITcCglVPl\n-----END CERTIFICATE-----\n\n-----BEGIN CERTIFICATE-----\nMIIDtTCCAp2gAwIBAgIJAPXv2haydkn6MA0GCSqGSIb3DQEBCwUAMGIxLTArBgNV\nBAMMJE90b3Jvc2hpIERlZmF1bHQgUm9vdCBDQSBDZXJ0aWZpY2F0ZTEeMBwGA1UE\nCwwVT3Rvcm9zaGkgQ2VydGlmaWNhdGVzMREwDwYDVQQKDAhPdG9yb3NoaTAeFw0y\nMjA3MjIwNzIwMzhaFw0zMjA3MTkwNzIwMzhaMGoxNTAzBgNVBAMMLE90b3Jvc2hp\nIERlZmF1bHQgSW50ZXJtZWRpYXRlIENBIENlcnRpZmljYXRlMR4wHAYDVQQLDBVP\ndG9yb3NoaSBDZXJ0aWZpY2F0ZXMxETAPBgNVBAoMCE90b3Jvc2hpMIIBIjANBgkq\nhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0zpxxxleKJNlQcaIrGYZ0KLjJ0fhYTbY\nxUmCTjA1tLphQW4/PSzJ+K7FuTRcl2BMy2PKPjkSj/ZdZkH0tNeyHCb5tdPWCzL6\ncmP8H1KcQ9iIz/SaPP1mTkrBc3Lep9aXHIoeDhuQaPbYLaKtukhw0CW9a4vAzrnp\niru6RTVTbfiGb+/3h8KIxB9D0ZpzSOYdSIwZjqn3AwpxyMDd3KOAb3FqCMqkHqZJ\n5MTN3SUt6vVrRPSKEy2RBF09uxf1s//zG9MkrY3XQKCEW2ZwpjW8un3Cnm9yi8xl\n0xIgO3KpvCB0rYiXQOUU0S4GhFOvaWUb53/TUmzlfw4WvLpYczeTvwIDAQABo2Yw\nZDASBgNVHRMBAf8ECDAGAQH/AgEAMA4GA1UdDwEB/wQEAwIBhjAfBgNVHSMEGDAW\ngBRfuwoUm0bAsZYCa5tHpJ4hmb1OwTAdBgNVHQ4EFgQUgnpqyouDufipK98M8TC8\nRVGloO0wDQYJKoZIhvcNAQELBQADggEBADFmlvVUhRESjyttoFNU8IvBWV5U915M\nanMuZLyARI1Roy0OzeALRxpQ4Jl7jQP9Hie9SRqmiOLZhTqIKLBpTU/ZPGGM5rFL\nPzibtWXJu07Snl7R21JG/0EH7jH6MFrPhJvBhMhnPDC2ZvSLZTGPhCfCe2vZJU7A\n8XN98bhAdfYq0jZWwM5sBchBookNWAlWgPP/lTev3VT2XRrwiOCvvcuYi/XHLRJa\nz8wtUOVhiil8fKcprq7bgVNecIx41N5aTJrhKfBIP2NKYvpMIq6upLYvctx+ydns\nQa/yYn1POCPqimYbJbVfXxLW1bC7sjrs8Y7ShosYOWFQz/zyvkjKW6Q=\n-----END CERTIFICATE-----\n\n-----BEGIN CERTIFICATE-----\nMIIEcjCCA1qgAwIBAgIJALlZD/ccO5qrMA0GCSqGSIb3DQEBCwUAMGIxLTArBgNV\nBAMMJE90b3Jvc2hpIERlZmF1bHQgUm9vdCBDQSBDZXJ0aWZpY2F0ZTEeMBwGA1UE\nCwwVT3Rvcm9zaGkgQ2VydGlmaWNhdGVzMREwDwYDVQQKDAhPdG9yb3NoaTAeFw0y\nMjA3MjIwNzIwMzdaFw0zMjA3MTkwNzIwMzdaMGIxLTArBgNVBAMMJE90b3Jvc2hp\nIERlZmF1bHQgUm9vdCBDQSBDZXJ0aWZpY2F0ZTEeMBwGA1UECwwVT3Rvcm9zaGkg\nQ2VydGlmaWNhdGVzMREwDwYDVQQKDAhPdG9yb3NoaTCCASIwDQYJKoZIhvcNAQEB\nBQADggEPADCCAQoCggEBAKrSEsArcGZD5avdKhy30uOzZWxTTN/htxsLvFRN3qvj\nvNuceeojknP6WkOw+Mv2FBaCgk60QnA45S24b2Rk7DXlXi7fmYBhNaqPzjwnPpZ+\nh+XVo1gwF743qkrkC8KGlXAAAyI854bTR9d6KJaET9RyN8M8PvhjvQnbtwZ+Lddo\nloxQfpNOg5kodb8NYKlLF6PD9Q/z5DJ8EM1Bp4kco7c8nZJH4aL/HN5KhfhsO0v5\nQkzuXi61b/c5bRHiBSl6h/JcNh+x4akWEhMfRlmGeqR83q321wQFHJOg6YZdEclL\nnFHrx1YcIOdhIsOmISNTJ0kPcAAY7vTbSRM1Vso52+kCAwEAAaOCASkwggElMA8G\nA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMB8GA1UdIwQYMBaAFF+7ChSb\nRsCxlgJrm0ekniGZvU7BMB0GA1UdDgQWBBRfuwoUm0bAsZYCa5tHpJ4hmb1OwTCB\nwQYIKwYBBQUHAQEEgbQwgbEwZQYIKwYBBQUHMAKGWWh0dHA6Ly9vdG9yb3NoaS1h\ncGkub3RvLnRvb2xzOjgwODAvLndlbGwta25vd24vb3Rvcm9zaGkvY2VydGlmaWNh\ndGVzLzEzMzU1NzIzNzIzOTQ4OTIzNTYzMEgGCCsGAQUFBzABhjxodHRwOi8vb3Rv\ncm9zaGktYXBpLm90by50b29sczo4MDgwLy53ZWxsLWtub3duL290b3Jvc2hpL29j\nc3AwDQYJKoZIhvcNAQELBQADggEBAFhFRC/6pBqmzFdqBklo19lhKqAmNKcH+/Os\nvBMjDfa89ynwC9GvSWzMR6LDlgXrzQvMiVRTYfUOiUBABs8bRx2Up1CM3j5i3z7d\nhhHjLGQjs+HezJ/dhH2ikkoDVIAOIzwJUUrv3RLFvmNRytrCrhxad0GFUU72xAsR\nZuja1BPOwqK6pXnW2M5DuN16bNqgscu3LBaBugn2ZpXgCKHwlu+9D9j57Xh6TWk9\nnw1tHeDAN0mPdmxKbiYsVsGcJ4i9qDdgerbR/c7YxcfNGvdBSdl6nn29UkooiyNC\niGHP0cJ2VcPPkaUaXHv+Eta3KfJeENoXpzP1hIBHdO2oQUpVcdU=\n-----END CERTIFICATE-----\n",
+      "caRef": null,
+      "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC+xiSKbkFkfJ9Y\nRI6qOTqkdHhckLzmjEdxveE/G+GjaxyTmOkztUEEFEtBO6z/GobqXTwHD010kyxF\np0Bssyycx12qnKlfWoU1bZk9rABFtq6iKacM9vKxmZQc2H1ooT71reAiuJv5bRy8\npqGueacSgxGegN7hZuQiw4iIL7yW8PG9HL5P1AkZuUzjsgJ0m/2Ilig44oBkCP1g\ndYTzZP0IDmQwAz5aafp24mXDGLx6nAEgEAXko/JfBxnbQ0A2CVo0ENR4XXSJzuVh\nOC/f6/FWvNHIf0EnOV+8cGFyyIp9R9ap5zxfu/ruibxDT+KxpqpM1Bl5lGh4M5qf\n8dm6U05bAgMBAAECggEAWTArPyiim8cDe/G5PO26c84bwzLLjYFBmXRrDOUNDShz\nWLGhPNJdTfnq4Nl0XGNbddAW0zodPQXdKccygF8X2Uf/i1bofDLGmh7eCI4UJoNs\ni1WryozdE5i4PPAdWUAhPhyG79Sc3vRa/fttFTO8nxP1tcOL75b5yyLc/sZKhcnZ\n8paSERF8HWL/tcprciSmov3Rq616/2wO1GxaU45HAFB+PurH0l7rI8M+Tf5PBUb6\n7KXIERoufRjy4IbJtUA/1sZ/UBUOY7z4/wlfMfRlzykSCI7zOx+o9OKN7AD+rn90\nhilUXHzqbjgnzQ7ryIElU/0Xzuc5T8DZL/0ZuOFnkQKBgQDwDaUUC3oVYXCZ6pDR\nSTAWoN//Qa4DUZXgN40Zcp74UttFekxg6N6Va56Q//4mwXr2sTB1DkNZ+t4PvvRt\nRiGUpEx4nyCTlzc2v9pgKSdR9EFu/bgrCsOqGvoqGgCdeFn6JKztV4U602RjdFlU\nSVmEIcV3An96+FWpHp8BpJXQcwKBgQDLcnPGPmf2YuQmXMy5yJGAwWPaqdMic1rO\nWRVZTCV5SQbqV+RHUkoNLoEzYFR4f+LvA485FP2HdgDzXyUv7pgLSXIKfvR739+b\netHwzorfTpJ4XELsSJojYdkeySUD/g0xn31qJZKCe+31gvLFyqUD9/PGGc+AT9Bd\nzOdhOuMYeQKBgDxtIt292dhh88c6zYNxKeK4UkpdzSDWu6R6N1FtkeiuarW9iFZo\nqAby1TJoziARWhOZHLqKgZe314gdKEgNfEx/YySF4dxlFyf3+U91bIlrs8Dtqxti\nlUhPjCNm8jqxXeziqIkCG+5n4gBK/GWEJT1mht9jSJW6x01QAPSX6oJTAoGAFbYn\nKNbsHV08X+OzbXg8HvOEhodtItYQsMjNAHSh4ymp9URf9kSP5ow5+ZOkMB/lxgAp\nPrxAuj4bp91ViKH70+iIpRobWUTxBhS7ZumD5ITsGLAv7CtrV69PjnuE2cI5Ajy1\nE6ji084J/RN2eSlBJwVFHLUQce8Sm5AMeVHhfnECgYBFlMAJRQMYhSnopm649e1S\n24H1NTb7jc3xtP80pEQFTIHDlRg80vy6MsPs+UM91hbmj+VVmnw0pcbmU7ZAFXzS\nVTrtQcRrZk9LQD5Qce3aX1o0ryvFazZdBVSMun+V/XyFTUC07q+Y/JHwDqjFfHms\n91fl4cuToqBYnMELdmjfYQ==\n-----END PRIVATE KEY-----\n",
+      "selfSigned": false,
+      "ca": false,
+      "valid": true,
+      "exposed": true,
+      "revoked": false,
+      "autoRenew": true,
+      "letsEncrypt": false,
+      "subject": "OU=Otoroshi Certificates, O=Otoroshi, CN=Otoroshi Default Client Certificate",
+      "from": 1658474439000,
+      "to": 1690010439000,
+      "client": true,
+      "keypair": false,
+      "sans": [],
+      "certType": "client",
+      "password": null,
+      "metadata": {
+        "csr": "{\"hosts\":[],\"key\":{\"algo\":\"rsa\",\"size\":2048},\"name\":{},\"subject\":\"CN=Otoroshi Default Client Certificate, OU=Otoroshi Certificates, O=Otoroshi\",\"client\":true,\"ca\":false,\"duration\":31536000000,\"signatureAlg\":\"SHA256WithRSAEncryption\",\"digestAlg\":\"SHA-256\"}"
+      },
+      "tags": []
+    },
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "otoroshi-jwt-signing",
+      "domain": "Otoroshi Default Jwt Signing Keypair",
+      "name": "Otoroshi Default Jwt Signing Keypair",
+      "description": "Otoroshi jwt signing keypair (auto-generated)",
+      "chain": "-----BEGIN CERTIFICATE-----\nMIIDsDCCApigAwIBAgIJAN/5IDoOsA0AMA0GCSqGSIb3DQEBCwUAMGoxNTAzBgNV\nBAMMLE90b3Jvc2hpIERlZmF1bHQgSW50ZXJtZWRpYXRlIENBIENlcnRpZmljYXRl\nMR4wHAYDVQQLDBVPdG9yb3NoaSBDZXJ0aWZpY2F0ZXMxETAPBgNVBAoMCE90b3Jv\nc2hpMB4XDTIyMDcyMjA3MjAzOVoXDTIzMDcyMjA3MjAzOVowYjEtMCsGA1UEAwwk\nT3Rvcm9zaGkgRGVmYXVsdCBKd3QgU2lnbmluZyBLZXlwYWlyMR4wHAYDVQQLDBVP\ndG9yb3NoaSBDZXJ0aWZpY2F0ZXMxETAPBgNVBAoMCE90b3Jvc2hpMIIBIjANBgkq\nhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAroW1lARzR1j85sDKn/8qBWJx1SH5T2T0\nuqvCIEzW7DdTl/yZEk6wQSmC8+ksVzI8IW4ACtUqa48X57fXBU0pIIOQe9OzbsOb\n1R9LCZGewKTEIIkwBW99Jaw3SSsae1TQVU1LSFKXXeD3glgF4kGb56cgXZITEJ9Q\nMw/KosxlQsz0ptT8kpxqzB819bXROrHUYtPmKutaf2cgPvV2NK8G+MyJ6SCcrGwD\nRCinsoK8PduQI7UFcAjFXFYr6pRDfqZ9YN+AyUjtUeP6m/mr8rHAvyhgMXZANhwL\n/rL5XEm3SNiYNSFlwKFxx86P1HtSigUXcCgbJfWaG1euzXUjEoDzzQIDAQABo2Ew\nXzAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIFoDATBgNVHSUEDDAKBggrBgEF\nBQcDATAfBgNVHSMEGDAWgBSCemrKi4O5+Kkr3wzxMLxFUaWg7TAJBgNVHREEAjAA\nMA0GCSqGSIb3DQEBCwUAA4IBAQABRDIK1ySkEBiT+DV+SjfPR8qsQwBEkaJh86DY\ntgM4xnyiH4Mt5ZolvXN3KgEQ/k51IiDnj2DFnwiiN1LAaukYu0+7bsiORyLPKPDW\nCYrSa3ZjIePPVAqJzXx2/Pnuht19rR6gRPuG0sweDIuy+BZVyNoY9q046r4qBsud\nqJAkyxKWl8IRLsN3Snnz7sAlYUMMZTExrCK0AOKigprU48Yg30r04mPXWmRZjdrO\nwqXNfpRqlE/pLNpF/Q0Tt4vUAPsJbRdqlfzUbbbGU80a30qOXZfN6tNv+3V1X5Y/\n4naoNJVHI9fnVGwu7aS1eQMYmcYWE1ReDrj19WuLAMrcrEX0\n-----END CERTIFICATE-----\n\n-----BEGIN CERTIFICATE-----\nMIIDtTCCAp2gAwIBAgIJAPXv2haydkn6MA0GCSqGSIb3DQEBCwUAMGIxLTArBgNV\nBAMMJE90b3Jvc2hpIERlZmF1bHQgUm9vdCBDQSBDZXJ0aWZpY2F0ZTEeMBwGA1UE\nCwwVT3Rvcm9zaGkgQ2VydGlmaWNhdGVzMREwDwYDVQQKDAhPdG9yb3NoaTAeFw0y\nMjA3MjIwNzIwMzhaFw0zMjA3MTkwNzIwMzhaMGoxNTAzBgNVBAMMLE90b3Jvc2hp\nIERlZmF1bHQgSW50ZXJtZWRpYXRlIENBIENlcnRpZmljYXRlMR4wHAYDVQQLDBVP\ndG9yb3NoaSBDZXJ0aWZpY2F0ZXMxETAPBgNVBAoMCE90b3Jvc2hpMIIBIjANBgkq\nhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0zpxxxleKJNlQcaIrGYZ0KLjJ0fhYTbY\nxUmCTjA1tLphQW4/PSzJ+K7FuTRcl2BMy2PKPjkSj/ZdZkH0tNeyHCb5tdPWCzL6\ncmP8H1KcQ9iIz/SaPP1mTkrBc3Lep9aXHIoeDhuQaPbYLaKtukhw0CW9a4vAzrnp\niru6RTVTbfiGb+/3h8KIxB9D0ZpzSOYdSIwZjqn3AwpxyMDd3KOAb3FqCMqkHqZJ\n5MTN3SUt6vVrRPSKEy2RBF09uxf1s//zG9MkrY3XQKCEW2ZwpjW8un3Cnm9yi8xl\n0xIgO3KpvCB0rYiXQOUU0S4GhFOvaWUb53/TUmzlfw4WvLpYczeTvwIDAQABo2Yw\nZDASBgNVHRMBAf8ECDAGAQH/AgEAMA4GA1UdDwEB/wQEAwIBhjAfBgNVHSMEGDAW\ngBRfuwoUm0bAsZYCa5tHpJ4hmb1OwTAdBgNVHQ4EFgQUgnpqyouDufipK98M8TC8\nRVGloO0wDQYJKoZIhvcNAQELBQADggEBADFmlvVUhRESjyttoFNU8IvBWV5U915M\nanMuZLyARI1Roy0OzeALRxpQ4Jl7jQP9Hie9SRqmiOLZhTqIKLBpTU/ZPGGM5rFL\nPzibtWXJu07Snl7R21JG/0EH7jH6MFrPhJvBhMhnPDC2ZvSLZTGPhCfCe2vZJU7A\n8XN98bhAdfYq0jZWwM5sBchBookNWAlWgPP/lTev3VT2XRrwiOCvvcuYi/XHLRJa\nz8wtUOVhiil8fKcprq7bgVNecIx41N5aTJrhKfBIP2NKYvpMIq6upLYvctx+ydns\nQa/yYn1POCPqimYbJbVfXxLW1bC7sjrs8Y7ShosYOWFQz/zyvkjKW6Q=\n-----END CERTIFICATE-----\n\n-----BEGIN CERTIFICATE-----\nMIIEcjCCA1qgAwIBAgIJALlZD/ccO5qrMA0GCSqGSIb3DQEBCwUAMGIxLTArBgNV\nBAMMJE90b3Jvc2hpIERlZmF1bHQgUm9vdCBDQSBDZXJ0aWZpY2F0ZTEeMBwGA1UE\nCwwVT3Rvcm9zaGkgQ2VydGlmaWNhdGVzMREwDwYDVQQKDAhPdG9yb3NoaTAeFw0y\nMjA3MjIwNzIwMzdaFw0zMjA3MTkwNzIwMzdaMGIxLTArBgNVBAMMJE90b3Jvc2hp\nIERlZmF1bHQgUm9vdCBDQSBDZXJ0aWZpY2F0ZTEeMBwGA1UECwwVT3Rvcm9zaGkg\nQ2VydGlmaWNhdGVzMREwDwYDVQQKDAhPdG9yb3NoaTCCASIwDQYJKoZIhvcNAQEB\nBQADggEPADCCAQoCggEBAKrSEsArcGZD5avdKhy30uOzZWxTTN/htxsLvFRN3qvj\nvNuceeojknP6WkOw+Mv2FBaCgk60QnA45S24b2Rk7DXlXi7fmYBhNaqPzjwnPpZ+\nh+XVo1gwF743qkrkC8KGlXAAAyI854bTR9d6KJaET9RyN8M8PvhjvQnbtwZ+Lddo\nloxQfpNOg5kodb8NYKlLF6PD9Q/z5DJ8EM1Bp4kco7c8nZJH4aL/HN5KhfhsO0v5\nQkzuXi61b/c5bRHiBSl6h/JcNh+x4akWEhMfRlmGeqR83q321wQFHJOg6YZdEclL\nnFHrx1YcIOdhIsOmISNTJ0kPcAAY7vTbSRM1Vso52+kCAwEAAaOCASkwggElMA8G\nA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMB8GA1UdIwQYMBaAFF+7ChSb\nRsCxlgJrm0ekniGZvU7BMB0GA1UdDgQWBBRfuwoUm0bAsZYCa5tHpJ4hmb1OwTCB\nwQYIKwYBBQUHAQEEgbQwgbEwZQYIKwYBBQUHMAKGWWh0dHA6Ly9vdG9yb3NoaS1h\ncGkub3RvLnRvb2xzOjgwODAvLndlbGwta25vd24vb3Rvcm9zaGkvY2VydGlmaWNh\ndGVzLzEzMzU1NzIzNzIzOTQ4OTIzNTYzMEgGCCsGAQUFBzABhjxodHRwOi8vb3Rv\ncm9zaGktYXBpLm90by50b29sczo4MDgwLy53ZWxsLWtub3duL290b3Jvc2hpL29j\nc3AwDQYJKoZIhvcNAQELBQADggEBAFhFRC/6pBqmzFdqBklo19lhKqAmNKcH+/Os\nvBMjDfa89ynwC9GvSWzMR6LDlgXrzQvMiVRTYfUOiUBABs8bRx2Up1CM3j5i3z7d\nhhHjLGQjs+HezJ/dhH2ikkoDVIAOIzwJUUrv3RLFvmNRytrCrhxad0GFUU72xAsR\nZuja1BPOwqK6pXnW2M5DuN16bNqgscu3LBaBugn2ZpXgCKHwlu+9D9j57Xh6TWk9\nnw1tHeDAN0mPdmxKbiYsVsGcJ4i9qDdgerbR/c7YxcfNGvdBSdl6nn29UkooiyNC\niGHP0cJ2VcPPkaUaXHv+Eta3KfJeENoXpzP1hIBHdO2oQUpVcdU=\n-----END CERTIFICATE-----\n",
+      "caRef": null,
+      "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIEuwIBADANBgkqhkiG9w0BAQEFAASCBKUwggShAgEAAoIBAQCuhbWUBHNHWPzm\nwMqf/yoFYnHVIflPZPS6q8IgTNbsN1OX/JkSTrBBKYLz6SxXMjwhbgAK1Sprjxfn\nt9cFTSkgg5B707Nuw5vVH0sJkZ7ApMQgiTAFb30lrDdJKxp7VNBVTUtIUpdd4PeC\nWAXiQZvnpyBdkhMQn1AzD8qizGVCzPSm1PySnGrMHzX1tdE6sdRi0+Yq61p/ZyA+\n9XY0rwb4zInpIJysbANEKKeygrw925AjtQVwCMVcVivqlEN+pn1g34DJSO1R4/qb\n+avyscC/KGAxdkA2HAv+svlcSbdI2Jg1IWXAoXHHzo/Ue1KKBRdwKBsl9ZobV67N\ndSMSgPPNAgMBAAECgf9YtaissVj4jWOSmQ0lAm45MySzvzNK6OJQiRWxj3HLCglT\nTmKibw6H7qts3z0FHFyItgo0KOjxUrTBN8rb0M8wgtUSMJkakGs9cHki0vUC0YOe\n/1bKyKv7kG3l469kN+nP7R+j8ELosPTn+K00wEpGxiYBGBtAALd9ZfUF5rMJgzlO\nT/y74F0ndD8RFCUxmwLXKnxBVOHOzk7xvyt6PgGuWpQ6EH/dAlvBWvNJPqAzh20s\n1qPhVgIkHMLMfXAaIsCaL76UtZwgodJwbv+992OiEXKv+lPnAkt9+NaG4DGKn9UO\nmlriiLXi4+DQ/XH0EornmU15fYjHuV52xQ8bmSECgYEA1glPQT7d4PPX+QKkeMe5\n5gak/iHA+jtoiw1tW+F58I+1iAP4Nlf9L6dZSzk3g4y/9Lc8/nG60s8eueGQuN+u\nfWBgSPV5MHE80jC/LDPD0bV4rNbzYs1fTEc3rK74k+Yf4V5zb+iRjp20GgJq0fh5\n2pXMffYztKoJvAZhOnMqZ90CgYEA0L0mpTBdYj3jMVPgOxk2JB8cSLhu2AzKAq/r\n5YA1fHErD4wLd8VrGTGyE5ayBeJXHBPuGgNtV48yE8rF06nJ0YL4sWfsRNaTjtCh\n6u8DXlLFTLHZMzxtP6Eh6UOogy+kIqGtKayARPcwIZf1yHyd0SeeNn4cD3un3N9H\nNd0rdLECgYBYXXWUGVFfWyzSSG4A02yDdEDQDr1uUfKiXgPFSDygvaQTqJfkT8Ve\n1DeAX/n0XLqvXKtY3TllaU9lLKQkP2z5pD18QaQsBMQ4fxmeNSzmOoa8zO2k3+c1\nRb3NlFtaLEsDL4x3KkxV1fQSPOc/Ete0D95iLrBAKWdlcjjX+c4LHQKBgAF3Empe\naIlj/dA+0ngXuTWPslcgVEbX8CMMsQ8vUzDIapD1Xq88h3/pxWI10JISAKKF0UoF\ndCMFMkjJR5IwwuXhkXVNUW86QlbiSACqJM/orNHY/blKV0n3C5Hjk684CmLj159P\nQqc5RPE3a9Y4abMqIAYp5HCHYao/NvS91KxBAoGBAIKj2cThKB60obNNTSDGNtua\nuTDKPLEcfgUPk4Yb7M8MiQgkPytlf0QlAI4NEo0brdle/rwr0xjnnx8F9Gwjt5Ev\nviZ4D2c2t2Dtr6DRURWIIZoCj9LFkJDf4uCox7Cow8MFV2lFCE4NAXvC84BmcLSu\nctGoLksAVdyjta+4nzRv\n-----END PRIVATE KEY-----\n",
+      "selfSigned": false,
+      "ca": false,
+      "valid": true,
+      "exposed": true,
+      "revoked": false,
+      "autoRenew": true,
+      "letsEncrypt": false,
+      "subject": "OU=Otoroshi Certificates, O=Otoroshi, CN=Otoroshi Default Jwt Signing Keypair",
+      "from": 1658474439000,
+      "to": 1690010439000,
+      "client": false,
+      "keypair": true,
+      "sans": [],
+      "certType": "keypair",
+      "password": null,
+      "metadata": {
+        "csr": "{\"hosts\":[],\"key\":{\"algo\":\"rsa\",\"size\":2048},\"name\":{},\"subject\":\"CN=Otoroshi Default Jwt Signing Keypair, OU=Otoroshi Certificates, O=Otoroshi\",\"client\":false,\"ca\":false,\"duration\":31536000000,\"signatureAlg\":\"SHA256WithRSAEncryption\",\"digestAlg\":\"SHA-256\"}"
+      },
+      "tags": []
+    }
+  ],
+  "clientValidators": [],
+  "scripts": [],
+  "tcpServices": [],
+  "dataExporters": [],
+  "tenants": [
+    {
+      "id": "default",
+      "name": "Default organization",
+      "description": "The default organization",
+      "metadata": {},
+      "tags": []
+    }
+  ],
+  "teams": [
+    {
+      "id": "default",
+      "tenant": "default",
+      "name": "Default team",
+      "description": "Default team created for any otoroshi instance",
+      "metadata": {},
+      "tags": []
+    }
+  ],
+  "routes": [
+    {
+      "_loc": {
+        "tenant": "default",
+        "teams": [
+          "default"
+        ]
+      },
+      "id": "route_dd78a69e0-26b7-4587-b9e1-a9073cd18868",
+      "name": "exposed-whoami",
+      "description": "A new route",
+      "tags": [],
+      "metadata": {},
+      "enabled": true,
+      "debug_flow": false,
+      "export_reporting": false,
+      "capture": false,
+      "groups": [
+        "default"
+      ],
+      "frontend": {
+        "domains": [
+          "whoami-exposed-next-gen.oto.tools"
+        ],
+        "strip_path": true,
+        "exact": false,
+        "headers": {},
+        "query": {},
+        "methods": []
+      },
+      "backend": {
+        "targets": [
+          {
+            "id": "target_1",
+            "hostname": "whoami-next-gen.oto.tools",
+            "port": 8080,
+            "tls": false,
+            "weight": 1,
+            "predicate": {
+              "type": "AlwaysMatch"
+            },
+            "protocol": "HTTP/1.1",
+            "ip_address": null,
+            "tls_config": {
+              "certs": [],
+              "trusted_certs": [],
+              "enabled": false,
+              "loose": false,
+              "trust_all": false
+            }
+          }
+        ],
+        "target_refs": [],
+        "root": "/",
+        "rewrite": false,
+        "load_balancing": {
+          "type": "RoundRobin"
+        },
+        "client": {
+          "retries": 1,
+          "max_errors": 20,
+          "retry_initial_delay": 50,
+          "backoff_factor": 2,
+          "call_timeout": 30000,
+          "call_and_stream_timeout": 120000,
+          "connection_timeout": 10000,
+          "idle_timeout": 60000,
+          "global_timeout": 30000,
+          "sample_interval": 2000,
+          "proxy": {},
+          "custom_timeouts": [],
+          "cache_connection_settings": {
+            "enabled": false,
+            "queue_size": 2048
+          }
+        },
+        "health_check": null
+      },
+      "backend_ref": null,
+      "plugins": [
+        {
+          "enabled": true,
+          "debug": false,
+          "plugin": "cp:otoroshi.next.plugins.OverrideHost",
+          "include": [],
+          "exclude": [],
+          "config": {},
+          "plugin_index": {
+            "transform_request": 0
+          }
+        },
+        {
+          "enabled": true,
+          "debug": false,
+          "plugin": "cp:otoroshi.next.tunnel.TunnelPlugin",
+          "include": [],
+          "exclude": [],
+          "config": {
+            "tunnel_id": "default"
+          },
+          "plugin_index": {}
+        }
+      ]
+    }
+  ],
+  "services": [],
+  "backends": [],
+  "targets": []
+}

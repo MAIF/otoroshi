@@ -194,7 +194,7 @@ class BackOfficeController(
           if (flags.logUrl) {
             logger.info(s"[${ctx.request.id}] calling ${ctx.request.method} $url/$path with Host = $host")
           }
-          logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
+          if (logger.isDebugEnabled) logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
           val headers                = Seq(
             "Host"                           -> host,
             "X-Forwarded-For"                -> ctx.request.theIpAddress,
@@ -237,7 +237,7 @@ class BackOfficeController(
               logger.info(
                 s"[${ctx.request.id}] akka - starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}"
               )
-            logger.debug(
+            if (logger.isDebugEnabled) logger.debug(
               s"[${ctx.request.id}] akka - starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}"
             )
             builderWithBody
@@ -249,7 +249,7 @@ class BackOfficeController(
                     s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
                       .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
                   )
-                logger.debug(
+                if (logger.isDebugEnabled) logger.debug(
                   s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
                     .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
                 )
@@ -268,7 +268,7 @@ class BackOfficeController(
                               s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
                                 .currentTimeMillis() - start}ms"
                             )
-                          logger.debug(
+                          if (logger.isDebugEnabled) logger.debug(
                             s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
                               .currentTimeMillis() - start}ms"
                           )
@@ -305,7 +305,7 @@ class BackOfficeController(
             val start = System.currentTimeMillis()
             if (flags.logStats)
               logger.info(s"[${ctx.request.id}] starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}")
-            logger.debug(s"[${ctx.request.id}] starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}")
+            if (logger.isDebugEnabled) logger.debug(s"[${ctx.request.id}] starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}")
             builderWithBody
               .stream()
               .fast
@@ -315,7 +315,7 @@ class BackOfficeController(
                     s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
                       .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
                   )
-                logger.debug(
+                if (logger.isDebugEnabled) logger.debug(
                   s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
                     .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
                 )
@@ -335,7 +335,7 @@ class BackOfficeController(
                               s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
                                 .currentTimeMillis() - start}ms"
                             )
-                          logger.debug(
+                          if (logger.isDebugEnabled) logger.debug(
                             s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
                               .currentTimeMillis() - start}ms"
                           )
@@ -365,7 +365,7 @@ class BackOfficeController(
 
   def robotTxt =
     Action { req =>
-      logger.debug(s"Rendering robot.txt on ${req.theProtocol}://${req.theHost}/robot.txt")
+      if (logger.isDebugEnabled) logger.debug(s"Rendering robot.txt on ${req.theProtocol}://${req.theHost}/robot.txt")
       Ok("""User-agent: *
          |Disallow: /""".stripMargin)
     }

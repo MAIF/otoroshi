@@ -456,6 +456,11 @@
     "operations.otoroshi.next.controllers.adminapi.NgTargetsController.initiateStoredNgTarget_experimental": "Creates a new template for a target",
     "operations.otoroshi.next.controllers.adminapi.NgTargetsController.patchEntityAction_experimental": "Updates (using json-patch) a specific StoredNgTarget using its id",
     "operations.otoroshi.next.controllers.adminapi.NgTargetsController.updateEntityAction_experimental": "Updates a specific StoredNgTarget using its id",
+    "operations.otoroshi.next.tunnel.TunnelController.infos_tunnels": "???",
+    "operations.otoroshi.next.tunnel.TunnelController.tunnelEndpoint_tunnels": "???",
+    "operations.otoroshi.next.tunnel.TunnelController.tunnelInfos_tunnels": "???",
+    "operations.otoroshi.next.tunnel.TunnelController.tunnelRelayWs_tunnels": "???",
+    "operations.otoroshi.next.tunnel.TunnelController.tunnelRelay_tunnels": "???",
     "operations_input_entity.otoroshi.controllers.PrivateAppsController.registerSession_privateapps": "Empty",
     "operations_input_entity.otoroshi.controllers.PrivateAppsController.sendSelfUpdateLink_privateapps": "Empty",
     "operations_input_entity.otoroshi.controllers.adminapi.AnalyticsController.servicesStatus_analytics": "ServiceDescriptorList",
@@ -591,6 +596,7 @@
     "operations_input_entity.otoroshi.next.controllers.adminapi.NgTargetsController.createAction_experimental": "otoroshi.next.models.StoredNgTarget",
     "operations_input_entity.otoroshi.next.controllers.adminapi.NgTargetsController.patchEntityAction_experimental": "otoroshi.next.models.StoredNgTarget",
     "operations_input_entity.otoroshi.next.controllers.adminapi.NgTargetsController.updateEntityAction_experimental": "otoroshi.next.models.StoredNgTarget",
+    "operations_input_entity.otoroshi.next.tunnel.TunnelController.tunnelRelay_tunnels": "???",
     "operations_response_entity.otoroshi.controllers.PrivateAppsController.registerSession_privateapps": "Empty",
     "operations_response_entity.otoroshi.controllers.PrivateAppsController.sendSelfUpdateLink_privateapps": "Empty",
     "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.filterableEvents_analytics": "Unknown",
@@ -870,6 +876,11 @@
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgTargetsController.initiateStoredNgTarget_experimental": "otoroshi.next.models.StoredNgTarget",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgTargetsController.patchEntityAction_experimental": "otoroshi.next.models.StoredNgTarget",
     "operations_response_entity.otoroshi.next.controllers.adminapi.NgTargetsController.updateEntityAction_experimental": "otoroshi.next.models.StoredNgTarget",
+    "operations_response_entity.otoroshi.next.tunnel.TunnelController.infos_tunnels": "???",
+    "operations_response_entity.otoroshi.next.tunnel.TunnelController.tunnelEndpoint_tunnels": "???",
+    "operations_response_entity.otoroshi.next.tunnel.TunnelController.tunnelInfos_tunnels": "???",
+    "operations_response_entity.otoroshi.next.tunnel.TunnelController.tunnelRelayWs_tunnels": "???",
+    "operations_response_entity.otoroshi.next.tunnel.TunnelController.tunnelRelay_tunnels": "???",
     "otoroshi.events.KafkaConfig.hostValidation": "Enabled TLS hostname validation",
     "otoroshi.events.KafkaConfig.keyPass": "Optional keypass",
     "otoroshi.events.KafkaConfig.keystore": "Optional keystore",
@@ -1696,7 +1707,8 @@
     "tags.snowmonkey": "All api endpoints about snowmonkey",
     "tags.tcp": "All api endpoints about tcp",
     "tags.teams": "All api endpoints about teams",
-    "tags.templates": "All api endpoints about templates "
+    "tags.templates": "All api endpoints about templates ",
+    "tags.tunnels": "???"
   },
   "add_schemas":   {
     "otoroshi.auth.AuthModuleConfig" : {

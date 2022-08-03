@@ -146,7 +146,7 @@ export class U2FLoginPage extends Component {
         password,
       }),
     }).then((r) => {
-      if (r.ok) {
+      if (r && r.ok) {
         window.location.href = '/bo/dashboard';
       } else {
         this.webAuthnLogin();

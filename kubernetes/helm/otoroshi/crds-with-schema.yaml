@@ -321,7 +321,7 @@ spec:
     deprecated: false
     schema:
       openAPIV3Schema:
-        description: "The otoroshi model for a service (handles routing)"
+        description: "???"
         type: "object"
         properties:
           metadata:
@@ -337,48 +337,48 @@ spec:
               \ submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
             type: "string"
           spec:
-            description: "The otoroshi model for a service (handles routing)"
+            description: "???"
             type: "object"
             properties:
               removeHeadersIn:
-                description: "Remove headers on client request"
+                description: "???"
                 type: "array"
                 items:
                   type: "string"
               missingOnlyHeadersOut:
-                description: "Add header on client response if they are not present"
+                description: "???"
                 additionalProperties:
                   type: "string"
                 type: "object"
               metadata:
-                description: "Just a bunch of random properties"
+                description: "???"
                 additionalProperties:
                   type: "string"
                 type: "object"
               tcpUdpTunneling:
-                description: "Enabled TCP/UDP tunneling through websocket connection"
+                description: "???"
                 type: "boolean"
               cors:
-                description: "CORS settings"
+                description: "???"
                 type: "object"
                 properties:
                   excludedPatterns:
-                    description: "The cors excluded patterns"
+                    description: "???"
                     type: "array"
                     items:
                       type: "string"
                   allowMethods:
-                    description: "The cors allowed methods"
+                    description: "???"
                     type: "array"
                     items:
                       type: "string"
                   allowHeaders:
-                    description: "The cors allowed headers"
+                    description: "???"
                     type: "array"
                     items:
                       type: "string"
                   exposeHeaders:
-                    description: "The cors exposed header"
+                    description: "???"
                     type: "array"
                     items:
                       type: "string"
@@ -387,24 +387,23 @@ spec:
                     description: "null type"
                     type: "string"
                   enabled:
-                    description: "Whether or not cors is enabled"
+                    description: "???"
                     type: "boolean"
                   allowCredentials:
-                    description: "Allow to pass credentials"
+                    description: "???"
                     type: "boolean"
                   allowOrigin:
-                    description: "The cors allowed origin"
+                    description: "???"
                     type: "string"
               forceHttps:
-                description: "Will force redirection to https:// if not present"
+                description: "???"
                 type: "boolean"
               matchingRoot:
                 nullable: true
                 description: "null type"
                 type: "string"
               plugins:
-                description: "Plugins enabled for this service. will replace separate\
-                  \ plugins fields in a near future"
+                description: "???"
                 type: "object"
                 properties:
                   excluded:
@@ -424,14 +423,13 @@ spec:
                     description: "Plugins enabled"
                     type: "boolean"
               letsEncrypt:
-                description: "Flag to automatically issue a let's encrypt (ACME) cert\
-                  \ for this service"
+                description: "???"
                 type: "boolean"
               useNewWSClient:
-                description: "Use akka http client for this service on websocket calls"
+                description: "???"
                 type: "boolean"
               chaosConfig:
-                description: "Chaos engineering settings"
+                description: "???"
                 type: "object"
                 properties:
                   badResponsesFaultConfig:
@@ -458,10 +456,10 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
                 description: "Sec. com. settings"
               detectApiKeySooner:
-                description: "Detect if an apikey is present but do not fail if not"
+                description: "???"
                 type: "boolean"
               transformerRefs:
-                description: "Enabled transformer plugins"
+                description: "???"
                 type: "array"
                 items:
                   type: "string"
@@ -471,7 +469,7 @@ spec:
                 description: "Algorithm to verify/sign challenge token coming from/to\
                   \ the backend"
               missingOnlyHeadersIn:
-                description: "Add header on client request if they are not present"
+                description: "???"
                 additionalProperties:
                   type: "string"
                 type: "object"
@@ -480,36 +478,35 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
                 description: "Algorithm to sign challenge token to the backend"
               removeHeadersOut:
-                description: "Remove headers on client response"
+                description: "???"
                 type: "array"
                 items:
                   type: "string"
               stripPath:
-                description: "Strip matching path in the forwarded request path"
+                description: "???"
                 type: "boolean"
               localHost:
-                description: "The host used localy, mainly localhost:xxxx"
+                description: "???"
                 type: "string"
               sendOtoroshiHeadersBack:
-                description: "When enabled, Otoroshi will send headers to consumer\
-                  \ like request id, client latency, overhead, etc ..."
+                description: "???"
                 type: "boolean"
               id:
-                description: "A unique random string to identify your service"
+                description: "???"
                 type: "string"
               api:
-                description: "Api exposition settings"
+                description: "???"
                 type: "object"
                 properties:
                   exposeApi:
-                    description: "Is this an API"
+                    description: "???"
                     type: "boolean"
                   openApiDescriptorUrl:
                     nullable: true
                     description: "null type"
                     type: "string"
               secComTtl:
-                description: "TTL for the info token"
+                description: "???"
                 type: "number"
               secComVersion:
                 type: "object"
@@ -520,74 +517,71 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
                 description: "Loadbalancing strategy"
               userFacing:
-                description: "The fact that this service will be seen by users and\
-                  \ cannot be impacted by the Snow Monkey"
+                description: "???"
                 type: "boolean"
               hosts:
-                description: "Possible hosts for the service"
+                description: "???"
                 type: "array"
                 items:
                   type: "string"
               restrictions:
-                description: "Restriction settings"
+                description: "???"
                 type: "object"
                 properties:
                   allowed:
-                    description: "Allowed paths"
+                    description: "???"
                     type: "array"
                     items:
                       type: "object"
                       properties:
                         path:
-                          description: "Path of the http request"
+                          description: "???"
                           type: "string"
                         method:
-                          description: "Method of the http request"
+                          description: "???"
                           type: "string"
                   allowLast:
-                    description: "Evalute allowed paths after everything else"
+                    description: "???"
                     type: "boolean"
                   forbidden:
-                    description: "Forbidden paths (return 403)"
+                    description: "???"
                     type: "array"
                     items:
                       type: "object"
                       properties:
                         path:
-                          description: "Path of the http request"
+                          description: "???"
                           type: "string"
                         method:
-                          description: "Method of the http request"
+                          description: "???"
                           type: "string"
                   notFound:
-                    description: "Not found paths (return 404)"
+                    description: "???"
                     type: "array"
                     items:
                       type: "object"
                       properties:
                         path:
-                          description: "Path of the http request"
+                          description: "???"
                           type: "string"
                         method:
-                          description: "Method of the http request"
+                          description: "???"
                           type: "string"
                   enabled:
-                    description: "Restrictions enabled"
+                    description: "???"
                     type: "boolean"
               readOnly:
-                description: "Service only accepts GET, HEAD and OPTIONS requests"
+                description: "???"
                 type: "boolean"
               secComInfoTokenVersion:
                 type: "object"
                 x-kubernetes-preserve-unknown-fields: true
                 description: "Version of the info token"
               enforceSecureCommunication:
-                description: "When enabled, Otoroshi will try to exchange headers\
-                  \ with backend service to ensure no one else can use the service\
-                  \ from outside"
+                description: "???"
                 type: "boolean"
               tags:
-                description: "Entity tags"
+                description: "???"
                 type: "array"
                 items:
                   type: "string"
@@ -596,37 +590,34 @@ spec:
                 description: "null type"
                 type: "string"
               privateApp:
-                description: "When enabled, user will be allowed to use the service\
-                  \ (UI) only if they are registered users of the private apps domain"
+                description: "???"
                 type: "boolean"
               enabledAdditionalHosts:
                 type: "boolean"
                 description: "if enabled, the additional hosts will be add to hosts\
                   \ array"
               paths:
-                description: "Matching paths on request"
+                description: "???"
                 type: "array"
                 items:
                   type: "string"
               domain:
-                description: "The domain on which the service is available."
+                description: "???"
                 type: "string"
               name:
-                description: "The name of your service. Only for debug and human readability\
-                  \ purposes"
+                description: "???"
                 type: "string"
               transformerConfig:
-                description: "Transformer plugins configuration"
+                description: "???"
                 type: "object"
               subdomain:
-                description: "The subdomain on which the service is available"
+                description: "???"
                 type: "string"
               maintenanceMode:
-                description: "Display a maintainance page when a user try to use the\
-                  \ service"
+                description: "???"
                 type: "boolean"
               secComHeaders:
-                description: "Header names for sec. com. protocol"
+                description: "???"
                 type: "object"
                 properties:
                   stateResponseName:
@@ -642,46 +633,39 @@ spec:
                     description: "null type"
                     type: "string"
               handleLegacyDomain:
-                description: "Use 'domain', 'subdomain', 'env' and 'matchingRoot'\
-                  \ for routing in addition to hosts, or just use hosts."
+                description: "???"
                 type: "boolean"
               logAnalyticsOnServer:
-                description: "Log analytics event on the server"
+                description: "???"
                 type: "boolean"
               strictlyPrivate:
-                description: "When strictly private, private app session will not\
-                  \ pass apikey filters"
+                description: "???"
                 type: "boolean"
               description:
-                description: "Entity description"
+                description: "???"
                 type: "string"
               buildMode:
-                description: "Display a construction page when a user try to use the\
-                  \ service"
+                description: "???"
                 type: "boolean"
               targets:
                 x-kubernetes-preserve-unknown-fields: true
                 type: "object"
               enabled:
-                description: "Activate or deactivate your service. Once disabled,\
-                  \ users will get an error page saying the service does not exist"
+                description: "???"
                 type: "boolean"
               additionalHeadersOut:
-                description: "Specify headers that will be added to each client response"
+                description: "???"
                 additionalProperties:
                   type: "string"
                 type: "object"
               sendStateChallenge:
-                description: "Should otoroshi send challenge token"
+                description: "???"
                 type: "boolean"
               root:
-                description: "Otoroshi will append this root to any target choosen.\
-                  \ If the specified root is '/api/foo', then a request to https://yyyyyyy/bar\
-                  \ will actually hit https://xxxxxxxxx/api/foo/bar"
+                description: "???"
                 type: "string"
               additionalHeaders:
-                description: "Specify headers that will be added to each client request.\
-                  \ Useful to add authentication"
+                description: "???"
                 additionalProperties:
                   type: "string"
                 type: "object"
@@ -690,49 +674,46 @@ spec:
                 description: "null type"
                 type: "string"
               ipFiltering:
-                description: "Ip filtering settings"
+                description: "???"
                 type: "object"
                 properties:
                   blacklist:
-                    description: "Blacklisted IP addresses"
+                    description: "???"
                     type: "array"
                     items:
                       type: "string"
                   whitelist:
-                    description: "Whitelisted IP addresses"
+                    description: "???"
                     type: "array"
                     items:
                       type: "string"
               redirection:
-                description: "Redirection settings"
+                description: "???"
                 type: "object"
                 properties:
                   code:
                     format: "int32"
-                    description: "The http redirect code"
+                    description: "???"
                     type: "integer"
                   to:
-                    description: "The location for redirection"
+                    description: "???"
                     type: "string"
                   enabled:
-                    description: "Whether or not redirection is enabled"
+                    description: "???"
                     type: "boolean"
               redirectToLocal:
-                description: "If you work locally with Otoroshi, you may want to use\
-                  \ that feature to redirect one particuliar service to a local host.\
-                  \ For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080\
-                  \ to make some tests"
+                description: "???"
                 type: "boolean"
               headersVerification:
-                description: "Specify headers that will be verified after routing."
+                description: "???"
                 additionalProperties:
                   type: "string"
                 type: "object"
               useAkkaHttpClient:
-                description: "Use akka http client for this service"
+                description: "???"
                 type: "boolean"
               securityExcludedPatterns:
-                description: "Exclude some paths"
+                description: "???"
                 type: "array"
                 items:
                   type: "string"
@@ -741,39 +722,34 @@ spec:
                 description: "null type"
                 type: "string"
               preRouting:
-                description: "Pre routing plugin settings"
+                description: "???"
                 type: "object"
                 properties:
                   excludedPatterns:
-                    description: "Excluded paths"
+                    description: "???"
                     type: "array"
                     items:
                       type: "string"
                   refs:
-                    description: "Enabled plugins"
+                    description: "???"
                     type: "array"
                     items:
                       type: "string"
                   config:
-                    description: "pre-routing plugins configuration"
+                    description: "???"
                     type: "object"
                   enabled:
-                    description: "pre-routing plugins enabled"
+                    description: "???"
                     type: "boolean"
               canary:
-                description: "Canary settings"
+                description: "???"
                 type: "object"
                 properties:
                   root:
-                    description: "Otoroshi will append this root to any target choosen.\
-                      \ If the specified root is '/api/foo', then a request to https://yyyyyyy/bar\
-                      \ will actually hit https://xxxxxxxxx/api/foo/bar"
+                    description: "???"
                     type: "string"
                   targets:
-                    description: "The list of target that Otoroshi will proxy and\
-                      \ expose through the subdomain defined before. Otoroshi will\
-                      \ do round-robin load balancing between all those targets with\
-                      \ circuit breaker mecanism to avoid cascading failures"
+                    description: "???"
                     type: "array"
                     items:
                       type: "object"
@@ -783,44 +759,41 @@ spec:
                           x-kubernetes-preserve-unknown-fields: true
                           description: "Predicate to choose this target"
                         metadata:
-                          description: "Metadata for this target"
+                          description: "???"
                           additionalProperties:
                             type: "string"
                           type: "object"
                         protocol:
-                          description: "Protocol for the target"
+                          description: "???"
                           type: "string"
                         scheme:
-                          description: "The protocol used for communication. Can be\
-                            \ http or https"
+                          description: "???"
                           type: "string"
                         mtlsConfig:
-                          description: "TLS settings to contact this target"
+                          description: "???"
                           type: "object"
                           properties:
                             loose:
-                              description: "Loose verification"
+                              description: "???"
                               type: "boolean"
                             trustAll:
-                              description: "Trust any certificate"
+                              description: "???"
                               type: "boolean"
                             mtls:
-                              description: "Enabled"
+                              description: "???"
                               type: "boolean"
                             certs:
-                              description: "Trusted cert. ids"
+                              description: "???"
                               type: "array"
                               items:
                                 type: "string"
                             trustedCerts:
-                              description: "Trusted cert. ids"
+                              description: "???"
                               type: "array"
                               items:
                                 type: "string"
                         host:
-                          description: "The host on which the HTTP call will be forwarded.\
-                            \ Can be a domain name, or an IP address. Can also have\
-                            \ a port"
+                          description: "???"
                           type: "string"
                         ipAddress:
                           nullable: true
@@ -828,83 +801,83 @@ spec:
                           type: "string"
                         weight:
                           format: "int32"
-                          description: "The weight of the target when choosing"
+                          description: "???"
                           type: "integer"
                         tags:
-                          description: "Tags for this target"
+                          description: "???"
                           type: "array"
                           items:
                             type: "string"
                   enabled:
-                    description: "Use canary mode for this service"
+                    description: "???"
                     type: "boolean"
                   traffic:
                     format: "double"
-                    description: "Ratio of traffic that will be sent to canary targets."
+                    description: "???"
                     type: "number"
               secComExcludedPatterns:
-                description: "URI patterns excluded from secured communications"
+                description: "???"
                 type: "array"
                 items:
                   type: "string"
               xForwardedHeaders:
-                description: "Send X-Forwarded-* headers"
+                description: "???"
                 type: "boolean"
               apiKeyConstraints:
-                description: "Routing and extraction constraints for the apikeyh"
+                description: "???"
                 type: "object"
                 properties:
                   routing:
-                    description: "Routing settings for this apikey"
+                    description: "???"
                     type: "object"
                     properties:
                       oneMetaKeyIn:
-                        description: "Routing if one meta key presents in apikey"
+                        description: "???"
                         type: "array"
                         items:
                           type: "string"
                       allTagsIn:
-                        description: "Routing if all tags presents in apikey"
+                        description: "???"
                         type: "array"
                         items:
                           type: "string"
                       allMetaIn:
-                        description: "Routing if all meta presents in apikey"
+                        description: "???"
                         additionalProperties:
                           type: "string"
                         type: "object"
                       noneTagIn:
-                        description: "Routing if none tags presents in apikey"
+                        description: "???"
                         type: "array"
                         items:
                           type: "string"
                       noneMetaKeysIn:
-                        description: "Routing if none meta keys presents in apikey"
+                        description: "???"
                         type: "array"
                         items:
                           type: "string"
                       oneMetaIn:
-                        description: "Routing if one meta presents in apikey"
+                        description: "???"
                         additionalProperties:
                           type: "string"
                         type: "object"
                       allMetaKeysIn:
-                        description: "Routing if all meta keys presents in apikey"
+                        description: "???"
                         type: "array"
                         items:
                           type: "string"
                       noneMetaIn:
-                        description: "Routing if none meta presents in apikey"
+                        description: "???"
                         additionalProperties:
                           type: "string"
                         type: "object"
                       oneTagIn:
-                        description: "outing if one tag presents in apikey"
+                        description: "???"
                         type: "array"
                         items:
                           type: "string"
                   customHeadersAuth:
-                    description: "Settings to extract apikey from custom headers"
+                    description: "???"
                     type: "object"
                     properties:
                       clientSecretHeaderName:
@@ -912,14 +885,14 @@ spec:
                         description: "null type"
                         type: "string"
                       enabled:
-                        description: "Constraint enabled"
+                        description: "???"
                         type: "boolean"
                       clientIdHeaderName:
                         nullable: true
                         description: "null type"
                         type: "string"
                   basicAuth:
-                    description: "Settings to extract basic auth style apikey"
+                    description: "???"
                     type: "object"
                     properties:
                       headerName:
@@ -931,10 +904,10 @@ spec:
                         description: "null type"
                         type: "string"
                       enabled:
-                        description: "Constraint enabled"
+                        description: "???"
                         type: "boolean"
                   jwtAuth:
-                    description: "Settings to extract apikey from jwt token"
+                    description: "???"
                     type: "object"
                     properties:
                       headerName:
@@ -946,28 +919,27 @@ spec:
                         description: "null type"
                         type: "string"
                       keyPairSigned:
-                        description: "The jwt token is signed by a keypair from a\
-                          \ cert found from its id in apikey meta. 'jwt-sign-keypair'"
+                        description: "???"
                         type: "boolean"
                       secretSigned:
-                        description: "Jwt token signed with the client_secret"
+                        description: "???"
                         type: "boolean"
                       queryName:
                         nullable: true
                         description: "null type"
                         type: "string"
                       enabled:
-                        description: "Constraint enabled"
+                        description: "???"
                         type: "boolean"
                       cookieName:
                         nullable: true
                         description: "null type"
                         type: "string"
                       includeRequestAttributes:
-                        description: "Jwt token should include verb and path"
+                        description: "???"
                         type: "boolean"
                   clientIdAuth:
-                    description: "Settings to extract client_id only apikey"
+                    description: "???"
                     type: "object"
                     properties:
                       headerName:
@@ -979,135 +951,117 @@ spec:
                         description: "null type"
                         type: "string"
                       enabled:
-                        description: "Constraint enabled"
+                        description: "???"
                         type: "boolean"
               sendInfoToken:
-                description: "Should otoroshi send info token"
+                description: "???"
                 type: "boolean"
               issueCert:
-                description: "Flag to automatically issue a cert for this service"
+                description: "???"
                 type: "boolean"
               groups:
-                description: "Each service descriptor is attached to groups. A group\
-                  \ can have one or more services. Each API key is linked to a group\
-                  \ and allow access to every service in the group"
+                description: "???"
                 type: "array"
                 items:
                   type: "string"
               privatePatterns:
-                description: "If you define a public pattern that is a little bit\
-                  \ too much, you can make some of public URL private again"
+                description: "???"
                 type: "array"
                 items:
                   type: "string"
               gzip:
-                description: "GZIP settings"
+                description: "???"
                 type: "object"
                 properties:
                   excludedPatterns:
-                    description: "Excluded paths"
+                    description: "???"
                     type: "array"
                     items:
                       type: "string"
                   blackList:
-                    description: "blocklisted content types"
+                    description: "???"
                     type: "array"
                     items:
                       type: "string"
                   whiteList:
-                    description: "allow listed content types"
+                    description: "???"
                     type: "array"
                     items:
                       type: "string"
                   chunkedThreshold:
                     format: "int32"
-                    description: "Chunk size"
+                    description: "???"
                     type: "integer"
                   compressionLevel:
                     format: "int32"
-                    description: "Compression level (0 - 9)"
+                    description: "???"
                     type: "integer"
                   enabled:
-                    description: "Gzip enabled"
+                    description: "???"
                     type: "boolean"
                   bufferSize:
                     format: "int32"
-                    description: "Buffer size in bytes"
+                    description: "???"
                     type: "integer"
               clientConfig:
-                description: "Http client settings"
+                description: "???"
                 type: "object"
                 properties:
                   sampleInterval:
                     format: "int64"
-                    description: "Specify the sliding window time for the circuit\
-                      \ breaker in milliseconds, after this time, error count will\
-                      \ be reseted"
+                    description: "???"
                     type: "integer"
                   backoffFactor:
                     format: "int64"
-                    description: "Specify the factor to multiply the delay for each\
-                      \ retry"
+                    description: "???"
                     type: "integer"
                   customTimeouts:
-                    description: "Custom timeouts per path"
+                    description: "???"
                     type: "array"
                     items:
                       type: "object"
                       properties:
                         path:
-                          description: "path on which this configuration works"
+                          description: "???"
                           type: "string"
                         callAndStreamTimeout:
                           format: "int64"
-                          description: "Specify how long each call should last at\
-                            \ most in milliseconds (hard timeout, connection will\
-                            \ be closed after that duration)"
+                          description: "???"
                           type: "integer"
                         idleTimeout:
                           format: "int64"
-                          description: "Timeout on idle connection"
+                          description: "???"
                           type: "integer"
                         callTimeout:
                           format: "int64"
-                          description: "Specify how long each call should last at\
-                            \ most in milliseconds (soft timeout as it's enforced\
-                            \ by the circuit breaker)"
+                          description: "???"
                           type: "integer"
                         globalTimeout:
                           format: "int64"
-                          description: "Specify how long the global call (with retries)\
-                            \ should last at most in milliseconds"
+                          description: "???"
                           type: "integer"
                         connectionTimeout:
                           format: "int64"
-                          description: "Timeout at connection"
+                          description: "???"
                           type: "integer"
                   callAndStreamTimeout:
                     format: "int64"
-                    description: "Specify how long each call should last at most in\
-                      \ milliseconds (hard timeout, connection will be closed after\
-                      \ that duration)"
+                    description: "???"
                     type: "integer"
                   retryInitialDelay:
                     format: "int64"
-                    description: "Specify the delay between two retries. Each retry,\
-                      \ the delay is multiplied by the backoff factor"
+                    description: "???"
                     type: "integer"
                   callTimeout:
                     format: "int64"
-                    description: "Specify how long each call should last at most in\
-                      \ milliseconds (soft timeout as it's enforced by the circuit\
-                      \ breaker)"
+                    description: "???"
                     type: "integer"
                   useCircuitBreaker:
-                    description: "Use a circuit breaker to avoid cascading failure\
-                      \ when calling chains of services. Highly recommended !"
+                    description: "???"
                     type: "boolean"
                   retries:
                     format: "int32"
-                    description: "Specify how many times the client will try to fetch\
-                      \ the result of the request after an error before giving up."
+                    description: "???"
                     type: "integer"
                   proxy:
                     nullable: true
@@ -1115,53 +1069,43 @@ spec:
                     type: "string"
                   maxErrors:
                     format: "int32"
-                    description: "Specify how many errors can pass before opening\
-                      \ the circuit breaker"
+                    description: "???"
                     type: "integer"
                   idleTimeout:
                     format: "int64"
-                    description: "Timeout on idle connection"
+                    description: "???"
                     type: "integer"
                   globalTimeout:
                     format: "int64"
-                    description: "Specify how long the global call (with retries)\
-                      \ should last at most in milliseconds"
+                    description: "???"
                     type: "integer"
                   cacheConnectionSettings:
-                    description: "Cached connection settings"
+                    description: "???"
                     type: "object"
                     properties:
                       queueSize:
                         format: "int32"
-                        description: "The size for the request queue"
+                        description: "???"
                         type: "integer"
                       enabled:
-                        description: "Enable Cached connections at host tevel"
+                        description: "???"
                         type: "boolean"
                   connectionTimeout:
                     format: "int64"
-                    description: "Timeout at connection"
+                    description: "???"
                     type: "integer"
               env:
-                description: "The line on which the service is available. Based on\
-                  \ that value, the name of the line will be appended to the subdomain.\
-                  \ For line prod, nothing will be appended. For example, if the subdomain\
-                  \ is 'foo' and line is 'preprod', then the exposed service will\
-                  \ be available at 'foo.preprod.mydomain'"
+                description: "???"
                 type: "string"
               jwtVerifier:
                 type: "object"
                 x-kubernetes-preserve-unknown-fields: true
                 description: "JWT verifiers settings"
               allowHttp10:
-                description: "Allow HTTP/1.0 requests"
+                description: "???"
                 type: "boolean"
               publicPatterns:
-                description: "By default, every services are private only and you'll\
-                  \ need an API key to access it. However, if you want to expose a\
-                  \ public UI, you can define one or more public patterns (regex)\
-                  \ to allow access to anybody. For example if you want to allow anybody\
-                  \ on any URL, just use '/.*'"
+                description: "???"
                 type: "array"
                 items:
                   type: "string"
@@ -1171,27 +1115,25 @@ spec:
                 description: "Algorithm to verify challenge token coming from the\
                   \ backend"
               localScheme:
-                description: "The scheme used localy, mainly http"
+                description: "???"
                 type: "string"
               healthCheck:
-                description: "Healthcheck settings"
+                description: "???"
                 type: "object"
                 properties:
                   enabled:
-                    description: "Whether or not healthcheck is enabled on the current\
-                      \ service descriptor"
+                    description: "???"
                     type: "boolean"
                   url:
-                    description: "The URL to check"
+                    description: "???"
                     type: "string"
               matchingHeaders:
-                description: "Specify headers that MUST be present on client request\
-                  \ to route it. Useful to implement versioning"
+                description: "???"
                 additionalProperties:
                   type: "string"
                 type: "object"
               overrideHost:
-                description: "Host header will be overriden with Host of the target"
+                description: "???"
                 type: "boolean"
               location:
                 description: "Entity location"
@@ -1214,28 +1156,27 @@ spec:
                         description: "???"
                         type: "string"
               secComUseSameAlgo:
-                description: "Use the same algo for info token, challenge token signing,\
-                  \ challenge token verification"
+                description: "???"
                 type: "boolean"
               accessValidator:
-                description: "Service access validatiors"
+                description: "???"
                 type: "object"
                 properties:
                   excludedPatterns:
-                    description: "Excluded paths"
+                    description: "???"
                     type: "array"
                     items:
                       type: "string"
                   refs:
-                    description: "Enabled plugins"
+                    description: "???"
                     type: "array"
                     items:
                       type: "string"
                   config:
-                    description: "Access validator plugins configuration"
+                    description: "???"
                     type: "object"
                   enabled:
-                    description: "Access validator plugins enabled"
+                    description: "???"
                     type: "boolean"
 ---
 apiVersion: "apiextensions.k8s.io/v1"
@@ -1478,19 +1419,19 @@ spec:
                       type: "object"
                       properties:
                         mtls:
-                          description: "Enabled"
+                          description: "???"
                           type: "boolean"
                         loose:
-                          description: "Loose verification"
+                          description: "???"
                           type: "boolean"
                         trustAll:
-                          description: "Trust any certificate"
+                          description: "???"
                           type: "boolean"
                         trustedCerts:
                           type: "array"
                           items:
                             type: "string"
-                          description: "Trusted cert. ids"
+                          description: "???"
                         certs:
                           type: "array"
                           items:
@@ -1569,7 +1510,7 @@ spec:
                     type: "array"
                     items:
                       type: "string"
-                    description: "Whitelisted IP addresses"
+                    description: "???"
                   blacklist:
                     type: "array"
                     items:
@@ -1674,19 +1615,19 @@ spec:
                       type: "object"
                       properties:
                         mtls:
-                          description: "Enabled"
+                          description: "???"
                           type: "boolean"
                         loose:
-                          description: "Loose verification"
+                          description: "???"
                           type: "boolean"
                         trustAll:
-                          description: "Trust any certificate"
+                          description: "???"
                           type: "boolean"
                         trustedCerts:
                           type: "array"
                           items:
                             type: "string"
-                          description: "Trusted cert. ids"
+                          description: "???"
                         certs:
                           type: "array"
                           items:
@@ -1932,24 +1873,24 @@ spec:
                       type: "object"
                       properties:
                         mtls:
-                          description: "Enabled"
+                          description: "???"
                           type: "boolean"
                         loose:
-                          description: "Loose verification"
+                          description: "???"
                           type: "boolean"
                         trustAll:
-                          description: "Trust any certificate"
+                          description: "???"
                           type: "boolean"
                         trustedCerts:
                           type: "array"
                           items:
                             type: "string"
-                          description: "Trusted cert. ids"
+                          description: "???"
                         certs:
                           type: "array"
                           items:
                             type: "string"
-                          description: "Trusted cert. ids"
+                          description: "???"
                     index:
                       nullable: true
                       description: "null type"
@@ -2064,46 +2005,46 @@ spec:
                 type: "object"
                 properties:
                   allowed:
-                    description: "Allowed paths"
+                    description: "???"
                     type: "array"
                     items:
                       type: "object"
                       properties:
                         path:
-                          description: "Path of the http request"
+                          description: "???"
                           type: "string"
                         method:
-                          description: "Method of the http request"
+                          description: "???"
                           type: "string"
                   allowLast:
-                    description: "Evalute allowed paths after everything else"
+                    description: "???"
                     type: "boolean"
                   forbidden:
-                    description: "Forbidden paths (return 403)"
+                    description: "???"
                     type: "array"
                     items:
                       type: "object"
                       properties:
                         path:
-                          description: "Path of the http request"
+                          description: "???"
                           type: "string"
                         method:
-                          description: "Method of the http request"
+                          description: "???"
                           type: "string"
                   notFound:
-                    description: "Not found paths (return 404)"
+                    description: "???"
                     type: "array"
                     items:
                       type: "object"
                       properties:
                         path:
-                          description: "Path of the http request"
+                          description: "???"
                           type: "string"
                         method:
-                          description: "Method of the http request"
+                          description: "???"
                           type: "string"
                   enabled:
-                    description: "Restrictions enabled"
+                    description: "???"
                     type: "boolean"
               readOnly:
                 description: "The apikey only allow access for GET, HEAD and OPTIONS\

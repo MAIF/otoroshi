@@ -273,7 +273,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         )
       else ""
 
-    if (authConfig.noWildcardRedirectURI) {
+    if (authConfig.noWildcardRedirectURI && logger.isDebugEnabled) {
       logger.debug(s"secret used $redirectUri")
       logger.debug(state)
     }
@@ -281,7 +281,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>
         val (codeVerifier, codeChallenge, codeChallengeMethod) = generatePKCECodes(authConfig.pkce.map(_.algorithm))
-        logger.debug(
+        if (logger.isDebugEnabled) logger.debug(
           s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod"
         )
         (
@@ -289,7 +289,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           Seq((s"${authConfig.id}-code_verifier" -> codeVerifier))
         )
       case _                          =>
-        logger.debug(s"not using pkce flow")
+        if (logger.isDebugEnabled) logger.debug(s"not using pkce flow")
         (
           s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
           Seq.empty[(String, String)]
@@ -354,7 +354,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>
         val (codeVerifier, codeChallenge, codeChallengeMethod) = generatePKCECodes(authConfig.pkce.map(_.algorithm))
-        logger.debug(
+        if (logger.isDebugEnabled) logger.debug(
           s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod"
         )
         (
@@ -362,7 +362,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           Seq((s"${authConfig.id}-code_verifier" -> codeVerifier))
         )
       case _                          =>
-        logger.debug(s"not using pkce flow")
+        if (logger.isDebugEnabled) logger.debug(s"not using pkce flow")
         (
           s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
           Seq.empty[(String, String)]

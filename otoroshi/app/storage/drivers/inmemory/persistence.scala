@@ -95,7 +95,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   }
 
   private def readStateFromDisk(source: Seq[String]): Unit = {
-    logger.debug("Reading state from disk ...")
+    if (logger.isDebugEnabled) logger.debug("Reading state from disk ...")
     val store       = new ConcurrentHashMap[String, Any]()
     val expirations = new ConcurrentHashMap[String, Long]()
     source.filterNot(_.trim.isEmpty).foreach { raw =>
@@ -166,7 +166,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       .map { content =>
         val hash = MurmurHash3.stringHash(content)
         if (hash != lastHash.get()) {
-          logger.debug("Writing state to disk ...")
+          if (logger.isDebugEnabled) logger.debug("Writing state to disk ...")
           Files.write(file.toPath, content.getBytes(Charsets.UTF_8))
           lastHash.set(hash)
         }
@@ -220,7 +220,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   }
 
   private def readStateFromHttp(): Future[Unit] = {
-    logger.debug("Reading state from http db ...")
+    if (logger.isDebugEnabled) logger.debug("Reading state from http db ...")
     implicit val ec  = ds.actorSystem.dispatcher
     implicit val mat = ds.materializer
     val store        = new ConcurrentHashMap[String, Any]()
@@ -306,7 +306,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     val source       = Source.futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4)).map { item =>
       ByteString(Json.stringify(item) + "\n")
     }
-    ds.logger.debug("Writing state to http db ...")
+    if (logger.isDebugEnabled) logger.debug("Writing state to http db ...")
     val headers      = stateHeaders.toSeq ++ Seq(
       "Content-Type" -> "application/x-ndjson"
     )
@@ -480,7 +480,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   }
 
   private def readStateFromS3(): Future[Unit] = {
-    logger.debug(s"Reading state from $url")
+    if (logger.isDebugEnabled) logger.debug(s"Reading state from $url")
     val store                                                       = new ConcurrentHashMap[String, Any]()
     val expirations                                                 = new ConcurrentHashMap[String, Long]()
     val none: Option[(Source[ByteString, NotUsed], ObjectMetadata)] = None
@@ -575,7 +575,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
             chunkingParallelism = 1
           )
           .withAttributes(s3ClientSettingsAttrs)
-        logger.debug(s"writing state to $url")
+        if (logger.isDebugEnabled) logger.debug(s"writing state to $url")
         Source
           .single(payload)
           .toMat(sink)(Keep.right)

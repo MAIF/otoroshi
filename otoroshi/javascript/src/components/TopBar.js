@@ -208,11 +208,17 @@ export class TopBar extends Component {
         if (this.state.env.clusterRole === 'Leader') {
           options.push({
             action: () => (window.location.href = '/bo/dashboard/cluster'),
-            env: <span className="fas fa-network-wired" />,
+            env: <span className="fas fa-network-wired-alt" />,
             label: 'Cluster view',
             value: 'cluster-view',
           });
         }
+        options.push({
+          action: () => (window.location.href = '/bo/dashboard/tunnels'),
+          env: <span className="fab fa-fa-pied-piper" />,
+          label: 'Connected tunnels',
+          value: 'tunnels-view',
+        });
         if (this.state.env.scriptingEnabled === true) {
           options.push({
             action: () => (window.location.href = '/bo/dashboard/plugins'),
@@ -732,6 +738,13 @@ export class TopBar extends Component {
                         </a>
                       </li>
                     )}
+                  {window.__otoroshi__env__latest.userAdmin && (
+                    <li>
+                      <a href="/bo/dashboard/tunnels" className="dropdown-item">
+                        <span className="fab fa-pied-piper-alt" /> Connected tunnels
+                      </a>
+                    </li>
+                  )}
                   {window.__otoroshi__env__latest.userAdmin &&
                     this.state.env.clusterRole === 'Leader' && <li className="dropdown-divider" />}
                   {(window.__otoroshi__env__latest.userAdmin || window.__user.tenantAdmin) && (

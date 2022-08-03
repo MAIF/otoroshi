@@ -1,49 +1,31 @@
 package otoroshi.env
 
-import java.lang.management.ManagementFactory
-import java.rmi.registry.LocateRegistry
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
 import akka.actor.{ActorSystem, Cancellable, PoisonPill, Scheduler}
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
-import otoroshi.auth.{AuthModuleConfig, SessionCookieValues}
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import otoroshi.cluster._
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
-import io.github.classgraph.ClassGraph
-import otoroshi.next.utils.Vaults
-import otoroshi.events._
-import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
-import otoroshi.health.{HealthCheckerActor, StartHealthCheck}
-
-import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
-import otoroshi.models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
+import otoroshi.auth.{AuthModuleConfig, SessionCookieValues}
+import otoroshi.cluster._
+import otoroshi.events._
+import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
+import otoroshi.health.HealthCheckerActor
 import otoroshi.jobs.updates.Version
-import otoroshi.models.{
-  EntityLocation,
-  OtoroshiAdminType,
-  SimpleOtoroshiAdmin,
-  Team,
-  TeamAccess,
-  TeamId,
-  Tenant,
-  TenantAccess,
-  TenantId,
-  UserRight,
-  UserRights,
-  WebAuthnOtoroshiAdmin
-}
+import otoroshi.models._
 import otoroshi.next.proxy.NgProxyState
-import otoroshi.openapi.{ClassGraphScanner, FormsGenerator, OpenApiGenerator, OpenapiToJson}
-import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
+import otoroshi.next.tunnel.{TunnelAgent, TunnelManager}
+import otoroshi.next.utils.Vaults
+import otoroshi.openapi.ClassGraphScanner
+import otoroshi.script.plugins.Plugins
+import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptManager}
+import otoroshi.security.{ClaimCrypto, IdGenerator}
 import otoroshi.ssl.pki.BouncyCastlePki
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.storage.DataStores
 import otoroshi.storage.drivers.cassandra._
 import otoroshi.storage.drivers.inmemory._
@@ -53,29 +35,28 @@ import otoroshi.storage.drivers.mongo._
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
 import otoroshi.storage.drivers.rediscala._
 import otoroshi.tcp.TcpService
-import otoroshi.utils.http.{AkkWsClient, MtlsWs, WsClientChooser}
+import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
 import otoroshi.utils.metrics.{HasMetrics, Metrics}
+import otoroshi.utils.syntax.implicits._
 import play.api._
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json.{JsArray, JsNull, JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws._
 import play.api.libs.ws.ahc._
+import play.shaded.ahc.org.asynchttpclient.DefaultAsyncHttpClient
 import play.twirl.api.Html
-import otoroshi.security.{ClaimCrypto, IdGenerator}
-import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
-import otoroshi.utils.http._
-import otoroshi.utils.metrics.Metrics
-import otoroshi.utils.syntax.implicits._
-import play.shaded.ahc.org.asynchttpclient.{AsyncHttpClient, DefaultAsyncHttpClient}
 
+import java.lang.management.ManagementFactory
+import java.rmi.registry.LocateRegistry
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
+import javax.crypto.Cipher
+import javax.crypto.spec.SecretKeySpec
+import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}
-import otoroshi.script.plugins.Plugins
-
-import javax.crypto.Cipher
-import javax.crypto.spec.SecretKeySpec
 
 case class SidecarConfig(
     serviceId: String,
@@ -632,9 +613,12 @@ class Env(
   // lazy val geoloc = new GeoLite2GeolocationHelper(this)
   // lazy val ua = new UserAgentHelper(this)
 
-  lazy val statsd  = new StatsdWrapper(otoroshiActorSystem, this)
-  lazy val metrics = new Metrics(this, lifecycle)
-  lazy val pki     = new BouncyCastlePki(snowflakeGenerator, this)
+  lazy val statsd        = new StatsdWrapper(otoroshiActorSystem, this)
+  lazy val metrics       = new Metrics(this, lifecycle)
+  lazy val pki           = new BouncyCastlePki(snowflakeGenerator, this)
+
+  lazy val tunnelManager = new TunnelManager(this)
+  lazy val tunnelAgent   = new TunnelAgent(this)
 
   lazy val hash = s"${System.currentTimeMillis()}"
 
@@ -1043,6 +1027,19 @@ class Env(
     logger.info(s"Starting JMX remote server at 127.0.0.1:$jmxPort")
   }
 
+  def beforeListening(): Future[Unit] = {
+    ().vfuture
+  }
+
+  def afterListening(): Future[Unit] = {
+    tunnelManager.start()
+    // TODO: remove timeout
+    timeout(300.millis).andThen { case _ =>
+      tunnelAgent.start()
+    }(otoroshiExecutionContext)
+    ().vfuture
+  }
+
   private def setupLoggers(): Unit = {
     val loggerContext                          = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
     val loggersAndLevel: Seq[(String, String)] = configuration
@@ -1169,8 +1166,6 @@ class Env(
                   Seq(ServiceGroupIdentifier("default")),
                   validUntil = None
                 )
-
-                import otoroshi.utils.json.JsonImplicits._
 
                 val admin = SimpleOtoroshiAdmin(
                   username = login,

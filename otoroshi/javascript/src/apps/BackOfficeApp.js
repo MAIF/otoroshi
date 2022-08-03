@@ -33,6 +33,7 @@ import { JwtVerifiersPage } from '../pages/JwtVerifiersPage';
 import { AuthModuleConfigsPage } from '../pages/AuthModuleConfigsPage';
 import { CertificatesPage } from '../pages/CertificatesPage';
 import { ClusterPage } from '../pages/ClusterPage';
+import { TunnelsPage, TunnelPage } from '../pages/TunnelsPage';
 import { ScriptsPage } from '../pages/ScriptsPage';
 import { ClientValidatorsPage } from '../pages/ClientValidatorsPage';
 import { GroupStatsPage } from '../pages/GroupStatsPage';
@@ -414,6 +415,14 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/cluster"
                           component={(props) => this.decorate(ClusterPage, props)}
+                        />
+                        <Route
+                          path="/tunnels/:id"
+                          component={(props) => this.decorate(TunnelPage, props)}
+                        />
+                        <Route
+                          path="/tunnels"
+                          component={(props) => this.decorate(TunnelsPage, props)}
                         />
 
                         <Route

@@ -170,7 +170,7 @@ class Log4ShellFilter extends RequestTransformer {
     val hasBadMethod     = containsBadValue(ctx.request.method)
     val hasBadPath       = containsBadValue(ctx.request.thePath)
     val hasBadQueryParam = containsBadValue(ctx.request.rawQueryString)
-    logger.debug(
+    if (logger.isDebugEnabled) logger.debug(
       s"hasBadHeaders: $hasBadHeaders, hasBadMethod: $hasBadMethod, hasBadPath: $hasBadPath, hasBadQueryParam: $hasBadQueryParam"
     )
     if (hasBadHeaders || hasBadMethod || hasBadPath || hasBadQueryParam) {

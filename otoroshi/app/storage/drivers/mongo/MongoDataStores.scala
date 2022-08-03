@@ -98,7 +98,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
       connection
         .askClose()(10.seconds)
         .map { _ =>
-          logger.debug("Mongo connections are stopped")
+          if (logger.isDebugEnabled) logger.debug("Mongo connections are stopped")
         }
         .andThen {
           case Failure(reason) =>

@@ -718,7 +718,7 @@ class ScriptCompiler(env: Env) {
         }
       }(scriptExec)
       .andThen { case _ =>
-        logger.debug(s"Compilation process took ${(System.currentTimeMillis() - start).millis}")
+        if (logger.isDebugEnabled) logger.debug(s"Compilation process took ${(System.currentTimeMillis() - start).millis}")
       }(scriptExec)
   }
 }
@@ -876,7 +876,7 @@ class ScriptManager(env: Env) {
       //   "win.*",
       // ).scan
 
-      logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")
+      if (logger.isDebugEnabled) logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")
       try {
 
         def predicate(c: ClassInfo): Boolean = {
@@ -1062,7 +1062,7 @@ class ScriptManager(env: Env) {
     compiling.putIfAbsent(script.id, ()) match {
       case Some(_) => FastFuture.successful(()) // do nothing as something is compiling
       case None    => {
-        logger.debug(s"Updating script ${script.name}")
+        if (logger.isDebugEnabled) logger.debug(s"Updating script ${script.name}")
         env.scriptCompiler.compile(script.code).map {
           case Left(err)    =>
             logger.error(s"Script ${script.name} with id ${script.id} does not compile: ${err}")
@@ -1101,7 +1101,7 @@ class ScriptManager(env: Env) {
 
   private def updateScriptCache(first: Boolean = false): Future[Unit] = {
     env.metrics.withTimerAsync("otoroshi.core.plugins.update-scripts") {
-      logger.debug(s"updateScriptCache")
+      if (logger.isDebugEnabled) logger.debug(s"updateScriptCache")
       if (first) logger.info("Compiling and starting scripts ...")
       val start = System.currentTimeMillis()
       env.datastores.scriptDataStore

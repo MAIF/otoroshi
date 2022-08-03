@@ -155,7 +155,7 @@ class NgProxyState(env: Env) {
     val s                                            = System.currentTimeMillis()
     domainPathTreeRef.set(NgTreeRouter.build(values))
     val d                                            = System.currentTimeMillis() - s
-    logger.debug(s"built TreeRouter(${values.size} routes) in ${d} ms.")
+    if (logger.isDebugEnabled) logger.debug(s"built TreeRouter(${values.size} routes) in ${d} ms.")
     // java.nio.file.Files.writeString(new java.io.File("./tree-router-config.json").toPath, domainPathTreeRef.get().json.prettify)
   }
 
@@ -247,9 +247,11 @@ class NgProxyState(env: Env) {
 
   private val fakeRoutesCount = 10 //10000 // 300000
 
+  private val dev = false && env.isDev
+
   private def generateRoutesByDomain(env: Env): Future[Seq[NgRoute]] = {
     import NgPluginHelper.pluginId
-    if (env.env == "dev") {
+    if (dev) {
       (0 until fakeRoutesCount).map { idx =>
         NgRoute(
           location = EntityLocation.default,
@@ -318,7 +320,7 @@ class NgProxyState(env: Env) {
 
   private def generateRoutesByName(env: Env): Future[Seq[NgRoute]] = {
     import NgPluginHelper.pluginId
-    if (env.env == "dev") {
+    if (dev) {
       (0 until fakeRoutesCount).map { idx =>
         NgRoute(
           location = EntityLocation.default,
@@ -381,7 +383,7 @@ class NgProxyState(env: Env) {
 
   private def generateRandomRoutes(env: Env): Future[Seq[NgRoute]] = {
     import NgPluginHelper.pluginId
-    if (env.env == "dev") {
+    if (dev) {
       (0 until ((Math.random() * 50) + 10).toInt).map { idx =>
         NgRoute(
           location = EntityLocation.default,
@@ -443,7 +445,7 @@ class NgProxyState(env: Env) {
   }
 
   private def soapRoute(env: Env): Seq[NgRoute] = {
-    if (env.env == "dev") {
+    if (dev) {
       Seq(
         NgRoute(
           location = EntityLocation.default,
@@ -529,7 +531,7 @@ class NgProxyState(env: Env) {
       genRoutesPath       <- generateRoutesByName(env)
       genRandom           <- generateRandomRoutes(env)
       descriptors         <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets() // secrets OK
-      fakeRoutes           = if (env.env == "dev") Seq(NgRoute.fake) else Seq.empty
+      fakeRoutes           = if (dev) Seq(NgRoute.fake) else Seq.empty
       newRoutes            = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
         NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
       ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
@@ -550,7 +552,7 @@ class NgProxyState(env: Env) {
       privateAppsSessions <- env.datastores.privateAppsUserDataStore.findAll() // no need for secrets
       tcpServices         <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets() // secrets OK
       scripts             <- env.datastores.scriptDataStore.findAll() // no need for secrets
-      croutes             <- if (env.env == "dev") {
+      croutes             <- if (dev) {
         NgService
           .fromOpenApi(
             "oto-api-next-gen.oto.tools",
@@ -678,7 +680,7 @@ class NgInternalStateMonitor extends Job {
     val total    = Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(env.proxyState).totalSize())
     val duration = Milliseconds(System.currentTimeMillis() - start)
     env.metrics.markDouble("ng-proxy-state-size-monitoring", total.value)
-    logger.debug(s"proxy-state: ${total.toMegabytes} mb, in ${duration}")
+    if (logger.isDebugEnabled) logger.debug(s"proxy-state: ${total.toMegabytes} mb, in ${duration}")
   }
 
   def monitorDataStoreState(env: Env): Unit = {
@@ -686,7 +688,7 @@ class NgInternalStateMonitor extends Job {
     val total    = Bytes(org.openjdk.jol.info.GraphLayout.parseInstance(env.datastores).totalSize())
     val duration = Milliseconds(System.currentTimeMillis() - start)
     env.metrics.markDouble("ng-datastore-size-monitoring", total.value)
-    logger.debug(s"datastore: ${total.toMegabytes} mb, in ${duration}")
+    if (logger.isDebugEnabled) logger.debug(s"datastore: ${total.toMegabytes} mb, in ${duration}")
   }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
