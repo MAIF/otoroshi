@@ -20,7 +20,7 @@ export default ({ injectTopBar }) => {
   }
 
   const exposedColumn = {
-    title: 'Exposed',
+    title: 'Enabled',
     style: { textAlign: 'center', width: 70 },
     notFilterable: true,
     cell: (_, item) => (item.enabled ? <span className="fas fa-check-circle" style={{ color: "#f9b000" }} /> : null),
