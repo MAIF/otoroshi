@@ -48,6 +48,20 @@ export const LEGACY_PLUGINS_WRAPPER = {
 };
 
 export const PLUGINS = {
+  'cp:otoroshi.next.tunnel.TunnelPlugin': (plugin) => ({
+    //...plugin,
+    type: 'object',
+    label: null,
+    format: 'form',
+    flow: ['tunnel_id'],
+    schema: {
+      //...(plugin || {}).schema,
+      tunnel_id: {
+        label: 'Tunnel ID',
+        type: 'string',
+      },
+    },
+  }),
   'cp:otoroshi.next.plugins.SOAPAction': (plugin) => ({
     ...plugin,
     schema: {
