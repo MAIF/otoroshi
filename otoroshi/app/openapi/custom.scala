@@ -1,12 +1,14 @@
 package otoroshi.openapi
 
+import otoroshi.next.plugins.{ContextValidation, GraphQLBackend, GraphQLQuery}
+import otoroshi.next.tunnel.TunnelPlugin
 import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.libs.json.Json
 
 object CustomForms {
 
   val forms: Map[String, Form] = Map(
-    "otoroshi.next.plugins.ContextValidation" -> Form(
+    classOf[ContextValidation].getName -> Form(
       flow = Seq("validators"),
       schema = Json
         .parse("""{
@@ -33,7 +35,7 @@ object CustomForms {
           |""".stripMargin)
         .asObject
     ),
-    "otoroshi.next.plugins.GraphQLQuery"      -> Form(
+    classOf[GraphQLQuery].getName -> Form(
       flow = Seq("url", "method", "headers", "timeout", "query", "response_filter", "response_path"),
       schema = Json
         .parse("""{
@@ -70,7 +72,7 @@ object CustomForms {
           |}""".stripMargin)
         .asObject
     ),
-    "otoroshi.next.plugins.GraphQLBackend"    -> Form(
+    classOf[GraphQLBackend].getName -> Form(
       flow = Seq("schema", "permissions", "initialData", "maxDepth"),
       schema = Json
         .parse("""{
@@ -94,6 +96,17 @@ object CustomForms {
           |     "type": "number"
           |  }
           |}""".stripMargin)
+        .asObject
+    ),
+    classOf[TunnelPlugin].getName -> Form(
+      flow = Seq("tunnel_id"),
+      schema = Json
+        .parse("""{
+                 |  "tunnel_id" : {
+                 |    "label" : "Tunnel ID",
+                 |    "type" : "string"
+                 |  }
+                 |}""".stripMargin)
         .asObject
     )
   )

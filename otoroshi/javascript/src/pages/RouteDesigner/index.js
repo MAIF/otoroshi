@@ -396,9 +396,9 @@ const RoutesView = ({ history }) => {
     {creation && <RouteWizard hide={() => setCreation(false)} history={history} />}
     <Routes injectTopBar={
       <button onClick={() => setCreation(true)}
-        className='btn btn-sm btn-save my-auto ms-1'
-        style={{ backgroundColor: '#f9b000', borderColor: '#f9b000' }}>
-        Create
+        className="btn btn-primary"
+        style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+        <i className="fas fa-hat-wizard" /> Create with wizard
       </button>} />
   </>
 }
