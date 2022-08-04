@@ -174,6 +174,16 @@ const Manager = ({ query, entity, ...props }) => {
                             {menu}
                             <button
                               type="button"
+                              className="btn btn-sm btn-info d-flex align-items-center justify-content-start"
+                              style={{ marginTop: 5 }}
+                              onClick={(e) => {
+                                const what = window.location.pathname.split('/')[3];
+                                history.push('/' + what);
+                              }}>
+                              <i className="fas fa-arrow-left me-3" /> Back to {window.location.pathname.split('/')[3]}
+                            </button>
+                            <button
+                              type="button"
                               className="btn btn-sm btn-danger d-flex align-items-center justify-content-start"
                               style={{ marginTop: 5 }}
                               onClick={(e) => {

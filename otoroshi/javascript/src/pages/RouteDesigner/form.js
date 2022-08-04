@@ -479,7 +479,8 @@ export class RouteForm extends Component {
   state = { value: null, plugins: [], json: false };
 
   componentDidMount() {
-    this.client = nextClient.forEntity(nextClient.ENTITIES.ROUTES);
+    this.entity = window.location.pathname.split('/')[3];
+    this.client = nextClient.forEntity(this.entity === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES);
     this.load();
     this.loadPlugins();
     this.props.setSaveButton(
@@ -677,6 +678,32 @@ export class RouteForm extends Component {
             );
           })}
         </Collapse>
+        <div className="d-flex align-items-center justify-content-end mt-3">
+          <div className="btn-group">
+            <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${this.entity}`)}>
+              <i className="fas fa-times" /> Cancel
+            </button>
+            {!this.props.isCreating && (
+              <button
+                className="btn btn-sm btn-danger"
+                onClick={() => {
+                  window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
+                    if (ok) {
+                      this.client.deleteById(value.id).then(() => history.push(`/${this.entity}`))
+                    }
+                  });
+                }}>
+                <i className="fas fa-trash" /> Delete
+              </button>
+            )}
+            <FeedbackButton
+              className=""
+              onPress={this.save}
+              text={this.props.isCreating ? 'Create route' : 'Save route'}
+              icon={() => <i className="fas fa-paper-plane" />}
+            />
+          </div>
+        </div>
       </div>
     );
   }
