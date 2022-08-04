@@ -16,7 +16,7 @@ import {
 } from './Graph';
 import Loader from './Loader';
 import { FeedbackButton } from './FeedbackButton';
-import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase, useQuery } from '../../util';
+import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
 import {
   SelectInput,
   Form,

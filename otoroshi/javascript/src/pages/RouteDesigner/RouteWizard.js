@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { TextInput } from '../../components/inputs'
 import { getOldPlugins, getPlugins, nextClient } from '../../services/BackOfficeServices'
 import Loader from './Loader'
