@@ -1,41 +1,8 @@
 package otoroshi.next.models
 
 import otoroshi.utils.syntax.implicits.BetterJsValue
-import play.api.libs.json.{
-  Format,
-  JsArray,
-  JsBoolean,
-  JsError,
-  JsNull,
-  JsNumber,
-  JsObject,
-  JsString,
-  JsSuccess,
-  JsValue,
-  Json
-}
-import sangria.ast.{
-  Argument,
-  BigDecimalValue,
-  BigIntValue,
-  BooleanValue,
-  Directive,
-  FieldDefinition,
-  FloatValue,
-  InputValueDefinition,
-  IntValue,
-  InterfaceTypeDefinition,
-  ListType,
-  ListValue,
-  NamedType,
-  NotNullType,
-  NullValue,
-  ObjectTypeDefinition,
-  StringValue,
-  TypeDefinition,
-  TypeSystemDefinition,
-  Value
-}
+import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsString, JsSuccess, JsValue, Json}
+import sangria.ast.{Argument, BigDecimalValue, BigIntValue, BooleanValue, Directive, Document, FieldDefinition, FloatValue, InputValueDefinition, IntValue, InterfaceTypeDefinition, ListType, ListValue, NamedType, NotNullType, NullValue, ObjectTypeDefinition, StringValue, TypeDefinition, TypeSystemDefinition, Value}
 import sangria.schema.Schema
 
 import scala.util.Try
@@ -252,7 +219,7 @@ object GraphQLFormats {
         } get
     }
 
-  def astDocumentToJson(schema: Schema[Any, Any]) = schema.toAst.definitions.map {
+  def astDocumentToJson(document: Document) = document.definitions.map {
     case definition: TypeSystemDefinition =>
       definition match {
         case definition: TypeDefinition =>

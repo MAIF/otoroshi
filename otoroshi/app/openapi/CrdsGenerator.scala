@@ -156,8 +156,8 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
 
     crdsEntities.fields.foreach(curr => {
       val entity = (curr._2 \ "entity").as[String]
-      data(entity).asOpt[JsObject] match {
-        case Some(content) =>
+      data.get(entity) match {
+        case Some(content: JsObject) =>
           out.put(
             curr._1,
             contentToOpenAPIV3Schema((schemas \ entity \ "description").asOpt[String].getOrElse("???"), content)
@@ -195,7 +195,7 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
         rawSpec.fields.foldLeft(schema)((acc, curr) => {
           (curr._2 \ "entity").asOpt[String] match {
             case Some(entity) =>
-              val missingData = data(entity).as[JsObject]
+              val missingData = data.getOrElse(entity, Json.obj()).as[JsObject]
               acc
                 .transform(
                   reads(openAPIV3SchemaPath).json.update(
@@ -326,7 +326,7 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
             Json.obj(
               "type"                                 -> "object",
               "x-kubernetes-preserve-unknown-fields" -> true,
-              "description"                          -> (updatedValue \ "description").as[String]
+              "description"                          -> (updatedValue \ "description").getOrElse(JsString("no-description")).as[String]
             )
           case _                                                => updatedValue
         }

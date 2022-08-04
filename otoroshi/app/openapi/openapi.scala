@@ -55,7 +55,7 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
       Seq(
         "otoroshi.controllers.BackOfficeController$SearchedService",
         "otoroshi.models.EntityLocationSupport",
-        "otoroshi.auth.AuthModuleConfig",
+        //"otoroshi.auth.AuthModuleConfig",
         "otoroshi.auth.OAuth2ModuleConfig",
         "otoroshi.ssl.ClientCertificateValidator",
         "otoroshi.next.models.KvStoredNgBackendDataStore",
@@ -144,7 +144,8 @@ class OpenApiGenerator(
   lazy val logger = Logger("otoroshi-openapi-generator").logger
 
   val nullType       =
-    Json.obj("$ref" -> s"#/components/schemas/Null") // Json.obj("type" -> "null") needs openapi 3.1.0 support :(
+    // Json.obj("$ref" -> s"#/components/schemas/Null") // Json.obj("type" -> "null") needs openapi 3.1.0 support :(
+  Json.obj("type" -> "string", "nullable" -> true, "description" -> "null type")
   val openApiVersion = JsString("3.0.3")
   val unknownValue   = "???"
 
@@ -686,7 +687,12 @@ class OpenApiGenerator(
         foundDescriptions.put(finalPath, value)
         value
     }) match {
-      case v if v == unknownValue => Json.obj("$ref" -> "#/components/schemas/Unknown")
+      case v if v == unknownValue =>
+        //Json.obj("$ref" -> "#/components/schemas/Unknown")
+        Json.obj(
+            "description" -> "unknown type",
+            "type" -> "object"
+          )
       case v if multiple          => Json.obj("type" -> "array", "items" -> Json.obj("$ref" -> s"#/components/schemas/$v"))
       case v                      =>
         if (v.contains(" ")) {
@@ -755,7 +761,12 @@ class OpenApiGenerator(
             (false, value)
           }
       }) match {
-        case (_, v) if v == unknownValue                        => Json.obj("$ref" -> "#/components/schemas/Unknown")
+        case (_, v) if v == unknownValue                        =>
+          Json.obj(
+            "description" -> "unknown type",
+            "type" -> "object"
+          )
+          //Json.obj("$ref" -> "#/components/schemas/Unknown")
         case (true, v) if controllerMethod == "bulkPatchAction" => {
           Json.obj("$ref" -> s"#/components/schemas/BulkPatchBody")
         }
@@ -1008,7 +1019,65 @@ class OpenApiGenerator(
       result.put(key, value)
     }
 
-    entities.foreach { clazz =>
+    result.put("ErrorResponse", Json.obj(
+        "type" -> "object",
+        "description" -> "error response"
+    ))
+
+    result.put("BulkResponseBody", Json.obj(
+      "type" -> "object",
+      "description" -> "BulkResponseBody object"
+    ))
+
+    result.put("BulkPatchBody", Json.obj(
+      "type" -> "object",
+      "description" -> "BulkPatchBody object"
+    ))
+
+    val (paths, tags) = scanPaths(config)
+
+    val usedEntities = paths.as[JsObject].value.flatMap {
+      case (_, endpoints) =>
+        Seq("get", "post", "delete", "put", "patch", "head")
+          .flatMap(verb => {
+            endpoints.as[JsObject] \ verb match {
+              case JsDefined(value: JsObject) =>
+                Seq("200", "201", "400", "404", "500")
+                  .flatMap(status => {
+                    value \ "responses" \ status \ "content" match {
+                      case JsDefined(value: JsObject) =>
+                        Seq("application/json", "application/x-ndjson")
+                          .flatMap(contentType => {
+                            val ref: Option[String] =  (value \ contentType \ "schema") match {
+                              case JsDefined(value: JsObject) =>
+                                value \ "$ref" match {
+                                  case JsDefined(JsString(r)) => Some(r)
+                                  case _: JsUndefined => None
+                                    value \ "item" \ "$ref" match {
+                                      case JsDefined(JsString(r)) => Some(r)
+                                      case _: JsUndefined => None
+                                    }
+                                }
+                              case _: JsUndefined => None
+                            }
+                            ref match {
+                              case Some(value) => Some(value.replace("#/components/schemas/", ""))
+                              case None => None
+                            }
+                          })
+                      case _: JsUndefined => None
+                    }
+                  })
+              case _: JsUndefined => None
+            }
+          })
+    }
+      .toSeq
+      .distinct
+
+    entities
+      // .filter(f => usedEntities.contains(f.getName))
+      .foreach { clazz =>
       if (
         !config.banned.contains(clazz.getName) && !config.banned
           .filter(_.contains("*"))
@@ -1019,8 +1088,6 @@ class OpenApiGenerator(
       }
     }
 
-    val (paths, tags) = scanPaths(config)
-
     logger.debug("")
     logger.debug(s"found ${found.get()} descriptions, not found ${notFound.get()} descriptions")
     logger.debug(s"found ${resFound.get()} response types, not found ${resNotFound.get()} response types")
@@ -1029,40 +1096,8 @@ class OpenApiGenerator(
     logger.debug(s"total found ${found.get() + resFound.get() + inFound
       .get()}, not found ${notFound.get() + resNotFound.get() + inNotFound.get()}")
 
-    val spec = Json.obj(
-      "openapi"      -> openApiVersion,
-      "info"         -> Json.obj(
-        "title"       -> "Otoroshi Admin API",
-        "description" -> "Admin API of the Otoroshi reverse proxy",
-        "version"     -> "1.5.0-dev",
-        "contact"     -> Json.obj(
-          "name"  -> "Otoroshi Team",
-          "email" -> "oss@maif.fr"
-        ),
-        "license"     -> Json.obj(
-          "name" -> "Apache 2.0",
-          "url"  -> "http://www.apache.org/licenses/LICENSE-2.0.html"
-        )
-      ),
-      "externalDocs" -> Json.obj("url" -> "https://www.otoroshi.io", "description" -> "everything about otoroshi"),
-      "servers"      -> Json.arr(
-        Json.obj(
-          "url"         -> "http://otoroshi-api.oto.tools:8080",
-          "description" -> "your local otoroshi server"
-        )
-      ),
-      "tags"         -> tags,
-      "paths"        -> paths,
-      "components"   -> Json.obj(
-        "schemas"         -> JsObject(result),
-        "securitySchemes" -> Json.obj(
-          "otoroshi_auth" -> Json.obj(
-            "type"   -> "http",
-            "scheme" -> "basic"
-          )
-        )
-      )
-    )
+    // build spec with only used entities
+    val spec = getSpec(tags, paths, result.filter(p => usedEntities.contains(p._1)))
 
     var hasWritten = false
     if (write) {
@@ -1095,7 +1130,45 @@ class OpenApiGenerator(
       logger.debug("")
     }
 
-    (spec, hasWritten)
+    // return spec with full entities (cauz it used by other generators like FormsGenerator)
+    (getSpec(tags, paths, result), hasWritten)
+  }
+
+  def getSpec(tags: JsValue, paths: JsValue, schemas: TrieMap[String, JsValue]) = {
+    Json.obj(
+      "openapi"      -> openApiVersion,
+      "info"         -> Json.obj(
+        "title"       -> "Otoroshi Admin API",
+        "description" -> "Admin API of the Otoroshi reverse proxy",
+        "version"     -> "1.5.0-dev",
+        "contact"     -> Json.obj(
+          "name"  -> "Otoroshi Team",
+          "email" -> "oss@maif.fr"
+        ),
+        "license"     -> Json.obj(
+          "name" -> "Apache 2.0",
+          "url"  -> "http://www.apache.org/licenses/LICENSE-2.0.html"
+        )
+      ),
+      "externalDocs" -> Json.obj("url" -> "https://www.otoroshi.io", "description" -> "everything about otoroshi"),
+      "servers"      -> Json.arr(
+        Json.obj(
+          "url"         -> "http://otoroshi-api.oto.tools:8080",
+          "description" -> "your local otoroshi server"
+        )
+      ),
+      "tags"         -> tags,
+      "paths"        -> paths,
+      "components"   -> Json.obj(
+        "schemas"         -> JsObject(schemas),
+        "securitySchemes" -> Json.obj(
+          "otoroshi_auth" -> Json.obj(
+            "type"   -> "http",
+            "scheme" -> "basic"
+          )
+        )
+      )
+    )
   }
 
   def readOldSpec(oldSpecPath: String): Unit = {

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Help } from './Help';
-import _ from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
 
 function parseDomain(service) {
   let domain = service.domain;
@@ -27,7 +27,7 @@ export class FreeDomainInput extends Component {
   change = (e) => {
     const rawValue = e.target.value;
     this.setState({ rawValue });
-    const newService = _.cloneDeep(this.props.value);
+    const newService = cloneDeep(this.props.value);
     this.setState({ value: rawValue });
     if (rawValue.indexOf('https://') === 0) {
       newService.forceHttps = true;

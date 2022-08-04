@@ -4,6 +4,11 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 import moment from 'moment';
 
+import groupBy from 'lodash/groupBy'
+import mapValues from 'lodash/mapValues'
+import orderBy from 'lodash/orderBy'
+import values from 'lodash/values'
+
 export class SessionsPage extends Component {
   columns = [
     { title: 'Name', content: (item) => item.name },
@@ -122,15 +127,15 @@ export class SessionsPage extends Component {
       if (ok) {
         BackOfficeServices.fetchSessions()
           .then((sessions) => {
-            let groups = _.groupBy(sessions, (i) => i.email);
-            groups = _.mapValues(groups, (g) => {
-              const values = _.orderBy(g, (i) => i.expiredAt, 'desc');
+            let groups = groupBy(sessions, (i) => i.email);
+            groups = mapValues(groups, (g) => {
+              const values = orderBy(g, (i) => i.expiredAt, 'desc');
               const head = values.shift();
               return Promise.all(
                 values.map((v) => BackOfficeServices.discardSession(v.randomId))
               ).then(() => head);
             });
-            return Promise.all(_.values(groups));
+            return Promise.all(values(groups));
           })
           .then(() => window.location.reload());
       }

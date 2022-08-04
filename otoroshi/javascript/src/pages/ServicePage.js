@@ -2,6 +2,10 @@ import React, { Component, Suspense } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import YAML from 'yaml';
+
+import cloneDeep from 'lodash/cloneDeep'
+import merge from 'lodash/merge'
+
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import {
@@ -42,6 +46,7 @@ import { Scripts } from '../components/Scripts';
 import { Location } from '../components/Location';
 
 import { Loader } from '../components/Loader';
+
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -689,7 +694,7 @@ export class ServicePage extends Component {
   };
 
   changeTheValue = (name, value, f) => {
-    const serviceClone = _.cloneDeep(this.state.service);
+    const serviceClone = cloneDeep(this.state.service);
     const newService = deepSet(serviceClone, name, value);
     this.setState(
       {
@@ -701,9 +706,9 @@ export class ServicePage extends Component {
   };
 
   setTheValue = (value, f) => {
-    const serviceClone = _.cloneDeep(this.state.service);
-    const valueClone = _.cloneDeep(value);
-    const newService = _.merge({}, serviceClone, valueClone);
+    const serviceClone = cloneDeep(this.state.service);
+    const valueClone = cloneDeep(value);
+    const newService = merge({}, serviceClone, valueClone);
     this.setState(
       {
         changed: shallowDiffers(this.state.originalService, newService),
@@ -3657,17 +3662,17 @@ export class PrivateApiButton extends Component {
 
 export class Migration extends Component {
   migrate = () => {
-    const value = _.cloneDeep(this.props.value);
+    const value = cloneDeep(this.props.value);
     const legacy = this.props.extractLegacy
-      ? _.cloneDeep(this.props.extractLegacy(value))
+      ? cloneDeep(this.props.extractLegacy(value))
       : { enabled: false, refs: [], excluded: [], config: {} };
     const holder = this.props.extractHolder
-      ? _.cloneDeep(this.props.extractHolder(value))
+      ? cloneDeep(this.props.extractHolder(value))
       : { enabled: false, refs: [], excluded: [], config: {} };
-    const newHolder = _.cloneDeep(holder);
+    const newHolder = cloneDeep(holder);
     newHolder.refs = [...newHolder.refs, ...legacy.refs];
     newHolder.excluded = [...newHolder.excluded, ...legacy.excluded];
-    newHolder.config = _.merge({}, newHolder.config, legacy.config);
+    newHolder.config = merge({}, newHolder.config, legacy.config);
     if (!newHolder.enabled && legacy.enabled) {
       newHolder.enabled = true;
     }

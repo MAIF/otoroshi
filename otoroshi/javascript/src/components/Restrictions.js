@@ -12,7 +12,7 @@ import {
 import { Separator } from './Separator';
 
 import deepSet from 'set-value';
-import _ from 'lodash';
+// import _ from 'lodash';
 
 class RestrictionPath extends Component {
   changeTheValue = (key, value) => {

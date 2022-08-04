@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import _ from 'lodash';
+// import _ from 'lodash';
 import * as yup from 'yup';
 
 import { NgForm, NgFormState } from './form';

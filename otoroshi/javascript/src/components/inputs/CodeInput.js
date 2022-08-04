@@ -1,7 +1,7 @@
 import React, { Component, useState } from 'react';
 import { Help } from './Help';
 import AceEditor from 'react-ace';
-import _ from 'lodash';
+import isFunction from 'lodash/isFunction';
 import 'brace/mode/html';
 import 'brace/mode/scala';
 import 'brace/mode/javascript';
@@ -102,7 +102,7 @@ export default class CodeInput extends Component {
         enableLiveAutocompletion={true}
         annotations={
           this.props.annotations
-            ? _.isFunction(this.props.annotations)
+            ? isFunction(this.props.annotations)
               ? this.props.annotations()
               : this.props.annotations
             : []

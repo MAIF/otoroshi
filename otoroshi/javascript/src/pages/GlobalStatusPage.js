@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
-import _ from 'lodash';
+// import _ from 'lodash';
 import Pagination from 'react-paginate';
 import { BooleanInput } from '../components/inputs';
 import * as BackOfficeServices from '../services/BackOfficeServices';

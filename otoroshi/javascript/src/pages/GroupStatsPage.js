@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import _ from 'lodash';
+// import _ from 'lodash';
 
 import { OtoroshiCharts } from '../components/OtoroshiCharts';
 

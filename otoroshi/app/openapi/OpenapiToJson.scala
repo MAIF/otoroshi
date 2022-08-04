@@ -79,15 +79,19 @@ class OpenapiToJson(spec: JsValue) {
 
               pruneField(data, key, path + "/oneOf")
 
-              fields.find(field => (field \ "type").asOpt[String].isDefined) match {
-                case Some(field) =>
+              (
+                fields.find(field => (field \ "type").asOpt[String].isDefined),
+                fields.exists(field => (field \ "$ref").asOpt[String].isDefined)
+                ) match {
+                case (Some(field), false) =>
                   updateField(data, key, path, field)
-                case None        =>
+                case (tmp, _)        =>
                   // corresponding when the object is composed of a list of references
                   updateField(data, key, path, Json.obj("type" -> "object"))
 
                   // get a flat object for each #ref and check if object is not only composed of an oneOf of refs
                   val refs = fields
+                    .filter(field => (field \ "$ref").asOpt[String].isDefined)
                     .flatMap { rawField =>
                       val field = (rawField \ "$ref").as[String]
                       if (field != nullType) {
@@ -141,7 +145,7 @@ class OpenapiToJson(spec: JsValue) {
   }
 
   def getRef(data: TrieMap[String, JsValue], ref: String): JsObject = {
-    if (ref.startsWith(otoroshiSchemaType)) {
+    //if (ref.startsWith(otoroshiSchemaType)) {
       val reference = ref.replace("#/components/schemas/", "")
 
       try {
@@ -154,8 +158,8 @@ class OpenapiToJson(spec: JsValue) {
           logger.debug(s"$reference not found")
           Json.obj()
       }
-    } else
-      Json.obj()
+    /*} else
+      Json.obj()*/
   }
 
   def replaceRef(data: TrieMap[String, JsValue], key: String, path: String, ref: String) = {

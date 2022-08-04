@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import _ from 'lodash';
+import isFunction from 'lodash/isFunction';
 
 import { Loader } from './Loader';
 import * as BackOfficeServices from '../services/BackOfficeServices';
@@ -43,7 +43,7 @@ export class WithEnv extends Component {
     }
     delete props.component;
     delete props.predicate;
-    if (_.isFunction(Comp) && !(Comp instanceof Component)) {
+    if (isFunction(Comp) && !(Comp instanceof Component)) {
       return Comp(this.state.env);
     }
     if (Comp instanceof Component) {

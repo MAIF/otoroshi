@@ -1,13 +1,14 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
-import _ from 'lodash';
+import isFunction from 'lodash/isFunction'
+import isString from 'lodash/isString'
 
 class Alert extends Component {
   componentDidMount() {
     this.okRef.focus();
   }
   render() {
-    const res = _.isFunction(this.props.message)
+    const res = isFunction(this.props.message)
       ? this.props.message(this.props.close)
       : this.props.message;
     return (
@@ -24,9 +25,9 @@ class Alert extends Component {
                 aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {_.isString(res) && <p>{res}</p>}
-              {!_.isString(res) && !_.isFunction(res) && res}
-              {!_.isString(res) && _.isFunction(res) && res(this.props.close)}
+              {isString(res) && <p>{res}</p>}
+              {!isString(res) && !isFunction(res) && res}
+              {!isString(res) && isFunction(res) && res(this.props.close)}
             </div>
             <div className="modal-footer">
               {this.props.linkOpt && (

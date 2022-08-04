@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import range from 'lodash/range'
 import { CodeInput, SelectInput } from '@maif/react-forms';
 import { BooleanInput } from '../../components/inputs';
 import {
@@ -20,7 +21,7 @@ const CONTENT_TYPE = ['text', 'javascript', 'json', 'html', 'xml'];
 const roundNsTo = (ns) => Number.parseFloat(round(ns) / 1000000).toFixed(3);
 const round = (num) => Math.round((num + Number.EPSILON) * 100000) / 100000;
 
-export const TryIt = ({ route, hide }) => {
+export default function ({ route, hide }) {
   const [selectedTab, setSelectedTab] = useState('Headers');
   const [selectedResponseTab, setSelectedResponseTab] = useState('Body');
   const [headersStatus, setHeadersStatus] = useState('down');
@@ -745,7 +746,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     }
   };
 
-  const spaces = _.range(0, 50)
+  const spaces = range(0, 50)
     .map((i) => '          ')
     .join('');
   return (
