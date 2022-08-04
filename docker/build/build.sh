@@ -8,7 +8,7 @@ cleanup () {
   rm -f ./otoroshi.jar
 }
 
-prepare_build () {
+prepare_build_old () {
   rm -rf ./otoroshi
   if [ ! -f ./otoroshi-dist.zip ]; then
     cd $LOCATION/../../otoroshi/javascript
@@ -29,6 +29,18 @@ prepare_build () {
   mkdir -p ./otoroshi/leveldb
   mkdir -p ./otoroshi/logs
   touch ./otoroshi/logs/application.log
+}
+
+prepare_build () {
+  if [ ! -f ./otoroshi.jar ]; then
+    cd $LOCATION/../../otoroshi/javascript
+    yarn install
+    yarn build
+    cd $LOCATION/../../otoroshi
+    sbt assembly
+    cd $LOCATION
+    cp ../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
+  fi
 }
 
 build_jdk8 () {
@@ -73,7 +85,7 @@ build_jdk19 () {
 }
 
 build_jdk20 () {
-  docker build --no-cache -f ./Dockerfile-jdk19-jar -t otoroshi-jdk20 .
+  docker build --no-cache -f ./Dockerfile-jdk20-jar -t otoroshi-jdk20 .
   docker tag otoroshi-jdk20 "maif/otoroshi:$1-jdk20"
 }
 
@@ -156,6 +168,15 @@ case "${1}" in
     docker push "maif/otoroshi:$2-graal"
     echo "\nnow pushing maif/otoroshi:latest\n"
     docker push "maif/otoroshi:latest"
+    ;;
+  test-release-builds)
+    prepare_build
+    build_jdk11 "dev"
+    build_jdk17 "dev"
+    build_jdk18 "dev"
+    build_jdk19 "dev"
+    build_jdk20 "dev"
+    build_graal "dev"
     ;;
   build-and-push-snapshot)
     NBR=`date +%s`

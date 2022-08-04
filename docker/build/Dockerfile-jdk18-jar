@@ -1,4 +1,4 @@
-FROM openjdk:18
+FROM eclipse-temurin:18
 
 LABEL maintainer "MAIF <oss@maif.fr>"
 
