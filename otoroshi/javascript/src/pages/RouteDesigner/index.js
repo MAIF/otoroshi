@@ -390,7 +390,7 @@ const Manager = ({ query, entity, ...props }) => {
 };
 
 const RoutesView = ({ history }) => {
-  const [creation, setCreation] = useState(true)
+  const [creation, setCreation] = useState(false)
 
   return <>
     {creation && <RouteWizard hide={() => setCreation(false)} history={history} />}
