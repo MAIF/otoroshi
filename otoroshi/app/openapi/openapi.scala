@@ -633,6 +633,10 @@ class OpenApiGenerator(
     )
   }
 
+  def matchSpecialCases(verb: String, controllerMethod: String): Boolean = {
+    verb == "GET" && controllerMethod == "sessions"
+  }
+
   def extractResBody(
       verb: String,
       path: String,
@@ -651,12 +655,15 @@ class OpenApiGenerator(
       foundDescriptions.put(finalPath, value)
       value
     }
+
+    // println(verb, path, isCrud, controllerMethod, matchSpecialCases(verb, controllerMethod))
+
     var resStatus = "200"
     if (isCrud && controllerMethod == "createAction") {
       resStatus = "201"
     }
     var multiple  = false
-    if (isCrud && controllerMethod == "findAllEntitiesAction") {
+    if ((isCrud && controllerMethod == "findAllEntitiesAction") || matchSpecialCases(verb, controllerMethod)) {
       multiple = true
     }
     val finalPath = s"operations_response_entity.$controllerName.${controllerMethod}_$tag"
@@ -1011,6 +1018,24 @@ class OpenApiGenerator(
 
   def run(): JsValue = runAndMaybeWrite()._1
 
+  def discoverEntities(result: TrieMap[String, JsValue], entity: (String, JsValue), out: TrieMap[String, JsValue]): Any = {
+    out.put(entity._1, entity._2)
+
+    Json.prettyPrint(entity._2)
+        .split("\n")
+        .filter(p => p.contains("$ref"))
+        .map(p => p.replace("\"", "").trim().split("/").last)
+        .foreach(name => {
+          result.get(name) match {
+            case Some(entity) =>
+              if (!out.contains(name))
+                discoverEntities(result, (name, entity), out)
+              out.put(name, entity)
+            case None =>
+          }
+        })
+  }
+
   def runAndMaybeWrite(): (JsValue, Boolean) = {
     val config = getConfig()
     val result = new TrieMap[String, JsValue]()
@@ -1036,7 +1061,28 @@ class OpenApiGenerator(
 
     val (paths, tags) = scanPaths(config)
 
-    val usedEntities = paths.as[JsObject].value.flatMap {
+    entities
+      // .filter(f => usedEntities.contains(f.getName))
+      .foreach { clazz =>
+      if (
+        !config.banned.contains(clazz.getName) && !config.banned
+          .filter(_.contains("*"))
+          .map(RegexPool.apply)
+          .exists(_.matches(clazz.getName))
+      ) {
+        visitEntity(clazz, None, result, config)
+      }
+    }
+
+    logger.debug("")
+    logger.debug(s"found ${found.get()} descriptions, not found ${notFound.get()} descriptions")
+    logger.debug(s"found ${resFound.get()} response types, not found ${resNotFound.get()} response types")
+    logger.debug(s"found ${inFound.get()} input types, not found ${inNotFound.get()} input types")
+    logger.debug("")
+    logger.debug(s"total found ${found.get() + resFound.get() + inFound
+      .get()}, not found ${notFound.get() + resNotFound.get() + inNotFound.get()}")
+
+    val returnEntities = paths.as[JsObject].value.flatMap {
       case (_, endpoints) =>
         Seq("get", "post", "delete", "put", "patch", "head")
           .flatMap(verb => {
@@ -1074,30 +1120,17 @@ class OpenApiGenerator(
     }
       .toSeq
       .distinct
+    val filteredEntities = result.filter(p => returnEntities.contains(p._1))
 
-    entities
-      // .filter(f => usedEntities.contains(f.getName))
-      .foreach { clazz =>
-      if (
-        !config.banned.contains(clazz.getName) && !config.banned
-          .filter(_.contains("*"))
-          .map(RegexPool.apply)
-          .exists(_.matches(clazz.getName))
-      ) {
-        visitEntity(clazz, None, result, config)
-      }
-    }
+    val openApiEntities = new TrieMap[String, JsValue]()
+    filteredEntities.foreach(ent => {
+      discoverEntities(result, ent, openApiEntities)
+    })
 
-    logger.debug("")
-    logger.debug(s"found ${found.get()} descriptions, not found ${notFound.get()} descriptions")
-    logger.debug(s"found ${resFound.get()} response types, not found ${resNotFound.get()} response types")
-    logger.debug(s"found ${inFound.get()} input types, not found ${inNotFound.get()} input types")
-    logger.debug("")
-    logger.debug(s"total found ${found.get() + resFound.get() + inFound
-      .get()}, not found ${notFound.get() + resNotFound.get() + inNotFound.get()}")
+    println(openApiEntities.keySet)
 
     // build spec with only used entities
-    val spec = getSpec(tags, paths, result.filter(p => usedEntities.contains(p._1)))
+    val spec = getSpec(tags, paths, openApiEntities)
 
     var hasWritten = false
     if (write) {

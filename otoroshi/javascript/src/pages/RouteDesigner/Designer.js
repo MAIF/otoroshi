@@ -33,7 +33,7 @@ import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
 
-const TryItComponent = React.lazy(() => import('./TryIt'))
+import TryItComponent from './TryIt'
 
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
@@ -1366,7 +1366,8 @@ class Designer extends React.Component {
               selectedNode: undefined,
             });
           }}>
-          {FullForm && <Suspense fallback={null}>
+          {FullForm &&
+            // <Suspense fallback={null}>
             <FullForm
               route={route}
               saveRoute={(route) => {
@@ -1391,7 +1392,8 @@ class Designer extends React.Component {
                 });
               }}
             />
-          </Suspense>}
+            // </Suspense>
+          }
           <PluginsContainer
             handleSearch={this.handleSearch}
             showLegacy={showLegacy}
