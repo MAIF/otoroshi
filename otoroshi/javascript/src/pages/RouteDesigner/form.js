@@ -476,6 +476,7 @@ export const schemas = {
 };
 
 export class RouteForm extends Component {
+
   state = { value: null, plugins: [], json: false };
 
   componentDidMount() {
@@ -680,7 +681,7 @@ export class RouteForm extends Component {
         </Collapse>
         <div className="d-flex align-items-center justify-content-end mt-3">
           <div className="btn-group">
-            <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${this.entity}`)}>
+            <button className="btn btn-sm btn-danger" onClick={() => this.props.history.push(`/${this.entity}`)}>
               <i className="fas fa-times" /> Cancel
             </button>
             {!this.props.isCreating && (
@@ -689,7 +690,7 @@ export class RouteForm extends Component {
                 onClick={() => {
                   window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
                     if (ok) {
-                      this.client.deleteById(value.id).then(() => history.push(`/${this.entity}`))
+                      this.client.deleteById(value.id).then(() => this.props.history.push(`/${this.entity}`))
                     }
                   });
                 }}>
