@@ -25,12 +25,14 @@ const CONVERTED_TYPES = {
   "GeolocationSettings": "Json",
   "AuthModuleConfig": "Json",
   "JwtTokenLocation": "Json",
-  "DataExporterConfigType": "Json",
-  "PluginType": "Json",
-  "TlsMode": "Json",
-  "OtoroshiAdminType": "Json",
-  "OutageStrategy": "Json",
-  "ClientAuth": "Json"
+  "DataExporterConfigType": "String",
+  "PluginType": "String",
+  "TlsMode": "String",
+  "OtoroshiAdminType": "String",
+  "OutageStrategy": "String",
+  "ClientAuth": "String",
+  "SecComVersion": "Int",
+  "SecComInfoTokenVersion": "String"
 }
 
 const RENAMED_TYPES = {
@@ -50,7 +52,8 @@ const AVAILABLE_OPERATIONS = [
 ]
 
 const REFACTO_TYPES = {
-  proxy: 'Json'
+  proxy: 'Json',
+  traffic: 'Float'
 }
 
 module.exports = {

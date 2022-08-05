@@ -9,6 +9,7 @@ const isPrimitiveTypes = type => [
   "String",
   "Boolean",
   "Json",
+  "Long",
   "Int",
   "SecComInfoTokenVersion",
   "SecComVersion"

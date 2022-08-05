@@ -70,11 +70,11 @@ type MtlsConfig {
   
 type CustomTimeouts {
  path: String 
- callAndStreamTimeout: Int 
- callTimeout: Int 
- idleTimeout: Int 
- globalTimeout: Int 
- connectionTimeout: Int 
+ callAndStreamTimeout: Long 
+ callTimeout: Long 
+ idleTimeout: Long 
+ globalTimeout: Long 
+ connectionTimeout: Long 
 }
 
   
@@ -90,8 +90,8 @@ Settings for apikey quotas alerts
 """
 type QuotasAlmostExceededSettings {
  enabled: Boolean # Is quotas alert enabled
- dailyQuotasThreshold: Int # The daily quotas threshold before generating alert
- monthlyQuotasThreshold: Int # The monthly quotas threshold before generating alert
+ dailyQuotasThreshold: Long # The daily quotas threshold before generating alert
+ monthlyQuotasThreshold: Long # The monthly quotas threshold before generating alert
 }
 
   
@@ -119,14 +119,6 @@ type ChaosConfig {
  enabled: Boolean # Whether or not this config is enabled
 }
 
-  """
-  Version of the challenge token
-  """
-  enum SecComVersion { 
-   V1
- v2
-  }
-
   
 """
 jwt token transformation settings
@@ -141,9 +133,9 @@ type TransformSettings {
 An otoroshi apikey that can allow you to access some services
 """
 type ApiKey {
- dailyQuota: Int # Authorized number of calls per day
+ dailyQuota: Long # Authorized number of calls per day
  metadata: Json # Bunch of metadata for the key
- throttlingQuota: Int # Authorized number of calls per second, measured on 10 seconds
+ throttlingQuota: Long # Authorized number of calls per second, measured on 10 seconds
  constrainedServicesOnly: Boolean # This apikey can only be used on services that constrained their apikey routing
  allowClientIdOnly: Boolean # This apikey can be used juste with the client_id value
  _loc: EntityLocation # The location of the apikey
@@ -154,7 +146,7 @@ type ApiKey {
  clientSecret: String # The secret of the Api Key. Usually 64 random alpha numerical characters, but can be anything
  validUntil: String
  clientName: String # The name of the api key, for humans ;-)
- monthlyQuota: Int # Authorized number of calls per month
+ monthlyQuota: Long # Authorized number of calls per month
  description: String # Description of this apikey
  rotation: ApiKeyRotation # Apikey rotation settings
  authorizedEntities: [String] # The group/service ids (prefixed by group_ or service_ on which the key is authorized
@@ -261,7 +253,7 @@ type Script {
  desc: String # The description of the script
  code: String # The code of the script
  id: String # The id of the script
- type: Json # Plugin type
+ type: String # Plugin type
 }
 
   
@@ -294,6 +286,94 @@ type StoredNgTarget {
 }
 
   
+type ServiceDescriptor {
+ buildMode: Boolean 
+ hosts: [String] 
+ privateApp: Boolean 
+ localScheme: String 
+ authConfigRef: String
+ issueCertCA: String
+ root: String 
+ name: String 
+ additionalHeaders: Json 
+ domain: String 
+ clientConfig: ClientConfig 
+ matchingRoot: String
+ forceHttps: Boolean 
+ localHost: String 
+ sendOtoroshiHeadersBack: Boolean 
+ healthCheck: HealthCheck 
+ strictlyPrivate: Boolean 
+ detectApiKeySooner: Boolean 
+ allowHttp10: Boolean 
+ subdomain: String 
+ paths: [String] 
+ stripPath: Boolean 
+ secComAlgoChallengeOtoToBack: Json 
+ apiKeyConstraints: ApiKeyConstraints 
+ env: String 
+ xForwardedHeaders: Boolean 
+ transformerRefs: [String] 
+ enabled: Boolean 
+ gzip: GzipConfig 
+ sendInfoToken: Boolean 
+ tcpUdpTunneling: Boolean 
+ removeHeadersOut: [String] 
+ useAkkaHttpClient: Boolean 
+ maintenanceMode: Boolean 
+ id: String 
+ removeHeadersIn: [String] 
+ logAnalyticsOnServer: Boolean 
+ secComAlgoInfoToken: Json 
+ userFacing: Boolean 
+ transformerConfig: Json 
+ clientValidatorRef: String
+ securityExcludedPatterns: [String] 
+ ipFiltering: IpFiltering 
+ targets: [Target] 
+ redirection: RedirectionSettings 
+ tags: [String] 
+ restrictions: Restrictions 
+ overrideHost: Boolean 
+ accessValidator: AccessValidatorRef 
+ sendStateChallenge: Boolean 
+ chaosConfig: ChaosConfig 
+ secComInfoTokenVersion: String 
+ additionalHeadersOut: Json 
+ secComHeaders: SecComHeaders 
+ matchingHeaders: Json 
+ secComAlgoChallengeBackToOto: Json 
+ secComUseSameAlgo: Boolean 
+ useNewWSClient: Boolean 
+ secComExcludedPatterns: [String] 
+ redirectToLocal: Boolean 
+ enforceSecureCommunication: Boolean 
+ missingOnlyHeadersOut: Json 
+ secComSettings: Json 
+ handleLegacyDomain: Boolean 
+ canary: Canary 
+ _loc: EntityLocation 
+ plugins: Plugins 
+ secComTtl: Long 
+ description: String 
+ secComVersion: Int 
+ preRouting: PreRoutingRef 
+ groups: [String] 
+ readOnly: Boolean 
+ privatePatterns: [String] 
+ targetsLoadBalancing: LoadBalancing 
+ cors: CorsSettings 
+ metadata: Json 
+ publicPatterns: [String] 
+ api: ApiDescriptor 
+ missingOnlyHeadersIn: Json 
+ issueCert: Boolean 
+ headersVerification: Json 
+ jwtVerifier: Json 
+ letsEncrypt: Boolean 
+}
+
+  
 """
 Access rights for teams
 """
@@ -320,7 +400,7 @@ type Cert {
  autoRenew: Boolean # Auto renew cert
  exposed: Boolean # Is the cert exposed (public key exposed in jwks.json)
  client: Boolean # Is cert a client cert ?
- from: Int # Start date
+ from: Long # Start date
  selfSigned: Boolean # Is cert self signed
  id: String # Entity id
  ca: Boolean # Is cert a CA ?
@@ -332,7 +412,7 @@ type Cert {
  caRef: String
  domain: String # Certificate domain
  name: String # Entity name
- to: Int # Stop date
+ to: Long # Stop date
 }
 
   
@@ -347,7 +427,7 @@ type TcpRule {
   
 type Canary {
  enabled: Boolean 
- traffic: Int 
+ traffic: Float 
  targets: [Target] 
  root: String 
 }
@@ -357,7 +437,7 @@ type Canary {
 Settings for a bad response return (chaos engineering)
 """
 type BadResponse {
- status: Int # The HTTP status for the response
+ status: Long # The HTTP status for the response
  body: String # The body of the HTTP response
  headers: Json # The HTTP headers of the response
 }
@@ -390,15 +470,15 @@ The global config (dynamic) for otoroshi
 type GlobalConfig {
  geolocationSettings: Json # Settings for geolocation extraction
  alertsEmails: [String] # Email addresses that will receive all Otoroshi alert events
- throttlingQuota: Int # Authorized number of calls per second globally, measured on 10 seconds
- maxWebhookSize: Int # Max number of items in webhooks
- maxConcurrentRequests: Int # The number of authorized request processed at the same time
+ throttlingQuota: Long # Authorized number of calls per second globally, measured on 10 seconds
+ maxWebhookSize: Long # Max number of items in webhooks
+ maxConcurrentRequests: Long # The number of authorized request processed at the same time
  cleverSettings: String # Optional CleverCloud configuration
  templates: DefaultTemplates # The otoroshi default templates for entities
  endlessIpAddresses: [String] # IP addresses for which any request to Otoroshi will respond with 128 Gb of zeros
  plugins: Plugins # global plugins settings
  kafkaConfig: String # Global kafka settings. deprecated
- maxLogsSize: Int # Number of events kept locally
+ maxLogsSize: Long # Number of events kept locally
  proxies: Proxies # Web proxies settings
  enableEmbeddedMetrics: Boolean # Enable embedded metrics
  elasticReadsConfig: String # Config. for elastic reads
@@ -423,9 +503,9 @@ type GlobalConfig {
  letsEncryptSettings: LetsEncryptSettings # Let's encrypt (ACME) settings
  snowMonkeyConfig: SnowMonkeyConfig # Snowmonky settings
  scripts: GlobalScripts # global plugins settings. will be deprecated soon
- perIpThrottlingQuota: Int # Authorized number of calls per second globally per IP address, measured on 10 seconds
+ perIpThrottlingQuota: Long # Authorized number of calls per second globally per IP address, measured on 10 seconds
  useCircuitBreakers: Boolean # If enabled, services will be authorized to use circuit breakers
- maxHttp10ResponseSize: Int # The max size in bytes of an HTTP 1.0 response
+ maxHttp10ResponseSize: Long # The max size in bytes of an HTTP 1.0 response
  tlsSettings: TlsSettings # TLS settings
  statsdConfig: String # Statsd settings (agent connection)
  autoLinkToDefaultGroup: Boolean # If not defined, every new service descriptor will be added to the default group
@@ -441,7 +521,7 @@ Settings for generating a keypair
 """
 type GenKeyPairQuery {
  algo: String # Keypair algorithm
- size: Int # Keypair size
+ size: Long # Keypair size
 }
 
   
@@ -477,20 +557,20 @@ type BasicAuthUser {
 
   
 type ClientConfig {
- connectionTimeout: Int 
+ connectionTimeout: Long 
  useCircuitBreaker: Boolean 
- retryInitialDelay: Int 
+ retryInitialDelay: Long 
  cacheConnectionSettings: CacheConnectionSettings 
  proxy: Json 
- callTimeout: Int 
- callAndStreamTimeout: Int 
- globalTimeout: Int 
- maxErrors: Int 
- retries: Int 
- backoffFactor: Int 
+ callTimeout: Long 
+ callAndStreamTimeout: Long 
+ globalTimeout: Long 
+ maxErrors: Long 
+ retries: Long 
+ backoffFactor: Long 
  customTimeouts: [CustomTimeouts] 
- idleTimeout: Int 
- sampleInterval: Int 
+ idleTimeout: Long 
+ sampleInterval: Long 
 }
 
   
@@ -507,11 +587,11 @@ type ApiKeyConstraints {
 An otoroshi admin user
 """
 type SimpleOtoroshiAdmin {
- createdAt: Int # User creation date
+ createdAt: Long # User creation date
  metadata: Json # Entity metadata
  password: String # User password (bcrypt hashed)
  rights: UserRights # User rights
- typ: Json # Type of user
+ typ: String # Type of user
  label: String # User label
  type: String # the kind of admin
  _loc: EntityLocation # Entity location
@@ -557,15 +637,15 @@ Target for a TCP proxy
 type TcpTarget {
  host: String # Target host
  ip: String
- port: Int # Target port
+ port: Long # Target port
  tls: Boolean # Use tls
 }
 
   
 type GeoPositionRadius {
- latitude: Int 
- longitude: Int 
- radius: Int 
+ latitude: Long 
+ longitude: Long 
+ radius: Long 
 }
 
   
@@ -576,25 +656,25 @@ type TcpService {
  enabled: Boolean # Service enabled
  description: String # Entity description
  metadata: Json # Entity metadata
- port: Int # network port
+ port: Long # network port
  tags: [String] # Entity tags
  rules: [TcpRule] # Routing rules
- clientAuth: Json # Use client authentication
+ clientAuth: String # Use client authentication
  interface: String # Network interface
  sni: SniSettings # SNI settings
  id: String # Entity id
  _loc: EntityLocation # Entity location
  name: String # Entity name
- tls: Json # TLS mode
+ tls: String # TLS mode
 }
 
   
 type GzipConfig {
- compressionLevel: Int 
+ compressionLevel: Long 
  blackList: [String] 
- chunkedThreshold: Int 
+ chunkedThreshold: Long 
  excludedPatterns: [String] 
- bufferSize: Int 
+ bufferSize: Long 
  whiteList: [String] 
  enabled: Boolean 
 }
@@ -615,12 +695,12 @@ type Webhook {
 Custom timeouts per path
 """
 type NgCustomTimeouts {
- connection_timeout: Int # Timeout at connection
- call_and_stream_timeout: Int # Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)
+ connection_timeout: Long # Timeout at connection
+ call_and_stream_timeout: Long # Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)
  path: String # path on which this configuration works
- call_timeout: Int # Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)
- idle_timeout: Int # Timeout on idle connection
- global_timeout: Int # Specify how long the global call (with retries) should last at most in milliseconds
+ call_timeout: Long # Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)
+ idle_timeout: Long # Timeout on idle connection
+ global_timeout: Long # Specify how long the global call (with retries) should last at most in milliseconds
 }
 
   
@@ -628,15 +708,15 @@ type NgCustomTimeouts {
 Remaining quotas for an apikey
 """
 type RemainingQuotas {
- currentCallsPerSec: Int # Current number of call per second
- remainingCallsPerSec: Int # Remaining number of call per second
- currentCallsPerDay: Int # Current number of call per day
- authorizedCallsPerDay: Int # Number of authorized call per day
- currentCallsPerMonth: Int # Current number of call per month
- remainingCallsPerMonth: Int # Remaining number of call per month
- authorizedCallsPerSec: Int # Number of authorized call per second
- authorizedCallsPerMonth: Int # Number of authorized call per month
- remainingCallsPerDay: Int # Remaining number of call per day
+ currentCallsPerSec: Long # Current number of call per second
+ remainingCallsPerSec: Long # Remaining number of call per second
+ currentCallsPerDay: Long # Current number of call per day
+ authorizedCallsPerDay: Long # Number of authorized call per day
+ currentCallsPerMonth: Long # Current number of call per month
+ remainingCallsPerMonth: Long # Remaining number of call per month
+ authorizedCallsPerSec: Long # Number of authorized call per second
+ authorizedCallsPerMonth: Long # Number of authorized call per month
+ remainingCallsPerDay: Long # Remaining number of call per day
 }
 
   
@@ -698,12 +778,12 @@ User session for private apps
 type PrivateAppsUser {
  realm: String # Session realm name
  token: Json # Session tokens (from OAuth)
- expiredAt: Int # Session expiration date
+ expiredAt: Long # Session expiration date
  profile: Json # Session user profile
- lastRefresh: Int # Session last refresh (if OAuth refresh_token supported)
+ lastRefresh: Long # Session last refresh (if OAuth refresh_token supported)
  randomId: String # Session random id
  email: String # Session user email
- createdAt: Int # Creation date of the session
+ createdAt: Long # Creation date of the session
  _loc: EntityLocation # Entity location
  authConfigId: String # Auth module id that created the session
  tags: [String] # Entity tags
@@ -744,16 +824,16 @@ Settings for the snow monkey (chaos engineering)
 """
 type SnowMonkeyConfig {
  dryRun: Boolean # Whether or not outages will actualy impact requests
- outageDurationTo: Int # End of outage duration range
+ outageDurationTo: Long # End of outage duration range
  chaosConfig: ChaosConfig # Chaos settings
- timesPerDay: Int # Number of time per day each service will be outage
- outageDurationFrom: Int # Start of outage duration range
+ timesPerDay: Long # Number of time per day each service will be outage
+ outageDurationFrom: Long # Start of outage duration range
  startTime: String # Start time of Snow Monkey each day
  includeUserFacingDescriptors: Boolean # Whether or not user facing apps. will be impacted by Snow Monkey
  targetGroups: [String] # Groups impacted by Snow Monkey. If empty, all groups will be impacted
  enabled: Boolean # Whether or not this config is enabled
  stopTime: String # Stop time of Snow Monkey each day
- outageStrategy: Json # 
+ outageStrategy: String # 
 }
 
   
@@ -795,26 +875,26 @@ type RestrictionPath {
 Settings for the http client when http request is forwarded
 """
 type NgClientConfig {
- idle_timeout: Int # Timeout on idle connection
- sample_interval: Int # Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted
+ idle_timeout: Long # Timeout on idle connection
+ sample_interval: Long # Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted
  cache_connection_settings: NgCacheConnectionSettings # Cached connection settings
- call_and_stream_timeout: Int # Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)
+ call_and_stream_timeout: Long # Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)
  custom_timeouts: [NgCustomTimeouts] # Custom timeouts per path
- connection_timeout: Int # Timeout at connection
- call_timeout: Int # Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)
- global_timeout: Int # Specify how long the global call (with retries) should last at most in milliseconds
- retry_initial_delay: Int # Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor
- backoff_factor: Int # Specify the factor to multiply the delay for each retry
+ connection_timeout: Long # Timeout at connection
+ call_timeout: Long # Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)
+ global_timeout: Long # Specify how long the global call (with retries) should last at most in milliseconds
+ retry_initial_delay: Long # Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor
+ backoff_factor: Long # Specify the factor to multiply the delay for each retry
  proxy: Json # Web proxy settings for http client
- retries: Int # Specify how many times the client will try to fetch the result of the request after an error before giving up.
- max_errors: Int # Specify how many errors can pass before opening the circuit breaker
+ retries: Long # Specify how many times the client will try to fetch the result of the request after an error before giving up.
+ max_errors: Long # Specify how many errors can pass before opening the circuit breaker
 }
 
   
 type Target {
  tags: [String] 
  host: String 
- weight: Int 
+ weight: Long 
  metadata: Json 
  protocol: String 
  predicate: Json 
@@ -844,15 +924,15 @@ Settings for automatic apikey rotation with grace period
 """
 type ApiKeyRotation {
  enabled: Boolean # Rotation enabled
- rotationEvery: Int # Rotate every n hours
- gracePeriod: Int # period (in hours) during which both secrets works
+ rotationEvery: Long # Rotate every n hours
+ gracePeriod: Long # period (in hours) during which both secrets works
  nextSecret: String
 }
 
   
 type CacheConnectionSettings {
  enabled: Boolean 
- queueSize: Int 
+ queueSize: Long 
 }
 
   
@@ -871,13 +951,13 @@ Loadbalancing strategy
 """
 type LoadBalancing {
  type: String # undefined
- ratio: Int # undefined
+ ratio: Long # undefined
 }
 
   
 type RedirectionSettings {
  enabled: Boolean 
- code: Int 
+ code: Long 
  to: String 
 }
 
@@ -900,6 +980,27 @@ type Tenant {
  name: String # Entity name
  tags: [String] # Entity tags
  id: String # Entity id
+}
+
+  
+"""
+User session for otoroshi-ui admins
+"""
+type BackOfficeUser {
+ randomId: String # Session user random id
+ profile: Json # Session user profile
+ authConfigId: String # Session created from auth module id
+ rights: UserRights # Session user rights
+ createdAt: Long # Creation date for the session
+ token: Json # Session tokens (only if OAuth/OIDC)
+ name: String # Session user name
+ tags: [String] # Entity tags
+ metadata: Json # Entity metadata
+ email: String # User email
+ simpleLogin: Boolean # Session generated from a simple login module (like basic or ldap)
+ expiredAt: Long # Expiration date for the session
+ _loc: EntityLocation # Entity location
+ lastRefresh: Long # Last refresh of the session (OAuth with refresh tokens)
 }
 
   
@@ -985,7 +1086,7 @@ type PreRoutingRef {
 The settings for http cached connection at host level
 """
 type NgCacheConnectionSettings {
- queue_size: Int # How much request can be queue before dropping it
+ queue_size: Long # How much request can be queue before dropping it
  enabled: Boolean # Is cached connection enabled
 }
 
@@ -996,13 +1097,13 @@ Data exporter settings
 type DataExporterConfig {
  desc: String # Description
  _loc: EntityLocation # Entity location
- bufferSize: Int # Number of events in buffer
- jsonWorkers: Int # Number of workers that transform events
- groupDuration: Int # The max duration before sending group
- groupSize: Int # The max size of events group before sending
- type: Json # Entity type
+ bufferSize: Long # Number of events in buffer
+ jsonWorkers: Long # Number of workers that transform events
+ groupDuration: Long # The max duration before sending group
+ groupSize: Long # The max size of events group before sending
+ type: String # Entity type
  tags: [String] # Entity tags
- sendWorkers: Int # Number of workers that sends events
+ sendWorkers: Long # Number of workers that sends events
  id: String # Id of the exporter
  name: String # Entity name
  metadata: Json # Entity metadata
@@ -1055,14 +1156,6 @@ type EntityLocation {
  teams: [String] # Teams of the current entity
 }
 
-  """
-  Version of the info token
-  """
-  enum SecComInfoTokenVersion { 
-   Legacy
- Latest
-  }
-
   
 type Credential {
  certificate: String
@@ -1081,9 +1174,9 @@ type NgTarget {
  predicate: Json # Predicate to choose this target
  tls_config: NgTlsConfig # TLS settings to contact this target
  tls: Boolean # Does the target uses TLS
- port: Int # port of the target
+ port: Long # port of the target
  id: String # id of the target
- weight: Int # The weight of the target when choosing
+ weight: Long # The weight of the target when choosing
  hostname: String # hostname of the target
 }
 
@@ -1128,11 +1221,14 @@ type Query {
   groupsId(id : String): ServiceGroup @rest(url: "http://otoroshi-api.oto.tools:9999/api/groups/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
   groupsTemplate: ServiceGroup @rest(url: "http://otoroshi-api.oto.tools:9999/api/groups/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
   live: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/live", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
-  liveHost: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/live/host", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
   liveId(id : String): Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/live/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
   newApikey: ApiKey @rest(url: "http://otoroshi-api.oto.tools:9999/api/new/apikey", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
   newGroup: ServiceGroup @rest(url: "http://otoroshi-api.oto.tools:9999/api/new/group", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  newService: ServiceDescriptor @rest(url: "http://otoroshi-api.oto.tools:9999/api/new/service", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
   newTcpService: TcpService @rest(url: "http://otoroshi-api.oto.tools:9999/api/new/tcp/service", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  old_services: [ServiceDescriptor] @rest(url: "http://otoroshi-api.oto.tools:9999/api/services", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  old_servicesId(id : String): ServiceDescriptor @rest(url: "http://otoroshi-api.oto.tools:9999/api/services/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  old_servicesTemplate: ServiceDescriptor @rest(url: "http://otoroshi-api.oto.tools:9999/api/services/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
   pluginsAll: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/plugins/all", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
   routes: [NgRoute] @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/routes", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
   routesId(id : String): NgRoute @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/routes/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")

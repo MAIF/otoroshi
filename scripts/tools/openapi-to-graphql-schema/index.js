@@ -18,7 +18,7 @@ const GraphQLFormatter = {
       return "Json" // TODO
 
     if (["Integer", "Number"].includes(returnType))
-      return "Int"
+      return "Long"
 
     if (MISSING_TYPES.includes(returnType))
       return 'Json'
@@ -261,14 +261,19 @@ type ${name} {${body}
     const operations = AVAILABLE_OPERATIONS
       .filter(ope => endpoints[ope.verb]);
 
-    // union Response = Type | ErrorResponse
     const components = GraphQLConverter.extractResponsesTypes(endpoints)
       .filter(f => f && f.type)
       .map(f => f.type)
 
-    const queryName = openApiPathToGraphQLType(path)
+    let queryName = openApiPathToGraphQLType(path)
 
     const returnType = GraphQLFormatter.returnType(components.length === 0 ? components[0] : components.find(f => f !== "ErrorResponse"))
+
+    // services: [ServiceDescriptor] 
+    // servicesId(id : String): ServiceDescriptor
+    // servicesTemplate: ServiceDescriptor
+    if (returnType.includes("ServiceDescriptor") && queryName.startsWith('services'))
+      queryName = `old_${queryName}`
 
     if (returnType?.endsWith("List") || returnType === "Any")
       return null
@@ -351,9 +356,11 @@ const GraphQLParser = {
       .filter(p => !p.path.includes("bulk") &&
         p.path.startsWith('/api') &&
         !p.path.endsWith('form') &&
-        !p.path.includes('forms'))
+        !p.path.includes('forms') &&
+        !p.path.includes("live/host")
+      )
       .flatMap(path => GraphQLConverter.pathToGraphQLQuery(path))
-      .filter(f => f && f.type && !["ServiceDescriptor"].includes(f.data.returnType))
+      .filter(f => f && f.type)
 
     const rawQueries = queriesAndMutations
       .filter(f => f.verb === "get")

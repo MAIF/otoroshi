@@ -1,7 +1,36 @@
 
 query adminSessions {
   adminSessions {
-  
+  	authConfigId
+  	createdAt
+  	email
+  	expiredAt
+  	lastRefresh
+  	metadata
+  	name
+  	profile
+  	randomId
+  	simpleLogin
+  	tags
+  	token
+  	rights {
+  		rights {
+  			tenant {
+  				canRead
+  				canWrite
+  				value
+  			}
+  			teams {
+  				canRead
+  				canWrite
+  				value
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
   }
 }
 
@@ -1045,10 +1074,6 @@ query live {
   live
 }
 
-query liveHost {
-  liveHost
-}
-
 query liveId($id: String) {
   liveId(id: $id)
 }
@@ -1113,6 +1138,270 @@ query newGroup {
   }
 }
 
+query newService {
+  newService {
+  	additionalHeaders
+  	additionalHeadersOut
+  	allowHttp10
+  	authConfigRef
+  	buildMode
+  	clientValidatorRef
+  	description
+  	detectApiKeySooner
+  	domain
+  	enabled
+  	enforceSecureCommunication
+  	env
+  	forceHttps
+  	groups
+  	handleLegacyDomain
+  	headersVerification
+  	hosts
+  	id
+  	issueCert
+  	issueCertCA
+  	jwtVerifier
+  	letsEncrypt
+  	localHost
+  	localScheme
+  	logAnalyticsOnServer
+  	maintenanceMode
+  	matchingHeaders
+  	matchingRoot
+  	metadata
+  	missingOnlyHeadersIn
+  	missingOnlyHeadersOut
+  	name
+  	overrideHost
+  	paths
+  	privateApp
+  	privatePatterns
+  	publicPatterns
+  	readOnly
+  	redirectToLocal
+  	removeHeadersIn
+  	removeHeadersOut
+  	root
+  	secComAlgoChallengeBackToOto
+  	secComAlgoChallengeOtoToBack
+  	secComAlgoInfoToken
+  	secComExcludedPatterns
+  	secComInfoTokenVersion
+  	secComSettings
+  	secComTtl
+  	secComUseSameAlgo
+  	secComVersion
+  	securityExcludedPatterns
+  	sendInfoToken
+  	sendOtoroshiHeadersBack
+  	sendStateChallenge
+  	strictlyPrivate
+  	stripPath
+  	subdomain
+  	tags
+  	tcpUdpTunneling
+  	transformerConfig
+  	transformerRefs
+  	useAkkaHttpClient
+  	useNewWSClient
+  	userFacing
+  	xForwardedHeaders
+  	clientConfig {
+  		backoffFactor
+  		callAndStreamTimeout
+  		callTimeout
+  		connectionTimeout
+  		globalTimeout
+  		idleTimeout
+  		maxErrors
+  		proxy
+  		retries
+  		retryInitialDelay
+  		sampleInterval
+  		useCircuitBreaker
+  		cacheConnectionSettings {
+  			enabled
+  			queueSize
+  		}
+  		customTimeouts {
+  			callAndStreamTimeout
+  			callTimeout
+  			connectionTimeout
+  			globalTimeout
+  			idleTimeout
+  			path
+  		}
+  	}
+  	healthCheck {
+  		enabled
+  		url
+  	}
+  	apiKeyConstraints {
+  		customHeadersAuth {
+  			clientIdHeaderName
+  			clientSecretHeaderName
+  			enabled
+  		}
+  		routing {
+  			allMetaIn
+  			allMetaKeysIn
+  			allTagsIn
+  			noneMetaIn
+  			noneMetaKeysIn
+  			noneTagIn
+  			oneMetaIn
+  			oneMetaKeyIn
+  			oneTagIn
+  		}
+  		clientIdAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  		jwtAuth {
+  			cookieName
+  			enabled
+  			headerName
+  			includeRequestAttributes
+  			keyPairSigned
+  			maxJwtLifespanSecs
+  			queryName
+  			secretSigned
+  		}
+  		basicAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  	}
+  	gzip {
+  		blackList
+  		bufferSize
+  		chunkedThreshold
+  		compressionLevel
+  		enabled
+  		excludedPatterns
+  		whiteList
+  	}
+  	ipFiltering {
+  		blacklist
+  		whitelist
+  	}
+  	targets {
+  		host
+  		ipAddress
+  		metadata
+  		predicate
+  		protocol
+  		scheme
+  		tags
+  		weight
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	redirection {
+  		code
+  		enabled
+  		to
+  	}
+  	restrictions {
+  		allowLast
+  		enabled
+  		forbidden {
+  			method
+  			path
+  		}
+  		allowed {
+  			method
+  			path
+  		}
+  		notFound {
+  			method
+  			path
+  		}
+  	}
+  	accessValidator {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	chaosConfig {
+  		badResponsesFaultConfig
+  		enabled
+  		largeRequestFaultConfig
+  		largeResponseFaultConfig
+  		latencyInjectionFaultConfig
+  	}
+  	secComHeaders {
+  		claimRequestName
+  		stateRequestName
+  		stateResponseName
+  	}
+  	canary {
+  		enabled
+  		root
+  		traffic
+  		targets {
+  			host
+  			ipAddress
+  			metadata
+  			predicate
+  			protocol
+  			scheme
+  			tags
+  			weight
+  			mtlsConfig {
+  				certs
+  				loose
+  				mtls
+  				trustAll
+  				trustedCerts
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	plugins {
+  		config
+  		enabled
+  		excluded
+  		refs
+  	}
+  	preRouting {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	targetsLoadBalancing {
+  		ratio
+  		type
+  	}
+  	cors {
+  		allowCredentials
+  		allowHeaders
+  		allowMethods
+  		allowOrigin
+  		enabled
+  		excludedPatterns
+  		exposeHeaders
+  		maxAge
+  	}
+  	api {
+  		exposeApi
+  		openApiDescriptorUrl
+  	}
+  }
+}
+
 query newTcpService {
   newTcpService {
   	clientAuth
@@ -1147,6 +1436,798 @@ query newTcpService {
   	_loc {
   		teams
   		tenant
+  	}
+  }
+}
+
+query old_services {
+  old_services {
+  	additionalHeaders
+  	additionalHeadersOut
+  	allowHttp10
+  	authConfigRef
+  	buildMode
+  	clientValidatorRef
+  	description
+  	detectApiKeySooner
+  	domain
+  	enabled
+  	enforceSecureCommunication
+  	env
+  	forceHttps
+  	groups
+  	handleLegacyDomain
+  	headersVerification
+  	hosts
+  	id
+  	issueCert
+  	issueCertCA
+  	jwtVerifier
+  	letsEncrypt
+  	localHost
+  	localScheme
+  	logAnalyticsOnServer
+  	maintenanceMode
+  	matchingHeaders
+  	matchingRoot
+  	metadata
+  	missingOnlyHeadersIn
+  	missingOnlyHeadersOut
+  	name
+  	overrideHost
+  	paths
+  	privateApp
+  	privatePatterns
+  	publicPatterns
+  	readOnly
+  	redirectToLocal
+  	removeHeadersIn
+  	removeHeadersOut
+  	root
+  	secComAlgoChallengeBackToOto
+  	secComAlgoChallengeOtoToBack
+  	secComAlgoInfoToken
+  	secComExcludedPatterns
+  	secComInfoTokenVersion
+  	secComSettings
+  	secComTtl
+  	secComUseSameAlgo
+  	secComVersion
+  	securityExcludedPatterns
+  	sendInfoToken
+  	sendOtoroshiHeadersBack
+  	sendStateChallenge
+  	strictlyPrivate
+  	stripPath
+  	subdomain
+  	tags
+  	tcpUdpTunneling
+  	transformerConfig
+  	transformerRefs
+  	useAkkaHttpClient
+  	useNewWSClient
+  	userFacing
+  	xForwardedHeaders
+  	clientConfig {
+  		backoffFactor
+  		callAndStreamTimeout
+  		callTimeout
+  		connectionTimeout
+  		globalTimeout
+  		idleTimeout
+  		maxErrors
+  		proxy
+  		retries
+  		retryInitialDelay
+  		sampleInterval
+  		useCircuitBreaker
+  		cacheConnectionSettings {
+  			enabled
+  			queueSize
+  		}
+  		customTimeouts {
+  			callAndStreamTimeout
+  			callTimeout
+  			connectionTimeout
+  			globalTimeout
+  			idleTimeout
+  			path
+  		}
+  	}
+  	healthCheck {
+  		enabled
+  		url
+  	}
+  	apiKeyConstraints {
+  		customHeadersAuth {
+  			clientIdHeaderName
+  			clientSecretHeaderName
+  			enabled
+  		}
+  		routing {
+  			allMetaIn
+  			allMetaKeysIn
+  			allTagsIn
+  			noneMetaIn
+  			noneMetaKeysIn
+  			noneTagIn
+  			oneMetaIn
+  			oneMetaKeyIn
+  			oneTagIn
+  		}
+  		clientIdAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  		jwtAuth {
+  			cookieName
+  			enabled
+  			headerName
+  			includeRequestAttributes
+  			keyPairSigned
+  			maxJwtLifespanSecs
+  			queryName
+  			secretSigned
+  		}
+  		basicAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  	}
+  	gzip {
+  		blackList
+  		bufferSize
+  		chunkedThreshold
+  		compressionLevel
+  		enabled
+  		excludedPatterns
+  		whiteList
+  	}
+  	ipFiltering {
+  		blacklist
+  		whitelist
+  	}
+  	targets {
+  		host
+  		ipAddress
+  		metadata
+  		predicate
+  		protocol
+  		scheme
+  		tags
+  		weight
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	redirection {
+  		code
+  		enabled
+  		to
+  	}
+  	restrictions {
+  		allowLast
+  		enabled
+  		forbidden {
+  			method
+  			path
+  		}
+  		allowed {
+  			method
+  			path
+  		}
+  		notFound {
+  			method
+  			path
+  		}
+  	}
+  	accessValidator {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	chaosConfig {
+  		badResponsesFaultConfig
+  		enabled
+  		largeRequestFaultConfig
+  		largeResponseFaultConfig
+  		latencyInjectionFaultConfig
+  	}
+  	secComHeaders {
+  		claimRequestName
+  		stateRequestName
+  		stateResponseName
+  	}
+  	canary {
+  		enabled
+  		root
+  		traffic
+  		targets {
+  			host
+  			ipAddress
+  			metadata
+  			predicate
+  			protocol
+  			scheme
+  			tags
+  			weight
+  			mtlsConfig {
+  				certs
+  				loose
+  				mtls
+  				trustAll
+  				trustedCerts
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	plugins {
+  		config
+  		enabled
+  		excluded
+  		refs
+  	}
+  	preRouting {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	targetsLoadBalancing {
+  		ratio
+  		type
+  	}
+  	cors {
+  		allowCredentials
+  		allowHeaders
+  		allowMethods
+  		allowOrigin
+  		enabled
+  		excludedPatterns
+  		exposeHeaders
+  		maxAge
+  	}
+  	api {
+  		exposeApi
+  		openApiDescriptorUrl
+  	}
+  }
+}
+
+query old_servicesId($id: String) {
+  old_servicesId(id: $id) {
+  	additionalHeaders
+  	additionalHeadersOut
+  	allowHttp10
+  	authConfigRef
+  	buildMode
+  	clientValidatorRef
+  	description
+  	detectApiKeySooner
+  	domain
+  	enabled
+  	enforceSecureCommunication
+  	env
+  	forceHttps
+  	groups
+  	handleLegacyDomain
+  	headersVerification
+  	hosts
+  	id
+  	issueCert
+  	issueCertCA
+  	jwtVerifier
+  	letsEncrypt
+  	localHost
+  	localScheme
+  	logAnalyticsOnServer
+  	maintenanceMode
+  	matchingHeaders
+  	matchingRoot
+  	metadata
+  	missingOnlyHeadersIn
+  	missingOnlyHeadersOut
+  	name
+  	overrideHost
+  	paths
+  	privateApp
+  	privatePatterns
+  	publicPatterns
+  	readOnly
+  	redirectToLocal
+  	removeHeadersIn
+  	removeHeadersOut
+  	root
+  	secComAlgoChallengeBackToOto
+  	secComAlgoChallengeOtoToBack
+  	secComAlgoInfoToken
+  	secComExcludedPatterns
+  	secComInfoTokenVersion
+  	secComSettings
+  	secComTtl
+  	secComUseSameAlgo
+  	secComVersion
+  	securityExcludedPatterns
+  	sendInfoToken
+  	sendOtoroshiHeadersBack
+  	sendStateChallenge
+  	strictlyPrivate
+  	stripPath
+  	subdomain
+  	tags
+  	tcpUdpTunneling
+  	transformerConfig
+  	transformerRefs
+  	useAkkaHttpClient
+  	useNewWSClient
+  	userFacing
+  	xForwardedHeaders
+  	clientConfig {
+  		backoffFactor
+  		callAndStreamTimeout
+  		callTimeout
+  		connectionTimeout
+  		globalTimeout
+  		idleTimeout
+  		maxErrors
+  		proxy
+  		retries
+  		retryInitialDelay
+  		sampleInterval
+  		useCircuitBreaker
+  		cacheConnectionSettings {
+  			enabled
+  			queueSize
+  		}
+  		customTimeouts {
+  			callAndStreamTimeout
+  			callTimeout
+  			connectionTimeout
+  			globalTimeout
+  			idleTimeout
+  			path
+  		}
+  	}
+  	healthCheck {
+  		enabled
+  		url
+  	}
+  	apiKeyConstraints {
+  		customHeadersAuth {
+  			clientIdHeaderName
+  			clientSecretHeaderName
+  			enabled
+  		}
+  		routing {
+  			allMetaIn
+  			allMetaKeysIn
+  			allTagsIn
+  			noneMetaIn
+  			noneMetaKeysIn
+  			noneTagIn
+  			oneMetaIn
+  			oneMetaKeyIn
+  			oneTagIn
+  		}
+  		clientIdAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  		jwtAuth {
+  			cookieName
+  			enabled
+  			headerName
+  			includeRequestAttributes
+  			keyPairSigned
+  			maxJwtLifespanSecs
+  			queryName
+  			secretSigned
+  		}
+  		basicAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  	}
+  	gzip {
+  		blackList
+  		bufferSize
+  		chunkedThreshold
+  		compressionLevel
+  		enabled
+  		excludedPatterns
+  		whiteList
+  	}
+  	ipFiltering {
+  		blacklist
+  		whitelist
+  	}
+  	targets {
+  		host
+  		ipAddress
+  		metadata
+  		predicate
+  		protocol
+  		scheme
+  		tags
+  		weight
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	redirection {
+  		code
+  		enabled
+  		to
+  	}
+  	restrictions {
+  		allowLast
+  		enabled
+  		forbidden {
+  			method
+  			path
+  		}
+  		allowed {
+  			method
+  			path
+  		}
+  		notFound {
+  			method
+  			path
+  		}
+  	}
+  	accessValidator {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	chaosConfig {
+  		badResponsesFaultConfig
+  		enabled
+  		largeRequestFaultConfig
+  		largeResponseFaultConfig
+  		latencyInjectionFaultConfig
+  	}
+  	secComHeaders {
+  		claimRequestName
+  		stateRequestName
+  		stateResponseName
+  	}
+  	canary {
+  		enabled
+  		root
+  		traffic
+  		targets {
+  			host
+  			ipAddress
+  			metadata
+  			predicate
+  			protocol
+  			scheme
+  			tags
+  			weight
+  			mtlsConfig {
+  				certs
+  				loose
+  				mtls
+  				trustAll
+  				trustedCerts
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	plugins {
+  		config
+  		enabled
+  		excluded
+  		refs
+  	}
+  	preRouting {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	targetsLoadBalancing {
+  		ratio
+  		type
+  	}
+  	cors {
+  		allowCredentials
+  		allowHeaders
+  		allowMethods
+  		allowOrigin
+  		enabled
+  		excludedPatterns
+  		exposeHeaders
+  		maxAge
+  	}
+  	api {
+  		exposeApi
+  		openApiDescriptorUrl
+  	}
+  }
+}
+
+query old_servicesTemplate {
+  old_servicesTemplate {
+  	additionalHeaders
+  	additionalHeadersOut
+  	allowHttp10
+  	authConfigRef
+  	buildMode
+  	clientValidatorRef
+  	description
+  	detectApiKeySooner
+  	domain
+  	enabled
+  	enforceSecureCommunication
+  	env
+  	forceHttps
+  	groups
+  	handleLegacyDomain
+  	headersVerification
+  	hosts
+  	id
+  	issueCert
+  	issueCertCA
+  	jwtVerifier
+  	letsEncrypt
+  	localHost
+  	localScheme
+  	logAnalyticsOnServer
+  	maintenanceMode
+  	matchingHeaders
+  	matchingRoot
+  	metadata
+  	missingOnlyHeadersIn
+  	missingOnlyHeadersOut
+  	name
+  	overrideHost
+  	paths
+  	privateApp
+  	privatePatterns
+  	publicPatterns
+  	readOnly
+  	redirectToLocal
+  	removeHeadersIn
+  	removeHeadersOut
+  	root
+  	secComAlgoChallengeBackToOto
+  	secComAlgoChallengeOtoToBack
+  	secComAlgoInfoToken
+  	secComExcludedPatterns
+  	secComInfoTokenVersion
+  	secComSettings
+  	secComTtl
+  	secComUseSameAlgo
+  	secComVersion
+  	securityExcludedPatterns
+  	sendInfoToken
+  	sendOtoroshiHeadersBack
+  	sendStateChallenge
+  	strictlyPrivate
+  	stripPath
+  	subdomain
+  	tags
+  	tcpUdpTunneling
+  	transformerConfig
+  	transformerRefs
+  	useAkkaHttpClient
+  	useNewWSClient
+  	userFacing
+  	xForwardedHeaders
+  	clientConfig {
+  		backoffFactor
+  		callAndStreamTimeout
+  		callTimeout
+  		connectionTimeout
+  		globalTimeout
+  		idleTimeout
+  		maxErrors
+  		proxy
+  		retries
+  		retryInitialDelay
+  		sampleInterval
+  		useCircuitBreaker
+  		cacheConnectionSettings {
+  			enabled
+  			queueSize
+  		}
+  		customTimeouts {
+  			callAndStreamTimeout
+  			callTimeout
+  			connectionTimeout
+  			globalTimeout
+  			idleTimeout
+  			path
+  		}
+  	}
+  	healthCheck {
+  		enabled
+  		url
+  	}
+  	apiKeyConstraints {
+  		customHeadersAuth {
+  			clientIdHeaderName
+  			clientSecretHeaderName
+  			enabled
+  		}
+  		routing {
+  			allMetaIn
+  			allMetaKeysIn
+  			allTagsIn
+  			noneMetaIn
+  			noneMetaKeysIn
+  			noneTagIn
+  			oneMetaIn
+  			oneMetaKeyIn
+  			oneTagIn
+  		}
+  		clientIdAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  		jwtAuth {
+  			cookieName
+  			enabled
+  			headerName
+  			includeRequestAttributes
+  			keyPairSigned
+  			maxJwtLifespanSecs
+  			queryName
+  			secretSigned
+  		}
+  		basicAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  	}
+  	gzip {
+  		blackList
+  		bufferSize
+  		chunkedThreshold
+  		compressionLevel
+  		enabled
+  		excludedPatterns
+  		whiteList
+  	}
+  	ipFiltering {
+  		blacklist
+  		whitelist
+  	}
+  	targets {
+  		host
+  		ipAddress
+  		metadata
+  		predicate
+  		protocol
+  		scheme
+  		tags
+  		weight
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	redirection {
+  		code
+  		enabled
+  		to
+  	}
+  	restrictions {
+  		allowLast
+  		enabled
+  		forbidden {
+  			method
+  			path
+  		}
+  		allowed {
+  			method
+  			path
+  		}
+  		notFound {
+  			method
+  			path
+  		}
+  	}
+  	accessValidator {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	chaosConfig {
+  		badResponsesFaultConfig
+  		enabled
+  		largeRequestFaultConfig
+  		largeResponseFaultConfig
+  		latencyInjectionFaultConfig
+  	}
+  	secComHeaders {
+  		claimRequestName
+  		stateRequestName
+  		stateResponseName
+  	}
+  	canary {
+  		enabled
+  		root
+  		traffic
+  		targets {
+  			host
+  			ipAddress
+  			metadata
+  			predicate
+  			protocol
+  			scheme
+  			tags
+  			weight
+  			mtlsConfig {
+  				certs
+  				loose
+  				mtls
+  				trustAll
+  				trustedCerts
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	plugins {
+  		config
+  		enabled
+  		excluded
+  		refs
+  	}
+  	preRouting {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	targetsLoadBalancing {
+  		ratio
+  		type
+  	}
+  	cors {
+  		allowCredentials
+  		allowHeaders
+  		allowMethods
+  		allowOrigin
+  		enabled
+  		excludedPatterns
+  		exposeHeaders
+  		maxAge
+  	}
+  	api {
+  		exposeApi
+  		openApiDescriptorUrl
   	}
   }
 }

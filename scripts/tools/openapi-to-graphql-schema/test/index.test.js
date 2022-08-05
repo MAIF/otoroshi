@@ -195,13 +195,32 @@ const removeUncomparableFields = obj => {
 const testGraphQLAndOtoResponse = (name, graphql, oto) => {
   let res = compare(removeUncomparableFields(graphql), removeUncomparableFields(oto))
 
-  // removes clientId, clientSecret, cauz each call generated new ones
-  if (name === "newApikey") {
-    res = {
-      ...res,
-      different: res.different.filter(p => !["clientId", "clientSecret"].includes(p))
+  const exclusions = [
+    {
+      names: ["apikeysTemplate", "newApikey"],
+      fields: ["clientId", "clientSecret"]
+    },
+    {
+      names: ["live"],
+      fields: ["rate",
+        "dataInRate",
+        "dataOutRate",
+        "concurrentHandledRequests"
+      ]
+    },
+    {
+      names: ["certificatesTemplate"],
+      fields: ["from", "to"]
     }
-  }
+  ];
+  exclusions.forEach(({ names, fields }) => {
+    if (names.includes(name)) {
+      res = {
+        ...res,
+        different: res.different.filter(p => !fields.includes(p))
+      }
+    }
+  })
 
   if (res.different.length > 0) {
     console.log(`${name}: ${JSON.stringify(res, null, 2)}`)
