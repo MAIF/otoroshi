@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Detailed topics · Otoroshi</title>
+<title>Otoroshi tunnels · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -118,7 +118,7 @@
   <li><a href="../../next/index.html" class="page">Otoroshi new proxy engine</a>
   <ul>
     <li><a href="../../next/engine.html" class="page">New proxy engine</a></li>
-    <li><a href="../../next/topics/index.html" class="active page">Detailed topics</a></li>
+    <li><a href="../../next/topics/index.html" class="page">Detailed topics</a></li>
     <li><a href="../../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
 </ul>
@@ -237,7 +237,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../../next/index.html" class="page">Otoroshi new proxy engine</a>
   <ul>
     <li><a href="../../next/engine.html" class="page">New proxy engine</a></li>
-    <li><a href="../../next/topics/index.html" class="active page">Detailed topics</a></li>
+    <li><a href="../../next/topics/index.html" class="page">Detailed topics</a></li>
     <li><a href="../../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
 </ul>
@@ -255,7 +255,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../../index.html">Otoroshi</a></li>
   <li><a href="../../next/index.html">Otoroshi new proxy engine</a></li>
-  <li>Detailed topics</li>
+  <li><a href="../../next/topics/index.html">Detailed topics</a></li>
+  <li>Otoroshi tunnels</li>
 </ul>
 </div>
 </div>
@@ -263,19 +264,80 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#detailed-topics" name="detailed-topics" class="anchor"><span class="anchor-link"></span></a>Detailed topics</h1>
-<p>In this sections, you will find informations about detailed topics linked with the <a href="../engine.html">new proxy engine</a></p>
-<ul>
-  <li><a href="secrets.html">Secrets management</a></li>
-  <li><a href="graphql-composer.html">GraphQL Composer</a></li>
-  <li><a href="relay-routing.html">Relay routing</a></li>
-  <li><a href="tunnels.html">Otoroshi tunnels</a></li>
-</ul>
+<h1><a href="#otoroshi-tunnels" name="otoroshi-tunnels" class="anchor"><span class="anchor-link"></span></a>Otoroshi tunnels</h1><div class="callout warning "><div class="callout-title">Warning</div>
+<p>this feature is <strong>EXPERIMENTAL</strong> and might not work as expected. <br/> If you encounter any bugs, <a href="https://github.com/MAIF/otoroshi/issues/new">please fill an issue</a>, it will help us a lot :)</p></div>
+<p>Sometimes, exposing apis that lives in our private network can be a nightmare, especially from a networking point of view. With otoroshi tunnels, this is now trivial, as long as your internal otoroshi (that lives inside your private network) is able to contact an external otoroshi (exposed on the internet).</p>
+<h2><a href="#how-otoroshi-tunnels-works" name="how-otoroshi-tunnels-works" class="anchor"><span class="anchor-link"></span></a>How Otoroshi tunnels works</h2>
+<p>the main idea behind otoroshi tunnels is that the connection between your private network et the public network is initiated by the private network side. You don&rsquo;t have to expose a part of your private network, create a DMZ or whatever, you just have to authorize your private network otoroshi instance to contact your public network otoroshi instance.</p><div class="centered-img">
+<img src="../../imgs/tunnel-creation.jpeg" /></div>
+<p>once the persistent tunnel has been created, you can create routes on the public otoroshi instance that uses the otoroshi <code>Remote tunnel calls</code> to target your remote routes through the designated tunnel instance </p><div class="centered-img">
+<img src="../../imgs/tunnel-requests.jpeg" style="margin-bottom: 20px;" /></div><div class="callout warning margin-top-20"><div class="callout-title">Warning</div>
+<p>this feature may introduce additional latency as the call passes through otoroshi tunnels</p></div>
+<h2><a href="#otoroshi-tunnel-example" name="otoroshi-tunnel-example" class="anchor"><span class="anchor-link"></span></a>Otoroshi tunnel example</h2>
+<p>first you have to enable the tunnels feature in your otoroshi configuration (on both public and private instances)</p>
+<pre class="prettyprint"><code class="language-conf">otoroshi {
+  ...
+  tunnels {
+    enabled = true
+    enabled = ${?OTOROSHI_TUNNELS_ENABLED}
+    ...
+  }
+}
+</code></pre>
+<p>then you can setup a tunnel instance on your private instance to contact your public instance</p>
+<pre class="prettyprint"><code class="language-conf">otoroshi {
+  ...
+  tunnels {
+    enabled = true
+    ...
+    public-apis {
+      id  = &quot;public-apis&quot;
+      name = &quot;public apis tunnel&quot;
+      url = &quot;https://otoroshi-api.company.com:443&quot;
+      host = &quot;otoroshi-api.company.com&quot;
+      clientId = &quot;xxx&quot;
+      clientSecret = &quot;xxxxxx&quot;
+      # ipAddress = &quot;127.0.0.1&quot; # optional: ip address of the public instance admin api
+      # tls { # optional: TLS settings to access the public instance admin api
+      #   ... 
+      # }
+      # export-routes = true # optional: send routes information to remote otoroshi instance to facilitate remote route exposition
+      # export-routes-tag = &quot;tunnel-exposed&quot; # optional: only send routes information if the route has this tag
+    }
+  }
+}
+</code></pre>
+<p>Now when your private otoroshi instance will boot, a persistent tunnel will be made between private and public instance. Now let say you have a private api exposed on <code>api-a.company.local</code> on your private otoroshi instance and you want to expose it on your public otoroshi instance. </p>
+<p>First create a new route exposed on <code>api-a.company.com</code> that targets <code>https://api-a.company.local:443</code></p><div class="centered-img">
+<img src="../../imgs/tunnel-exposition.png" /></div>
+<p>then add the <code>Remote tunnel calls</code> plugin to your route and set the tunnel id to <code>public-apis</code> to match the id you set in the otoroshi config file</p><div class="centered-img">
+<img src="../../imgs/tunnel-plugin.png" /></div>
+<p>add all the plugin you need to secure this brand new public api and call it</p>
+<pre class="prettyprint"><code class="language-sh">curl &quot;https://api-a.company.com/users&quot; | jq
+</code></pre>
+<h2><a href="#easily-expose-your-remote-services" name="easily-expose-your-remote-services" class="anchor"><span class="anchor-link"></span></a>Easily expose your remote services</h2>
+<p>you can see all the connected tunnel instances on an otoroshi instance on the <code>Connected tunnels</code> (<code>Cog icon</code> / <code>Connected tunnels</code>). For each tunnel instance you will be able to check the tunnel health and also to easily expose all the routes available on the other end of the tunnel. Just clic on the <code>expose</code> button of the route you want to expose, and a new route will be created with the <code>Remote tunnel calls</code> plugin already setup.</p><div class="centered-img">
+<img src="../../imgs/tunnel-expose.png" /></div>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../../next/topics/secrets.html">Secrets management</a></p>
+<p><strong>Next:</strong> <a href="../../next/built-in-plugins.html">Built-in plugins</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../../next/topics/tunnels.html#otoroshi-tunnels" class="header">Otoroshi tunnels</a>
+  <ul>
+    <li><a href="../../next/topics/tunnels.html#how-otoroshi-tunnels-works" class="header">How Otoroshi tunnels works</a></li>
+    <li><a href="../../next/topics/tunnels.html#otoroshi-tunnel-example" class="header">Otoroshi tunnel example</a></li>
+    <li><a href="../../next/topics/tunnels.html#easily-expose-your-remote-services" class="header">Easily expose your remote services</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
