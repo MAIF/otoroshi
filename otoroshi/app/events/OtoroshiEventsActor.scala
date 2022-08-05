@@ -72,7 +72,8 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
       for {
         _ <- Future.sequence(dataExporters.map {
                case (key, c) if !exporters.exists(e => e.id == c.configUnsafe.id || e.id == key) =>
-                 if (logger.isDebugEnabled) logger.debug(s"[OtoroshiEventActor] - Stop exporter ${c.configOpt.map(_.name).getOrElse("no name")}")
+                 if (logger.isDebugEnabled)
+                   logger.debug(s"[OtoroshiEventActor] - Stop exporter ${c.configOpt.map(_.name).getOrElse("no name")}")
                  dataExporters.remove(key).map(_.stopExporter()).getOrElse(FastFuture.successful(()))
                case _                                                                            => FastFuture.successful(())
              })
@@ -80,13 +81,16 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
                case config
                    if dataExporters
                      .exists(e => e._1 == config.id && !e._2.configOpt.contains(config)) && !config.enabled =>
-                 if (logger.isDebugEnabled) logger.debug(s"[OtoroshiEventActor] - stop exporter ${config.name} - ${config.id}")
+                 if (logger.isDebugEnabled)
+                   logger.debug(s"[OtoroshiEventActor] - stop exporter ${config.name} - ${config.id}")
                  dataExporters.remove(config.id).map(_.stopExporter()).getOrElse(FastFuture.successful(()))
                case config if dataExporters.exists(e => e._1 == config.id && !e._2.configOpt.contains(config)) =>
-                 if (logger.isDebugEnabled) logger.debug(s"[OtoroshiEventActor] - update exporter ${config.name} - ${config.id}")
+                 if (logger.isDebugEnabled)
+                   logger.debug(s"[OtoroshiEventActor] - update exporter ${config.name} - ${config.id}")
                  dataExporters.get(config.id).map(_.update(config)).getOrElse(FastFuture.successful(()))
                case config if !dataExporters.contains(config.id) && config.enabled                             =>
-                 if (logger.isDebugEnabled) logger.debug(s"[OtoroshiEventActor] - start exporter ${config.name} - ${config.id}")
+                 if (logger.isDebugEnabled)
+                   logger.debug(s"[OtoroshiEventActor] - start exporter ${config.name} - ${config.id}")
                  val exporter = config.exporter()
                  dataExporters.put(config.id, exporter)
                  exporter.startExporter()
@@ -323,7 +327,8 @@ object DataExporter {
       if (configOpt.exists(_.enabled)) {
         withQueue { queue =>
           queue.offer(event).andThen {
-            case Success(QueueOfferResult.Enqueued)    => if (logger.isDebugEnabled) logger.debug("OTOROSHI_EVENT: Event enqueued")
+            case Success(QueueOfferResult.Enqueued)    =>
+              if (logger.isDebugEnabled) logger.debug("OTOROSHI_EVENT: Event enqueued")
             case Success(QueueOfferResult.Dropped)     =>
               logger.error("OTOROSHI_EVENTS_ERROR: Enqueue Dropped otoroshiEvents :(")
             case Success(QueueOfferResult.QueueClosed) =>

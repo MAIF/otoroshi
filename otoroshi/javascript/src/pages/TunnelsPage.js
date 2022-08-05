@@ -7,8 +7,7 @@ import ReactTable from 'react-table';
 import { Collapse } from '../components/inputs/Collapse';
 
 export class TunnelsPage extends Component {
-
-  state = { env: null }
+  state = { env: null };
 
   columns = [
     {
@@ -45,16 +44,16 @@ export class TunnelsPage extends Component {
               <i className="fas fa-eye" />
             </a>
           </div>
-        )
+        );
       },
-    }
+    },
   ];
 
   componentDidMount() {
     this.props.setTitle(`Connected tunnels`);
     this.interval = setInterval(this.update, 5000);
     BackOfficeServices.env().then((env) => {
-      this.setState({ env })
+      this.setState({ env });
     });
   }
 
@@ -92,137 +91,138 @@ export class TunnelsPage extends Component {
 }
 
 export class TunnelPage extends Component {
-
-  state = { tunnel: null, routes: [] }
+  state = { tunnel: null, routes: [] };
 
   schema = {
     tunnel_id: { type: 'string', disabled: true, props: { label: 'id', placeholder: '---' } },
     name: { type: 'string', disabled: true, props: { label: 'name', placeholder: '---' } },
-    last_seen: { type: 'string', disabled: true, props: { label: 'last_seen', placeholder: '---' } },
-  }
+    last_seen: {
+      type: 'string',
+      disabled: true,
+      props: { label: 'last_seen', placeholder: '---' },
+    },
+  };
 
-  flow = [
-    'tunnel_id', 'name', 'last_seen'
-  ]
+  flow = ['tunnel_id', 'name', 'last_seen'];
 
   componentDidMount() {
     const id = this.props.match.params.id;
     BackOfficeServices.env().then((env) => {
       this.setState({ env });
-      BackOfficeServices.fetchTunnels().then(tunnels => {
-        const tunnel = tunnels.filter(t => t.tunnel_id == id)[0];
+      BackOfficeServices.fetchTunnels().then((tunnels) => {
+        const tunnel = tunnels.filter((t) => t.tunnel_id == id)[0];
         this.props.setTitle(`Connected tunnel '${tunnel.name}'`);
-        this.setState({ tunnel })
-        BackOfficeServices.nextClient.forEntity('routes').findAll().then(routes => {
-          this.setState({ routes });
-        });
+        this.setState({ tunnel });
+        BackOfficeServices.nextClient
+          .forEntity('routes')
+          .findAll()
+          .then((routes) => {
+            this.setState({ routes });
+          });
       });
     });
   }
 
   exposeRoute = (originalRoute) => {
     const routesClient = BackOfficeServices.nextClient.forEntity('routes');
-    const [hostname, ...parts] = (originalRoute.frontend.indexOf('/') > -1) ? originalRoute.frontend.split('/') : [originalRoute.frontend];
+    const [hostname, ...parts] =
+      originalRoute.frontend.indexOf('/') > -1
+        ? originalRoute.frontend.split('/')
+        : [originalRoute.frontend];
     const root = '/' + parts.join('/');
     const route = {
-      "_loc": {
-        "tenant": "default",
-        "teams": [
-          "default"
-        ]
+      _loc: {
+        tenant: 'default',
+        teams: ['default'],
       },
-      "id": `route_${v4()}`,
-      "name": `tunnel exposed '${originalRoute.name}'`,
-      "description": `route '${originalRoute.name}' exposed through tunnel '${this.state.tunnel.tunnel_id}'`,
-      "tags": [],
-      "metadata": {
+      id: `route_${v4()}`,
+      name: `tunnel exposed '${originalRoute.name}'`,
+      description: `route '${originalRoute.name}' exposed through tunnel '${this.state.tunnel.tunnel_id}'`,
+      tags: [],
+      metadata: {
         from_tunnel_id: this.state.tunnel.tunnel_id,
-        from_route_id: originalRoute.id
+        from_route_id: originalRoute.id,
       },
-      "enabled": false,
-      "debug_flow": false,
-      "export_reporting": false,
-      "capture": false,
-      "groups": [
-        "default"
-      ],
-      "frontend": {
-        "domains": [
-          `${originalRoute.id}.oto.tools${root}`
-        ],
-        "strip_path": true,
-        "exact": false,
-        "headers": {},
-        "query": {},
-        "methods": []
+      enabled: false,
+      debug_flow: false,
+      export_reporting: false,
+      capture: false,
+      groups: ['default'],
+      frontend: {
+        domains: [`${originalRoute.id}.oto.tools${root}`],
+        strip_path: true,
+        exact: false,
+        headers: {},
+        query: {},
+        methods: [],
       },
-      "backend": {
-        "targets": [
+      backend: {
+        targets: [
           {
-            "id": "target_1",
-            "hostname": hostname,
-            "port": 0,
-            "tls": false,
-            "weight": 1,
-            "predicate": {
-              "type": "AlwaysMatch"
+            id: 'target_1',
+            hostname: hostname,
+            port: 0,
+            tls: false,
+            weight: 1,
+            predicate: {
+              type: 'AlwaysMatch',
             },
-            "protocol": "HTTP/1.1",
-            "ip_address": null,
-            "tls_config": {
-              "certs": [],
-              "trusted_certs": [],
-              "enabled": false,
-              "loose": false,
-              "trust_all": false
-            }
-          }
-        ],
-        "target_refs": [],
-        "root": root,
-        "rewrite": false,
-        "load_balancing": {
-          "type": "RoundRobin"
-        },
-        "client": {
-          "retries": 1,
-          "max_errors": 20,
-          "retry_initial_delay": 50,
-          "backoff_factor": 2,
-          "call_timeout": 30000,
-          "call_and_stream_timeout": 120000,
-          "connection_timeout": 10000,
-          "idle_timeout": 60000,
-          "global_timeout": 30000,
-          "sample_interval": 2000,
-          "proxy": {},
-          "custom_timeouts": [],
-          "cache_connection_settings": {
-            "enabled": false,
-            "queue_size": 2048
-          }
-        },
-        "health_check": null
-      },
-      "backend_ref": null,
-      "plugins": [
-        {
-          "enabled": true,
-          "debug": false,
-          "plugin": "cp:otoroshi.next.tunnel.TunnelPlugin",
-          "include": [],
-          "exclude": [],
-          "config": {
-            "tunnel_id": this.state.tunnel.tunnel_id
+            protocol: 'HTTP/1.1',
+            ip_address: null,
+            tls_config: {
+              certs: [],
+              trusted_certs: [],
+              enabled: false,
+              loose: false,
+              trust_all: false,
+            },
           },
-          "plugin_index": {}
-        }
+        ],
+        target_refs: [],
+        root: root,
+        rewrite: false,
+        load_balancing: {
+          type: 'RoundRobin',
+        },
+        client: {
+          retries: 1,
+          max_errors: 20,
+          retry_initial_delay: 50,
+          backoff_factor: 2,
+          call_timeout: 30000,
+          call_and_stream_timeout: 120000,
+          connection_timeout: 10000,
+          idle_timeout: 60000,
+          global_timeout: 30000,
+          sample_interval: 2000,
+          proxy: {},
+          custom_timeouts: [],
+          cache_connection_settings: {
+            enabled: false,
+            queue_size: 2048,
+          },
+        },
+        health_check: null,
+      },
+      backend_ref: null,
+      plugins: [
+        {
+          enabled: true,
+          debug: false,
+          plugin: 'cp:otoroshi.next.tunnel.TunnelPlugin',
+          include: [],
+          exclude: [],
+          config: {
+            tunnel_id: this.state.tunnel.tunnel_id,
+          },
+          plugin_index: {},
+        },
       ],
     };
-    routesClient.create(route).then(r => {
+    routesClient.create(route).then((r) => {
       window.location = `/bo/dashboard/routes/${route.id}?tab=flow`;
     });
-  }
+  };
 
   columnBuilder = (c) => {
     return {
@@ -252,8 +252,8 @@ export class TunnelPage extends Component {
           return value[c.id || c.title];
         }
       },
-    }
-  }
+    };
+  };
 
   nodeColumns = [
     { title: 'id' },
@@ -263,24 +263,41 @@ export class TunnelPage extends Component {
     { title: 'https_port', style: { width: 80 } },
     { title: 'last_seen' },
     { title: 'type', style: { width: 80 } },
-  ].map(this.columnBuilder)
+  ].map(this.columnBuilder);
 
   routesColumns = [
     { title: 'id' },
     { title: 'name' },
     // { title: 'frontend' },
-    { title: 'actions', notFilterable: true, content: () => '', style: { width: 100 }, cell: (item, node) => {
-      const route = this.state.routes
-        .filter(r => r.metadata.from_tunnel_id === this.state.tunnel.tunnel_id)
-        .find(r => r.metadata.from_route_id === node.id);
-      const exposed = !!route;
-      if (exposed) {
-        return <button type="button" className="btn btn-success btn-sm" disabled>expose</button>;
-      } else {
-        return <button type="button" className="btn btn-success btn-sm" onClick={e => this.exposeRoute(node)}>expose</button>;
-      }
-    }}
-  ].map(this.columnBuilder)
+    {
+      title: 'actions',
+      notFilterable: true,
+      content: () => '',
+      style: { width: 100 },
+      cell: (item, node) => {
+        const route = this.state.routes
+          .filter((r) => r.metadata.from_tunnel_id === this.state.tunnel.tunnel_id)
+          .find((r) => r.metadata.from_route_id === node.id);
+        const exposed = !!route;
+        if (exposed) {
+          return (
+            <button type="button" className="btn btn-success btn-sm" disabled>
+              expose
+            </button>
+          );
+        } else {
+          return (
+            <button
+              type="button"
+              className="btn btn-success btn-sm"
+              onClick={(e) => this.exposeRoute(node)}>
+              expose
+            </button>
+          );
+        }
+      },
+    },
+  ].map(this.columnBuilder);
 
   render() {
     if (!this.state.tunnel) {
@@ -296,9 +313,11 @@ export class TunnelPage extends Component {
             loading={false}
             filterable={true}
             filterAll={true}
-            defaultSorted={[ { id: 'desc' } ]}
+            defaultSorted={[{ id: 'desc' }]}
             defaultFiltered={[]}
-            defaultPageSize={this.state.tunnel.nodes.length > 20 ? 20 : this.state.tunnel.nodes.length}
+            defaultPageSize={
+              this.state.tunnel.nodes.length > 20 ? 20 : this.state.tunnel.nodes.length
+            }
             columns={this.nodeColumns}
             defaultFilterMethod={(filter, row, column) => {
               const id = filter.pivotId || filter.id;
@@ -318,9 +337,11 @@ export class TunnelPage extends Component {
             loading={false}
             filterable={true}
             filterAll={true}
-            defaultSorted={[ { id: 'desc' } ]}
+            defaultSorted={[{ id: 'desc' }]}
             defaultFiltered={[]}
-            defaultPageSize={this.state.tunnel.routes.length > 20 ? 20 : this.state.tunnel.routes.length}
+            defaultPageSize={
+              this.state.tunnel.routes.length > 20 ? 20 : this.state.tunnel.routes.length
+            }
             columns={this.routesColumns}
             defaultFilterMethod={(filter, row, column) => {
               const id = filter.pivotId || filter.id;
@@ -333,8 +354,20 @@ export class TunnelPage extends Component {
             }}
           />
         </Collapse>
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'flex-end', width: '100%' }}>
-          <a className="btn btn-danger btn-sm" href="/bo/dashboard/tunnels" style={{ marginTop: 30 }}><i className="fas fa-times" /> Cancel</a>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-end',
+            width: '100%',
+          }}>
+          <a
+            className="btn btn-danger btn-sm"
+            href="/bo/dashboard/tunnels"
+            style={{ marginTop: 30 }}>
+            <i className="fas fa-times" /> Cancel
+          </a>
         </div>
       </>
     );

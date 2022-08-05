@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
-import isFunction from 'lodash/isFunction'
-import isString from 'lodash/isString'
+import isFunction from 'lodash/isFunction';
+import isString from 'lodash/isString';
 
 class Alert extends Component {
   componentDidMount() {

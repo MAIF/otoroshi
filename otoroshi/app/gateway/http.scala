@@ -507,7 +507,8 @@ class HttpHandler()(implicit env: Env) {
 
           val extractedTimeout =
             descriptor.clientConfig.extractTimeout(req.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
-          if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[gateway] using callAndStreamTimeout: $extractedTimeout")
+          if (ClientConfig.logger.isDebugEnabled)
+            ClientConfig.logger.debug(s"[gateway] using callAndStreamTimeout: $extractedTimeout")
           val builder          = clientReq
             .withRequestTimeout(extractedTimeout)
             .withFailureIndicator(alreadyFailed)

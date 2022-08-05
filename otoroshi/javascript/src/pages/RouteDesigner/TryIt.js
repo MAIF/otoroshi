@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import range from 'lodash/range'
+import range from 'lodash/range';
 import { CodeInput, SelectInput } from '@maif/react-forms';
 import { BooleanInput } from '../../components/inputs';
 import {
@@ -66,9 +66,9 @@ export default function ({ route, hide }) {
   useEffect(() => {
     const state = store.getState();
     const settings = getSettings(state);
-    settings["schema.polling.enable"] = false;
+    settings['schema.polling.enable'] = false;
     store.dispatch(setSettingsString(JSON.stringify(settings, null, 2)));
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (route && route.id) {
@@ -81,19 +81,19 @@ export default function ({ route, hide }) {
 
       setTesterView(
         route &&
-        route.plugins.find((f) => f.plugin.includes('GraphQLBackend')) &&
-        route.plugins.find((f) => f.plugin.includes('GraphQLBackend')).enabled &&
-        playgroundUrl &&
-        lastQuery
-      )
+          route.plugins.find((f) => f.plugin.includes('GraphQLBackend')) &&
+          route.plugins.find((f) => f.plugin.includes('GraphQLBackend')).enabled &&
+          playgroundUrl &&
+          lastQuery
+      );
     }
   }, [route]);
 
   useEffect(() => {
-    if (testerView === "graphql" && route) {
+    if (testerView === 'graphql' && route) {
       hidePlaygroundStuff(route);
     }
-  }, [route, testerView])
+  }, [route, testerView]);
 
   useEffect(() => {
     loadLastQuery();
@@ -218,15 +218,15 @@ export default function ({ route, hide }) {
       ),
       ...(format === 'basic'
         ? {
-          'authorization-header': {
-            key: apikeyHeader || request.apikeyHeader,
-            value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-          },
-        }
+            'authorization-header': {
+              key: apikeyHeader || request.apikeyHeader,
+              value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+            },
+          }
         : {
-          'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
-          'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
-        }),
+            'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
+            'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
+          }),
     };
   };
 
@@ -246,24 +246,32 @@ export default function ({ route, hide }) {
               <i className="fas fa-times" style={{ color: '#fff' }} />
             </button>
           </div>
-          {route && route.plugins.find(f => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') &&
-            <div className='mt-2'>
-              <button className='btn btn-sm btn-info me-1' type="button" onClick={() => setTesterView('rest')}>
-                REST Tester
-              </button>
-              <button className='btn btn-sm btn-info' type="button" onClick={() => setTesterView('graphql')}>
-                GraphQL Tester
-              </button>
-            </div>}
+          {route &&
+            route.plugins.find((f) => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') && (
+              <div className="mt-2">
+                <button
+                  className="btn btn-sm btn-info me-1"
+                  type="button"
+                  onClick={() => setTesterView('rest')}>
+                  REST Tester
+                </button>
+                <button
+                  className="btn btn-sm btn-info"
+                  type="button"
+                  onClick={() => setTesterView('graphql')}>
+                  GraphQL Tester
+                </button>
+              </div>
+            )}
         </div>
-      </div >
+      </div>
       {testerView === 'graphql' ? (
         <div style={{ minHeight: 'calc(100vh - 162px)' }}>
           <Provider store={store}>
             <Playground
               settings={{
                 'schema.polling.enable': false,
-                'introspection': true
+                introspection: true,
               }}
               codeTheme={{
                 editorBackground: '#3c3c3c',
@@ -671,9 +679,9 @@ export default function ({ route, hide }) {
           ) : null}
         </div>
       )}
-    </div >
+    </div>
   );
-};
+}
 
 const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, flow, setFlow }) => {
   const [selectedStep, setSelectedStep] = useState(-1);
@@ -699,9 +707,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     search.length <= 0
       ? true
       : step.task.includes(search) ||
-      [...(step?.ctx?.plugins || [])].find((plugin) =>
-        search.length <= 0 ? true : plugin.name.includes(search)
-      );
+        [...(step?.ctx?.plugins || [])].find((plugin) =>
+          search.length <= 0 ? true : plugin.name.includes(search)
+        );
 
   const isPluginNameMatchingSearch = (plugin) =>
     search.length <= 0 ? true : plugin.name.includes(search);
@@ -721,8 +729,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
       return unit === 'ms'
         ? roundNsTo(report.duration_ns)
         : unit === 'ns'
-          ? report.duration_ns
-          : 100;
+        ? report.duration_ns
+        : 100;
     else {
       const value = [...steps]
         .filter(isOnFlow)
@@ -731,8 +739,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           const userPluginsFlow =
             step.ctx && step.ctx.plugins
               ? [...(step.ctx?.plugins || [])]
-                .filter(isPluginNameMatchingSearch)
-                .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
+                  .filter(isPluginNameMatchingSearch)
+                  .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
               : 0;
 
           if (flow === 'user')
@@ -791,8 +799,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
         </div>
         <div
           onClick={() => setSelectedStep(-1)}
-          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${informations.state === 'Successful' ? 'success' : 'danger'
-            }`}>
+          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${
+            informations.state === 'Successful' ? 'success' : 'danger'
+          }`}>
           <span>Report</span>
           <span>
             {reportDuration()} {unit}
@@ -814,13 +823,15 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                     setSelectedPlugin(-1);
                     setSelectedStep(step.task);
                   }}
-                  className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep ? 'btn-dark' : ''
-                    }`}>
+                  className={`d-flex-between mt-1 px-3 py-2 report-step ${
+                    step.task === selectedStep ? 'btn-dark' : ''
+                  }`}>
                   <div className="d-flex align-items-center">
                     {displaySubList && (
                       <i
-                        className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
-                          } me-1`}
+                        className={`fas fa-chevron-${
+                          step.open || flow === 'user' ? 'down' : 'right'
+                        } me-1`}
                         onClick={() =>
                           setSteps(
                             steps.map((s) =>
@@ -837,8 +848,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                       {unit === 'ms'
                         ? roundNsTo(step.duration_ns)
                         : unit === 'ns'
-                          ? step.duration_ns
-                          : percentage}{' '}
+                        ? step.duration_ns
+                        : percentage}{' '}
                       {unit}
                     </span>
                   )}
@@ -860,17 +871,18 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                           key={plugin.name}
                           style={{ width: 'calc(100% - 12px)', marginLeft: '12px' }}
                           onClick={() => setSelectedPlugin(plugin.name)}
-                          className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep && plugin.name === selectedPlugin
-                            ? 'btn-dark'
-                            : ''
-                            }`}>
+                          className={`d-flex-between mt-1 px-3 py-2 report-step ${
+                            step.task === selectedStep && plugin.name === selectedPlugin
+                              ? 'btn-dark'
+                              : ''
+                          }`}>
                           <span>{firstLetterUppercase(pluginName)}</span>
                           <span style={{ maxWidth: '100px', textAlign: 'right' }}>
                             {unit === 'ms'
                               ? roundNsTo(plugin.duration_ns)
                               : unit === 'ns'
-                                ? plugin.duration_ns
-                                : pluginPercentage}{' '}
+                              ? plugin.duration_ns
+                              : pluginPercentage}{' '}
                             {unit}
                           </span>
                         </div>
@@ -891,8 +903,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                   ? informations
                   : steps.find((t) => t.task === selectedStep)
                 : steps
-                  .find((t) => t.task === selectedStep)
-                  ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+                    .find((t) => t.task === selectedStep)
+                    ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
               null,
               4
             ) +

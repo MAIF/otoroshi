@@ -232,7 +232,8 @@ object PrivateAppsUserHelper {
             GenericOauth2Module.handleTokenRefresh(auth, user)
             FastFuture.successful(Some(user))
           case None if env.clusterConfig.mode == ClusterMode.Worker => {
-            if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"private apps session $id not found locally - from helper")
+            if (Cluster.logger.isDebugEnabled)
+              Cluster.logger.debug(s"private apps session $id not found locally - from helper")
             env.clusterAgent.isSessionValid(id, Some(req)).map {
               case Some(user) =>
                 user.save(

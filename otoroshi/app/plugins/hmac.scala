@@ -120,9 +120,10 @@ class HMACCallerPlugin extends RequestTransformer {
         if (logger.isDebugEnabled) logger.debug(s"Signature send : $signature")
         if (logger.isDebugEnabled) logger.debug(s"Algorithm used : $algorithm")
         if (logger.isDebugEnabled) logger.debug(s"Date generated : $signingString")
-        if (logger.isDebugEnabled) logger.debug(
-          s"Send Authorization header : ${s"$authorizationHeader" -> s"""hmac algorithm="${algorithm.toLowerCase}", headers="Date", signature="$signature""""}"
-        )
+        if (logger.isDebugEnabled)
+          logger.debug(
+            s"Send Authorization header : ${s"$authorizationHeader" -> s"""hmac algorithm="${algorithm.toLowerCase}", headers="Date", signature="$signature""""}"
+          )
 
         context.otoroshiRequest
           .copy(headers =

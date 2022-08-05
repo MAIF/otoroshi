@@ -102,7 +102,8 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
           .runFold(0L)(_ + _)
       }
       .andThen {
-        case Success(count) if count > 0L => if (logger.isDebugEnabled) logger.debug(s"Cleaned up $count fast lookup keys without ttl")
+        case Success(count) if count > 0L =>
+          if (logger.isDebugEnabled) logger.debug(s"Cleaned up $count fast lookup keys without ttl")
         case _                            =>
       }
   }

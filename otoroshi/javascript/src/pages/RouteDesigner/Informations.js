@@ -4,7 +4,7 @@ import { Location } from '../../components/Location';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
-import isEqual from 'lodash/isEqual'
+import isEqual from 'lodash/isEqual';
 import merge from 'lodash/merge';
 import { FeedbackButton } from './FeedbackButton';
 

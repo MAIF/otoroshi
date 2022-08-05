@@ -50,7 +50,9 @@ const Manager = ({ query, entity, ...props }) => {
 
   useEffect(() => {
     if (value && value.id) {
-      props.setSidebarContent(<DesignerSidebar route={value} setSidebarContent={props.setSidebarContent} />);
+      props.setSidebarContent(
+        <DesignerSidebar route={value} setSidebarContent={props.setSidebarContent} />
+      );
 
       props.setTitle(() => (
         <div className="page-header d-flex align-item-center justify-content-between ms-0 mb-3">
@@ -109,7 +111,7 @@ const Manager = ({ query, entity, ...props }) => {
                 },
                 {
                   icon: 'fa-cog',
-                  onClick: () => { },
+                  onClick: () => {},
                   enabled: () => !isOnViewPlugins, //isOnViewPlugins || query == 'flow',
                   dropdown: true,
                   style: { marginLeft: 20 },
@@ -127,15 +129,17 @@ const Manager = ({ query, entity, ...props }) => {
                     <button
                       key={title}
                       type="button"
-                      className={`btn btn-sm toggle-form-buttons d-flex align-items-center ${dropdown ? 'dropdown-toggle' : ''}`}
+                      className={`btn btn-sm toggle-form-buttons d-flex align-items-center ${
+                        dropdown ? 'dropdown-toggle' : ''
+                      }`}
                       onClick={
                         onClick
                           ? onClick
                           : () => {
-                            if (query !== tab || viewPlugins) {
-                              if (!window.location.href.includes(to)) history.push(to);
+                              if (query !== tab || viewPlugins) {
+                                if (!window.location.href.includes(to)) history.push(to);
+                              }
                             }
-                          }
                       }
                       {...(tooltip || {})}
                       style={{
@@ -180,7 +184,8 @@ const Manager = ({ query, entity, ...props }) => {
                                 const what = window.location.pathname.split('/')[3];
                                 history.push('/' + what);
                               }}>
-                              <i className="fas fa-arrow-left me-3" /> Back to {window.location.pathname.split('/')[3]}
+                              <i className="fas fa-arrow-left me-3" /> Back to{' '}
+                              {window.location.pathname.split('/')[3]}
                             </button>
                             <button
                               type="button"
@@ -400,22 +405,28 @@ const Manager = ({ query, entity, ...props }) => {
 };
 
 const RoutesView = ({ history }) => {
-  const [creation, setCreation] = useState(false)
+  const [creation, setCreation] = useState(false);
 
-  return <>
-    {creation && <RouteWizard hide={() => setCreation(false)} history={history} />}
-    <Routes injectTopBar={
-      <button onClick={() => setCreation(true)}
-        className="btn btn-primary"
-        style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
-        <i className="fas fa-hat-wizard" /> Create with wizard
-      </button>} />
-  </>
-}
+  return (
+    <>
+      {creation && <RouteWizard hide={() => setCreation(false)} history={history} />}
+      <Routes
+        injectTopBar={
+          <button
+            onClick={() => setCreation(true)}
+            className="btn btn-primary"
+            style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+            <i className="fas fa-hat-wizard" /> Create with wizard
+          </button>
+        }
+      />
+    </>
+  );
+};
 
 export default (props) => {
   const match = useRouteMatch();
-  const history = useHistory()
+  const history = useHistory();
   const { search, pathname } = useLocation();
   const entity = useEntityFromURI();
   const query = new URLSearchParams(search).get('tab');
@@ -427,9 +438,8 @@ export default (props) => {
   }, []);
 
   useEffect(() => {
-    if (pathname === "/routes" || pathname === "/routes")
-      props.setSidebarContent(null)
-  }, [pathname])
+    if (pathname === '/routes' || pathname === '/routes') props.setSidebarContent(null);
+  }, [pathname]);
 
   useEffect(() => {
     if (!query) {

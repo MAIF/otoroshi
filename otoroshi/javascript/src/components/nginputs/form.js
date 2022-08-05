@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import cloneDeep from 'lodash/cloneDeep';
-import isFunction from 'lodash/isFunction'
+import isFunction from 'lodash/isFunction';
 import isEqual from 'lodash/isEqual';
-import isString from 'lodash/isString'
+import isString from 'lodash/isString';
 
 import {
   NgPasswordRenderer,

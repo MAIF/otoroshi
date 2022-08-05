@@ -35,7 +35,7 @@ object CustomForms {
           |""".stripMargin)
         .asObject
     ),
-    classOf[GraphQLQuery].getName -> Form(
+    classOf[GraphQLQuery].getName      -> Form(
       flow = Seq("url", "method", "headers", "timeout", "query", "response_filter", "response_path"),
       schema = Json
         .parse("""{
@@ -72,7 +72,7 @@ object CustomForms {
           |}""".stripMargin)
         .asObject
     ),
-    classOf[GraphQLBackend].getName -> Form(
+    classOf[GraphQLBackend].getName    -> Form(
       flow = Seq("schema", "permissions", "initialData", "maxDepth"),
       schema = Json
         .parse("""{
@@ -98,7 +98,7 @@ object CustomForms {
           |}""".stripMargin)
         .asObject
     ),
-    classOf[TunnelPlugin].getName -> Form(
+    classOf[TunnelPlugin].getName      -> Form(
       flow = Seq("tunnel_id"),
       schema = Json
         .parse("""{

@@ -714,9 +714,10 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         }
       }
       case certs if (clientCerts ++ trustedCerts).nonEmpty => {
-        if (logger.isDebugEnabled) logger.debug(
-          s"Calling ${request.uri} with mTLS context of ${clientCerts.size} client certificates and ${trustedCerts.size} trusted certificates"
-        )
+        if (logger.isDebugEnabled)
+          logger.debug(
+            s"Calling ${request.uri} with mTLS context of ${clientCerts.size} client certificates and ${trustedCerts.size} trusted certificates"
+          )
         // logger.info(s"Calling ${request.uri} with mTLS context of ${clientCerts.size} client certificates and ${trustedCerts.size} trusted certificates: ${Json.prettyPrint(Json.obj(
         //   "clientCerts" -> JsArray(clientCerts.map(c => JsString(c.name + " - " + c.enrich().certificates.head.getSubjectDN.getName))),
         //   "trustedCerts" -> JsArray(trustedCerts.map(c => JsString(c.name + " - " + c.enrich().certificates.head.getSubjectDN.getName))),
@@ -834,7 +835,8 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         )(mat)
       }
       case certs if (clientCerts ++ trustedCerts).nonEmpty => {
-        if (logger.isDebugEnabled) logger.debug(s"Calling ws ${request.uri} with mTLS context of ${certs.size} certificates")
+        if (logger.isDebugEnabled)
+          logger.debug(s"Calling ws ${request.uri} with mTLS context of ${certs.size} certificates")
         val sslContext = env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-fetch") {
           val cacheKey = certs.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
           singleSslContextCache.getOrElse(
@@ -912,7 +914,8 @@ case class AkkWsClientStreamedResponse(
   def headers: Map[String, Seq[String]]                = allHeaders
   def underlying[T]: T                                 = httpResponse.asInstanceOf[T]
   def bodyAsSource: Source[ByteString, _] = {
-    if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] consuming body in ${requestTimeout}")
+    if (ClientConfig.logger.isDebugEnabled)
+      ClientConfig.logger.debug(s"[httpclient] consuming body in ${requestTimeout}")
     httpResponse.entity.dataBytes.takeWithin(requestTimeout)
   }
   override def header(name: String): Option[String]    = headerValues(name).headOption
@@ -1102,9 +1105,10 @@ case class AkkaWsClientRequest(
           case _                                 => ClientTransport.httpsProxy(proxyAddress)
         }
         a: ConnectionPoolSettings => {
-          if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(
-            s"[httpclient] using idleTimeout: $idleTimeout, connectionTimeout: $connectionTimeout"
-          )
+          if (ClientConfig.logger.isDebugEnabled)
+            ClientConfig.logger.debug(
+              s"[httpclient] using idleTimeout: $idleTimeout, connectionTimeout: $connectionTimeout"
+            )
           a.withTransport(httpsProxyTransport)
             .withIdleTimeout(idleTimeout)
             .withConnectionSettings(
@@ -1154,7 +1158,8 @@ case class AkkaWsClientRequest(
   }
 
   def withRequestTimeout(timeout: Duration): Self = {
-    if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] setting requestTimeout to ${timeout}")
+    if (ClientConfig.logger.isDebugEnabled)
+      ClientConfig.logger.debug(s"[httpclient] setting requestTimeout to ${timeout}")
     copy(requestTimeout = Some(timeout))
   }
 
@@ -1185,7 +1190,8 @@ case class AkkaWsClientRequest(
     val zeTimeout               = requestTimeout
       .map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS))
       .getOrElse(FiniteDuration(30, TimeUnit.DAYS)) // yeah that's infinity ...
-    if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] stream request with timeout to ${zeTimeout}")
+    if (ClientConfig.logger.isDebugEnabled)
+      ClientConfig.logger.debug(s"[httpclient] stream request with timeout to ${zeTimeout}")
     if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] start req")
     val failure = Timeout
       .timeout(Done, zeTimeout)(client.ec, env.otoroshiScheduler)
@@ -1213,7 +1219,8 @@ case class AkkaWsClientRequest(
           FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
         } else {
           val remainingTimeout = remaining.millis
-          if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] got stream resp - ${remainingTimeout}")
+          if (ClientConfig.logger.isDebugEnabled)
+            ClientConfig.logger.debug(s"[httpclient] got stream resp - ${remainingTimeout}")
           AkkWsClientStreamedResponse(
             resp,
             rawUrl,
@@ -1273,7 +1280,8 @@ case class AkkaWsClientRequest(
           FastFuture.failed(otoroshi.gateway.RequestTimeoutException)
         } else {
           val remainingTimeout = remaining.millis
-          if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] got resp - ${remainingTimeout}")
+          if (ClientConfig.logger.isDebugEnabled)
+            ClientConfig.logger.debug(s"[httpclient] got resp - ${remainingTimeout}")
           response.entity
             .toStrict(remainingTimeout)
             .map(a => (response, a))

@@ -511,7 +511,7 @@ class NgProxyState(env: Env) {
   }
 
   def sync()(implicit ec: ExecutionContext): Future[Unit] = {
-    implicit val ev = env
+    implicit val ev  = env
     val start        = System.currentTimeMillis()
     val config       = env.datastores.globalConfigDataStore
       .latest()
@@ -533,8 +533,8 @@ class NgProxyState(env: Env) {
       descriptors         <- env.datastores.serviceDescriptorDataStore.findAllAndFillSecrets() // secrets OK
       fakeRoutes           = if (dev) Seq(NgRoute.fake) else Seq.empty
       newRoutes            = (genRoutesDomain ++ genRoutesPath ++ genRandom ++ descriptors.map(d =>
-        NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
-      ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
+                               NgRoute.fromServiceDescriptor(d, debug || debugHeaders).seffectOn(_.serviceDescriptor)
+                             ) ++ routes ++ routescomp.flatMap(_.toRoutes) ++ fakeRoutes ++ soapRoute(env)).filter(_.enabled)
       apikeys             <- env.datastores.apiKeyDataStore.findAllAndFillSecrets() // secrets OK
       certs               <- env.datastores.certificatesDataStore.findAllAndFillSecrets() // secrets OK
       verifiers           <- env.datastores.globalJwtVerifierDataStore.findAllAndFillSecrets() // secrets OK
@@ -553,39 +553,39 @@ class NgProxyState(env: Env) {
       tcpServices         <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets() // secrets OK
       scripts             <- env.datastores.scriptDataStore.findAll() // no need for secrets
       croutes             <- if (dev) {
-        NgService
-          .fromOpenApi(
-            "oto-api-next-gen.oto.tools",
-            "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"
-          )
-          .map(route => {
-            // java.nio.file.Files.writeString(new java.io.File("./service.json").toPath(), route.json.prettify)
-            route.toRoutes.map(r =>
-              r.copy(
-                backend =
-                  r.backend.copy(targets = r.backend.targets.map(t => t.copy(port = 9999, tls = false))),
-                plugins = NgPlugins(
-                  Seq(
-                    NgPluginInstance(
-                      plugin = NgPluginHelper.pluginId[OverrideHost]
-                    ),
-                    NgPluginInstance(
-                      plugin = NgPluginHelper.pluginId[AdditionalHeadersIn],
-                      config = NgPluginInstanceConfig(
-                        Json.obj(
-                          "headers" -> Json.obj(
-                            "Otoroshi-Client-Id"     -> "admin-api-apikey-id",
-                            "Otoroshi-Client-Secret" -> "admin-api-apikey-secret"
-                          )
-                        )
-                      )
-                    )
-                  )
-                )
-              )
-            )
-          })
-      } else Seq.empty[NgRoute].vfuture
+                               NgService
+                                 .fromOpenApi(
+                                   "oto-api-next-gen.oto.tools",
+                                   "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"
+                                 )
+                                 .map(route => {
+                                   // java.nio.file.Files.writeString(new java.io.File("./service.json").toPath(), route.json.prettify)
+                                   route.toRoutes.map(r =>
+                                     r.copy(
+                                       backend =
+                                         r.backend.copy(targets = r.backend.targets.map(t => t.copy(port = 9999, tls = false))),
+                                       plugins = NgPlugins(
+                                         Seq(
+                                           NgPluginInstance(
+                                             plugin = NgPluginHelper.pluginId[OverrideHost]
+                                           ),
+                                           NgPluginInstance(
+                                             plugin = NgPluginHelper.pluginId[AdditionalHeadersIn],
+                                             config = NgPluginInstanceConfig(
+                                               Json.obj(
+                                                 "headers" -> Json.obj(
+                                                   "Otoroshi-Client-Id"     -> "admin-api-apikey-id",
+                                                   "Otoroshi-Client-Secret" -> "admin-api-apikey-secret"
+                                                 )
+                                               )
+                                             )
+                                           )
+                                         )
+                                       )
+                                     )
+                                   )
+                                 })
+                             } else Seq.empty[NgRoute].vfuture
     } yield {
       env.proxyState.updateRoutes(newRoutes ++ croutes)
       env.proxyState.updateTargets(targets)

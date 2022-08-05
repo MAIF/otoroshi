@@ -12,11 +12,10 @@ export function DefaultSidebar(props) {
     base === pathname && search.indexOf(`env=${part}`) > -1 ? 'active' : '';
 
   const canShowSidebar = () => {
-    return !['/bo/dashboard/routes/'].some(path => pathname.startsWith(path))
-  }
+    return !['/bo/dashboard/routes/'].some((path) => pathname.startsWith(path));
+  };
 
-  if (!canShowSidebar())
-    return null
+  if (!canShowSidebar()) return null;
 
   return (
     <ul className="nav flex-column nav-sidebar">

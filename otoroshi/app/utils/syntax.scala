@@ -415,7 +415,7 @@ object implicits {
       }
     }
   }
-  implicit class BetterCookie(val cookie: Cookie) extends AnyVal {
+  implicit class BetterCookie(val cookie: Cookie)                             extends AnyVal {
     def wsCookie: WSCookie = DefaultWSCookie(
       name = cookie.name,
       value = cookie.value,
@@ -423,20 +423,20 @@ object implicits {
       path = cookie.path.some,
       maxAge = cookie.maxAge.map(_.toLong),
       secure = cookie.secure,
-      httpOnly = cookie.httpOnly,
+      httpOnly = cookie.httpOnly
     )
-    def json: JsValue = Json.obj(
-      "name" -> cookie.name,
-      "value" -> cookie.value,
-      "maxAge" -> cookie.maxAge.map(n => JsNumber(BigDecimal(n))).getOrElse(JsNull).asValue,
-      "path" -> cookie.path,
-      "domain" -> cookie.domain.map(JsString.apply).getOrElse(JsNull).asValue,
-      "secure" -> cookie.secure,
+    def json: JsValue      = Json.obj(
+      "name"     -> cookie.name,
+      "value"    -> cookie.value,
+      "maxAge"   -> cookie.maxAge.map(n => JsNumber(BigDecimal(n))).getOrElse(JsNull).asValue,
+      "path"     -> cookie.path,
+      "domain"   -> cookie.domain.map(JsString.apply).getOrElse(JsNull).asValue,
+      "secure"   -> cookie.secure,
       "httpOnly" -> cookie.httpOnly,
       "sameSite" -> cookie.sameSite.map(_.value.json).getOrElse(JsNull).asValue
     )
   }
-  implicit class BetterWSCookie(val cookie: WSCookie) extends AnyVal {
+  implicit class BetterWSCookie(val cookie: WSCookie)                         extends AnyVal {
     def mvcCookie: Cookie = Cookie(
       name = cookie.name,
       value = cookie.value,
@@ -445,16 +445,16 @@ object implicits {
       domain = cookie.domain,
       secure = cookie.secure,
       httpOnly = cookie.httpOnly,
-      sameSite = None,
+      sameSite = None
     )
-    def json: JsValue = Json.obj(
-      "name" -> cookie.name,
-      "value" -> cookie.value,
-      "maxAge" -> cookie.maxAge.map(n => JsNumber(BigDecimal(n))).getOrElse(JsNull).asValue,
-      "path" -> cookie.path.map(JsString.apply).getOrElse(JsNull).asValue,
-      "domain" -> cookie.domain.map(JsString.apply).getOrElse(JsNull).asValue,
-      "secure" -> cookie.secure,
-      "httpOnly" -> cookie.httpOnly,
+    def json: JsValue     = Json.obj(
+      "name"     -> cookie.name,
+      "value"    -> cookie.value,
+      "maxAge"   -> cookie.maxAge.map(n => JsNumber(BigDecimal(n))).getOrElse(JsNull).asValue,
+      "path"     -> cookie.path.map(JsString.apply).getOrElse(JsNull).asValue,
+      "domain"   -> cookie.domain.map(JsString.apply).getOrElse(JsNull).asValue,
+      "secure"   -> cookie.secure,
+      "httpOnly" -> cookie.httpOnly
     )
   }
   implicit class BetterMapOfStringAndB[B](val theMap: Map[String, B])         extends AnyVal {

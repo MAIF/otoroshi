@@ -630,7 +630,8 @@ class TcpEngineProvider {
       env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
 
     val context: SSLContext    = DynamicSSLEngineProvider.currentServer
-    if (DynamicSSLEngineProvider.logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
+    if (DynamicSSLEngineProvider.logger.isDebugEnabled)
+      DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     val rawEngine              = context.createSSLEngine()
     val engine                 = new CustomSSLEngine(rawEngine)
     val rawEnabledCipherSuites = rawEngine.getEnabledCipherSuites.toSeq
@@ -653,10 +654,12 @@ class TcpEngineProvider {
         sniServerName match {
           case hn: SNIHostName =>
             val hostName = hn.getAsciiName
-            if (DynamicSSLEngineProvider.logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"createSSLEngine - for $hostName")
+            if (DynamicSSLEngineProvider.logger.isDebugEnabled)
+              DynamicSSLEngineProvider.logger.debug(s"createSSLEngine - for $hostName")
             engine.setEngineHostName(hostName)
           case _               =>
-            if (DynamicSSLEngineProvider.logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Not a hostname :( ${sniServerName.toString}")
+            if (DynamicSSLEngineProvider.logger.isDebugEnabled)
+              DynamicSSLEngineProvider.logger.debug(s"Not a hostname :( ${sniServerName.toString}")
         }
         true
       }

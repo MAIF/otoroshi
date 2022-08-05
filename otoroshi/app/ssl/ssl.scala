@@ -1496,7 +1496,8 @@ object DynamicSSLEngineProvider {
               if (certificateChain.isEmpty) {
                 logger.error(s"[${cert.id}] Certificate file does not contain any certificates :(")
               } else {
-                if (logger.isDebugEnabled) logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
+                if (logger.isDebugEnabled)
+                  logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
                 val domain = Try {
                   certificateChain.head.maybeDomain.getOrElse(cert.domain)
                 }.toOption.getOrElse(cert.domain)
@@ -1749,7 +1750,8 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
       .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.clientAuth")
       .flatMap(ClientAuth.apply)
       .getOrElse(ClientAuth.None)
-    if (DynamicSSLEngineProvider.logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
+    if (DynamicSSLEngineProvider.logger.isDebugEnabled)
+      DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
     auth
   }
 
@@ -2123,7 +2125,8 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
   }
 
   def setEngineHostName(hostName: String): Unit = {
-    if (DynamicSSLEngineProvider.logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")
+    if (DynamicSSLEngineProvider.logger.isDebugEnabled)
+      DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")
     hostnameHolder.set(hostName)
     // TODO: add try to avoid future issue ? fixed for now with '--add-opens java.base/javax.net.ssl=ALL-UNNAMED' in the java command line
     field.set(this, hostName)

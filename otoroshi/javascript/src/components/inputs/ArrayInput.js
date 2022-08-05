@@ -95,9 +95,11 @@ export class ArrayInput extends Component {
       return (
         <div>
           <div className="row mb-3">
-            {!this.props.hideLabel && <label className="col-xs-12 col-sm-2 col-form-label">
-              {this.props.label} <Help text={this.props.help} />
-            </label>}
+            {!this.props.hideLabel && (
+              <label className="col-xs-12 col-sm-2 col-form-label">
+                {this.props.label} <Help text={this.props.help} />
+              </label>
+            )}
             <div className="col-sm-10">
               {values.length === 0 && (
                 <button
@@ -156,11 +158,13 @@ export class ArrayInput extends Component {
       <div>
         {values.length === 0 && (
           <div className="row mb-3">
-            {!this.props.hideLabel && <label
-              htmlFor={`input-${this.props.label}`}
-              className="col-xs-12 col-sm-2 col-form-label">
-              {this.props.label} <Help text={this.props.help} />
-            </label>}
+            {!this.props.hideLabel && (
+              <label
+                htmlFor={`input-${this.props.label}`}
+                className="col-xs-12 col-sm-2 col-form-label">
+                {this.props.label} <Help text={this.props.help} />
+              </label>
+            )}
             <div className="col-sm-10">
               <button
                 disabled={this.props.disabled}
@@ -179,7 +183,9 @@ export class ArrayInput extends Component {
                 {this.props.label} <Help text={this.props.help} />
               </label>
             )}
-            {idx > 0 && !this.props.hideLabel && <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>}
+            {idx > 0 && !this.props.hideLabel && (
+              <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>
+            )}
             <div className="col-sm-10">
               <div className="input-group justify-content-between">
                 {!this.state.values.length && !this.props.component && (

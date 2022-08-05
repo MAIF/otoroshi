@@ -484,7 +484,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                     OtoResHolder(raw, item)
                   }
               } else {
-                if (logger.isDebugEnabled) logger.debug(s"fetchOtoroshiResources ${pluralName}: bad status ${resp.status}")
+                if (logger.isDebugEnabled)
+                  logger.debug(s"fetchOtoroshiResources ${pluralName}: bad status ${resp.status}")
                 Seq.empty
               }
             } match {
@@ -831,7 +832,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           Source.single(Source.empty).delay(5.seconds).flatMapConcat(v => v)
         } else {
           lastTime.set(now)
-          if (logger.isDebugEnabled) logger.debug(s"watch on ${api} / ${namespace} / ${resource} for ${timeout} seconds ! ")
+          if (logger.isDebugEnabled)
+            logger.debug(s"watch on ${api} / ${namespace} / ${resource} for ${timeout} seconds ! ")
           val lblStart                              = labelSelector.map(s => s"?labelSelector=$s").getOrElse("")
           val cliStart: WSRequest                   = client(s"${root}/$api/namespaces/$namespace/$resource$lblStart")
           val f: Future[Source[Seq[ByteString], _]] = cliStart
@@ -868,9 +870,10 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                           val name            = (json \ "object" \ "metadata" \ "name").asOpt[String]
                           val ns              = (json \ "object" \ "metadata" \ "namespace").asOpt[String]
                           val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
-                          if (logger.isDebugEnabled) logger.debug(
-                            s"received event for ${api}/${namespace}/${resource} - $typ - $ns/$name($resourceVersion)"
-                          )
+                          if (logger.isDebugEnabled)
+                            logger.debug(
+                              s"received event for ${api}/${namespace}/${resource} - $typ - $ns/$name($resourceVersion)"
+                            )
                           resourceVersion.foreach(v => last.set(v))
                           ByteString(line)
                         }

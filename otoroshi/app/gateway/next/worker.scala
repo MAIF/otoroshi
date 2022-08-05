@@ -813,9 +813,10 @@ class OtoroshiRequestHandler(
     actionBuilder { req =>
       val domain   = req.theDomain
       val protocol = req.theProtocol
-      if (logger.isTraceEnabled) logger.trace(
-        s"redirectToHttps from ${protocol}://$domain${req.relativeUri} to ${env.rootScheme}$domain${req.relativeUri}"
-      )
+      if (logger.isTraceEnabled)
+        logger.trace(
+          s"redirectToHttps from ${protocol}://$domain${req.relativeUri} to ${env.rootScheme}$domain${req.relativeUri}"
+        )
       Redirect(s"${env.rootScheme}$domain${req.relativeUri}").withHeaders("otoroshi-redirect-to" -> "https")
     }
 
@@ -823,9 +824,10 @@ class OtoroshiRequestHandler(
     actionBuilder { req =>
       val domain: String = env.redirections.foldLeft(req.theDomain)((domain, item) => domain.replace(item, env.domain))
       val protocol       = req.theProtocol
-      if (logger.isDebugEnabled) logger.debug(
-        s"redirectToMainDomain from $protocol://${req.theDomain}${req.relativeUri} to $protocol://$domain${req.relativeUri}"
-      )
+      if (logger.isDebugEnabled)
+        logger.debug(
+          s"redirectToMainDomain from $protocol://${req.theDomain}${req.relativeUri} to $protocol://$domain${req.relativeUri}"
+        )
       Redirect(s"$protocol://$domain${req.relativeUri}")
     }
 

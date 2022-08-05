@@ -933,7 +933,9 @@ object NgRoute {
                   Json.obj(
                     "version"              -> service.secComVersion.str,
                     "ttl"                  -> service.secComTtl.toSeconds,
-                    "request_header_name"  -> service.secComHeaders.stateRequestName.getOrElse(env.Headers.OtoroshiState).json,
+                    "request_header_name"  -> service.secComHeaders.stateRequestName
+                      .getOrElse(env.Headers.OtoroshiState)
+                      .json,
                     "response_header_name" -> service.secComHeaders.stateResponseName
                       .getOrElse(env.Headers.OtoroshiStateResp)
                       .json,

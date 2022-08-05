@@ -82,10 +82,10 @@ class OpenapiToJson(spec: JsValue) {
               (
                 fields.find(field => (field \ "type").asOpt[String].isDefined),
                 fields.exists(field => (field \ "$ref").asOpt[String].isDefined)
-                ) match {
+              ) match {
                 case (Some(field), false) =>
                   updateField(data, key, path, field)
-                case (tmp, _)        =>
+                case (tmp, _)             =>
                   // corresponding when the object is composed of a list of references
                   updateField(data, key, path, Json.obj("type" -> "object"))
 
@@ -146,18 +146,18 @@ class OpenapiToJson(spec: JsValue) {
 
   def getRef(data: TrieMap[String, JsValue], ref: String): JsObject = {
     //if (ref.startsWith(otoroshiSchemaType)) {
-      val reference = ref.replace("#/components/schemas/", "")
+    val reference = ref.replace("#/components/schemas/", "")
 
-      try {
-        (data(reference) \ "properties").asOpt[JsObject] match {
-          case Some(prop) => prop
-          case _          => data(reference).as[JsObject]
-        }
-      } catch {
-        case _: Throwable =>
-          logger.debug(s"$reference not found")
-          Json.obj()
+    try {
+      (data(reference) \ "properties").asOpt[JsObject] match {
+        case Some(prop) => prop
+        case _          => data(reference).as[JsObject]
       }
+    } catch {
+      case _: Throwable =>
+        logger.debug(s"$reference not found")
+        Json.obj()
+    }
     /*} else
       Json.obj()*/
   }

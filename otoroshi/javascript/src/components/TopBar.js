@@ -667,8 +667,9 @@ export class TopBar extends Component {
                 />
                 <ul
                   id="dropdown"
-                  className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                    } py-2 pb-4`}
+                  className={`custom-dropdown ${
+                    this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                  } py-2 pb-4`}
                   aria-labelledby="dropdownMenuParams">
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>

@@ -281,9 +281,10 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>
         val (codeVerifier, codeChallenge, codeChallengeMethod) = generatePKCECodes(authConfig.pkce.map(_.algorithm))
-        if (logger.isDebugEnabled) logger.debug(
-          s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod"
-        )
+        if (logger.isDebugEnabled)
+          logger.debug(
+            s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod"
+          )
         (
           s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri&code_challenge=$codeChallenge&code_challenge_method=$codeChallengeMethod",
           Seq((s"${authConfig.id}-code_verifier" -> codeVerifier))
@@ -354,9 +355,10 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>
         val (codeVerifier, codeChallenge, codeChallengeMethod) = generatePKCECodes(authConfig.pkce.map(_.algorithm))
-        if (logger.isDebugEnabled) logger.debug(
-          s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod"
-        )
+        if (logger.isDebugEnabled)
+          logger.debug(
+            s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod"
+          )
         (
           s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri&code_challenge=$codeChallenge&code_challenge_method=$codeChallengeMethod",
           Seq((s"${authConfig.id}-code_verifier" -> codeVerifier))

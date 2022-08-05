@@ -4,10 +4,10 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 import moment from 'moment';
 
-import groupBy from 'lodash/groupBy'
-import mapValues from 'lodash/mapValues'
-import orderBy from 'lodash/orderBy'
-import values from 'lodash/values'
+import groupBy from 'lodash/groupBy';
+import mapValues from 'lodash/mapValues';
+import orderBy from 'lodash/orderBy';
+import values from 'lodash/values';
 
 export class SessionsPage extends Component {
   columns = [

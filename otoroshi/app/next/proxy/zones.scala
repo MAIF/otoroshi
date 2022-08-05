@@ -126,11 +126,15 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
       val uriStr                         = s"$url/api/cluster/relay"
       val uri                            = Uri(uriStr)
       if (useLeader) {
-        if (RelayRouting.logger.isDebugEnabled) RelayRouting.logger.debug(
-          s"forwarding call to '${route.name}' through local leader '${uriStr}' (attempt ${attempt})"
-        )
+        if (RelayRouting.logger.isDebugEnabled)
+          RelayRouting.logger.debug(
+            s"forwarding call to '${route.name}' through local leader '${uriStr}' (attempt ${attempt})"
+          )
       } else {
-        if (RelayRouting.logger.isDebugEnabled) RelayRouting.logger.debug(s"forwarding call to '${route.name}' through relay '${uriStr}' (attempt ${attempt})")
+        if (RelayRouting.logger.isDebugEnabled)
+          RelayRouting.logger.debug(
+            s"forwarding call to '${route.name}' through relay '${uriStr}' (attempt ${attempt})"
+          )
       }
       env.Ws
         .akkaUrlWithTarget(

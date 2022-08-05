@@ -4,9 +4,9 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 import moment from 'moment';
 import groupBy from 'lodash/groupBy';
-import mapValues from 'lodash/mapValues'
+import mapValues from 'lodash/mapValues';
 import values from 'lodash/values';
-import orderBy from 'lodash/orderBy'
+import orderBy from 'lodash/orderBy';
 
 export class PrivateAppsSessionsPage extends Component {
   columns = [

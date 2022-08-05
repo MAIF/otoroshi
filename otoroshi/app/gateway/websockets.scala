@@ -197,9 +197,10 @@ class WebSocketHandler()(implicit env: Env) {
       jwtInjection = jwtInjection,
       attrs = attrs
     )
-    if (logger.isTraceEnabled) logger.trace(
-      s"[WEBSOCKET] calling '$url' with headers \n ${headersIn.map(_.toString()) mkString "\n"}"
-    )
+    if (logger.isTraceEnabled)
+      logger.trace(
+        s"[WEBSOCKET] calling '$url' with headers \n ${headersIn.map(_.toString()) mkString "\n"}"
+      )
     val overhead                         = System.currentTimeMillis() - start
     val quotas: Future[RemainingQuotas]  =
       apiKey.map(_.updateQuotas()).getOrElse(FastFuture.successful(RemainingQuotas()))
@@ -691,9 +692,10 @@ object WebSocketProxyActor {
     )
     Flow.lazyFutureFlow[PlayWSMessage, PlayWSMessage, NotUsed] { () =>
       connected.flatMap { r =>
-        if (logger.isTraceEnabled) logger.trace(
-          s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"
-        )
+        if (logger.isTraceEnabled)
+          logger.trace(
+            s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"
+          )
         r match {
           case ValidUpgrade(response, chosenSubprotocol) =>
             val f: Flow[PlayWSMessage, PlayWSMessage, NotUsed] = Flow.fromSinkAndSource(
@@ -838,9 +840,10 @@ class WebSocketProxyActor(
         case Success(r) => {
           implicit val ec  = env.otoroshiExecutionContext
           implicit val mat = env.otoroshiMaterializer
-          if (logger.isTraceEnabled) logger.trace(
-            s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"
-          )
+          if (logger.isTraceEnabled)
+            logger.trace(
+              s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"
+            )
           r.response.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bs =>
             if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] connected to target with response '${bs.utf8String}'")
           }

@@ -237,9 +237,10 @@ class BackOfficeController(
               logger.info(
                 s"[${ctx.request.id}] akka - starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}"
               )
-            if (logger.isDebugEnabled) logger.debug(
-              s"[${ctx.request.id}] akka - starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}"
-            )
+            if (logger.isDebugEnabled)
+              logger.debug(
+                s"[${ctx.request.id}] akka - starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}"
+              )
             builderWithBody
               .stream()
               .fast
@@ -249,10 +250,11 @@ class BackOfficeController(
                     s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
                       .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
                   )
-                if (logger.isDebugEnabled) logger.debug(
-                  s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
-                    .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
-                )
+                if (logger.isDebugEnabled)
+                  logger.debug(
+                    s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
+                      .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
+                  )
                 val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
                 Status(res.status)
                   .sendEntity(
@@ -268,10 +270,11 @@ class BackOfficeController(
                               s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
                                 .currentTimeMillis() - start}ms"
                             )
-                          if (logger.isDebugEnabled) logger.debug(
-                            s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
-                              .currentTimeMillis() - start}ms"
-                          )
+                          if (logger.isDebugEnabled)
+                            logger.debug(
+                              s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
+                                .currentTimeMillis() - start}ms"
+                            )
                         }),
                       res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
                       res.headers.get("Content-Type").flatMap(_.headOption)
@@ -305,7 +308,8 @@ class BackOfficeController(
             val start = System.currentTimeMillis()
             if (flags.logStats)
               logger.info(s"[${ctx.request.id}] starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}")
-            if (logger.isDebugEnabled) logger.debug(s"[${ctx.request.id}] starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}")
+            if (logger.isDebugEnabled)
+              logger.debug(s"[${ctx.request.id}] starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}")
             builderWithBody
               .stream()
               .fast
@@ -315,10 +319,11 @@ class BackOfficeController(
                     s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
                       .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
                   )
-                if (logger.isDebugEnabled) logger.debug(
-                  s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
-                    .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
-                )
+                if (logger.isDebugEnabled)
+                  logger.debug(
+                    s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
+                      .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
+                  )
                 val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
                 Status(res.status)
                   .sendEntity(
@@ -335,10 +340,11 @@ class BackOfficeController(
                               s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
                                 .currentTimeMillis() - start}ms"
                             )
-                          if (logger.isDebugEnabled) logger.debug(
-                            s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
-                              .currentTimeMillis() - start}ms"
-                          )
+                          if (logger.isDebugEnabled)
+                            logger.debug(
+                              s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
+                                .currentTimeMillis() - start}ms"
+                            )
                         }),
                       res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
                       res.headers.get("Content-Type").flatMap(_.headOption)
@@ -1775,7 +1781,7 @@ class BackOfficeController(
     sangria.parser.QueryParser.parse(schema) match {
       case scala.util.Failure(exception)   => BadRequest(Json.obj("error" -> exception.getMessage)).future
       case scala.util.Success(astDocument) =>
-        val res             = GraphQLFormats.astDocumentToJson(astDocument)
+        val res = GraphQLFormats.astDocumentToJson(astDocument)
 
         Ok(Json.obj("types" -> res)).future
     }

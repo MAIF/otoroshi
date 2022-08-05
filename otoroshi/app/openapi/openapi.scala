@@ -145,7 +145,7 @@ class OpenApiGenerator(
 
   val nullType       =
     // Json.obj("$ref" -> s"#/components/schemas/Null") // Json.obj("type" -> "null") needs openapi 3.1.0 support :(
-  Json.obj("type" -> "string", "nullable" -> true, "description" -> "null type")
+    Json.obj("type" -> "string", "nullable" -> true, "description" -> "null type")
   val openApiVersion = JsString("3.0.3")
   val unknownValue   = "???"
 
@@ -690,9 +690,9 @@ class OpenApiGenerator(
       case v if v == unknownValue =>
         //Json.obj("$ref" -> "#/components/schemas/Unknown")
         Json.obj(
-            "description" -> "unknown type",
-            "type" -> "object"
-          )
+          "description" -> "unknown type",
+          "type"        -> "object"
+        )
       case v if multiple          => Json.obj("type" -> "array", "items" -> Json.obj("$ref" -> s"#/components/schemas/$v"))
       case v                      =>
         if (v.contains(" ")) {
@@ -764,9 +764,9 @@ class OpenApiGenerator(
         case (_, v) if v == unknownValue                        =>
           Json.obj(
             "description" -> "unknown type",
-            "type" -> "object"
+            "type"        -> "object"
           )
-          //Json.obj("$ref" -> "#/components/schemas/Unknown")
+        //Json.obj("$ref" -> "#/components/schemas/Unknown")
         case (true, v) if controllerMethod == "bulkPatchAction" => {
           Json.obj("$ref" -> s"#/components/schemas/BulkPatchBody")
         }
@@ -1019,25 +1019,36 @@ class OpenApiGenerator(
       result.put(key, value)
     }
 
-    result.put("ErrorResponse", Json.obj(
-        "type" -> "object",
+    result.put(
+      "ErrorResponse",
+      Json.obj(
+        "type"        -> "object",
         "description" -> "error response"
-    ))
+      )
+    )
 
-    result.put("BulkResponseBody", Json.obj(
-      "type" -> "object",
-      "description" -> "BulkResponseBody object"
-    ))
+    result.put(
+      "BulkResponseBody",
+      Json.obj(
+        "type"        -> "object",
+        "description" -> "BulkResponseBody object"
+      )
+    )
 
-    result.put("BulkPatchBody", Json.obj(
-      "type" -> "object",
-      "description" -> "BulkPatchBody object"
-    ))
+    result.put(
+      "BulkPatchBody",
+      Json.obj(
+        "type"        -> "object",
+        "description" -> "BulkPatchBody object"
+      )
+    )
 
     val (paths, tags) = scanPaths(config)
 
-    val usedEntities = paths.as[JsObject].value.flatMap {
-      case (_, endpoints) =>
+    val usedEntities = paths
+      .as[JsObject]
+      .value
+      .flatMap { case (_, endpoints) =>
         Seq("get", "post", "delete", "put", "patch", "head")
           .flatMap(verb => {
             endpoints.as[JsObject] \ verb match {
@@ -1048,45 +1059,46 @@ class OpenApiGenerator(
                       case JsDefined(value: JsObject) =>
                         Seq("application/json", "application/x-ndjson")
                           .flatMap(contentType => {
-                            val ref: Option[String] =  (value \ contentType \ "schema") match {
+                            val ref: Option[String] = (value \ contentType \ "schema") match {
                               case JsDefined(value: JsObject) =>
                                 value \ "$ref" match {
                                   case JsDefined(JsString(r)) => Some(r)
-                                  case _: JsUndefined => None
+                                  case _: JsUndefined         =>
+                                    None
                                     value \ "item" \ "$ref" match {
                                       case JsDefined(JsString(r)) => Some(r)
-                                      case _: JsUndefined => None
+                                      case _: JsUndefined         => None
                                     }
                                 }
-                              case _: JsUndefined => None
+                              case _: JsUndefined             => None
                             }
                             ref match {
                               case Some(value) => Some(value.replace("#/components/schemas/", ""))
-                              case None => None
+                              case None        => None
                             }
                           })
-                      case _: JsUndefined => None
+                      case _: JsUndefined             => None
                     }
                   })
-              case _: JsUndefined => None
+              case _: JsUndefined             => None
             }
           })
-    }
+      }
       .toSeq
       .distinct
 
     entities
       // .filter(f => usedEntities.contains(f.getName))
       .foreach { clazz =>
-      if (
-        !config.banned.contains(clazz.getName) && !config.banned
-          .filter(_.contains("*"))
-          .map(RegexPool.apply)
-          .exists(_.matches(clazz.getName))
-      ) {
-        visitEntity(clazz, None, result, config)
+        if (
+          !config.banned.contains(clazz.getName) && !config.banned
+            .filter(_.contains("*"))
+            .map(RegexPool.apply)
+            .exists(_.matches(clazz.getName))
+        ) {
+          visitEntity(clazz, None, result, config)
+        }
       }
-    }
 
     logger.debug("")
     logger.debug(s"found ${found.get()} descriptions, not found ${notFound.get()} descriptions")

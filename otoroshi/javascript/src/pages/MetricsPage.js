@@ -1,7 +1,7 @@
 import isNumber from 'lodash/isNumber';
-import uniqBy from 'lodash/uniqBy'
+import uniqBy from 'lodash/uniqBy';
 import sortBy from 'lodash/sortBy';
-import isString from 'lodash/isString'
+import isString from 'lodash/isString';
 
 import React, { Component } from 'react';
 

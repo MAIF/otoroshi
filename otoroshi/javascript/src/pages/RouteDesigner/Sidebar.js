@@ -45,29 +45,34 @@ export default ({ route, setSidebarContent }) => {
   const currentTab = query.get('tab');
   const isActive = (tab) => (currentTab === tab ? 'active' : '');
 
-  return <div className="d-flex" style={{
-    flex: 1,
-    flexDirection: 'column'
-  }}>
-    <ul className="nav flex-column nav-sidebar" style={{ flex: 1 }}>
-      <li
-        className="nav-item"
-        onClick={() => history.push(`/${entity.link}/${route.id}?tab=flow`)}
-        style={{ cursor: 'pointer' }}>
-        <h3>
-          <span className="fas fa-road" /> {route.name}
-        </h3>
-      </li>
-      {LINKS(entity.link, route).map(({ to, icon, title, tooltip, tab }) => (
-        <li className="nav-item" key={title}>
-          <Link to={to} {...(tooltip || {})} className={`nav-link ${isActive(tab)}`}>
-            <i className={`fas ${icon}`} /> {title}
-          </Link>
+  return (
+    <div
+      className="d-flex"
+      style={{
+        flex: 1,
+        flexDirection: 'column',
+      }}>
+      <ul className="nav flex-column nav-sidebar" style={{ flex: 1 }}>
+        <li
+          className="nav-item"
+          onClick={() => history.push(`/${entity.link}/${route.id}?tab=flow`)}
+          style={{ cursor: 'pointer' }}>
+          <h3>
+            <span className="fas fa-road" /> {route.name}
+          </h3>
         </li>
-      ))}
-    </ul>
-    <Link to="/routes" onClick={() => setSidebarContent(null)} style={{ textAlign: 'center' }}>
-      <i className="fas fa-arrow-left me-3" />Back to routes
-    </Link>
-  </div>
+        {LINKS(entity.link, route).map(({ to, icon, title, tooltip, tab }) => (
+          <li className="nav-item" key={title}>
+            <Link to={to} {...(tooltip || {})} className={`nav-link ${isActive(tab)}`}>
+              <i className={`fas ${icon}`} /> {title}
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <Link to="/routes" onClick={() => setSidebarContent(null)} style={{ textAlign: 'center' }}>
+        <i className="fas fa-arrow-left me-3" />
+        Back to routes
+      </Link>
+    </div>
+  );
 };

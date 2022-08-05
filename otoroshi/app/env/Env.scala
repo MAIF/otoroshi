@@ -613,9 +613,9 @@ class Env(
   // lazy val geoloc = new GeoLite2GeolocationHelper(this)
   // lazy val ua = new UserAgentHelper(this)
 
-  lazy val statsd        = new StatsdWrapper(otoroshiActorSystem, this)
-  lazy val metrics       = new Metrics(this, lifecycle)
-  lazy val pki           = new BouncyCastlePki(snowflakeGenerator, this)
+  lazy val statsd  = new StatsdWrapper(otoroshiActorSystem, this)
+  lazy val metrics = new Metrics(this, lifecycle)
+  lazy val pki     = new BouncyCastlePki(snowflakeGenerator, this)
 
   lazy val tunnelManager = new TunnelManager(this)
   lazy val tunnelAgent   = new TunnelAgent(this)

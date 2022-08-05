@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import YAML from 'yaml';
 
-import cloneDeep from 'lodash/cloneDeep'
-import merge from 'lodash/merge'
+import cloneDeep from 'lodash/cloneDeep';
+import merge from 'lodash/merge';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
@@ -46,7 +46,6 @@ import { Scripts } from '../components/Scripts';
 import { Location } from '../components/Location';
 
 import { Loader } from '../components/Loader';
-
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
