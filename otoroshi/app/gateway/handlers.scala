@@ -32,7 +32,7 @@ import play.core.WebCommands
 import otoroshi.security.OtoroshiClaim
 import otoroshi.ssl.{KeyManagerCompatibility, SSLSessionJavaHelper}
 import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits.{BetterConfiguration, BetterString, BetterSyntax}
+import otoroshi.utils.syntax.implicits._
 
 import java.io.File
 import scala.concurrent.{ExecutionContext, Future}
@@ -482,7 +482,12 @@ class GatewayRequestHandler(
               Results.Ok(contentRaw).as(mimeType)
             }
         } getOrElse {
-          Results.NotFound(s"file '${wholePath}' not found !").future
+          if (path.startsWith("/javascripts/bundle/")) {
+            val host = req.theHost.replace(":9999", ":3040")
+            Results.Redirect(s"http://$host/assets${path}").future
+          } else {
+            Results.NotFound(s"file '${wholePath}' not found !").future
+          }
         }
       }
     }
