@@ -17804,6 +17804,10 @@
           "$ref" : "#/components/schemas/otoroshi.script.Script"
         }
       },
+      "LetsEncryptCertBody" : {
+        "type" : "object",
+        "description" : "PEM encoded certificate"
+      },
       "otoroshi.models.CustomTimeouts" : {
         "description" : "???",
         "type" : "object",
@@ -17932,6 +17936,14 @@
         "properties" : {
           "done" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "UserTokenBody" : {
+        "type" : "object",
+        "properties" : {
+          "token" : {
+            "type" : "string"
           }
         }
       },
@@ -18747,6 +18759,20 @@
           }
         }
       },
+      "ServiceFromOpenApiBody" : {
+        "type" : "object",
+        "description" : "Properties to create a service from an openapi spec",
+        "properties" : {
+          "domain" : {
+            "type" : "string",
+            "description" : "the domain on which the service will be exposed by otoroshi"
+          },
+          "openapi" : {
+            "type" : "string",
+            "description" : "the url to an openapi 3 spec or the content of an openapi 3 spec"
+          }
+        }
+      },
       "otoroshi.models.GlobalJwtVerifier" : {
         "description" : "Otoroshi model for JWT token verifier",
         "type" : "object",
@@ -19055,6 +19081,10 @@
             "$ref" : "#/components/schemas/otoroshi.auth.SAMLCanocalizationMethod"
           }
         }
+      },
+      "UpdateQuotasBody" : {
+        "type" : "string",
+        "description" : ""
       },
       "otoroshi.models.DataExporterConfigFiltering" : {
         "description" : "Filter events to export",
@@ -21202,6 +21232,10 @@
           }
         }
       },
+      "WebAuthnRegistrationFinishBody" : {
+        "type" : "object",
+        "description" : ""
+      },
       "otoroshi.models.LocalJwtVerifier" : {
         "description" : "???",
         "type" : "object",
@@ -21959,6 +21993,10 @@
           }
         }
       },
+      "CodeBody" : {
+        "type" : "string",
+        "description" : "Plugin scala code"
+      },
       "otoroshi.models.AutoCert" : {
         "description" : "Settings to generate certificates on the fly",
         "type" : "object",
@@ -22542,6 +22580,34 @@
           }
         }
       },
+      "WebAuthnRegistrationStartBody" : {
+        "type" : "object",
+        "description" : ""
+      },
+      "PatchDocument" : {
+        "type" : "object",
+        "description" : "A JSONPatch document as defined by RFC 6902",
+        "required" : [ "op", "path" ],
+        "properties" : {
+          "op" : {
+            "type" : "string",
+            "description" : "The operation to be performed",
+            "enum" : [ "add", "remove", "replace", "move", "copy", "test" ]
+          },
+          "path" : {
+            "type" : "string",
+            "description" : "A JSON-Pointer"
+          },
+          "value" : {
+            "type" : "object",
+            "description" : "The value to be used within the operations."
+          },
+          "from" : {
+            "type" : "string",
+            "description" : "A string containing a JSON Pointer value."
+          }
+        }
+      },
       "otoroshi.models.Tenant" : {
         "description" : "An otoroshi model for an organization (otoroshi-ui)",
         "type" : "object",
@@ -22571,6 +22637,74 @@
           "id" : {
             "description" : "Entity id",
             "$ref" : "#/components/schemas/otoroshi.models.TenantId"
+          }
+        }
+      },
+      "otoroshi.models.BackOfficeUser" : {
+        "description" : "User session for otoroshi-ui admins",
+        "type" : "object",
+        "properties" : {
+          "randomId" : {
+            "description" : "Session user random id",
+            "type" : "string"
+          },
+          "profile" : {
+            "description" : "Session user profile",
+            "type" : "object"
+          },
+          "authConfigId" : {
+            "description" : "Session created from auth module id",
+            "type" : "string"
+          },
+          "rights" : {
+            "description" : "Session user rights",
+            "$ref" : "#/components/schemas/otoroshi.models.UserRights"
+          },
+          "createdAt" : {
+            "description" : "Creation date for the session",
+            "type" : "number"
+          },
+          "token" : {
+            "description" : "Session tokens (only if OAuth/OIDC)",
+            "type" : "object"
+          },
+          "name" : {
+            "description" : "Session user name",
+            "type" : "string"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Entity tags"
+          },
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "Entity metadata"
+          },
+          "email" : {
+            "description" : "User email",
+            "type" : "string"
+          },
+          "simpleLogin" : {
+            "description" : "Session generated from a simple login module (like basic or ldap)",
+            "type" : "boolean"
+          },
+          "expiredAt" : {
+            "description" : "Expiration date for the session",
+            "type" : "number"
+          },
+          "_loc" : {
+            "description" : "Entity location",
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
+          },
+          "lastRefresh" : {
+            "description" : "Last refresh of the session (OAuth with refresh tokens)",
+            "type" : "number"
           }
         }
       },
@@ -22820,6 +22954,14 @@
           }
         }
       },
+      "ByteStreamBody" : {
+        "type" : "string",
+        "description" : ""
+      },
+      "PemCertificateBody" : {
+        "type" : "string",
+        "description" : "PEM encoded certificate"
+      },
       "otoroshi.models.LargeRequestFaultConfig" : {
         "description" : "Settings for a large request fault (chaos engineering)",
         "type" : "object",
@@ -23028,6 +23170,10 @@
             "type" : "string"
           }
         }
+      },
+      "PemCsrBody" : {
+        "type" : "string",
+        "description" : "PEM encoded csr"
       },
       "Unknown" : {
         "type" : "object",
@@ -23730,6 +23876,14 @@
         "enum" : [ "Legacy", "Latest" ],
         "description" : "Version of the info token"
       },
+      "BulkPatchBody" : {
+        "type" : "object",
+        "description" : "BulkPatchBody object"
+      },
+      "GlobalConfigImportBody" : {
+        "type" : "object",
+        "description" : ""
+      },
       "otoroshi.auth.AuthModuleConfig" : {
         "oneOf" : [ {
           "$ref" : "#/components/schemas/otoroshi.auth.BasicAuthModuleConfig"
@@ -23884,6 +24038,12 @@
             },
             "description" : "Entity tags"
           }
+        }
+      },
+      "PatchBody" : {
+        "type" : "array",
+        "items" : {
+          "$ref" : "#/components/schemas/PatchDocument"
         }
       },
       "otoroshi.models.DataCenterMatch" : {

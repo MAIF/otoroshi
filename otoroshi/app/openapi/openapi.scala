@@ -1036,6 +1036,13 @@ class OpenApiGenerator(
         })
   }
 
+  def discoverEntitiesFromPaths(result: JsValue) = {
+    Json.prettyPrint(result)
+      .split("\n")
+      .filter(p => p.contains("$ref"))
+      .map(p => p.replace("\"", "").trim().split("/").last)
+  }
+
   def runAndMaybeWrite(): (JsValue, Boolean) = {
     val config = getConfig()
     val result = new TrieMap[String, JsValue]()
@@ -1082,7 +1089,7 @@ class OpenApiGenerator(
     logger.debug(s"total found ${found.get() + resFound.get() + inFound
       .get()}, not found ${notFound.get() + resNotFound.get() + inNotFound.get()}")
 
-    val returnEntities = paths.as[JsObject].value.flatMap {
+    /*val returnEntities = paths.as[JsObject].value.flatMap {
       case (_, endpoints) =>
         Seq("get", "post", "delete", "put", "patch", "head")
           .flatMap(verb => {
@@ -1119,7 +1126,10 @@ class OpenApiGenerator(
           })
     }
       .toSeq
-      .distinct
+      .distinct*/
+
+    val returnEntities = discoverEntitiesFromPaths(paths)
+
     val filteredEntities = result.filter(p => returnEntities.contains(p._1))
 
     val openApiEntities = new TrieMap[String, JsValue]()
@@ -1127,7 +1137,7 @@ class OpenApiGenerator(
       discoverEntities(result, ent, openApiEntities)
     })
 
-    println(openApiEntities.keySet)
+    println(returnEntities)
 
     // build spec with only used entities
     val spec = getSpec(tags, paths, openApiEntities)
