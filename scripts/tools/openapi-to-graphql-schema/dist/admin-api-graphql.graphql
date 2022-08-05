@@ -30,6 +30,15 @@ type CorsSettings {
 
   
 """
+Settings for a large response fault (chaos engineering)
+"""
+type LargeResponseFaultConfig {
+ ratio: Float # The percentage of requests affected by this fault. Value should be between 0.0 and 1.0
+ additionalResponseSize: Float # Add n 0 bytes
+}
+
+  
+"""
 Settings to transform a jwt token
 """
 type MappingSettings {
@@ -70,11 +79,11 @@ type MtlsConfig {
   
 type CustomTimeouts {
  path: String 
- callAndStreamTimeout: Long 
- callTimeout: Long 
- idleTimeout: Long 
- globalTimeout: Long 
- connectionTimeout: Long 
+ callAndStreamTimeout: Float 
+ callTimeout: Float 
+ idleTimeout: Float 
+ globalTimeout: Float 
+ connectionTimeout: Float 
 }
 
   
@@ -90,8 +99,8 @@ Settings for apikey quotas alerts
 """
 type QuotasAlmostExceededSettings {
  enabled: Boolean # Is quotas alert enabled
- dailyQuotasThreshold: Long # The daily quotas threshold before generating alert
- monthlyQuotasThreshold: Long # The monthly quotas threshold before generating alert
+ dailyQuotasThreshold: Float # The daily quotas threshold before generating alert
+ monthlyQuotasThreshold: Float # The monthly quotas threshold before generating alert
 }
 
   
@@ -112,10 +121,10 @@ type Team {
 Settings to enable chaos engineering for a service
 """
 type ChaosConfig {
- badResponsesFaultConfig: String # Settings for bad responses
- largeRequestFaultConfig: String # Settings for large requests
- largeResponseFaultConfig: String # Settings for large responses
- latencyInjectionFaultConfig: String # Settings for latency injection
+ badResponsesFaultConfig: BadResponsesFaultConfig # Settings for bad responses
+ largeRequestFaultConfig: LargeRequestFaultConfig # Settings for large requests
+ largeResponseFaultConfig: LargeResponseFaultConfig # Settings for large responses
+ latencyInjectionFaultConfig: LatencyInjectionFaultConfig # Settings for latency injection
  enabled: Boolean # Whether or not this config is enabled
 }
 
@@ -133,9 +142,9 @@ type TransformSettings {
 An otoroshi apikey that can allow you to access some services
 """
 type ApiKey {
- dailyQuota: Long # Authorized number of calls per day
+ dailyQuota: Float # Authorized number of calls per day
  metadata: Json # Bunch of metadata for the key
- throttlingQuota: Long # Authorized number of calls per second, measured on 10 seconds
+ throttlingQuota: Float # Authorized number of calls per second, measured on 10 seconds
  constrainedServicesOnly: Boolean # This apikey can only be used on services that constrained their apikey routing
  allowClientIdOnly: Boolean # This apikey can be used juste with the client_id value
  _loc: EntityLocation # The location of the apikey
@@ -146,7 +155,7 @@ type ApiKey {
  clientSecret: String # The secret of the Api Key. Usually 64 random alpha numerical characters, but can be anything
  validUntil: String
  clientName: String # The name of the api key, for humans ;-)
- monthlyQuota: Long # Authorized number of calls per month
+ monthlyQuota: Float # Authorized number of calls per month
  description: String # Description of this apikey
  rotation: ApiKeyRotation # Apikey rotation settings
  authorizedEntities: [String] # The group/service ids (prefixed by group_ or service_ on which the key is authorized
@@ -195,22 +204,22 @@ type TenantAccess {
 The template that will be merged with newly created entities
 """
 type DefaultTemplates {
- team: String
- script: String
- apikey: String
- group: String
- tcpService: String
- verifier: String
- service: String
- target: String
- certificate: String
- dataExporter: String
- route: String
- backend: String
- template: String
- tenant: String
- authConfig: String
- descriptor: String
+ team: Json # the template for the team entities
+ script: Json # the template for the script entities
+ apikey: Json # the template for the apikey entities
+ group: Json # the template for the group entities
+ tcpService: Json # the template for the tcpService entities
+ verifier: Json # the template for the verifier entities
+ service: Json # the template for the service entities
+ target: Json # the template for the target entities
+ certificate: Json # the template for the certificate entities
+ dataExporter: Json # the template for the dataExporter entities
+ route: Json # the template for the route entities
+ backend: Json # the template for the backend entities
+ template: Json # the template for the template entities
+ tenant: Json # the template for the tenant entities
+ authConfig: Json # the template for the authConfig entities
+ descriptor: Json # the template for the descriptor entities
 }
 
   
@@ -243,6 +252,24 @@ type ServiceGroup {
 
   
 """
+Settings for generating a certificate
+"""
+type GenCsrQuery {
+ client: Boolean # Is cert client ?
+ hosts: [String] # Certificate SANs
+ key: GenKeyPairQuery # Keypair specs
+ includeAIA: Boolean # Include AIA extension (if generated from otoroshi CA)
+ signatureAlg: String # Signature algorithm
+ existingSerialNumber: String
+ duration: Float # Certificate lifespan
+ digestAlg: String # Digest algo
+ ca: Boolean # Is cert ca ?
+ name: Json # Certificate name
+ subject: String
+}
+
+  
+"""
 An otoroshi plugins stored as scala code in the otoroshi datastore
 """
 type Script {
@@ -254,6 +281,21 @@ type Script {
  code: String # The code of the script
  id: String # The id of the script
  type: String # Plugin type
+}
+
+  
+"""
+Proxy server
+"""
+type WSProxyServer {
+ host: String # The hostname of the proxy server.
+ port: String # The port of the proxy server.
+ protocol: String # The protocol of the proxy server.  Use "http" or "https".  Defaults to "http" if not specified.
+ principal: String # The principal (aka username) of the credentials for the proxy server.
+ password: String # The password for the credentials for the proxy server.
+ ntlmDomain: String # The ntlm domain for the proxy server.
+ encoding: String # The realm's charset.
+ nonProxyHosts: String # The non proxied hosts
 }
 
   
@@ -354,7 +396,7 @@ type ServiceDescriptor {
  canary: Canary 
  _loc: EntityLocation 
  plugins: Plugins 
- secComTtl: Long 
+ secComTtl: Float 
  description: String 
  secComVersion: Int 
  preRouting: PreRoutingRef 
@@ -400,7 +442,7 @@ type Cert {
  autoRenew: Boolean # Auto renew cert
  exposed: Boolean # Is the cert exposed (public key exposed in jwks.json)
  client: Boolean # Is cert a client cert ?
- from: Long # Start date
+ from: Float # Start date
  selfSigned: Boolean # Is cert self signed
  id: String # Entity id
  ca: Boolean # Is cert a CA ?
@@ -412,7 +454,7 @@ type Cert {
  caRef: String
  domain: String # Certificate domain
  name: String # Entity name
- to: Long # Stop date
+ to: Float # Stop date
 }
 
   
@@ -422,6 +464,18 @@ Associate targets for a domain (SNI)
 type TcpRule {
  domain: String # match on SNI domain
  targets: [TcpTarget] # TCP targets
+}
+
+  
+"""
+Settings for connection to the clever-cloud api
+"""
+type CleverCloudSettings {
+ consumerSecret: String # Clever-Cloud oauth consumer secret
+ consumerKey: String # Clever-Cloud oauth consumer key
+ secret: String # Clever-Cloud oauth secret
+ token: String # Clever-Cloud oauth token
+ orgaId: String # Clever-Cloud organization id
 }
 
   
@@ -437,7 +491,7 @@ type Canary {
 Settings for a bad response return (chaos engineering)
 """
 type BadResponse {
- status: Long # The HTTP status for the response
+ status: Float # The HTTP status for the response
  body: String # The body of the HTTP response
  headers: Json # The HTTP headers of the response
 }
@@ -470,18 +524,18 @@ The global config (dynamic) for otoroshi
 type GlobalConfig {
  geolocationSettings: Json # Settings for geolocation extraction
  alertsEmails: [String] # Email addresses that will receive all Otoroshi alert events
- throttlingQuota: Long # Authorized number of calls per second globally, measured on 10 seconds
- maxWebhookSize: Long # Max number of items in webhooks
- maxConcurrentRequests: Long # The number of authorized request processed at the same time
- cleverSettings: String # Optional CleverCloud configuration
+ throttlingQuota: Float # Authorized number of calls per second globally, measured on 10 seconds
+ maxWebhookSize: Float # Max number of items in webhooks
+ maxConcurrentRequests: Float # The number of authorized request processed at the same time
+ cleverSettings: CleverCloudSettings # Optional CleverCloud configuration
  templates: DefaultTemplates # The otoroshi default templates for entities
  endlessIpAddresses: [String] # IP addresses for which any request to Otoroshi will respond with 128 Gb of zeros
  plugins: Plugins # global plugins settings
- kafkaConfig: String # Global kafka settings. deprecated
- maxLogsSize: Long # Number of events kept locally
+ kafkaConfig: KafkaConfig # Global kafka settings. deprecated
+ maxLogsSize: Float # Number of events kept locally
  proxies: Proxies # Web proxies settings
  enableEmbeddedMetrics: Boolean # Enable embedded metrics
- elasticReadsConfig: String # Config. for elastic reads
+ elasticReadsConfig: ElasticAnalyticsConfig # Config. for elastic reads
  trustXForwarded: Boolean # Use X-Forwarded-* headers for routing
  quotasSettings: QuotasAlmostExceededSettings # Settings to generate alert when an apikey almost exceeded or exceeded its quotas
  tags: [String] # Entity tags
@@ -494,7 +548,7 @@ type GlobalConfig {
  backOfficeAuthRef: String
  streamEntityOnly: Boolean # HTTP will be streamed only. Doesn't work with old browsers
  otoroshiId: String # Unique id for this otoroshi instance
- mailerSettings: String # Optional mailer configuration
+ mailerSettings: Json # Optional mailer configuration
  lines: [String] # Possibles lines for Otoroshi
  middleFingers: Boolean # Use middle finger emoji as a response character for endless HTTP responses
  analyticsWebhooks: [Webhook] # Webhook that will receive all internal Otoroshi events
@@ -503,11 +557,11 @@ type GlobalConfig {
  letsEncryptSettings: LetsEncryptSettings # Let's encrypt (ACME) settings
  snowMonkeyConfig: SnowMonkeyConfig # Snowmonky settings
  scripts: GlobalScripts # global plugins settings. will be deprecated soon
- perIpThrottlingQuota: Long # Authorized number of calls per second globally per IP address, measured on 10 seconds
+ perIpThrottlingQuota: Float # Authorized number of calls per second globally per IP address, measured on 10 seconds
  useCircuitBreakers: Boolean # If enabled, services will be authorized to use circuit breakers
- maxHttp10ResponseSize: Long # The max size in bytes of an HTTP 1.0 response
+ maxHttp10ResponseSize: Float # The max size in bytes of an HTTP 1.0 response
  tlsSettings: TlsSettings # TLS settings
- statsdConfig: String # Statsd settings (agent connection)
+ statsdConfig: StatsdConfig # Statsd settings (agent connection)
  autoLinkToDefaultGroup: Boolean # If not defined, every new service descriptor will be added to the default group
  alertsWebhooks: [Webhook] # Webhook that will receive all Otoroshi alert events
  ipFiltering: IpFiltering # Global ip filtering settings
@@ -521,7 +575,7 @@ Settings for generating a keypair
 """
 type GenKeyPairQuery {
  algo: String # Keypair algorithm
- size: Long # Keypair size
+ size: Float # Keypair size
 }
 
   
@@ -550,27 +604,27 @@ type BasicAuthUser {
  password: String 
  tags: [String] 
  email: String 
- webauthn: String 
+ webauthn: WebAuthnDetails 
  rights: UserRights 
  name: String 
 }
 
   
 type ClientConfig {
- connectionTimeout: Long 
+ connectionTimeout: Float 
  useCircuitBreaker: Boolean 
- retryInitialDelay: Long 
+ retryInitialDelay: Float 
  cacheConnectionSettings: CacheConnectionSettings 
  proxy: Json 
- callTimeout: Long 
- callAndStreamTimeout: Long 
- globalTimeout: Long 
- maxErrors: Long 
- retries: Long 
- backoffFactor: Long 
+ callTimeout: Float 
+ callAndStreamTimeout: Float 
+ globalTimeout: Float 
+ maxErrors: Float 
+ retries: Float 
+ backoffFactor: Float 
  customTimeouts: [CustomTimeouts] 
- idleTimeout: Long 
- sampleInterval: Long 
+ idleTimeout: Float 
+ sampleInterval: Float 
 }
 
   
@@ -587,7 +641,7 @@ type ApiKeyConstraints {
 An otoroshi admin user
 """
 type SimpleOtoroshiAdmin {
- createdAt: Long # User creation date
+ createdAt: Float # User creation date
  metadata: Json # Entity metadata
  password: String # User password (bcrypt hashed)
  rights: UserRights # User rights
@@ -597,6 +651,22 @@ type SimpleOtoroshiAdmin {
  _loc: EntityLocation # Entity location
  username: String # User username
  tags: [String] # Entity tags
+}
+
+  
+"""
+Settings for connection to a kafka cluster
+"""
+type KafkaConfig {
+ hostValidation: Boolean # Enabled TLS hostname validation
+ servers: [String] # URLs of the kafka servers
+ keyPass: String
+ mtlsConfig: MtlsConfig # TLS config to access the cluster
+ topic: String # Optional kafka topic (otoroshi-events by default)
+ truststore: String
+ keystore: String
+ sendEvents: Boolean # Send events to it, or just connect
+ type: String # the kind of exporter
 }
 
   
@@ -631,21 +701,27 @@ type NgMinimalBackend {
 }
 
   
+type WebAuthnDetails {
+ handle: String 
+ credentials: Json 
+}
+
+  
 """
 Target for a TCP proxy
 """
 type TcpTarget {
  host: String # Target host
  ip: String
- port: Long # Target port
+ port: Float # Target port
  tls: Boolean # Use tls
 }
 
   
 type GeoPositionRadius {
- latitude: Long 
- longitude: Long 
- radius: Long 
+ latitude: Float 
+ longitude: Float 
+ radius: Float 
 }
 
   
@@ -656,7 +732,7 @@ type TcpService {
  enabled: Boolean # Service enabled
  description: String # Entity description
  metadata: Json # Entity metadata
- port: Long # network port
+ port: Float # network port
  tags: [String] # Entity tags
  rules: [TcpRule] # Routing rules
  clientAuth: String # Use client authentication
@@ -670,11 +746,11 @@ type TcpService {
 
   
 type GzipConfig {
- compressionLevel: Long 
+ compressionLevel: Float 
  blackList: [String] 
- chunkedThreshold: Long 
+ chunkedThreshold: Float 
  excludedPatterns: [String] 
- bufferSize: Long 
+ bufferSize: Float 
  whiteList: [String] 
  enabled: Boolean 
 }
@@ -695,12 +771,12 @@ type Webhook {
 Custom timeouts per path
 """
 type NgCustomTimeouts {
- connection_timeout: Long # Timeout at connection
- call_and_stream_timeout: Long # Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)
+ connection_timeout: Float # Timeout at connection
+ call_and_stream_timeout: Float # Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)
  path: String # path on which this configuration works
- call_timeout: Long # Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)
- idle_timeout: Long # Timeout on idle connection
- global_timeout: Long # Specify how long the global call (with retries) should last at most in milliseconds
+ call_timeout: Float # Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)
+ idle_timeout: Float # Timeout on idle connection
+ global_timeout: Float # Specify how long the global call (with retries) should last at most in milliseconds
 }
 
   
@@ -708,15 +784,15 @@ type NgCustomTimeouts {
 Remaining quotas for an apikey
 """
 type RemainingQuotas {
- currentCallsPerSec: Long # Current number of call per second
- remainingCallsPerSec: Long # Remaining number of call per second
- currentCallsPerDay: Long # Current number of call per day
- authorizedCallsPerDay: Long # Number of authorized call per day
- currentCallsPerMonth: Long # Current number of call per month
- remainingCallsPerMonth: Long # Remaining number of call per month
- authorizedCallsPerSec: Long # Number of authorized call per second
- authorizedCallsPerMonth: Long # Number of authorized call per month
- remainingCallsPerDay: Long # Remaining number of call per day
+ currentCallsPerSec: Float # Current number of call per second
+ remainingCallsPerSec: Float # Remaining number of call per second
+ currentCallsPerDay: Float # Current number of call per day
+ authorizedCallsPerDay: Float # Number of authorized call per day
+ currentCallsPerMonth: Float # Current number of call per month
+ remainingCallsPerMonth: Float # Remaining number of call per month
+ authorizedCallsPerSec: Float # Number of authorized call per second
+ authorizedCallsPerMonth: Float # Number of authorized call per month
+ remainingCallsPerDay: Float # Remaining number of call per day
 }
 
   
@@ -778,17 +854,17 @@ User session for private apps
 type PrivateAppsUser {
  realm: String # Session realm name
  token: Json # Session tokens (from OAuth)
- expiredAt: Long # Session expiration date
+ expiredAt: Float # Session expiration date
  profile: Json # Session user profile
- lastRefresh: Long # Session last refresh (if OAuth refresh_token supported)
+ lastRefresh: Float # Session last refresh (if OAuth refresh_token supported)
  randomId: String # Session random id
  email: String # Session user email
- createdAt: Long # Creation date of the session
+ createdAt: Float # Creation date of the session
  _loc: EntityLocation # Entity location
  authConfigId: String # Auth module id that created the session
  tags: [String] # Entity tags
  name: String # Entity name
- otoroshiData: String
+ otoroshiData: Json # Otoroshi oriented metadata
  metadata: Json # Entity metadata
 }
 
@@ -824,10 +900,10 @@ Settings for the snow monkey (chaos engineering)
 """
 type SnowMonkeyConfig {
  dryRun: Boolean # Whether or not outages will actualy impact requests
- outageDurationTo: Long # End of outage duration range
+ outageDurationTo: Float # End of outage duration range
  chaosConfig: ChaosConfig # Chaos settings
- timesPerDay: Long # Number of time per day each service will be outage
- outageDurationFrom: Long # Start of outage duration range
+ timesPerDay: Float # Number of time per day each service will be outage
+ outageDurationFrom: Float # Start of outage duration range
  startTime: String # Start time of Snow Monkey each day
  includeUserFacingDescriptors: Boolean # Whether or not user facing apps. will be impacted by Snow Monkey
  targetGroups: [String] # Groups impacted by Snow Monkey. If empty, all groups will be impacted
@@ -875,26 +951,35 @@ type RestrictionPath {
 Settings for the http client when http request is forwarded
 """
 type NgClientConfig {
- idle_timeout: Long # Timeout on idle connection
- sample_interval: Long # Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted
+ idle_timeout: Float # Timeout on idle connection
+ sample_interval: Float # Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted
  cache_connection_settings: NgCacheConnectionSettings # Cached connection settings
- call_and_stream_timeout: Long # Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)
+ call_and_stream_timeout: Float # Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)
  custom_timeouts: [NgCustomTimeouts] # Custom timeouts per path
- connection_timeout: Long # Timeout at connection
- call_timeout: Long # Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)
- global_timeout: Long # Specify how long the global call (with retries) should last at most in milliseconds
- retry_initial_delay: Long # Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor
- backoff_factor: Long # Specify the factor to multiply the delay for each retry
+ connection_timeout: Float # Timeout at connection
+ call_timeout: Float # Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)
+ global_timeout: Float # Specify how long the global call (with retries) should last at most in milliseconds
+ retry_initial_delay: Float # Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor
+ backoff_factor: Float # Specify the factor to multiply the delay for each retry
  proxy: Json # Web proxy settings for http client
- retries: Long # Specify how many times the client will try to fetch the result of the request after an error before giving up.
- max_errors: Long # Specify how many errors can pass before opening the circuit breaker
+ retries: Float # Specify how many times the client will try to fetch the result of the request after an error before giving up.
+ max_errors: Float # Specify how many errors can pass before opening the circuit breaker
+}
+
+  
+"""
+List of bad response settings
+"""
+type BadResponsesFaultConfig {
+ ratio: Float # The percentage of requests affected by this fault. Value should be between 0.0 and 1.0
+ responses: [BadResponse] # The possibles responses
 }
 
   
 type Target {
  tags: [String] 
  host: String 
- weight: Long 
+ weight: Float 
  metadata: Json 
  protocol: String 
  predicate: Json 
@@ -908,14 +993,14 @@ type Target {
 Various web proxy settings for http client
 """
 type Proxies {
- elastic: String # Web proxy used to call elastic
- eventsWebhooks: String # Web proxy used to call webhooks
- jwk: String # Web proxy used to fetch jwks
- auth: String # Web proxy used to call OAuth providers
- clevercloud: String # Web proxy used to call clevercloud
- alertEmails: String # Web proxy used to send alert emails
- authority: String # Web proxy used to check authorities
- services: String # Web proxy used to access services targets
+ elastic: WSProxyServer # Web proxy used to call elastic
+ eventsWebhooks: WSProxyServer # Web proxy used to call webhooks
+ jwk: WSProxyServer # Web proxy used to fetch jwks
+ auth: WSProxyServer # Web proxy used to call OAuth providers
+ clevercloud: WSProxyServer # Web proxy used to call clevercloud
+ alertEmails: WSProxyServer # Web proxy used to send alert emails
+ authority: WSProxyServer # Web proxy used to check authorities
+ services: WSProxyServer # Web proxy used to access services targets
 }
 
   
@@ -924,15 +1009,15 @@ Settings for automatic apikey rotation with grace period
 """
 type ApiKeyRotation {
  enabled: Boolean # Rotation enabled
- rotationEvery: Long # Rotate every n hours
- gracePeriod: Long # period (in hours) during which both secrets works
+ rotationEvery: Float # Rotate every n hours
+ gracePeriod: Float # period (in hours) during which both secrets works
  nextSecret: String
 }
 
   
 type CacheConnectionSettings {
  enabled: Boolean 
- queueSize: Long 
+ queueSize: Float 
 }
 
   
@@ -951,13 +1036,13 @@ Loadbalancing strategy
 """
 type LoadBalancing {
  type: String # undefined
- ratio: Long # undefined
+ ratio: Float # undefined
 }
 
   
 type RedirectionSettings {
  enabled: Boolean 
- code: Long 
+ code: Float 
  to: String 
 }
 
@@ -991,16 +1076,16 @@ type BackOfficeUser {
  profile: Json # Session user profile
  authConfigId: String # Session created from auth module id
  rights: UserRights # Session user rights
- createdAt: Long # Creation date for the session
+ createdAt: Float # Creation date for the session
  token: Json # Session tokens (only if OAuth/OIDC)
  name: String # Session user name
  tags: [String] # Entity tags
  metadata: Json # Entity metadata
  email: String # User email
  simpleLogin: Boolean # Session generated from a simple login module (like basic or ldap)
- expiredAt: Long # Expiration date for the session
+ expiredAt: Float # Expiration date for the session
  _loc: EntityLocation # Entity location
- lastRefresh: Long # Last refresh of the session (OAuth with refresh tokens)
+ lastRefresh: Float # Last refresh of the session (OAuth with refresh tokens)
 }
 
   
@@ -1061,11 +1146,20 @@ type JsonPathValidator {
 
   
 """
+Settings for a large request fault (chaos engineering)
+"""
+type LargeRequestFaultConfig {
+ ratio: Float # The percentage of requests affected by this fault. Value should be between 0.0 and 1.0
+ additionalRequestSize: Float # The size added to the request body in bytes. Added payload will be spaces only.
+}
+
+  
+"""
 A backend representation with it's targets, load balancing and general settings
 """
 type NgBackend {
  root: String # The root path of the backend or the full rewrite path
- health_check: String 
+ health_check: HealthCheck 
  client: NgClientConfig # Client config. of the backend
  load_balancing: LoadBalancing # Loadbalancing config og the backend
  rewrite: Boolean # Does the backend performs a full url rewrite ?
@@ -1086,7 +1180,7 @@ type PreRoutingRef {
 The settings for http cached connection at host level
 """
 type NgCacheConnectionSettings {
- queue_size: Long # How much request can be queue before dropping it
+ queue_size: Float # How much request can be queue before dropping it
  enabled: Boolean # Is cached connection enabled
 }
 
@@ -1097,13 +1191,13 @@ Data exporter settings
 type DataExporterConfig {
  desc: String # Description
  _loc: EntityLocation # Entity location
- bufferSize: Long # Number of events in buffer
- jsonWorkers: Long # Number of workers that transform events
- groupDuration: Long # The max duration before sending group
- groupSize: Long # The max size of events group before sending
+ bufferSize: Float # Number of events in buffer
+ jsonWorkers: Float # Number of workers that transform events
+ groupDuration: Float # The max duration before sending group
+ groupSize: Float # The max size of events group before sending
  type: String # Entity type
  tags: [String] # Entity tags
- sendWorkers: Long # Number of workers that sends events
+ sendWorkers: Float # Number of workers that sends events
  id: String # Id of the exporter
  name: String # Entity name
  metadata: Json # Entity metadata
@@ -1142,9 +1236,35 @@ type Restrictions {
 }
 
   
+type PKCEConfig {
+ enabled: Boolean 
+ algorithm: String 
+}
+
+  
+"""
+Settings for connection to a statsd agent
+"""
+type StatsdConfig {
+ datadog: Boolean # Datadog agent
+ host: String # The host of the StatsD agent
+ port: Float # The port of the StatsD agent
+}
+
+  
 type IpFiltering {
  whitelist: [String] 
  blacklist: [String] 
+}
+
+  
+"""
+Settings for a latency injection fault (chaos engineering)
+"""
+type LatencyInjectionFaultConfig {
+ ratio: Float # The percentage of requests affected by this fault. Value should be between 0.0 and 1.0
+ from: Float # The start range of latency added to the request
+ to: Float # The end range of latency added to the request
 }
 
   
@@ -1174,9 +1294,9 @@ type NgTarget {
  predicate: Json # Predicate to choose this target
  tls_config: NgTlsConfig # TLS settings to contact this target
  tls: Boolean # Does the target uses TLS
- port: Long # port of the target
+ port: Float # port of the target
  id: String # id of the target
- weight: Long # The weight of the target when choosing
+ weight: Float # The weight of the target when choosing
  hostname: String # hostname of the target
 }
 

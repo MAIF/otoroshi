@@ -11,8 +11,7 @@ const isPrimitiveTypes = type => [
   "Json",
   "Long",
   "Int",
-  "SecComInfoTokenVersion",
-  "SecComVersion"
+  "Float"
 ].includes(type
   .replace('[', '')
   .replace(']', ''))

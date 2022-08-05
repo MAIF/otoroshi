@@ -290,10 +290,13 @@ query backends {
   	name
   	tags
   	backend {
-  		health_check
   		rewrite
   		root
   		target_refs
+  		health_check {
+  			enabled
+  			url
+  		}
   		client {
   			backoff_factor
   			call_and_stream_timeout
@@ -302,7 +305,6 @@ query backends {
   			global_timeout
   			idle_timeout
   			max_errors
-  			proxy
   			retries
   			retry_initial_delay
   			sample_interval
@@ -317,6 +319,16 @@ query backends {
   				global_timeout
   				idle_timeout
   				path
+  			}
+  			proxy {
+  				encoding
+  				host
+  				nonProxyHosts
+  				ntlmDomain
+  				password
+  				port
+  				principal
+  				protocol
   			}
   		}
   		load_balancing {
@@ -356,10 +368,13 @@ query backendsId($id: String) {
   	name
   	tags
   	backend {
-  		health_check
   		rewrite
   		root
   		target_refs
+  		health_check {
+  			enabled
+  			url
+  		}
   		client {
   			backoff_factor
   			call_and_stream_timeout
@@ -368,7 +383,6 @@ query backendsId($id: String) {
   			global_timeout
   			idle_timeout
   			max_errors
-  			proxy
   			retries
   			retry_initial_delay
   			sample_interval
@@ -383,6 +397,16 @@ query backendsId($id: String) {
   				global_timeout
   				idle_timeout
   				path
+  			}
+  			proxy {
+  				encoding
+  				host
+  				nonProxyHosts
+  				ntlmDomain
+  				password
+  				port
+  				principal
+  				protocol
   			}
   		}
   		load_balancing {
@@ -422,10 +446,13 @@ query backendsTemplate {
   	name
   	tags
   	backend {
-  		health_check
   		rewrite
   		root
   		target_refs
+  		health_check {
+  			enabled
+  			url
+  		}
   		client {
   			backoff_factor
   			call_and_stream_timeout
@@ -434,7 +461,6 @@ query backendsTemplate {
   			global_timeout
   			idle_timeout
   			max_errors
-  			proxy
   			retries
   			retry_initial_delay
   			sample_interval
@@ -449,6 +475,16 @@ query backendsTemplate {
   				global_timeout
   				idle_timeout
   				path
+  			}
+  			proxy {
+  				encoding
+  				host
+  				nonProxyHosts
+  				ntlmDomain
+  				password
+  				port
+  				principal
+  				protocol
   			}
   		}
   		load_balancing {
@@ -704,12 +740,9 @@ query globalconfig {
   	apiReadOnly
   	autoLinkToDefaultGroup
   	backOfficeAuthRef
-  	cleverSettings
-  	elasticReadsConfig
   	enableEmbeddedMetrics
   	endlessIpAddresses
   	geolocationSettings
-  	kafkaConfig
   	limitConcurrentRequests
   	lines
   	logAnalyticsOnServer
@@ -723,7 +756,6 @@ query globalconfig {
   	middleFingers
   	otoroshiId
   	perIpThrottlingQuota
-  	statsdConfig
   	streamEntityOnly
   	tags
   	throttlingQuota
@@ -731,6 +763,13 @@ query globalconfig {
   	u2fLoginOnly
   	useAkkaHttpClient
   	useCircuitBreakers
+  	cleverSettings {
+  		consumerKey
+  		consumerSecret
+  		orgaId
+  		secret
+  		token
+  	}
   	templates {
   		apikey
   		authConfig
@@ -755,15 +794,125 @@ query globalconfig {
   		excluded
   		refs
   	}
+  	kafkaConfig {
+  		hostValidation
+  		keyPass
+  		keystore
+  		sendEvents
+  		servers
+  		topic
+  		truststore
+  		type
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
   	proxies {
-  		alertEmails
-  		auth
-  		authority
-  		clevercloud
-  		elastic
-  		eventsWebhooks
-  		jwk
-  		services
+  		elastic {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		eventsWebhooks {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		jwk {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		auth {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		clevercloud {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		alertEmails {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		authority {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		services {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  	}
+  	elasticReadsConfig {
+  		applyTemplate
+  		clusterUri
+  		headers
+  		index
+  		password
+  		type
+  		user
+  		version
+  		indexSettings {
+  			clientSide
+  			interval
+  		}
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
   	}
   	quotasSettings {
   		dailyQuotasThreshold
@@ -771,7 +920,25 @@ query globalconfig {
   		monthlyQuotasThreshold
   	}
   	elasticWritesConfigs {
-  
+  		applyTemplate
+  		clusterUri
+  		headers
+  		index
+  		password
+  		type
+  		user
+  		version
+  		indexSettings {
+  			clientSide
+  			interval
+  		}
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
   	}
   	analyticsWebhooks {
   		headers
@@ -812,11 +979,28 @@ query globalconfig {
   		targetGroups
   		timesPerDay
   		chaosConfig {
-  			badResponsesFaultConfig
   			enabled
-  			largeRequestFaultConfig
-  			largeResponseFaultConfig
-  			latencyInjectionFaultConfig
+  			badResponsesFaultConfig {
+  				ratio
+  				responses {
+  					body
+  					headers
+  					status
+  				}
+  			}
+  			largeRequestFaultConfig {
+  				additionalRequestSize
+  				ratio
+  			}
+  			largeResponseFaultConfig {
+  				additionalResponseSize
+  				ratio
+  			}
+  			latencyInjectionFaultConfig {
+  				from
+  				ratio
+  				to
+  			}
   		}
   	}
   	scripts {
@@ -838,6 +1022,11 @@ query globalconfig {
   		includeJdkCaServer
   		randomIfNotFound
   		trustedCAsServer
+  	}
+  	statsdConfig {
+  		datadog
+  		host
+  		port
   	}
   	alertsWebhooks {
   		headers
@@ -867,12 +1056,9 @@ query globalconfigTemplate {
   	apiReadOnly
   	autoLinkToDefaultGroup
   	backOfficeAuthRef
-  	cleverSettings
-  	elasticReadsConfig
   	enableEmbeddedMetrics
   	endlessIpAddresses
   	geolocationSettings
-  	kafkaConfig
   	limitConcurrentRequests
   	lines
   	logAnalyticsOnServer
@@ -886,7 +1072,6 @@ query globalconfigTemplate {
   	middleFingers
   	otoroshiId
   	perIpThrottlingQuota
-  	statsdConfig
   	streamEntityOnly
   	tags
   	throttlingQuota
@@ -894,6 +1079,13 @@ query globalconfigTemplate {
   	u2fLoginOnly
   	useAkkaHttpClient
   	useCircuitBreakers
+  	cleverSettings {
+  		consumerKey
+  		consumerSecret
+  		orgaId
+  		secret
+  		token
+  	}
   	templates {
   		apikey
   		authConfig
@@ -918,15 +1110,125 @@ query globalconfigTemplate {
   		excluded
   		refs
   	}
+  	kafkaConfig {
+  		hostValidation
+  		keyPass
+  		keystore
+  		sendEvents
+  		servers
+  		topic
+  		truststore
+  		type
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
   	proxies {
-  		alertEmails
-  		auth
-  		authority
-  		clevercloud
-  		elastic
-  		eventsWebhooks
-  		jwk
-  		services
+  		elastic {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		eventsWebhooks {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		jwk {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		auth {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		clevercloud {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		alertEmails {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		authority {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		services {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  	}
+  	elasticReadsConfig {
+  		applyTemplate
+  		clusterUri
+  		headers
+  		index
+  		password
+  		type
+  		user
+  		version
+  		indexSettings {
+  			clientSide
+  			interval
+  		}
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
   	}
   	quotasSettings {
   		dailyQuotasThreshold
@@ -934,7 +1236,25 @@ query globalconfigTemplate {
   		monthlyQuotasThreshold
   	}
   	elasticWritesConfigs {
-  
+  		applyTemplate
+  		clusterUri
+  		headers
+  		index
+  		password
+  		type
+  		user
+  		version
+  		indexSettings {
+  			clientSide
+  			interval
+  		}
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
   	}
   	analyticsWebhooks {
   		headers
@@ -975,11 +1295,28 @@ query globalconfigTemplate {
   		targetGroups
   		timesPerDay
   		chaosConfig {
-  			badResponsesFaultConfig
   			enabled
-  			largeRequestFaultConfig
-  			largeResponseFaultConfig
-  			latencyInjectionFaultConfig
+  			badResponsesFaultConfig {
+  				ratio
+  				responses {
+  					body
+  					headers
+  					status
+  				}
+  			}
+  			largeRequestFaultConfig {
+  				additionalRequestSize
+  				ratio
+  			}
+  			largeResponseFaultConfig {
+  				additionalResponseSize
+  				ratio
+  			}
+  			latencyInjectionFaultConfig {
+  				from
+  				ratio
+  				to
+  			}
   		}
   	}
   	scripts {
@@ -1001,6 +1338,11 @@ query globalconfigTemplate {
   		includeJdkCaServer
   		randomIfNotFound
   		trustedCAsServer
+  	}
+  	statsdConfig {
+  		datadog
+  		host
+  		port
   	}
   	alertsWebhooks {
   		headers
@@ -1214,7 +1556,6 @@ query newService {
   		globalTimeout
   		idleTimeout
   		maxErrors
-  		proxy
   		retries
   		retryInitialDelay
   		sampleInterval
@@ -1222,6 +1563,16 @@ query newService {
   		cacheConnectionSettings {
   			enabled
   			queueSize
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
   		}
   		customTimeouts {
   			callAndStreamTimeout
@@ -1332,11 +1683,28 @@ query newService {
   		refs
   	}
   	chaosConfig {
-  		badResponsesFaultConfig
   		enabled
-  		largeRequestFaultConfig
-  		largeResponseFaultConfig
-  		latencyInjectionFaultConfig
+  		badResponsesFaultConfig {
+  			ratio
+  			responses {
+  				body
+  				headers
+  				status
+  			}
+  		}
+  		largeRequestFaultConfig {
+  			additionalRequestSize
+  			ratio
+  		}
+  		largeResponseFaultConfig {
+  			additionalResponseSize
+  			ratio
+  		}
+  		latencyInjectionFaultConfig {
+  			from
+  			ratio
+  			to
+  		}
   	}
   	secComHeaders {
   		claimRequestName
@@ -1516,7 +1884,6 @@ query old_services {
   		globalTimeout
   		idleTimeout
   		maxErrors
-  		proxy
   		retries
   		retryInitialDelay
   		sampleInterval
@@ -1524,6 +1891,16 @@ query old_services {
   		cacheConnectionSettings {
   			enabled
   			queueSize
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
   		}
   		customTimeouts {
   			callAndStreamTimeout
@@ -1634,11 +2011,28 @@ query old_services {
   		refs
   	}
   	chaosConfig {
-  		badResponsesFaultConfig
   		enabled
-  		largeRequestFaultConfig
-  		largeResponseFaultConfig
-  		latencyInjectionFaultConfig
+  		badResponsesFaultConfig {
+  			ratio
+  			responses {
+  				body
+  				headers
+  				status
+  			}
+  		}
+  		largeRequestFaultConfig {
+  			additionalRequestSize
+  			ratio
+  		}
+  		largeResponseFaultConfig {
+  			additionalResponseSize
+  			ratio
+  		}
+  		latencyInjectionFaultConfig {
+  			from
+  			ratio
+  			to
+  		}
   	}
   	secComHeaders {
   		claimRequestName
@@ -1780,7 +2174,6 @@ query old_servicesId($id: String) {
   		globalTimeout
   		idleTimeout
   		maxErrors
-  		proxy
   		retries
   		retryInitialDelay
   		sampleInterval
@@ -1788,6 +2181,16 @@ query old_servicesId($id: String) {
   		cacheConnectionSettings {
   			enabled
   			queueSize
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
   		}
   		customTimeouts {
   			callAndStreamTimeout
@@ -1898,11 +2301,28 @@ query old_servicesId($id: String) {
   		refs
   	}
   	chaosConfig {
-  		badResponsesFaultConfig
   		enabled
-  		largeRequestFaultConfig
-  		largeResponseFaultConfig
-  		latencyInjectionFaultConfig
+  		badResponsesFaultConfig {
+  			ratio
+  			responses {
+  				body
+  				headers
+  				status
+  			}
+  		}
+  		largeRequestFaultConfig {
+  			additionalRequestSize
+  			ratio
+  		}
+  		largeResponseFaultConfig {
+  			additionalResponseSize
+  			ratio
+  		}
+  		latencyInjectionFaultConfig {
+  			from
+  			ratio
+  			to
+  		}
   	}
   	secComHeaders {
   		claimRequestName
@@ -2044,7 +2464,6 @@ query old_servicesTemplate {
   		globalTimeout
   		idleTimeout
   		maxErrors
-  		proxy
   		retries
   		retryInitialDelay
   		sampleInterval
@@ -2052,6 +2471,16 @@ query old_servicesTemplate {
   		cacheConnectionSettings {
   			enabled
   			queueSize
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
   		}
   		customTimeouts {
   			callAndStreamTimeout
@@ -2162,11 +2591,28 @@ query old_servicesTemplate {
   		refs
   	}
   	chaosConfig {
-  		badResponsesFaultConfig
   		enabled
-  		largeRequestFaultConfig
-  		largeResponseFaultConfig
-  		latencyInjectionFaultConfig
+  		badResponsesFaultConfig {
+  			ratio
+  			responses {
+  				body
+  				headers
+  				status
+  			}
+  		}
+  		largeRequestFaultConfig {
+  			additionalRequestSize
+  			ratio
+  		}
+  		largeResponseFaultConfig {
+  			additionalResponseSize
+  			ratio
+  		}
+  		latencyInjectionFaultConfig {
+  			from
+  			ratio
+  			to
+  		}
   	}
   	secComHeaders {
   		claimRequestName
@@ -2262,10 +2708,13 @@ query routes {
   		tenant
   	}
   	backend {
-  		health_check
   		rewrite
   		root
   		target_refs
+  		health_check {
+  			enabled
+  			url
+  		}
   		client {
   			backoff_factor
   			call_and_stream_timeout
@@ -2274,7 +2723,6 @@ query routes {
   			global_timeout
   			idle_timeout
   			max_errors
-  			proxy
   			retries
   			retry_initial_delay
   			sample_interval
@@ -2289,6 +2737,16 @@ query routes {
   				global_timeout
   				idle_timeout
   				path
+  			}
+  			proxy {
+  				encoding
+  				host
+  				nonProxyHosts
+  				ntlmDomain
+  				password
+  				port
+  				principal
+  				protocol
   			}
   		}
   		load_balancing {
@@ -2342,10 +2800,13 @@ query routesId($id: String) {
   		tenant
   	}
   	backend {
-  		health_check
   		rewrite
   		root
   		target_refs
+  		health_check {
+  			enabled
+  			url
+  		}
   		client {
   			backoff_factor
   			call_and_stream_timeout
@@ -2354,7 +2815,6 @@ query routesId($id: String) {
   			global_timeout
   			idle_timeout
   			max_errors
-  			proxy
   			retries
   			retry_initial_delay
   			sample_interval
@@ -2369,6 +2829,16 @@ query routesId($id: String) {
   				global_timeout
   				idle_timeout
   				path
+  			}
+  			proxy {
+  				encoding
+  				host
+  				nonProxyHosts
+  				ntlmDomain
+  				password
+  				port
+  				principal
+  				protocol
   			}
   		}
   		load_balancing {
@@ -2422,10 +2892,13 @@ query routesTemplate {
   		tenant
   	}
   	backend {
-  		health_check
   		rewrite
   		root
   		target_refs
+  		health_check {
+  			enabled
+  			url
+  		}
   		client {
   			backoff_factor
   			call_and_stream_timeout
@@ -2434,7 +2907,6 @@ query routesTemplate {
   			global_timeout
   			idle_timeout
   			max_errors
-  			proxy
   			retries
   			retry_initial_delay
   			sample_interval
@@ -2449,6 +2921,16 @@ query routesTemplate {
   				global_timeout
   				idle_timeout
   				path
+  			}
+  			proxy {
+  				encoding
+  				host
+  				nonProxyHosts
+  				ntlmDomain
+  				password
+  				port
+  				principal
+  				protocol
   			}
   		}
   		load_balancing {
@@ -2544,7 +3026,6 @@ query services {
   		global_timeout
   		idle_timeout
   		max_errors
-  		proxy
   		retries
   		retry_initial_delay
   		sample_interval
@@ -2559,6 +3040,16 @@ query services {
   			global_timeout
   			idle_timeout
   			path
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
   		}
   	}
   	routes {
@@ -2626,7 +3117,6 @@ query servicesId($id: String) {
   		global_timeout
   		idle_timeout
   		max_errors
-  		proxy
   		retries
   		retry_initial_delay
   		sample_interval
@@ -2641,6 +3131,16 @@ query servicesId($id: String) {
   			global_timeout
   			idle_timeout
   			path
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
   		}
   	}
   	routes {
@@ -2728,7 +3228,6 @@ query servicesTemplate {
   		global_timeout
   		idle_timeout
   		max_errors
-  		proxy
   		retries
   		retry_initial_delay
   		sample_interval
@@ -2743,6 +3242,16 @@ query servicesTemplate {
   			global_timeout
   			idle_timeout
   			path
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
   		}
   	}
   	routes {
@@ -2803,11 +3312,28 @@ query snowmonkeyConfig {
   	targetGroups
   	timesPerDay
   	chaosConfig {
-  		badResponsesFaultConfig
   		enabled
-  		largeRequestFaultConfig
-  		largeResponseFaultConfig
-  		latencyInjectionFaultConfig
+  		badResponsesFaultConfig {
+  			ratio
+  			responses {
+  				body
+  				headers
+  				status
+  			}
+  		}
+  		largeRequestFaultConfig {
+  			additionalRequestSize
+  			ratio
+  		}
+  		largeResponseFaultConfig {
+  			additionalResponseSize
+  			ratio
+  		}
+  		latencyInjectionFaultConfig {
+  			from
+  			ratio
+  			to
+  		}
   	}
   }
 }

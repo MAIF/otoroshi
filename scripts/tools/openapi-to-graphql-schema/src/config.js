@@ -32,7 +32,8 @@ const CONVERTED_TYPES = {
   "OutageStrategy": "String",
   "ClientAuth": "String",
   "SecComVersion": "Int",
-  "SecComInfoTokenVersion": "String"
+  "SecComInfoTokenVersion": "String",
+  "MailerSettings": "Json"
 }
 
 const RENAMED_TYPES = {
@@ -53,7 +54,9 @@ const AVAILABLE_OPERATIONS = [
 
 const REFACTO_TYPES = {
   proxy: 'Json',
-  traffic: 'Float'
+  // traffic: 'Float',
+  // monthlyQuotasThreshold: 'Float',
+  // ratio: 'Float'
 }
 
 module.exports = {

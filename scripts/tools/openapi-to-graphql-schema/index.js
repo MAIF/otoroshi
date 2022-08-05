@@ -10,15 +10,21 @@ const OTOROSHI_API = process.env.OTOROSHI_API || "http://otoroshi-api.oto.tools:
 const GraphQLFormatter = {
   name: n => RENAMED_TYPES[n] || n,
   fieldDescription: description => description !== '???' ? `# ${description}` : '',
-  returnType: (returnType, name) => {
+  returnType: ({ returnType, name, format }) => {
     if (REFACTO_TYPES[name])
       return REFACTO_TYPES[name]
 
     if (!returnType || returnType.includes(" "))
       return "Json" // TODO
 
-    if (["Integer", "Number"].includes(returnType))
-      return "Long"
+    if (["Integer", "Number"].includes(returnType)) {
+      if ("int64" === "format" || "int32" === "format")
+        return "Int"
+      else if ("double")
+        return "Float"
+      else
+        return "Long"
+    }
 
     if (MISSING_TYPES.includes(returnType))
       return 'Json'
@@ -42,8 +48,12 @@ const GraphQLFormatter = {
   type ${name} {
     todo: String
   }`,
-  field: (name, returnType, description, capitalized = true, isArray = false) => {
-    const formattedType = GraphQLFormatter.returnType(capitalized ? capitalize(returnType) : returnType, name)
+  field: ({ name, returnType, description, capitalized = true, isArray = false, format }) => {
+    const formattedType = GraphQLFormatter.returnType({
+      returnType: capitalized ? capitalize(returnType) : returnType,
+      name,
+      format
+    })
     const finalReturnType = isArray ? `[${formattedType}]` : formattedType;
     return `
  ${name}: ${finalReturnType} ${GraphQLFormatter.fieldDescription(description)}`
@@ -70,9 +80,27 @@ const GraphQLConverter = {
         const name = GraphQLFormatter.name(rawName.replace(/-/g, "_"))
         if (fields.oneOf) {
           if (fields.oneOf.length === 2 &&
+            fields.oneOf.every(f => f["type"]) &&
+            ((fields.oneOf[0].type === 'string' && fields.oneOf[1].type === 'object') ||
+              (fields.oneOf[0].type === 'object' && fields.oneOf[1].type === 'string'))
+          ) {
+            return GraphQLFormatter.field({
+              name,
+              returnType: 'Json',
+              description: fields.description,
+              capitalize: false
+            })
+          }
+          else if (fields.oneOf.length === 2 &&
             fields.oneOf.find(f => f["$ref"]) &&
-            fields.oneOf.find(f => f["type"]))
-            return GraphQLFormatter.field(name, fields.oneOf.find(f => f["type"]).type, fields.description)
+            fields.oneOf.find(f => f["type"])) {
+            return GraphQLFormatter.field({
+              name,
+              returnType: fields.oneOf.find(f => f["$ref"])["$ref"].split(".").slice(-1)[0],
+              description: fields.description,
+              capitalize: false
+            })
+          }
           else {
             return `
  ${name}: ${[...new Set(
@@ -89,22 +117,29 @@ const GraphQLConverter = {
                   }
                 })
                 .filter(f => !["Object", "Array"].includes(f))
-                .map(r => GraphQLFormatter.returnType(r))
+                .map(r => GraphQLFormatter.returnType({ returnType: r }))
                 .filter(r => r !== name))][0]
               }`
           }
         }
         else if (fields["$ref"]) {
-          return GraphQLFormatter.field(name, fields["$ref"].split(".").slice(-1)[0], fields.description, false)
+          return GraphQLFormatter.field({ name, returnType: fields["$ref"].split(".").slice(-1)[0], description: fields.description, capitalized: false })
         }
         else if (fields.type === "array") {
           let ref = fields.items['$ref'] || fields.items['type']
           if (ref)
             ref = ref.includes(".") ? ref.split(".").slice(-1)[0] : ref.split("/").slice(-1)[0];
-          return GraphQLFormatter.field(name, ref, fields.description, true, true)
+          return GraphQLFormatter.field({
+            name,
+            format: fields.items['format'],
+            returnType: ref,
+            description: fields.description,
+            capitalized: true,
+            isArray: true
+          })
         }
         else
-          return GraphQLFormatter.field(name, fields.type, fields.description)
+          return GraphQLFormatter.field({ name, returnType: fields.type, description: fields.description, format: fields.format })
       })
       .join("")
   },
@@ -129,7 +164,7 @@ union ${name} = ${[...new Set(
           }
         })
         .filter(f => !["Object", "Array"].includes(f))
-        .map(r => GraphQLFormatter.returnType(r))
+        .map(r => GraphQLFormatter.returnType({ returnType: r }))
         .filter(r => r !== name))]
         .join(" | ")
       }`
@@ -151,12 +186,12 @@ union ${name} = ${[...new Set(
         body += entries(props.items.properties)
           .map(([rawName, fields]) => {
             const name = GraphQLFormatter.name(rawName.replace(/-/g, "_"))
-            return GraphQLFormatter.field(name, fields.type, fields.description)
+            return GraphQLFormatter.field({ name, returnType: fields.type, description: fields.description, format: fields.format })
           })
         fields = entries(props.items.properties)
           .map(([rawName, fields]) => ({
             name: rawName,
-            type: GraphQLFormatter.returnType(capitalized ? capitalize(fields.type) : fields.types)
+            type: GraphQLFormatter.returnType({ returnType: capitalized ? capitalize(fields.type) : fields.types, format: fields.format })
           }))
       } else {
         return GraphQLConverter.null
@@ -173,10 +208,19 @@ union ${name} = ${[...new Set(
             const name = GraphQLFormatter.name(rawName.replace(/-/g, "_"))
             let type
             if (fields.oneOf) {
-              if (fields.oneOf.length === 2 &&
+              if (fields.oneOf.length === 2 && fields.oneOf.every(f => f["type"]) &&
+                ((fields.oneOf[0].type === 'string' && fields.oneOf[1].type === 'object') ||
+                  (fields.oneOf[0].type === 'object' && fields.oneOf[1].type === 'string'))
+              ) {
+                type = GraphQLFormatter.returnType({ returnType: 'Json' })
+              }
+              else if (fields.oneOf.length === 2 &&
                 fields.oneOf.find(f => f["$ref"]) &&
                 fields.oneOf.find(f => f["type"]))
-                type = GraphQLFormatter.returnType(capitalize(fields.oneOf.find(f => f["type"]).type))
+                type = GraphQLFormatter.returnType({
+                  returnType: capitalize(
+                    fields.oneOf.find(f => f["$ref"])["$ref"].split(".").slice(-1)[0]),
+                })
               else {
                 type = [...new Set(
                   fields.oneOf
@@ -192,21 +236,21 @@ union ${name} = ${[...new Set(
                       }
                     })
                     .filter(f => !["Object", "Array"].includes(f))
-                    .map(r => GraphQLFormatter.returnType(r))
+                    .map(r => GraphQLFormatter.returnType({ returnType: r }))
                     .filter(r => r !== name))][0]
               }
             }
             else if (fields["$ref"]) {
-              type = GraphQLFormatter.returnType(fields["$ref"].split(".").slice(-1)[0])
+              type = GraphQLFormatter.returnType({ returnType: fields["$ref"].split(".").slice(-1)[0] })
             }
             else if (fields.type === "array") {
               let ref = fields.items['$ref']
               if (ref)
                 ref = ref.includes(".") ? ref.split(".").slice(-1)[0] : ref.split("/").slice(-1)[0];
-              type = GraphQLFormatter.returnType(capitalize(ref))
+              type = GraphQLFormatter.returnType({ returnType: capitalize(ref) })
             }
             else
-              type = GraphQLFormatter.returnType(capitalize(fields.type))
+              type = GraphQLFormatter.returnType({ returnType: capitalize(fields.type), format: fields.format })
             return {
               name: rawName,
               type
@@ -267,7 +311,9 @@ type ${name} {${body}
 
     let queryName = openApiPathToGraphQLType(path)
 
-    const returnType = GraphQLFormatter.returnType(components.length === 0 ? components[0] : components.find(f => f !== "ErrorResponse"))
+    const returnType = GraphQLFormatter.returnType({
+      returnType: components.length === 0 ? components[0] : components.find(f => f !== "ErrorResponse")
+    })
 
     // services: [ServiceDescriptor] 
     // servicesId(id : String): ServiceDescriptor
@@ -290,17 +336,19 @@ type ${name} {${body}
       const headers = `{\\\"Accept\\\": \\\"application/json\\\", \\\"Authorization\\\": \\\"Basic ${BASIC_ADMIN_API_KEY_CREDENTIALS}\\\"}`
 
       const parameters = (endpoints[verb].parameters || [])
-        .map(parameter => `${parameter.name} : ${GraphQLFormatter.returnType(capitalize(parameter.schema.type))}`)
+        .map(parameter => `${parameter.name} : ${GraphQLFormatter.returnType({
+          returnType: capitalize(parameter.schema.type)
+        })}`)
 
       const parametersStr = parameters.length > 0 ? `(${parameters.join(",")})` : ''
 
       return {
         verb,
         queryName,
-        type: `  ${operation !== "read" ? operation + capitalize(queryName) : queryName}${parametersStr}: ${isArray ? `[${GraphQLFormatter.returnType(returnType)}]` : GraphQLFormatter.returnType(returnType)} @rest(url: "${url}", method: "${method}", headers: "${headers}")`,
+        type: `  ${operation !== "read" ? operation + capitalize(queryName) : queryName}${parametersStr}: ${isArray ? `[${GraphQLFormatter.returnType({ returnType })}]` : GraphQLFormatter.returnType({ returnType })} @rest(url: "${url}", method: "${method}", headers: "${headers}")`,
         data: {
           name: operation !== "read" ? operation + capitalize(queryName) : queryName,
-          returnType: GraphQLFormatter.returnType(returnType),
+          returnType: GraphQLFormatter.returnType({ returnType }),
           parameters: endpoints[verb].parameters || []
         }
       }
@@ -397,13 +445,14 @@ const GraphQLParser = {
 
 const QueryGenerator = {
   recursiveQuery: (returnType, graphTypes, indent) => {
-    const fields = graphTypes[returnType] || []
+    const fields = [...(graphTypes[returnType] || [])]
 
     return fields
       .sort((a, b) => isPrimitiveTypes(a.type) && isPrimitiveTypes(b.type) ? a.name.localeCompare(b.name) : isPrimitiveTypes(a.type) ? -1 : 1)
       .map(({ name, type }) => {
         const spaces = [...new Array(indent)].join('\t')
         const formattedName = GraphQLFormatter.name(name)
+
         if (isPrimitiveTypes(type))
           return `${spaces}${formattedName}`
         else {
@@ -415,14 +464,14 @@ const QueryGenerator = {
   },
   run: ({ queries, types }) => {
     const graphTypes = types
-      .reduce((acc, curr) => ({ ...acc, [curr.name]: curr.fields }))
+      .reduce((acc, curr) => ({ ...acc, [curr.name]: curr.fields }), {})
 
     const adminOtoroshiQueries = queries
       .map(q => q.data)
       .map(({ name, returnType, parameters }) => {
         const formattedName = GraphQLFormatter.name(name)
         const queryParams = parameters.length > 0 ?
-          `(${parameters.map(p => `$${GraphQLFormatter.name(p.name)}: ${capitalize(GraphQLFormatter.returnType(p.schema.type))}`).join(",")})` : ''
+          `(${parameters.map(p => `$${GraphQLFormatter.name(p.name)}: ${capitalize(GraphQLFormatter.returnType({ returnType: p.schema.type }))}`).join(",")})` : ''
         const subQueryParams = parameters.length > 0 ?
           `(${parameters.map(p => `${GraphQLFormatter.name(p.name)}: $${GraphQLFormatter.name(p.name)}`).join(",")})` : ''
 

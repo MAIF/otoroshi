@@ -202,7 +202,8 @@ const testGraphQLAndOtoResponse = (name, graphql, oto) => {
     },
     {
       names: ["live"],
-      fields: ["rate",
+      fields: [
+        "rate",
         "dataInRate",
         "dataOutRate",
         "concurrentHandledRequests"
@@ -211,6 +212,10 @@ const testGraphQLAndOtoResponse = (name, graphql, oto) => {
     {
       names: ["certificatesTemplate"],
       fields: ["from", "to"]
+    },
+    {
+      names: ["globalconfigTemplate"],
+      fields: ["otoroshiId"]
     }
   ];
   exclusions.forEach(({ names, fields }) => {
