@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>New proxy engine · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/ngplugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+<link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.13
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
+  <ul>
+    <li><a href="../next/engine.html" class="active page">New proxy engine</a></li>
+    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
+    <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
+  </ul></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.13
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
+  <ul>
+    <li><a href="../next/engine.html" class="active page">New proxy engine</a></li>
+    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
+    <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
+  </ul></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../next/index.html">Otoroshi new proxy engine</a></li>
+  <li>New proxy engine</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#new-proxy-engine" name="new-proxy-engine" class="anchor"><span class="anchor-link"></span></a>New proxy engine</h1><div class="callout warning "><div class="callout-title">Warning</div>
+<p>this feature is <strong>EXPERIMENTAL</strong> and might not work as expected. <br/> If you encounter any bugs, <a href="https://github.com/MAIF/otoroshi/issues/new">please fill an issue</a>, it will help us a lot :)</p></div>
+<p>Starting from the <code>1.5.3</code> release, otoroshi offers a new plugin that implements the next generation of the proxy engine. This engine has been designed based on our 5 years experience building, maintaining and running the previous one. It tries to fix all the drawback we may have encountered during those years and highly improve performances, user experience, reporting and debugging capabilities. The new engine is fully plugin oriented in order to spend CPU cycles only on useful stuff. You can enable this plugin only on some domain names so you can easily A/B test the new engine. The new proxy engine is designed to be more reactive and more efficient generally. It is also designed to be very efficient on path routing where it wasn&rsquo;t the old engines strong suit.</p>
+<h2><a href="#enabling-the-new-engine" name="enabling-the-new-engine" class="anchor"><span class="anchor-link"></span></a>Enabling the new engine</h2>
+<p>To enable the new proxy engine on an otoroshi instance, just add the plugin in the <code>global plugins</code> section of the danger zone, inject the default configuration, enable it and in <code>domains</code> add the values of the desired domains (let say we want to use the new engine on <code>api.foo.bar</code>. It is possible to use <code>*.foo.bar</code> if that&rsquo;s what you want to do).</p>
+<p>The next time a request hits the <code>api.foo.bar</code> domain, the new engine will handle it instead of the previous one.</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;NextGenProxyEngine&quot; : {
+    &quot;enabled&quot; : true,
+    &quot;debug_headers&quot; : false,
+    &quot;reporting&quot;: true,
+    &quot;domains&quot; : [ &quot;api.foo.bar&quot; ],
+    &quot;deny_domains&quot; : [ ],
+  }
+}
+</code></pre>
+<p>if you need to enable global plugin with the new engine, you can add the following configuration in the <code>global plugins</code> configuration object </p>
+<pre class="prettyprint"><code class="language-javascript">{
+  ...
+  &quot;ng&quot;: {
+    &quot;slots&quot;: [
+      {
+        &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.W3CTracing&quot;,
+        &quot;enabled&quot;: true,
+        &quot;include&quot;: [],
+        &quot;exclude&quot;: [],
+        &quot;config&quot;: {
+          &quot;baggage&quot;: {
+            &quot;foo&quot;: &quot;bar&quot;
+          }
+        }
+      },
+      {
+        &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.wrappers.RequestSinkWrapper&quot;,
+        &quot;enabled&quot;: true,
+        &quot;include&quot;: [],
+        &quot;exclude&quot;: [],
+        &quot;config&quot;: {
+          &quot;plugin&quot;: &quot;cp:otoroshi.plugins.apikeys.ClientCredentialService&quot;,
+          &quot;ClientCredentialService&quot;: {
+            &quot;domain&quot;: &quot;ccs-next-gen.oto.tools&quot;,
+            &quot;expiration&quot;: 3600000,
+            &quot;defaultKeyPair&quot;: &quot;otoroshi-jwt-signing&quot;,
+            &quot;secure&quot;: false
+          }
+        }
+      }
+    ]
+  }
+  ...
+}
+</code></pre>
+<h2><a href="#entities" name="entities" class="anchor"><span class="anchor-link"></span></a>Entities</h2>
+<p>This plugin introduces new entities that will replace (one day maybe) service descriptors:</p>
+<ul>
+  <li><code>routes</code>: a unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins</li>
+  <li><code>services</code>: multiple routing rules based on hostname, path, method and headers that will execute the same list of plugins</li>
+  <li><code>targets</code>: how to contact a backend either by using a domain name or an ip address, supports mtls</li>
+  <li><code>backends</code>: a list of targets to contact a backend</li>
+</ul>
+<h2><a href="#entities-sync" name="entities-sync" class="anchor"><span class="anchor-link"></span></a>Entities sync</h2>
+<p>A new behavior introduced for the new proxy engine is the entities sync job. To avoid unecessary operations on the underlying datastore when routing requests, a new job has been setup in otoroshi that synchronize the content of the datastore (at least a part of it) with an in-memory cache. Because of it, the propagation of changes between an admin api call and the actual result on routing can be longer than before. When a node creates, updates, or deletes an entity via the admin api, other nodes need to wait for the next poll to purge the old cached entity and start using the new one. You can change the interval between syncs with the configuration key <code>otoroshi.next.state-sync-interval</code> or the env. variable <code>OTOROSHI_NEXT_STATE_SYNC_INTERVAL</code>. The default value is <code>10000</code> and the unit is <code>milliseconds</code></p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>Because of entities sync, memory consumption of otoroshi will be significantly higher than previous versions. You can use <code>otoroshi.next.monitor-proxy-state-size=true</code> config (or <code>OTOROSHI_NEXT_MONITOR_PROXY_STATE_SIZE</code> env. variable) to monitor the actual memory size of the entities cache. This will produce the <code>ng-proxy-state-size-monitoring</code> metric in standard otoroshi metrics</p></div>
+<h2><a href="#automatic-conversion" name="automatic-conversion" class="anchor"><span class="anchor-link"></span></a>Automatic conversion</h2>
+<p>The new engine uses new entities for its configuration, but in order to facilitate transition between the old world and the new world, all the <code>service descriptors</code> of an otoroshi instance are automatically converted live into <code>routes</code> periodically. Any <code>service descriptor</code> should still work as expected through the new engine while enjoying all the perks.</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>the experimental nature of the engine can imply unexpected behaviors for converted service descriptors</p></div>
+<h2><a href="#routing" name="routing" class="anchor"><span class="anchor-link"></span></a>Routing</h2>
+<p>the new proxy engine introduces a new router that has enhanced capabilities and performances. The router can handle thousands of routes declarations without compromising performances.</p>
+<p>The new route allow routes to be matched on a combination of</p>
+<ul>
+  <li>hostname</li>
+  <li>path</li>
+  <li>header values
+    <ul>
+      <li>where values can be <code>exact_value</code>, or <code>Regex(value_regex)</code>, or <code>Wildcard(value_with_*)</code></li>
+    </ul>
+  </li>
+  <li>query param values
+    <ul>
+      <li>where values can be <code>exact_value</code>, or <code>Regex(value_regex)</code>, or <code>Wildcard(value_with_*)</code></li>
+    </ul>
+  </li>
+</ul>
+<p>patch matching works </p>
+<ul>
+  <li>exactly
+    <ul>
+      <li>matches <code>/api/foo</code> with <code>/api/foo</code> and not with <code>/api/foo/bar</code></li>
+    </ul>
+  </li>
+  <li>starting with value (default behavior, like the previous engine)
+    <ul>
+      <li>matches <code>/api/foo</code> with <code>/api/foo</code> but also with <code>/api/foo/bar</code></li>
+    </ul>
+  </li>
+</ul>
+<p>path matching can also include wildcard paths and even path params</p>
+<ul>
+  <li>plain old path: <code>subdomain.domain.tld/api/users</code></li>
+  <li>wildcard path: <code>subdomain.domain.tld/api/users/*/bills</code></li>
+  <li>named path params: <code>subdomain.domain.tld/api/users/:id/bills</code></li>
+  <li>named regex path params: <code>subdomain.domain.tld/api/users/$id&lt;[0-9]+&gt;/bills</code></li>
+</ul>
+<p>hostname matching works on </p>
+<ul>
+  <li>exact values
+    <ul>
+      <li><code>subdomain.domain.tld</code></li>
+    </ul>
+  </li>
+  <li>wildcard values like
+    <ul>
+      <li><code>*.domain.tld</code></li>
+      <li><code>subdomain.*.tld</code></li>
+    </ul>
+  </li>
+</ul>
+<p>as path matching can now include named path params, it is possible to perform a ful url rewrite on the target path like </p>
+<ul>
+  <li>input: <code>subdomain.domain.tld/api/users/$id&lt;[0-9]+&gt;/bills</code></li>
+  <li>output: <code>target.domain.tld/apis/v1/basic_users/${req.pathparams.id}/all_bills</code></li>
+</ul>
+<h2><a href="#plugins" name="plugins" class="anchor"><span class="anchor-link"></span></a>Plugins</h2>
+<p>the new route entity defines a plugin pipline where any plugin can be enabled or not and can be active only on some paths. Each plugin slot in the pipeline holds the plugin id and the plugin configuration. </p>
+<p>You can also enable debugging only on a plugin instance instead of the whole route (see <a href="#debugging">the debugging section</a>)</p>
+<pre class="prettyprint"><code class="language-javascript">{ 
+  ...
+  &quot;plugins&quot; : [ {
+    &quot;enabled&quot; : true,
+    &quot;debug&quot; : false,
+    &quot;plugin&quot; : &quot;cp:otoroshi.next.plugins.OverrideHost&quot;,
+    &quot;include&quot; : [ ],
+    &quot;exclude&quot; : [ ],
+    &quot;config&quot; : { }
+  }, {
+    &quot;enabled&quot; : true,
+    &quot;debug&quot; : false,
+    &quot;plugin&quot; : &quot;cp:otoroshi.next.plugins.ApikeyCalls&quot;,
+    &quot;include&quot; : [ ],
+    &quot;exclude&quot; : [ &quot;/openapi.json&quot; ],
+    &quot;config&quot; : { }
+  } ]
+}
+</code></pre>
+<p>you can find the list of built-in plugins <a href="built-in-plugins.html">here</a></p>
+<h2><a href="#using-legacy-plugins" name="using-legacy-plugins" class="anchor"><span class="anchor-link"></span></a>Using legacy plugins</h2>
+<p>if you need to use legacy otoroshi plugins with the new engine, you can use several wrappers in order to do so</p>
+<ul>
+  <li><code>otoroshi.next.plugins.wrappers.PreRoutingWrapper</code></li>
+  <li><code>otoroshi.next.plugins.wrappers.AccessValidatorWrapper</code></li>
+  <li><code>otoroshi.next.plugins.wrappers.RequestSinkWrapper</code></li>
+  <li><code>otoroshi.next.plugins.wrappers.RequestTransformerWrapper</code></li>
+  <li><code>otoroshi.next.plugins.wrappers.CompositeWrapper</code></li>
+</ul>
+<p>to use it, just declare a plugin slot with the right wrapper and in the config, declare the <code>plugin</code> you want to use and its configuration like:</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.wrappers.PreRoutingWrapper&quot;,
+  &quot;enabled&quot;: true,
+  &quot;include&quot;: [],
+  &quot;exclude&quot;: [],
+  &quot;config&quot;: {
+    &quot;plugin&quot;: &quot;cp:otoroshi.plugins.jwt.JwtUserExtractor&quot;,
+    &quot;JwtUserExtractor&quot;: {
+      &quot;verifier&quot; : &quot;$ref&quot;,
+      &quot;strict&quot;   : true,
+      &quot;namePath&quot; : &quot;name&quot;,
+      &quot;emailPath&quot;: &quot;email&quot;,
+      &quot;metaPath&quot; : null
+    }
+  }
+}
+</code></pre>
+<h2><a href="#reporting" name="reporting" class="anchor"><span class="anchor-link"></span></a>Reporting</h2>
+<p>by default, any request hiting the new engine will generate an execution report with informations about how the request pipeline steps were performed. It is possible to export those reports as <code>RequestFlowReport</code> events using classical data exporter. By default, exporting for reports is not enabled, you must enable the <code>export_reporting</code> flag on a <code>route</code> or <code>service</code>.</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;@id&quot;: &quot;8efac472-07bc-4a80-8d27-4236309d7d01&quot;,
+  &quot;@timestamp&quot;: &quot;2022-02-15T09:51:25.402+01:00&quot;,
+  &quot;@type&quot;: &quot;RequestFlowReport&quot;,
+  &quot;@product&quot;: &quot;otoroshi&quot;,
+  &quot;@serviceId&quot;: &quot;service_548f13bb-a809-4b1d-9008-fae3b1851092&quot;,
+  &quot;@service&quot;: &quot;demo-service&quot;,
+  &quot;@env&quot;: &quot;prod&quot;,
+  &quot;route&quot;: {
+    &quot;_loc&quot; : {
+      &quot;tenant&quot; : &quot;default&quot;,
+      &quot;teams&quot; : [ &quot;default&quot; ]
+    },
+    &quot;id&quot; : &quot;service_dev_d54f11d0-18e2-4da4-9316-cf47733fd29a&quot;,
+    &quot;name&quot; : &quot;hey&quot;,
+    &quot;description&quot; : &quot;hey&quot;,
+    &quot;tags&quot; : [ &quot;env:prod&quot; ],
+    &quot;metadata&quot; : { },
+    &quot;enabled&quot; : true,
+    &quot;debug_flow&quot; : true,
+    &quot;export_reporting&quot; : false,
+    &quot;groups&quot; : [ &quot;default&quot; ],
+    &quot;frontend&quot; : {
+      &quot;domains&quot; : [ &quot;hey-next-gen.oto.tools/&quot;, &quot;hey.oto.tools/&quot; ],
+      &quot;strip_path&quot; : true,
+      &quot;exact&quot; : false,
+      &quot;headers&quot; : { },
+      &quot;methods&quot; : [ ]
+    },
+    &quot;backend&quot; : {
+      &quot;targets&quot; : [ {
+        &quot;id&quot; : &quot;127.0.0.1:8081&quot;,
+        &quot;hostname&quot; : &quot;127.0.0.1&quot;,
+        &quot;port&quot; : 8081,
+        &quot;tls&quot; : false,
+        &quot;weight&quot; : 1,
+        &quot;protocol&quot; : &quot;HTTP/1.1&quot;,
+        &quot;ip_address&quot; : null,
+        &quot;tls_config&quot; : {
+          &quot;certs&quot; : [ ],
+          &quot;trustedCerts&quot; : [ ],
+          &quot;mtls&quot; : false,
+          &quot;loose&quot; : false,
+          &quot;trustAll&quot; : false
+        }
+      } ],
+      &quot;target_refs&quot; : [ ],
+      &quot;root&quot; : &quot;/&quot;,
+      &quot;rewrite&quot; : false,
+      &quot;load_balancing&quot; : {
+        &quot;type&quot; : &quot;RoundRobin&quot;
+      },
+      &quot;client&quot; : {
+        &quot;useCircuitBreaker&quot; : true,
+        &quot;retries&quot; : 1,
+        &quot;maxErrors&quot; : 20,
+        &quot;retryInitialDelay&quot; : 50,
+        &quot;backoffFactor&quot; : 2,
+        &quot;callTimeout&quot; : 30000,
+        &quot;callAndStreamTimeout&quot; : 120000,
+        &quot;connectionTimeout&quot; : 10000,
+        &quot;idleTimeout&quot; : 60000,
+        &quot;globalTimeout&quot; : 30000,
+        &quot;sampleInterval&quot; : 2000,
+        &quot;proxy&quot; : { },
+        &quot;customTimeouts&quot; : [ ],
+        &quot;cacheConnectionSettings&quot; : {
+          &quot;enabled&quot; : false,
+          &quot;queueSize&quot; : 2048
+        }
+      }
+    },
+    &quot;backend_ref&quot; : null,
+    &quot;plugins&quot; : [ ]
+  },
+  &quot;report&quot;: {
+    &quot;id&quot; : &quot;ab73707b3-946b-4853-92d4-4c38bbaac6d6&quot;,
+    &quot;creation&quot; : &quot;2022-02-15T09:51:25.402+01:00&quot;,
+    &quot;termination&quot; : &quot;2022-02-15T09:51:25.408+01:00&quot;,
+    &quot;duration&quot; : 5,
+    &quot;duration_ns&quot; : 5905522,
+    &quot;overhead&quot; : 4,
+    &quot;overhead_ns&quot; : 4223215,
+    &quot;overhead_in&quot; : 2,
+    &quot;overhead_in_ns&quot; : 2687750,
+    &quot;overhead_out&quot; : 1,
+    &quot;overhead_out_ns&quot; : 1535465,
+    &quot;state&quot; : &quot;Successful&quot;,
+    &quot;steps&quot; : [ {
+      &quot;task&quot; : &quot;start-handling&quot;,
+      &quot;start&quot; : 1644915085402,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.402+01:00&quot;,
+      &quot;stop&quot; : 1644915085402,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.402+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 177430,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;check-concurrent-requests&quot;,
+      &quot;start&quot; : 1644915085402,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.402+01:00&quot;,
+      &quot;stop&quot; : 1644915085402,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.402+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 145242,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;find-route&quot;,
+      &quot;start&quot; : 1644915085402,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.402+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 497119,
+      &quot;ctx&quot; : {
+        &quot;found_route&quot; : {
+          &quot;_loc&quot; : {
+            &quot;tenant&quot; : &quot;default&quot;,
+            &quot;teams&quot; : [ &quot;default&quot; ]
+          },
+          &quot;id&quot; : &quot;service_dev_d54f11d0-18e2-4da4-9316-cf47733fd29a&quot;,
+          &quot;name&quot; : &quot;hey&quot;,
+          &quot;description&quot; : &quot;hey&quot;,
+          &quot;tags&quot; : [ &quot;env:prod&quot; ],
+          &quot;metadata&quot; : { },
+          &quot;enabled&quot; : true,
+          &quot;debug_flow&quot; : true,
+          &quot;export_reporting&quot; : false,
+          &quot;groups&quot; : [ &quot;default&quot; ],
+          &quot;frontend&quot; : {
+            &quot;domains&quot; : [ &quot;hey-next-gen.oto.tools/&quot;, &quot;hey.oto.tools/&quot; ],
+            &quot;strip_path&quot; : true,
+            &quot;exact&quot; : false,
+            &quot;headers&quot; : { },
+            &quot;methods&quot; : [ ]
+          },
+          &quot;backend&quot; : {
+            &quot;targets&quot; : [ {
+              &quot;id&quot; : &quot;127.0.0.1:8081&quot;,
+              &quot;hostname&quot; : &quot;127.0.0.1&quot;,
+              &quot;port&quot; : 8081,
+              &quot;tls&quot; : false,
+              &quot;weight&quot; : 1,
+              &quot;protocol&quot; : &quot;HTTP/1.1&quot;,
+              &quot;ip_address&quot; : null,
+              &quot;tls_config&quot; : {
+                &quot;certs&quot; : [ ],
+                &quot;trustedCerts&quot; : [ ],
+                &quot;mtls&quot; : false,
+                &quot;loose&quot; : false,
+                &quot;trustAll&quot; : false
+              }
+            } ],
+            &quot;target_refs&quot; : [ ],
+            &quot;root&quot; : &quot;/&quot;,
+            &quot;rewrite&quot; : false,
+            &quot;load_balancing&quot; : {
+              &quot;type&quot; : &quot;RoundRobin&quot;
+            },
+            &quot;client&quot; : {
+              &quot;useCircuitBreaker&quot; : true,
+              &quot;retries&quot; : 1,
+              &quot;maxErrors&quot; : 20,
+              &quot;retryInitialDelay&quot; : 50,
+              &quot;backoffFactor&quot; : 2,
+              &quot;callTimeout&quot; : 30000,
+              &quot;callAndStreamTimeout&quot; : 120000,
+              &quot;connectionTimeout&quot; : 10000,
+              &quot;idleTimeout&quot; : 60000,
+              &quot;globalTimeout&quot; : 30000,
+              &quot;sampleInterval&quot; : 2000,
+              &quot;proxy&quot; : { },
+              &quot;customTimeouts&quot; : [ ],
+              &quot;cacheConnectionSettings&quot; : {
+                &quot;enabled&quot; : false,
+                &quot;queueSize&quot; : 2048
+              }
+            }
+          },
+          &quot;backend_ref&quot; : null,
+          &quot;plugins&quot; : [ ]
+        },
+        &quot;matched_path&quot; : &quot;&quot;,
+        &quot;exact&quot; : true,
+        &quot;params&quot; : { },
+        &quot;matched_routes&quot; : [ &quot;service_dev_d54f11d0-18e2-4da4-9316-cf47733fd29a&quot; ]
+      }
+    }, {
+      &quot;task&quot; : &quot;compute-plugins&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 105151,
+      &quot;ctx&quot; : {
+        &quot;disabled_plugins&quot; : [ ],
+        &quot;filtered_plugins&quot; : [ ]
+      }
+    }, {
+      &quot;task&quot; : &quot;tenant-check&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 26097,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;check-global-maintenance&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 14132,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;call-before-request-callbacks&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 56671,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;extract-tracking-id&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 5207,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;call-pre-route-plugins&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 39786,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;call-access-validator-plugins&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085403,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 25311,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;enforce-global-limits&quot;,
+      &quot;start&quot; : 1644915085403,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.403+01:00&quot;,
+      &quot;stop&quot; : 1644915085404,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.404+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 296617,
+      &quot;ctx&quot; : {
+        &quot;remaining_quotas&quot; : {
+          &quot;authorizedCallsPerSec&quot; : 10000000,
+          &quot;currentCallsPerSec&quot; : 10000000,
+          &quot;remainingCallsPerSec&quot; : 10000000,
+          &quot;authorizedCallsPerDay&quot; : 10000000,
+          &quot;currentCallsPerDay&quot; : 10000000,
+          &quot;remainingCallsPerDay&quot; : 10000000,
+          &quot;authorizedCallsPerMonth&quot; : 10000000,
+          &quot;currentCallsPerMonth&quot; : 10000000,
+          &quot;remainingCallsPerMonth&quot; : 10000000
+        }
+      }
+    }, {
+      &quot;task&quot; : &quot;choose-backend&quot;,
+      &quot;start&quot; : 1644915085404,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.404+01:00&quot;,
+      &quot;stop&quot; : 1644915085404,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.404+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 368899,
+      &quot;ctx&quot; : {
+        &quot;backend&quot; : {
+          &quot;id&quot; : &quot;127.0.0.1:8081&quot;,
+          &quot;hostname&quot; : &quot;127.0.0.1&quot;,
+          &quot;port&quot; : 8081,
+          &quot;tls&quot; : false,
+          &quot;weight&quot; : 1,
+          &quot;protocol&quot; : &quot;HTTP/1.1&quot;,
+          &quot;ip_address&quot; : null,
+          &quot;tls_config&quot; : {
+            &quot;certs&quot; : [ ],
+            &quot;trustedCerts&quot; : [ ],
+            &quot;mtls&quot; : false,
+            &quot;loose&quot; : false,
+            &quot;trustAll&quot; : false
+          }
+        }
+      }
+    }, {
+      &quot;task&quot; : &quot;transform-request&quot;,
+      &quot;start&quot; : 1644915085404,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.404+01:00&quot;,
+      &quot;stop&quot; : 1644915085404,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.404+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 506363,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;call-backend&quot;,
+      &quot;start&quot; : 1644915085404,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.404+01:00&quot;,
+      &quot;stop&quot; : 1644915085407,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.407+01:00&quot;,
+      &quot;duration&quot; : 2,
+      &quot;duration_ns&quot; : 2163470,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;transform-response&quot;,
+      &quot;start&quot; : 1644915085407,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.407+01:00&quot;,
+      &quot;stop&quot; : 1644915085407,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.407+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 279887,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;stream-response&quot;,
+      &quot;start&quot; : 1644915085407,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.407+01:00&quot;,
+      &quot;stop&quot; : 1644915085407,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.407+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 382952,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;trigger-analytics&quot;,
+      &quot;start&quot; : 1644915085407,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.407+01:00&quot;,
+      &quot;stop&quot; : 1644915085408,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.408+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 812036,
+      &quot;ctx&quot; : null
+    }, {
+      &quot;task&quot; : &quot;request-success&quot;,
+      &quot;start&quot; : 1644915085408,
+      &quot;start_fmt&quot; : &quot;2022-02-15T09:51:25.408+01:00&quot;,
+      &quot;stop&quot; : 1644915085408,
+      &quot;stop_fmt&quot; : &quot;2022-02-15T09:51:25.408+01:00&quot;,
+      &quot;duration&quot; : 0,
+      &quot;duration_ns&quot; : 0,
+      &quot;ctx&quot; : null
+    } ]
+  }
+}
+</code></pre>
+<h2><a href="#debugging" name="debugging" class="anchor"><span class="anchor-link"></span></a>Debugging</h2>
+<p>with the new reporting capabilities, the new engine also have debugging capabilities built in. In you enable the <code>debug_flow</code> flag on a route (or service), the resulting <code>RequestFlowReport</code> will be enriched with contextual informations between each plugins of the route plugin pipeline</p><div class="callout note "><div class="callout-title">Note</div>
+<p>you can also use the <code>Try it</code> feature of the new route designer UI to get debug reports automatically for a specific call</p></div>
+<h2><a href="#http-traffic-capture" name="http-traffic-capture" class="anchor"><span class="anchor-link"></span></a>HTTP traffic capture</h2>
+<p>using the <code>capture</code> flag, a <code>TrafficCaptureEvent</code> is generated for each http request/response. This event will contains request and response body. Those events can be exported using <a href="../entities/data-exporters.html">data exporters</a> as usual. You can also use the <a href="../entities/data-exporters.html#goreplay-file">GoReplay file exporter</a> that is specifically designed to ingest those events and create <a href="https://goreplay.org/">GoReplay</a> files (<code>.gor</code>)</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>this feature can have actual impact on CPU and RAM consumption</p></div>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;@id&quot;: &quot;d5998b0c4-cb08-43e6-9921-27472c7a56e0&quot;,
+  &quot;@timestamp&quot;: 1651828801115,
+  &quot;@type&quot;: &quot;TrafficCaptureEvent&quot;,
+  &quot;@product&quot;: &quot;otoroshi&quot;,
+  &quot;@serviceId&quot;: &quot;route_2b2670879-131c-423d-b755-470c7b1c74b1&quot;,
+  &quot;@service&quot;: &quot;test-server&quot;,
+  &quot;@env&quot;: &quot;prod&quot;,
+  &quot;route&quot;: {
+    &quot;id&quot;: &quot;route_2b2670879-131c-423d-b755-470c7b1c74b1&quot;,
+    &quot;name&quot;: &quot;test-server&quot;
+  },
+  &quot;request&quot;: {
+    &quot;id&quot;: &quot;152250645825034725600000&quot;,
+    &quot;int_id&quot;: 115,
+    &quot;method&quot;: &quot;POST&quot;,
+    &quot;headers&quot;: {
+      &quot;Host&quot;: &quot;test-server-next-gen.oto.tools:9999&quot;,
+      &quot;Accept&quot;: &quot;*/*&quot;,
+      &quot;Cookie&quot;: &quot;fifoo=fibar&quot;,
+      &quot;User-Agent&quot;: &quot;curl/7.64.1&quot;,
+      &quot;Content-Type&quot;: &quot;application/json&quot;,
+      &quot;Content-Length&quot;: &quot;13&quot;,
+      &quot;Remote-Address&quot;: &quot;127.0.0.1:57660&quot;,
+      &quot;Timeout-Access&quot;: &quot;&lt;function1&gt;&quot;,
+      &quot;Raw-Request-URI&quot;: &quot;/&quot;,
+      &quot;Tls-Session-Info&quot;: &quot;Session(1651828041285|SSL_NULL_WITH_NULL_NULL)&quot;
+    },
+    &quot;cookies&quot;: [
+      {
+        &quot;name&quot;: &quot;fifoo&quot;,
+        &quot;value&quot;: &quot;fibar&quot;,
+        &quot;path&quot;: &quot;/&quot;,
+        &quot;domain&quot;: null,
+        &quot;http_only&quot;: true,
+        &quot;max_age&quot;: null,
+        &quot;secure&quot;: false,
+        &quot;same_site&quot;: null
+      }
+    ],
+    &quot;tls&quot;: false,
+    &quot;uri&quot;: &quot;/&quot;,
+    &quot;path&quot;: &quot;/&quot;,
+    &quot;version&quot;: &quot;HTTP/1.1&quot;,
+    &quot;has_body&quot;: true,
+    &quot;remote&quot;: &quot;127.0.0.1&quot;,
+    &quot;client_cert_chain&quot;: null,
+    &quot;body&quot;: &quot;{\&quot;foo\&quot;:\&quot;bar\&quot;}&quot;
+  },
+  &quot;backend_request&quot;: {
+    &quot;url&quot;: &quot;http://localhost:3000/&quot;,
+    &quot;method&quot;: &quot;POST&quot;,
+    &quot;headers&quot;: {
+      &quot;Host&quot;: &quot;localhost&quot;,
+      &quot;Accept&quot;: &quot;*/*&quot;,
+      &quot;Cookie&quot;: &quot;fifoo=fibar&quot;,
+      &quot;User-Agent&quot;: &quot;curl/7.64.1&quot;,
+      &quot;Content-Type&quot;: &quot;application/json&quot;,
+      &quot;Content-Length&quot;: &quot;13&quot;
+    },
+    &quot;version&quot;: &quot;HTTP/1.1&quot;,
+    &quot;client_cert_chain&quot;: null,
+    &quot;cookies&quot;: [
+      {
+        &quot;name&quot;: &quot;fifoo&quot;,
+        &quot;value&quot;: &quot;fibar&quot;,
+        &quot;domain&quot;: null,
+        &quot;path&quot;: &quot;/&quot;,
+        &quot;maxAge&quot;: null,
+        &quot;secure&quot;: false,
+        &quot;httpOnly&quot;: true
+      }
+    ],
+    &quot;id&quot;: &quot;152260631569472064900000&quot;,
+    &quot;int_id&quot;: 33,
+    &quot;body&quot;: &quot;{\&quot;foo\&quot;:\&quot;bar\&quot;}&quot;
+  },
+  &quot;backend_response&quot;: {
+    &quot;status&quot;: 200,
+    &quot;headers&quot;: {
+      &quot;Date&quot;: &quot;Fri, 06 May 2022 09:20:01 GMT&quot;,
+      &quot;Connection&quot;: &quot;keep-alive&quot;,
+      &quot;Set-Cookie&quot;: &quot;foo=bar&quot;,
+      &quot;Content-Type&quot;: &quot;application/json&quot;,
+      &quot;Transfer-Encoding&quot;: &quot;chunked&quot;
+    },
+    &quot;cookies&quot;: [
+      {
+        &quot;name&quot;: &quot;foo&quot;,
+        &quot;value&quot;: &quot;bar&quot;,
+        &quot;domain&quot;: null,
+        &quot;path&quot;: null,
+        &quot;maxAge&quot;: null,
+        &quot;secure&quot;: false,
+        &quot;httpOnly&quot;: false
+      }
+    ],
+    &quot;id&quot;: &quot;152260631569472064900000&quot;,
+    &quot;status_txt&quot;: &quot;OK&quot;,
+    &quot;http_version&quot;: &quot;HTTP/1.1&quot;,
+    &quot;body&quot;: &quot;{\&quot;headers\&quot;:{\&quot;host\&quot;:\&quot;localhost\&quot;,\&quot;accept\&quot;:\&quot;*/*\&quot;,\&quot;user-agent\&quot;:\&quot;curl/7.64.1\&quot;,\&quot;content-type\&quot;:\&quot;application/json\&quot;,\&quot;cookie\&quot;:\&quot;fifoo=fibar\&quot;,\&quot;content-length\&quot;:\&quot;13\&quot;},\&quot;method\&quot;:\&quot;POST\&quot;,\&quot;path\&quot;:\&quot;/\&quot;,\&quot;body\&quot;:\&quot;{\\\&quot;foo\\\&quot;:\\\&quot;bar\\\&quot;}\&quot;}&quot;
+  },
+  &quot;response&quot;: {
+    &quot;id&quot;: &quot;152250645825034725600000&quot;,
+    &quot;status&quot;: 200,
+    &quot;headers&quot;: {
+      &quot;Date&quot;: &quot;Fri, 06 May 2022 09:20:01 GMT&quot;,
+      &quot;Connection&quot;: &quot;keep-alive&quot;,
+      &quot;Set-Cookie&quot;: &quot;foo=bar&quot;,
+      &quot;Content-Type&quot;: &quot;application/json&quot;,
+      &quot;Transfer-Encoding&quot;: &quot;chunked&quot;
+    },
+    &quot;cookies&quot;: [
+      {
+        &quot;name&quot;: &quot;foo&quot;,
+        &quot;value&quot;: &quot;bar&quot;,
+        &quot;domain&quot;: null,
+        &quot;path&quot;: null,
+        &quot;maxAge&quot;: null,
+        &quot;secure&quot;: false,
+        &quot;httpOnly&quot;: false
+      }
+    ],
+    &quot;status_txt&quot;: &quot;OK&quot;,
+    &quot;http_version&quot;: &quot;HTTP/1.1&quot;,
+    &quot;body&quot;: &quot;{\&quot;headers\&quot;:{\&quot;host\&quot;:\&quot;localhost\&quot;,\&quot;accept\&quot;:\&quot;*/*\&quot;,\&quot;user-agent\&quot;:\&quot;curl/7.64.1\&quot;,\&quot;content-type\&quot;:\&quot;application/json\&quot;,\&quot;cookie\&quot;:\&quot;fifoo=fibar\&quot;,\&quot;content-length\&quot;:\&quot;13\&quot;},\&quot;method\&quot;:\&quot;POST\&quot;,\&quot;path\&quot;:\&quot;/\&quot;,\&quot;body\&quot;:\&quot;{\\\&quot;foo\\\&quot;:\\\&quot;bar\\\&quot;}\&quot;}&quot;
+  },
+  &quot;user-agent-details&quot;: null,
+  &quot;origin-details&quot;: null,
+  &quot;instance-number&quot;: 0,
+  &quot;instance-name&quot;: &quot;dev&quot;,
+  &quot;instance-zone&quot;: &quot;local&quot;,
+  &quot;instance-region&quot;: &quot;local&quot;,
+  &quot;instance-dc&quot;: &quot;local&quot;,
+  &quot;instance-provider&quot;: &quot;local&quot;,
+  &quot;instance-rack&quot;: &quot;local&quot;,
+  &quot;cluster-mode&quot;: &quot;Leader&quot;,
+  &quot;cluster-name&quot;: &quot;otoroshi-leader-9hnv5HUXpbCZD7Ee&quot;
+}
+</code></pre>
+<h2><a href="#openapi-import" name="openapi-import" class="anchor"><span class="anchor-link"></span></a>openapi import</h2>
+<p>as the new router offers possibility to match exactly on a single path and a single method, and with the help of the <code>service</code> entity, it is now pretty easy to import openapi document as <code>service</code> entities. To do that, a new api has been made available to perform the translation. Be aware that this api <strong>DOES NOT</strong> save the entity and just return the result of the translation. </p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST \
+  -H &#39;Content-Type: application/json&#39; \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  &#39;http://otoroshi-api.oto.tools:8080/api/experimental/services/_openapi&#39; \
+  -d &#39;{&quot;domain&quot;:&quot;oto-api-proxy.oto.tools&quot;,&quot;openapi&quot;:&quot;https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json&quot;}&#39;
+</code></pre><div class="centered-img">
+<img src="../imgs/route_comp_openapi_import.png" /></div>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../next/topics/index.html">Detailed topics</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../next/engine.html#new-proxy-engine" class="header">New proxy engine</a>
+  <ul>
+    <li><a href="../next/engine.html#enabling-the-new-engine" class="header">Enabling the new engine</a></li>
+    <li><a href="../next/engine.html#entities" class="header">Entities</a></li>
+    <li><a href="../next/engine.html#entities-sync" class="header">Entities sync</a></li>
+    <li><a href="../next/engine.html#automatic-conversion" class="header">Automatic conversion</a></li>
+    <li><a href="../next/engine.html#routing" class="header">Routing</a></li>
+    <li><a href="../next/engine.html#plugins" class="header">Plugins</a></li>
+    <li><a href="../next/engine.html#using-legacy-plugins" class="header">Using legacy plugins</a></li>
+    <li><a href="../next/engine.html#reporting" class="header">Reporting</a></li>
+    <li><a href="../next/engine.html#debugging" class="header">Debugging</a></li>
+    <li><a href="../next/engine.html#http-traffic-capture" class="header">HTTP traffic capture</a></li>
+    <li><a href="../next/engine.html#openapi-import" class="header">openapi import</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2022</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
