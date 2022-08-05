@@ -439,7 +439,6 @@ class OpenApiGenerator(
         val name = field.getName
         val typ  = field.getTypeSignatureOrTypeDescriptor
 
-        //println(name, typ, handleType(name, "akka.http.scaladsl.model.HttpProtocol", typ))
         typ match {
           case c: BaseTypeSignature                                                                              =>
             val valueName      = c.getTypeStr
@@ -655,8 +654,6 @@ class OpenApiGenerator(
       foundDescriptions.put(finalPath, value)
       value
     }
-
-    // println(verb, path, isCrud, controllerMethod, matchSpecialCases(verb, controllerMethod))
 
     var resStatus = "200"
     if (isCrud && controllerMethod == "createAction") {
@@ -1089,45 +1086,6 @@ class OpenApiGenerator(
     logger.debug(s"total found ${found.get() + resFound.get() + inFound
       .get()}, not found ${notFound.get() + resNotFound.get() + inNotFound.get()}")
 
-    /*val returnEntities = paths.as[JsObject].value.flatMap {
-      case (_, endpoints) =>
-        Seq("get", "post", "delete", "put", "patch", "head")
-          .flatMap(verb => {
-            endpoints.as[JsObject] \ verb match {
-              case JsDefined(value: JsObject) =>
-                Seq("200", "201", "400", "404", "500")
-                  .flatMap(status => {
-                    value \ "responses" \ status \ "content" match {
-                      case JsDefined(value: JsObject) =>
-                        Seq("application/json", "application/x-ndjson")
-                          .flatMap(contentType => {
-                            val ref: Option[String] =  (value \ contentType \ "schema") match {
-                              case JsDefined(value: JsObject) =>
-                                value \ "$ref" match {
-                                  case JsDefined(JsString(r)) => Some(r)
-                                  case _: JsUndefined => None
-                                    value \ "item" \ "$ref" match {
-                                      case JsDefined(JsString(r)) => Some(r)
-                                      case _: JsUndefined => None
-                                    }
-                                }
-                              case _: JsUndefined => None
-                            }
-                            ref match {
-                              case Some(value) => Some(value.replace("#/components/schemas/", ""))
-                              case None => None
-                            }
-                          })
-                      case _: JsUndefined => None
-                    }
-                  })
-              case _: JsUndefined => None
-            }
-          })
-    }
-      .toSeq
-      .distinct*/
-
     val returnEntities = discoverEntitiesFromPaths(paths)
 
     val filteredEntities = result.filter(p => returnEntities.contains(p._1))
@@ -1136,8 +1094,6 @@ class OpenApiGenerator(
     filteredEntities.foreach(ent => {
       discoverEntities(result, ent, openApiEntities)
     })
-
-    println(returnEntities)
 
     // build spec with only used entities
     val spec = getSpec(tags, paths, openApiEntities)
