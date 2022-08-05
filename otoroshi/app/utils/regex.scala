@@ -9,6 +9,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class Regex(originalPattern: String, compiledPattern: Pattern) {
   def matches(value: String): Boolean = compiledPattern.matcher(value).matches()
+  def split(value: String): Seq[String] = compiledPattern.split(value).toSeq
 }
 
 object RegexPool {
