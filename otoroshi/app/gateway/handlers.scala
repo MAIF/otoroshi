@@ -464,28 +464,28 @@ class GatewayRequestHandler(
           .replaceFirst("/assets", "")
           .replaceFirst("/__otoroshi_assets", "")
           .applyOnIf(wholePath.contains("?"))(_.split("\\?").head)
-        val ext              = path.split("\\.").toSeq.lastOption.getOrElse("txt").toLowerCase
-        val mimeType: String = devMimetypes.getOrElse(ext, "text/plain")
-        val fileSource = {
-          val file = new File("./public" + path)
-          if (file.exists()) {
-            FileIO.fromPath(file.toPath).some
-          } else {
-            None
-          }
-        }
-        fileSource.map { source =>
-          source
-            .runFold(ByteString.empty)(_ ++ _)
-            .map { contentRaw =>
-              devCache.put(wholePath, (mimeType, contentRaw))
-              Results.Ok(contentRaw).as(mimeType)
+        if (path.startsWith("/javascripts/bundle/")) {
+          val host = req.theHost.replace(":9999", ":3040")
+          Results.Redirect(s"${req.theProtocol}://$host/assets${path}").future
+        } else {
+          val ext              = path.split("\\.").toSeq.lastOption.getOrElse("txt").toLowerCase
+          val mimeType: String = devMimetypes.getOrElse(ext, "text/plain")
+          val fileSource = {
+            val file = new File("./public" + path)
+            if (file.exists()) {
+              FileIO.fromPath(file.toPath).some
+            } else {
+              None
             }
-        } getOrElse {
-          if (path.startsWith("/javascripts/bundle/")) {
-            val host = req.theHost.replace(":9999", ":3040")
-            Results.Redirect(s"http://$host/assets${path}").future
-          } else {
+          }
+          fileSource.map { source =>
+            source
+              .runFold(ByteString.empty)(_ ++ _)
+              .map { contentRaw =>
+                devCache.put(wholePath, (mimeType, contentRaw))
+                Results.Ok(contentRaw).as(mimeType)
+              }
+          } getOrElse {
             Results.NotFound(s"file '${wholePath}' not found !").future
           }
         }
