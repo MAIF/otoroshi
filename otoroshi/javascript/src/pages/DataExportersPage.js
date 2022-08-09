@@ -280,6 +280,14 @@ export class DataExportersPage extends Component {
   render() {
     return (
       <div>
+        {/* <button
+          onClick={() => {
+
+          }}
+          className="btn btn-primary"
+          style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+          <i className="fas fa-hat-wizard" /> Create with wizard
+        </button> */}
         <Table
           parentProps={this.props}
           selfUrl="exporters"
@@ -310,6 +318,20 @@ export class DataExportersPage extends Component {
       </div>
     );
   }
+}
+
+const ExporterTryIt = ({ exporter }) => {
+
+  return <div>
+    <div class="col-sm-12" role="button">
+      <Collapse initCollapsed={false} label="Try it">
+        <button type="button" onClick={() => {
+          BackOfficeServices.dataExportertryIt(exporter)
+            .then(res => console.log(res))
+        }}>Test connection</button>
+      </Collapse>
+    </div>
+  </div>
 }
 
 export class NewExporterForm extends Component {
@@ -436,6 +458,7 @@ export class NewExporterForm extends Component {
               />
             </Collapse>
           )}
+          <ExporterTryIt exporter={this.props.value} />
         </form>
       </>
     );
@@ -759,6 +782,9 @@ const possibleExporterConfigFormValues = {
   kafka: {
     flow: [
       'servers',
+      'securityProtocol',
+      'saslConfig.username',
+      'saslConfig.password',
       'keyPass',
       'keystore',
       'truststore',
@@ -779,9 +805,21 @@ const possibleExporterConfigFormValues = {
           help: 'The list of servers to contact to connect the Kafka client with the Kafka cluster',
         },
       },
+      securityProtocol: {
+        type: 'select',
+        props: {
+          label: 'Security protocol',
+          possibleValues: [
+            { value: 'PLAINTEXT', label: 'PLAINTEXT (Un-authenticated, non-encrypted channel)' },
+            { value: 'SASL_PLAINTEXT', label: 'SASL_PLAINTEXT (SASL authenticated, non-encrypted channel)' },
+            { value: 'SASL_SSL', label: 'SASL_SSL (SASL authenticated, SSL channel)' },
+            { value: 'SSL', label: 'SSL channel' },
+          ]
+        },
+      },
       keyPass: {
         type: 'string',
-        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls),
+        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls && v.securityProtocol.includes("SSL")),
         props: {
           label: 'Kafka keypass',
           placeholder: 'secret',
@@ -792,7 +830,7 @@ const possibleExporterConfigFormValues = {
       },
       keystore: {
         type: 'string',
-        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls),
+        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls && v.securityProtocol.includes("SSL")),
         props: {
           label: 'Kafka keystore path',
           placeholder: '/home/bas/client.keystore.jks',
@@ -802,12 +840,28 @@ const possibleExporterConfigFormValues = {
       },
       truststore: {
         type: 'string',
-        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls),
+        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls && v.securityProtocol.includes("SSL")),
         props: {
           label: 'Kafka truststore path',
           placeholder: '/home/bas/client.truststore.jks',
           help:
             'The truststore path on the server if you use a keystore/truststore to connect to Kafka cluster',
+        },
+      },
+      'saslConfig.username': {
+        type: 'string',
+        display: (v) => tryOrTrue(() => v.securityProtocol.includes("SASL")),
+        props: {
+          label: 'Sasl username',
+          help: 'Kafka client user',
+        },
+      },
+      'saslConfig.password': {
+        type: 'string',
+        display: (v) => tryOrTrue(() => v.securityProtocol.includes("SASL")),
+        props: {
+          label: 'Sasl password',
+          help: 'Kafka client password',
         },
       },
       hostValidation: {
@@ -820,6 +874,7 @@ const possibleExporterConfigFormValues = {
       },
       'mtlsConfig.mtls': {
         type: 'bool',
+        display: v => tryOrTrue(() => v.securityProtocol.includes("SSL")),
         props: {
           label: 'Custom TLS Settings',
           help: 'Custom TLS Settings',
