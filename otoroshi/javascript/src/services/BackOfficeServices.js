@@ -1815,7 +1815,6 @@ export function dataExportertryIt(content) {
     },
     body: JSON.stringify(content),
   })
-    .then(r => r.json())
 }
 
 export function routeEntries(routeId) {

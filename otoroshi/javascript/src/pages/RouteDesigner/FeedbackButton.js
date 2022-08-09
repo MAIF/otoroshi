@@ -50,6 +50,7 @@ export function FeedbackButton({
 
   return (
     <button
+      type="button"
       disabled={disabled}
       className={`btn btn-sm ${color} ${className || ''}`}
       style={{ ...style }}

@@ -1,6 +1,4 @@
-import React, { Component } from 'react';
-import faker from 'faker';
-
+import React, { Component, useState } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import {
   Table,
@@ -16,6 +14,7 @@ import {
 import { Collapse } from '../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 import { CheckElasticsearchConnection } from '../components/elasticsearch';
+import { FeedbackButton } from './RouteDesigner/FeedbackButton'
 
 function tryOrTrue(f) {
   try {
@@ -321,17 +320,58 @@ export class DataExportersPage extends Component {
 }
 
 const ExporterTryIt = ({ exporter }) => {
+  const [status, setStatus] = useState("Not tested")
+  const [timeout, setConnectionTimeout] = useState(15)
 
   return <div>
     <div class="col-sm-12" role="button">
       <Collapse initCollapsed={false} label="Try it">
-        <button type="button" onClick={() => {
-          BackOfficeServices.dataExportertryIt(exporter)
-            .then(res => console.log(res))
-        }}>Test connection</button>
-      </Collapse>
-    </div>
-  </div>
+        <div className="row mb-3">
+          <label className="col-xs-12 col-sm-2 col-form-label">
+            Status
+          </label>
+          <div className="col-sm-10 " style={{
+            color: status === 'Successful' ? '#5cb85c' : '#D5443F',
+            display: 'flex',
+            alignItems: 'center',
+            width: 'fit-content'
+          }}>
+            {status !== 'Successful' ?
+              <i className='fas fa-times-circle' /> :
+              <i className='fas fa-check' />}
+            <span className='ms-1'>{status}</span>
+          </div>
+        </div>
+        <NumberInput
+          label="Try it connection timeout"
+          step="1"
+          min={0}
+          max={120}
+          value={timeout}
+          onChange={setConnectionTimeout}
+        />
+        <div className='row mb-3'>
+          <label className="col-xs-12 col-sm-2 col-form-label"></label>
+          <div className="col-sm-10 d-flex">
+            <FeedbackButton
+              text="Test connection"
+              icon={() => <i className='fas fa-hammer' />}
+              onPress={() => {
+                setStatus("Processing ...")
+                return BackOfficeServices.dataExportertryIt({ ...exporter, timeout })
+                  .then(res => {
+                    if (res.status === 200)
+                      setStatus("Successful")
+                    else
+                      res.json()
+                        .then(err => setStatus(err.error))
+                  })
+              }} />
+          </div>
+        </div>
+      </Collapse >
+    </div >
+  </div >
 }
 
 export class NewExporterForm extends Component {
@@ -785,6 +825,7 @@ const possibleExporterConfigFormValues = {
       'securityProtocol',
       'saslConfig.username',
       'saslConfig.password',
+      'saslConfig.mechanism',
       'keyPass',
       'keystore',
       'truststore',
@@ -852,7 +893,7 @@ const possibleExporterConfigFormValues = {
         type: 'string',
         display: (v) => tryOrTrue(() => v.securityProtocol.includes("SASL")),
         props: {
-          label: 'Sasl username',
+          label: 'SASL username',
           help: 'Kafka client user',
         },
       },
@@ -860,9 +901,23 @@ const possibleExporterConfigFormValues = {
         type: 'string',
         display: (v) => tryOrTrue(() => v.securityProtocol.includes("SASL")),
         props: {
-          label: 'Sasl password',
+          label: 'SASL password',
           help: 'Kafka client password',
         },
+      },
+      'saslConfig.mechanism': {
+        type: 'select',
+        display: v => tryOrTrue(() => v.securityProtocol === 'SASL_PLAINTEXT'),
+        props: {
+          label: 'SASL Mechanism',
+          possibleValues: [
+            { value: 'PLAIN', label: 'PLAIN' },
+            //{ value: 'GSSAPI', label: 'GSSAPI (Kerberos)' },
+            { value: 'SCRAM-SHA-256', label: 'SCRAM-SHA-256' },
+            { value: 'SCRAM-SHA-512', label: 'SCRAM-SHA-512' },
+            // { value: 'OAUTHBEARER', label: 'OAUTHBEARER' },
+          ]
+        }
       },
       hostValidation: {
         type: 'bool',

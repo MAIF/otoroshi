@@ -40,7 +40,7 @@ case class KafkaConfig(
   def toJson: JsValue = KafkaConfig.format.writes(this)
 }
 
-case class SaslConfig(username: String, password: String)
+case class SaslConfig(username: String, password: String, mechanism: String = "PLAIN")
 
 object SaslConfig {
   implicit val format = new Format[SaslConfig] { // Json.format[KafkaConfig]
@@ -48,14 +48,16 @@ object SaslConfig {
     override def writes(o: SaslConfig): JsValue =
       Json.obj(
         "username"        -> o.username,
-        "password" -> o.password
+        "password" -> o.password,
+        "mechanism" -> o.mechanism,
       )
 
     override def reads(json: JsValue): JsResult[SaslConfig] =
       Try {
         SaslConfig(
           username = (json \ "username").asOpt[String].getOrElse("foo"),
-          password = (json \ "password").asOpt[String].getOrElse("bar")
+          password = (json \ "password").asOpt[String].getOrElse("bar"),
+          mechanism = (json \ "mechanism").asOpt[String].getOrElse("PLAIN")
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -115,20 +117,25 @@ object KafkaSettings {
       .runWith(Sink.head)(env.otoroshiMaterializer)
   }
 
+  private def getSaslJaasClass(mechanism: String) = {
+    mechanism match {
+      case "SCRAM-SHA-512" | "SCRAM-SHA-256" => "org.apache.kafka.common.security.scram.ScramLoginModule"
+      case _ => "org.apache.kafka.common.security.plain.PlainLoginModule"
+    }
+  }
+
   def consumerTesterSettings(_env: otoroshi.env.Env, config: KafkaConfig): ConsumerSettings[Array[Byte], String] = {
     val username = config.saslConfig.map(_.username).getOrElse("foo")
     val password = config.saslConfig.map(_.password).getOrElse("bar")
-
-    println(config.saslConfig)
-    println(username, password)
+    val mechanism = config.saslConfig.map(_.mechanism).getOrElse("PLAIN")
 
     ConsumerSettings
       .create(_env.analyticsActorSystem, new ByteArrayDeserializer(), new StringDeserializer())
       .withBootstrapServers(config.servers.mkString(","))
-      .withProperty("security.protocol", "SASL_PLAINTEXT")
-      .withProperty(SaslConfigs.SASL_MECHANISM, "PLAIN")
+      .withProperty("security.protocol", config.securityProtocol)
+      .withProperty(SaslConfigs.SASL_MECHANISM, mechanism)
       .withProperty(SaslConfigs.SASL_JAAS_CONFIG,
-        s"""org.apache.kafka.common.security.scram.ScramLoginModule required username="$username" password="$password";""")
+        s"""${getSaslJaasClass(mechanism)} required username="$username" password="$password";""")
   }
 
   def producerSettings(_env: otoroshi.env.Env, config: KafkaConfig): ProducerSettings[Array[Byte], String] = {
