@@ -63,9 +63,9 @@ const RouteChooser = ({ state, onChange }) => (
         },
       ].map(({ kind, title, text }) => (
         <button
-          className={`btn ${
-            state.route.kind === kind ? 'btn-save' : 'btn-dark'
-          } py-3 wizard-route-chooser`}
+          type="button"
+          className={`btn ${state.route.kind === kind ? 'btn-save' : 'btn-dark'
+            } py-3 wizard-route-chooser`}
           onClick={() => onChange(kind)}
           key={kind}>
           <h3 className="wizard-h3--small">{title}</h3>
@@ -183,10 +183,10 @@ const ProcessStep = ({ state, history }) => {
     ]).then(([plugins, oldPlugins, template]) => {
       const url = ['mock', 'graphql'].includes(state.route.kind)
         ? {
-            pahtname: '/',
-            hostname: '',
-            protocol: 'https://',
-          }
+          pahtname: '/',
+          hostname: '',
+          protocol: 'https://',
+        }
         : new URL(state.route.url);
       const secured = url.protocol.includes('https');
 
@@ -296,8 +296,8 @@ const ProcessStep = ({ state, history }) => {
             {state.route.kind === 'mock'
               ? 'Start creating mocks'
               : state.route.kind === 'graphql'
-              ? 'Start creating schema'
-              : 'Try it'}
+                ? 'Start creating schema'
+                : 'Try it'}
           </button>
         </div>
       </Loader>

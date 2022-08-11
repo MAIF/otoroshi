@@ -16,6 +16,7 @@ import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, Result}
 
+import java.time.temporal.{ChronoUnit, TemporalUnit}
 import java.util.UUID
 import scala.concurrent.Future
 import scala.concurrent.duration.{DurationConversions, DurationDouble, DurationInt, SECONDS}
@@ -43,8 +44,9 @@ class TryItController(
           KafkaConfig.format.reads(config) match {
             case JsSuccess(kafka, _) =>
               Try {
-                val timeout = akka.pattern.after(
-                  new DurationInt((jsonBody \ "timeout").asOpt[Int].getOrElse(15)).seconds,
+                val seconds = (jsonBody \ "timeout").asOpt[Int].getOrElse(15)
+
+                val race = akka.pattern.after(new DurationInt(seconds).seconds,
                   using = env.otoroshiActorSystem.scheduler)(Future.successful(BadRequest(Json.obj("error" -> "Failed to connect to kafka"))))
                 Future.firstCompletedOf(Seq(
                   Future {
@@ -52,16 +54,21 @@ class TryItController(
                       val consumerSettings = KafkaSettings.consumerTesterSettings(env, kafka)
                       val consumer = ConsumerSettings
                         .createKafkaConsumer(consumerSettings)
-                      consumer.listTopics()
+                      consumer.listTopics(java.time.Duration.of(seconds, ChronoUnit.SECONDS))
+                      consumer.close()
                       Ok(Json.obj("status" -> "success"))
                     } recover {
-                      case e: Throwable => BadRequest(Json.obj("error" -> e.getMessage))
+                      case e: Throwable =>
+                        throw e
+                        BadRequest(Json.obj("error" -> e.getMessage))
                     } get
                   },
-                  timeout
+                  race
                 ))
               } recover {
-                case e: Throwable => BadRequest(Json.obj("error" -> e.getMessage)).future
+                case e: Throwable =>
+                  throw e
+                  BadRequest(Json.obj("error" -> e.getMessage)).future
               } get
             case JsError(errors) => BadRequest(Json.obj("error" -> errors.toString, "message" -> "Bad config")).future
           }

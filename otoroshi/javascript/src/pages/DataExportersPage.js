@@ -331,7 +331,7 @@ const ExporterTryIt = ({ exporter }) => {
             Status
           </label>
           <div className="col-sm-10 " style={{
-            color: status === 'Successful' ? '#5cb85c' : '#D5443F',
+            color: status === 'Successful' ? '#5cb85c' : status === 'Not tested' ? '#f39c12' : '#D5443F',
             display: 'flex',
             alignItems: 'center',
             width: 'fit-content'
@@ -503,6 +503,67 @@ export class NewExporterForm extends Component {
       </>
     );
   }
+}
+
+const CustomMtlsChooser = ({ onChange, value, rawValue }) => {
+  console.log(value)
+  if (!["SASL_SSL", "SSL"].includes(rawValue.securityProtocol))
+    return null
+
+  return <div className="row mb-3">
+    <label className="col-xs-12 col-sm-2 col-form-label">
+      Custom TLS Settings
+    </label>
+    <div className="col-sm-10" style={{ display: 'flex' }}>
+      <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+        <ChooserButton isActive={value === true}
+          onChange={onChange} value={true} label='Use Otoroshi certificates' style={{ minHeight: 'initial' }} />
+        <ChooserButton isActive={typeof value === "object" && Object.keys(value).length === 0}
+          onChange={onChange} value={false} label='Use your own keystore/truststore' style={{ minHeight: 'initial' }} />
+      </div>
+    </div>
+  </div>
+}
+
+const SecurityProtocol = ({ onChange, ...props }) => {
+  const protocols = [
+    { value: 'PLAINTEXT', label: 'PLAINTEXT', description: '(Un-authenticated, non-encrypted channel)' },
+    { value: 'SASL_PLAINTEXT', label: 'SASL_PLAINTEXT', description: '(SASL authenticated, non-encrypted channel)' },
+    { value: 'SASL_SSL', label: 'SASL_SSL', description: '(SASL authenticated, SSL channel)' },
+    { value: 'SSL', label: 'SSL channel' }
+  ]
+  return <div className="row mb-3">
+    <label className="col-xs-12 col-sm-2 col-form-label">
+      Security Protocol
+    </label>
+    <div className="col-sm-10" style={{ display: 'flex' }}>
+      <div style={{ display: 'flex', gap: '12px' }}>
+        {protocols.map(({ value, label, description }) => {
+          return <ChooserButton key={value} isActive={value === props.value} value={value} onChange={onChange} label={label} description={description} />
+        })}
+      </div>
+    </div>
+  </div>
+}
+
+const ChooserButton = ({ isActive, value, onChange, label, description, style = {} }) => {
+  return <button
+    type="button"
+    className={`btn ${isActive ? 'btn-success' : 'btn-dark'}`}
+    onClick={() => onChange(value)}
+    style={{
+      flexDirection: 'column',
+      flex: 1,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      maxHeight: '80px !important',
+      minHeight: '80px',
+      ...style
+    }}>
+    <span>{label}</span>
+    {description && <span style={{ fontSize: '.75em' }}>{description}</span>}
+  </button>
 }
 
 const possibleExporterConfigFormValues = {
@@ -822,20 +883,20 @@ const possibleExporterConfigFormValues = {
   kafka: {
     flow: [
       'servers',
+      'topic',
       'securityProtocol',
       'saslConfig.username',
       'saslConfig.password',
       'saslConfig.mechanism',
+      'mtlsConfig.mtls',
       'keyPass',
       'keystore',
       'truststore',
-      'mtlsConfig.mtls',
       'mtlsConfig.trustAll',
       'mtlsConfig.loose',
       'mtlsConfig.certs',
       'mtlsConfig.trustedCerts',
-      'hostValidation',
-      'topic',
+      'hostValidation'
     ],
     schema: {
       servers: {
@@ -846,18 +907,7 @@ const possibleExporterConfigFormValues = {
           help: 'The list of servers to contact to connect the Kafka client with the Kafka cluster',
         },
       },
-      securityProtocol: {
-        type: 'select',
-        props: {
-          label: 'Security protocol',
-          possibleValues: [
-            { value: 'PLAINTEXT', label: 'PLAINTEXT (Un-authenticated, non-encrypted channel)' },
-            { value: 'SASL_PLAINTEXT', label: 'SASL_PLAINTEXT (SASL authenticated, non-encrypted channel)' },
-            { value: 'SASL_SSL', label: 'SASL_SSL (SASL authenticated, SSL channel)' },
-            { value: 'SSL', label: 'SSL channel' },
-          ]
-        },
-      },
+      securityProtocol: <SecurityProtocol />,
       keyPass: {
         type: 'string',
         display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls && v.securityProtocol.includes("SSL")),
@@ -903,38 +953,32 @@ const possibleExporterConfigFormValues = {
         props: {
           label: 'SASL password',
           help: 'Kafka client password',
+          type: 'password'
         },
       },
       'saslConfig.mechanism': {
         type: 'select',
-        display: v => tryOrTrue(() => v.securityProtocol === 'SASL_PLAINTEXT'),
+        display: v => tryOrTrue(() => ['SASL_PLAINTEXT', 'SASL_SSL'].includes(v.securityProtocol)),
         props: {
           label: 'SASL Mechanism',
           possibleValues: [
             { value: 'PLAIN', label: 'PLAIN' },
-            //{ value: 'GSSAPI', label: 'GSSAPI (Kerberos)' },
+            //{value: 'GSSAPI', label: 'GSSAPI (Kerberos)' },
             { value: 'SCRAM-SHA-256', label: 'SCRAM-SHA-256' },
             { value: 'SCRAM-SHA-512', label: 'SCRAM-SHA-512' },
-            // { value: 'OAUTHBEARER', label: 'OAUTHBEARER' },
+            // {value: 'OAUTHBEARER', label: 'OAUTHBEARER' },
           ]
         }
       },
       hostValidation: {
         type: 'bool',
-        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls || ['SSL', 'SASL_SSL'].includes(v.securityProtocol)),
         props: {
           label: 'Hostname validation',
           help: 'Enabled TLS hostname validation',
         },
       },
-      'mtlsConfig.mtls': {
-        type: 'bool',
-        display: v => tryOrTrue(() => v.securityProtocol.includes("SSL")),
-        props: {
-          label: 'Custom TLS Settings',
-          help: 'Custom TLS Settings',
-        },
-      },
+      'mtlsConfig.mtls': <CustomMtlsChooser />,
       'mtlsConfig.trustAll': {
         type: 'bool',
         display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
@@ -1325,9 +1369,9 @@ const possibleExporterConfigFormValues = {
               <span>
                 <span className="badge bg-success" style={{ minWidth: 63 }}>
                   {a.certType}
-                </span>{' '}
+                </span > {' '}
                 {a.name}
-              </span>
+              </span >
             ),
           }),
         },
