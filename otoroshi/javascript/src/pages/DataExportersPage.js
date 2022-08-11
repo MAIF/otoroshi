@@ -554,6 +554,7 @@ const ChooserButton = ({ isActive, value, onChange, label, description, style = 
     style={{
       flexDirection: 'column',
       flex: 1,
+      maxWidth: '200px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',

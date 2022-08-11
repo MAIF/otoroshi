@@ -20,6 +20,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * @ref:[The resources loader](./resources-loader.md)
 * @ref:[Log levels customization](./custom-log-levels.md)
 * @ref:[Initial state customization](./custom-initial-state.md)
+* @ref:[Communicate with Kafka](./communicate-with-kafka.md)
 
 @@@ index
 
@@ -41,5 +42,6 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [The resources loader](./resources-loader.md)
 * [Log levels customization](./custom-log-levels.md)
 * [Initial state customization](./custom-initial-state.md)
+* [Communicate with Kafka](./communicate-with-kafka.md)
 
 @@@
