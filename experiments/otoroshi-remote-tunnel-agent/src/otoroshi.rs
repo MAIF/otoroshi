@@ -46,8 +46,10 @@ impl Otoroshi {
           let client = Client::new();
           client.request(req).await.unwrap()
         };
-        if resp.status().as_u16() == 200 {
-            let body_bytes = hyper::body::to_bytes(resp).await.unwrap();
+        let status = resp.status().as_u16();
+        let body_bytes = hyper::body::to_bytes(resp).await.unwrap();
+        // println!("status: {}, body: {:?}", status, body_bytes);
+        if status == 200 {
             match serde_json::from_slice::<OtoroshInfos>(&body_bytes) {
                 Ok(infos) => Some(infos),
                 Err(e) => {

@@ -5,6 +5,10 @@
 Sometimes, exposing apis that lives in our private network can be a nightmare, especially from a networking point of view. 
 With otoroshi tunnels, this is now trivial, as long as your internal otoroshi (that lives inside your private network) is able to contact an external otoroshi (exposed on the internet).
 
+@@@ warning { .margin-top-20 }
+You have to enable cluster mode (Leader or Worker) to make this feature work. As this feature is experimental, we only support simple http request right now. Server Sent Event and Websocket request are not supported at the moment.
+@@@
+
 ## How Otoroshi tunnels works
 
 the main idea behind otoroshi tunnels is that the connection between your private network et the public network is initiated by the private network side. You don't have to expose a part of your private network, create a DMZ or whatever, you just have to authorize your private network otoroshi instance to contact your public network otoroshi instance.
