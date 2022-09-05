@@ -18500,7 +18500,7 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.events.KafkaConfig"
             } ],
-            "description" : "???"
+            "description" : "Kafka settings"
           },
           "maxLogsSize" : {
             "format" : "int32",
