@@ -85,6 +85,7 @@ PUT    /bo/api/backoffice/flags                               otoroshi.controlle
 GET    /bo/api/backoffice/flags                               otoroshi.controllers.BackOfficeController.getFlags()
 
 POST   /bo/api/tryit                                          otoroshi.next.controllers.TryItController.call(entity: Option[String])
+POST   /bo/api/data-exporter/tryit                            otoroshi.next.controllers.TryItController.dataExporterCall()
 
 GET     /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()
 POST    /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()

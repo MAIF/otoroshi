@@ -1,9 +1,12 @@
 package otoroshi.next.controllers
 
+import akka.http.scaladsl.util.FastFuture
+import akka.kafka.ConsumerSettings
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.actions.BackOfficeActionAuth
 import otoroshi.env.Env
+import otoroshi.events.{KafkaConfig, KafkaEventProducer, KafkaSettings}
 import otoroshi.models.EntityLocationSupport
 import otoroshi.next.models.{NgRoute, NgService, NgTarget, NgTlsConfig}
 import otoroshi.next.plugins.ForceHttpsTraffic
@@ -11,10 +14,13 @@ import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
+import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, Result}
 
+import java.time.temporal.{ChronoUnit, TemporalUnit}
 import java.util.UUID
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.Future
+import scala.concurrent.duration.{DurationConversions, DurationDouble, DurationInt, SECONDS}
+import scala.util.{Failure, Success, Try}
 
 class TryItController(
     BackOfficeActionAuth: BackOfficeActionAuth,
@@ -28,6 +34,48 @@ class TryItController(
 
   val sourceBodyParser = BodyParser("TryItController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
+  }
+
+  def dataExporterCall() = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+      val jsonBody = bodyRaw.utf8String.parseJson
+      jsonBody \ "config" match {
+        case JsDefined(config) =>
+          KafkaConfig.format.reads(config) match {
+            case JsSuccess(kafka, _) =>
+              Try {
+                val seconds = (jsonBody \ "timeout").asOpt[Int].getOrElse(15)
+
+                val race = akka.pattern.after(new DurationInt(seconds).seconds,
+                  using = env.otoroshiActorSystem.scheduler)(Future.successful(BadRequest(Json.obj("error" -> "Failed to connect to kafka"))))
+                Future.firstCompletedOf(Seq(
+                  Future {
+                    Try {
+                      val consumerSettings = KafkaSettings.consumerTesterSettings(env, kafka)
+                      val consumer = ConsumerSettings
+                        .createKafkaConsumer(consumerSettings)
+                      consumer.listTopics(java.time.Duration.of(seconds, ChronoUnit.SECONDS))
+                      consumer.close()
+                      Ok(Json.obj("status" -> "success"))
+                    } recover {
+                      case e: Throwable =>
+                        throw e
+                        BadRequest(Json.obj("error" -> e.getMessage))
+                    } get
+                  },
+                  race
+                ))
+              } recover {
+                case e: Throwable =>
+                  throw e
+                  BadRequest(Json.obj("error" -> e.getMessage)).future
+              } get
+            case JsError(errors) => BadRequest(Json.obj("error" -> errors.toString, "message" -> "Bad config")).future
+          }
+        case _: JsUndefined =>
+          BadRequest(Json.obj("error" -> "missing config")).future
+      }
+    }
   }
 
   def call(entity: Option[String] = None) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>

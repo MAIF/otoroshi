@@ -182,8 +182,8 @@ export function allServices(env, group) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?filter.groups=${group}`
-    : `/bo/api/proxy/api/services`;
+      ? `/bo/api/proxy/api/services?filter.groups=${group}`
+      : `/bo/api/proxy/api/services`;
   return fetch(url, {
     method: 'GET',
     credentials: 'include',
@@ -1803,6 +1803,18 @@ export function tryIt(content, entity) {
     },
     body: JSON.stringify(content),
   });
+}
+
+export function dataExportertryIt(content) {
+  return fetch('/bo/api/data-exporter/tryit', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(content),
+  })
 }
 
 export function routeEntries(routeId) {

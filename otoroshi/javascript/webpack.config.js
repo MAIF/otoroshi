@@ -24,6 +24,10 @@ module.exports = (env, argv) => {
     devServer: {
       hot: true,
       allowedHosts: "all",
+      headers: {
+        "Access-Control-Allow-Origin": "http://otoroshi.oto.tools:9999",
+        "Access-Control-Allow-Credentials": true
+      },
       https: process.env.DEV_SERVER_HTTPS ? true : false,
       port: process.env.DEV_SERVER_PORT || 3040,
     },
