@@ -2202,6 +2202,10 @@ otoroshi {
     enabled = ${?OTOROSHI_TUNNELS_ENABLED}
     worker-ws = true
     worker-ws = ${?OTOROSHI_TUNNELS_WORKER_WS}
+    worker-use-internal-ports = false
+    worker-use-internal-ports = ${?OTOROSHI_TUNNELS_WORKER_USE_INTERNAL_PORTS}
+    worker-use-loadbalancing = false
+    worker-use-loadbalancing = ${?OTOROSHI_TUNNELS_WORKER_USE_LOADBALANCING}
     default {
       enabled = false
       enabled = ${?OTOROSHI_TUNNELS_DEFAULT_ENABLED}
@@ -2220,6 +2224,14 @@ otoroshi {
 			export-routes = true # send routes information to remote otoroshi instance to facilitate remote route exposition
 			export-routes = ${?OTOROSHI_TUNNELS_DEFAULT_EXPORT_ROUTES} # send routes information to remote otoroshi instance to facilitate remote route exposition
 			export-routes-tag = ${?OTOROSHI_TUNNELS_DEFAULT_EXPORT_TAG} # only send routes information if the route has this tag
+      proxy {
+        enabled = false
+        host = none
+        port = none
+        principal = none
+        password = none
+        nonProxyHosts = []
+      }
     }
   }
 }
@@ -3151,6 +3163,8 @@ otoroshi {
   tunnels {
     enabled = ${?OTOROSHI_TUNNELS_ENABLED}
     worker-ws = ${?OTOROSHI_TUNNELS_WORKER_WS}
+    worker-use-internal-ports = ${?OTOROSHI_TUNNELS_WORKER_USE_INTERNAL_PORTS}
+    worker-use-loadbalancing = ${?OTOROSHI_TUNNELS_WORKER_USE_LOADBALANCING}
     default {
       enabled = ${?OTOROSHI_TUNNELS_DEFAULT_ENABLED}
       id = ${?OTOROSHI_TUNNELS_DEFAULT_ID}
@@ -3161,6 +3175,8 @@ otoroshi {
 			clientSecret = ${?OTOROSHI_TUNNELS_DEFAULT_CLIENT_SECRET}
 			export-routes = ${?OTOROSHI_TUNNELS_DEFAULT_EXPORT_ROUTES} # send routes information to remote otoroshi instance to facilitate remote route exposition
 			export-routes-tag = ${?OTOROSHI_TUNNELS_DEFAULT_EXPORT_TAG} # only send routes information if the route has this tag
+      proxy {
+      }
     }
   }
 }
