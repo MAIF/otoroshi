@@ -13,7 +13,7 @@ the datastores are replicated accrpss network zones in an active-active fashion.
 it can quickly become a nightmare when you want to access an application deployed in one network zone from another network zone. You'll have to publicly expose this application to be able to access it from the other zone. This pattern is fine, but sometimes it's not enough. With `relay routing`, you will be able to flag your routes as being deployed in one zone or another, and let otoroshi handle all the heavy lifting to route the traffic to  the right network zone for you.
 
 @@@ div { .centered-img }
-<img src="../imgs/relay.png" />
+<img src="../../imgs/relay.png" />
 @@@
 
 
@@ -56,7 +56,7 @@ otoroshi {
 also, to make your leaders exposed by zone, do not hesitate to add domain names to the `otoroshi-admin-api` service and setup your DNS to bind those domains to the right place
 
 @@@ div { .centered-img }
-<img src="../imgs/relay-api-hostnames.png" />
+<img src="../../imgs/relay-api-hostnames.png" />
 @@@
 
 ## Route setup for an application deployed in only one zone
@@ -86,7 +86,7 @@ let say we set `otoroshi-deployment-zones=zone-1, zone-2` on a route, if we call
 also, you will have to setup your targets to avoid trying to contact targets that are not actually in the current zone. To do that, you'll have to set the target predicate to `NetworkLocationMatch` and fill the possible locations according to the actual location of your target
 
 @@@ div { .centered-img }
-<img src="../imgs/relay-target-filter.png" />
+<img src="../../imgs/relay-target-filter.png" />
 @@@
 
 ## Demo
