@@ -374,6 +374,14 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                                 .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
                                 .map(_.toInt)
                                 .getOrElse(env.exposedHttpsPortInt),
+                              internalHttpPort = ctx.request.headers
+                                .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
+                                .map(_.toInt)
+                                .getOrElse(env.httpPort),
+                              internalHttpsPort = ctx.request.headers
+                                .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
+                                .map(_.toInt)
+                                .getOrElse(env.httpsPort),
                               lastSeen = DateTime.now(),
                               timeout = Duration(
                                 env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
@@ -484,6 +492,14 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                     .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
                     .map(_.toInt)
                     .getOrElse(env.exposedHttpsPortInt),
+                  internalHttpPort = ctx.request.headers
+                    .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
+                    .map(_.toInt)
+                    .getOrElse(env.httpPort),
+                  internalHttpsPort = ctx.request.headers
+                    .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
+                    .map(_.toInt)
+                    .getOrElse(env.httpsPort),
                   lastSeen = DateTime.now(),
                   timeout = Duration(
                     env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,

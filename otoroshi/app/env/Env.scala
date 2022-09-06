@@ -875,6 +875,8 @@ class Env(
       .getOrElse(9999)
   )
 
+  lazy val httpPort = port
+
   lazy val httpsPort = getHttpsPort.getOrElse(
     configuration
       .getOptionalWithFileSupport[Int]("play.server.https.port")

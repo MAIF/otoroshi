@@ -35,6 +35,9 @@ import scala.collection.immutable
 import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
+import otoroshi.cluster.ClusterConfig
+import play.api.libs.ws.DefaultWSProxyServer
+import akka.http.scaladsl.ClientTransport
 
 case class TunnelPluginConfig(tunnelId: String) extends NgPluginConfig {
   override def json: JsValue = Json.obj("tunnel_id" -> tunnelId)
@@ -137,6 +140,18 @@ class TunnelAgent(env: Env) {
               val ipAddress    = conf.getOptional[String]("ipAddress")
               val exportMeta   = conf.getOptional[Boolean]("export-routes").getOrElse(true)
               val exportTag    = conf.getOptional[String]("export-routes-tag")
+              val proxy = if (conf.getOptional[Boolean]("proxy.enabled").getOrElse(false)) {
+                Some(DefaultWSProxyServer(
+                  host = conf.getOptional[String]("proxy.host").get,
+                  port = conf.getOptional[Int]("proxy.port").get,
+                  protocol = Some("https"),
+                  principal = conf.getOptional[String]("proxy.principal"),
+                  password = conf.getOptional[String]("proxy.password"),
+                  nonProxyHosts = conf.getOptional[Seq[String]]("proxy.nonProxyHosts"),
+                ))
+              } else {
+                None
+              }
               val tls = {
                 val enabled =
                   conf
@@ -173,6 +188,7 @@ class TunnelAgent(env: Env) {
                 clientSecret,
                 ipAddress,
                 tls,
+                proxy,
                 exportMeta,
                 exportTag,
                 200,
@@ -194,6 +210,7 @@ class TunnelAgent(env: Env) {
       clientSecret: String,
       ipAddress: Option[String],
       tls: Option[MtlsConfig],
+      proxy: Option[DefaultWSProxyServer],
       exportMeta: Boolean,
       exportTag: Option[String],
       initialWaiting: Long,
@@ -377,6 +394,7 @@ class TunnelAgent(env: Env) {
                 clientSecret,
                 ipAddress,
                 tls,
+                proxy,
                 exportMeta,
                 exportTag,
                 initialWaiting,
@@ -401,6 +419,7 @@ class TunnelAgent(env: Env) {
                 clientSecret,
                 ipAddress,
                 tls,
+                proxy,
                 exportMeta,
                 exportTag,
                 initialWaiting,
@@ -410,9 +429,18 @@ class TunnelAgent(env: Env) {
             promise.trySuccess(())
         }),
       customizer = m => {
-        ipAddress.map { addr =>
-          m.withTransport(ManualResolveTransport.resolveTo(InetSocketAddress.createUnresolved(addr, port)))
-        } getOrElse m
+        (ipAddress, proxy) match {
+          case (_, Some(proxySettings)) => {
+            val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
+            val transport = (proxySettings.principal, proxySettings.password) match {
+              case (Some(principal), Some(password)) => ClientTransport.httpsProxy(proxyAddress, akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password))
+              case _                                 => ClientTransport.httpsProxy(proxyAddress)
+            }
+            m.withTransport(transport)
+          }
+          case (Some(addr), _) =>  m.withTransport(ManualResolveTransport.resolveTo(InetSocketAddress.createUnresolved(addr, port)))
+          case _ => m
+        }
       }
     )
     fu.andThen {
@@ -637,6 +665,9 @@ class LeaderConnection(
   private implicit val mat     = env.otoroshiMaterializer
   private implicit val factory = env.otoroshiActorSystem
 
+  private val useInternalPorts = env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-use-internal-ports").getOrElse(false)
+  private val useLoadbalancing = env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-use-loadbalancing").getOrElse(false)
+
   def location: String = member.location
 
   private val ref                                                                                                 = new AtomicLong(0L)
@@ -675,12 +706,21 @@ class LeaderConnection(
   }
 
   def connect(waiting: Long): LeaderConnection = {
+    if (useLoadbalancing) {
+      connectLoadBalanced(waiting)
+    } else {
+      connectDirect(waiting)
+    }
+  }
+
+  def connectDirect(waiting: Long): LeaderConnection = {
     val url       = env.clusterConfig.leader.urls.head
     val ipAddress = member.location
     val secured   = url.startsWith("https")
-    val port      = if (secured) member.httpsPort else member.httpPort
+    val port      = if (useInternalPorts) (if (secured) member.internalHttpsPort else member.internalHttpPort) else (if (secured) member.httpsPort else member.httpPort)
     val userpwd   = s"${env.clusterConfig.leader.clientId}:${env.clusterConfig.leader.clientSecret}".base64
-    val uri       = Uri(url + s"/api/tunnels/$tunnelId/relay").copy(scheme = if (secured) "wss" else "ws")
+    val uriRaw    = Uri(url + s"/api/tunnels/$tunnelId/relay").copy(scheme = if (secured) "wss" else "ws")
+    val uri       = uriRaw.copy(authority = uriRaw.authority.copy(port = port))
     env.Ws
       .ws(
         request = WebSocketRequest(
@@ -739,6 +779,87 @@ class LeaderConnection(
     this
   }
 
+  def connectLoadBalanced(waiting: Long): LeaderConnection = {
+    val url       = env.clusterConfig.leader.urls.head
+    val secured   = url.startsWith("https")
+    val port      = if (secured) member.httpsPort else member.httpPort
+    val userpwd   = s"${env.clusterConfig.leader.clientId}:${env.clusterConfig.leader.clientSecret}".base64
+    val uriRaw    = Uri(url + s"/api/tunnels/$tunnelId/relay?mid=${member.id}").copy(scheme = if (secured) "wss" else "ws")
+    val uri       = uriRaw.copy(authority = uriRaw.authority.copy(port = port))
+    logger.debug(s"trying to find node at: '${uri.toString()}' from node '${ClusterConfig.clusterNodeId}'")
+    logger.debug(s"from: '${ClusterConfig.clusterNodeId}' to '${member.id}'")
+    env.Ws
+      .ws(
+        request = WebSocketRequest(
+          uri = uri,
+          extraHeaders = List(
+            RawHeader("Host", env.clusterConfig.leader.host),
+            RawHeader("Authorization", s"Basic ${userpwd}"),
+            RawHeader(env.Headers.OtoroshiClientId, env.clusterConfig.leader.clientId),
+            RawHeader(env.Headers.OtoroshiClientSecret, env.clusterConfig.leader.clientSecret)
+          ),
+          subprotocols = immutable.Seq.empty[String]
+        ),
+        targetOpt = Target(
+          host = uri.authority.host.toString(),
+          scheme = uri.scheme,
+          mtlsConfig = env.clusterConfig.mtlsConfig
+        ).some,
+        clientFlow = Flow
+          .fromSinkAndSource(
+            Sink.foreach[akka.http.scaladsl.model.ws.Message] {
+              case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleResponse(data)
+              case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+                source.runFold(ByteString.empty)(_ ++ _).map(b => handleResponse(b))
+              case _                                                          =>
+            },
+            source
+          )
+          .alsoTo(Sink.onComplete {
+            case Success(e) =>
+              logger.info(
+                s"tunnel relay ws lb '${tunnelId}' disconnected, launching reconnection in ${waiting.milliseconds.toHumanReadable} ..."
+              )
+              close()
+              timeout(waiting.millis).andThen { case _ =>
+                new LeaderConnection(tunnelId, member, env, register, unregister).connect(waiting)
+              }
+            case Failure(e) =>
+              logger.error(
+                s"tunnel relay ws lb '${tunnelId}' disconnected, launching reconnection in ${(waiting * 2).milliseconds.toHumanReadable} ...",
+                e
+              )
+              close()
+              timeout(waiting.millis).andThen { case _ =>
+                new LeaderConnection(tunnelId, member, env, register, unregister).connect(waiting * 2)
+              }
+          }),
+        customizer = identity
+      )
+      ._1
+      .map { resp =>
+        resp.response.status.intValue() match {
+          case 200 => {
+            logger.debug("lb connection accepted 200")
+            ref.set(System.currentTimeMillis())
+            register(this)
+          }
+          case 101 => {
+            logger.debug("lb connection accepted 101")
+            ref.set(System.currentTimeMillis())
+            register(this)
+          }
+          case 417 => 
+            // retry to find the right node
+            logger.debug("lb retry ws connection to find the right leader")
+            connectLoadBalanced(waiting)
+          case v => 
+            logger.error(s"lb received unknown status: $v")
+        }
+      }
+    this
+  }
+
   private def handleResponse(data: ByteString): Unit = {
     val json    = Json.parse(data.toArray)
     val msgKind = json.select("type").asString
@@ -768,8 +889,9 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
 
   private val tunnelsEnabled = env.configuration.getOptional[Boolean]("otoroshi.tunnels.enabled").getOrElse(false)
 
-  private def validateRequest(request: RequestHeader): Option[ApiKey] =
+  private def validateRequest(request: RequestHeader): Option[ApiKey] = {
     env.backOfficeApiKey.some // TODO: actual validation
+  }
 
   def infos = ApiAction {
     Ok(
@@ -840,9 +962,16 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
       validateRequest(request) match {
         case None    => Left(Results.Unauthorized(Json.obj("error" -> "unauthorized"))).vfuture
         case Some(_) => {
-          Right(ActorFlow.actorRef { out =>
-            TunnelRelayActor.props(out, tunnelId, env)
-          }).vfuture
+          request.getQueryString("mid") match {
+            case Some(mid) if mid != ClusterConfig.clusterNodeId => {
+              Left(Results.ExpectationFailed(Json.obj("error" -> "bad node"))).vfuture
+            }
+            case _ => {
+              Right(ActorFlow.actorRef { out =>
+                TunnelRelayActor.props(out, tunnelId, env)
+              }).vfuture
+            }
+          }
         }
       }
     } else {

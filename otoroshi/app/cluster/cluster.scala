@@ -464,6 +464,8 @@ case class MemberView(
     location: String,
     httpPort: Int,
     httpsPort: Int,
+    internalHttpPort: Int,
+    internalHttpsPort: Int,
     lastSeen: DateTime,
     timeout: Duration,
     memberType: ClusterMode,
@@ -479,6 +481,8 @@ case class MemberView(
       "location"  -> location,
       "httpPort"  -> httpPort,
       "httpsPort" -> httpsPort,
+      "internalHttpPort" -> internalHttpPort,
+      "internalHttpsPort" -> internalHttpsPort,
       "lastSeen"  -> lastSeen.getMillis,
       "timeout"   -> timeout.toMillis,
       "type"      -> memberType.name,
@@ -527,6 +531,8 @@ object MemberView {
           tunnels = (value \ "tunnels").asOpt[Seq[String]].map(_.distinct).getOrElse(Seq.empty),
           httpsPort = (value \ "httpsPort").asOpt[Int].getOrElse(env.exposedHttpsPortInt),
           httpPort = (value \ "httpPort").asOpt[Int].getOrElse(env.exposedHttpPortInt),
+          internalHttpsPort = (value \ "internalHttpsPort").asOpt[Int].getOrElse(env.httpsPort),
+          internalHttpPort = (value \ "internalHttpPort").asOpt[Int].getOrElse(env.httpPort),
           relay = RelayRouting(
             enabled = true,
             leaderOnly = false,
@@ -819,6 +825,8 @@ object ClusterAgent {
   val OtoroshiWorkerLocationHeader     = "Otoroshi-Worker-Location"
   val OtoroshiWorkerHttpPortHeader     = "Otoroshi-Worker-Http-Port"
   val OtoroshiWorkerHttpsPortHeader    = "Otoroshi-Worker-Https-Port"
+  val OtoroshiWorkerInternalHttpPortHeader  = "Otoroshi-Worker-Internal-Http-Port"
+  val OtoroshiWorkerInternalHttpsPortHeader = "Otoroshi-Worker-Internal-Https-Port"
   val OtoroshiWorkerRelayRoutingHeader = "Otoroshi-Worker-Relay-Routing"
 
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
@@ -1035,6 +1043,8 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
           location = hostAddress,
           httpPort = env.exposedHttpPortInt,
           httpsPort = env.exposedHttpsPortInt,
+          internalHttpPort = env.httpPort,
+          internalHttpsPort = env.httpsPort,
           lastSeen = DateTime.now(),
           timeout = 120.seconds,
           stats = stats,
@@ -1231,7 +1241,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               ClusterAgent.OtoroshiWorkerNameHeader      -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader  -> s"$hostAddress",
               ClusterAgent.OtoroshiWorkerHttpPortHeader  -> env.exposedHttpPortInt.toString,
-              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpPortHeader  -> env.httpPort.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader -> env.httpsPort.toString,
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1276,7 +1288,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               ClusterAgent.OtoroshiWorkerNameHeader      -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader  -> s"$hostAddress",
               ClusterAgent.OtoroshiWorkerHttpPortHeader  -> env.exposedHttpPortInt.toString,
-              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpPortHeader  -> env.httpPort.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader -> env.httpsPort.toString,
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1321,7 +1335,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               ClusterAgent.OtoroshiWorkerNameHeader      -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader  -> s"$hostAddress",
               ClusterAgent.OtoroshiWorkerHttpPortHeader  -> env.exposedHttpPortInt.toString,
-              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpPortHeader  -> env.httpPort.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader -> env.httpsPort.toString,
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1364,7 +1380,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               ClusterAgent.OtoroshiWorkerNameHeader      -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader  -> s"$hostAddress",
               ClusterAgent.OtoroshiWorkerHttpPortHeader  -> env.exposedHttpPortInt.toString,
-              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpPortHeader  -> env.httpPort.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader -> env.httpsPort.toString,
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1405,7 +1423,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               ClusterAgent.OtoroshiWorkerNameHeader      -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader  -> s"$hostAddress",
               ClusterAgent.OtoroshiWorkerHttpPortHeader  -> env.exposedHttpPortInt.toString,
-              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpPortHeader  -> env.httpPort.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader -> env.httpsPort.toString,
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1480,7 +1500,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               ClusterAgent.OtoroshiWorkerNameHeader      -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader  -> s"$hostAddress",
               ClusterAgent.OtoroshiWorkerHttpPortHeader  -> env.exposedHttpPortInt.toString,
-              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString
+              ClusterAgent.OtoroshiWorkerHttpsPortHeader -> env.exposedHttpsPortInt.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpPortHeader  -> env.httpPort.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader -> env.httpsPort.toString,
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1603,7 +1625,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 ClusterAgent.OtoroshiWorkerLocationHeader     -> s"$hostAddress",
                 ClusterAgent.OtoroshiWorkerHttpPortHeader     -> env.exposedHttpPortInt.toString,
                 ClusterAgent.OtoroshiWorkerHttpsPortHeader    -> env.exposedHttpsPortInt.toString,
-                ClusterAgent.OtoroshiWorkerRelayRoutingHeader -> env.clusterConfig.relay.json.stringify
+              ClusterAgent.OtoroshiWorkerInternalHttpPortHeader  -> env.httpPort.toString,
+              ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader -> env.httpsPort.toString,
+                ClusterAgent.OtoroshiWorkerRelayRoutingHeader -> env.clusterConfig.relay.json.stringify,
               )
               .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
               .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
@@ -1843,6 +1867,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   ClusterAgent.OtoroshiWorkerLocationHeader     -> s"$hostAddress",
                   ClusterAgent.OtoroshiWorkerHttpPortHeader     -> env.exposedHttpPortInt.toString,
                   ClusterAgent.OtoroshiWorkerHttpsPortHeader    -> env.exposedHttpsPortInt.toString,
+                  ClusterAgent.OtoroshiWorkerInternalHttpPortHeader  -> env.httpPort.toString,
+                  ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader -> env.httpsPort.toString,
                   ClusterAgent.OtoroshiWorkerRelayRoutingHeader -> env.clusterConfig.relay.json.stringify
                 )
                 .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
