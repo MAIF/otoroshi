@@ -8,7 +8,7 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - implement some enterprise plugins (payload transformation, soap, etc)
   - implement secret vaults support
   - implement tracing plugins
-- [ ] Q2 2022
+- [x] Q2 2022
   - implement views for the new proxy engine
   - implement a "try it" view for services
     - REST
@@ -17,17 +17,28 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - implement secret vaults
   - implement grapql plugins (except federation)
 - [ ] Q3 2022  
-  - rollout new proxy engine
-  - implement k8s SMI spec support  
-  - implement k8s Gateway API support
+  - remote tunnels for easier exposition
+  - relay routing
 - [ ] Q4 2022  
-  - use wizard to help resources creation
-    - use @maif/react-form 
-
+  - rollout new proxy engine
+  - kubernetes integration upgrades
+    - implement k8s SMI spec support  
+    - implement k8s Gateway API support
+  - introduce wizards to help resources creation
+- [ ] next
+  - introduce new versioning scheme (see below)
+  - new plugins
+    - provide a plugin to act as an Eureka 2 backend
+    - provide a plugin to handle backend discovery backed by Eureka 2
+    - provide a Brotli compression plugin
+  - give the kubernetes integration some love
+  - pluggable authentication modules
+  - scala version upgrade 
+  - better testing infrastructure for multi node environments
 
 ## versioning
 
-after releasing 1.5.0 we plan to make a new release immediately with version number 16.0.0 as previous minor version where actually major ones. We will not make a 15.0.0 as there are already alpha releases of the 1.5.0.
+after releasing 1.5.0 we plan to make a new release immediately with version number 16.0.0 as previous minor version where actually major ones. We will not make a 15.0.0 as there are already alpha releases of the 1.5.0. Then, as we release a new version every month (every 4 to 8 weeks), we will increment the major version for each release.
 
 ## authentication and security
 
