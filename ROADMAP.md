@@ -25,6 +25,9 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
     - implement k8s SMI spec support  
     - implement k8s Gateway API support
   - introduce wizards to help resources creation
+  - support websocket calls in relay routing
+  - support websocket calls in remote tunnels
+  - support long/streaming calls in remote tunnels
 - [ ] next
   - introduce new versioning scheme (see below)
   - new plugins
