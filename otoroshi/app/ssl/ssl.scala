@@ -1725,6 +1725,16 @@ object DynamicSSLEngineProvider {
     cipherSuites.orElse(Some(rawEnabledCipherSuites)).foreach(s => sslParameters.setCipherSuites(s.toArray))
     protocols.orElse(Some(rawEnabledProtocols)).foreach(p => sslParameters.setProtocols(p.toArray))
     engine.setSSLParameters(sslParameters)
+    // println("protocols: ", protocols.mkString(", "), "cipherSuites: ", cipherSuites.mkString(", "))
+    // println("----")
+    // println("engine supported", engine.getSupportedProtocols().toSeq.mkString(", "))
+    // println("engine enabled", engine.getEnabledProtocols().toSeq.mkString(", "))
+    // println("sslParameters", sslParameters.getProtocols().toSeq.mkString(", "))
+    // println("----")
+    // println("engine supported", engine.getSupportedCipherSuites().toSeq.mkString(", "))
+    // println("engine enabled", engine.getEnabledCipherSuites().toSeq.mkString(", "))
+    // println("sslParameters", sslParameters.getCipherSuites().toSeq.mkString(", "))
+    // println("----")
     engine.locked()
   }
 }
