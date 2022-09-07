@@ -20,15 +20,11 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - remote tunnels for easier exposition
   - relay routing
 - [ ] Q4 2022  
-  - rollout new proxy engine
+  - rollout new proxy engine (version 16)
+  - introduce wizards to help resources creation
   - kubernetes integration upgrades
     - implement k8s SMI spec support (if it fits the use case)
     - implement k8s Gateway API support (https://github.com/kubernetes-sigs/gateway-api)
-  - introduce wizards to help resources creation
-  - support complex call in networking features (maybe in next if no time ?)
-    - support websocket calls in relay routing
-    - support websocket calls in remote tunnels
-    - support long/streaming calls in remote tunnels
 - [ ] next (2023 - 202x)
   - introduce new versioning scheme (see below)
   - new plugins
@@ -36,18 +32,27 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
     - provide a plugin to handle backend discovery backed by Eureka 2
     - provide a Brotli compression plugin
     - provide a graphql federation plugin
+    - provide an orchestration plugin
   - cleanup kubernetes integration 
     - fix versioning in crds
     - check against latest kubernetes version
     - support external-dns (https://github.com/kubernetes-sigs/external-dns)
   - pluggable authentication modules
-  - scala version upgrade 
-  - better testing infrastructure for multi node environments
-  - new documentation generator
+  - upgrade scala version (2.13.x) 
+  - better testing infrastructure for multi node environments (test-containers or something like that)
+  - new documentation website generator
   - upgrade all frontend libs
   - stored tunnels
   - expand vault mechanism to config. file
   - disable TLS 1.0 and 1.1 by default
+  - support websocket calls in relay routing
+  - improve tunnels 
+    - improve stability
+    - improve performances (use binary format ?)
+    - improve resilience
+    - support websocket calls
+    - support long/streaming calls
+  - experiment around moving out of play framework and akka ...
 
 ## versioning
 
@@ -169,7 +174,7 @@ provide the authentication modules needed for most cases and associated tools
 at some point we will have the opportunity to rewrite otoroshi with major breaking changes
 
 - [ ] remove play framework
-  - [ ] rewritte http engine using akka http
+  - [ ] rewritte http engine using akka http (well maybe remove akka too ...)
 - [ ] split admin api http server and http routing server with default routing for admin api
 - [ ] modular architecture rework  
   - [x] default template (customizable) for services with standard plugins
