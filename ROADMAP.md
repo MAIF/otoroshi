@@ -22,26 +22,38 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
 - [ ] Q4 2022  
   - rollout new proxy engine
   - kubernetes integration upgrades
-    - implement k8s SMI spec support  
-    - implement k8s Gateway API support
+    - implement k8s SMI spec support (if it fits the use case)
+    - implement k8s Gateway API support (https://github.com/kubernetes-sigs/gateway-api)
   - introduce wizards to help resources creation
-  - support websocket calls in relay routing
-  - support websocket calls in remote tunnels
-  - support long/streaming calls in remote tunnels
-- [ ] next
+  - support complex call in networking features (maybe in next if no time ?)
+    - support websocket calls in relay routing
+    - support websocket calls in remote tunnels
+    - support long/streaming calls in remote tunnels
+- [ ] next (2023 - 202x)
   - introduce new versioning scheme (see below)
   - new plugins
     - provide a plugin to act as an Eureka 2 backend
     - provide a plugin to handle backend discovery backed by Eureka 2
     - provide a Brotli compression plugin
-  - give the kubernetes integration some love
+    - provide a graphql federation plugin
+  - cleanup kubernetes integration 
+    - fix versioning in crds
+    - check against latest kubernetes version
+    - support external-dns (https://github.com/kubernetes-sigs/external-dns)
   - pluggable authentication modules
   - scala version upgrade 
   - better testing infrastructure for multi node environments
+  - new documentation generator
+  - upgrade all frontend libs
+  - stored tunnels
+  - expand vault mechanism to config. file
+  - disable TLS 1.0 and 1.1 by default
 
 ## versioning
 
-after releasing 1.5.0 we plan to make a new release immediately with version number 16.0.0 as previous minor version where actually major ones. We will not make a 15.0.0 as there are already alpha releases of the 1.5.0. Then, as we release a new version every month (every 4 to 8 weeks), we will increment the major version for each release.
+after releasing 1.5.0 we plan to make a new release immediately with version number 16.0.0 as previous minor version where actually major ones. 
+
+Then, as we release a new version every month (actually every 4 to 8 weeks), we will increment the major version for each release.
 
 ## authentication and security
 
