@@ -19,6 +19,8 @@ import { ServicesPage } from '../pages/ServicesPage';
 import { SessionsPage } from '../pages/SessionsPage';
 import { U2FRegisterPage } from '../pages/U2FRegisterPage';
 import { CleverPage } from '../pages/CleverPage';
+import { EurekaServersPage } from '../pages/EurekaServersPage';
+import { EurekaServerPage } from '../pages/EurekaServerPage';
 import { AuditPage } from '../pages/AuditPage';
 import { Top10servicesPage } from '../pages/Top10servicesPage';
 import { LoggersPage } from '../pages/LoggersPage';
@@ -452,6 +454,14 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/clever"
                           component={(props) => this.decorate(CleverPage, props)}
+                        />
+                        <Route
+                          path="/eureka-servers/edit/:eurekaServerId"
+                          component={(props) => this.decorate(EurekaServerPage, props)}
+                        />
+                        <Route
+                          path="/eureka-servers"
+                          component={(props) => this.decorate(EurekaServersPage, props)}
                         />
                         <Route
                           path="/audit"
