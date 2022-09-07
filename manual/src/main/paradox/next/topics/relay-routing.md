@@ -8,7 +8,7 @@ Relay routing is the capability to forward traffic between otoroshi leader nodes
 - one or more otoroshi leader instances
 - one or more otoroshi worker instances
 
-the datastores are replicated accrpss network zones in an active-active fashion. Each network zone also have applications, apis, etc deployed. Sometimes the same application is deployed in multiple zones, sometimes not. 
+the datastores are replicated accross network zones in an active-active fashion. Each network zone also have applications, apis, etc deployed. Sometimes the same application is deployed in multiple zones, sometimes not. 
 
 it can quickly become a nightmare when you want to access an application deployed in one network zone from another network zone. You'll have to publicly expose this application to be able to access it from the other zone. This pattern is fine, but sometimes it's not enough. With `relay routing`, you will be able to flag your routes as being deployed in one zone or another, and let otoroshi handle all the heavy lifting to route the traffic to  the right network zone for you.
 
