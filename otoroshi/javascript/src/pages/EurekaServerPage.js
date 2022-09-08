@@ -78,7 +78,7 @@ export function EurekaServerPage(props) {
         <span style={{
           fontWeight: 'bold',
           fontSize: 24,
-          color: globalStatus === 'all up' ? 'var(--bs-green)' : 'initial'
+          color: globalStatus === 'all up' ? 'var(--bs-green)' : 'var(--bs-danger)'
         }}>{globalStatus}</span>
       </div>
     </div>
@@ -102,16 +102,16 @@ const App = ({ name, instances }) => {
     <span style={{ textTransform: 'uppercase' }}>{name}</span>
     {instances.map(instance => <div className='d-flex justify-content-between align-items-center py-3' key={instance.instanceId}>
       <div className='d-flex align-items-center'>
-        <i className='fas fa-check px-3'
+        <i className={`fas fa-${instance.status === 'UP' ? 'check' : 'times'} px-3`}
           style={{
-            color: instance.status === 'UP' ? 'var(--bs-green)' : 'initial'
+            color: instance.status === 'UP' ? 'var(--bs-green)' : 'var(--bs-danger)'
           }} />
         <div className='d-flex flex-column'>
           <span style={{ textTransform: 'uppercase' }}>{instance.instanceId}</span>
           <a href={instance.homePageUrl}>{instance.homePageUrl}</a>
         </div>
       </div>
-      <button type="button" class="btn btn-success btn-sm"
+      <button type="button" class="btn btn-success btn-sm me-3"
         onClick={() => {
           window.newAlert(
             <Suspense fallback="Loading ...">

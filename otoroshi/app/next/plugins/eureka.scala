@@ -15,41 +15,6 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-/*case class EurekaPort(`@enabled`: String, `$`: String)
-case class EurekaDataCenterInfo(`@class`: String, name: String)
-case class EurekaLeaseInfo(renewalIntervalInSecs: Int,
-                           durationInSecs: Int,
-                           registrationTimestamp: Long,
-                           lastRenewalTimestamp: Long,
-                           evictionTimestamp: Long,
-                           serviceUpTimestamp: Long)
-case class EurekaMetadata(`management.port`: Int)
-
-case class EurekaInstance(
-   hostName: String,
-   app: String,
-   ipAddr: String,
-   status: String,
-   overriddenstatus: String,
-   port: EurekaPort,
-   securePort: EurekaPort,
-   countryId: Int,
-   dataCenterInfo: EurekaDataCenterInfo,
-   leaseInfo: EurekaLeaseInfo,
-   metadata: EurekaMetadata,
-   homePageUrl: String,
-   statusPageUrl: String,
-   healthCheckUrl: String,
-   vipAddress: String,
-   secureVipAddress: String,
-   isCoordinatingDiscoveryServer: Boolean,
-   lastUpdatedTimestamp: Long,
-   lastDirtyTimestamp: Long,
-   actionType: String
-  )
-
-case class EurekaApplication(name: String, instance: EurekaInstance)*/
-
 case class EurekaServerTransformerConfig() extends NgPluginConfig {
   def json: JsValue = EurekaServerConfig.format.writes(this)
 }
@@ -81,17 +46,26 @@ class EurekaServerSink extends NgBackendCall {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
 
+  private def notFoundResponse() = {
+    bodyResponse(404,
+      Map("Content-Type" -> "application/json"), Source.empty).vfuture
+  }
+
+  private def successfulResponse(body: Seq[JsValue]) = {
+    bodyResponse(
+      200,
+      Map("Content-Type" -> "application/xml"),
+      otoroshi.utils.xml.Xml.toXml(Json.obj("applications" -> body)).toString().byteString.singleSource
+    ).vfuture
+  }
+
   private def getApps(pluginId: String)(implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
 
     env.datastores.rawDataStore
       .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps*")
       .flatMap { arr =>
         println(s"GET ${arr.length} apps")
-        bodyResponse(
-          200,
-          Map("Content-Type" -> "application/xml"),
-          otoroshi.utils.xml.Xml.toXml(Json.obj("applications" -> arr.map(_.utf8String.parseJson))).toString().byteString.singleSource
-        ).vfuture
+        successfulResponse(arr.map(_.utf8String.parseJson))
       }
   }
 
@@ -141,32 +115,62 @@ class EurekaServerSink extends NgBackendCall {
 
   private def getAppWithId(pluginId: String, appId: String)
                           (implicit env: Env, ec: ExecutionContext, mat: Materializer)= {
-    println(s"GET apps with $appId")
-    bodyResponse(
-      200,
-      Map("Content-Type" -> "application/json"),
-      Json.obj("Response" -> "ok").stringify.byteString.singleSource
-    ).vfuture
+    env.datastores.rawDataStore
+      .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:*")
+      .flatMap { instances =>
+        if (instances.isEmpty)
+          notFoundResponse()
+        else
+          bodyResponse(
+            200,
+            Map("Content-Type" -> "application/xml"),
+            otoroshi.utils.xml.Xml.toXml(Json.obj(
+              "application" -> Json.obj(
+                "name" -> (instances.head.utf8String.parseJson \ "name").as[String],
+                "instances" -> instances.map(instance => {
+                  Json.obj("instance" -> (instance.utf8String.parseJson \ "application" \ "instance").as[JsValue])
+                })
+              )
+            ))
+              .toString()
+              .byteString
+              .singleSource
+          ).vfuture
+      }
   }
 
   private def getAppWithIdAndInstanceId(pluginId: String, appId: String, instanceId: String)
                           (implicit env: Env, ec: ExecutionContext, mat: Materializer)= {
-    println("GET specific app", appId, instanceId)
-    bodyResponse(
-      200,
-      Map("Content-Type" -> "application/json"),
-      Json.obj("Response" -> "ok").stringify.byteString.singleSource
-    ).vfuture
+    env.datastores.rawDataStore
+      .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
+      .flatMap {
+        case Some(instance) =>
+          bodyResponse(
+            200,
+            Map("Content-Type" -> "application/xml"),
+            otoroshi.utils.xml.Xml.toXml(instance.utf8String.parseJson).toString().byteString.singleSource
+          ).vfuture
+        case None =>
+          bodyResponse(404,
+            Map("Content-Type" -> "application/json"), Source.empty).vfuture
+      }
   }
 
   private def getInstanceWithId(pluginId: String, instanceId: String)
                           (implicit env: Env, ec: ExecutionContext, mat: Materializer)= {
-    println("GET instance", instanceId)
-    bodyResponse(
-      200,
-      Map("Content-Type" -> "application/json"),
-      Json.obj("Response" -> "ok").stringify.byteString.singleSource
-    ).vfuture
+    env.datastores.rawDataStore
+      .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:*:$instanceId")
+      .flatMap { instances =>
+        if (instances.isEmpty)
+          bodyResponse(404,
+            Map("Content-Type" -> "application/json"), Source.empty).vfuture
+        else
+          bodyResponse(
+            200,
+            Map("Content-Type" -> "application/xml"),
+            otoroshi.utils.xml.Xml.toXml(instances.head.utf8String.parseJson).toString().byteString.singleSource
+          ).vfuture
+      }
   }
 
   private def deleteAppWithId(pluginId: String, appId: String, instanceId: String)
@@ -183,7 +187,7 @@ class EurekaServerSink extends NgBackendCall {
       }
   }
 
-  private def updateAppWithIdAndInstanceId(pluginId: String, appId: String, instanceId: String)
+  private def checkHeartbeat(pluginId: String, appId: String, instanceId: String)
                                        (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
     env.datastores.rawDataStore
       .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
@@ -200,24 +204,108 @@ class EurekaServerSink extends NgBackendCall {
       }
   }
 
-  private def takeInstanceOutOfService(pluginId: String, appId: String, instanceId: String)
+  private def takeInstanceOutOfService(pluginId: String, appId: String, instanceId: String, status: Option[String])
                                       (implicit env: Env, ec: ExecutionContext, mat: Materializer)  = {
-    println("PUT status out of service", appId, instanceId)
-    bodyResponse(
-      200,
-      Map("Content-Type" -> "application/json"),
-      Json.obj("Response" -> "ok").stringify.byteString.singleSource
-    ).vfuture
+    env.datastores.rawDataStore
+      .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
+      .flatMap {
+        case None =>
+          println(s"Failed takeInstanceOutOfService : ${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
+          notFoundResponse()
+        case Some(app) =>
+          val updatedApp = app.utf8String.parseJson.as[JsObject].deepMerge(
+            Json.obj("application" -> Json.obj(
+              "instance" -> Json.obj(
+                "status" -> status.getOrElse("UP").asInstanceOf[String]
+              )))
+          )
+          env.datastores.rawDataStore
+            .set(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId",
+              updatedApp.stringify.byteString,
+              120.seconds.toMillis.some)
+            .flatMap {
+              case true =>
+                bodyResponse(200,
+                  Map("Content-Type" -> "application/json"),
+                  Source.empty).vfuture
+              case false =>
+                notFoundResponse()
+            }
+
+      }
   }
 
-  private def putMetadata(pluginId: String, appId: String, instanceId: String, key: String, value: String)
+  private def putMetadata(pluginId: String, appId: String, instanceId: String, queryString: Option[String])
                                       (implicit env: Env, ec: ExecutionContext, mat: Materializer)  = {
-    println("PUT metadata", appId, instanceId, key, value)
-    bodyResponse(
-      200,
-      Map("Content-Type" -> "application/json"),
-      Json.obj("Response" -> "ok").stringify.byteString.singleSource
-    ).vfuture
+
+    if (queryString.isEmpty)
+      bodyResponse(400,
+        Map("Content-Type" -> "application/json"),
+        Json.obj("error" -> "missing query string").stringify.byteString.singleSource).vfuture
+    else
+      env.datastores.rawDataStore
+        .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
+        .flatMap {
+          case None =>
+            println(s"Failed takeInstanceOutOfService : ${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
+            notFoundResponse()
+          case Some(app) =>
+            val jsonApp = app.utf8String.parseJson.as[JsObject]
+            val updatedApp = jsonApp.deepMerge(
+              Json.obj("application" -> Json.obj(
+                "instance" -> Json.obj(
+                  "metadata" -> queryString.get.split("&")
+                      .map(_.split("="))
+                      .foldLeft(Json.obj()) { case (acc, c) =>
+                        acc ++ Json.obj(c.head -> c(1))
+                      }
+                )))
+            )
+            env.datastores.rawDataStore
+              .set(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId",
+                updatedApp.stringify.byteString,
+                120.seconds.toMillis.some)
+              .flatMap {
+                case true =>
+                  bodyResponse(200,
+                    Map("Content-Type" -> "application/json"),
+                    Source.empty).vfuture
+                case false =>
+                  notFoundResponse()
+              }
+
+        }
+  }
+
+
+  private def getInstancesUnderVipAddress(pluginId: String, vipAddress: String)
+                                         (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
+    env.datastores.rawDataStore
+      .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps*")
+      .flatMap { arr =>
+        val apps = arr.map(_.utf8String.parseJson)
+          .filter(app => (app \ "application" \ "instance" \ "vipAddress").as[String] == vipAddress)
+
+        if (apps.isEmpty)
+          notFoundResponse()
+        else
+          successfulResponse(apps)
+      }
+  }
+
+  private def getInstancesUnderSecureVipAddress(pluginId: String, svipAddress: String)
+                                         (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
+    env.datastores.rawDataStore
+      .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps*")
+      .flatMap { arr =>
+        val apps = arr.map(_.utf8String.parseJson)
+          .filter(app => (app \ "application" \ "instance" \ "secureVipAddress").as[String] == svipAddress)
+
+        if (apps.isEmpty)
+          notFoundResponse()
+        else
+          successfulResponse(apps)
+      }
   }
 
   override def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])
@@ -226,7 +314,12 @@ class EurekaServerSink extends NgBackendCall {
     val pluginId = ctx.route.id
     val body = ctx.request.body.runFold(ByteString.empty)(_ ++ _)
 
+    println(ctx.request.path)
     (ctx.request.method, ctx.request.path) match {
+      case ("PUT", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)/status") =>
+        takeInstanceOutOfService(pluginId, appId, instanceId, ctx.rawRequest.getQueryString("value"))
+      case ("PUT", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)/metadata") =>
+        putMetadata(pluginId, appId, instanceId, ctx.request.queryString)
       case ("GET", r"/eureka/apps/$appId@(.*)") =>
         if(s"$appId".isEmpty)
           getApps(pluginId)
@@ -236,20 +329,17 @@ class EurekaServerSink extends NgBackendCall {
         getAppWithIdAndInstanceId(pluginId, appId, instanceId)
       case ("GET", r"/eureka/instances/$instanceId@(.*)") =>
         getInstanceWithId(pluginId, instanceId)
+      case ("GET", r"/eureka/vips/$vipAddress@(.*)") =>
+        getInstancesUnderVipAddress(pluginId, vipAddress)
+      case ("GET", r"/eureka/svips/$svipAddress@(.*)") =>
+        getInstancesUnderSecureVipAddress(pluginId, svipAddress)
       case ("POST", r"/eureka/apps/$appId@(.*)") =>
         createApp(pluginId, appId, ctx.request.hasBody, body)
       case ("DELETE", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)") =>
         deleteAppWithId(pluginId, appId, instanceId)
       case ("PUT", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)") =>
-        updateAppWithIdAndInstanceId(pluginId, appId, instanceId)
-      case ("PUT", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)/status?value=OUT_OF_SERVICE") =>
-        takeInstanceOutOfService(pluginId, appId, instanceId)
-      case ("PUT", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)/metadata?$key@(.*)=$value@(.*)") =>
-        putMetadata(pluginId, appId, instanceId, key, value)
-      case _ => bodyResponse(404,
-        Map("Content-Type" -> "application/json"),
-        Json.obj("error" -> "resource not found").stringify.byteString.chunks(16 * 1024)
-      ).vfuture
+        checkHeartbeat(pluginId, appId, instanceId)
+      case _ => notFoundResponse()
     }
   }
 }
