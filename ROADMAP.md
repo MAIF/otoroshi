@@ -52,6 +52,17 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
     - improve resilience
     - support websocket calls
     - support long/streaming calls
+  - new data exporters
+    - TCP
+    - UDP
+    - Syslog
+  - minimal gRCP support
+    - plugin to call gRPC services
+    - expose routes as gRPC-Web
+  - serverless
+    - plugin to call functions in AWS
+    - plugin to call functions in Azure
+    - plugin to call functions in GCP
   - experiment around moving out of play framework and akka ...
 
 ## versioning
