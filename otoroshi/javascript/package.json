@@ -47,7 +47,7 @@
     "legally": "3.5.8",
     "lodash": "4.17.21",
     "moment": "2.29.2",
-    "node-sass": "^7.0.1",
+    "node-sass": "^7.0.2",
     "prop-types": "15.7.2",
     "query-string": "6.13.2",
     "react": "16.13.1",
