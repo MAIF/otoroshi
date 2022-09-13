@@ -1,6 +1,6 @@
 package otoroshi.openapi
 
-import otoroshi.next.plugins.{ContextValidation, GraphQLBackend, GraphQLQuery}
+import otoroshi.next.plugins.{ContextValidation, EurekaTarget, GraphQLBackend, GraphQLQuery}
 import otoroshi.next.tunnel.TunnelPlugin
 import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.libs.json.Json

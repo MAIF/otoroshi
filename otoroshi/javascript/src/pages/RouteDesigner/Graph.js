@@ -180,8 +180,7 @@ export const DEFAULT_FLOW = {
 
           onChange(
             'custom_target',
-            `${isSecured ? 'https' : 'http'}://${hostname}${port}${
-              getFieldValue('custom_target')?.endsWith(' ') ? ' ' : ''
+            `${isSecured ? 'https' : 'http'}://${hostname}${port}${getFieldValue('custom_target')?.endsWith(' ') ? ' ' : ''
             }`
           );
         },
@@ -193,8 +192,7 @@ export const DEFAULT_FLOW = {
             render: ({ value, onChange }) => {
               const open = value.endsWith(' ');
               return (
-                <div
-                  className="d-flex-center justify-content-start target_information mt-3"
+                <div className="d-flex-center justify-content-start target_information mt-3 py-1"
                   onClick={() => onChange(open ? value.slice(0, -1) : `${value} `)}>
                   <i className={`me-2 fas fa-chevron-${open ? 'down' : 'right'}`} />
                   <i className="fas fa-server me-2" />

@@ -1688,8 +1688,10 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def getBackend(target: Target, route: NgRoute)(implicit env: Env): NgTarget = {
-    route.backend.allTargets.find(b => b.id == target.tags.head).get
+  def getBackend(target: Target, route: NgRoute, attrs: TypedMap)(implicit env: Env): NgTarget = {
+    attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey)
+      .getOrElse(route.backend.allTargets)
+      .find(b => b.id == target.tags.head).get
   }
 
   def callTarget(snowflake: String, reqNumber: Long, request: Request[Source[ByteString, _]], _route: NgRoute)(
@@ -1708,6 +1710,7 @@ class ProxyEngine() extends RequestHandler {
     val trackingId          = attrs.get(otoroshi.plugins.Keys.RequestTrackingIdKey).getOrElse(IdGenerator.uuid)
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     attrs.put(Keys.BodyAlreadyConsumedKey -> bodyAlreadyConsumed)
+
     if (globalConfig.useCircuitBreakers) {
       val counter            = new AtomicInteger(0)
       val relUri             = request.relativeUri
@@ -1718,7 +1721,7 @@ class ProxyEngine() extends RequestHandler {
           .getOrElse("")
 
       def callF(target: Target, attempts: Int, alreadyFailed: AtomicBoolean): Future[Either[Result, Result]] = {
-        val backend = getBackend(target, route)
+        val backend = getBackend(target, route, attrs)
         attrs.put(Keys.BackendKey -> backend)
         f(NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart)).value.flatMap {
           case Left(err)        => err.asResult().map(Left.apply)
@@ -1855,6 +1858,7 @@ class ProxyEngine() extends RequestHandler {
       }
 
       implicit val scheduler = env.otoroshiScheduler
+
       FEither(
         env.circuitBeakersHolder
           .get(
@@ -1864,7 +1868,7 @@ class ProxyEngine() extends RequestHandler {
           .callGenNg[Result](
             route.cacheableId,
             route.name,
-            route.backend.allTargets.map(_.toTarget),
+            attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey).getOrElse(route.backend.allTargets).map(_.toTarget),
             route.backend.loadBalancing,
             route.backend.client.legacy,
             reqNumber.toString,
@@ -1884,12 +1888,10 @@ class ProxyEngine() extends RequestHandler {
         }
       )
     } else {
-
       val target  = attrs
         .get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey)
         .getOrElse {
-
-          val targets: Seq[Target] = route.backend.allTargets
+          val targets: Seq[Target] = attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey).getOrElse(route.backend.allTargets)
             .map(_.toTarget)
             .filter(_.predicate.matches(reqNumber.toString, request, attrs))
             .flatMap(t => Seq.fill(t.weight)(t))
@@ -1905,7 +1907,7 @@ class ProxyEngine() extends RequestHandler {
       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
       // Round robin loadbalancing is happening here !!!!!
       //val target = targets.apply(index.toInt)
-      val backend = getBackend(target, route)
+      val backend = getBackend(target, route, attrs)
       attrs.put(Keys.BackendKey -> backend)
       f(NgSelectedBackendTarget(backend, 1, new AtomicBoolean(false), cbStart))
     }
@@ -1941,7 +1943,7 @@ class ProxyEngine() extends RequestHandler {
           attempts: Int,
           alreadyFailed: AtomicBoolean
       ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-        val backend = getBackend(target, route)
+        val backend = getBackend(target, route, attrs)
         attrs.put(Keys.BackendKey -> backend)
         f(NgSelectedBackendTarget(backend, attempts, alreadyFailed, cbStart)).value.flatMap {
           case Left(err)        => err.asResult().map(Left.apply)
@@ -2107,12 +2109,10 @@ class ProxyEngine() extends RequestHandler {
         }
       )
     } else {
-
-      val target  = attrs
+      val target: Target = attrs
         .get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey)
         .getOrElse {
-
-          val targets: Seq[Target] = route.backend.allTargets
+          val targets: Seq[Target] = attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey).getOrElse(route.backend.allTargets)
             .map(_.toTarget)
             .filter(_.predicate.matches(reqNumber.toString, request, attrs))
             .flatMap(t => Seq.fill(t.weight)(t))
@@ -2128,7 +2128,7 @@ class ProxyEngine() extends RequestHandler {
       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
       // Round robin loadbalancing is happening here !!!!!
       //val target = targets.apply(index.toInt)
-      val backend = getBackend(target, route)
+      val backend = getBackend(target, route, attrs)
       attrs.put(Keys.BackendKey -> backend)
       f(NgSelectedBackendTarget(backend, 1, new AtomicBoolean(false), cbStart))
     }

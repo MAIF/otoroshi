@@ -1,31 +1,155 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.util.FastFuture
+import akka.Done
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import kaleidoscope._
 import otoroshi.env.Env
+import otoroshi.gateway.Errors
+import otoroshi.next.models.NgTarget
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
-import kaleidoscope._
-import otoroshi.utils.syntax.implicits.{BetterByteString, BetterJsValue, BetterString, BetterSyntax}
-import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsResult, JsSuccess, JsValue, Json}
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterString, BetterSyntax}
+import play.api.libs.json._
+import play.api.mvc.{Result, Results}
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class EurekaServerTransformerConfig() extends NgPluginConfig {
+case class EurekaApp(
+    name: String,
+    instances: Seq[EurekaInstance])
+
+case class EurekaInstance(
+  instanceId: String,
+  hostname: String,
+  app: String,
+  ipAddr: String,
+  status: String,
+  overriddenStatus: String,
+  port: Int,
+  securePort: Int,
+  isSecured: Boolean,
+  metadata: Map[String, String],
+  homePageUrl: String,
+  statusPageUrl: String,
+  healthCheckUrl: String,
+  vipAddress: String,
+  secureVipAddress: String,
+  isCoordinatingDiscoveryServer: String,
+  lastUpdatedTimestamp: Long,
+  lastDirtyTimestamp: Long
+)
+
+object EurekaInstance {
+  def toTarget(instance: EurekaInstance): NgTarget = {
+    NgTarget(
+      id = instance.instanceId,
+      hostname = instance.hostname,
+      tls = instance.isSecured,
+      ipAddress = Some(instance.ipAddr),
+      port = if(instance.isSecured) instance.securePort else instance.port
+    )
+  }
+
+  val format: Format[EurekaInstance] = new Format[EurekaInstance] {
+    override def writes(o: EurekaInstance): JsValue             = Json.obj(
+      "instanceId" -> o.instanceId,
+      "hostname" -> o.hostname,
+      "app" -> o.app,
+      "ipAddr" -> o.ipAddr,
+      "status" -> o.status,
+      "overriddenStatus" -> o.overriddenStatus,
+      "port" -> o.port,
+      "securePort" -> o.securePort,
+      "isSecured" -> o.isSecured,
+      "metadata" -> o.metadata,
+      "homePageUrl" -> o.homePageUrl,
+      "statusPageUrl" -> o.statusPageUrl,
+      "healthCheckUrl" -> o.healthCheckUrl,
+      "vipAddress" -> o.vipAddress,
+      "secureVipAddress" -> o.secureVipAddress,
+      "isCoordinatingDiscoveryServer" -> o.isCoordinatingDiscoveryServer,
+      "lastUpdatedTimestamp" -> o.lastUpdatedTimestamp,
+      "lastDirtyTimestamp" -> o.lastDirtyTimestamp
+    )
+    override def reads(o: JsValue): JsResult[EurekaInstance] = Try {
+      EurekaInstance(
+        instanceId = (o \ "instanceId").as[String],
+        hostname = (o \ "hostName").as[String],
+        app = (o \ "app").as[String],
+        ipAddr = (o \ "ipAddr").as[String],
+        status = (o \ "status").as[String],
+        overriddenStatus  = (o \ "overriddenStatus").as[String],
+        port = (o \ "port" \ "$").as[Int],
+        securePort = (o \ "securePort" \ "$").as[Int],
+        isSecured = (o \ "securePort" \ "@enabled").asOpt[Boolean].getOrElse(false),
+        metadata = (o \ "metadata").as[Map[String, String]],
+        homePageUrl = (o \ "homePageUrl").as[String],
+        statusPageUrl = (o \ "statusPageUrl").as[String],
+        healthCheckUrl = (o \ "healthCheckUrl").as[String],
+        vipAddress = (o \ "vipAddress").as[String],
+        secureVipAddress = (o \ "secureVipAddress").as[String],
+        isCoordinatingDiscoveryServer = (o \ "isCoordinatingDiscoveryServer").as[String],
+        lastUpdatedTimestamp = (o \ "lastUpdatedTimestamp").as[String].toLong,
+        lastDirtyTimestamp = (o \ "lastDirtyTimestamp").as[String].toLong
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
+object EurekaApp {
+  val format: Format[EurekaApp] = new Format[EurekaApp] {
+    override def writes(o: EurekaApp): JsValue             = Json.obj(
+      "name" -> o.name,
+      "instances" -> o.instances.map(EurekaInstance.format.writes)
+    )
+    override def reads(json: JsValue): JsResult[EurekaApp] = Try {
+      EurekaApp(
+        name = (json \ "name").asOpt[String].getOrElse("UNKNOWN_APP"),
+        instances = (json \ "instances").as[Seq[JsObject]]
+          .map(EurekaInstance.format.reads)
+          .collect { case JsSuccess(value, _) => value }
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
+case class EurekaServerConfig(
+                               selfPreservation: Boolean = true,
+                               expectedClientRenewalIntervalSeconds: Int = 30, // seconds, The server expects client heartbeats at an interval configured with this property
+                               leaseExpirationDurationInSeconds: Int = 90, // seconds, Indicates the time in seconds that the Eureka server waits since it received the last heartbeat from a client before it can remove that client from its registry
+                               renewalPercentThreshold: Double = .85, // if we lost 15% of the eureka clients, Eureka will enter in self preservation mode
+                               renewalThresholdUpdateIntervalMs: Int = 15 // minutes
+                            ) extends NgPluginConfig {
   def json: JsValue = EurekaServerConfig.format.writes(this)
 }
 
 object EurekaServerConfig {
-  val format: Format[EurekaServerTransformerConfig] = new Format[EurekaServerTransformerConfig] {
-    override def writes(o: EurekaServerTransformerConfig): JsValue             = Json.obj(
-
+  val format: Format[EurekaServerConfig] = new Format[EurekaServerConfig] {
+    override def writes(o: EurekaServerConfig): JsValue             = Json.obj(
+      "self_preservation" -> o.selfPreservation,
+      "expected_client_renewal_interval_seconds" -> o.expectedClientRenewalIntervalSeconds,
+      "lease_expiration_duration_in_seconds" -> o.leaseExpirationDurationInSeconds,
+      "renewal_percent_threshold" -> o.renewalPercentThreshold,
+      "renewal_threshold_update_interval_ms" -> o.renewalThresholdUpdateIntervalMs
     )
-    override def reads(json: JsValue): JsResult[EurekaServerTransformerConfig] = Try {
-      EurekaServerTransformerConfig()
+    override def reads(json: JsValue): JsResult[EurekaServerConfig] = Try {
+      EurekaServerConfig(
+        selfPreservation = (json \ "self_preservation").asOpt[Boolean].getOrElse(true),
+        expectedClientRenewalIntervalSeconds = (json \ "expected_client_renewal_interval_seconds").asOpt[Int].getOrElse(30),
+        leaseExpirationDurationInSeconds = (json \ "lease_expiration_duration_in_seconds").asOpt[Int].getOrElse(90),
+        renewalPercentThreshold = (json \ "renewal_percent_threshold").asOpt[Double].getOrElse(.85),
+        renewalThresholdUpdateIntervalMs = (json \ "renewal_threshold_update_interval_ms").asOpt[Int].getOrElse(15)
+      )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
@@ -35,17 +159,74 @@ object EurekaServerConfig {
 
 class EurekaServerSink extends NgBackendCall {
 
-  override def useDelegates: Boolean                       = false
-  override def multiInstance: Boolean                      = false
-  override def core: Boolean                               = false
-  override def name: String                                = "Eureka instance"
-  override def description: Option[String]                 = "Eureka plugin description".some
-  override def defaultConfigObject: Option[NgPluginConfig] = EurekaServerTransformerConfig().some
+  override def useDelegates: Boolean = false
 
-  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean = false
+
+  override def core: Boolean = false
+
+  override def name: String = "Eureka instance"
+
+  override def description: Option[String] = "Eureka plugin description".some
+
+  override def defaultConfigObject: Option[NgPluginConfig] = EurekaServerConfig().some
+
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
-  override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
 
+  override def steps: Seq[NgStep] = Seq(NgStep.CallBackend)
+
+  /*private def setHeartbeatsThreshold(pluginId: String, config: EurekaServerConfig)
+                                 (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
+    env.datastores.rawDataStore
+      .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps*")
+      .flatMap(instances => {
+        env.datastores.rawDataStore
+          .set(
+            s"${env.storageRoot}:plugins:eureka-server-$pluginId:heartbeats-threshold",
+            ByteString.fromString(s"${
+              Math.floor(60 / config.expectedClientRenewalIntervalSeconds) * instances.length * config.renewalPercentThreshold)
+            }"),
+            config.renewalThresholdUpdateIntervalMs.minutes.toMillis.some
+          )
+      })
+  }
+
+  // calculate threshold each minute
+  private def setExpectedHeartbeats(pluginId: String, config: EurekaServerConfig)
+                                (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
+    env.datastores.rawDataStore
+      .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps*")
+      .flatMap(instances => {
+        val expected = 1 + config.expectedClientRenewalIntervalSeconds * instances.length
+
+        for {
+          heartbeats <- env.datastores.rawDataStore
+            .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:heartbeats-last-minute")
+          heartbeatsThreshold <- env.datastores.rawDataStore
+            .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:heartbeats-threshold")
+        } yield {
+          (heartbeats, heartbeatsThreshold) match {
+            case (Some(heartbeats), Some(heartbeatsThreshold)) =>
+                togglePreservationMode(pluginId, heartbeats.utf8String.toInt < expected && expected < heartbeatsThreshold.utf8String.toInt)
+            case _ => ??? // never should happened
+          }
+        }
+      })
+  }
+
+  private def togglePreservationMode(pluginId: String, enabled: Boolean)
+                                    (implicit env: Env, ec: ExecutionContext, mat: Materializer)= {
+      env.datastores.rawDataStore
+        .set(
+          s"${env.storageRoot}:plugins:eureka-server-$pluginId:preservation-mode",
+          ByteString.fromString(s"$enabled"),
+          365.days.toMillis.some
+        )
+  }
+
+   */
   private def notFoundResponse() = {
     bodyResponse(404,
       Map("Content-Type" -> "application/json"), Source.empty).vfuture
@@ -63,15 +244,11 @@ class EurekaServerSink extends NgBackendCall {
 
     env.datastores.rawDataStore
       .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps*")
-      .flatMap { arr =>
-        println(s"GET ${arr.length} apps")
-        successfulResponse(arr.map(_.utf8String.parseJson))
-      }
+      .flatMap(arr => successfulResponse(arr.map(_.utf8String.parseJson)))
   }
 
   private def createApp(pluginId: String, appId: String, hasBody: Boolean, body: Future[ByteString])
                        (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
-
     if (hasBody)
       body.flatMap { bodyRaw =>
         val instance = bodyRaw.utf8String.parseJson.as[JsObject]
@@ -87,12 +264,9 @@ class EurekaServerSink extends NgBackendCall {
                 ).stringify.byteString,
                 120.seconds.toMillis.some)
               .flatMap { res =>
-                if(res) {
-                  println("Successful update apps")
-                  bodyResponse(204, Map.empty, Source.empty)
-                    .vfuture
+                if (res) {
+                  bodyResponse(204, Map.empty, Source.empty).vfuture
                 } else {
-                  println("Failed to update apps")
                   bodyResponse(400,
                     Map("Content-Type" -> "application/json"),
                     Json.obj("error" -> "an error happened during registration of new app").stringify.byteString.singleSource
@@ -114,7 +288,7 @@ class EurekaServerSink extends NgBackendCall {
   }
 
   private def getAppWithId(pluginId: String, appId: String)
-                          (implicit env: Env, ec: ExecutionContext, mat: Materializer)= {
+                          (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
     env.datastores.rawDataStore
       .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:*")
       .flatMap { instances =>
@@ -140,7 +314,7 @@ class EurekaServerSink extends NgBackendCall {
   }
 
   private def getAppWithIdAndInstanceId(pluginId: String, appId: String, instanceId: String)
-                          (implicit env: Env, ec: ExecutionContext, mat: Materializer)= {
+                                       (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
     env.datastores.rawDataStore
       .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
       .flatMap {
@@ -157,7 +331,7 @@ class EurekaServerSink extends NgBackendCall {
   }
 
   private def getInstanceWithId(pluginId: String, instanceId: String)
-                          (implicit env: Env, ec: ExecutionContext, mat: Materializer)= {
+                               (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
     env.datastores.rawDataStore
       .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:*:$instanceId")
       .flatMap { instances =>
@@ -174,11 +348,10 @@ class EurekaServerSink extends NgBackendCall {
   }
 
   private def deleteAppWithId(pluginId: String, appId: String, instanceId: String)
-                               (implicit env: Env, ec: ExecutionContext, mat: Materializer)= {
+                             (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
     env.datastores.rawDataStore
       .del(Seq(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId"))
       .flatMap { _ =>
-        println("DELETE", appId, instanceId)
         bodyResponse(
           200,
           Map("Content-Type" -> "application/json"),
@@ -188,30 +361,24 @@ class EurekaServerSink extends NgBackendCall {
   }
 
   private def checkHeartbeat(pluginId: String, appId: String, instanceId: String)
-                                       (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
+                            (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
     env.datastores.rawDataStore
       .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
       .flatMap {
-        case None =>
-          println(s"Failed heartbeat : ${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
-          bodyResponse(404,
-            Map("Content-Type" -> "application/json"), Source.empty).vfuture
-        case Some(v) =>
-          println(s"Successful heartbeat : ${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
-          bodyResponse(200,
-            Map("Content-Type" -> "application/json"),
-            Source.empty).vfuture
+        case None => bodyResponse(404,
+          Map("Content-Type" -> "application/json"), Source.empty).vfuture
+        case Some(_) => bodyResponse(200,
+          Map("Content-Type" -> "application/json"),
+          Source.empty).vfuture
       }
   }
 
   private def takeInstanceOutOfService(pluginId: String, appId: String, instanceId: String, status: Option[String])
-                                      (implicit env: Env, ec: ExecutionContext, mat: Materializer)  = {
+                                      (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
     env.datastores.rawDataStore
       .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
       .flatMap {
-        case None =>
-          println(s"Failed takeInstanceOutOfService : ${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
-          notFoundResponse()
+        case None => notFoundResponse()
         case Some(app) =>
           val updatedApp = app.utf8String.parseJson.as[JsObject].deepMerge(
             Json.obj("application" -> Json.obj(
@@ -236,8 +403,7 @@ class EurekaServerSink extends NgBackendCall {
   }
 
   private def putMetadata(pluginId: String, appId: String, instanceId: String, queryString: Option[String])
-                                      (implicit env: Env, ec: ExecutionContext, mat: Materializer)  = {
-
+                         (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
     if (queryString.isEmpty)
       bodyResponse(400,
         Map("Content-Type" -> "application/json"),
@@ -246,19 +412,17 @@ class EurekaServerSink extends NgBackendCall {
       env.datastores.rawDataStore
         .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
         .flatMap {
-          case None =>
-            println(s"Failed takeInstanceOutOfService : ${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
-            notFoundResponse()
+          case None => notFoundResponse()
           case Some(app) =>
             val jsonApp = app.utf8String.parseJson.as[JsObject]
             val updatedApp = jsonApp.deepMerge(
               Json.obj("application" -> Json.obj(
                 "instance" -> Json.obj(
                   "metadata" -> queryString.get.split("&")
-                      .map(_.split("="))
-                      .foldLeft(Json.obj()) { case (acc, c) =>
-                        acc ++ Json.obj(c.head -> c(1))
-                      }
+                    .map(_.split("="))
+                    .foldLeft(Json.obj()) { case (acc, c) =>
+                      acc ++ Json.obj(c.head -> c(1))
+                    }
                 )))
             )
             env.datastores.rawDataStore
@@ -294,7 +458,7 @@ class EurekaServerSink extends NgBackendCall {
   }
 
   private def getInstancesUnderSecureVipAddress(pluginId: String, svipAddress: String)
-                                         (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
+                                               (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
     env.datastores.rawDataStore
       .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps*")
       .flatMap { arr =>
@@ -313,15 +477,15 @@ class EurekaServerSink extends NgBackendCall {
 
     val pluginId = ctx.route.id
     val body = ctx.request.body.runFold(ByteString.empty)(_ ++ _)
+    val config = ctx.cachedConfig(internalName)(EurekaServerConfig.format).getOrElse(EurekaServerConfig())
 
-    println(ctx.request.path)
     (ctx.request.method, ctx.request.path) match {
       case ("PUT", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)/status") =>
         takeInstanceOutOfService(pluginId, appId, instanceId, ctx.rawRequest.getQueryString("value"))
       case ("PUT", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)/metadata") =>
         putMetadata(pluginId, appId, instanceId, ctx.request.queryString)
       case ("GET", r"/eureka/apps/$appId@(.*)") =>
-        if(s"$appId".isEmpty)
+        if (s"$appId".isEmpty)
           getApps(pluginId)
         else
           getAppWithId(pluginId, appId)
@@ -343,3 +507,138 @@ class EurekaServerSink extends NgBackendCall {
     }
   }
 }
+
+case class EurekaTargetConfig(eurekaServer: Option[String] = None, eurekaApp: Option[String] = None)
+  extends NgPluginConfig {
+  override def json: JsValue = Json.obj(
+    "eureka_server" -> eurekaServer,
+    "eureka_app" -> eurekaApp,
+  )
+}
+
+object EurekaTargetConfig {
+  val format: Format[EurekaTargetConfig] = new Format[EurekaTargetConfig] {
+    override def writes(o: EurekaTargetConfig): JsValue             = Json.obj(
+      "eureka_server" -> o.eurekaServer,
+      "eureka_app" -> o.eurekaApp,
+    )
+    override def reads(o: JsValue): JsResult[EurekaTargetConfig] = Try {
+      EurekaTargetConfig(
+        eurekaServer = (o \ "eureka_server").asOpt[String],
+        eurekaApp = (o \ "eureka_app").asOpt[String]
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
+class EurekaTarget extends NgPreRouting {
+
+  override def name: String = "Eureka target"
+
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+
+  override def description: Option[String] = {
+    Some(s"""Description of the eureka target""".stripMargin)
+  }
+
+  override def defaultConfigObject: Option[NgPluginConfig] = EurekaTargetConfig().some
+  override def multiInstance: Boolean = true
+
+  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+    val rawConfig = ctx.cachedConfig(internalName)(EurekaTargetConfig.format)
+
+    rawConfig match {
+      case Some(config) =>
+        (config.eurekaServer, config.eurekaApp) match {
+          case (Some(eurekaServer), Some(eurekaApp)) =>
+            env.datastores.rawDataStore
+              .allMatching(s"${env.storageRoot}:plugins:eureka-server-$eurekaServer:apps:$eurekaApp:*")
+              .flatMap(rawApps => {
+                val apps = rawApps.map(a => a.utf8String.parseJson)
+                ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey -> apps.map(application => {
+                  val instance = (application \ "application" \ "instance").as(EurekaInstance.format.reads)
+                  EurekaInstance.toTarget(instance)
+                }))
+
+                Done
+                  .right
+                  .vfuture
+              })
+          case _ =>
+            Errors
+              .craftResponseResult(
+                "An error occured",
+                Results.BadRequest,
+                ctx.request,
+                None,
+                Some("errors.eureka.config"),
+                duration = ctx.report.getDurationNow(),
+                overhead = ctx.report.getOverheadInNow(),
+                attrs = ctx.attrs,
+                maybeRoute = ctx.route.some
+              )
+              .map(r => Left(NgPreRoutingErrorWithResult(r)))
+        }
+      case None =>
+        Errors
+          .craftResponseResult(
+            "An error occured",
+            Results.BadRequest,
+            ctx.request,
+            None,
+            Some("errors.eureka.config"),
+            duration = ctx.report.getDurationNow(),
+            overhead = ctx.report.getOverheadInNow(),
+            attrs = ctx.attrs,
+            maybeRoute = ctx.route.some
+          )
+          .map(r => Left(NgPreRoutingErrorWithResult(r)))
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
