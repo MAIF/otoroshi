@@ -122,7 +122,7 @@ class OtoroshiWorker(interface: String, router: OtoroshiRequestHandler, errorHan
     new SSLContext(
       new SSLContextSpi() {
         override def engineCreateSSLEngine(): SSLEngine                     =
-          DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols)
+          DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols, None)
         override def engineCreateSSLEngine(s: String, i: Int): SSLEngine    = engineCreateSSLEngine()
         override def engineInit(
             keyManagers: Array[KeyManager],

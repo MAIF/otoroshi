@@ -147,6 +147,9 @@ libraryDependencies ++= Seq(
   "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"  % "1.11.0",
   "io.opentelemetry"                 % "opentelemetry-exporter-jaeger"  % "1.11.0",
   "com.amazonaws"                    % "aws-java-sdk-secretsmanager"    % "1.12.173" excludeAll (excludesJackson: _*),
+  "io.projectreactor.netty"           % "reactor-netty-core"            % "1.0.22",
+  "io.projectreactor.netty"           % "reactor-netty-http"            % "1.0.22",
+  "io.projectreactor.netty.incubator" % "reactor-netty-incubator-quic"  % "0.0.12",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"             % "5.1.0" % Test,
   // do not update because the feature is deprecated and will be removed
@@ -270,8 +273,8 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.events.maxSize=0",
   "-Dotoroshi.cluster.mode=Leader",
   "-Dotoroshi.cluster.leader.name=otoroshi-leader-dev",
-  "-Dotoroshi.tunnels.enabled=true",
-  "-Dotoroshi.tunnels.default.enabled=true",
+  "-Dotoroshi.tunnels.enabled=false",
+  "-Dotoroshi.tunnels.default.enabled=false",
   "-Dotoroshi.tunnels.default.url=http://127.0.0.1:9999",
   "-Dotoroshi.instance.name=dev",
   "-Dotoroshi.vaults.enabled=true",

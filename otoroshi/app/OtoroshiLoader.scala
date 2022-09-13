@@ -32,6 +32,7 @@ class OtoroshiLoader extends ApplicationLoader {
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
+    new otoroshi.utils.netty.HttpServer(components.env).start()
     components.application
   }
 }

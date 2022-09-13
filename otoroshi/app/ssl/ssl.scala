@@ -1684,7 +1684,8 @@ object DynamicSSLEngineProvider {
   def createSSLEngine(
       clientAuth: ClientAuth,
       cipherSuites: Option[Seq[String]],
-      protocols: Option[Seq[String]]
+      protocols: Option[Seq[String]],
+      appProto: Option[String],
   ): SSLEngine = {
     val context: SSLContext    = DynamicSSLEngineProvider.currentServer
     if (logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
@@ -1693,7 +1694,7 @@ object DynamicSSLEngineProvider {
     val rawEnabledProtocols    = rawEngine.getEnabledProtocols.toSeq
     cipherSuites.foreach(s => rawEngine.setEnabledCipherSuites(s.toArray))
     protocols.foreach(p => rawEngine.setEnabledProtocols(p.toArray))
-    val engine                 = new CustomSSLEngine(rawEngine)
+    val engine                 = new CustomSSLEngine(rawEngine, appProto)
     val sslParameters          = new SSLParameters
     val matchers               = new java.util.ArrayList[SNIMatcher]()
 
@@ -1766,7 +1767,7 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
   }
 
   override def createSSLEngine(): SSLEngine = {
-    DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols)
+    DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols, None)
   }
 
   private def setupSslContext(): SSLContext = {
@@ -2112,7 +2113,7 @@ object FakeKeyStore {
   }
 }
 
-class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
+class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String]) extends SSLEngine {
 
   // println(delegate.getClass.getName)
   // sun.security.ssl.SSLEngineImpl
@@ -2248,7 +2249,10 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
   override def getHandshakeApplicationProtocolSelector: BiFunction[SSLEngine, util.List[String], String] =
     delegate.getHandshakeApplicationProtocolSelector
   override def getHandshakeApplicationProtocol: String                                                   = delegate.getHandshakeApplicationProtocol
-  override def getApplicationProtocol: String                                                            = delegate.getApplicationProtocol
+  override def getApplicationProtocol: String                                                            = appProto match {
+    case None => delegate.getApplicationProtocol
+    case Some(protocol) => protocol
+  }
 }
 
 sealed trait ClientCertificateValidationDataStore extends BasicStore[ClientCertificateValidator] {
