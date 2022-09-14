@@ -617,10 +617,10 @@ class BackOfficeController(
     BackOfficeActionAuth.async { _ =>
       env.datastores.rawDataStore
         .allMatching(s"${env.storageRoot}:plugins:eureka-server-$id:apps*")
-        .map { apps =>
+        .map { rawApps =>
           Ok(
             JsArray(
-              apps.map(app => Json.parse(app.utf8String))
+              rawApps.map(app => Json.parse(app.utf8String))
             )
           )
         }

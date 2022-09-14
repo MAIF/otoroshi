@@ -4,6 +4,7 @@ import akka.Done
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import kaleidoscope._
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
@@ -123,32 +124,18 @@ object EurekaApp {
   }
 }
 
-case class EurekaServerConfig(
-                               selfPreservation: Boolean = true,
-                               expectedClientRenewalIntervalSeconds: Int = 30, // seconds, The server expects client heartbeats at an interval configured with this property
-                               leaseExpirationDurationInSeconds: Int = 90, // seconds, Indicates the time in seconds that the Eureka server waits since it received the last heartbeat from a client before it can remove that client from its registry
-                               renewalPercentThreshold: Double = .85, // if we lost 15% of the eureka clients, Eureka will enter in self preservation mode
-                               renewalThresholdUpdateIntervalMs: Int = 15 // minutes
-                            ) extends NgPluginConfig {
+case class EurekaServerConfig(evictionTimeout: Int = 300) extends NgPluginConfig {
   def json: JsValue = EurekaServerConfig.format.writes(this)
 }
 
 object EurekaServerConfig {
   val format: Format[EurekaServerConfig] = new Format[EurekaServerConfig] {
     override def writes(o: EurekaServerConfig): JsValue             = Json.obj(
-      "self_preservation" -> o.selfPreservation,
-      "expected_client_renewal_interval_seconds" -> o.expectedClientRenewalIntervalSeconds,
-      "lease_expiration_duration_in_seconds" -> o.leaseExpirationDurationInSeconds,
-      "renewal_percent_threshold" -> o.renewalPercentThreshold,
-      "renewal_threshold_update_interval_ms" -> o.renewalThresholdUpdateIntervalMs
+      "evictionTimeout" -> o.evictionTimeout
     )
-    override def reads(json: JsValue): JsResult[EurekaServerConfig] = Try {
+    override def reads(o: JsValue): JsResult[EurekaServerConfig] = Try {
       EurekaServerConfig(
-        selfPreservation = (json \ "self_preservation").asOpt[Boolean].getOrElse(true),
-        expectedClientRenewalIntervalSeconds = (json \ "expected_client_renewal_interval_seconds").asOpt[Int].getOrElse(30),
-        leaseExpirationDurationInSeconds = (json \ "lease_expiration_duration_in_seconds").asOpt[Int].getOrElse(90),
-        renewalPercentThreshold = (json \ "renewal_percent_threshold").asOpt[Double].getOrElse(.85),
-        renewalThresholdUpdateIntervalMs = (json \ "renewal_threshold_update_interval_ms").asOpt[Int].getOrElse(15)
+        evictionTimeout = (o \ "evictionTimeout").asOpt[Int].getOrElse(300)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -160,73 +147,16 @@ object EurekaServerConfig {
 class EurekaServerSink extends NgBackendCall {
 
   override def useDelegates: Boolean = false
-
   override def multiInstance: Boolean = false
-
   override def core: Boolean = false
-
   override def name: String = "Eureka instance"
 
   override def description: Option[String] = "Eureka plugin description".some
-
   override def defaultConfigObject: Option[NgPluginConfig] = EurekaServerConfig().some
-
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
-
   override def steps: Seq[NgStep] = Seq(NgStep.CallBackend)
 
-  /*private def setHeartbeatsThreshold(pluginId: String, config: EurekaServerConfig)
-                                 (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
-    env.datastores.rawDataStore
-      .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps*")
-      .flatMap(instances => {
-        env.datastores.rawDataStore
-          .set(
-            s"${env.storageRoot}:plugins:eureka-server-$pluginId:heartbeats-threshold",
-            ByteString.fromString(s"${
-              Math.floor(60 / config.expectedClientRenewalIntervalSeconds) * instances.length * config.renewalPercentThreshold)
-            }"),
-            config.renewalThresholdUpdateIntervalMs.minutes.toMillis.some
-          )
-      })
-  }
-
-  // calculate threshold each minute
-  private def setExpectedHeartbeats(pluginId: String, config: EurekaServerConfig)
-                                (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
-    env.datastores.rawDataStore
-      .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps*")
-      .flatMap(instances => {
-        val expected = 1 + config.expectedClientRenewalIntervalSeconds * instances.length
-
-        for {
-          heartbeats <- env.datastores.rawDataStore
-            .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:heartbeats-last-minute")
-          heartbeatsThreshold <- env.datastores.rawDataStore
-            .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:heartbeats-threshold")
-        } yield {
-          (heartbeats, heartbeatsThreshold) match {
-            case (Some(heartbeats), Some(heartbeatsThreshold)) =>
-                togglePreservationMode(pluginId, heartbeats.utf8String.toInt < expected && expected < heartbeatsThreshold.utf8String.toInt)
-            case _ => ??? // never should happened
-          }
-        }
-      })
-  }
-
-  private def togglePreservationMode(pluginId: String, enabled: Boolean)
-                                    (implicit env: Env, ec: ExecutionContext, mat: Materializer)= {
-      env.datastores.rawDataStore
-        .set(
-          s"${env.storageRoot}:plugins:eureka-server-$pluginId:preservation-mode",
-          ByteString.fromString(s"$enabled"),
-          365.days.toMillis.some
-        )
-  }
-
-   */
   private def notFoundResponse() = {
     bodyResponse(404,
       Map("Content-Type" -> "application/json"), Source.empty).vfuture
@@ -247,7 +177,7 @@ class EurekaServerSink extends NgBackendCall {
       .flatMap(arr => successfulResponse(arr.map(_.utf8String.parseJson)))
   }
 
-  private def createApp(pluginId: String, appId: String, hasBody: Boolean, body: Future[ByteString])
+  private def createApp(pluginId: String, appId: String, hasBody: Boolean, body: Future[ByteString], evictionTimeout: Int)
                        (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
     if (hasBody)
       body.flatMap { bodyRaw =>
@@ -260,9 +190,10 @@ class EurekaServerSink extends NgBackendCall {
             env.datastores.rawDataStore
               .set(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId",
                 Json.obj(
-                  "application" -> Json.obj("name" -> name).deepMerge(instance)
+                  "application" -> Json.obj("name" -> name).deepMerge(instance.deepMerge(
+                    Json.obj("instance" -> Json.obj("last_heartbeat" -> new java.util.Date().getTime))))
                 ).stringify.byteString,
-                120.seconds.toMillis.some)
+                evictionTimeout.seconds.toMillis.some)
               .flatMap { res =>
                 if (res) {
                   bodyResponse(204, Map.empty, Source.empty).vfuture
@@ -360,16 +291,30 @@ class EurekaServerSink extends NgBackendCall {
       }
   }
 
-  private def checkHeartbeat(pluginId: String, appId: String, instanceId: String)
+  private def checkHeartbeat(pluginId: String, appId: String, instanceId: String, evictionTimeout: Int)
                             (implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
+    val key = s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId"
     env.datastores.rawDataStore
-      .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
+      .get(key)
       .flatMap {
-        case None => bodyResponse(404,
-          Map("Content-Type" -> "application/json"), Source.empty).vfuture
-        case Some(_) => bodyResponse(200,
-          Map("Content-Type" -> "application/json"),
-          Source.empty).vfuture
+        case None => bodyResponse(404, Map("Content-Type" -> "application/json"), Source.empty)
+          .vfuture
+        case Some(v) =>
+          env.datastores.rawDataStore
+            .set(
+              key,
+              v.utf8String.parseJson.as[JsObject].deepMerge(
+                Json.obj("application" -> Json.obj(
+                  "instance" -> Json.obj("last_heartbeat" -> new java.util.Date().getTime)
+                )))
+                .stringify.byteString,
+              (evictionTimeout * 1000).seconds.toMillis.some)
+            .flatMap {
+              case true => bodyResponse(200, Map("Content-Type" -> "application/json"), Source.empty)
+                .vfuture
+              case false => bodyResponse(400, Map.empty, Source.empty)
+                  .vfuture
+            }
       }
   }
 
@@ -428,7 +373,7 @@ class EurekaServerSink extends NgBackendCall {
             env.datastores.rawDataStore
               .set(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId",
                 updatedApp.stringify.byteString,
-                120.seconds.toMillis.some)
+                None)
               .flatMap {
                 case true =>
                   bodyResponse(200,
@@ -498,11 +443,11 @@ class EurekaServerSink extends NgBackendCall {
       case ("GET", r"/eureka/svips/$svipAddress@(.*)") =>
         getInstancesUnderSecureVipAddress(pluginId, svipAddress)
       case ("POST", r"/eureka/apps/$appId@(.*)") =>
-        createApp(pluginId, appId, ctx.request.hasBody, body)
+        createApp(pluginId, appId, ctx.request.hasBody, body, config.evictionTimeout)
       case ("DELETE", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)") =>
         deleteAppWithId(pluginId, appId, instanceId)
       case ("PUT", r"/eureka/apps/$appId@(.*)/$instanceId@(.*)") =>
-        checkHeartbeat(pluginId, appId, instanceId)
+        checkHeartbeat(pluginId, appId, instanceId, config.evictionTimeout)
       case _ => notFoundResponse()
     }
   }
@@ -534,6 +479,13 @@ object EurekaTargetConfig {
   }
 }
 
+object EurekaTarget {
+  private val cache: Cache[String, Seq[JsValue]] = Scaffeine()
+    .expireAfterWrite(15.seconds)
+    .maximumSize(1000)
+    .build()
+}
+
 class EurekaTarget extends NgPreRouting {
 
   override def name: String = "Eureka target"
@@ -549,6 +501,13 @@ class EurekaTarget extends NgPreRouting {
   override def defaultConfigObject: Option[NgPluginConfig] = EurekaTargetConfig().some
   override def multiInstance: Boolean = true
 
+  private def updatePreExtractedRequestTargetsKey(ctx: NgPreRoutingContext, apps: Seq[JsValue]) = {
+    ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey -> apps.map(application => {
+      val instance = (application \ "application" \ "instance").as(EurekaInstance.format.reads)
+      EurekaInstance.toTarget(instance)
+    }))
+  }
+
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val rawConfig = ctx.cachedConfig(internalName)(EurekaTargetConfig.format)
 
@@ -556,19 +515,25 @@ class EurekaTarget extends NgPreRouting {
       case Some(config) =>
         (config.eurekaServer, config.eurekaApp) match {
           case (Some(eurekaServer), Some(eurekaApp)) =>
-            env.datastores.rawDataStore
-              .allMatching(s"${env.storageRoot}:plugins:eureka-server-$eurekaServer:apps:$eurekaApp:*")
-              .flatMap(rawApps => {
-                val apps = rawApps.map(a => a.utf8String.parseJson)
-                ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey -> apps.map(application => {
-                  val instance = (application \ "application" \ "instance").as(EurekaInstance.format.reads)
-                  EurekaInstance.toTarget(instance)
-                }))
-
+            val key = s"${env.storageRoot}:plugins:eureka-server-$eurekaServer:apps:$eurekaApp:*"
+            EurekaTarget.cache.getIfPresent(key) match {
+              case None =>
+                env.datastores.rawDataStore
+                  .allMatching(s"${env.storageRoot}:plugins:eureka-server-$eurekaServer:apps:$eurekaApp:*")
+                  .flatMap(rawApps => {
+                    val apps = rawApps.map(a => a.utf8String.parseJson)
+                    updatePreExtractedRequestTargetsKey(ctx, apps)
+                    EurekaTarget.cache.put(key, apps)
+                    Done
+                      .right
+                      .vfuture
+                  })
+              case Some(apps) =>
+                updatePreExtractedRequestTargetsKey(ctx, apps)
                 Done
                   .right
                   .vfuture
-              })
+            }
           case _ =>
             Errors
               .craftResponseResult(

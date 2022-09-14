@@ -19,7 +19,6 @@ export function EurekaServerPage(props) {
     BackOfficeServices.getEurekaApps(params.eurekaServerId)
       .then(apps => {
         const groupedApps = groupByApp(apps)
-        console.log(groupedApps)
         setApps(groupedApps)
 
         const status = calculateGlobalStatus(groupedApps)
@@ -27,7 +26,7 @@ export function EurekaServerPage(props) {
 
         setNumberOfInstances(apps)
 
-        setTimeout(sync, 60000);
+        setTimeout(sync, 30000);
       })
   }
 
@@ -102,16 +101,19 @@ const App = ({ name, instances }) => {
     <span style={{ textTransform: 'uppercase' }}>{name}</span>
     {instances.map(instance => <div className='d-flex justify-content-between align-items-center py-3' key={instance.instanceId}>
       <div className='d-flex align-items-center'>
-        <i className={`fas fa-${instance.status === 'UP' ? 'check' : 'times'} px-3`}
-          style={{
-            color: instance.status === 'UP' ? 'var(--bs-green)' : 'var(--bs-danger)'
-          }} />
+        <div className='d-flex flex-column'>
+          <i className={`fas fa-${instance.status === 'UP' ? 'check' : 'times'} px-3`}
+            style={{
+              color: instance.status === 'UP' ? 'var(--bs-green)' : 'var(--bs-danger)'
+            }} />
+          <Countdown lastHeartBeat={instance.last_heartbeat} />
+        </div>
         <div className='d-flex flex-column'>
           <span style={{ textTransform: 'uppercase' }}>{instance.instanceId}</span>
           <a href={instance.homePageUrl}>{instance.homePageUrl}</a>
         </div>
       </div>
-      <button type="button" class="btn btn-success btn-sm me-3"
+      <button type="button" className="btn btn-success btn-sm me-3"
         onClick={() => {
           window.newAlert(
             <Suspense fallback="Loading ...">
@@ -126,5 +128,22 @@ const App = ({ name, instances }) => {
         }}>Informations</button>
     </div>)}
   </div>
+}
+
+const Countdown = ({ lastHeartBeat }) => {
+  const [count, setCount] = useState()
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount(Date.now() - lastHeartBeat)
+    })
+
+    return () => clearInterval(interval)
+  }, [lastHeartBeat])
+
+
+  return <span className="text-center">
+    {Math.floor(count / 1000)}s
+  </span>
 }
 
