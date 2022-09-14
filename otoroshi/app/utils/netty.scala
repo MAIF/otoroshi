@@ -3,9 +3,7 @@ package otoroshi.utils.netty
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import io.netty.handler.codec.http._
-import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import io.netty.handler.ssl._
-import io.netty.handler.ssl.util.SelfSignedCertificate
 import org.reactivestreams.Publisher
 import otoroshi.env.Env
 import otoroshi.next.proxy.ProxyEngine
@@ -16,7 +14,7 @@ import play.api.Logger
 import play.api.http.{HttpChunk, HttpEntity}
 import play.api.libs.typedmap.TypedMap
 import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
-import play.api.mvc.{Cookie, Cookies, Headers, Request, Results}
+import play.api.mvc.{Cookies, Headers, Request, Results}
 import reactor.netty.http.server.HttpServerRequest
 
 import java.net.{InetAddress, URI}
@@ -240,12 +238,13 @@ class HttpServer(env: Env) {
 
   def start(): Unit = {
 
-    logger.info("")
-    logger.info(s"Starting the Reactor Netty Server !!!")
-    logger.info(s" - https://127.0.0.1:${env.httpsPort + 50}")
-    logger.info(s" - https://127.0.0.1:${env.httpsPort + 51}")
-    logger.info(s" - http://127.0.0.1:${env.httpPort + 50}")
-    logger.info("")
+    // TODO: start from config
+
+    logger.debug("")
+    logger.debug(s"Starting the Reactor Netty Server !!!")
+    logger.debug(s" - https://0.0.0.1:${env.httpsPort + 50}") // TODO: from config
+    logger.debug(s" - http://0.0.0.1:${env.httpPort + 50}") // TODO: from config
+    logger.debug("")
 
     val serverHttps = HttpServer
       .create()
@@ -278,31 +277,9 @@ class HttpServer(env: Env) {
       .protocol(HttpProtocol.H2C, HttpProtocol.HTTP11)
       .handle((req, res) => handle(req, res, false))
       .bindNow()
-    // val serverCtx = QuicSslContextBuilder.forServer(cert.privateKey(), null, cert.certificate())
-    //     .applicationProtocols("http/1.1")
-    //     .build()
-    // val serverHttp3 =
-    //   QuicServer.create()
-    //     .host("0.0.0.0")
-    //     .port(env.httpsPort + 51)
-    //     .secure(serverCtx)
-    //     .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
-    //     // .wiretap(true)
-    //     // .accessLog(true)
-    //     // .idleTimeout(Duration.ofSeconds(5))
-    //     .initialSettings(spec =>
-    //       spec.maxData(10000000)
-    //         .maxStreamDataBidirectionalRemote(1000000)
-    //         .maxStreamsBidirectional(100))
-    //     .handleStream { (in, out) =>
-    //       // TODO: plug handle here
-    //       out.send(in.receive().retain())
-    //     }
-    //     .bindNow()
     Runtime.getRuntime.addShutdownHook(new Thread(() => {
       serverHttp.disposeNow()
       serverHttps.disposeNow()
-      // serverHttp3.disposeNow()
     }))
   }
 }
