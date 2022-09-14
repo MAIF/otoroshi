@@ -3,22 +3,27 @@ package otoroshi.utils.netty
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import io.netty.handler.codec.http._
+import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import io.netty.handler.ssl._
 import io.netty.handler.ssl.util.SelfSignedCertificate
 import org.reactivestreams.Publisher
 import otoroshi.env.Env
 import otoroshi.next.proxy.ProxyEngine
 import otoroshi.script.RequestHandler
+import otoroshi.ssl.{ClientAuth, DynamicSSLEngineProvider}
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.http.{HttpChunk, HttpEntity}
 import play.api.libs.typedmap.TypedMap
 import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
-import play.api.mvc.{Cookies, Headers, Request, Results}
+import play.api.mvc.{Cookie, Cookies, Headers, Request, Results}
 import reactor.netty.http.server.HttpServerRequest
 
 import java.net.{InetAddress, URI}
 import java.security.cert.X509Certificate
+import java.security.{Provider, SecureRandom}
 import java.util.concurrent.atomic.AtomicLong
+import javax.net.ssl._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -50,7 +55,13 @@ object ReactiveStreamUtils {
 
 class ReactorNettyRemoteConnection(req: HttpServerRequest, val secure: Boolean) extends RemoteConnection {
   lazy val remoteAddress: InetAddress = req.remoteAddress().getAddress
-  lazy val clientCertificateChain: Option[Seq[X509Certificate]] = None // TODO: fixme
+  lazy val clientCertificateChain: Option[Seq[X509Certificate]] = {
+    if (secure) {
+      None // TODO: fixme
+    } else {
+      None
+    }
+  }
 }
 
 class ReactorNettyRequestTarget(req: HttpServerRequest) extends RequestTarget {
@@ -71,7 +82,39 @@ class ReactorNettyRequest(req: HttpServerRequest, secure: Boolean) extends Reque
 
   val attrs = TypedMap.apply(
     RequestAttrKey.Id      -> ReactorNettyRequest.counter.incrementAndGet(),
-    RequestAttrKey.Cookies -> Cell(Cookies.apply(Seq.empty)) // TODO: fixme
+    RequestAttrKey.Cookies -> Cell(Cookies(req.cookies().asScala.toSeq.flatMap {
+      case (_, cookies) => cookies.asScala.map {
+        case cookie: io.netty.handler.codec.http.cookie.DefaultCookie => {
+          play.api.mvc.Cookie(
+            name = cookie.name(),
+            value = cookie.value(),
+            maxAge = Option(cookie.maxAge()).map(_.toInt),
+            path = Option(cookie.path()).filter(_.nonEmpty).getOrElse("/"),
+            domain = Option(cookie.domain()).filter(_.nonEmpty),
+            secure = cookie.isSecure,
+            httpOnly = cookie.isHttpOnly,
+            sameSite = Option(cookie.sameSite()).map {
+              case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None =>  play.api.mvc.Cookie.SameSite.None
+              case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict => play.api.mvc.Cookie.SameSite.Strict
+              case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax => play.api.mvc.Cookie.SameSite.Lax
+              case _ => play.api.mvc.Cookie.SameSite.None
+            }
+          )
+        }
+        case cookie => {
+          play.api.mvc.Cookie(
+            name = cookie.name(),
+            value = cookie.value(),
+            maxAge = Option(cookie.maxAge()).map(_.toInt),
+            path = Option(cookie.path()).filter(_.nonEmpty).getOrElse("/"),
+            domain = Option(cookie.domain()).filter(_.nonEmpty),
+            secure = cookie.isSecure,
+            httpOnly = cookie.isHttpOnly,
+            sameSite = None
+          )
+        }
+      }
+    }))
   )
   lazy val method: String = req.method().toString
   lazy val version: String = req.version().toString
@@ -95,7 +138,27 @@ class HttpServer(env: Env) {
   implicit private val mat = env.otoroshiMaterializer
   implicit private val ev = env
 
+  private val logger = Logger("otoroshi-experiments-reactor-netty-server")
+
   private val engine: ProxyEngine = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get.asInstanceOf[ProxyEngine]
+
+  private lazy val cipherSuites =
+    env.configuration
+      .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
+      .filterNot(_.isEmpty)
+  private lazy val protocols    =
+    env.configuration
+      .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols")
+      .filterNot(_.isEmpty)
+  private lazy val clientAuth = {
+    val auth = env.configuration
+      .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.clientAuth")
+      .flatMap(ClientAuth.apply)
+      .getOrElse(ClientAuth.None)
+    if (DynamicSSLEngineProvider.logger.isDebugEnabled)
+      DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
+    auth
+  }
 
   private def handle(req: HttpServerRequest, res: HttpServerResponse, secure: Boolean): Publisher[Void] = {
     ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
@@ -104,11 +167,8 @@ class HttpServer(env: Env) {
           case HttpEntity.NoEntity => HttpServerBodyResponse(Flux.empty[Array[Byte]](), None, None, false)
           case HttpEntity.Strict(data, contentType) => HttpServerBodyResponse(Flux.just(Seq(data.toArray[Byte]): _*), contentType, Some(data.size.toLong), false)
           case HttpEntity.Chunked(chunks, contentType) => {
-            val publisher = chunks.map {
-              case HttpChunk.Chunk(data) => Some(data.toArray[Byte])
-              case HttpChunk.LastChunk(_) => None
-            }.collect{
-              case Some(data) => data
+            val publisher = chunks.collect {
+              case HttpChunk.Chunk(data) => data.toArray[Byte]
             }.runWith(Sink.asPublisher(false))
             HttpServerBodyResponse(publisher, contentType, None, true)
           }
@@ -126,7 +186,23 @@ class HttpServer(env: Env) {
         res
           .status(result.header.status)
           .headers(headers)
-          // .addCookie() // TODO: fixme
+          .applyOnIf(result.newCookies.nonEmpty) { r =>
+            result.newCookies.map { cookie =>
+              val nettyCookie = new io.netty.handler.codec.http.cookie.DefaultCookie(cookie.name, cookie.value)
+              nettyCookie.setPath(cookie.path)
+              nettyCookie.setHttpOnly(cookie.httpOnly)
+              nettyCookie.setSecure(cookie.secure)
+              cookie.domain.foreach(d => nettyCookie.setDomain(d))
+              cookie.maxAge.foreach(d => nettyCookie.setMaxAge(d.toLong))
+              cookie.sameSite.foreach {
+                case play.api.mvc.Cookie.SameSite.None => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
+                case play.api.mvc.Cookie.SameSite.Strict => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
+                case play.api.mvc.Cookie.SameSite.Lax => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
+              }
+              r.addCookie(nettyCookie)
+            }
+            r
+          }
           .chunkedTransfer(bresponse.chunked)
           .keepAlive(true)
           .sendByteArray(bresponse.body)
@@ -134,22 +210,61 @@ class HttpServer(env: Env) {
     }
   }
 
+  private def setupSslContext(): SSLContext = {
+    new SSLContext(
+      new SSLContextSpi() {
+        override def engineCreateSSLEngine(): SSLEngine                     = DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols, None)
+        override def engineCreateSSLEngine(s: String, i: Int): SSLEngine    = engineCreateSSLEngine()
+        override def engineInit(
+                                 keyManagers: Array[KeyManager],
+                                 trustManagers: Array[TrustManager],
+                                 secureRandom: SecureRandom
+                               ): Unit                                                             = ()
+        override def engineGetClientSessionContext(): SSLSessionContext     =
+          DynamicSSLEngineProvider.currentServer.getClientSessionContext
+        override def engineGetServerSessionContext(): SSLSessionContext     =
+          DynamicSSLEngineProvider.currentServer.getServerSessionContext
+        override def engineGetSocketFactory(): SSLSocketFactory             =
+          DynamicSSLEngineProvider.currentServer.getSocketFactory
+        override def engineGetServerSocketFactory(): SSLServerSocketFactory =
+          DynamicSSLEngineProvider.currentServer.getServerSocketFactory
+      },
+      new Provider(
+        "[NETTY] Otoroshi SSlEngineProvider delegate",
+        "1.0",
+        "[NETTY] A provider that delegates calls to otoroshi dynamic one"
+      )                   {},
+      "[NETTY] Otoroshi SSLEngineProvider delegate"
+    ) {}
+  }
+
   def start(): Unit = {
-    println(s"Starting the Reactor Netty Server !!! https://127.0.0.1:${env.httpsPort + 50} / https://127.0.0.1:${env.httpsPort + 51} / http://127.0.0.1:${env.httpPort + 50}")
-    // TODO: fixme - use otoroshi one
-    val cert = new SelfSignedCertificate()
-    val serverOptions = SslContextBuilder.forServer(cert.certificate(), cert.privateKey()).trustManager()
+
+    logger.info("")
+    logger.info(s"Starting the Reactor Netty Server !!!")
+    logger.info(s" - https://127.0.0.1:${env.httpsPort + 50}")
+    logger.info(s" - https://127.0.0.1:${env.httpsPort + 51}")
+    logger.info(s" - http://127.0.0.1:${env.httpPort + 50}")
+    logger.info("")
 
     val serverHttps = HttpServer
       .create()
       .host("0.0.0.0")
-      .accessLog(true)
-      .wiretap(false)
-      .port(env.httpsPort + 50)
-      .protocol(HttpProtocol.HTTP11, HttpProtocol.H2)
-      .secure { ssl: reactor.netty.tcp.SslProvider.SslContextSpec =>
-        // TODO: use dyn keymanagerfactory
-        ssl.sslContext(serverOptions)
+      .accessLog(true) // TODO: from config
+      .wiretap(false) // TODO: from config
+      .port(env.httpsPort + 50) // TODO: from config
+      .protocol(HttpProtocol.HTTP11, HttpProtocol.H2C)
+      .doOnChannelInit { (observer, channel, _) =>
+        val engine = setupSslContext().createSSLEngine()
+        engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
+          protocols match {
+            case ps if ps.contains("h2") => "h2"
+            case ps if ps.contains("spdy/3") => "spdy/3"
+            case _ => "http/1.1"
+          }
+        })
+        // we do not use .secure() because of no dynamic sni support and use SslHandler instead !
+        channel.pipeline().addFirst(new SslHandler(engine))
       }
       .handle((req, res) => handle(req, res, true))
       .bindNow()
@@ -157,9 +272,9 @@ class HttpServer(env: Env) {
       .create()
       .host("0.0.0.0")
       .noSSL()
-      .accessLog(true)
-      .wiretap(false)
-      .port(env.httpPort + 50)
+      .accessLog(true) // TODO: from config
+      .wiretap(false) // TODO: from config
+      .port(env.httpPort + 50) // TODO: from config
       .protocol(HttpProtocol.H2C, HttpProtocol.HTTP11)
       .handle((req, res) => handle(req, res, false))
       .bindNow()
