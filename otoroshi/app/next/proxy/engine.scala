@@ -142,6 +142,9 @@ object ProxyEngine {
 
 class ProxyEngine() extends RequestHandler {
 
+  def badDefaultRoutingHttp(req: Request[Source[ByteString, _]]): Future[Result] = Results.InternalServerError("bad default routing").vfuture
+  def badDefaultRoutingWs(req: RequestHeader): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = Results.InternalServerError("bad default routing").left.vfuture
+
   private val logger               = Logger("otoroshi-next-gen-proxy-engine")
   private val fakeFailureIndicator = new AtomicBoolean(false)
   private val reqCounter           = new AtomicInteger(0)

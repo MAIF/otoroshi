@@ -2,8 +2,10 @@ package otoroshi.utils.netty
 
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
+import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.Channel
 import io.netty.handler.codec.http._
+import io.netty.handler.codec.http.websocketx._
 import io.netty.handler.ssl._
 import org.reactivestreams.Publisher
 import otoroshi.env.Env
@@ -13,11 +15,14 @@ import otoroshi.ssl.{ClientAuth, DynamicSSLEngineProvider}
 import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
+import play.api.http.websocket.Message
 import play.api.http.{HttpChunk, HttpEntity}
 import play.api.libs.typedmap.TypedMap
+import play.api.mvc._
 import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
-import play.api.mvc.{Cookies, Headers, Request, Results}
-import reactor.core.publisher.Mono
+import play.core.server.common.WebSocketFlowHandler
+import play.core.server.common.WebSocketFlowHandler.{MessageType, RawMessage}
+import reactor.netty.NettyOutbound
 import reactor.netty.http.server.HttpServerRequest
 
 import java.net.{InetAddress, URI}
@@ -85,9 +90,11 @@ object ReactorNettyRequest {
   val counter = new AtomicLong(0L)
 }
 
-class ReactorNettyRequest(req: HttpServerRequest, secure: Boolean, sessionOpt: Option[SSLSession]) extends Request[Source[ByteString, _]] {
+class ReactorNettyRequest(req: HttpServerRequest, secure: Boolean, sessionOpt: Option[SSLSession]) extends ReactorNettyRequestHeader(req, secure, sessionOpt) with Request[Source[ByteString, _]] {
+  lazy val body: Source[ByteString, _] = Source.fromPublisher(req.receive().retain()).map(bb => ByteString(bb.array()))
+}
 
-  import scala.collection.JavaConverters._
+class ReactorNettyRequestHeader(req: HttpServerRequest, secure: Boolean, sessionOpt: Option[SSLSession]) extends RequestHeader {
 
   lazy val attrs = TypedMap.apply(
     RequestAttrKey.Id      -> ReactorNettyRequest.counter.incrementAndGet(),
@@ -130,7 +137,6 @@ class ReactorNettyRequest(req: HttpServerRequest, secure: Boolean, sessionOpt: O
   lazy val headers: Headers = Headers(
     (req.requestHeaders().entries().asScala.map(e => (e.getKey, e.getValue)) ++ sessionOpt.map(s => ("Tls-Session-Info", s.toString))): _*
   )
-  lazy val body: Source[ByteString, _] = Source.fromPublisher(req.receive().retain()).map(bb => ByteString(bb.array()))
   lazy val connection: RemoteConnection = new ReactorNettyRemoteConnection(req, secure, sessionOpt)
   lazy val target: RequestTarget = new ReactorNettyRequestTarget(req)
 }
@@ -171,64 +177,124 @@ class HttpServer(env: Env) {
     auth
   }
 
+  private def sendResultAsHttpResponse(result: Result, res: HttpServerResponse): NettyOutbound = {
+    val bresponse: HttpServerBodyResponse = result.body match {
+      case HttpEntity.NoEntity => HttpServerBodyResponse(Flux.empty[Array[Byte]](), None, None, false)
+      case HttpEntity.Strict(data, contentType) => HttpServerBodyResponse(Flux.just(Seq(data.toArray[Byte]): _*), contentType, Some(data.size.toLong), false)
+      case HttpEntity.Chunked(chunks, contentType) => {
+        val publisher = chunks.collect {
+          case HttpChunk.Chunk(data) => data.toArray[Byte]
+        }.runWith(Sink.asPublisher(false))
+        HttpServerBodyResponse(publisher, contentType, None, true)
+      }
+      case HttpEntity.Streamed(data, contentLength, contentType) => {
+        val publisher = data.map(_.toArray[Byte]).runWith(Sink.asPublisher(false))
+        HttpServerBodyResponse(publisher, contentType, contentLength, false)
+      }
+    }
+    val headers = new DefaultHttpHeaders()
+    result.header.headers.map {
+      case (key, value) => headers.add(key, value)
+    }
+    bresponse.contentType.foreach(ct => headers.add("Content-Type", ct))
+    bresponse.contentLength.foreach(cl => headers.addInt("Content-Length", cl.toInt))
+    res
+      .status(result.header.status)
+      .headers(headers)
+      .applyOnIf(result.newCookies.nonEmpty) { r =>
+        result.newCookies.map { cookie =>
+          val nettyCookie = new io.netty.handler.codec.http.cookie.DefaultCookie(cookie.name, cookie.value)
+          nettyCookie.setPath(cookie.path)
+          nettyCookie.setHttpOnly(cookie.httpOnly)
+          nettyCookie.setSecure(cookie.secure)
+          cookie.domain.foreach(d => nettyCookie.setDomain(d))
+          cookie.maxAge.foreach(d => nettyCookie.setMaxAge(d.toLong))
+          cookie.sameSite.foreach {
+            case play.api.mvc.Cookie.SameSite.None => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
+            case play.api.mvc.Cookie.SameSite.Strict => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
+            case play.api.mvc.Cookie.SameSite.Lax => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
+          }
+          r.addCookie(nettyCookie)
+        }
+        r
+      }
+      .chunkedTransfer(bresponse.chunked)
+      .keepAlive(true)
+      .sendByteArray(bresponse.body)
+  }
+
+  private def frameToMessage(frame: WebSocketFrame): RawMessage = {
+    val builder = ByteString.newBuilder
+    frame.content().readBytes(builder.asOutputStream, frame.content().readableBytes())
+    val bytes = builder.result()
+    val messageType = frame match {
+      case _: TextWebSocketFrame         => MessageType.Text
+      case _: BinaryWebSocketFrame       => MessageType.Binary
+      case close: CloseWebSocketFrame    => MessageType.Close
+      case _: PingWebSocketFrame         => MessageType.Ping
+      case _: PongWebSocketFrame         => MessageType.Pong
+      case _: ContinuationWebSocketFrame => MessageType.Continuation
+    }
+    RawMessage(messageType, bytes, frame.isFinalFragment)
+  }
+
+  private def messageToFrame(message: Message): WebSocketFrame = {
+    import io.netty.handler.codec.http.websocketx._
+    def byteStringToByteBuf(bytes: ByteString): ByteBuf = {
+      if (bytes.isEmpty) {
+        Unpooled.EMPTY_BUFFER
+      } else {
+        Unpooled.wrappedBuffer(bytes.asByteBuffer)
+      }
+    }
+    message match {
+      case play.api.http.websocket.TextMessage(data)                      => new TextWebSocketFrame(data)
+      case play.api.http.websocket.BinaryMessage(data)                    => new BinaryWebSocketFrame(byteStringToByteBuf(data))
+      case play.api.http.websocket.PingMessage(data)                      => new PingWebSocketFrame(byteStringToByteBuf(data))
+      case play.api.http.websocket.PongMessage(data)                      => new PongWebSocketFrame(byteStringToByteBuf(data))
+      case play.api.http.websocket.CloseMessage(Some(statusCode), reason) => new CloseWebSocketFrame(statusCode, reason)
+      case play.api.http.websocket.CloseMessage(None, _)                  => new CloseWebSocketFrame()
+    }
+  }
+
+  private def handleWebsocket(req: HttpServerRequest, res: HttpServerResponse, secure: Boolean, channel: Channel, session: Option[SSLSession]): Publisher[Void] = {
+    // res.status(500).headers(new DefaultHttpHeaders().add("Content-Type", "application/json")).sendString(Mono.just("""{"error":"websocket calls not supported yet"}"""))
+    ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
+      val otoReq = new ReactorNettyRequestHeader(req, secure, session)
+      engine.handleWs(otoReq, engine.badDefaultRoutingWs).map {
+        case Left(result) => sendResultAsHttpResponse(result, res)
+        case Right(flow) => {
+          res.sendWebsocket { (wsInbound, wsOutbound) =>
+            val pub: Publisher[ByteBuf] = Source.fromPublisher(wsInbound.aggregateFrames().receiveFrames())
+              .map(frameToMessage)
+              .via(WebSocketFlowHandler.webSocketProtocol(65536).join(flow))
+              .map(messageToFrame)
+              .map(_.content())
+              .runWith(Sink.asPublisher[ByteBuf](false))
+            // wsOutbound.sendObject(pub)
+            wsOutbound.send(pub)
+          }
+        }
+      }
+    }
+  }
+
   private def handle(req: HttpServerRequest, res: HttpServerResponse, secure: Boolean, channel: Channel): Publisher[Void] = {
     // TODO: handle standard otoroshi urls like in handlers.scala
     // val sslHandler = Option(channel.pipeline().get(classOf[SslHandler]))
     // val sslSession = sslHandler.map(_.engine.getSession) // Does not seems to work as the SslHandler is not available on the pipeline :(
     val sessionOpt = Option(currentSession.get())
     currentSession.remove()
-    val isWebSocket = req.requestHeaders().contains("Sec-WebSocket-Version")
+    val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
+      (req.requestHeaders().contains("Sec-WebSocket-Version") || req.requestHeaders().contains("Sec-WebSocket-Version".toLowerCase)) &&
+      Option(req.requestHeaders().get("Upgrade")).contains("websocket")
     if (isWebSocket) {
-      // TODO: handle websocket calls
-      res.status(500).headers(new DefaultHttpHeaders().add("Content-Type", "application/json")).sendString(Mono.just("""{"error":"websocket calls not supported yet"}"""))
-      // res.sendWebsocket((wsInbound, wsOutbound) => wsOutbound.send(wsInbound.receive().retain()))
+      handleWebsocket(req, res, secure, channel, sessionOpt)
     } else {
       ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
         val otoReq = new ReactorNettyRequest(req, secure, sessionOpt)
-        engine.handle(otoReq, _ => Results.InternalServerError("bad default routing").vfuture).map { result =>
-          val bresponse: HttpServerBodyResponse = result.body match {
-            case HttpEntity.NoEntity => HttpServerBodyResponse(Flux.empty[Array[Byte]](), None, None, false)
-            case HttpEntity.Strict(data, contentType) => HttpServerBodyResponse(Flux.just(Seq(data.toArray[Byte]): _*), contentType, Some(data.size.toLong), false)
-            case HttpEntity.Chunked(chunks, contentType) => {
-              val publisher = chunks.collect {
-                case HttpChunk.Chunk(data) => data.toArray[Byte]
-              }.runWith(Sink.asPublisher(false))
-              HttpServerBodyResponse(publisher, contentType, None, true)
-            }
-            case HttpEntity.Streamed(data, contentLength, contentType) => {
-              val publisher = data.map(_.toArray[Byte]).runWith(Sink.asPublisher(false))
-              HttpServerBodyResponse(publisher, contentType, contentLength, false)
-            }
-          }
-          val headers = new DefaultHttpHeaders()
-          result.header.headers.map {
-            case (key, value) => headers.add(key, value)
-          }
-          bresponse.contentType.foreach(ct => headers.add("Content-Type", ct))
-          bresponse.contentLength.foreach(cl => headers.addInt("Content-Length", cl.toInt))
-          res
-            .status(result.header.status)
-            .headers(headers)
-            .applyOnIf(result.newCookies.nonEmpty) { r =>
-              result.newCookies.map { cookie =>
-                val nettyCookie = new io.netty.handler.codec.http.cookie.DefaultCookie(cookie.name, cookie.value)
-                nettyCookie.setPath(cookie.path)
-                nettyCookie.setHttpOnly(cookie.httpOnly)
-                nettyCookie.setSecure(cookie.secure)
-                cookie.domain.foreach(d => nettyCookie.setDomain(d))
-                cookie.maxAge.foreach(d => nettyCookie.setMaxAge(d.toLong))
-                cookie.sameSite.foreach {
-                  case play.api.mvc.Cookie.SameSite.None => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
-                  case play.api.mvc.Cookie.SameSite.Strict => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
-                  case play.api.mvc.Cookie.SameSite.Lax => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
-                }
-                r.addCookie(nettyCookie)
-              }
-              r
-            }
-            .chunkedTransfer(bresponse.chunked)
-            .keepAlive(true)
-            .sendByteArray(bresponse.body)
+        engine.handle(otoReq, engine.badDefaultRoutingHttp).map { result =>
+          sendResultAsHttpResponse(result, res)
         }
       }
     }
