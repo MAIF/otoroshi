@@ -235,6 +235,7 @@ class HttpServer(env: Env) {
       case _: PongWebSocketFrame         => MessageType.Pong
       case _: ContinuationWebSocketFrame => MessageType.Continuation
     }
+    println(s"received type '${messageType}' with '${bytes.utf8String}'")
     RawMessage(messageType, bytes, frame.isFinalFragment)
   }
 
@@ -265,7 +266,7 @@ class HttpServer(env: Env) {
         case Left(result) => sendResultAsHttpResponse(result, res)
         case Right(flow) => {
           res.sendWebsocket { (wsInbound, wsOutbound) =>
-            val pub: Publisher[WebSocketFrame] = Source.fromPublisher(wsInbound.aggregateFrames().receiveFrames())
+            val pub: Publisher[WebSocketFrame] = Source.fromPublisher(wsInbound.receiveFrames())
               .map(frameToMessage)
               .via(WebSocketFlowHandler.webSocketProtocol(65536).join(flow))
               .map(messageToFrame)

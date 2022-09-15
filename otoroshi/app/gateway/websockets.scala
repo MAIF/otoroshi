@@ -808,7 +808,7 @@ class WebSocketProxyActor(
           .alsoTo(Sink.onComplete { _ =>
             if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] target stopped")
             Option(queueRef.get()).foreach(_.complete())
-            out ! PoisonPill
+            // out ! PoisonPill
           }),
         descriptor.clientConfig.proxy
           .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
@@ -857,15 +857,17 @@ class WebSocketProxyActor(
   override def postStop() = {
     if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] client stopped")
     Option(queueRef.get()).foreach(_.complete())
-    out ! PoisonPill
+    // out ! PoisonPill
   }
 
   def receive = {
     case msg: PlayWSBinaryMessage     => {
+      println("PlayWSBinaryMessage", msg.data.utf8String)
       if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from client: ${msg.data.utf8String}")
       Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
     }
     case msg: PlayWSTextMessage       => {
+      println("PlayWSTextMessage", msg.data)
       if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] text message from client: ${msg.data}")
       Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.TextMessage(msg.data)))
     }
@@ -878,9 +880,10 @@ class WebSocketProxyActor(
       Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
     }
     case CloseMessage(status, reason) => {
+      println("CloseMessage", status, reason)
       if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] close message from client: $status : $reason")
       Option(queueRef.get()).foreach(_.complete())
-      out ! PoisonPill
+      // out ! PoisonPill
     }
     case e                            => logger.error(s"[WEBSOCKET] Bad message type: $e")
   }
