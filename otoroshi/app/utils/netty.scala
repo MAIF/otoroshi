@@ -22,7 +22,7 @@ import play.api.mvc._
 import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
 import play.core.server.common.WebSocketFlowHandler
 import play.core.server.common.WebSocketFlowHandler.{MessageType, RawMessage}
-import reactor.netty.NettyOutbound
+import reactor.netty.{ByteBufFlux, NettyOutbound}
 import reactor.netty.http.server.HttpServerRequest
 
 import java.net.{InetAddress, URI}
@@ -265,16 +265,26 @@ class HttpServer(env: Env) {
       engine.handleWs(otoReq, engine.badDefaultRoutingWs).map {
         case Left(result) => sendResultAsHttpResponse(result, res)
         case Right(flow) => {
-          res.sendWebsocket { (wsInbound, wsOutbound) =>
-            val pub: Publisher[WebSocketFrame] = Source.fromPublisher(wsInbound.receiveFrames())
+          res.sendWebsocket( (wsInbound, wsOutbound) => {
+
+            // val pub: Publisher[WebSocketFrame] = Source.fromPublisher(wsInbound.receiveFrames())
+            //   .map(frameToMessage)
+            //   .via(WebSocketFlowHandler.webSocketProtocol(65536).join(flow))
+            //   .map(messageToFrame)
+            //   .runWith(Sink.asPublisher[WebSocketFrame](false))
+            // wsOutbound.sendObject(pub)
+
+            val pub: Publisher[ByteBuf] = Source.fromPublisher(wsInbound.receiveFrames())
               .map(frameToMessage)
               .via(WebSocketFlowHandler.webSocketProtocol(65536).join(flow))
               .map(messageToFrame)
-              //.map(_.content())
-              .runWith(Sink.asPublisher[WebSocketFrame](false))
-            wsOutbound.sendObject(pub)
-            // wsOutbound.send(pub)
-          }
+              .map(_.content())
+              .runWith(Sink.asPublisher[ByteBuf](false))
+            wsOutbound.send(pub)
+
+            // wsOutbound.send(wsInbound.receive().retain())
+
+          }, WebsocketServerSpec.builder().handlePing(true).build())
         }
       }
     }
