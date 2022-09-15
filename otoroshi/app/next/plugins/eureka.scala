@@ -488,18 +488,22 @@ object EurekaTarget {
 
 class EurekaTarget extends NgPreRouting {
 
-  override def name: String = "Eureka target"
+  override def name: String = "Internal Eureka target"
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def description: Option[String] = {
-    Some(s"""Description of the eureka target""".stripMargin)
+    Some(
+      s"""
+         | This plugin can be used to used a target that come from an internal Eureka server.
+         | If you want to use a target which it locate outside of Otoroshi, you must use the External Eureka Server.
+         |""".stripMargin)
   }
 
   override def defaultConfigObject: Option[NgPluginConfig] = EurekaTargetConfig().some
-  override def multiInstance: Boolean = true
+  override def multiInstance: Boolean = false
 
   private def updatePreExtractedRequestTargetsKey(ctx: NgPreRoutingContext, apps: Seq[JsValue]) = {
     ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey -> apps.map(application => {
@@ -510,16 +514,17 @@ class EurekaTarget extends NgPreRouting {
 
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val rawConfig = ctx.cachedConfig(internalName)(EurekaTargetConfig.format)
+    val pluginId = ctx.route.id
 
     rawConfig match {
       case Some(config) =>
         (config.eurekaServer, config.eurekaApp) match {
           case (Some(eurekaServer), Some(eurekaApp)) =>
-            val key = s"${env.storageRoot}:plugins:eureka-server-$eurekaServer:apps:$eurekaApp:*"
+            val key = s"${env.storageRoot}:plugins:${pluginId}:eureka-server-$eurekaServer:apps:$eurekaApp:*"
             EurekaTarget.cache.getIfPresent(key) match {
               case None =>
                 env.datastores.rawDataStore
-                  .allMatching(s"${env.storageRoot}:plugins:eureka-server-$eurekaServer:apps:$eurekaApp:*")
+                  .allMatching(key)
                   .flatMap(rawApps => {
                     val apps = rawApps.map(a => a.utf8String.parseJson)
                     updatePreExtractedRequestTargetsKey(ctx, apps)
@@ -567,8 +572,150 @@ class EurekaTarget extends NgPreRouting {
   }
 }
 
+case class ExternalEurekaTargetConfig(
+                                       serviceUrlDefaultZone: Option[String] = None,
+                                       eurekaApp: Option[String] = None)
+  extends NgPluginConfig {
+  override def json: JsValue = Json.obj(
+    "service_url_default_zone" -> serviceUrlDefaultZone,
+    "eureka_app" -> eurekaApp,
+  )
+}
+
+object ExternalEurekaTargetConfig {
+  val format: Format[ExternalEurekaTargetConfig] = new Format[ExternalEurekaTargetConfig] {
+    override def writes(o: ExternalEurekaTargetConfig): JsValue             = Json.obj(
+      "service_url_default_zone" -> o.serviceUrlDefaultZone,
+      "eureka_app" -> o.eurekaApp,
+    )
+    override def reads(o: JsValue): JsResult[ExternalEurekaTargetConfig] = Try {
+      ExternalEurekaTargetConfig(
+        serviceUrlDefaultZone = (o \ "service_url_default_zone").asOpt[String],
+        eurekaApp = (o \ "eureka_app").asOpt[String]
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
+object ExternalEurekaTarget {
+  private val cache: Cache[String, Seq[NgTarget]] = Scaffeine()
+    .expireAfterWrite(15.seconds)
+    .maximumSize(1000)
+    .build()
+}
+
+class ExternalEurekaTarget extends NgPreRouting {
+
+  override def name: String = "External Eureka target"
+
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+
+  override def description: Option[String] = {
+    Some(
+      s"""
+         | This plugin can be used to used a target that come from an external Eureka server.
+         | If you want to use a target that is directly exposed by an implementation of Eureka by Otoroshi,
+         | you must use the Internal Eureka Server.
+         |""".stripMargin)
+  }
+
+  override def defaultConfigObject: Option[NgPluginConfig] = EurekaTargetConfig().some
+  override def multiInstance: Boolean = false
+
+  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+    val rawConfig = ctx.cachedConfig(internalName)(ExternalEurekaTargetConfig.format)
+    val pluginId = ctx.route.id
 
 
+    rawConfig match {
+      case Some(config) =>
+        (config.serviceUrlDefaultZone, config.eurekaApp) match {
+          case (Some(serviceUrlDefaultZone), Some(eurekaApp)) =>
+            val key = s"${env.storageRoot}:plugins:${pluginId}:eureka-server:$eurekaApp:*"
+
+            ExternalEurekaTarget.cache.getIfPresent(key) match {
+              case None =>
+                env.Ws
+                  .url(s"$serviceUrlDefaultZone/apps/$eurekaApp")
+                  .withHttpHeaders(Seq("Accept" -> "application/json"):_*)
+                  .get()
+                  .flatMap { res =>
+                    if (res.status == 200) {
+                      val instances = (res.body
+                          .parseJson
+                          .as[JsObject] \ "application" \ "instance")
+                          .as[JsArray]
+                          .value
+                          .map(instance => instance.as(EurekaInstance.format.reads))
+                          .map(EurekaInstance.toTarget)
+
+                        ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey -> instances)
+                        ExternalEurekaTarget.cache.put(key, instances)
+                        
+                        Done
+                          .right
+                          .vfuture
+                    }
+                    else { 
+                      Errors
+                        .craftResponseResult(
+                          "An error occured",
+                          Results.BadRequest,
+                          ctx.request,
+                          None,
+                          Some("errors.eureka.config"),
+                          duration = ctx.report.getDurationNow(),
+                          overhead = ctx.report.getOverheadInNow(),
+                          attrs = ctx.attrs,
+                          )
+                    }
+                  }
+                  Done
+                    .right
+                    .vfuture
+              case Some(apps) =>
+                ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey -> apps)
+                Done
+                  .right
+                  .vfuture
+            }
+          case _ =>
+            Errors
+              .craftResponseResult(
+                "Wrong config",
+                Results.BadRequest,
+                ctx.request,
+                None,
+                Some("errors.eureka.config"),
+                duration = ctx.report.getDurationNow(),
+                overhead = ctx.report.getOverheadInNow(),
+                attrs = ctx.attrs,
+                maybeRoute = ctx.route.some
+              )
+                .map(r => Left(NgPreRoutingErrorWithResult(r)))
+        }
+      case None =>
+        Errors
+          .craftResponseResult(
+            "Missing config",
+            Results.BadRequest,
+            ctx.request,
+            None,
+            Some("errors.eureka.config"),
+            duration = ctx.report.getDurationNow(),
+            overhead = ctx.report.getOverheadInNow(),
+            attrs = ctx.attrs,
+            maybeRoute = ctx.route.some
+          )
+            .map(r => Left(NgPreRoutingErrorWithResult(r)))
+    }
+  }
+}
 
 
 

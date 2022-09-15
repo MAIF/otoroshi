@@ -726,6 +726,16 @@ export function getEurekaApps(eurekaServerId) {
   }).then(r => r.json())
 }
 
+export function getExternalEurekaServers(url) {
+  return fetch(`/bo/api/external-eureka-servers?url=${url}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json'
+    }
+  }).then(r => r.json())
+}
+
 export function discardAllSessions() {
   // return fetch(`/bo/api/sessions`, {
   return fetch(`/bo/api/proxy/api/admin-sessions`, {

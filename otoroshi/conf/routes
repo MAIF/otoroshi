@@ -37,6 +37,7 @@ GET     /bo/api/metrics                                       otoroshi.controlle
 GET     /bo/api/env                                           otoroshi.controllers.BackOfficeController.getEnv()
 GET     /bo/api/apps                                          otoroshi.controllers.BackOfficeController.cleverApps()
 GET     /bo/api/eureka-servers                                otoroshi.controllers.BackOfficeController.eurekaServers()
+GET     /bo/api/external-eureka-servers                       otoroshi.controllers.BackOfficeController.externalEurekaServers()
 GET     /bo/api/eureka-servers/:id/apps                       otoroshi.controllers.BackOfficeController.eurekaServerApps(id)
 # GET     /bo/api/sessions                                    otoroshi.controllers.BackOfficeController.sessions()
 # DELETE  /bo/api/sessions/:id                                otoroshi.controllers.BackOfficeController.discardSession(id)

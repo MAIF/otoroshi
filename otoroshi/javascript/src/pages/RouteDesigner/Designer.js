@@ -40,6 +40,7 @@ import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
 import { EurekaTargetForm } from './EurekaTargetForm';
+import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -2089,7 +2090,7 @@ class EditView extends React.Component {
     const oldConfig = form.value
 
     return this.props.updatePlugin(nodeId, selectedNode.id, {
-      plugin: newValue.plugin || oldConfig.plugin,
+      plugin: newValue.plugin || oldConfig?.plugin,
       status: newValue.status,
     });
   };
@@ -2140,6 +2141,10 @@ class EditView extends React.Component {
     const notOnBackendNode = !usingExistingBackend || id !== 'Backend';
 
     if (form.flow.length === 0 && Object.keys(form.schema).length === 0) return null;
+
+    const EurekaForm = id === 'cp:otoroshi.next.plugins.EurekaTarget' ? EurekaTargetForm : ExternalEurekaTargetForm
+    const hasCustomPluginForm = ['cp:otoroshi.next.plugins.EurekaTarget',
+      'cp:otoroshi.next.plugins.ExternalEurekaTarget'].includes(id)
 
     return (
       <div
@@ -2227,7 +2232,7 @@ class EditView extends React.Component {
                   ref={this.formRef}
                   value={form.value}
                   schema={form.schema}
-                  flow={id === 'cp:otoroshi.next.plugins.EurekaTarget' ? ['status'] : form.flow}
+                  flow={hasCustomPluginForm ? ['status'] : form.flow}
                   onSubmit={this.onValidate}
                   options={{ autosubmit: true }}
                   footer={() => (
@@ -2239,8 +2244,8 @@ class EditView extends React.Component {
                     />
                   )}
                 />
-                {id === 'cp:otoroshi.next.plugins.EurekaTarget' &&
-                  <EurekaTargetForm
+                {hasCustomPluginForm &&
+                  <EurekaForm
                     route={route}
                     update={plugin => {
                       const { selectedNode } = this.props;

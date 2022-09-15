@@ -613,6 +613,28 @@ class BackOfficeController(
       }
     }
 
+  def externalEurekaServers() =
+    BackOfficeActionAuth.async { ctx =>
+      ctx.request.getQueryString("url") match {
+        case Some(url) =>
+          env.Ws
+            .url(s"$url/apps")
+            .withMethod("GET")
+            .withHttpHeaders(Seq("Accept" -> "application/json"):_*)
+            .execute()
+            .map { res =>
+              if (res.status == 200) {
+                Ok(res.bodyAsBytes.utf8String.parseJson)
+              } else {
+                BadRequest(Json.obj("error" -> s"bad server response: ${res.status} - ${res.headers} - ${res.body}"))
+              }
+            }
+        case None =>
+          BadRequest(Json.obj("error" -> "missing url"))
+            .vfuture
+      }
+    }
+
   def eurekaServerApps(id: String) =
     BackOfficeActionAuth.async { _ =>
       env.datastores.rawDataStore
