@@ -818,6 +818,10 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
     val request = __request
       .applyOnWithPredicate(_.uri.scheme == "http")(r => r.copy(uri = r.uri.copy(scheme = "ws")))
       .applyOnWithPredicate(_.uri.scheme == "https")(r => r.copy(uri = r.uri.copy(scheme = "wss")))
+      .copy(extraHeaders = __request.extraHeaders
+        .filterNot(h => h.lowercaseName() == "content-length")
+        .filterNot(h => h.lowercaseName() == "content-type")
+      )
     clientCerts match {
       case certs if (clientCerts ++ trustedCerts).isEmpty  => {
         val currentSslContext = DynamicSSLEngineProvider.currentClient

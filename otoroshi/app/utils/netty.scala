@@ -265,14 +265,14 @@ class HttpServer(env: Env) {
         case Left(result) => sendResultAsHttpResponse(result, res)
         case Right(flow) => {
           res.sendWebsocket { (wsInbound, wsOutbound) =>
-            val pub: Publisher[ByteBuf] = Source.fromPublisher(wsInbound.aggregateFrames().receiveFrames())
+            val pub: Publisher[WebSocketFrame] = Source.fromPublisher(wsInbound.aggregateFrames().receiveFrames())
               .map(frameToMessage)
               .via(WebSocketFlowHandler.webSocketProtocol(65536).join(flow))
               .map(messageToFrame)
-              .map(_.content())
-              .runWith(Sink.asPublisher[ByteBuf](false))
-            // wsOutbound.sendObject(pub)
-            wsOutbound.send(pub)
+              //.map(_.content())
+              .runWith(Sink.asPublisher[WebSocketFrame](false))
+            wsOutbound.sendObject(pub)
+            // wsOutbound.send(pub)
           }
         }
       }
@@ -332,11 +332,11 @@ class HttpServer(env: Env) {
 
     // TODO: start from config
 
-    logger.debug("")
-    logger.debug(s"Starting the Reactor Netty Server !!!")
-    logger.debug(s" - https://0.0.0.0:${env.httpsPort + 50}") // TODO: from config
-    logger.debug(s" - http://0.0.0.0:${env.httpPort + 50}") // TODO: from config
-    logger.debug("")
+    logger.info("")
+    logger.info(s"Starting the experimental Reactor Netty Server !!!")
+    logger.info(s" - https://0.0.0.0:${env.httpsPort + 50}") // TODO: from config
+    logger.info(s" - http://0.0.0.0:${env.httpPort + 50}") // TODO: from config
+    logger.info("")
 
     val serverHttps = HttpServer
       .create()
