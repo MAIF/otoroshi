@@ -130,7 +130,7 @@ class ReactorNettyRequest(req: HttpServerRequest, secure: Boolean, sessionOpt: O
   lazy val headers: Headers = Headers(
     (req.requestHeaders().entries().asScala.map(e => (e.getKey, e.getValue)) ++ sessionOpt.map(s => ("Tls-Session-Info", s.toString))): _*
   )
-  lazy val body: Source[ByteString, _] = Source.fromPublisher(req.receive()).map(bb => ByteString(bb.array()))
+  lazy val body: Source[ByteString, _] = Source.fromPublisher(req.receive().retain()).map(bb => ByteString(bb.array()))
   lazy val connection: RemoteConnection = new ReactorNettyRemoteConnection(req, secure, sessionOpt)
   lazy val target: RequestTarget = new ReactorNettyRequestTarget(req)
 }
