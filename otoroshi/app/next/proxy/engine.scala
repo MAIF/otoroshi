@@ -2232,7 +2232,7 @@ class ProxyEngine() extends RequestHandler {
       headers = request.headers.toSimpleMap,
       cookies = wsCookiesIn,
       version = request.version,
-      clientCertificateChain = request.clientCertificateChain,
+      clientCertificateChain = () => request.clientCertificateChain,
       body = lazySource,
       backend = None
     )
@@ -2255,7 +2255,7 @@ class ProxyEngine() extends RequestHandler {
       headers = headers,
       cookies = wsCookiesIn,
       version = request.version,
-      clientCertificateChain = request.clientCertificateChain,
+      clientCertificateChain = () => request.clientCertificateChain,
       body = lazySource,
       backend = backend.some
     )

@@ -239,7 +239,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
             headers = ctx.rawRequest.headers,
             cookies = ctx.rawRequest.cookies,
             version = ctx.rawRequest.version,
-            clientCertificateChain = ctx.rawRequest.clientCertificateChain,
+            clientCertificateChain = ctx.rawRequest.clientCertificateChain(),
             target =
               ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
             claims = ctx.attrs
@@ -262,7 +262,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
             headers = ctx.otoroshiRequest.headers,
             cookies = ctx.otoroshiRequest.cookies,
             version = ctx.otoroshiRequest.version,
-            clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain,
+            clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain(),
             target =
               ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
             claims = ctx.attrs
@@ -298,7 +298,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
             headers = ctx.rawRequest.headers,
             cookies = ctx.rawRequest.cookies,
             version = ctx.rawRequest.version,
-            clientCertificateChain = ctx.rawRequest.clientCertificateChain,
+            clientCertificateChain = ctx.rawRequest.clientCertificateChain(),
             target =
               ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
             claims = ctx.attrs
@@ -321,7 +321,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
             headers = ctx.otoroshiRequest.headers,
             cookies = ctx.otoroshiRequest.cookies,
             version = ctx.otoroshiRequest.version,
-            clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain,
+            clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain(),
             target =
               ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
             claims = ctx.attrs
@@ -358,7 +358,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
                 headers = req.headers,
                 cookies = req.cookies,
                 version = req.version,
-                clientCertificateChain = req.clientCertificateChain,
+                clientCertificateChain = () => req.clientCertificateChain,
                 body = newBody,
                 backend = req.target.map(t => NgTarget.fromTarget(t))
               )
@@ -647,7 +647,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
             headers = ctx.rawRequest.headers,
             cookies = ctx.rawRequest.cookies,
             version = ctx.rawRequest.version,
-            clientCertificateChain = ctx.rawRequest.clientCertificateChain,
+            clientCertificateChain = ctx.rawRequest.clientCertificateChain(),
             target =
               ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
             claims = ctx.attrs
@@ -670,7 +670,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
             headers = ctx.otoroshiRequest.headers,
             cookies = ctx.otoroshiRequest.cookies,
             version = ctx.otoroshiRequest.version,
-            clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain,
+            clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain(),
             target =
               ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.rawRequest.backend).map(_.toTarget),
             claims = ctx.attrs
@@ -706,7 +706,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
             headers = ctx.rawRequest.headers,
             cookies = ctx.rawRequest.cookies,
             version = ctx.rawRequest.version,
-            clientCertificateChain = ctx.rawRequest.clientCertificateChain,
+            clientCertificateChain = ctx.rawRequest.clientCertificateChain(),
             target =
               ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
             claims = ctx.attrs
@@ -729,7 +729,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
             headers = ctx.otoroshiRequest.headers,
             cookies = ctx.otoroshiRequest.cookies,
             version = ctx.otoroshiRequest.version,
-            clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain,
+            clientCertificateChain = ctx.otoroshiRequest.clientCertificateChain(),
             target =
               ctx.attrs.get(otoroshi.next.plugins.Keys.BackendKey).orElse(ctx.otoroshiRequest.backend).map(_.toTarget),
             claims = ctx.attrs
@@ -766,7 +766,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
                 headers = req.headers,
                 cookies = req.cookies,
                 version = req.version,
-                clientCertificateChain = req.clientCertificateChain,
+                clientCertificateChain = () => req.clientCertificateChain,
                 body = newBody,
                 backend = req.target.map(t => NgTarget.fromTarget(t))
               )
