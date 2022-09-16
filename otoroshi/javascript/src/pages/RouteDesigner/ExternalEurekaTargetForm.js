@@ -1,11 +1,11 @@
 import React from 'react'
 import { SelectInput, TextInput } from '../../components/inputs';
-import { findAllEurekaServers, getEurekaApps, getExternalEurekaServers } from '../../services/BackOfficeServices';
+import { getExternalEurekaServers } from '../../services/BackOfficeServices';
 import { FeedbackButton } from './FeedbackButton';
 
 export class ExternalEurekaTargetForm extends React.Component {
   state = {
-    serviceUrlDefaultZone: "", //"http://localhost:8761/eureka",
+    serviceUrlDefaultZone: "",
     eurekaApp: undefined,
     eurekaApps: [],
     route: this.props.route

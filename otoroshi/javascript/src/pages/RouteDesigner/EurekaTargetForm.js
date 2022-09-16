@@ -51,7 +51,6 @@ export class EurekaTargetForm extends React.Component {
   }
 
   render() {
-    console.log(this.state)
     return <div className="target_information pt-3 mt-3">
       <div className='mb-2'>
         <SelectInput
