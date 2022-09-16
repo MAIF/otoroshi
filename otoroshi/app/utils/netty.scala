@@ -14,7 +14,7 @@ import otoroshi.script.RequestHandler
 import otoroshi.ssl.{ClientAuth, DynamicSSLEngineProvider}
 import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.syntax.implicits._
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import play.api.http.websocket.Message
 import play.api.http.{HttpChunk, HttpEntity}
 import play.api.libs.typedmap.TypedMap
@@ -144,7 +144,50 @@ class ReactorNettyRequestHeader(req: HttpServerRequest, secure: Boolean, session
 
 case class HttpServerBodyResponse(body: Publisher[Array[Byte]], contentType: Option[String], contentLength: Option[Long], chunked: Boolean)
 
-class HttpServer(env: Env) {
+case class ReactorNettyServerConfig(
+  enabled: Boolean,
+  host: String,
+  httpPort: Int,
+  httpsPort: Int,
+  wiretap: Boolean,
+  accessLog: Boolean,
+  cipherSuites: Option[Seq[String]],
+  protocols: Option[Seq[String]],
+  clientAuth: ClientAuth
+)
+
+object ReactorNettyServerConfig {
+  def parseFrom(env: Env): ReactorNettyServerConfig = {
+    val config = env.configuration.get[Configuration]("otoroshi.next.experimental.netty-server")
+    ReactorNettyServerConfig(
+      enabled = config.getOptionalWithFileSupport[Boolean]("enabled").getOrElse(false),
+      host = config.getOptionalWithFileSupport[String]("host").getOrElse("0.0.0.0"),
+      httpPort = config.getOptionalWithFileSupport[Int]("http-port").getOrElse(env.httpPort + 50),
+      httpsPort = config.getOptionalWithFileSupport[Int]("https-port").getOrElse(env.httpsPort + 50),
+      wiretap = config.getOptionalWithFileSupport[Boolean]("wiretap").getOrElse(false),
+      accessLog = config.getOptionalWithFileSupport[Boolean]("accesslog").getOrElse(false),
+      cipherSuites =
+        env.configuration
+          .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
+          .filterNot(_.isEmpty),
+      protocols    =
+        env.configuration
+          .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols")
+          .filterNot(_.isEmpty),
+      clientAuth = {
+        val auth = env.configuration
+          .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.clientAuth")
+          .flatMap(ClientAuth.apply)
+          .getOrElse(ClientAuth.None)
+        if (DynamicSSLEngineProvider.logger.isDebugEnabled)
+          DynamicSSLEngineProvider.logger.debug(s"Otoroshi netty client auth: ${auth}")
+        auth
+      }
+    )
+  }
+}
+
+class ReactorNettyServer(env: Env) {
 
   import reactor.core.publisher.Flux
   import reactor.netty.http.HttpProtocol
@@ -160,23 +203,7 @@ class HttpServer(env: Env) {
 
   private val engine: ProxyEngine = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get.asInstanceOf[ProxyEngine]
 
-  private lazy val cipherSuites =
-    env.configuration
-      .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
-      .filterNot(_.isEmpty)
-  private lazy val protocols    =
-    env.configuration
-      .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols")
-      .filterNot(_.isEmpty)
-  private lazy val clientAuth = {
-    val auth = env.configuration
-      .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.clientAuth")
-      .flatMap(ClientAuth.apply)
-      .getOrElse(ClientAuth.None)
-    if (DynamicSSLEngineProvider.logger.isDebugEnabled)
-      DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
-    auth
-  }
+  private val config = ReactorNettyServerConfig.parseFrom(env)
 
   private def sendResultAsHttpResponse(result: Result, res: HttpServerResponse): NettyOutbound = {
     val bresponse: HttpServerBodyResponse = result.body match {
@@ -224,24 +251,26 @@ class HttpServer(env: Env) {
       .sendByteArray(bresponse.body)
   }
 
-  private def frameToRawMessage(frame: WebSocketFrame): RawMessage = Try {
-    val builder = ByteString.newBuilder
-    frame.content().readBytes(builder.asOutputStream, frame.content().readableBytes())
-    val bytes = builder.result()
-    val messageType = frame match {
-      case _: TextWebSocketFrame         => MessageType.Text
-      case _: BinaryWebSocketFrame       => MessageType.Binary
-      case close: CloseWebSocketFrame    => MessageType.Close
-      case _: PingWebSocketFrame         => MessageType.Ping
-      case _: PongWebSocketFrame         => MessageType.Pong
-      case _: ContinuationWebSocketFrame => MessageType.Continuation
+  private def frameToRawMessage(frame: WebSocketFrame): RawMessage = {
+    Try {
+      val builder = ByteString.newBuilder
+      frame.content().readBytes(builder.asOutputStream, frame.content().readableBytes())
+      val bytes = builder.result()
+      val messageType = frame match {
+        case _: TextWebSocketFrame         => MessageType.Text
+        case _: BinaryWebSocketFrame       => MessageType.Binary
+        case close: CloseWebSocketFrame    => MessageType.Close
+        case _: PingWebSocketFrame         => MessageType.Ping
+        case _: PongWebSocketFrame         => MessageType.Pong
+        case _: ContinuationWebSocketFrame => MessageType.Continuation
+      }
+      RawMessage(messageType, bytes, frame.isFinalFragment)
+    } match {
+      case Failure(ex) =>
+        ex.printStackTrace()
+        RawMessage(MessageType.Text, ByteString("frameToRawMessage error: " + ex.getMessage), frame.isFinalFragment)
+      case Success(s) => s
     }
-    RawMessage(messageType, bytes, frame.isFinalFragment)
-  } match {
-    case Failure(ex) =>
-      ex.printStackTrace()
-      RawMessage(MessageType.Text, ByteString("frameToRawMessage error: " + ex.getMessage), frame.isFinalFragment)
-    case Success(s) => s
   }
 
   private def messageToFrame(message: Message): WebSocketFrame = {
@@ -307,7 +336,7 @@ class HttpServer(env: Env) {
   private def setupSslContext(): SSLContext = {
     new SSLContext(
       new SSLContextSpi() {
-        override def engineCreateSSLEngine(): SSLEngine                     = DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols, None)
+        override def engineCreateSSLEngine(): SSLEngine                     = DynamicSSLEngineProvider.createSSLEngine(config.clientAuth, config.cipherSuites, config.protocols, None)
         override def engineCreateSSLEngine(s: String, i: Int): SSLEngine    = engineCreateSSLEngine()
         override def engineInit(
                                  keyManagers: Array[KeyManager],
@@ -333,60 +362,62 @@ class HttpServer(env: Env) {
   }
 
   def start(): Unit = {
+    if (config.enabled) {
 
-    // TODO: start from config
+      logger.info("")
+      logger.info(s"Starting the experimental Reactor Netty Server !!!")
+      logger.info(s" - https://${config.host}:${config.httpsPort}")
+      logger.info(s" - http://${config.host}:${config.httpPort}")
+      logger.info("")
 
-    logger.info("")
-    logger.info(s"Starting the experimental Reactor Netty Server !!!")
-    logger.info(s" - https://0.0.0.0:${env.httpsPort + 50}") // TODO: from config
-    logger.info(s" - http://0.0.0.0:${env.httpPort + 50}") // TODO: from config
-    logger.info("")
-
-    val serverHttps = HttpServer
-      .create()
-      .host("0.0.0.0")
-      .accessLog(true) // TODO: from config
-      .wiretap(false) // TODO: from config
-      .port(env.httpsPort + 50) // TODO: from config
-      .protocol(HttpProtocol.HTTP11, HttpProtocol.H2C)
-      .doOnChannelInit { (observer, channel, socket) =>
-        val engine = setupSslContext().createSSLEngine()
-        engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
-          val session = e.getHandshakeSession
-          if (currentSession.get() != null) {
-            logger.warn(s"Something weird happened with the TLS session: it's not clean ...")
-          }
-          currentSession.set(session)
-          protocols match {
-            case ps if ps.contains("h2") => "h2"
-            case ps if ps.contains("spdy/3") => "spdy/3"
-            case _ => "http/1.1"
-          }
-        })
-        // we do not use .secure() because of no dynamic sni support and use SslHandler instead !
-        channel.pipeline().addFirst(new SslHandler(engine))
-      }
-      .handle { (req, res) =>
-        val channel = NettyHelper.getChannel(req)
-        handle(req, res, true, channel)
-      }
-      .bindNow()
-    val serverHttp = HttpServer
-      .create()
-      .host("0.0.0.0")
-      .noSSL()
-      .accessLog(true) // TODO: from config
-      .wiretap(false) // TODO: from config
-      .port(env.httpPort + 50) // TODO: from config
-      .protocol(HttpProtocol.H2C, HttpProtocol.HTTP11)
-      .handle { (req, res) =>
-        val channel = NettyHelper.getChannel(req)
-        handle(req, res, false, channel)
-      }
-      .bindNow()
-    Runtime.getRuntime.addShutdownHook(new Thread(() => {
-      serverHttp.disposeNow()
-      serverHttps.disposeNow()
-    }))
+      val serverHttps = HttpServer
+        .create()
+        .host(config.host)
+        .accessLog(config.accessLog)
+        .wiretap(config.wiretap)
+        .port(config.httpsPort)
+        .protocol(HttpProtocol.HTTP11, HttpProtocol.H2C)
+        .doOnChannelInit { (observer, channel, socket) =>
+          val engine = setupSslContext().createSSLEngine()
+          engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
+            val session = e.getHandshakeSession
+            if (currentSession.get() != null) {
+              logger.warn(s"Something weird happened with the TLS session: it's not clean ...")
+            }
+            currentSession.set(session)
+            protocols match {
+              case ps if ps.contains("h2") => "h2"
+              case ps if ps.contains("spdy/3") => "spdy/3"
+              case _ => "http/1.1"
+            }
+          })
+          // we do not use .secure() because of no dynamic sni support and use SslHandler instead !
+          channel.pipeline().addFirst(new SslHandler(engine))
+        }
+        .handle { (req, res) =>
+          val channel = NettyHelper.getChannel(req)
+          handle(req, res, true, channel)
+        }
+        .bindNow()
+      val serverHttp = HttpServer
+        .create()
+        .host(config.host)
+        .noSSL()
+        .accessLog(config.accessLog)
+        .wiretap(config.wiretap)
+        .port(config.httpPort)
+        .protocol(HttpProtocol.H2C, HttpProtocol.HTTP11)
+        .handle { (req, res) =>
+          val channel = NettyHelper.getChannel(req)
+          handle(req, res, false, channel)
+        }
+        .bindNow()
+      Runtime.getRuntime.addShutdownHook(new Thread(() => {
+        serverHttp.disposeNow()
+        serverHttps.disposeNow()
+      }))
+    } else {
+      ()
+    }
   }
 }

@@ -412,6 +412,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
+    new otoroshi.utils.netty.ReactorNettyServer(components.env).start()
     server.httpPort.get + 1
     this
   }
@@ -420,6 +421,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
+    new otoroshi.utils.netty.ReactorNettyServer(components.env).start()
     server.httpPort.get + 1
     stopOnShutdown()
   }
