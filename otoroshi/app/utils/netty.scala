@@ -7,7 +7,7 @@ import io.netty.channel.Channel
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.websocketx._
 import io.netty.handler.ssl._
-import org.reactivestreams.Publisher
+import org.reactivestreams.{Processor, Publisher}
 import otoroshi.env.Env
 import otoroshi.next.proxy.ProxyEngine
 import otoroshi.script.RequestHandler
@@ -22,7 +22,7 @@ import play.api.mvc._
 import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
 import play.core.server.common.WebSocketFlowHandler
 import play.core.server.common.WebSocketFlowHandler.{MessageType, RawMessage}
-import reactor.netty.{ByteBufFlux, NettyOutbound}
+import reactor.netty.NettyOutbound
 import reactor.netty.http.server.HttpServerRequest
 
 import java.net.{InetAddress, URI}
@@ -31,6 +31,7 @@ import java.security.{Provider, SecureRandom}
 import java.util.concurrent.atomic.AtomicLong
 import javax.net.ssl._
 import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success, Try}
 
 object ReactorNettyRemoteConnection {
   val logger = Logger("otoroshi-experiments-reactor-netty-server-remote-connection")
@@ -223,7 +224,7 @@ class HttpServer(env: Env) {
       .sendByteArray(bresponse.body)
   }
 
-  private def frameToMessage(frame: WebSocketFrame): RawMessage = {
+  private def frameToRawMessage(frame: WebSocketFrame): RawMessage = Try {
     val builder = ByteString.newBuilder
     frame.content().readBytes(builder.asOutputStream, frame.content().readableBytes())
     val bytes = builder.result()
@@ -235,8 +236,12 @@ class HttpServer(env: Env) {
       case _: PongWebSocketFrame         => MessageType.Pong
       case _: ContinuationWebSocketFrame => MessageType.Continuation
     }
-    println(s"received type '${messageType}' with '${bytes.utf8String}'")
     RawMessage(messageType, bytes, frame.isFinalFragment)
+  } match {
+    case Failure(ex) =>
+      ex.printStackTrace()
+      RawMessage(MessageType.Text, ByteString("frameToRawMessage error: " + ex.getMessage), frame.isFinalFragment)
+    case Success(s) => s
   }
 
   private def messageToFrame(message: Message): WebSocketFrame = {
@@ -265,26 +270,16 @@ class HttpServer(env: Env) {
       engine.handleWs(otoReq, engine.badDefaultRoutingWs).map {
         case Left(result) => sendResultAsHttpResponse(result, res)
         case Right(flow) => {
-          res.sendWebsocket( (wsInbound, wsOutbound) => {
-
-            // val pub: Publisher[WebSocketFrame] = Source.fromPublisher(wsInbound.receiveFrames())
-            //   .map(frameToMessage)
-            //   .via(WebSocketFlowHandler.webSocketProtocol(65536).join(flow))
-            //   .map(messageToFrame)
-            //   .runWith(Sink.asPublisher[WebSocketFrame](false))
-            // wsOutbound.sendObject(pub)
-
-            val pub: Publisher[ByteBuf] = Source.fromPublisher(wsInbound.receiveFrames())
-              .map(frameToMessage)
-              .via(WebSocketFlowHandler.webSocketProtocol(65536).join(flow))
-              .map(messageToFrame)
-              .map(_.content())
-              .runWith(Sink.asPublisher[ByteBuf](false))
-            wsOutbound.send(pub)
-
-            // wsOutbound.send(wsInbound.receive().retain())
-
-          }, WebsocketServerSpec.builder().handlePing(true).build())
+          res.sendWebsocket { (wsInbound, wsOutbound) =>
+            val processor: Processor[RawMessage, Message] = WebSocketFlowHandler.webSocketProtocol(65536).join(flow).toProcessor.run()
+            wsInbound
+              .aggregateFrames(65536)
+              .receiveFrames()
+              .map[RawMessage](frameToRawMessage)
+              .subscribe(processor)
+            val fluxOut: Flux[WebSocketFrame] = Flux.from(processor).map(messageToFrame)
+            wsOutbound.sendObject(fluxOut)
+          }
         }
       }
     }
