@@ -264,7 +264,6 @@ class HttpServer(env: Env) {
   }
 
   private def handleWebsocket(req: HttpServerRequest, res: HttpServerResponse, secure: Boolean, channel: Channel, session: Option[SSLSession]): Publisher[Void] = {
-    // res.status(500).headers(new DefaultHttpHeaders().add("Content-Type", "application/json")).sendString(Mono.just("""{"error":"websocket calls not supported yet"}"""))
     ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
       val otoReq = new ReactorNettyRequestHeader(req, secure, session)
       engine.handleWs(otoReq, engine.badDefaultRoutingWs).map {
@@ -273,7 +272,6 @@ class HttpServer(env: Env) {
           res.sendWebsocket { (wsInbound, wsOutbound) =>
             val processor: Processor[RawMessage, Message] = WebSocketFlowHandler.webSocketProtocol(65536).join(flow).toProcessor.run()
             wsInbound
-              .aggregateFrames(65536)
               .receiveFrames()
               .map[RawMessage](frameToRawMessage)
               .subscribe(processor)

@@ -862,12 +862,10 @@ class WebSocketProxyActor(
 
   def receive = {
     case msg: PlayWSBinaryMessage     => {
-      println("PlayWSBinaryMessage", msg.data.utf8String)
       if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] binary message from client: ${msg.data.utf8String}")
       Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
     }
     case msg: PlayWSTextMessage       => {
-      println("PlayWSTextMessage", msg.data)
       if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] text message from client: ${msg.data}")
       Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.TextMessage(msg.data)))
     }
@@ -880,7 +878,6 @@ class WebSocketProxyActor(
       Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage(msg.data)))
     }
     case CloseMessage(status, reason) => {
-      println("CloseMessage", status, reason)
       if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] close message from client: $status : $reason")
       Option(queueRef.get()).foreach(_.complete())
       // out ! PoisonPill
