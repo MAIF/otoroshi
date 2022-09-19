@@ -105,16 +105,17 @@ const Manager = ({ query, entity, ...props }) => {
                 },
                 {
                   icon: 'fa-vials',
+                  style: { marginLeft: 20 },
+                  moreClass: 'pb-2',
                   title: 'Tester',
                   onClick: () => viewRef?.current?.onTestingButtonClick(history, value),
                   enabled: () => !isOnViewPlugins,
                 },
                 {
-                  icon: 'fa-cog',
+                  icon: 'fa-ellipsis-h',
                   onClick: () => {},
                   enabled: () => !isOnViewPlugins, //isOnViewPlugins || query == 'flow',
                   dropdown: true,
-                  style: { marginLeft: 20 },
                   props: {
                     id: 'designer-menu',
                     'data-bs-toggle': 'dropdown',
@@ -124,14 +125,12 @@ const Manager = ({ query, entity, ...props }) => {
                 },
               ]
                 .filter((link) => !link.enabled || link.enabled())
-                .map(({ to, icon, title, tooltip, tab, onClick, dropdown, style, props = {} }) => (
-                  <div className={`ms-2 ${dropdown ? 'dropdown' : ''}`}>
+                .map(({ to, icon, title, tooltip, tab, onClick, dropdown, moreClass, style, props = {} }) => (
+                  <div className={`ms-2 ${moreClass ? moreClass : ''} ${dropdown ? 'dropdown' : ''}`}>
                     <button
                       key={title}
                       type="button"
-                      className={`btn btn-sm toggle-form-buttons d-flex align-items-center ${
-                        dropdown ? 'dropdown-toggle' : ''
-                      }`}
+                      className={`btn btn-sm toggle-form-buttons d-flex align-items-center`}
                       onClick={
                         onClick
                           ? onClick
