@@ -153,7 +153,14 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
   return (
     <>
       <Form
-        schema={schema}
+      schema={{
+        ...schema,
+        id: {
+          ...schema.id,
+          disabled: true    
+        }
+      }}
+
         flow={flow}
         value={informations}
         options={{ autosubmit: true }}

@@ -61,6 +61,7 @@ const Manager = ({ query, entity, ...props }) => {
               {
                 flow: 'Designer',
                 informations: 'Informations',
+                form: 'Form',
                 routes: 'Routes',
                 route_plugins: 'Route plugins',
                 form: 'Form'
