@@ -81,10 +81,10 @@ export default function ({ route, hide }) {
 
       setTesterView(
         route &&
-          route.plugins.find((f) => f.plugin.includes('GraphQLBackend')) &&
-          route.plugins.find((f) => f.plugin.includes('GraphQLBackend')).enabled &&
-          playgroundUrl &&
-          lastQuery
+        route.plugins.find((f) => f.plugin.includes('GraphQLBackend')) &&
+        route.plugins.find((f) => f.plugin.includes('GraphQLBackend')).enabled &&
+        playgroundUrl &&
+        lastQuery
       );
     }
   }, [route]);
@@ -218,15 +218,15 @@ export default function ({ route, hide }) {
       ),
       ...(format === 'basic'
         ? {
-            'authorization-header': {
-              key: apikeyHeader || request.apikeyHeader,
-              value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-            },
-          }
+          'authorization-header': {
+            key: apikeyHeader || request.apikeyHeader,
+            value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+          },
+        }
         : {
-            'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
-            'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
-          }),
+          'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
+          'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
+        }),
     };
   };
 
@@ -360,16 +360,16 @@ export default function ({ route, hide }) {
                 ))}
               </div>
               <i
-                className={`tab fas fa-chevron-${headersStatus}`}
+                className={`tab fas fa-chevron-${headersStatus === 'up' ? 'down' : 'up'}`}
                 onClick={() => setHeadersStatus(headersStatus === 'up' ? 'down' : 'up')}
               />
             </div>
             {selectedTab === 'Authorization' && headersStatus === 'down' && (
-              <div className="w-75">
-                <div className="mt-3 d-flex">
+              <div className="d-flex">
+                <div className="mt-3 flex">
                   <div
-                    className="d-flex-between pe-3 me-3"
-                    style={{ flex: 0.5, borderRight: '2px solid #494849' }}>
+                    className="d-flex-between pe-3"
+                    style={{ flex: 0.5 }}>
                     <BooleanInput
                       flex={true}
                       label="Use an apikey"
@@ -386,8 +386,7 @@ export default function ({ route, hide }) {
                   {request.useApikey && (
                     <div className="flex">
                       <div className="d-flex-between">
-                        <span className="me-3">Apikey</span>
-                        <div className="flex">
+                        <div className="flex mt-2">
                           <SelectInput
                             possibleValues={apikeys}
                             value={request.apikey}
@@ -449,10 +448,10 @@ export default function ({ route, hide }) {
                     </div>
                   )}
                 </div>
-                <div className="mt-3 d-flex">
+                <div className="mt-3 ms-3 flex">
                   <div
-                    className="d-flex-between pe-3 me-3"
-                    style={{ flex: 0.5, borderRight: '2px solid #494849' }}>
+                    className="d-flex-between pe-3"
+                    style={{ flex: 0.5 }}>
                     <BooleanInput
                       flex={true}
                       label="Use a certificate client"
@@ -466,9 +465,8 @@ export default function ({ route, hide }) {
                     />
                   </div>
                   {request.useCertificate && (
-                    <div className="flex">
+                    <div className="flex mt-2">
                       <div className="d-flex-between">
-                        <span className="me-3">Certificate</span>
                         <div className="flex">
                           <SelectInput
                             possibleValues={certificates}
@@ -710,9 +708,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     search.length <= 0
       ? true
       : step.task.includes(search) ||
-        [...(step?.ctx?.plugins || [])].find((plugin) =>
-          search.length <= 0 ? true : plugin.name.includes(search)
-        );
+      [...(step?.ctx?.plugins || [])].find((plugin) =>
+        search.length <= 0 ? true : plugin.name.includes(search)
+      );
 
   const isPluginNameMatchingSearch = (plugin) =>
     search.length <= 0 ? true : plugin.name.includes(search);
@@ -732,8 +730,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
       return unit === 'ms'
         ? roundNsTo(report.duration_ns)
         : unit === 'ns'
-        ? report.duration_ns
-        : 100;
+          ? report.duration_ns
+          : 100;
     else {
       const value = [...steps]
         .filter(isOnFlow)
@@ -742,8 +740,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           const userPluginsFlow =
             step.ctx && step.ctx.plugins
               ? [...(step.ctx?.plugins || [])]
-                  .filter(isPluginNameMatchingSearch)
-                  .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
+                .filter(isPluginNameMatchingSearch)
+                .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
               : 0;
 
           if (flow === 'user')
@@ -802,9 +800,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
         </div>
         <div
           onClick={() => setSelectedStep(-1)}
-          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${
-            informations.state === 'Successful' ? 'success' : 'danger'
-          }`}>
+          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${informations.state === 'Successful' ? 'success' : 'danger'
+            }`}>
           <span>Report</span>
           <span>
             {reportDuration()} {unit}
@@ -826,15 +823,13 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                     setSelectedPlugin(-1);
                     setSelectedStep(step.task);
                   }}
-                  className={`d-flex-between mt-1 px-3 py-2 report-step ${
-                    step.task === selectedStep ? 'btn-dark' : ''
-                  }`}>
+                  className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep ? 'btn-dark' : ''
+                    }`}>
                   <div className="d-flex align-items-center">
                     {displaySubList && (
                       <i
-                        className={`fas fa-chevron-${
-                          step.open || flow === 'user' ? 'down' : 'right'
-                        } me-1`}
+                        className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
+                          } me-1`}
                         onClick={() =>
                           setSteps(
                             steps.map((s) =>
@@ -851,8 +846,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                       {unit === 'ms'
                         ? roundNsTo(step.duration_ns)
                         : unit === 'ns'
-                        ? step.duration_ns
-                        : percentage}{' '}
+                          ? step.duration_ns
+                          : percentage}{' '}
                       {unit}
                     </span>
                   )}
@@ -874,18 +869,17 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                           key={plugin.name}
                           style={{ width: 'calc(100% - 12px)', marginLeft: '12px' }}
                           onClick={() => setSelectedPlugin(plugin.name)}
-                          className={`d-flex-between mt-1 px-3 py-2 report-step ${
-                            step.task === selectedStep && plugin.name === selectedPlugin
-                              ? 'btn-dark'
-                              : ''
-                          }`}>
+                          className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep && plugin.name === selectedPlugin
+                            ? 'btn-dark'
+                            : ''
+                            }`}>
                           <span>{firstLetterUppercase(pluginName)}</span>
                           <span style={{ maxWidth: '100px', textAlign: 'right' }}>
                             {unit === 'ms'
                               ? roundNsTo(plugin.duration_ns)
                               : unit === 'ns'
-                              ? plugin.duration_ns
-                              : pluginPercentage}{' '}
+                                ? plugin.duration_ns
+                                : pluginPercentage}{' '}
                             {unit}
                           </span>
                         </div>
@@ -906,8 +900,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                   ? informations
                   : steps.find((t) => t.task === selectedStep)
                 : steps
-                    .find((t) => t.task === selectedStep)
-                    ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+                  .find((t) => t.task === selectedStep)
+                  ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
               null,
               4
             ) +
@@ -922,7 +916,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
 
 const Headers = ({ headers, onKeyChange, onValueChange }) => (
   <div
-    className="mt-2 w-50 div-overflowy pb-3"
+    className="mt-2 w-100 div-overflowy pb-3"
     style={{
       height: onKeyChange ? '100%' : 'initial',
       overflowY: 'scroll',
