@@ -64,7 +64,6 @@ const Manager = ({ query, entity, ...props }) => {
                 form: 'Form',
                 routes: 'Routes',
                 route_plugins: 'Route plugins',
-                form: 'Form'
               }[query]
             }
           </h4>
