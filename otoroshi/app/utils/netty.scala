@@ -16,12 +16,15 @@ import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.syntax.implicits._
 import play.api.{Configuration, Logger}
 import play.api.http.websocket.Message
-import play.api.http.{HttpChunk, HttpEntity}
+import play.api.http.{HttpChunk, HttpEntity, HttpRequestHandler}
+import play.api.libs.crypto.CookieSignerProvider
+import play.api.libs.json.Json
 import play.api.libs.typedmap.TypedMap
 import play.api.mvc._
 import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
 import play.core.server.common.WebSocketFlowHandler
 import play.core.server.common.WebSocketFlowHandler.{MessageType, RawMessage}
+import reactor.core.publisher.Flux
 import reactor.netty.NettyOutbound
 import reactor.netty.http.server.HttpServerRequest
 
@@ -29,6 +32,7 @@ import java.net.{InetAddress, URI}
 import java.security.cert.X509Certificate
 import java.security.{Provider, SecureRandom}
 import java.util.concurrent.atomic.AtomicLong
+import java.util.function.BiFunction
 import javax.net.ssl._
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
@@ -91,14 +95,40 @@ object ReactorNettyRequest {
   val counter = new AtomicLong(0L)
 }
 
-class ReactorNettyRequest(req: HttpServerRequest, secure: Boolean, sessionOpt: Option[SSLSession]) extends ReactorNettyRequestHeader(req, secure, sessionOpt) with Request[Source[ByteString, _]] {
-  lazy val body: Source[ByteString, _] = Source.fromPublisher(req.receive().retain()).map(bb => ByteString(bb.array()))
+class ReactorNettyRequest(req: HttpServerRequest, secure: Boolean, sessionOpt: Option[SSLSession], sessionCookieBaker: SessionCookieBaker, flashCookieBaker: FlashCookieBaker) extends ReactorNettyRequestHeader(req, secure, sessionOpt, sessionCookieBaker, flashCookieBaker) with Request[Source[ByteString, _]] {
+  lazy val body: Source[ByteString, _] = {
+    val flux: Publisher[ByteString] = req.receive().map { bb =>
+      val builder = ByteString.newBuilder
+      bb.readBytes(builder.asOutputStream, bb.readableBytes())
+      builder.result()
+    }
+    Source.fromPublisher(flux)
+  }
 }
 
-class ReactorNettyRequestHeader(req: HttpServerRequest, secure: Boolean, sessionOpt: Option[SSLSession]) extends RequestHeader {
+class ReactorNettyRequestHeader(req: HttpServerRequest, secure: Boolean, sessionOpt: Option[SSLSession], sessionCookieBaker: SessionCookieBaker, flashCookieBaker: FlashCookieBaker) extends RequestHeader {
 
+  lazy val zeSession: Session = {
+    Option(req.cookies().get(sessionCookieBaker.COOKIE_NAME))
+      .flatMap(_.asScala.headOption)
+      .flatMap { value =>
+        Try(sessionCookieBaker.deserialize(sessionCookieBaker.decode(value.value()))).toOption
+      }
+      .getOrElse(Session())
+  }
+  lazy val zeFlash: Flash = {
+    Option(req.cookies().get(flashCookieBaker.COOKIE_NAME))
+      .flatMap(_.asScala.headOption)
+      .flatMap { value =>
+        Try(flashCookieBaker.deserialize(flashCookieBaker.decode(value.value()))).toOption
+      }
+      .getOrElse(Flash())
+  }
   lazy val attrs = TypedMap.apply(
     RequestAttrKey.Id      -> ReactorNettyRequest.counter.incrementAndGet(),
+    RequestAttrKey.Session -> Cell(zeSession),
+    RequestAttrKey.Flash -> Cell(zeFlash),
+    RequestAttrKey.Server -> "reactor-netty-experimental",
     RequestAttrKey.Cookies -> Cell(Cookies(req.cookies().asScala.toSeq.flatMap {
       case (_, cookies) => cookies.asScala.map {
         case cookie: io.netty.handler.codec.http.cookie.DefaultCookie => {
@@ -146,6 +176,7 @@ case class HttpServerBodyResponse(body: Publisher[Array[Byte]], contentType: Opt
 
 case class ReactorNettyServerConfig(
   enabled: Boolean,
+  newEngineOnly: Boolean,
   host: String,
   httpPort: Int,
   httpsPort: Int,
@@ -161,6 +192,7 @@ object ReactorNettyServerConfig {
     val config = env.configuration.get[Configuration]("otoroshi.next.experimental.netty-server")
     ReactorNettyServerConfig(
       enabled = config.getOptionalWithFileSupport[Boolean]("enabled").getOrElse(false),
+      newEngineOnly = config.getOptionalWithFileSupport[Boolean]("new-engine-only").getOrElse(false),
       host = config.getOptionalWithFileSupport[String]("host").getOrElse("0.0.0.0"),
       httpPort = config.getOptionalWithFileSupport[Int]("http-port").getOrElse(env.httpPort + 50),
       httpsPort = config.getOptionalWithFileSupport[Int]("https-port").getOrElse(env.httpsPort + 50),
@@ -205,6 +237,11 @@ class ReactorNettyServer(env: Env) {
 
   private val config = ReactorNettyServerConfig.parseFrom(env)
 
+  private val cookieSignerProvider = new CookieSignerProvider(env.httpConfiguration.secret)
+  private val sessionCookieBaker = new DefaultSessionCookieBaker(env.httpConfiguration.session, env.httpConfiguration.secret, cookieSignerProvider.get)
+  private val flashCookieBaker =new DefaultFlashCookieBaker(env.httpConfiguration.flash, env.httpConfiguration.secret, cookieSignerProvider.get)
+  private val cookieEncoder = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
+
   private def sendResultAsHttpResponse(result: Result, res: HttpServerResponse): NettyOutbound = {
     val bresponse: HttpServerBodyResponse = result.body match {
       case HttpEntity.NoEntity => HttpServerBodyResponse(Flux.empty[Array[Byte]](), None, None, false)
@@ -243,6 +280,42 @@ class ReactorNettyServer(env: Env) {
             case play.api.mvc.Cookie.SameSite.Lax => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
           }
           r.addCookie(nettyCookie)
+        }
+        r
+      }
+      .applyOnIf(result.newSession.isDefined) { r =>
+        result.newSession.map { session =>
+          val cookie = sessionCookieBaker.encodeAsCookie(session)
+          val sessionCookie = new io.netty.handler.codec.http.cookie.DefaultCookie(cookie.name, cookie.value)
+          sessionCookie.setPath(cookie.path)
+          sessionCookie.setHttpOnly(cookie.httpOnly)
+          sessionCookie.setSecure(cookie.secure)
+          cookie.domain.foreach(d => sessionCookie.setDomain(d))
+          cookie.maxAge.foreach(d => sessionCookie.setMaxAge(d.toLong))
+          cookie.sameSite.foreach {
+            case play.api.mvc.Cookie.SameSite.None => sessionCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
+            case play.api.mvc.Cookie.SameSite.Strict => sessionCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
+            case play.api.mvc.Cookie.SameSite.Lax => sessionCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
+          }
+          r.addCookie(sessionCookie)
+        }
+        r
+      }
+      .applyOnIf(result.newFlash.isDefined) { r =>
+        result.newFlash.map { flash =>
+          val cookie = flashCookieBaker.encodeAsCookie(flash)
+          val flashCookie = new io.netty.handler.codec.http.cookie.DefaultCookie(cookie.name, cookie.value)
+          flashCookie.setPath(cookie.path)
+          flashCookie.setHttpOnly(cookie.httpOnly)
+          flashCookie.setSecure(cookie.secure)
+          cookie.domain.foreach(d => flashCookie.setDomain(d))
+          cookie.maxAge.foreach(d => flashCookie.setMaxAge(d.toLong))
+          cookie.sameSite.foreach {
+            case play.api.mvc.Cookie.SameSite.None => flashCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
+            case play.api.mvc.Cookie.SameSite.Strict => flashCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
+            case play.api.mvc.Cookie.SameSite.Lax => flashCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
+          }
+          r.addCookie(flashCookie)
         }
         r
       }
@@ -294,7 +367,7 @@ class ReactorNettyServer(env: Env) {
 
   private def handleWebsocket(req: HttpServerRequest, res: HttpServerResponse, secure: Boolean, channel: Channel, session: Option[SSLSession]): Publisher[Void] = {
     ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
-      val otoReq = new ReactorNettyRequestHeader(req, secure, session)
+      val otoReq = new ReactorNettyRequestHeader(req, secure, session, sessionCookieBaker, flashCookieBaker)
       engine.handleWs(otoReq, engine.badDefaultRoutingWs).map {
         case Left(result) => sendResultAsHttpResponse(result, res)
         case Right(flow) => {
@@ -312,8 +385,7 @@ class ReactorNettyServer(env: Env) {
     }
   }
 
-  private def handle(req: HttpServerRequest, res: HttpServerResponse, secure: Boolean, channel: Channel): Publisher[Void] = {
-    // TODO: handle standard otoroshi urls like in handlers.scala
+  private def handleHttp(req: HttpServerRequest, res: HttpServerResponse, secure: Boolean, channel: Channel, handler: HttpRequestHandler): Publisher[Void] = {
     // val sslHandler = Option(channel.pipeline().get(classOf[SslHandler]))
     // val sslSession = sslHandler.map(_.engine.getSession) // Does not seems to work as the SslHandler is not available on the pipeline :(
     val sessionOpt = Option(currentSession.get())
@@ -325,9 +397,47 @@ class ReactorNettyServer(env: Env) {
       handleWebsocket(req, res, secure, channel, sessionOpt)
     } else {
       ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
-        val otoReq = new ReactorNettyRequest(req, secure, sessionOpt)
+        val otoReq = new ReactorNettyRequest(req, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
         engine.handle(otoReq, engine.badDefaultRoutingHttp).map { result =>
           sendResultAsHttpResponse(result, res)
+        }
+      }
+    }
+  }
+
+  private def handle(req: HttpServerRequest, res: HttpServerResponse, secure: Boolean, channel: Channel, handler: HttpRequestHandler): Publisher[Void] = {
+    val sessionOpt = Option(currentSession.get())
+    currentSession.remove()
+    val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
+      (req.requestHeaders().contains("Sec-WebSocket-Version") || req.requestHeaders().contains("Sec-WebSocket-Version".toLowerCase)) &&
+      Option(req.requestHeaders().get("Upgrade")).contains("websocket")
+    ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
+      val otoReq = new ReactorNettyRequest(req, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
+      val (nreq, reqHandler) = handler.handlerForRequest(otoReq)
+      reqHandler match {
+        case a: EssentialAction => {
+          a.apply(nreq).run(otoReq.body).map { result =>
+            sendResultAsHttpResponse(result, res)
+          }
+        }
+        case a: WebSocket if isWebSocket => {
+          a.apply(nreq).map {
+            case Left(result) => sendResultAsHttpResponse(result, res)
+            case Right(flow) => {
+              res.sendWebsocket { (wsInbound, wsOutbound) =>
+                val processor: Processor[RawMessage, Message] = WebSocketFlowHandler.webSocketProtocol(65536).join(flow).toProcessor.run()
+                wsInbound
+                  .receiveFrames()
+                  .map[RawMessage](frameToRawMessage)
+                  .subscribe(processor)
+                val fluxOut: Flux[WebSocketFrame] = Flux.from(processor).map(messageToFrame)
+                wsOutbound.sendObject(fluxOut)
+              }
+            }
+          }
+        }
+        case a => {
+          sendResultAsHttpResponse(Results.InternalServerError(Json.obj("err" -> s"unknown handler: ${a.getClass.getName} - ${a}")), res).vfuture
         }
       }
     }
@@ -361,7 +471,7 @@ class ReactorNettyServer(env: Env) {
     ) {}
   }
 
-  def start(): Unit = {
+  def start(handler: HttpRequestHandler): Unit = {
     if (config.enabled) {
 
       logger.info("")
@@ -369,6 +479,20 @@ class ReactorNettyServer(env: Env) {
       logger.info(s" - https://${config.host}:${config.httpsPort}")
       logger.info(s" - http://${config.host}:${config.httpPort}")
       logger.info("")
+
+      def handleFunction(secure: Boolean): BiFunction[_ >: HttpServerRequest, _ >: HttpServerResponse, _ <: Publisher[Void]] = {
+        if (config.newEngineOnly) {
+          (req, res) => {
+            val channel = NettyHelper.getChannel(req)
+            handleHttp(req, res, secure, channel, handler)
+          }
+        } else {
+          (req, res) => {
+            val channel = NettyHelper.getChannel(req)
+            handle(req, res, secure, channel, handler)
+          }
+        }
+      }
 
       val serverHttps = HttpServer
         .create()
@@ -394,10 +518,7 @@ class ReactorNettyServer(env: Env) {
           // we do not use .secure() because of no dynamic sni support and use SslHandler instead !
           channel.pipeline().addFirst(new SslHandler(engine))
         }
-        .handle { (req, res) =>
-          val channel = NettyHelper.getChannel(req)
-          handle(req, res, true, channel)
-        }
+        .handle(handleFunction(true))
         .bindNow()
       val serverHttp = HttpServer
         .create()
@@ -407,10 +528,7 @@ class ReactorNettyServer(env: Env) {
         .wiretap(config.wiretap)
         .port(config.httpPort)
         .protocol(HttpProtocol.H2C, HttpProtocol.HTTP11)
-        .handle { (req, res) =>
-          val channel = NettyHelper.getChannel(req)
-          handle(req, res, false, channel)
-        }
+        .handle(handleFunction(false))
         .bindNow()
       Runtime.getRuntime.addShutdownHook(new Thread(() => {
         serverHttp.disposeNow()

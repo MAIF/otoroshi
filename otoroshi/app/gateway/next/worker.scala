@@ -183,6 +183,7 @@ object OtoroshiWorkerTest {
       _configuration = configuration,
       environment = environment,
       lifecycle = lifecycle,
+      httpConfiguration = ???,
       wsClient = wsClient,
       circuitBeakersHolder = circuitBreakersHolder,
       getHttpPort = None,

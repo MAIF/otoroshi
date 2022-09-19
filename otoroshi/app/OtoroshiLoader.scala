@@ -32,7 +32,7 @@ class OtoroshiLoader extends ApplicationLoader {
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    new otoroshi.utils.netty.ReactorNettyServer(components.env).start()
+    new otoroshi.utils.netty.ReactorNettyServer(components.env).start(components.httpRequestHandler)
     components.application
   }
 }
@@ -61,6 +61,7 @@ package object modules {
         _configuration = configuration,
         environment = environment,
         lifecycle = applicationLifecycle,
+        httpConfiguration = httpConfiguration,
         wsClient = wsClient,
         circuitBeakersHolder = circuitBreakersHolder,
         getHttpPort = getHttpPort,

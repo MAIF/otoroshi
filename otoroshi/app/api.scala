@@ -323,6 +323,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
       _configuration = configuration,
       environment = environment,
       lifecycle = applicationLifecycle,
+      httpConfiguration = httpConfiguration,
       wsClient = wsClient,
       circuitBeakersHolder = circuitBreakersHolder,
       getHttpPort = None,
@@ -412,7 +413,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    new otoroshi.utils.netty.ReactorNettyServer(components.env).start()
+    new otoroshi.utils.netty.ReactorNettyServer(components.env).start(components.httpRequestHandler)
     server.httpPort.get + 1
     this
   }
@@ -421,7 +422,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    new otoroshi.utils.netty.ReactorNettyServer(components.env).start()
+    new otoroshi.utils.netty.ReactorNettyServer(components.env).start(components.httpRequestHandler)
     server.httpPort.get + 1
     stopOnShutdown()
   }
