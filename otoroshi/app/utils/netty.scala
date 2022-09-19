@@ -50,17 +50,6 @@ class ReactorNettyRemoteConnection(req: HttpServerRequest, val secure: Boolean, 
           None
         case Some(session) => {
           if (session.isValid) {
-            // TODO: get the session from channel, but no channel access yet
-            // private val sslHandler                       = Option(channel.pipeline().get(classOf[SslHandler]))
-            // lazy val clientCertificateChain: Option[Seq[X509Certificate]] = {
-            //   try {
-            //     sslHandler.map { handler =>
-            //       handler.engine.getSession.getPeerCertificates.toSeq.collect { case x509: X509Certificate => x509 }
-            //     }
-            //   } catch {
-            //     case e: SSLPeerUnverifiedException => None
-            //   }
-            // }
             val certs = try {
               session.getPeerCertificates.toSeq.collect { case c: X509Certificate => c }
             } catch {
@@ -228,8 +217,6 @@ class ReactorNettyServer(env: Env) {
   implicit private val mat = env.otoroshiMaterializer
   implicit private val ev = env
 
-  // private val currentSession = new ThreadLocal[SSLSession]()
-
   private val logger = Logger("otoroshi-experiments-reactor-netty-server")
 
   private val engine: ProxyEngine = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get.asInstanceOf[ProxyEngine]
@@ -386,10 +373,8 @@ class ReactorNettyServer(env: Env) {
 
   private def handleHttp(req: HttpServerRequest, res: HttpServerResponse, secure: Boolean, channel: Channel): Publisher[Void] = {
     val parent = channel.parent()
-    val sslHandler2 = Option(parent.pipeline().get(classOf[SslHandler]))
-    val sessionOpt = sslHandler2.map(_.engine.getSession)
-    // val sessionOpt = Option(currentSession.get())
-    // currentSession.remove()
+    val sslHandler = Option(parent.pipeline().get(classOf[SslHandler]))
+    val sessionOpt = sslHandler.map(_.engine.getSession)
     val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
       (req.requestHeaders().contains("Sec-WebSocket-Version") || req.requestHeaders().contains("Sec-WebSocket-Version".toLowerCase)) &&
       Option(req.requestHeaders().get("Upgrade")).contains("websocket")
@@ -407,10 +392,8 @@ class ReactorNettyServer(env: Env) {
 
   private def handle(req: HttpServerRequest, res: HttpServerResponse, secure: Boolean, channel: Channel, handler: HttpRequestHandler): Publisher[Void] = {
     val parent = channel.parent()
-    val sslHandler2 = Option(parent.pipeline().get(classOf[SslHandler]))
-    val sessionOpt = sslHandler2.map(_.engine.getSession)
-    // val sessionOpt = Option(currentSession.get())
-    // currentSession.remove()
+    val sslHandler = Option(parent.pipeline().get(classOf[SslHandler]))
+    val sessionOpt = sslHandler.map(_.engine.getSession)
     val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
       (req.requestHeaders().contains("Sec-WebSocket-Version") || req.requestHeaders().contains("Sec-WebSocket-Version".toLowerCase)) &&
       Option(req.requestHeaders().get("Upgrade")).contains("websocket")
@@ -420,7 +403,6 @@ class ReactorNettyServer(env: Env) {
       reqHandler match {
         case a: EssentialAction => {
           a.apply(nreq).run(otoReq.body).map { result =>
-            // nreq.clientCertificateChain.debugPrintln
             sendResultAsHttpResponse(result, res)
           }
         }
@@ -508,11 +490,6 @@ class ReactorNettyServer(env: Env) {
         .doOnChannelInit { (observer, channel, socket) =>
           val engine = setupSslContext().createSSLEngine()
           engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
-            // val session = e.getHandshakeSession
-            // if (currentSession.get() != null) {
-            //   logger.warn(s"Something weird happened with the TLS session: it's not clean ...")
-            // }
-            // currentSession.set(session)
             protocols match {
               case ps if ps.contains("h2") => "h2"
               case ps if ps.contains("spdy/3") => "spdy/3"
