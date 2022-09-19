@@ -10,7 +10,7 @@ To work with Eureka, Otoroshi has three differents plugins:
 * to discover an existing Eureka Server instance
 * to use Eureka application as an Otoroshi target and took advantage of all Otoroshi clients features (load-balancing, rate limiting, etc...)
 
-Let's cut this tutorial in four parts. 
+Let's cut this tutorial in three parts. 
 
 - Create an simple Spring application that we'll use as an Eureka Client
 - Deploy an implementation of the Otoroshi Eureka Server (using the `Eureka Instance` plugin), register eureka clients and expose them using the `Internal Eureka Server` plugin
