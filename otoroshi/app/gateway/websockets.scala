@@ -808,7 +808,7 @@ class WebSocketProxyActor(
           .alsoTo(Sink.onComplete { _ =>
             if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] target stopped")
             Option(queueRef.get()).foreach(_.complete())
-            out ! PoisonPill
+            // out ! PoisonPill
           }),
         descriptor.clientConfig.proxy
           .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
@@ -857,7 +857,7 @@ class WebSocketProxyActor(
   override def postStop() = {
     if (logger.isTraceEnabled) logger.trace(s"[WEBSOCKET] client stopped")
     Option(queueRef.get()).foreach(_.complete())
-    out ! PoisonPill
+    // out ! PoisonPill
   }
 
   def receive = {
@@ -880,7 +880,7 @@ class WebSocketProxyActor(
     case CloseMessage(status, reason) => {
       if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] close message from client: $status : $reason")
       Option(queueRef.get()).foreach(_.complete())
-      out ! PoisonPill
+      // out ! PoisonPill
     }
     case e                            => logger.error(s"[WEBSOCKET] Bad message type: $e")
   }

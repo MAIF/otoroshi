@@ -49,10 +49,9 @@ export default ({ route, setSidebarContent }) => {
     <div
       className="d-flex"
       style={{
-        flex: 1,
         flexDirection: 'column',
       }}>
-      <ul className="nav flex-column nav-sidebar" style={{ flex: 1 }}>
+      <ul className="nav flex-column nav-sidebar">
         <li
           className="nav-item"
           onClick={() => history.push(`/${entity.link}/${route.id}?tab=flow`)}
@@ -69,10 +68,6 @@ export default ({ route, setSidebarContent }) => {
           </li>
         ))}
       </ul>
-      <Link to="/routes" onClick={() => setSidebarContent(null)} style={{ textAlign: 'center' }}>
-        <i className="fas fa-arrow-left me-3" />
-        Back to routes
-      </Link>
     </div>
   );
 };

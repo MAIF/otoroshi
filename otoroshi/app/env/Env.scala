@@ -39,6 +39,7 @@ import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
 import otoroshi.utils.metrics.{HasMetrics, Metrics}
 import otoroshi.utils.syntax.implicits._
 import play.api._
+import play.api.http.HttpConfiguration
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws._
@@ -70,6 +71,7 @@ class Env(
     val _configuration: Configuration,
     val environment: Environment,
     val lifecycle: ApplicationLifecycle,
+    val httpConfiguration: HttpConfiguration,
     wsClient: WSClient,
     val circuitBeakersHolder: CircuitBreakersHolder,
     getHttpPort: => Option[Int],

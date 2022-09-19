@@ -37,7 +37,7 @@ case class NgPluginHttpRequest(
     headers: Map[String, String],
     cookies: Seq[WSCookie] = Seq.empty[WSCookie],
     version: String,
-    clientCertificateChain: Option[Seq[X509Certificate]],
+    clientCertificateChain: () => Option[Seq[X509Certificate]],
     body: Source[ByteString, _],
     backend: Option[NgTarget]
 ) {
@@ -81,13 +81,14 @@ case class NgPluginHttpRequest(
 
   def header(name: String): Option[String] = headers.get(name).orElse(headers.get(name.toLowerCase()))
 
-  def json: JsValue =
+  def json: JsValue = {
+    val certs: Option[Seq[X509Certificate]] = clientCertificateChain()
     Json.obj(
       "url"               -> url,
       "method"            -> method,
       "headers"           -> headers,
       "version"           -> version,
-      "client_cert_chain" -> JsonHelpers.clientCertChainToJson(clientCertificateChain),
+      "client_cert_chain" -> JsonHelpers.clientCertChainToJson(certs),
       "backend"           -> backend.map(_.json).getOrElse(JsNull).asValue,
       "cookies"           -> JsArray(
         cookies.map(c =>
@@ -103,6 +104,7 @@ case class NgPluginHttpRequest(
         )
       )
     )
+  }
 }
 
 case class NgPluginHttpResponse(

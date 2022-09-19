@@ -13,6 +13,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 
 import scala.concurrent.duration._
+import scala.util.Try
 
 object KeyManagerCompatibility {
 
@@ -177,7 +178,9 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
   override def chooseEngineServerAlias(keyType: String, issuers: Array[Principal], engine: SSLEngine): String = {
     val latestConfig: Option[GlobalConfig] = env.datastores.globalConfigDataStore.latestSafe
     val defaultDomain: Option[String]      = latestConfig.flatMap(_.tlsSettings.defaultDomain)
+    val handshakePeerHost: Option[String]  = Try(engine.getHandshakeSession.getPeerHost).toOption.filter(_ != null)
     Option(engine.getPeerHost)
+      .orElse(handshakePeerHost)
       .orElse(defaultDomain)
       .map { domain =>
         val autoCertEnabled        = latestConfig.exists(_.autoCert.enabled)
