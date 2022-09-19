@@ -107,10 +107,9 @@ public class PortController {
     }
 }
 ````
-This controller is very simple, we just exposed one endpoint `/port` which returns the port as string.
+This controller is very simple, we just exposed one endpoint `/port` which returns the port as string. Our client is ready to running. 
 
-
-Our client is ready to running. Let's launch it with the following command:
+Let's launch it with the following command:
 
 ````sh
 mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8085
@@ -135,9 +134,7 @@ Now try to call the new route.
 curl 'http://eureka-client-next-gen.oto.tools:8080/port`'
 ````
 
-If everything is working, you should get the port 8085 as the response.
-
-The setup is working as expected, but we can improve him by scaling our eureka client.
+If everything is working, you should get the port 8085 as the response.The setup is working as expected, but we can improve him by scaling our eureka client.
 
 Open a new tab in your terminal and run the following command.
 
