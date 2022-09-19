@@ -168,13 +168,13 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
         footer={() => null}
       />
       <div className="d-flex align-items-center justify-content-end mt-3">
-        <div className="btn-group">
-          <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
-            <i className="fas fa-times" /> Cancel
+        <div className="displayGroupBtn">
+          <button className="btn btn-danger" onClick={() => history.push(`/${link}`)}>
+            Cancel
           </button>
           {!isCreation && (
             <button
-              className="btn btn-sm btn-danger"
+              className="btn btn-danger"
               onClick={() => {
                 window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
                   if (ok) {

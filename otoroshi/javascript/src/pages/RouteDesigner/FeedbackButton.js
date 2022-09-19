@@ -52,7 +52,7 @@ export function FeedbackButton({
     <button
       type="button"
       disabled={disabled}
-      className={`btn btn-sm ${color} ${className || ''}`}
+      className={`btn ${color} ${className || ''}`}
       style={{ ...style }}
       onClick={() => {
         if (!uploading && waiting) {
