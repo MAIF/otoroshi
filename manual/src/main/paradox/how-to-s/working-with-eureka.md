@@ -16,7 +16,8 @@ Let's cut this tutorial in four parts.
 - Deploy an implementation of the Otoroshi Eureka Server (using the `Eureka Instance` plugin), register eureka clients and expose them using the `Internal Eureka Server` plugin
 - Deploy an Netflix Eureka Server and use it in Otoroshi to discover apps using the `External Eureka Server` plugin.
 
-## Summary
+
+In this tutorial: 
 
 - [Create an Otoroshi route with the Internal Eureka Server plugin](#create-an-otoroshi-route-with-the-internal-eureka-server-plugin)
 - [Create a simple Eureka Client and register it](#create-a-simple-eureka-client-and-register-it)
@@ -28,7 +29,9 @@ Let's cut this tutorial in four parts.
 
 ### Create an Otoroshi route with the Internal Eureka Server plugin
 
-*We'll supposed that you have an Otoroshi exposed on the 8080 port with the new Otoroshi engine enabled*
+@@@ note
+We'll supposed that you have an Otoroshi exposed on the 8080 port with the new Otoroshi engine enabled
+@@@
 
 Let's jump to the routes Otoroshi [view](http://otoroshi.oto.tools:8080/bo/dashboard/routes) and create a new route using the wizard button.
 
@@ -115,7 +118,9 @@ Let's launch it with the following command:
 mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8085
 ````
 
-*The port is not required but it will be useful when we will deploy more than one instances in the rest of the tutorial*
+@@@note
+The port is not required but it will be useful when we will deploy more than one instances in the rest of the tutorial
+@@@
 
 
 Once the command ran, you can navigate to the eureka server view in the Otoroshi UI. The dashboard should displays one registered app and instance.
