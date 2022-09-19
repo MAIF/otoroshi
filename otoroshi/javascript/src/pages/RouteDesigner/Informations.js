@@ -153,18 +153,25 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
   return (
     <>
       <Form
-      schema={{
-        ...schema,
-        id: {
-          ...schema.id,
-          disabled: true    
-        }
-      }}
-
+        schema={{
+          ...schema,
+          id: {
+            ...schema.id,
+            disabled: true
+          }
+        }}
         flow={flow}
         value={informations}
         options={{ autosubmit: true }}
-        onSubmit={(item) => setInformations({ ...merge({ ...value }, item) })}
+        onSubmit={(item) => {
+          setInformations({
+            ...item,
+            backend: value.backend,
+            backend_ref: value.backend_ref,
+            frontend: value.frontend,
+            plugins: value.plugins
+          })
+        }}
         footer={() => null}
       />
       <div className="d-flex align-items-center justify-content-end mt-3">
