@@ -366,10 +366,12 @@ export class RouteWizard extends React.Component {
     if (this.state.step - 1 === 4 && ['mock', 'graphql'].includes(this.state.route.kind))
       this.setState({
         step: 3,
+        error: undefined
       });
     else
       this.setState({
         step: this.state.step - 1,
+        error: undefined
       });
   };
 

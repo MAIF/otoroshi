@@ -97,6 +97,19 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
                 NgAccess.NgAllowed
             }
         }
+        case None if !config.validate && !pass => {
+          // Here are 2 + 12 datastore calls to handle quotas
+          val routeId = ctx.route.cacheableId // handling route groups
+          ApiKeyHelper
+            .passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId, config.updateQuotas)
+            .map {
+              case Left(result)  =>
+                NgAccess.NgAllowed
+              case Right(apikey) =>
+                ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
+                NgAccess.NgAllowed
+            }
+        }
         case _                                => NgAccess.NgAllowed.vfuture
       }
     }
