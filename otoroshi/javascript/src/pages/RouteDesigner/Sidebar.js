@@ -69,10 +69,6 @@ export default ({ route, setSidebarContent }) => {
           </li>
         ))}
       </ul>
-      <Link to="/routes" onClick={() => setSidebarContent(null)} style={{ textAlign: 'center' }}>
-        <i className="fas fa-arrow-left me-3" />
-        Back to routes
-      </Link>
     </div>
   );
 };
