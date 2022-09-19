@@ -300,6 +300,9 @@ export default function ({ route, hide }) {
             background: 'rgb(60,60,60)',
             padding: '12px',
             borderRadius: '8px',
+            width:'97%',
+            margin : '0 auto',
+            marginTop:'10px'
           }}>
           <div className="d-flex">
             <div style={{ minWidth: '200px' }}>
