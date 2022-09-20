@@ -39,6 +39,8 @@ import _ from 'lodash';
 import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
+import { EurekaTargetForm } from './EurekaTargetForm';
+import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -312,9 +314,9 @@ const Container = ({ children, onClick }) => {
       onMouseDown={(e) => {
         setPropagate(
           !document.getElementById('form-container')?.contains(e.target) &&
-            ![...document.getElementsByClassName('delete-node-button')].find((d) =>
-              d.contains(e.target)
-            )
+          ![...document.getElementsByClassName('delete-node-button')].find((d) =>
+            d.contains(e.target)
+          )
         );
         // &&
         // ![...document.getElementsByClassName("fa-chevron")].find(d => d.contains(e.target))
@@ -484,6 +486,7 @@ class Designer extends React.Component {
     },
     advancedDesignerView: null,
     showTryIt: false,
+    backendForm: undefined
   };
 
   componentDidMount() {
@@ -563,7 +566,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) {}
+      } catch (_) { }
     }
   };
 
@@ -579,7 +582,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) {}
+      } catch (_) { }
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -606,11 +609,11 @@ class Designer extends React.Component {
       let route =
         this.props.viewPlugins !== null && this.props.viewPlugins !== -1
           ? {
-              ...r,
-              overridePlugins: true,
-              plugins: [],
-              ...r.routes[~~this.props.viewPlugins],
-            }
+            ...r,
+            overridePlugins: true,
+            plugins: [],
+            ...r.routes[~~this.props.viewPlugins],
+          }
           : r;
 
       if (route.error) {
@@ -664,6 +667,7 @@ class Designer extends React.Component {
       this.setState(
         {
           backends,
+          backendForm,
           loading: false,
           categories: categories.filter((category) => !['Tunnel', 'Job'].includes(category)),
           route: { ...routeWithNodeId },
@@ -689,7 +693,8 @@ class Designer extends React.Component {
             ...DEFAULT_FLOW.Backend('plugin'),
             ...backendForm,
             config_schema: toUpperCaseLabels(
-              DEFAULT_FLOW.Backend('plugin').config_schema(backendForm.schema)
+              DEFAULT_FLOW.Backend('plugin')
+                .config_schema(backendForm.schema, route, this.updateRoute)
             ),
             config_flow: DEFAULT_FLOW.Backend('plugin').config_flow,
             nodeId: 'Backend',
@@ -1149,8 +1154,8 @@ class Designer extends React.Component {
           plugin_index: Object.fromEntries(
             Object.entries(
               plugin.plugin_index ||
-                this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-                {}
+              this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+              {}
             ).map(([key, v]) => [snakeCase(key), v])
           ),
         })),
@@ -1342,17 +1347,17 @@ class Designer extends React.Component {
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-            .map((p) => {
-              const id = p.plugin;
-              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-              if (pluginDef) {
-                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                  return { ...p, ...pluginDef };
-                }
+          .map((p) => {
+            const id = p.plugin;
+            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+            if (pluginDef) {
+              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                return { ...p, ...pluginDef };
               }
-              return null;
-            })
-            .filter((p) => !!p)
+            }
+            return null;
+          })
+          .filter((p) => !!p)
         : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
@@ -1556,6 +1561,7 @@ class Designer extends React.Component {
                     originalRoute={originalRoute}
                     alertModal={alertModal}
                     disabledSaveButton={isEqual(route, originalRoute)}
+                    backendForm={this.state.backendForm}
                   />
                 </div>
               </>
@@ -1695,13 +1701,13 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
     const allMethods =
       frontend.methods && frontend.methods.length > 0
         ? frontend.methods.map((m, i) => (
-            <span
-              key={`frontendmethod-${i}`}
-              className={`badge me-1`}
-              style={{ backgroundColor: HTTP_COLORS[m] }}>
-              {m}
-            </span>
-          ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}>
+            {m}
+          </span>
+        ))
         : [<span className="badge bg-success">ALL</span>];
     return (
       <>
@@ -1816,8 +1822,8 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
               const start = target.tls ? 'https://' : 'http://';
               const mtls =
                 target.tls_config &&
-                target.tls_config.enabled &&
-                [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
+                  target.tls_config.enabled &&
+                  [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
                   <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
                     mTLS
                   </span>
@@ -1875,9 +1881,8 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${
-          icon || 'bars'
-        } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${icon || 'bars'
+          } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>
@@ -1997,7 +2002,8 @@ class EditView extends React.Component {
   loadForm = () => {
     const { selectedNode, plugins, route, readOnly } = this.props;
 
-    const { id, flow, config_flow, config_schema, schema, nodeId } = selectedNode;
+    const { id, flow, config_flow, schema, nodeId } = selectedNode;
+    let { config_schema } = selectedNode
 
     const isFrontendOrBackend = ['Backend', 'Frontend'].includes(id);
     const isPluginWithConfiguration = Object.keys(config_schema).length > 0;
@@ -2007,11 +2013,11 @@ class EditView extends React.Component {
       isFrontendOrBackend ? undefined : 'status',
       isPluginWithConfiguration
         ? {
-            label: isFrontendOrBackend ? null : 'Plugin',
-            flow: ['plugin'],
-            collapsed: false,
-            collapsable: false,
-          }
+          label: isFrontendOrBackend ? null : 'Plugin',
+          flow: ['plugin'],
+          collapsed: false,
+          collapsable: false,
+        }
         : undefined,
     ].filter((f) => f);
 
@@ -2081,8 +2087,10 @@ class EditView extends React.Component {
     const { selectedNode } = this.props;
     const { nodeId } = selectedNode;
 
+    const oldConfig = form.value
+
     return this.props.updatePlugin(nodeId, selectedNode.id, {
-      plugin: newValue.plugin,
+      plugin: newValue.plugin || oldConfig?.plugin,
       status: newValue.status,
     });
   };
@@ -2133,6 +2141,10 @@ class EditView extends React.Component {
     const notOnBackendNode = !usingExistingBackend || id !== 'Backend';
 
     if (form.flow.length === 0 && Object.keys(form.schema).length === 0) return null;
+
+    const EurekaForm = id === 'cp:otoroshi.next.plugins.EurekaTarget' ? EurekaTargetForm : ExternalEurekaTargetForm
+    const hasCustomPluginForm = ['cp:otoroshi.next.plugins.EurekaTarget',
+      'cp:otoroshi.next.plugins.ExternalEurekaTarget'].includes(id)
 
     return (
       <div
@@ -2215,12 +2227,12 @@ class EditView extends React.Component {
                   )}
                 </>
               )}
-              {!asJsonFormat && (
+              {!asJsonFormat && <>
                 <Form
                   ref={this.formRef}
                   value={form.value}
                   schema={form.schema}
-                  flow={form.flow}
+                  flow={hasCustomPluginForm ? ['status'] : form.flow}
                   onSubmit={this.onValidate}
                   options={{ autosubmit: true }}
                   footer={() => (
@@ -2232,7 +2244,20 @@ class EditView extends React.Component {
                     />
                   )}
                 />
-              )}
+                {hasCustomPluginForm &&
+                  <EurekaForm
+                    route={route}
+                    update={plugin => {
+                      const { selectedNode } = this.props;
+                      const { nodeId } = selectedNode;
+
+                      return this.props.updatePlugin(nodeId, selectedNode.id, {
+                        plugin,
+                        status: form.schema.status,
+                      });
+                    }} />
+                }
+              </>}
             </div>
           )}
           {!notOnBackendNode && (

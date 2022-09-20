@@ -706,6 +706,36 @@ export function findAllApps() {
   }).then((r) => r.json());
 }
 
+export function findAllEurekaServers() {
+  return fetch('/bo/api/eureka-servers', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json'
+    }
+  }).then(r => r.json())
+}
+
+export function getEurekaApps(eurekaServerId) {
+  return fetch(`/bo/api/eureka-servers/${eurekaServerId}/apps`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json'
+    }
+  }).then(r => r.json())
+}
+
+export function getExternalEurekaServers(url) {
+  return fetch(`/bo/api/external-eureka-servers?url=${url}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json'
+    }
+  }).then(r => r.json())
+}
+
 export function discardAllSessions() {
   // return fetch(`/bo/api/sessions`, {
   return fetch(`/bo/api/proxy/api/admin-sessions`, {

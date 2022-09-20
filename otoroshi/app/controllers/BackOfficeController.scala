@@ -22,7 +22,7 @@ import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models.RightsChecker.SuperAdminOnly
 import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId, _}
 import otoroshi.next.models.{GraphQLFormats, NgRoute, NgService}
-import otoroshi.next.plugins.GraphQLBackend
+import otoroshi.next.plugins.{EurekaServerSink, GraphQLBackend}
 import otoroshi.security._
 import otoroshi.ssl._
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
@@ -598,6 +598,54 @@ class BackOfficeController(
           }
         }
       }
+    }
+
+  def eurekaServers() =
+    BackOfficeActionAuth.async { _ =>
+      env.datastores.routeDataStore.findAll().map { routes =>
+        Ok(
+            JsArray(
+              routes
+              .filter(r => r.plugins.hasPlugin[EurekaServerSink])
+              .map(_.json)
+            )
+        )
+      }
+    }
+
+  def externalEurekaServers() =
+    BackOfficeActionAuth.async { ctx =>
+      ctx.request.getQueryString("url") match {
+        case Some(url) =>
+          env.Ws
+            .url(s"$url/apps")
+            .withMethod("GET")
+            .withHttpHeaders(Seq("Accept" -> "application/json"):_*)
+            .execute()
+            .map { res =>
+              if (res.status == 200) {
+                Ok(res.bodyAsBytes.utf8String.parseJson)
+              } else {
+                BadRequest(Json.obj("error" -> s"bad server response: ${res.status} - ${res.headers} - ${res.body}"))
+              }
+            }
+        case None =>
+          BadRequest(Json.obj("error" -> "missing url"))
+            .vfuture
+      }
+    }
+
+  def eurekaServerApps(id: String) =
+    BackOfficeActionAuth.async { _ =>
+      env.datastores.rawDataStore
+        .allMatching(s"${env.storageRoot}:plugins:eureka-server-$id:apps*")
+        .map { rawApps =>
+          Ok(
+            JsArray(
+              rawApps.map(app => Json.parse(app.utf8String))
+            )
+          )
+        }
     }
 
   def panicMode() =

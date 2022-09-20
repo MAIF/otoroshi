@@ -38,10 +38,10 @@ export class SelectInput extends Component {
     }
   }
 
-  componentDidCatch(error) {
-    console.log('SelectInput catches error', error, this.state);
-    this.setState({ error });
-  }
+  // componentDidCatch(error) {
+  //   console.log('SelectInput catches error', error, this.state);
+  //   this.setState({ error });
+  // }
 
   reloadValues = () => {
     this.setState({ loading: true });
