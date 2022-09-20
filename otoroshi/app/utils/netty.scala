@@ -6,6 +6,7 @@ import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.Channel
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.websocketx._
+import io.netty.handler.logging.LogLevel
 import io.netty.handler.ssl._
 import org.reactivestreams.{Processor, Publisher}
 import otoroshi.env.Env
@@ -37,7 +38,7 @@ import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 object ReactorNettyRemoteConnection {
-  val logger = Logger("otoroshi-experiments-reactor-netty-server-remote-connection")
+  val logger = Logger("otoroshi-experimental-reactor-netty-server-remote-connection")
 }
 
 class ReactorNettyRemoteConnection(req: HttpServerRequest, val secure: Boolean, sessionOpt: Option[SSLSession]) extends RemoteConnection {
@@ -217,7 +218,7 @@ class ReactorNettyServer(env: Env) {
   implicit private val mat = env.otoroshiMaterializer
   implicit private val ev = env
 
-  private val logger = Logger("otoroshi-experiments-reactor-netty-server")
+  private val logger = Logger("otoroshi-experimental-reactor-netty-server")
 
   private val engine: ProxyEngine = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get.asInstanceOf[ProxyEngine]
 
@@ -484,7 +485,7 @@ class ReactorNettyServer(env: Env) {
         .create()
         .host(config.host)
         .accessLog(config.accessLog)
-        .wiretap(config.wiretap)
+        .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-https", LogLevel.INFO))
         .port(config.httpsPort)
         .protocol(HttpProtocol.HTTP11, HttpProtocol.H2C)
         .doOnChannelInit { (observer, channel, socket) =>
@@ -506,7 +507,7 @@ class ReactorNettyServer(env: Env) {
         .host(config.host)
         .noSSL()
         .accessLog(config.accessLog)
-        .wiretap(config.wiretap)
+        .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-http", LogLevel.INFO))
         .port(config.httpPort)
         .protocol(HttpProtocol.H2C, HttpProtocol.HTTP11)
         .handle(handleFunction(false))

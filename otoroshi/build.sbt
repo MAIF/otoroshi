@@ -282,6 +282,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.inmemory.modern=true",
   "-Dotoroshi.next.experimental.netty-server.enabled=true",
   "-Dotoroshi.next.experimental.netty-server.accesslog=true",
+  "-Dotoroshi.next.experimental.netty-server.wiretap=false",
   // "-Dotoroshi.storage=experimental-pg",
   // "-Dotoroshi.storage=redis",
   // "-Dotoroshi.storage=lettuce",
