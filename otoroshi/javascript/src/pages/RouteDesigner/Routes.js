@@ -11,29 +11,38 @@ export default ({ injectTopBar }) => {
 
   const domainToTargetColumn = {
     title: 'Domain → Target',
-    cell: item => {
-      return <>
-        {(item.frontend.domains[0] || '-')} {item.frontend.domains.length > 1 && <span className='badge bg-secondary'>{item.frontend.domains.length - 1} more</span>}  → {' '}
-        {(item.backend.targets[0]?.hostname || '-')} {item.backend.targets.length > 1 && <span className='badge bg-secondary'>{item.backend.targets.length - 1} more</span>}
-      </>
-    }
-  }
+    cell: (item) => {
+      return (
+        <>
+          {item.frontend.domains[0] || '-'}{' '}
+          {item.frontend.domains.length > 1 && (
+            <span className="badge bg-secondary">{item.frontend.domains.length - 1} more</span>
+          )}{' '}
+          → {item.backend.targets[0]?.hostname || '-'}{' '}
+          {item.backend.targets.length > 1 && (
+            <span className="badge bg-secondary">{item.backend.targets.length - 1} more</span>
+          )}
+        </>
+      );
+    },
+  };
 
   const exposedColumn = {
     title: 'Enabled',
     style: { textAlign: 'center', width: 70 },
     notFilterable: true,
-    cell: (_, item) => (item.enabled ? <span className="fas fa-check-circle" style={{ color: "#f9b000" }} /> : null),
-  }
+    cell: (_, item) =>
+      item.enabled ? <span className="fas fa-check-circle" style={{ color: '#f9b000' }} /> : null,
+  };
 
   const columns = [
     {
       title: 'Name',
-      content: (item) => item.name
+      content: (item) => item.name,
     },
     entity.lowercase == 'route' ? domainToTargetColumn : undefined,
-    exposedColumn
-  ].filter(c => c);
+    exposedColumn,
+  ].filter((c) => c);
 
   return (
     <div className="designer">

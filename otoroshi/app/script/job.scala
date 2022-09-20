@@ -595,16 +595,18 @@ class JobManager(env: Env) {
       actorSystem = jobActorSystem,
       scheduler = jobActorSystem.scheduler
     )
-    if (JobManager.logger.isDebugEnabled) JobManager.logger.debug(
-      s"Registering job '${job.name}' with id '${job.uniqueId}' of kind ${job.kind} starting ${job.starting} with ${job
-        .instantiation(ctx, env)} (${job.initialDelay(ctx, env)} / ${job.interval(ctx, env)} - ${job.cronExpression(ctx, env)})"
-    )
+    if (JobManager.logger.isDebugEnabled)
+      JobManager.logger.debug(
+        s"Registering job '${job.name}' with id '${job.uniqueId}' of kind ${job.kind} starting ${job.starting} with ${job
+          .instantiation(ctx, env)} (${job.initialDelay(ctx, env)} / ${job.interval(ctx, env)} - ${job.cronExpression(ctx, env)})"
+      )
     registeredJobs.putIfAbsent(job.uniqueId, rctx)
     rctx
   }
 
   def unregisterJob(job: Job): Unit = {
-    if (JobManager.logger.isDebugEnabled) JobManager.logger.debug(s"Unregistering job '${job.name}' with id '${job.uniqueId}'")
+    if (JobManager.logger.isDebugEnabled)
+      JobManager.logger.debug(s"Unregistering job '${job.name}' with id '${job.uniqueId}'")
     env.datastores.globalConfigDataStore.singleton().map { config =>
       registeredJobs.get(job.uniqueId).foreach(_.stop(config, env))
       registeredJobs.remove(job.uniqueId)

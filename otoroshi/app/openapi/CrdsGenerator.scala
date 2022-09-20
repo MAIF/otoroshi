@@ -162,7 +162,7 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
             curr._1,
             contentToOpenAPIV3Schema((schemas \ entity \ "description").asOpt[String].getOrElse("???"), content)
           )
-        case None          =>
+        case None                    =>
           println(s"Warning : crd entity not found in open api schema : ${curr._1} - $entity")
       }
     })

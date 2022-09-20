@@ -9,7 +9,7 @@ import YAML from 'yaml';
 
 import deepSet from 'set-value';
 import cloneDeep from 'lodash/cloneDeep';
-import merge from 'lodash/merge'
+import merge from 'lodash/merge';
 import Select from 'react-select';
 import Creatable from 'react-select/lib/Creatable';
 

@@ -85,8 +85,7 @@ object ValidatorUtils {
     else {
       if (validateSign)
         if (logger.isDebugEnabled) logger.debug(s"Response Signature validated")
-      else
-        if (logger.isDebugEnabled) logger.debug(s"Validation of Response Signature not required")
+        else if (logger.isDebugEnabled) logger.debug(s"Validation of Response Signature not required")
       Right(())
     }
   }

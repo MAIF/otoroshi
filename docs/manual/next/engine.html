@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.12
+1.5.13
 </div>
 </div>
 <div class="nav-toc">
@@ -115,12 +115,10 @@
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi Next</a>
+  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
   <ul>
     <li><a href="../next/engine.html" class="active page">New proxy engine</a></li>
-    <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
-    <li><a href="../next/graphql-composer.html" class="page">GraphQL Composer Proxy</a></li>
-    <li><a href="../next/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
     <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
 </ul>
@@ -156,7 +154,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.12
+1.5.13
 </div>
 </div>
 <div class="nav-toc">
@@ -236,12 +234,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi Next</a>
+  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
   <ul>
     <li><a href="../next/engine.html" class="active page">New proxy engine</a></li>
-    <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
-    <li><a href="../next/graphql-composer.html" class="page">GraphQL Composer Proxy</a></li>
-    <li><a href="../next/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
     <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
 </ul>
@@ -258,7 +254,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
-  <li><a href="../next/index.html">Otoroshi Next</a></li>
+  <li><a href="../next/index.html">Otoroshi new proxy engine</a></li>
   <li>New proxy engine</li>
 </ul>
 </div>
@@ -267,9 +263,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#new-proxy-engine" name="new-proxy-engine" class="anchor"><span class="anchor-link"></span></a>New proxy engine</h1>
-<p>Starting from the <code>1.5.3</code> release, otoroshi offers a new plugin that implements the next generation of the proxy engine. This engine has been designed based on our 5 years experience building, maintaining and running the previous one. It tries to fix all the drawback we may have encountered during those years and highly improve performances, user experience, reporting and debugging capabilities. The new engine is fully plugin oriented in order to spend CPU cycles only on useful stuff. You can enable this plugin only on some domain names so you can easily A/B test the new engine. The new proxy engine is designed to be more reactive and more efficient generally. It is also designed to be very efficient on path routing where it wasn&rsquo;t the old engines strong suit.</p><div class="callout warning "><div class="callout-title">Warning</div>
-<p>This engine is <strong>experimental</strong> and might not work as expected !</p></div>
+<h1><a href="#new-proxy-engine" name="new-proxy-engine" class="anchor"><span class="anchor-link"></span></a>New proxy engine</h1><div class="callout warning "><div class="callout-title">Warning</div>
+<p>this feature is <strong>EXPERIMENTAL</strong> and might not work as expected. <br/> If you encounter any bugs, <a href="https://github.com/MAIF/otoroshi/issues/new">please fill an issue</a>, it will help us a lot :)</p></div>
+<p>Starting from the <code>1.5.3</code> release, otoroshi offers a new plugin that implements the next generation of the proxy engine. This engine has been designed based on our 5 years experience building, maintaining and running the previous one. It tries to fix all the drawback we may have encountered during those years and highly improve performances, user experience, reporting and debugging capabilities. The new engine is fully plugin oriented in order to spend CPU cycles only on useful stuff. You can enable this plugin only on some domain names so you can easily A/B test the new engine. The new proxy engine is designed to be more reactive and more efficient generally. It is also designed to be very efficient on path routing where it wasn&rsquo;t the old engines strong suit.</p>
 <h2><a href="#enabling-the-new-engine" name="enabling-the-new-engine" class="anchor"><span class="anchor-link"></span></a>Enabling the new engine</h2>
 <p>To enable the new proxy engine on an otoroshi instance, just add the plugin in the <code>global plugins</code> section of the danger zone, inject the default configuration, enable it and in <code>domains</code> add the values of the desired domains (let say we want to use the new engine on <code>api.foo.bar</code>. It is possible to use <code>*.foo.bar</code> if that&rsquo;s what you want to do).</p>
 <p>The next time a request hits the <code>api.foo.bar</code> domain, the new engine will handle it instead of the previous one.</p>
@@ -955,7 +951,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre><div class="centered-img">
 <img src="../imgs/route_comp_openapi_import.png" /></div>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../next/secrets.html">Secrets management</a></p>
+<p><strong>Next:</strong> <a href="../next/topics/index.html">Detailed topics</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>

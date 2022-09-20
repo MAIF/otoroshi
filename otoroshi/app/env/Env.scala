@@ -39,6 +39,7 @@ import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
 import otoroshi.utils.metrics.{HasMetrics, Metrics}
 import otoroshi.utils.syntax.implicits._
 import play.api._
+import play.api.http.HttpConfiguration
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws._
@@ -70,6 +71,7 @@ class Env(
     val _configuration: Configuration,
     val environment: Environment,
     val lifecycle: ApplicationLifecycle,
+    val httpConfiguration: HttpConfiguration,
     wsClient: WSClient,
     val circuitBeakersHolder: CircuitBreakersHolder,
     getHttpPort: => Option[Int],
@@ -613,9 +615,9 @@ class Env(
   // lazy val geoloc = new GeoLite2GeolocationHelper(this)
   // lazy val ua = new UserAgentHelper(this)
 
-  lazy val statsd        = new StatsdWrapper(otoroshiActorSystem, this)
-  lazy val metrics       = new Metrics(this, lifecycle)
-  lazy val pki           = new BouncyCastlePki(snowflakeGenerator, this)
+  lazy val statsd  = new StatsdWrapper(otoroshiActorSystem, this)
+  lazy val metrics = new Metrics(this, lifecycle)
+  lazy val pki     = new BouncyCastlePki(snowflakeGenerator, this)
 
   lazy val tunnelManager = new TunnelManager(this)
   lazy val tunnelAgent   = new TunnelAgent(this)
@@ -874,6 +876,8 @@ class Env(
       .orElse(configuration.getOptionalWithFileSupport[Int]("http.port"))
       .getOrElse(9999)
   )
+
+  lazy val httpPort = port
 
   lazy val httpsPort = getHttpsPort.getOrElse(
     configuration

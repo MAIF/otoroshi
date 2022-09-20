@@ -182,8 +182,8 @@ export function allServices(env, group) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?filter.groups=${group}`
-    : `/bo/api/proxy/api/services`;
+      ? `/bo/api/proxy/api/services?filter.groups=${group}`
+      : `/bo/api/proxy/api/services`;
   return fetch(url, {
     method: 'GET',
     credentials: 'include',
@@ -704,6 +704,36 @@ export function findAllApps() {
       Accept: 'application/json',
     },
   }).then((r) => r.json());
+}
+
+export function findAllEurekaServers() {
+  return fetch('/bo/api/eureka-servers', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json'
+    }
+  }).then(r => r.json())
+}
+
+export function getEurekaApps(eurekaServerId) {
+  return fetch(`/bo/api/eureka-servers/${eurekaServerId}/apps`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json'
+    }
+  }).then(r => r.json())
+}
+
+export function getExternalEurekaServers(url) {
+  return fetch(`/bo/api/external-eureka-servers?url=${url}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json'
+    }
+  }).then(r => r.json())
 }
 
 export function discardAllSessions() {
@@ -1803,6 +1833,18 @@ export function tryIt(content, entity) {
     },
     body: JSON.stringify(content),
   });
+}
+
+export function dataExportertryIt(content) {
+  return fetch('/bo/api/data-exporter/tryit', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(content),
+  })
 }
 
 export function routeEntries(routeId) {

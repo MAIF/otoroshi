@@ -137,7 +137,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
             }
           }
           case Leader => {
-            if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] valid login token $token")
+            if (Cluster.logger.isDebugEnabled)
+              Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] valid login token $token")
             env.datastores.authConfigsDataStore.validateLoginToken(token).map {
               case true  =>
                 if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"Login token $token is valid")
@@ -163,7 +164,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
             }
           }
           case Leader => {
-            if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] valid user token $token")
+            if (Cluster.logger.isDebugEnabled)
+              Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] valid user token $token")
             env.datastores.authConfigsDataStore.getUserForToken(token).map {
               case Some(user) =>
                 if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"User token $token is valid")
@@ -189,7 +191,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
             }
           }
           case Leader => {
-            if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] creating login token $token")
+            if (Cluster.logger.isDebugEnabled)
+              Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] creating login token $token")
             env.datastores.authConfigsDataStore
               .generateLoginToken(Some(token))
               .map(t => Created(Json.obj("token" -> t)))
@@ -214,7 +217,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
           case Leader => {
             val token = (ctx.request.body \ "token").as[String]
             val usr   = (ctx.request.body \ "user").as[JsValue]
-            if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] creating user token $token")
+            if (Cluster.logger.isDebugEnabled)
+              Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] creating user token $token")
             env.datastores.authConfigsDataStore
               .setUserForToken(token, usr)
               .map(_ => Created(Json.obj("token" -> token)))
@@ -235,7 +239,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
             }
           }
           case Leader => {
-            if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] valid session $sessionId")
+            if (Cluster.logger.isDebugEnabled)
+              Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] valid session $sessionId")
             env.datastores.privateAppsUserDataStore.findById(sessionId).map {
               case Some(user) =>
                 if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"Session $sessionId is valid")
@@ -266,13 +271,15 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
             }
           }
           case Leader => {
-            if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] creating session")
+            if (Cluster.logger.isDebugEnabled)
+              Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] creating session")
             PrivateAppsUser.fmt.reads(ctx.request.body) match {
               case JsError(e)         => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad session format")))
               case JsSuccess(user, _) =>
-                if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(
-                  s"Saving session for user ${user.name} for the next ${Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)} ms"
-                )
+                if (Cluster.logger.isDebugEnabled)
+                  Cluster.logger.debug(
+                    s"Saving session for user ${user.name} for the next ${Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)} ms"
+                  )
                 user.save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)).map {
                   session =>
                     Created(session.toJson)
@@ -359,8 +366,22 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                               memberType = ClusterMode.Worker,
                               location =
                                 ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
-                              httpPort = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerHttpPortHeader).map(_.toInt).getOrElse(env.exposedHttpPortInt),
-                              httpsPort = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerHttpsPortHeader).map(_.toInt).getOrElse(env.exposedHttpsPortInt),
+                              httpPort = ctx.request.headers
+                                .get(ClusterAgent.OtoroshiWorkerHttpPortHeader)
+                                .map(_.toInt)
+                                .getOrElse(env.exposedHttpPortInt),
+                              httpsPort = ctx.request.headers
+                                .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
+                                .map(_.toInt)
+                                .getOrElse(env.exposedHttpsPortInt),
+                              internalHttpPort = ctx.request.headers
+                                .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
+                                .map(_.toInt)
+                                .getOrElse(env.httpPort),
+                              internalHttpsPort = ctx.request.headers
+                                .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
+                                .map(_.toInt)
+                                .getOrElse(env.httpsPort),
                               lastSeen = DateTime.now(),
                               timeout = Duration(
                                 env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
@@ -403,7 +424,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                 }
                 .runWith(Sink.ignore)
                 .andThen { case _ =>
-                  if (Cluster.logger.isTraceEnabled) Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updated quotas (${bytesCounter.get()} b)")
+                  if (Cluster.logger.isTraceEnabled)
+                    Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updated quotas (${bytesCounter.get()} b)")
                   env.datastores.clusterStateDataStore.updateDataIn(bytesCounter.get())
                   if ((System.currentTimeMillis() - start) > budget) {
                     Cluster.logger.warn(
@@ -462,8 +484,22 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                   name = name,
                   memberType = ClusterMode.Worker,
                   location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
-                  httpPort = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerHttpPortHeader).map(_.toInt).getOrElse(env.exposedHttpPortInt),
-                  httpsPort = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerHttpsPortHeader).map(_.toInt).getOrElse(env.exposedHttpsPortInt),
+                  httpPort = ctx.request.headers
+                    .get(ClusterAgent.OtoroshiWorkerHttpPortHeader)
+                    .map(_.toInt)
+                    .getOrElse(env.exposedHttpPortInt),
+                  httpsPort = ctx.request.headers
+                    .get(ClusterAgent.OtoroshiWorkerHttpsPortHeader)
+                    .map(_.toInt)
+                    .getOrElse(env.exposedHttpsPortInt),
+                  internalHttpPort = ctx.request.headers
+                    .get(ClusterAgent.OtoroshiWorkerInternalHttpPortHeader)
+                    .map(_.toInt)
+                    .getOrElse(env.httpPort),
+                  internalHttpsPort = ctx.request.headers
+                    .get(ClusterAgent.OtoroshiWorkerInternalHttpsPortHeader)
+                    .map(_.toInt)
+                    .getOrElse(env.httpsPort),
                   lastSeen = DateTime.now(),
                   timeout = Duration(
                     env.clusterConfig.worker.retries * env.clusterConfig.worker.state.pollEvery,
@@ -579,10 +615,11 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
             }
              */
             // if (env.clusterConfig.autoUpdateState) {
-            if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(
-              s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${Option(env.clusterLeaderAgent.cachedCount)
-                .getOrElse(0L)} items / ${Option(cachedValue).getOrElse(ByteString.empty).size / 1024} Kb) ..."
-            )
+            if (Cluster.logger.isDebugEnabled)
+              Cluster.logger.debug(
+                s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${Option(env.clusterLeaderAgent.cachedCount)
+                  .getOrElse(0L)} items / ${Option(cachedValue).getOrElse(ByteString.empty).size / 1024} Kb) ..."
+              )
             if (env.clusterConfig.streamed) {
               Ok.sendEntity(
                 HttpEntity
@@ -673,7 +710,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
           val request    = new RelayRoutingRequest(ctx.request, Cookies(cookies), certs)
           val routeName  = ctx.request.headers.get("Otoroshi-Relay-Routing-Route-Name").getOrElse("--")
           val callerName = ctx.request.headers.get("Otoroshi-Relay-Routing-Caller-Name").getOrElse("--")
-          if (RelayRouting.logger.isDebugEnabled) RelayRouting.logger.debug(s"routing relay call to '${routeName}' from '${callerName}'")
+          if (RelayRouting.logger.isDebugEnabled)
+            RelayRouting.logger.debug(s"routing relay call to '${routeName}' from '${callerName}'")
           engine.handle(request, _ => Results.InternalServerError("bad default routing").vfuture).map { resp =>
             resp.copy(
               header = resp.header.copy(

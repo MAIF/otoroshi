@@ -90,8 +90,41 @@ build_jdk20 () {
 }
 
 build_graal () {
-  docker build --no-cache -f ./Dockerfile-graal -t otoroshi-graal .
+  docker build --build-arg "IMG_FROM=ghcr.io/graalvm/graalvm-ce:latest" --no-cache -f ./Dockerfile -t "otoroshi-grall" .
   docker tag otoroshi-graal "maif/otoroshi:$1-graal"
+}
+
+build_jar_template_version () {
+  OTO_VERSION="$1"
+  JDK_VERSION="$2"
+  echo "build version $OTO_VERSION with jdk $JDK_VERSION"
+  docker build --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "otoroshi-jdk$JDK_VERSION" .
+  echo "build version $OTO_VERSION with jdk $JDK_VERSION from eclipse-temurin"
+  docker build --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "otoroshi-temurin-jdk$JDK_VERSION" .
+  echo "build version $OTO_VERSION with jdk $JDK_VERSION from amazon-correto"
+  docker build --build-arg "IMG_FROM=amazoncorretto:$JDK_VERSION"  --no-cache -f ./Dockerfile -t "otoroshi-correto-jdk$JDK_VERSION" .
+  docker tag "otoroshi-jdk$JDK_VERSION" "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION"
+  docker tag "otoroshi-temurin-jdk$JDK_VERSION" "maif/otoroshi:$OTO_VERSION-temurin-jdk$JDK_VERSION"
+  docker tag "otoroshi-correto-jdk$JDK_VERSION" "maif/otoroshi:$OTO_VERSION-correto-jdk$JDK_VERSION"
+}
+
+build_jar_templates () {
+  OTO_VERSION="$1"
+  build_jar_template_version "$OTO_VERSION" "8"
+  build_jar_template_version "$OTO_VERSION" "11"
+  build_jar_template_version "$OTO_VERSION" "17"
+  build_jar_template_version "$OTO_VERSION" "18"
+}
+
+push_otoroshi_version () {
+  OTO_VERSION="$1"
+  JDK_VERSION="$2"
+  echo "\nnow pushing maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION\n"
+  docker push "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION"
+  echo "\nnow pushing maif/otoroshi:$OTO_VERSION-temurin-jdk$JDK_VERSION\n"
+  docker push "maif/otoroshi:$OTO_VERSION-temurin-jdk$JDK_VERSION"
+  echo "\nnow pushing maif/otoroshi:$OTO_VERSION-correto-jdk$JDK_VERSION\n"
+  docker push "maif/otoroshi:$OTO_VERSION-correto-jdk$JDK_VERSION"
 }
 
 echo "Docker images for otoroshi version $2"
@@ -144,30 +177,31 @@ case "${1}" in
     cleanup
     ;;
   push-all)
+    
+    OTO_VERSION="$2"
+
     prepare_build
-    build_jdk11 $2
-    build_jdk17 $2
-    build_jdk18 $2
-    build_jdk19 $2
-    build_jdk20 $2
-    build_graal $2
+
+    build_jar_template_version "$OTO_VERSION" "11"
+    build_jar_template_version "$OTO_VERSION" "17"
+    build_jar_template_version "$OTO_VERSION" "18"
+    build_graal "$OTO_VERSION"
+
     cleanup
+
+    docker tag otoroshi-jdk11 "maif/otoroshi:latest" 
+    docker tag otoroshi-jdk11 "maif/otoroshi:$OTO_VERSION" 
     echo "\nnow pushing maif/otoroshi:$2\n"
     docker push "maif/otoroshi:$2"
-    echo "\nnow pushing maif/otoroshi:$2-jdk11\n"
-    docker push "maif/otoroshi:$2-jdk11"
-    echo "\nnow pushing maif/otoroshi:$2-jdk17\n"
-    docker push "maif/otoroshi:$2-jdk17"
-    echo "\nnow pushing maif/otoroshi:$2-jdk18\n"
-    docker push "maif/otoroshi:$2-jdk18"
-    echo "\nnow pushing maif/otoroshi:$2-jdk19\n"
-    docker push "maif/otoroshi:$2-jdk19"
-     echo "\nnow pushing maif/otoroshi:$2-jdk20\n"
-    docker push "maif/otoroshi:$2-jdk20"
-    echo "\nnow pushing maif/otoroshi:$2-graal\n"
-    docker push "maif/otoroshi:$2-graal"
     echo "\nnow pushing maif/otoroshi:latest\n"
     docker push "maif/otoroshi:latest"
+
+    push_otoroshi_version "$OTO_VERSION" "11"
+    push_otoroshi_version "$OTO_VERSION" "17"
+    push_otoroshi_version "$OTO_VERSION" "18"
+
+    echo "\nnow pushing maif/otoroshi:$2-graal\n"
+    docker push "maif/otoroshi:$2-graal"
     ;;
   test-release-builds)
     prepare_build
@@ -220,6 +254,11 @@ case "${1}" in
   prepare)
     cp ../../otoroshi/target/universal/otoroshi-1.5.0-dev.zip ./otoroshi-dist.zip
     cp ../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
+    ;;
+  build_jar_templates)
+    cp ../../otoroshi/target/scala-2.12/otoroshi.jar otoroshi.jar
+    build_jar_templates "dev"
+    rm -f ./otoroshi.jar
     ;;
   *)
     echo "Build otoroshi docker images"

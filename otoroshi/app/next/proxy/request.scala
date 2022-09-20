@@ -38,20 +38,20 @@ class RelayRoutingRequest(req: Request[Source[ByteString, _]], cookies: Cookies,
 }
 
 class TunnelRequest(
-  requestId: Long,
-  val version: String,
-  val method: String,
-  val body: Source[ByteString, _],
-  _remoteUriStr: String,
-  _remoteAddr: String,
-  _remoteSecured: Boolean,
-  _remoteHasBody: Boolean,
-  _headers: Map[String, String],
-  cookies: Cookies,
-  certs: Option[Seq[X509Certificate]],
+    requestId: Long,
+    val version: String,
+    val method: String,
+    val body: Source[ByteString, _],
+    _remoteUriStr: String,
+    _remoteAddr: String,
+    _remoteSecured: Boolean,
+    _remoteHasBody: Boolean,
+    _headers: Map[String, String],
+    cookies: Cookies,
+    certs: Option[Seq[X509Certificate]]
 ) extends Request[Source[ByteString, _]] {
 
-  lazy val _remoteUri = Uri(_remoteUriStr)
+  lazy val _remoteUri      = Uri(_remoteUriStr)
   lazy val _remoteAddrInet = InetAddress.getByName(_remoteAddr)
   lazy val attrs           = TypedMap.apply(
     RequestAttrKey.Id      -> requestId,

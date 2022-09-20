@@ -15,7 +15,7 @@ const CodeInput = React.lazy(() => Promise.resolve(require('./CodeInput')));
 import { JsonObjectAsCodeInput } from './CodeInput'; // TODO: fix
 
 import isFunction from 'lodash/isFunction';
-import cloneDeep from 'lodash/cloneDeep'
+import cloneDeep from 'lodash/cloneDeep';
 
 import deepGet from 'get-value';
 import deepSet from 'set-value';

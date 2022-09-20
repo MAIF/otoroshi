@@ -5,18 +5,20 @@ import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.producer._
-import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
+import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringDeserializer, StringSerializer}
 import akka.Done
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.http.scaladsl.util.FastFuture._
 import akka.http.scaladsl.util.FastFuture
-import akka.kafka.ProducerSettings
+import akka.kafka.{ConsumerSettings, ProducerSettings}
 import akka.stream.scaladsl.{Sink, Source}
-import org.apache.kafka.common.config.SslConfigs
+import org.apache.kafka.clients.consumer.Consumer
+import org.apache.kafka.common.config.{SaslConfigs, SslConfigs}
 import play.api.libs.json._
 import otoroshi.env.Env
 import otoroshi.models.Exporter
 import org.apache.kafka.common.config.internals.BrokerSecurityConfigs
+import org.apache.kafka.common.security.auth.SecurityProtocol
 import otoroshi.models.Exporter
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.ssl.DynamicSSLEngineProvider
@@ -30,10 +32,38 @@ case class KafkaConfig(
     sendEvents: Boolean = false,
     hostValidation: Boolean = true,
     topic: String = "otoroshi-events",
-    mtlsConfig: MtlsConfig = MtlsConfig()
+    mtlsConfig: MtlsConfig = MtlsConfig(),
+    securityProtocol: String = SecurityProtocol.PLAINTEXT.name,
+    saslConfig: Option[SaslConfig] = None
 ) extends Exporter {
   def json: JsValue   = KafkaConfig.format.writes(this)
   def toJson: JsValue = KafkaConfig.format.writes(this)
+}
+
+case class SaslConfig(username: String, password: String, mechanism: String = "PLAIN")
+
+object SaslConfig {
+  implicit val format = new Format[SaslConfig] { // Json.format[KafkaConfig]
+
+    override def writes(o: SaslConfig): JsValue =
+      Json.obj(
+        "username"        -> o.username,
+        "password" -> o.password,
+        "mechanism" -> o.mechanism,
+      )
+
+    override def reads(json: JsValue): JsResult[SaslConfig] =
+      Try {
+        SaslConfig(
+          username = (json \ "username").asOpt[String].getOrElse("foo"),
+          password = (json \ "password").asOpt[String].getOrElse("bar"),
+          mechanism = (json \ "mechanism").asOpt[String].getOrElse("PLAIN")
+        )
+      } match {
+        case Failure(e)  => JsError(e.getMessage)
+        case Success(kc) => JsSuccess(kc)
+      }
+  }
 }
 
 object KafkaConfig {
@@ -49,7 +79,9 @@ object KafkaConfig {
         "topic"          -> o.topic,
         "sendEvents"     -> o.sendEvents,
         "hostValidation" -> o.hostValidation,
-        "mtlsConfig"     -> o.mtlsConfig.json
+        "mtlsConfig"     -> o.mtlsConfig.json,
+        "securityProtocol"-> o.securityProtocol,
+        "saslConfig" -> o.saslConfig.map(SaslConfig.format.writes),
       )
 
     override def reads(json: JsValue): JsResult[KafkaConfig] =
@@ -62,7 +94,9 @@ object KafkaConfig {
           sendEvents = (json \ "sendEvents").asOpt[Boolean].getOrElse(false),
           hostValidation = (json \ "hostValidation").asOpt[Boolean].getOrElse(true),
           topic = (json \ "topic").asOpt[String].getOrElse("otoroshi-events"),
-          mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
+          mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
+          securityProtocol = (json \ "securityProtocol").asOpt[String].getOrElse(SecurityProtocol.PLAINTEXT.name),
+          saslConfig = (json \ "saslConfig").asOpt[JsValue].flatMap(c => SaslConfig.format.reads(c).asOpt)
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -83,34 +117,36 @@ object KafkaSettings {
       .runWith(Sink.head)(env.otoroshiMaterializer)
   }
 
-  def producerSettings(_env: otoroshi.env.Env, config: KafkaConfig): ProducerSettings[Array[Byte], String] = {
+  private def getSaslJaasClass(mechanism: String) = {
+    mechanism match {
+      case "SCRAM-SHA-512" | "SCRAM-SHA-256" => "org.apache.kafka.common.security.scram.ScramLoginModule"
+      case _ => "org.apache.kafka.common.security.plain.PlainLoginModule"
+    }
+  }
 
-    val settings = ProducerSettings
-      .create(_env.analyticsActorSystem, new ByteArraySerializer(), new StringSerializer())
+  def consumerTesterSettings(_env: otoroshi.env.Env, config: KafkaConfig): ConsumerSettings[Array[Byte], String] = {
+    ConsumerSettings
+      .create(_env.analyticsActorSystem, new ByteArrayDeserializer(), new StringDeserializer())
+      .withProperties(kafkaSettings(_env, config))
       .withBootstrapServers(config.servers.mkString(","))
+  }
 
-    if (config.mtlsConfig.mtls) {
-      // AWAIT: valid
-      Await.result(waitForFirstSetup(_env), 5.seconds) // wait until certs fully populated at least once
-      val (jks1, jks2, password) = config.mtlsConfig.toJKS(_env)
-      settings
-        .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
-        .withProperty(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG, "required")
-        .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, "")
-        .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, jks1.getAbsolutePath)
-        .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, password)
-        .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, jks2.getAbsolutePath)
-        .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, password)
-        .applyOnIf(!config.hostValidation)(_.withProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, ""))
-    } else {
-      val s = for {
-        ks <- config.keystore
-        ts <- config.truststore
-        kp <- config.keyPass
-      } yield {
-        settings
+  def kafkaSettings(_env: otoroshi.env.Env, config: KafkaConfig): Map[String, String] = {
+    val username = config.saslConfig.map(_.username).getOrElse("foo")
+    val password = config.saslConfig.map(_.password).getOrElse("bar")
+    val mechanism = config.saslConfig.map(_.mechanism).getOrElse("PLAIN")
+
+    val entity = ConsumerSettings
+      .create(_env.analyticsActorSystem, new ByteArrayDeserializer(), new StringDeserializer())
+
+    var settings = config.securityProtocol match {
+      case "SSL" | "SASL_SSL" =>
+        val ks = config.keystore.get
+        val ts = config.truststore.get
+        val kp = config.keyPass.get
+        entity
           .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
-          .withProperty(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG, "required")
+          .withProperty(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG, "required") // TODO - test it
           .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, kp)
           .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, ks)
           .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, kp)
@@ -119,9 +155,44 @@ object KafkaSettings {
           .applyOnIf(!config.hostValidation)(
             _.withProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "")
           )
-      }
-      s.getOrElse(settings)
+      case _ =>
+        entity
+          .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, config.securityProtocol)
+          .withProperty(SaslConfigs.SASL_MECHANISM, mechanism)
+          .withProperty(SaslConfigs.SASL_JAAS_CONFIG,
+            s"""${getSaslJaasClass(mechanism)} required username="$username" password="$password";""")
     }
+
+    if (config.securityProtocol == "SASL_SSL") {
+      settings = settings
+        .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL")
+        .withProperty(SaslConfigs.SASL_MECHANISM, mechanism)
+        .withProperty(SaslConfigs.SASL_JAAS_CONFIG,
+          s"""${getSaslJaasClass(mechanism)} required username="$username" password="$password";""")
+    }
+
+    if (config.mtlsConfig.mtls) {
+      // AWAIT: valid
+      Await.result(waitForFirstSetup(_env), 5.seconds) // wait until certs fully populated at least once
+      val (jks1, jks2, password) = config.mtlsConfig.toJKS(_env)
+      settings = settings
+        .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
+        .withProperty(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG, "required") // TODO - test it
+        .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, "")
+        .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, jks1.getAbsolutePath)
+        .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, password)
+        .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, jks2.getAbsolutePath)
+        .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, password)
+    }
+
+    settings.properties
+  }
+
+  def producerSettings(_env: otoroshi.env.Env, config: KafkaConfig): ProducerSettings[Array[Byte], String] = {
+    ProducerSettings
+      .create(_env.analyticsActorSystem, new ByteArraySerializer(), new StringSerializer())
+      .withProperties(kafkaSettings(_env, config))
+      .withBootstrapServers(config.servers.mkString(","))
   }
 }
 

@@ -2,6 +2,8 @@ use base64::{encode};
 use hyper::{Method, Request, Client};
 use serde::{Deserialize, Serialize};
 
+use hyper_tls::HttpsConnector;
+
 use crate::opts::Opts;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -25,7 +27,6 @@ impl Otoroshi {
             "http"
         };
         let host = opts.host;
-        let client = Client::new();
         let uri: String = format!("{}://{}/api/tunnels/infos", scheme, host);
         let req: Request<hyper::Body> = Request::builder()
             .method(Method::GET)
@@ -37,9 +38,18 @@ impl Otoroshi {
             .header("Otoroshi-Client-Secret", client_secret)
             .body(hyper::Body::empty())
             .unwrap();
-        let resp = client.request(req).await.unwrap();
-        if resp.status().as_u16() == 200 {
-            let body_bytes = hyper::body::to_bytes(resp).await.unwrap();
+        let resp = if opts.tls {
+          let https = HttpsConnector::new();
+          let client = Client::builder().build::<_, hyper::Body>(https);
+          client.request(req).await.unwrap()
+        } else {
+          let client = Client::new();
+          client.request(req).await.unwrap()
+        };
+        let status = resp.status().as_u16();
+        let body_bytes = hyper::body::to_bytes(resp).await.unwrap();
+        // println!("status: {}, body: {:?}", status, body_bytes);
+        if status == 200 {
             match serde_json::from_slice::<OtoroshInfos>(&body_bytes) {
                 Ok(infos) => Some(infos),
                 Err(e) => {
@@ -63,7 +73,6 @@ impl Otoroshi {
             "http"
         };
         let host = opts.host;
-        let client = Client::new();
         let uri: String = format!("{}://{}/api/experimental/routes/route_{}", scheme, host, tunnel_id);
         let req: Request<hyper::Body> = Request::builder()
             .method(Method::GET)
@@ -75,7 +84,14 @@ impl Otoroshi {
             .header("Otoroshi-Client-Secret", client_secret)
             .body(hyper::Body::empty())
             .unwrap();
-        let resp = client.request(req).await.unwrap();
+        let resp = if opts.tls {
+          let https = HttpsConnector::new();
+          let client = Client::builder().build::<_, hyper::Body>(https);
+          client.request(req).await.unwrap()
+        } else {
+          let client = Client::new();
+          client.request(req).await.unwrap()
+        };
         if resp.status().as_u16() == 200 {
             debug!("route already exists ...");
             let body_bytes = hyper::body::to_bytes(resp).await.unwrap();
@@ -105,7 +121,6 @@ impl Otoroshi {
             "http"
         };
         let host = opts.host;
-        let client = Client::new();
         let uri: String = format!("{}://{}/api/experimental/routes", scheme, host);
         let json = r###"{
             "id": "route_$tunnel_id",
@@ -185,7 +200,14 @@ impl Otoroshi {
             .header("Otoroshi-Client-Secret", client_secret)
             .body(hyper::Body::from(json))
             .unwrap();
-        let resp = client.request(req).await.unwrap();
+        let resp = if opts.tls {
+          let https = HttpsConnector::new();
+          let client = Client::builder().build::<_, hyper::Body>(https);
+          client.request(req).await.unwrap()
+        } else {
+          let client = Client::new();
+          client.request(req).await.unwrap()
+        };
         let status = resp.status();
         // let body_bytes = hyper::body::to_bytes(resp).await.unwrap();
         // let body_str = std::str::from_utf8(&body_bytes).unwrap();

@@ -31,9 +31,11 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${rawValue.clientId
-            }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${rawValue.clientSecret
-            }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
+            rawValue.clientId
+          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
+            rawValue.clientSecret
+          }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -561,7 +563,8 @@ const ApiKeysConstants = {
           type="button"
           className="btn btn-sm btn-success"
           onClick={(e) =>
-          (window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
+            (window.location = `/bo/dashboard/lines/prod/services/${
+              that.state.service ? that.state.service.id : '-'
             }/apikeys/edit/${item.clientId}/stats`)
           }>
           <i className="fas fa-chart-bar" />
@@ -620,7 +623,12 @@ export class ServiceApiKeysPage extends Component {
 
   sidebarContent(name) {
     if (this.onRoutes) {
-      return <DesignerSidebar route={{ id: this.props.params.routeId, name }} setSidebarContent={this.props.setSidebarContent} />;
+      return (
+        <DesignerSidebar
+          route={{ id: this.props.params.routeId, name }}
+          setSidebarContent={this.props.setSidebarContent}
+        />
+      );
     }
     return (
       <ServiceSidebar

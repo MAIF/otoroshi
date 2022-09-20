@@ -42,13 +42,15 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
         val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
         cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
           // request.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
-          if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"private apps session checking for $id - from action")
+          if (Cluster.logger.isDebugEnabled)
+            Cluster.logger.debug(s"private apps session checking for $id - from action")
           env.datastores.privateAppsUserDataStore.findById(id).flatMap {
             case Some(user)                                           =>
               user.withAuthModuleConfig(a => GenericOauth2Module.handleTokenRefresh(a, user))
               block(PrivateAppsActionContext(request, Some(user), globalConfig))
             case None if env.clusterConfig.mode == ClusterMode.Worker => {
-              if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"private apps session $id not found locally - from action")
+              if (Cluster.logger.isDebugEnabled)
+                Cluster.logger.debug(s"private apps session $id not found locally - from action")
               env.clusterAgent.isSessionValid(id, Some(request)).flatMap {
                 case Some(user) =>
                   user.save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS))

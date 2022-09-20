@@ -135,9 +135,10 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
   }
 
   def getCircuitBreakerNg(clientConfig: ClientConfig, path: String): AkkaCircuitBreaker = {
-    if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(
-      s"[circuitbreaker] using callTimeout - 1: ${clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout)}"
-    )
+    if (ClientConfig.logger.isDebugEnabled)
+      ClientConfig.logger.debug(
+        s"[circuitbreaker] using callTimeout - 1: ${clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout)}"
+      )
     new AkkaCircuitBreaker(
       scheduler = scheduler,
       maxFailures = clientConfig.maxErrors,
@@ -245,9 +246,10 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
             )
           )
         }
-        if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(
-          s"[circuitbreaker] using callTimeout - 2: ${clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout)}"
-        )
+        if (ClientConfig.logger.isDebugEnabled)
+          ClientConfig.logger.debug(
+            s"[circuitbreaker] using callTimeout - 2: ${clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout)}"
+          )
         breakers.put(
           target.host,
           AkkaCircuitBreakerWrapper(
@@ -334,9 +336,10 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       env: Env
   ): Future[Either[Result, A]] = {
 
-    if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(
-      s"[circuitbreaker] using globalTimeout: ${clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout)}"
-    )
+    if (ClientConfig.logger.isDebugEnabled)
+      ClientConfig.logger.debug(
+        s"[circuitbreaker] using globalTimeout: ${clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout)}"
+      )
     val failure      = Timeout
       .timeout(Done, clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout))
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))

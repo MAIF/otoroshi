@@ -933,7 +933,9 @@ object NgRoute {
                   Json.obj(
                     "version"              -> service.secComVersion.str,
                     "ttl"                  -> service.secComTtl.toSeconds,
-                    "request_header_name"  -> service.secComHeaders.stateRequestName.getOrElse(env.Headers.OtoroshiState).json,
+                    "request_header_name"  -> service.secComHeaders.stateRequestName
+                      .getOrElse(env.Headers.OtoroshiState)
+                      .json,
                     "response_header_name" -> service.secComHeaders.stateResponseName
                       .getOrElse(env.Headers.OtoroshiStateResp)
                       .json,
@@ -941,23 +943,6 @@ object NgRoute {
                                           else service.secComAlgoChallengeOtoToBack.asJson),
                     "algo_from_backend"    -> (if (service.secComUseSameAlgo) service.secComSettings.asJson
                                             else service.secComAlgoChallengeBackToOto.asJson)
-                  )
-                ).json.asObject
-              )
-            )
-          }
-          .applyOnIf(service.enforceSecureCommunication && service.sendInfoToken) { seq =>
-            seq :+ NgPluginInstance(
-              plugin = pluginId[OtoroshiInfos],
-              exclude = service.secComExcludedPatterns,
-              config = NgPluginInstanceConfig(
-                NgOtoroshiInfoConfig(
-                  Json.obj(
-                    "version"     -> service.secComInfoTokenVersion.version,
-                    "ttl"         -> service.secComTtl.toSeconds,
-                    "header_name" -> service.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim).json,
-                    "algo"        -> (if (service.secComUseSameAlgo) service.secComSettings.asJson
-                               else service.secComAlgoInfoToken.asJson)
                   )
                 ).json.asObject
               )
@@ -973,14 +958,16 @@ object NgRoute {
           // .applyOnIf(!service.publicPatterns.contains("/.*")) { seq =>
           .applyOnIf(
             (service.publicPatterns.isEmpty && service.privatePatterns.isEmpty) || service.privatePatterns.nonEmpty || !service.publicPatterns
-              .contains("/.*")
+              .contains("/.*") || service.detectApiKeySooner
           ) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[ApikeyCalls],
               include = service.privatePatterns,
               exclude =
-                if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) Seq.empty
-                else service.publicPatterns,
+                if (service.detectApiKeySooner) Seq.empty else (
+                  if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) Seq.empty
+                  else service.publicPatterns
+                ),
               config = NgPluginInstanceConfig(
                 NgApikeyCallsConfig
                   .fromLegacy(service.apiKeyConstraints)
@@ -1034,6 +1021,23 @@ object NgRoute {
                 config = NgPluginInstanceConfig(Json.obj())
               )
             }
+          }
+          .applyOnIf(service.enforceSecureCommunication && service.sendInfoToken) { seq =>
+            seq :+ NgPluginInstance(
+              plugin = pluginId[OtoroshiInfos],
+              exclude = service.secComExcludedPatterns,
+              config = NgPluginInstanceConfig(
+                NgOtoroshiInfoConfig(
+                  Json.obj(
+                    "version"     -> service.secComInfoTokenVersion.version,
+                    "ttl"         -> service.secComTtl.toSeconds,
+                    "header_name" -> service.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim).json,
+                    "algo"        -> (if (service.secComUseSameAlgo) service.secComSettings.asJson
+                    else service.secComAlgoInfoToken.asJson)
+                  )
+                ).json.asObject
+              )
+            )
           }
           .applyOnIf(service.plugins.enabled) { seq =>
             seq ++ service.plugins.refs

@@ -1,4 +1,11 @@
-import React, { forwardRef, Suspense, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, {
+  forwardRef,
+  Suspense,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import { Link } from 'react-router-dom';
 import { useParams, useLocation } from 'react-router';
 import {
@@ -25,15 +32,17 @@ import {
   MarkdownInput,
   BooleanInput,
 } from '@maif/react-forms';
-import snakeCase from 'lodash/snakeCase'
-import camelCase from 'lodash/camelCase'
-import isEqual from 'lodash/isEqual'
-import _ from 'lodash'
+import snakeCase from 'lodash/snakeCase';
+import camelCase from 'lodash/camelCase';
+import isEqual from 'lodash/isEqual';
+import _ from 'lodash';
 import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
+import { EurekaTargetForm } from './EurekaTargetForm';
+import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 
-import TryItComponent from './TryIt'
+const TryItComponent = React.lazy(() => import('./TryIt'));
 
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
@@ -248,11 +257,9 @@ export default forwardRef(
     }));
 
     useEffect(() => {
-      console.log(location)
-      if (location?.state?.showTryIt)
-        childRef.current.toggleTryIt();
-      else if (location?.state?.plugin)
-        childRef.current.selectPlugin(location?.state?.plugin)
+      console.log(location);
+      if (location?.state?.showTryIt) childRef.current.toggleTryIt();
+      else if (location?.state?.plugin) childRef.current.selectPlugin(location?.state?.plugin);
     }, [location.state]);
 
     return (
@@ -479,6 +486,7 @@ class Designer extends React.Component {
     },
     advancedDesignerView: null,
     showTryIt: false,
+    backendForm: undefined
   };
 
   componentDidMount() {
@@ -491,9 +499,9 @@ class Designer extends React.Component {
     this.setState({ showTryIt: true });
   };
 
-  selectPlugin = pluginId => {
-    this.setState({ locationPlugin: pluginId })
-  }
+  selectPlugin = (pluginId) => {
+    this.setState({ locationPlugin: pluginId });
+  };
 
   injectSaveButton = () => {
     this.props.setSaveButton(
@@ -659,6 +667,7 @@ class Designer extends React.Component {
       this.setState(
         {
           backends,
+          backendForm,
           loading: false,
           categories: categories.filter((category) => !['Tunnel', 'Job'].includes(category)),
           route: { ...routeWithNodeId },
@@ -684,12 +693,13 @@ class Designer extends React.Component {
             ...DEFAULT_FLOW.Backend('plugin'),
             ...backendForm,
             config_schema: toUpperCaseLabels(
-              DEFAULT_FLOW.Backend('plugin').config_schema(backendForm.schema)
+              DEFAULT_FLOW.Backend('plugin')
+                .config_schema(backendForm.schema, route, this.updateRoute)
             ),
             config_flow: DEFAULT_FLOW.Backend('plugin').config_flow,
             nodeId: 'Backend',
           },
-          selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins)
+          selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
         },
         this.injectNavbarMenu
       );
@@ -697,20 +707,19 @@ class Designer extends React.Component {
   };
 
   getSelectedNodeFromLocation = (routePlugins, plugins) => {
-    const id = this.state.locationPlugin
-    const routePlugin = routePlugins
-      .find(p => p.plugin === id)
+    const id = this.state.locationPlugin;
+    const routePlugin = routePlugins.find((p) => p.plugin === id);
 
-    const plugin = plugins.find(p => p.id === id)
+    const plugin = plugins.find((p) => p.id === id);
 
     if (routePlugin && plugin)
       return {
         ...routePlugin,
-        ...plugin
-      }
+        ...plugin,
+      };
 
-    return null
-  }
+    return null;
+  };
 
   generateInternalNodeId = (nodes) =>
     nodes.reduce(
@@ -1366,34 +1375,35 @@ class Designer extends React.Component {
               selectedNode: undefined,
             });
           }}>
-          {FullForm &&
-            // <Suspense fallback={null}>
-            <FullForm
-              route={route}
-              saveRoute={(route) => {
-                this.setState({ route });
-              }}
-              hide={(e) => {
-                e.stopPropagation();
-                this.setState({
-                  selectedNode: backendCallNodes.find((node) => {
-                    return node.id.includes(
-                      FullForm.name !== 'GraphQLForm' ?
-                        (FullForm.name === 'MocksDesigner' ? 'otoroshi.next.plugins.MockResponses'
-                          : this.state.selectedNode)
-                        : 'otoroshi.next.plugins.GraphQLBackend'
-                    )
-                  }),
-                  advancedDesignerView: false,
-                });
+          {FullForm && (
+            <Suspense fallback={null}>
+              <FullForm
+                route={route}
+                saveRoute={(route) => {
+                  this.setState({ route });
+                }}
+                hide={(e) => {
+                  e.stopPropagation();
+                  this.setState({
+                    selectedNode: backendCallNodes.find((node) => {
+                      return node.id.includes(
+                        FullForm.name !== 'GraphQLForm'
+                          ? FullForm.name === 'MocksDesigner'
+                            ? 'otoroshi.next.plugins.MockResponses'
+                            : this.state.selectedNode
+                          : 'otoroshi.next.plugins.GraphQLBackend'
+                      );
+                    }),
+                    advancedDesignerView: false,
+                  });
 
-                this.setState({
-                  showTryIt: false,
-                });
-              }}
-            />
-            // </Suspense>
-          }
+                  this.setState({
+                    showTryIt: false,
+                  });
+                }}
+              />
+            </Suspense>
+          )}
           <PluginsContainer
             handleSearch={this.handleSearch}
             showLegacy={showLegacy}
@@ -1551,6 +1561,7 @@ class Designer extends React.Component {
                     originalRoute={originalRoute}
                     alertModal={alertModal}
                     disabledSaveButton={isEqual(route, originalRoute)}
+                    backendForm={this.state.backendForm}
                   />
                 </div>
               </>
@@ -1991,7 +2002,8 @@ class EditView extends React.Component {
   loadForm = () => {
     const { selectedNode, plugins, route, readOnly } = this.props;
 
-    const { id, flow, config_flow, config_schema, schema, nodeId } = selectedNode;
+    const { id, flow, config_flow, schema, nodeId } = selectedNode;
+    let { config_schema } = selectedNode
 
     const isFrontendOrBackend = ['Backend', 'Frontend'].includes(id);
     const isPluginWithConfiguration = Object.keys(config_schema).length > 0;
@@ -2075,8 +2087,10 @@ class EditView extends React.Component {
     const { selectedNode } = this.props;
     const { nodeId } = selectedNode;
 
+    const oldConfig = form.value
+
     return this.props.updatePlugin(nodeId, selectedNode.id, {
-      plugin: newValue.plugin,
+      plugin: newValue.plugin || oldConfig?.plugin,
       status: newValue.status,
     });
   };
@@ -2127,6 +2141,10 @@ class EditView extends React.Component {
     const notOnBackendNode = !usingExistingBackend || id !== 'Backend';
 
     if (form.flow.length === 0 && Object.keys(form.schema).length === 0) return null;
+
+    const EurekaForm = id === 'cp:otoroshi.next.plugins.EurekaTarget' ? EurekaTargetForm : ExternalEurekaTargetForm
+    const hasCustomPluginForm = ['cp:otoroshi.next.plugins.EurekaTarget',
+      'cp:otoroshi.next.plugins.ExternalEurekaTarget'].includes(id)
 
     return (
       <div
@@ -2209,12 +2227,12 @@ class EditView extends React.Component {
                   )}
                 </>
               )}
-              {!asJsonFormat && (
+              {!asJsonFormat && <>
                 <Form
                   ref={this.formRef}
                   value={form.value}
                   schema={form.schema}
-                  flow={form.flow}
+                  flow={hasCustomPluginForm ? ['status'] : form.flow}
                   onSubmit={this.onValidate}
                   options={{ autosubmit: true }}
                   footer={() => (
@@ -2226,7 +2244,20 @@ class EditView extends React.Component {
                     />
                   )}
                 />
-              )}
+                {hasCustomPluginForm &&
+                  <EurekaForm
+                    route={route}
+                    update={plugin => {
+                      const { selectedNode } = this.props;
+                      const { nodeId } = selectedNode;
+
+                      return this.props.updatePlugin(nodeId, selectedNode.id, {
+                        plugin,
+                        status: form.schema.status,
+                      });
+                    }} />
+                }
+              </>}
             </div>
           )}
           {!notOnBackendNode && (

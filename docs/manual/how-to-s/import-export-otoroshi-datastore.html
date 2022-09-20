@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.12
+1.5.13
 </div>
 </div>
 <div class="nav-toc">
@@ -115,12 +115,10 @@
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi Next</a>
+  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
   <ul>
     <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
-    <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
-    <li><a href="../next/graphql-composer.html" class="page">GraphQL Composer Proxy</a></li>
-    <li><a href="../next/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
     <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
 </ul>
@@ -156,7 +154,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.12
+1.5.13
 </div>
 </div>
 <div class="nav-toc">
@@ -236,12 +234,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi Next</a>
+  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
   <ul>
     <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
-    <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
-    <li><a href="../next/graphql-composer.html" class="page">GraphQL Composer Proxy</a></li>
-    <li><a href="../next/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
     <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
 </ul>
@@ -270,7 +266,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h1><a href="#import-and-export-otoroshi-datastore" name="import-and-export-otoroshi-datastore" class="anchor"><span class="anchor-link"></span></a>Import and export Otoroshi datastore</h1>
 <h3><a href="#start-otoroshi-with-an-initial-datastore" name="start-otoroshi-with-an-initial-datastore" class="anchor"><span class="anchor-link"></span></a>Start Otoroshi with an initial datastore</h3>
 <p>Let&rsquo;s start by downloading the latest Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.12/otoroshi.jar&#39;
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.13/otoroshi.jar&#39;
 </code></pre>
 <p>By default, Otoroshi starts with domain <code>oto.tools</code> that targets <code>127.0.0.1</code> Now you are almost ready to run Otoroshi for the first time, we want run it with an initial data.</p>
 <p>To do that, you need to add the <strong>otoroshi.importFrom</strong> setting to the Otoroshi configuration (of <code>$APP_IMPORT_FROM</code> env). It can be a file path or a URL. The content of the initial datastore can look something like the following.</p>

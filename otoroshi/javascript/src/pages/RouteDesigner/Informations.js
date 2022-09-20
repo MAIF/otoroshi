@@ -4,7 +4,7 @@ import { Location } from '../../components/Location';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
-import isEqual from 'lodash/isEqual'
+import isEqual from 'lodash/isEqual';
 import merge from 'lodash/merge';
 import { FeedbackButton } from './FeedbackButton';
 
@@ -153,21 +153,35 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
   return (
     <>
       <Form
-        schema={schema}
+        schema={{
+          ...schema,
+          id: {
+            ...schema.id,
+            disabled: true
+          }
+        }}
         flow={flow}
         value={informations}
         options={{ autosubmit: true }}
-        onSubmit={(item) => setInformations({ ...merge({ ...value }, item) })}
+        onSubmit={(item) => {
+          setInformations({
+            ...item,
+            backend: value.backend,
+            backend_ref: value.backend_ref,
+            frontend: value.frontend,
+            plugins: value.plugins
+          })
+        }}
         footer={() => null}
       />
       <div className="d-flex align-items-center justify-content-end mt-3">
-        <div className="btn-group">
-          <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
-            <i className="fas fa-times" /> Cancel
+        <div className="displayGroupBtn">
+          <button className="btn btn-danger" onClick={() => history.push(`/${link}`)}>
+            Cancel
           </button>
           {!isCreation && (
             <button
-              className="btn btn-sm btn-danger"
+              className="btn btn-danger"
               onClick={() => {
                 window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
                   if (ok) {

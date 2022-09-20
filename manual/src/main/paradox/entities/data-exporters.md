@@ -151,18 +151,39 @@ With this kind of exporter, every matching event will be sent to an [Apache Puls
 
 ## Kafka 
 
-With this kind of exporter, every matching event will be sent to an [Apache Kafka topic](https://kafka.apache.org/)
+With this kind of exporter, every matching event will be sent to an [Apache Kafka topic](https://kafka.apache.org/). You can find few @ref[tutorials](../how-to-s/communicate-with-kafka.md) about the connection between Otoroshi and Kafka based on docker images.
 
 * `Kafka Servers`: the list of servers to contact to connect the Kafka client with the Kafka cluster
+* `Kafka topic`: the topic on which Otoroshi alerts will be sent
+
+By default, Kafka is installed with no authentication. Otoroshi supports the following authentication mechanisms and protocols for Kafka brokers.
+
+### SASL
+
+The Simple Authentication and Security Layer (SASL) [RFC4422] is a
+method for adding authentication support to connection-based
+protocols.
+
+* `SASL username`: the client username  
+* `SASL password`: the client username  
+* `SASL Mechanism`: 
+     * `PLAIN`: SASL/PLAIN uses a simple username and password for authentication.
+     * `SCRAM-SHA-256` and `SCRAM-SHA-512`: SASL/SCRAM uses usernames and passwords stored in ZooKeeper. Credentials are created during installation.
+
+### SSL 
+
 * `Kafka keypass`: the keystore password if you use a keystore/truststore to connect to Kafka cluster
 * `Kafka keystore path`: the keystore path on the server if you use a keystore/truststore to connect to Kafka cluster
 * `Kafka truststore path`: the truststore path on the server if you use a keystore/truststore to connect to Kafka cluster
 * `Custom TLS Settings`: enable the TLS configuration for the communication with Elasticsearch
-  * `TLS loose`: if enabled, will block all untrustful ssl configs
-  * `TrustAll`: allows any server certificates even the self-signed ones
-  * `Client certificates`: list of client certificates used to communicate with elasticsearch
-  * `Trusted certificates`: list of trusted certificates received from elasticsearch
-* `Kafka topic`: the topic on which Otoroshi alerts will be sent
+    * `TLS loose`: if enabled, will block all untrustful ssl configs
+    * `TrustAll`: allows any server certificates even the self-signed ones
+    * `Client certificates`: list of client certificates used to communicate with elasticsearch
+    * `Trusted certificates`: list of trusted certificates received from elasticsearch
+
+### SASL + SSL
+
+This mechanism uses the SSL configuration and the SASL configuration.
 
 ## Mailer 
 

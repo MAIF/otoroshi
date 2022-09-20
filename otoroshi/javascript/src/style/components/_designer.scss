@@ -420,7 +420,7 @@
     .react-form-select__menu,
     .react-form-select__single-value {
         color: #E6E6E6;
-        background-color: #595959;
+        background-color: #595959 !important;
         border-color: #494948;
     }
 
@@ -679,4 +679,21 @@
 
 .patch-row {
     margin-right: 0 !important;
+}
+
+.patch-main {
+    .page-header{
+        padding-bottom: 0px;
+        h4,.dropdown{
+            padding-bottom: 9px;
+        }
+        >div>button{
+            margin-bottom: 9px;
+        }
+        .ms-2:not(.dropdown)>button{
+            border-bottom-left-radius: 0px;
+            border-bottom-right-radius: 0px;
+
+        }
+    }
 }

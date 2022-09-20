@@ -233,7 +233,12 @@ export class ServiceEventsPage extends Component {
 
   sidebarContent(name) {
     if (this.onRoutes) {
-      return <DesignerSidebar route={{ id: this.props.params.routeId, name }} setSidebarContent={this.props.setSidebarContent} />;
+      return (
+        <DesignerSidebar
+          route={{ id: this.props.params.routeId, name }}
+          setSidebarContent={this.props.setSidebarContent}
+        />
+      );
     }
     return (
       <ServiceSidebar

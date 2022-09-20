@@ -17592,6 +17592,24 @@
           }
         }
       },
+      "otoroshi.events.SaslConfig" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "description" : "SASL username",
+            "type" : "string"
+          },
+          "password" : {
+            "description" : "SASL password",
+            "type" : "string"
+          },
+          "mechanism" : {
+            "description" : "SASL login mechanism",
+            "type" : "string"
+          }
+        }
+      },
       "otoroshi.models.LargeResponseFaultConfig" : {
         "description" : "Settings for a large response fault (chaos engineering)",
         "type" : "object",
@@ -20336,7 +20354,7 @@
             }, {
               "$ref" : "#/components/schemas/otoroshi.events.KafkaConfig"
             } ],
-            "description" : "Global kafka settings. deprecated"
+            "description" : "Kafka settings"
           },
           "maxLogsSize" : {
             "format" : "int32",
@@ -20911,12 +20929,22 @@
         "description" : "A string representing a domain and an optional path"
       },
       "otoroshi.events.KafkaConfig" : {
-        "description" : "Settings for connection to a kafka cluster",
+        "description" : "???",
         "type" : "object",
         "properties" : {
           "hostValidation" : {
             "description" : "Enabled TLS hostname validation",
             "type" : "boolean"
+          },
+          "saslConfig" : {
+            "oneOf" : [ {
+              "type" : "string",
+              "nullable" : true,
+              "description" : "null type"
+            }, {
+              "$ref" : "#/components/schemas/otoroshi.events.SaslConfig"
+            } ],
+            "description" : "SASL configuration"
           },
           "servers" : {
             "type" : "array",
@@ -20934,6 +20962,10 @@
               "type" : "string"
             } ],
             "description" : "Optional keypass"
+          },
+          "securityProtocol" : {
+            "description" : "Used security protocol",
+            "type" : "string"
           },
           "mtlsConfig" : {
             "description" : "TLS config to access the cluster",

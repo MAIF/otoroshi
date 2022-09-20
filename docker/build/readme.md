@@ -1,7 +1,6 @@
 # Docker build
 
 ```sh
-docker build --no-cache -t otoroshi .
-docker build --no-cache -f ./Dockerfile-jdk9 -t otoroshi-jdk9 .
-docker build --no-cache -f ./Dockerfile-jdk10 -t otoroshi-jdk10 .
+export JDK_VERSION=11
+docker build --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile-gen -t "otoroshi-jdk$JDK_VERSION" .
 ```

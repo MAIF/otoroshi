@@ -1090,12 +1090,14 @@ object DynamicSSLEngineProvider {
 
   def certificates: TrieMap[String, Cert] = allUnrevokedCertMap // _certificates.filter(_._2.notRevoked)
 
-  private lazy val firstSetupDone           = new AtomicBoolean(false)
-  private lazy val currentContextServer     = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true, Seq.empty))
-  private lazy val currentContextClient     = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true, Seq.empty))
-  private lazy val currentSslConfigSettings = new AtomicReference[SSLConfigSettings](null)
-  private val currentEnv                    = new AtomicReference[Env](null)
-  private val defaultSslContext             = SSLContext.getDefault
+  private lazy val firstSetupDone            = new AtomicBoolean(false)
+  private lazy val currentKeyManagerServer   = new AtomicReference[KeyManager](null)
+  private lazy val currentTrustManagerServer = new AtomicReference[TrustManager](null)
+  private lazy val currentContextServer      = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true, Seq.empty))
+  private lazy val currentContextClient      = new AtomicReference[SSLContext](setupContext(FakeHasMetrics, true, Seq.empty))
+  private lazy val currentSslConfigSettings  = new AtomicReference[SSLConfigSettings](null)
+  private val currentEnv                     = new AtomicReference[Env](null)
+  private val defaultSslContext              = SSLContext.getDefault
 
   def isFirstSetupDone: Boolean = firstSetupDone.get()
 
@@ -1107,7 +1109,11 @@ object DynamicSSLEngineProvider {
     currentEnv.get()
   }
 
-  private def setupContext(env: HasMetrics, includeJdkCa: Boolean, trustedCerts: Seq[String]): SSLContext =
+  private def setupContext(env: HasMetrics, includeJdkCa: Boolean, trustedCerts: Seq[String]): SSLContext = {
+    setupContextAndManagers(env, includeJdkCa, trustedCerts)._1
+  }
+
+  private def setupContextAndManagers(env: HasMetrics, includeJdkCa: Boolean, trustedCerts: Seq[String]): (SSLContext, KeyManager, TrustManager) =
     env.metrics.withTimer("otoroshi.core.tls.setup-global-context") {
 
       val certificates                               = allUnrevokedCertMap // _certificates.filter(_._2.notRevoked)
@@ -1232,7 +1238,7 @@ object DynamicSSLEngineProvider {
       // }
       if (logger.isDebugEnabled) logger.debug(s"SSL Context init done ! (${keyStore.size()})")
       SSLContext.setDefault(sslContext)
-      sslContext
+      (sslContext, keyManagers.head, tm.head)
     }
 
   /*
@@ -1376,6 +1382,8 @@ object DynamicSSLEngineProvider {
       sslContext
     }
 
+  def currentServerKeyManager = currentKeyManagerServer.get()
+  def currentServerTrustManager = currentTrustManagerServer.get()
   def currentServer = currentContextServer.get()
   def currentClient = currentContextClient.get()
 
@@ -1394,13 +1402,15 @@ object DynamicSSLEngineProvider {
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
     )
-    val ctxServer = setupContext(
+    val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
+    currentKeyManagerServer.set(keyManagerServer)
+    currentTrustManagerServer.set(trustManagerServer)
   }
 
   def setCertificates(env: Env): Unit = {
@@ -1427,13 +1437,15 @@ object DynamicSSLEngineProvider {
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
     )
-    val ctxServer = setupContext(
+    val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
+    currentKeyManagerServer.set(keyManagerServer)
+    currentTrustManagerServer.set(trustManagerServer)
   }
 
   def forceUpdate(env: Env): Unit = {
@@ -1443,13 +1455,15 @@ object DynamicSSLEngineProvider {
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
     )
-    val ctxServer = setupContext(
+    val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
+    currentKeyManagerServer.set(keyManagerServer)
+    currentTrustManagerServer.set(trustManagerServer)
   }
 
   def createKeyStore(certificates: Seq[Cert]): KeyStore = {
@@ -1496,7 +1510,8 @@ object DynamicSSLEngineProvider {
               if (certificateChain.isEmpty) {
                 logger.error(s"[${cert.id}] Certificate file does not contain any certificates :(")
               } else {
-                if (logger.isDebugEnabled) logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
+                if (logger.isDebugEnabled)
+                  logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
                 val domain = Try {
                   certificateChain.head.maybeDomain.getOrElse(cert.domain)
                 }.toOption.getOrElse(cert.domain)
@@ -1683,7 +1698,8 @@ object DynamicSSLEngineProvider {
   def createSSLEngine(
       clientAuth: ClientAuth,
       cipherSuites: Option[Seq[String]],
-      protocols: Option[Seq[String]]
+      protocols: Option[Seq[String]],
+      appProto: Option[String],
   ): SSLEngine = {
     val context: SSLContext    = DynamicSSLEngineProvider.currentServer
     if (logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
@@ -1692,7 +1708,7 @@ object DynamicSSLEngineProvider {
     val rawEnabledProtocols    = rawEngine.getEnabledProtocols.toSeq
     cipherSuites.foreach(s => rawEngine.setEnabledCipherSuites(s.toArray))
     protocols.foreach(p => rawEngine.setEnabledProtocols(p.toArray))
-    val engine                 = new CustomSSLEngine(rawEngine)
+    val engine                 = new CustomSSLEngine(rawEngine, appProto)
     val sslParameters          = new SSLParameters
     val matchers               = new java.util.ArrayList[SNIMatcher]()
 
@@ -1724,6 +1740,16 @@ object DynamicSSLEngineProvider {
     cipherSuites.orElse(Some(rawEnabledCipherSuites)).foreach(s => sslParameters.setCipherSuites(s.toArray))
     protocols.orElse(Some(rawEnabledProtocols)).foreach(p => sslParameters.setProtocols(p.toArray))
     engine.setSSLParameters(sslParameters)
+    // println("protocols: ", protocols.mkString(", "), "cipherSuites: ", cipherSuites.mkString(", "))
+    // println("----")
+    // println("engine supported", engine.getSupportedProtocols().toSeq.mkString(", "))
+    // println("engine enabled", engine.getEnabledProtocols().toSeq.mkString(", "))
+    // println("sslParameters", sslParameters.getProtocols().toSeq.mkString(", "))
+    // println("----")
+    // println("engine supported", engine.getSupportedCipherSuites().toSeq.mkString(", "))
+    // println("engine enabled", engine.getEnabledCipherSuites().toSeq.mkString(", "))
+    // println("sslParameters", sslParameters.getCipherSuites().toSeq.mkString(", "))
+    // println("----")
     engine.locked()
   }
 }
@@ -1749,12 +1775,13 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
       .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.clientAuth")
       .flatMap(ClientAuth.apply)
       .getOrElse(ClientAuth.None)
-    if (DynamicSSLEngineProvider.logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
+    if (DynamicSSLEngineProvider.logger.isDebugEnabled)
+      DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
     auth
   }
 
   override def createSSLEngine(): SSLEngine = {
-    DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols)
+    DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols, None)
   }
 
   private def setupSslContext(): SSLContext = {
@@ -2100,7 +2127,7 @@ object FakeKeyStore {
   }
 }
 
-class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
+class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String]) extends SSLEngine {
 
   // println(delegate.getClass.getName)
   // sun.security.ssl.SSLEngineImpl
@@ -2123,7 +2150,8 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
   }
 
   def setEngineHostName(hostName: String): Unit = {
-    if (DynamicSSLEngineProvider.logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")
+    if (DynamicSSLEngineProvider.logger.isDebugEnabled)
+      DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")
     hostnameHolder.set(hostName)
     // TODO: add try to avoid future issue ? fixed for now with '--add-opens java.base/javax.net.ssl=ALL-UNNAMED' in the java command line
     field.set(this, hostName)
@@ -2235,7 +2263,10 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
   override def getHandshakeApplicationProtocolSelector: BiFunction[SSLEngine, util.List[String], String] =
     delegate.getHandshakeApplicationProtocolSelector
   override def getHandshakeApplicationProtocol: String                                                   = delegate.getHandshakeApplicationProtocol
-  override def getApplicationProtocol: String                                                            = delegate.getApplicationProtocol
+  override def getApplicationProtocol: String                                                            = appProto match {
+    case None => delegate.getApplicationProtocol
+    case Some(protocol) => protocol
+  }
 }
 
 sealed trait ClientCertificateValidationDataStore extends BasicStore[ClientCertificateValidator] {

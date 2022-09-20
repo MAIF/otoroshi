@@ -53,7 +53,8 @@ object CertParentHelper {
     .build()
 
   def fromOtoroshiRootCa(cert: X509Certificate, level: Int = 0): Boolean = {
-    if (logger.isDebugEnabled) logger.debug(s"fromOtoroshiRootCa: ${cert.getSerialNumber} - ${DN(cert.getSubjectDN.getName)}")
+    if (logger.isDebugEnabled)
+      logger.debug(s"fromOtoroshiRootCa: ${cert.getSerialNumber} - ${DN(cert.getSubjectDN.getName)}")
     if (level > 100) {
       logger.error(s"failed to find origin for cert ${cert.getSerialNumber} - ${DN(cert.getSubjectDN.getName)}")
       cache.put(cert.getSerialNumber, false)

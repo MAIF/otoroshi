@@ -165,9 +165,10 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
         }
       }
       val newSize = store.keySet.size
-      if (SwappableInMemoryRedis.logger.isDebugEnabled) SwappableInMemoryRedis.logger.debug(
-        s"[${env.clusterConfig.mode.name}] Swapping store instance now ! ($oldSize / $newSize)"
-      )
+      if (SwappableInMemoryRedis.logger.isDebugEnabled)
+        SwappableInMemoryRedis.logger.debug(
+          s"[${env.clusterConfig.mode.name}] Swapping store instance now ! ($oldSize / $newSize)"
+        )
     }
   }
 
@@ -473,9 +474,10 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
       val oldSize = memory.size
       memory.swap(nstore, nexpirations)
       val newSize = memory.size
-      if (SwappableInMemoryRedis.logger.isDebugEnabled) SwappableInMemoryRedis.logger.debug(
-        s"[${env.clusterConfig.mode.name}] Swapping modern store instance now ! ($oldSize / $newSize)"
-      )
+      if (SwappableInMemoryRedis.logger.isDebugEnabled)
+        SwappableInMemoryRedis.logger.debug(
+          s"[${env.clusterConfig.mode.name}] Swapping modern store instance now ! ($oldSize / $newSize)"
+        )
     }
   }
 

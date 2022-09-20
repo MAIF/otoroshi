@@ -103,12 +103,37 @@ object Xml {
   }
 
   def toXml(json: JsValue): NodeSeq = {
-    def toXml(name: String, json: JsValue): NodeSeq = json match {
+    def getAttributes(attrs: List[(String, JsValue)]): MetaData = {
+      if(attrs.isEmpty)
+        xml.Null
+      else {
+        val lastAttribute = new UnprefixedAttribute(
+          attrs.last._1.replaceAll("@", ""),
+          attrs.last._2.toString(),
+          xml.Null)
+        attrs
+          .slice(0, attrs.length-1)
+          .reverse
+          .foldLeft(lastAttribute) { case (attr, attribute) => new UnprefixedAttribute(
+            attribute._1.replaceAll("@", ""),
+            attribute._2.toString(),
+            attr)
+          }
+      }
+    }
+
+    def nestedToXml(name: String, json: JsValue): NodeSeq = json match {
       case JsObject(fields) =>
-        val children = fields.toList.flatMap { case (n, v) => toXml(n, v) }
-        XmlNode(name, children)
+        val children = fields.toList.filter(p => !p._1.startsWith("@") && p._1 != "$").flatMap { case (n, v) => nestedToXml(n, v) }
+        val attributes = fields.toList.filter(p => p._1.startsWith("@"))
+        val value = fields.toList.find(p => p._1 == "$")
+
+        if (value.isEmpty)
+          XmlNode(name, children, getAttributes(attributes))
+        else
+          XmlElemWithAttributes(name, value.get._2.toString(), getAttributes(attributes))
       case JsArray(xs)      =>
-        xs.flatMap { v => toXml(name, v) }
+        XmlNode(name, xs.flatMap { v => toXml(v) }, xml.Null)
       case JsNumber(v)      =>
         XmlElem(name, v.toString())
       case JsBoolean(v)     =>
@@ -121,15 +146,18 @@ object Xml {
 
     json match {
       case JsObject(fields) =>
-        fields.toList.flatMap { case (n, v) => toXml(n, v) }
+        fields.toList.flatMap { case (n, v) => nestedToXml(n, v) }
       case x                =>
-        toXml("root", x)
+        nestedToXml("root", x)
     }
   }
 
-  private[this] case class XmlNode(name: String, children: Seq[Node])
-      extends Elem(null, name, xml.Null, TopScope, true, children: _*)
+  private[this] case class XmlNode(name: String, children: Seq[Node], atrributes: MetaData)
+      extends Elem(null, name, attributes1 = atrributes, TopScope, true, children: _*)
 
   private[this] case class XmlElem(name: String, value: String)
       extends Elem(null, name, xml.Null, TopScope, true, Text(value))
+
+  private[this] case class XmlElemWithAttributes(name: String, value: String, atrributes: MetaData)
+    extends Elem(null, name, attributes1 = atrributes, TopScope, true, Text(value))
 }

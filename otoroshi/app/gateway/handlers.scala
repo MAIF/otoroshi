@@ -460,32 +460,32 @@ class GatewayRequestHandler(
     devCache.getIfPresent(wholePath) match {
       case Some((contentType, content)) => Results.Ok(content).as(contentType).future
       case None                         => {
-        val path             = wholePath
+        val path = wholePath
           .replaceFirst("/assets", "")
           .replaceFirst("/__otoroshi_assets", "")
           .applyOnIf(wholePath.contains("?"))(_.split("\\?").head)
-        val ext              = path.split("\\.").toSeq.lastOption.getOrElse("txt").toLowerCase
-        val mimeType: String = devMimetypes.getOrElse(ext, "text/plain")
-        val fileSource = {
-          val file = new File("./public" + path)
-          if (file.exists()) {
-            FileIO.fromPath(file.toPath).some
-          } else {
-            None
-          }
-        }
-        fileSource.map { source =>
-          source
-            .runFold(ByteString.empty)(_ ++ _)
-            .map { contentRaw =>
-              devCache.put(wholePath, (mimeType, contentRaw))
-              Results.Ok(contentRaw).as(mimeType)
+        if (path.startsWith("/javascripts/bundle/")) {
+          val host = req.theHost.replace(":9999", ":3040")
+          Results.Redirect(s"${req.theProtocol}://$host/assets${path}").future
+        } else {
+          val ext              = path.split("\\.").toSeq.lastOption.getOrElse("txt").toLowerCase
+          val mimeType: String = devMimetypes.getOrElse(ext, "text/plain")
+          val fileSource = {
+            val file = new File("./public" + path)
+            if (file.exists()) {
+              FileIO.fromPath(file.toPath).some
+            } else {
+              None
             }
-        } getOrElse {
-          if (path.startsWith("/javascripts/bundle/")) {
-            val host = req.theHost.replace(":9999", ":3040")
-            Results.Redirect(s"http://$host/assets${path}").future
-          } else {
+          }
+          fileSource.map { source =>
+            source
+              .runFold(ByteString.empty)(_ ++ _)
+              .map { contentRaw =>
+                devCache.put(wholePath, (mimeType, contentRaw))
+                Results.Ok(contentRaw).as(mimeType)
+              }
+          } getOrElse {
             Results.NotFound(s"file '${wholePath}' not found !").future
           }
         }
@@ -906,9 +906,10 @@ class GatewayRequestHandler(
     actionBuilder { req =>
       val domain   = req.theDomain
       val protocol = req.theProtocol
-      if (logger.isTraceEnabled) logger.trace(
-        s"redirectToHttps from ${protocol}://$domain${req.relativeUri} to ${env.rootScheme}$domain${req.relativeUri}"
-      )
+      if (logger.isTraceEnabled)
+        logger.trace(
+          s"redirectToHttps from ${protocol}://$domain${req.relativeUri} to ${env.rootScheme}$domain${req.relativeUri}"
+        )
       Redirect(s"${env.rootScheme}$domain${req.relativeUri}").withHeaders("otoroshi-redirect-to" -> "https")
     }
 
@@ -916,9 +917,10 @@ class GatewayRequestHandler(
     actionBuilder { req =>
       val domain: String = env.redirections.foldLeft(req.theDomain)((domain, item) => domain.replace(item, env.domain))
       val protocol       = req.theProtocol
-      if (logger.isDebugEnabled) logger.debug(
-        s"redirectToMainDomain from $protocol://${req.theDomain}${req.relativeUri} to $protocol://$domain${req.relativeUri}"
-      )
+      if (logger.isDebugEnabled)
+        logger.debug(
+          s"redirectToMainDomain from $protocol://${req.theDomain}${req.relativeUri} to $protocol://$domain${req.relativeUri}"
+        )
       Redirect(s"$protocol://$domain${req.relativeUri}")
     }
 

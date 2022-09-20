@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.12
+1.5.13
 </div>
 </div>
 <div class="nav-toc">
@@ -115,12 +115,10 @@
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi Next</a>
+  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
   <ul>
     <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
-    <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
-    <li><a href="../next/graphql-composer.html" class="page">GraphQL Composer Proxy</a></li>
-    <li><a href="../next/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
     <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
 </ul>
@@ -156,7 +154,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.12
+1.5.13
 </div>
 </div>
 <div class="nav-toc">
@@ -236,12 +234,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi Next</a>
+  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
   <ul>
     <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
-    <li><a href="../next/secrets.html" class="page">Secrets management</a></li>
-    <li><a href="../next/graphql-composer.html" class="page">GraphQL Composer Proxy</a></li>
-    <li><a href="../next/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
     <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
   </ul></li>
 </ul>
@@ -1942,8 +1938,8 @@ otoroshi {
     retryFactor = 2 # the retry factor to avoid high load on failing nodes
     retryFactor = ${?CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
     retryFactor = ${?OTOROSHI_CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
-    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster selfAddress
-    selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the cluster selfAddress
+    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the instance ip address
+    selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the instance ip address
     autoUpdateState = true # auto update cluster state with a job (more efficient)
     autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
     autoUpdateState = ${?OTOROSHI_CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
@@ -2199,6 +2195,31 @@ otoroshi {
     #   token = &quot;root&quot;
     # }
   }
+  tunnels {
+    enabled = true
+    enabled = ${?OTOROSHI_TUNNELS_ENABLED}
+    worker-ws = true
+    worker-ws = ${?OTOROSHI_TUNNELS_WORKER_WS}
+    default {
+      enabled = false
+      enabled = ${?OTOROSHI_TUNNELS_DEFAULT_ENABLED}
+      id = &quot;default&quot;
+      id = ${?OTOROSHI_TUNNELS_DEFAULT_ID}
+      name = &quot;default&quot;
+      name = ${?OTOROSHI_TUNNELS_DEFAULT_NAME}
+			url = &quot;http://127.0.0.1:8080&quot;
+			url = ${?OTOROSHI_TUNNELS_DEFAULT_URL}
+			host = &quot;otoroshi-api.oto.tools&quot;
+			host = ${?OTOROSHI_TUNNELS_DEFAULT_HOST}
+			clientId = &quot;admin-api-apikey-id&quot;
+			clientId = ${?OTOROSHI_TUNNELS_DEFAULT_CLIENT_ID}
+			clientSecret = &quot;admin-api-apikey-secret&quot;
+			clientSecret = ${?OTOROSHI_TUNNELS_DEFAULT_CLIENT_SECRET}
+			export-routes = true # send routes information to remote otoroshi instance to facilitate remote route exposition
+			export-routes = ${?OTOROSHI_TUNNELS_DEFAULT_EXPORT_ROUTES} # send routes information to remote otoroshi instance to facilitate remote route exposition
+			export-routes-tag = ${?OTOROSHI_TUNNELS_DEFAULT_EXPORT_TAG} # only send routes information if the route has this tag
+    }
+  }
 }
 
 
@@ -2245,6 +2266,9 @@ play.server.https.keyStore.password=${?OTOROSHI_HTTPS_KEYSTORE_PASSWORD} # setti
 play.server.https.keyStore.algorithm=${?HTTPS_KEYSTORE_ALGO}    # settings for the default server keystore
 play.server.https.keyStore.algorithm=${?OTOROSHI_HTTPS_KEYSTORE_ALGO}    # settings for the default server keystore
  
+
+play.server.websocket.frame.maxLength = 1024k
+play.server.websocket.frame.maxLength = ${?OTOROSHI_WEBSOCKET_FRAME_MAX_LENGTH}
 
 
 
@@ -2963,8 +2987,8 @@ otoroshi {
     retryDelay = ${?OTOROSHI_CLUSTER_RETRY_DELAY} # the delay before retrying a request to leader
     retryFactor = ${?CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
     retryFactor = ${?OTOROSHI_CLUSTER_RETRY_FACTOR} # the retry factor to avoid high load on failing nodes
-    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the cluster selfAddress
-    selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the cluster selfAddress
+    selfAddress = ${?CLUSTER_SELF_ADDRESS} # the instance ip address
+    selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the instance ip address
     autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
     autoUpdateState = ${?OTOROSHI_CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
     relay { # relay routing settings
@@ -3122,6 +3146,21 @@ otoroshi {
     # hashicorpvault {
     # }
   }
+  tunnels {
+    enabled = ${?OTOROSHI_TUNNELS_ENABLED}
+    worker-ws = ${?OTOROSHI_TUNNELS_WORKER_WS}
+    default {
+      enabled = ${?OTOROSHI_TUNNELS_DEFAULT_ENABLED}
+      id = ${?OTOROSHI_TUNNELS_DEFAULT_ID}
+      name = ${?OTOROSHI_TUNNELS_DEFAULT_NAME}
+			url = ${?OTOROSHI_TUNNELS_DEFAULT_URL}
+			host = ${?OTOROSHI_TUNNELS_DEFAULT_HOST}
+			clientId = ${?OTOROSHI_TUNNELS_DEFAULT_CLIENT_ID}
+			clientSecret = ${?OTOROSHI_TUNNELS_DEFAULT_CLIENT_SECRET}
+			export-routes = ${?OTOROSHI_TUNNELS_DEFAULT_EXPORT_ROUTES} # send routes information to remote otoroshi instance to facilitate remote route exposition
+			export-routes-tag = ${?OTOROSHI_TUNNELS_DEFAULT_EXPORT_TAG} # only send routes information if the route has this tag
+    }
+  }
 }
 http.port = ${?otoroshi.http.port}     # the main http port for the otoroshi server
 http.port = ${?PORT}                   # the main http port for the otoroshi server
@@ -3154,6 +3193,7 @@ play.server.https.keyStore.password=${?HTTPS_KEYSTORE_PASSWORD} # settings for t
 play.server.https.keyStore.password=${?OTOROSHI_HTTPS_KEYSTORE_PASSWORD} # settings for the default server keystore
 play.server.https.keyStore.algorithm=${?HTTPS_KEYSTORE_ALGO}    # settings for the default server keystore
 play.server.https.keyStore.algorithm=${?OTOROSHI_HTTPS_KEYSTORE_ALGO}    # settings for the default server keystore
+play.server.websocket.frame.maxLength = ${?OTOROSHI_WEBSOCKET_FRAME_MAX_LENGTH}
 play.http {
   session {
     secure = ${?SESSION_SECURE_ONLY}  # the cookie for otoroshi backoffice should be exhanged over https only

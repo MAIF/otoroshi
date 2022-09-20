@@ -22,7 +22,7 @@ import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models.RightsChecker.SuperAdminOnly
 import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId, _}
 import otoroshi.next.models.{GraphQLFormats, NgRoute, NgService}
-import otoroshi.next.plugins.GraphQLBackend
+import otoroshi.next.plugins.{EurekaServerSink, GraphQLBackend}
 import otoroshi.security._
 import otoroshi.ssl._
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
@@ -237,9 +237,10 @@ class BackOfficeController(
               logger.info(
                 s"[${ctx.request.id}] akka - starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}"
               )
-            if (logger.isDebugEnabled) logger.debug(
-              s"[${ctx.request.id}] akka - starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}"
-            )
+            if (logger.isDebugEnabled)
+              logger.debug(
+                s"[${ctx.request.id}] akka - starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}"
+              )
             builderWithBody
               .stream()
               .fast
@@ -249,10 +250,11 @@ class BackOfficeController(
                     s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
                       .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
                   )
-                if (logger.isDebugEnabled) logger.debug(
-                  s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
-                    .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
-                )
+                if (logger.isDebugEnabled)
+                  logger.debug(
+                    s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
+                      .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
+                  )
                 val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
                 Status(res.status)
                   .sendEntity(
@@ -268,10 +270,11 @@ class BackOfficeController(
                               s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
                                 .currentTimeMillis() - start}ms"
                             )
-                          if (logger.isDebugEnabled) logger.debug(
-                            s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
-                              .currentTimeMillis() - start}ms"
-                          )
+                          if (logger.isDebugEnabled)
+                            logger.debug(
+                              s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
+                                .currentTimeMillis() - start}ms"
+                            )
                         }),
                       res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
                       res.headers.get("Content-Type").flatMap(_.headOption)
@@ -305,7 +308,8 @@ class BackOfficeController(
             val start = System.currentTimeMillis()
             if (flags.logStats)
               logger.info(s"[${ctx.request.id}] starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}")
-            if (logger.isDebugEnabled) logger.debug(s"[${ctx.request.id}] starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}")
+            if (logger.isDebugEnabled)
+              logger.debug(s"[${ctx.request.id}] starting admin-api call: ${ctx.request.method} ${ctx.request.thePath}")
             builderWithBody
               .stream()
               .fast
@@ -315,10 +319,11 @@ class BackOfficeController(
                     s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
                       .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
                   )
-                if (logger.isDebugEnabled) logger.debug(
-                  s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
-                    .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
-                )
+                if (logger.isDebugEnabled)
+                  logger.debug(
+                    s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
+                      .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
+                  )
                 val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
                 Status(res.status)
                   .sendEntity(
@@ -335,10 +340,11 @@ class BackOfficeController(
                               s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
                                 .currentTimeMillis() - start}ms"
                             )
-                          if (logger.isDebugEnabled) logger.debug(
-                            s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
-                              .currentTimeMillis() - start}ms"
-                          )
+                          if (logger.isDebugEnabled)
+                            logger.debug(
+                              s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
+                                .currentTimeMillis() - start}ms"
+                            )
                         }),
                       res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
                       res.headers.get("Content-Type").flatMap(_.headOption)
@@ -592,6 +598,54 @@ class BackOfficeController(
           }
         }
       }
+    }
+
+  def eurekaServers() =
+    BackOfficeActionAuth.async { _ =>
+      env.datastores.routeDataStore.findAll().map { routes =>
+        Ok(
+            JsArray(
+              routes
+              .filter(r => r.plugins.hasPlugin[EurekaServerSink])
+              .map(_.json)
+            )
+        )
+      }
+    }
+
+  def externalEurekaServers() =
+    BackOfficeActionAuth.async { ctx =>
+      ctx.request.getQueryString("url") match {
+        case Some(url) =>
+          env.Ws
+            .url(s"$url/apps")
+            .withMethod("GET")
+            .withHttpHeaders(Seq("Accept" -> "application/json"):_*)
+            .execute()
+            .map { res =>
+              if (res.status == 200) {
+                Ok(res.bodyAsBytes.utf8String.parseJson)
+              } else {
+                BadRequest(Json.obj("error" -> s"bad server response: ${res.status} - ${res.headers} - ${res.body}"))
+              }
+            }
+        case None =>
+          BadRequest(Json.obj("error" -> "missing url"))
+            .vfuture
+      }
+    }
+
+  def eurekaServerApps(id: String) =
+    BackOfficeActionAuth.async { _ =>
+      env.datastores.rawDataStore
+        .allMatching(s"${env.storageRoot}:plugins:eureka-server-$id:apps*")
+        .map { rawApps =>
+          Ok(
+            JsArray(
+              rawApps.map(app => Json.parse(app.utf8String))
+            )
+          )
+        }
     }
 
   def panicMode() =
@@ -1774,7 +1828,7 @@ class BackOfficeController(
     sangria.parser.QueryParser.parse(schema) match {
       case scala.util.Failure(exception)   => BadRequest(Json.obj("error" -> exception.getMessage)).future
       case scala.util.Success(astDocument) =>
-        val res             = GraphQLFormats.astDocumentToJson(astDocument)
+        val res = GraphQLFormats.astDocumentToJson(astDocument)
 
         Ok(Json.obj("types" -> res)).future
     }

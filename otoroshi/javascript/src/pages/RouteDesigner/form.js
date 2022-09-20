@@ -476,12 +476,13 @@ export const schemas = {
 };
 
 export class RouteForm extends Component {
-
   state = { value: null, plugins: [], json: false };
 
   componentDidMount() {
     this.entity = window.location.pathname.split('/')[3];
-    this.client = nextClient.forEntity(this.entity === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES);
+    this.client = nextClient.forEntity(
+      this.entity === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES
+    );
     this.load();
     this.loadPlugins();
     this.props.setSaveButton(
@@ -680,17 +681,21 @@ export class RouteForm extends Component {
           })}
         </Collapse>
         <div className="d-flex align-items-center justify-content-end mt-3">
-          <div className="btn-group">
-            <button className="btn btn-sm btn-danger" onClick={() => this.props.history.push(`/${this.entity}`)}>
-              <i className="fas fa-times" /> Cancel
+          <div className="displayGroupBtn">
+            <button
+              className="btn btn-danger"
+              onClick={() => this.props.history.push(`/${this.entity}`)}>
+              Cancel
             </button>
             {!this.props.isCreating && (
               <button
-                className="btn btn-sm btn-danger"
+                className="btn btn-danger"
                 onClick={() => {
                   window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
                     if (ok) {
-                      this.client.deleteById(value.id).then(() => this.props.history.push(`/${this.entity}`))
+                      this.client
+                        .deleteById(value.id)
+                        .then(() => this.props.history.push(`/${this.entity}`));
                     }
                   });
                 }}>

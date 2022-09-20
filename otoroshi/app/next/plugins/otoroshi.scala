@@ -38,9 +38,9 @@ object NgOtoroshiChallengeConfig {
   def apply(raw: JsValue): NgOtoroshiChallengeConfig = format.reads(raw).get
   val format                                         = new Format[NgOtoroshiChallengeConfig] {
     override def reads(raw: JsValue): JsResult[NgOtoroshiChallengeConfig] = Try {
-      lazy val secComVersion: SecComVersion       = {
+      lazy val secComVersion: SecComVersion = {
         raw.select("version").asOpt[Int] match {
-          case None => SecComVersion(raw.select("version").asOpt[String].getOrElse("V2")).getOrElse(SecComVersion.V2)
+          case None    => SecComVersion(raw.select("version").asOpt[String].getOrElse("V2")).getOrElse(SecComVersion.V2)
           case Some(v) => SecComVersion(v).getOrElse(SecComVersion.V2)
         }
       }

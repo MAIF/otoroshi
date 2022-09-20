@@ -28,7 +28,7 @@ import faker from 'faker';
 import bcrypt from 'bcryptjs';
 import { JsonObjectAsCodeInput } from './inputs/CodeInput';
 import { Form } from './inputs';
-import isString from 'lodash/isString'
+import isString from 'lodash/isString';
 
 function Base64Url() {
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -1742,7 +1742,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     warning: {
-      type: ({ }) => {
+      type: ({}) => {
         if (this.props.value.warning) {
           const { warning } = this.props.value;
           return (
@@ -1813,7 +1813,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     credentials: {
-      type: ({ }) => {
+      type: ({}) => {
         const {
           signingKey,
           encryptionKey,
@@ -1863,8 +1863,9 @@ export class SamlModuleConfig extends Component {
             config.show && (
               <div key={`config${i}`}>
                 <BooleanInput
-                  label={`${i === 0 ? 'Sign' : 'Validate'} ${config.element
-                    } with Otoroshi certificate`}
+                  label={`${i === 0 ? 'Sign' : 'Validate'} ${
+                    config.element
+                  } with Otoroshi certificate`}
                   value={config.switch.value}
                   onChange={() => config.switch.setValue(!config.switch.value)}
                 />
@@ -1938,7 +1939,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     usedNameIDAsEmail: {
-      type: ({ }) => {
+      type: ({}) => {
         const { emailAttributeName, usedNameIDAsEmail } = this.props.value;
         return (
           <div>
@@ -2165,7 +2166,7 @@ export class OAuth1ModuleConfig extends Component {
       },
     },
     rightsOverride: {
-      type: ({ }) => (
+      type: ({}) => (
         <JsonObjectAsCodeInput
           label="Rights override"
           mode="json"

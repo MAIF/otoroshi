@@ -147,6 +147,9 @@ libraryDependencies ++= Seq(
   "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"  % "1.11.0",
   "io.opentelemetry"                 % "opentelemetry-exporter-jaeger"  % "1.11.0",
   "com.amazonaws"                    % "aws-java-sdk-secretsmanager"    % "1.12.173" excludeAll (excludesJackson: _*),
+  "io.projectreactor.netty"           % "reactor-netty-core"            % "1.0.22",
+  "io.projectreactor.netty"           % "reactor-netty-http"            % "1.0.22",
+  "io.projectreactor.netty.incubator" % "reactor-netty-incubator-quic"  % "0.0.12",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"             % "5.1.0" % Test,
   // do not update because the feature is deprecated and will be removed
@@ -155,7 +158,7 @@ libraryDependencies ++= Seq(
   ),
   "org.iq80.leveldb"                 % "leveldb"                        % "0.12",
   "org.apache.logging.log4j"         % "log4j-api"                      % "2.17.1",
-  "org.sangria-graphql"             %% "sangria"                        % "3.0.0",
+  "org.sangria-graphql"             %% "sangria"                        % "3.0.0"
   /*"org.sangria-graphql"             %% "sangria-play-json"              % "2.0.1" excludeAll ExclusionRule(
     organization = "com.typesafe.play"
   )*/ // TODO - check if needed
@@ -270,13 +273,15 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.events.maxSize=0",
   "-Dotoroshi.cluster.mode=Leader",
   "-Dotoroshi.cluster.leader.name=otoroshi-leader-dev",
-  "-Dotoroshi.tunnels.enabled=true",
-  "-Dotoroshi.tunnels.default.enabled=true",
+  "-Dotoroshi.tunnels.enabled=false",
+  "-Dotoroshi.tunnels.default.enabled=false",
   "-Dotoroshi.tunnels.default.url=http://127.0.0.1:9999",
   "-Dotoroshi.instance.name=dev",
   "-Dotoroshi.vaults.enabled=true",
   "-Dotoroshi.ssl.fromOutside.clientAuth=Want",
-  "-Dotoroshi.inmemory.modern=true"
+  "-Dotoroshi.inmemory.modern=true",
+  "-Dotoroshi.next.experimental.netty-server.enabled=true",
+  "-Dotoroshi.next.experimental.netty-server.accesslog=true",
   // "-Dotoroshi.storage=experimental-pg",
   // "-Dotoroshi.storage=redis",
   // "-Dotoroshi.storage=lettuce",

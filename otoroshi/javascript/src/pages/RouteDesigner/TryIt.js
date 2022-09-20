@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import range from 'lodash/range'
+import range from 'lodash/range';
 import { CodeInput, SelectInput } from '@maif/react-forms';
 import { BooleanInput } from '../../components/inputs';
 import {
@@ -66,9 +66,9 @@ export default function ({ route, hide }) {
   useEffect(() => {
     const state = store.getState();
     const settings = getSettings(state);
-    settings["schema.polling.enable"] = false;
+    settings['schema.polling.enable'] = false;
     store.dispatch(setSettingsString(JSON.stringify(settings, null, 2)));
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (route && route.id) {
@@ -85,15 +85,15 @@ export default function ({ route, hide }) {
         route.plugins.find((f) => f.plugin.includes('GraphQLBackend')).enabled &&
         playgroundUrl &&
         lastQuery
-      )
+      );
     }
   }, [route]);
 
   useEffect(() => {
-    if (testerView === "graphql" && route) {
+    if (testerView === 'graphql' && route) {
       hidePlaygroundStuff(route);
     }
-  }, [route, testerView])
+  }, [route, testerView]);
 
   useEffect(() => {
     loadLastQuery();
@@ -246,24 +246,32 @@ export default function ({ route, hide }) {
               <i className="fas fa-times" style={{ color: '#fff' }} />
             </button>
           </div>
-          {route && route.plugins.find(f => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') &&
-            <div className='mt-2'>
-              <button className='btn btn-sm btn-info me-1' type="button" onClick={() => setTesterView('rest')}>
-                REST Tester
-              </button>
-              <button className='btn btn-sm btn-info' type="button" onClick={() => setTesterView('graphql')}>
-                GraphQL Tester
-              </button>
-            </div>}
+          {route &&
+            route.plugins.find((f) => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') && (
+              <div className="mt-2">
+                <button
+                  className="btn btn-sm btn-info me-1"
+                  type="button"
+                  onClick={() => setTesterView('rest')}>
+                  REST Tester
+                </button>
+                <button
+                  className="btn btn-sm btn-info"
+                  type="button"
+                  onClick={() => setTesterView('graphql')}>
+                  GraphQL Tester
+                </button>
+              </div>
+            )}
         </div>
-      </div >
+      </div>
       {testerView === 'graphql' ? (
         <div style={{ minHeight: 'calc(100vh - 162px)' }}>
           <Provider store={store}>
             <Playground
               settings={{
                 'schema.polling.enable': false,
-                'introspection': true
+                introspection: true,
               }}
               codeTheme={{
                 editorBackground: '#3c3c3c',
@@ -292,6 +300,9 @@ export default function ({ route, hide }) {
             background: 'rgb(60,60,60)',
             padding: '12px',
             borderRadius: '8px',
+            width:'97%',
+            margin : '0 auto',
+            marginTop:'10px'
           }}>
           <div className="d-flex">
             <div style={{ minWidth: '200px' }}>
@@ -349,16 +360,16 @@ export default function ({ route, hide }) {
                 ))}
               </div>
               <i
-                className={`tab fas fa-chevron-${headersStatus}`}
+                className={`tab fas fa-chevron-${headersStatus === 'up' ? 'down' : 'up'}`}
                 onClick={() => setHeadersStatus(headersStatus === 'up' ? 'down' : 'up')}
               />
             </div>
             {selectedTab === 'Authorization' && headersStatus === 'down' && (
-              <div className="w-75">
-                <div className="mt-3 d-flex">
+              <div className="d-flex">
+                <div className="mt-3 flex">
                   <div
-                    className="d-flex-between pe-3 me-3"
-                    style={{ flex: 0.5, borderRight: '2px solid #494849' }}>
+                    className="d-flex-between pe-3"
+                    style={{ flex: 0.5 }}>
                     <BooleanInput
                       flex={true}
                       label="Use an apikey"
@@ -375,8 +386,7 @@ export default function ({ route, hide }) {
                   {request.useApikey && (
                     <div className="flex">
                       <div className="d-flex-between">
-                        <span className="me-3">Apikey</span>
-                        <div className="flex">
+                        <div className="flex mt-2">
                           <SelectInput
                             possibleValues={apikeys}
                             value={request.apikey}
@@ -438,10 +448,10 @@ export default function ({ route, hide }) {
                     </div>
                   )}
                 </div>
-                <div className="mt-3 d-flex">
+                <div className="mt-3 ms-3 flex">
                   <div
-                    className="d-flex-between pe-3 me-3"
-                    style={{ flex: 0.5, borderRight: '2px solid #494849' }}>
+                    className="d-flex-between pe-3"
+                    style={{ flex: 0.5 }}>
                     <BooleanInput
                       flex={true}
                       label="Use a certificate client"
@@ -455,9 +465,8 @@ export default function ({ route, hide }) {
                     />
                   </div>
                   {request.useCertificate && (
-                    <div className="flex">
+                    <div className="flex mt-2">
                       <div className="d-flex-between">
-                        <span className="me-3">Certificate</span>
                         <div className="flex">
                           <SelectInput
                             possibleValues={certificates}
@@ -671,9 +680,9 @@ export default function ({ route, hide }) {
           ) : null}
         </div>
       )}
-    </div >
+    </div>
   );
-};
+}
 
 const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, flow, setFlow }) => {
   const [selectedStep, setSelectedStep] = useState(-1);
@@ -907,7 +916,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
 
 const Headers = ({ headers, onKeyChange, onValueChange }) => (
   <div
-    className="mt-2 w-50 div-overflowy pb-3"
+    className="mt-2 w-100 div-overflowy pb-3"
     style={{
       height: onKeyChange ? '100%' : 'initial',
       overflowY: 'scroll',

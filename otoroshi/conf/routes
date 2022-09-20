@@ -36,6 +36,9 @@ GET     /bo/api/version                                       otoroshi.controlle
 GET     /bo/api/metrics                                       otoroshi.controllers.HealthController.backofficeMetrics()
 GET     /bo/api/env                                           otoroshi.controllers.BackOfficeController.getEnv()
 GET     /bo/api/apps                                          otoroshi.controllers.BackOfficeController.cleverApps()
+GET     /bo/api/eureka-servers                                otoroshi.controllers.BackOfficeController.eurekaServers()
+GET     /bo/api/external-eureka-servers                       otoroshi.controllers.BackOfficeController.externalEurekaServers()
+GET     /bo/api/eureka-servers/:id/apps                       otoroshi.controllers.BackOfficeController.eurekaServerApps(id)
 # GET     /bo/api/sessions                                    otoroshi.controllers.BackOfficeController.sessions()
 # DELETE  /bo/api/sessions/:id                                otoroshi.controllers.BackOfficeController.discardSession(id)
 # DELETE  /bo/api/sessions                                    otoroshi.controllers.BackOfficeController.discardAllSessions()
@@ -85,6 +88,7 @@ PUT    /bo/api/backoffice/flags                               otoroshi.controlle
 GET    /bo/api/backoffice/flags                               otoroshi.controllers.BackOfficeController.getFlags()
 
 POST   /bo/api/tryit                                          otoroshi.next.controllers.TryItController.call(entity: Option[String])
+POST   /bo/api/data-exporter/tryit                            otoroshi.next.controllers.TryItController.dataExporterCall()
 
 GET     /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()
 POST    /bo/api/graphqlproxy                                  otoroshi.controllers.BackOfficeController.graphqlProxy()

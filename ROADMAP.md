@@ -8,7 +8,7 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - implement some enterprise plugins (payload transformation, soap, etc)
   - implement secret vaults support
   - implement tracing plugins
-- [ ] Q2 2022
+- [x] Q2 2022
   - implement views for the new proxy engine
   - implement a "try it" view for services
     - REST
@@ -17,17 +17,59 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - implement secret vaults
   - implement grapql plugins (except federation)
 - [ ] Q3 2022  
-  - rollout new proxy engine
-  - implement k8s SMI spec support  
-  - implement k8s Gateway API support
+  - remote tunnels for easier exposition
+  - relay routing
 - [ ] Q4 2022  
-  - use wizard to help resources creation
-    - use @maif/react-form 
-
+  - rollout new proxy engine (version 16)
+  - introduce wizards to help resources creation
+  - kubernetes integration upgrades
+    - implement k8s SMI spec support (if it fits the use case)
+    - implement k8s Gateway API support (https://github.com/kubernetes-sigs/gateway-api)
+- [ ] next (2023 - 202x)
+  - introduce new versioning scheme (see below)
+  - new plugins
+    - provide a plugin to act as an Eureka 2 backend
+    - provide a plugin to handle backend discovery backed by Eureka 2
+    - provide a Brotli compression plugin
+    - provide a graphql federation plugin
+    - provide an orchestration plugin
+  - cleanup kubernetes integration 
+    - fix versioning in crds
+    - check against latest kubernetes version
+    - support external-dns (https://github.com/kubernetes-sigs/external-dns)
+  - pluggable authentication modules
+  - upgrade scala version (2.13.x) 
+  - better testing infrastructure for multi node environments (test-containers or something like that)
+  - new documentation website generator
+  - upgrade all frontend libs
+  - stored tunnels
+  - expand vault mechanism to config. file
+  - disable TLS 1.0 and 1.1 by default
+  - support websocket calls in relay routing
+  - improve tunnels 
+    - improve stability
+    - improve performances (use binary format ?)
+    - improve resilience
+    - support websocket calls
+    - support long/streaming calls
+  - new data exporters
+    - TCP
+    - UDP
+    - Syslog
+  - minimal gRCP support
+    - plugin to call gRPC services
+    - expose routes as gRPC-Web
+  - serverless
+    - plugin to call functions in AWS
+    - plugin to call functions in Azure
+    - plugin to call functions in GCP
+  - experiment around moving out of play framework and akka ...
 
 ## versioning
 
-after releasing 1.5.0 we plan to make a new release immediately with version number 16.0.0 as previous minor version where actually major ones. We will not make a 15.0.0 as there are already alpha releases of the 1.5.0.
+after releasing 1.5.0 we plan to make a new release immediately with version number 16.0.0 as previous minor version where actually major ones. 
+
+Then, as we release a new version every month (actually every 4 to 8 weeks), we will increment the major version for each release.
 
 ## authentication and security
 
@@ -143,7 +185,7 @@ provide the authentication modules needed for most cases and associated tools
 at some point we will have the opportunity to rewrite otoroshi with major breaking changes
 
 - [ ] remove play framework
-  - [ ] rewritte http engine using akka http
+  - [ ] rewritte http engine using akka http (well maybe remove akka too ...)
 - [ ] split admin api http server and http routing server with default routing for admin api
 - [ ] modular architecture rework  
   - [x] default template (customizable) for services with standard plugins

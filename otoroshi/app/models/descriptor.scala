@@ -2476,7 +2476,8 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       ec: ExecutionContext,
       env: Env
   ): Future[Seq[ServiceDescriptor]] = env.metrics.withTimerAsync("otoroshi.core.proxy.services.raw-find") {
-    if (ServiceDescriptorDataStore.logger.isDebugEnabled) ServiceDescriptorDataStore.logger.debug("Full scan of services, should not pass here anymore ...")
+    if (ServiceDescriptorDataStore.logger.isDebugEnabled)
+      ServiceDescriptorDataStore.logger.debug("Full scan of services, should not pass here anymore ...")
     // val redisCli = this.asInstanceOf[KvServiceDescriptorDataStore].redisLike
     // val all = if (redisCli.optimized) {
     //   redisCli.asOptimized.serviceDescriptors_findByHost(query)
@@ -2510,7 +2511,8 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
     val start = System.currentTimeMillis()
     query.exists().flatMap {
       case true  => {
-        if (ServiceDescriptorDataStore.logger.isDebugEnabled) ServiceDescriptorDataStore.logger.debug(s"Service descriptors exists for fast lookups ${query.asKey}")
+        if (ServiceDescriptorDataStore.logger.isDebugEnabled)
+          ServiceDescriptorDataStore.logger.debug(s"Service descriptors exists for fast lookups ${query.asKey}")
         query
           .getServices(false)
           .fast

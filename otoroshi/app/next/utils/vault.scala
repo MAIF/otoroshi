@@ -271,7 +271,8 @@ class AzureVault(name: String, env: Env) extends Vault {
       .get()
       .map { response =>
         if (response.status == 200) {
-          if (logger.isDebugEnabled) logger.debug(s"found secret at '${url}'") // with value '${response.json.select("value").asOpt[JsValue]}'")
+          if (logger.isDebugEnabled)
+            logger.debug(s"found secret at '${url}'") // with value '${response.json.select("value").asOpt[JsValue]}'")
           response.json.select("value").asOpt[JsValue] match {
             case Some(JsString(value))  => CachedVaultSecretStatus.SecretReadSuccess(value)
             case Some(JsNumber(value))  => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
@@ -749,7 +750,8 @@ class Vaults(env: Env) {
         resolveExpression(expr)
           .map {
             case CachedVaultSecretStatus.SecretReadSuccess(value) =>
-              if (logger.isDebugEnabled) logger.debug(s"fill secret on '${id}' from '${expr}' successfully") //, secret value is '${value}'")
+              if (logger.isDebugEnabled)
+                logger.debug(s"fill secret on '${id}' from '${expr}' successfully") //, secret value is '${value}'")
               value
             case status                                           =>
               logger.error(s"filling secret on '${id}' from '${expr}' failed because of '${status.value}'")

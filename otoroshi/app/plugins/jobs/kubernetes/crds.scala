@@ -1885,9 +1885,10 @@ object KubernetesCRDsJob {
             .map(_.replace("### config-hash: ", "").replace("\n", ""))
             .getOrElse("--")
           val configHasChanged  = hashFromConfigMap != hash
-          if (logger.isDebugEnabled) logger.debug(
-            s"current hash: $hash, hash from coredns configmap: $hashFromConfigMap, config has changed: $configHasChanged"
-          )
+          if (logger.isDebugEnabled)
+            logger.debug(
+              s"current hash: $hash, hash from coredns configmap: $hashFromConfigMap, config has changed: $configHasChanged"
+            )
           if (configHasChanged) {
             patchConfig(coredns, configMap, false)
             ().future
@@ -1963,11 +1964,15 @@ object KubernetesCRDsJob {
           kubeDnsDep.isDefined && kubeDnsCm.isDefined && kubeDnsCm.exists(cm =>
             (cm.stubDomains \ otoDomain).as[Seq[String]].contains(service.map(_.clusterIP).getOrElse("--"))
           )
-        _                    = if (logger.isDebugEnabled) logger.debug(
-                                 s"kube-dns Operator has dns server: ${hasOtoroshiDnsServer} and should not be updated ${shouldNotUpdate}"
-                               )
-        _                    = if (logger.isDebugEnabled) logger.debug(s"kube-dns Operator config: ${kubeDnsCm.map(_.data.prettify).getOrElse("--")}")
-        _                    = if (logger.isDebugEnabled) logger.debug(s"Otoroshi CoreDNS config: ${service.map(_.spec.prettify).getOrElse("--")}")
+        _                    =
+          if (logger.isDebugEnabled)
+            logger.debug(
+              s"kube-dns Operator has dns server: ${hasOtoroshiDnsServer} and should not be updated ${shouldNotUpdate}"
+            )
+        _                    = if (logger.isDebugEnabled)
+                                 logger.debug(s"kube-dns Operator config: ${kubeDnsCm.map(_.data.prettify).getOrElse("--")}")
+        _                    = if (logger.isDebugEnabled)
+                                 logger.debug(s"Otoroshi CoreDNS config: ${service.map(_.spec.prettify).getOrElse("--")}")
         _                   <- if (service.isDefined && kubeDnsDep.isDefined && kubeDnsCm.isDefined && !hasOtoroshiDnsServer) {
                                  val cm          = kubeDnsCm.get
                                  val stubDomains = cm.stubDomains ++ Json.obj(
@@ -2043,11 +2048,14 @@ object KubernetesCRDsJob {
               )
           )
         _                    =
-          if (logger.isDebugEnabled) logger.debug(
-            s"Openshift DNS Operator has dns server: ${hasOtoroshiDnsServer} and should not be updated ${shouldNotUpdate}"
-          )
-        _                    = if (logger.isDebugEnabled) logger.debug(s"Openshift DNS Operator config: ${dnsOperator.map(_.spec.prettify).getOrElse("--")}")
-        _                    = if (logger.isDebugEnabled) logger.debug(s"Otoroshi CoreDNS config: ${service.map(_.spec.prettify).getOrElse("--")}")
+          if (logger.isDebugEnabled)
+            logger.debug(
+              s"Openshift DNS Operator has dns server: ${hasOtoroshiDnsServer} and should not be updated ${shouldNotUpdate}"
+            )
+        _                    = if (logger.isDebugEnabled)
+                                 logger.debug(s"Openshift DNS Operator config: ${dnsOperator.map(_.spec.prettify).getOrElse("--")}")
+        _                    = if (logger.isDebugEnabled)
+                                 logger.debug(s"Otoroshi CoreDNS config: ${service.map(_.spec.prettify).getOrElse("--")}")
         _                   <- if (service.isDefined && dnsOperator.isDefined && !hasOtoroshiDnsServer) {
                                  val servers = dnsOperator.get.servers.map(_.raw) :+ Json.obj(
                                    "name"          -> conf.openshiftDnsOperatorCoreDnsName,

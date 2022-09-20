@@ -124,24 +124,26 @@ object OtoroshiLoaderHelper {
     def waitForFirstClusterFetch(): Future[Unit] = {
       if (components.env.clusterConfig.mode == ClusterMode.Worker && waitForFirstClusterFetchEnabled) {
         logger.info("waiting for first cluster fetch ...")
-        Future.firstCompletedOf(
-          Seq(
-            timeout(waitForFirstClusterFetchTimeout.millis),
-            Source
-              .tick(1.second, 1.second, ())
-              .map { _ =>
-                if (components.env.clusterConfig.mode == ClusterMode.Worker)
-                  !components.env.clusterAgent.cannotServeRequests()
-                else true
-              }
-              .filter(identity)
-              .take(1)
-              .runWith(Sink.head)(mat)
-              .map(_ => ())
+        Future
+          .firstCompletedOf(
+            Seq(
+              timeout(waitForFirstClusterFetchTimeout.millis),
+              Source
+                .tick(1.second, 1.second, ())
+                .map { _ =>
+                  if (components.env.clusterConfig.mode == ClusterMode.Worker)
+                    !components.env.clusterAgent.cannotServeRequests()
+                  else true
+                }
+                .filter(identity)
+                .take(1)
+                .runWith(Sink.head)(mat)
+                .map(_ => ())
+            )
           )
-        ).flatMap { _ =>
-          components.env.proxyState.sync()
-        }
+          .flatMap { _ =>
+            components.env.proxyState.sync()
+          }
       } else {
         FastFuture.successful(())
       }
@@ -321,6 +323,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
       _configuration = configuration,
       environment = environment,
       lifecycle = applicationLifecycle,
+      httpConfiguration = httpConfiguration,
       wsClient = wsClient,
       circuitBeakersHolder = circuitBreakersHolder,
       getHttpPort = None,
@@ -410,6 +413,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
+    new otoroshi.utils.netty.ReactorNettyServer(components.env).start(components.httpRequestHandler)
     server.httpPort.get + 1
     this
   }
@@ -418,6 +422,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
+    new otoroshi.utils.netty.ReactorNettyServer(components.env).start(components.httpRequestHandler)
     server.httpPort.get + 1
     stopOnShutdown()
   }

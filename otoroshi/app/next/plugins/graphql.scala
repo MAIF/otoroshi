@@ -22,7 +22,29 @@ import sangria.ast._
 import sangria.execution.deferred.DeferredResolver
 import sangria.execution.{ExceptionHandler, Executor, HandledException, QueryReducer}
 import sangria.parser.QueryParser
-import sangria.schema.{Action, AdditionalTypes, AnyFieldResolver, Argument, AstDirectiveContext, AstSchemaBuilder, AstSchemaMaterializer, BooleanType, DefaultAstSchemaBuilder, Directive, DirectiveResolver, FieldResolver, InstanceCheck, IntType, IntrospectionSchemaBuilder, ListInputType, OptionInputType, ResolverBasedAstSchemaBuilder, ScalarType, Schema, StringType}
+import sangria.schema.{
+  Action,
+  AdditionalTypes,
+  AnyFieldResolver,
+  Argument,
+  AstDirectiveContext,
+  AstSchemaBuilder,
+  AstSchemaMaterializer,
+  BooleanType,
+  DefaultAstSchemaBuilder,
+  Directive,
+  DirectiveResolver,
+  FieldResolver,
+  InstanceCheck,
+  IntType,
+  IntrospectionSchemaBuilder,
+  ListInputType,
+  OptionInputType,
+  ResolverBasedAstSchemaBuilder,
+  ScalarType,
+  Schema,
+  StringType
+}
 import sangria.util.tag.@@
 import sangria.validation.{QueryValidator, ValueCoercionViolation, Violation}
 
@@ -243,7 +265,7 @@ class GraphQLBackend extends NgBackendCall {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
 
-  case object MapCoercionViolation  extends ValueCoercionViolation("Exception : map value can't be parsed")
+  case object MapCoercionViolation extends ValueCoercionViolation("Exception : map value can't be parsed")
 
   val exceptionHandler = ExceptionHandler(
     onException = { case (_, throwable) =>
@@ -390,36 +412,38 @@ class GraphQLBackend extends NgBackendCall {
     locations = directivesLocations
   )
 
-  case object JsonCoercionViolation extends ValueCoercionViolation("Not valid JSON")
+  case object JsonCoercionViolation   extends ValueCoercionViolation("Not valid JSON")
   case object StringCoercionViolation extends ValueCoercionViolation("Not valid String")
 
-  val JsonType: ScalarType[JsValue] = ScalarType[JsValue]("Json",
+  val JsonType: ScalarType[JsValue] = ScalarType[JsValue](
+    "Json",
     description = Some("Raw JSON value"),
     coerceOutput = (value, _) => value,
     coerceUserInput = {
-      case v: String ⇒ Right(JsString(v))
-      case v: Boolean ⇒ Right(JsBoolean(v))
-      case v: Int ⇒ Right(JsNumber(v))
-      case v: Long ⇒ Right(JsNumber(v))
-      case v: Float ⇒ Right(JsNumber(v))
-      case v: Double ⇒ Right(JsNumber(v))
-      case v: BigInt ⇒ Right(JsNumber(v.intValue()))
+      case v: String     ⇒ Right(JsString(v))
+      case v: Boolean    ⇒ Right(JsBoolean(v))
+      case v: Int        ⇒ Right(JsNumber(v))
+      case v: Long       ⇒ Right(JsNumber(v))
+      case v: Float      ⇒ Right(JsNumber(v))
+      case v: Double     ⇒ Right(JsNumber(v))
+      case v: BigInt     ⇒ Right(JsNumber(v.intValue()))
       case v: BigDecimal ⇒ Right(JsNumber(v))
-      case v: JsValue ⇒ Right(v)
+      case v: JsValue    ⇒ Right(v)
     },
     coerceInput = {
       case ast.StringValue(jsonStr, _, _, _, _) =>
         Right(jsonStr.parseJson)
-      case _ =>
+      case _                                    =>
         Left(JsonCoercionViolation)
     }
   )
 
-  def builder(config: GraphQLBackendConfig,
-              ctx: NgbBackendCallContext,
-              delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]],
-              body: JsObject)
-             (implicit env: Env, ec: ExecutionContext, mat: Materializer) = AstSchemaBuilder.resolverBased[Unit](
+  def builder(
+      config: GraphQLBackendConfig,
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]],
+      body: JsObject
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer) = AstSchemaBuilder.resolverBased[Unit](
     AdditionalTypes(JsonType),
     InstanceCheck.field[Unit, JsValue],
     DirectiveResolver(permissionDirective, resolve = c => permissionDirectiveResolver(c, config, ctx)),
@@ -439,8 +463,7 @@ class GraphQLBackend extends NgBackendCall {
     DirectiveResolver(jsonDirective, resolve = c => jsonDirectiveResolver(c, config)),
     DirectiveResolver(
       mockDirective,
-      resolve =
-        c => mockDirectiveResolver(c, ctx.route.plugins.getPluginByClass[MockResponses].map(_.config.raw))
+      resolve = c => mockDirectiveResolver(c, ctx.route.plugins.getPluginByClass[MockResponses].map(_.config.raw))
     ),
     AnyFieldResolver.defaultInput[Unit, JsValue]
   )
@@ -600,7 +623,7 @@ class GraphQLBackend extends NgBackendCall {
                 case JsBoolean(v) => v
                 case v            => v.toString()
               }
-            case v => v
+            case v              => v
           }
         } else {
           c.ctx.field.toAst.fieldType match {
@@ -917,11 +940,11 @@ class GraphQLBackend extends NgBackendCall {
       Source.single(body.stringify.byteString)
     )
 
-  def introspectionResponse(config: GraphQLBackendConfig, builder: ResolverBasedAstSchemaBuilder[Unit])
-                           (implicit ec: ExecutionContext) = {
+  def introspectionResponse(config: GraphQLBackendConfig, builder: ResolverBasedAstSchemaBuilder[Unit])(implicit
+      ec: ExecutionContext
+  ) = {
     QueryParser.parse(config.schema) match {
-      case Failure(exception)   => jsonResponse(400, Json.obj("error" -> exception.getMessage))
-        .future
+      case Failure(exception)   => jsonResponse(400, Json.obj("error" -> exception.getMessage)).future
       case Success(astDocument) =>
         Executor
           .execute(Schema.buildFromAst(astDocument, builder), sangria.introspection.introspectionQuery)
@@ -946,14 +969,13 @@ class GraphQLBackend extends NgBackendCall {
       .getOrElse(GraphQLBackendConfig(schema = DEFAULT_GRAPHQL_SCHEMA))
 
     bodyToJson(ctx.request.body).flatMap(body => {
-      val jsonBody = (body \ "json").as[JsObject]
+      val jsonBody                                           = (body \ "json").as[JsObject]
       val customBuilder: ResolverBasedAstSchemaBuilder[Unit] = builder(config, ctx, delegates, body)
       if ((jsonBody \ "operationName").asOpt[String].contains("IntrospectionQuery"))
         introspectionResponse(config, customBuilder)
       else {
         QueryParser.parse(config.schema) match {
-          case Failure(exception)             => jsonResponse(400, Json.obj("error" -> exception.getMessage))
-            .future
+          case Failure(exception)             => jsonResponse(400, Json.obj("error" -> exception.getMessage)).future
           case Success(astDocument: Document) =>
             (jsonBody \ "query").asOpt[String] match {
               case Some(value) =>
@@ -965,10 +987,7 @@ class GraphQLBackend extends NgBackendCall {
                   maxDepth = config.maxDepth,
                   variables = (jsonBody \ "variables").asOpt[JsValue].getOrElse(Json.obj()).as[JsObject]
                 )
-              case None        => jsonResponse(
-                400,
-                Json.obj("error" -> "query field missing"))
-                .future
+              case None        => jsonResponse(400, Json.obj("error" -> "query field missing")).future
             }
         }
       }

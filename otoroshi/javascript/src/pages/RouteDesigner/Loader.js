@@ -19,12 +19,14 @@ export default function Loader({ loading, children, loadingChildren, minLoaderTi
   }, [loading]);
 
   if (internalLoading)
-    return <>
-      <div className="d-flex justify-content-center">
-        <i className="fas fa-cog fa-spin" style={{ fontSize: '40px' }} />
-      </div>
-      {loadingChildren}
-    </>
+    return (
+      <>
+        <div className="d-flex justify-content-center">
+          <i className="fas fa-cog fa-spin" style={{ fontSize: '40px' }} />
+        </div>
+        {loadingChildren}
+      </>
+    );
 
   return children;
 }
