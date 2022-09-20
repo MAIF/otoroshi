@@ -136,7 +136,7 @@ Let's define a new route to exposed our registered eureka client.
 Now try to call the new route.
 
 ````sh
-curl 'http://eureka-client-next-gen.oto.tools:8080/port`'
+curl 'http://eureka-client-next-gen.oto.tools:8080/port'
 ````
 
 If everything is working, you should get the port 8085 as the response.The setup is working as expected, but we can improve him by scaling our eureka client.
@@ -150,13 +150,13 @@ mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8083
 Just wait a few seconds and retry to call your new route.
 
 ````sh
-curl 'http://eureka-client-next-gen.oto.tools:8080/port`'
+curl 'http://eureka-client-next-gen.oto.tools:8080/port'
 $ 8082
-curl 'http://eureka-client-next-gen.oto.tools:8080/port`'
+curl 'http://eureka-client-next-gen.oto.tools:8080/port'
 $ 8085
-curl 'http://eureka-client-next-gen.oto.tools:8080/port`'
+curl 'http://eureka-client-next-gen.oto.tools:8080/port'
 $ 8085
-curl 'http://eureka-client-next-gen.oto.tools:8080/port`'
+curl 'http://eureka-client-next-gen.oto.tools:8080/port'
 $ 8082
 ````
 
