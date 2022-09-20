@@ -439,7 +439,6 @@ class OpenApiGenerator(
         val name = field.getName
         val typ  = field.getTypeSignatureOrTypeDescriptor
 
-        //println(name, typ, handleType(name, "akka.http.scaladsl.model.HttpProtocol", typ))
         typ match {
           case c: BaseTypeSignature                                                                              =>
             val valueName      = c.getTypeStr
@@ -633,6 +632,10 @@ class OpenApiGenerator(
     )
   }
 
+  def matchSpecialCases(verb: String, controllerMethod: String): Boolean = {
+    verb == "GET" && controllerMethod == "sessions"
+  }
+
   def extractResBody(
       verb: String,
       path: String,
@@ -651,12 +654,13 @@ class OpenApiGenerator(
       foundDescriptions.put(finalPath, value)
       value
     }
+
     var resStatus = "200"
     if (isCrud && controllerMethod == "createAction") {
       resStatus = "201"
     }
     var multiple  = false
-    if (isCrud && controllerMethod == "findAllEntitiesAction") {
+    if ((isCrud && controllerMethod == "findAllEntitiesAction") || matchSpecialCases(verb, controllerMethod)) {
       multiple = true
     }
     val finalPath = s"operations_response_entity.$controllerName.${controllerMethod}_$tag"
@@ -1011,6 +1015,31 @@ class OpenApiGenerator(
 
   def run(): JsValue = runAndMaybeWrite()._1
 
+  def discoverEntities(result: TrieMap[String, JsValue], entity: (String, JsValue), out: TrieMap[String, JsValue]): Any = {
+    out.put(entity._1, entity._2)
+
+    Json.prettyPrint(entity._2)
+        .split("\n")
+        .filter(p => p.contains("$ref"))
+        .map(p => p.replace("\"", "").trim().split("/").last)
+        .foreach(name => {
+          result.get(name) match {
+            case Some(entity) =>
+              if (!out.contains(name))
+                discoverEntities(result, (name, entity), out)
+              out.put(name, entity)
+            case None =>
+          }
+        })
+  }
+
+  def discoverEntitiesFromPaths(result: JsValue) = {
+    Json.prettyPrint(result)
+      .split("\n")
+      .filter(p => p.contains("$ref"))
+      .map(p => p.replace("\"", "").trim().split("/").last)
+  }
+
   def runAndMaybeWrite(): (JsValue, Boolean) = {
     val config = getConfig()
     val result = new TrieMap[String, JsValue]()
@@ -1108,8 +1137,17 @@ class OpenApiGenerator(
     logger.debug(s"total found ${found.get() + resFound.get() + inFound
       .get()}, not found ${notFound.get() + resNotFound.get() + inNotFound.get()}")
 
+    val returnEntities = discoverEntitiesFromPaths(paths)
+
+    val filteredEntities = result.filter(p => returnEntities.contains(p._1))
+
+    val openApiEntities = new TrieMap[String, JsValue]()
+    filteredEntities.foreach(ent => {
+      discoverEntities(result, ent, openApiEntities)
+    })
+
     // build spec with only used entities
-    val spec = getSpec(tags, paths, result.filter(p => usedEntities.contains(p._1)))
+    val spec = getSpec(tags, paths, openApiEntities)
 
     var hasWritten = false
     if (write) {
