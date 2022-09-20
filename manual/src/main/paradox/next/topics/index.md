@@ -4,7 +4,7 @@ In this sections, you will find informations about detailed topics linked with t
 
 @@@ warning
 
-all the features here are **EXPERIMENTAL** <br/>
+all the features listed here are **EXPERIMENTAL** <br/>
 If you encounter any bugs, [please fill an issue](https://github.com/MAIF/otoroshi/issues/new), it will help us a lot :)
 
 @@@
