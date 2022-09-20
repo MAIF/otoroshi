@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Deploy to production · Otoroshi</title>
+<title>Working with Eureka · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -99,7 +99,7 @@
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
     <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
-    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="active page">Working with Eureka</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -108,7 +108,7 @@
     <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
-  <li><a href="../deploy/index.html" class="active page">Deploy to production</a>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
     <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
@@ -220,7 +220,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
     <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
-    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="active page">Working with Eureka</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -229,7 +229,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
-  <li><a href="../deploy/index.html" class="active page">Deploy to production</a>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
     <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
     <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
@@ -258,7 +258,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
-  <li>Deploy to production</li>
+  <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
+  <li>Working with Eureka</li>
 </ul>
 </div>
 </div>
@@ -266,56 +267,149 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#deploy-to-production" name="deploy-to-production" class="anchor"><span class="anchor-link"></span></a>Deploy to production</h1>
-<p>Now it&rsquo;s time to deploy Otoroshi in production, in this chapter we will see what kind of things you can do.</p>
-<p>Otoroshi can run wherever you want, even on a raspberry pi (Cluster^^) ;)</p><div class="plugin platform">
-<h2><a href="#clever-cloud" name="clever-cloud" class="anchor"><span class="anchor-link"></span></a>Clever Cloud</h2>
-<p>Otoroshi provides an integration to create easily services based on application deployed on your Clever Cloud account.</p>
-<img src="../imgs/clever-cloud.png" />
-<p><a href="clever-cloud.html">Documentation</a></p></div><div class="plugin platform">
-<h2><a href="#kubernetes" name="kubernetes" class="anchor"><span class="anchor-link"></span></a>Kubernetes</h2>
-<p>Starting at version 1.5.0, Otoroshi provides a native Kubernetes support.</p>
-<img src="../imgs/kubernetes.png" />
-<p><a href="kubernetes.html">Documentation</a></p></div><div class="plugin platform">
-<h2><a href="#aws-elastic-beanstalk" name="aws-elastic-beanstalk" class="anchor"><span class="anchor-link"></span></a>AWS Elastic Beanstalk</h2>
-<p>Run Otoroshi on AWS Elastic Beanstalk</p>
-<img src="../imgs/elastic-beanstalk.png" />
-<p><a href="aws.html">Tutorial</a></p></div><div class="plugin platform">
-<h2><a href="#amazon-ecs" name="amazon-ecs" class="anchor"><span class="anchor-link"></span></a>Amazon ECS</h2>
-<p>Deploy the Otoroshi Docker image using Amazon Elastic Container Service</p>
-<img src="../imgs/amazon-ecs.png" />
-<p><a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html" title="Tutorial">Tutorial</a> <a href="../install/get-otoroshi.html#from-docker">Docker image</a></p></div><div class="plugin platform">
-<h2><a href="#gce" name="gce" class="anchor"><span class="anchor-link"></span></a>GCE</h2>
-<p>Deploy the Docker image using Google Compute Engine container integration</p>
-<img src="../imgs/google.jpeg" />
-<p><a href="https://cloud.google.com/compute/docs/containers/deploying-containers" title="Documentation">Documentation</a> <a href="../install/get-otoroshi.html#from-docker">Docker image</a></p></div><div class="plugin platform">
-<h2><a href="#azure" name="azure" class="anchor"><span class="anchor-link"></span></a>Azure</h2>
-<p>Deploy the Docker image using Azure Container Service</p>
-<img src="../imgs/azure-container-service.png" />
-<p><a href="https://azure.microsoft.com/en-us/services/container-service/" title="Documentation">Documentation</a> <a href="../install/get-otoroshi.html#from-docker">Docker image</a> </p></div><div class="plugin platform">
-<h2><a href="#heroku" name="heroku" class="anchor"><span class="anchor-link"></span></a>Heroku</h2>
-<p>Deploy the Docker image using Docker integration</p>
-<img src="../imgs/heroku.png" />
-<p><a href="https://devcenter.heroku.com/articles/container-registry-and-runtime" title="Documentation">Documentation</a> <a href="../install/get-otoroshi.html#from-docker">Docker image</a></p></div><div class="plugin platform">
-<h2><a href="#cloudfoundry" name="cloudfoundry" class="anchor"><span class="anchor-link"></span></a>CloudFoundry</h2>
-<p>Deploy the Docker image using -Docker integration</p>
-<img src="../imgs/cloudfoundry.png" />
-<p><a href="https://docs.cloudfoundry.org/adminguide/docker.html" title="Documentation">Documentation</a> <a href="../install/get-otoroshi.html#from-docker">Docker image</a></p></div><div class="plugin platform platform-actions-column">
-<h2><a href="#your-own-infrastructure" name="your-own-infrastructure" class="anchor"><span class="anchor-link"></span></a>Your own infrastructure</h2>
-<p>As Otoroshi is a Play Framework application, you can read the doc about putting a <code>Play</code> app in production.</p>
-<p>Download the latest Otoroshi distribution, unzip it, customize it and run it.</p>
-<p><a href="https://www.playframework.com" title="Play Framework">Play Framework</a> <a href="https://www.playframework.com/documentation/2.6.x/ProductionConfiguration" title="Production Configuration">Production Configuration</a> <a href="../install/get-otoroshi.html#from-zip">Otoroshi distribution</a></p></div><div class="break">
-<h2><a href="#scaling-and-clustering-in-production" name="scaling-and-clustering-in-production" class="anchor"><span class="anchor-link"></span></a>Scaling and clustering in production</h2></div><div class="plugin platform dark-platform">
-<h2><a href="#clustering" name="clustering" class="anchor"><span class="anchor-link"></span></a>Clustering</h2>
-<p>Deploy Otoroshi as a cluster of leaders and workers.</p>
-<img src="../imgs/clustering.png" />
-<p><a href="clustering.html">Documentation</a></p></div><div class="plugin platform dark-platform">
-<h2><a href="#scaling-otoroshi" name="scaling-otoroshi" class="anchor"><span class="anchor-link"></span></a>Scaling Otoroshi</h2>
-<p>Otoroshi is designed to be reasonably easy to scale and be highly available.</p>
-<img src="../imgs/scaling.png" />
-<p><a href="scaling.html">Documentation</a> </p></div>
+<h1><a href="#working-with-eureka" name="working-with-eureka" class="anchor"><span class="anchor-link"></span></a>Working with Eureka</h1>
+<p>Eureka is a library of Spring Cloud Netflix, which provides two parts to register and discover services. Generally, the services are applications written with Spring but Eureka also provides a way to communicate in REST. The main goals of Eureka are to allow clients to find and communicate with each other without hard-coding the hostname and port. All services are registered in an Eureka Server.</p>
+<p>To work with Eureka, Otoroshi has three differents plugins:</p>
+<ul>
+  <li>to expose its own Eureka Server instance</li>
+  <li>to discover an existing Eureka Server instance</li>
+  <li>to use Eureka application as an Otoroshi target and took advantage of all Otoroshi clients features (load-balancing, rate limiting, etc&hellip;)</li>
+</ul>
+<p>Let&rsquo;s cut this tutorial in three parts. </p>
+<ul>
+  <li>Create an simple Spring application that we&rsquo;ll use as an Eureka Client</li>
+  <li>Deploy an implementation of the Otoroshi Eureka Server (using the <code>Eureka Instance</code> plugin), register eureka clients and expose them using the <code>Internal Eureka Server</code> plugin</li>
+  <li>Deploy an Netflix Eureka Server and use it in Otoroshi to discover apps using the <code>External Eureka Server</code> plugin.</li>
+</ul>
+<p>In this tutorial: </p>
+<ul>
+  <li><a href="#create-an-otoroshi-route-with-the-internal-eureka-server-plugin">Create an Otoroshi route with the Internal Eureka Server plugin</a></li>
+  <li><a href="#create-a-simple-eureka-client-and-register-it">Create a simple Eureka Client and register it</a></li>
+  <li><a href="#connect-to-an-external-eureka-server">Connect to an external Eureka server</a></li>
+</ul>
+<h3><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download Otoroshi</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
+<div id="instructions-toggle">
+<span class="instructions-title">I want to follow the instructions to start an instance of Otorohi</span>
+<button id="instructions-toggle-button">close</button>
+</div>
+<p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar&#39;
+</code></pre>
+<p>then you can run start Otoroshi :</p>
+<pre class="prettyprint"><code class="language-sh">java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
+</code></pre>
+<p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
+<p>Create a service, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/services&#39; \
+  -d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;my-service&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myservice&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
+  -H &quot;Content-type: application/json&quot; \
+  -u admin-api-apikey-id:admin-api-apikey-secret
+</code></pre>
+<button id="instructions-toggle-confirm">Confirm the installation</button></div>
+<h3><a href="#create-an-otoroshi-route-with-the-internal-eureka-server-plugin" name="create-an-otoroshi-route-with-the-internal-eureka-server-plugin" class="anchor"><span class="anchor-link"></span></a>Create an Otoroshi route with the Internal Eureka Server plugin</h3><div class="callout note "><div class="callout-title">Note</div>
+<p>We&rsquo;ll supposed that you have an Otoroshi exposed on the 8080 port with the new Otoroshi engine enabled</p></div>
+<p>Let&rsquo;s jump to the routes Otoroshi <a href="http://otoroshi.oto.tools:8080/bo/dashboard/routes">view</a> and create a new route using the wizard button.</p>
+<p>Enter the following values in for each step:</p>
+<ol>
+  <li>An Eureka Server instance</li>
+  <li>Choose the first choice : <strong>BLANK ROUTE</strong> and click on continue</li>
+  <li>As exposed domain, set <code>eureka-server-next-gen.oto.tools/eureka</code></li>
+  <li>As Target URL, set <code>http://foo.bar</code> (this value has no importance and will be skip by the Otoroshi Instance plugin)</li>
+  <li>Validate the creation</li>
+</ol>
+<p>Once created, you can hide with the arrow on the right top of the screen the tester view (which is displayed by default after each route creation). In our case, we want to add a new plugin, called Internal Eureka Instance on our feed.</p>
+<p>Inside the designer view:</p>
+<ol>
+  <li>Search the <code>Eureka Instance</code> in the list of plugins.</li>
+  <li>Add it to the feed by clicking on it</li>
+  <li>Set an eviction timeout at 300 seconds (this configuration is used by Otoroshi to automatically check if an Eureka is up. Otherwise Otoroshi will evict the eureka client from the registry)</li>
+</ol>
+<p>Well done you have set up an Eureka Server. To check the content of an Eureka Server, you can navigate to this <a href="'http://otoroshi.oto.tools:8080/bo/dashboard/eureka-servers'">link</a>. In all case, none instances or applications are registered, so the registry is currently empty.</p>
+<h3><a href="#create-a-simple-eureka-client-and-register-it" name="create-a-simple-eureka-client-and-register-it" class="anchor"><span class="anchor-link"></span></a>Create a simple Eureka Client and register it</h3>
+<p><em>This tutorial has no vocation to teach you how to write an Spring application and it may exists a newer version of this Spring code.</em></p>
+<p>For this tutorial, we&rsquo;ll use the following code which initiates an Eureka Client and defines an Spring REST Controller with only one endpoint. This endpoint will return its own exposed port (this value will be useful to check that the Otoroshi load balancing is right working between the multiples Eureka instances registered).</p>
+<p>Let&rsquo;s fast create a Spring project using <a href="https://start.spring.io/">Spring Initializer</a>. You can use the previous link or directly click on the following link to get the form already filled with the needed dependencies.</p>
+<pre class="prettyprint"><code class="language-bash">https://start.spring.io/#!type=maven-project&amp;language=java&amp;platformVersion=2.7.3&amp;packaging=jar&amp;jvmVersion=17&amp;groupId=otoroshi.io&amp;artifactId=eureka-client&amp;name=eureka-client&amp;description=A%20simple%20eureka%20client&amp;packageName=otoroshi.io.eureka-client&amp;dependencies=cloud-eureka,web
+</code></pre>
+<p>Feel free to change the project metadata for your use case.</p>
+<p>Once downloaded and uncompressed, let&rsquo;s ahead and start to delete the application.properties and create an application.yml (if you are more comfortable with an application.properties, keep it)</p>
+<pre class="prettyprint"><code class="language-yaml">eureka:
+   client:
+      fetch-registry: false # disable the discovery services mechanism for the client
+      serviceUrl:
+         defaultZone: http://eureka-server-next-gen.oto.tools:8080/eureka
+
+spring:
+   application:
+      name: foo_app
+
+</code></pre>
+<p>Now, let&rsquo;s define the simple REST controller to expose the client port.</p>
+<p>Create a new file, called PortController.java, in the sources folder of your project with the following content.</p>
+<pre class="prettyprint"><code class="language-java">package otoroshi.io.eurekaclient;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class PortController {
+
+    @Autowired
+    Environment environment;
+
+    @GetMapping(&quot;/port&quot;)
+    public String index() {
+        return environment.getProperty(&quot;local.server.port&quot;);
+    }
+}
+</code></pre>
+<p>This controller is very simple, we just exposed one endpoint <code>/port</code> which returns the port as string. Our client is ready to running. </p>
+<p>Let&rsquo;s launch it with the following command:</p>
+<pre class="prettyprint"><code class="language-sh">mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8085
+</code></pre><div class="callout note "><div class="callout-title">Note</div>
+<p>The port is not required but it will be useful when we will deploy more than one instances in the rest of the tutorial</p></div>
+<p>Once the command ran, you can navigate to the eureka server view in the Otoroshi UI. The dashboard should displays one registered app and instance. It should also displays a timer for each application which represents the elapsed time since the last received heartbeat.</p>
+<p>Let&rsquo;s define a new route to exposed our registered eureka client.</p>
+<ul>
+  <li>Create a new route, named <code>Eureka client</code>, exposed on <code>http://eureka-client-next-gen.oto.tools:8080</code> and targeting <code>http://foo.bar</code></li>
+  <li>Search and add the <code>Internal Eureka server</code> plugin</li>
+  <li>Edit the plugin and choose your eureka server and your app (in our case, <code>Eureka Server</code> and <code>FOO_APP</code> respectively)</li>
+  <li>Save your route</li>
+</ul>
+<p>Now try to call the new route.</p>
+<pre class="prettyprint"><code class="language-sh">curl &#39;http://eureka-client-next-gen.oto.tools:8080/port`&#39;
+</code></pre>
+<p>If everything is working, you should get the port 8085 as the response.The setup is working as expected, but we can improve him by scaling our eureka client.</p>
+<p>Open a new tab in your terminal and run the following command.</p>
+<pre class="prettyprint"><code class="language-sh">mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8083
+</code></pre>
+<p>Just wait a few seconds and retry to call your new route.</p>
+<pre class="prettyprint"><code class="language-sh">curl &#39;http://eureka-client-next-gen.oto.tools:8080/port`&#39;
+$ 8082
+curl &#39;http://eureka-client-next-gen.oto.tools:8080/port`&#39;
+$ 8085
+curl &#39;http://eureka-client-next-gen.oto.tools:8080/port`&#39;
+$ 8085
+curl &#39;http://eureka-client-next-gen.oto.tools:8080/port`&#39;
+$ 8082
+</code></pre>
+<p>The configuration is ready and the setup is working, Otoroshi use all instances of your app to dispatch clients on it.</p>
+<h3><a href="#connect-to-an-external-eureka-server" name="connect-to-an-external-eureka-server" class="anchor"><span class="anchor-link"></span></a>Connect to an external Eureka server</h3>
+<p>Otoroshi has the possibility to discover services by connecting to an Eureka Server.</p>
+<p>Let&rsquo;s create a route with an Eureka application as Otoroshi target:</p>
+<ul>
+  <li>Create a new blank API route</li>
+  <li>Search and add the <code>External Eureka Server</code> plugin</li>
+  <li>Set your eureka URL</li>
+  <li>Click on <code>Fetch Services</code> button to discover the applications of the Eureka instance</li>
+  <li>In the appeared selector, choose the application to target</li>
+  <li>Once the frontend configured, save your route and try to call it.</li>
+</ul>
+<p>Well done, you have exposed your Eureka application through the Otoroshi discovery services.</p>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../deploy/clustering.html">Otoroshi clustering</a></p>
+<p><strong>Next:</strong> <a href="../plugins/index.html">Otoroshi plugins</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -324,20 +418,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../deploy/index.html#deploy-to-production" class="header">Deploy to production</a>
+  <li><a href="../how-to-s/working-with-eureka.html#working-with-eureka" class="header">Working with Eureka</a>
   <ul>
-    <li><a href="../deploy/index.html#clever-cloud" class="header">Clever Cloud</a></li>
-    <li><a href="../deploy/index.html#kubernetes" class="header">Kubernetes</a></li>
-    <li><a href="../deploy/index.html#aws-elastic-beanstalk" class="header">AWS Elastic Beanstalk</a></li>
-    <li><a href="../deploy/index.html#amazon-ecs" class="header">Amazon ECS</a></li>
-    <li><a href="../deploy/index.html#gce" class="header">GCE</a></li>
-    <li><a href="../deploy/index.html#azure" class="header">Azure</a></li>
-    <li><a href="../deploy/index.html#heroku" class="header">Heroku</a></li>
-    <li><a href="../deploy/index.html#cloudfoundry" class="header">CloudFoundry</a></li>
-    <li><a href="../deploy/index.html#your-own-infrastructure" class="header">Your own infrastructure</a></li>
-    <li><a href="../deploy/index.html#scaling-and-clustering-in-production" class="header">Scaling and clustering in production</a></li>
-    <li><a href="../deploy/index.html#clustering" class="header">Clustering</a></li>
-    <li><a href="../deploy/index.html#scaling-otoroshi" class="header">Scaling Otoroshi</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html#download-otoroshi" class="header">Download Otoroshi</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html#create-an-otoroshi-route-with-the-internal-eureka-server-plugin" class="header">Create an Otoroshi route with the Internal Eureka Server plugin</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html#create-a-simple-eureka-client-and-register-it" class="header">Create a simple Eureka Client and register it</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html#connect-to-an-external-eureka-server" class="header">Connect to an external Eureka server</a></li>
   </ul></li>
 </ul>
 </div>
