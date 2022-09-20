@@ -21,7 +21,7 @@ object NgAuthModuleConfig {
   val format = new Format[NgAuthModuleConfig] {
     override def reads(json: JsValue): JsResult[NgAuthModuleConfig] = Try {
       NgAuthModuleConfig(
-        module = json.select("auth_module").asOpt[String].filter(_.nonEmpty),
+        module = json.select("auth_module").asOpt[String].orElse(json.select("module").asOpt[String]).filter(_.nonEmpty),
         passWithApikey = json.select("pass_with_apikey").asOpt[Boolean].getOrElse(false)
       )
     } match {
@@ -140,7 +140,7 @@ object NgAuthModuleUserExtractorConfig {
   val format = new Format[NgAuthModuleUserExtractorConfig] {
     override def reads(json: JsValue): JsResult[NgAuthModuleUserExtractorConfig] = Try {
       NgAuthModuleUserExtractorConfig(
-        module = json.select("auth_module").asOpt[String].filter(_.nonEmpty),
+        module = json.select("auth_module").asOpt[String].orElse(json.select("module").asOpt[String]).filter(_.nonEmpty),
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

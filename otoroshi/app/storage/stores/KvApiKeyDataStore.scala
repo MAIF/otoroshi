@@ -183,7 +183,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
 
   // optimized
   override def findByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
-    env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+    env.datastores.serviceDescriptorDataStore.findOrRouteById(serviceId).flatMap {
       case Some(descriptor) => {
         if (redisCli.optimized) {
           redisCli.asOptimized.apiKeys_findByService(descriptor)
@@ -228,7 +228,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       case Some(apiKey)                                                                                     => {
         // unoptimized
         // apiKey.services.fast.map(services => services.find(_.id == serviceId).map(_ => apiKey))
-        env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
+        env.datastores.serviceDescriptorDataStore.findOrRouteById(serviceId).map {
           case None          => None
           case Some(service) => {
             val identifiers = service.groups.map(ServiceGroupIdentifier.apply)

@@ -171,18 +171,18 @@ case class ApiKey(
       authorizedEntities.exists(e => identifiers.contains(e))
     }
   }
-  def services(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
-    FastFuture
-      .sequence(authorizedEntities.map {
-        case ServiceDescriptorIdentifier(id) => env.datastores.serviceDescriptorDataStore.findById(id).map(_.toSeq)
-        case ServiceGroupIdentifier(id)      =>
-          env.datastores.serviceGroupDataStore.findById(id).flatMap {
-            case Some(group) => group.services
-            case None        => FastFuture.successful(Seq.empty[ServiceDescriptor])
-          }
-      })
-      .map(_.flatten)
-  }
+  // def services(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+  //   FastFuture
+  //     .sequence(authorizedEntities.map {
+  //       case ServiceDescriptorIdentifier(id) => env.datastores.serviceDescriptorDataStore.findById(id).map(_.toSeq)
+  //       case ServiceGroupIdentifier(id)      =>
+  //         env.datastores.serviceGroupDataStore.findById(id).flatMap {
+  //           case Some(group) => group.services
+  //           case None        => FastFuture.successful(Seq.empty[ServiceDescriptor])
+  //         }
+  //     })
+  //     .map(_.flatten)
+  // }
 
   def updateQuotas()(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]    =
     env.datastores.apiKeyDataStore.updateQuotas(this)
