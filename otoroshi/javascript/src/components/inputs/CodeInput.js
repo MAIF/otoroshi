@@ -19,7 +19,7 @@ export class JsonObjectAsCodeInput extends Component {
         onChange={(e) => {
           try {
             this.props.onChange(JSON.parse(e));
-          } catch (ex) {}
+          } catch (ex) { }
         }}
       />
     );
@@ -124,6 +124,7 @@ export default class CodeInput extends Component {
     if (this.props.editorOnly) {
       return editor;
     }
+
 
     return (
       <div className="row mb-3">

@@ -5,7 +5,6 @@ import { Collapse } from '../../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import { FeedbackButton } from './FeedbackButton';
 import { NgForm } from '../../components/nginputs/form';
-import { Form as MaifForm } from '@maif/react-forms';
 
 export class Target extends Component {
   formSchema = {
@@ -716,11 +715,7 @@ export class RouteForm extends Component {
 }
 
 class Plugin extends Component {
-  state = { form: true, ngForm: false };
-
-  switchForm = () => {
-    this.setState({ ngForm: !this.state.ngForm });
-  };
+  state = { form: true };
 
   render() {
     const plugin = this.props.plugin;
@@ -816,29 +811,14 @@ class Plugin extends Component {
             />
             {pluginInfos.config_flow.length > 0 && (
               <div className="row" style={{ width: '100%' }}>
-                <label className="col-md-2 col-form-label" onClick={this.switchForm}>
-                  plugin configuration form
-                </label>
                 <div className="col-md-10">
-                  {this.state.ngForm && (
-                    <NgForm
-                      key={plugin.plugin}
-                      value={plugin.config}
-                      onChange={(config) => this.props.onChange({ ...plugin, config })}
-                      flow={pluginInfos.config_flow}
-                      schema={pluginInfos.config_schema}
-                    />
-                  )}
-                  {!this.state.ngForm && (
-                    <MaifForm
-                      value={plugin.config}
-                      schema={pluginInfos.config_schema}
-                      flow={pluginInfos.config_flow}
-                      onSubmit={(config) => this.props.onChange({ ...plugin, config })}
-                      options={{ autosubmit: true }}
-                      footer={() => null}
-                    />
-                  )}
+                  <NgForm
+                    key={plugin.plugin}
+                    value={plugin.config}
+                    onChange={(config) => this.props.onChange({ ...plugin, config })}
+                    flow={pluginInfos.config_flow}
+                    schema={pluginInfos.config_schema}
+                  />
                 </div>
               </div>
             )}

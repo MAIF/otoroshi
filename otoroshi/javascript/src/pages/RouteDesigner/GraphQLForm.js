@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { graphqlSchemaToJson, jsonToGraphqlSchema } from '../../services/BackOfficeServices';
-import { CodeInput, Form } from '@maif/react-forms';
+// import { CodeInput, Form } from '@maif/react-forms';
 import isEqual from 'lodash/isEqual';
 import { FeedbackButton } from './FeedbackButton';
 

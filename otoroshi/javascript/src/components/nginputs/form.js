@@ -28,6 +28,7 @@ import {
   NgValidationRenderer,
   NgFormRenderer,
 } from './components';
+import { Collapse } from '../inputs/Collapse';
 
 const Helpers = {
   rendererFor: (type, components) => {
@@ -174,6 +175,7 @@ export class NgStep extends Component {
     // const validation = this.validate(this.props.value);
     const validation = this.state.validation;
     const ValidationRenderer = this.props.components.ValidationRenderer;
+
     return (
       <ValidationRenderer key={this.props.path.join('/')} validation={validation}>
         <Renderer
@@ -358,11 +360,21 @@ export class NgForm extends Component {
     }
   };
 
+  getFlow = (value, schema) => {
+    if (isFunction(this.props.flow))
+      return this.props.flow(value)
+
+    if (this.props.flow?.length === 0)
+      return Object.keys(schema)
+
+    return this.props.flow || []
+  }
+
   render() {
     const value = this.getValue();
-    const flow = (isFunction(this.props.flow) ? this.props.flow(value) : this.props.flow) || [];
     const schema =
       (isFunction(this.props.schema) ? this.props.schema(value) : this.props.schema) || {};
+    const flow = this.getFlow(value, schema);
     const propsComponents = isFunction(this.props.components)
       ? this.props.components(value)
       : this.props.components;
@@ -373,47 +385,51 @@ export class NgForm extends Component {
     const root = !embedded;
     const validation = root ? this.state.validation : this.props.validation;
     const path = this.props.path || [];
+
+    // console.log(flow, schema)
     return (
       <FormRenderer {...this.props}>
         {flow &&
-          flow.map((name) => {
-            const stepSchema = schema[name];
-            if (stepSchema) {
-              const visible =
-                'visible' in stepSchema
-                  ? isFunction(stepSchema.visible)
-                    ? stepSchema.visible(value)
-                    : stepSchema.visible
-                  : true;
-              if (visible) {
-                const path = root ? [name] : [...path, name];
-                return (
-                  <NgStep
-                    key={path.join('/')}
-                    name={name}
-                    embedded
-                    fromArray={this.props.fromArray}
-                    path={path}
-                    validation={validation}
-                    setValidation={this.setValidation}
-                    components={components}
-                    schema={this.convertSchema(stepSchema)}
-                    value={value ? value[name] : null}
-                    onChange={(e) => {
-                      const newValue = value ? { ...value, [name]: e } : { [name]: e };
-                      this.rootOnChange(newValue);
-                    }}
-                    rootValue={value}
-                    rootOnChange={this.rootOnChange}
-                  />
-                );
+          flow
+            .map((name) => {
+              const stepSchema = schema[name];
+
+              if (stepSchema) {
+                const visible =
+                  'visible' in stepSchema
+                    ? isFunction(stepSchema.visible)
+                      ? stepSchema.visible(value)
+                      : stepSchema.visible
+                    : true;
+                if (visible) {
+                  const path = root ? [name] : [...path, name];
+                  return (
+                    <NgStep
+                      key={path.join('/')}
+                      name={name}
+                      embedded
+                      fromArray={this.props.fromArray}
+                      path={path}
+                      validation={validation}
+                      setValidation={this.setValidation}
+                      components={components}
+                      schema={this.convertSchema(stepSchema)}
+                      value={value ? value[name] : null}
+                      onChange={(e) => {
+                        const newValue = value ? { ...value, [name]: e } : { [name]: e };
+                        this.rootOnChange(newValue);
+                      }}
+                      rootValue={value}
+                      rootOnChange={this.rootOnChange}
+                    />
+                  );
+                } else {
+                  return null;
+                }
               } else {
-                return null;
+                return <StepNotFound name={name} />;
               }
-            } else {
-              return <StepNotFound name={name} />;
-            }
-          })}
+            })}
       </FormRenderer>
     );
   }

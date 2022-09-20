@@ -3,12 +3,25 @@ import React, { Component } from 'react';
 import Select from 'react-select';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 
-import { SingleLineCode, CodeInput } from '@maif/react-forms';
+// import { SingleLineCode, CodeInput } from '@maif/react-forms';
+
+export class SingleLineCode extends Component {
+  render() {
+    return (
+      <div>SingleLineCode</div>
+    )
+  }
+}
 
 function LabelAndInput(_props) {
   const schema = _props.schema || {};
   const props = schema.props || {};
-  const label = props.label || _props.name || _props.rawSchema.label || '...';
+  const label = _props.label || props.label || _props.name || _props.rawSchema.label || '...';
+  const ngOptions = _props.ngOptions || props.ngOptions || {}
+
+  if (ngOptions.spread)
+    return _props.children
+
   return (
     <div className="row mb-3">
       <label className="col-xs-12 col-sm-2 col-form-label">
@@ -60,7 +73,7 @@ export class NgJsonRenderer extends Component {
           onChange={(e) => {
             try {
               this.props.onChange(JSON.parse(e));
-            } catch (ex) {}
+            } catch (ex) { }
           }}
           style={{ width: '100%' }}
         />
@@ -448,21 +461,23 @@ export class NgArraySelectRenderer extends Component {
                     alignItems: 'center',
                     width: '100%',
                   }}>
-                  <Select
-                    name={`selector-${this.props.name}`}
-                    value={value}
-                    isLoading={this.state.loading}
-                    disabled={props.disabled}
-                    placeholder={props.placeholder}
-                    optionRenderer={props.optionRenderer}
-                    options={this.state.options || props.options}
-                    style={{ width: '100%' }}
-                    onChange={(e) => {
-                      const newArray = this.props.value ? [...this.props.value] : [];
-                      newArray.splice(idx, 1, e.value);
-                      this.props.onChange(newArray);
-                    }}
-                  />
+                  <div style={{ width: '100%', flex: 1 }}>
+                    <Select
+                      name={`selector-${this.props.name}`}
+                      value={value}
+                      isLoading={this.state.loading}
+                      disabled={props.disabled}
+                      placeholder={props.placeholder}
+                      optionRenderer={props.optionRenderer}
+                      options={this.state.options || props.options}
+                      style={{ width: '100%' }}
+                      onChange={(e) => {
+                        const newArray = this.props.value ? [...this.props.value] : [];
+                        newArray.splice(idx, 1, e.value);
+                        this.props.onChange(newArray);
+                      }}
+                    />
+                  </div>
                   <button
                     type="button"
                     className="btn btn-sm btn-danger"
@@ -614,11 +629,7 @@ export class NgSelectRenderer extends Component {
           .then((r) => r.json())
           .then((r) => {
             this.setState({ loading: false });
-            if (props.optionsTransformer) {
-              this.setState({ options: props.optionsTransformer(r) });
-            } else {
-              this.setState({ options: r });
-            }
+            this.setState({ options: this.applyTransformer(props, r) })
           })
           .catch((e) => {
             this.setState({ loading: false });
@@ -626,19 +637,30 @@ export class NgSelectRenderer extends Component {
       });
     }
   }
+
+  applyTransformer = (props, r) => {
+    if (props.optionsTransformer) {
+      return props.optionsTransformer(r)
+    } else {
+      return r
+    }
+  }
+
   render() {
     const schema = this.props.schema || {};
-    const props = schema.props || {};
+    const props = schema.props || this.props || {};
+
     return (
       <LabelAndInput {...this.props}>
         <Select
           name={`selector-${this.props.name}`}
           value={this.props.value}
+          isMulti={props.isMulti}
           isLoading={this.state.loading}
           disabled={props.disabled}
           placeholder={props.placeholder}
           optionRenderer={props.optionRenderer}
-          options={this.state.options || props.options}
+          options={this.applyTransformer(props || this.props, this.state.options || props.options || this.props.options)}
           onChange={(e) => this.props.onChange(e.value)}
         />
       </LabelAndInput>

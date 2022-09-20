@@ -1,29 +1,28 @@
 import React from 'react';
-import { type } from '@maif/react-forms';
 import GraphQLForm from './GraphQLForm';
 import MocksDesigner from './MocksDesigner';
 
 export const PLUGIN_INFORMATIONS_SCHEMA = {
   enabled: {
     visibleOnCollapse: true,
-    type: type.bool,
+    type: 'bool',
     label: 'Enabled',
   },
   debug: {
-    type: type.bool,
+    type: 'bool',
     label: 'Debug',
   },
   include: {
     label: 'Include',
     format: 'singleLineCode',
-    type: type.string,
+    type: 'string',
     array: true,
     createOption: true,
   },
   exclude: {
     label: 'Exclude',
     format: 'singleLineCode',
-    type: type.string,
+    type: 'string',
     array: true,
     createOption: true,
   },
@@ -101,7 +100,7 @@ export const PLUGINS = {
         ),
       },
       permissions: {
-        type: type.string,
+        type: 'string',
         array: true,
         label: 'Permissions paths',
       },
@@ -149,16 +148,17 @@ export const DEFAULT_FLOW = {
     field: 'frontend',
     config_schema: {
       domains: {
-        type: type.string,
+        type: 'string',
         array: true,
         label: 'Domains',
       },
       methods: {
-        type: 'string',
-        format: 'select',
-        isMulti: true,
-        label: 'methods',
-        options: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+        type: 'array-select',
+        props: {
+          label: 'Methods',
+          options: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
+            .map(item => ({ label: item, value: item }))
+        }
       },
     },
     config_flow: ['domains', 'strip_path', 'exact', 'headers', 'methods', 'query'],
@@ -180,8 +180,7 @@ export const DEFAULT_FLOW = {
 
           onChange(
             'custom_target',
-            `${isSecured ? 'https' : 'http'}://${hostname}${port}${
-              getFieldValue('custom_target')?.endsWith(' ') ? ' ' : ''
+            `${isSecured ? 'https' : 'http'}://${hostname}${port}${getFieldValue('custom_target')?.endsWith(' ') ? ' ' : ''
             }`
           );
         },

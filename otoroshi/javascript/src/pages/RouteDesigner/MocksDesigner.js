@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import faker from 'faker';
-import { CodeInput } from '@maif/react-forms';
+// import { CodeInput } from '@maif/react-forms';
 import { FeedbackButton } from './FeedbackButton';
 import {
   BooleanInput,

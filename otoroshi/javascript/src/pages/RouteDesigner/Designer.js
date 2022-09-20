@@ -24,14 +24,9 @@ import {
 import Loader from './Loader';
 import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
-import {
-  SelectInput,
-  Form,
-  validate,
-  CodeInput,
-  MarkdownInput,
-  BooleanInput,
-} from '@maif/react-forms';
+import { NgBooleanRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
+const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
+
 import snakeCase from 'lodash/snakeCase';
 import camelCase from 'lodash/camelCase';
 import isEqual from 'lodash/isEqual';
@@ -39,6 +34,7 @@ import _ from 'lodash';
 import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
+import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -312,9 +308,9 @@ const Container = ({ children, onClick }) => {
       onMouseDown={(e) => {
         setPropagate(
           !document.getElementById('form-container')?.contains(e.target) &&
-            ![...document.getElementsByClassName('delete-node-button')].find((d) =>
-              d.contains(e.target)
-            )
+          ![...document.getElementsByClassName('delete-node-button')].find((d) =>
+            d.contains(e.target)
+          )
         );
         // &&
         // ![...document.getElementsByClassName("fa-chevron")].find(d => d.contains(e.target))
@@ -516,7 +512,7 @@ class Designer extends React.Component {
     <>
       <span className="me-3 mt-2">Override route plugins</span>{' '}
       {/* mt-2 to fix the form lib css ...*/}
-      <BooleanInput
+      <NgBooleanRenderer
         value={this.state.route?.overridePlugins}
         onChange={(overridePlugins) => {
           this.setState(
@@ -563,7 +559,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) {}
+      } catch (_) { }
     }
   };
 
@@ -579,7 +575,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) {}
+      } catch (_) { }
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -606,11 +602,11 @@ class Designer extends React.Component {
       let route =
         this.props.viewPlugins !== null && this.props.viewPlugins !== -1
           ? {
-              ...r,
-              overridePlugins: true,
-              plugins: [],
-              ...r.routes[~~this.props.viewPlugins],
-            }
+            ...r,
+            overridePlugins: true,
+            plugins: [],
+            ...r.routes[~~this.props.viewPlugins],
+          }
           : r;
 
       if (route.error) {
@@ -1149,8 +1145,8 @@ class Designer extends React.Component {
           plugin_index: Object.fromEntries(
             Object.entries(
               plugin.plugin_index ||
-                this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-                {}
+              this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+              {}
             ).map(([key, v]) => [snakeCase(key), v])
           ),
         })),
@@ -1342,17 +1338,17 @@ class Designer extends React.Component {
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-            .map((p) => {
-              const id = p.plugin;
-              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-              if (pluginDef) {
-                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                  return { ...p, ...pluginDef };
-                }
+          .map((p) => {
+            const id = p.plugin;
+            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+            if (pluginDef) {
+              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                return { ...p, ...pluginDef };
               }
-              return null;
-            })
-            .filter((p) => !!p)
+            }
+            return null;
+          })
+          .filter((p) => !!p)
         : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
@@ -1695,13 +1691,13 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
     const allMethods =
       frontend.methods && frontend.methods.length > 0
         ? frontend.methods.map((m, i) => (
-            <span
-              key={`frontendmethod-${i}`}
-              className={`badge me-1`}
-              style={{ backgroundColor: HTTP_COLORS[m] }}>
-              {m}
-            </span>
-          ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}>
+            {m}
+          </span>
+        ))
         : [<span className="badge bg-success">ALL</span>];
     return (
       <>
@@ -1816,8 +1812,8 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
               const start = target.tls ? 'https://' : 'http://';
               const mtls =
                 target.tls_config &&
-                target.tls_config.enabled &&
-                [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
+                  target.tls_config.enabled &&
+                  [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
                   <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
                     mTLS
                   </span>
@@ -1875,9 +1871,8 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${
-          icon || 'bars'
-        } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${icon || 'bars'
+          } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>
@@ -1913,9 +1908,10 @@ const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonCli
 
 const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => (
   <>
-    {value && value.toString().length > 0 && (
+    {value && value.toString().length > 0 && <Suspense fallback={() => <div>Loading ...</div>}>
       <CodeInput
         mode="json"
+        editorOnly={true}
         themeStyle={{
           maxHeight: readOnly ? '300px' : '-1',
           minHeight: '100px',
@@ -1926,7 +1922,7 @@ const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => (
           if (!readOnly) onChange(e);
         }}
       />
-    )}
+    </Suspense>}
     {errors && (
       <div>
         {(errors || []).map((error, idx) => (
@@ -1974,7 +1970,8 @@ class EditView extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.selectedNode.id !== prevProps.selectedNode.id) this.loadForm();
+    if (this.props.selectedNode.id !== prevProps.selectedNode.id)
+      this.loadForm();
   }
 
   manageScrolling = () => {
@@ -1997,6 +1994,8 @@ class EditView extends React.Component {
   loadForm = () => {
     const { selectedNode, plugins, route, readOnly } = this.props;
 
+    console.log('load form')
+
     const { id, flow, config_flow, config_schema, schema, nodeId } = selectedNode;
 
     const isFrontendOrBackend = ['Backend', 'Frontend'].includes(id);
@@ -2006,32 +2005,37 @@ class EditView extends React.Component {
     let formFlow = [
       isFrontendOrBackend ? undefined : 'status',
       isPluginWithConfiguration
-        ? {
-            label: isFrontendOrBackend ? null : 'Plugin',
-            flow: ['plugin'],
-            collapsed: false,
-            collapsable: false,
-          }
+        ? 'plugin'
+        // {
+        //   label: isFrontendOrBackend ? null : 'Plugin',
+        //   flow: ['plugin'],
+        //   collapsed: false,
+        //   collapsable: false,
+        // }
         : undefined,
     ].filter((f) => f);
 
     if (config_schema) {
       formSchema = {
         status: {
-          type: 'object',
-          format: 'form',
-          collapsable: true,
-          collapsed: isPluginWithConfiguration,
+          type: 'form',
+          collapsable: isPluginWithConfiguration ? true : false,
+          collasped: false,
           label: 'Informations',
           schema: PLUGIN_INFORMATIONS_SCHEMA,
+          flow: [
+            'enabled',
+            'debug',
+            'include',
+            'exclude'
+          ]
         },
       };
       if (isPluginWithConfiguration)
         formSchema = {
           ...formSchema,
           plugin: {
-            type: 'object',
-            format: 'form',
+            type: 'form',
             label: null,
             schema: { ...convertTransformer(config_schema) },
             flow: [...(config_flow || flow)],
@@ -2081,6 +2085,16 @@ class EditView extends React.Component {
     const { selectedNode } = this.props;
     const { nodeId } = selectedNode;
 
+    this.setState({
+      form: {
+        ...this.state.form,
+        value: {
+          plugin: newValue.plugin,
+          status: newValue.status,
+        }
+      }
+    })
+
     return this.props.updatePlugin(nodeId, selectedNode.id, {
       plugin: newValue.plugin,
       status: newValue.status,
@@ -2089,20 +2103,21 @@ class EditView extends React.Component {
 
   onJsonInputChange = (value) => {
     const { form } = this.state;
-    validate([], form.schema, value)
-      .then(() => {
-        this.setState({
-          errors: [],
-        });
-        this.onValidate(JSON.parse(value));
-      })
-      .catch((err) => {
-        if (err.inner && Array.isArray(err.inner)) {
-          this.setState({
-            errors: err.inner.map((r) => r.message),
-          });
-        }
-      });
+    this.onValidate(JSON.parse(value))
+    // validate([], form.schema, value)
+    //   .then(() => {
+    //     this.setState({
+    //       errors: [],
+    //     });
+    //     this.onValidate(JSON.parse(value));
+    //   })
+    //   .catch((err) => {
+    //     if (err.inner && Array.isArray(err.inner)) {
+    //       this.setState({
+    //         errors: err.inner.map((r) => r.message),
+    //       });
+    //     }
+    //   });
   };
 
   toggleJsonFormat = (value) => {
@@ -2163,11 +2178,13 @@ class EditView extends React.Component {
               errors={errors}
               onFormClick={() => this.toggleJsonFormat(false)}
               onRawJsonClick={() => {
-                if (this.formRef.current)
-                  this.formRef.current.validate().then(() => {
-                    this.toggleJsonFormat(true);
-                  });
-                else this.toggleJsonFormat(true);
+                console.log(this.formRef.current)
+                if (this.formRef.current &&
+                  this.formRef.current.isValid(this.formRef.current.state.validation)) {
+                  this.toggleJsonFormat(true);
+                }
+                else
+                  this.toggleJsonFormat(true);
               }}
             />
           )}
@@ -2216,13 +2233,12 @@ class EditView extends React.Component {
                 </>
               )}
               {!asJsonFormat && (
-                <Form
+                <NgForm
                   ref={this.formRef}
                   value={form.value}
                   schema={form.schema}
                   flow={form.flow}
-                  onSubmit={this.onValidate}
-                  options={{ autosubmit: true }}
+                  onChange={this.onValidate}
                   footer={() => (
                     <Actions
                       disabledSaveButton={disabledSaveButton}
@@ -2298,19 +2314,22 @@ const BackendSelector = ({
           </button>
         </div>
         {usingExistingBackend && (
-          <SelectInput
+          <NgSelectRenderer
             id="backend_select"
             value={route.backend_ref}
             placeholder="Select an existing backend"
-            label=""
+            label={" "}
+            ngOptions={{
+              spread: true
+            }}
             onChange={(backend_ref) =>
               setRoute({
                 ...route,
                 backend_ref,
               })
             }
-            possibleValues={backends}
-            transformer={(item) => ({ label: item.name, value: item.id })}
+            options={backends}
+            optionsTransformer={arr => arr.map(item => ({ label: item.name, value: item.id }))}
           />
         )}
       </div>

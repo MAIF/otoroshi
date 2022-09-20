@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useImperativeHandle } from 'react';
 
-import { Form, SelectInput } from '@maif/react-forms';
+// import { Form, SelectInput } from '@maif/react-forms';
 import { nextClient } from '../../services/BackOfficeServices';
 import { DEFAULT_FLOW } from './Graph';
 import { toUpperCaseLabels } from '../../util';

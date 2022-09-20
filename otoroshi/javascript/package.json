@@ -26,7 +26,6 @@
     "licences": "legally"
   },
   "dependencies": {
-    "@maif/react-forms": "github:MAIF/react-forms#v2",
     "antd": "^4.21.4",
     "apollo-link-ws": "1.0.8",
     "bcryptjs": "2.4.3",

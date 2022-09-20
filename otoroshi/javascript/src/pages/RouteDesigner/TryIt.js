@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import range from 'lodash/range';
-import { CodeInput, SelectInput } from '@maif/react-forms';
+// import { CodeInput, SelectInput } from '@maif/react-forms';
 import { BooleanInput } from '../../components/inputs';
 import {
   tryIt,

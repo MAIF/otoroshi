@@ -1,16 +1,14 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import { Form, type, constraints, format } from '@maif/react-forms';
+import { NgForm } from '../../components/nginputs';
 import { Location } from '../../components/Location';
 import { nextClient } from '../../services/BackOfficeServices';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
 import isEqual from 'lodash/isEqual';
-import merge from 'lodash/merge';
 import { FeedbackButton } from './FeedbackButton';
 
 export const Informations = forwardRef(({ isCreation, value, setValue, setSaveButton }, ref) => {
   const history = useHistory();
-  const location = useLocation();
   const [informations, setInformations] = useState({ ...value });
 
   const { capitalize, lowercase, fetchName, link } = useEntityFromURI();
@@ -54,59 +52,58 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
 
   const schema = {
     id: {
-      type: type.string,
-      visible: false,
+      type: 'string',
+      visible: false
     },
     name: {
-      type: type.string,
+      type: 'string',
       label: `${capitalize} name`,
       placeholder: `Your ${lowercase} name`,
       help: `The name of your ${lowercase}. Only for debug and human readability purposes.`,
-      constraints: [constraints.required()],
+      // constraints: [constraints.required()],
     },
     enabled: {
-      type: type.bool,
+      type: 'bool',
       label: 'Route enabled',
     },
     capture: {
-      type: type.bool,
+      type: 'bool',
       label: 'Capture route traffic',
     },
     debug_flow: {
-      type: type.bool,
+      type: 'bool',
       label: 'Debug the flow',
     },
     export_reporting: {
-      type: type.bool,
+      type: 'bool',
       label: 'Export reporting',
     },
     description: {
-      type: type.string,
+      type: 'string',
       label: 'Description',
       placeholder: 'Your route description',
       help: 'The description of your route. Only for debug and human readability purposes.',
     },
     groups: {
-      type: type.string,
-      format: format.select,
+      type: 'string',
+      format: 'select',
       createOption: true,
       isMulti: true,
       label: 'Groups',
     },
     metadata: {
-      type: type.object,
+      type: 'object',
       label: 'Metadata',
     },
     tags: {
-      type: type.string,
-      format: format.select,
+      format: 'select',
       createOption: true,
       isMulti: true,
       label: 'Tags',
     },
     _loc: {
-      type: type.object,
-      label: null,
+      type: 'object',
+      label: 'Location',
       render: ({ onChange, value }) => (
         <Location
           {...value}
@@ -128,11 +125,8 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
   };
 
   const flow = [
-    {
-      label: 'Location',
-      flow: ['_loc'],
-      collapsed: false,
-    },
+    // '>>>Location',
+    '_loc',
     'id',
     'name',
     'enabled',
@@ -141,60 +135,29 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     'capture',
     'description',
     'groups',
-    {
-      label: 'Advanced',
-      flow: ['metadata', 'tags'],
-      collapsed: false,
-    },
+    // '>>>Advanced',
+    'metadata',
+    'tags'
   ];
 
   if (!informations || !value) return null;
 
   return (
     <>
-      <Form
-        schema={{
-          ...schema,
-          id: {
-            ...schema.id,
-            disabled: true
-          }
-        }}
+      <NgForm
+        schema={schema}
         flow={flow}
         value={informations}
-        options={{ autosubmit: true }}
-        onSubmit={(item) => {
-          setInformations({
-            ...item,
-            backend: value.backend,
-            backend_ref: value.backend_ref,
-            frontend: value.frontend,
-            plugins: value.plugins
-          })
+        onChange={(value, validation) => {
+          // TODO - manage validation
+          setInformations(value)
         }}
-        footer={() => null}
       />
       <div className="d-flex align-items-center justify-content-end mt-3">
         <div className="btn-group">
           <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
             <i className="fas fa-times" /> Cancel
           </button>
-          {!isCreation && (
-            <button
-              className="btn btn-sm btn-danger"
-              onClick={() => {
-                window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
-                  if (ok) {
-                    nextClient
-                      .deleteById(nextClient.ENTITIES[fetchName], value.id)
-                      .then(() => history.push(`/${link}`));
-                  }
-                });
-              }}>
-              <i className="fas fa-trash" /> Delete
-            </button>
-          )}
-          {saveButton('')}
         </div>
       </div>
     </>
