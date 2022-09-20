@@ -184,7 +184,8 @@ case "${1}" in
 
     build_jar_template_version "$OTO_VERSION" "11"
     build_jar_template_version "$OTO_VERSION" "17"
-    build_jar_template_version "$OTO_VERSION" "18"
+    # build_jar_template_version "$OTO_VERSION" "18"
+    build_jar_template_version "$OTO_VERSION" "19"
     build_graal "$OTO_VERSION"
 
     cleanup
@@ -198,7 +199,8 @@ case "${1}" in
 
     push_otoroshi_version "$OTO_VERSION" "11"
     push_otoroshi_version "$OTO_VERSION" "17"
-    push_otoroshi_version "$OTO_VERSION" "18"
+    # push_otoroshi_version "$OTO_VERSION" "18"
+    push_otoroshi_version "$OTO_VERSION" "19"
 
     echo "\nnow pushing maif/otoroshi:$2-graal\n"
     docker push "maif/otoroshi:$2-graal"
