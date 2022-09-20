@@ -379,20 +379,20 @@ public class PortController {
   <li>Save your route</li>
 </ul>
 <p>Now try to call the new route.</p>
-<pre class="prettyprint"><code class="language-sh">curl &#39;http://eureka-client-next-gen.oto.tools:8080/port`&#39;
+<pre class="prettyprint"><code class="language-sh">curl &#39;http://eureka-client-next-gen.oto.tools:8080/port&#39;
 </code></pre>
 <p>If everything is working, you should get the port 8085 as the response.The setup is working as expected, but we can improve him by scaling our eureka client.</p>
 <p>Open a new tab in your terminal and run the following command.</p>
 <pre class="prettyprint"><code class="language-sh">mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8083
 </code></pre>
 <p>Just wait a few seconds and retry to call your new route.</p>
-<pre class="prettyprint"><code class="language-sh">curl &#39;http://eureka-client-next-gen.oto.tools:8080/port`&#39;
+<pre class="prettyprint"><code class="language-sh">curl &#39;http://eureka-client-next-gen.oto.tools:8080/port&#39;
 $ 8082
-curl &#39;http://eureka-client-next-gen.oto.tools:8080/port`&#39;
+curl &#39;http://eureka-client-next-gen.oto.tools:8080/port&#39;
 $ 8085
-curl &#39;http://eureka-client-next-gen.oto.tools:8080/port`&#39;
+curl &#39;http://eureka-client-next-gen.oto.tools:8080/port&#39;
 $ 8085
-curl &#39;http://eureka-client-next-gen.oto.tools:8080/port`&#39;
+curl &#39;http://eureka-client-next-gen.oto.tools:8080/port&#39;
 $ 8082
 </code></pre>
 <p>The configuration is ready and the setup is working, Otoroshi use all instances of your app to dispatch clients on it.</p>
