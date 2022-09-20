@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import range from 'lodash/range';
-// import { CodeInput, SelectInput } from '@maif/react-forms';
 import { BooleanInput } from '../../components/inputs';
 import {
   tryIt,
@@ -13,6 +12,9 @@ import { useLocation } from 'react-router-dom';
 
 import { Provider } from 'react-redux';
 import { Playground, store, getSettings, setSettingsString } from 'graphql-playground-react';
+import { NgSelectRenderer } from '../../components/nginputs';
+
+const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'];
 
@@ -303,10 +305,14 @@ export default function ({ route, hide }) {
           }}>
           <div className="d-flex">
             <div style={{ minWidth: '200px' }}>
-              <SelectInput
-                possibleValues={METHODS}
+              <NgSelectRenderer
+                options={METHODS}
                 value={request.method}
-                transformer={(item) => ({ value: item, label: item })}
+                ngOptions={{
+                  spread: true
+                }}
+                onChange={method => setRequest({ ...request, method })}
+                optionsTransformer={arr => (arr || []).map((item) => ({ value: item, label: item }))}
               />
             </div>
             <input
@@ -384,17 +390,20 @@ export default function ({ route, hide }) {
                     <div className="flex">
                       <div className="d-flex-between">
                         <div className="flex mt-2">
-                          <SelectInput
-                            possibleValues={apikeys}
+                          <NgSelectRenderer
                             value={request.apikey}
-                            onChange={(k) =>
+                            onChange={(k) => {
                               setRequest({
                                 ...request,
                                 apikey: k,
                                 headers: apikeyToHeader(request.apikeyFormat, k),
                               })
-                            }
-                            transformer={(item) => ({ value: item, label: item.clientName })}
+                            }}
+                            ngOptions={{
+                              spread: true
+                            }}
+                            options={apikeys}
+                            optionsTransformer={arr => arr.map((item) => ({ value: item.clientId, label: item.clientName }))}
                           />
                         </div>
                       </div>
@@ -403,11 +412,14 @@ export default function ({ route, hide }) {
                           <div className="d-flex-between">
                             <span className="me-3">Apikey format</span>
                             <div className="flex">
-                              <SelectInput
-                                possibleValues={[
+                              <NgSelectRenderer
+                                options={[
                                   { value: 'basic', label: 'Basic header' },
                                   { value: 'credentials', label: 'Client ID/Secret headers' },
                                 ]}
+                                ngOptions={{
+                                  spread: true
+                                }}
                                 value={request.apikeyFormat}
                                 onChange={(k) =>
                                   setRequest({
@@ -465,8 +477,11 @@ export default function ({ route, hide }) {
                     <div className="flex mt-2">
                       <div className="d-flex-between">
                         <div className="flex">
-                          <SelectInput
-                            possibleValues={certificates}
+                          <NgSelectRenderer
+                            ngOptions={{
+                              spread: true
+                            }}
+                            options={certificates}
                             value={request.client_cert}
                             onChange={(client_cert) =>
                               setRequest({
@@ -474,7 +489,7 @@ export default function ({ route, hide }) {
                                 client_cert,
                               })
                             }
-                            transformer={(item) => ({ value: item.id, label: item.name })}
+                            optionsTransformer={arr => arr.map((item) => ({ value: item.id, label: item.name }))}
                           />
                         </div>
                       </div>
@@ -550,11 +565,11 @@ export default function ({ route, hide }) {
                   </div>
                   {request.body === 'raw' && (
                     <div style={{ minWidth: '120px' }}>
-                      <SelectInput
-                        possibleValues={CONTENT_TYPE}
+                      <NgSelectRenderer
+                        options={CONTENT_TYPE}
                         value={request.contentType}
                         onChange={(contentType) => setRequest({ ...request, contentType })}
-                        transformer={(item) => ({ label: item, value: item })}
+                        optionsTransformer={arr => arr.map((item) => ({ value: item, label: item }))}
                       />
                     </div>
                   )}

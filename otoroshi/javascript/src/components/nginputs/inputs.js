@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 // import _ from 'lodash';
 import Select from 'react-select';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 
-// import { SingleLineCode, CodeInput } from '@maif/react-forms';
+const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
 export class SingleLineCode extends Component {
   render() {
@@ -16,7 +16,7 @@ export class SingleLineCode extends Component {
 function LabelAndInput(_props) {
   const schema = _props.schema || {};
   const props = schema.props || {};
-  const label = _props.label || props.label || _props.name || _props.rawSchema.label || '...';
+  const label = _props.label || props.label || _props.name || _props.rawSchema?.label || '...';
   const ngOptions = _props.ngOptions || props.ngOptions || {}
 
   if (ngOptions.spread)
@@ -54,11 +54,13 @@ export class NgCodeRenderer extends Component {
   render() {
     return (
       <LabelAndInput {...this.props}>
-        <CodeInput
-          value={this.props.value}
-          onChange={(e) => this.props.onChange(e)}
-          style={{ width: '100%' }}
-        />
+        <Suspense fallback={<div>Loading</div>}>
+          <CodeInput
+            value={this.props.value}
+            onChange={(e) => this.props.onChange(e)}
+            style={{ width: '100%' }}
+          />
+        </Suspense>
       </LabelAndInput>
     );
   }
@@ -661,7 +663,7 @@ export class NgSelectRenderer extends Component {
           placeholder={props.placeholder}
           optionRenderer={props.optionRenderer}
           options={this.applyTransformer(props || this.props, this.state.options || props.options || this.props.options)}
-          onChange={(e) => this.props.onChange(e.value)}
+          onChange={(e) => this.props.onChange(e?.value)}
         />
       </LabelAndInput>
     );
