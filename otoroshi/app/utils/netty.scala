@@ -3,11 +3,16 @@ package otoroshi.utils.netty
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.channel.Channel
+import io.netty.channel.{Channel, EventLoopGroup}
+import io.netty.channel.epoll.Epoll
+import io.netty.channel.kqueue.KQueueEventLoopGroup
+import io.netty.channel.nio.NioEventLoopGroup
+import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.websocketx._
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.ssl._
+import io.netty.incubator.channel.uring.IOUringServerSocketChannel
 import org.reactivestreams.{Processor, Publisher}
 import otoroshi.env.Env
 import otoroshi.next.proxy.ProxyEngine
@@ -169,6 +174,7 @@ case class ReactorNettyServerConfig(
   host: String,
   httpPort: Int,
   httpsPort: Int,
+  nThread: Int,
   wiretap: Boolean,
   accessLog: Boolean,
   cipherSuites: Option[Seq[String]],
@@ -185,6 +191,7 @@ object ReactorNettyServerConfig {
       host = config.getOptionalWithFileSupport[String]("host").getOrElse("0.0.0.0"),
       httpPort = config.getOptionalWithFileSupport[Int]("http-port").getOrElse(env.httpPort + 50),
       httpsPort = config.getOptionalWithFileSupport[Int]("https-port").getOrElse(env.httpsPort + 50),
+      nThread = config.getOptionalWithFileSupport[Int]("threads").getOrElse(0),
       wiretap = config.getOptionalWithFileSupport[Boolean]("wiretap").getOrElse(false),
       accessLog = config.getOptionalWithFileSupport[Boolean]("accesslog").getOrElse(false),
       cipherSuites =
@@ -463,8 +470,24 @@ class ReactorNettyServer(env: Env) {
 
       logger.info("")
       logger.info(s"Starting the experimental Reactor Netty Server !!!")
-      logger.info(s" - https://${config.host}:${config.httpsPort}")
-      logger.info(s" - http://${config.host}:${config.httpPort}")
+      logger.info("")
+      val (channel: Channel, groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = if (io.netty.channel.epoll.Epoll.isAvailable) {
+        logger.info("  using Epoll native transport")
+        logger.info("")
+        (new io.netty.channel.epoll.EpollServerSocketChannel(), new io.netty.channel.epoll.EpollEventLoopGroup(config.nThread), new io.netty.channel.epoll.EpollEventLoopGroup(config.nThread))
+      } else if (io.netty.channel.kqueue.KQueue.isAvailable) {
+        logger.info("  using KQueue native transport")
+        logger.info("")
+        (new io.netty.channel.kqueue.KQueueServerSocketChannel(), new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread), new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread))
+      } else if (io.netty.incubator.channel.uring.IOUring.isAvailable) {
+        logger.info("  using IO-Uring native transport")
+        logger.info("")
+        (new io.netty.incubator.channel.uring.IOUringServerSocketChannel(), new io.netty.incubator.channel.uring.IOUringEventLoopGroup(config.nThread), new io.netty.incubator.channel.uring.IOUringEventLoopGroup(config.nThread))
+      } else {
+        (new NioServerSocketChannel(), new NioEventLoopGroup(config.nThread), new NioEventLoopGroup(config.nThread))
+      }
+      logger.info(s"  https://${config.host}:${config.httpsPort}")
+      logger.info(s"  http://${config.host}:${config.httpPort}")
       logger.info("")
 
       def handleFunction(secure: Boolean): BiFunction[_ >: HttpServerRequest, _ >: HttpServerResponse, _ <: Publisher[Void]] = {
@@ -488,6 +511,8 @@ class ReactorNettyServer(env: Env) {
         .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-https", LogLevel.INFO))
         .port(config.httpsPort)
         .protocol(HttpProtocol.HTTP11, HttpProtocol.H2C)
+        .runOn(groupHttps)
+        // .httpRequestDecoder(spec => spec.) // TODO: custom stuff here
         .doOnChannelInit { (observer, channel, socket) =>
           val engine = setupSslContext().createSSLEngine()
           engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
@@ -511,6 +536,7 @@ class ReactorNettyServer(env: Env) {
         .port(config.httpPort)
         .protocol(HttpProtocol.H2C, HttpProtocol.HTTP11)
         .handle(handleFunction(false))
+        .runOn(groupHttp)
         .bindNow()
       Runtime.getRuntime.addShutdownHook(new Thread(() => {
         serverHttp.disposeNow()

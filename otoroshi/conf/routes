@@ -215,6 +215,8 @@ POST    /api/services/_bulk                                   otoroshi.controlle
 PUT     /api/services/_bulk                                   otoroshi.controllers.adminapi.ServicesController.bulkUpdateAction()
 PATCH   /api/services/_bulk                                   otoroshi.controllers.adminapi.ServicesController.bulkPatchAction()
 DELETE  /api/services/_bulk                                   otoroshi.controllers.adminapi.ServicesController.bulkDeleteAction()
+GET     /api/services/:id/route                               otoroshi.controllers.adminapi.ServicesController.convertAsRoute(id)
+POST    /api/services/:id/route                               otoroshi.controllers.adminapi.ServicesController.importAsRoute(id)
 GET     /api/services/:id                                     otoroshi.controllers.adminapi.ServicesController.findEntityByIdAction(id)
 DELETE  /api/services/:id                                     otoroshi.controllers.adminapi.ServicesController.deleteEntityAction(id)
 PUT     /api/services/:id                                     otoroshi.controllers.adminapi.ServicesController.updateEntityAction(id)
