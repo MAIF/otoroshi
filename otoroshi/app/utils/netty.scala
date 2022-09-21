@@ -3,16 +3,13 @@ package otoroshi.utils.netty
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.channel.{Channel, EventLoopGroup}
-import io.netty.channel.epoll.Epoll
-import io.netty.channel.kqueue.KQueueEventLoopGroup
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
+import io.netty.channel.{Channel, EventLoopGroup}
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.websocketx._
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.ssl._
-import io.netty.incubator.channel.uring.IOUringServerSocketChannel
 import org.reactivestreams.{Processor, Publisher}
 import otoroshi.env.Env
 import otoroshi.next.proxy.ProxyEngine
@@ -471,20 +468,44 @@ class ReactorNettyServer(env: Env) {
       logger.info("")
       logger.info(s"Starting the experimental Reactor Netty Server !!!")
       logger.info("")
-      val (channel: Channel, groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = if (io.netty.channel.epoll.Epoll.isAvailable) {
+      val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = if (io.netty.channel.epoll.Epoll.isAvailable) {
         logger.info("  using Epoll native transport")
         logger.info("")
-        (new io.netty.channel.epoll.EpollServerSocketChannel(), new io.netty.channel.epoll.EpollEventLoopGroup(config.nThread), new io.netty.channel.epoll.EpollEventLoopGroup(config.nThread))
+        val channelHttp = new io.netty.channel.epoll.EpollServerSocketChannel()
+        val channelHttps = new io.netty.channel.epoll.EpollServerSocketChannel()
+        val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(config.nThread)
+        val evlGroupHttps = new io.netty.channel.epoll.EpollEventLoopGroup(config.nThread)
+        evlGroupHttp.register(channelHttp)
+        evlGroupHttps.register(channelHttps)
+        (evlGroupHttp, evlGroupHttps)
       } else if (io.netty.channel.kqueue.KQueue.isAvailable) {
         logger.info("  using KQueue native transport")
         logger.info("")
-        (new io.netty.channel.kqueue.KQueueServerSocketChannel(), new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread), new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread))
+        val channelHttp = new io.netty.channel.kqueue.KQueueServerSocketChannel()
+        val channelHttps = new io.netty.channel.kqueue.KQueueServerSocketChannel()
+        val evlGroupHttp = new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread)
+        val evlGroupHttps = new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread)
+        evlGroupHttp.register(channelHttp)
+        evlGroupHttps.register(channelHttps)
+        (evlGroupHttp, evlGroupHttps)
       } else if (io.netty.incubator.channel.uring.IOUring.isAvailable) {
         logger.info("  using IO-Uring native transport")
         logger.info("")
-        (new io.netty.incubator.channel.uring.IOUringServerSocketChannel(), new io.netty.incubator.channel.uring.IOUringEventLoopGroup(config.nThread), new io.netty.incubator.channel.uring.IOUringEventLoopGroup(config.nThread))
+        val channelHttp = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
+        val channelHttps = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
+        val evlGroupHttp = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(config.nThread)
+        val evlGroupHttps = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(config.nThread)
+        evlGroupHttp.register(channelHttp)
+        evlGroupHttps.register(channelHttps)
+        (evlGroupHttp, evlGroupHttps)
       } else {
-        (new NioServerSocketChannel(), new NioEventLoopGroup(config.nThread), new NioEventLoopGroup(config.nThread))
+        val channelHttp = new NioServerSocketChannel()
+        val channelHttps = new NioServerSocketChannel()
+        val evlGroupHttp = new NioEventLoopGroup(config.nThread)
+        val evlGroupHttps = new NioEventLoopGroup(config.nThread)
+        evlGroupHttp.register(channelHttp)
+        evlGroupHttps.register(channelHttps)
+        (evlGroupHttp, evlGroupHttps)
       }
       logger.info(s"  https://${config.host}:${config.httpsPort}")
       logger.info(s"  http://${config.host}:${config.httpPort}")
