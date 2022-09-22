@@ -87,15 +87,12 @@ export const PLUGINS = {
     ...plugin,
     schema: {
       turn_view: {
-        type: 'bool',
-        label: null,
-        defaultValue: false,
-        render: () => (
+        renderer: () => (
           <button
             type="button"
-            className="btn btn-sm btn-success me-3 mb-3"
+            className="btn btn-sm btn-info mb-3"
             onClick={() => showAdvancedDesignerView(GraphQLForm)}>
-            Expand
+            Edit with the GraphQL Designer
           </button>
         ),
       },
@@ -115,19 +112,14 @@ export const PLUGINS = {
     ...plugin,
     schema: {
       turn_view: {
-        type: 'bool',
-        label: null,
-        defaultValue: false,
-        render: (props) => {
-          return (
-            <button
-              type="button"
-              className="btn btn-sm btn-success me-3 mb-3"
-              onClick={() => showAdvancedDesignerView(MocksDesigner)}>
-              Expand
-            </button>
-          );
-        },
+        renderer: () => (
+          <button
+            type="button"
+            className="btn btn-sm btn-info mb-3"
+            onClick={() => showAdvancedDesignerView(MocksDesigner)}>
+            Edit with the GraphQL Designer
+          </button>
+        ),
       },
       form_data: {
         ...plugin.schema.form_data,

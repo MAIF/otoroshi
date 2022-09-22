@@ -90,7 +90,7 @@ export default class CodeInput extends Component {
         }
         theme="monokai"
         onChange={this.onChange}
-        value={code}
+        value={code || ''}
         name="scriptParam"
         editorProps={{ $blockScrolling: true }}
         height={this.props.height || '300px'}
@@ -124,7 +124,6 @@ export default class CodeInput extends Component {
     if (this.props.editorOnly) {
       return editor;
     }
-
 
     return (
       <div className="row mb-3">

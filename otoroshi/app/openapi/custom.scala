@@ -49,8 +49,7 @@ object CustomForms {
           |  },
           |  "query" : {
           |    "label" : "GraphQL query",
-          |    "type" : "string",
-          |    "format": "code",
+          |    "type" : "code",
           |    "help": "The graphql query that will be sent to the graphql endpoint"
           |  },
           |  "response_filter" : {
@@ -77,19 +76,18 @@ object CustomForms {
       schema = Json
         .parse("""{
           |  "schema" : {
-          |    "label" : "Schema",
-          |    "type" : "string",
-          |    "format": "code"
+          |    "type" : "code",
+          |    "props": {
+          |       "editorOnly": true
+          |    }
           |  },
           |  "permissions": {
           |     "label": "Permissions",
-          |     "type": "string",
-          |     "array": true
+          |     "type": "array"
           |   },
           |  "initialData": {
           |     "label": "Predefined data",
-          |     "type": "object",
-          |     "format": "code"
+          |     "type": "json"
           |  },
           |  "maxDepth": {
           |     "label": "Max depth",

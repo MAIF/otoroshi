@@ -26,14 +26,13 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
       )
 
       if (`type` == "object" && (prop._2 \ "properties").asOpt[JsObject].nonEmpty)
-        informations = informations ++ Json.obj("format" -> "form", "collapsable" -> true, "collapsed" -> true)
+        informations = informations ++ Json.obj("type" -> "form", "collapsable" -> true, "collapsed" -> true)
       else if (`type` == "array") {
         isArray = true
         val rawType = (prop._2 \ "items" \ "type").asOpt[String].getOrElse("unknown type")
         val outType = JsString(openapiTypesToFormTypes.getOrElse(rawType, rawType))
         informations = informations ++ Json.obj(
-          "array"  -> true,
-          "type"   -> outType,
+          "type"   -> "array",
           "format" -> (if (outType == JsString("object")) JsString("form")
                        else JsNull)
         )

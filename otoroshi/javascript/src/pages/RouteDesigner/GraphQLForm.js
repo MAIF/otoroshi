@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { graphqlSchemaToJson, jsonToGraphqlSchema } from '../../services/BackOfficeServices';
-// import { CodeInput, Form } from '@maif/react-forms';
 import isEqual from 'lodash/isEqual';
 import { FeedbackButton } from './FeedbackButton';
+import { NgForm } from '../../components/nginputs';
+
+const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
 export default class GraphQLForm extends React.Component {
   state = {
@@ -363,23 +365,30 @@ class SideView extends React.Component {
 
 class FieldForm extends React.Component {
   state = {
+    flow: [
+      'name',
+      'fieldType',
+      'arguments',
+      'directives'
+    ],
     schema: {
       name: {
         type: 'string',
         label: 'Name',
       },
       fieldType: {
-        type: 'object',
-        format: 'form',
+        type: 'form',
         label: 'Type',
         flow: ['type', 'required', 'isList'],
         schema: {
           type: {
-            label: null,
-            format: 'select',
-            type: 'string',
-            createOption: true,
-            options: ['Int', 'String', 'Boolean', 'Float', ...this.props.types],
+            type: 'select',
+            props: {
+              label: "Type",
+              createOption: true,
+              options: ['Int', 'String', 'Boolean', 'Float', ...this.props.types]
+                .map(r => ({ label: r, value: r })),
+            }
           },
           required: {
             type: 'bool',
@@ -392,9 +401,8 @@ class FieldForm extends React.Component {
         },
       },
       arguments: {
-        type: 'object',
-        label: 'Arguments',
         format: 'form',
+        label: 'Arguments',
         array: true,
         flow: ['name', 'valueType'],
         schema: {
@@ -404,15 +412,16 @@ class FieldForm extends React.Component {
           },
           valueType: {
             label: 'Argument value',
-            format: 'form',
-            type: 'object',
+            type: 'form',
             flow: ['type', 'required', 'isList'],
             schema: {
               type: {
-                label: null,
-                format: 'select',
-                type: 'string',
-                options: ['Int', 'String', 'Boolean', 'Float'],
+                type: 'select',
+                props: {
+                  label: null,
+                  options: ['Int', 'String', 'Boolean', 'Float']
+                    .map(item => ({ value: item, label: item }))
+                }
               },
               required: {
                 type: 'bool',
@@ -427,220 +436,135 @@ class FieldForm extends React.Component {
         },
       },
       directives: {
-        type: 'object',
+        format: 'form',
         label: 'Directives',
         array: true,
-        format: 'form',
         flow: ['name', 'arguments'],
         schema: {
           name: {
-            type: 'string',
-            label: 'Type',
-            format: 'select',
-            options: [
-              'rest',
-              'graphql',
-              'json',
-              'soap',
-              'permission',
-              'allpermissions',
-              'onePermissionsOf',
-              'authorize',
-              'otoroshi (soon)',
-            ],
+            type: 'select',
+            props: {
+              label: 'Type',
+              options: [
+                'rest',
+                'graphql',
+                'json',
+                'soap',
+                'permission',
+                'allpermissions',
+                'onePermissionsOf',
+                'authorize',
+                'otoroshi (soon)',
+              ].map(item => ({ label: item, value: item })),
+            }
           },
           arguments: {
-            type: 'object',
-            label: 'Arguments',
             format: 'form',
-            conditionalSchema: {
-              rawRef: 'name',
-              switch: [
-                {
-                  condition: 'rest',
-                  schema: {
-                    url: {
-                      type: 'string',
-                      label: 'URL',
-                    },
-                    method: {
-                      type: 'string',
-                      label: 'HTTP Method',
-                      format: 'select',
-                      defaultValue: 'GET',
-                      options: ['GET', 'POST'],
-                    },
-                    headers: {
-                      type: 'object',
-                      label: 'Header',
-                    },
-                    timeout: {
-                      type: 'number',
-                      label: 'Timeout',
-                      defaultValue: 5000,
-                    },
-                    paginate: {
-                      type: 'bool',
-                      label: 'Enable pagination',
-                      help: 'Automatically add limit and offset argument',
-                      defaultValue: false,
-                    },
-                  },
-                  flow: ['url', 'method', 'headers', 'timeout', 'paginate'],
-                },
-                {
-                  condition: 'graphql',
-                  schema: {
-                    url: {
-                      type: 'string',
-                      label: 'URL',
-                    },
-                    query: {
-                      type: 'string',
-                      format: 'code',
-                      label: 'GraphQL Query',
-                    },
-                    headers: {
-                      type: 'object',
-                      label: 'Headers',
-                    },
-                    timeout: {
-                      type: 'number',
-                      defaultValue: 5000,
-                      label: 'Timeout',
-                    },
-                    method: {
-                      type: 'string',
-                      format: 'select',
-                      defaultValue: 'GET',
-                      options: ['GET', 'POST'],
-                      label: 'HTTP Method',
-                    },
-                    response_path_arg: {
-                      type: 'string',
-                      label: 'JSON Response path',
-                    },
-                    response_filter_arg: {
-                      type: 'string',
-                      label: 'JSON response filter path',
-                    },
-                  },
-                  flow: [
-                    'url',
-                    'query',
-                    'headers',
-                    'timeout',
-                    'method',
-                    'response_path_arg',
-                    'response_filter_arg',
-                  ],
-                },
-                {
-                  condition: 'json',
-                  schema: {
-                    path: {
-                      type: 'string',
-                      label: 'JSON path',
-                    },
-                  },
-                },
-                {
-                  condition: 'permission',
-                  schema: {
-                    value: {
-                      type: 'string',
-                      label: 'Value',
-                    },
-                    unauthorized_value: {
-                      type: 'string',
-                      label: 'Unauthorized message',
-                    },
-                  },
-                },
-                {
-                  condition: 'allpermissions',
-                  schema: {
-                    values: {
-                      type: 'string',
-                      array: true,
-                      label: 'Values',
-                    },
-                    unauthorized_value: {
-                      type: 'string',
-                      label: 'Unauthorized message',
-                    },
-                  },
-                },
-                {
-                  condition: 'onePermissionsOf',
-                  schema: {
-                    values: {
-                      type: 'string',
-                      array: true,
-                      label: 'Values',
-                    },
-                    unauthorized_value: {
-                      type: 'string',
-                      label: 'Unauthorized message',
-                    },
-                  },
-                },
-                {
-                  condition: 'authorize',
-                  schema: {
-                    path: {
-                      type: 'string',
-                      label: 'JSON Path',
-                    },
-                    value: {
-                      type: 'string',
-                      label: 'Value',
-                    },
-                    unauthorized_value: {
-                      type: 'string',
-                      label: 'Unauthorized message',
-                    },
-                  },
-                },
-                {
-                  condition: 'soap',
-                  schema: {
-                    url: {
-                      type: 'string',
-                      label: 'URL',
-                    },
-                    envelope: {
-                      type: 'string',
-                      label: 'Envelope',
-                    },
-                    action: {
-                      type: 'string',
-                      label: 'Action',
-                    },
-                    preserve_query: {
-                      type: 'bool',
-                      defaultValue: true,
-                      label: 'Preserve query',
-                    },
-                    charset: {
-                      type: 'string',
-                      label: 'Charset',
-                    },
-                    jq_request_filter: {
-                      type: 'string',
-                      label: 'JQ Request filter',
-                    },
-                    jq_response_filter: {
-                      type: 'string',
-                      label: 'JQ Response filter',
-                    },
-                  },
-                },
-              ],
+            label: 'Arguments',
+
+            flow: (value, props) => {
+              const type = props.rootValue?.name
+
+              return {
+                rest: ['url', 'method', 'headers', 'timeout', 'paginate'],
+                graphql: ['url', 'query', 'headers', 'timeout', 'method', 'response_path_arg', 'response_filter_arg'],
+                json: ['path'],
+                permission: ['value', 'unauthorized_value'],
+                allpermissions: ['values', 'unauthorized_value'],
+                onePermissionsOf: ['values', 'unauthorized_value'],
+                authorize: ['path', 'value', 'unauthorized_value'],
+                soap: ['url', 'envelope', 'action', 'preserve_query', 'charset', 'jq_request_filter', 'jq_response_filter'],
+                [undefined]: []
+              }[type]
             },
+            schema: {
+              url: {
+                type: 'string',
+                label: 'URL',
+              },
+              method: {
+                type: 'select',
+                props: {
+                  label: 'HTTP Method',
+                  defaultValue: 'GET',
+                  options: ['GET', 'POST'].map(item => ({ value: item, label: item })),
+                }
+              },
+              headers: {
+                type: 'object',
+                label: 'Header',
+              },
+              timeout: {
+                type: 'number',
+                label: 'Timeout',
+                defaultValue: 5000,
+              },
+              paginate: {
+                type: 'bool',
+                label: 'Enable pagination',
+                help: 'Automatically add limit and offset argument',
+                defaultValue: false,
+              },
+              query: {
+                type: 'code',
+                props: {
+                  editorOnly: true,
+                  label: 'GraphQL Query',
+                }
+              },
+              response_path_arg: {
+                type: 'string',
+                label: 'JSON Response path',
+              },
+              response_filter_arg: {
+                type: 'string',
+                label: 'JSON response filter path',
+              },
+              path: {
+                type: 'string',
+                label: 'JSON path',
+              },
+              value: {
+                type: 'string',
+                label: 'Value',
+              },
+              values: {
+                type: 'array',
+                label: 'Values',
+              },
+              unauthorized_value: {
+                type: 'string',
+                label: 'Unauthorized message',
+              },
+              envelope: {
+                type: 'string',
+                label: 'Envelope',
+              },
+              action: {
+                type: 'string',
+                label: 'Action',
+              },
+              preserve_query: {
+                type: 'bool',
+                defaultValue: true,
+                label: 'Preserve query',
+              },
+              charset: {
+                type: 'string',
+                label: 'Charset',
+              },
+              jq_request_filter: {
+                type: 'string',
+                label: 'JQ Request filter',
+              },
+              jq_response_filter: {
+                type: 'string',
+                label: 'JQ Response filter',
+              },
+            }
           },
         },
-      },
+      }
     },
     formState: null,
   };
@@ -661,19 +585,21 @@ class FieldForm extends React.Component {
   render() {
     if (!this.state.formState) return null;
 
-    const { field, onChange } = this.props;
+    const { onChange } = this.props;
 
     return (
       <div className="p-3" style={{ background: '#373735', borderRadius: '4px' }}>
-        <Form
+        <NgForm
+          flow={this.state.flow}
           schema={this.state.schema}
           value={this.state.formState}
-          onError={() => {}}
-          options={{ autosubmit: true }}
-          onSubmit={(data) => {
-            onChange(data);
+          onChange={formState => {
+            this.setState({
+              formState
+            })
+            // TODO - uncomment the next line before push
+            // onChange(formState)
           }}
-          footer={() => null}
         />
       </div>
     );

@@ -1,5 +1,4 @@
 import React, { Component, Suspense } from 'react';
-// import _ from 'lodash';
 import Select from 'react-select';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 
@@ -56,6 +55,7 @@ export class NgCodeRenderer extends Component {
       <LabelAndInput {...this.props}>
         <Suspense fallback={<div>Loading</div>}>
           <CodeInput
+            {...this.props.rawSchema?.props}
             value={this.props.value}
             onChange={(e) => this.props.onChange(e)}
             style={{ width: '100%' }}
@@ -69,8 +69,9 @@ export class NgCodeRenderer extends Component {
 export class NgJsonRenderer extends Component {
   render() {
     return (
-      <LabelAndInput {...this.props}>
+      <Suspense fallback={<div>Loading</div>}>
         <CodeInput
+          {...this.props.rawSchema?.props}
           value={JSON.stringify(this.props.value, null, 2)}
           onChange={(e) => {
             try {
@@ -79,7 +80,7 @@ export class NgJsonRenderer extends Component {
           }}
           style={{ width: '100%' }}
         />
-      </LabelAndInput>
+      </Suspense>
     );
   }
 }

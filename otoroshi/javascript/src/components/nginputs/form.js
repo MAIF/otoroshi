@@ -361,8 +361,9 @@ export class NgForm extends Component {
   };
 
   getFlow = (value, schema) => {
-    if (isFunction(this.props.flow))
-      return this.props.flow(value)
+    if (isFunction(this.props.flow)) {
+      return this.props.flow(value, this.props)
+    }
 
     if (this.props.flow?.length === 0)
       return Object.keys(schema)
@@ -386,7 +387,6 @@ export class NgForm extends Component {
     const validation = root ? this.state.validation : this.props.validation;
     const path = this.props.path || [];
 
-    // console.log(flow, schema)
     return (
       <FormRenderer {...this.props}>
         {flow &&
