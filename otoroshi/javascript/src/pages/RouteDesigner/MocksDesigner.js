@@ -410,7 +410,7 @@ const Data = ({ idx, body, confirm, cancel }) => {
   return (
     <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
       <Suspense fallback={<div>Loading ....</div>}>
-        <CodeInput value={res} onChange={setRes} />
+        <CodeInput value={res} onChange={setRes} mode="json" />
       </Suspense>
 
       <div className="d-flex mt-3">
@@ -798,12 +798,15 @@ class NewEndpoint extends React.Component {
         />
         <div className="row mb-3">
           <label htmlFor={`input-method`} className="col-xs-12 col-sm-2 col-form-label">
-            Body
+            JSON Body
           </label>
           <div className="col-sm-10">
-            <CodeInput
-              value={body}
-              onChange={(v) => this.setState({ body: v })} />
+            <Suspense fallback={<div>Loading ...</div>}>
+              <CodeInput
+                value={body}
+                mode="json"
+                onChange={(v) => this.setState({ body: v })} />
+            </Suspense>
           </div>
         </div>
         <div className="d-flex-between">
