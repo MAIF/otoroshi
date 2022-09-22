@@ -147,7 +147,7 @@ class AuthController(
       ctx.request.getQueryString("desc") match {
         case None            => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
         case Some(serviceId) => {
-          env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+          env.datastores.serviceDescriptorDataStore.findOrRouteById(serviceId).flatMap {
             case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
             case Some(descriptor) if !descriptor.privateApp                                                =>
               NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
@@ -378,7 +378,7 @@ class AuthController(
 
       def process(serviceId: String) = {
         if (logger.isDebugEnabled) logger.debug(s"redirect to service descriptor : $serviceId")
-        env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+        env.datastores.serviceDescriptorDataStore.findOrRouteById(serviceId).flatMap {
           case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
           case Some(descriptor) if !descriptor.privateApp                                                =>
             NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture

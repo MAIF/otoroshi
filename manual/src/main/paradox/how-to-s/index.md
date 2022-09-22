@@ -21,6 +21,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * @ref:[Log levels customization](./custom-log-levels.md)
 * @ref:[Initial state customization](./custom-initial-state.md)
 * @ref:[Communicate with Kafka](./communicate-with-kafka.md)
+* @ref:[Working with Eureka](./working-with-eureka.md)
 
 @@@ index
 
@@ -43,5 +44,5 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [Log levels customization](./custom-log-levels.md)
 * [Initial state customization](./custom-initial-state.md)
 * [Communicate with Kafka](./communicate-with-kafka.md)
-
+* [Working with Eureka](./working-with-eureka.md)
 @@@

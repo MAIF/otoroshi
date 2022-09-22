@@ -99,6 +99,7 @@
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
     <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -219,6 +220,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
     <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -1807,6 +1809,24 @@ otoroshi {
       apply-legacy-checks = true
       apply-legacy-checks = ${?OTOROSHI_NEXT_PLUGINS_APPLY_LEGACY_CHECKS}
     }
+    experimental {
+   		netty-server {
+   			enabled = false
+   			enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ENABLED}
+   			new-engine-only = false
+   			new-engine-only = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NEW_ENGINE_ONLY}
+   			host = &quot;0.0.0.0&quot;
+   			host = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HOST}
+   			http-port = 10049
+   			http-port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_PORT}
+   			https-port = 10048
+   			https-port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTPS_PORT}
+   			wiretap = false
+   			wiretap = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_WIRETAP}
+   			accesslog = false
+   			accesslog = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ACCESSLOG}
+   		}
+    }
   }
   options {
     bypassUserRightsCheck = false
@@ -1897,7 +1917,7 @@ otoroshi {
   tls = ${otoroshi.ssl}
   ssl {
     # the cipher suites used by otoroshi TLS termination
-    cipherSuitesJDK11 = [&quot;TLS_AES_128_GCM_SHA256&quot;, &quot;TLS_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_EMPTY_RENEGOTIATION_INFO_SCSV&quot;]
+    cipherSuitesJDK11 = [&quot;TLS_AES_256_GCM_SHA384&quot;, &quot;TLS_AES_128_GCM_SHA256&quot;, &quot;TLS_CHACHA20_POLY1305_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_EMPTY_RENEGOTIATION_INFO_SCSV&quot;]
     cipherSuitesJDK8 = [&quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_EMPTY_RENEGOTIATION_INFO_SCSV&quot;]
     # cipherSuites = [&quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_AES_128_GCM_SHA256&quot;, &quot;TLS_AES_256_GCM_SHA384&quot;]
     cipherSuites = ${otoroshi.ssl.cipherSuitesJDK11}
@@ -2940,6 +2960,17 @@ otoroshi {
     plugins {
       merge-sync-steps = ${?OTOROSHI_NEXT_PLUGINS_MERGE_SYNC_STEPS}
       apply-legacy-checks = ${?OTOROSHI_NEXT_PLUGINS_APPLY_LEGACY_CHECKS}
+    }
+    experimental {
+   		netty-server {
+   			enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ENABLED}
+   			new-engine-only = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NEW_ENGINE_ONLY}
+   			host = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HOST}
+   			http-port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_PORT}
+   			https-port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTPS_PORT}
+   			wiretap = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_WIRETAP}
+   			accesslog = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ACCESSLOG}
+   		}
     }
   }
   options {

@@ -1,0 +1,16 @@
+{
+  "name": "openapi-to-graphql",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "cross-fetch": "^3.1.5",
+    "jest": "^28.1.3",
+    "lodash": "^4.17.21",
+    "lodash.isequal": "^4.5.0"
+  },
+  "scripts": {
+    "test": "cd test && jest"
+  }
+}

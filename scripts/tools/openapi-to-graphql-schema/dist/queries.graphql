@@ -1,0 +1,3694 @@
+
+query adminSessions {
+  adminSessions {
+  	authConfigId
+  	createdAt
+  	email
+  	expiredAt
+  	lastRefresh
+  	metadata
+  	name
+  	profile
+  	randomId
+  	simpleLogin
+  	tags
+  	token
+  	rights {
+  		rights {
+  			tenant {
+  				canRead
+  				canWrite
+  				value
+  			}
+  			teams {
+  				canRead
+  				canWrite
+  				value
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query adminsSimpleTemplate {
+  adminsSimpleTemplate {
+  	createdAt
+  	label
+  	metadata
+  	password
+  	tags
+  	typ
+  	type
+  	username
+  	rights {
+  		rights {
+  			tenant {
+  				canRead
+  				canWrite
+  				value
+  			}
+  			teams {
+  				canRead
+  				canWrite
+  				value
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query adminsWebauthnTemplate {
+  adminsWebauthnTemplate {
+  	createdAt
+  	label
+  	metadata
+  	password
+  	tags
+  	typ
+  	type
+  	username
+  	rights {
+  		rights {
+  			tenant {
+  				canRead
+  				canWrite
+  				value
+  			}
+  			teams {
+  				canRead
+  				canWrite
+  				value
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query apikeys {
+  apikeys {
+  	allowClientIdOnly
+  	authorizedEntities
+  	clientId
+  	clientName
+  	clientSecret
+  	constrainedServicesOnly
+  	dailyQuota
+  	description
+  	enabled
+  	metadata
+  	monthlyQuota
+  	readOnly
+  	tags
+  	throttlingQuota
+  	validUntil
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	restrictions {
+  		allowLast
+  		enabled
+  		forbidden {
+  			method
+  			path
+  		}
+  		allowed {
+  			method
+  			path
+  		}
+  		notFound {
+  			method
+  			path
+  		}
+  	}
+  	rotation {
+  		enabled
+  		gracePeriod
+  		nextSecret
+  		rotationEvery
+  	}
+  }
+}
+
+query apikeysId($id: String) {
+  apikeysId(id: $id) {
+  	allowClientIdOnly
+  	authorizedEntities
+  	clientId
+  	clientName
+  	clientSecret
+  	constrainedServicesOnly
+  	dailyQuota
+  	description
+  	enabled
+  	metadata
+  	monthlyQuota
+  	readOnly
+  	tags
+  	throttlingQuota
+  	validUntil
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	restrictions {
+  		allowLast
+  		enabled
+  		forbidden {
+  			method
+  			path
+  		}
+  		allowed {
+  			method
+  			path
+  		}
+  		notFound {
+  			method
+  			path
+  		}
+  	}
+  	rotation {
+  		enabled
+  		gracePeriod
+  		nextSecret
+  		rotationEvery
+  	}
+  }
+}
+
+query apikeysIdQuotas($id: String) {
+  apikeysIdQuotas(id: $id) {
+  	authorizedCallsPerDay
+  	authorizedCallsPerMonth
+  	authorizedCallsPerSec
+  	currentCallsPerDay
+  	currentCallsPerMonth
+  	currentCallsPerSec
+  	remainingCallsPerDay
+  	remainingCallsPerMonth
+  	remainingCallsPerSec
+  }
+}
+
+query apikeysTemplate {
+  apikeysTemplate {
+  	allowClientIdOnly
+  	authorizedEntities
+  	clientId
+  	clientName
+  	clientSecret
+  	constrainedServicesOnly
+  	dailyQuota
+  	description
+  	enabled
+  	metadata
+  	monthlyQuota
+  	readOnly
+  	tags
+  	throttlingQuota
+  	validUntil
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	restrictions {
+  		allowLast
+  		enabled
+  		forbidden {
+  			method
+  			path
+  		}
+  		allowed {
+  			method
+  			path
+  		}
+  		notFound {
+  			method
+  			path
+  		}
+  	}
+  	rotation {
+  		enabled
+  		gracePeriod
+  		nextSecret
+  		rotationEvery
+  	}
+  }
+}
+
+query appsSessions {
+  appsSessions {
+  	authConfigId
+  	createdAt
+  	email
+  	expiredAt
+  	lastRefresh
+  	metadata
+  	name
+  	otoroshiData
+  	profile
+  	randomId
+  	realm
+  	tags
+  	token
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query auths {
+  auths
+}
+
+query authsId($id: String) {
+  authsId(id: $id)
+}
+
+query authsTemplate {
+  authsTemplate
+}
+
+query backends {
+  backends {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  	backend {
+  		rewrite
+  		root
+  		target_refs
+  		health_check {
+  			enabled
+  			url
+  		}
+  		client {
+  			backoff_factor
+  			call_and_stream_timeout
+  			call_timeout
+  			connection_timeout
+  			global_timeout
+  			idle_timeout
+  			max_errors
+  			retries
+  			retry_initial_delay
+  			sample_interval
+  			cache_connection_settings {
+  				enabled
+  				queue_size
+  			}
+  			custom_timeouts {
+  				call_and_stream_timeout
+  				call_timeout
+  				connection_timeout
+  				global_timeout
+  				idle_timeout
+  				path
+  			}
+  			proxy {
+  				encoding
+  				host
+  				nonProxyHosts
+  				ntlmDomain
+  				password
+  				port
+  				principal
+  				protocol
+  			}
+  		}
+  		load_balancing {
+  			ratio
+  			type
+  		}
+  		targets {
+  			hostname
+  			id
+  			ip_address
+  			port
+  			predicate
+  			protocol
+  			tls
+  			weight
+  			tls_config {
+  				certs
+  				enabled
+  				loose
+  				trust_all
+  				trusted_certs
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query backendsId($id: String) {
+  backendsId(id: $id) {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  	backend {
+  		rewrite
+  		root
+  		target_refs
+  		health_check {
+  			enabled
+  			url
+  		}
+  		client {
+  			backoff_factor
+  			call_and_stream_timeout
+  			call_timeout
+  			connection_timeout
+  			global_timeout
+  			idle_timeout
+  			max_errors
+  			retries
+  			retry_initial_delay
+  			sample_interval
+  			cache_connection_settings {
+  				enabled
+  				queue_size
+  			}
+  			custom_timeouts {
+  				call_and_stream_timeout
+  				call_timeout
+  				connection_timeout
+  				global_timeout
+  				idle_timeout
+  				path
+  			}
+  			proxy {
+  				encoding
+  				host
+  				nonProxyHosts
+  				ntlmDomain
+  				password
+  				port
+  				principal
+  				protocol
+  			}
+  		}
+  		load_balancing {
+  			ratio
+  			type
+  		}
+  		targets {
+  			hostname
+  			id
+  			ip_address
+  			port
+  			predicate
+  			protocol
+  			tls
+  			weight
+  			tls_config {
+  				certs
+  				enabled
+  				loose
+  				trust_all
+  				trusted_certs
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query backendsTemplate {
+  backendsTemplate {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  	backend {
+  		rewrite
+  		root
+  		target_refs
+  		health_check {
+  			enabled
+  			url
+  		}
+  		client {
+  			backoff_factor
+  			call_and_stream_timeout
+  			call_timeout
+  			connection_timeout
+  			global_timeout
+  			idle_timeout
+  			max_errors
+  			retries
+  			retry_initial_delay
+  			sample_interval
+  			cache_connection_settings {
+  				enabled
+  				queue_size
+  			}
+  			custom_timeouts {
+  				call_and_stream_timeout
+  				call_timeout
+  				connection_timeout
+  				global_timeout
+  				idle_timeout
+  				path
+  			}
+  			proxy {
+  				encoding
+  				host
+  				nonProxyHosts
+  				ntlmDomain
+  				password
+  				port
+  				principal
+  				protocol
+  			}
+  		}
+  		load_balancing {
+  			ratio
+  			type
+  		}
+  		targets {
+  			hostname
+  			id
+  			ip_address
+  			port
+  			predicate
+  			protocol
+  			tls
+  			weight
+  			tls_config {
+  				certs
+  				enabled
+  				loose
+  				trust_all
+  				trusted_certs
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query certificates {
+  certificates {
+  	autoRenew
+  	ca
+  	caRef
+  	certType
+  	chain
+  	client
+  	description
+  	domain
+  	exposed
+  	from
+  	id
+  	keypair
+  	letsEncrypt
+  	metadata
+  	name
+  	password
+  	privateKey
+  	revoked
+  	sans
+  	selfSigned
+  	subject
+  	tags
+  	to
+  	valid
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query certificatesByDomain {
+  certificatesByDomain
+}
+
+query certificatesId($id: String) {
+  certificatesId(id: $id) {
+  	autoRenew
+  	ca
+  	caRef
+  	certType
+  	chain
+  	client
+  	description
+  	domain
+  	exposed
+  	from
+  	id
+  	keypair
+  	letsEncrypt
+  	metadata
+  	name
+  	password
+  	privateKey
+  	revoked
+  	sans
+  	selfSigned
+  	subject
+  	tags
+  	to
+  	valid
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query certificatesTemplate {
+  certificatesTemplate {
+  	autoRenew
+  	ca
+  	caRef
+  	certType
+  	chain
+  	client
+  	description
+  	domain
+  	exposed
+  	from
+  	id
+  	keypair
+  	letsEncrypt
+  	metadata
+  	name
+  	password
+  	privateKey
+  	revoked
+  	sans
+  	selfSigned
+  	subject
+  	tags
+  	to
+  	valid
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query clusterLoginTokensId($id: String) {
+  clusterLoginTokensId(id: $id)
+}
+
+query clusterSessionsId($id: String) {
+  clusterSessionsId(id: $id) {
+  	authConfigId
+  	createdAt
+  	email
+  	expiredAt
+  	lastRefresh
+  	metadata
+  	name
+  	otoroshiData
+  	profile
+  	randomId
+  	realm
+  	tags
+  	token
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query clusterUserTokensId($id: String) {
+  clusterUserTokensId(id: $id)
+}
+
+query dataExporterConfigs {
+  dataExporterConfigs {
+  	bufferSize
+  	config
+  	desc
+  	enabled
+  	groupDuration
+  	groupSize
+  	id
+  	jsonWorkers
+  	metadata
+  	name
+  	projection
+  	sendWorkers
+  	tags
+  	type
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	filtering {
+  		exclude
+  		include
+  	}
+  }
+}
+
+query dataExporterConfigsId($id: String) {
+  dataExporterConfigsId(id: $id) {
+  	bufferSize
+  	config
+  	desc
+  	enabled
+  	groupDuration
+  	groupSize
+  	id
+  	jsonWorkers
+  	metadata
+  	name
+  	projection
+  	sendWorkers
+  	tags
+  	type
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	filtering {
+  		exclude
+  		include
+  	}
+  }
+}
+
+query dataExporterConfigsTemplate {
+  dataExporterConfigsTemplate {
+  	bufferSize
+  	config
+  	desc
+  	enabled
+  	groupDuration
+  	groupSize
+  	id
+  	jsonWorkers
+  	metadata
+  	name
+  	projection
+  	sendWorkers
+  	tags
+  	type
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	filtering {
+  		exclude
+  		include
+  	}
+  }
+}
+
+query events {
+  events
+}
+
+query globalconfig {
+  globalconfig {
+  	alertsEmails
+  	apiReadOnly
+  	autoLinkToDefaultGroup
+  	backOfficeAuthRef
+  	enableEmbeddedMetrics
+  	endlessIpAddresses
+  	geolocationSettings
+  	limitConcurrentRequests
+  	lines
+  	logAnalyticsOnServer
+  	mailerSettings
+  	maintenanceMode
+  	maxConcurrentRequests
+  	maxHttp10ResponseSize
+  	maxLogsSize
+  	maxWebhookSize
+  	metadata
+  	middleFingers
+  	otoroshiId
+  	perIpThrottlingQuota
+  	streamEntityOnly
+  	tags
+  	throttlingQuota
+  	trustXForwarded
+  	u2fLoginOnly
+  	useAkkaHttpClient
+  	useCircuitBreakers
+  	cleverSettings {
+  		consumerKey
+  		consumerSecret
+  		orgaId
+  		secret
+  		token
+  	}
+  	templates {
+  		apikey
+  		authConfig
+  		backend
+  		certificate
+  		dataExporter
+  		descriptor
+  		group
+  		route
+  		script
+  		service
+  		target
+  		tcpService
+  		team
+  		template
+  		tenant
+  		verifier
+  	}
+  	plugins {
+  		config
+  		enabled
+  		excluded
+  		refs
+  	}
+  	kafkaConfig {
+  		hostValidation
+  		keyPass
+  		keystore
+  		sendEvents
+  		servers
+  		topic
+  		truststore
+  		type
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	proxies {
+  		elastic {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		eventsWebhooks {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		jwk {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		auth {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		clevercloud {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		alertEmails {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		authority {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		services {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  	}
+  	elasticReadsConfig {
+  		applyTemplate
+  		clusterUri
+  		headers
+  		index
+  		password
+  		type
+  		user
+  		version
+  		indexSettings {
+  			clientSide
+  			interval
+  		}
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	quotasSettings {
+  		dailyQuotasThreshold
+  		enabled
+  		monthlyQuotasThreshold
+  	}
+  	elasticWritesConfigs {
+  		applyTemplate
+  		clusterUri
+  		headers
+  		index
+  		password
+  		type
+  		user
+  		version
+  		indexSettings {
+  			clientSide
+  			interval
+  		}
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	analyticsWebhooks {
+  		headers
+  		type
+  		url
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	autoCert {
+  		allowed
+  		caRef
+  		enabled
+  		notAllowed
+  		replyNicely
+  	}
+  	letsEncryptSettings {
+  		contacts
+  		emails
+  		enabled
+  		privateKey
+  		publicKey
+  		server
+  	}
+  	snowMonkeyConfig {
+  		dryRun
+  		enabled
+  		includeUserFacingDescriptors
+  		outageDurationFrom
+  		outageDurationTo
+  		outageStrategy
+  		startTime
+  		stopTime
+  		targetGroups
+  		timesPerDay
+  		chaosConfig {
+  			enabled
+  			badResponsesFaultConfig {
+  				ratio
+  				responses {
+  					body
+  					headers
+  					status
+  				}
+  			}
+  			largeRequestFaultConfig {
+  				additionalRequestSize
+  				ratio
+  			}
+  			largeResponseFaultConfig {
+  				additionalResponseSize
+  				ratio
+  			}
+  			latencyInjectionFaultConfig {
+  				from
+  				ratio
+  				to
+  			}
+  		}
+  	}
+  	scripts {
+  		enabled
+  		jobConfig
+  		jobRefs
+  		preRouteConfig
+  		preRouteRefs
+  		sinkConfig
+  		sinkRefs
+  		transformersConfig
+  		transformersRefs
+  		validatorConfig
+  		validatorRefs
+  	}
+  	tlsSettings {
+  		defaultDomain
+  		includeJdkCaClient
+  		includeJdkCaServer
+  		randomIfNotFound
+  		trustedCAsServer
+  	}
+  	statsdConfig {
+  		datadog
+  		host
+  		port
+  	}
+  	alertsWebhooks {
+  		headers
+  		type
+  		url
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	ipFiltering {
+  		blacklist
+  		whitelist
+  	}
+  	userAgentSettings {
+  		enabled
+  	}
+  }
+}
+
+query globalconfigTemplate {
+  globalconfigTemplate {
+  	alertsEmails
+  	apiReadOnly
+  	autoLinkToDefaultGroup
+  	backOfficeAuthRef
+  	enableEmbeddedMetrics
+  	endlessIpAddresses
+  	geolocationSettings
+  	limitConcurrentRequests
+  	lines
+  	logAnalyticsOnServer
+  	mailerSettings
+  	maintenanceMode
+  	maxConcurrentRequests
+  	maxHttp10ResponseSize
+  	maxLogsSize
+  	maxWebhookSize
+  	metadata
+  	middleFingers
+  	otoroshiId
+  	perIpThrottlingQuota
+  	streamEntityOnly
+  	tags
+  	throttlingQuota
+  	trustXForwarded
+  	u2fLoginOnly
+  	useAkkaHttpClient
+  	useCircuitBreakers
+  	cleverSettings {
+  		consumerKey
+  		consumerSecret
+  		orgaId
+  		secret
+  		token
+  	}
+  	templates {
+  		apikey
+  		authConfig
+  		backend
+  		certificate
+  		dataExporter
+  		descriptor
+  		group
+  		route
+  		script
+  		service
+  		target
+  		tcpService
+  		team
+  		template
+  		tenant
+  		verifier
+  	}
+  	plugins {
+  		config
+  		enabled
+  		excluded
+  		refs
+  	}
+  	kafkaConfig {
+  		hostValidation
+  		keyPass
+  		keystore
+  		sendEvents
+  		servers
+  		topic
+  		truststore
+  		type
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	proxies {
+  		elastic {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		eventsWebhooks {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		jwk {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		auth {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		clevercloud {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		alertEmails {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		authority {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		services {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  	}
+  	elasticReadsConfig {
+  		applyTemplate
+  		clusterUri
+  		headers
+  		index
+  		password
+  		type
+  		user
+  		version
+  		indexSettings {
+  			clientSide
+  			interval
+  		}
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	quotasSettings {
+  		dailyQuotasThreshold
+  		enabled
+  		monthlyQuotasThreshold
+  	}
+  	elasticWritesConfigs {
+  		applyTemplate
+  		clusterUri
+  		headers
+  		index
+  		password
+  		type
+  		user
+  		version
+  		indexSettings {
+  			clientSide
+  			interval
+  		}
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	analyticsWebhooks {
+  		headers
+  		type
+  		url
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	autoCert {
+  		allowed
+  		caRef
+  		enabled
+  		notAllowed
+  		replyNicely
+  	}
+  	letsEncryptSettings {
+  		contacts
+  		emails
+  		enabled
+  		privateKey
+  		publicKey
+  		server
+  	}
+  	snowMonkeyConfig {
+  		dryRun
+  		enabled
+  		includeUserFacingDescriptors
+  		outageDurationFrom
+  		outageDurationTo
+  		outageStrategy
+  		startTime
+  		stopTime
+  		targetGroups
+  		timesPerDay
+  		chaosConfig {
+  			enabled
+  			badResponsesFaultConfig {
+  				ratio
+  				responses {
+  					body
+  					headers
+  					status
+  				}
+  			}
+  			largeRequestFaultConfig {
+  				additionalRequestSize
+  				ratio
+  			}
+  			largeResponseFaultConfig {
+  				additionalResponseSize
+  				ratio
+  			}
+  			latencyInjectionFaultConfig {
+  				from
+  				ratio
+  				to
+  			}
+  		}
+  	}
+  	scripts {
+  		enabled
+  		jobConfig
+  		jobRefs
+  		preRouteConfig
+  		preRouteRefs
+  		sinkConfig
+  		sinkRefs
+  		transformersConfig
+  		transformersRefs
+  		validatorConfig
+  		validatorRefs
+  	}
+  	tlsSettings {
+  		defaultDomain
+  		includeJdkCaClient
+  		includeJdkCaServer
+  		randomIfNotFound
+  		trustedCAsServer
+  	}
+  	statsdConfig {
+  		datadog
+  		host
+  		port
+  	}
+  	alertsWebhooks {
+  		headers
+  		type
+  		url
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	ipFiltering {
+  		blacklist
+  		whitelist
+  	}
+  	userAgentSettings {
+  		enabled
+  	}
+  }
+}
+
+query groups {
+  groups {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query groupsGroupIdStatus($groupId: String) {
+  groupsGroupIdStatus(groupId: $groupId)
+}
+
+query groupsId($id: String) {
+  groupsId(id: $id) {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query groupsTemplate {
+  groupsTemplate {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query live {
+  live
+}
+
+query liveId($id: String) {
+  liveId(id: $id)
+}
+
+query newApikey {
+  newApikey {
+  	allowClientIdOnly
+  	authorizedEntities
+  	clientId
+  	clientName
+  	clientSecret
+  	constrainedServicesOnly
+  	dailyQuota
+  	description
+  	enabled
+  	metadata
+  	monthlyQuota
+  	readOnly
+  	tags
+  	throttlingQuota
+  	validUntil
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	restrictions {
+  		allowLast
+  		enabled
+  		forbidden {
+  			method
+  			path
+  		}
+  		allowed {
+  			method
+  			path
+  		}
+  		notFound {
+  			method
+  			path
+  		}
+  	}
+  	rotation {
+  		enabled
+  		gracePeriod
+  		nextSecret
+  		rotationEvery
+  	}
+  }
+}
+
+query newGroup {
+  newGroup {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query newService {
+  newService {
+  	additionalHeaders
+  	additionalHeadersOut
+  	allowHttp10
+  	authConfigRef
+  	buildMode
+  	clientValidatorRef
+  	description
+  	detectApiKeySooner
+  	domain
+  	enabled
+  	enforceSecureCommunication
+  	env
+  	forceHttps
+  	groups
+  	handleLegacyDomain
+  	headersVerification
+  	hosts
+  	id
+  	issueCert
+  	issueCertCA
+  	jwtVerifier
+  	letsEncrypt
+  	localHost
+  	localScheme
+  	logAnalyticsOnServer
+  	maintenanceMode
+  	matchingHeaders
+  	matchingRoot
+  	metadata
+  	missingOnlyHeadersIn
+  	missingOnlyHeadersOut
+  	name
+  	overrideHost
+  	paths
+  	privateApp
+  	privatePatterns
+  	publicPatterns
+  	readOnly
+  	redirectToLocal
+  	removeHeadersIn
+  	removeHeadersOut
+  	root
+  	secComAlgoChallengeBackToOto
+  	secComAlgoChallengeOtoToBack
+  	secComAlgoInfoToken
+  	secComExcludedPatterns
+  	secComInfoTokenVersion
+  	secComSettings
+  	secComTtl
+  	secComUseSameAlgo
+  	secComVersion
+  	securityExcludedPatterns
+  	sendInfoToken
+  	sendOtoroshiHeadersBack
+  	sendStateChallenge
+  	strictlyPrivate
+  	stripPath
+  	subdomain
+  	tags
+  	tcpUdpTunneling
+  	transformerConfig
+  	transformerRefs
+  	useAkkaHttpClient
+  	useNewWSClient
+  	userFacing
+  	xForwardedHeaders
+  	clientConfig {
+  		backoffFactor
+  		callAndStreamTimeout
+  		callTimeout
+  		connectionTimeout
+  		globalTimeout
+  		idleTimeout
+  		maxErrors
+  		retries
+  		retryInitialDelay
+  		sampleInterval
+  		useCircuitBreaker
+  		cacheConnectionSettings {
+  			enabled
+  			queueSize
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		customTimeouts {
+  			callAndStreamTimeout
+  			callTimeout
+  			connectionTimeout
+  			globalTimeout
+  			idleTimeout
+  			path
+  		}
+  	}
+  	healthCheck {
+  		enabled
+  		url
+  	}
+  	apiKeyConstraints {
+  		customHeadersAuth {
+  			clientIdHeaderName
+  			clientSecretHeaderName
+  			enabled
+  		}
+  		routing {
+  			allMetaIn
+  			allMetaKeysIn
+  			allTagsIn
+  			noneMetaIn
+  			noneMetaKeysIn
+  			noneTagIn
+  			oneMetaIn
+  			oneMetaKeyIn
+  			oneTagIn
+  		}
+  		clientIdAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  		jwtAuth {
+  			cookieName
+  			enabled
+  			headerName
+  			includeRequestAttributes
+  			keyPairSigned
+  			maxJwtLifespanSecs
+  			queryName
+  			secretSigned
+  		}
+  		basicAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  	}
+  	gzip {
+  		blackList
+  		bufferSize
+  		chunkedThreshold
+  		compressionLevel
+  		enabled
+  		excludedPatterns
+  		whiteList
+  	}
+  	ipFiltering {
+  		blacklist
+  		whitelist
+  	}
+  	targets {
+  		host
+  		ipAddress
+  		metadata
+  		predicate
+  		protocol
+  		scheme
+  		tags
+  		weight
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	redirection {
+  		code
+  		enabled
+  		to
+  	}
+  	restrictions {
+  		allowLast
+  		enabled
+  		forbidden {
+  			method
+  			path
+  		}
+  		allowed {
+  			method
+  			path
+  		}
+  		notFound {
+  			method
+  			path
+  		}
+  	}
+  	accessValidator {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	chaosConfig {
+  		enabled
+  		badResponsesFaultConfig {
+  			ratio
+  			responses {
+  				body
+  				headers
+  				status
+  			}
+  		}
+  		largeRequestFaultConfig {
+  			additionalRequestSize
+  			ratio
+  		}
+  		largeResponseFaultConfig {
+  			additionalResponseSize
+  			ratio
+  		}
+  		latencyInjectionFaultConfig {
+  			from
+  			ratio
+  			to
+  		}
+  	}
+  	secComHeaders {
+  		claimRequestName
+  		stateRequestName
+  		stateResponseName
+  	}
+  	canary {
+  		enabled
+  		root
+  		traffic
+  		targets {
+  			host
+  			ipAddress
+  			metadata
+  			predicate
+  			protocol
+  			scheme
+  			tags
+  			weight
+  			mtlsConfig {
+  				certs
+  				loose
+  				mtls
+  				trustAll
+  				trustedCerts
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	plugins {
+  		config
+  		enabled
+  		excluded
+  		refs
+  	}
+  	preRouting {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	targetsLoadBalancing {
+  		ratio
+  		type
+  	}
+  	cors {
+  		allowCredentials
+  		allowHeaders
+  		allowMethods
+  		allowOrigin
+  		enabled
+  		excludedPatterns
+  		exposeHeaders
+  		maxAge
+  	}
+  	api {
+  		exposeApi
+  		openApiDescriptorUrl
+  	}
+  }
+}
+
+query newTcpService {
+  newTcpService {
+  	clientAuth
+  	description
+  	enabled
+  	id
+  	interface
+  	metadata
+  	name
+  	port
+  	tags
+  	tls
+  	rules {
+  		domain
+  		targets {
+  			host
+  			ip
+  			port
+  			tls
+  		}
+  	}
+  	sni {
+  		enabled
+  		forwardIfNoMatch
+  		forwardsTo {
+  			host
+  			ip
+  			port
+  			tls
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query old_services {
+  old_services {
+  	additionalHeaders
+  	additionalHeadersOut
+  	allowHttp10
+  	authConfigRef
+  	buildMode
+  	clientValidatorRef
+  	description
+  	detectApiKeySooner
+  	domain
+  	enabled
+  	enforceSecureCommunication
+  	env
+  	forceHttps
+  	groups
+  	handleLegacyDomain
+  	headersVerification
+  	hosts
+  	id
+  	issueCert
+  	issueCertCA
+  	jwtVerifier
+  	letsEncrypt
+  	localHost
+  	localScheme
+  	logAnalyticsOnServer
+  	maintenanceMode
+  	matchingHeaders
+  	matchingRoot
+  	metadata
+  	missingOnlyHeadersIn
+  	missingOnlyHeadersOut
+  	name
+  	overrideHost
+  	paths
+  	privateApp
+  	privatePatterns
+  	publicPatterns
+  	readOnly
+  	redirectToLocal
+  	removeHeadersIn
+  	removeHeadersOut
+  	root
+  	secComAlgoChallengeBackToOto
+  	secComAlgoChallengeOtoToBack
+  	secComAlgoInfoToken
+  	secComExcludedPatterns
+  	secComInfoTokenVersion
+  	secComSettings
+  	secComTtl
+  	secComUseSameAlgo
+  	secComVersion
+  	securityExcludedPatterns
+  	sendInfoToken
+  	sendOtoroshiHeadersBack
+  	sendStateChallenge
+  	strictlyPrivate
+  	stripPath
+  	subdomain
+  	tags
+  	tcpUdpTunneling
+  	transformerConfig
+  	transformerRefs
+  	useAkkaHttpClient
+  	useNewWSClient
+  	userFacing
+  	xForwardedHeaders
+  	clientConfig {
+  		backoffFactor
+  		callAndStreamTimeout
+  		callTimeout
+  		connectionTimeout
+  		globalTimeout
+  		idleTimeout
+  		maxErrors
+  		retries
+  		retryInitialDelay
+  		sampleInterval
+  		useCircuitBreaker
+  		cacheConnectionSettings {
+  			enabled
+  			queueSize
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		customTimeouts {
+  			callAndStreamTimeout
+  			callTimeout
+  			connectionTimeout
+  			globalTimeout
+  			idleTimeout
+  			path
+  		}
+  	}
+  	healthCheck {
+  		enabled
+  		url
+  	}
+  	apiKeyConstraints {
+  		customHeadersAuth {
+  			clientIdHeaderName
+  			clientSecretHeaderName
+  			enabled
+  		}
+  		routing {
+  			allMetaIn
+  			allMetaKeysIn
+  			allTagsIn
+  			noneMetaIn
+  			noneMetaKeysIn
+  			noneTagIn
+  			oneMetaIn
+  			oneMetaKeyIn
+  			oneTagIn
+  		}
+  		clientIdAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  		jwtAuth {
+  			cookieName
+  			enabled
+  			headerName
+  			includeRequestAttributes
+  			keyPairSigned
+  			maxJwtLifespanSecs
+  			queryName
+  			secretSigned
+  		}
+  		basicAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  	}
+  	gzip {
+  		blackList
+  		bufferSize
+  		chunkedThreshold
+  		compressionLevel
+  		enabled
+  		excludedPatterns
+  		whiteList
+  	}
+  	ipFiltering {
+  		blacklist
+  		whitelist
+  	}
+  	targets {
+  		host
+  		ipAddress
+  		metadata
+  		predicate
+  		protocol
+  		scheme
+  		tags
+  		weight
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	redirection {
+  		code
+  		enabled
+  		to
+  	}
+  	restrictions {
+  		allowLast
+  		enabled
+  		forbidden {
+  			method
+  			path
+  		}
+  		allowed {
+  			method
+  			path
+  		}
+  		notFound {
+  			method
+  			path
+  		}
+  	}
+  	accessValidator {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	chaosConfig {
+  		enabled
+  		badResponsesFaultConfig {
+  			ratio
+  			responses {
+  				body
+  				headers
+  				status
+  			}
+  		}
+  		largeRequestFaultConfig {
+  			additionalRequestSize
+  			ratio
+  		}
+  		largeResponseFaultConfig {
+  			additionalResponseSize
+  			ratio
+  		}
+  		latencyInjectionFaultConfig {
+  			from
+  			ratio
+  			to
+  		}
+  	}
+  	secComHeaders {
+  		claimRequestName
+  		stateRequestName
+  		stateResponseName
+  	}
+  	canary {
+  		enabled
+  		root
+  		traffic
+  		targets {
+  			host
+  			ipAddress
+  			metadata
+  			predicate
+  			protocol
+  			scheme
+  			tags
+  			weight
+  			mtlsConfig {
+  				certs
+  				loose
+  				mtls
+  				trustAll
+  				trustedCerts
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	plugins {
+  		config
+  		enabled
+  		excluded
+  		refs
+  	}
+  	preRouting {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	targetsLoadBalancing {
+  		ratio
+  		type
+  	}
+  	cors {
+  		allowCredentials
+  		allowHeaders
+  		allowMethods
+  		allowOrigin
+  		enabled
+  		excludedPatterns
+  		exposeHeaders
+  		maxAge
+  	}
+  	api {
+  		exposeApi
+  		openApiDescriptorUrl
+  	}
+  }
+}
+
+query old_servicesId($id: String) {
+  old_servicesId(id: $id) {
+  	additionalHeaders
+  	additionalHeadersOut
+  	allowHttp10
+  	authConfigRef
+  	buildMode
+  	clientValidatorRef
+  	description
+  	detectApiKeySooner
+  	domain
+  	enabled
+  	enforceSecureCommunication
+  	env
+  	forceHttps
+  	groups
+  	handleLegacyDomain
+  	headersVerification
+  	hosts
+  	id
+  	issueCert
+  	issueCertCA
+  	jwtVerifier
+  	letsEncrypt
+  	localHost
+  	localScheme
+  	logAnalyticsOnServer
+  	maintenanceMode
+  	matchingHeaders
+  	matchingRoot
+  	metadata
+  	missingOnlyHeadersIn
+  	missingOnlyHeadersOut
+  	name
+  	overrideHost
+  	paths
+  	privateApp
+  	privatePatterns
+  	publicPatterns
+  	readOnly
+  	redirectToLocal
+  	removeHeadersIn
+  	removeHeadersOut
+  	root
+  	secComAlgoChallengeBackToOto
+  	secComAlgoChallengeOtoToBack
+  	secComAlgoInfoToken
+  	secComExcludedPatterns
+  	secComInfoTokenVersion
+  	secComSettings
+  	secComTtl
+  	secComUseSameAlgo
+  	secComVersion
+  	securityExcludedPatterns
+  	sendInfoToken
+  	sendOtoroshiHeadersBack
+  	sendStateChallenge
+  	strictlyPrivate
+  	stripPath
+  	subdomain
+  	tags
+  	tcpUdpTunneling
+  	transformerConfig
+  	transformerRefs
+  	useAkkaHttpClient
+  	useNewWSClient
+  	userFacing
+  	xForwardedHeaders
+  	clientConfig {
+  		backoffFactor
+  		callAndStreamTimeout
+  		callTimeout
+  		connectionTimeout
+  		globalTimeout
+  		idleTimeout
+  		maxErrors
+  		retries
+  		retryInitialDelay
+  		sampleInterval
+  		useCircuitBreaker
+  		cacheConnectionSettings {
+  			enabled
+  			queueSize
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		customTimeouts {
+  			callAndStreamTimeout
+  			callTimeout
+  			connectionTimeout
+  			globalTimeout
+  			idleTimeout
+  			path
+  		}
+  	}
+  	healthCheck {
+  		enabled
+  		url
+  	}
+  	apiKeyConstraints {
+  		customHeadersAuth {
+  			clientIdHeaderName
+  			clientSecretHeaderName
+  			enabled
+  		}
+  		routing {
+  			allMetaIn
+  			allMetaKeysIn
+  			allTagsIn
+  			noneMetaIn
+  			noneMetaKeysIn
+  			noneTagIn
+  			oneMetaIn
+  			oneMetaKeyIn
+  			oneTagIn
+  		}
+  		clientIdAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  		jwtAuth {
+  			cookieName
+  			enabled
+  			headerName
+  			includeRequestAttributes
+  			keyPairSigned
+  			maxJwtLifespanSecs
+  			queryName
+  			secretSigned
+  		}
+  		basicAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  	}
+  	gzip {
+  		blackList
+  		bufferSize
+  		chunkedThreshold
+  		compressionLevel
+  		enabled
+  		excludedPatterns
+  		whiteList
+  	}
+  	ipFiltering {
+  		blacklist
+  		whitelist
+  	}
+  	targets {
+  		host
+  		ipAddress
+  		metadata
+  		predicate
+  		protocol
+  		scheme
+  		tags
+  		weight
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	redirection {
+  		code
+  		enabled
+  		to
+  	}
+  	restrictions {
+  		allowLast
+  		enabled
+  		forbidden {
+  			method
+  			path
+  		}
+  		allowed {
+  			method
+  			path
+  		}
+  		notFound {
+  			method
+  			path
+  		}
+  	}
+  	accessValidator {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	chaosConfig {
+  		enabled
+  		badResponsesFaultConfig {
+  			ratio
+  			responses {
+  				body
+  				headers
+  				status
+  			}
+  		}
+  		largeRequestFaultConfig {
+  			additionalRequestSize
+  			ratio
+  		}
+  		largeResponseFaultConfig {
+  			additionalResponseSize
+  			ratio
+  		}
+  		latencyInjectionFaultConfig {
+  			from
+  			ratio
+  			to
+  		}
+  	}
+  	secComHeaders {
+  		claimRequestName
+  		stateRequestName
+  		stateResponseName
+  	}
+  	canary {
+  		enabled
+  		root
+  		traffic
+  		targets {
+  			host
+  			ipAddress
+  			metadata
+  			predicate
+  			protocol
+  			scheme
+  			tags
+  			weight
+  			mtlsConfig {
+  				certs
+  				loose
+  				mtls
+  				trustAll
+  				trustedCerts
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	plugins {
+  		config
+  		enabled
+  		excluded
+  		refs
+  	}
+  	preRouting {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	targetsLoadBalancing {
+  		ratio
+  		type
+  	}
+  	cors {
+  		allowCredentials
+  		allowHeaders
+  		allowMethods
+  		allowOrigin
+  		enabled
+  		excludedPatterns
+  		exposeHeaders
+  		maxAge
+  	}
+  	api {
+  		exposeApi
+  		openApiDescriptorUrl
+  	}
+  }
+}
+
+query old_servicesTemplate {
+  old_servicesTemplate {
+  	additionalHeaders
+  	additionalHeadersOut
+  	allowHttp10
+  	authConfigRef
+  	buildMode
+  	clientValidatorRef
+  	description
+  	detectApiKeySooner
+  	domain
+  	enabled
+  	enforceSecureCommunication
+  	env
+  	forceHttps
+  	groups
+  	handleLegacyDomain
+  	headersVerification
+  	hosts
+  	id
+  	issueCert
+  	issueCertCA
+  	jwtVerifier
+  	letsEncrypt
+  	localHost
+  	localScheme
+  	logAnalyticsOnServer
+  	maintenanceMode
+  	matchingHeaders
+  	matchingRoot
+  	metadata
+  	missingOnlyHeadersIn
+  	missingOnlyHeadersOut
+  	name
+  	overrideHost
+  	paths
+  	privateApp
+  	privatePatterns
+  	publicPatterns
+  	readOnly
+  	redirectToLocal
+  	removeHeadersIn
+  	removeHeadersOut
+  	root
+  	secComAlgoChallengeBackToOto
+  	secComAlgoChallengeOtoToBack
+  	secComAlgoInfoToken
+  	secComExcludedPatterns
+  	secComInfoTokenVersion
+  	secComSettings
+  	secComTtl
+  	secComUseSameAlgo
+  	secComVersion
+  	securityExcludedPatterns
+  	sendInfoToken
+  	sendOtoroshiHeadersBack
+  	sendStateChallenge
+  	strictlyPrivate
+  	stripPath
+  	subdomain
+  	tags
+  	tcpUdpTunneling
+  	transformerConfig
+  	transformerRefs
+  	useAkkaHttpClient
+  	useNewWSClient
+  	userFacing
+  	xForwardedHeaders
+  	clientConfig {
+  		backoffFactor
+  		callAndStreamTimeout
+  		callTimeout
+  		connectionTimeout
+  		globalTimeout
+  		idleTimeout
+  		maxErrors
+  		retries
+  		retryInitialDelay
+  		sampleInterval
+  		useCircuitBreaker
+  		cacheConnectionSettings {
+  			enabled
+  			queueSize
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  		customTimeouts {
+  			callAndStreamTimeout
+  			callTimeout
+  			connectionTimeout
+  			globalTimeout
+  			idleTimeout
+  			path
+  		}
+  	}
+  	healthCheck {
+  		enabled
+  		url
+  	}
+  	apiKeyConstraints {
+  		customHeadersAuth {
+  			clientIdHeaderName
+  			clientSecretHeaderName
+  			enabled
+  		}
+  		routing {
+  			allMetaIn
+  			allMetaKeysIn
+  			allTagsIn
+  			noneMetaIn
+  			noneMetaKeysIn
+  			noneTagIn
+  			oneMetaIn
+  			oneMetaKeyIn
+  			oneTagIn
+  		}
+  		clientIdAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  		jwtAuth {
+  			cookieName
+  			enabled
+  			headerName
+  			includeRequestAttributes
+  			keyPairSigned
+  			maxJwtLifespanSecs
+  			queryName
+  			secretSigned
+  		}
+  		basicAuth {
+  			enabled
+  			headerName
+  			queryName
+  		}
+  	}
+  	gzip {
+  		blackList
+  		bufferSize
+  		chunkedThreshold
+  		compressionLevel
+  		enabled
+  		excludedPatterns
+  		whiteList
+  	}
+  	ipFiltering {
+  		blacklist
+  		whitelist
+  	}
+  	targets {
+  		host
+  		ipAddress
+  		metadata
+  		predicate
+  		protocol
+  		scheme
+  		tags
+  		weight
+  		mtlsConfig {
+  			certs
+  			loose
+  			mtls
+  			trustAll
+  			trustedCerts
+  		}
+  	}
+  	redirection {
+  		code
+  		enabled
+  		to
+  	}
+  	restrictions {
+  		allowLast
+  		enabled
+  		forbidden {
+  			method
+  			path
+  		}
+  		allowed {
+  			method
+  			path
+  		}
+  		notFound {
+  			method
+  			path
+  		}
+  	}
+  	accessValidator {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	chaosConfig {
+  		enabled
+  		badResponsesFaultConfig {
+  			ratio
+  			responses {
+  				body
+  				headers
+  				status
+  			}
+  		}
+  		largeRequestFaultConfig {
+  			additionalRequestSize
+  			ratio
+  		}
+  		largeResponseFaultConfig {
+  			additionalResponseSize
+  			ratio
+  		}
+  		latencyInjectionFaultConfig {
+  			from
+  			ratio
+  			to
+  		}
+  	}
+  	secComHeaders {
+  		claimRequestName
+  		stateRequestName
+  		stateResponseName
+  	}
+  	canary {
+  		enabled
+  		root
+  		traffic
+  		targets {
+  			host
+  			ipAddress
+  			metadata
+  			predicate
+  			protocol
+  			scheme
+  			tags
+  			weight
+  			mtlsConfig {
+  				certs
+  				loose
+  				mtls
+  				trustAll
+  				trustedCerts
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	plugins {
+  		config
+  		enabled
+  		excluded
+  		refs
+  	}
+  	preRouting {
+  		config
+  		enabled
+  		excludedPatterns
+  		refs
+  	}
+  	targetsLoadBalancing {
+  		ratio
+  		type
+  	}
+  	cors {
+  		allowCredentials
+  		allowHeaders
+  		allowMethods
+  		allowOrigin
+  		enabled
+  		excludedPatterns
+  		exposeHeaders
+  		maxAge
+  	}
+  	api {
+  		exposeApi
+  		openApiDescriptorUrl
+  	}
+  }
+}
+
+query pluginsAll {
+  pluginsAll
+}
+
+query routes {
+  routes {
+  	backend_ref
+  	capture
+  	debug_flow
+  	description
+  	enabled
+  	export_reporting
+  	groups
+  	id
+  	metadata
+  	name
+  	tags
+  	frontend {
+  		domains
+  		exact
+  		headers
+  		methods
+  		query
+  		strip_path
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	backend {
+  		rewrite
+  		root
+  		target_refs
+  		health_check {
+  			enabled
+  			url
+  		}
+  		client {
+  			backoff_factor
+  			call_and_stream_timeout
+  			call_timeout
+  			connection_timeout
+  			global_timeout
+  			idle_timeout
+  			max_errors
+  			retries
+  			retry_initial_delay
+  			sample_interval
+  			cache_connection_settings {
+  				enabled
+  				queue_size
+  			}
+  			custom_timeouts {
+  				call_and_stream_timeout
+  				call_timeout
+  				connection_timeout
+  				global_timeout
+  				idle_timeout
+  				path
+  			}
+  			proxy {
+  				encoding
+  				host
+  				nonProxyHosts
+  				ntlmDomain
+  				password
+  				port
+  				principal
+  				protocol
+  			}
+  		}
+  		load_balancing {
+  			ratio
+  			type
+  		}
+  		targets {
+  			hostname
+  			id
+  			ip_address
+  			port
+  			predicate
+  			protocol
+  			tls
+  			weight
+  			tls_config {
+  				certs
+  				enabled
+  				loose
+  				trust_all
+  				trusted_certs
+  			}
+  		}
+  	}
+  }
+}
+
+query routesId($id: String) {
+  routesId(id: $id) {
+  	backend_ref
+  	capture
+  	debug_flow
+  	description
+  	enabled
+  	export_reporting
+  	groups
+  	id
+  	metadata
+  	name
+  	tags
+  	frontend {
+  		domains
+  		exact
+  		headers
+  		methods
+  		query
+  		strip_path
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	backend {
+  		rewrite
+  		root
+  		target_refs
+  		health_check {
+  			enabled
+  			url
+  		}
+  		client {
+  			backoff_factor
+  			call_and_stream_timeout
+  			call_timeout
+  			connection_timeout
+  			global_timeout
+  			idle_timeout
+  			max_errors
+  			retries
+  			retry_initial_delay
+  			sample_interval
+  			cache_connection_settings {
+  				enabled
+  				queue_size
+  			}
+  			custom_timeouts {
+  				call_and_stream_timeout
+  				call_timeout
+  				connection_timeout
+  				global_timeout
+  				idle_timeout
+  				path
+  			}
+  			proxy {
+  				encoding
+  				host
+  				nonProxyHosts
+  				ntlmDomain
+  				password
+  				port
+  				principal
+  				protocol
+  			}
+  		}
+  		load_balancing {
+  			ratio
+  			type
+  		}
+  		targets {
+  			hostname
+  			id
+  			ip_address
+  			port
+  			predicate
+  			protocol
+  			tls
+  			weight
+  			tls_config {
+  				certs
+  				enabled
+  				loose
+  				trust_all
+  				trusted_certs
+  			}
+  		}
+  	}
+  }
+}
+
+query routesTemplate {
+  routesTemplate {
+  	backend_ref
+  	capture
+  	debug_flow
+  	description
+  	enabled
+  	export_reporting
+  	groups
+  	id
+  	metadata
+  	name
+  	tags
+  	frontend {
+  		domains
+  		exact
+  		headers
+  		methods
+  		query
+  		strip_path
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	backend {
+  		rewrite
+  		root
+  		target_refs
+  		health_check {
+  			enabled
+  			url
+  		}
+  		client {
+  			backoff_factor
+  			call_and_stream_timeout
+  			call_timeout
+  			connection_timeout
+  			global_timeout
+  			idle_timeout
+  			max_errors
+  			retries
+  			retry_initial_delay
+  			sample_interval
+  			cache_connection_settings {
+  				enabled
+  				queue_size
+  			}
+  			custom_timeouts {
+  				call_and_stream_timeout
+  				call_timeout
+  				connection_timeout
+  				global_timeout
+  				idle_timeout
+  				path
+  			}
+  			proxy {
+  				encoding
+  				host
+  				nonProxyHosts
+  				ntlmDomain
+  				password
+  				port
+  				principal
+  				protocol
+  			}
+  		}
+  		load_balancing {
+  			ratio
+  			type
+  		}
+  		targets {
+  			hostname
+  			id
+  			ip_address
+  			port
+  			predicate
+  			protocol
+  			tls
+  			weight
+  			tls_config {
+  				certs
+  				enabled
+  				loose
+  				trust_all
+  				trusted_certs
+  			}
+  		}
+  	}
+  }
+}
+
+query scripts {
+  scripts {
+  	code
+  	desc
+  	id
+  	metadata
+  	name
+  	tags
+  	type
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query scriptsId($id: String) {
+  scriptsId(id: $id) {
+  	code
+  	desc
+  	id
+  	metadata
+  	name
+  	tags
+  	type
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query scriptsTemplate {
+  scriptsTemplate {
+  	code
+  	desc
+  	id
+  	metadata
+  	name
+  	tags
+  	type
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query services {
+  services {
+  	capture
+  	debug_flow
+  	description
+  	enabled
+  	export_reporting
+  	groups
+  	id
+  	metadata
+  	name
+  	tags
+  	client {
+  		backoff_factor
+  		call_and_stream_timeout
+  		call_timeout
+  		connection_timeout
+  		global_timeout
+  		idle_timeout
+  		max_errors
+  		retries
+  		retry_initial_delay
+  		sample_interval
+  		cache_connection_settings {
+  			enabled
+  			queue_size
+  		}
+  		custom_timeouts {
+  			call_and_stream_timeout
+  			call_timeout
+  			connection_timeout
+  			global_timeout
+  			idle_timeout
+  			path
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  	}
+  	routes {
+  		backend_ref
+  		override_plugins
+  		frontend {
+  			domains
+  			exact
+  			headers
+  			methods
+  			query
+  			strip_path
+  		}
+  		backend {
+  			rewrite
+  			root
+  			target_refs
+  			targets {
+  				hostname
+  				id
+  				ip_address
+  				port
+  				predicate
+  				protocol
+  				tls
+  				weight
+  				tls_config {
+  					certs
+  					enabled
+  					loose
+  					trust_all
+  					trusted_certs
+  				}
+  			}
+  			load_balancing {
+  				ratio
+  				type
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query servicesId($id: String) {
+  servicesId(id: $id) {
+  	capture
+  	debug_flow
+  	description
+  	enabled
+  	export_reporting
+  	groups
+  	id
+  	metadata
+  	name
+  	tags
+  	client {
+  		backoff_factor
+  		call_and_stream_timeout
+  		call_timeout
+  		connection_timeout
+  		global_timeout
+  		idle_timeout
+  		max_errors
+  		retries
+  		retry_initial_delay
+  		sample_interval
+  		cache_connection_settings {
+  			enabled
+  			queue_size
+  		}
+  		custom_timeouts {
+  			call_and_stream_timeout
+  			call_timeout
+  			connection_timeout
+  			global_timeout
+  			idle_timeout
+  			path
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  	}
+  	routes {
+  		backend_ref
+  		override_plugins
+  		frontend {
+  			domains
+  			exact
+  			headers
+  			methods
+  			query
+  			strip_path
+  		}
+  		backend {
+  			rewrite
+  			root
+  			target_refs
+  			targets {
+  				hostname
+  				id
+  				ip_address
+  				port
+  				predicate
+  				protocol
+  				tls
+  				weight
+  				tls_config {
+  					certs
+  					enabled
+  					loose
+  					trust_all
+  					trusted_certs
+  				}
+  			}
+  			load_balancing {
+  				ratio
+  				type
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query servicesServiceIdEvents($serviceId: String) {
+  servicesServiceIdEvents(serviceId: $serviceId)
+}
+
+query servicesServiceIdLive($serviceId: String) {
+  servicesServiceIdLive(serviceId: $serviceId)
+}
+
+query servicesServiceIdResponse($serviceId: String) {
+  servicesServiceIdResponse(serviceId: $serviceId)
+}
+
+query servicesServiceIdStats($serviceId: String) {
+  servicesServiceIdStats(serviceId: $serviceId)
+}
+
+query servicesServiceIdStatus($serviceId: String) {
+  servicesServiceIdStatus(serviceId: $serviceId)
+}
+
+query servicesTemplate {
+  servicesTemplate {
+  	capture
+  	debug_flow
+  	description
+  	enabled
+  	export_reporting
+  	groups
+  	id
+  	metadata
+  	name
+  	tags
+  	client {
+  		backoff_factor
+  		call_and_stream_timeout
+  		call_timeout
+  		connection_timeout
+  		global_timeout
+  		idle_timeout
+  		max_errors
+  		retries
+  		retry_initial_delay
+  		sample_interval
+  		cache_connection_settings {
+  			enabled
+  			queue_size
+  		}
+  		custom_timeouts {
+  			call_and_stream_timeout
+  			call_timeout
+  			connection_timeout
+  			global_timeout
+  			idle_timeout
+  			path
+  		}
+  		proxy {
+  			encoding
+  			host
+  			nonProxyHosts
+  			ntlmDomain
+  			password
+  			port
+  			principal
+  			protocol
+  		}
+  	}
+  	routes {
+  		backend_ref
+  		override_plugins
+  		frontend {
+  			domains
+  			exact
+  			headers
+  			methods
+  			query
+  			strip_path
+  		}
+  		backend {
+  			rewrite
+  			root
+  			target_refs
+  			targets {
+  				hostname
+  				id
+  				ip_address
+  				port
+  				predicate
+  				protocol
+  				tls
+  				weight
+  				tls_config {
+  					certs
+  					enabled
+  					loose
+  					trust_all
+  					trusted_certs
+  				}
+  			}
+  			load_balancing {
+  				ratio
+  				type
+  			}
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query snowmonkeyConfig {
+  snowmonkeyConfig {
+  	dryRun
+  	enabled
+  	includeUserFacingDescriptors
+  	outageDurationFrom
+  	outageDurationTo
+  	outageStrategy
+  	startTime
+  	stopTime
+  	targetGroups
+  	timesPerDay
+  	chaosConfig {
+  		enabled
+  		badResponsesFaultConfig {
+  			ratio
+  			responses {
+  				body
+  				headers
+  				status
+  			}
+  		}
+  		largeRequestFaultConfig {
+  			additionalRequestSize
+  			ratio
+  		}
+  		largeResponseFaultConfig {
+  			additionalResponseSize
+  			ratio
+  		}
+  		latencyInjectionFaultConfig {
+  			from
+  			ratio
+  			to
+  		}
+  	}
+  }
+}
+
+query stats {
+  stats
+}
+
+query statsGlobal {
+  statsGlobal
+}
+
+query statusGlobal {
+  statusGlobal
+}
+
+query targets {
+  targets {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	target {
+  		hostname
+  		id
+  		ip_address
+  		port
+  		predicate
+  		protocol
+  		tls
+  		weight
+  		tls_config {
+  			certs
+  			enabled
+  			loose
+  			trust_all
+  			trusted_certs
+  		}
+  	}
+  }
+}
+
+query targetsId($id: String) {
+  targetsId(id: $id) {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	target {
+  		hostname
+  		id
+  		ip_address
+  		port
+  		predicate
+  		protocol
+  		tls
+  		weight
+  		tls_config {
+  			certs
+  			enabled
+  			loose
+  			trust_all
+  			trusted_certs
+  		}
+  	}
+  }
+}
+
+query targetsTemplate {
+  targetsTemplate {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  	_loc {
+  		teams
+  		tenant
+  	}
+  	target {
+  		hostname
+  		id
+  		ip_address
+  		port
+  		predicate
+  		protocol
+  		tls
+  		weight
+  		tls_config {
+  			certs
+  			enabled
+  			loose
+  			trust_all
+  			trusted_certs
+  		}
+  	}
+  }
+}
+
+query tcpServices {
+  tcpServices {
+  	clientAuth
+  	description
+  	enabled
+  	id
+  	interface
+  	metadata
+  	name
+  	port
+  	tags
+  	tls
+  	rules {
+  		domain
+  		targets {
+  			host
+  			ip
+  			port
+  			tls
+  		}
+  	}
+  	sni {
+  		enabled
+  		forwardIfNoMatch
+  		forwardsTo {
+  			host
+  			ip
+  			port
+  			tls
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query tcpServicesId($id: String) {
+  tcpServicesId(id: $id) {
+  	clientAuth
+  	description
+  	enabled
+  	id
+  	interface
+  	metadata
+  	name
+  	port
+  	tags
+  	tls
+  	rules {
+  		domain
+  		targets {
+  			host
+  			ip
+  			port
+  			tls
+  		}
+  	}
+  	sni {
+  		enabled
+  		forwardIfNoMatch
+  		forwardsTo {
+  			host
+  			ip
+  			port
+  			tls
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query tcpTemplate {
+  tcpTemplate {
+  	clientAuth
+  	description
+  	enabled
+  	id
+  	interface
+  	metadata
+  	name
+  	port
+  	tags
+  	tls
+  	rules {
+  		domain
+  		targets {
+  			host
+  			ip
+  			port
+  			tls
+  		}
+  	}
+  	sni {
+  		enabled
+  		forwardIfNoMatch
+  		forwardsTo {
+  			host
+  			ip
+  			port
+  			tls
+  		}
+  	}
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query teams {
+  teams {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  	tenant
+  }
+}
+
+query teamsId($id: String) {
+  teamsId(id: $id) {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  	tenant
+  }
+}
+
+query teamsTemplate {
+  teamsTemplate {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  	tenant
+  }
+}
+
+query tenants {
+  tenants {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  }
+}
+
+query tenantsId($id: String) {
+  tenantsId(id: $id) {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  }
+}
+
+query tenantsTemplate {
+  tenantsTemplate {
+  	description
+  	id
+  	metadata
+  	name
+  	tags
+  }
+}
+
+query tunnels {
+  tunnels
+}
+
+query tunnelsInfos {
+  tunnelsInfos
+}
+
+query tunnelsRegister {
+  tunnelsRegister
+}
+
+query tunnelsTunnelIdRelay($tunnelId: String) {
+  tunnelsTunnelIdRelay(tunnelId: $tunnelId)
+}
+
+query verifiers {
+  verifiers {
+  	algoSettings
+  	desc
+  	id
+  	metadata
+  	name
+  	source
+  	strategy
+  	strict
+  	tags
+  	type
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query verifiersId($id: String) {
+  verifiersId(id: $id) {
+  	algoSettings
+  	desc
+  	id
+  	metadata
+  	name
+  	source
+  	strategy
+  	strict
+  	tags
+  	type
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}
+
+query verifiersTemplate {
+  verifiersTemplate {
+  	algoSettings
+  	desc
+  	id
+  	metadata
+  	name
+  	source
+  	strategy
+  	strict
+  	tags
+  	type
+  	_loc {
+  		teams
+  		tenant
+  	}
+  }
+}

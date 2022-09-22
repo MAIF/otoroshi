@@ -240,6 +240,33 @@ export default function ({ route, hide }) {
         <div className="flex">
           <div className="d-flex-between">
             <h3>Testing</h3>
+            {route &&
+              route.plugins.find((f) => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') && (
+                <div style={{
+                  padding: '5px',
+                  borderRadius: '24px',
+                  backgroundColor: '#373735'
+                }}>
+                  <button
+                    className='tryit-selector-mode'
+                    style={{
+                      backgroundColor: (!testerView || testerView === 'rest') ? 'rgb(73, 73, 72)' : 'transparent'
+                    }}
+                    type="button"
+                    onClick={() => setTesterView('rest')}>
+                    REST Tester
+                  </button>
+                  <button
+                    className='tryit-selector-mode tryit-right-selector'
+                    style={{
+                      backgroundColor: testerView === 'graphql' ? 'rgb(73, 73, 72)' : 'transparent'
+                    }}
+                    type="button"
+                    onClick={() => setTesterView('graphql')}>
+                    GraphQL Tester
+                  </button>
+                </div>
+              )}
             <button
               className="btn btn-sm"
               type="button"
@@ -248,23 +275,6 @@ export default function ({ route, hide }) {
               <i className="fas fa-times" style={{ color: '#fff' }} />
             </button>
           </div>
-          {route &&
-            route.plugins.find((f) => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') && (
-              <div className="mt-2">
-                <button
-                  className="btn btn-sm btn-info me-1"
-                  type="button"
-                  onClick={() => setTesterView('rest')}>
-                  REST Tester
-                </button>
-                <button
-                  className="btn btn-sm btn-info"
-                  type="button"
-                  onClick={() => setTesterView('graphql')}>
-                  GraphQL Tester
-                </button>
-              </div>
-            )}
         </div>
       </div>
       {testerView === 'graphql' ? (
@@ -302,6 +312,9 @@ export default function ({ route, hide }) {
             background: 'rgb(60,60,60)',
             padding: '12px',
             borderRadius: '8px',
+            width: '97%',
+            margin: '0 auto',
+            marginTop: '10px'
           }}>
           <div className="d-flex">
             <div style={{ minWidth: '200px' }}>
@@ -905,6 +918,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
         <CodeInput
           readOnly={true}
           width="100%"
+          height="100%"
+          editorOnly={true}
           value={
             JSON.stringify(
               selectedPlugin === -1

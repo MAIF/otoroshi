@@ -164,18 +164,6 @@ export const DEFAULT_FLOW = {
       ...generatedSchema,
       targets: {
         ...generatedSchema.targets,
-        // onAfterChange: ({ onChange, getFieldValue }) => {
-        //   let port = getFieldValue('port');
-        //   port = port ? `:${port}` : '';
-        //   const hostname = getFieldValue('hostname') || '';
-        //   const isSecured = getFieldValue('tls');
-
-        //   onChange(
-        //     'custom_target',
-        //     `${isSecured ? 'https' : 'http'}://${hostname}${port}${getFieldValue('custom_target')?.endsWith(' ') ? ' ' : ''
-        //     }`
-        //   );
-        // },
         schema: {
           custom_target: {
             renderer: props => {

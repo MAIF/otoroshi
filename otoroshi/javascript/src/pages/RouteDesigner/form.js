@@ -680,15 +680,15 @@ export class RouteForm extends Component {
           })}
         </Collapse>
         <div className="d-flex align-items-center justify-content-end mt-3">
-          <div className="btn-group">
+          <div className="displayGroupBtn">
             <button
-              className="btn btn-sm btn-danger"
+              className="btn btn-danger"
               onClick={() => this.props.history.push(`/${this.entity}`)}>
-              <i className="fas fa-times" /> Cancel
+              Cancel
             </button>
             {!this.props.isCreating && (
               <button
-                className="btn btn-sm btn-danger"
+                className="btn btn-danger"
                 onClick={() => {
                   window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
                     if (ok) {

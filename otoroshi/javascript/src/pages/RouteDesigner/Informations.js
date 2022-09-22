@@ -154,9 +154,9 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
         }}
       />
       <div className="d-flex align-items-center justify-content-end mt-3">
-        <div className="btn-group">
-          <button className="btn btn-sm btn-danger" onClick={() => history.push(`/${link}`)}>
-            <i className="fas fa-times" /> Cancel
+        <div className="displayGroupBtn">
+          <button className="btn btn-danger" onClick={() => history.push(`/${link}`)}>
+            Cancel
           </button>
         </div>
       </div>

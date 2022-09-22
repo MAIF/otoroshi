@@ -104,6 +104,12 @@ export class TopBar extends Component {
           action: () => (window.location.href = '/bo/dashboard/clever'),
         });
         options.push({
+          label: 'Eureka Servers',
+          value: 'Eureka-Servers',
+          env: <i className="fas fa-list-alt" />,
+          action: () => (window.location.href = '/bo/dashboard/eureka-servers'),
+        });
+        options.push({
           action: () => (window.location.href = '/bo/dashboard/dangerzone'),
           env: <span className="fas fa-exclamation-triangle" />,
           label: 'Danger Zone',
@@ -667,9 +673,8 @@ export class TopBar extends Component {
                 />
                 <ul
                   id="dropdown"
-                  className={`custom-dropdown ${
-                    this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                  } py-2 pb-4`}
+                  className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                    } py-2 pb-4`}
                   aria-labelledby="dropdownMenuParams">
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
@@ -704,6 +709,12 @@ export class TopBar extends Component {
                     {window.__otoroshi__env__latest.userAdmin && (
                       <a href="/bo/dashboard/clever" className="dropdown-item">
                         <span className="fas fa-list-alt" /> Clever apps
+                      </a>
+                    )}
+
+                    {window.__otoroshi__env__latest.userAdmin && (
+                      <a href="/bo/dashboard/eureka-servers" className="dropdown-item">
+                        <span className="fas fa-desktop" /> Eureka servers
                       </a>
                     )}
                   </li>

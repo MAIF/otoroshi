@@ -1,0 +1,1390 @@
+
+  
+"""
+Settings for connection to an elastic cluster
+"""
+type ElasticAnalyticsConfig {
+ clusterUri: String # Cluster URL
+ headers: Json # Additionnal headers in the http request
+ password: String
+ indexSettings: IndexSettings # Indexation settings
+ mtlsConfig: MtlsConfig # TLS settings for the http client
+ index: String
+ type: String
+ applyTemplate: Boolean # Enable template creation/update
+ version: String
+ user: String
+}
+
+  
+type CorsSettings {
+ enabled: Boolean 
+ allowCredentials: Boolean 
+ maxAge: String
+ allowMethods: [String] 
+ allowHeaders: [String] 
+ excludedPatterns: [String] 
+ exposeHeaders: [String] 
+ allowOrigin: String 
+}
+
+  
+"""
+Settings for a large response fault (chaos engineering)
+"""
+type LargeResponseFaultConfig {
+ ratio: Float # The percentage of requests affected by this fault. Value should be between 0.0 and 1.0
+ additionalResponseSize: Float # Add n 0 bytes
+}
+
+  
+"""
+Settings to transform a jwt token
+"""
+type MappingSettings {
+ map: Json # Change values
+ values: Json # Add values
+ remove: [String] # Remove some token claims
+}
+
+  
+"""
+jwt token verification settings
+"""
+type VerificationSettings {
+ fields: Json # Fields validation
+ arrayFields: Json # Fields array validation
+}
+
+  
+"""
+A route representation with it's minimal attributes
+"""
+type NgMinimalRoute {
+ backend_ref: String
+ frontend: NgFrontend # The frontend of the route
+ override_plugins: Boolean # Override global plugin list from route composition
+ backend: NgMinimalBackend # The backend of the route
+}
+
+  
+type MtlsConfig {
+ mtls: Boolean 
+ loose: Boolean 
+ trustAll: Boolean 
+ trustedCerts: [String] 
+ certs: [String] 
+}
+
+  
+type CustomTimeouts {
+ path: String 
+ callAndStreamTimeout: Float 
+ callTimeout: Float 
+ idleTimeout: Float 
+ globalTimeout: Float 
+ connectionTimeout: Float 
+}
+
+  
+type BasicAuthConstraints {
+ enabled: Boolean 
+ headerName: String
+ queryName: String
+}
+
+  
+"""
+Settings for apikey quotas alerts
+"""
+type QuotasAlmostExceededSettings {
+ enabled: Boolean # Is quotas alert enabled
+ dailyQuotasThreshold: Float # The daily quotas threshold before generating alert
+ monthlyQuotasThreshold: Float # The monthly quotas threshold before generating alert
+}
+
+  
+"""
+An otoroshi model for a team of users in the organization (otoroshi-ui)
+"""
+type Team {
+ tags: [String] # Entity tags
+ name: String # Entity name
+ description: String # Entity description
+ tenant: String # Entity organization
+ metadata: Json # Entity metadata
+ id: String # Entity id
+}
+
+  
+"""
+Settings to enable chaos engineering for a service
+"""
+type ChaosConfig {
+ badResponsesFaultConfig: BadResponsesFaultConfig # Settings for bad responses
+ largeRequestFaultConfig: LargeRequestFaultConfig # Settings for large requests
+ largeResponseFaultConfig: LargeResponseFaultConfig # Settings for large responses
+ latencyInjectionFaultConfig: LatencyInjectionFaultConfig # Settings for latency injection
+ enabled: Boolean # Whether or not this config is enabled
+}
+
+  
+"""
+jwt token transformation settings
+"""
+type TransformSettings {
+ _loc: Json # Location of the token
+ mappingSettings: MappingSettings # Token mapping settings
+}
+
+  
+"""
+An otoroshi apikey that can allow you to access some services
+"""
+type ApiKey {
+ dailyQuota: Float # Authorized number of calls per day
+ metadata: Json # Bunch of metadata for the key
+ throttlingQuota: Float # Authorized number of calls per second, measured on 10 seconds
+ constrainedServicesOnly: Boolean # This apikey can only be used on services that constrained their apikey routing
+ allowClientIdOnly: Boolean # This apikey can be used juste with the client_id value
+ _loc: EntityLocation # The location of the apikey
+ restrictions: Restrictions # Apikey restrictions settings
+ tags: [String] # Apikey tags
+ enabled: Boolean # Whether or not the key is enabled. If disabled, resources won't be available to calls using this key
+ readOnly: Boolean # The apikey only allow access for GET, HEAD and OPTIONS verbs
+ clientSecret: String # The secret of the Api Key. Usually 64 random alpha numerical characters, but can be anything
+ validUntil: String
+ clientName: String # The name of the api key, for humans ;-)
+ monthlyQuota: Float # Authorized number of calls per month
+ description: String # Description of this apikey
+ rotation: ApiKeyRotation # Apikey rotation settings
+ authorizedEntities: [String] # The group/service ids (prefixed by group_ or service_ on which the key is authorized
+ clientId: String # The unique id of the Api Key. Usually 16 random alpha numerical characters, but can be anything
+}
+
+  
+"""
+Represent a user right (teams, organizations) in otoroshi-ui
+"""
+type UserRight {
+ tenant: TenantAccess # Access rights on organizations
+ teams: [TeamAccess] # Access rights on teams
+}
+
+  
+"""
+Otoroshi model for JWT token verifier
+"""
+type GlobalJwtVerifier {
+ metadata: Json # Entity metadata
+ algoSettings: Json # Algo settings of the verifier
+ name: String # Verifier name
+ source: Json # Where to find the jwt token
+ id: String # Verifier id
+ type: String # the kind of verifier
+ strict: Boolean # Does it fail if JWT not found
+ strategy: Json # The strategy of the verifier
+ _loc: EntityLocation # Entity location
+ desc: String # Verifier description
+ tags: [String] # Entity tags
+}
+
+  
+"""
+Access rights for organizations
+"""
+type TenantAccess {
+ canWrite: Boolean # Can this access right write data
+ value: String # Access pattern
+ canRead: Boolean # Can this access right read data
+}
+
+  
+"""
+The template that will be merged with newly created entities
+"""
+type DefaultTemplates {
+ team: Json # the template for the team entities
+ script: Json # the template for the script entities
+ apikey: Json # the template for the apikey entities
+ group: Json # the template for the group entities
+ tcpService: Json # the template for the tcpService entities
+ verifier: Json # the template for the verifier entities
+ service: Json # the template for the service entities
+ target: Json # the template for the target entities
+ certificate: Json # the template for the certificate entities
+ dataExporter: Json # the template for the dataExporter entities
+ route: Json # the template for the route entities
+ backend: Json # the template for the backend entities
+ template: Json # the template for the template entities
+ tenant: Json # the template for the tenant entities
+ authConfig: Json # the template for the authConfig entities
+ descriptor: Json # the template for the descriptor entities
+}
+
+  
+type SAMLSignature {
+ algorithm: Json 
+ canocalizationMethod: Json 
+}
+
+  
+"""
+Filter events to export
+"""
+type DataExporterConfigFiltering {
+ include: [Json] # Event include filter
+ exclude: [Json] # Event exclude filter
+}
+
+  
+"""
+The otoroshi model for a group of services
+"""
+type ServiceGroup {
+ id: String # A unique random string to identify your service
+ _loc: EntityLocation # Entity location
+ name: String # The name of your service. Only for debug and human readability purposes
+ metadata: Json # Just a bunch of random properties
+ description: String # Entity description
+ tags: [String] # Entity tags
+}
+
+  
+"""
+Settings for generating a certificate
+"""
+type GenCsrQuery {
+ client: Boolean # Is cert client ?
+ hosts: [String] # Certificate SANs
+ key: GenKeyPairQuery # Keypair specs
+ includeAIA: Boolean # Include AIA extension (if generated from otoroshi CA)
+ signatureAlg: String # Signature algorithm
+ existingSerialNumber: String
+ duration: Float # Certificate lifespan
+ digestAlg: String # Digest algo
+ ca: Boolean # Is cert ca ?
+ name: Json # Certificate name
+ subject: String
+}
+
+  
+"""
+An otoroshi plugins stored as scala code in the otoroshi datastore
+"""
+type Script {
+ name: String # The name of the script
+ metadata: Json # Entity metadata
+ tags: [String] # Entity tags
+ _loc: EntityLocation # Entity location
+ desc: String # The description of the script
+ code: String # The code of the script
+ id: String # The id of the script
+ type: String # Plugin type
+}
+
+  
+"""
+Proxy server
+"""
+type WSProxyServer {
+ host: String # The hostname of the proxy server.
+ port: String # The port of the proxy server.
+ protocol: String # The protocol of the proxy server.  Use "http" or "https".  Defaults to "http" if not specified.
+ principal: String # The principal (aka username) of the credentials for the proxy server.
+ password: String # The password for the credentials for the proxy server.
+ ntlmDomain: String # The ntlm domain for the proxy server.
+ encoding: String # The realm's charset.
+ nonProxyHosts: String # The non proxied hosts
+}
+
+  
+type SecComHeaders {
+ claimRequestName: String
+ stateRequestName: String
+ stateResponseName: String
+}
+
+  
+type SAMLCredentials {
+ signingKey: Credential 
+ encryptionKey: Credential 
+ signedDocuments: Boolean 
+ encryptedAssertions: Boolean 
+}
+
+  
+"""
+A target that can be stored in the otoroshi datastore
+"""
+type StoredNgTarget {
+ name: String # The name of the target
+ _loc: EntityLocation # The location of the target
+ metadata: Json # The metadata of the target
+ description: String # The description of the target
+ tags: [String] # The tags of the target
+ id: String # The id of the target
+ target: NgTarget # The actual target
+}
+
+  
+type ServiceDescriptor {
+ buildMode: Boolean 
+ hosts: [String] 
+ privateApp: Boolean 
+ localScheme: String 
+ authConfigRef: String
+ issueCertCA: String
+ root: String 
+ name: String 
+ additionalHeaders: Json 
+ domain: String 
+ clientConfig: ClientConfig 
+ matchingRoot: String
+ forceHttps: Boolean 
+ localHost: String 
+ sendOtoroshiHeadersBack: Boolean 
+ healthCheck: HealthCheck 
+ strictlyPrivate: Boolean 
+ detectApiKeySooner: Boolean 
+ allowHttp10: Boolean 
+ subdomain: String 
+ paths: [String] 
+ stripPath: Boolean 
+ secComAlgoChallengeOtoToBack: Json 
+ apiKeyConstraints: ApiKeyConstraints 
+ env: String 
+ xForwardedHeaders: Boolean 
+ transformerRefs: [String] 
+ enabled: Boolean 
+ gzip: GzipConfig 
+ sendInfoToken: Boolean 
+ tcpUdpTunneling: Boolean 
+ removeHeadersOut: [String] 
+ useAkkaHttpClient: Boolean 
+ maintenanceMode: Boolean 
+ id: String 
+ removeHeadersIn: [String] 
+ logAnalyticsOnServer: Boolean 
+ secComAlgoInfoToken: Json 
+ userFacing: Boolean 
+ transformerConfig: Json 
+ clientValidatorRef: String
+ securityExcludedPatterns: [String] 
+ ipFiltering: IpFiltering 
+ targets: [Target] 
+ redirection: RedirectionSettings 
+ tags: [String] 
+ restrictions: Restrictions 
+ overrideHost: Boolean 
+ accessValidator: AccessValidatorRef 
+ sendStateChallenge: Boolean 
+ chaosConfig: ChaosConfig 
+ secComInfoTokenVersion: String 
+ additionalHeadersOut: Json 
+ secComHeaders: SecComHeaders 
+ matchingHeaders: Json 
+ secComAlgoChallengeBackToOto: Json 
+ secComUseSameAlgo: Boolean 
+ useNewWSClient: Boolean 
+ secComExcludedPatterns: [String] 
+ redirectToLocal: Boolean 
+ enforceSecureCommunication: Boolean 
+ missingOnlyHeadersOut: Json 
+ secComSettings: Json 
+ handleLegacyDomain: Boolean 
+ canary: Canary 
+ _loc: EntityLocation 
+ plugins: Plugins 
+ secComTtl: Float 
+ description: String 
+ secComVersion: Int 
+ preRouting: PreRoutingRef 
+ groups: [String] 
+ readOnly: Boolean 
+ privatePatterns: [String] 
+ targetsLoadBalancing: LoadBalancing 
+ cors: CorsSettings 
+ metadata: Json 
+ publicPatterns: [String] 
+ api: ApiDescriptor 
+ missingOnlyHeadersIn: Json 
+ issueCert: Boolean 
+ headersVerification: Json 
+ jwtVerifier: Json 
+ letsEncrypt: Boolean 
+}
+
+  
+"""
+Access rights for teams
+"""
+type TeamAccess {
+ canRead: Boolean # Can this access right read data
+ value: String # Access pattern
+ canWrite: Boolean # Can this access right write data
+}
+
+  
+"""
+The otoroshi model for X509 certificates
+"""
+type Cert {
+ certType: String # the kind of certificate
+ metadata: Json # Entity metadata
+ subject: String # Certificate subject
+ letsEncrypt: Boolean # Let's encrypt (ACME) generated
+ keypair: Boolean # Is cert used for its keypair only ?
+ description: String # Entity description
+ revoked: Boolean # Certificate is revoked
+ valid: Boolean # Is cert valid
+ password: String
+ autoRenew: Boolean # Auto renew cert
+ exposed: Boolean # Is the cert exposed (public key exposed in jwks.json)
+ client: Boolean # Is cert a client cert ?
+ from: Float # Start date
+ selfSigned: Boolean # Is cert self signed
+ id: String # Entity id
+ ca: Boolean # Is cert a CA ?
+ chain: String # Certicates chain (PEM encoded)
+ sans: [String] # Certificate SANs
+ _loc: EntityLocation # Entity location
+ tags: [String] # Entity tags
+ privateKey: String # Certificate private key (PEM encoded)
+ caRef: String
+ domain: String # Certificate domain
+ name: String # Entity name
+ to: Float # Stop date
+}
+
+  
+"""
+Associate targets for a domain (SNI)
+"""
+type TcpRule {
+ domain: String # match on SNI domain
+ targets: [TcpTarget] # TCP targets
+}
+
+  
+"""
+Settings for connection to the clever-cloud api
+"""
+type CleverCloudSettings {
+ consumerSecret: String # Clever-Cloud oauth consumer secret
+ consumerKey: String # Clever-Cloud oauth consumer key
+ secret: String # Clever-Cloud oauth secret
+ token: String # Clever-Cloud oauth token
+ orgaId: String # Clever-Cloud organization id
+}
+
+  
+type Canary {
+ enabled: Boolean 
+ traffic: Float 
+ targets: [Target] 
+ root: String 
+}
+
+  
+"""
+Settings for a bad response return (chaos engineering)
+"""
+type BadResponse {
+ status: Float # The HTTP status for the response
+ body: String # The body of the HTTP response
+ headers: Json # The HTTP headers of the response
+}
+
+  
+"""
+A routing primitive representing how a request is matched and where the request is forwarded
+"""
+type NgRoute {
+ debug_flow: Boolean # Enable report debugging
+ enabled: Boolean # Is the route enabled
+ name: String # The name of the route
+ id: String # The ud of the route
+ export_reporting: Boolean # Export the execution reporting through standard data exporter
+ metadata: Json # The metadata of the route
+ frontend: NgFrontend # The frontend of the route
+ _loc: EntityLocation # The location of the route
+ tags: [String] # The tags of the route
+ capture: Boolean # Capture http traffic
+ groups: [String] # The groups of the route
+ backend_ref: String
+ description: String # The description of the route
+ backend: NgBackend # The backend of the route
+}
+
+  
+"""
+The global config (dynamic) for otoroshi
+"""
+type GlobalConfig {
+ geolocationSettings: Json # Settings for geolocation extraction
+ alertsEmails: [String] # Email addresses that will receive all Otoroshi alert events
+ throttlingQuota: Float # Authorized number of calls per second globally, measured on 10 seconds
+ maxWebhookSize: Float # Max number of items in webhooks
+ maxConcurrentRequests: Float # The number of authorized request processed at the same time
+ cleverSettings: CleverCloudSettings # Optional CleverCloud configuration
+ templates: DefaultTemplates # The otoroshi default templates for entities
+ endlessIpAddresses: [String] # IP addresses for which any request to Otoroshi will respond with 128 Gb of zeros
+ plugins: Plugins # global plugins settings
+ kafkaConfig: KafkaConfig # Global kafka settings. deprecated
+ maxLogsSize: Float # Number of events kept locally
+ proxies: Proxies # Web proxies settings
+ enableEmbeddedMetrics: Boolean # Enable embedded metrics
+ elasticReadsConfig: ElasticAnalyticsConfig # Config. for elastic reads
+ trustXForwarded: Boolean # Use X-Forwarded-* headers for routing
+ quotasSettings: QuotasAlmostExceededSettings # Settings to generate alert when an apikey almost exceeded or exceeded its quotas
+ tags: [String] # Entity tags
+ limitConcurrentRequests: Boolean # If enabled, Otoroshi will reject new request if too much at the same time
+ useAkkaHttpClient: Boolean # Globally use akka http client for everything
+ elasticWritesConfigs: [ElasticAnalyticsConfig] # Configs. for Elastic writes
+ logAnalyticsOnServer: Boolean # Log analytics event on the server
+ metadata: Json # Entity metadata
+ apiReadOnly: Boolean # If enabled, Admin API won't be able to write/update/delete entities
+ backOfficeAuthRef: String
+ streamEntityOnly: Boolean # HTTP will be streamed only. Doesn't work with old browsers
+ otoroshiId: String # Unique id for this otoroshi instance
+ mailerSettings: Json # Optional mailer configuration
+ lines: [String] # Possibles lines for Otoroshi
+ middleFingers: Boolean # Use middle finger emoji as a response character for endless HTTP responses
+ analyticsWebhooks: [Webhook] # Webhook that will receive all internal Otoroshi events
+ autoCert: AutoCert # Auto certs settings
+ maintenanceMode: Boolean # Global maintenant mode
+ letsEncryptSettings: LetsEncryptSettings # Let's encrypt (ACME) settings
+ snowMonkeyConfig: SnowMonkeyConfig # Snowmonky settings
+ scripts: GlobalScripts # global plugins settings. will be deprecated soon
+ perIpThrottlingQuota: Float # Authorized number of calls per second globally per IP address, measured on 10 seconds
+ useCircuitBreakers: Boolean # If enabled, services will be authorized to use circuit breakers
+ maxHttp10ResponseSize: Float # The max size in bytes of an HTTP 1.0 response
+ tlsSettings: TlsSettings # TLS settings
+ statsdConfig: StatsdConfig # Statsd settings (agent connection)
+ autoLinkToDefaultGroup: Boolean # If not defined, every new service descriptor will be added to the default group
+ alertsWebhooks: [Webhook] # Webhook that will receive all Otoroshi alert events
+ ipFiltering: IpFiltering # Global ip filtering settings
+ u2fLoginOnly: Boolean # If enabled, login to backoffice through Auth0 will be disabled
+ userAgentSettings: UserAgentSettings # Settings for useragent extraction
+}
+
+  
+"""
+Settings for generating a keypair
+"""
+type GenKeyPairQuery {
+ algo: String # Keypair algorithm
+ size: Float # Keypair size
+}
+
+  
+"""
+Representation of how a request will be matched to a route
+"""
+type NgFrontend {
+ headers: Json # the headers that will be matched
+ query: Json # the query params that will be matched
+ domains: [String] # The domain and path that will be matched
+ methods: [String] # the http methods that will be matched
+ exact: Boolean # Match on exact path ?
+ strip_path: Boolean # Is path stripped from backend request
+}
+
+  
+type ClientIdAuthConstraints {
+ enabled: Boolean 
+ headerName: String
+ queryName: String
+}
+
+  
+type BasicAuthUser {
+ metadata: Json 
+ password: String 
+ tags: [String] 
+ email: String 
+ webauthn: WebAuthnDetails 
+ rights: UserRights 
+ name: String 
+}
+
+  
+type ClientConfig {
+ connectionTimeout: Float 
+ useCircuitBreaker: Boolean 
+ retryInitialDelay: Float 
+ cacheConnectionSettings: CacheConnectionSettings 
+ proxy: Json 
+ callTimeout: Float 
+ callAndStreamTimeout: Float 
+ globalTimeout: Float 
+ maxErrors: Float 
+ retries: Float 
+ backoffFactor: Float 
+ customTimeouts: [CustomTimeouts] 
+ idleTimeout: Float 
+ sampleInterval: Float 
+}
+
+  
+type ApiKeyConstraints {
+ customHeadersAuth: CustomHeadersAuthConstraints 
+ routing: ApiKeyRouteMatcher 
+ clientIdAuth: ClientIdAuthConstraints 
+ jwtAuth: JwtAuthConstraints 
+ basicAuth: BasicAuthConstraints 
+}
+
+  
+"""
+An otoroshi admin user
+"""
+type SimpleOtoroshiAdmin {
+ createdAt: Float # User creation date
+ metadata: Json # Entity metadata
+ password: String # User password (bcrypt hashed)
+ rights: UserRights # User rights
+ typ: String # Type of user
+ label: String # User label
+ type: String # the kind of admin
+ _loc: EntityLocation # Entity location
+ username: String # User username
+ tags: [String] # Entity tags
+}
+
+  
+"""
+Settings for connection to a kafka cluster
+"""
+type KafkaConfig {
+ hostValidation: Boolean # Enabled TLS hostname validation
+ servers: [String] # URLs of the kafka servers
+ keyPass: String
+ mtlsConfig: MtlsConfig # TLS config to access the cluster
+ topic: String # Optional kafka topic (otoroshi-events by default)
+ truststore: String
+ keystore: String
+ sendEvents: Boolean # Send events to it, or just connect
+ type: String # the kind of exporter
+}
+
+  
+"""
+Represent a list of user rights
+"""
+type UserRights {
+ rights: [UserRight] # Access rights of a user
+}
+
+  
+"""
+Settings for plugins (of any kind)
+"""
+type Plugins {
+ config: Json # Plugins configuration
+ enabled: Boolean # Plugins enabled
+ excluded: [String] # Excluded paths
+ refs: [String] # Enabled plugins
+}
+
+  
+"""
+A backend representation with it's minimal attributes
+"""
+type NgMinimalBackend {
+ root: String # The root path of the backend or the full rewrite path
+ targets: [NgTarget] # The targets of the backend
+ load_balancing: LoadBalancing # Loadbalancing config og the backend
+ target_refs: [String] # List of NgStoredBackend ids
+ rewrite: Boolean # Does the backend performs a full url rewrite ?
+}
+
+  
+type WebAuthnDetails {
+ handle: String 
+ credentials: Json 
+}
+
+  
+"""
+Target for a TCP proxy
+"""
+type TcpTarget {
+ host: String # Target host
+ ip: String
+ port: Float # Target port
+ tls: Boolean # Use tls
+}
+
+  
+type GeoPositionRadius {
+ latitude: Float 
+ longitude: Float 
+ radius: Float 
+}
+
+  
+"""
+Model for a TCP proxy
+"""
+type TcpService {
+ enabled: Boolean # Service enabled
+ description: String # Entity description
+ metadata: Json # Entity metadata
+ port: Float # network port
+ tags: [String] # Entity tags
+ rules: [TcpRule] # Routing rules
+ clientAuth: String # Use client authentication
+ interface: String # Network interface
+ sni: SniSettings # SNI settings
+ id: String # Entity id
+ _loc: EntityLocation # Entity location
+ name: String # Entity name
+ tls: String # TLS mode
+}
+
+  
+type GzipConfig {
+ compressionLevel: Float 
+ blackList: [String] 
+ chunkedThreshold: Float 
+ excludedPatterns: [String] 
+ bufferSize: Float 
+ whiteList: [String] 
+ enabled: Boolean 
+}
+
+  
+"""
+Settings for webhook call
+"""
+type Webhook {
+ headers: Json # Headers to authorize the call or whatever
+ mtlsConfig: MtlsConfig # TLS config when calling webhook
+ type: String # the kind of exporter
+ url: String # The URL where events are posted
+}
+
+  
+"""
+Custom timeouts per path
+"""
+type NgCustomTimeouts {
+ connection_timeout: Float # Timeout at connection
+ call_and_stream_timeout: Float # Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)
+ path: String # path on which this configuration works
+ call_timeout: Float # Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)
+ idle_timeout: Float # Timeout on idle connection
+ global_timeout: Float # Specify how long the global call (with retries) should last at most in milliseconds
+}
+
+  
+"""
+Remaining quotas for an apikey
+"""
+type RemainingQuotas {
+ currentCallsPerSec: Float # Current number of call per second
+ remainingCallsPerSec: Float # Remaining number of call per second
+ currentCallsPerDay: Float # Current number of call per day
+ authorizedCallsPerDay: Float # Number of authorized call per day
+ currentCallsPerMonth: Float # Current number of call per month
+ remainingCallsPerMonth: Float # Remaining number of call per month
+ authorizedCallsPerSec: Float # Number of authorized call per second
+ authorizedCallsPerMonth: Float # Number of authorized call per month
+ remainingCallsPerDay: Float # Remaining number of call per day
+}
+
+  
+"""
+Settings to apply plugins globally
+"""
+type GlobalScripts {
+ jobConfig: Json # jobs enabled
+ enabled: Boolean # Global scripts enabled
+ transformersConfig: Json # transformers config
+ transformersRefs: [String] # transformers enabled
+ preRouteRefs: [String] # pre-route plugins enabled
+ sinkConfig: Json # sinks config
+ jobRefs: [String] # running jobs
+ validatorRefs: [String] # validator enabled
+ sinkRefs: [String] # sinks enabled
+ preRouteConfig: Json # pre-route config
+ validatorConfig: Json # validator config
+}
+
+  
+type JwtAuthConstraints {
+ keyPairSigned: Boolean 
+ cookieName: String
+ queryName: String
+ headerName: String
+ secretSigned: Boolean 
+ maxJwtLifespanSecs: String
+ enabled: Boolean 
+ includeRequestAttributes: Boolean 
+}
+
+  
+"""
+A backend that can be stored in the otoroshi datastore
+"""
+type StoredNgBackend {
+ description: String # The description of the backend
+ tags: [String] # The tags of the backend
+ metadata: Json # The metadata of the backend
+ backend: NgBackend # The actual backend
+ name: String # The name of the backend
+ _loc: EntityLocation # The location of the backend
+ id: String # The id of the backend
+}
+
+  
+type AccessValidatorRef {
+ enabled: Boolean 
+ excludedPatterns: [String] 
+ refs: [String] 
+ config: Json 
+}
+
+  
+"""
+User session for private apps
+"""
+type PrivateAppsUser {
+ realm: String # Session realm name
+ token: Json # Session tokens (from OAuth)
+ expiredAt: Float # Session expiration date
+ profile: Json # Session user profile
+ lastRefresh: Float # Session last refresh (if OAuth refresh_token supported)
+ randomId: String # Session random id
+ email: String # Session user email
+ createdAt: Float # Creation date of the session
+ _loc: EntityLocation # Entity location
+ authConfigId: String # Auth module id that created the session
+ tags: [String] # Entity tags
+ name: String # Entity name
+ otoroshiData: Json # Otoroshi oriented metadata
+ metadata: Json # Entity metadata
+}
+
+  
+"""
+A composition of multiple routes with the same plugins
+"""
+type NgService {
+ metadata: Json # The metadata of the service
+ client: NgClientConfig # The client config of the service
+ name: String # The name of the service
+ id: String # The id of the service
+ capture: Boolean # Capture http traffic
+ description: String # The description of the service
+ routes: [NgMinimalRoute] # The routes of the service
+ debug_flow: Boolean # Enable report debugging
+ export_reporting: Boolean # Export the execution reporting through standard data exporter
+ _loc: EntityLocation # The location of the service
+ enabled: Boolean # Is the service enabled
+ tags: [String] # The tags of the service
+ groups: [String] # The groups of the service
+}
+
+  
+type HealthCheck {
+ enabled: Boolean 
+ url: String 
+}
+
+  
+"""
+Settings for the snow monkey (chaos engineering)
+"""
+type SnowMonkeyConfig {
+ dryRun: Boolean # Whether or not outages will actualy impact requests
+ outageDurationTo: Float # End of outage duration range
+ chaosConfig: ChaosConfig # Chaos settings
+ timesPerDay: Float # Number of time per day each service will be outage
+ outageDurationFrom: Float # Start of outage duration range
+ startTime: String # Start time of Snow Monkey each day
+ includeUserFacingDescriptors: Boolean # Whether or not user facing apps. will be impacted by Snow Monkey
+ targetGroups: [String] # Groups impacted by Snow Monkey. If empty, all groups will be impacted
+ enabled: Boolean # Whether or not this config is enabled
+ stopTime: String # Stop time of Snow Monkey each day
+ outageStrategy: String # 
+}
+
+  
+"""
+Elasticseach indexation settings
+"""
+type IndexSettings {
+ clientSide: Boolean # Enable index splitting on client side
+ interval: Json # Index splitting interval
+}
+
+  
+type GroupFilter {
+ group: String 
+ tenant: TenantAccess 
+ team: String 
+}
+
+  
+"""
+Settings to generate certificates on the fly
+"""
+type AutoCert {
+ allowed: [String] # allowed domains
+ enabled: Boolean # Enable auto cert
+ replyNicely: Boolean # Reply TLS error with an auto generated certificate for the domain
+ notAllowed: [String] # not allowed domains
+ caRef: String
+}
+
+  
+type RestrictionPath {
+ method: String 
+ path: String 
+}
+
+  
+"""
+Settings for the http client when http request is forwarded
+"""
+type NgClientConfig {
+ idle_timeout: Float # Timeout on idle connection
+ sample_interval: Float # Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted
+ cache_connection_settings: NgCacheConnectionSettings # Cached connection settings
+ call_and_stream_timeout: Float # Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)
+ custom_timeouts: [NgCustomTimeouts] # Custom timeouts per path
+ connection_timeout: Float # Timeout at connection
+ call_timeout: Float # Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)
+ global_timeout: Float # Specify how long the global call (with retries) should last at most in milliseconds
+ retry_initial_delay: Float # Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor
+ backoff_factor: Float # Specify the factor to multiply the delay for each retry
+ proxy: Json # Web proxy settings for http client
+ retries: Float # Specify how many times the client will try to fetch the result of the request after an error before giving up.
+ max_errors: Float # Specify how many errors can pass before opening the circuit breaker
+}
+
+  
+"""
+List of bad response settings
+"""
+type BadResponsesFaultConfig {
+ ratio: Float # The percentage of requests affected by this fault. Value should be between 0.0 and 1.0
+ responses: [BadResponse] # The possibles responses
+}
+
+  
+type Target {
+ tags: [String] 
+ host: String 
+ weight: Float 
+ metadata: Json 
+ protocol: String 
+ predicate: Json 
+ ipAddress: String
+ mtlsConfig: MtlsConfig 
+ scheme: String 
+}
+
+  
+"""
+Various web proxy settings for http client
+"""
+type Proxies {
+ elastic: WSProxyServer # Web proxy used to call elastic
+ eventsWebhooks: WSProxyServer # Web proxy used to call webhooks
+ jwk: WSProxyServer # Web proxy used to fetch jwks
+ auth: WSProxyServer # Web proxy used to call OAuth providers
+ clevercloud: WSProxyServer # Web proxy used to call clevercloud
+ alertEmails: WSProxyServer # Web proxy used to send alert emails
+ authority: WSProxyServer # Web proxy used to check authorities
+ services: WSProxyServer # Web proxy used to access services targets
+}
+
+  
+"""
+Settings for automatic apikey rotation with grace period
+"""
+type ApiKeyRotation {
+ enabled: Boolean # Rotation enabled
+ rotationEvery: Float # Rotate every n hours
+ gracePeriod: Float # period (in hours) during which both secrets works
+ nextSecret: String
+}
+
+  
+type CacheConnectionSettings {
+ enabled: Boolean 
+ queueSize: Float 
+}
+
+  
+"""
+SNI settings for a TCP proxy
+"""
+type SniSettings {
+ enabled: Boolean # SNI extraction enabled
+ forwardIfNoMatch: Boolean # 
+ forwardsTo: TcpTarget # forwards call to
+}
+
+  
+"""
+Loadbalancing strategy
+"""
+type LoadBalancing {
+ type: String # undefined
+ ratio: Float # undefined
+}
+
+  
+type RedirectionSettings {
+ enabled: Boolean 
+ code: Float 
+ to: String 
+}
+
+  
+"""
+Email location settings
+"""
+type EmailLocation {
+ name: String # Destination name
+ email: String # Email address
+}
+
+  
+"""
+An otoroshi model for an organization (otoroshi-ui)
+"""
+type Tenant {
+ description: String # Entity description
+ metadata: Json # Entity metadata
+ name: String # Entity name
+ tags: [String] # Entity tags
+ id: String # Entity id
+}
+
+  
+"""
+User session for otoroshi-ui admins
+"""
+type BackOfficeUser {
+ randomId: String # Session user random id
+ profile: Json # Session user profile
+ authConfigId: String # Session created from auth module id
+ rights: UserRights # Session user rights
+ createdAt: Float # Creation date for the session
+ token: Json # Session tokens (only if OAuth/OIDC)
+ name: String # Session user name
+ tags: [String] # Entity tags
+ metadata: Json # Entity metadata
+ email: String # User email
+ simpleLogin: Boolean # Session generated from a simple login module (like basic or ldap)
+ expiredAt: Float # Expiration date for the session
+ _loc: EntityLocation # Entity location
+ lastRefresh: Float # Last refresh of the session (OAuth with refresh tokens)
+}
+
+  
+type ApiDescriptor {
+ exposeApi: Boolean 
+ openApiDescriptorUrl: String
+}
+
+  
+type SessionCookieValues {
+ httpOnly: Boolean 
+ secure: Boolean 
+}
+
+  
+"""
+Settings for connection to a let's encrypt (or ACME) server
+"""
+type LetsEncryptSettings {
+ privateKey: String # Let's encrypt (ACME) private key
+ contacts: [String] # Let's encrypt (ACME) contacts
+ emails: [String] # Let's encrypt (ACME) contact emails
+ enabled: Boolean # Let's encrypt (ACME) enabled
+ publicKey: String # Let's encrypt (ACME) public key
+ server: String # Let's encrypt (ACME) server
+}
+
+  
+"""
+TLS settings for the http client
+"""
+type NgTlsConfig {
+ enabled: Boolean # Enabled
+ certs: [String] # Trusted cert. ids
+ loose: Boolean # Loose verification
+ trust_all: Boolean # Trust any certificate
+ trusted_certs: [String] # Trusted cert. ids
+}
+
+  
+type ApiKeyRouteMatcher {
+ oneTagIn: [String] 
+ noneMetaKeysIn: [String] 
+ oneMetaIn: Json 
+ oneMetaKeyIn: [String] 
+ allMetaKeysIn: [String] 
+ noneTagIn: [String] 
+ allTagsIn: [String] 
+ allMetaIn: Json 
+ noneMetaIn: Json 
+}
+
+  
+type JsonPathValidator {
+ path: String 
+ value: Json 
+}
+
+  
+"""
+Settings for a large request fault (chaos engineering)
+"""
+type LargeRequestFaultConfig {
+ ratio: Float # The percentage of requests affected by this fault. Value should be between 0.0 and 1.0
+ additionalRequestSize: Float # The size added to the request body in bytes. Added payload will be spaces only.
+}
+
+  
+"""
+A backend representation with it's targets, load balancing and general settings
+"""
+type NgBackend {
+ root: String # The root path of the backend or the full rewrite path
+ health_check: HealthCheck 
+ client: NgClientConfig # Client config. of the backend
+ load_balancing: LoadBalancing # Loadbalancing config og the backend
+ rewrite: Boolean # Does the backend performs a full url rewrite ?
+ target_refs: [String] # List of NgStoredBackend ids
+ targets: [NgTarget] # The targets of the backend
+}
+
+  
+type PreRoutingRef {
+ enabled: Boolean 
+ excludedPatterns: [String] 
+ refs: [String] 
+ config: Json 
+}
+
+  
+"""
+The settings for http cached connection at host level
+"""
+type NgCacheConnectionSettings {
+ queue_size: Float # How much request can be queue before dropping it
+ enabled: Boolean # Is cached connection enabled
+}
+
+  
+"""
+Data exporter settings
+"""
+type DataExporterConfig {
+ desc: String # Description
+ _loc: EntityLocation # Entity location
+ bufferSize: Float # Number of events in buffer
+ jsonWorkers: Float # Number of workers that transform events
+ groupDuration: Float # The max duration before sending group
+ groupSize: Float # The max size of events group before sending
+ type: String # Entity type
+ tags: [String] # Entity tags
+ sendWorkers: Float # Number of workers that sends events
+ id: String # Id of the exporter
+ name: String # Entity name
+ metadata: Json # Entity metadata
+ config: Json # Exporter config
+ projection: Json # Event projection
+ enabled: Boolean # Is the exporter enabled
+ filtering: DataExporterConfigFiltering # Filtering options
+}
+
+  
+type CustomHeadersAuthConstraints {
+ enabled: Boolean 
+ clientIdHeaderName: String
+ clientSecretHeaderName: String
+}
+
+  
+"""
+Global TLS settings. The default domain that will be picked if no certificate matches the current request
+"""
+type TlsSettings {
+ trustedCAsServer: [String] # List for CAs trusted by otoroshi when performing TLS termination
+ includeJdkCaClient: Boolean # Use known JDK CAs to build trust when performing request from otoroshi to backends
+ randomIfNotFound: Boolean # Use a random one
+ defaultDomain: String
+ includeJdkCaServer: Boolean # Use known JDK CAs to build trust for incoming request
+}
+
+  
+type Restrictions {
+ forbidden: [RestrictionPath] 
+ allowed: [RestrictionPath] 
+ notFound: [RestrictionPath] 
+ allowLast: Boolean 
+ enabled: Boolean 
+}
+
+  
+type PKCEConfig {
+ enabled: Boolean 
+ algorithm: String 
+}
+
+  
+"""
+Settings for connection to a statsd agent
+"""
+type StatsdConfig {
+ datadog: Boolean # Datadog agent
+ host: String # The host of the StatsD agent
+ port: Float # The port of the StatsD agent
+}
+
+  
+type IpFiltering {
+ whitelist: [String] 
+ blacklist: [String] 
+}
+
+  
+"""
+Settings for a latency injection fault (chaos engineering)
+"""
+type LatencyInjectionFaultConfig {
+ ratio: Float # The percentage of requests affected by this fault. Value should be between 0.0 and 1.0
+ from: Float # The start range of latency added to the request
+ to: Float # The end range of latency added to the request
+}
+
+  
+"""
+Location of any entity (teams and organization)
+"""
+type EntityLocation {
+ tenant: String # Organization of the current entity
+ teams: [String] # Teams of the current entity
+}
+
+  
+type Credential {
+ certificate: String
+ privateKey: String
+ certId: String
+ useOtoroshiCertificate: Boolean 
+}
+
+  
+"""
+A target where incoming requests will be forwarded
+"""
+type NgTarget {
+ ip_address: String
+ protocol: String # Protocol for the target
+ predicate: Json # Predicate to choose this target
+ tls_config: NgTlsConfig # TLS settings to contact this target
+ tls: Boolean # Does the target uses TLS
+ port: Float # port of the target
+ id: String # id of the target
+ weight: Float # The weight of the target when choosing
+ hostname: String # hostname of the target
+}
+
+  
+"""
+Settings to extract informations about user agent (for otoroshi events)
+"""
+type UserAgentSettings {
+ enabled: Boolean # User agent extraction enabled
+}
+
+type Query {
+  adminSessions: [BackOfficeUser] @rest(url: "http://otoroshi-api.oto.tools:9999/api/admin-sessions", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  adminsSimpleTemplate: SimpleOtoroshiAdmin @rest(url: "http://otoroshi-api.oto.tools:9999/api/admins/simple/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  adminsWebauthnTemplate: SimpleOtoroshiAdmin @rest(url: "http://otoroshi-api.oto.tools:9999/api/admins/webauthn/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  apikeys: [ApiKey] @rest(url: "http://otoroshi-api.oto.tools:9999/api/apikeys", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  apikeysId(id : String): ApiKey @rest(url: "http://otoroshi-api.oto.tools:9999/api/apikeys/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  apikeysIdQuotas(id : String): RemainingQuotas @rest(url: "http://otoroshi-api.oto.tools:9999/api/apikeys/${params.id}/quotas", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  apikeysTemplate: ApiKey @rest(url: "http://otoroshi-api.oto.tools:9999/api/apikeys/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  appsSessions: PrivateAppsUser @rest(url: "http://otoroshi-api.oto.tools:9999/api/apps-sessions", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  auths: [Json] @rest(url: "http://otoroshi-api.oto.tools:9999/api/auths", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  authsId(id : String): Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/auths/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  authsTemplate: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/auths/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  backends: [StoredNgBackend] @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/backends", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  backendsId(id : String): StoredNgBackend @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/backends/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  backendsTemplate: StoredNgBackend @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/backends/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  certificates: [Cert] @rest(url: "http://otoroshi-api.oto.tools:9999/api/certificates", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  certificatesByDomain: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/certificates/_by_domain", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  certificatesId(id : String): Cert @rest(url: "http://otoroshi-api.oto.tools:9999/api/certificates/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  certificatesTemplate: Cert @rest(url: "http://otoroshi-api.oto.tools:9999/api/certificates/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  clusterLoginTokensId(id : String): Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/cluster/login-tokens/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  clusterSessionsId(id : String): PrivateAppsUser @rest(url: "http://otoroshi-api.oto.tools:9999/api/cluster/sessions/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  clusterUserTokensId(id : String): Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/cluster/user-tokens/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  dataExporterConfigs: [DataExporterConfig] @rest(url: "http://otoroshi-api.oto.tools:9999/api/data-exporter-configs", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  dataExporterConfigsId(id : String): DataExporterConfig @rest(url: "http://otoroshi-api.oto.tools:9999/api/data-exporter-configs/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  dataExporterConfigsTemplate: DataExporterConfig @rest(url: "http://otoroshi-api.oto.tools:9999/api/data-exporter-configs/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  events: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/events", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  globalconfig: GlobalConfig @rest(url: "http://otoroshi-api.oto.tools:9999/api/globalconfig", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  globalconfigTemplate: GlobalConfig @rest(url: "http://otoroshi-api.oto.tools:9999/api/globalconfig/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  groups: [ServiceGroup] @rest(url: "http://otoroshi-api.oto.tools:9999/api/groups", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  groupsGroupIdStatus(groupId : String): Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/groups/${params.groupId}/status", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  groupsId(id : String): ServiceGroup @rest(url: "http://otoroshi-api.oto.tools:9999/api/groups/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  groupsTemplate: ServiceGroup @rest(url: "http://otoroshi-api.oto.tools:9999/api/groups/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  live: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/live", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  liveId(id : String): Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/live/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  newApikey: ApiKey @rest(url: "http://otoroshi-api.oto.tools:9999/api/new/apikey", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  newGroup: ServiceGroup @rest(url: "http://otoroshi-api.oto.tools:9999/api/new/group", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  newService: ServiceDescriptor @rest(url: "http://otoroshi-api.oto.tools:9999/api/new/service", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  newTcpService: TcpService @rest(url: "http://otoroshi-api.oto.tools:9999/api/new/tcp/service", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  old_services: [ServiceDescriptor] @rest(url: "http://otoroshi-api.oto.tools:9999/api/services", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  old_servicesId(id : String): ServiceDescriptor @rest(url: "http://otoroshi-api.oto.tools:9999/api/services/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  old_servicesTemplate: ServiceDescriptor @rest(url: "http://otoroshi-api.oto.tools:9999/api/services/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  pluginsAll: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/plugins/all", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  routes: [NgRoute] @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/routes", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  routesId(id : String): NgRoute @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/routes/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  routesTemplate: NgRoute @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/routes/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  scripts: [Script] @rest(url: "http://otoroshi-api.oto.tools:9999/api/scripts", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  scriptsId(id : String): Script @rest(url: "http://otoroshi-api.oto.tools:9999/api/scripts/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  scriptsTemplate: Script @rest(url: "http://otoroshi-api.oto.tools:9999/api/scripts/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  services: [NgService] @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/services", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  servicesId(id : String): NgService @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/services/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  servicesServiceIdEvents(serviceId : String): Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/services/${params.serviceId}/events", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  servicesServiceIdLive(serviceId : String): Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/services/${params.serviceId}/live", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  servicesServiceIdResponse(serviceId : String): Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/services/${params.serviceId}/response", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  servicesServiceIdStats(serviceId : String): Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/services/${params.serviceId}/stats", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  servicesServiceIdStatus(serviceId : String): Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/services/${params.serviceId}/status", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  servicesTemplate: NgService @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/services/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  snowmonkeyConfig: SnowMonkeyConfig @rest(url: "http://otoroshi-api.oto.tools:9999/api/snowmonkey/config", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  stats: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/stats", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  statsGlobal: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/stats/global", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  statusGlobal: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/status/global", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  targets: [StoredNgTarget] @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/targets", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  targetsId(id : String): StoredNgTarget @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/targets/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  targetsTemplate: StoredNgTarget @rest(url: "http://otoroshi-api.oto.tools:9999/api/experimental/targets/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  tcpServices: [TcpService] @rest(url: "http://otoroshi-api.oto.tools:9999/api/tcp/services", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  tcpServicesId(id : String): TcpService @rest(url: "http://otoroshi-api.oto.tools:9999/api/tcp/services/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  tcpTemplate: TcpService @rest(url: "http://otoroshi-api.oto.tools:9999/api/tcp/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  teams: [Team] @rest(url: "http://otoroshi-api.oto.tools:9999/api/teams", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  teamsId(id : String): Team @rest(url: "http://otoroshi-api.oto.tools:9999/api/teams/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  teamsTemplate: Team @rest(url: "http://otoroshi-api.oto.tools:9999/api/teams/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  tenants: [Tenant] @rest(url: "http://otoroshi-api.oto.tools:9999/api/tenants", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  tenantsId(id : String): Tenant @rest(url: "http://otoroshi-api.oto.tools:9999/api/tenants/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  tenantsTemplate: Tenant @rest(url: "http://otoroshi-api.oto.tools:9999/api/tenants/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  tunnels: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/tunnels", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  tunnelsInfos: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/tunnels/infos", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  tunnelsRegister: Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/tunnels/register", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  tunnelsTunnelIdRelay(tunnelId : String): Json @rest(url: "http://otoroshi-api.oto.tools:9999/api/tunnels/${params.tunnelId}/relay", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  verifiers: [GlobalJwtVerifier] @rest(url: "http://otoroshi-api.oto.tools:9999/api/verifiers", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  verifiersId(id : String): GlobalJwtVerifier @rest(url: "http://otoroshi-api.oto.tools:9999/api/verifiers/${params.id}", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+  verifiersTemplate: GlobalJwtVerifier @rest(url: "http://otoroshi-api.oto.tools:9999/api/verifiers/_template", method: "GET", headers: "{\"Accept\": \"application/json\", \"Authorization\": \"Basic YWRtaW4tYXBpLWFwaWtleS1pZDphZG1pbi1hcGktYXBpa2V5LXNlY3JldA==\"}")
+}

@@ -5,18 +5,9 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}
-import otoroshi.utils.controllers.{
-  AdminApiHelper,
-  ApiError,
-  BulkControllerHelper,
-  CrudControllerHelper,
-  EntityAndContext,
-  JsonApiError,
-  NoEntityAndContext,
-  OptionalEntityAndContext,
-  SendAuditAndAlert,
-  SeqEntityAndContext
-}
+import otoroshi.next.models.NgRoute
+import otoroshi.utils.controllers.{AdminApiHelper, ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SendAuditAndAlert, SeqEntityAndContext}
+import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -536,4 +527,31 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
         }
       }
     }
+
+  def convertAsRoute(serviceId: String) = ApiAction.async { ctx =>
+    env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+      case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).vfuture
+      case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
+      case Some(desc)                            => {
+        Ok(NgRoute.fromServiceDescriptor(desc, false).json).vfuture
+      }
+    }
+  }
+
+  def importAsRoute(serviceId: String) = ApiAction.async { ctx =>
+    env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+      case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).vfuture
+      case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
+      case Some(desc)                            => {
+        val route = NgRoute.fromServiceDescriptor(desc, false)
+        route.save().map { _ =>
+          val port = if (ctx.request.theSecured) env.exposedHttpsPortInt else env.exposedHttpPortInt
+          Ok(route.json.asObject ++ Json.obj(
+            "resource_url" -> s"${ctx.request.theProtocol}://${env.adminApiExposedHost}:${port}/api/experimental/routes/${route.id}",
+            "resource_ui_url" -> s"${ctx.request.theProtocol}://${env.backOfficeHost}:${port}/bo/dashboard/routes/${route.id}",
+          ))
+        }
+      }
+    }
+  }
 }

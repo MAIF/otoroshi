@@ -34,6 +34,8 @@ import _ from 'lodash';
 import { HTTP_COLORS } from './RouteComposition';
 
 import { getPluginsPatterns } from './patterns';
+import { EurekaTargetForm } from './EurekaTargetForm';
+import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
@@ -480,6 +482,7 @@ class Designer extends React.Component {
     },
     advancedDesignerView: null,
     showTryIt: false,
+    backendForm: undefined
   };
 
   componentDidMount() {
@@ -660,6 +663,7 @@ class Designer extends React.Component {
       this.setState(
         {
           backends,
+          backendForm,
           loading: false,
           categories: categories.filter((category) => !['Tunnel', 'Job'].includes(category)),
           route: { ...routeWithNodeId },
@@ -685,7 +689,8 @@ class Designer extends React.Component {
             ...DEFAULT_FLOW.Backend('plugin'),
             ...backendForm,
             config_schema: toUpperCaseLabels(
-              DEFAULT_FLOW.Backend('plugin').config_schema(backendForm.schema)
+              DEFAULT_FLOW.Backend('plugin')
+                .config_schema(backendForm.schema, route, this.updateRoute)
             ),
             config_flow: DEFAULT_FLOW.Backend('plugin').config_flow,
             nodeId: 'Backend',
@@ -1552,6 +1557,7 @@ class Designer extends React.Component {
                     originalRoute={originalRoute}
                     alertModal={alertModal}
                     disabledSaveButton={isEqual(route, originalRoute)}
+                    backendForm={this.state.backendForm}
                   />
                 </div>
               </>
@@ -1994,7 +2000,8 @@ class EditView extends React.Component {
   loadForm = () => {
     const { selectedNode, plugins, route, readOnly } = this.props;
 
-    const { id, flow, config_flow, config_schema, schema, nodeId } = selectedNode;
+    const { id, flow, config_flow, schema, nodeId } = selectedNode;
+    let { config_schema } = selectedNode
 
     const isFrontendOrBackend = ['Backend', 'Frontend'].includes(id);
     const isPluginWithConfiguration = Object.keys(config_schema).length > 0;
@@ -2088,7 +2095,7 @@ class EditView extends React.Component {
     })
 
     return this.props.updatePlugin(nodeId, selectedNode.id, {
-      plugin: newValue.plugin,
+      plugin: newValue.plugin || oldConfig?.plugin,
       status: newValue.status,
     });
   };
@@ -2140,6 +2147,10 @@ class EditView extends React.Component {
     const notOnBackendNode = !usingExistingBackend || id !== 'Backend';
 
     if (form.flow.length === 0 && Object.keys(form.schema).length === 0) return null;
+
+    const EurekaForm = id === 'cp:otoroshi.next.plugins.EurekaTarget' ? EurekaTargetForm : ExternalEurekaTargetForm
+    const hasCustomPluginForm = ['cp:otoroshi.next.plugins.EurekaTarget',
+      'cp:otoroshi.next.plugins.ExternalEurekaTarget'].includes(id)
 
     return (
       <div
@@ -2224,23 +2235,36 @@ class EditView extends React.Component {
                   )}
                 </>
               )}
-              {!asJsonFormat && (
+              {!asJsonFormat && <>
                 <NgForm
                   ref={this.formRef}
                   value={form.value}
                   schema={form.schema}
-                  flow={form.flow}
+                  flow={hasCustomPluginForm ? ['status'] : form.flow}
                   onChange={this.onValidate}
-                  footer={() => (
-                    <Actions
-                      disabledSaveButton={disabledSaveButton}
-                      valid={saveRoute}
-                      selectedNode={selectedNode}
-                      onRemove={onRemove}
-                    />
-                  )}
+                // footer={() => (
+                //   <Actions
+                //     disabledSaveButton={disabledSaveButton}
+                //     valid={saveRoute}
+                //     selectedNode={selectedNode}
+                //     onRemove={onRemove}
+                //   />
+                // )}
                 />
-              )}
+                {hasCustomPluginForm &&
+                  <EurekaForm
+                    route={route}
+                    update={plugin => {
+                      const { selectedNode } = this.props;
+                      const { nodeId } = selectedNode;
+
+                      return this.props.updatePlugin(nodeId, selectedNode.id, {
+                        plugin,
+                        status: form.schema.status,
+                      });
+                    }} />
+                }
+              </>}
             </div>
           )}
           {!notOnBackendNode && (

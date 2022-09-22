@@ -38,7 +38,7 @@
     .d-flex {
         display: flex;
     }
-    
+
     .d-flex-center {
         display: flex;
         align-items: center;
@@ -546,6 +546,23 @@
         height: 100%;
     }
 
+    .tryit-selector-mode {
+        border-radius: 24px;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border: none;
+        padding: 4px 8px;
+        color: #fff;
+        text-align: center;
+    }
+
+    .tryit-right-selector {
+        border-top-right-radius: 24px;
+        border-bottom-right-radius: 24px;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
     .tryit-prettify-button {
         position: absolute;
         top: 16px;
@@ -634,7 +651,7 @@
 .wizard-content {
     flex: 1;
     margin-top: 2em;
-    display: flex; 
+    display: flex;
     flex-direction: column;
 }
 
@@ -678,4 +695,25 @@
 
 .patch-row {
     margin-right: 0 !important;
+}
+
+.patch-main {
+    .page-header {
+        padding-bottom: 0px;
+
+        h4,
+        .dropdown {
+            padding-bottom: 9px;
+        }
+
+        >div>button {
+            margin-bottom: 9px;
+        }
+
+        .ms-2:not(.dropdown)>button {
+            border-bottom-left-radius: 0px;
+            border-bottom-right-radius: 0px;
+
+        }
+    }
 }

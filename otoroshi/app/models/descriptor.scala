@@ -2286,6 +2286,20 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def dataOutFor(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def findByEnv(env: String)(implicit ec: ExecutionContext, _env: Env): Future[Seq[ServiceDescriptor]]
   def findByGroup(id: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]]
+  def findOrRouteById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]] = {
+    findById(id) flatMap {
+      case Some(service) => service.some.vfuture
+      case None          =>
+        env.datastores.routeDataStore.findById(id) flatMap {
+          case Some(service) => service.legacy.some.vfuture
+          case None          =>
+            env.datastores.servicesDataStore.findById(id) map {
+              case Some(service) => service.toRoutes.head.legacy.some
+              case None          => None
+            }
+        }
+    }
+  }
 
   def getFastLookups(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]]
   def fastLookupExists(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext, env: Env): Future[Boolean]

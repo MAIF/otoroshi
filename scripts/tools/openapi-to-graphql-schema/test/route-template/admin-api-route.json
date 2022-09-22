@@ -1,0 +1,94 @@
+{
+  "_loc": {
+    "tenant": "default",
+    "teams": [
+      "new-team"
+    ]
+  },
+  "name": "Otoroshi GraphQL admin api",
+  "description": "A new route",
+  "tags": [],
+  "metadata": {},
+  "enabled": true,
+  "debug_flow": false,
+  "export_reporting": false,
+  "capture": false,
+  "groups": [
+    "default"
+  ],
+  "frontend": {
+    "domains": [],
+    "strip_path": true,
+    "exact": false,
+    "headers": {},
+    "query": {},
+    "methods": []
+  },
+  "backend": {
+    "targets": [
+      {
+        "id": "target_1",
+        "hostname": "",
+        "port": 443,
+        "tls": true,
+        "weight": 1,
+        "predicate": {
+          "type": "AlwaysMatch"
+        },
+        "protocol": "HTTP/1.1",
+        "ip_address": null,
+        "tls_config": {
+          "certs": [],
+          "trusted_certs": [],
+          "enabled": true,
+          "loose": false,
+          "trust_all": false
+        }
+      }
+    ],
+    "target_refs": [],
+    "root": "/",
+    "rewrite": false,
+    "load_balancing": {
+      "type": "RoundRobin"
+    },
+    "client": {
+      "retries": 1,
+      "max_errors": 20,
+      "retry_initial_delay": 50,
+      "backoff_factor": 2,
+      "call_timeout": 30000,
+      "call_and_stream_timeout": 120000,
+      "connection_timeout": 10000,
+      "idle_timeout": 60000,
+      "global_timeout": 30000,
+      "sample_interval": 2000,
+      "proxy": {},
+      "custom_timeouts": [],
+      "cache_connection_settings": {
+        "enabled": false,
+        "queue_size": 2048
+      }
+    },
+    "health_check": null
+  },
+  "backend_ref": null,
+  "plugins": [
+    {
+      "enabled": true,
+      "debug": false,
+      "plugin": "cp:otoroshi.next.plugins.GraphQLBackend",
+      "include": [],
+      "exclude": [],
+      "config": {
+        "turn_view": null,
+        "schema": "",
+        "permissions": [],
+        "initialData": null,
+        "maxDepth": null
+      },
+      "plugin_index": {}
+    }
+  ],
+  "kind": "Route"
+}
