@@ -164,32 +164,32 @@ export const DEFAULT_FLOW = {
       ...generatedSchema,
       targets: {
         ...generatedSchema.targets,
-        onAfterChange: ({ onChange, getFieldValue }) => {
-          let port = getFieldValue('port');
-          port = port ? `:${port}` : '';
-          const hostname = getFieldValue('hostname') || '';
-          const isSecured = getFieldValue('tls');
+        // onAfterChange: ({ onChange, getFieldValue }) => {
+        //   let port = getFieldValue('port');
+        //   port = port ? `:${port}` : '';
+        //   const hostname = getFieldValue('hostname') || '';
+        //   const isSecured = getFieldValue('tls');
 
-          onChange(
-            'custom_target',
-            `${isSecured ? 'https' : 'http'}://${hostname}${port}${getFieldValue('custom_target')?.endsWith(' ') ? ' ' : ''
-            }`
-          );
-        },
+        //   onChange(
+        //     'custom_target',
+        //     `${isSecured ? 'https' : 'http'}://${hostname}${port}${getFieldValue('custom_target')?.endsWith(' ') ? ' ' : ''
+        //     }`
+        //   );
+        // },
         schema: {
           custom_target: {
-            label: 'Target',
-            type: 'string',
-            disabled: true,
-            render: ({ value, onChange }) => {
-              const open = value.endsWith(' ');
+            renderer: props => {
+              const port = props.rootValue?.port
+              const hostname = props.rootValue?.hostname || '';
+              const isSecured = props.rootValue?.tls
+
               return (
                 <div
-                  className="d-flex-center justify-content-start target_information mt-3"
-                  onClick={() => onChange(open ? value.slice(0, -1) : `${value} `)}>
-                  <i className={`me-2 fas fa-chevron-${open ? 'down' : 'right'}`} />
+                  className="d-flex-center justify-content-start target_information mb-1"
+                  onClick={() => props.onChange(props.value === 'open' ? 'down' : 'open')}>
+                  <i className={`me-2 fas fa-chevron-${props.value === 'open' ? 'down' : 'right'}`} />
                   <i className="fas fa-server me-2" />
-                  <a>{value}</a>
+                  <a>{`${isSecured ? 'https' : 'http'}://${hostname}${port ? `:${port}` : ''}`}</a>
                 </div>
               );
             },
@@ -199,21 +199,13 @@ export const DEFAULT_FLOW = {
               key,
               {
                 ...value,
-                visible: {
-                  ref: parentNode,
-                  test: (v, idx) => {
-                    return !!v.targets[idx]?.custom_target.endsWith(' ');
-                  },
-                },
+                visible: (value) => value?.custom_target === 'open'
               },
             ])
           ),
           hostname: {
             ...generatedSchema.targets.schema.hostname,
-            visible: {
-              ref: parentNode,
-              test: (v, idx) => !!v.targets[idx]?.custom_target.endsWith(' '),
-            },
+            visible: (value) => value?.custom_target === 'open',
             constraints: [
               {
                 type: 'blacklist',

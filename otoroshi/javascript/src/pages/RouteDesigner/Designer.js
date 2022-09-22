@@ -1994,8 +1994,6 @@ class EditView extends React.Component {
   loadForm = () => {
     const { selectedNode, plugins, route, readOnly } = this.props;
 
-    console.log('load form')
-
     const { id, flow, config_flow, config_schema, schema, nodeId } = selectedNode;
 
     const isFrontendOrBackend = ['Backend', 'Frontend'].includes(id);
@@ -2004,15 +2002,7 @@ class EditView extends React.Component {
     let formSchema = schema || config_schema;
     let formFlow = [
       isFrontendOrBackend ? undefined : 'status',
-      isPluginWithConfiguration
-        ? 'plugin'
-        // {
-        //   label: isFrontendOrBackend ? null : 'Plugin',
-        //   flow: ['plugin'],
-        //   collapsed: false,
-        //   collapsable: false,
-        // }
-        : undefined,
+      isPluginWithConfiguration ? 'plugin' : undefined,
     ].filter((f) => f);
 
     if (config_schema) {
@@ -2036,7 +2026,9 @@ class EditView extends React.Component {
           ...formSchema,
           plugin: {
             type: 'form',
-            label: null,
+            props: {
+              label: 'Plugin configuration',
+            },
             schema: { ...convertTransformer(config_schema) },
             flow: [...(config_flow || flow)],
           },

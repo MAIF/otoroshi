@@ -25,14 +25,14 @@ function LabelAndInput(_props) {
     <div className="row mb-3">
       <label className="col-xs-12 col-sm-2 col-form-label">
         {label.replace(/_/g, ' ')}{' '}
-        <i
+        {_props.help && <i
           className="far fa-question-circle"
           data-toggle="tooltip"
           data-placement="top"
           title={_props.help}
           data-bs-original-title={_props.help}
           aria-label={_props.help}
-        />
+        />}
       </label>
       <div className="col-sm-10">{_props.children}</div>
     </div>
@@ -642,11 +642,13 @@ export class NgSelectRenderer extends Component {
   }
 
   applyTransformer = (props, r) => {
+    console.log(props, r)
     if (props.optionsTransformer) {
       return props.optionsTransformer(r)
-    } else {
-      return r
-    }
+    } else if ((r || []).length > 0 && r[0].label && r[0].value) {
+      return r;
+    } else
+      return (r || []).map(rawValue => ({ label: rawValue, value: rawValue }))
   }
 
   render() {

@@ -32,7 +32,8 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
         val rawType = (prop._2 \ "items" \ "type").asOpt[String].getOrElse("unknown type")
         val outType = JsString(openapiTypesToFormTypes.getOrElse(rawType, rawType))
         informations = informations ++ Json.obj(
-          "type"   -> "array",
+          // "type"   -> "array",
+          "array" -> true,
           "format" -> (if (outType == JsString("object")) JsString("form")
                        else JsNull)
         )
@@ -40,16 +41,21 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
 
       val enum = (prop._2 \ "enum").asOpt[Seq[String]]
       if (enum.nonEmpty) {
-        informations = informations ++ Json.obj(
-          "format"  -> "select",
-          "options" -> JsArray(enum.getOrElse(Seq.empty).map(JsString.apply))
+        informations = Json.obj(
+          "type"  -> "select",
+          "props" -> Json.obj(
+            "label" -> label,
+            "options" -> JsArray(enum.getOrElse(Seq.empty).map(JsString.apply))
+          )
         )
       }
 
       if (label == "raw" && `type` == "object") {
-        informations = informations ++ Json.obj(
-          "format" -> "code",
+        informations = Json.obj(
+          "type" -> "code",
           "props"  -> Json.obj(
+            "label" -> label,
+            "editorOnly" -> true,
             "mode" -> "json"
           )
         )
@@ -87,9 +93,11 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
                     }
                   else if ((informations \ "type").as[String] == "string" && enum.isEmpty) {
                     if (label == "body") {
-                      informations ++ Json.obj(
-                        "format" -> "code",
+                      Json.obj(
+                        "type" -> "code",
                         "props"  -> Json.obj(
+                          "label" -> label,
+                          "editorOnly" -> true,
                           "mode" -> "json"
                         )
                       )
