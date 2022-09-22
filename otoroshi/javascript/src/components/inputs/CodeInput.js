@@ -81,6 +81,7 @@ export default class CodeInput extends Component {
 
     const editor = (
       <AceEditor
+        {...(this.props.ace_config || {})}
         mode={
           this.props.mode
             ? this.props.mode === 'json'

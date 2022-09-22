@@ -27,10 +27,6 @@
         min-height: calc(100vh - 162px);
     }
 
-    .hide-overflow {
-        overflow: hidden;
-    }
-
     .relative-container {
         position: relative;
     }
@@ -531,36 +527,32 @@
         height: 100%;
     }
 
-    .tryit-columns {
-        width: 100%;
-        height: 100%;
-    }
-
-    .tryit-right-column {
-        width: 100%;
-        height: 100% !important;
-    }
-
-    .tryit-right-column :first-child {
-        width: 100%;
-        height: 100%;
-    }
-
     .tryit-selector-mode {
-        border-radius: 24px;
-        border-top-right-radius: 0;
-        border-bottom-right-radius: 0;
         border: none;
-        padding: 4px 8px;
+        padding: 2px 0;
         color: #fff;
         text-align: center;
+        background: none;
+        z-index: 21;
+        position: relative;
+        width: 115px;
     }
 
-    .tryit-right-selector {
-        border-top-right-radius: 24px;
-        border-bottom-right-radius: 24px;
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
+    .tryit-selector-mode-right {
+        left: calc(50% - 4px) !important;
+        width: 50% !important;
+    }
+
+    .tryit-selector-cursor {
+        transition: left .25s;
+        position: absolute;
+        background-color: #f9b000;
+        top: 4px;
+        bottom: 4px;
+        left: 4px;
+        border-radius: 24px;
+        width: calc(50% - 8px);
+        z-index: 20;
     }
 
     .tryit-prettify-button {
@@ -574,7 +566,7 @@
     .graphql-form {
         position: absolute;
         top: 0;
-        right: -12px;
+        right: 0;
         left: 0;
         bottom: 0;
         background-color: rgb(73, 73, 72);

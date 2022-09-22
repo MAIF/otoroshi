@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import range from 'lodash/range';
 import { BooleanInput } from '../../components/inputs';
 import {
@@ -235,47 +235,39 @@ export default function ({ route, hide }) {
   const receivedResponse = rawResponse && response;
 
   return (
-    <div className="graphql-form flex-column" style={{ overflowY: 'scroll' }}>
+    <div className="graphql-form flex-column">
       <div className="d-flex-between m-2 mb-0">
-        <div className="flex">
-          <div className="d-flex-between">
-            <h3>Testing</h3>
-            {route &&
-              route.plugins.find((f) => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') && (
-                <div style={{
-                  padding: '5px',
-                  borderRadius: '24px',
-                  backgroundColor: '#373735'
-                }}>
-                  <button
-                    className='tryit-selector-mode'
-                    style={{
-                      backgroundColor: (!testerView || testerView === 'rest') ? 'rgb(73, 73, 72)' : 'transparent'
-                    }}
-                    type="button"
-                    onClick={() => setTesterView('rest')}>
-                    REST Tester
-                  </button>
-                  <button
-                    className='tryit-selector-mode tryit-right-selector'
-                    style={{
-                      backgroundColor: testerView === 'graphql' ? 'rgb(73, 73, 72)' : 'transparent'
-                    }}
-                    type="button"
-                    onClick={() => setTesterView('graphql')}>
-                    GraphQL Tester
-                  </button>
-                </div>
-              )}
-            <button
-              className="btn btn-sm"
-              type="button"
-              style={{ minWidth: '36px' }}
-              onClick={hide}>
-              <i className="fas fa-times" style={{ color: '#fff' }} />
-            </button>
-          </div>
-        </div>
+        <h3>Testing</h3>
+        {route &&
+          route.plugins.find((f) => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') && (
+            <div style={{
+              padding: '5px',
+              borderRadius: '24px',
+              backgroundColor: '#373735',
+              position: 'relative'
+            }}>
+              <div className={`tryit-selector-cursor ${(!testerView || testerView === 'rest') ? '' : 'tryit-selector-mode-right'}`} />
+              <button
+                className="tryit-selector-mode"
+                type="button"
+                onClick={() => setTesterView('rest')}>
+                REST Tester
+              </button>
+              <button
+                className="tryit-selector-mode"
+                type="button"
+                onClick={() => setTesterView('graphql')}>
+                GraphQL Tester
+              </button>
+            </div>
+          )}
+        <button
+          className="btn btn-sm"
+          type="button"
+          style={{ minWidth: '36px' }}
+          onClick={hide}>
+          <i className="fas fa-times" style={{ color: '#fff' }} />
+        </button>
       </div>
       {testerView === 'graphql' ? (
         <div style={{ minHeight: 'calc(100vh - 162px)' }}>
@@ -306,15 +298,14 @@ export default function ({ route, hide }) {
         </div>
       ) : (
         <div
-          className="h-100"
+          // className="h-100"
           style={{
             flexDirection: 'column',
             background: 'rgb(60,60,60)',
             padding: '12px',
             borderRadius: '8px',
-            width: '97%',
-            margin: '0 auto',
-            marginTop: '10px'
+            margin: '10px',
+            flex: 1
           }}>
           <div className="d-flex">
             <div style={{ minWidth: '200px' }}>
@@ -560,40 +551,35 @@ export default function ({ route, hide }) {
               />
             )}
             {selectedTab === 'Body' && headersStatus === 'down' && (
-              <div className="mt-3">
-                <div className="d-flex align-items-center mb-3">
-                  <div className="d-flex">
-                    <BooleanInput
-                      label="none"
-                      value={!request.body}
-                      onChange={() => setRequest({ ...request, body: undefined })}
-                    />
-                  </div>
-                  <div className="d-flex mx-2">
-                    <BooleanInput
-                      label="raw"
-                      value={request.body === 'raw'}
-                      onChange={() => setRequest({ ...request, body: 'raw', contentType: 'json' })}
-                    />
-                  </div>
-                  {request.body === 'raw' && (
-                    <div style={{ minWidth: '120px' }}>
-                      <NgSelectRenderer
-                        options={CONTENT_TYPE}
-                        value={request.contentType}
-                        onChange={(contentType) => setRequest({ ...request, contentType })}
-                        optionsTransformer={arr => arr.map((item) => ({ value: item, label: item }))}
-                      />
-                    </div>
-                  )}
-                </div>
-                {request.body === 'raw' && (
-                  <CodeInput
-                    value={request.bodyContent}
-                    mode={request.contentType}
-                    onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
+              <div className="mt-3" style={{ overflow: 'hidden' }}>
+                <BooleanInput
+                  label="Use a body"
+                  value={request.body === 'raw' ? true : false}
+                  onChange={() => {
+                    const enabled = request.body === 'raw'
+                    if (enabled)
+                      setRequest({ ...request, body: undefined })
+                    else
+                      setRequest({ ...request, body: 'raw', contentType: 'json' })
+                  }}
+                />
+                {request.body === 'raw' && <>
+                  <NgSelectRenderer
+                    label="Type of content"
+                    options={CONTENT_TYPE}
+                    value={request.contentType}
+                    onChange={(contentType) => setRequest({ ...request, contentType })}
+                    optionsTransformer={arr => arr.map((item) => ({ value: item, label: item }))}
                   />
-                )}
+                  <Suspense fallback={<div>Loading ...</div>}>
+                    <CodeInput
+                      label="Content"
+                      value={request.bodyContent}
+                      mode={request.contentType}
+                      onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
+                    />
+                  </Suspense>
+                </>}
               </div>
             )}
           </div>
@@ -676,7 +662,7 @@ export default function ({ route, hide }) {
             </div>
           )}
           {!receivedResponse && !loading && (
-            <div className="d-flex align-items-center justify-content-center">
+            <div className="mt-3 text-center">
               <span>Enter the URL and click Send to get a response</span>
             </div>
           )}
@@ -784,7 +770,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     .map((i) => '          ')
     .join('');
   return (
-    <div className="d-flex mt-3 tryit-columns">
+    <div className="d-flex mt-3 flex reportview">
       <div className="main-view me-2" style={{ flex: 0.5, minWidth: '250px' }}>
         <div
           onClick={() => setSelectedStep(-1)}
@@ -914,29 +900,29 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
             );
           })}
       </div>
-      <div className="main-view tryit-right-column">
-        <CodeInput
-          readOnly={true}
-          width="100%"
-          height="100%"
-          editorOnly={true}
-          value={
-            JSON.stringify(
-              selectedPlugin === -1
-                ? selectedStep === -1
-                  ? informations
-                  : steps.find((t) => t.task === selectedStep)
-                : steps
-                  .find((t) => t.task === selectedStep)
-                  ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
-              null,
-              4
-            ) +
-            '\n' +
-            spaces
-          }
-        />
-      </div>
+      <CodeInput
+        readOnly={true}
+        width="100%"
+        editorOnly={true}
+        ace_config={{
+          maxLines: Infinity
+        }}
+        value={
+          JSON.stringify(
+            selectedPlugin === -1
+              ? selectedStep === -1
+                ? informations
+                : steps.find((t) => t.task === selectedStep)
+              : steps
+                .find((t) => t.task === selectedStep)
+                ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+            null,
+            4
+          ) +
+          '\n' +
+          spaces
+        }
+      />
     </div>
   );
 };

@@ -306,7 +306,7 @@ const Container = ({ children, onClick }) => {
 
   return (
     <div
-      className="h-100 col-12 hide-overflow route-designer"
+      className="h-100 col-12 route-designer div-overflowy"
       onMouseDown={(e) => {
         setPropagate(
           !document.getElementById('form-container')?.contains(e.target) &&
