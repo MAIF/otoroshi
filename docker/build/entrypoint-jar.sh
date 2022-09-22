@@ -1,6 +1,7 @@
 #!/bin/sh
 
 export JAVA_OPTS="$JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions --illegal-access=warn"
+echo "JAVA_OPTS: ${JAVA_OPTS}"
 if [ -z ${OTOROSHI_PLUGINS_DIR_PATH+x} ]; 
 then 
   echo "Bootstrapping otoroshi without additional plugins"
