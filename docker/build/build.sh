@@ -104,6 +104,11 @@ case "${1}" in
     push_jar_templates "$OTO_VERSION"
     push_graal "$OTO_VERSION"
     ;;
+  push-only-all)
+    OTO_VERSION="$2"
+    push_jar_templates "$OTO_VERSION"
+    push_graal "$OTO_VERSION"
+    ;;
   test-release-builds)
     OTO_VERSION="dev"
     prepare_build
@@ -153,15 +158,16 @@ case "${1}" in
     echo ""
     echo "possible commands: "
     echo ""
-    echo " - prepare-build"
-    echo " - cleanup"
-    echo " - build-all {version}"
-    echo " - push-all {version}"
+    echo " - prepare-build: build otoroshi.jar if not available and copy it"
+    echo " - prepare: copy otoroshi.jar"
+    echo " - cleanup: delete otoroshi.jar"
+    echo " - build-all {version}: build and tag all docker images"
+    echo " - push-all {version}: build, tag and push all docker images"
+    echo " - push-only-all {version}: push all docker images"
     echo " - test-release-builds"
     echo " - build-and-push-snapshot"
     echo " - build-snapshot"
     echo " - build-and-push-local"
-    echo " - prepare"
     ;;
 esac
 
