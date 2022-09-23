@@ -102,26 +102,11 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
       label: 'Tags',
     },
     _loc: {
-      type: 'object',
-      label: 'Location',
-      render: ({ onChange, value }) => (
-        <Location
-          {...value}
-          onChangeTenant={(v) =>
-            onChange({
-              ...value,
-              tenant: v,
-            })
-          }
-          onChangeTeams={(v) =>
-            onChange({
-              ...value,
-              teams: v,
-            })
-          }
-        />
-      ),
-    },
+      type: 'location',
+      props: {
+        label: 'Location'
+      }
+    }
   };
 
   const flow = [

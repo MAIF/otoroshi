@@ -1,8 +1,33 @@
 import React, { Component, Suspense } from 'react';
 import Select from 'react-select';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
+import { Location } from '../Location';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
+
+export class NgLocationRenderer extends Component {
+  render() {
+    const schema = this.props.schema;
+    const props = schema.props || {};
+    return (
+      <LabelAndInput {...this.props}>
+        <Location
+          {...props}
+          tenant={this.props.value?.tenant || 'default'}
+          teams={this.props.value?.teams || ['default']}
+          onChangeTenant={tenant => this.props.onChange({
+            ...this.props.value,
+            tenant
+          })}
+          onChangeTeams={teams => this.props.onChange({
+            ...this.props.value,
+            teams
+          })}
+        />
+      </LabelAndInput>
+    )
+  }
+}
 
 export class SingleLineCode extends Component {
   render() {
@@ -642,7 +667,6 @@ export class NgSelectRenderer extends Component {
   }
 
   applyTransformer = (props, r) => {
-    console.log(props, r)
     if (props.optionsTransformer) {
       return props.optionsTransformer(r)
     } else if ((r || []).length > 0 && r[0].label && r[0].value) {

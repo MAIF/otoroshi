@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { SelectInput, ArrayInput } from './inputs';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Separator } from './Separator';
 
 export class Location extends Component {
   state = { possibleTeams: [], possibleTenants: [], tenant: 'default' };
@@ -46,7 +45,7 @@ export class Location extends Component {
     BackOfficeServices.findAllTeams().then((teams) => {
       const possibleTeams = [
         { id: '*', name: 'All', description: 'All teams' },
-        ...teams.filter((t) => t.tenant === tenant),
+        ...teams.filter((t) => tenant === '*' || t.tenant === tenant),
       ];
       this.setState({ possibleTeams }, () => {
         this.props.onChangeTeams(possibleTeams[0] ? [possibleTeams[0]] : ['default']);

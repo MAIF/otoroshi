@@ -20,6 +20,7 @@ import {
   NgHiddenRenderer,
   NgSingleCodeLineRenderer,
   NgCodeRenderer,
+  NgLocationRenderer
 } from './inputs';
 
 import {
@@ -64,6 +65,8 @@ const Helpers = {
       return components.PasswordRenderer;
     } else if (type === 'form') {
       return NgForm;
+    } else if (type === 'location') {
+      return components.LocationRenderer;
     } else {
       return components.RendererNotFound;
     }
@@ -214,6 +217,7 @@ export class NgForm extends Component {
     CodeRenderer: NgCodeRenderer,
     PasswordRenderer: NgPasswordRenderer,
     JsonRenderer: NgJsonRenderer,
+    LocationRenderer: NgLocationRenderer
   };
 
   static setTheme = (theme) => {
