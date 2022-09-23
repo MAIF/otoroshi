@@ -456,18 +456,16 @@ export class NgArraySelectRenderer extends Component {
     const props = schema.props || {};
     if (props.optionsFrom) {
       this.setState({ loading: true }, () => {
-        fetch(this.props.schema.props.optionsFrom, {
+        fetch(props.optionsFrom, {
           method: 'GET',
           credentials: 'include',
         })
           .then((r) => r.json())
           .then((r) => {
-            this.setState({ loading: false });
-            if (props.optionsTransformer) {
-              this.setState({ options: props.optionsTransformer(r) });
-            } else {
-              this.setState({ options: r });
-            }
+            this.setState({
+              loading: false,
+              options: r
+            });
           })
           .catch((e) => {
             this.setState({ loading: false });
@@ -475,23 +473,28 @@ export class NgArraySelectRenderer extends Component {
       });
     }
   }
+
+  applyTransformer = (props, r) => {
+    if (props.optionsTransformer) {
+      return props.optionsTransformer(r || [])
+    } else if ((r || []).length > 0 && r[0].label && r[0].value) {
+      return r;
+    } else
+      return (r || []).map(rawValue => ({ label: rawValue, value: rawValue }))
+  }
+
   render() {
     const schema = this.props.schema || {};
     const props = schema.props || {};
+
     return (
       <LabelAndInput {...this.props}>
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           {this.props.value &&
             this.props.value.map((value, idx) => {
               return (
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    width: '100%',
-                  }}>
+                <div className='d-flex justify-content-between align-items-center mb-1'
+                  key={`${value}-${idx}`}>
                   <div style={{ width: '100%', flex: 1 }}>
                     <Select
                       name={`selector-${this.props.name}`}
@@ -500,11 +503,11 @@ export class NgArraySelectRenderer extends Component {
                       disabled={props.disabled}
                       placeholder={props.placeholder}
                       optionRenderer={props.optionRenderer}
-                      options={this.state.options || props.options}
+                      options={this.applyTransformer(props || this.props, this.state.options || props.options || [])}
                       style={{ width: '100%' }}
                       onChange={(e) => {
                         const newArray = this.props.value ? [...this.props.value] : [];
-                        newArray.splice(idx, 1, e.value);
+                        newArray.splice(idx, 1, e?.value || '');
                         this.props.onChange(newArray);
                       }}
                     />
@@ -512,7 +515,7 @@ export class NgArraySelectRenderer extends Component {
                   <button
                     type="button"
                     className="btn btn-sm btn-danger"
-                    style={{ width: 42, marginLeft: 5 }}
+                    style={{ width: 42, marginLeft: 5, alignSelf: 'stretch' }}
                     onClick={(e) => {
                       const newArray = this.props.value ? [...this.props.value] : [];
                       newArray.splice(idx, 1);
@@ -568,6 +571,7 @@ export class NgObjectSelectRenderer extends Component {
   render() {
     const schema = this.props.schema || {};
     const props = schema.props || {};
+
     return (
       <LabelAndInput {...this.props}>
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
@@ -660,7 +664,8 @@ export class NgSelectRenderer extends Component {
           .then((r) => r.json())
           .then((r) => {
             this.setState({ loading: false });
-            this.setState({ options: this.applyTransformer(props, r) })
+            // this.setState({ options: this.applyTransformer(props, r) })
+            this.setState({ options: r })
           })
           .catch((e) => {
             this.setState({ loading: false });
@@ -671,7 +676,7 @@ export class NgSelectRenderer extends Component {
 
   applyTransformer = (props, r) => {
     if (props.optionsTransformer) {
-      return props.optionsTransformer(r)
+      return props.optionsTransformer(r || [])
     } else if ((r || []).length > 0 && r[0].label && r[0].value) {
       return r;
     } else

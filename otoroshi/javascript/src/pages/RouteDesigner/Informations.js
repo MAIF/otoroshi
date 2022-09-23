@@ -99,6 +99,8 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     groups: {
       type: 'array-select',
       props: {
+        optionsFrom: "/bo/api/proxy/api/groups",
+        optionsTransformer: arr => arr.map(item => ({ value: item.id, label: item.name })),
         label: 'Groups'
       }
     },
