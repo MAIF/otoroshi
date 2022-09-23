@@ -1,6 +1,6 @@
 package otoroshi.openapi
 
-import otoroshi.next.plugins.{ContextValidation, EurekaTarget, GraphQLBackend, GraphQLQuery}
+import otoroshi.next.plugins.{ContextValidation, EurekaTarget, GraphQLBackend, GraphQLQuery, JwtVerification}
 import otoroshi.next.tunnel.TunnelPlugin
 import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.libs.json.Json
@@ -105,6 +105,23 @@ object CustomForms {
                  |  "tunnel_id" : {
                  |    "label" : "Tunnel ID",
                  |    "type" : "string"
+                 |  }
+                 |}""".stripMargin)
+        .asObject
+    ),
+    classOf[JwtVerification].getName      -> Form(
+      flow = Seq("verifiers"),
+      schema = Json
+        .parse("""{
+                 |  "verifiers" : {
+                 |    "type": "array-select",
+                 |    "props": {
+                 |      "optionsFrom": "/bo/api/proxy/api/verifiers",
+                 |      "optionsTransformer": {
+                 |          "label": "name",
+                 |          "value": "id"
+                 |      }
+                 |    }
                  |  }
                  |}""".stripMargin)
         .asObject

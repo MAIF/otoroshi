@@ -1,5 +1,6 @@
 import React, { Component, Suspense } from 'react';
 import Select from 'react-select';
+import isFunction from 'lodash/isFunction'
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 import { Location } from '../Location';
 
@@ -476,7 +477,10 @@ export class NgArraySelectRenderer extends Component {
 
   applyTransformer = (props, r) => {
     if (props.optionsTransformer) {
-      return props.optionsTransformer(r || [])
+      if (isFunction(props.optionsTransformer))
+        return props.optionsTransformer(r || [])
+      else
+        return (r || []).map(item => ({ label: item[props.optionsTransformer.label], value: item[props.optionsTransformer.value] }))
     } else if ((r || []).length > 0 && r[0].label && r[0].value) {
       return r;
     } else
@@ -676,7 +680,10 @@ export class NgSelectRenderer extends Component {
 
   applyTransformer = (props, r) => {
     if (props.optionsTransformer) {
-      return props.optionsTransformer(r || [])
+      if (isFunction(props.optionsTransformer))
+        return props.optionsTransformer(r || [])
+      else
+        return (r || []).map(item => ({ label: item[props.optionsTransformer.label], value: item[props.optionsTransformer.value] }))
     } else if ((r || []).length > 0 && r[0].label && r[0].value) {
       return r;
     } else
