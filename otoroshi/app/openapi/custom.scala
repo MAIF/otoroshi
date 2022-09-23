@@ -1,6 +1,6 @@
 package otoroshi.openapi
 
-import otoroshi.next.plugins.{ContextValidation, EurekaTarget, GraphQLBackend, GraphQLQuery, JwtVerification}
+import otoroshi.next.plugins.{ContextValidation, EurekaTarget, GraphQLBackend, GraphQLQuery, JwtVerification, MockFormData, NgAuthModuleConfig}
 import otoroshi.next.tunnel.TunnelPlugin
 import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.libs.json.Json
@@ -125,6 +125,135 @@ object CustomForms {
                  |  }
                  |}""".stripMargin)
         .asObject
+    ),
+    classOf[NgAuthModuleConfig].getName      -> Form(
+      schema = Json
+        .parse("""{
+                 |  "module" : {
+                 |    "type": "array-select",
+                 |    "props": {
+                 |      "optionsFrom": "/bo/api/proxy/api/auths",
+                 |      "optionsTransformer": {
+                 |          "label": "name",
+                 |          "value": "id"
+                 |      }
+                 |    }
+                 |  },
+                 |  "pass_with_apikey": {
+                 |    "type": "boolean"
+                 |  }
+                 |}""".stripMargin)
+        .asObject,
+      flow = Seq("module", "pass_with_apikey")
+    ),
+    classOf[MockFormData].getName      -> Form(
+      schema = Json
+        .parse("""{
+                 |  "endpoints" : {
+                 |    "type" : "object",
+                 |    "array" : true,
+                 |    "format" : "form",
+                 |    "flow": ["method", "path", "status", "body", "resource", "resourceList", "headers", "length"],
+                 |    "schema": {
+                 |       "method": {
+                 |          "type": "string"
+                 |       },
+                 |       "path": {
+                 |          "type": "string"
+                 |       },
+                 |       "status": {
+                 |          "type": "number"
+                 |       },
+                 |       "body": {
+                 |          "type": "code",
+                 |          "props": {
+                 |              "label": "Body",
+                 |              "editorOnly": true,
+                 |              "mode": "json"
+                 |          }
+                 |       },
+                 |       "resource": {
+                 |          "type": "string"
+                 |       },
+                 |       "resourceList": {
+                 |          "type": "bool"
+                 |       },
+                 |       "headers": {
+                 |          "type": "object",
+                 |          "props": {
+                 |            "label": "Headers"
+                 |          }
+                 |       },
+                 |       "length": {
+                 |          "type": "number"
+                 |       }
+                 |    }
+                 |  },
+                 |  "resources": {
+                 |    "type" : "object",
+                 |    "array" : true,
+                 |    "format" : "form",
+                 |    "flow": ["name", "schema", "additional_data"],
+                 |    "schema": {
+                 |       "name": {
+                 |          "type": "string"
+                 |       },
+                 |       "schema": {
+                 |          "type": "object",
+                 |          "format" : "form",
+                 |          "array": true,
+                 |          "flow": ["field_name", "field_type", "value"],
+                 |          "schema": {
+                 |             "field_name": {
+                 |                "type": "string",
+                 |                "props": {
+                 |                  "label": "Field name"
+                 |                 }
+                 |             },
+                 |             "field_type": {
+                 |                "type": "select",
+                 |                "props": {
+                 |                  "label": "Field type",
+                 |                  "options": [
+                 |                      "String",
+                 |                      "Number",
+                 |                      "Boolean",
+                 |                      "Object",
+                 |                      "Array",
+                 |                      "Date",
+                 |                      "Child"
+                 |                   ]
+                 |                 }
+                 |             },
+                 |             "value":{
+                 |                "type": "code",
+                 |                "props": {
+                 |                  "label": "Value",
+                 |                  "mode": "json",
+                 |                  "editorOnly": true
+                 |                }
+                 |             }
+                 |          },
+                 |          "props": {
+                 |             "label": "Schema"
+                 |          }
+                 |       },
+                 |       "additional_data": {
+                 |          "type": "code",
+                 |          "props": {
+                 |            "label": "Additional data",
+                 |            "mode": "json",
+                 |            "editorOnly": true
+                 |          }
+                 |       }
+                 |    },
+                 |    "props": {
+                 |      "label": "Resources"
+                 |    }
+                 |  }
+                 |}""".stripMargin)
+        .asObject,
+      flow = Seq("endpoints", "resources")
     )
   )
 }
