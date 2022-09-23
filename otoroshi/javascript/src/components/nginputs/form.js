@@ -376,13 +376,15 @@ export class NgForm extends Component {
   }
 
   renderGridFlow(name, config) {
-    const gridFlow = name
+    const parts = name
       .replace('#grid|', '')
-      .split(',');
+
+    const [label, gridFlow] = parts.split('|')
+
     return <div className='row'>
-      <LabelAndInput label="Flags">
+      <LabelAndInput label={label}>
         <div className='d-flex flex-wrap'>
-          {gridFlow.map(subName => <div className='flex' style={{ minWidth: '50%' }} key={`${name}-${subName}`}>
+          {gridFlow.split(',').map(subName => <div className='flex' style={{ minWidth: '50%' }} key={`${name}-${subName}`}>
             {this.renderStepFlow(subName, config)}
           </div>)}
         </div>

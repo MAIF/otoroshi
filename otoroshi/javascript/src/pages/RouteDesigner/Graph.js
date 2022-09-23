@@ -139,6 +139,20 @@ export const DEFAULT_FLOW = {
     description: null,
     field: 'frontend',
     config_schema: {
+      strip_path: {
+        type: 'bool',
+        props: {
+          label: 'Strip path',
+          labelColumn: 6
+        }
+      },
+      exact: {
+        type: 'bool',
+        props: {
+          label: 'Exact',
+          labelColumn: 6
+        }
+      },
       domains: {
         type: 'string',
         array: true,
@@ -153,7 +167,7 @@ export const DEFAULT_FLOW = {
         }
       },
     },
-    config_flow: ['domains', 'strip_path', 'exact', 'headers', 'methods', 'query'],
+    config_flow: ['domains', '#grid||strip_path,exact', 'headers', 'methods', 'query'],
   },
   Backend: (parentNode) => ({
     id: 'Backend',

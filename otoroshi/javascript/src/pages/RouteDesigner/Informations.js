@@ -66,40 +66,28 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
       type: 'bool',
       props: {
         label: 'Route enabled',
-        labelColumn: 6,
-        labelOverrideStyle: {
-          textAlign: 'start'
-        }
+        labelColumn: 6
       }
     },
     capture: {
       type: 'bool',
       props: {
         label: 'Capture route traffic',
-        labelColumn: 6,
-        labelOverrideStyle: {
-          textAlign: 'start'
-        }
+        labelColumn: 6
       }
     },
     debug_flow: {
       type: 'bool',
       props: {
         label: 'Debug the flow',
-        labelColumn: 6,
-        labelOverrideStyle: {
-          textAlign: 'start'
-        }
+        labelColumn: 6
       }
     },
     export_reporting: {
       type: 'bool',
       props: {
         label: 'Export reporting',
-        labelColumn: 6,
-        labelOverrideStyle: {
-          textAlign: 'start'
-        },
+        labelColumn: 6
       }
     },
     description: {
@@ -109,21 +97,20 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
       help: 'The description of your route. Only for debug and human readability purposes.',
     },
     groups: {
-      type: 'string',
-      format: 'select',
-      createOption: true,
-      isMulti: true,
-      label: 'Groups',
+      type: 'array-select',
+      props: {
+        label: 'Groups'
+      }
     },
     metadata: {
       type: 'object',
       label: 'Metadata',
     },
     tags: {
-      format: 'select',
-      createOption: true,
-      isMulti: true,
-      label: 'Tags',
+      type: 'array-select',
+      props: {
+        label: 'Tags'
+      }
     },
     _loc: {
       type: 'location',
@@ -137,7 +124,7 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     '_loc',
     'id',
     'name',
-    '#grid|enabled,debug_flow,export_reporting,capture',
+    '#grid|Flags|enabled,debug_flow,export_reporting,capture',
     'description',
     'groups',
     'metadata',

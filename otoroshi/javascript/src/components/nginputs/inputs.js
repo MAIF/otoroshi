@@ -43,14 +43,15 @@ export function LabelAndInput(_props) {
   const label = _props.label || props.label || _props.name || _props.rawSchema?.label || '...';
   const ngOptions = _props.ngOptions || props.ngOptions || {};
   const labelColumn = _props.labelColumn || props.labelColumn || 2;
-  const labelOverrideStyle = _props.labelOverrideStyle || props.labelOverrideStyle || {};
 
   if (ngOptions.spread)
     return _props.children
 
   return (
     <div className="row mb-3">
-      <label className={`col-xs-12 col-sm-${labelColumn} col-form-label`} style={labelOverrideStyle}>
+      <label className={`col-xs-12 col-sm-${labelColumn} col-form-label`} style={{
+        textAlign: labelColumn === 2 ? 'right' : 'left'
+      }}>
         {label.replace(/_/g, ' ')}{' '}
         {_props.help && <i
           className="far fa-question-circle"
