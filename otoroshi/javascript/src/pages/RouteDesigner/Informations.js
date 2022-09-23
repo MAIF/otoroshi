@@ -109,7 +109,7 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
       label: 'Metadata',
     },
     tags: {
-      type: 'array-select',
+      type: 'array',
       props: {
         label: 'Tags'
       }
@@ -124,13 +124,9 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
 
   const flow = [
     '_loc',
-    'id',
-    'name',
+    '#group|Route|name,description,groups',
     '#grid|Flags|enabled,debug_flow,export_reporting,capture',
-    'description',
-    'groups',
-    'metadata',
-    'tags'
+    '#group|Advanced|metadata,tags'
   ];
 
   if (!informations || !value) return null;

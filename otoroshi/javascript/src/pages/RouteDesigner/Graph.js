@@ -167,7 +167,7 @@ export const DEFAULT_FLOW = {
         }
       },
     },
-    config_flow: ['domains', '#grid||strip_path,exact', 'headers', 'methods', 'query'],
+    config_flow: ['domains', '#grid|Flags|strip_path,exact', 'headers', 'methods', 'query'],
   },
   Backend: (parentNode) => ({
     id: 'Backend',

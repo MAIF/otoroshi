@@ -23,10 +23,12 @@ object CustomForms {
           |        "type" : "string"
           |      },
           |      "value" : {
-          |        "label" : "value",
-          |        "type" : "object",
-          |        "format": "code",
-          |        "type": "json"
+          |        "type" : "code",
+          |        "props": {
+          |         "label": "Value",
+          |         "type": "json",
+          |         "editorOnly": true
+          |        }
           |      }
           |    },
           |    "flow" : [ "path", "value" ]

@@ -375,6 +375,30 @@ export class NgForm extends Component {
     return this.props.flow || []
   }
 
+  renderGroupFlow(name, config) {
+    const parts = name
+      .replace('#group|', '')
+
+    const [label, groupFlow] = parts.split('|')
+
+    const FormRenderer = config.components.FormRenderer;
+
+    return <FormRenderer
+      embedded={true}
+      rawSchema={{
+        label,
+        collapsable: true,
+        collasped: false,
+        style: {
+          marginBottom: '1rem'
+        }
+      }}>
+      {groupFlow
+        .split(',')
+        .map(subName => this.renderStepFlow(subName, config))}
+    </FormRenderer>
+  }
+
   renderGridFlow(name, config) {
     const parts = name
       .replace('#grid|', '')
@@ -384,9 +408,12 @@ export class NgForm extends Component {
     return <div className='row'>
       <LabelAndInput label={label}>
         <div className='d-flex flex-wrap'>
-          {gridFlow.split(',').map(subName => <div className='flex' style={{ minWidth: '50%' }} key={`${name}-${subName}`}>
-            {this.renderStepFlow(subName, config)}
-          </div>)}
+          {gridFlow
+            .split(',')
+            .map(subName => <div className='flex' style={{ minWidth: '50%' }} key={`${name}-${subName}`}>
+              {this.renderStepFlow(subName, config)}
+            </div>)
+          }
         </div>
       </LabelAndInput>
     </div>
@@ -457,6 +484,8 @@ export class NgForm extends Component {
         {flow && flow.map((name) => {
           if (name.startsWith('#grid|')) {
             return this.renderGridFlow(name, config);
+          } else if (name.startsWith('#group|')) {
+            return this.renderGroupFlow(name, config);
           } else {
             return this.renderStepFlow(name, config);
           }

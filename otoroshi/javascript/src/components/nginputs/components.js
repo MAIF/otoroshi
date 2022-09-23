@@ -39,13 +39,14 @@ export class NgFormRenderer extends Component {
     folded: true,
   };
   componentDidMount() {
-    if (this.props && !this.props.embedded && this.props.rawSchema) {
+    if (this.props && this.props.rawSchema) {
       const folded =
         ((this.props.rawSchema.props ? this.props.rawSchema.props.collapsable : false) ||
           this.props.rawSchema.collapsable) &&
-        ((this.props.rawSchema.props ? this.props.rawSchema.props.collasped : false) ||
+        ((this.props.rawSchema.props ? this.props.rawSchema.props.collasped : true) ||
           this.props.rawSchema.collasped);
-      this.setState({ folded });
+
+      this.setState({ folded: folded === undefined ? true : folded });
     }
   }
   render() {
@@ -92,6 +93,7 @@ export class NgFormRenderer extends Component {
               display: 'flex',
               flexDirection: 'column',
               width: '100%',
+              ...(this.props.rawSchema.style || {})
             }}>
             <div
               style={{

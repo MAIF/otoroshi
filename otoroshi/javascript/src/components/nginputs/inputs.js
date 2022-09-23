@@ -332,7 +332,7 @@ export class NgArrayRenderer extends Component {
             })}
           <button
             type="button"
-            className="btn btn-sm btn-success float-end"
+            className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={(e) => {
               const newArray = this.props.value ? [...this.props.value, ''] : [''];
@@ -434,7 +434,7 @@ export class NgObjectRenderer extends Component {
               })}
           <button
             type="button"
-            className="btn btn-sm btn-success float-end"
+            className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={(e) => {
               const newObject = { ...this.props.value };
@@ -528,7 +528,7 @@ export class NgArraySelectRenderer extends Component {
             })}
           <button
             type="button"
-            className="btn btn-sm btn-success float-end"
+            className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={(e) => {
               const newArray = this.props.value ? [...this.props.value, ''] : [''];
@@ -635,7 +635,7 @@ export class NgObjectSelectRenderer extends Component {
               })}
           <button
             type="button"
-            className="btn btn-sm btn-success float-end"
+            className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={(e) => {
               const newObject = { ...this.props.value };
