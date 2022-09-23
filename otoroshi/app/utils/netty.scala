@@ -10,6 +10,9 @@ import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.websocketx._
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.ssl._
+import io.netty.handler.ssl.util.SelfSignedCertificate
+import io.netty.incubator.codec.quic.{InsecureQuicTokenHandler, QuicSslContextBuilder}
+import io.netty.util.CharsetUtil
 import org.reactivestreams.{Processor, Publisher}
 import otoroshi.env.Env
 import otoroshi.next.proxy.ProxyEngine
@@ -28,7 +31,9 @@ import play.api.{Configuration, Logger}
 import play.core.server.common.WebSocketFlowHandler
 import play.core.server.common.WebSocketFlowHandler.{MessageType, RawMessage}
 import reactor.netty.NettyOutbound
+import reactor.netty.http.HttpDecoderSpec
 import reactor.netty.http.server.HttpServerRequest
+import reactor.netty.incubator.quic.QuicServer
 
 import java.net.{InetAddress, URI}
 import java.security.cert.X509Certificate
@@ -165,6 +170,18 @@ class ReactorNettyRequestHeader(req: HttpServerRequest, secure: Boolean, session
 
 case class HttpServerBodyResponse(body: Publisher[Array[Byte]], contentType: Option[String], contentLength: Option[Long], chunked: Boolean)
 
+case class HttpRequestParserConfig(
+  allowDuplicateContentLengths: Boolean,
+  validateHeaders: Boolean,
+  h2cMaxContentLength: Int,
+  initialBufferSize: Int,
+  maxHeaderSize: Int,
+  maxInitialLineLength: Int,
+  maxChunkSize: Int,
+)
+
+case class Http3Settings(enabled: Boolean, port: Int)
+
 case class ReactorNettyServerConfig(
   enabled: Boolean,
   newEngineOnly: Boolean,
@@ -176,7 +193,10 @@ case class ReactorNettyServerConfig(
   accessLog: Boolean,
   cipherSuites: Option[Seq[String]],
   protocols: Option[Seq[String]],
-  clientAuth: ClientAuth
+  clientAuth: ClientAuth,
+  idleTimeout: java.time.Duration,
+  parser: HttpRequestParserConfig,
+  http3: Http3Settings,
 )
 
 object ReactorNettyServerConfig {
@@ -191,6 +211,7 @@ object ReactorNettyServerConfig {
       nThread = config.getOptionalWithFileSupport[Int]("threads").getOrElse(0),
       wiretap = config.getOptionalWithFileSupport[Boolean]("wiretap").getOrElse(false),
       accessLog = config.getOptionalWithFileSupport[Boolean]("accesslog").getOrElse(false),
+      idleTimeout = config.getOptionalWithFileSupport[Long]("idleTimeout").map(l => java.time.Duration.ofMillis(l)).getOrElse(java.time.Duration.ofMillis(60000)),
       cipherSuites =
         env.configuration
           .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
@@ -207,7 +228,20 @@ object ReactorNettyServerConfig {
         if (DynamicSSLEngineProvider.logger.isDebugEnabled)
           DynamicSSLEngineProvider.logger.debug(s"Otoroshi netty client auth: ${auth}")
         auth
-      }
+      },
+      parser = HttpRequestParserConfig(
+        allowDuplicateContentLengths = config.getOptionalWithFileSupport[Boolean]("parser.allowDuplicateContentLengths").getOrElse(HttpDecoderSpec.DEFAULT_ALLOW_DUPLICATE_CONTENT_LENGTHS),
+        validateHeaders = config.getOptionalWithFileSupport[Boolean]("parser.validateHeaders").getOrElse(HttpDecoderSpec.DEFAULT_VALIDATE_HEADERS),
+        h2cMaxContentLength = config.getOptionalWithFileSupport[Int]("parser.h2cMaxContentLength").getOrElse(65536),
+        initialBufferSize = config.getOptionalWithFileSupport[Int]("parser.initialBufferSize").getOrElse(HttpDecoderSpec.DEFAULT_INITIAL_BUFFER_SIZE),
+        maxHeaderSize = config.getOptionalWithFileSupport[Int]("parser.maxHeaderSize").getOrElse(HttpDecoderSpec.DEFAULT_MAX_HEADER_SIZE),
+        maxInitialLineLength = config.getOptionalWithFileSupport[Int]("parser.maxInitialLineLength").getOrElse(HttpDecoderSpec.DEFAULT_MAX_INITIAL_LINE_LENGTH),
+        maxChunkSize = config.getOptionalWithFileSupport[Int]("parser.maxChunkSize").getOrElse(HttpDecoderSpec.DEFAULT_MAX_CHUNK_SIZE),
+      ),
+      http3 = Http3Settings(
+        enabled = config.getOptionalWithFileSupport[Boolean]("http3.enabled").getOrElse(false),
+        port = config.getOptionalWithFileSupport[Int]("http3.port").getOrElse(10050),
+      )
     )
   }
 }
@@ -462,6 +496,109 @@ class ReactorNettyServer(env: Env) {
     ) {}
   }
 
+  def startHttp3(handler: HttpRequestHandler): Unit = {
+
+    /*
+    val ssc = new SelfSignedCertificate()
+      val serverCtx =
+        QuicSslContextBuilder.forServer(ssc.privateKey(), null, ssc.certificate())
+          .applicationProtocols("http/1.1")
+          .build()
+      val quicServer = QuicServer.create()
+        .host(config.host)
+        .port(10050)
+        .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-quic", LogLevel.INFO))
+        .secure(serverCtx)
+        .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
+        .idleTimeout(java.time.Duration.ofSeconds(5))
+        .initialSettings { spec =>
+          spec.maxData(10000000)
+            .maxStreamDataBidirectionalRemote(1000000)
+            .maxStreamsBidirectional(100)
+        }
+        .handleStream((in, out) => out.send(in.receive().retain()))
+        .bindNow()
+     */
+
+    if (config.http3.enabled) {
+
+      import io.netty.incubator.codec.http3._
+      import io.netty.incubator.codec.http3.Http3
+      import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec
+      import io.netty.incubator.codec.http3.Http3ServerConnectionHandler
+      import io.netty.incubator.codec.quic.InsecureQuicTokenHandler
+      import io.netty.incubator.codec.quic.QuicChannel
+      import io.netty.incubator.codec.quic.QuicChannelOption
+      import io.netty.incubator.codec.quic.QuicStreamChannel
+      import io.netty.bootstrap._
+      import io.netty.channel._
+      import io.netty.channel.socket.nio._
+      import java.util.concurrent.TimeUnit
+
+      class Http1RequestHandler extends ChannelInboundHandlerAdapter {
+        val CONTENT = Unpooled.wrappedBuffer("Hello World!\r\n".getBytes(CharsetUtil.US_ASCII))
+        override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
+          if (msg.isInstanceOf[LastHttpContent]) {
+            val response = new DefaultFullHttpResponse(
+              HttpVersion.HTTP_1_1, HttpResponseStatus.OK, CONTENT.retainedDuplicate())
+            response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, CONTENT.readableBytes())
+            ctx.writeAndFlush(response);
+          }
+        }
+      }
+
+      val cert = new SelfSignedCertificate()
+      val sslContext = QuicSslContextBuilder.forServer(cert.key(), null, cert.cert())
+        .applicationProtocols(Http3.supportedApplicationProtocols():_*).earlyData(true).build()
+
+      val codec = Http3.newQuicServerCodecBuilder
+        //.option(QuicChannelOption.UDP_SEGMENTS, 10)
+        .sslContext(sslContext)
+        .maxIdleTimeout(config.idleTimeout.toMillis, TimeUnit.MILLISECONDS)
+        .maxSendUdpPayloadSize(1500)
+        .maxRecvUdpPayloadSize(1500)
+        .initialMaxData(10000000)
+        .initialMaxStreamDataBidirectionalLocal(1000000)
+        .initialMaxStreamDataBidirectionalRemote(1000000)
+        .initialMaxStreamsBidirectional(100000)
+        .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
+        .handler(new ChannelInitializer[QuicChannel]() {
+          override def initChannel(ch: QuicChannel): Unit = {
+            ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+              @Override
+              override def channelInactive(ctx: ChannelHandlerContext): Unit = {
+                // System.err.println("INACTIVE")
+                // ctx.channel().asInstanceOf[QuicChannel].collectStats().addListener(f => {
+                //   // System.err.println(f.getNow())
+                //   println("yep")
+                // })
+              }
+            })
+            ch.pipeline().addLast(new Http3ServerConnectionHandler(
+              new ChannelInitializer[QuicStreamChannel]() {
+                // Called for each request-stream,
+                override def initChannel(ch: QuicStreamChannel): Unit = {
+                  ch.pipeline().addLast(new Http3FrameToHttpObjectCodec(true))
+                  ch.pipeline().addLast(new Http1RequestHandler())
+                }
+              }))
+          }
+        }).build()
+      val group = new NioEventLoopGroup(1)
+      val bs = new Bootstrap()
+      val channel = bs.group(group)
+        .channel(classOf[NioDatagramChannel])
+        .handler(codec)
+        .bind(config.host, config.http3.port)
+        .sync()
+        .channel()
+      channel.closeFuture()
+      Runtime.getRuntime.addShutdownHook(new Thread(() => {
+        group.shutdownGracefully();
+      }))
+    }
+  }
+
   def start(handler: HttpRequestHandler): Unit = {
     if (config.enabled) {
 
@@ -509,6 +646,7 @@ class ReactorNettyServer(env: Env) {
       }
       logger.info(s"  https://${config.host}:${config.httpsPort}")
       logger.info(s"  http://${config.host}:${config.httpPort}")
+      if (config.http3.enabled) logger.info(s"  https://${config.host}:${config.http3.port} (HTTP/3)")
       logger.info("")
 
       def handleFunction(secure: Boolean): BiFunction[_ >: HttpServerRequest, _ >: HttpServerResponse, _ <: Publisher[Void]] = {
@@ -533,7 +671,16 @@ class ReactorNettyServer(env: Env) {
         .port(config.httpsPort)
         .protocol(HttpProtocol.HTTP11, HttpProtocol.H2C)
         .runOn(groupHttps)
-        // .httpRequestDecoder(spec => spec.) // TODO: custom stuff here
+        .httpRequestDecoder(spec => spec
+          .allowDuplicateContentLengths(config.parser.allowDuplicateContentLengths)
+          .h2cMaxContentLength(config.parser.h2cMaxContentLength)
+          .initialBufferSize(config.parser.initialBufferSize)
+          .maxHeaderSize(config.parser.maxHeaderSize)
+          .maxInitialLineLength(config.parser.maxInitialLineLength)
+          .maxChunkSize(config.parser.maxChunkSize)
+          .validateHeaders(config.parser.validateHeaders)
+        )
+        .idleTimeout(config.idleTimeout)
         .doOnChannelInit { (observer, channel, socket) =>
           val engine = setupSslContext().createSSLEngine()
           engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
@@ -558,7 +705,18 @@ class ReactorNettyServer(env: Env) {
         .protocol(HttpProtocol.H2C, HttpProtocol.HTTP11)
         .handle(handleFunction(false))
         .runOn(groupHttp)
+        .httpRequestDecoder(spec => spec
+          .allowDuplicateContentLengths(config.parser.allowDuplicateContentLengths)
+          .h2cMaxContentLength(config.parser.h2cMaxContentLength)
+          .initialBufferSize(config.parser.initialBufferSize)
+          .maxHeaderSize(config.parser.maxHeaderSize)
+          .maxInitialLineLength(config.parser.maxInitialLineLength)
+          .maxChunkSize(config.parser.maxChunkSize)
+          .validateHeaders(config.parser.validateHeaders)
+        )
+        .idleTimeout(config.idleTimeout)
         .bindNow()
+      startHttp3(handler)
       Runtime.getRuntime.addShutdownHook(new Thread(() => {
         serverHttp.disposeNow()
         serverHttps.disposeNow()
