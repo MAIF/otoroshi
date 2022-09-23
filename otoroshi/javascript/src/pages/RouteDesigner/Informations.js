@@ -64,19 +64,43 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     },
     enabled: {
       type: 'bool',
-      label: 'Route enabled',
+      props: {
+        label: 'Route enabled',
+        labelColumn: 6,
+        labelOverrideStyle: {
+          textAlign: 'start'
+        }
+      }
     },
     capture: {
       type: 'bool',
-      label: 'Capture route traffic',
+      props: {
+        label: 'Capture route traffic',
+        labelColumn: 6,
+        labelOverrideStyle: {
+          textAlign: 'start'
+        }
+      }
     },
     debug_flow: {
       type: 'bool',
-      label: 'Debug the flow',
+      props: {
+        label: 'Debug the flow',
+        labelColumn: 6,
+        labelOverrideStyle: {
+          textAlign: 'start'
+        }
+      }
     },
     export_reporting: {
       type: 'bool',
-      label: 'Export reporting',
+      props: {
+        label: 'Export reporting',
+        labelColumn: 6,
+        labelOverrideStyle: {
+          textAlign: 'start'
+        },
+      }
     },
     description: {
       type: 'string',
@@ -110,17 +134,12 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
   };
 
   const flow = [
-    // '>>>Location',
     '_loc',
     'id',
     'name',
-    'enabled',
-    'debug_flow',
-    'export_reporting',
-    'capture',
+    '#grid|enabled,debug_flow,export_reporting,capture',
     'description',
     'groups',
-    // '>>>Advanced',
     'metadata',
     'tags'
   ];

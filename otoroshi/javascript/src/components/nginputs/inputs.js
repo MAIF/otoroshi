@@ -37,18 +37,20 @@ export class SingleLineCode extends Component {
   }
 }
 
-function LabelAndInput(_props) {
+export function LabelAndInput(_props) {
   const schema = _props.schema || {};
   const props = schema.props || {};
   const label = _props.label || props.label || _props.name || _props.rawSchema?.label || '...';
-  const ngOptions = _props.ngOptions || props.ngOptions || {}
+  const ngOptions = _props.ngOptions || props.ngOptions || {};
+  const labelColumn = _props.labelColumn || props.labelColumn || 2;
+  const labelOverrideStyle = _props.labelOverrideStyle || props.labelOverrideStyle || {};
 
   if (ngOptions.spread)
     return _props.children
 
   return (
     <div className="row mb-3">
-      <label className="col-xs-12 col-sm-2 col-form-label">
+      <label className={`col-xs-12 col-sm-${labelColumn} col-form-label`} style={labelOverrideStyle}>
         {label.replace(/_/g, ' ')}{' '}
         {_props.help && <i
           className="far fa-question-circle"
@@ -59,7 +61,7 @@ function LabelAndInput(_props) {
           aria-label={_props.help}
         />}
       </label>
-      <div className="col-sm-10">{_props.children}</div>
+      <div className={`col-sm-${12 - labelColumn}`}>{_props.children}</div>
     </div>
   );
 }

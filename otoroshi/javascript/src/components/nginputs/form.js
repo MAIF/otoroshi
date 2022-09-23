@@ -20,7 +20,8 @@ import {
   NgHiddenRenderer,
   NgSingleCodeLineRenderer,
   NgCodeRenderer,
-  NgLocationRenderer
+  NgLocationRenderer,
+  LabelAndInput
 } from './inputs';
 
 import {
@@ -29,7 +30,6 @@ import {
   NgValidationRenderer,
   NgFormRenderer,
 } from './components';
-import { Collapse } from '../inputs/Collapse';
 
 const Helpers = {
   rendererFor: (type, components) => {
@@ -375,6 +375,63 @@ export class NgForm extends Component {
     return this.props.flow || []
   }
 
+  renderGridFlow(name, config) {
+    const gridFlow = name
+      .replace('#grid|', '')
+      .split(',');
+    return <div className='row'>
+      <LabelAndInput label="Flags">
+        <div className='d-flex flex-wrap'>
+          {gridFlow.map(subName => <div className='flex' style={{ minWidth: '50%' }} key={`${name}-${subName}`}>
+            {this.renderStepFlow(subName, config)}
+          </div>)}
+        </div>
+      </LabelAndInput>
+    </div>
+  }
+
+  renderStepFlow(name, {
+    schema, value, root, path, validation, components, StepNotFound
+  }) {
+    const stepSchema = schema[name];
+
+    if (stepSchema) {
+      const visible =
+        'visible' in stepSchema
+          ? isFunction(stepSchema.visible)
+            ? stepSchema.visible(value)
+            : stepSchema.visible
+          : true;
+      if (visible) {
+        const path = root ? [name] : [...path, name];
+        return (
+          <NgStep
+            key={path.join('/')}
+            name={name}
+            embedded
+            fromArray={this.props.fromArray}
+            path={path}
+            validation={validation}
+            setValidation={this.setValidation}
+            components={components}
+            schema={this.convertSchema(stepSchema)}
+            value={value ? value[name] : null}
+            onChange={(e) => {
+              const newValue = value ? { ...value, [name]: e } : { [name]: e };
+              this.rootOnChange(newValue);
+            }}
+            rootValue={value}
+            rootOnChange={this.rootOnChange}
+          />
+        );
+      } else {
+        return null;
+      }
+    } else {
+      return <StepNotFound name={name} />;
+    }
+  }
+
   render() {
     const value = this.getValue();
     const schema =
@@ -391,49 +448,17 @@ export class NgForm extends Component {
     const validation = root ? this.state.validation : this.props.validation;
     const path = this.props.path || [];
 
+    const config = { schema, value, root, path, validation, components, StepNotFound }
+
     return (
       <FormRenderer {...this.props}>
-        {flow &&
-          flow
-            .map((name) => {
-              const stepSchema = schema[name];
-
-              if (stepSchema) {
-                const visible =
-                  'visible' in stepSchema
-                    ? isFunction(stepSchema.visible)
-                      ? stepSchema.visible(value)
-                      : stepSchema.visible
-                    : true;
-                if (visible) {
-                  const path = root ? [name] : [...path, name];
-                  return (
-                    <NgStep
-                      key={path.join('/')}
-                      name={name}
-                      embedded
-                      fromArray={this.props.fromArray}
-                      path={path}
-                      validation={validation}
-                      setValidation={this.setValidation}
-                      components={components}
-                      schema={this.convertSchema(stepSchema)}
-                      value={value ? value[name] : null}
-                      onChange={(e) => {
-                        const newValue = value ? { ...value, [name]: e } : { [name]: e };
-                        this.rootOnChange(newValue);
-                      }}
-                      rootValue={value}
-                      rootOnChange={this.rootOnChange}
-                    />
-                  );
-                } else {
-                  return null;
-                }
-              } else {
-                return <StepNotFound name={name} />;
-              }
-            })}
+        {flow && flow.map((name) => {
+          if (name.startsWith('#grid|')) {
+            return this.renderGridFlow(name, config);
+          } else {
+            return this.renderStepFlow(name, config);
+          }
+        })}
       </FormRenderer>
     );
   }
