@@ -1,6 +1,6 @@
 package otoroshi.openapi
 
-import otoroshi.next.plugins.{ContextValidation, EurekaTarget, GraphQLBackend, GraphQLQuery, JwtVerification, MockFormData, NgAuthModuleConfig}
+import otoroshi.next.plugins.{ContextValidation, EurekaTarget, GraphQLBackend, GraphQLQuery, JwtVerification, MockFormData, NgAuthModuleConfig, NgJwtVerificationConfig}
 import otoroshi.next.tunnel.TunnelPlugin
 import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.libs.json.Json
@@ -110,6 +110,23 @@ object CustomForms {
         .asObject
     ),
     classOf[JwtVerification].getName      -> Form(
+      flow = Seq("verifiers"),
+      schema = Json
+        .parse("""{
+                 |  "verifiers" : {
+                 |    "type": "array-select",
+                 |    "props": {
+                 |      "optionsFrom": "/bo/api/proxy/api/verifiers",
+                 |      "optionsTransformer": {
+                 |          "label": "name",
+                 |          "value": "id"
+                 |      }
+                 |    }
+                 |  }
+                 |}""".stripMargin)
+        .asObject
+    ),
+    classOf[NgJwtVerificationConfig].getName      -> Form(
       flow = Seq("verifiers"),
       schema = Json
         .parse("""{
