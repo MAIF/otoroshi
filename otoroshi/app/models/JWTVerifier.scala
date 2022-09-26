@@ -705,11 +705,13 @@ case class KidAlgoSettings(onlyExposedCerts: Boolean) extends AlgoSettings {
     mode match {
       case InputMode(typ, Some(kid)) => {
         val certs   = DynamicSSLEngineProvider.certificates
-        val certOpt =
+        val certOpt = {
           certs.get(kid).orElse(certs.values.find(_.entityMetadata.get("nextCertificate").contains(kid))).filter {
             case c if !c.exposed && onlyExposedCerts => false
             case c                                   => true
           }
+        }
+        // logger.info(s"kid: $kid, typ: $typ, certOpt=${certOpt}")
         certOpt.flatMap { cert =>
           val keyPair = cert.cryptoKeyPair
           (keyPair.getPublic, keyPair.getPrivate) match {
@@ -1491,7 +1493,7 @@ sealed trait JwtVerifier extends AsJson {
             val verificationResult = JwtVerifier.signatureCache.get(key, _ => Try(verification.build().verify(token)))
             verificationResult match {
               case Failure(e)            =>
-                // logger.error("Bad JWT token", e)
+                // logger.error("Bad JWT token 2", e)
                 Errors
                   .craftResponseResult(
                     "error.bad.token",
