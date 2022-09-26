@@ -5,14 +5,15 @@ import akka.util.ByteString
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
-import io.netty.channel.{Channel, EventLoopGroup}
+import io.netty.channel.{Channel, ChannelHandlerContext, EventLoopGroup}
 import io.netty.handler.codec.http._
+import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import io.netty.handler.codec.http.websocketx._
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.ssl._
 import io.netty.handler.ssl.util.SelfSignedCertificate
-import io.netty.incubator.codec.quic.{InsecureQuicTokenHandler, QuicSslContextBuilder}
-import io.netty.util.CharsetUtil
+import io.netty.incubator.codec.quic.QuicSslContextBuilder
+import io.netty.util.{CharsetUtil, ReferenceCountUtil}
 import org.reactivestreams.{Processor, Publisher}
 import otoroshi.env.Env
 import otoroshi.next.proxy.ProxyEngine
@@ -30,10 +31,9 @@ import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarg
 import play.api.{Configuration, Logger}
 import play.core.server.common.WebSocketFlowHandler
 import play.core.server.common.WebSocketFlowHandler.{MessageType, RawMessage}
-import reactor.netty.NettyOutbound
 import reactor.netty.http.HttpDecoderSpec
 import reactor.netty.http.server.HttpServerRequest
-import reactor.netty.incubator.quic.QuicServer
+import reactor.netty.{Connection, NettyOutbound}
 
 import java.net.{InetAddress, URI}
 import java.security.cert.X509Certificate
@@ -79,6 +79,45 @@ class ReactorNettyRemoteConnection(req: HttpServerRequest, val secure: Boolean, 
   }
 }
 
+object NettyRemoteConnection {
+  val logger = Logger("otoroshi-experimental-netty-server-remote-connection")
+}
+
+class NettyRemoteConnection(req: FullHttpRequest, ctx: ChannelHandlerContext, val secure: Boolean, sessionOpt: Option[SSLSession]) extends RemoteConnection {
+  lazy val remoteAddress: InetAddress = {
+    val addr = Connection.from(ctx.channel()).address().asInstanceOf[io.netty.incubator.codec.quic.QuicStreamAddress]
+    // TODO: fix it
+    InetAddress.getLocalHost
+  }
+  lazy val clientCertificateChain: Option[Seq[X509Certificate]] = {
+    if (secure) {
+      sessionOpt match {
+        case None =>
+          ReactorNettyRemoteConnection.logger.warn(s"Something weird happened with the TLS session: it does not exists ...")
+          None
+        case Some(session) => {
+          if (session.isValid) {
+            val certs = try {
+              session.getPeerCertificates.toSeq.collect { case c: X509Certificate => c }
+            } catch {
+              case e: SSLPeerUnverifiedException => Seq.empty[X509Certificate]
+            }
+            if (certs.nonEmpty) {
+              Some(certs)
+            } else {
+              None
+            }
+          } else {
+            None
+          }
+        }
+      }
+    } else {
+      None
+    }
+  }
+}
+
 class ReactorNettyRequestTarget(req: HttpServerRequest) extends RequestTarget {
   lazy val kUri = akka.http.scaladsl.model.Uri(uriString)
   lazy val uri: URI = new URI(uriString)
@@ -87,7 +126,19 @@ class ReactorNettyRequestTarget(req: HttpServerRequest) extends RequestTarget {
   lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq)
 }
 
+class NettyRequestTarget(req: FullHttpRequest) extends RequestTarget {
+  lazy val kUri = akka.http.scaladsl.model.Uri(uriString)
+  lazy val uri: URI = new URI(uriString)
+  lazy val uriString: String = req.uri()
+  lazy val path: String = kUri.path.toString()
+  lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq)
+}
+
 object ReactorNettyRequest {
+  val counter = new AtomicLong(0L)
+}
+
+object NettyRequest {
   val counter = new AtomicLong(0L)
 }
 
@@ -166,6 +217,86 @@ class ReactorNettyRequestHeader(req: HttpServerRequest, secure: Boolean, session
   )
   lazy val connection: RemoteConnection = new ReactorNettyRemoteConnection(req, secure, sessionOpt)
   lazy val target: RequestTarget = new ReactorNettyRequestTarget(req)
+}
+
+class NettyRequest(req: FullHttpRequest, ctx: ChannelHandlerContext, rawBody: ByteString, secure: Boolean, sessionOpt: Option[SSLSession], sessionCookieBaker: SessionCookieBaker, flashCookieBaker: FlashCookieBaker) extends NettyRequestHeader(req, ctx, secure, sessionOpt, sessionCookieBaker, flashCookieBaker) with Request[Source[ByteString, _]] {
+  lazy val body: Source[ByteString, _] = {
+    // val flux: Publisher[ByteString] = req.receive().map { bb =>
+    //   val builder = ByteString.newBuilder
+    //   bb.readBytes(builder.asOutputStream, bb.readableBytes())
+    //   builder.result()
+    // }
+    // Source.fromPublisher(flux)
+    Source.single(rawBody)
+  }
+}
+
+class NettyRequestHeader(req: FullHttpRequest, ctx: ChannelHandlerContext, secure: Boolean, sessionOpt: Option[SSLSession], sessionCookieBaker: SessionCookieBaker, flashCookieBaker: FlashCookieBaker) extends RequestHeader {
+
+  lazy val _cookies = Option(req.headers().get("Cookie")).map(c => ServerCookieDecoder.LAX.decode(c).asScala.groupBy(_.name()).mapValues(_.toSeq)).getOrElse(Map.empty[String, Seq[io.netty.handler.codec.http.cookie.DefaultCookie]])
+
+  lazy val zeSession: Session = {
+    _cookies.get(sessionCookieBaker.COOKIE_NAME)
+      .flatMap(_.headOption)
+      .flatMap { value =>
+        Try(sessionCookieBaker.deserialize(sessionCookieBaker.decode(value.value()))).toOption
+      }
+      .getOrElse(Session())
+  }
+  lazy val zeFlash: Flash = {
+    _cookies.get(flashCookieBaker.COOKIE_NAME)
+      .flatMap(_.headOption)
+      .flatMap { value =>
+        Try(flashCookieBaker.deserialize(flashCookieBaker.decode(value.value()))).toOption
+      }
+      .getOrElse(Flash())
+  }
+  lazy val attrs = TypedMap.apply(
+    RequestAttrKey.Id      -> NettyRequest.counter.incrementAndGet(),
+    RequestAttrKey.Session -> Cell(zeSession),
+    RequestAttrKey.Flash -> Cell(zeFlash),
+    RequestAttrKey.Server -> "netty-experimental",
+    RequestAttrKey.Cookies -> Cell(Cookies(_cookies.toSeq.flatMap {
+      case (_, cookies) => cookies.map {
+        case cookie: io.netty.handler.codec.http.cookie.DefaultCookie => {
+          play.api.mvc.Cookie(
+            name = cookie.name(),
+            value = cookie.value(),
+            maxAge = Option(cookie.maxAge()).map(_.toInt),
+            path = Option(cookie.path()).filter(_.nonEmpty).getOrElse("/"),
+            domain = Option(cookie.domain()).filter(_.nonEmpty),
+            secure = cookie.isSecure,
+            httpOnly = cookie.isHttpOnly,
+            sameSite = Option(cookie.sameSite()).map {
+              case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None =>  play.api.mvc.Cookie.SameSite.None
+              case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict => play.api.mvc.Cookie.SameSite.Strict
+              case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax => play.api.mvc.Cookie.SameSite.Lax
+              case _ => play.api.mvc.Cookie.SameSite.None
+            }
+          )
+        }
+        case cookie => {
+          play.api.mvc.Cookie(
+            name = cookie.name(),
+            value = cookie.value(),
+            maxAge = Option(cookie.maxAge()).map(_.toInt),
+            path = Option(cookie.path()).filter(_.nonEmpty).getOrElse("/"),
+            domain = Option(cookie.domain()).filter(_.nonEmpty),
+            secure = cookie.isSecure,
+            httpOnly = cookie.isHttpOnly,
+            sameSite = None
+          )
+        }
+      }
+    }))
+  )
+  lazy val method: String = req.method().toString
+  lazy val version: String = req.protocolVersion().toString
+  lazy val headers: Headers = Headers(
+    (req.headers().entries().asScala.map(e => (e.getKey, e.getValue)) ++ sessionOpt.map(s => ("Tls-Session-Info", s.toString))): _*
+  )
+  lazy val connection: RemoteConnection = new NettyRemoteConnection(req, ctx, secure, sessionOpt)
+  lazy val target: RequestTarget = new NettyRequestTarget(req)
 }
 
 case class HttpServerBodyResponse(body: Publisher[Array[Byte]], contentType: Option[String], contentLength: Option[Long], chunked: Boolean)
@@ -522,27 +653,116 @@ class ReactorNettyServer(env: Env) {
 
     if (config.http3.enabled) {
 
-      import io.netty.incubator.codec.http3._
-      import io.netty.incubator.codec.http3.Http3
-      import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec
-      import io.netty.incubator.codec.http3.Http3ServerConnectionHandler
-      import io.netty.incubator.codec.quic.InsecureQuicTokenHandler
-      import io.netty.incubator.codec.quic.QuicChannel
-      import io.netty.incubator.codec.quic.QuicChannelOption
-      import io.netty.incubator.codec.quic.QuicStreamChannel
       import io.netty.bootstrap._
       import io.netty.channel._
       import io.netty.channel.socket.nio._
+      import io.netty.incubator.codec.http3.{Http3, Http3FrameToHttpObjectCodec, Http3ServerConnectionHandler}
+      import io.netty.incubator.codec.quic.{InsecureQuicTokenHandler, QuicChannel, QuicStreamChannel}
+
       import java.util.concurrent.TimeUnit
 
       class Http1RequestHandler extends ChannelInboundHandlerAdapter {
-        val CONTENT = Unpooled.wrappedBuffer("Hello World!\r\n".getBytes(CharsetUtil.US_ASCII))
+
+        private val NOT_HANDLED = Unpooled.wrappedBuffer(s"${Json.obj("error" -> "not handled")}\r\n".getBytes(CharsetUtil.US_ASCII))
+        private val NOT_ESSENTIAL_ACTION = Unpooled.wrappedBuffer(s"${Json.obj("error" -> "not essential action")}\r\n".getBytes(CharsetUtil.US_ASCII))
+        private val ERROR = Unpooled.wrappedBuffer(s"${Json.obj("error" -> "error")}\r\n".getBytes(CharsetUtil.US_ASCII))
+
+        private var body: ByteString = ByteString.empty
+
+        def send100Continue(ctx: ChannelHandlerContext): Unit = {
+          val response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE, Unpooled.EMPTY_BUFFER)
+          ctx.write(response)
+        }
+
+        override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
+          cause.printStackTrace()
+          ctx.close()
+        }
+
         override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
-          if (msg.isInstanceOf[LastHttpContent]) {
-            val response = new DefaultFullHttpResponse(
-              HttpVersion.HTTP_1_1, HttpResponseStatus.OK, CONTENT.retainedDuplicate())
-            response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, CONTENT.readableBytes())
-            ctx.writeAndFlush(response);
+          // TODO: SSLSession ???
+          msg match {
+            case req: FullHttpRequest => {
+              if (HttpUtil.is100ContinueExpected(req)) {
+                send100Continue(ctx)
+                ReferenceCountUtil.release(msg)
+              } else {
+                val keepAlive = HttpUtil.isKeepAlive(req)
+                def go(): Unit = {
+                  val otoReq = new NettyRequest(req, ctx, body, true, None, sessionCookieBaker, flashCookieBaker)
+                  val (nreq, reqHandler) = handler.handlerForRequest(otoReq)
+                  reqHandler match {
+                    case a: EssentialAction => {
+                      a.apply(nreq).run(otoReq.body).flatMap { result =>
+                        result.body.dataStream.runFold(ByteString.empty)(_ ++ _).map { body =>
+                          val response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.valueOf(result.header.status), Unpooled.copiedBuffer(body.toArray))
+                          result.header.headers.foreach {
+                            case (key, value) => response.headers().set(key, value)
+                          }
+                          // TODO: keepalive: https://github.com/netty/netty/blob/4.1/example/src/main/java/io/netty/example/http/snoop/HttpSnoopServerHandler.java#L157
+                          //                  https://github.com/netty/netty/blob/4.1/example/src/main/java/io/netty/example/http/snoop/HttpSnoopServerHandler.java#L128
+                          // TODO: cookie: https://github.com/netty/netty/blob/4.1/example/src/main/java/io/netty/example/http/snoop/HttpSnoopServerHandler.java#L177
+                          result.body.contentLength.foreach(l => response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, l.toInt))
+                          result.body.contentType.foreach(l => response.headers().set(HttpHeaderNames.CONTENT_TYPE, l))
+                          if (keepAlive) {
+                            response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE)
+                            ctx.write(response)
+                            ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE) // TODO: why ???
+                          } else {
+                            ctx.write(response)
+                            ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE)
+                          }
+                          ReferenceCountUtil.release(msg)
+                        }
+                      }.andThen {
+                        case Failure(exception) => {
+                          exception.printStackTrace()
+                          val response = new DefaultFullHttpResponse(
+                            HttpVersion.HTTP_1_1, HttpResponseStatus.OK, ERROR.retainedDuplicate())
+                          response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, ERROR.readableBytes())
+                          ctx.writeAndFlush(response)
+                          ReferenceCountUtil.release(msg)
+                        }
+                      }
+                    }
+                    case _ => {
+                      val response = new DefaultFullHttpResponse(
+                        HttpVersion.HTTP_1_1, HttpResponseStatus.OK, NOT_ESSENTIAL_ACTION.retainedDuplicate())
+                      response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, NOT_ESSENTIAL_ACTION.readableBytes())
+                      ctx.writeAndFlush(response)
+                      ReferenceCountUtil.release(msg)
+                    }
+                  }
+                }
+
+                if (msg.isInstanceOf[HttpRequest]) {
+                  // TODO: trigger route without body yet
+                }
+                if (msg.isInstanceOf[HttpContent]) {
+                  val contentMsg = msg.asInstanceOf[HttpContent]
+                  val content = contentMsg.content()
+                  if (content.isReadable()) {
+                    body = body ++ ByteString(content.array())
+                  }
+                  if (msg.isInstanceOf[LastHttpContent]) {
+                    // TODO: handle trailer headers
+                    // TODO: stream body ;)
+                    go()
+                  }
+                } else if (msg.isInstanceOf[LastHttpContent]) {
+                  // TODO: handle trailer headers
+                  // TODO: stream body ;)
+                  go()
+                }
+              }
+            }
+            case _ => {
+              val response = new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1, HttpResponseStatus.OK, NOT_HANDLED.retainedDuplicate())
+              response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, NOT_HANDLED.readableBytes())
+              ctx.writeAndFlush(response)
+              ReferenceCountUtil.release(msg)
+            }
           }
         }
       }
