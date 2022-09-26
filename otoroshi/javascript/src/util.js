@@ -20,6 +20,7 @@ export const toUpperCaseLabels = (obj) => {
         : typeof value === 'object' &&
           value !== null &&
           key !== 'transformer' &&
+          key !== 'optionsTransformer' &&
           !Array.isArray(value)
         ? toUpperCaseLabels(value)
         : value,

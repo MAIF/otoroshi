@@ -364,10 +364,35 @@ export class NgForm extends Component {
     }
   };
 
+  recursiveSearch = (paths, value) => {
+    console.log(paths, value)
+    if (paths.length === 0)
+      return value
+    return this.recursiveSearch(paths.slice(1), (value || {})[paths.slice(0, 1)])
+  }
+
   getFlow = (value, schema) => {
     if (isFunction(this.props.flow)) {
       return this.props.flow(value, this.props)
     }
+
+    if (typeof this.props.flow === 'object' &&
+      this.props.flow !== null &&
+      !Array.isArray(this.props.flow) &&
+      this.props.flow.field && this.props.flow.flow
+    ) {
+      const paths = this.props.flow.field.split('.')
+      const flow = this.props.flow.flow[this.recursiveSearch(paths, (value || {}))] ||
+        this.props.flow.flow[this.recursiveSearch(paths, (this.props.rootValue || {}))]
+
+      console.log(this.props.flow.flow)
+      if (!flow)
+        return Object.values(this.props.flow.flow)[0]
+      else
+        return flow
+
+    }
+
 
     if (this.props.flow?.length === 0)
       return Object.keys(schema)

@@ -259,10 +259,11 @@ export class NgArrayRenderer extends Component {
     const schema = this.props.schema;
     const props = schema.props || {};
     const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;
+
     return (
       <LabelAndInput {...this.props}>
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          {this.props.value &&
+          {Array.isArray(this.props.value) &&
             this.props.value.map((value, idx) => {
               return (
                 <div
@@ -336,7 +337,7 @@ export class NgArrayRenderer extends Component {
             className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={(e) => {
-              const newArray = this.props.value ? [...this.props.value, ''] : [''];
+              const newArray = Array.isArray(this.props.value) ? [...this.props.value, ''] : [''];
               this.props.onChange(newArray);
             }}>
             <i className="fas fa-plus-circle" />
@@ -494,7 +495,7 @@ export class NgArraySelectRenderer extends Component {
     return (
       <LabelAndInput {...this.props}>
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          {this.props.value &&
+          {Array.isArray(this.props.value) &&
             this.props.value.map((value, idx) => {
               return (
                 <div className='d-flex justify-content-between align-items-center mb-1'
@@ -535,7 +536,7 @@ export class NgArraySelectRenderer extends Component {
             className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={(e) => {
-              const newArray = this.props.value ? [...this.props.value, ''] : [''];
+              const newArray = Array.isArray(this.props.value) ? [...this.props.value, ''] : [''];
               this.props.onChange(newArray);
             }}>
             <i className="fas fa-plus-circle" />

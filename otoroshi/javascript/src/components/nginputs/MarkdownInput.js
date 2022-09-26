@@ -93,7 +93,7 @@ export const MarkdownInput = (props) => {
     const parent = [...document.getElementsByClassName('preview')]
     if (parent.length > 0)
       [...parent[0].querySelectorAll('pre code')]
-        .forEach(block => hljs.highlightElement(block));
+        .forEach(block => hljs.highlightBlock(block));
   };
 
   const injectButtons = () => {
