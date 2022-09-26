@@ -214,16 +214,15 @@ export const DEFAULT_FLOW = {
             visible: (value) => value?.custom_target === 'open' && value?.tls === true
           },
         },
-        flow: ['custom_target', ...generatedSchema.targets.flow.filter(f => f !== 'id')],
+        flow: ['custom_target', ...generatedSchema.targets.flow.filter(key => !["id"].includes(key))],
       },
     }),
     config_flow: [
       'root',
+      '#grid|Flags|rewrite',
       'targets',
       'health_check',
-      'target_refs',
       'client',
-      'rewrite',
       'load_balancing',
     ],
   }),
