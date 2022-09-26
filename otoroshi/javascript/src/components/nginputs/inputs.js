@@ -272,7 +272,7 @@ export class NgArrayRenderer extends Component {
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    width: '100%',
+                    width: '100%'
                   }}>
                   {!ItemRenderer && (
                     <input

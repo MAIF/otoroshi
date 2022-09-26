@@ -207,17 +207,14 @@ export const DEFAULT_FLOW = {
           ),
           hostname: {
             ...generatedSchema.targets.schema.hostname,
-            visible: (value) => value?.custom_target === 'open',
-            constraints: [
-              {
-                type: 'blacklist',
-                arrayOfValues: ['http:', 'https:', 'tcp:', 'udp:', '/'],
-                message: 'You cannot use protocol scheme or / in the Host name',
-              },
-            ],
+            visible: (value) => value?.custom_target === 'open'
+          },
+          tls_config: {
+            ...generatedSchema.targets.schema.tls_config,
+            visible: (value) => value?.custom_target === 'open' && value?.tls === true
           },
         },
-        flow: ['custom_target', ...generatedSchema.targets.flow],
+        flow: ['custom_target', ...generatedSchema.targets.flow.filter(f => f !== 'id')],
       },
     }),
     config_flow: [
