@@ -2094,6 +2094,8 @@ class EditView extends React.Component {
       }
     })
 
+    const oldConfig = this.state.form.value
+
     return this.props.updatePlugin(nodeId, selectedNode.id, {
       plugin: newValue.plugin || oldConfig?.plugin,
       status: newValue.status,
