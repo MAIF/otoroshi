@@ -290,7 +290,7 @@ GET     /api/globalconfig                                     otoroshi.controlle
 PUT     /api/globalconfig                                     otoroshi.controllers.adminapi.GlobalConfigController.updateGlobalConfig()
 PATCH   /api/globalconfig                                     otoroshi.controllers.adminapi.GlobalConfigController.patchGlobalConfig()
 
-GET     /api/otoroshi.jpoiuson                                    otoroshi.controllers.adminapi.ImportExportController.fullExport()
+GET     /api/otoroshi.json                                    otoroshi.controllers.adminapi.ImportExportController.fullExport()
 POST    /api/otoroshi.json                                    otoroshi.controllers.adminapi.ImportExportController.fullImport()
 POST    /api/import                                           otoroshi.controllers.adminapi.ImportExportController.fullImportFromFile()
 

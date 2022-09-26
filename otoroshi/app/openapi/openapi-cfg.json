@@ -529,7 +529,7 @@
     "operations_input_entity.otoroshi.controllers.adminapi.DataExporterConfigController.patchEntityAction_data-exporters": "otoroshi.models.DataExporterConfig",
     "operations_input_entity.otoroshi.controllers.adminapi.DataExporterConfigController.updateEntityAction_data-exporters": "otoroshi.models.DataExporterConfig",
     "operations_input_entity.otoroshi.controllers.adminapi.GlobalConfigController.patchGlobalConfig_globalconfig": "PatchBody",
-    "operations_input_entity.otoroshi.controllers.adminapi.GlobalConfigController.updateGlobalConfig_globalconfig": "otoroshi.models.GlobalConfig",
+    "operations_input_entity.otoroshi.controllers.adminapi.GlobalConfigControlle r.updateGlobalConfig_globalconfig": "otoroshi.models.GlobalConfig",
     "operations_input_entity.otoroshi.controllers.adminapi.ImportExportController.fullImportFromFile_import-export": "GlobalConfigImportBody",
     "operations_input_entity.otoroshi.controllers.adminapi.ImportExportController.fullImport_import-export": "GlobalConfigImportBody",
     "operations_input_entity.otoroshi.controllers.adminapi.JwtVerifierController.bulkCreateAction_jwt-verifiers": "BulkBody",
