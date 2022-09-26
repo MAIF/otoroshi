@@ -344,6 +344,7 @@ export class Table extends Component {
         style: { ...c.style, height: 30 },
         sortable: !c.notSortable,
         filterable: !c.notFilterable,
+        sortMethod: c.sortMethod,
         accessor: (d) => (c.content ? c.content(d) : d),
         Filter: (d) => (
           <input
