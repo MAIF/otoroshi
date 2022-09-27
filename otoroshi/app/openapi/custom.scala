@@ -1,6 +1,10 @@
 package otoroshi.openapi
 
-import otoroshi.next.plugins.{AuthModule, ContextValidation, GraphQLBackend, GraphQLQuery, JwtVerification, MockFormData, NgAuthModuleConfig, NgAuthModuleExpectedUser, NgAuthModuleExpectedUserConfig, NgAuthModuleUserExtractor, NgAuthModuleUserExtractorConfig, NgJwtVerificationConfig, OtoroshiChallenge, OtoroshiInfos}
+import otoroshi.next.plugins.{
+  AuthModule, ContextValidation, GraphQLBackend, GraphQLQuery,
+  JwtVerification, MockFormData, NgAuthModuleConfig,
+  NgAuthModuleExpectedUser, NgAuthModuleUserExtractor, NgJwtVerificationConfig,
+  OtoroshiChallenge, OtoroshiInfos}
 import otoroshi.next.tunnel.TunnelPlugin
 import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.libs.json.Json
@@ -46,13 +50,19 @@ object CustomForms {
           |    "type" : "object"
           |  },
           |  "method" : {
-          |    "label" : "method",
-          |    "type" : "string"
+          |    "type" : "select",
+          |    "props": {
+          |       "label" : "method",
+          |       "options": ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+          |    }
           |  },
           |  "query" : {
-          |    "label" : "GraphQL query",
           |    "type" : "code",
-          |    "help": "The graphql query that will be sent to the graphql endpoint"
+          |    "props": {
+          |       "editorOnly": true,
+          |       "label" : "Graphql query",
+          |       "help": "The graphql query that will be sent to the graphql endpoint"
+          |    }
           |  },
           |  "response_filter" : {
           |    "label" : "response_filter",
@@ -103,8 +113,15 @@ object CustomForms {
       schema = Json
         .parse("""{
                  |  "tunnel_id" : {
-                 |    "label" : "Tunnel ID",
-                 |    "type" : "string"
+                 |    "type" : "select",
+                 |    "props": {
+                 |      "label" : "Tunnel ID",
+                 |      "optionsFrom": "/bo/api/proxy/api/tunnels",
+                 |      "optionsTransformer": {
+                 |          "label": "name",
+                 |          "value": "id"
+                 |      }
+                 |    }
                  |  }
                  |}""".stripMargin)
         .asObject
@@ -999,6 +1016,6 @@ object CustomForms {
                  |}""".stripMargin)
         .asObject,
       flow = Seq("version", "ttl", "header_name", "algo")
-    ),
+    )
   )
 }

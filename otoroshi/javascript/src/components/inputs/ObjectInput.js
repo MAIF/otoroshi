@@ -72,10 +72,10 @@ export function ObjectInput(props) {
     <div>
       {data.length === 0 && (
         <div className="row mb-3">
-          <label htmlFor={`input-${props.label}`} className="col-xs-12 col-sm-2 col-form-label">
+          {!props.ngOptions?.spread && <label htmlFor={`input-${props.label}`} className="col-xs-12 col-sm-2 col-form-label">
             {props.label} <Help text={props.help} />
-          </label>
-          <div className="col-sm-10">
+          </label>}
+          <div className={`${props.ngOptions?.spread ? 'col-sm-12' : 'col-sm-10'}`}>
             <button
               disabled={props.disabled}
               type="button"
@@ -95,7 +95,7 @@ export function ObjectInput(props) {
           )}
           {(i > 0 && !props.ngOptions?.spread) &&
             <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>}
-          <div className={`${props.ngOptions?.spread} ? 'col-sm-12' : 'col-sm-10'`}>
+          <div className={`${props.ngOptions?.spread ? 'col-sm-12' : 'col-sm-10'}`}>
             <div className="input-group justify-content-between">
               {props.itemRenderer && props.itemRenderer(key, value, idx)}
               {!props.itemRenderer && <>

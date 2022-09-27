@@ -362,8 +362,8 @@ export class NgObjectRenderer extends Component {
             spread: true
           }}
           label={null}
-          placeholderKey=" "
-          placeholderValue=" "
+          placeholderKey={props.placeholderKey}
+          placeholderValue={props.placeholderValue}
           value={this.props.value}
           onChange={this.props.onChange}
           itemRenderer={ItemRenderer ? (key, value, idx) => <ItemRenderer

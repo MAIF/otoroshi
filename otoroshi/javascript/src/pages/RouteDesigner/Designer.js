@@ -253,7 +253,6 @@ export default forwardRef(
     }));
 
     useEffect(() => {
-      console.log(location);
       if (location?.state?.showTryIt) childRef.current.toggleTryIt();
       else if (location?.state?.plugin) childRef.current.selectPlugin(location?.state?.plugin);
     }, [location.state]);
@@ -986,7 +985,7 @@ class Designer extends React.Component {
         })),
       },
       () => {
-        this.updateRoute({ ...newRoute }).then(() => console.log('pattern added '));
+        this.updateRoute({ ...newRoute })
       }
     );
   };
@@ -1037,7 +1036,7 @@ class Designer extends React.Component {
         })),
       },
       () => {
-        this.updateRoute({ ...newRoute }).then(() => console.log('pattern added '));
+        this.updateRoute({ ...newRoute })
       }
     );
   };
@@ -2185,7 +2184,6 @@ class EditView extends React.Component {
               errors={errors}
               onFormClick={() => this.toggleJsonFormat(false)}
               onRawJsonClick={() => {
-                console.log(this.formRef.current)
                 if (this.formRef.current &&
                   this.formRef.current.isValid(this.formRef.current.state.validation)) {
                   this.toggleJsonFormat(true);
