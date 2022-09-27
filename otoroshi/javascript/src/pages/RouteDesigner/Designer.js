@@ -1808,42 +1808,44 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
               backgroundColor: '#555',
               borderRadius: 3,
             }}>
-            {backend.targets.map((target, i) => {
-              const path = backend.root;
-              const rewrite = backend.rewrite;
-              const hostname = target.ip_address
-                ? `${target.hostname}@${target.ip_address}`
-                : target.hostname;
-              const end = rewrite || frontend.strip_path ? path : `/<request_path>${path}`;
-              const start = target.tls ? 'https://' : 'http://';
-              const mtls =
-                target.tls_config &&
-                  target.tls_config.enabled &&
-                  [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
-                  <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
-                    mTLS
-                  </span>
-                ) : (
-                  <span></span>
+            {backend.targets
+              .filter(f => f)
+              .map((target, i) => {
+                const path = backend.root;
+                const rewrite = backend.rewrite;
+                const hostname = target.ip_address
+                  ? `${target.hostname}@${target.ip_address}`
+                  : target.hostname;
+                const end = rewrite || frontend.strip_path ? path : `/<request_path>${path}`;
+                const start = target.tls ? 'https://' : 'http://';
+                const mtls =
+                  target.tls_config &&
+                    target.tls_config.enabled &&
+                    [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
+                    <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
+                      mTLS
+                    </span>
+                  ) : (
+                    <span></span>
+                  );
+                return (
+                  <div
+                    style={{
+                      paddingLeft: 10,
+                      paddingRight: 10,
+                      display: 'flex',
+                      flexDirection: 'row',
+                    }}
+                    key={`backend-targets${i}`}>
+                    <span style={{ fontFamily: 'monospace' }}>
+                      {mtls}
+                      {start}
+                      {hostname}:{target.port}
+                      {end}
+                    </span>
+                  </div>
                 );
-              return (
-                <div
-                  style={{
-                    paddingLeft: 10,
-                    paddingRight: 10,
-                    display: 'flex',
-                    flexDirection: 'row',
-                  }}
-                  key={`backend-targets${i}`}>
-                  <span style={{ fontFamily: 'monospace' }}>
-                    {mtls}
-                    {start}
-                    {hostname}:{target.port}
-                    {end}
-                  </span>
-                </div>
-              );
-            })}
+              })}
           </div>
         </div>
         <div style={{ marginTop: 20, width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
@@ -2315,19 +2317,24 @@ const BackendSelector = ({
   return (
     enabled && (
       <div className="backend-selector">
-        <div className={`d-flex ${usingExistingBackend ? 'mb-3' : ''}`}>
+        <div className={`d-flex ${usingExistingBackend ? 'mb-3' : ''}`}
+          style={{
+            padding: '5px',
+            borderRadius: '24px',
+            backgroundColor: '#373735',
+            position: 'relative'
+          }}>
+          <div className={`tryit-selector-cursor ${!usingExistingBackend ? '' : 'tryit-selector-mode-right'}`} />
           <button
-            className="btn btn-sm new-backend-button"
+            className="flex tryit-selector-mode"
             onClick={() => {
               setUsingExistingBackend(false);
-            }}
-            style={{ backgroundColor: usingExistingBackend ? '#494849' : '#f9b000' }}>
+            }}>
             Create a new backend
           </button>
           <button
-            className="btn btn-sm new-backend-button"
-            onClick={() => setUsingExistingBackend(true)}
-            style={{ backgroundColor: usingExistingBackend ? '#f9b000' : '#494849' }}>
+            className="flex tryit-selector-mode"
+            onClick={() => setUsingExistingBackend(true)}>
             Select an existing backend
           </button>
         </div>

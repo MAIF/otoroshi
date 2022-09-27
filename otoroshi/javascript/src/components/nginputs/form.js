@@ -321,7 +321,7 @@ export class NgForm extends Component {
       schema.className ||
       schema.style ||
       schema.render ||
-      schema.itemRender ||
+      schema.itemRenderer ||
       schema.conditionalSchema
     ) {
       const possible = {
@@ -350,7 +350,7 @@ export class NgForm extends Component {
         collapsable: schema.collapsable,
         collasped: schema.collasped,
         label: schema.label,
-        itemRenderer: itemRenderer,
+        itemRenderer: itemRenderer || schema.itemRenderer,
         props: {
           label: schema.label,
           placeholder: schema.placeholder,

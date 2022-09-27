@@ -3,6 +3,7 @@ import Select from 'react-select';
 import isFunction from 'lodash/isFunction'
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 import { Location } from '../Location';
+import { ObjectInput } from '../inputs';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
@@ -349,103 +350,37 @@ export class NgArrayRenderer extends Component {
 }
 
 export class NgObjectRenderer extends Component {
-  // state = { values: this.props.value ? Object.keys(this.props.value).map(key => ({ key, value: this.props.value[key] })) : [] }
-
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
     const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;
+
     return (
       <LabelAndInput {...this.props}>
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          {this.props.value &&
-            // this.state.values.map(raw => {
-            //   const { key, value } = raw;
-            Object.keys(this.props.value)
-              .map((key) => [key, this.props.value[key]])
-              .map((raw, idx) => {
-                const [key, value] = raw;
-                return (
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      width: '100%',
-                    }}>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder={props.placeholderKey}
-                      title={props.help}
-                      value={key}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        const old = newObject[key];
-                        delete newObject[key];
-                        newObject[e.target.value] = old;
-                        this.props.onChange(newObject);
-                      }}
-                      style={{ width: '50%' }}
-                      {...props}
-                    />
-                    {!ItemRenderer && (
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder={props.placeholderValue}
-                        title={props.help}
-                        value={value}
-                        onChange={(e) => {
-                          const newObject = this.props.value ? { ...this.props.value } : {};
-                          newObject[key] = e.target.value;
-                          this.props.onChange(newObject);
-                        }}
-                        style={{ width: '50%' }}
-                        {...props}
-                      />
-                    )}
-                    {ItemRenderer && (
-                      <ItemRenderer
-                        embedded
-                        flow={this.props.flow}
-                        schema={this.props.schema}
-                        value={value}
-                        onChange={(e) => {
-                          const newObject = this.props.value ? { ...this.props.value } : {};
-                          newObject[key] = e;
-                          this.props.onChange(newObject);
-                        }}
-                        {...props}
-                      />
-                    )}
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-danger"
-                      style={{ width: 42, marginLeft: 5 }}
-                      onClick={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        delete newObject[key];
-                        this.props.onChange(newObject);
-                      }}>
-                      <i className="fas fa-trash" />
-                    </button>
-                  </div>
-                );
-              })}
-          <button
-            type="button"
-            className="btn btn-sm btn-info float-end"
-            style={{ width: 42, marginTop: 5 }}
-            onClick={(e) => {
-              const newObject = { ...this.props.value };
-              newObject[''] = '';
+        <ObjectInput
+          ngOptions={{
+            spread: true
+          }}
+          label={null}
+          placeholderKey=" "
+          placeholderValue=" "
+          value={this.props.value}
+          onChange={this.props.onChange}
+          itemRenderer={ItemRenderer ? (key, value, idx) => <ItemRenderer
+            embedded
+            flow={this.props.flow}
+            schema={this.props.schema}
+            value={value}
+            key={key}
+            idx={idx}
+            onChange={(e) => {
+              const newObject = this.props.value ? { ...this.props.value } : {};
+              newObject[key] = e;
               this.props.onChange(newObject);
-            }}>
-            <i className="fas fa-plus-circle" />
-          </button>
-        </div>
+            }}
+            {...props}
+          /> : null}
+        />
       </LabelAndInput>
     );
   }

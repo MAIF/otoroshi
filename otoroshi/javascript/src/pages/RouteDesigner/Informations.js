@@ -106,7 +106,7 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     },
     metadata: {
       type: 'object',
-      label: 'Metadata',
+      label: 'Metadata'
     },
     tags: {
       type: 'array',
