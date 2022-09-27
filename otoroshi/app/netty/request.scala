@@ -20,53 +20,20 @@ import javax.net.ssl.{SSLPeerUnverifiedException, SSLSession}
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 object ReactorNettyRemoteConnection {
   val logger = Logger("otoroshi-experimental-reactor-netty-server-remote-connection")
 }
 
+object ReactorNettyRequest {
+  val counter = new AtomicLong(0L)
+}
+
 class ReactorNettyRemoteConnection(req: HttpServerRequest, val secure: Boolean, sessionOpt: Option[SSLSession]) extends RemoteConnection {
   lazy val remoteAddress: InetAddress = req.remoteAddress().getAddress
-  lazy val clientCertificateChain: Option[Seq[X509Certificate]] = {
-    if (secure) {
-      sessionOpt match {
-        case None =>
-          ReactorNettyRemoteConnection.logger.warn(s"Something weird happened with the TLS session: it does not exists ...")
-          None
-        case Some(session) => {
-          if (session.isValid) {
-            val certs = try {
-              session.getPeerCertificates.toSeq.collect { case c: X509Certificate => c }
-            } catch {
-              case e: SSLPeerUnverifiedException => Seq.empty[X509Certificate]
-            }
-            if (certs.nonEmpty) {
-              Some(certs)
-            } else {
-              None
-            }
-          } else {
-            None
-          }
-        }
-      }
-    } else {
-      None
-    }
-  }
-}
-
-object NettyRemoteConnection {
-  val logger = Logger("otoroshi-experimental-netty-server-remote-connection")
-}
-
-class NettyRemoteConnection(req: HttpRequest, ctx: ChannelHandlerContext, val secure: Boolean, sessionOpt: Option[SSLSession]) extends RemoteConnection {
-  lazy val remoteAddress: InetAddress = {
-    ctx.channel() match {
-      case c: io.netty.incubator.codec.quic.QuicChannel => InetAddress.getLocalHost
-      case c: io.netty.incubator.codec.quic.QuicStreamChannel => InetAddress.getLocalHost
-      case _ => InetAddress.getLocalHost
-    }
-  }
   lazy val clientCertificateChain: Option[Seq[X509Certificate]] = {
     if (secure) {
       sessionOpt match {
@@ -102,22 +69,6 @@ class ReactorNettyRequestTarget(req: HttpServerRequest) extends RequestTarget {
   lazy val uriString: String = req.uri()
   lazy val path: String = req.fullPath()
   lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq)
-}
-
-class NettyRequestTarget(req: HttpRequest) extends RequestTarget {
-  lazy val kUri = akka.http.scaladsl.model.Uri(uriString)
-  lazy val uri: URI = new URI(uriString)
-  lazy val uriString: String = req.uri()
-  lazy val path: String = kUri.path.toString()
-  lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq)
-}
-
-object ReactorNettyRequest {
-  val counter = new AtomicLong(0L)
-}
-
-object NettyRequest {
-  val counter = new AtomicLong(0L)
 }
 
 class ReactorNettyRequest(req: HttpServerRequest, secure: Boolean, sessionOpt: Option[SSLSession], sessionCookieBaker: SessionCookieBaker, flashCookieBaker: FlashCookieBaker) extends ReactorNettyRequestHeader(req, secure, sessionOpt, sessionCookieBaker, flashCookieBaker) with Request[Source[ByteString, _]] {
@@ -197,15 +148,65 @@ class ReactorNettyRequestHeader(req: HttpServerRequest, secure: Boolean, session
   lazy val target: RequestTarget = new ReactorNettyRequestTarget(req)
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+object NettyRemoteConnection {
+  val logger = Logger("otoroshi-experimental-netty-server-remote-connection")
+}
+
+object NettyRequest {
+  val counter = new AtomicLong(0L)
+}
+
+class NettyRemoteConnection(req: HttpRequest, ctx: ChannelHandlerContext, val secure: Boolean, sessionOpt: Option[SSLSession]) extends RemoteConnection {
+  lazy val remoteAddress: InetAddress = {
+    ctx.channel() match {
+      case c: io.netty.incubator.codec.quic.QuicChannel => InetAddress.getLocalHost
+      case c: io.netty.incubator.codec.quic.QuicStreamChannel => InetAddress.getLocalHost
+      case _ => InetAddress.getLocalHost
+    }
+  }
+  lazy val clientCertificateChain: Option[Seq[X509Certificate]] = {
+    if (secure) {
+      sessionOpt match {
+        case None =>
+          ReactorNettyRemoteConnection.logger.warn(s"Something weird happened with the TLS session: it does not exists ...")
+          None
+        case Some(session) => {
+          if (session.isValid) {
+            val certs = try {
+              session.getPeerCertificates.toSeq.collect { case c: X509Certificate => c }
+            } catch {
+              case e: SSLPeerUnverifiedException => Seq.empty[X509Certificate]
+            }
+            if (certs.nonEmpty) {
+              Some(certs)
+            } else {
+              None
+            }
+          } else {
+            None
+          }
+        }
+      }
+    } else {
+      None
+    }
+  }
+}
+
+class NettyRequestTarget(req: HttpRequest) extends RequestTarget {
+  lazy val kUri = akka.http.scaladsl.model.Uri(uriString)
+  lazy val uri: URI = new URI(uriString)
+  lazy val uriString: String = req.uri()
+  lazy val path: String = kUri.path.toString()
+  lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq)
+}
+
 class NettyRequest(req: HttpRequest, ctx: ChannelHandlerContext, rawBody: Flux[ByteString], secure: Boolean, sessionOpt: Option[SSLSession], sessionCookieBaker: SessionCookieBaker, flashCookieBaker: FlashCookieBaker) extends NettyRequestHeader(req, ctx, secure, sessionOpt, sessionCookieBaker, flashCookieBaker) with Request[Source[ByteString, _]] {
   lazy val body: Source[ByteString, _] = {
-    // val flux: Publisher[ByteString] = req.receive().map { bb =>
-    //   val builder = ByteString.newBuilder
-    //   bb.readBytes(builder.asOutputStream, bb.readableBytes())
-    //   builder.result()
-    // }
-    // Source.fromPublisher(flux)
-    // Source.single(rawBody)
     Source.fromPublisher(rawBody)
   }
 }
@@ -277,3 +278,7 @@ class NettyRequestHeader(req: HttpRequest, ctx: ChannelHandlerContext, secure: B
   lazy val connection: RemoteConnection = new NettyRemoteConnection(req, ctx, secure, sessionOpt)
   lazy val target: RequestTarget = new NettyRequestTarget(req)
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

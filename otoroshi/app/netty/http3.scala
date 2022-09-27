@@ -11,7 +11,7 @@ import io.netty.handler.ssl.util.SelfSignedCertificate
 import io.netty.incubator.codec.quic.{QuicSslContext, QuicSslContextBuilder}
 import io.netty.util.{CharsetUtil, Mapping, ReferenceCountUtil}
 import otoroshi.env.Env
-import otoroshi.ssl.DynamicKeyManager
+import otoroshi.ssl.{DynamicKeyManager, DynamicSSLEngineProvider}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.http.{HttpEntity, HttpRequestHandler}
@@ -24,7 +24,7 @@ import java.util.function.Consumer
 import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 
-class Http1RequestHandler(handler: HttpRequestHandler, sessionCookieBaker: SessionCookieBaker, flashCookieBaker: FlashCookieBaker, env: Env) extends ChannelInboundHandlerAdapter {
+class Http1RequestHandler(handler: HttpRequestHandler, sessionCookieBaker: SessionCookieBaker, flashCookieBaker: FlashCookieBaker, env: Env, logger: Logger) extends ChannelInboundHandlerAdapter {
 
   private implicit val ec  = env.otoroshiExecutionContext
   private implicit val mat = env.otoroshiMaterializer
@@ -89,8 +89,7 @@ class Http1RequestHandler(handler: HttpRequestHandler, sessionCookieBaker: Sessi
   }
 
   private def runOtoroshiRequest(req: HttpRequest, keepAlive: Boolean, ctx: ChannelHandlerContext, msg: Any): Unit = {
-    if (request == null)
-      throw new RuntimeException("no request found !")
+    if (request == null) throw new RuntimeException("no request found !!!")
     // TODO: handle trailer headers
     val session = ctx.channel() match {
       case c: io.netty.incubator.codec.quic.QuicChannel => Option(c)
@@ -125,13 +124,62 @@ class Http1RequestHandler(handler: HttpRequestHandler, sessionCookieBaker: Sessi
           result.header.headers.foreach {
             case (key, value) => response.headers().set(key, value)
           }
-          // TODO: keepalive: https://github.com/netty/netty/blob/4.1/example/src/main/java/io/netty/example/http/snoop/HttpSnoopServerHandler.java#L157
-          //                  https://github.com/netty/netty/blob/4.1/example/src/main/java/io/netty/example/http/snoop/HttpSnoopServerHandler.java#L128
-          // TODO: cookie: https://github.com/netty/netty/blob/4.1/example/src/main/java/io/netty/example/http/snoop/HttpSnoopServerHandler.java#L177
+          var cookies = Seq.empty[io.netty.handler.codec.http.cookie.Cookie]
+          if (result.newSession.nonEmpty) {
+            result.newSession.map { session =>
+              val cookie = sessionCookieBaker.encodeAsCookie(session)
+              val sessionCookie = new io.netty.handler.codec.http.cookie.DefaultCookie(cookie.name, cookie.value)
+              sessionCookie.setPath(cookie.path)
+              sessionCookie.setHttpOnly(cookie.httpOnly)
+              sessionCookie.setSecure(cookie.secure)
+              cookie.domain.foreach(d => sessionCookie.setDomain(d))
+              cookie.maxAge.foreach(d => sessionCookie.setMaxAge(d.toLong))
+              cookie.sameSite.foreach {
+                case play.api.mvc.Cookie.SameSite.None => sessionCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
+                case play.api.mvc.Cookie.SameSite.Strict => sessionCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
+                case play.api.mvc.Cookie.SameSite.Lax => sessionCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
+              }
+              cookies = cookies :+ sessionCookie
+            }
+          }
+          if (result.newFlash.nonEmpty) {
+            result.newFlash.foreach { flash =>
+              val cookie = flashCookieBaker.encodeAsCookie(flash)
+              val flashCookie = new io.netty.handler.codec.http.cookie.DefaultCookie(cookie.name, cookie.value)
+              flashCookie.setPath(cookie.path)
+              flashCookie.setHttpOnly(cookie.httpOnly)
+              flashCookie.setSecure(cookie.secure)
+              cookie.domain.foreach(d => flashCookie.setDomain(d))
+              cookie.maxAge.foreach(d => flashCookie.setMaxAge(d.toLong))
+              cookie.sameSite.foreach {
+                case play.api.mvc.Cookie.SameSite.None => flashCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
+                case play.api.mvc.Cookie.SameSite.Strict => flashCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
+                case play.api.mvc.Cookie.SameSite.Lax => flashCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
+              }
+              cookies = cookies :+ flashCookie
+            }
+          }
+          if (result.newCookies.nonEmpty) {
+            result.newCookies.foreach { cookie =>
+              val nettyCookie = new io.netty.handler.codec.http.cookie.DefaultCookie(cookie.name, cookie.value)
+              nettyCookie.setPath(cookie.path)
+              nettyCookie.setHttpOnly(cookie.httpOnly)
+              nettyCookie.setSecure(cookie.secure)
+              cookie.domain.foreach(d => nettyCookie.setDomain(d))
+              cookie.maxAge.foreach(d => nettyCookie.setMaxAge(d.toLong))
+              cookie.sameSite.foreach {
+                case play.api.mvc.Cookie.SameSite.None => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
+                case play.api.mvc.Cookie.SameSite.Strict => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
+                case play.api.mvc.Cookie.SameSite.Lax => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
+              }
+              cookies = cookies :+ nettyCookie
+            }
+          }
+          cookies.map(cookie => response.headers().set(HttpHeaderNames.SET_COOKIE,  io.netty.handler.codec.http.cookie.ServerCookieEncoder.LAX.encode(cookie)))
           result.body.contentLength.foreach(l => response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, l.toInt))
           result.body.contentType.foreach(l => response.headers().set(HttpHeaderNames.CONTENT_TYPE, l))
           if (keepAlive) {
-            if (!req.protocolVersion().isKeepAliveDefault()) {
+            if (!req.protocolVersion().isKeepAliveDefault) {
               response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE)
             }
           } else {
@@ -173,7 +221,7 @@ class Http1RequestHandler(handler: HttpRequestHandler, sessionCookieBaker: Sessi
           }
         }.andThen {
           case Failure(exception) => {
-            exception.printStackTrace() // TODO: logger
+            logger.error("error while handling http3 request", exception)
             directResponse(ctx, msg, HttpResponseStatus.INTERNAL_SERVER_ERROR, ERROR.retainedDuplicate())
           }
         }
@@ -286,7 +334,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                     case otoroshi.ssl.ClientAuth.Want => io.netty.handler.ssl.ClientAuth.OPTIONAL
                     case otoroshi.ssl.ClientAuth.Need => io.netty.handler.ssl.ClientAuth.REQUIRE
                   })
-                  //.trustManager(???) TODO:
+                  .trustManager(DynamicSSLEngineProvider.currentServerTrustManager)
                   .applicationProtocols(Http3.supportedApplicationProtocols():_*)
                   .earlyData(true)
                   .build()
@@ -324,7 +372,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                 // Called for each request-stream,
                 override def initChannel(ch: QuicStreamChannel): Unit = {
                   ch.pipeline().addLast(new Http3FrameToHttpObjectCodec(true))
-                  ch.pipeline().addLast(new Http1RequestHandler(handler, sessionCookieBaker, flashCookieBaker, env))
+                  ch.pipeline().addLast(new Http1RequestHandler(handler, sessionCookieBaker, flashCookieBaker, env, logger))
                 }
               }))
           }
