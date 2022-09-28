@@ -308,19 +308,18 @@ const Container = ({ children, onClick }) => {
     <div
       className="h-100 col-12 route-designer div-overflowy"
       onMouseDown={(e) => {
-        setPropagate(
-          !document.getElementById('form-container')?.contains(e.target) &&
-          ![...document.getElementsByClassName('delete-node-button')].find((d) =>
-            d.contains(e.target)
-          )
-        );
-        // &&
-        // ![...document.getElementsByClassName("fa-chevron")].find(d => d.contains(e.target))
-        // )
+        setPropagate(![
+          document.getElementById('form-container'),
+          ...document.getElementsByClassName('delete-node-button'),
+          ...document.querySelectorAll('i[class^="fas fa-chevron"]')
+        ]
+          .filter(f => f)
+          .find(d => d.contains(e.target)))
       }}
       onMouseUp={(e) => {
         e.stopPropagation();
-        if (propagate) onClick(e);
+        if (propagate)
+          onClick(e);
 
         setPropagate(false);
       }}>
@@ -1861,11 +1860,6 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
                 );
               })}
           </div>
-        </div>
-        <div style={{ marginTop: 20, width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-          <button className="btn btn-danger btn-sm" onClick={clearPlugins}>
-            Remove plugins
-          </button>
         </div>
       </>
     );

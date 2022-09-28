@@ -270,7 +270,7 @@ const Manager = ({ query, entity, ...props }) => {
                     setForceTester(true)
                     viewRef?.current?.onTestingButtonClick(history, value)
                   },
-                  hide: !isOnViewPlugins && query === 'flow' && !forceHideTester,
+                  hide: !isOnViewPlugins && query !== 'flow' && !forceHideTester,
                 },
                 {
                   icon: 'fa-ellipsis-h',
@@ -333,7 +333,7 @@ const Manager = ({ query, entity, ...props }) => {
                           border: '1px solid #373735',
                           borderTop: 0,
                           padding: '12px',
-                          zIndex: 20,
+                          zIndex: 400,
                           maxWidth: '194px'
                         }}
                         onClick={(e) => e.stopPropagation()}>
