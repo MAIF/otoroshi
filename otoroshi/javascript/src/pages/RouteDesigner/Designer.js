@@ -538,11 +538,22 @@ class Designer extends React.Component {
   injectDefaultMenu = () => (
     <button
       type="button"
-      className="btn btn-sm btn-danger mt-1"
-      style={{ width: '100%' }}
+      className="btn btn-sm btn-danger d-flex align-items-center justify-content-center flex-column"
+      style={{
+        minWidth: '80px',
+        minHeight: '80px',
+        maxWidth: '80px',
+        maxHeight: '80px',
+
+        flex: 1
+      }}
       onClick={this.clearPlugins}>
-      <i className="fas fa-ban me-3" />
-      Remove plugins
+      <div>
+        <i className="fas fa-ban" />
+      </div>
+      <div>
+        Remove plugins
+      </div>
     </button>
   );
 
