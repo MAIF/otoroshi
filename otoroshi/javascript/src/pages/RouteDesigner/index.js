@@ -40,6 +40,8 @@ const Manager = ({ query, entity, ...props }) => {
   const [saveButton, setSaveButton] = useState(null);
   const [menu, setMenu] = useState();
 
+  const [forceHideTester, setForceTester] = useState(false)
+
   const viewRef = useRef();
 
   useEffect(() => {
@@ -107,8 +109,11 @@ const Manager = ({ query, entity, ...props }) => {
                   style: { marginLeft: 20 },
                   moreClass: 'pb-2',
                   title: 'Tester',
-                  onClick: () => viewRef?.current?.onTestingButtonClick(history, value),
-                  enabled: () => !isOnViewPlugins,
+                  onClick: () => {
+                    setForceTester(true)
+                    viewRef?.current?.onTestingButtonClick(history, value)
+                  },
+                  hide: !isOnViewPlugins && query === 'flow' && !forceHideTester,
                 },
                 {
                   icon: 'fa-ellipsis-h',
@@ -125,8 +130,12 @@ const Manager = ({ query, entity, ...props }) => {
               ]
                 .filter((link) => !link.enabled || link.enabled())
                 .filter(link => location.state?.routeFromService ? link.tab === 'Informations' : true)
-                .map(({ to, icon, title, tooltip, tab, onClick, dropdown, moreClass, style, props = {} }) => (
-                  <div className={`ms-2 ${moreClass ? moreClass : ''} ${dropdown ? 'dropdown' : ''}`}>
+                .map(({ to, icon, title, tooltip, tab, onClick, dropdown, moreClass, style, props = {}, hide }) => (
+                  <div className={`ms-2 ${moreClass ? moreClass : ''} ${dropdown ? 'dropdown' : ''}`}
+                    style={{
+                      opacity: hide === true ? 0 : 1,
+                      pointerEvents: hide === true ? 'none': 'cursor'
+                    }}>
                     <button
                       key={title}
                       type="button"
@@ -335,7 +344,7 @@ const Manager = ({ query, entity, ...props }) => {
         </div>
       ));
     }
-  }, [value, saveButton, menu, viewRef]);
+  }, [value, saveButton, menu, viewRef, forceHideTester]);
 
   const divs = [
     {
@@ -343,6 +352,7 @@ const Manager = ({ query, entity, ...props }) => {
       render: () => (
         <Designer
           {...props}
+          enableTesterButton={() => setForceTester(false)}
           ref={viewRef}
           tab={query}
           history={history}

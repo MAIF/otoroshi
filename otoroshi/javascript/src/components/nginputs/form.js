@@ -367,7 +367,6 @@ export class NgForm extends Component {
   };
 
   recursiveSearch = (paths, value) => {
-    console.log(paths, value)
     if (paths.length === 0)
       return value
     return this.recursiveSearch(paths.slice(1), (value || {})[paths.slice(0, 1)])
@@ -413,7 +412,6 @@ export class NgForm extends Component {
 
     }
 
-
     if (this.props.flow?.length === 0)
       return Object.keys(schema)
 
@@ -436,10 +434,7 @@ export class NgForm extends Component {
       rawSchema={{
         label: name,
         collapsable: true,
-        collapsed: collapsed === undefined ? false : true,
-        style: {
-          marginBottom: '1rem'
-        }
+        collapsed: collapsed === undefined ? false : true
       }}>
       {fields.map(subName => this.renderStepFlow(subName, config))}
     </FormRenderer>

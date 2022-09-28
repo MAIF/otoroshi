@@ -79,7 +79,10 @@ export default function ({ route, hide }) {
         route_id: route.id,
       });
 
-      routeEntries(route.id).then((data) => setPlaygroundUrl(data.entries[0]));
+      routeEntries(route.id).then((data) => {
+        if (data.entries)
+          setPlaygroundUrl(data.entries[0])
+      });
 
       setTesterView(
         route &&

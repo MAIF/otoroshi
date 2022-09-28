@@ -155,8 +155,6 @@ class RouteForms extends React.Component {
 
     if (!schemas) return null;
 
-    console.log(route)
-
     return (
       <div className="p-2">
         <div className="d-flex justify-content-end">
@@ -177,7 +175,6 @@ class RouteForms extends React.Component {
             <h5 className="route-forms-title">Frontend</h5>
             <RouteForm
               onSubmit={(e) => {
-                console.log(e)
                 this.saveChanges(e)
               }}
               dirtyField="frontend"
@@ -360,7 +357,7 @@ export default ({ service, setSaveButton, setService, viewPlugins, ref }) => {
       <FeedbackButton
         className="ms-2"
         _disabled={!shouldUpdateRoutes}
-        text="Save routes"
+        text="Save route"
         icon={() => <i className="fas fa-paper-plane" />}
         onPress={saveRoute}
       />

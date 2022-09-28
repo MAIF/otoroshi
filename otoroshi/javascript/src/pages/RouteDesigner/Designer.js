@@ -260,6 +260,7 @@ export default forwardRef(
     return (
       <Designer
         ref={childRef}
+        enableTesterButton={props.enableTesterButton}
         history={history}
         viewPlugins={props.viewPlugins || viewPlugins}
         subTab={subTab}
@@ -1379,6 +1380,10 @@ class Designer extends React.Component {
                 }}
                 hide={(e) => {
                   e.stopPropagation();
+
+                  if (showTryIt)
+                    this.props.enableTesterButton()
+
                   this.setState({
                     selectedNode: backendCallNodes.find((node) => {
                       return node.id.includes(
@@ -1556,7 +1561,6 @@ class Designer extends React.Component {
                     originalRoute={originalRoute}
                     alertModal={alertModal}
                     disabledSaveButton={isEqual(route, originalRoute)}
-                    backendForm={this.state.backendForm}
                   />
                 </div>
               </>

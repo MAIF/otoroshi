@@ -157,7 +157,20 @@ export const DEFAULT_FLOW = {
         }
       },
     },
-    config_flow: ['domains', '#grid|Flags|strip_path,exact', 'headers', 'methods', 'query'],
+    config_flow: [
+      'domains',
+      {
+        type: 'grid',
+        name: 'Flags',
+        fields: [
+          'strip_path',
+          'exact'
+        ]
+      },
+      'headers',
+      'methods',
+      'query'
+    ]
   },
   Backend: (parentNode) => ({
     id: 'Backend',
@@ -167,7 +180,10 @@ export const DEFAULT_FLOW = {
     config_schema: (generatedSchema) => ({
       ...generatedSchema,
       targets: {
-        ...generatedSchema.targets,
+        array: true,
+        format: "form",
+        type: "object",
+        label: " ",
         schema: {
           custom_target: {
             renderer: props => {
@@ -201,7 +217,32 @@ export const DEFAULT_FLOW = {
           },
           tls_config: {
             ...generatedSchema.targets.schema.tls_config,
-            visible: (value) => value?.custom_target === 'open' && value?.tls === true
+            visible: (value) => value?.custom_target === 'open' && value?.tls === true,
+            schema: {
+              ...generatedSchema.targets.schema.tls_config.schema,
+              certs: {
+                type: "array-select",
+                props: {
+                  label: "Certificates",
+                  optionsFrom: "/bo/api/proxy/api/certificates",
+                  optionsTransformer: {
+                    label: "name",
+                    value: "id"
+                  }
+                }
+              },
+              trusted_certs: {
+                type: "array-select",
+                props: {
+                  label: "Trusted certificates",
+                  optionsFrom: "/bo/api/proxy/api/certificates",
+                  optionsTransformer: {
+                    label: "name",
+                    value: "id"
+                  }
+                }
+              }
+            }
           },
         },
         flow: ['custom_target', ...generatedSchema.targets.flow.filter(key => !["id"].includes(key))],
@@ -209,8 +250,12 @@ export const DEFAULT_FLOW = {
     }),
     config_flow: [
       'root',
-      '#grid|Flags|rewrite',
-      'targets',
+      'rewrite',
+      {
+        type: 'group',
+        name: 'Targets',
+        fields: ['targets']
+      },
       'health_check',
       'client',
       'load_balancing',

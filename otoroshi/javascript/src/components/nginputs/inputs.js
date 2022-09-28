@@ -53,7 +53,7 @@ export class SingleLineCode extends Component {
 export function LabelAndInput(_props) {
   const schema = _props.schema || {};
   const props = schema.props || {};
-  const label = _props.label || props.label || _props.name || _props.rawSchema?.label || '...';
+  const label = _props.label || props.label || _props.rawSchema?.label || _props.name || '...';
   const ngOptions = _props.ngOptions || props.ngOptions || {};
   const labelColumn = _props.labelColumn || props.labelColumn || 2;
 
