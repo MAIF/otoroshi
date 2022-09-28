@@ -30,6 +30,7 @@ import reactor.netty.NettyOutbound
 import java.security.{Provider, SecureRandom}
 import java.util.function.BiFunction
 import javax.net.ssl._
+import scala.jdk.CollectionConverters.asScalaBufferConverter
 import scala.util.{Failure, Success, Try}
 
 case class HttpServerBodyResponse(body: Publisher[Array[Byte]], contentType: Option[String], contentLength: Option[Long], chunked: Boolean)
@@ -44,7 +45,7 @@ class ReactorNettyServer(env: Env) {
   implicit private val mat = env.otoroshiMaterializer
   implicit private val ev = env
 
-  private val logger = Logger("otoroshi-experimental-reactor-netty-server")
+  private val logger = Logger("otoroshi-experimental-netty-server")
 
   private val engine: ProxyEngine = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get.asInstanceOf[ProxyEngine]
 
@@ -288,9 +289,9 @@ class ReactorNettyServer(env: Env) {
     if (config.enabled) {
 
       logger.info("")
-      logger.info(s"Starting the experimental Reactor Netty Server !!!")
+      logger.info(s"Starting the experimental Netty Server !!!")
       logger.info("")
-      val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = if (io.netty.channel.epoll.Epoll.isAvailable) {
+      val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = if (config.native.isEpoll && io.netty.channel.epoll.Epoll.isAvailable) {
         logger.info("  using Epoll native transport")
         logger.info("")
         val channelHttp = new io.netty.channel.epoll.EpollServerSocketChannel()
@@ -300,23 +301,23 @@ class ReactorNettyServer(env: Env) {
         evlGroupHttp.register(channelHttp)
         evlGroupHttps.register(channelHttps)
         (evlGroupHttp, evlGroupHttps)
-      } else if (io.netty.channel.kqueue.KQueue.isAvailable) {
-        logger.info("  using KQueue native transport")
-        logger.info("")
-        val channelHttp = new io.netty.channel.kqueue.KQueueServerSocketChannel()
-        val channelHttps = new io.netty.channel.kqueue.KQueueServerSocketChannel()
-        val evlGroupHttp = new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread)
-        val evlGroupHttps = new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread)
-        evlGroupHttp.register(channelHttp)
-        evlGroupHttps.register(channelHttps)
-        (evlGroupHttp, evlGroupHttps)
-      } else if (io.netty.incubator.channel.uring.IOUring.isAvailable) {
+      } else if (config.native.isIOUring && io.netty.incubator.channel.uring.IOUring.isAvailable) {
         logger.info("  using IO-Uring native transport")
         logger.info("")
         val channelHttp = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
         val channelHttps = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
         val evlGroupHttp = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(config.nThread)
         val evlGroupHttps = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(config.nThread)
+        evlGroupHttp.register(channelHttp)
+        evlGroupHttps.register(channelHttps)
+        (evlGroupHttp, evlGroupHttps)
+      } else if (config.native.isKQueue && io.netty.channel.kqueue.KQueue.isAvailable) {
+        logger.info("  using KQueue native transport")
+        logger.info("")
+        val channelHttp = new io.netty.channel.kqueue.KQueueServerSocketChannel()
+        val channelHttps = new io.netty.channel.kqueue.KQueueServerSocketChannel()
+        val evlGroupHttp = new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread)
+        val evlGroupHttps = new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread)
         evlGroupHttp.register(channelHttp)
         evlGroupHttps.register(channelHttps)
         (evlGroupHttp, evlGroupHttps)
@@ -329,9 +330,9 @@ class ReactorNettyServer(env: Env) {
         evlGroupHttps.register(channelHttps)
         (evlGroupHttp, evlGroupHttps)
       }
-      logger.info(s"  https://${config.host}:${config.httpsPort}")
-      logger.info(s"  http://${config.host}:${config.httpPort}")
       if (config.http3.enabled) logger.info(s"  https://${config.host}:${config.http3.port} (HTTP/3)")
+      logger.info(s"  https://${config.host}:${config.httpsPort} (HTTP/1.1, HTTP/2)")
+      logger.info(s"  http://${config.host}:${config.httpPort}  (HTTP/1.1, HTTP/2 H2C)")
       logger.info("")
 
       def handleFunction(secure: Boolean): BiFunction[_ >: HttpServerRequest, _ >: HttpServerResponse, _ <: Publisher[Void]] = {
@@ -354,7 +355,8 @@ class ReactorNettyServer(env: Env) {
         .accessLog(config.accessLog)
         .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-https", LogLevel.INFO))
         .port(config.httpsPort)
-        .protocol(HttpProtocol.HTTP11, HttpProtocol.H2C)
+        .applyOnIf(config.http2.enabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
+        .applyOnIf(!config.http2.enabled)(_.protocol(HttpProtocol.HTTP11))
         .runOn(groupHttps)
         .httpRequestDecoder(spec => spec
           .allowDuplicateContentLengths(config.parser.allowDuplicateContentLengths)
@@ -369,9 +371,10 @@ class ReactorNettyServer(env: Env) {
         .doOnChannelInit { (observer, channel, socket) =>
           val engine = setupSslContext().createSSLEngine()
           engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
+            println(protocols.asScala)
             protocols match {
-              case ps if ps.contains("h2") => "h2"
-              case ps if ps.contains("spdy/3") => "spdy/3"
+              case ps if ps.contains("h2") && config.http2.enabled => "h2"
+              // case ps if ps.contains("spdy/3") => "spdy/3"
               case _ => "http/1.1"
             }
           })
@@ -387,7 +390,8 @@ class ReactorNettyServer(env: Env) {
         .accessLog(config.accessLog)
         .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-http", LogLevel.INFO))
         .port(config.httpPort)
-        .protocol(HttpProtocol.H2C, HttpProtocol.HTTP11)
+        .applyOnIf(config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
+        .applyOnIf(!config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11))
         .handle(handleFunction(false))
         .runOn(groupHttp)
         .httpRequestDecoder(spec => spec

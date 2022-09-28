@@ -25,7 +25,7 @@ import scala.util.Try
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 object ReactorNettyRemoteConnection {
-  val logger = Logger("otoroshi-experimental-reactor-netty-server-remote-connection")
+  val logger = Logger("otoroshi-experimental-netty-server-remote-connection")
 }
 
 object ReactorNettyRequest {

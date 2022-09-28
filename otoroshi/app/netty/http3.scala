@@ -348,23 +348,18 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
         //.option(QuicChannelOption.UDP_SEGMENTS, 10)
         .sslContext(sslContext)
         .maxIdleTimeout(config.idleTimeout.toMillis, TimeUnit.MILLISECONDS)
-        .maxSendUdpPayloadSize(1500)
-        .maxRecvUdpPayloadSize(1500)
-        .initialMaxData(10000000)
-        .initialMaxStreamDataBidirectionalLocal(1000000)
-        .initialMaxStreamDataBidirectionalRemote(1000000)
-        .initialMaxStreamsBidirectional(100000)
+        .maxSendUdpPayloadSize(config.http3.maxSendUdpPayloadSize) // TODO: from config
+        .maxRecvUdpPayloadSize(config.http3.maxRecvUdpPayloadSize) // TODO: from config
+        .initialMaxData(config.http3.initialMaxData) // TODO: from config
+        .initialMaxStreamDataBidirectionalLocal(config.http3.initialMaxStreamDataBidirectionalLocal) // TODO: from config
+        .initialMaxStreamDataBidirectionalRemote(config.http3.initialMaxStreamDataBidirectionalRemote) // TODO: from config
+        .initialMaxStreamsBidirectional(config.http3.initialMaxStreamsBidirectional) // TODO: from config
         .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
         .handler(new ChannelInitializer[QuicChannel]() {
           override def initChannel(ch: QuicChannel): Unit = {
             ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
               @Override
               override def channelInactive(ctx: ChannelHandlerContext): Unit = {
-                // System.err.println("INACTIVE")
-                // ctx.channel().asInstanceOf[QuicChannel].collectStats().addListener(f => {
-                //   // System.err.println(f.getNow())
-                //   println("yep")
-                // })
               }
             })
             ch.pipeline().addLast(new Http3ServerConnectionHandler(
@@ -372,12 +367,13 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                 // Called for each request-stream,
                 override def initChannel(ch: QuicStreamChannel): Unit = {
                   ch.pipeline().addLast(new Http3FrameToHttpObjectCodec(true))
+                  if (config.accessLog) ch.pipeline().addLast(reactor.netty.http.server.logging.AccessLogHandlerFactory.H1.create(null))
                   ch.pipeline().addLast(new Http1RequestHandler(handler, sessionCookieBaker, flashCookieBaker, env, logger))
                 }
               }))
           }
         }).build()
-      val group = new NioEventLoopGroup(1)
+      val group = new NioEventLoopGroup(config.nThread)
       val bs = new Bootstrap()
       val channel = bs.group(group)
         .channel(classOf[NioDatagramChannel])

@@ -16,7 +16,30 @@ case class HttpRequestParserConfig(
   maxChunkSize: Int,
 )
 
-case class Http3Settings(enabled: Boolean, port: Int)
+sealed trait NativeDriver
+object NativeDriver {
+  case object Auto extends NativeDriver
+  case object Epoll extends NativeDriver
+  case object KQueue extends NativeDriver
+  case object IOUring extends NativeDriver
+}
+
+case class Http3Settings(
+  enabled: Boolean,
+  port: Int,
+  maxSendUdpPayloadSize: Long,
+  maxRecvUdpPayloadSize: Long,
+  initialMaxData: Long,
+  initialMaxStreamDataBidirectionalLocal: Long,
+  initialMaxStreamDataBidirectionalRemote: Long,
+  initialMaxStreamsBidirectional: Long
+)
+case class Http2Settings(enabled: Boolean, h2cEnabled: Boolean)
+case class NativeSettings(enabled: Boolean, driver: NativeDriver) {
+  def isEpoll: Boolean = enabled && (driver == NativeDriver.Auto || driver == NativeDriver.Epoll)
+  def isKQueue: Boolean = enabled && (driver == NativeDriver.Auto || driver == NativeDriver.KQueue)
+  def isIOUring: Boolean = enabled && (driver == NativeDriver.Auto || driver == NativeDriver.IOUring)
+}
 
 case class ReactorNettyServerConfig(
   enabled: Boolean,
@@ -32,7 +55,9 @@ case class ReactorNettyServerConfig(
   clientAuth: ClientAuth,
   idleTimeout: java.time.Duration,
   parser: HttpRequestParserConfig,
+  http2: Http2Settings,
   http3: Http3Settings,
+  native: NativeSettings,
 )
 
 object ReactorNettyServerConfig {
@@ -74,9 +99,33 @@ object ReactorNettyServerConfig {
         maxInitialLineLength = config.getOptionalWithFileSupport[Int]("parser.maxInitialLineLength").getOrElse(HttpDecoderSpec.DEFAULT_MAX_INITIAL_LINE_LENGTH),
         maxChunkSize = config.getOptionalWithFileSupport[Int]("parser.maxChunkSize").getOrElse(HttpDecoderSpec.DEFAULT_MAX_CHUNK_SIZE),
       ),
+      http2 = Http2Settings(
+        enabled = config.getOptionalWithFileSupport[Boolean]("http2.enabled").getOrElse(true),
+        h2cEnabled = config.getOptionalWithFileSupport[Boolean]("http2.h2c").getOrElse(true),
+      ),
       http3 = Http3Settings(
         enabled = config.getOptionalWithFileSupport[Boolean]("http3.enabled").getOrElse(false),
-        port = config.getOptionalWithFileSupport[Int]("http3.port").getOrElse(10050),
+        port = config.getOptionalWithFileSupport[Int]("http3.port").getOrElse(10048),
+        maxSendUdpPayloadSize = config.getOptionalWithFileSupport[Long]("http3.maxSendUdpPayloadSize").getOrElse(1500),
+        maxRecvUdpPayloadSize = config.getOptionalWithFileSupport[Long]("http3.maxRecvUdpPayloadSize").getOrElse(1500),
+        initialMaxData = config.getOptionalWithFileSupport[Long]("http3.initialMaxData").getOrElse(10000000),
+        initialMaxStreamDataBidirectionalLocal = config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamDataBidirectionalLocal").getOrElse(1000000),
+        initialMaxStreamDataBidirectionalRemote = config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamDataBidirectionalRemote").getOrElse(1000000),
+        initialMaxStreamsBidirectional = config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamsBidirectional").getOrElse(100000),
+      ),
+      native = NativeSettings(
+        enabled = config.getOptionalWithFileSupport[Boolean]("native.enabled").getOrElse(true),
+        driver = config.getOptionalWithFileSupport[String]("native.driver").map {
+          case "Auto" => NativeDriver.Auto
+          case "Epoll" => NativeDriver.Epoll
+          case "KQueue" => NativeDriver.KQueue
+          case "IOUring" => NativeDriver.IOUring
+          case "auto" => NativeDriver.Auto
+          case "epoll" => NativeDriver.Epoll
+          case "kqueue" => NativeDriver.KQueue
+          case "iOUring" => NativeDriver.IOUring
+          case _ => NativeDriver.Auto
+        }.getOrElse(NativeDriver.Auto)
       )
     )
   }
