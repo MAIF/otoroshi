@@ -285,51 +285,25 @@ class ReactorNettyServer(env: Env) {
     ) {}
   }
 
+  def createEventLoops(): (EventLoopGroup, EventLoopGroup) = {
+    val groupHttp = EventLoopUtils.create(config.native, config.nThread)
+    val groupHttps = EventLoopUtils.create(config.native, config.nThread)
+    groupHttp.native.foreach { name =>
+      logger.info(s"  using ${name} native transport")
+      logger.info("")
+    }
+    (groupHttp.group, groupHttps.group)
+  }
+
   def start(handler: HttpRequestHandler): Unit = {
     if (config.enabled) {
 
       logger.info("")
       logger.info(s"Starting the experimental Netty Server !!!")
       logger.info("")
-      val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = if (config.native.isEpoll && io.netty.channel.epoll.Epoll.isAvailable) {
-        logger.info("  using Epoll native transport")
-        logger.info("")
-        val channelHttp = new io.netty.channel.epoll.EpollServerSocketChannel()
-        val channelHttps = new io.netty.channel.epoll.EpollServerSocketChannel()
-        val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(config.nThread)
-        val evlGroupHttps = new io.netty.channel.epoll.EpollEventLoopGroup(config.nThread)
-        evlGroupHttp.register(channelHttp)
-        evlGroupHttps.register(channelHttps)
-        (evlGroupHttp, evlGroupHttps)
-      } else if (config.native.isIOUring && io.netty.incubator.channel.uring.IOUring.isAvailable) {
-        logger.info("  using IO-Uring native transport")
-        logger.info("")
-        val channelHttp = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
-        val channelHttps = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
-        val evlGroupHttp = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(config.nThread)
-        val evlGroupHttps = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(config.nThread)
-        evlGroupHttp.register(channelHttp)
-        evlGroupHttps.register(channelHttps)
-        (evlGroupHttp, evlGroupHttps)
-      } else if (config.native.isKQueue && io.netty.channel.kqueue.KQueue.isAvailable) {
-        logger.info("  using KQueue native transport")
-        logger.info("")
-        val channelHttp = new io.netty.channel.kqueue.KQueueServerSocketChannel()
-        val channelHttps = new io.netty.channel.kqueue.KQueueServerSocketChannel()
-        val evlGroupHttp = new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread)
-        val evlGroupHttps = new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread)
-        evlGroupHttp.register(channelHttp)
-        evlGroupHttps.register(channelHttps)
-        (evlGroupHttp, evlGroupHttps)
-      } else {
-        val channelHttp = new NioServerSocketChannel()
-        val channelHttps = new NioServerSocketChannel()
-        val evlGroupHttp = new NioEventLoopGroup(config.nThread)
-        val evlGroupHttps = new NioEventLoopGroup(config.nThread)
-        evlGroupHttp.register(channelHttp)
-        evlGroupHttps.register(channelHttps)
-        (evlGroupHttp, evlGroupHttps)
-      }
+
+      val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = createEventLoops()
+
       if (config.http3.enabled) logger.info(s"  https://${config.host}:${config.http3.port} (HTTP/3)")
       logger.info(s"  https://${config.host}:${config.httpsPort} (HTTP/1.1, HTTP/2)")
       logger.info(s"  http://${config.host}:${config.httpPort}  (HTTP/1.1, HTTP/2 H2C)")
@@ -371,10 +345,9 @@ class ReactorNettyServer(env: Env) {
         .doOnChannelInit { (observer, channel, socket) =>
           val engine = setupSslContext().createSSLEngine()
           engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
-            println(protocols.asScala)
             protocols match {
               case ps if ps.contains("h2") && config.http2.enabled => "h2"
-              // case ps if ps.contains("spdy/3") => "spdy/3"
+              case ps if ps.contains("spdy/3") => "spdy/3"
               case _ => "http/1.1"
             }
           })

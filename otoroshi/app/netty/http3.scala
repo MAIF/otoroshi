@@ -367,7 +367,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                 // Called for each request-stream,
                 override def initChannel(ch: QuicStreamChannel): Unit = {
                   ch.pipeline().addLast(new Http3FrameToHttpObjectCodec(true))
-                  if (config.accessLog) ch.pipeline().addLast(reactor.netty.http.server.logging.AccessLogHandlerFactory.H1.create(null))
+                  if (config.accessLog) ch.pipeline().addLast(new AccessLogHandler())
                   ch.pipeline().addLast(new Http1RequestHandler(handler, sessionCookieBaker, flashCookieBaker, env, logger))
                 }
               }))
