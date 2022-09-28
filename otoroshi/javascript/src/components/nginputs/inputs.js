@@ -11,8 +11,19 @@ export class NgLocationRenderer extends Component {
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
+    const FormRenderer = this.props.components.FormRenderer;
+
     return (
-      <LabelAndInput {...this.props}>
+      <FormRenderer
+        embedded={true}
+        rawSchema={{
+          label: 'Location',
+          collapsable: true,
+          collapsed: false,
+          style: {
+            marginBottom: '1rem'
+          }
+        }}>
         <Location
           {...props}
           tenant={this.props.value?.tenant || 'default'}
@@ -26,7 +37,7 @@ export class NgLocationRenderer extends Component {
             teams
           })}
         />
-      </LabelAndInput>
+      </FormRenderer>
     )
   }
 }
@@ -595,17 +606,18 @@ export class NgSelectRenderer extends Component {
   componentDidMount() {
     const schema = this.props.schema || {};
     const props = schema.props || {};
-    if (props.optionsFrom) {
+    if (props.optionsFrom || this.props.optionsFrom) {
       this.setState({ loading: true }, () => {
-        fetch(this.props.schema.props.optionsFrom, {
+        fetch(props.optionsFrom || this.props.optionsFrom, {
           method: 'GET',
           credentials: 'include',
         })
           .then((r) => r.json())
           .then((r) => {
-            this.setState({ loading: false });
-            // this.setState({ options: this.applyTransformer(props, r) })
-            this.setState({ options: r })
+            this.setState({
+              loading: false,
+              options: r
+            });
           })
           .catch((e) => {
             this.setState({ loading: false });
@@ -616,8 +628,9 @@ export class NgSelectRenderer extends Component {
 
   applyTransformer = (props, r) => {
     if (props.optionsTransformer) {
-      if (isFunction(props.optionsTransformer))
+      if (isFunction(props.optionsTransformer)) {
         return props.optionsTransformer(r || [])
+      }
       else
         return (r || []).map(item => ({ label: item[props.optionsTransformer.label], value: item[props.optionsTransformer.value] }))
     } else if ((r || []).length > 0 && r[0].label && r[0].value) {

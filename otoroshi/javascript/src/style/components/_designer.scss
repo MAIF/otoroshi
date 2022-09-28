@@ -630,7 +630,7 @@
     flex-direction: column;
     margin: auto;
     margin-top: 5em;
-    overflow: hidden;
+    // overflow: hidden;
     max-width: 50vw;
     border-radius: 4px;
     box-shadow: 0px 0 2px 1px #f9b000c2;
@@ -707,5 +707,20 @@
             border-bottom-right-radius: 0px;
 
         }
+    }
+}
+
+.fall-down {
+    // transition: top 1.5s;
+    // top: 1200px !important;
+    animation: leafanimation .85s reverse;
+    transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    -webkit-animation-fill-mode: forwards;
+}
+
+@keyframes leafanimation {
+    0% {
+        transform: rotate(678deg) translateX(30px);
+        top: calc(100vh - 52px);
     }
 }

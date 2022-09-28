@@ -191,7 +191,7 @@ class BackOfficeAppContainer extends Component {
             </div>
             <div className="col-sm-10 offset-2 main">
               <div className="row">
-                <div className={classes.join(' ')} style={{ overflowX: 'hidden' }}>
+                <div className={classes.join(' ')}>
                   <DynamicTitle />
                   <div className="row" style={{ marginTop: 1 }}>
                     {!this.state.catchedError && (

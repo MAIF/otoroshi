@@ -47,70 +47,71 @@ export function FeedbackButton({
 
     return `btn-${type}`;
   };
-
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      className={`btn ${color} ${className || ''}`}
-      style={{ ...style }}
-      onClick={() => {
-        if (!uploading && waiting) {
-          setUploading(true);
-          const timer = Date.now();
-          onPress()
-            .then(() => {
-              const diff = Date.now() - timer;
-              if (diff > 150) onResult('success');
-              setTimeout(() => {
-                onResult('success');
-              }, 150 - diff);
-            })
-            .catch((err) => {
-              onResult('failed');
-              throw err;
-            });
-        }
+  
+  return <button
+    id={text}
+    type="button"
+    disabled={disabled}
+    className={`btn ${color} ${className || ''}`}
+    style={{
+      ...style
+    }}
+    onClick={() => {
+      if (!uploading && waiting) {
+        setUploading(true);
+        const timer = Date.now();
+        onPress()
+          .then(() => {
+            const diff = Date.now() - timer;
+            if (diff > 150) onResult('success');
+            setTimeout(() => {
+              onResult('success');
+            }, 150 - diff);
+          })
+          .catch((err) => {
+            onResult('failed');
+            throw err;
+          });
+      }
+    }}>
+    <div
+      className="me-1"
+      style={{
+        width: '16px',
+        display: 'inline-block',
       }}>
-      <div
-        className="me-1"
-        style={{
-          width: '16px',
-          display: 'inline-block',
-        }}>
-        {waiting && !uploading && <Icon />}
+      {waiting && !uploading && <Icon />}
 
-        {loading && (
-          <i
-            className="fas fa-spinner fa-spin fa-sm"
-            style={{
-              opacity: loading ? 1 : 0,
-              transition: 'opacity 2s',
-            }}
-          />
-        )}
+      {loading && (
+        <i
+          className="fas fa-spinner fa-spin fa-sm"
+          style={{
+            opacity: loading ? 1 : 0,
+            transition: 'opacity 2s',
+          }}
+        />
+      )}
 
-        {successed && (
-          <i
-            className="fas fa-check"
-            style={{
-              opacity: successed ? 1 : 0,
-              transition: 'opacity 2s',
-            }}
-          />
-        )}
+      {successed && (
+        <i
+          className="fas fa-check"
+          style={{
+            opacity: successed ? 1 : 0,
+            transition: 'opacity 2s',
+          }}
+        />
+      )}
 
-        {failed && (
-          <i
-            className="fas fa-times"
-            style={{
-              opacity: failed ? 1 : 0,
-              transition: 'opacity 2s',
-            }}
-          />
-        )}
-      </div>
-      {text}
-    </button>
-  );
+      {failed && (
+        <i
+          className="fas fa-times"
+          style={{
+            opacity: failed ? 1 : 0,
+            transition: 'opacity 2s',
+          }}
+        />
+      )}
+    </div>
+    {text}
+  </button>
 }

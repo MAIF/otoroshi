@@ -5,7 +5,6 @@ import Designer from './Designer';
 import RouteCompositions from './RouteComposition';
 import Routes from './Routes';
 import { Informations } from './Informations';
-import { RouteForm } from './form';
 import DesignerSidebar from './Sidebar';
 
 import { ServiceEventsPage } from '../ServiceEventsPage';
@@ -14,6 +13,7 @@ import { ServiceHealthPage } from '../ServiceHealthPage';
 import { ServiceAnalyticsPage } from '../ServiceAnalyticsPage';
 import { ServiceApiKeysPage } from '../ServiceApiKeysPage';
 import { RouteWizard } from './RouteWizard';
+import { ImportServiceDescriptor } from './ImportServiceDescriptor';
 import { useEntityFromURI } from '../../util';
 import { v4 } from 'uuid';
 
@@ -36,7 +36,7 @@ const Manager = ({ query, entity, ...props }) => {
   const viewPlugins = rawViewPlugins !== null ? Number(rawViewPlugins) : -1;
   const isOnViewPlugins = (viewPlugins !== -1) & (query === 'route_plugins');
 
-  const [value, setValue] = useState();
+  const [value, setValue] = useState(location.state?.routeFromService);
   const [saveButton, setSaveButton] = useState(null);
   const [menu, setMenu] = useState();
 
@@ -45,7 +45,13 @@ const Manager = ({ query, entity, ...props }) => {
   useEffect(() => {
     if (p.routeId === 'new') {
       nextClient.template(nextClient.ENTITIES[entity.fetchName]).then(setValue);
-    } else nextClient.fetch(nextClient.ENTITIES[entity.fetchName], p.routeId).then(setValue);
+    } else {
+      nextClient.fetch(nextClient.ENTITIES[entity.fetchName], p.routeId)
+        .then(res => {
+          if (!res.error)
+            setValue(res)
+        });
+    }
   }, [p.routeId]);
 
   useEffect(() => {
@@ -61,7 +67,6 @@ const Manager = ({ query, entity, ...props }) => {
               {
                 flow: 'Designer',
                 informations: 'Informations',
-                form: 'Form',
                 routes: 'Routes',
                 route_plugins: 'Route plugins',
               }[query]
@@ -81,13 +86,6 @@ const Manager = ({ query, entity, ...props }) => {
                   icon: 'fa-file-alt',
                   title: 'Informations',
                   tab: 'informations',
-                  enabled: () => !isOnViewPlugins,
-                },
-                {
-                  to: `/${entity.link}/${value.id}?tab=form`,
-                  icon: 'fa-file-alt',
-                  title: 'Form',
-                  tab: 'form',
                   enabled: () => !isOnViewPlugins,
                 },
                 {
@@ -114,7 +112,7 @@ const Manager = ({ query, entity, ...props }) => {
                 },
                 {
                   icon: 'fa-ellipsis-h',
-                  onClick: () => {},
+                  onClick: () => { },
                   enabled: () => !isOnViewPlugins, //isOnViewPlugins || query == 'flow',
                   dropdown: true,
                   props: {
@@ -126,6 +124,7 @@ const Manager = ({ query, entity, ...props }) => {
                 },
               ]
                 .filter((link) => !link.enabled || link.enabled())
+                .filter(link => location.state?.routeFromService ? link.tab === 'Informations' : true)
                 .map(({ to, icon, title, tooltip, tab, onClick, dropdown, moreClass, style, props = {} }) => (
                   <div className={`ms-2 ${moreClass ? moreClass : ''} ${dropdown ? 'dropdown' : ''}`}>
                     <button
@@ -136,10 +135,11 @@ const Manager = ({ query, entity, ...props }) => {
                         onClick
                           ? onClick
                           : () => {
-                              if (query !== tab || viewPlugins) {
-                                if (!window.location.href.includes(to)) history.push(to);
-                              }
+                            if (query !== tab || viewPlugins) {
+                              if (!window.location.href.includes(to))
+                                history.push(to);
                             }
+                          }
                       }
                       {...(tooltip || {})}
                       style={{
@@ -354,24 +354,6 @@ const Manager = ({ query, entity, ...props }) => {
       ),
     },
     {
-      predicate: query && query === 'form' && entity.fetchName === 'ROUTES',
-      render: () => (
-        <RouteForm
-          ref={viewRef}
-          setSaveButton={setSaveButton}
-          isCreation={isCreation}
-          routeId={p.routeId}
-          setValue={setValue}
-          history={history}
-          location={location}
-        />
-      ),
-    },
-    {
-      predicate: query && query === 'form' && entity.fetchName === 'SERVICES',
-      render: () => <div>services</div>,
-    },
-    {
       predicate: query && query === 'routes',
       render: () =>
         value && (
@@ -394,6 +376,7 @@ const Manager = ({ query, entity, ...props }) => {
     <div className="designer row ps-3">
       <Informations
         {...props}
+        routeId={p.routeId}
         ref={viewRef}
         isCreation={isCreation}
         value={value}
@@ -406,19 +389,27 @@ const Manager = ({ query, entity, ...props }) => {
 
 const RoutesView = ({ history }) => {
   const [creation, setCreation] = useState(false);
+  const [importServiceDescriptor, setImportServiceDescriptor] = useState(false);
 
   return (
     <>
       {creation && <RouteWizard hide={() => setCreation(false)} history={history} />}
+      {importServiceDescriptor && <ImportServiceDescriptor hide={() => setImportServiceDescriptor(false)} history={history} />}
       <Routes
-        injectTopBar={
+        injectTopBar={<>
           <button
             onClick={() => setCreation(true)}
             className="btn btn-primary"
             style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
             <i className="fas fa-hat-wizard" /> Create with wizard
           </button>
-        }
+          <button
+            onClick={() => setImportServiceDescriptor(true)}
+            className="btn btn-primary"
+            style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+            <i className="fas fas fa-exchange-alt" /> Convert a service descriptor
+          </button>
+        </>}
       />
     </>
   );

@@ -7,6 +7,12 @@ export class NgStepNotFound extends Component {
   }
 }
 
+export class NgFlowNotFound extends Component {
+  return() {
+    return <h3>flow type not found {this.props.type}</h3>;
+  }
+}
+
 export class NgRendererNotFound extends Component {
   render() {
     return <h3>renderer not found {this.props.name}</h3>;
@@ -43,8 +49,8 @@ export class NgFormRenderer extends Component {
       const folded =
         ((this.props.rawSchema.props ? this.props.rawSchema.props.collapsable : false) ||
           this.props.rawSchema.collapsable) &&
-        ((this.props.rawSchema.props ? this.props.rawSchema.props.collasped : true) ||
-          this.props.rawSchema.collasped);
+        ((this.props.rawSchema.props ? this.props.rawSchema.props.collapsed : true) ||
+          this.props.rawSchema.collapsed);
 
       this.setState({ folded: folded === undefined ? true : folded });
     }

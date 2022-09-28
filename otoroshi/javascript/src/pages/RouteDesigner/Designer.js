@@ -2018,7 +2018,7 @@ class EditView extends React.Component {
         status: {
           type: 'form',
           collapsable: isPluginWithConfiguration ? true : false,
-          collasped: false,
+          collapsed: false,
           label: 'Informations',
           schema: PLUGIN_INFORMATIONS_SCHEMA,
           flow: [

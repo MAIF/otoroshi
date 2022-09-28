@@ -1,15 +1,18 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { NgForm } from '../../components/nginputs';
-import { Location } from '../../components/Location';
 import { nextClient } from '../../services/BackOfficeServices';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
 import isEqual from 'lodash/isEqual';
 import { FeedbackButton } from './FeedbackButton';
+import { RouteForm } from './form'
 
-export const Informations = forwardRef(({ isCreation, value, setValue, setSaveButton }, ref) => {
+export const Informations = forwardRef(({ isCreation, value, setValue, setSaveButton, routeId }, ref) => {
   const history = useHistory();
+  const location = useLocation()
   const [informations, setInformations] = useState({ ...value });
+
+  const [showAdvancedForm, toggleAdvancedForm] = useState(false)
 
   const { capitalize, lowercase, fetchName, link } = useEntityFromURI();
 
@@ -40,13 +43,14 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
   };
 
   const saveRoute = () => {
-    if (isCreation) {
+    if (isCreation || location.state?.routeFromService) {
       return nextClient
         .create(nextClient.ENTITIES[fetchName], informations)
         .then(() => history.push(`/${link}/${informations.id}?tab=flow`));
     } else
       return nextClient.update(nextClient.ENTITIES[fetchName], informations).then((res) => {
-        if (!res.error) setValue(res);
+        if (!res.error)
+          setValue(res);
       });
   };
 
@@ -124,16 +128,42 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
 
   const flow = [
     '_loc',
-    '#group|Route|name,description,groups',
-    '#grid|Flags|enabled,debug_flow,export_reporting,capture',
-    '#group|Advanced|metadata,tags'
+    {
+      type: 'group',
+      name: 'Route',
+      fields: [
+        'name',
+        'description',
+        'groups',
+        {
+          type: 'grid',
+          name: 'Flags',
+          fields: ['enabled', 'debug_flow', 'export_reporting', 'capture']
+        }
+      ]
+    },
+    {
+      type: 'group',
+      name: 'Advanced',
+      collapsed: true,
+      fields: [
+        'metadata', 'tags'
+      ]
+    }
   ];
 
   if (!informations || !value) return null;
 
   return (
     <>
-      <NgForm
+      {showAdvancedForm && <RouteForm
+        routeId={routeId}
+        setValue={setValue}
+        history={history}
+        location={location}
+      />}
+
+      {!showAdvancedForm && <NgForm
         schema={schema}
         flow={flow}
         value={informations}
@@ -141,9 +171,14 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
           // TODO - manage validation
           setInformations(value)
         }}
-      />
+      />}
+
       <div className="d-flex align-items-center justify-content-end mt-3">
         <div className="displayGroupBtn">
+          <button className='btn btn-outline-info'
+            onClick={() => showAdvancedForm ? toggleAdvancedForm(false) : toggleAdvancedForm(true)}>
+            {showAdvancedForm ? 'Simple form' : 'Advanced form'}
+          </button>
           <button className="btn btn-danger" onClick={() => history.push(`/${link}`)}>
             Cancel
           </button>

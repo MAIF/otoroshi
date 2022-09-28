@@ -1940,3 +1940,11 @@ export const getOldPlugins = () =>
   }).then((r) => r.json());
 
 export const getCategories = () => fetchWrapper('/plugins/categories');
+
+export const convertAsRoute = id => fetch(`/bo/api/proxy/api/services/${id}/route`, {
+  method: 'GET',
+  credentials: 'include',
+  headers: {
+    Accept: 'application/json',
+  },
+}).then((r) => r.json());

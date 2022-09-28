@@ -29,6 +29,7 @@ import {
   NgRendererNotFound,
   NgValidationRenderer,
   NgFormRenderer,
+  NgFlowNotFound,
 } from './components';
 
 const Helpers = {
@@ -217,7 +218,8 @@ export class NgForm extends Component {
     CodeRenderer: NgCodeRenderer,
     PasswordRenderer: NgPasswordRenderer,
     JsonRenderer: NgJsonRenderer,
-    LocationRenderer: NgLocationRenderer
+    LocationRenderer: NgLocationRenderer,
+    FlowNotFound: NgFlowNotFound
   };
 
   static setTheme = (theme) => {
@@ -348,7 +350,7 @@ export class NgForm extends Component {
         schema: schema.schema,
         flow: schema.flow,
         collapsable: schema.collapsable,
-        collasped: schema.collasped,
+        collapsed: schema.collapsed,
         label: schema.label,
         itemRenderer: itemRenderer || schema.itemRenderer,
         props: {
@@ -371,21 +373,39 @@ export class NgForm extends Component {
     return this.recursiveSearch(paths.slice(1), (value || {})[paths.slice(0, 1)])
   }
 
+  isAnObject = variable => {
+    return typeof variable === 'object' &&
+      variable !== null &&
+      !Array.isArray(variable);
+  }
+
   getFlow = (value, schema) => {
     if (isFunction(this.props.flow)) {
       return this.props.flow(value, this.props)
     }
 
-    if (typeof this.props.flow === 'object' &&
-      this.props.flow !== null &&
-      !Array.isArray(this.props.flow) &&
-      this.props.flow.field && this.props.flow.flow
-    ) {
+    // useful to match the case of a json flow 
+    /*
+      {
+        schema: {
+          name: { ...}
+        }
+        flow: {
+          field: 'name',
+          flow: {
+            Foo: ['a sub flow'],
+            Bar: ['a other sub flow']
+          }
+        }
+      }
+    */
+    if (this.isAnObject(this.props.flow) &&
+      this.props.flow.field &&
+      this.props.flow.flow) {
       const paths = this.props.flow.field.split('.')
       const flow = this.props.flow.flow[this.recursiveSearch(paths, (value || {}))] ||
         this.props.flow.flow[this.recursiveSearch(paths, (this.props.rootValue || {}))]
 
-      console.log(this.props.flow.flow)
       if (!flow)
         return Object.values(this.props.flow.flow)[0]
       else
@@ -400,41 +420,36 @@ export class NgForm extends Component {
     return this.props.flow || []
   }
 
-  renderGroupFlow(name, config) {
-    const parts = name
-      .replace('#group|', '')
+  renderCustomFlow({ name, fields, renderer }, config) {
+    return renderer({
+      name,
+      fields,
+      renderStepFlow: subName => this.renderInlineStepFlow(subName, config)
+    })
+  }
 
-    const [label, groupFlow] = parts.split('|')
-
+  renderGroupFlow({ name, fields, collapsed }, config) {
     const FormRenderer = config.components.FormRenderer;
 
     return <FormRenderer
       embedded={true}
       rawSchema={{
-        label,
+        label: name,
         collapsable: true,
-        collasped: false,
+        collapsed: collapsed === undefined ? false : true,
         style: {
           marginBottom: '1rem'
         }
       }}>
-      {groupFlow
-        .split(',')
-        .map(subName => this.renderStepFlow(subName, config))}
+      {fields.map(subName => this.renderStepFlow(subName, config))}
     </FormRenderer>
   }
 
-  renderGridFlow(name, config) {
-    const parts = name
-      .replace('#grid|', '')
-
-    const [label, gridFlow] = parts.split('|')
-
+  renderGridFlow({ name, fields }, config) {
     return <div className='row'>
-      <LabelAndInput label={label}>
-        <div className='d-flex flex-wrap'>
-          {gridFlow
-            .split(',')
+      <LabelAndInput label={name}>
+        <div className='d-flex flex-wrap ms-3'>
+          {fields
             .map(subName => <div className='flex' style={{ minWidth: '50%' }} key={`${name}-${subName}`}>
               {this.renderStepFlow(subName, config)}
             </div>)
@@ -444,7 +459,7 @@ export class NgForm extends Component {
     </div>
   }
 
-  renderStepFlow(name, {
+  renderInlineStepFlow(name, {
     schema, value, root, path, validation, components, StepNotFound
   }) {
     const stepSchema = schema[name];
@@ -486,6 +501,25 @@ export class NgForm extends Component {
     }
   }
 
+  renderStepFlow(name, config) {
+    if (this.isAnObject(name)) {
+      const composedFlow = name
+      if (composedFlow.type === 'grid') {
+        return this.renderGridFlow(composedFlow, config)
+      } else if (composedFlow.type === 'group') {
+        return this.renderGroupFlow(composedFlow, config)
+      } else if (composedFlow.type === 'custom') {
+        return this.renderCustomFlow(composedFlow, config)
+      } else {
+        return React.createElement(config.components.FlowNotFound, {
+          type: composedFlow.type
+        })
+      }
+    } else {
+      return this.renderInlineStepFlow(name, config);
+    }
+  }
+
   render() {
     const value = this.getValue();
     const schema =
@@ -506,15 +540,8 @@ export class NgForm extends Component {
 
     return (
       <FormRenderer {...this.props}>
-        {flow && flow.map((name) => {
-          if (name.startsWith('#grid|')) {
-            return this.renderGridFlow(name, config);
-          } else if (name.startsWith('#group|')) {
-            return this.renderGroupFlow(name, config);
-          } else {
-            return this.renderStepFlow(name, config);
-          }
-        })}
+        {flow &&
+          flow.map(name => this.renderStepFlow(name, config))}
       </FormRenderer>
     );
   }
