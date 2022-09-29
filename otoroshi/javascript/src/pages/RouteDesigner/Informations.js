@@ -22,7 +22,7 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
 
   useImperativeHandle(ref, () => ({
     onTestingButtonClick() {
-      history.push(`/routes/${value.id}?tab=flow`, { showTryIt: true });
+      history.push(`/${link}/${value.id}?tab=flow`, { showTryIt: true });
     },
   }));
 
@@ -69,15 +69,14 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     enabled: {
       type: 'bool',
       props: {
-        label: 'Route enabled',
-        labelColumn: 6
+        label: 'Enabled'
       }
     },
     capture: {
       type: 'bool',
       props: {
         label: 'Capture route traffic',
-        labelColumn: 6
+        labelColumn: 3
       }
     },
     debug_flow: {
@@ -127,6 +126,11 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
   };
 
   const flow = [
+    {
+      type: 'group',
+      name: 'Expose your route',
+      fields: ['enabled']
+    },
     '_loc',
     {
       type: 'group',
@@ -138,7 +142,7 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
         {
           type: 'grid',
           name: 'Flags',
-          fields: ['enabled', 'debug_flow', 'export_reporting', 'capture']
+          fields: ['debug_flow', 'export_reporting', 'capture']
         }
       ]
     },

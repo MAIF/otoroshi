@@ -253,14 +253,17 @@ export default forwardRef(
     }));
 
     useEffect(() => {
-      if (location?.state?.showTryIt) childRef.current.toggleTryIt();
+      if (location?.state?.showTryIt) {
+        childRef.current.toggleTryIt();
+        props.toggleTesterButton(true)
+      }
       else if (location?.state?.plugin) childRef.current.selectPlugin(location?.state?.plugin);
     }, [location.state]);
 
     return (
       <Designer
         ref={childRef}
-        enableTesterButton={props.enableTesterButton}
+        toggleTesterButton={props.toggleTesterButton}
         history={history}
         viewPlugins={props.viewPlugins || viewPlugins}
         subTab={subTab}
@@ -929,7 +932,14 @@ class Designer extends React.Component {
       if (ok) {
         const newRoute = this.state.route;
         newRoute.plugins = [];
-        this.setState({ route: newRoute, nodes: [] });
+        this.setState({
+          route: newRoute,
+          nodes: [],
+          plugins: this.state.plugins.map(p => ({
+            ...p,
+            selected: false
+          }))
+        });
         this.updateRoute({ ...newRoute });
       }
     });
@@ -1218,7 +1228,6 @@ class Designer extends React.Component {
             <span
               className="badge bg-warning text-dark"
               style={{
-                opacity: selectedNode ? 0.25 : hiddenSteps[steps[i]] ? 1 : 0.75,
                 cursor: 'pointer',
               }}
               onClick={() => {
@@ -1231,6 +1240,10 @@ class Designer extends React.Component {
                   hiddenSteps: hidden_steps,
                 });
               }}>
+              <i className={`me-1 fas fa-chevron-${hiddenSteps[steps[i]] ? 'down' : 'right'}`}
+                style={{
+                  minWidth: '10px'
+                }} />
               {steps[i]}
             </span>
             <Hr highlighted={!selectedNode} />
@@ -1281,15 +1294,12 @@ class Designer extends React.Component {
   };
 
   transformResponseBadge = () => {
-    const { nodes, hiddenSteps, selectedNode } = this.state;
+    const { nodes, hiddenSteps } = this.state;
     return (
       nodes.find((n) => n.plugin_index.TransformResponse !== undefined) && (
         <span
           className="badge bg-warning text-dark"
-          style={{
-            opacity: selectedNode ? 0.25 : hiddenSteps.TransformResponse ? 1 : 0.75,
-            cursor: 'pointer',
-          }}
+          style={{ cursor: 'pointer' }}
           onClick={() => {
             const hidden_steps = {
               ...hiddenSteps,
@@ -1300,6 +1310,10 @@ class Designer extends React.Component {
               hiddenSteps: hidden_steps,
             });
           }}>
+          <i className={`me-1 fas fa-chevron-${hiddenSteps.TransformResponse ? 'up' : 'right'}`}
+            style={{
+              minWidth: '10px'
+            }} />
           TransformResponse
         </span>
       )
@@ -1391,8 +1405,8 @@ class Designer extends React.Component {
                 hide={(e) => {
                   e.stopPropagation();
 
-                  if (showTryIt)
-                    this.props.enableTesterButton()
+                  if (this.props.toggleTesterButton)
+                    this.props.toggleTesterButton(false)
 
                   this.setState({
                     selectedNode: backendCallNodes.find((node) => {

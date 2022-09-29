@@ -3,7 +3,7 @@ import { Route, Switch, useHistory, useLocation, useParams, useRouteMatch } from
 import { nextClient } from '../../services/BackOfficeServices';
 import Designer from './Designer';
 import RouteCompositions from './RouteComposition';
-import Routes from './Routes';
+import Routes from './RoutesTable';
 import { Informations } from './Informations';
 import DesignerSidebar from './Sidebar';
 
@@ -16,6 +16,7 @@ import { RouteWizard } from './RouteWizard';
 import { ImportServiceDescriptor } from './ImportServiceDescriptor';
 import { useEntityFromURI } from '../../util';
 import { v4 } from 'uuid';
+import { Help, HelpWrapper } from '../../components/inputs';
 
 const GridButton = ({ onClick, text, icon, level = "info" }) => {
   return <button
@@ -76,7 +77,7 @@ const DeleteRouteButton = () => {
     text="Delete" />
 }
 
-const DuplicateButton = ({ value }) => {
+const DuplicateButton = ({ value, history }) => {
   return <GridButton
     onClick={(e) => {
       const what = window.location.pathname.split('/')[3];
@@ -219,144 +220,153 @@ const Manager = ({ query, entity, ...props }) => {
         <DesignerSidebar route={value} setSidebarContent={props.setSidebarContent} />
       );
 
-      props.setTitle(() => (
-        <div className="page-header d-flex align-item-center justify-content-between ms-0 mb-3">
-          <h4 className="flex" style={{ margin: 0 }}>
-            {
-              {
-                flow: 'Designer',
-                informations: 'Informations',
-                routes: 'Routes',
-                route_plugins: 'Route plugins',
-              }[query]
-            }
-          </h4>
-          <div className="d-flex align-item-center justify-content-between flex">
-            {!isCreation &&
-              [
-                {
-                  onClick: () => history.replace(`${url}?tab=routes&view_plugins=${viewPlugins}`),
-                  icon: 'fa-arrow-left',
-                  title: 'Back to route',
-                  enabled: () => isOnViewPlugins,
-                },
-                {
-                  to: `/${entity.link}/${value.id}?tab=informations`,
-                  icon: 'fa-file-alt',
-                  title: 'Informations',
-                  tab: 'informations',
-                  enabled: () => !isOnViewPlugins,
-                },
-                {
-                  to: `/${entity.link}/${value.id}?tab=routes`,
-                  icon: 'fa-road',
-                  title: 'Routes',
-                  tab: 'routes',
-                  enabled: () => ['route-compositions'].includes(entity.link),
-                },
-                {
-                  to: `/${entity.link}/${value.id}?tab=flow`,
-                  icon: 'fa-pencil-ruler',
-                  title: 'Designer',
-                  tab: 'flow',
-                  enabled: () => !isOnViewPlugins,
-                },
-                {
-                  icon: 'fa-vials',
-                  style: { marginLeft: 20 },
-                  moreClass: 'pb-2',
-                  title: 'Tester',
-                  onClick: () => {
-                    setForceTester(true)
-                    viewRef?.current?.onTestingButtonClick(history, value)
-                  },
-                  hide: !isOnViewPlugins && query !== 'flow' && !forceHideTester,
-                },
-                {
-                  icon: 'fa-ellipsis-h',
-                  onClick: () => { },
-                  enabled: () => !isOnViewPlugins, //isOnViewPlugins || query == 'flow',
-                  dropdown: true,
-                  props: {
-                    id: 'designer-menu',
-                    'data-bs-toggle': 'dropdown',
-                    'data-bs-auto-close': 'outside',
-                    'aria-expanded': 'false',
-                  },
-                },
-              ]
-                .filter((link) => !link.enabled || link.enabled())
-                .filter(link => location.state?.routeFromService ? link.tab === 'Informations' : true)
-                .map(({ to, icon, title, tooltip, tab, onClick, dropdown, moreClass, style, props = {}, hide }) => (
-                  <div className={`ms-2 ${moreClass ? moreClass : ''} ${dropdown ? 'dropdown' : ''}`}
-                    style={{
-                      opacity: hide === true ? 0 : 1,
-                      pointerEvents: hide === true ? 'none' : 'cursor',
-                      position: 'inherit'
-                    }}>
-                    <button
-                      key={title}
-                      type="button"
-                      className={`btn btn-sm toggle-form-buttons d-flex align-items-center`}
-                      onClick={
-                        onClick
-                          ? onClick
-                          : () => {
-                            if (query !== tab || viewPlugins) {
-                              if (!window.location.href.includes(to))
-                                history.push(to);
-                            }
-                          }
-                      }
-                      {...(tooltip || {})}
-                      style={{
-                        ...(style || {}),
-                        backgroundColor: tab === query ? '#f9b000' : '#494948',
-                        color: '#fff',
-                        height: '100%',
-                      }}
-                      {...props}>
-                      {icon && (
-                        <i
-                          className={`fas ${icon} ${title ? 'me-2' : ''}`}
-                          style={{ fontSize: '1.33333em' }}
-                        />
-                      )}{' '}
-                      {title}
-                    </button>
-                    {dropdown && (
-                      <ul
-                        className="dropdown-menu"
-                        aria-labelledby="designer-menu"
-                        style={{
-                          background: 'rgb(73, 73, 72)',
-                          border: '1px solid #373735',
-                          borderTop: 0,
-                          padding: '12px',
-                          zIndex: 400,
-                          maxWidth: '194px'
-                        }}
-                        onClick={(e) => e.stopPropagation()}>
-                        <li className="d-flex flex-wrap" style={{
-                          gap: '8px'
-                        }}>
-                          <DeleteRouteButton />
-                          {menu}
-                          <JsonExportButton value={value} />
-                          <YAMLExportButton value={value} />
-                          <DuplicateButton value={value} />
-                          <BackToButton history={history} />
-                        </li>
-                      </ul>
-                    )}
-                  </div>
-                ))}
-            {saveButton}
-          </div>
-        </div>
-      ));
+      props.setTitle(getTitle);
     }
-  }, [value, saveButton, menu, viewRef, forceHideTester]);
+  }, [value, saveButton, menu, viewRef, forceHideTester, isOnViewPlugins]);
+
+  console.log(forceHideTester)
+
+  const getTitle = () => {
+    return <div className="page-header d-flex align-item-center justify-content-between ms-0 mb-3">
+      <h4 className="flex" style={{ margin: 0 }}>
+        {
+          {
+            flow: 'Designer',
+            informations: 'Informations',
+            routes: 'Routes',
+            route_plugins: 'Route plugins',
+          }[query]
+        }
+      </h4>
+      <div className="d-flex align-item-center justify-content-between flex">
+        {!isCreation &&
+          [
+            {
+              onClick: () => history.replace(`${url}?tab=routes&view_plugins=${viewPlugins}`),
+              icon: 'fa-arrow-left',
+              title: 'Back to route',
+              enabled: () => isOnViewPlugins,
+            },
+            {
+              to: `/${entity.link}/${value.id}?tab=informations`,
+              icon: 'fa-file-alt',
+              title: 'Informations',
+              tab: 'informations',
+              enabled: () => !isOnViewPlugins,
+            },
+            {
+              to: `/${entity.link}/${value.id}?tab=routes`,
+              icon: 'fa-road',
+              title: 'Routes',
+              tab: 'routes',
+              enabled: () => ['route-compositions'].includes(entity.link),
+            },
+            {
+              to: `/${entity.link}/${value.id}?tab=flow`,
+              icon: 'fa-pencil-ruler',
+              title: 'Designer',
+              tab: 'flow',
+              enabled: () => !isOnViewPlugins,
+            },
+            {
+              icon: 'fa-vials',
+              style: { marginLeft: 20 },
+              moreClass: 'pb-2',
+              title: 'Tester',
+              disabledHelp: 'Your route is disabled. Navigate to the informations page to turn it',
+              disabled: !value.enabled,
+              onClick: () => {
+                setForceTester(true)
+                viewRef?.current?.onTestingButtonClick(history, value)
+              },
+              hidden: !(isOnViewPlugins || forceHideTester !== true) || query === 'routes',
+            },
+            {
+              icon: 'fa-ellipsis-h',
+              onClick: () => { },
+              enabled: () => !isOnViewPlugins, //isOnViewPlugins || query == 'flow',
+              dropdown: true,
+              props: {
+                id: 'designer-menu',
+                'data-bs-toggle': 'dropdown',
+                'data-bs-auto-close': 'outside',
+                'aria-expanded': 'false',
+              },
+            },
+          ]
+            .filter((link) => !link.enabled || link.enabled())
+            .filter(link => location.state?.routeFromService ? link.tab === 'Informations' : true)
+            .map(({ to, icon, title, tooltip, tab, onClick, dropdown, moreClass, style, props = {}, hidden, disabledHelp, disabled }) => (
+              <HelpWrapper text={disabled ? disabledHelp : undefined} dataPlacement="bottom">
+                <div className={`ms-2 ${moreClass ? moreClass : ''} ${dropdown ? 'dropdown' : ''}`}
+                  style={{
+                    opacity: hidden ? 0 : 1,
+                    pointerEvents: hidden ? 'none' : 'auto',
+                    height: '100%'
+                  }}>
+                  <button
+                    key={title}
+                    disabled={disabled}
+                    type="button"
+                    className={`btn btn-sm toggle-form-buttons d-flex align-items-center`}
+                    onClick={
+                      onClick
+                        ? onClick
+                        : () => {
+                          if (query !== tab || viewPlugins) {
+                            if (!window.location.href.includes(to))
+                              history.push(to);
+                          }
+                        }
+                    }
+                    {...(tooltip || {})}
+                    style={{
+                      ...(style || {}),
+                      backgroundColor: tab === query ? '#f9b000' : '#494948',
+                      color: '#fff',
+                      height: '100%',
+                    }}
+                    {...props}>
+                    {icon && (
+                      <i
+                        className={`fas ${icon} ${title ? 'me-2' : ''}`}
+                        style={{ fontSize: '1.33333em' }}
+                      />
+                    )}{' '}
+                    {title}
+                  </button>
+                  {dropdown && (
+                    <ul
+                      className="dropdown-menu"
+                      aria-labelledby="designer-menu"
+                      style={{
+                        background: 'rgb(73, 73, 72)',
+                        border: '1px solid #373735',
+                        borderTop: 0,
+                        padding: '12px',
+                        zIndex: 400,
+                      }}
+                      onClick={(e) => e.stopPropagation()}>
+                      <li className="d-flex flex-wrap" style={{
+                        gap: '8px',
+                        minWidth: '170px'
+                      }}>
+                        <DuplicateButton value={value} history={history} />
+                        <JsonExportButton value={value} />
+                        <YAMLExportButton value={value} />
+                        <DeleteRouteButton />
+                        {menu}
+                        <BackToButton history={history} />
+                      </li>
+                    </ul>
+                  )}
+                </div>
+              </HelpWrapper>
+            ))}
+        {saveButton}
+      </div>
+    </div>
+  }
 
   const divs = [
     {
@@ -364,7 +374,10 @@ const Manager = ({ query, entity, ...props }) => {
       render: () => (
         <Designer
           {...props}
-          enableTesterButton={() => setForceTester(false)}
+          toggleTesterButton={e => {
+            console.log(e)
+            setForceTester(e)
+          }}
           ref={viewRef}
           tab={query}
           history={history}
@@ -412,26 +425,28 @@ const Manager = ({ query, entity, ...props }) => {
 const RoutesView = ({ history }) => {
   const [creation, setCreation] = useState(false);
   const [importServiceDescriptor, setImportServiceDescriptor] = useState(false);
+  const { pathname } = useLocation()
 
   return (
     <>
       {creation && <RouteWizard hide={() => setCreation(false)} history={history} />}
       {importServiceDescriptor && <ImportServiceDescriptor hide={() => setImportServiceDescriptor(false)} history={history} />}
       <Routes
-        injectTopBar={<>
-          <button
-            onClick={() => setCreation(true)}
-            className="btn btn-primary"
-            style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
-            <i className="fas fa-hat-wizard" /> Create with wizard
-          </button>
-          <button
-            onClick={() => setImportServiceDescriptor(true)}
-            className="btn btn-primary"
-            style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
-            <i className="fas fas fa-exchange-alt" /> Convert a service descriptor
-          </button>
-        </>}
+        injectTopBar={pathname.includes('route-compositions') ?
+          null : <>
+            <button
+              onClick={() => setCreation(true)}
+              className="btn btn-primary"
+              style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+              <i className="fas fa-hat-wizard" /> Create with wizard
+            </button>
+            <button
+              onClick={() => setImportServiceDescriptor(true)}
+              className="btn btn-primary"
+              style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+              <i className="fas fas fa-exchange-alt" /> Convert a service descriptor
+            </button>
+          </>}
       />
     </>
   );
@@ -455,9 +470,10 @@ export default (props) => {
   }, [pathname]);
 
   useEffect(() => {
-    if (!query) {
+    if (pathname.endsWith('route-compositions'))
+      props.setTitle('Routes compositions');
+    else if (!query)
       props.setTitle('Routes');
-    }
   }, [search]);
 
   const patchStyle = (applyPatch) => {

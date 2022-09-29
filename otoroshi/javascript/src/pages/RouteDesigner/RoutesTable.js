@@ -32,7 +32,8 @@ export default ({ injectTopBar }) => {
     style: { textAlign: 'center', width: 70 },
     notFilterable: true,
     cell: (_, item) =>
-      item.enabled ? <span className="fas fa-check-circle" style={{ color: '#f9b000' }} /> : null,
+      item.enabled ? <span className="fas fa-check-circle" style={{ color: '#5cb85c' }} /> :
+        <span className="fas fa-times" style={{ color: '#D5443F' }} />,
   };
 
   const columns = [

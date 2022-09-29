@@ -19,10 +19,7 @@ export class NgLocationRenderer extends Component {
         rawSchema={{
           label: 'Location',
           collapsable: true,
-          collapsed: false,
-          style: {
-            marginBottom: '1rem'
-          }
+          collapsed: false
         }}>
         <Location
           {...props}
