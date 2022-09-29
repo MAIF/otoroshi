@@ -432,7 +432,7 @@ export class NgForm extends Component {
     return <FormRenderer
       embedded={true}
       rawSchema={{
-        label: name,
+        label: isFunction(name) ? name(config) : name,
         collapsable: true,
         collapsed: collapsed === undefined ? false : true
       }}>

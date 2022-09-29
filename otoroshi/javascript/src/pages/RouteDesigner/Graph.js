@@ -179,46 +179,20 @@ export const DEFAULT_FLOW = {
     field: 'backend',
     config_schema: (generatedSchema) => ({
       ...generatedSchema,
+      rewrite: {
+        ...generatedSchema.rewrite,
+        label: 'Full path rewrite'
+      },
       targets: {
         array: true,
         format: "form",
         type: "object",
         label: " ",
         schema: {
-          custom_target: {
-            renderer: props => {
-              const port = props.rootValue?.port
-              const hostname = props.rootValue?.hostname || '';
-              const isSecured = props.rootValue?.tls
-
-              return (
-                <div
-                  className="d-flex-center justify-content-start target_information mb-1"
-                  onClick={() => props.onChange(props.value === 'open' ? 'down' : 'open')}>
-                  <i className={`me-2 fas fa-chevron-${props.value === 'open' ? 'down' : 'right'}`} />
-                  <i className="fas fa-server me-2" />
-                  <a>{`${isSecured ? 'https' : 'http'}://${hostname}${port ? `:${port}` : ''}`}</a>
-                </div>
-              );
-            },
-          },
-          ...Object.fromEntries(
-            Object.entries(generatedSchema.targets.schema).map(([key, value]) => [
-              key,
-              {
-                ...value,
-                visible: (value) => value?.custom_target === 'open'
-              },
-            ])
-          ),
-          hostname: {
-            ...generatedSchema.targets.schema.hostname,
-            visible: (value) => value?.custom_target === 'open'
-          },
+          ...generatedSchema.targets.schema,
           tls_config: {
             ...generatedSchema.targets.schema.tls_config,
-            visible: (value) => value?.custom_target === 'open' && value?.tls === true,
-            schema: {
+            schema: Object.entries({
               ...generatedSchema.targets.schema.tls_config.schema,
               certs: {
                 type: "array-select",
@@ -242,10 +216,58 @@ export const DEFAULT_FLOW = {
                   }
                 }
               }
-            }
+            }).reduce((obj, entry) => {
+              if (entry[0] === 'enabled')
+                return {
+                  ...obj,
+                  [entry[0]]: entry[1]
+                }
+              else
+                return {
+                  ...obj,
+                  [entry[0]]: {
+                    ...entry[1],
+                    visible: value => value?.enabled
+                  }
+                }
+            }, {})
           },
+          predicate: {
+            ...generatedSchema.targets.schema.predicate,
+            flow: (value) => {
+              const type = value?.type
+
+              return {
+                'GeolocationMatch': ['type', 'positions'],
+                'NetworkLocationMatch': ['type', 'provider', 'region', 'zone', 'dataCenter', 'rack'],
+                'AlwaysMatch': ['type'],
+                [undefined]: ['type']
+              }[type]
+            }
+          }
         },
-        flow: ['custom_target', ...generatedSchema.targets.flow.filter(key => !["id"].includes(key))],
+        flow: [
+          {
+            type: 'group',
+            collapsed: true,
+            name: props => {
+              const port = props.value?.port
+              const hostname = props.value?.hostname || '';
+              const isSecured = props.value?.tls
+
+              return `${isSecured ? 'https' : 'http'}://${hostname}${port ? `:${port}` : ''}`
+            },
+            fields: [
+              'hostname',
+              'port',
+              'weight',
+              'predicate',
+              'protocol',
+              'ip_address',
+              'tls_config'
+            ]
+          }
+        ],
       },
     }),
     config_flow: [

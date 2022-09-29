@@ -488,7 +488,7 @@ export default ({ service, setSaveButton, setService, viewPlugins, ref }) => {
     <div className="h-100 flex-column">
       <div className="d-flex mb-3">
         <button
-          className="btn btn-sm btn-success"
+          className="btn btn-info"
           onClick={() => {
             const newItem = cloneDeep(templates?.routes[0]);
             updateRoute(routes.length, newItem);
@@ -497,7 +497,7 @@ export default ({ service, setSaveButton, setService, viewPlugins, ref }) => {
           Create a new route
         </button>
         <button
-          className="btn btn-sm btn-success mx-1"
+          className="btn btn-info mx-1"
           style={{ marginLeft: 10 }}
           onClick={() => {
             importOpenApi();
