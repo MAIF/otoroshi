@@ -72,7 +72,7 @@ class AccessLogHandler extends ChannelDuplexHandler {
         }
         val chunked = HttpUtil.isTransferEncodingChunked(response)
         if (!chunked) {
-          contentLength = contentLength + HttpUtil.getContentLength(response, -1)
+          contentLength = contentLength + HttpUtil.getContentLength(response, 0)
         }
       }
       case response: LastHttpContent => {

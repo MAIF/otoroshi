@@ -178,6 +178,7 @@ case class NgRoute(
 
   lazy val userFacing: Boolean                  = metadata.get("otoroshi-core-user-facing").contains("true")
   lazy val useAkkaHttpClient: Boolean           = metadata.get("otoroshi-core-use-akka-http-client").contains("true")
+  lazy val useNettyClient: Boolean              = metadata.get("otoroshi-core-use-netty-http-client").contains("true")
   lazy val useAkkaHttpWsClient: Boolean         = metadata.get("otoroshi-core-use-akka-http-ws-client").contains("true")
   lazy val issueLetsEncryptCertificate: Boolean =
     metadata.get("otoroshi-core-issue-lets-encrypt-certificate").contains("true")

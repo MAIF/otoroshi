@@ -3,8 +3,6 @@ package otoroshi.netty
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.channel.nio.NioEventLoopGroup
-import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.channel.{Channel, EventLoopGroup}
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.websocketx._
@@ -30,7 +28,6 @@ import reactor.netty.NettyOutbound
 import java.security.{Provider, SecureRandom}
 import java.util.function.BiFunction
 import javax.net.ssl._
-import scala.jdk.CollectionConverters.asScalaBufferConverter
 import scala.util.{Failure, Success, Try}
 
 case class HttpServerBodyResponse(body: Publisher[Array[Byte]], contentType: Option[String], contentLength: Option[Long], chunked: Boolean)
@@ -53,7 +50,7 @@ class ReactorNettyServer(env: Env) {
 
   private val cookieSignerProvider = new CookieSignerProvider(env.httpConfiguration.secret)
   private val sessionCookieBaker = new DefaultSessionCookieBaker(env.httpConfiguration.session, env.httpConfiguration.secret, cookieSignerProvider.get)
-  private val flashCookieBaker =new DefaultFlashCookieBaker(env.httpConfiguration.flash, env.httpConfiguration.secret, cookieSignerProvider.get)
+  private val flashCookieBaker = new DefaultFlashCookieBaker(env.httpConfiguration.flash, env.httpConfiguration.secret, cookieSignerProvider.get)
   private val cookieEncoder = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
 
   private def sendResultAsHttpResponse(result: Result, res: HttpServerResponse): NettyOutbound = {

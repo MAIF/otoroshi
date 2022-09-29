@@ -130,3 +130,20 @@ object ReactorNettyServerConfig {
     )
   }
 }
+
+case class NettyClientConfig(
+  wiretap: Boolean,
+  enforceAkkaClient: Boolean,
+  enforceAll: Boolean,
+)
+
+object NettyClientConfig {
+  def parseFrom(env: Env): NettyClientConfig = {
+    val config = env.configuration.get[Configuration]("otoroshi.next.experimental.netty-client")
+    NettyClientConfig(
+      wiretap = config.getOptionalWithFileSupport[Boolean]("wiretap").getOrElse(false),
+      enforceAll = config.getOptionalWithFileSupport[Boolean]("enforce").getOrElse(false),
+      enforceAkkaClient = config.getOptionalWithFileSupport[Boolean]("enforce-akka").getOrElse(false)
+    )
+  }
+}
