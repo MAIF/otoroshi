@@ -559,6 +559,7 @@ class Env(
     WsClientChooser(
       ahcClient,
       new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
+      reactor.netty.http.client.HttpClient.create(),
       configuration.getOptionalWithFileSupport[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
       this
     )
@@ -607,6 +608,7 @@ class Env(
     WsClientChooser(
       wsClient,
       new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
+      reactor.netty.http.client.HttpClient.create(),
       configuration.getOptionalWithFileSupport[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
       this
     )

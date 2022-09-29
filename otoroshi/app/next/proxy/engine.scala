@@ -12,6 +12,7 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway._
 import otoroshi.models._
+import otoroshi.netty.NettyHttpClient
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.models._
 import otoroshi.next.plugins.Keys
@@ -31,6 +32,7 @@ import play.api.http.HttpEntity
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
 import play.api.libs.streams.ActorFlow
+import play.api.libs.ws.WSRequest
 import play.api.mvc.Results.Status
 import play.api.mvc._
 
@@ -145,6 +147,7 @@ class ProxyEngine() extends RequestHandler {
   def badDefaultRoutingHttp(req: Request[Source[ByteString, _]]): Future[Result] = Results.InternalServerError("bad default routing").vfuture
   def badDefaultRoutingWs(req: RequestHeader): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = Results.InternalServerError("bad default routing").left.vfuture
 
+  private val httpClient           = reactor.netty.http.client.HttpClient.create()
   private val logger               = Logger("otoroshi-next-gen-proxy-engine")
   private val fakeFailureIndicator = new AtomicBoolean(false)
   private val reqCounter           = new AtomicInteger(0)
@@ -2573,25 +2576,29 @@ class ProxyEngine() extends RequestHandler {
       val (currentReqHasBody, shouldInjectContentLength) = request.hasBodyWithoutLength
       val wsCookiesIn                                    = request.cookies
       val clientConfig                                   = route.backend.client
-      val clientReq                                      = route.useAkkaHttpClient match {
-        case _ if finalTarget.mtlsConfig.mtls =>
-          env.gatewayClient.akkaUrlWithTarget(
-            UrlSanitizer.sanitize(request.url),
-            finalTarget,
-            clientConfig.legacy
-          )
-        case true                             =>
-          env.gatewayClient.akkaUrlWithTarget(
-            UrlSanitizer.sanitize(request.url),
-            finalTarget,
-            clientConfig.legacy
-          )
-        case false                            =>
-          env.gatewayClient.urlWithTarget(
-            UrlSanitizer.sanitize(request.url),
-            finalTarget,
-            clientConfig.legacy
-          )
+      val clientReq: WSRequest                           = if (route.useNettyClient) {
+        NettyHttpClient.url(UrlSanitizer.sanitize(request.url), httpClient).withTarget(finalTarget).withClientConfig(clientConfig.legacy)
+      } else {
+        route.useAkkaHttpClient match {
+          case _ if finalTarget.mtlsConfig.mtls =>
+            env.gatewayClient.akkaUrlWithTarget(
+              UrlSanitizer.sanitize(request.url),
+              finalTarget,
+              clientConfig.legacy
+            )
+          case true                             =>
+            env.gatewayClient.akkaUrlWithTarget(
+              UrlSanitizer.sanitize(request.url),
+              finalTarget,
+              clientConfig.legacy
+            )
+          case false                            =>
+            env.gatewayClient.urlWithTarget(
+              UrlSanitizer.sanitize(request.url),
+              finalTarget,
+              clientConfig.legacy
+            )
+        }
       }
       val host                                           = request.headers.get("Host").orElse(request.headers.get("host")).getOrElse(rawRequest.theHost)
       val extractedTimeout                               =

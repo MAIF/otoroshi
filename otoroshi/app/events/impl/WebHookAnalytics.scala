@@ -7,6 +7,7 @@ import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json}
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -60,11 +61,18 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
     val url          = event.headOption
       .map(evt =>
         webhook.url
-          //.replace("@product", env.eventsName)
-          .replace("@service", (evt \ "@service").as[String])
-          .replace("@serviceId", (evt \ "@serviceId").as[String])
-          .replace("@id", (evt \ "@id").as[String])
-          .replace("@messageType", (evt \ "@type").as[String])
+          .applyOnWithOpt(evt.select("@service").asOpt[String]) {
+            case (wh, service) => wh.replace("@service", service)
+          }
+          .applyOnWithOpt(evt.select("@serviceId").asOpt[String]) {
+            case (wh, serviceId) => wh.replace("@serviceId", serviceId)
+          }
+          .applyOnWithOpt(evt.select("@id").asOpt[String]) {
+            case (wh, id) => wh.replace("@id", id)
+          }
+          .applyOnWithOpt(evt.select("@messageType").asOpt[String]) {
+            case (wh, messageType) => wh.replace("@type", messageType)
+          }
       )
       .getOrElse(webhook.url)
     val postResponse = env.MtlsWs

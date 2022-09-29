@@ -2,7 +2,7 @@ package otoroshi.utils.reactive
 
 import org.reactivestreams.Publisher
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 object ReactiveStreamUtils {
@@ -16,6 +16,18 @@ object ReactiveStreamUtils {
         }
       }
     }
+    def toFuture[A](mono: Mono[A]): Future[A] = {
+      val promise = Promise.apply[A]()
+      mono.toFuture.handle[Unit] { (res: A, ex: Throwable) =>
+        if (ex != null) {
+          promise.tryFailure(ex)
+        } else {
+          promise.trySuccess(res)
+        }
+        ()
+      }
+      promise.future
+    }
 
   }
   object FluxUtils {
@@ -27,6 +39,16 @@ object ReactiveStreamUtils {
           case Failure(exception) => sink.error(exception)
         }
       }.flatMapMany(i => i)
+    }
+    def toFuture[A](flux: Flux[A]): Future[A] = {
+      val promise = Promise.apply[A]()
+      flux
+        .doOnError(err => promise.tryFailure(err))
+        .doOnCancel(() => promise.tryFailure(new RuntimeException("flux canceled")))
+        .doOnComplete(() => promise.tryFailure(new RuntimeException("flux completed without element")))
+        .doOnNext(e => promise.trySuccess(e))
+        .subscribe()
+      promise.future
     }
   }
 }

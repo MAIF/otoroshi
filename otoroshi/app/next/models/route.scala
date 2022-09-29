@@ -178,6 +178,7 @@ case class NgRoute(
 
   lazy val userFacing: Boolean                  = metadata.get("otoroshi-core-user-facing").contains("true")
   lazy val useAkkaHttpClient: Boolean           = metadata.get("otoroshi-core-use-akka-http-client").contains("true")
+  lazy val useNettyClient: Boolean              = metadata.get("otoroshi-core-use-netty-http-client").contains("true")
   lazy val useAkkaHttpWsClient: Boolean         = metadata.get("otoroshi-core-use-akka-http-ws-client").contains("true")
   lazy val issueLetsEncryptCertificate: Boolean =
     metadata.get("otoroshi-core-issue-lets-encrypt-certificate").contains("true")
@@ -1048,6 +1049,7 @@ object NgRoute {
                 (ref, plugin)
               }
               .map { case (ref, plugin) =>
+                // TODO: handle when a ngplugin actually used
                 def makeInst(id: String): Option[NgPluginInstance] = {
                   val config: JsValue    = plugin.configRoot
                     .flatMap(r => service.plugins.config.select(r).asOpt[JsValue])
@@ -1065,18 +1067,32 @@ object NgRoute {
                     )
                   ).some
                 }
-
-                plugin.pluginType match {
-                  case PluginType.AppType             => makeInst(pluginId[RequestTransformerWrapper])
-                  case PluginType.TransformerType     => makeInst(pluginId[RequestTransformerWrapper])
-                  case PluginType.AccessValidatorType => makeInst(pluginId[AccessValidatorWrapper])
-                  case PluginType.PreRoutingType      => makeInst(pluginId[PreRoutingWrapper])
-                  case PluginType.RequestSinkType     => makeInst(pluginId[RequestSinkWrapper])
-                  case PluginType.CompositeType       => makeInst(pluginId[CompositeWrapper])
-                  case PluginType.EventListenerType   => None
-                  case PluginType.JobType             => None
-                  case PluginType.DataExporterType    => None
-                  case PluginType.RequestHandlerType  => None
+                plugin match {
+                  case p: NgPlugin => {
+                    val config: JsObject = service.plugins.config.select(p.getClass.getSimpleName).asOpt[JsValue]
+                      .orElse(plugin.defaultConfig)
+                      .map(_.asObject)
+                      .getOrElse(Json.obj())
+                    NgPluginInstance(
+                      plugin = ref,
+                      exclude = service.plugins.excluded,
+                      config = NgPluginInstanceConfig(config)
+                    ).some
+                  }
+                  case _ => {
+                    plugin.pluginType match {
+                      case PluginType.AppType             => makeInst(pluginId[RequestTransformerWrapper])
+                      case PluginType.TransformerType     => makeInst(pluginId[RequestTransformerWrapper])
+                      case PluginType.AccessValidatorType => makeInst(pluginId[AccessValidatorWrapper])
+                      case PluginType.PreRoutingType      => makeInst(pluginId[PreRoutingWrapper])
+                      case PluginType.RequestSinkType     => makeInst(pluginId[RequestSinkWrapper])
+                      case PluginType.CompositeType       => makeInst(pluginId[CompositeWrapper])
+                      case PluginType.EventListenerType   => None
+                      case PluginType.JobType             => None
+                      case PluginType.DataExporterType    => None
+                      case PluginType.RequestHandlerType  => None
+                    }
+                  }
                 }
               }
               .collect { case Some(plugin) =>

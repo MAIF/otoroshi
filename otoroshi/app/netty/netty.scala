@@ -1,10 +1,8 @@
-package otoroshi.utils.netty
+package otoroshi.netty
 
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.channel.nio.NioEventLoopGroup
-import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.channel.{Channel, EventLoopGroup}
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.websocketx._
@@ -14,203 +12,25 @@ import org.reactivestreams.{Processor, Publisher}
 import otoroshi.env.Env
 import otoroshi.next.proxy.ProxyEngine
 import otoroshi.script.RequestHandler
-import otoroshi.ssl.{ClientAuth, DynamicSSLEngineProvider}
+import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.http.websocket.Message
 import play.api.http.{HttpChunk, HttpEntity, HttpRequestHandler}
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.libs.json.Json
-import play.api.libs.typedmap.TypedMap
 import play.api.mvc._
-import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
-import play.api.{Configuration, Logger}
 import play.core.server.common.WebSocketFlowHandler
 import play.core.server.common.WebSocketFlowHandler.{MessageType, RawMessage}
 import reactor.netty.NettyOutbound
-import reactor.netty.http.server.HttpServerRequest
 
-import java.net.{InetAddress, URI}
-import java.security.cert.X509Certificate
 import java.security.{Provider, SecureRandom}
-import java.util.concurrent.atomic.AtomicLong
 import java.util.function.BiFunction
 import javax.net.ssl._
-import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
-object ReactorNettyRemoteConnection {
-  val logger = Logger("otoroshi-experimental-reactor-netty-server-remote-connection")
-}
-
-class ReactorNettyRemoteConnection(req: HttpServerRequest, val secure: Boolean, sessionOpt: Option[SSLSession]) extends RemoteConnection {
-  lazy val remoteAddress: InetAddress = req.remoteAddress().getAddress
-  lazy val clientCertificateChain: Option[Seq[X509Certificate]] = {
-    if (secure) {
-      sessionOpt match {
-        case None =>
-          ReactorNettyRemoteConnection.logger.warn(s"Something weird happened with the TLS session: it does not exists ...")
-          None
-        case Some(session) => {
-          if (session.isValid) {
-            val certs = try {
-              session.getPeerCertificates.toSeq.collect { case c: X509Certificate => c }
-            } catch {
-              case e: SSLPeerUnverifiedException => Seq.empty[X509Certificate]
-            }
-            if (certs.nonEmpty) {
-              Some(certs)
-            } else {
-              None
-            }
-          } else {
-            None
-          }
-        }
-      }
-    } else {
-      None
-    }
-  }
-}
-
-class ReactorNettyRequestTarget(req: HttpServerRequest) extends RequestTarget {
-  lazy val kUri = akka.http.scaladsl.model.Uri(uriString)
-  lazy val uri: URI = new URI(uriString)
-  lazy val uriString: String = req.uri()
-  lazy val path: String = req.fullPath()
-  lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq)
-}
-
-object ReactorNettyRequest {
-  val counter = new AtomicLong(0L)
-}
-
-class ReactorNettyRequest(req: HttpServerRequest, secure: Boolean, sessionOpt: Option[SSLSession], sessionCookieBaker: SessionCookieBaker, flashCookieBaker: FlashCookieBaker) extends ReactorNettyRequestHeader(req, secure, sessionOpt, sessionCookieBaker, flashCookieBaker) with Request[Source[ByteString, _]] {
-  lazy val body: Source[ByteString, _] = {
-    val flux: Publisher[ByteString] = req.receive().map { bb =>
-      val builder = ByteString.newBuilder
-      bb.readBytes(builder.asOutputStream, bb.readableBytes())
-      builder.result()
-    }
-    Source.fromPublisher(flux)
-  }
-}
-
-class ReactorNettyRequestHeader(req: HttpServerRequest, secure: Boolean, sessionOpt: Option[SSLSession], sessionCookieBaker: SessionCookieBaker, flashCookieBaker: FlashCookieBaker) extends RequestHeader {
-
-  lazy val zeSession: Session = {
-    Option(req.cookies().get(sessionCookieBaker.COOKIE_NAME))
-      .flatMap(_.asScala.headOption)
-      .flatMap { value =>
-        Try(sessionCookieBaker.deserialize(sessionCookieBaker.decode(value.value()))).toOption
-      }
-      .getOrElse(Session())
-  }
-  lazy val zeFlash: Flash = {
-    Option(req.cookies().get(flashCookieBaker.COOKIE_NAME))
-      .flatMap(_.asScala.headOption)
-      .flatMap { value =>
-        Try(flashCookieBaker.deserialize(flashCookieBaker.decode(value.value()))).toOption
-      }
-      .getOrElse(Flash())
-  }
-  lazy val attrs = TypedMap.apply(
-    RequestAttrKey.Id      -> ReactorNettyRequest.counter.incrementAndGet(),
-    RequestAttrKey.Session -> Cell(zeSession),
-    RequestAttrKey.Flash -> Cell(zeFlash),
-    RequestAttrKey.Server -> "reactor-netty-experimental",
-    RequestAttrKey.Cookies -> Cell(Cookies(req.cookies().asScala.toSeq.flatMap {
-      case (_, cookies) => cookies.asScala.map {
-        case cookie: io.netty.handler.codec.http.cookie.DefaultCookie => {
-          play.api.mvc.Cookie(
-            name = cookie.name(),
-            value = cookie.value(),
-            maxAge = Option(cookie.maxAge()).map(_.toInt),
-            path = Option(cookie.path()).filter(_.nonEmpty).getOrElse("/"),
-            domain = Option(cookie.domain()).filter(_.nonEmpty),
-            secure = cookie.isSecure,
-            httpOnly = cookie.isHttpOnly,
-            sameSite = Option(cookie.sameSite()).map {
-              case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None =>  play.api.mvc.Cookie.SameSite.None
-              case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict => play.api.mvc.Cookie.SameSite.Strict
-              case e if e == io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax => play.api.mvc.Cookie.SameSite.Lax
-              case _ => play.api.mvc.Cookie.SameSite.None
-            }
-          )
-        }
-        case cookie => {
-          play.api.mvc.Cookie(
-            name = cookie.name(),
-            value = cookie.value(),
-            maxAge = Option(cookie.maxAge()).map(_.toInt),
-            path = Option(cookie.path()).filter(_.nonEmpty).getOrElse("/"),
-            domain = Option(cookie.domain()).filter(_.nonEmpty),
-            secure = cookie.isSecure,
-            httpOnly = cookie.isHttpOnly,
-            sameSite = None
-          )
-        }
-      }
-    }))
-  )
-  lazy val method: String = req.method().toString
-  lazy val version: String = req.version().toString
-  lazy val headers: Headers = Headers(
-    (req.requestHeaders().entries().asScala.map(e => (e.getKey, e.getValue)) ++ sessionOpt.map(s => ("Tls-Session-Info", s.toString))): _*
-  )
-  lazy val connection: RemoteConnection = new ReactorNettyRemoteConnection(req, secure, sessionOpt)
-  lazy val target: RequestTarget = new ReactorNettyRequestTarget(req)
-}
-
 case class HttpServerBodyResponse(body: Publisher[Array[Byte]], contentType: Option[String], contentLength: Option[Long], chunked: Boolean)
-
-case class ReactorNettyServerConfig(
-  enabled: Boolean,
-  newEngineOnly: Boolean,
-  host: String,
-  httpPort: Int,
-  httpsPort: Int,
-  nThread: Int,
-  wiretap: Boolean,
-  accessLog: Boolean,
-  cipherSuites: Option[Seq[String]],
-  protocols: Option[Seq[String]],
-  clientAuth: ClientAuth
-)
-
-object ReactorNettyServerConfig {
-  def parseFrom(env: Env): ReactorNettyServerConfig = {
-    val config = env.configuration.get[Configuration]("otoroshi.next.experimental.netty-server")
-    ReactorNettyServerConfig(
-      enabled = config.getOptionalWithFileSupport[Boolean]("enabled").getOrElse(false),
-      newEngineOnly = config.getOptionalWithFileSupport[Boolean]("new-engine-only").getOrElse(false),
-      host = config.getOptionalWithFileSupport[String]("host").getOrElse("0.0.0.0"),
-      httpPort = config.getOptionalWithFileSupport[Int]("http-port").getOrElse(env.httpPort + 50),
-      httpsPort = config.getOptionalWithFileSupport[Int]("https-port").getOrElse(env.httpsPort + 50),
-      nThread = config.getOptionalWithFileSupport[Int]("threads").getOrElse(0),
-      wiretap = config.getOptionalWithFileSupport[Boolean]("wiretap").getOrElse(false),
-      accessLog = config.getOptionalWithFileSupport[Boolean]("accesslog").getOrElse(false),
-      cipherSuites =
-        env.configuration
-          .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
-          .filterNot(_.isEmpty),
-      protocols    =
-        env.configuration
-          .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols")
-          .filterNot(_.isEmpty),
-      clientAuth = {
-        val auth = env.configuration
-          .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.clientAuth")
-          .flatMap(ClientAuth.apply)
-          .getOrElse(ClientAuth.None)
-        if (DynamicSSLEngineProvider.logger.isDebugEnabled)
-          DynamicSSLEngineProvider.logger.debug(s"Otoroshi netty client auth: ${auth}")
-        auth
-      }
-    )
-  }
-}
 
 class ReactorNettyServer(env: Env) {
 
@@ -222,7 +42,7 @@ class ReactorNettyServer(env: Env) {
   implicit private val mat = env.otoroshiMaterializer
   implicit private val ev = env
 
-  private val logger = Logger("otoroshi-experimental-reactor-netty-server")
+  private val logger = Logger("otoroshi-experimental-netty-server")
 
   private val engine: ProxyEngine = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get.asInstanceOf[ProxyEngine]
 
@@ -230,7 +50,7 @@ class ReactorNettyServer(env: Env) {
 
   private val cookieSignerProvider = new CookieSignerProvider(env.httpConfiguration.secret)
   private val sessionCookieBaker = new DefaultSessionCookieBaker(env.httpConfiguration.session, env.httpConfiguration.secret, cookieSignerProvider.get)
-  private val flashCookieBaker =new DefaultFlashCookieBaker(env.httpConfiguration.flash, env.httpConfiguration.secret, cookieSignerProvider.get)
+  private val flashCookieBaker = new DefaultFlashCookieBaker(env.httpConfiguration.flash, env.httpConfiguration.secret, cookieSignerProvider.get)
   private val cookieEncoder = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
 
   private def sendResultAsHttpResponse(result: Result, res: HttpServerResponse): NettyOutbound = {
@@ -462,53 +282,28 @@ class ReactorNettyServer(env: Env) {
     ) {}
   }
 
+  def createEventLoops(): (EventLoopGroup, EventLoopGroup) = {
+    val groupHttp = EventLoopUtils.create(config.native, config.nThread)
+    val groupHttps = EventLoopUtils.create(config.native, config.nThread)
+    groupHttp.native.foreach { name =>
+      logger.info(s"  using ${name} native transport")
+      logger.info("")
+    }
+    (groupHttp.group, groupHttps.group)
+  }
+
   def start(handler: HttpRequestHandler): Unit = {
     if (config.enabled) {
 
       logger.info("")
-      logger.info(s"Starting the experimental Reactor Netty Server !!!")
+      logger.info(s"Starting the experimental Netty Server !!!")
       logger.info("")
-      val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = if (io.netty.channel.epoll.Epoll.isAvailable) {
-        logger.info("  using Epoll native transport")
-        logger.info("")
-        val channelHttp = new io.netty.channel.epoll.EpollServerSocketChannel()
-        val channelHttps = new io.netty.channel.epoll.EpollServerSocketChannel()
-        val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(config.nThread)
-        val evlGroupHttps = new io.netty.channel.epoll.EpollEventLoopGroup(config.nThread)
-        evlGroupHttp.register(channelHttp)
-        evlGroupHttps.register(channelHttps)
-        (evlGroupHttp, evlGroupHttps)
-      } else if (io.netty.channel.kqueue.KQueue.isAvailable) {
-        logger.info("  using KQueue native transport")
-        logger.info("")
-        val channelHttp = new io.netty.channel.kqueue.KQueueServerSocketChannel()
-        val channelHttps = new io.netty.channel.kqueue.KQueueServerSocketChannel()
-        val evlGroupHttp = new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread)
-        val evlGroupHttps = new io.netty.channel.kqueue.KQueueEventLoopGroup(config.nThread)
-        evlGroupHttp.register(channelHttp)
-        evlGroupHttps.register(channelHttps)
-        (evlGroupHttp, evlGroupHttps)
-      } else if (io.netty.incubator.channel.uring.IOUring.isAvailable) {
-        logger.info("  using IO-Uring native transport")
-        logger.info("")
-        val channelHttp = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
-        val channelHttps = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
-        val evlGroupHttp = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(config.nThread)
-        val evlGroupHttps = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(config.nThread)
-        evlGroupHttp.register(channelHttp)
-        evlGroupHttps.register(channelHttps)
-        (evlGroupHttp, evlGroupHttps)
-      } else {
-        val channelHttp = new NioServerSocketChannel()
-        val channelHttps = new NioServerSocketChannel()
-        val evlGroupHttp = new NioEventLoopGroup(config.nThread)
-        val evlGroupHttps = new NioEventLoopGroup(config.nThread)
-        evlGroupHttp.register(channelHttp)
-        evlGroupHttps.register(channelHttps)
-        (evlGroupHttp, evlGroupHttps)
-      }
-      logger.info(s"  https://${config.host}:${config.httpsPort}")
-      logger.info(s"  http://${config.host}:${config.httpPort}")
+
+      val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = createEventLoops()
+
+      if (config.http3.enabled) logger.info(s"  https://${config.host}:${config.http3.port} (HTTP/3)")
+      logger.info(s"  https://${config.host}:${config.httpsPort} (HTTP/1.1, HTTP/2)")
+      logger.info(s"  http://${config.host}:${config.httpPort}  (HTTP/1.1, HTTP/2 H2C)")
       logger.info("")
 
       def handleFunction(secure: Boolean): BiFunction[_ >: HttpServerRequest, _ >: HttpServerResponse, _ <: Publisher[Void]] = {
@@ -531,14 +326,24 @@ class ReactorNettyServer(env: Env) {
         .accessLog(config.accessLog)
         .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-https", LogLevel.INFO))
         .port(config.httpsPort)
-        .protocol(HttpProtocol.HTTP11, HttpProtocol.H2C)
+        .applyOnIf(config.http2.enabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
+        .applyOnIf(!config.http2.enabled)(_.protocol(HttpProtocol.HTTP11))
         .runOn(groupHttps)
-        // .httpRequestDecoder(spec => spec.) // TODO: custom stuff here
+        .httpRequestDecoder(spec => spec
+          .allowDuplicateContentLengths(config.parser.allowDuplicateContentLengths)
+          .h2cMaxContentLength(config.parser.h2cMaxContentLength)
+          .initialBufferSize(config.parser.initialBufferSize)
+          .maxHeaderSize(config.parser.maxHeaderSize)
+          .maxInitialLineLength(config.parser.maxInitialLineLength)
+          .maxChunkSize(config.parser.maxChunkSize)
+          .validateHeaders(config.parser.validateHeaders)
+        )
+        .idleTimeout(config.idleTimeout)
         .doOnChannelInit { (observer, channel, socket) =>
           val engine = setupSslContext().createSSLEngine()
           engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
             protocols match {
-              case ps if ps.contains("h2") => "h2"
+              case ps if ps.contains("h2") && config.http2.enabled => "h2"
               case ps if ps.contains("spdy/3") => "spdy/3"
               case _ => "http/1.1"
             }
@@ -555,10 +360,22 @@ class ReactorNettyServer(env: Env) {
         .accessLog(config.accessLog)
         .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-http", LogLevel.INFO))
         .port(config.httpPort)
-        .protocol(HttpProtocol.H2C, HttpProtocol.HTTP11)
+        .applyOnIf(config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
+        .applyOnIf(!config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11))
         .handle(handleFunction(false))
         .runOn(groupHttp)
+        .httpRequestDecoder(spec => spec
+          .allowDuplicateContentLengths(config.parser.allowDuplicateContentLengths)
+          .h2cMaxContentLength(config.parser.h2cMaxContentLength)
+          .initialBufferSize(config.parser.initialBufferSize)
+          .maxHeaderSize(config.parser.maxHeaderSize)
+          .maxInitialLineLength(config.parser.maxInitialLineLength)
+          .maxChunkSize(config.parser.maxChunkSize)
+          .validateHeaders(config.parser.validateHeaders)
+        )
+        .idleTimeout(config.idleTimeout)
         .bindNow()
+      new NettyHttp3Server(config, env).start(handler, sessionCookieBaker, flashCookieBaker)
       Runtime.getRuntime.addShutdownHook(new Thread(() => {
         serverHttp.disposeNow()
         serverHttps.disposeNow()

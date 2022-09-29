@@ -156,6 +156,8 @@ libraryDependencies ++= Seq(
   "io.netty"                          % "netty-transport-native-epoll"  % "4.1.81.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
   "io.netty.incubator"                % "netty-incubator-transport-native-io_uring" % "0.0.15.Final",
   "io.netty.incubator"                % "netty-incubator-transport-native-io_uring" % "0.0.15.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
+  "io.netty.incubator"                % "netty-incubator-codec-native-quic"         % "0.0.30.Final" classifier "linux-x86_64" classifier "osx-x86_64",
+  "io.netty.incubator"                % "netty-incubator-codec-http3"   % "0.0.13.Final",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"             % "5.1.0" % Test,
   // do not update because the feature is deprecated and will be removed
@@ -289,6 +291,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.next.experimental.netty-server.enabled=true",
   "-Dotoroshi.next.experimental.netty-server.accesslog=true",
   "-Dotoroshi.next.experimental.netty-server.wiretap=false",
+  "-Dotoroshi.next.experimental.netty-server.http3.enabled=true",
   // "-Dotoroshi.storage=experimental-pg",
   // "-Dotoroshi.storage=redis",
   // "-Dotoroshi.storage=lettuce",

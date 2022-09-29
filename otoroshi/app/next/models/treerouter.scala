@@ -6,6 +6,7 @@ import otoroshi.models.{ClientConfig, EntityLocation}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{RegexPool, TypedMap}
+import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.typedmap
 import play.api.mvc.request.{RemoteConnection, RequestTarget}
@@ -135,6 +136,8 @@ case class NgTreeRouter(
 
 object NgTreeNodePath {
 
+  val logger = Logger("otoroshi-next-tree-node-path")
+
   def addSubRoutes(current: NgTreeNodePath, segments: Seq[String], route: NgRoute): Unit = {
     if (segments.isEmpty) {
       current.addRoute(route)
@@ -218,9 +221,9 @@ case class NgTreeNodePath(
             // merge the tree
             NgTreeNodePath.empty.copy(routes = nroute.routes ++ rroute.routes, tree = nroute.tree ++ rroute.tree).some
           }
-          .applyOnWithPredicate(opt => if (opt.isEmpty) hasWildcardKeys else false)(opt =>
+          .applyOnWithPredicate(opt => if (opt.isEmpty) hasWildcardKeys else false) { opt =>
             opt.orElse(wildcardEntriesMatching(head)).orElse(wildcardEntry)
-          )
+          }
         mptree match {
           case None if endsWithSlash && routes.isEmpty              => None
           case None if endsWithSlash && routes.nonEmpty             =>
@@ -231,11 +234,14 @@ case class NgTreeNodePath(
             segmentStartsWithCache.get(
               head,
               _ => {
+                var sw = false
                 val mSubTree = tree.keySet.toSeq
                   .sortWith((r1, r2) => r1.length.compareTo(r2.length) > 0)
                   .find {
                     case key if key.contains("*") => RegexPool(key).matches(head)
-                    case key                      => head.startsWith(key)
+                    case key                      =>
+                      sw = true
+                      head.startsWith(key)
                   }
                   .flatMap(key => tree.get(key))
                 mSubTree match {
@@ -244,7 +250,10 @@ case class NgTreeNodePath(
                     // NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = false).some
                     NgMatchedRoutes(routes, path, pathParams, noMoreSegments = false).some
                   case Some(ptree)            =>
-                    ptree.find(segments.tail, endsWithSlash, s"$path/$head", pathParams) match {
+                    ptree.applyOnIf(sw) { pt =>
+                      // here returned matched routes can't have more possible segments or you will match anything
+                      pt.copy(tree = TrieMap.empty)
+                    }.find(segments.tail, endsWithSlash, s"$path/$head", pathParams) match {
                       case None if routes.isEmpty => None
                       case None                   => NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = false).some
                       case s                      => s

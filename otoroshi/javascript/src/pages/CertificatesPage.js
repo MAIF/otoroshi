@@ -573,12 +573,14 @@ export class CertificatesPage extends Component {
     {
       title: 'From',
       content: (item) => moment(item.from).format('DD/MM/YYYY HH:mm:ss'),
+      sortMethod: (a, b) => moment(a).diff(moment(b)),
       style: { textAlign: 'center', width: 150 },
       sortMethod: (a, b) => moment(a).diff(moment(b))
     },
     {
       title: 'To',
       content: (item) => moment(item.to).format('DD/MM/YYYY HH:mm:ss'),
+      sortMethod: (a, b) => moment(a).diff(moment(b)),
       style: { textAlign: 'center', width: 150 },
       sortMethod: (a, b) => moment(a).diff(moment(b))
     },

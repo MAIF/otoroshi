@@ -7,6 +7,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers.{Assets, AssetsComponents}
+import otoroshi.netty.ReactorNettyServer
 import otoroshi.actions._
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.cluster.ClusterMode
@@ -413,7 +414,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    new otoroshi.utils.netty.ReactorNettyServer(components.env).start(components.httpRequestHandler)
+    new ReactorNettyServer(components.env).start(components.httpRequestHandler)
     server.httpPort.get + 1
     this
   }
@@ -422,7 +423,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    new otoroshi.utils.netty.ReactorNettyServer(components.env).start(components.httpRequestHandler)
+    new ReactorNettyServer(components.env).start(components.httpRequestHandler)
     server.httpPort.get + 1
     stopOnShutdown()
   }

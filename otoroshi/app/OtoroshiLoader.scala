@@ -2,6 +2,7 @@ package otoroshi.loader
 
 import com.softwaremill.macwire._
 import controllers.{Assets, AssetsComponents}
+import otoroshi.netty.ReactorNettyServer
 import otoroshi.actions._
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.api.{OtoroshiEnvHolder, OtoroshiLoaderHelper}
@@ -32,7 +33,7 @@ class OtoroshiLoader extends ApplicationLoader {
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
-    new otoroshi.utils.netty.ReactorNettyServer(components.env).start(components.httpRequestHandler)
+    new ReactorNettyServer(components.env).start(components.httpRequestHandler)
     components.application
   }
 }
