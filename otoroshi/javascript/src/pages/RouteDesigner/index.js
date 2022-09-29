@@ -224,8 +224,6 @@ const Manager = ({ query, entity, ...props }) => {
     }
   }, [value, saveButton, menu, viewRef, forceHideTester, isOnViewPlugins]);
 
-  console.log(forceHideTester)
-
   const getTitle = () => {
     return <div className="page-header d-flex align-item-center justify-content-between ms-0 mb-3">
       <h4 className="flex" style={{ margin: 0 }}>
@@ -344,7 +342,7 @@ const Manager = ({ query, entity, ...props }) => {
                         border: '1px solid #373735',
                         borderTop: 0,
                         padding: '12px',
-                        zIndex: 400,
+                        zIndex: 4000,
                       }}
                       onClick={(e) => e.stopPropagation()}>
                       <li className="d-flex flex-wrap" style={{
@@ -375,7 +373,6 @@ const Manager = ({ query, entity, ...props }) => {
         <Designer
           {...props}
           toggleTesterButton={e => {
-            console.log(e)
             setForceTester(e)
           }}
           ref={viewRef}

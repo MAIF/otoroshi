@@ -35,8 +35,9 @@ export default function ({ route, hide }) {
   const [flow, setFlow] = useState('all');
 
   const [lastQuery, setLastQuery] = useState();
+  const [testingRouteHistory, setTestingRouteHistory] = useState();
 
-  const [request, setRequest] = useState({
+  const [request, updateRequest] = useState({
     path: '/',
     headers: { [Date.now()]: { key: '', value: '' } },
     method: METHODS[0],
@@ -74,7 +75,7 @@ export default function ({ route, hide }) {
 
   useEffect(() => {
     if (route && route.id) {
-      setRequest({
+      updateRequest({
         ...request,
         route_id: route.id,
       });
@@ -102,7 +103,13 @@ export default function ({ route, hide }) {
 
   useEffect(() => {
     loadLastQuery();
+    loadTestingRouteHistory()
   }, []);
+
+  const setRequest = newReq => {
+    saveTestingRouteHistory(newReq);
+    updateRequest(newReq)
+  }
 
   useEffect(() => {
     if (lastQuery) localStorage.removeItem('graphql-playground');
@@ -119,6 +126,52 @@ export default function ({ route, hide }) {
       setLastQuery(query || '{}');
     }
   };
+
+  const loadTestingRouteHistory = () => {
+    try {
+      const storedData = JSON.parse(localStorage.getItem('testers'));
+      const r = storedData.routes.find(r => r.id === route.id)
+      if (storedData && r) {
+        setRequest(r)
+      }
+    } catch (_) { }
+  }
+
+  const saveTestingRouteHistory = request => {
+    const storedData = JSON.parse(localStorage.getItem('testers'));
+    if (!storedData)
+      localStorage.setItem('testers', JSON.stringify({
+        routes: [{
+          id: route.id,
+          ...request
+        }]
+      }))
+    else {
+      if (storedData.routes.find(r => r.id === route.id)) {
+        localStorage.setItem('testers', JSON.stringify({
+          routes: (storedData.routes || []).map(r => {
+            if (r.id === route.id)
+              return {
+                id: route.id,
+                ...request
+              }
+            return r
+          })
+        }))
+      }
+      else {
+        localStorage.setItem('testers', JSON.stringify({
+          routes: [
+            ...(storedData.routes || []),
+            {
+              id: route.id,
+              ...request
+            }
+          ]
+        }))
+      }
+    }
+  }
 
   const hidePlaygroundStuff = (route, retry) => {
     if (!route) {

@@ -291,13 +291,13 @@ const ProcessStep = ({ state, history }) => {
                       ? 'cp:otoroshi.next.plugins.MockResponse'
                       : 'cp:otoroshi.next.plugins.GraphQLBackend',
                 });
-              else history.push(`/routes/${createdRoute.id}?tab=flow`, { showTryIt: true });
+              else history.push(`/routes/${createdRoute.id}?tab=flow`);
             }}>
             {state.route.kind === 'mock'
               ? 'Start creating mocks'
               : state.route.kind === 'graphql'
                 ? 'Start creating schema'
-                : 'Try it'}
+                : 'Start editing plugins'}
           </button>
         </div>
       </Loader>
