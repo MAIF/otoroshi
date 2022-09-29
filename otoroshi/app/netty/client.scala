@@ -45,7 +45,7 @@ object NettyHttpClient {
     NettyWsClientRequest(
       client = client,
       _url = rawUrl,
-      protocol = "HTTP/1.1",
+      protocol = None,
       method = "GET",
       body = EmptyBody,
       headers = Map.empty,
@@ -66,7 +66,7 @@ object NettyWsClientRequest {
 case class NettyWsClientRequest(
   client: HttpClient,
   _url: String,
-  protocol: String,
+  protocol: Option[String],
   method: String,
   body: WSBody = EmptyBody,
   headers: Map[String, Seq[String]] = Map.empty[String, Seq[String]],
@@ -82,7 +82,7 @@ case class NettyWsClientRequest(
 
   private val _uri = Uri(_url)
 
-  def withProtocol(proto: String): NettyWsClientRequest = copy(protocol = protocol)
+  def withProtocol(proto: String): NettyWsClientRequest = copy(protocol = proto.some)
   def withTlsConfig(tlsConfig: MtlsConfig): NettyWsClientRequest = copy(tlsConfig = tlsConfig.some)
   def withTarget(target: Target): NettyWsClientRequest = copy(targetOpt = target.some)
   def withClientConfig(clientConfig: ClientConfig): NettyWsClientRequest = copy(clientConfig = clientConfig)
@@ -264,6 +264,7 @@ case class NettyWsClientRequest(
     // TODO: if protocol.toLowerCase().startsWith("http/3") ...
     val env = OtoroshiEnvHolder.get()
     val config = NettyClientConfig.parseFrom(env)
+    val proto = protocol.orElse(targetOpt.map(_.protocol.value)).getOrElse("HTTP/1.1")
     // val client = HttpClient.create() // TODO: custom connection provider for clientconfig ?
     client
       .disableRetry(false)
@@ -351,11 +352,11 @@ case class NettyWsClientRequest(
           )
         }
       }
-      .applyOnIf(protocol.toLowerCase().startsWith("http/2"))(_.protocol(HttpProtocol.H2))
-      .applyOnIf(protocol.toLowerCase() == "h2c")(_.protocol(HttpProtocol.H2C))
-      .applyOnIf(protocol.toLowerCase() == "h2")(_.protocol(HttpProtocol.H2C))
-      .applyOnIf(protocol.toLowerCase().startsWith("http/1"))(_.protocol(HttpProtocol.HTTP11))
-      .applyOnIf(protocol.toLowerCase().startsWith("http/2") || protocol.toLowerCase() == "h2c" || protocol.toLowerCase() == "h2") { client =>
+      .applyOnIf(proto.toLowerCase().startsWith("http/2"))(_.protocol(HttpProtocol.H2))
+      .applyOnIf(proto.toLowerCase() == "h2c")(_.protocol(HttpProtocol.H2C))
+      .applyOnIf(proto.toLowerCase() == "h2")(_.protocol(HttpProtocol.H2C))
+      .applyOnIf(proto.toLowerCase().startsWith("http/1"))(_.protocol(HttpProtocol.HTTP11))
+      .applyOnIf(proto.toLowerCase().startsWith("http/2") || proto.toLowerCase() == "h2c" || proto.toLowerCase() == "h2") { client =>
         client.http2Settings(builder => builder.build())
       }
       //.httpResponseDecoder(spec => spec) // TODO: check if needed
@@ -393,10 +394,10 @@ case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri
       } catch {
         case e: Throwable =>
           e.printStackTrace()
-          ByteString("foo")
+          ByteString.empty
       }
     }
-    Source.fromPublisher(flux)
+    Source.fromPublisher(flux).filter(_.nonEmpty)
   }
   private lazy val _bodyAsBytes: ByteString      = {
     Await.result(
