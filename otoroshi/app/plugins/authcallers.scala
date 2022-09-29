@@ -1,14 +1,17 @@
 package otoroshi.plugins.authcallers
 
+import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.util.ByteString
+import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.models.ServiceDescriptor
+import otoroshi.models.{GlobalConfig, ServiceDescriptor}
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
+import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.duration._
@@ -16,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 
 class ForceRetryException(token: String)
-    extends RuntimeException("Unauthorized call on OAuth2 API, new token generated !")
+    extends RuntimeException("Unauthorized call on OAuth2 API, new token generated, add retry on your service to avoid seeing this message !")
     with NoStackTrace
 
 sealed trait OAuth2Kind {
@@ -169,16 +172,22 @@ class OAuth2Caller extends RequestTransformer {
                 (parts.head, parts.last)
               }
               .toMap
+            val jsonBody = JsObject(body.mapValues(JsString.apply))
             val token            = body.getOrElse("access_token", "--")
             val expires_in: Long = body.getOrElse("expires_in", config.cacheTokenSeconds.toSeconds.toString).toLong
-            env.datastores.rawDataStore.set(key, ByteString(token), expires_in.seconds.toMillis.some).map { _ =>
+            val expiration_date = DateTime.now().plusSeconds(expires_in.toInt).toDate.getTime
+            val newjsonBody = jsonBody.as[JsObject] ++ Json.obj("expiration_date" -> expiration_date)
+            env.datastores.rawDataStore.set(key, ByteString(newjsonBody.stringify), expires_in.seconds.toMillis.some).map { _ =>
               Right(token)
             }
           } else {
-            val token            = resp.json.select("access_token").as[String]
+            val bodyJson = resp.json
+            val token            = bodyJson.select("access_token").as[String]
             val expires_in: Long =
-              resp.json.select("expires_in").asOpt[Long].getOrElse(config.cacheTokenSeconds.toSeconds)
-            env.datastores.rawDataStore.set(key, ByteString(token), expires_in.seconds.toMillis.some).map { _ =>
+              bodyJson.select("expires_in").asOpt[Long].getOrElse(config.cacheTokenSeconds.toSeconds)
+            val expiration_date = DateTime.now().plusSeconds(expires_in.toInt).toDate.getTime
+            val newjsonBody = bodyJson.as[JsObject] ++ Json.obj("expiration_date" -> expiration_date)
+            env.datastores.rawDataStore.set(key, ByteString(newjsonBody.stringify), expires_in.seconds.toMillis.some).map { _ =>
               Right(token)
             }
           }
@@ -186,6 +195,82 @@ class OAuth2Caller extends RequestTransformer {
           Left((respBody, resp.status)).future
         }
       }
+  }
+
+  def fetchRefreshTheToken(
+     refreshToken: String,
+     config: OAuth2CallerConfig
+   )(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+    val ctype  = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
+    val builder =
+      env.MtlsWs
+        .url(config.url, config.tlsConfig)
+        .withMethod(config.method)
+        .withHttpHeaders("Content-Type" -> ctype)
+    val future1 = if (config.jsonPayload) {
+      builder.post(
+        Json.obj(
+          "refresh_token" -> refreshToken,
+          "grant_type"    -> "refresh_token",
+          "client_id"     -> config.clientId,
+          "client_secret" -> config.clientSecret,
+        )
+        .applyOnWithOpt(config.scope) { (json, scope) => json ++ Json.obj("scope" -> scope) }
+        .applyOnWithOpt(config.audience) { (json, audience) => json ++ Json.obj("audience" -> audience) }
+      )
+    } else {
+      builder.post(
+        Map(
+          "refresh_token" -> refreshToken,
+          "grant_type"    -> "refresh_token",
+          "client_id"     -> config.clientId,
+          "client_secret" -> config.clientSecret,
+        )
+        .applyOnWithOpt(config.scope) { (json, scope) => json ++ Map("scope" -> scope) }
+        .applyOnWithOpt(config.audience) { (json, audience) => json ++ Map("audience" -> audience) }
+      )(writeableOf_urlEncodedSimpleForm)
+    }
+    // TODO: check status code
+    future1.map(_.json).map { json =>
+      val rtok  = json.select("refresh_token").asOpt[String].getOrElse(refreshToken)
+      val tokenbody = json.as[JsObject] ++ Json.obj("refresh_token" -> rtok)
+      tokenbody
+    }
+  }
+
+  def tryRenewToken(key: String, config: OAuth2CallerConfig)(implicit env: Env, ec: ExecutionContext): Future[Either[String, String]] = {
+    env.datastores.rawDataStore.get(key).flatMap {
+      case None => Left("no token found !").vfuture
+      case Some(tokenBody) => {
+        val tokenBodyJson = tokenBody.utf8String.parseJson.asObject
+        tokenBodyJson.select("refresh_token").asOpt[String] match {
+          case None => Left("no refresh_token found !").vfuture
+          case Some(refreshToken) => fetchRefreshTheToken(refreshToken, config).flatMap { newTokenBody =>
+            val rtok  = newTokenBody.select("refresh_token").asOpt[String].getOrElse(refreshToken)
+            val expires_in: Long = newTokenBody.select("expires_in").asOpt[Long].getOrElse(config.cacheTokenSeconds.toSeconds)
+            val expiration_date = DateTime.now().plusSeconds(expires_in.toInt).toDate.getTime
+            val newnewTokenBody = newTokenBody.as[JsObject] ++ Json.obj("refresh_token" -> rtok, "expiration_date" -> expiration_date)
+            val token            = newnewTokenBody.select("access_token").as[String]
+            env.datastores.rawDataStore.set(key, ByteString(newnewTokenBody.stringify), expires_in.seconds.toMillis.some).map { _ =>
+              Right(token)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def isAlmostComplete(tokenBody: JsValue, config: OAuth2CallerConfig): Boolean = {
+    val expires_in = tokenBody.select("expires_in").asOpt[Long].getOrElse(config.cacheTokenSeconds.toSeconds)
+    val limit = (expires_in.toDouble * 0.1)
+    tokenBody.select("expiration_date").asOpt[Long] match {
+      case None => false
+      case Some(expiration_date_lng) => {
+        val expiration_date = new DateTime(expiration_date_lng)
+        val dur = new org.joda.time.Duration(DateTime.now(), expiration_date)
+        dur.toStandardSeconds.getSeconds <= limit
+      }
+    }
   }
 
   def computeKey(env: Env, config: OAuth2CallerConfig, descriptor: ServiceDescriptor): String =
@@ -198,10 +283,15 @@ class OAuth2Caller extends RequestTransformer {
     val config = OAuth2CallerConfig.parse(ctx.configFor(configRoot.get))
     val key    = computeKey(env, config, ctx.descriptor)
     env.datastores.rawDataStore.get(key).flatMap {
-      case Some(token) =>
+      case Some(tokenBody) =>
+        val jsonToken = tokenBody.utf8String.parseJson
+        val token = jsonToken.select("access_token").asString
+        if (isAlmostComplete(jsonToken, config)) {
+          tryRenewToken(key, config)
+        }
         Right(
           ctx.otoroshiRequest.copy(headers =
-            ctx.otoroshiRequest.headers + (config.headerName -> config.headerValueFormat.format(token.utf8String))
+            ctx.otoroshiRequest.headers + (config.headerName -> config.headerValueFormat.format(token))
           )
         ).future
       case None        =>
@@ -228,14 +318,19 @@ class OAuth2Caller extends RequestTransformer {
     val config = OAuth2CallerConfig.parse(ctx.configFor(configRoot.get))
     val key    = computeKey(env, config, ctx.descriptor)
     if (ctx.otoroshiResponse.status == 401) {
-      getToken(key, config).map {
-        case Left((body, status)) =>
-          Left(
-            Results.Unauthorized(
-              Json.obj("error" -> "unauthorized", "error_description" -> body, "error_status" -> status)
-            )
-          )
-        case Right(token)         => throw new ForceRetryException(token)
+      tryRenewToken(key, config).flatMap {
+        case Left(_) => {
+          getToken(key, config).flatMap {
+            case Left((body, status)) =>
+              Left(
+                Results.Unauthorized(
+                  Json.obj("error" -> "unauthorized", "error_description" -> body, "error_status" -> status)
+                )
+              ).vfuture
+            case Right(token) => Future.failed[Either[Result, HttpResponse]](new ForceRetryException(token))
+          }
+        }
+        case Right(token) => Future.failed[Either[Result, HttpResponse]](new ForceRetryException(token))
       }
     } else {
       Right(ctx.otoroshiResponse).future
