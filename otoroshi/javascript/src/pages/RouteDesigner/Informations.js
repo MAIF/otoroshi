@@ -148,7 +148,7 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     },
     {
       type: 'group',
-      name: 'Advanced',
+      name: 'Misc.',
       collapsed: true,
       fields: [
         'metadata', 'tags'
@@ -181,7 +181,7 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
         <div className="displayGroupBtn">
           <button className='btn btn-outline-info'
             onClick={() => showAdvancedForm ? toggleAdvancedForm(false) : toggleAdvancedForm(true)}>
-            {showAdvancedForm ? 'Simple form' : 'Advanced form'}
+            {showAdvancedForm ? 'Simple view' : 'Advanced view'}
           </button>
           <button className="btn btn-danger" onClick={() => history.push(`/${link}`)}>
             Cancel
