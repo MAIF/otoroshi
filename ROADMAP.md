@@ -20,6 +20,8 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - remote tunnels for easier exposition
   - relay routing
 - [ ] Q4 2022  
+  - experimental netty stuff
+  - http3 preview
   - rollout new proxy engine (version 16)
   - introduce wizards to help resources creation
   - kubernetes integration upgrades
@@ -69,7 +71,9 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
 
 after releasing 1.5.0 we plan to make a new release immediately with version number 16.0.0 as previous minor version where actually major ones. 
 
-Then, as we release a new version every month (actually every 4 to 8 weeks), we will increment the major version for each release.
+Then, as we release a new version every month (actually every 4 to 8 weeks), we will increment the major version for each release (16.0.0, 17.0.0, etc).
+
+Another strategy could be to do the same with minor version number and keep major version for breaking changes (1.6.x, 1.7.x, etc)
 
 ## authentication and security
 
