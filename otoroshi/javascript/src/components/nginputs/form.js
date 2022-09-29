@@ -467,14 +467,15 @@ export class NgForm extends Component {
             : stepSchema.visible
           : true;
       if (visible) {
-        const path = root ? [name] : [...path, name];
+        const newPath = root ? [name] : [...path, name];
+        // console.log(newPath)
         return (
           <NgStep
-            key={path.join('/')}
+            key={newPath.join('/')}
             name={name}
             embedded
             fromArray={this.props.fromArray}
-            path={path}
+            path={newPath}
             validation={validation}
             setValidation={this.setValidation}
             components={components}
