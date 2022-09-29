@@ -19,7 +19,7 @@ export class JsonObjectAsCodeInput extends Component {
         onChange={(e) => {
           try {
             this.props.onChange(JSON.parse(e));
-          } catch (ex) {}
+          } catch (ex) { }
         }}
       />
     );
@@ -81,6 +81,7 @@ export default class CodeInput extends Component {
 
     const editor = (
       <AceEditor
+        {...(this.props.ace_config || {})}
         mode={
           this.props.mode
             ? this.props.mode === 'json'
@@ -90,7 +91,7 @@ export default class CodeInput extends Component {
         }
         theme="monokai"
         onChange={this.onChange}
-        value={code}
+        value={code || ''}
         name="scriptParam"
         editorProps={{ $blockScrolling: true }}
         height={this.props.height || '300px'}

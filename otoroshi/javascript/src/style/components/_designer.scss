@@ -27,10 +27,6 @@
         min-height: calc(100vh - 162px);
     }
 
-    .hide-overflow {
-        overflow: hidden;
-    }
-
     .relative-container {
         position: relative;
     }
@@ -38,7 +34,7 @@
     .d-flex {
         display: flex;
     }
-    
+
     .d-flex-center {
         display: flex;
         align-items: center;
@@ -516,7 +512,6 @@
 
     .route-forms-title {
         color: #fff;
-        margin-bottom: 0;
     }
 
     .route-forms-header {
@@ -532,19 +527,32 @@
         height: 100%;
     }
 
-    .tryit-columns {
-        width: 100%;
-        height: 100%;
+    .tryit-selector-mode {
+        border: none;
+        padding: 2px 0;
+        color: #fff;
+        text-align: center;
+        background: none;
+        z-index: 21;
+        position: relative;
+        width: 115px;
     }
 
-    .tryit-right-column {
-        width: 100%;
-        height: 100% !important;
+    .tryit-selector-mode-right {
+        left: calc(50% - 4px) !important;
+        width: 50% !important;
     }
 
-    .tryit-right-column :first-child {
-        width: 100%;
-        height: 100%;
+    .tryit-selector-cursor {
+        transition: left .25s;
+        position: absolute;
+        background-color: #f9b000;
+        top: 4px;
+        bottom: 4px;
+        left: 4px;
+        border-radius: 24px;
+        width: calc(50% - 8px);
+        z-index: 20;
     }
 
     .tryit-prettify-button {
@@ -558,7 +566,7 @@
     .graphql-form {
         position: absolute;
         top: 0;
-        right: -12px;
+        right: 0;
         left: 0;
         bottom: 0;
         background-color: rgb(73, 73, 72);
@@ -622,7 +630,7 @@
     flex-direction: column;
     margin: auto;
     margin-top: 5em;
-    overflow: hidden;
+    // overflow: hidden;
     max-width: 50vw;
     border-radius: 4px;
     box-shadow: 0px 0 2px 1px #f9b000c2;
@@ -635,7 +643,7 @@
 .wizard-content {
     flex: 1;
     margin-top: 2em;
-    display: flex; 
+    display: flex;
     flex-direction: column;
 }
 
@@ -682,18 +690,37 @@
 }
 
 .patch-main {
-    .page-header{
+    .page-header {
         padding-bottom: 0px;
-        h4,.dropdown{
+
+        h4,
+        .dropdown {
             padding-bottom: 9px;
         }
-        >div>button{
+
+        >div>button {
             margin-bottom: 9px;
         }
-        .ms-2:not(.dropdown)>button{
+
+        .ms-2:not(.dropdown)>button {
             border-bottom-left-radius: 0px;
             border-bottom-right-radius: 0px;
 
         }
+    }
+}
+
+.fall-down {
+    // transition: top 1.5s;
+    // top: 1200px !important;
+    animation: leafanimation .85s reverse;
+    transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    -webkit-animation-fill-mode: forwards;
+}
+
+@keyframes leafanimation {
+    0% {
+        transform: rotate(678deg) translateX(30px);
+        top: calc(100vh - 52px);
     }
 }

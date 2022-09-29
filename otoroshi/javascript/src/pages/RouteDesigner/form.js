@@ -5,7 +5,6 @@ import { Collapse } from '../../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import { FeedbackButton } from './FeedbackButton';
 import { NgForm } from '../../components/nginputs/form';
-import { Form as MaifForm } from '@maif/react-forms';
 
 export class Target extends Component {
   formSchema = {
@@ -485,14 +484,6 @@ export class RouteForm extends Component {
     );
     this.load();
     this.loadPlugins();
-    this.props.setSaveButton(
-      <FeedbackButton
-        className="ms-2"
-        onPress={this.save}
-        text="Save route"
-        icon={() => <i className="fas fa-paper-plane" />}
-      />
-    );
   }
 
   onTestingButtonClick(history, value) {
@@ -680,47 +671,13 @@ export class RouteForm extends Component {
             );
           })}
         </Collapse>
-        <div className="d-flex align-items-center justify-content-end mt-3">
-          <div className="displayGroupBtn">
-            <button
-              className="btn btn-danger"
-              onClick={() => this.props.history.push(`/${this.entity}`)}>
-              Cancel
-            </button>
-            {!this.props.isCreating && (
-              <button
-                className="btn btn-danger"
-                onClick={() => {
-                  window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
-                    if (ok) {
-                      this.client
-                        .deleteById(value.id)
-                        .then(() => this.props.history.push(`/${this.entity}`));
-                    }
-                  });
-                }}>
-                <i className="fas fa-trash" /> Delete
-              </button>
-            )}
-            <FeedbackButton
-              className=""
-              onPress={this.save}
-              text={this.props.isCreating ? 'Create route' : 'Save route'}
-              icon={() => <i className="fas fa-paper-plane" />}
-            />
-          </div>
-        </div>
       </div>
     );
   }
 }
 
 class Plugin extends Component {
-  state = { form: true, ngForm: false };
-
-  switchForm = () => {
-    this.setState({ ngForm: !this.state.ngForm });
-  };
+  state = { form: true };
 
   render() {
     const plugin = this.props.plugin;
@@ -816,29 +773,14 @@ class Plugin extends Component {
             />
             {pluginInfos.config_flow.length > 0 && (
               <div className="row" style={{ width: '100%' }}>
-                <label className="col-md-2 col-form-label" onClick={this.switchForm}>
-                  plugin configuration form
-                </label>
                 <div className="col-md-10">
-                  {this.state.ngForm && (
-                    <NgForm
-                      key={plugin.plugin}
-                      value={plugin.config}
-                      onChange={(config) => this.props.onChange({ ...plugin, config })}
-                      flow={pluginInfos.config_flow}
-                      schema={pluginInfos.config_schema}
-                    />
-                  )}
-                  {!this.state.ngForm && (
-                    <MaifForm
-                      value={plugin.config}
-                      schema={pluginInfos.config_schema}
-                      flow={pluginInfos.config_flow}
-                      onSubmit={(config) => this.props.onChange({ ...plugin, config })}
-                      options={{ autosubmit: true }}
-                      footer={() => null}
-                    />
-                  )}
+                  <NgForm
+                    key={plugin.plugin}
+                    value={plugin.config}
+                    onChange={(config) => this.props.onChange({ ...plugin, config })}
+                    flow={pluginInfos.config_flow}
+                    schema={pluginInfos.config_schema}
+                  />
                 </div>
               </div>
             )}

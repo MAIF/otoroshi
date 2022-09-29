@@ -1,29 +1,28 @@
 import React from 'react';
-import { type } from '@maif/react-forms';
 import GraphQLForm from './GraphQLForm';
 import MocksDesigner from './MocksDesigner';
 
 export const PLUGIN_INFORMATIONS_SCHEMA = {
   enabled: {
     visibleOnCollapse: true,
-    type: type.bool,
+    type: 'bool',
     label: 'Enabled',
   },
   debug: {
-    type: type.bool,
+    type: 'bool',
     label: 'Debug',
   },
   include: {
     label: 'Include',
     format: 'singleLineCode',
-    type: type.string,
+    type: 'string',
     array: true,
     createOption: true,
   },
   exclude: {
     label: 'Exclude',
     format: 'singleLineCode',
-    type: type.string,
+    type: 'string',
     array: true,
     createOption: true,
   },
@@ -48,28 +47,16 @@ export const LEGACY_PLUGINS_WRAPPER = {
 };
 
 export const PLUGINS = {
-  'cp:otoroshi.next.tunnel.TunnelPlugin': (plugin) => ({
-    //...plugin,
-    type: 'object',
-    label: null,
-    format: 'form',
-    flow: ['tunnel_id'],
-    schema: {
-      //...(plugin || {}).schema,
-      tunnel_id: {
-        label: 'Tunnel ID',
-        type: 'string',
-      },
-    },
-  }),
   'cp:otoroshi.next.plugins.SOAPAction': (plugin) => ({
     ...plugin,
     schema: {
       ...plugin.schema,
       envelope: {
-        label: 'envelope',
-        type: 'string',
-        format: 'code',
+        type: 'code',
+        props: {
+          label: 'Envelope',
+          editorOnly: true
+        }
       },
     },
   }),
@@ -78,9 +65,11 @@ export const PLUGINS = {
     schema: {
       ...plugin.schema,
       envelope: {
-        label: 'envelope',
-        type: 'string',
-        format: 'code',
+        type: 'code',
+        props: {
+          label: 'Envelope',
+          editorOnly: true
+        }
       },
     },
   }),
@@ -88,20 +77,17 @@ export const PLUGINS = {
     ...plugin,
     schema: {
       turn_view: {
-        type: 'bool',
-        label: null,
-        defaultValue: false,
-        render: () => (
+        renderer: () => (
           <button
             type="button"
-            className="btn btn-sm btn-success me-3 mb-3"
+            className="btn btn-sm btn-info mb-3"
             onClick={() => showAdvancedDesignerView(GraphQLForm)}>
-            Expand
+            Edit with the GraphQL Designer
           </button>
         ),
       },
       permissions: {
-        type: type.string,
+        type: 'string',
         array: true,
         label: 'Permissions paths',
       },
@@ -116,19 +102,14 @@ export const PLUGINS = {
     ...plugin,
     schema: {
       turn_view: {
-        type: 'bool',
-        label: null,
-        defaultValue: false,
-        render: (props) => {
-          return (
-            <button
-              type="button"
-              className="btn btn-sm btn-success me-3 mb-3"
-              onClick={() => showAdvancedDesignerView(MocksDesigner)}>
-              Expand
-            </button>
-          );
-        },
+        renderer: () => (
+          <button
+            type="button"
+            className="btn btn-sm btn-info mb-3"
+            onClick={() => showAdvancedDesignerView(MocksDesigner)}>
+            Edit with the GraphQL Designer
+          </button>
+        ),
       },
       form_data: {
         ...plugin.schema.form_data,
@@ -148,20 +129,48 @@ export const DEFAULT_FLOW = {
     description: null,
     field: 'frontend',
     config_schema: {
+      strip_path: {
+        type: 'bool',
+        props: {
+          label: 'Strip path',
+          labelColumn: 6
+        }
+      },
+      exact: {
+        type: 'bool',
+        props: {
+          label: 'Exact',
+          labelColumn: 6
+        }
+      },
       domains: {
-        type: type.string,
+        type: 'string',
         array: true,
         label: 'Domains',
       },
       methods: {
-        type: 'string',
-        format: 'select',
-        isMulti: true,
-        label: 'methods',
-        options: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+        type: 'array-select',
+        props: {
+          label: 'Methods',
+          options: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
+            .map(item => ({ label: item, value: item }))
+        }
       },
     },
-    config_flow: ['domains', 'strip_path', 'exact', 'headers', 'methods', 'query'],
+    config_flow: [
+      'domains',
+      {
+        type: 'grid',
+        name: 'Flags',
+        fields: [
+          'strip_path',
+          'exact'
+        ]
+      },
+      'headers',
+      'methods',
+      'query'
+    ]
   },
   Backend: (parentNode) => ({
     id: 'Backend',
@@ -170,76 +179,107 @@ export const DEFAULT_FLOW = {
     field: 'backend',
     config_schema: (generatedSchema) => ({
       ...generatedSchema,
+      rewrite: {
+        ...generatedSchema.rewrite,
+        label: 'Full path rewrite'
+      },
       targets: {
-        ...generatedSchema.targets,
-        onAfterChange: ({ onChange, getFieldValue }) => {
-          let port = getFieldValue('port');
-          port = port ? `:${port}` : '';
-          const hostname = getFieldValue('hostname') || '';
-          const isSecured = getFieldValue('tls');
-
-          onChange(
-            'custom_target',
-            `${isSecured ? 'https' : 'http'}://${hostname}${port}${getFieldValue('custom_target')?.endsWith(' ') ? ' ' : ''
-            }`
-          );
-        },
+        array: true,
+        format: "form",
+        type: "object",
+        label: " ",
         schema: {
-          custom_target: {
-            label: 'Target',
-            type: 'string',
-            disabled: true,
-            render: ({ value, onChange }) => {
-              const open = value.endsWith(' ');
-              return (
-                <div className="d-flex-center justify-content-start target_information mt-3 py-1"
-                  onClick={() => onChange(open ? value.slice(0, -1) : `${value} `)}>
-                  <i className={`me-2 fas fa-chevron-${open ? 'down' : 'right'}`} />
-                  <i className="fas fa-server me-2" />
-                  <a>{value}</a>
-                </div>
-              );
-            },
-          },
-          ...Object.fromEntries(
-            Object.entries(generatedSchema.targets.schema).map(([key, value]) => [
-              key,
-              {
-                ...value,
-                visible: {
-                  ref: parentNode,
-                  test: (v, idx) => {
-                    return !!v.targets[idx]?.custom_target.endsWith(' ');
-                  },
-                },
+          ...generatedSchema.targets.schema,
+          tls_config: {
+            ...generatedSchema.targets.schema.tls_config,
+            schema: Object.entries({
+              ...generatedSchema.targets.schema.tls_config.schema,
+              certs: {
+                type: "array-select",
+                props: {
+                  label: "Certificates",
+                  optionsFrom: "/bo/api/proxy/api/certificates",
+                  optionsTransformer: {
+                    label: "name",
+                    value: "id"
+                  }
+                }
               },
-            ])
-          ),
-          hostname: {
-            ...generatedSchema.targets.schema.hostname,
-            visible: {
-              ref: parentNode,
-              test: (v, idx) => !!v.targets[idx]?.custom_target.endsWith(' '),
-            },
-            constraints: [
-              {
-                type: 'blacklist',
-                arrayOfValues: ['http:', 'https:', 'tcp:', 'udp:', '/'],
-                message: 'You cannot use protocol scheme or / in the Host name',
-              },
-            ],
+              trusted_certs: {
+                type: "array-select",
+                props: {
+                  label: "Trusted certificates",
+                  optionsFrom: "/bo/api/proxy/api/certificates",
+                  optionsTransformer: {
+                    label: "name",
+                    value: "id"
+                  }
+                }
+              }
+            }).reduce((obj, entry) => {
+              if (entry[0] === 'enabled')
+                return {
+                  ...obj,
+                  [entry[0]]: entry[1]
+                }
+              else
+                return {
+                  ...obj,
+                  [entry[0]]: {
+                    ...entry[1],
+                    visible: value => value?.enabled
+                  }
+                }
+            }, {})
           },
+          predicate: {
+            ...generatedSchema.targets.schema.predicate,
+            flow: (value) => {
+              const type = value?.type
+
+              return {
+                'GeolocationMatch': ['type', 'positions'],
+                'NetworkLocationMatch': ['type', 'provider', 'region', 'zone', 'dataCenter', 'rack'],
+                'AlwaysMatch': ['type'],
+                [undefined]: ['type']
+              }[type]
+            }
+          }
         },
-        flow: ['custom_target', ...generatedSchema.targets.flow],
+        flow: [
+          {
+            type: 'group',
+            collapsed: true,
+            name: props => {
+              const port = props.value?.port
+              const hostname = props.value?.hostname || '';
+              const isSecured = props.value?.tls
+
+              return `${isSecured ? 'https' : 'http'}://${hostname}${port ? `:${port}` : ''}`
+            },
+            fields: [
+              'hostname',
+              'port',
+              'weight',
+              'predicate',
+              'protocol',
+              'ip_address',
+              'tls_config'
+            ]
+          }
+        ],
       },
     }),
     config_flow: [
       'root',
-      'targets',
-      'health_check',
-      'target_refs',
-      'client',
       'rewrite',
+      {
+        type: 'group',
+        name: 'Targets',
+        fields: ['targets']
+      },
+      'health_check',
+      'client',
       'load_balancing',
     ],
   }),

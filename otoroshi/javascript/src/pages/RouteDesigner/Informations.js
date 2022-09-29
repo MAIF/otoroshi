@@ -1,17 +1,18 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import { Form, type, constraints, format } from '@maif/react-forms';
-import { Location } from '../../components/Location';
+import { NgForm } from '../../components/nginputs';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
 import isEqual from 'lodash/isEqual';
-import merge from 'lodash/merge';
 import { FeedbackButton } from './FeedbackButton';
+import { RouteForm } from './form'
 
-export const Informations = forwardRef(({ isCreation, value, setValue, setSaveButton }, ref) => {
+export const Informations = forwardRef(({ isCreation, value, setValue, setSaveButton, routeId }, ref) => {
   const history = useHistory();
-  const location = useLocation();
+  const location = useLocation()
   const [informations, setInformations] = useState({ ...value });
+
+  const [showAdvancedForm, toggleAdvancedForm] = useState(false)
 
   const { capitalize, lowercase, fetchName, link } = useEntityFromURI();
 
@@ -21,7 +22,7 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
 
   useImperativeHandle(ref, () => ({
     onTestingButtonClick() {
-      history.push(`/routes/${value.id}?tab=flow`, { showTryIt: true });
+      history.push(`/${link}/${value.id}?tab=flow`, { showTryIt: true });
     },
   }));
 
@@ -42,159 +43,149 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
   };
 
   const saveRoute = () => {
-    if (isCreation) {
+    if (isCreation || location.state?.routeFromService) {
       return nextClient
         .create(nextClient.ENTITIES[fetchName], informations)
         .then(() => history.push(`/${link}/${informations.id}?tab=flow`));
     } else
       return nextClient.update(nextClient.ENTITIES[fetchName], informations).then((res) => {
-        if (!res.error) setValue(res);
+        if (!res.error)
+          setValue(res);
       });
   };
 
   const schema = {
     id: {
-      type: type.string,
-      visible: false,
+      type: 'string',
+      visible: false
     },
     name: {
-      type: type.string,
+      type: 'string',
       label: `${capitalize} name`,
       placeholder: `Your ${lowercase} name`,
       help: `The name of your ${lowercase}. Only for debug and human readability purposes.`,
-      constraints: [constraints.required()],
+      // constraints: [constraints.required()],
     },
     enabled: {
-      type: type.bool,
-      label: 'Route enabled',
+      type: 'bool',
+      props: {
+        label: 'Enabled'
+      }
     },
     capture: {
-      type: type.bool,
-      label: 'Capture route traffic',
+      type: 'bool',
+      props: {
+        label: 'Capture route traffic',
+        labelColumn: 3
+      }
     },
     debug_flow: {
-      type: type.bool,
-      label: 'Debug the flow',
+      type: 'bool',
+      props: {
+        label: 'Debug the flow',
+        labelColumn: 6
+      }
     },
     export_reporting: {
-      type: type.bool,
-      label: 'Export reporting',
+      type: 'bool',
+      props: {
+        label: 'Export reporting',
+        labelColumn: 6
+      }
     },
     description: {
-      type: type.string,
+      type: 'string',
       label: 'Description',
       placeholder: 'Your route description',
       help: 'The description of your route. Only for debug and human readability purposes.',
     },
     groups: {
-      type: type.string,
-      format: format.select,
-      createOption: true,
-      isMulti: true,
-      label: 'Groups',
+      type: 'array-select',
+      props: {
+        optionsFrom: "/bo/api/proxy/api/groups",
+        optionsTransformer: arr => arr.map(item => ({ value: item.id, label: item.name })),
+        label: 'Groups'
+      }
     },
     metadata: {
-      type: type.object,
-      label: 'Metadata',
+      type: 'object',
+      label: 'Metadata'
     },
     tags: {
-      type: type.string,
-      format: format.select,
-      createOption: true,
-      isMulti: true,
-      label: 'Tags',
+      type: 'array',
+      props: {
+        label: 'Tags'
+      }
     },
     _loc: {
-      type: type.object,
-      label: null,
-      render: ({ onChange, value }) => (
-        <Location
-          {...value}
-          onChangeTenant={(v) =>
-            onChange({
-              ...value,
-              tenant: v,
-            })
-          }
-          onChangeTeams={(v) =>
-            onChange({
-              ...value,
-              teams: v,
-            })
-          }
-        />
-      ),
-    },
+      type: 'location',
+      props: {
+        label: 'Location'
+      }
+    }
   };
 
   const flow = [
     {
-      label: 'Location',
-      flow: ['_loc'],
-      collapsed: false,
+      type: 'group',
+      name: 'Expose your route',
+      fields: ['enabled']
     },
-    'id',
-    'name',
-    'enabled',
-    'debug_flow',
-    'export_reporting',
-    'capture',
-    'description',
-    'groups',
+    '_loc',
     {
-      label: 'Advanced',
-      flow: ['metadata', 'tags'],
-      collapsed: false,
+      type: 'group',
+      name: 'Route',
+      fields: [
+        'name',
+        'description',
+        'groups',
+        {
+          type: 'grid',
+          name: 'Flags',
+          fields: ['debug_flow', 'export_reporting', 'capture']
+        }
+      ]
     },
+    {
+      type: 'group',
+      name: 'Advanced',
+      collapsed: true,
+      fields: [
+        'metadata', 'tags'
+      ]
+    }
   ];
 
   if (!informations || !value) return null;
 
   return (
     <>
-      <Form
-        schema={{
-          ...schema,
-          id: {
-            ...schema.id,
-            disabled: true
-          }
-        }}
+      {showAdvancedForm && <RouteForm
+        routeId={routeId}
+        setValue={setValue}
+        history={history}
+        location={location}
+      />}
+
+      {!showAdvancedForm && <NgForm
+        schema={schema}
         flow={flow}
         value={informations}
-        options={{ autosubmit: true }}
-        onSubmit={(item) => {
-          setInformations({
-            ...item,
-            backend: value.backend,
-            backend_ref: value.backend_ref,
-            frontend: value.frontend,
-            plugins: value.plugins
-          })
+        onChange={(value, validation) => {
+          // TODO - manage validation
+          setInformations(value)
         }}
-        footer={() => null}
-      />
+      />}
+
       <div className="d-flex align-items-center justify-content-end mt-3">
         <div className="displayGroupBtn">
+          <button className='btn btn-outline-info'
+            onClick={() => showAdvancedForm ? toggleAdvancedForm(false) : toggleAdvancedForm(true)}>
+            {showAdvancedForm ? 'Simple form' : 'Advanced form'}
+          </button>
           <button className="btn btn-danger" onClick={() => history.push(`/${link}`)}>
             Cancel
           </button>
-          {!isCreation && (
-            <button
-              className="btn btn-danger"
-              onClick={() => {
-                window.newConfirm('Are you sure you want to delete that route ?').then((ok) => {
-                  if (ok) {
-                    nextClient
-                      .deleteById(nextClient.ENTITIES[fetchName], value.id)
-                      .then(() => history.push(`/${link}`));
-                  }
-                });
-              }}>
-              <i className="fas fa-trash" /> Delete
-            </button>
-          )}
-          {saveButton('')}
         </div>
       </div>
     </>

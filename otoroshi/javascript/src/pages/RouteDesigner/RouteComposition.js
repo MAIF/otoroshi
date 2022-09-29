@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useImperativeHandle } from 'react';
 
-import { Form, SelectInput } from '@maif/react-forms';
 import { nextClient } from '../../services/BackOfficeServices';
 import { DEFAULT_FLOW } from './Graph';
 import { toUpperCaseLabels } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
 import isEqual from 'lodash/isEqual';
-import merge from 'lodash/merge';
 import cloneDeep from 'lodash/cloneDeep';
-import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
+import { useHistory, useRouteMatch } from 'react-router-dom';
+import { NgForm, NgSelectRenderer } from '../../components/nginputs';
 
 export const HTTP_COLORS = {
   GET: 'rgb(52, 170, 182)',
@@ -24,13 +23,13 @@ const Methods = ({ frontend }) => {
   const hasMethods = frontend.methods && frontend.methods.length > 0;
   const methods = hasMethods
     ? frontend.methods.map((m, i) => (
-        <span
-          key={`frontendmethod-${i}`}
-          className={`badge me-1`}
-          style={{ backgroundColor: HTTP_COLORS[m] }}>
-          {m}
-        </span>
-      ))
+      <span
+        key={`frontendmethod-${i}`}
+        className={`badge me-1`}
+        style={{ backgroundColor: HTTP_COLORS[m] }}>
+        {m}
+      </span>
+    ))
     : [<span className="badge bg-dark">ALL</span>];
   return (
     <div className="d-flex-between">
@@ -75,7 +74,7 @@ const SaveButton = ({ disabled, saveChanges, disablePadding }) => (
 );
 
 const BackendSelector = ({ setExistingBackend, usingExistingBackend }) => (
-  <div className="d-flex mt-2">
+  <div className="d-flex mt-2 mb-3">
     <button
       className="btn btn-sm new-backend-button"
       onClick={(e) => {
@@ -99,9 +98,6 @@ const BackendSelector = ({ setExistingBackend, usingExistingBackend }) => (
 
 class RouteForms extends React.Component {
   state = {
-    frontend: null,
-    backend: null,
-    backendRef: null,
     schemas: null,
     backends: [],
     usingExistingBackend: false,
@@ -109,13 +105,6 @@ class RouteForms extends React.Component {
   };
 
   componentDidMount() {
-    const { frontend, backend, backend_ref } = this.props.route;
-    this.setState({
-      frontend,
-      backend,
-      backendRef: backend_ref,
-    });
-
     Promise.all([
       nextClient.form(nextClient.ENTITIES.FRONTENDS),
       nextClient.form(nextClient.ENTITIES.BACKENDS),
@@ -142,25 +131,7 @@ class RouteForms extends React.Component {
     });
   }
 
-  componentDidUpdate(prevProps) {
-    const { frontend, backend, backend_ref } = this.props.route;
-    if (frontend !== prevProps.route.frontend) this.setState({ frontend: frontend });
-    else if (backend !== prevProps.route.backend) this.setState({ backend: backend });
-    else if (backend_ref !== prevProps.route.backend_ref)
-      this.setState({ backendRef: backend_ref });
-  }
-
-  saveChanges = () =>
-    this.props.updateRoute({
-      ...merge(
-        { ...this.props.route },
-        {
-          frontend: merge({ ...this.props.route.frontend }, { ...this.state.frontend }),
-          backend: merge({ ...this.props.route.backend }, { ...this.state.backend }),
-          backend_ref: this.state.usingExistingBackend ? this.state.backendRef : null,
-        }
-      ),
-    });
+  saveChanges = newRoute => this.props.updateRoute(newRoute)
 
   disabledSaveButton = () => {
     const { originalRoute } = this.props;
@@ -175,15 +146,12 @@ class RouteForms extends React.Component {
 
   render() {
     const {
-      frontend,
-      backend,
       schemas,
-      backendRef,
       usingJsonView,
       usingExistingBackend,
       backends,
     } = this.state;
-    const { saveRoute } = this.props;
+    const { saveRoute, route } = this.props;
 
     if (!schemas) return null;
 
@@ -206,11 +174,11 @@ class RouteForms extends React.Component {
           <div className="flex p-3 route-forms-form">
             <h5 className="route-forms-title">Frontend</h5>
             <RouteForm
-              onSubmit={(e) =>
-                this.setState({ frontend: e.frontend ? e.frontend : e }, this.saveChanges)
-              }
+              onSubmit={(e) => {
+                this.saveChanges(e)
+              }}
               dirtyField="frontend"
-              value={frontend}
+              value={route}
               schema={schemas.frontend.config_schema}
               flow={schemas.frontend.config_flow}
               usingJsonView={usingJsonView}
@@ -225,32 +193,29 @@ class RouteForms extends React.Component {
             />
             {usingExistingBackend && (
               <div className="mt-3">
-                <SelectInput
-                  id="backend_select"
-                  value={backendRef}
+                <NgSelectRenderer
+                  value={route.backend_ref}
                   placeholder="Select an existing backend"
-                  label=""
-                  onChange={(e) =>
-                    this.setState(
-                      {
-                        backendRef: e,
-                      },
-                      this.saveChanges
-                    )
+                  ngOptions={{
+                    spread: true
+                  }}
+                  onChange={backendRef =>
+                    this.saveChanges({
+                      ...route,
+                      backend_ref: this.state.usingExistingBackend ? backendRef : null,
+                    })
                   }
-                  possibleValues={backends}
-                  transformer={(item) => ({ label: item.name, value: item.id })}
+                  options={backends}
+                  optionsTransformer={arr => arr.map((item) => ({ label: item.name, value: item.id }))}
                 />
               </div>
             )}
 
             {!usingExistingBackend && (
               <RouteForm
-                onSubmit={(e) =>
-                  this.setState({ backend: e.backend ? e.backend : e }, this.saveChanges)
-                }
+                onSubmit={(e) => this.saveChanges(e)}
                 dirtyField="backend"
-                value={backend}
+                value={route}
                 schema={schemas.backend.config_schema}
                 flow={schemas.backend.config_flow}
                 usingJsonView={usingJsonView}
@@ -271,32 +236,29 @@ class RouteForms extends React.Component {
 }
 
 const RouteForm = React.memo(
-  ({ dirtyField, value, schema, flow, usingJsonView, onSubmit }) => (
-    <Form
-      value={
-        usingJsonView
-          ? {
-              [dirtyField]: value,
-            }
-          : value
-      }
+  ({ dirtyField, value, schema, flow, usingJsonView, onSubmit }) => {
+    return <NgForm
+      value={value}
       schema={
         usingJsonView
           ? {
-              [dirtyField]: {
-                type: 'json',
-                format: 'code',
-                label: null,
-              },
-            }
+            [dirtyField]: {
+              type: 'json',
+              props: {
+                label: '',
+                editorOnly: true,
+                ngOptions: {
+                  spread: true
+                }
+              }
+            },
+          }
           : schema
       }
       flow={usingJsonView ? [dirtyField] : flow}
-      footer={() => null}
-      onSubmit={onSubmit}
-      options={{ autosubmit: true }}
+      onChange={onSubmit}
     />
-  ),
+  },
   (prev, next) =>
     prev.value === next.value &&
     prev.usingJsonView === next.usingJsonView &&
@@ -395,7 +357,7 @@ export default ({ service, setSaveButton, setService, viewPlugins, ref }) => {
       <FeedbackButton
         className="ms-2"
         _disabled={!shouldUpdateRoutes}
-        text="Save routes"
+        text="Save route composition"
         icon={() => <i className="fas fa-paper-plane" />}
         onPress={saveRoute}
       />
@@ -526,7 +488,7 @@ export default ({ service, setSaveButton, setService, viewPlugins, ref }) => {
     <div className="h-100 flex-column">
       <div className="d-flex mb-3">
         <button
-          className="btn btn-sm btn-success"
+          className="btn btn-info"
           onClick={() => {
             const newItem = cloneDeep(templates?.routes[0]);
             updateRoute(routes.length, newItem);
@@ -535,7 +497,7 @@ export default ({ service, setSaveButton, setService, viewPlugins, ref }) => {
           Create a new route
         </button>
         <button
-          className="btn btn-sm btn-success mx-1"
+          className="btn btn-info mx-1"
           style={{ marginLeft: 10 }}
           onClick={() => {
             importOpenApi();

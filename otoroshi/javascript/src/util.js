@@ -13,16 +13,12 @@ export const toUpperCaseLabels = (obj) => {
 
     return {
       ...acc,
-      [key]: !value
-        ? null
-        : isLabelField
-        ? prefix.charAt(0).toUpperCase() + prefix.slice(1) + ' ' + sequences.join(' ').toLowerCase()
-        : typeof value === 'object' &&
+      [key]: !value ? null : isLabelField ? prefix.charAt(0).toUpperCase() + prefix.slice(1) + ' ' + sequences.join(' ').toLowerCase() :
+        (typeof value === 'object' &&
           value !== null &&
           key !== 'transformer' &&
-          !Array.isArray(value)
-        ? toUpperCaseLabels(value)
-        : value,
+          key !== 'optionsTransformer' &&
+          !Array.isArray(value)) ? toUpperCaseLabels(value) : value
     };
   }, {});
 };
@@ -38,7 +34,7 @@ export const useEntityFromURI = () => {
   let entity = 'routes';
   try {
     entity = pathname.split('/')[1];
-  } catch (_) {}
+  } catch (_) { }
 
   const isRouteInstance = entity === 'routes';
 

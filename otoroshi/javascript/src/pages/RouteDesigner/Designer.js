@@ -24,14 +24,9 @@ import {
 import Loader from './Loader';
 import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
-import {
-  SelectInput,
-  Form,
-  validate,
-  CodeInput,
-  MarkdownInput,
-  BooleanInput,
-} from '@maif/react-forms';
+import { NgBooleanRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
+const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
+
 import snakeCase from 'lodash/snakeCase';
 import camelCase from 'lodash/camelCase';
 import isEqual from 'lodash/isEqual';
@@ -41,6 +36,7 @@ import { HTTP_COLORS } from './RouteComposition';
 import { getPluginsPatterns } from './patterns';
 import { EurekaTargetForm } from './EurekaTargetForm';
 import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
+import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -257,14 +253,17 @@ export default forwardRef(
     }));
 
     useEffect(() => {
-      console.log(location);
-      if (location?.state?.showTryIt) childRef.current.toggleTryIt();
+      if (location?.state?.showTryIt) {
+        childRef.current.toggleTryIt();
+        props.toggleTesterButton(true)
+      }
       else if (location?.state?.plugin) childRef.current.selectPlugin(location?.state?.plugin);
     }, [location.state]);
 
     return (
       <Designer
         ref={childRef}
+        toggleTesterButton={props.toggleTesterButton}
         history={history}
         viewPlugins={props.viewPlugins || viewPlugins}
         subTab={subTab}
@@ -310,21 +309,20 @@ const Container = ({ children, onClick }) => {
 
   return (
     <div
-      className="h-100 col-12 hide-overflow route-designer"
+      className="h-100 col-12 route-designer div-overflowy"
       onMouseDown={(e) => {
-        setPropagate(
-          !document.getElementById('form-container')?.contains(e.target) &&
-          ![...document.getElementsByClassName('delete-node-button')].find((d) =>
-            d.contains(e.target)
-          )
-        );
-        // &&
-        // ![...document.getElementsByClassName("fa-chevron")].find(d => d.contains(e.target))
-        // )
+        setPropagate(![
+          document.getElementById('form-container'),
+          ...document.getElementsByClassName('delete-node-button'),
+          ...document.querySelectorAll('i[class^="fas fa-chevron"]')
+        ]
+          .filter(f => f)
+          .find(d => d.contains(e.target)))
       }}
       onMouseUp={(e) => {
         e.stopPropagation();
-        if (propagate) onClick(e);
+        if (propagate)
+          onClick(e);
 
         setPropagate(false);
       }}>
@@ -519,7 +517,7 @@ class Designer extends React.Component {
     <>
       <span className="me-3 mt-2">Override route plugins</span>{' '}
       {/* mt-2 to fix the form lib css ...*/}
-      <BooleanInput
+      <NgBooleanRenderer
         value={this.state.route?.overridePlugins}
         onChange={(overridePlugins) => {
           this.setState(
@@ -542,11 +540,22 @@ class Designer extends React.Component {
   injectDefaultMenu = () => (
     <button
       type="button"
-      className="btn btn-sm btn-danger mt-1"
-      style={{ width: '100%' }}
+      className="btn btn-sm btn-danger d-flex align-items-center justify-content-center flex-column"
+      style={{
+        minWidth: '80px',
+        minHeight: '80px',
+        maxWidth: '80px',
+        maxHeight: '80px',
+
+        flex: 1
+      }}
       onClick={this.clearPlugins}>
-      <i className="fas fa-ban me-3" />
-      Remove plugins
+      <div>
+        <i className="fas fa-ban" />
+      </div>
+      <div>
+        Remove plugins
+      </div>
     </button>
   );
 
@@ -923,7 +932,14 @@ class Designer extends React.Component {
       if (ok) {
         const newRoute = this.state.route;
         newRoute.plugins = [];
-        this.setState({ route: newRoute, nodes: [] });
+        this.setState({
+          route: newRoute,
+          nodes: [],
+          plugins: this.state.plugins.map(p => ({
+            ...p,
+            selected: false
+          }))
+        });
         this.updateRoute({ ...newRoute });
       }
     });
@@ -990,7 +1006,7 @@ class Designer extends React.Component {
         })),
       },
       () => {
-        this.updateRoute({ ...newRoute }).then(() => console.log('pattern added '));
+        this.updateRoute({ ...newRoute })
       }
     );
   };
@@ -1041,7 +1057,7 @@ class Designer extends React.Component {
         })),
       },
       () => {
-        this.updateRoute({ ...newRoute }).then(() => console.log('pattern added '));
+        this.updateRoute({ ...newRoute })
       }
     );
   };
@@ -1212,7 +1228,6 @@ class Designer extends React.Component {
             <span
               className="badge bg-warning text-dark"
               style={{
-                opacity: selectedNode ? 0.25 : hiddenSteps[steps[i]] ? 1 : 0.75,
                 cursor: 'pointer',
               }}
               onClick={() => {
@@ -1225,6 +1240,10 @@ class Designer extends React.Component {
                   hiddenSteps: hidden_steps,
                 });
               }}>
+              <i className={`me-1 fas fa-chevron-${hiddenSteps[steps[i]] ? 'down' : 'right'}`}
+                style={{
+                  minWidth: '10px'
+                }} />
               {steps[i]}
             </span>
             <Hr highlighted={!selectedNode} />
@@ -1275,15 +1294,12 @@ class Designer extends React.Component {
   };
 
   transformResponseBadge = () => {
-    const { nodes, hiddenSteps, selectedNode } = this.state;
+    const { nodes, hiddenSteps } = this.state;
     return (
       nodes.find((n) => n.plugin_index.TransformResponse !== undefined) && (
         <span
           className="badge bg-warning text-dark"
-          style={{
-            opacity: selectedNode ? 0.25 : hiddenSteps.TransformResponse ? 1 : 0.75,
-            cursor: 'pointer',
-          }}
+          style={{ cursor: 'pointer' }}
           onClick={() => {
             const hidden_steps = {
               ...hiddenSteps,
@@ -1294,6 +1310,10 @@ class Designer extends React.Component {
               hiddenSteps: hidden_steps,
             });
           }}>
+          <i className={`me-1 fas fa-chevron-${hiddenSteps.TransformResponse ? 'up' : 'right'}`}
+            style={{
+              minWidth: '10px'
+            }} />
           TransformResponse
         </span>
       )
@@ -1384,6 +1404,10 @@ class Designer extends React.Component {
                 }}
                 hide={(e) => {
                   e.stopPropagation();
+
+                  if (this.props.toggleTesterButton)
+                    this.props.toggleTesterButton(false)
+
                   this.setState({
                     selectedNode: backendCallNodes.find((node) => {
                       return node.id.includes(
@@ -1561,7 +1585,6 @@ class Designer extends React.Component {
                     originalRoute={originalRoute}
                     alertModal={alertModal}
                     disabledSaveButton={isEqual(route, originalRoute)}
-                    backendForm={this.state.backendForm}
                   />
                 </div>
               </>
@@ -1812,48 +1835,45 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
               backgroundColor: '#555',
               borderRadius: 3,
             }}>
-            {backend.targets.map((target, i) => {
-              const path = backend.root;
-              const rewrite = backend.rewrite;
-              const hostname = target.ip_address
-                ? `${target.hostname}@${target.ip_address}`
-                : target.hostname;
-              const end = rewrite || frontend.strip_path ? path : `/<request_path>${path}`;
-              const start = target.tls ? 'https://' : 'http://';
-              const mtls =
-                target.tls_config &&
-                  target.tls_config.enabled &&
-                  [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
-                  <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
-                    mTLS
-                  </span>
-                ) : (
-                  <span></span>
+            {backend.targets
+              .filter(f => f)
+              .map((target, i) => {
+                const path = backend.root;
+                const rewrite = backend.rewrite;
+                const hostname = target.ip_address
+                  ? `${target.hostname}@${target.ip_address}`
+                  : target.hostname;
+                const end = rewrite || frontend.strip_path ? path : `/<request_path>${path}`;
+                const start = target.tls ? 'https://' : 'http://';
+                const mtls =
+                  target.tls_config &&
+                    target.tls_config.enabled &&
+                    [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
+                    <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
+                      mTLS
+                    </span>
+                  ) : (
+                    <span></span>
+                  );
+                return (
+                  <div
+                    style={{
+                      paddingLeft: 10,
+                      paddingRight: 10,
+                      display: 'flex',
+                      flexDirection: 'row',
+                    }}
+                    key={`backend-targets${i}`}>
+                    <span style={{ fontFamily: 'monospace' }}>
+                      {mtls}
+                      {start}
+                      {hostname}:{target.port}
+                      {end}
+                    </span>
+                  </div>
                 );
-              return (
-                <div
-                  style={{
-                    paddingLeft: 10,
-                    paddingRight: 10,
-                    display: 'flex',
-                    flexDirection: 'row',
-                  }}
-                  key={`backend-targets${i}`}>
-                  <span style={{ fontFamily: 'monospace' }}>
-                    {mtls}
-                    {start}
-                    {hostname}:{target.port}
-                    {end}
-                  </span>
-                </div>
-              );
-            })}
+              })}
           </div>
-        </div>
-        <div style={{ marginTop: 20, width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-          <button className="btn btn-danger btn-sm" onClick={clearPlugins}>
-            Remove plugins
-          </button>
         </div>
       </>
     );
@@ -1918,9 +1938,10 @@ const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonCli
 
 const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => (
   <>
-    {value && value.toString().length > 0 && (
+    {value && value.toString().length > 0 && <Suspense fallback={() => <div>Loading ...</div>}>
       <CodeInput
         mode="json"
+        editorOnly={true}
         themeStyle={{
           maxHeight: readOnly ? '300px' : '-1',
           minHeight: '100px',
@@ -1931,7 +1952,7 @@ const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => (
           if (!readOnly) onChange(e);
         }}
       />
-    )}
+    </Suspense>}
     {errors && (
       <div>
         {(errors || []).map((error, idx) => (
@@ -1979,7 +2000,8 @@ class EditView extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.selectedNode.id !== prevProps.selectedNode.id) this.loadForm();
+    if (this.props.selectedNode.id !== prevProps.selectedNode.id)
+      this.loadForm();
   }
 
   manageScrolling = () => {
@@ -2011,34 +2033,33 @@ class EditView extends React.Component {
     let formSchema = schema || config_schema;
     let formFlow = [
       isFrontendOrBackend ? undefined : 'status',
-      isPluginWithConfiguration
-        ? {
-          label: isFrontendOrBackend ? null : 'Plugin',
-          flow: ['plugin'],
-          collapsed: false,
-          collapsable: false,
-        }
-        : undefined,
+      isPluginWithConfiguration ? 'plugin' : undefined,
     ].filter((f) => f);
 
     if (config_schema) {
       formSchema = {
         status: {
-          type: 'object',
-          format: 'form',
-          collapsable: true,
-          collapsed: isPluginWithConfiguration,
+          type: 'form',
+          collapsable: isPluginWithConfiguration ? true : false,
+          collapsed: false,
           label: 'Informations',
           schema: PLUGIN_INFORMATIONS_SCHEMA,
+          flow: [
+            'enabled',
+            'debug',
+            'include',
+            'exclude'
+          ]
         },
       };
       if (isPluginWithConfiguration)
         formSchema = {
           ...formSchema,
           plugin: {
-            type: 'object',
-            format: 'form',
-            label: null,
+            type: 'form',
+            props: {
+              label: 'Plugin configuration',
+            },
             schema: { ...convertTransformer(config_schema) },
             flow: [...(config_flow || flow)],
           },
@@ -2087,7 +2108,17 @@ class EditView extends React.Component {
     const { selectedNode } = this.props;
     const { nodeId } = selectedNode;
 
-    const oldConfig = form.value
+    this.setState({
+      form: {
+        ...this.state.form,
+        value: {
+          plugin: newValue.plugin,
+          status: newValue.status,
+        }
+      }
+    })
+
+    const oldConfig = this.state.form.value
 
     return this.props.updatePlugin(nodeId, selectedNode.id, {
       plugin: newValue.plugin || oldConfig?.plugin,
@@ -2097,20 +2128,21 @@ class EditView extends React.Component {
 
   onJsonInputChange = (value) => {
     const { form } = this.state;
-    validate([], form.schema, value)
-      .then(() => {
-        this.setState({
-          errors: [],
-        });
-        this.onValidate(JSON.parse(value));
-      })
-      .catch((err) => {
-        if (err.inner && Array.isArray(err.inner)) {
-          this.setState({
-            errors: err.inner.map((r) => r.message),
-          });
-        }
-      });
+    this.onValidate(JSON.parse(value))
+    // validate([], form.schema, value)
+    //   .then(() => {
+    //     this.setState({
+    //       errors: [],
+    //     });
+    //     this.onValidate(JSON.parse(value));
+    //   })
+    //   .catch((err) => {
+    //     if (err.inner && Array.isArray(err.inner)) {
+    //       this.setState({
+    //         errors: err.inner.map((r) => r.message),
+    //       });
+    //     }
+    //   });
   };
 
   toggleJsonFormat = (value) => {
@@ -2175,11 +2207,12 @@ class EditView extends React.Component {
               errors={errors}
               onFormClick={() => this.toggleJsonFormat(false)}
               onRawJsonClick={() => {
-                if (this.formRef.current)
-                  this.formRef.current.validate().then(() => {
-                    this.toggleJsonFormat(true);
-                  });
-                else this.toggleJsonFormat(true);
+                if (this.formRef.current &&
+                  this.formRef.current.isValid(this.formRef.current.state.validation)) {
+                  this.toggleJsonFormat(true);
+                }
+                else
+                  this.toggleJsonFormat(true);
               }}
             />
           )}
@@ -2228,21 +2261,20 @@ class EditView extends React.Component {
                 </>
               )}
               {!asJsonFormat && <>
-                <Form
+                <NgForm
                   ref={this.formRef}
                   value={form.value}
                   schema={form.schema}
                   flow={hasCustomPluginForm ? ['status'] : form.flow}
-                  onSubmit={this.onValidate}
-                  options={{ autosubmit: true }}
-                  footer={() => (
-                    <Actions
-                      disabledSaveButton={disabledSaveButton}
-                      valid={saveRoute}
-                      selectedNode={selectedNode}
-                      onRemove={onRemove}
-                    />
-                  )}
+                  onChange={this.onValidate}
+                // footer={() => (
+                //   <Actions
+                //     disabledSaveButton={disabledSaveButton}
+                //     valid={saveRoute}
+                //     selectedNode={selectedNode}
+                //     onRemove={onRemove}
+                //   />
+                // )}
                 />
                 {hasCustomPluginForm &&
                   <EurekaForm
@@ -2269,8 +2301,9 @@ class EditView extends React.Component {
               />
               {route.backend_ref && (
                 <Link
-                  className="btn btn-sm btn-success ms-2"
-                  to={`/backends/${route.backend_ref}/`}>
+                  className="btn btn-info ms-2"
+                  to={`/backends/edit/${route.backend_ref}/`}>
+                  <i className='fas fa-microchip me-1' />
                   Edit this backend
                 </Link>
               )}
@@ -2306,36 +2339,44 @@ const BackendSelector = ({
   return (
     enabled && (
       <div className="backend-selector">
-        <div className={`d-flex ${usingExistingBackend ? 'mb-3' : ''}`}>
+        <div className={`d-flex ${usingExistingBackend ? 'mb-3' : ''}`}
+          style={{
+            padding: '5px',
+            borderRadius: '24px',
+            backgroundColor: '#373735',
+            position: 'relative'
+          }}>
+          <div className={`tryit-selector-cursor ${!usingExistingBackend ? '' : 'tryit-selector-mode-right'}`} />
           <button
-            className="btn btn-sm new-backend-button"
+            className="flex tryit-selector-mode"
             onClick={() => {
               setUsingExistingBackend(false);
-            }}
-            style={{ backgroundColor: usingExistingBackend ? '#494849' : '#f9b000' }}>
+            }}>
             Create a new backend
           </button>
           <button
-            className="btn btn-sm new-backend-button"
-            onClick={() => setUsingExistingBackend(true)}
-            style={{ backgroundColor: usingExistingBackend ? '#f9b000' : '#494849' }}>
+            className="flex tryit-selector-mode"
+            onClick={() => setUsingExistingBackend(true)}>
             Select an existing backend
           </button>
         </div>
         {usingExistingBackend && (
-          <SelectInput
+          <NgSelectRenderer
             id="backend_select"
             value={route.backend_ref}
             placeholder="Select an existing backend"
-            label=""
+            label={" "}
+            ngOptions={{
+              spread: true
+            }}
             onChange={(backend_ref) =>
               setRoute({
                 ...route,
                 backend_ref,
               })
             }
-            possibleValues={backends}
-            transformer={(item) => ({ label: item.name, value: item.id })}
+            options={backends}
+            optionsTransformer={arr => arr.map(item => ({ label: item.name, value: item.id }))}
           />
         )}
       </div>

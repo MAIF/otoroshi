@@ -1,28 +1,78 @@
-import React, { Component } from 'react';
-// import _ from 'lodash';
+import React, { Component, Suspense } from 'react';
 import Select from 'react-select';
+import isFunction from 'lodash/isFunction'
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
+import { Location } from '../Location';
+import { ObjectInput } from '../inputs';
 
-import { SingleLineCode, CodeInput } from '@maif/react-forms';
+const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
-function LabelAndInput(_props) {
+export class NgLocationRenderer extends Component {
+  render() {
+    const schema = this.props.schema;
+    const props = schema.props || {};
+    const FormRenderer = this.props.components.FormRenderer;
+
+    return (
+      <FormRenderer
+        embedded={true}
+        rawSchema={{
+          label: 'Location',
+          collapsable: true,
+          collapsed: false
+        }}>
+        <Location
+          {...props}
+          tenant={this.props.value?.tenant || 'default'}
+          teams={this.props.value?.teams || ['default']}
+          onChangeTenant={tenant => this.props.onChange({
+            ...this.props.value,
+            tenant
+          })}
+          onChangeTeams={teams => this.props.onChange({
+            ...this.props.value,
+            teams
+          })}
+        />
+      </FormRenderer>
+    )
+  }
+}
+
+export class SingleLineCode extends Component {
+  render() {
+    return (
+      <div>SingleLineCode</div>
+    )
+  }
+}
+
+export function LabelAndInput(_props) {
   const schema = _props.schema || {};
   const props = schema.props || {};
-  const label = props.label || _props.name || _props.rawSchema.label || '...';
+  const label = _props.label || props.label || _props.rawSchema?.label || _props.name || '...';
+  const ngOptions = _props.ngOptions || props.ngOptions || {};
+  const labelColumn = _props.labelColumn || props.labelColumn || 2;
+
+  if (ngOptions.spread)
+    return _props.children
+
   return (
     <div className="row mb-3">
-      <label className="col-xs-12 col-sm-2 col-form-label">
+      <label className={`col-xs-12 col-sm-${labelColumn} col-form-label`} style={{
+        textAlign: labelColumn === 2 ? 'right' : 'left'
+      }}>
         {label.replace(/_/g, ' ')}{' '}
-        <i
+        {_props.help && <i
           className="far fa-question-circle"
           data-toggle="tooltip"
           data-placement="top"
           title={_props.help}
           data-bs-original-title={_props.help}
           aria-label={_props.help}
-        />
+        />}
       </label>
-      <div className="col-sm-10">{_props.children}</div>
+      <div className={`col-sm-${12 - labelColumn}`}>{_props.children}</div>
     </div>
   );
 }
@@ -41,11 +91,14 @@ export class NgCodeRenderer extends Component {
   render() {
     return (
       <LabelAndInput {...this.props}>
-        <CodeInput
-          value={this.props.value}
-          onChange={(e) => this.props.onChange(e)}
-          style={{ width: '100%' }}
-        />
+        <Suspense fallback={<div>Loading</div>}>
+          <CodeInput
+            {...this.props.rawSchema?.props}
+            value={this.props.value}
+            onChange={(e) => this.props.onChange(e)}
+            style={{ width: '100%' }}
+          />
+        </Suspense>
       </LabelAndInput>
     );
   }
@@ -54,17 +107,18 @@ export class NgCodeRenderer extends Component {
 export class NgJsonRenderer extends Component {
   render() {
     return (
-      <LabelAndInput {...this.props}>
+      <Suspense fallback={<div>Loading</div>}>
         <CodeInput
+          {...this.props.rawSchema?.props}
           value={JSON.stringify(this.props.value, null, 2)}
           onChange={(e) => {
             try {
               this.props.onChange(JSON.parse(e));
-            } catch (ex) {}
+            } catch (ex) { }
           }}
           style={{ width: '100%' }}
         />
-      </LabelAndInput>
+      </Suspense>
     );
   }
 }
@@ -214,10 +268,11 @@ export class NgArrayRenderer extends Component {
     const schema = this.props.schema;
     const props = schema.props || {};
     const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;
+
     return (
       <LabelAndInput {...this.props}>
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          {this.props.value &&
+          {Array.isArray(this.props.value) &&
             this.props.value.map((value, idx) => {
               return (
                 <div
@@ -226,7 +281,7 @@ export class NgArrayRenderer extends Component {
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    width: '100%',
+                    width: '100%'
                   }}>
                   {!ItemRenderer && (
                     <input
@@ -288,10 +343,10 @@ export class NgArrayRenderer extends Component {
             })}
           <button
             type="button"
-            className="btn btn-sm btn-success float-end"
+            className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={(e) => {
-              const newArray = this.props.value ? [...this.props.value, ''] : [''];
+              const newArray = Array.isArray(this.props.value) ? [...this.props.value, ''] : [''];
               this.props.onChange(newArray);
             }}>
             <i className="fas fa-plus-circle" />
@@ -303,103 +358,37 @@ export class NgArrayRenderer extends Component {
 }
 
 export class NgObjectRenderer extends Component {
-  // state = { values: this.props.value ? Object.keys(this.props.value).map(key => ({ key, value: this.props.value[key] })) : [] }
-
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
     const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;
+
     return (
       <LabelAndInput {...this.props}>
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          {this.props.value &&
-            // this.state.values.map(raw => {
-            //   const { key, value } = raw;
-            Object.keys(this.props.value)
-              .map((key) => [key, this.props.value[key]])
-              .map((raw, idx) => {
-                const [key, value] = raw;
-                return (
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      width: '100%',
-                    }}>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder={props.placeholderKey}
-                      title={props.help}
-                      value={key}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        const old = newObject[key];
-                        delete newObject[key];
-                        newObject[e.target.value] = old;
-                        this.props.onChange(newObject);
-                      }}
-                      style={{ width: '50%' }}
-                      {...props}
-                    />
-                    {!ItemRenderer && (
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder={props.placeholderValue}
-                        title={props.help}
-                        value={value}
-                        onChange={(e) => {
-                          const newObject = this.props.value ? { ...this.props.value } : {};
-                          newObject[key] = e.target.value;
-                          this.props.onChange(newObject);
-                        }}
-                        style={{ width: '50%' }}
-                        {...props}
-                      />
-                    )}
-                    {ItemRenderer && (
-                      <ItemRenderer
-                        embedded
-                        flow={this.props.flow}
-                        schema={this.props.schema}
-                        value={value}
-                        onChange={(e) => {
-                          const newObject = this.props.value ? { ...this.props.value } : {};
-                          newObject[key] = e;
-                          this.props.onChange(newObject);
-                        }}
-                        {...props}
-                      />
-                    )}
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-danger"
-                      style={{ width: 42, marginLeft: 5 }}
-                      onClick={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        delete newObject[key];
-                        this.props.onChange(newObject);
-                      }}>
-                      <i className="fas fa-trash" />
-                    </button>
-                  </div>
-                );
-              })}
-          <button
-            type="button"
-            className="btn btn-sm btn-success float-end"
-            style={{ width: 42, marginTop: 5 }}
-            onClick={(e) => {
-              const newObject = { ...this.props.value };
-              newObject[''] = '';
+        <ObjectInput
+          ngOptions={{
+            spread: true
+          }}
+          label={null}
+          placeholderKey={props.placeholderKey}
+          placeholderValue={props.placeholderValue}
+          value={this.props.value}
+          onChange={this.props.onChange}
+          itemRenderer={ItemRenderer ? (key, value, idx) => <ItemRenderer
+            embedded
+            flow={this.props.flow}
+            schema={this.props.schema}
+            value={value}
+            key={key}
+            idx={idx}
+            onChange={(e) => {
+              const newObject = this.props.value ? { ...this.props.value } : {};
+              newObject[key] = e;
               this.props.onChange(newObject);
-            }}>
-            <i className="fas fa-plus-circle" />
-          </button>
-        </div>
+            }}
+            {...props}
+          /> : null}
+        />
       </LabelAndInput>
     );
   }
@@ -412,18 +401,16 @@ export class NgArraySelectRenderer extends Component {
     const props = schema.props || {};
     if (props.optionsFrom) {
       this.setState({ loading: true }, () => {
-        fetch(this.props.schema.props.optionsFrom, {
+        fetch(props.optionsFrom, {
           method: 'GET',
           credentials: 'include',
         })
           .then((r) => r.json())
           .then((r) => {
-            this.setState({ loading: false });
-            if (props.optionsTransformer) {
-              this.setState({ options: props.optionsTransformer(r) });
-            } else {
-              this.setState({ options: r });
-            }
+            this.setState({
+              loading: false,
+              options: r
+            });
           })
           .catch((e) => {
             this.setState({ loading: false });
@@ -431,42 +418,52 @@ export class NgArraySelectRenderer extends Component {
       });
     }
   }
+
+  applyTransformer = (props, r) => {
+    if (props.optionsTransformer) {
+      if (isFunction(props.optionsTransformer))
+        return props.optionsTransformer(r || [])
+      else
+        return (r || []).map(item => ({ label: item[props.optionsTransformer.label], value: item[props.optionsTransformer.value] }))
+    } else if ((r || []).length > 0 && r[0].label && r[0].value) {
+      return r;
+    } else
+      return (r || []).map(rawValue => ({ label: rawValue, value: rawValue }))
+  }
+
   render() {
     const schema = this.props.schema || {};
     const props = schema.props || {};
+
     return (
       <LabelAndInput {...this.props}>
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          {this.props.value &&
+          {Array.isArray(this.props.value) &&
             this.props.value.map((value, idx) => {
               return (
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    width: '100%',
-                  }}>
-                  <Select
-                    name={`selector-${this.props.name}`}
-                    value={value}
-                    isLoading={this.state.loading}
-                    disabled={props.disabled}
-                    placeholder={props.placeholder}
-                    optionRenderer={props.optionRenderer}
-                    options={this.state.options || props.options}
-                    style={{ width: '100%' }}
-                    onChange={(e) => {
-                      const newArray = this.props.value ? [...this.props.value] : [];
-                      newArray.splice(idx, 1, e.value);
-                      this.props.onChange(newArray);
-                    }}
-                  />
+                <div className='d-flex justify-content-between align-items-center mb-1'
+                  key={`${value}-${idx}`}>
+                  <div style={{ width: '100%', flex: 1 }}>
+                    <Select
+                      name={`selector-${this.props.name}`}
+                      value={value}
+                      isLoading={this.state.loading}
+                      disabled={props.disabled}
+                      placeholder={props.placeholder}
+                      optionRenderer={props.optionRenderer}
+                      options={this.applyTransformer(props || this.props, this.state.options || props.options || [])}
+                      style={{ width: '100%' }}
+                      onChange={(e) => {
+                        const newArray = this.props.value ? [...this.props.value] : [];
+                        newArray.splice(idx, 1, e?.value || '');
+                        this.props.onChange(newArray);
+                      }}
+                    />
+                  </div>
                   <button
                     type="button"
                     className="btn btn-sm btn-danger"
-                    style={{ width: 42, marginLeft: 5 }}
+                    style={{ width: 42, marginLeft: 5, alignSelf: 'stretch' }}
                     onClick={(e) => {
                       const newArray = this.props.value ? [...this.props.value] : [];
                       newArray.splice(idx, 1);
@@ -479,10 +476,10 @@ export class NgArraySelectRenderer extends Component {
             })}
           <button
             type="button"
-            className="btn btn-sm btn-success float-end"
+            className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={(e) => {
-              const newArray = this.props.value ? [...this.props.value, ''] : [''];
+              const newArray = Array.isArray(this.props.value) ? [...this.props.value, ''] : [''];
               this.props.onChange(newArray);
             }}>
             <i className="fas fa-plus-circle" />
@@ -522,6 +519,7 @@ export class NgObjectSelectRenderer extends Component {
   render() {
     const schema = this.props.schema || {};
     const props = schema.props || {};
+
     return (
       <LabelAndInput {...this.props}>
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
@@ -585,7 +583,7 @@ export class NgObjectSelectRenderer extends Component {
               })}
           <button
             type="button"
-            className="btn btn-sm btn-success float-end"
+            className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={(e) => {
               const newObject = { ...this.props.value };
@@ -605,20 +603,18 @@ export class NgSelectRenderer extends Component {
   componentDidMount() {
     const schema = this.props.schema || {};
     const props = schema.props || {};
-    if (props.optionsFrom) {
+    if (props.optionsFrom || this.props.optionsFrom) {
       this.setState({ loading: true }, () => {
-        fetch(this.props.schema.props.optionsFrom, {
+        fetch(props.optionsFrom || this.props.optionsFrom, {
           method: 'GET',
           credentials: 'include',
         })
           .then((r) => r.json())
           .then((r) => {
-            this.setState({ loading: false });
-            if (props.optionsTransformer) {
-              this.setState({ options: props.optionsTransformer(r) });
-            } else {
-              this.setState({ options: r });
-            }
+            this.setState({
+              loading: false,
+              options: r
+            });
           })
           .catch((e) => {
             this.setState({ loading: false });
@@ -626,20 +622,36 @@ export class NgSelectRenderer extends Component {
       });
     }
   }
+
+  applyTransformer = (props, r) => {
+    if (props.optionsTransformer) {
+      if (isFunction(props.optionsTransformer)) {
+        return props.optionsTransformer(r || [])
+      }
+      else
+        return (r || []).map(item => ({ label: item[props.optionsTransformer.label], value: item[props.optionsTransformer.value] }))
+    } else if ((r || []).length > 0 && r[0].label && r[0].value) {
+      return r;
+    } else
+      return (r || []).map(rawValue => ({ label: rawValue, value: rawValue }))
+  }
+
   render() {
     const schema = this.props.schema || {};
-    const props = schema.props || {};
+    const props = schema.props || this.props || {};
+
     return (
       <LabelAndInput {...this.props}>
         <Select
           name={`selector-${this.props.name}`}
           value={this.props.value}
+          isMulti={props.isMulti}
           isLoading={this.state.loading}
           disabled={props.disabled}
           placeholder={props.placeholder}
           optionRenderer={props.optionRenderer}
-          options={this.state.options || props.options}
-          onChange={(e) => this.props.onChange(e.value)}
+          options={this.applyTransformer(props || this.props, this.state.options || props.options || this.props.options)}
+          onChange={(e) => this.props.onChange(e?.value)}
         />
       </LabelAndInput>
     );

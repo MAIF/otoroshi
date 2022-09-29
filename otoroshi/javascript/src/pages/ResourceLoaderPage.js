@@ -47,6 +47,7 @@ const UPDATE_ENTITIES = {
   ClientValidator: (content) => BackOfficeServices.updateClientValidator(content),
   Script: (content) => BackOfficeServices.updateScript(content),
   ErrorTemplate: (content) => BackOfficeServices.updateTemplate(content),
+  Route: content => BackOfficeServices.nextClient.update(BackOfficeServices.nextClient.ENTITIES.ROUTES, content)
 };
 
 export function ResourceLoaderPage({ setTitle }) {
@@ -244,7 +245,6 @@ export function ResourceLoaderPage({ setTitle }) {
               highlightActiveLine={true}
               tabSize={2}
               enableBasicAutocompletion={true}
-              // enableLiveAutocompletion={true}
             />
           </div>
           <div className="col-sm-4" style={{ paddingLeft: 1 }}>

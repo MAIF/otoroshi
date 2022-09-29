@@ -1559,7 +1559,6 @@ export class AuthModuleConfig extends Component {
         label="Type"
         value={settings.type}
         onChange={(e) => {
-          console.log(e);
           BackOfficeServices.createNewAuthConfig(e).then((templ) => {
             this.props.onChange(templ);
           });

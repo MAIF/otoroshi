@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import range from 'lodash/range';
-import { CodeInput, SelectInput } from '@maif/react-forms';
 import { BooleanInput } from '../../components/inputs';
 import {
   tryIt,
@@ -13,6 +12,9 @@ import { useLocation } from 'react-router-dom';
 
 import { Provider } from 'react-redux';
 import { Playground, store, getSettings, setSettingsString } from 'graphql-playground-react';
+import { NgSelectRenderer } from '../../components/nginputs';
+
+const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'];
 
@@ -33,8 +35,9 @@ export default function ({ route, hide }) {
   const [flow, setFlow] = useState('all');
 
   const [lastQuery, setLastQuery] = useState();
+  const [testingRouteHistory, setTestingRouteHistory] = useState();
 
-  const [request, setRequest] = useState({
+  const [request, updateRequest] = useState({
     path: '/',
     headers: { [Date.now()]: { key: '', value: '' } },
     method: METHODS[0],
@@ -72,12 +75,15 @@ export default function ({ route, hide }) {
 
   useEffect(() => {
     if (route && route.id) {
-      setRequest({
+      updateRequest({
         ...request,
         route_id: route.id,
       });
 
-      routeEntries(route.id).then((data) => setPlaygroundUrl(data.entries[0]));
+      routeEntries(route.id).then((data) => {
+        if (data.entries)
+          setPlaygroundUrl(data.entries[0])
+      });
 
       setTesterView(
         route &&
@@ -97,7 +103,13 @@ export default function ({ route, hide }) {
 
   useEffect(() => {
     loadLastQuery();
+    loadTestingRouteHistory()
   }, []);
+
+  const setRequest = newReq => {
+    saveTestingRouteHistory(newReq);
+    updateRequest(newReq)
+  }
 
   useEffect(() => {
     if (lastQuery) localStorage.removeItem('graphql-playground');
@@ -114,6 +126,52 @@ export default function ({ route, hide }) {
       setLastQuery(query || '{}');
     }
   };
+
+  const loadTestingRouteHistory = () => {
+    try {
+      const storedData = JSON.parse(localStorage.getItem('testers'));
+      const r = storedData.routes.find(r => r.id === route.id)
+      if (storedData && r) {
+        setRequest(r)
+      }
+    } catch (_) { }
+  }
+
+  const saveTestingRouteHistory = request => {
+    const storedData = JSON.parse(localStorage.getItem('testers'));
+    if (!storedData)
+      localStorage.setItem('testers', JSON.stringify({
+        routes: [{
+          id: route.id,
+          ...request
+        }]
+      }))
+    else {
+      if (storedData.routes.find(r => r.id === route.id)) {
+        localStorage.setItem('testers', JSON.stringify({
+          routes: (storedData.routes || []).map(r => {
+            if (r.id === route.id)
+              return {
+                id: route.id,
+                ...request
+              }
+            return r
+          })
+        }))
+      }
+      else {
+        localStorage.setItem('testers', JSON.stringify({
+          routes: [
+            ...(storedData.routes || []),
+            {
+              id: route.id,
+              ...request
+            }
+          ]
+        }))
+      }
+    }
+  }
 
   const hidePlaygroundStuff = (route, retry) => {
     if (!route) {
@@ -233,37 +291,39 @@ export default function ({ route, hide }) {
   const receivedResponse = rawResponse && response;
 
   return (
-    <div className="graphql-form flex-column" style={{ overflowY: 'scroll' }}>
+    <div className="graphql-form flex-column">
       <div className="d-flex-between m-2 mb-0">
-        <div className="flex">
-          <div className="d-flex-between">
-            <h3>Testing</h3>
-            <button
-              className="btn btn-sm"
-              type="button"
-              style={{ minWidth: '36px' }}
-              onClick={hide}>
-              <i className="fas fa-times" style={{ color: '#fff' }} />
-            </button>
-          </div>
-          {route &&
-            route.plugins.find((f) => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') && (
-              <div className="mt-2">
-                <button
-                  className="btn btn-sm btn-info me-1"
-                  type="button"
-                  onClick={() => setTesterView('rest')}>
-                  REST Tester
-                </button>
-                <button
-                  className="btn btn-sm btn-info"
-                  type="button"
-                  onClick={() => setTesterView('graphql')}>
-                  GraphQL Tester
-                </button>
-              </div>
-            )}
-        </div>
+        <h3>Testing</h3>
+        {route &&
+          route.plugins.find((f) => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') && (
+            <div style={{
+              padding: '5px',
+              borderRadius: '24px',
+              backgroundColor: '#373735',
+              position: 'relative'
+            }}>
+              <div className={`tryit-selector-cursor ${(!testerView || testerView === 'rest') ? '' : 'tryit-selector-mode-right'}`} />
+              <button
+                className="tryit-selector-mode"
+                type="button"
+                onClick={() => setTesterView('rest')}>
+                REST Tester
+              </button>
+              <button
+                className="tryit-selector-mode"
+                type="button"
+                onClick={() => setTesterView('graphql')}>
+                GraphQL Tester
+              </button>
+            </div>
+          )}
+        <button
+          className="btn btn-sm"
+          type="button"
+          style={{ minWidth: '36px' }}
+          onClick={hide}>
+          <i className="fas fa-times" style={{ color: '#fff' }} />
+        </button>
       </div>
       {testerView === 'graphql' ? (
         <div style={{ minHeight: 'calc(100vh - 162px)' }}>
@@ -294,22 +354,25 @@ export default function ({ route, hide }) {
         </div>
       ) : (
         <div
-          className="h-100"
+          // className="h-100"
           style={{
             flexDirection: 'column',
             background: 'rgb(60,60,60)',
             padding: '12px',
             borderRadius: '8px',
-            width:'97%',
-            margin : '0 auto',
-            marginTop:'10px'
+            margin: '10px',
+            flex: 1
           }}>
           <div className="d-flex">
             <div style={{ minWidth: '200px' }}>
-              <SelectInput
-                possibleValues={METHODS}
+              <NgSelectRenderer
+                options={METHODS}
                 value={request.method}
-                transformer={(item) => ({ value: item, label: item })}
+                ngOptions={{
+                  spread: true
+                }}
+                onChange={method => setRequest({ ...request, method })}
+                optionsTransformer={arr => (arr || []).map((item) => ({ value: item, label: item }))}
               />
             </div>
             <input
@@ -387,17 +450,20 @@ export default function ({ route, hide }) {
                     <div className="flex">
                       <div className="d-flex-between">
                         <div className="flex mt-2">
-                          <SelectInput
-                            possibleValues={apikeys}
+                          <NgSelectRenderer
                             value={request.apikey}
-                            onChange={(k) =>
+                            onChange={(k) => {
                               setRequest({
                                 ...request,
                                 apikey: k,
                                 headers: apikeyToHeader(request.apikeyFormat, k),
                               })
-                            }
-                            transformer={(item) => ({ value: item, label: item.clientName })}
+                            }}
+                            ngOptions={{
+                              spread: true
+                            }}
+                            options={apikeys}
+                            optionsTransformer={arr => arr.map((item) => ({ value: item.clientId, label: item.clientName }))}
                           />
                         </div>
                       </div>
@@ -406,11 +472,14 @@ export default function ({ route, hide }) {
                           <div className="d-flex-between">
                             <span className="me-3">Apikey format</span>
                             <div className="flex">
-                              <SelectInput
-                                possibleValues={[
+                              <NgSelectRenderer
+                                options={[
                                   { value: 'basic', label: 'Basic header' },
                                   { value: 'credentials', label: 'Client ID/Secret headers' },
                                 ]}
+                                ngOptions={{
+                                  spread: true
+                                }}
                                 value={request.apikeyFormat}
                                 onChange={(k) =>
                                   setRequest({
@@ -468,8 +537,11 @@ export default function ({ route, hide }) {
                     <div className="flex mt-2">
                       <div className="d-flex-between">
                         <div className="flex">
-                          <SelectInput
-                            possibleValues={certificates}
+                          <NgSelectRenderer
+                            ngOptions={{
+                              spread: true
+                            }}
+                            options={certificates}
                             value={request.client_cert}
                             onChange={(client_cert) =>
                               setRequest({
@@ -477,7 +549,7 @@ export default function ({ route, hide }) {
                                 client_cert,
                               })
                             }
-                            transformer={(item) => ({ value: item.id, label: item.name })}
+                            optionsTransformer={arr => arr.map((item) => ({ value: item.id, label: item.name }))}
                           />
                         </div>
                       </div>
@@ -535,40 +607,35 @@ export default function ({ route, hide }) {
               />
             )}
             {selectedTab === 'Body' && headersStatus === 'down' && (
-              <div className="mt-3">
-                <div className="d-flex align-items-center mb-3">
-                  <div className="d-flex">
-                    <BooleanInput
-                      label="none"
-                      value={!request.body}
-                      onChange={() => setRequest({ ...request, body: undefined })}
-                    />
-                  </div>
-                  <div className="d-flex mx-2">
-                    <BooleanInput
-                      label="raw"
-                      value={request.body === 'raw'}
-                      onChange={() => setRequest({ ...request, body: 'raw', contentType: 'json' })}
-                    />
-                  </div>
-                  {request.body === 'raw' && (
-                    <div style={{ minWidth: '120px' }}>
-                      <SelectInput
-                        possibleValues={CONTENT_TYPE}
-                        value={request.contentType}
-                        onChange={(contentType) => setRequest({ ...request, contentType })}
-                        transformer={(item) => ({ label: item, value: item })}
-                      />
-                    </div>
-                  )}
-                </div>
-                {request.body === 'raw' && (
-                  <CodeInput
-                    value={request.bodyContent}
-                    mode={request.contentType}
-                    onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
+              <div className="mt-3" style={{ overflow: 'hidden' }}>
+                <BooleanInput
+                  label="Use a body"
+                  value={request.body === 'raw' ? true : false}
+                  onChange={() => {
+                    const enabled = request.body === 'raw'
+                    if (enabled)
+                      setRequest({ ...request, body: undefined })
+                    else
+                      setRequest({ ...request, body: 'raw', contentType: 'json' })
+                  }}
+                />
+                {request.body === 'raw' && <>
+                  <NgSelectRenderer
+                    label="Type of content"
+                    options={CONTENT_TYPE}
+                    value={request.contentType}
+                    onChange={(contentType) => setRequest({ ...request, contentType })}
+                    optionsTransformer={arr => arr.map((item) => ({ value: item, label: item }))}
                   />
-                )}
+                  <Suspense fallback={<div>Loading ...</div>}>
+                    <CodeInput
+                      label="Content"
+                      value={request.bodyContent}
+                      mode={request.contentType}
+                      onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
+                    />
+                  </Suspense>
+                </>}
               </div>
             )}
           </div>
@@ -651,7 +718,7 @@ export default function ({ route, hide }) {
             </div>
           )}
           {!receivedResponse && !loading && (
-            <div className="d-flex align-items-center justify-content-center">
+            <div className="mt-3 text-center">
               <span>Enter the URL and click Send to get a response</span>
             </div>
           )}
@@ -759,7 +826,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     .map((i) => '          ')
     .join('');
   return (
-    <div className="d-flex mt-3 tryit-columns">
+    <div className="d-flex mt-3 flex reportview">
       <div className="main-view me-2" style={{ flex: 0.5, minWidth: '250px' }}>
         <div
           onClick={() => setSelectedStep(-1)}
@@ -889,27 +956,29 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
             );
           })}
       </div>
-      <div className="main-view tryit-right-column">
-        <CodeInput
-          readOnly={true}
-          width="100%"
-          value={
-            JSON.stringify(
-              selectedPlugin === -1
-                ? selectedStep === -1
-                  ? informations
-                  : steps.find((t) => t.task === selectedStep)
-                : steps
-                  .find((t) => t.task === selectedStep)
-                  ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
-              null,
-              4
-            ) +
-            '\n' +
-            spaces
-          }
-        />
-      </div>
+      <CodeInput
+        readOnly={true}
+        width="100%"
+        editorOnly={true}
+        ace_config={{
+          maxLines: Infinity
+        }}
+        value={
+          JSON.stringify(
+            selectedPlugin === -1
+              ? selectedStep === -1
+                ? informations
+                : steps.find((t) => t.task === selectedStep)
+              : steps
+                .find((t) => t.task === selectedStep)
+                ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+            null,
+            4
+          ) +
+          '\n' +
+          spaces
+        }
+      />
     </div>
   );
 };

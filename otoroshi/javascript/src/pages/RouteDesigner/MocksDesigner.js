@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import faker from 'faker';
-import { CodeInput } from '@maif/react-forms';
 import { FeedbackButton } from './FeedbackButton';
 import {
   BooleanInput,
@@ -11,6 +10,8 @@ import {
   SimpleBooleanInput,
   TextInput,
 } from '../../components/inputs';
+
+const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
 const castValue = (value, type) => {
   if (type === 'String') return value;
@@ -268,9 +269,9 @@ export default class MocksDesigner extends React.Component {
           this.setAndSave({
             [elementName]: Number.isFinite(idx)
               ? this.state[elementName].map((r, i) => {
-                  if (i === idx) return value;
-                  return r;
-                })
+                if (i === idx) return value;
+                return r;
+              })
               : [...this.state[elementName], value],
           });
         }
@@ -408,7 +409,9 @@ const Data = ({ idx, body, confirm, cancel }) => {
 
   return (
     <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
-      <CodeInput value={res} onChange={setRes} />
+      <Suspense fallback={<div>Loading ....</div>}>
+        <CodeInput value={res} onChange={setRes} mode="json" />
+      </Suspense>
 
       <div className="d-flex mt-3">
         <button className="btn btn-sm btn-danger me-1 ms-auto" onClick={cancel}>
@@ -672,10 +675,13 @@ class NewResource extends React.Component {
             <Help text="To define more complex structure for your data use JSON template. You can reference Faker.js methods using `$`." />
           </label>
           <div className="col-sm-10">
-            <CodeInput
-              value={objectTemplate}
-              onChange={(v) => this.setState({ objectTemplate: v })}
-            />
+            <Suspense fallback={<div>Loading ....</div>}>
+              <CodeInput
+                value={objectTemplate}
+                mode="json"
+                onChange={(v) => this.setState({ objectTemplate: v })}
+              />
+            </Suspense>
           </div>
         </div>
 
@@ -792,10 +798,15 @@ class NewEndpoint extends React.Component {
         />
         <div className="row mb-3">
           <label htmlFor={`input-method`} className="col-xs-12 col-sm-2 col-form-label">
-            Body
+            JSON Body
           </label>
           <div className="col-sm-10">
-            <CodeInput value={body} onChange={(v) => this.setState({ body: v })} />
+            <Suspense fallback={<div>Loading ...</div>}>
+              <CodeInput
+                value={body}
+                mode="json"
+                onChange={(v) => this.setState({ body: v })} />
+            </Suspense>
           </div>
         </div>
         <div className="d-flex-between">
