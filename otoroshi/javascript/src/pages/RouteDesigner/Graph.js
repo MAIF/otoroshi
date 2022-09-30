@@ -192,6 +192,7 @@ export const DEFAULT_FLOW = {
           ...generatedSchema.targets.schema,
           tls_config: {
             ...generatedSchema.targets.schema.tls_config,
+            label: 'Custom TLS setup',
             schema: Object.entries({
               ...generatedSchema.targets.schema.tls_config.schema,
               certs: {
@@ -264,6 +265,7 @@ export const DEFAULT_FLOW = {
               'predicate',
               'protocol',
               'ip_address',
+              'tls',
               'tls_config'
             ]
           }
