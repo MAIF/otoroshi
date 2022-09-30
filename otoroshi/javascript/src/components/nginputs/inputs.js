@@ -175,7 +175,7 @@ export class NgNumberRenderer extends Component {
           placeholder={props.placeholder}
           title={props.help}
           value={this.props.value}
-          onChange={(e) => this.props.onChange(e.target.value)}
+          onChange={(e) => this.props.onChange(~~e.target.value)}
           {...props}
         />
       </LabelAndInput>

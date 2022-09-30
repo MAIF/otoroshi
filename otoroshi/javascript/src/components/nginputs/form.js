@@ -233,10 +233,6 @@ export class NgForm extends Component {
     const value = this.getValue();
     this.rootOnChange(value);
     this.interval = setInterval(() => this.handleTasks(), 100);
-
-    this.setState({
-      breadcrumb: this.props.breadcrumb
-    })
   }
 
   componentWillUnmount() {
@@ -544,10 +540,10 @@ export class NgForm extends Component {
 
     const config = {
       schema, value, root, path, validation, components, StepNotFound,
-      setBreadcrumb: this.props.setBreadcrumb ? this.props.setBreadcrumb : e => {
+      setBreadcrumb: !root ? this.props.setBreadcrumb : e => {
         this.setState({ breadcrumb: e })
       },
-      breadcrumb: this.props.breadcrumb ? this.props.breadcrumb : this.state.breadcrumb
+      breadcrumb: root ? this.state.breadcrumb : this.props.breadcrumb
     }
 
     return (
