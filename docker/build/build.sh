@@ -132,6 +132,8 @@ case "${1}" in
     OTO_VERSION="dev-${NBR}"
     echo "Will build version $OTO_VERSION"
     copy_build
+    build_jar_template_version "$OTO_VERSION" "11"
+    build_jar_template_version "$OTO_VERSION" "17"
     build_jar_template_version "$OTO_VERSION" "19"
     cleanup
     ;;

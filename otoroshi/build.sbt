@@ -203,6 +203,7 @@ assemblyMergeStrategy in assembly := {
   case PathList("org", "apache", "commons", "logging", xs @ _*)       => MergeStrategy.first
   case PathList("org", "apache", "commons", "lang", xs @ _*)          => MergeStrategy.first
   case PathList("org", "apache", "commons", "collections", xs @ _*)   => MergeStrategy.first
+  case PathList("org", "apache", "maven", "surefire", "shade", "org", "apache", "maven", "shared", "utils", "StringUtils.class") => MergeStrategy.first
   case PathList("io", "sundr", xs @ _*)                               => MergeStrategy.first
   case PathList("com", "sun", "xml", xs @ _*)                         => MergeStrategy.first
   case PathList("com", "sun", "istack", xs @ _*)                      => MergeStrategy.first
