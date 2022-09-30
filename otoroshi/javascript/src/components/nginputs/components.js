@@ -101,7 +101,10 @@ export class NgFormRenderer extends Component {
               width: '100%',
               ...(this.props.rawSchema.style || {})
             }} onClick={e => {
-              // console.log(e.target, e.currentTarget, e.target == e.currentTarget)
+              console.log(this.props.setBreadcrumb)
+              if (this.props.setBreadcrumb) {
+                this.props.setBreadcrumb()
+              }
               this.setState({ folded: !this.state.folded })
             }}>
             <div
@@ -116,7 +119,14 @@ export class NgFormRenderer extends Component {
                 <button
                   type="button"
                   className="btn btn-info float-end btn-sm"
-                  onClick={(e) => this.setState({ folded: !this.state.folded })}>
+                  onClick={(e) => {
+                    this.setState({ folded: !this.state.folded })
+
+                    console.log(this.props.setBreadcrumb)
+                    if (this.props.setBreadcrumb) {
+                      this.props.setBreadcrumb()
+                    }
+                  }}>
                   <i className="fas fa-eye-slash"></i>
                 </button>
               )}
@@ -124,7 +134,13 @@ export class NgFormRenderer extends Component {
                 <button
                   type="button"
                   className="btn btn-info float-end btn-sm"
-                  onClick={(e) => this.setState({ folded: !this.state.folded })}>
+                  onClick={(e) => {
+                    console.log(this.props.setBreadcrumb)
+                    if (this.props.setBreadcrumb) {
+                      this.props.setBreadcrumb()
+                    }
+                    this.setState({ folded: !this.state.folded })
+                  }}>
                   <i className="fas fa-eye"></i>
                 </button>
               )}

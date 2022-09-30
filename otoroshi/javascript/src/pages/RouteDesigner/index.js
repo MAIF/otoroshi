@@ -295,7 +295,7 @@ const Manager = ({ query, entity, ...props }) => {
             .filter((link) => !link.enabled || link.enabled())
             .filter(link => location.state?.routeFromService ? link.tab === 'Informations' : true)
             .map(({ to, icon, title, tooltip, tab, onClick, dropdown, moreClass, style, props = {}, hidden, disabledHelp, disabled }) => (
-              <HelpWrapper text={disabled ? disabledHelp : undefined} dataPlacement="bottom">
+              <HelpWrapper text={disabled ? disabledHelp : undefined} dataPlacement="bottom" key={icon}>
                 <div className={`ms-2 ${moreClass ? moreClass : ''} ${dropdown ? 'dropdown' : ''}`}
                   style={{
                     opacity: hidden ? 0 : 1,

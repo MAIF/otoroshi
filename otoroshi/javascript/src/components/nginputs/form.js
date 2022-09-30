@@ -233,6 +233,10 @@ export class NgForm extends Component {
     const value = this.getValue();
     this.rootOnChange(value);
     this.interval = setInterval(() => this.handleTasks(), 100);
+
+    this.setState({
+      breadcrumb: this.props.breadcrumb
+    })
   }
 
   componentWillUnmount() {
@@ -431,6 +435,10 @@ export class NgForm extends Component {
 
     return <FormRenderer
       embedded={true}
+      setBreadcrumb={() => {
+        console.log(config.path)
+        config.setBreadcrumb(config.path)
+      }}
       rawSchema={{
         label: isFunction(name) ? name(config) : name,
         collapsable: true,
@@ -455,7 +463,7 @@ export class NgForm extends Component {
   }
 
   renderInlineStepFlow(name, {
-    schema, value, root, path, validation, components, StepNotFound
+    schema, value, root, path, validation, components, StepNotFound, setBreadcrumb, breadcrumb
   }) {
     const stepSchema = schema[name];
 
@@ -468,7 +476,6 @@ export class NgForm extends Component {
           : true;
       if (visible) {
         const newPath = root ? [name] : [...path, name];
-        // console.log(newPath)
         return (
           <NgStep
             key={newPath.join('/')}
@@ -484,7 +491,10 @@ export class NgForm extends Component {
             onChange={(e) => {
               const newValue = value ? { ...value, [name]: e } : { [name]: e };
               this.rootOnChange(newValue);
+              setBreadcrumb(newPath)
             }}
+            breadcrumb={breadcrumb}
+            setBreadcrumb={setBreadcrumb}
             rootValue={value}
             rootOnChange={this.rootOnChange}
           />
@@ -532,13 +542,36 @@ export class NgForm extends Component {
     const validation = root ? this.state.validation : this.props.validation;
     const path = this.props.path || [];
 
-    const config = { schema, value, root, path, validation, components, StepNotFound }
+    const config = {
+      schema, value, root, path, validation, components, StepNotFound,
+      setBreadcrumb: this.props.setBreadcrumb ? this.props.setBreadcrumb : e => {
+        this.setState({ breadcrumb: e })
+      },
+      breadcrumb: this.props.breadcrumb ? this.props.breadcrumb : this.state.breadcrumb
+    }
 
     return (
       <FormRenderer {...this.props}>
-        {flow &&
-          flow.map(name => this.renderStepFlow(name, config))}
-      </FormRenderer>
+        {this.state.breadcrumb && <div>
+          {this.state.breadcrumb
+            // .slice(1)
+            .map((part, i, length) => {
+              return <button className='btn' style={{
+                padding: 0,
+                color: '#fff'
+              }} onClick={() => {
+                // revenir vers la source et fermer tout ce qui est en dessous de ce path
+                // aut clic dans les groupes faire avancr le breadcrumb
+              }}>
+                {part} {i === length - 1 ? '' : '/'}
+              </button>
+            })}
+        </div>}
+        {
+          flow &&
+          flow.map(name => this.renderStepFlow(name, config))
+        }
+      </FormRenderer >
     );
   }
 }

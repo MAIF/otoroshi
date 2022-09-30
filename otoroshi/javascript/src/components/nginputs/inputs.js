@@ -282,7 +282,7 @@ export class NgArrayRenderer extends Component {
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     width: '100%'
-                  }}>
+                  }} key={`${value}-${idx}`}>
                   {!ItemRenderer && (
                     <input
                       type="text"
@@ -303,6 +303,8 @@ export class NgArrayRenderer extends Component {
                     <ItemRenderer
                       embedded
                       fromArray
+                      breadcrumb={this.props.breadcrumb}
+                      setBreadcrumb={this.props.setBreadcrumb}
                       path={[...this.props.path, String(idx)]}
                       flow={this.props.flow}
                       schema={this.props.schema}
