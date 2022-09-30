@@ -1810,6 +1810,14 @@ otoroshi {
       apply-legacy-checks = ${?OTOROSHI_NEXT_PLUGINS_APPLY_LEGACY_CHECKS}
     }
     experimental {
+    	netty-client {
+    		wiretap = false
+    		wiretap = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_CLIENT_WIRETAP}
+    		enforce = false
+    		enforce = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_CLIENT_ENFORCE}
+    		enforce-akka = false
+				enforce-akka = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_CLIENT_ENFORCE_AKKA}
+    	}
    		netty-server {
    			enabled = false
    			enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ENABLED}
@@ -1825,6 +1833,41 @@ otoroshi {
    			wiretap = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_WIRETAP}
    			accesslog = false
    			accesslog = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ACCESSLOG}
+        threads = 0
+        threads = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_THREADS}
+   			parser {
+   				allowDuplicateContentLengths = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_ALLOW_DUPLICATE_CONTENT_LENGTHS}
+          validateHeaders = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_VALIDATE_HEADERS}
+          h2cMaxContentLength = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_H_2_C_MAX_CONTENT_LENGTH}
+          initialBufferSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_INITIAL_BUFFER_SIZE}
+          maxHeaderSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_MAX_HEADER_SIZE}
+          maxInitialLineLength = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_MAX_INITIAL_LINE_LENGTH}
+          maxChunkSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_MAX_CHUNK_SIZE}
+   			}
+   			http2 {
+					enabled = true
+					enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP2_ENABLED}
+					h2c = true
+					h2c = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP2_H2C}
+				}
+   			http3 {
+   				enabled = false
+   				enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP3_ENABLED}
+   				port = 10048
+   				port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP3_PORT}
+          initialMaxStreamsBidirectional = 100000
+          initialMaxStreamDataBidirectionalRemote = 1000000
+          initialMaxStreamDataBidirectionalLocal = 1000000
+          initialMaxData = 10000000
+          maxRecvUdpPayloadSize = 1500
+          maxSendUdpPayloadSize = 1500
+   			}
+   			native {
+   				enabled = true
+   				enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NATIVE_ENABLED}
+   				driver = &quot;Auto&quot; # possible values are Auto, Epoll, KQueue, IOUring
+   				driver = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NATIVE_DRIVER}
+   			}
    		}
     }
   }
@@ -2962,6 +3005,11 @@ otoroshi {
       apply-legacy-checks = ${?OTOROSHI_NEXT_PLUGINS_APPLY_LEGACY_CHECKS}
     }
     experimental {
+    	netty-client {
+    		wiretap = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_CLIENT_WIRETAP}
+    		enforce = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_CLIENT_ENFORCE}
+				enforce-akka = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_CLIENT_ENFORCE_AKKA}
+    	}
    		netty-server {
    			enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ENABLED}
    			new-engine-only = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NEW_ENGINE_ONLY}
@@ -2970,6 +3018,28 @@ otoroshi {
    			https-port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTPS_PORT}
    			wiretap = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_WIRETAP}
    			accesslog = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ACCESSLOG}
+        threads = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_THREADS}
+   			parser {
+   				allowDuplicateContentLengths = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_ALLOW_DUPLICATE_CONTENT_LENGTHS}
+          validateHeaders = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_VALIDATE_HEADERS}
+          h2cMaxContentLength = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_H_2_C_MAX_CONTENT_LENGTH}
+          initialBufferSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_INITIAL_BUFFER_SIZE}
+          maxHeaderSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_MAX_HEADER_SIZE}
+          maxInitialLineLength = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_MAX_INITIAL_LINE_LENGTH}
+          maxChunkSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_MAX_CHUNK_SIZE}
+   			}
+   			http2 {
+					enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP2_ENABLED}
+					h2c = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP2_H2C}
+				}
+   			http3 {
+   				enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP3_ENABLED}
+   				port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP3_PORT}
+   			}
+   			native {
+   				enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NATIVE_ENABLED}
+   				driver = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NATIVE_DRIVER}
+   			}
    		}
     }
   }
