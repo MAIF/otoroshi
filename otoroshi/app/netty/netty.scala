@@ -29,7 +29,7 @@ import java.security.{Provider, SecureRandom}
 import java.util.function.BiFunction
 import javax.net.ssl._
 import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.util.{Failure, Success, Try}
 
 case class HttpServerBodyResponse(body: Publisher[Array[Byte]], contentType: Option[String], contentLength: Option[Long], chunked: Boolean)
@@ -141,16 +141,18 @@ class ReactorNettyServer(env: Env) {
         result.header.headers.get("otoroshi-netty-trailers").foreach { trailersId =>
           otoroshi.netty.NettyRequestAwaitingTrailers.get(trailersId).foreach {
             case Left(future) =>
-              logger.warn(s"Unable to get trailer header for request '${trailersId}'")
+              // if (logger.isWarnEnabled) logger.warn(s"Unable to get trailer header for request '${trailersId}'")
               otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+              val start = System.nanoTime()
               val trailers = Await.result(future, 10.seconds)
+              if (logger.isWarnEnabled) logger.warn(s"Blocked thread for ${(System.nanoTime() - start).nanos.toHumanReadable} to get trailer header for request '${trailersId}'")
               otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
               trailers.foreach {
                 case (name, values) =>
                   try {
                     theaders.add(name, values.asJava)
                   } catch {
-                    case e: Throwable => logger.error("error while adding trailer header", e)
+                    case e: Throwable => if (logger.isErrorEnabled) logger.error("error while adding trailer header", e)
                   }
               }
             case Right(trailers) =>
@@ -160,7 +162,7 @@ class ReactorNettyServer(env: Env) {
                   try {
                     theaders.add(name, values.asJava)
                   } catch {
-                    case e: Throwable => logger.error("error while adding trailer header", e)
+                    case e: Throwable => if (logger.isErrorEnabled) logger.error("error while adding trailer header", e)
                   }
               }
           }
