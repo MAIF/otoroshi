@@ -139,12 +139,12 @@ class ReactorNettyServer(env: Env) {
       .trailerHeaders(theaders => {
         import collection.JavaConverters._
         result.header.headers.get("otoroshi-netty-trailers").foreach { trailersId =>
-          otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.get(trailersId).foreach {
+          otoroshi.netty.NettyRequestAwaitingTrailers.get(trailersId).foreach {
             case Left(future) =>
               logger.warn(s"Unable to get trailer header for request '${trailersId}'")
-              otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.remove(trailersId)
+              otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
               val trailers = Await.result(future, 10.seconds)
-              otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.remove(trailersId)
+              otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
               trailers.foreach {
                 case (name, values) =>
                   try {
@@ -154,7 +154,7 @@ class ReactorNettyServer(env: Env) {
                   }
               }
             case Right(trailers) =>
-              otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.remove(trailersId)
+              otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
               trailers.foreach {
                 case (name, values) =>
                   try {

@@ -2,6 +2,7 @@ package otoroshi.netty
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import com.github.blemale.scaffeine.Scaffeine
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpRequest
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder
@@ -18,17 +19,30 @@ import java.net.{InetAddress, URI}
 import java.security.cert.X509Certificate
 import java.util.concurrent.atomic.AtomicLong
 import javax.net.ssl.{SSLPeerUnverifiedException, SSLSession}
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 object NettyRequestKeys {
-  val TrailerHeadersPromiseIdKey = TypedKey[String]("Trailer-Headers-Promise-Id")
+  val TrailerHeadersIdKey = TypedKey[String]("Trailer-Headers-Id")
 }
 
 object NettyRequestAwaitingTrailers {
-  val awaiting = new TrieMap[String, Either[Future[Map[String, Seq[String]]], Map[String, Seq[String]]]]()
+
+  private val awaiting = Scaffeine().maximumSize(1000).expireAfterWrite(10.seconds).build[String, Either[Future[Map[String, Seq[String]]], Map[String, Seq[String]]]]()
+
+  def add(key: String, value: Either[Future[Map[String, Seq[String]]], Map[String, Seq[String]]]): Unit = {
+    awaiting.put(key, value)
+  }
+
+  def get(key: String): Option[Either[Future[Map[String, Seq[String]]], Map[String, Seq[String]]]] = {
+    awaiting.getIfPresent(key)
+  }
+
+  def remove(key: String): Unit = {
+    awaiting.invalidate(key)
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,12 +125,13 @@ class ReactorNettyRequestHeader(req: HttpServerRequest, secure: Boolean, session
       }
       .getOrElse(Flash())
   }
+  val count = ReactorNettyRequest.counter.incrementAndGet()
   lazy val attrs = TypedMap.apply(
-    RequestAttrKey.Id      -> ReactorNettyRequest.counter.incrementAndGet(),
+    RequestAttrKey.Id      -> count,
     RequestAttrKey.Session -> Cell(zeSession),
     RequestAttrKey.Flash -> Cell(zeFlash),
     RequestAttrKey.Server -> "netty-experimental",
-    NettyRequestKeys.TrailerHeadersPromiseIdKey -> IdGenerator.uuid,
+    NettyRequestKeys.TrailerHeadersIdKey -> s"${IdGenerator.uuid}-${count}",
     RequestAttrKey.Cookies -> Cell(Cookies(req.cookies().asScala.toSeq.flatMap {
       case (_, cookies) => cookies.asScala.map {
         case cookie: io.netty.handler.codec.http.cookie.DefaultCookie => {
@@ -243,12 +258,13 @@ class NettyRequestHeader(req: HttpRequest, ctx: ChannelHandlerContext, secure: B
       }
       .getOrElse(Flash())
   }
+  val count = NettyRequest.counter.incrementAndGet()
   lazy val attrs = TypedMap.apply(
-    RequestAttrKey.Id      -> NettyRequest.counter.incrementAndGet(),
+    RequestAttrKey.Id      -> count,
     RequestAttrKey.Session -> Cell(zeSession),
     RequestAttrKey.Flash -> Cell(zeFlash),
     RequestAttrKey.Server -> "netty-experimental",
-    NettyRequestKeys.TrailerHeadersPromiseIdKey -> IdGenerator.uuid,
+    NettyRequestKeys.TrailerHeadersIdKey -> s"${IdGenerator.uuid}-${count}",
     RequestAttrKey.Cookies -> Cell(Cookies(_cookies.toSeq.flatMap {
       case (_, cookies) => cookies.map {
         case cookie: io.netty.handler.codec.http.cookie.DefaultCookie => {

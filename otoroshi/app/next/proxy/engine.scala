@@ -2643,19 +2643,19 @@ class ProxyEngine() extends RequestHandler {
       val fu: Future[BackendCallResponse] = builderWithBody
         .stream()
         .map { response =>
-          val idOpt = rawRequest.attrs.get(otoroshi.netty.NettyRequestKeys.TrailerHeadersPromiseIdKey)
+          val idOpt = rawRequest.attrs.get(otoroshi.netty.NettyRequestKeys.TrailerHeadersIdKey)
           val shouldHaveTrailers = route.useNettyClient && finalTarget.protocol == HttpProtocols.`HTTP/2.0` && rawRequest.attrs.get(RequestAttrKey.Server).contains("netty-experimental") && rawRequest.headers.get("te").contains("trailers")
           if (shouldHaveTrailers) {
             val id = idOpt.get
             response match {
               case r: otoroshi.netty.NettyWsResponse =>
                 val future = r.trailingHeaders()
-                otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.add(id, Left(future))
-                future.map(trls => otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.add(id, Right(trls)))
+                otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Left(future))
+                future.map(trls => otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Right(trls)))
               case r: otoroshi.netty.NettyWsStrictResponse =>
                 val future = r.trailingHeaders()
-                otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.add(id, Left(future))
-                future.map(trls => otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.add(id, Right(trls)))
+                otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Left(future))
+                future.map(trls => otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Right(trls)))
               case _ =>
             }
           }
