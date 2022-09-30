@@ -37,12 +37,11 @@ export class HelpWrapper extends Component {
               });
           }}
           data-bs-toggle="tooltip"
-          data-bs-placement={this.props.dataPlacement || "top"}
+          data-bs-placement={this.props.dataPlacement || 'top'}
           title={this.props.text}
           style={{
-            height: '100%'
-          }}
-        >
+            height: '100%',
+          }}>
           {this.props.children}
         </div>
       );

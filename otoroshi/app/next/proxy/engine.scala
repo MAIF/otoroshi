@@ -145,8 +145,10 @@ object ProxyEngine {
 
 class ProxyEngine() extends RequestHandler {
 
-  def badDefaultRoutingHttp(req: Request[Source[ByteString, _]]): Future[Result] = Results.InternalServerError("bad default routing").vfuture
-  def badDefaultRoutingWs(req: RequestHeader): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = Results.InternalServerError("bad default routing").left.vfuture
+  def badDefaultRoutingHttp(req: Request[Source[ByteString, _]]): Future[Result]                             =
+    Results.InternalServerError("bad default routing").vfuture
+  def badDefaultRoutingWs(req: RequestHeader): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
+    Results.InternalServerError("bad default routing").left.vfuture
 
   private val httpClient           = reactor.netty.http.client.HttpClient.create()
   private val logger               = Logger("otoroshi-next-gen-proxy-engine")
@@ -1696,9 +1698,11 @@ class ProxyEngine() extends RequestHandler {
   }
 
   def getBackend(target: Target, route: NgRoute, attrs: TypedMap)(implicit env: Env): NgTarget = {
-    attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey)
+    attrs
+      .get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey)
       .getOrElse(route.backend.allTargets)
-      .find(b => b.id == target.tags.head).get
+      .find(b => b.id == target.tags.head)
+      .get
   }
 
   def callTarget(snowflake: String, reqNumber: Long, request: Request[Source[ByteString, _]], _route: NgRoute)(
@@ -1875,7 +1879,10 @@ class ProxyEngine() extends RequestHandler {
           .callGenNg[Result](
             route.cacheableId,
             route.name,
-            attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey).getOrElse(route.backend.allTargets).map(_.toTarget),
+            attrs
+              .get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey)
+              .getOrElse(route.backend.allTargets)
+              .map(_.toTarget),
             route.backend.loadBalancing,
             route.backend.client.legacy,
             reqNumber.toString,
@@ -1898,7 +1905,9 @@ class ProxyEngine() extends RequestHandler {
       val target  = attrs
         .get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey)
         .getOrElse {
-          val targets: Seq[Target] = attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey).getOrElse(route.backend.allTargets)
+          val targets: Seq[Target] = attrs
+            .get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey)
+            .getOrElse(route.backend.allTargets)
             .map(_.toTarget)
             .filter(_.predicate.matches(reqNumber.toString, request, attrs))
             .flatMap(t => Seq.fill(t.weight)(t))
@@ -2119,7 +2128,9 @@ class ProxyEngine() extends RequestHandler {
       val target: Target = attrs
         .get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey)
         .getOrElse {
-          val targets: Seq[Target] = attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey).getOrElse(route.backend.allTargets)
+          val targets: Seq[Target] = attrs
+            .get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey)
+            .getOrElse(route.backend.allTargets)
             .map(_.toTarget)
             .filter(_.predicate.matches(reqNumber.toString, request, attrs))
             .flatMap(t => Seq.fill(t.weight)(t))
@@ -2135,7 +2146,7 @@ class ProxyEngine() extends RequestHandler {
       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
       // Round robin loadbalancing is happening here !!!!!
       //val target = targets.apply(index.toInt)
-      val backend = getBackend(target, route, attrs)
+      val backend        = getBackend(target, route, attrs)
       attrs.put(Keys.BackendKey -> backend)
       f(NgSelectedBackendTarget(backend, 1, new AtomicBoolean(false), cbStart))
     }
@@ -2578,7 +2589,10 @@ class ProxyEngine() extends RequestHandler {
       val wsCookiesIn                                    = request.cookies
       val clientConfig                                   = route.backend.client
       val clientReq: WSRequest                           = if (route.useNettyClient) {
-        NettyHttpClient.url(UrlSanitizer.sanitize(request.url), httpClient).withTarget(finalTarget).withClientConfig(clientConfig.legacy)
+        NettyHttpClient
+          .url(UrlSanitizer.sanitize(request.url), httpClient)
+          .withTarget(finalTarget)
+          .withClientConfig(clientConfig.legacy)
       } else {
         route.useAkkaHttpClient match {
           case _ if finalTarget.mtlsConfig.mtls =>
@@ -2643,12 +2657,15 @@ class ProxyEngine() extends RequestHandler {
       val fu: Future[BackendCallResponse] = builderWithBody
         .stream()
         .map { response =>
-          val idOpt = rawRequest.attrs.get(otoroshi.netty.NettyRequestKeys.TrailerHeadersIdKey)
-          val shouldHaveTrailers = route.useNettyClient && finalTarget.protocol == HttpProtocols.`HTTP/2.0` && rawRequest.attrs.get(RequestAttrKey.Server).contains("netty-experimental") && rawRequest.headers.get("te").contains("trailers")
+          val idOpt              = rawRequest.attrs.get(otoroshi.netty.NettyRequestKeys.TrailerHeadersIdKey)
+          val shouldHaveTrailers =
+            route.useNettyClient && finalTarget.protocol == HttpProtocols.`HTTP/2.0` && rawRequest.attrs
+              .get(RequestAttrKey.Server)
+              .contains("netty-experimental") && rawRequest.headers.get("te").contains("trailers")
           if (shouldHaveTrailers) {
             val id = idOpt.get
             response match {
-              case r: otoroshi.netty.NettyWsResponse =>
+              case r: otoroshi.netty.NettyWsResponse       =>
                 val future = r.trailingHeaders()
                 otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Left(future))
                 future.map(trls => otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Right(trls)))
@@ -2656,7 +2673,7 @@ class ProxyEngine() extends RequestHandler {
                 val future = r.trailingHeaders()
                 otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Left(future))
                 future.map(trls => otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Right(trls)))
-              case _ =>
+              case _                                       =>
             }
           }
           BackendCallResponse(
@@ -2665,7 +2682,7 @@ class ProxyEngine() extends RequestHandler {
               headers = response.headers.mapValues(_.last).applyOnIf(shouldHaveTrailers) { hds =>
                 idOpt match {
                   case Some(id) if shouldHaveTrailers => hds ++ Map("otoroshi-netty-trailers" -> id)
-                  case _ => hds
+                  case _                              => hds
                 }
               },
               cookies = response.cookies,

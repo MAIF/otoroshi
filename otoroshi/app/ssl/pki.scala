@@ -11,7 +11,15 @@ import otoroshi.env.Env
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x509._
-import org.bouncycastle.asn1.{ASN1EncodableVector, ASN1Integer, ASN1ObjectIdentifier, ASN1Sequence, DERIA5String, DERSequence, x509}
+import org.bouncycastle.asn1.{
+  x509,
+  ASN1EncodableVector,
+  ASN1Integer,
+  ASN1ObjectIdentifier,
+  ASN1Sequence,
+  DERIA5String,
+  DERSequence
+}
 import org.bouncycastle.cert.{X509ExtensionUtils, X509v3CertificateBuilder}
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils
 import org.bouncycastle.crypto.util.PrivateKeyFactory

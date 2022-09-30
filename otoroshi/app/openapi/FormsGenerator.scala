@@ -33,7 +33,7 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
         val outType = JsString(openapiTypesToFormTypes.getOrElse(rawType, rawType))
         informations = informations ++ Json.obj(
           // "type"   -> "array",
-          "array" -> true,
+          "array"  -> true,
           "format" -> (if (outType == JsString("object")) JsString("form")
                        else JsNull)
         )
@@ -44,7 +44,7 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
         informations = Json.obj(
           "type"  -> "select",
           "props" -> Json.obj(
-            "label" -> label,
+            "label"   -> label,
             "options" -> JsArray(enum.getOrElse(Seq.empty).map(JsString.apply))
           )
         )
@@ -52,11 +52,11 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
 
       if (label == "raw" && `type` == "object") {
         informations = Json.obj(
-          "type" -> "code",
-          "props"  -> Json.obj(
-            "label" -> label,
+          "type"  -> "code",
+          "props" -> Json.obj(
+            "label"      -> label,
             "editorOnly" -> true,
-            "mode" -> "json"
+            "mode"       -> "json"
           )
         )
       }
@@ -94,11 +94,11 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
                   else if ((informations \ "type").as[String] == "string" && enum.isEmpty) {
                     if (label == "body") {
                       Json.obj(
-                        "type" -> "code",
-                        "props"  -> Json.obj(
-                          "label" -> label,
+                        "type"  -> "code",
+                        "props" -> Json.obj(
+                          "label"      -> label,
                           "editorOnly" -> true,
-                          "mode" -> "json"
+                          "mode"       -> "json"
                         )
                       )
                     } else

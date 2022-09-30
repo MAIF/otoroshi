@@ -104,29 +104,26 @@ object Xml {
 
   def toXml(json: JsValue): NodeSeq = {
     def getAttributes(attrs: List[(String, JsValue)]): MetaData = {
-      if(attrs.isEmpty)
+      if (attrs.isEmpty)
         xml.Null
       else {
-        val lastAttribute = new UnprefixedAttribute(
-          attrs.last._1.replaceAll("@", ""),
-          attrs.last._2.toString(),
-          xml.Null)
+        val lastAttribute =
+          new UnprefixedAttribute(attrs.last._1.replaceAll("@", ""), attrs.last._2.toString(), xml.Null)
         attrs
-          .slice(0, attrs.length-1)
+          .slice(0, attrs.length - 1)
           .reverse
-          .foldLeft(lastAttribute) { case (attr, attribute) => new UnprefixedAttribute(
-            attribute._1.replaceAll("@", ""),
-            attribute._2.toString(),
-            attr)
+          .foldLeft(lastAttribute) { case (attr, attribute) =>
+            new UnprefixedAttribute(attribute._1.replaceAll("@", ""), attribute._2.toString(), attr)
           }
       }
     }
 
     def nestedToXml(name: String, json: JsValue): NodeSeq = json match {
       case JsObject(fields) =>
-        val children = fields.toList.filter(p => !p._1.startsWith("@") && p._1 != "$").flatMap { case (n, v) => nestedToXml(n, v) }
+        val children   =
+          fields.toList.filter(p => !p._1.startsWith("@") && p._1 != "$").flatMap { case (n, v) => nestedToXml(n, v) }
         val attributes = fields.toList.filter(p => p._1.startsWith("@"))
-        val value = fields.toList.find(p => p._1 == "$")
+        val value      = fields.toList.find(p => p._1 == "$")
 
         if (value.isEmpty)
           XmlNode(name, children, getAttributes(attributes))
@@ -159,5 +156,5 @@ object Xml {
       extends Elem(null, name, xml.Null, TopScope, true, Text(value))
 
   private[this] case class XmlElemWithAttributes(name: String, value: String, atrributes: MetaData)
-    extends Elem(null, name, attributes1 = atrributes, TopScope, true, Text(value))
+      extends Elem(null, name, attributes1 = atrributes, TopScope, true, Text(value))
 }

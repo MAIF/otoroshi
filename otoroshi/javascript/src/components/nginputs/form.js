@@ -21,7 +21,7 @@ import {
   NgSingleCodeLineRenderer,
   NgCodeRenderer,
   NgLocationRenderer,
-  LabelAndInput
+  LabelAndInput,
 } from './inputs';
 
 import {
@@ -219,7 +219,7 @@ export class NgForm extends Component {
     PasswordRenderer: NgPasswordRenderer,
     JsonRenderer: NgJsonRenderer,
     LocationRenderer: NgLocationRenderer,
-    FlowNotFound: NgFlowNotFound
+    FlowNotFound: NgFlowNotFound,
   };
 
   static setTheme = (theme) => {
@@ -367,23 +367,20 @@ export class NgForm extends Component {
   };
 
   recursiveSearch = (paths, value) => {
-    if (paths.length === 0)
-      return value
-    return this.recursiveSearch(paths.slice(1), (value || {})[paths.slice(0, 1)])
-  }
+    if (paths.length === 0) return value;
+    return this.recursiveSearch(paths.slice(1), (value || {})[paths.slice(0, 1)]);
+  };
 
-  isAnObject = variable => {
-    return typeof variable === 'object' &&
-      variable !== null &&
-      !Array.isArray(variable);
-  }
+  isAnObject = (variable) => {
+    return typeof variable === 'object' && variable !== null && !Array.isArray(variable);
+  };
 
   getFlow = (value, schema) => {
     if (isFunction(this.props.flow)) {
-      return this.props.flow(value, this.props)
+      return this.props.flow(value, this.props);
     }
 
-    // useful to match the case of a json flow 
+    // useful to match the case of a json flow
     /*
       {
         schema: {
@@ -398,65 +395,62 @@ export class NgForm extends Component {
         }
       }
     */
-    if (this.isAnObject(this.props.flow) &&
-      this.props.flow.field &&
-      this.props.flow.flow) {
-      const paths = this.props.flow.field.split('.')
-      const flow = this.props.flow.flow[this.recursiveSearch(paths, (value || {}))] ||
-        this.props.flow.flow[this.recursiveSearch(paths, (this.props.rootValue || {}))]
+    if (this.isAnObject(this.props.flow) && this.props.flow.field && this.props.flow.flow) {
+      const paths = this.props.flow.field.split('.');
+      const flow =
+        this.props.flow.flow[this.recursiveSearch(paths, value || {})] ||
+        this.props.flow.flow[this.recursiveSearch(paths, this.props.rootValue || {})];
 
-      if (!flow)
-        return Object.values(this.props.flow.flow)[0]
-      else
-        return flow
-
+      if (!flow) return Object.values(this.props.flow.flow)[0];
+      else return flow;
     }
 
-    if (this.props.flow?.length === 0)
-      return Object.keys(schema)
+    if (this.props.flow?.length === 0) return Object.keys(schema);
 
-    return this.props.flow || []
-  }
+    return this.props.flow || [];
+  };
 
   renderCustomFlow({ name, fields, renderer }, config) {
     return renderer({
       name,
       fields,
-      renderStepFlow: subName => this.renderInlineStepFlow(subName, config)
-    })
+      renderStepFlow: (subName) => this.renderInlineStepFlow(subName, config),
+    });
   }
 
   renderGroupFlow({ name, fields, collapsed }, config) {
     const FormRenderer = config.components.FormRenderer;
 
-    return <FormRenderer
-      embedded={true}
-      rawSchema={{
-        label: isFunction(name) ? name(config) : name,
-        collapsable: true,
-        collapsed: collapsed === undefined ? false : true
-      }}>
-      {fields.map(subName => this.renderStepFlow(subName, config))}
-    </FormRenderer>
+    return (
+      <FormRenderer
+        embedded={true}
+        rawSchema={{
+          label: isFunction(name) ? name(config) : name,
+          collapsable: true,
+          collapsed: collapsed === undefined ? false : true,
+        }}>
+        {fields.map((subName) => this.renderStepFlow(subName, config))}
+      </FormRenderer>
+    );
   }
 
   renderGridFlow({ name, fields }, config) {
-    return <div className='row'>
-      <LabelAndInput label={name}>
-        <div className='d-flex flex-wrap ms-3'>
-          {fields
-            .map(subName => <div className='flex' style={{ minWidth: '50%' }} key={`${name}-${subName}`}>
-              {this.renderStepFlow(subName, config)}
-            </div>)
-          }
-        </div>
-      </LabelAndInput>
-    </div>
+    return (
+      <div className="row">
+        <LabelAndInput label={name}>
+          <div className="d-flex flex-wrap ms-3">
+            {fields.map((subName) => (
+              <div className="flex" style={{ minWidth: '50%' }} key={`${name}-${subName}`}>
+                {this.renderStepFlow(subName, config)}
+              </div>
+            ))}
+          </div>
+        </LabelAndInput>
+      </div>
+    );
   }
 
-  renderInlineStepFlow(name, {
-    schema, value, root, path, validation, components, StepNotFound
-  }) {
+  renderInlineStepFlow(name, { schema, value, root, path, validation, components, StepNotFound }) {
     const stepSchema = schema[name];
 
     if (stepSchema) {
@@ -499,17 +493,17 @@ export class NgForm extends Component {
 
   renderStepFlow(name, config) {
     if (this.isAnObject(name)) {
-      const composedFlow = name
+      const composedFlow = name;
       if (composedFlow.type === 'grid') {
-        return this.renderGridFlow(composedFlow, config)
+        return this.renderGridFlow(composedFlow, config);
       } else if (composedFlow.type === 'group') {
-        return this.renderGroupFlow(composedFlow, config)
+        return this.renderGroupFlow(composedFlow, config);
       } else if (composedFlow.type === 'custom') {
-        return this.renderCustomFlow(composedFlow, config)
+        return this.renderCustomFlow(composedFlow, config);
       } else {
         return React.createElement(config.components.FlowNotFound, {
-          type: composedFlow.type
-        })
+          type: composedFlow.type,
+        });
       }
     } else {
       return this.renderInlineStepFlow(name, config);
@@ -532,12 +526,11 @@ export class NgForm extends Component {
     const validation = root ? this.state.validation : this.props.validation;
     const path = this.props.path || [];
 
-    const config = { schema, value, root, path, validation, components, StepNotFound }
+    const config = { schema, value, root, path, validation, components, StepNotFound };
 
     return (
       <FormRenderer {...this.props}>
-        {flow &&
-          flow.map(name => this.renderStepFlow(name, config))}
+        {flow && flow.map((name) => this.renderStepFlow(name, config))}
       </FormRenderer>
     );
   }

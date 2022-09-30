@@ -52,7 +52,13 @@ object DynamicKeyManager {
     (validCerts, validCerts.flatMap(c => c.allDomains.map(d => (d, c))).toMap)
   }
 
-  def getServerCertificateForDomain(domain: String, validCerts: Seq[Cert],certsByDomains: Map[String, Cert], env: Env, logger: Logger): Option[Cert] = {
+  def getServerCertificateForDomain(
+      domain: String,
+      validCerts: Seq[Cert],
+      certsByDomains: Map[String, Cert],
+      env: Env,
+      logger: Logger
+  ): Option[Cert] = {
     DynamicKeyManager.cache.getIfPresent(domain) match {
       case Some(cert) =>
         // logger.debug(s"[${domain}] found cert from cache: ${cert.id} - '${cert.name}'")
@@ -82,9 +88,7 @@ object DynamicKeyManager {
               )
               .map(_._2)
               .headOption
-              .seffectOnIf(logger.isDebugEnabled)(opt =>
-                logger.debug(s"choosing '${opt.map(_.name).getOrElse("--")}'")
-              )
+              .seffectOnIf(logger.isDebugEnabled)(opt => logger.debug(s"choosing '${opt.map(_.name).getOrElse("--")}'"))
           }
           .orElse {
             //foundCertDef
@@ -133,9 +137,9 @@ object DynamicKeyManager {
 class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X509KeyManager, env: Env)
     extends X509ExtendedKeyManager {
 
-  private val logger                                 = Logger("otoroshi-dyn-key-manager")
-  private lazy val allCertificates: Seq[Cert]        = allCerts()
-  private lazy val (validCerts, certsByDomains)      = DynamicKeyManager.validCertificatesByDomains(allCertificates)
+  private val logger                            = Logger("otoroshi-dyn-key-manager")
+  private lazy val allCertificates: Seq[Cert]   = allCerts()
+  private lazy val (validCerts, certsByDomains) = DynamicKeyManager.validCertificatesByDomains(allCertificates)
   // private lazy val validCerts                        = allCertificates
   //   .map(_.enrich())
   //   .filter(c => c.notRevoked && c.notExpired && !c.ca && !c.keypair)
@@ -180,7 +184,7 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
     } else {
       DynamicKeyManager.getServerCertificateForDomain(domain, validCerts, certsByDomains, env, logger)
     }
-      /*
+    /*
       DynamicKeyManager.cache.getIfPresent(domain) match {
         case Some(cert) =>
           // logger.debug(s"[${domain}] found cert from cache: ${cert.id} - '${cert.name}'")
@@ -256,7 +260,7 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
         }
       }
     }
-    */
+     */
   }
 
   override def getCertificateChain(domain: String): Array[X509Certificate] = {

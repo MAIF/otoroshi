@@ -195,7 +195,7 @@ object implicits {
     def asValue: JsValue   = obj.as[JsValue]
   }
   implicit class BetterFuture[A](private val obj: Future[A])           extends AnyVal {
-    def mono(implicit ec: ExecutionContext): Mono[A] = ReactiveStreamUtils.MonoUtils.fromFuture(obj)
+    def mono(implicit ec: ExecutionContext): Mono[A]                          = ReactiveStreamUtils.MonoUtils.fromFuture(obj)
     def fleft[B](implicit ec: ExecutionContext): Future[Either[A, B]]         = obj.map(v => Left(v))
     def fright[B](implicit ec: ExecutionContext): Future[Either[B, A]]        = obj.map(v => Right(v))
     def asLeft[R](implicit executor: ExecutionContext): Future[Either[A, R]]  = obj.map(a => Left[A, R](a))

@@ -174,7 +174,7 @@ class NgTreeRouterTests
       new NgTreeRouterRealLifeSpec(),
       new NgTreeRouterPathParamsSpec(),
       new NgTreeRouterSpec(),
-      new NgTreeRouterWithEnvSpec(Configurations.InMemoryConfiguration),
+      new NgTreeRouterWithEnvSpec(Configurations.InMemoryConfiguration)
     )
 
 class OneShotTests

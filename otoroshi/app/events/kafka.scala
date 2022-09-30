@@ -5,7 +5,12 @@ import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.producer._
-import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringDeserializer, StringSerializer}
+import org.apache.kafka.common.serialization.{
+  ByteArrayDeserializer,
+  ByteArraySerializer,
+  StringDeserializer,
+  StringSerializer
+}
 import akka.Done
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.http.scaladsl.util.FastFuture._
@@ -47,9 +52,9 @@ object SaslConfig {
 
     override def writes(o: SaslConfig): JsValue =
       Json.obj(
-        "username"        -> o.username,
-        "password" -> o.password,
-        "mechanism" -> o.mechanism,
+        "username"  -> o.username,
+        "password"  -> o.password,
+        "mechanism" -> o.mechanism
       )
 
     override def reads(json: JsValue): JsResult[SaslConfig] =
@@ -72,16 +77,16 @@ object KafkaConfig {
 
     override def writes(o: KafkaConfig): JsValue =
       Json.obj(
-        "servers"        -> JsArray(o.servers.map(JsString.apply)),
-        "keyPass"        -> o.keyPass.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "keystore"       -> o.keystore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "truststore"     -> o.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "topic"          -> o.topic,
-        "sendEvents"     -> o.sendEvents,
-        "hostValidation" -> o.hostValidation,
-        "mtlsConfig"     -> o.mtlsConfig.json,
-        "securityProtocol"-> o.securityProtocol,
-        "saslConfig" -> o.saslConfig.map(SaslConfig.format.writes),
+        "servers"          -> JsArray(o.servers.map(JsString.apply)),
+        "keyPass"          -> o.keyPass.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "keystore"         -> o.keystore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "truststore"       -> o.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "topic"            -> o.topic,
+        "sendEvents"       -> o.sendEvents,
+        "hostValidation"   -> o.hostValidation,
+        "mtlsConfig"       -> o.mtlsConfig.json,
+        "securityProtocol" -> o.securityProtocol,
+        "saslConfig"       -> o.saslConfig.map(SaslConfig.format.writes)
       )
 
     override def reads(json: JsValue): JsResult[KafkaConfig] =
@@ -120,7 +125,7 @@ object KafkaSettings {
   private def getSaslJaasClass(mechanism: String) = {
     mechanism match {
       case "SCRAM-SHA-512" | "SCRAM-SHA-256" => "org.apache.kafka.common.security.scram.ScramLoginModule"
-      case _ => "org.apache.kafka.common.security.plain.PlainLoginModule"
+      case _                                 => "org.apache.kafka.common.security.plain.PlainLoginModule"
     }
   }
 
@@ -132,8 +137,8 @@ object KafkaSettings {
   }
 
   def kafkaSettings(_env: otoroshi.env.Env, config: KafkaConfig): Map[String, String] = {
-    val username = config.saslConfig.map(_.username).getOrElse("foo")
-    val password = config.saslConfig.map(_.password).getOrElse("bar")
+    val username  = config.saslConfig.map(_.username).getOrElse("foo")
+    val password  = config.saslConfig.map(_.password).getOrElse("bar")
     val mechanism = config.saslConfig.map(_.mechanism).getOrElse("PLAIN")
 
     val entity = ConsumerSettings
@@ -155,20 +160,24 @@ object KafkaSettings {
           .applyOnIf(!config.hostValidation)(
             _.withProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "")
           )
-      case _ =>
+      case _                  =>
         entity
           .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, config.securityProtocol)
           .withProperty(SaslConfigs.SASL_MECHANISM, mechanism)
-          .withProperty(SaslConfigs.SASL_JAAS_CONFIG,
-            s"""${getSaslJaasClass(mechanism)} required username="$username" password="$password";""")
+          .withProperty(
+            SaslConfigs.SASL_JAAS_CONFIG,
+            s"""${getSaslJaasClass(mechanism)} required username="$username" password="$password";"""
+          )
     }
 
     if (config.securityProtocol == "SASL_SSL") {
       settings = settings
         .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL")
         .withProperty(SaslConfigs.SASL_MECHANISM, mechanism)
-        .withProperty(SaslConfigs.SASL_JAAS_CONFIG,
-          s"""${getSaslJaasClass(mechanism)} required username="$username" password="$password";""")
+        .withProperty(
+          SaslConfigs.SASL_JAAS_CONFIG,
+          s"""${getSaslJaasClass(mechanism)} required username="$username" password="$password";"""
+        )
     }
 
     if (config.mtlsConfig.mtls) {

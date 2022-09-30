@@ -99,10 +99,11 @@ export class NgFormRenderer extends Component {
               display: 'flex',
               flexDirection: 'column',
               width: '100%',
-              ...(this.props.rawSchema.style || {})
-            }} onClick={e => {
+              ...(this.props.rawSchema.style || {}),
+            }}
+            onClick={(e) => {
               // console.log(e.target, e.currentTarget, e.target == e.currentTarget)
-              this.setState({ folded: !this.state.folded })
+              this.setState({ folded: !this.state.folded });
             }}>
             <div
               style={{
@@ -129,7 +130,7 @@ export class NgFormRenderer extends Component {
                 </button>
               )}
             </div>
-            <div onClick={e => e.stopPropagation()}>
+            <div onClick={(e) => e.stopPropagation()}>
               {!this.state.folded && this.props.children}
             </div>
           </div>

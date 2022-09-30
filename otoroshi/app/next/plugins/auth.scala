@@ -21,7 +21,8 @@ object NgAuthModuleConfig {
   val format = new Format[NgAuthModuleConfig] {
     override def reads(json: JsValue): JsResult[NgAuthModuleConfig] = Try {
       NgAuthModuleConfig(
-        module = json.select("auth_module").asOpt[String].orElse(json.select("module").asOpt[String]).filter(_.nonEmpty),
+        module =
+          json.select("auth_module").asOpt[String].orElse(json.select("module").asOpt[String]).filter(_.nonEmpty),
         passWithApikey = json.select("pass_with_apikey").asOpt[Boolean].getOrElse(false)
       )
     } match {
@@ -140,14 +141,14 @@ object NgAuthModuleUserExtractorConfig {
   val format = new Format[NgAuthModuleUserExtractorConfig] {
     override def reads(json: JsValue): JsResult[NgAuthModuleUserExtractorConfig] = Try {
       NgAuthModuleUserExtractorConfig(
-        module = json.select("auth_module").asOpt[String].orElse(json.select("module").asOpt[String]).filter(_.nonEmpty),
+        module = json.select("auth_module").asOpt[String].orElse(json.select("module").asOpt[String]).filter(_.nonEmpty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: NgAuthModuleUserExtractorConfig): JsValue             = Json.obj(
-      "auth_module"      -> o.module.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+      "auth_module" -> o.module.map(JsString.apply).getOrElse(JsNull).as[JsValue]
     )
   }
 }
@@ -160,32 +161,50 @@ class NgAuthModuleUserExtractor extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def isAccessAsync: Boolean = true
-  override def multiInstance: Boolean                      = true
-  override def core: Boolean                               = true
-  override def name: String                                = "User extraction from auth. module"
-  override def description: Option[String]                 = "This plugin extracts users from an authentication module without enforcing login".some
+  override def isAccessAsync: Boolean                                       = true
+  override def multiInstance: Boolean                                       = true
+  override def core: Boolean                                                = true
+  override def name: String                                                 = "User extraction from auth. module"
+  override def description: Option[String]                                  =
+    "This plugin extracts users from an authentication module without enforcing login".some
   override def defaultConfigObject: Option[NgAuthModuleUserExtractorConfig] = NgAuthModuleUserExtractorConfig().some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
 
     def error(status: Results.Status, msg: String, code: String): Future[NgAccess] = {
-      Errors.craftResponseResult(
-        msg, status, ctx.request, None, code.some,
-        attrs = ctx.attrs, maybeRoute = ctx.route.some
-      ).map(NgAccess.NgDenied.apply)
+      Errors
+        .craftResponseResult(
+          msg,
+          status,
+          ctx.request,
+          None,
+          code.some,
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some
+        )
+        .map(NgAccess.NgDenied.apply)
     }
 
     val NgAuthModuleUserExtractorConfig(module) =
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgAuthModuleUserExtractorConfig())
-    val descriptor                                 = ctx.route.serviceDescriptor
+    val descriptor                              = ctx.route.serviceDescriptor
     ctx.attrs.get(otoroshi.plugins.Keys.UserKey) match {
       case None => {
         module match {
-          case None => error(Results.InternalServerError, "Auth. config. ref not found on the descriptor", "errors.auth.config.ref.not.found")
+          case None      =>
+            error(
+              Results.InternalServerError,
+              "Auth. config. ref not found on the descriptor",
+              "errors.auth.config.ref.not.found"
+            )
           case Some(ref) => {
             env.proxyState.authModule(ref) match {
-              case None => error(Results.InternalServerError, "Auth. config. not found on the descriptor", "errors.auth.config.not.found")
+              case None       =>
+                error(
+                  Results.InternalServerError,
+                  "Auth. config. not found on the descriptor",
+                  "errors.auth.config.not.found"
+                )
               case Some(auth) => {
                 // here there is a datastore access (by key) to get the user session
                 PrivateAppsUserHelper.isPrivateAppsSessionValidWithAuth(ctx.request, descriptor, auth).flatMap {
@@ -201,7 +220,7 @@ class NgAuthModuleUserExtractor extends NgAccessValidator {
           }
         }
       }
-      case _ => NgAccess.NgAllowed.vfuture
+      case _    => NgAccess.NgAllowed.vfuture
     }
   }
 }
@@ -214,13 +233,13 @@ object NgAuthModuleExpectedUserConfig {
   val format = new Format[NgAuthModuleExpectedUserConfig] {
     override def reads(json: JsValue): JsResult[NgAuthModuleExpectedUserConfig] = Try {
       NgAuthModuleExpectedUserConfig(
-        onlyFrom = json.select("only_from").asOpt[Seq[String]].getOrElse(Seq.empty),
+        onlyFrom = json.select("only_from").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: NgAuthModuleExpectedUserConfig): JsValue = Json.obj(
+    override def writes(o: NgAuthModuleExpectedUserConfig): JsValue             = Json.obj(
       "only_from" -> JsArray(o.onlyFrom.map(JsString.apply))
     )
   }
@@ -234,27 +253,34 @@ class NgAuthModuleExpectedUser extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def isAccessAsync: Boolean = true
-  override def multiInstance: Boolean                      = true
-  override def core: Boolean                               = true
-  override def name: String                                = "User logged in expected"
-  override def description: Option[String]                 = "This plugin enforce that a user from any auth. module is logged in".some
+  override def isAccessAsync: Boolean                                      = true
+  override def multiInstance: Boolean                                      = true
+  override def core: Boolean                                               = true
+  override def name: String                                                = "User logged in expected"
+  override def description: Option[String]                                 = "This plugin enforce that a user from any auth. module is logged in".some
   override def defaultConfigObject: Option[NgAuthModuleExpectedUserConfig] = NgAuthModuleExpectedUserConfig().some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
 
     def error(status: Results.Status, msg: String, code: String): Future[NgAccess] = {
-      Errors.craftResponseResult(
-        msg, status, ctx.request, None, code.some,
-        attrs = ctx.attrs, maybeRoute = ctx.route.some
-      ).map(NgAccess.NgDenied.apply)
+      Errors
+        .craftResponseResult(
+          msg,
+          status,
+          ctx.request,
+          None,
+          code.some,
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some
+        )
+        .map(NgAccess.NgDenied.apply)
     }
 
     val NgAuthModuleExpectedUserConfig(onlyFrom) =
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgAuthModuleExpectedUserConfig())
 
     ctx.attrs.get(otoroshi.plugins.Keys.UserKey) match {
-      case None => error(Results.Unauthorized, "You're not authorized here !", "errors.auth.unauthorized")
+      case None                            => error(Results.Unauthorized, "You're not authorized here !", "errors.auth.unauthorized")
       case Some(user) if onlyFrom.nonEmpty => {
         if (onlyFrom.contains(user.authConfigId)) {
           NgAccess.NgAllowed.vfuture
@@ -262,7 +288,7 @@ class NgAuthModuleExpectedUser extends NgAccessValidator {
           error(Results.Unauthorized, "You're not authorized here !", "errors.auth.unauthorized")
         }
       }
-      case Some(_) => NgAccess.NgAllowed.vfuture
+      case Some(_)                         => NgAccess.NgAllowed.vfuture
     }
   }
 }

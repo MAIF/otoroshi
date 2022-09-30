@@ -182,8 +182,8 @@ export function allServices(env, group) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-      ? `/bo/api/proxy/api/services?filter.groups=${group}`
-      : `/bo/api/proxy/api/services`;
+    ? `/bo/api/proxy/api/services?filter.groups=${group}`
+    : `/bo/api/proxy/api/services`;
   return fetch(url, {
     method: 'GET',
     credentials: 'include',
@@ -711,9 +711,9 @@ export function findAllEurekaServers() {
     method: 'GET',
     credentials: 'include',
     headers: {
-      Accept: 'application/json'
-    }
-  }).then(r => r.json())
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
 }
 
 export function getEurekaApps(eurekaServerId) {
@@ -721,9 +721,9 @@ export function getEurekaApps(eurekaServerId) {
     method: 'GET',
     credentials: 'include',
     headers: {
-      Accept: 'application/json'
-    }
-  }).then(r => r.json())
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
 }
 
 export function getExternalEurekaServers(url) {
@@ -731,9 +731,9 @@ export function getExternalEurekaServers(url) {
     method: 'GET',
     credentials: 'include',
     headers: {
-      Accept: 'application/json'
-    }
-  }).then(r => r.json())
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
 }
 
 export function discardAllSessions() {
@@ -1844,7 +1844,7 @@ export function dataExportertryIt(content) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(content),
-  })
+  });
 }
 
 export function routeEntries(routeId) {
@@ -1941,10 +1941,11 @@ export const getOldPlugins = () =>
 
 export const getCategories = () => fetchWrapper('/plugins/categories');
 
-export const convertAsRoute = id => fetch(`/bo/api/proxy/api/services/${id}/route`, {
-  method: 'GET',
-  credentials: 'include',
-  headers: {
-    Accept: 'application/json',
-  },
-}).then((r) => r.json());
+export const convertAsRoute = (id) =>
+  fetch(`/bo/api/proxy/api/services/${id}/route`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());

@@ -61,17 +61,17 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
     val url          = event.headOption
       .map(evt =>
         webhook.url
-          .applyOnWithOpt(evt.select("@service").asOpt[String]) {
-            case (wh, service) => wh.replace("@service", service)
+          .applyOnWithOpt(evt.select("@service").asOpt[String]) { case (wh, service) =>
+            wh.replace("@service", service)
           }
-          .applyOnWithOpt(evt.select("@serviceId").asOpt[String]) {
-            case (wh, serviceId) => wh.replace("@serviceId", serviceId)
+          .applyOnWithOpt(evt.select("@serviceId").asOpt[String]) { case (wh, serviceId) =>
+            wh.replace("@serviceId", serviceId)
           }
-          .applyOnWithOpt(evt.select("@id").asOpt[String]) {
-            case (wh, id) => wh.replace("@id", id)
+          .applyOnWithOpt(evt.select("@id").asOpt[String]) { case (wh, id) =>
+            wh.replace("@id", id)
           }
-          .applyOnWithOpt(evt.select("@messageType").asOpt[String]) {
-            case (wh, messageType) => wh.replace("@type", messageType)
+          .applyOnWithOpt(evt.select("@messageType").asOpt[String]) { case (wh, messageType) =>
+            wh.replace("@type", messageType)
           }
       )
       .getOrElse(webhook.url)

@@ -81,16 +81,15 @@ export default function ({ route, hide }) {
       });
 
       routeEntries(route.id).then((data) => {
-        if (data.entries)
-          setPlaygroundUrl(data.entries[0])
+        if (data.entries) setPlaygroundUrl(data.entries[0]);
       });
 
       setTesterView(
         route &&
-        route.plugins.find((f) => f.plugin.includes('GraphQLBackend')) &&
-        route.plugins.find((f) => f.plugin.includes('GraphQLBackend')).enabled &&
-        playgroundUrl &&
-        lastQuery
+          route.plugins.find((f) => f.plugin.includes('GraphQLBackend')) &&
+          route.plugins.find((f) => f.plugin.includes('GraphQLBackend')).enabled &&
+          playgroundUrl &&
+          lastQuery
       );
     }
   }, [route]);
@@ -103,13 +102,13 @@ export default function ({ route, hide }) {
 
   useEffect(() => {
     loadLastQuery();
-    loadTestingRouteHistory()
+    loadTestingRouteHistory();
   }, []);
 
-  const setRequest = newReq => {
+  const setRequest = (newReq) => {
     saveTestingRouteHistory(newReq);
-    updateRequest(newReq)
-  }
+    updateRequest(newReq);
+  };
 
   useEffect(() => {
     if (lastQuery) localStorage.removeItem('graphql-playground');
@@ -130,48 +129,58 @@ export default function ({ route, hide }) {
   const loadTestingRouteHistory = () => {
     try {
       const storedData = JSON.parse(localStorage.getItem('testers'));
-      const r = storedData.routes.find(r => r.id === route.id)
+      const r = storedData.routes.find((r) => r.id === route.id);
       if (storedData && r) {
-        setRequest(r)
+        setRequest(r);
       }
-    } catch (_) { }
-  }
+    } catch (_) {}
+  };
 
-  const saveTestingRouteHistory = request => {
+  const saveTestingRouteHistory = (request) => {
     const storedData = JSON.parse(localStorage.getItem('testers'));
     if (!storedData)
-      localStorage.setItem('testers', JSON.stringify({
-        routes: [{
-          id: route.id,
-          ...request
-        }]
-      }))
-    else {
-      if (storedData.routes.find(r => r.id === route.id)) {
-        localStorage.setItem('testers', JSON.stringify({
-          routes: (storedData.routes || []).map(r => {
-            if (r.id === route.id)
-              return {
-                id: route.id,
-                ...request
-              }
-            return r
-          })
-        }))
-      }
-      else {
-        localStorage.setItem('testers', JSON.stringify({
+      localStorage.setItem(
+        'testers',
+        JSON.stringify({
           routes: [
-            ...(storedData.routes || []),
             {
               id: route.id,
-              ...request
-            }
-          ]
-        }))
+              ...request,
+            },
+          ],
+        })
+      );
+    else {
+      if (storedData.routes.find((r) => r.id === route.id)) {
+        localStorage.setItem(
+          'testers',
+          JSON.stringify({
+            routes: (storedData.routes || []).map((r) => {
+              if (r.id === route.id)
+                return {
+                  id: route.id,
+                  ...request,
+                };
+              return r;
+            }),
+          })
+        );
+      } else {
+        localStorage.setItem(
+          'testers',
+          JSON.stringify({
+            routes: [
+              ...(storedData.routes || []),
+              {
+                id: route.id,
+                ...request,
+              },
+            ],
+          })
+        );
       }
     }
-  }
+  };
 
   const hidePlaygroundStuff = (route, retry) => {
     if (!route) {
@@ -276,15 +285,15 @@ export default function ({ route, hide }) {
       ),
       ...(format === 'basic'
         ? {
-          'authorization-header': {
-            key: apikeyHeader || request.apikeyHeader,
-            value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-          },
-        }
+            'authorization-header': {
+              key: apikeyHeader || request.apikeyHeader,
+              value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+            },
+          }
         : {
-          'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
-          'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
-        }),
+            'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
+            'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
+          }),
     };
   };
 
@@ -296,13 +305,18 @@ export default function ({ route, hide }) {
         <h3>Testing</h3>
         {route &&
           route.plugins.find((f) => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') && (
-            <div style={{
-              padding: '5px',
-              borderRadius: '24px',
-              backgroundColor: '#373735',
-              position: 'relative'
-            }}>
-              <div className={`tryit-selector-cursor ${(!testerView || testerView === 'rest') ? '' : 'tryit-selector-mode-right'}`} />
+            <div
+              style={{
+                padding: '5px',
+                borderRadius: '24px',
+                backgroundColor: '#373735',
+                position: 'relative',
+              }}>
+              <div
+                className={`tryit-selector-cursor ${
+                  !testerView || testerView === 'rest' ? '' : 'tryit-selector-mode-right'
+                }`}
+              />
               <button
                 className="tryit-selector-mode"
                 type="button"
@@ -317,11 +331,7 @@ export default function ({ route, hide }) {
               </button>
             </div>
           )}
-        <button
-          className="btn btn-sm"
-          type="button"
-          style={{ minWidth: '36px' }}
-          onClick={hide}>
+        <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
           <i className="fas fa-times" style={{ color: '#fff' }} />
         </button>
       </div>
@@ -361,7 +371,7 @@ export default function ({ route, hide }) {
             padding: '12px',
             borderRadius: '8px',
             margin: '10px',
-            flex: 1
+            flex: 1,
           }}>
           <div className="d-flex">
             <div style={{ minWidth: '200px' }}>
@@ -369,10 +379,12 @@ export default function ({ route, hide }) {
                 options={METHODS}
                 value={request.method}
                 ngOptions={{
-                  spread: true
+                  spread: true,
                 }}
-                onChange={method => setRequest({ ...request, method })}
-                optionsTransformer={arr => (arr || []).map((item) => ({ value: item, label: item }))}
+                onChange={(method) => setRequest({ ...request, method })}
+                optionsTransformer={(arr) =>
+                  (arr || []).map((item) => ({ value: item, label: item }))
+                }
               />
             </div>
             <input
@@ -430,9 +442,7 @@ export default function ({ route, hide }) {
             {selectedTab === 'Authorization' && headersStatus === 'down' && (
               <div className="d-flex">
                 <div className="mt-3 flex">
-                  <div
-                    className="d-flex-between pe-3"
-                    style={{ flex: 0.5 }}>
+                  <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
                     <BooleanInput
                       flex={true}
                       label="Use an apikey"
@@ -457,13 +467,15 @@ export default function ({ route, hide }) {
                                 ...request,
                                 apikey: k,
                                 headers: apikeyToHeader(request.apikeyFormat, k),
-                              })
+                              });
                             }}
                             ngOptions={{
-                              spread: true
+                              spread: true,
                             }}
                             options={apikeys}
-                            optionsTransformer={arr => arr.map((item) => ({ value: item.clientId, label: item.clientName }))}
+                            optionsTransformer={(arr) =>
+                              arr.map((item) => ({ value: item.clientId, label: item.clientName }))
+                            }
                           />
                         </div>
                       </div>
@@ -478,7 +490,7 @@ export default function ({ route, hide }) {
                                   { value: 'credentials', label: 'Client ID/Secret headers' },
                                 ]}
                                 ngOptions={{
-                                  spread: true
+                                  spread: true,
                                 }}
                                 value={request.apikeyFormat}
                                 onChange={(k) =>
@@ -518,9 +530,7 @@ export default function ({ route, hide }) {
                   )}
                 </div>
                 <div className="mt-3 ms-3 flex">
-                  <div
-                    className="d-flex-between pe-3"
-                    style={{ flex: 0.5 }}>
+                  <div className="d-flex-between pe-3" style={{ flex: 0.5 }}>
                     <BooleanInput
                       flex={true}
                       label="Use a certificate client"
@@ -539,7 +549,7 @@ export default function ({ route, hide }) {
                         <div className="flex">
                           <NgSelectRenderer
                             ngOptions={{
-                              spread: true
+                              spread: true,
                             }}
                             options={certificates}
                             value={request.client_cert}
@@ -549,7 +559,9 @@ export default function ({ route, hide }) {
                                 client_cert,
                               })
                             }
-                            optionsTransformer={arr => arr.map((item) => ({ value: item.id, label: item.name }))}
+                            optionsTransformer={(arr) =>
+                              arr.map((item) => ({ value: item.id, label: item.name }))
+                            }
                           />
                         </div>
                       </div>
@@ -612,30 +624,32 @@ export default function ({ route, hide }) {
                   label="Use a body"
                   value={request.body === 'raw' ? true : false}
                   onChange={() => {
-                    const enabled = request.body === 'raw'
-                    if (enabled)
-                      setRequest({ ...request, body: undefined })
-                    else
-                      setRequest({ ...request, body: 'raw', contentType: 'json' })
+                    const enabled = request.body === 'raw';
+                    if (enabled) setRequest({ ...request, body: undefined });
+                    else setRequest({ ...request, body: 'raw', contentType: 'json' });
                   }}
                 />
-                {request.body === 'raw' && <>
-                  <NgSelectRenderer
-                    label="Type of content"
-                    options={CONTENT_TYPE}
-                    value={request.contentType}
-                    onChange={(contentType) => setRequest({ ...request, contentType })}
-                    optionsTransformer={arr => arr.map((item) => ({ value: item, label: item }))}
-                  />
-                  <Suspense fallback={<div>Loading ...</div>}>
-                    <CodeInput
-                      label="Content"
-                      value={request.bodyContent}
-                      mode={request.contentType}
-                      onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
+                {request.body === 'raw' && (
+                  <>
+                    <NgSelectRenderer
+                      label="Type of content"
+                      options={CONTENT_TYPE}
+                      value={request.contentType}
+                      onChange={(contentType) => setRequest({ ...request, contentType })}
+                      optionsTransformer={(arr) =>
+                        arr.map((item) => ({ value: item, label: item }))
+                      }
                     />
-                  </Suspense>
-                </>}
+                    <Suspense fallback={<div>Loading ...</div>}>
+                      <CodeInput
+                        label="Content"
+                        value={request.bodyContent}
+                        mode={request.contentType}
+                        onChange={(bodyContent) => setRequest({ ...request, bodyContent })}
+                      />
+                    </Suspense>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -775,9 +789,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     search.length <= 0
       ? true
       : step.task.includes(search) ||
-      [...(step?.ctx?.plugins || [])].find((plugin) =>
-        search.length <= 0 ? true : plugin.name.includes(search)
-      );
+        [...(step?.ctx?.plugins || [])].find((plugin) =>
+          search.length <= 0 ? true : plugin.name.includes(search)
+        );
 
   const isPluginNameMatchingSearch = (plugin) =>
     search.length <= 0 ? true : plugin.name.includes(search);
@@ -797,8 +811,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
       return unit === 'ms'
         ? roundNsTo(report.duration_ns)
         : unit === 'ns'
-          ? report.duration_ns
-          : 100;
+        ? report.duration_ns
+        : 100;
     else {
       const value = [...steps]
         .filter(isOnFlow)
@@ -807,8 +821,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           const userPluginsFlow =
             step.ctx && step.ctx.plugins
               ? [...(step.ctx?.plugins || [])]
-                .filter(isPluginNameMatchingSearch)
-                .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
+                  .filter(isPluginNameMatchingSearch)
+                  .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
               : 0;
 
           if (flow === 'user')
@@ -867,8 +881,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
         </div>
         <div
           onClick={() => setSelectedStep(-1)}
-          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${informations.state === 'Successful' ? 'success' : 'danger'
-            }`}>
+          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${
+            informations.state === 'Successful' ? 'success' : 'danger'
+          }`}>
           <span>Report</span>
           <span>
             {reportDuration()} {unit}
@@ -890,13 +905,15 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                     setSelectedPlugin(-1);
                     setSelectedStep(step.task);
                   }}
-                  className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep ? 'btn-dark' : ''
-                    }`}>
+                  className={`d-flex-between mt-1 px-3 py-2 report-step ${
+                    step.task === selectedStep ? 'btn-dark' : ''
+                  }`}>
                   <div className="d-flex align-items-center">
                     {displaySubList && (
                       <i
-                        className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
-                          } me-1`}
+                        className={`fas fa-chevron-${
+                          step.open || flow === 'user' ? 'down' : 'right'
+                        } me-1`}
                         onClick={() =>
                           setSteps(
                             steps.map((s) =>
@@ -913,8 +930,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                       {unit === 'ms'
                         ? roundNsTo(step.duration_ns)
                         : unit === 'ns'
-                          ? step.duration_ns
-                          : percentage}{' '}
+                        ? step.duration_ns
+                        : percentage}{' '}
                       {unit}
                     </span>
                   )}
@@ -936,17 +953,18 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                           key={plugin.name}
                           style={{ width: 'calc(100% - 12px)', marginLeft: '12px' }}
                           onClick={() => setSelectedPlugin(plugin.name)}
-                          className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep && plugin.name === selectedPlugin
-                            ? 'btn-dark'
-                            : ''
-                            }`}>
+                          className={`d-flex-between mt-1 px-3 py-2 report-step ${
+                            step.task === selectedStep && plugin.name === selectedPlugin
+                              ? 'btn-dark'
+                              : ''
+                          }`}>
                           <span>{firstLetterUppercase(pluginName)}</span>
                           <span style={{ maxWidth: '100px', textAlign: 'right' }}>
                             {unit === 'ms'
                               ? roundNsTo(plugin.duration_ns)
                               : unit === 'ns'
-                                ? plugin.duration_ns
-                                : pluginPercentage}{' '}
+                              ? plugin.duration_ns
+                              : pluginPercentage}{' '}
                             {unit}
                           </span>
                         </div>
@@ -961,7 +979,7 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
         width="100%"
         editorOnly={true}
         ace_config={{
-          maxLines: Infinity
+          maxLines: Infinity,
         }}
         value={
           JSON.stringify(
@@ -970,8 +988,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                 ? informations
                 : steps.find((t) => t.task === selectedStep)
               : steps
-                .find((t) => t.task === selectedStep)
-                ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+                  .find((t) => t.task === selectedStep)
+                  ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
             null,
             4
           ) +

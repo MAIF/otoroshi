@@ -1015,26 +1015,32 @@ class OpenApiGenerator(
 
   def run(): JsValue = runAndMaybeWrite()._1
 
-  def discoverEntities(result: TrieMap[String, JsValue], entity: (String, JsValue), out: TrieMap[String, JsValue]): Any = {
+  def discoverEntities(
+      result: TrieMap[String, JsValue],
+      entity: (String, JsValue),
+      out: TrieMap[String, JsValue]
+  ): Any = {
     out.put(entity._1, entity._2)
 
-    Json.prettyPrint(entity._2)
-        .split("\n")
-        .filter(p => p.contains("$ref"))
-        .map(p => p.replace("\"", "").trim().split("/").last)
-        .foreach(name => {
-          result.get(name) match {
-            case Some(entity) =>
-              if (!out.contains(name))
-                discoverEntities(result, (name, entity), out)
-              out.put(name, entity)
-            case None =>
-          }
-        })
+    Json
+      .prettyPrint(entity._2)
+      .split("\n")
+      .filter(p => p.contains("$ref"))
+      .map(p => p.replace("\"", "").trim().split("/").last)
+      .foreach(name => {
+        result.get(name) match {
+          case Some(entity) =>
+            if (!out.contains(name))
+              discoverEntities(result, (name, entity), out)
+            out.put(name, entity)
+          case None         =>
+        }
+      })
   }
 
   def discoverEntitiesFromPaths(result: JsValue) = {
-    Json.prettyPrint(result)
+    Json
+      .prettyPrint(result)
       .split("\n")
       .filter(p => p.contains("$ref"))
       .map(p => p.replace("\"", "").trim().split("/").last)

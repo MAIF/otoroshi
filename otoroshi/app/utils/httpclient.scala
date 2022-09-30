@@ -119,7 +119,7 @@ case class MtlsConfig(
       }
     }
   }
-  def json: JsValue = MtlsConfig.format.writes(this)
+  def json: JsValue       = MtlsConfig.format.writes(this)
   def toJKS(implicit env: Env): (java.io.File, java.io.File, String) = {
     val password      = IdGenerator.token
     val path1         = java.nio.file.Files.createTempFile("oto-kafka-keystore-", ".jks")
@@ -220,9 +220,9 @@ class WsClientChooser(
   private[utils] val lastSslConfig           = new AtomicReference[SSLConfigSettings](null)
   private[utils] val connectionContextHolder = new AtomicReference[WSClient](null)
 
-  private val nettyClientConfig = NettyClientConfig.parseFrom(env)
+  private val nettyClientConfig  = NettyClientConfig.parseFrom(env)
   private val enforceNettyOnAkka = nettyClientConfig.enforceAkkaClient
-  private val enforceAll = nettyClientConfig.enforceAll
+  private val enforceAll         = nettyClientConfig.enforceAll
 
   // private def getAhcInstance(): WSClient = {
   //   val currentSslContext = DynamicSSLEngineProvider.sslConfigSettings
@@ -299,7 +299,7 @@ class WsClientChooser(
   def urlWithCert(url: String, mtlsConfig: Option[MtlsConfig]): WSRequest = {
     if (enforceNettyOnAkka || enforceAll) {
       mtlsConfig match {
-        case None => NettyHttpClient.url(url, httpClient)
+        case None    => NettyHttpClient.url(url, httpClient)
         case Some(c) => NettyHttpClient.url(url, httpClient).withTlsConfig(c)
       }
     } else {
@@ -385,11 +385,11 @@ class WsClientChooser(
   def urlWithProtocol(protocol: String, url: String, clientConfig: ClientConfig = ClientConfig()): WSRequest = {
     val useAkkaHttpClient = env.datastores.globalConfigDataStore.latestSafe.map(_.useAkkaHttpClient).getOrElse(false)
     protocol.toLowerCase() match {
-      case _ if enforceAll =>
+      case _ if enforceAll                                            =>
         NettyHttpClient.url(url, httpClient).withClientConfig(clientConfig).withProtocol(protocol)
       case _ if enforceNettyOnAkka && (useAkkaHttpClient || fullAkka) =>
         NettyHttpClient.url(url, httpClient).withClientConfig(clientConfig).withProtocol(protocol)
-      case "http" if useAkkaHttpClient || fullAkka  =>
+      case "http" if useAkkaHttpClient || fullAkka                    =>
         new AkkaWsClientRequest(
           akkaClient,
           url,
@@ -400,7 +400,7 @@ class WsClientChooser(
         )(
           akkaClient.mat
         )
-      case "https" if useAkkaHttpClient || fullAkka =>
+      case "https" if useAkkaHttpClient || fullAkka                   =>
         new AkkaWsClientRequest(
           akkaClient,
           url,
@@ -864,9 +864,10 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
     val request = __request
       .applyOnWithPredicate(_.uri.scheme == "http")(r => r.copy(uri = r.uri.copy(scheme = "ws")))
       .applyOnWithPredicate(_.uri.scheme == "https")(r => r.copy(uri = r.uri.copy(scheme = "wss")))
-      .copy(extraHeaders = __request.extraHeaders
-        .filterNot(h => h.lowercaseName() == "content-length")
-        .filterNot(h => h.lowercaseName() == "content-type")
+      .copy(extraHeaders =
+        __request.extraHeaders
+          .filterNot(h => h.lowercaseName() == "content-length")
+          .filterNot(h => h.lowercaseName() == "content-type")
       )
     clientCerts match {
       case certs if (clientCerts ++ trustedCerts).isEmpty  => {

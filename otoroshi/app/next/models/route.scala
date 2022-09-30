@@ -965,7 +965,8 @@ object NgRoute {
               plugin = pluginId[ApikeyCalls],
               include = service.privatePatterns,
               exclude =
-                if (service.detectApiKeySooner) Seq.empty else (
+                if (service.detectApiKeySooner) Seq.empty
+                else (
                   if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) Seq.empty
                   else service.publicPatterns
                 ),
@@ -1034,7 +1035,7 @@ object NgRoute {
                     "ttl"         -> service.secComTtl.toSeconds,
                     "header_name" -> service.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim).json,
                     "algo"        -> (if (service.secComUseSameAlgo) service.secComSettings.asJson
-                    else service.secComAlgoInfoToken.asJson)
+                               else service.secComAlgoInfoToken.asJson)
                   )
                 ).json.asObject
               )
@@ -1069,7 +1070,9 @@ object NgRoute {
                 }
                 plugin match {
                   case p: NgPlugin => {
-                    val config: JsObject = service.plugins.config.select(p.getClass.getSimpleName).asOpt[JsValue]
+                    val config: JsObject = service.plugins.config
+                      .select(p.getClass.getSimpleName)
+                      .asOpt[JsValue]
                       .orElse(plugin.defaultConfig)
                       .map(_.asObject)
                       .getOrElse(Json.obj())
@@ -1079,7 +1082,7 @@ object NgRoute {
                       config = NgPluginInstanceConfig(config)
                     ).some
                   }
-                  case _ => {
+                  case _           => {
                     plugin.pluginType match {
                       case PluginType.AppType             => makeInst(pluginId[RequestTransformerWrapper])
                       case PluginType.TransformerType     => makeInst(pluginId[RequestTransformerWrapper])

@@ -365,12 +365,7 @@ class SideView extends React.Component {
 
 class FieldForm extends React.Component {
   state = {
-    flow: [
-      'name',
-      'fieldType',
-      'arguments',
-      'directives'
-    ],
+    flow: ['name', 'fieldType', 'arguments', 'directives'],
     schema: {
       name: {
         type: 'string',
@@ -384,11 +379,13 @@ class FieldForm extends React.Component {
           type: {
             type: 'select',
             props: {
-              label: "Type",
+              label: 'Type',
               createOption: true,
-              options: ['Int', 'String', 'Boolean', 'Float', ...this.props.types]
-                .map(r => ({ label: r, value: r })),
-            }
+              options: ['Int', 'String', 'Boolean', 'Float', ...this.props.types].map((r) => ({
+                label: r,
+                value: r,
+              })),
+            },
           },
           required: {
             type: 'bool',
@@ -419,9 +416,11 @@ class FieldForm extends React.Component {
                 type: 'select',
                 props: {
                   label: null,
-                  options: ['Int', 'String', 'Boolean', 'Float']
-                    .map(item => ({ value: item, label: item }))
-                }
+                  options: ['Int', 'String', 'Boolean', 'Float'].map((item) => ({
+                    value: item,
+                    label: item,
+                  })),
+                },
               },
               required: {
                 type: 'bool',
@@ -455,27 +454,43 @@ class FieldForm extends React.Component {
                 'onePermissionsOf',
                 'authorize',
                 'otoroshi (soon)',
-              ].map(item => ({ label: item, value: item })),
-            }
+              ].map((item) => ({ label: item, value: item })),
+            },
           },
           arguments: {
             format: 'form',
             label: 'Arguments',
 
             flow: (value, props) => {
-              const type = props.rootValue?.name
+              const type = props.rootValue?.name;
 
               return {
                 rest: ['url', 'method', 'headers', 'timeout', 'paginate'],
-                graphql: ['url', 'query', 'headers', 'timeout', 'method', 'response_path_arg', 'response_filter_arg'],
+                graphql: [
+                  'url',
+                  'query',
+                  'headers',
+                  'timeout',
+                  'method',
+                  'response_path_arg',
+                  'response_filter_arg',
+                ],
                 json: ['path'],
                 permission: ['value', 'unauthorized_value'],
                 allpermissions: ['values', 'unauthorized_value'],
                 onePermissionsOf: ['values', 'unauthorized_value'],
                 authorize: ['path', 'value', 'unauthorized_value'],
-                soap: ['url', 'envelope', 'action', 'preserve_query', 'charset', 'jq_request_filter', 'jq_response_filter'],
-                [undefined]: []
-              }[type]
+                soap: [
+                  'url',
+                  'envelope',
+                  'action',
+                  'preserve_query',
+                  'charset',
+                  'jq_request_filter',
+                  'jq_response_filter',
+                ],
+                [undefined]: [],
+              }[type];
             },
             schema: {
               url: {
@@ -487,8 +502,8 @@ class FieldForm extends React.Component {
                 props: {
                   label: 'HTTP Method',
                   defaultValue: 'GET',
-                  options: ['GET', 'POST'].map(item => ({ value: item, label: item })),
-                }
+                  options: ['GET', 'POST'].map((item) => ({ value: item, label: item })),
+                },
               },
               headers: {
                 type: 'object',
@@ -510,7 +525,7 @@ class FieldForm extends React.Component {
                 props: {
                   editorOnly: true,
                   label: 'GraphQL Query',
-                }
+                },
               },
               response_path_arg: {
                 type: 'string',
@@ -561,10 +576,10 @@ class FieldForm extends React.Component {
                 type: 'string',
                 label: 'JQ Response filter',
               },
-            }
+            },
           },
         },
-      }
+      },
     },
     formState: null,
   };
@@ -593,10 +608,10 @@ class FieldForm extends React.Component {
           flow={this.state.flow}
           schema={this.state.schema}
           value={this.state.formState}
-          onChange={formState => {
+          onChange={(formState) => {
             this.setState({
-              formState
-            })
+              formState,
+            });
             // TODO - uncomment the next line before push
             // onChange(formState)
           }}
