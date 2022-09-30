@@ -28,6 +28,8 @@ import reactor.netty.NettyOutbound
 import java.security.{Provider, SecureRandom}
 import java.util.function.BiFunction
 import javax.net.ssl._
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}
 
 case class HttpServerBodyResponse(body: Publisher[Array[Byte]], contentType: Option[String], contentLength: Option[Long], chunked: Boolean)
@@ -70,7 +72,10 @@ class ReactorNettyServer(env: Env) {
     }
     val headers = new DefaultHttpHeaders()
     result.header.headers.map {
-      case (key, value) => headers.add(key, value)
+      case (key, value) => if (key != "otoroshi-netty-trailers") headers.add(key, value)
+    }
+    if (bresponse.contentType.contains("application/grpc")) {
+      headers.add(HttpHeaderNames.TRAILER, "grpc-status, grpc-message")
     }
     bresponse.contentType.foreach(ct => headers.add("Content-Type", ct))
     bresponse.contentLength.foreach(cl => headers.addInt("Content-Length", cl.toInt))
@@ -131,6 +136,36 @@ class ReactorNettyServer(env: Env) {
         r
       }
       .chunkedTransfer(bresponse.chunked)
+      .trailerHeaders(theaders => {
+        import collection.JavaConverters._
+        result.header.headers.get("otoroshi-netty-trailers").foreach { trailersId =>
+          otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.get(trailersId).foreach {
+            case Left(future) =>
+              logger.warn(s"Unable to get trailer header for request '${trailersId}'")
+              otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.remove(trailersId)
+              val trailers = Await.result(future, 10.seconds)
+              otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.remove(trailersId)
+              trailers.foreach {
+                case (name, values) =>
+                  try {
+                    theaders.add(name, values.asJava)
+                  } catch {
+                    case e: Throwable => logger.error("error while adding trailer header", e)
+                  }
+              }
+            case Right(trailers) =>
+              otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.remove(trailersId)
+              trailers.foreach {
+                case (name, values) =>
+                  try {
+                    theaders.add(name, values.asJava)
+                  } catch {
+                    case e: Throwable => logger.error("error while adding trailer header", e)
+                  }
+              }
+          }
+        }
+      })
       .keepAlive(true)
       .sendByteArray(bresponse.body)
   }

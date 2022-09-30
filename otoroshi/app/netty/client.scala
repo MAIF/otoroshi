@@ -35,8 +35,9 @@ import java.net.{InetSocketAddress, URI}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, Future, Promise}
 import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success}
 import scala.xml.{Elem, XML}
 
 object NettyHttpClient {
@@ -352,7 +353,14 @@ case class NettyWsClientRequest(
           )
         }
       }
-      .applyOnIf(proto.toLowerCase().startsWith("http/2"))(_.protocol(HttpProtocol.H2))
+      .applyOnIf(proto.toLowerCase().startsWith("http/2")) { client =>
+        val tls = targetOpt.map(_.scheme.startsWith("https")).getOrElse(_uri.scheme.startsWith("https"))
+        if (tls) {
+          client.protocol(HttpProtocol.H2)
+        } else {
+          client.protocol(HttpProtocol.H2C)
+        }
+      }
       .applyOnIf(proto.toLowerCase() == "h2c")(_.protocol(HttpProtocol.H2C))
       .applyOnIf(proto.toLowerCase() == "h2")(_.protocol(HttpProtocol.H2C))
       .applyOnIf(proto.toLowerCase().startsWith("http/1"))(_.protocol(HttpProtocol.HTTP11))
@@ -361,10 +369,9 @@ case class NettyWsClientRequest(
       }
       //.httpResponseDecoder(spec => spec) // TODO: check if needed
       .headers { heads =>
+        import collection.JavaConverters._
         headers.foreach {
-          case (name, values) => values.foreach { value =>
-            heads.add(name, value)
-          }
+          case (name, values) => heads.add(name, values.asJava)
         }
       }
       .request(HttpMethod.valueOf(method.toUpperCase()))
@@ -442,6 +449,25 @@ case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri
   override def uri: URI = new URI(_uri.toRelative.toString())
 
   def toStrict(): NettyWsStrictResponse = NettyWsStrictResponse(this, _bodyAsBytes)
+
+  def trailingHeaders(): Future[Map[String, Seq[String]]] = {
+    ReactiveStreamUtils.MonoUtils.toFuture(resp.trailerHeaders()).map { headers =>
+      headers.names().asScala.map { name =>
+        (name, headers.getAll(name).asScala.toSeq)
+      }.toMap
+    }(env.otoroshiExecutionContext)
+  }
+
+  def registerTrailingHeaders(promise: Promise[Map[String, Seq[String]]]): Unit = {
+    ReactiveStreamUtils.MonoUtils.toFuture(resp.trailerHeaders()).map { headers =>
+      headers.names().asScala.map { name =>
+        (name, headers.getAll(name).asScala.toSeq)
+      }.toMap
+    }(env.otoroshiExecutionContext).andThen {
+      case Failure(ex) => promise.tryFailure(ex)
+      case Success(headers) => promise.trySuccess(headers)
+    }(env.otoroshiExecutionContext)
+  }
 }
 
 case class NettyWsStrictResponse(resp: NettyWsResponse, bodyAsBytes: ByteString) extends WSResponse {
@@ -463,4 +489,7 @@ case class NettyWsStrictResponse(resp: NettyWsResponse, bodyAsBytes: ByteString)
   override def body: String = _bodyAsString
   override def xml: Elem = _bodyAsXml
   override def json: JsValue = _bodyAsJson
+
+  def trailingHeaders(): Future[Map[String, Seq[String]]] = resp.trailingHeaders()
+  def registerTrailingHeaders(promise: Promise[Map[String, Seq[String]]]): Unit = resp.registerTrailingHeaders(promise)
 }

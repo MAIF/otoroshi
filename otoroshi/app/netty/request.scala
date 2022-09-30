@@ -6,8 +6,9 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpRequest
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import org.reactivestreams.Publisher
+import otoroshi.security.IdGenerator
 import play.api.Logger
-import play.api.libs.typedmap.TypedMap
+import play.api.libs.typedmap.{TypedKey, TypedMap}
 import play.api.mvc._
 import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
 import reactor.core.publisher.Flux
@@ -17,8 +18,18 @@ import java.net.{InetAddress, URI}
 import java.security.cert.X509Certificate
 import java.util.concurrent.atomic.AtomicLong
 import javax.net.ssl.{SSLPeerUnverifiedException, SSLSession}
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.util.Try
+
+object NettyRequestKeys {
+  val TrailerHeadersPromiseIdKey = TypedKey[String]("Trailer-Headers-Promise-Id")
+}
+
+object NettyRequestAwaitingTrailers {
+  val awaiting = new TrieMap[String, Either[Future[Map[String, Seq[String]]], Map[String, Seq[String]]]]()
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -104,7 +115,8 @@ class ReactorNettyRequestHeader(req: HttpServerRequest, secure: Boolean, session
     RequestAttrKey.Id      -> ReactorNettyRequest.counter.incrementAndGet(),
     RequestAttrKey.Session -> Cell(zeSession),
     RequestAttrKey.Flash -> Cell(zeFlash),
-    RequestAttrKey.Server -> "reactor-netty-experimental",
+    RequestAttrKey.Server -> "netty-experimental",
+    NettyRequestKeys.TrailerHeadersPromiseIdKey -> IdGenerator.uuid,
     RequestAttrKey.Cookies -> Cell(Cookies(req.cookies().asScala.toSeq.flatMap {
       case (_, cookies) => cookies.asScala.map {
         case cookie: io.netty.handler.codec.http.cookie.DefaultCookie => {
@@ -236,6 +248,7 @@ class NettyRequestHeader(req: HttpRequest, ctx: ChannelHandlerContext, secure: B
     RequestAttrKey.Session -> Cell(zeSession),
     RequestAttrKey.Flash -> Cell(zeFlash),
     RequestAttrKey.Server -> "netty-experimental",
+    NettyRequestKeys.TrailerHeadersPromiseIdKey -> IdGenerator.uuid,
     RequestAttrKey.Cookies -> Cell(Cookies(_cookies.toSeq.flatMap {
       case (_, cookies) => cookies.map {
         case cookie: io.netty.handler.codec.http.cookie.DefaultCookie => {

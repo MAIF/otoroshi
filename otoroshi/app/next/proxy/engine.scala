@@ -35,6 +35,7 @@ import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSRequest
 import play.api.mvc.Results.Status
 import play.api.mvc._
+import play.api.mvc.request.RequestAttrKey
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import scala.concurrent.duration.DurationInt
@@ -2641,17 +2642,38 @@ class ProxyEngine() extends RequestHandler {
       report.markOverheadIn()
       val fu: Future[BackendCallResponse] = builderWithBody
         .stream()
-        .map(response =>
+        .map { response =>
+          val idOpt = rawRequest.attrs.get(otoroshi.netty.NettyRequestKeys.TrailerHeadersPromiseIdKey)
+          val shouldHaveTrailers = route.useNettyClient && finalTarget.protocol == HttpProtocols.`HTTP/2.0` && rawRequest.attrs.get(RequestAttrKey.Server).contains("netty-experimental") && rawRequest.headers.get("te").contains("trailers")
+          if (shouldHaveTrailers) {
+            val id = idOpt.get
+            response match {
+              case r: otoroshi.netty.NettyWsResponse =>
+                val future = r.trailingHeaders()
+                otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.add(id, Left(future))
+                future.map(trls => otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.add(id, Right(trls)))
+              case r: otoroshi.netty.NettyWsStrictResponse =>
+                val future = r.trailingHeaders()
+                otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.add(id, Left(future))
+                future.map(trls => otoroshi.netty.NettyRequestAwaitingTrailers.awaiting.add(id, Right(trls)))
+              case _ =>
+            }
+          }
           BackendCallResponse(
             NgPluginHttpResponse(
               status = response.status,
-              headers = response.headers.mapValues(_.last),
+              headers = response.headers.mapValues(_.last).applyOnIf(shouldHaveTrailers) { hds =>
+                idOpt match {
+                  case Some(id) if shouldHaveTrailers => hds ++ Map("otoroshi-netty-trailers" -> id)
+                  case _ => hds
+                }
+              },
               cookies = response.cookies,
               body = response.bodyAsSource
             ),
             response.some
           )
-        )
+        }
         .andThen { case Success(_) =>
           report.startOverheadOut()
         }
