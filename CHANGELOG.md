@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.14] - 2022-09-30
+
+https://github.com/MAIF/otoroshi/milestone/46?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.13...v1.5.14
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.14
+
+- add experimental HTTP/3 support for netty server backend (#1254)
+- kafka exporter - SASL Authentication (#1211)
+- fix node communication behing load balancers for tunnels (#1234)
+- fix relay routing images in documentation (#1235)
+- generic docker image (#1236)
+- env variables for akka http settings (#1237)
+- new plugin to extract logged in user if any (#1241)
+- new plugin to ensure a logged in user exists (#1242)
+- fix ServiceDescriptor conversion when using `detectApiKeySooner` (#1243)
+- better TLS defaults (#1244)
+- add experimental server backend using netty and reactor-netty (#1245)
+- matching routes issue (#1247)
+- expose all keypairs in jwks endpoint (#1250)
+- add experimental client backend using netty and reactor-netty (#1253)
+
 ## [1.5.13] - 2022-08-05
 
 https://github.com/MAIF/otoroshi/milestone/45?closed=1
