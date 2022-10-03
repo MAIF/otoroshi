@@ -271,7 +271,7 @@ const Manager = ({ query, entity, ...props }) => {
               style: { marginLeft: 20 },
               moreClass: 'pb-2',
               title: 'Tester',
-              disabledHelp: 'Your route is disabled. Navigate to the informations page to turn it',
+              disabledHelp: 'Your route is disabled. Navigate to the informations page to turn it on again',
               disabled: !value.enabled,
               onClick: () => {
                 setForceTester(true)

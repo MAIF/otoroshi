@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-// import _ from 'lodash';
+import isEqual from 'lodash/isEqual';
 
 export class NgStepNotFound extends Component {
   render() {
@@ -41,9 +41,11 @@ export class NgValidationRenderer extends Component {
 }
 
 export class NgFormRenderer extends Component {
+
   state = {
     folded: true,
   };
+
   componentDidMount() {
     if (this.props && this.props.rawSchema) {
       const folded =
@@ -55,7 +57,44 @@ export class NgFormRenderer extends Component {
       this.setState({ folded: folded === undefined ? true : folded });
     }
   }
+
+  setBreadcrumb = () => {
+    if (this.props.setBreadcrumb) {
+      this.props.setBreadcrumb(this.props.path)
+    }
+    else
+      this.setState({
+        folded: !this.state.folded
+      })
+  }
+
+  match = (test, breadcrumb) => test.join('-').startsWith(breadcrumb.join('-')) ||
+    breadcrumb.join('-').startsWith(test.join('-'));
+
+  getChildrenVisibility = (pathAsArray, breadcrumbAsArray) => {
+    if (!this.props.setBreadcrumb)
+      return !this.state.folded;
+
+    if (this.props.breadcrumb === undefined)
+      return false;
+
+    console.log(pathAsArray, breadcrumbAsArray,
+      pathAsArray.length <= breadcrumbAsArray.length && this.match(pathAsArray, breadcrumbAsArray))
+
+    return pathAsArray.length <= breadcrumbAsArray.length && this.match(pathAsArray, breadcrumbAsArray);
+  }
+
   render() {
+    const breadcrumbAsArray = this.props.breadcrumb || [];
+    const pathAsArray = this.props.path || [];
+
+    const showChildren = this.getChildrenVisibility(pathAsArray, breadcrumbAsArray)
+    const clickable = !this.props.setBreadcrumb ? true : !breadcrumbAsArray.join('-').startsWith(pathAsArray.join('-'));
+    const isLeaf = !this.props.setBreadcrumb ? true : pathAsArray.length >= breadcrumbAsArray.length;
+
+    if (!this.match(pathAsArray, breadcrumbAsArray))
+      return null
+
     if (!this.props.embedded) {
       return (
         <form style={this.props.style} className={this.props.className}>
@@ -77,6 +116,9 @@ export class NgFormRenderer extends Component {
         this.props.name ||
         '...'
       ).replace(/_/g, ' ');
+      const showTitle = !noTitle && (isLeaf || clickable);
+
+
       const titleComponent = (
         <span
           style={{
@@ -93,19 +135,16 @@ export class NgFormRenderer extends Component {
         return (
           <div
             style={{
-              outline: '1px solid #41413e',
-              padding: 5,
-              margin: 5,
+              outline: clickable ? '1px solid #41413e' : 'none',
+              padding: clickable ? 5 : 0,
+              margin: clickable ? '5px 0' : '',
               display: 'flex',
               flexDirection: 'column',
               width: '100%',
               ...(this.props.rawSchema.style || {})
-            }} onClick={e => {
-              console.log(this.props.setBreadcrumb)
-              if (this.props.setBreadcrumb) {
-                this.props.setBreadcrumb()
-              }
-              this.setState({ folded: !this.state.folded })
+            }} onClick={() => {
+              if (clickable)
+                this.setBreadcrumb()
             }}>
             <div
               style={{
@@ -114,46 +153,32 @@ export class NgFormRenderer extends Component {
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}>
-              {!noTitle && titleComponent}
-              {!this.state.folded && (
+              {showTitle && titleComponent}
+              {!this.props.setBreadcrumb && (
                 <button
                   type="button"
                   className="btn btn-info float-end btn-sm"
-                  onClick={(e) => {
-                    this.setState({ folded: !this.state.folded })
-
-                    console.log(this.props.setBreadcrumb)
-                    if (this.props.setBreadcrumb) {
-                      this.props.setBreadcrumb()
-                    }
-                  }}>
-                  <i className="fas fa-eye-slash"></i>
+                  onClick={this.setBreadcrumb}>
+                  <i className={`fas fa-eye${this.state.folded ? '-slash' : ''}`} />
                 </button>
               )}
-              {this.state.folded && (
-                <button
-                  type="button"
-                  className="btn btn-info float-end btn-sm"
-                  onClick={(e) => {
-                    console.log(this.props.setBreadcrumb)
-                    if (this.props.setBreadcrumb) {
-                      this.props.setBreadcrumb()
-                    }
-                    this.setState({ folded: !this.state.folded })
-                  }}>
-                  <i className="fas fa-eye"></i>
-                </button>
-              )}
+              {(this.props.setBreadcrumb && clickable) && <button
+                type="button"
+                className="btn btn-info float-end btn-sm"
+                onClick={this.setBreadcrumb}>
+                <i className="fas fa-chevron-right"></i>
+              </button>}
             </div>
-            <div onClick={e => e.stopPropagation()}>
-              {!this.state.folded && this.props.children}
-            </div>
+            {showChildren &&
+              <div onClick={e => e.stopPropagation()}>
+                {this.props.children}
+              </div>}
           </div>
         );
       } else if (noBorder) {
         return (
           <div style={{ width: '100%' }}>
-            {!noTitle && titleComponent}
+            {showTitle && titleComponent}
             {this.props.children}
           </div>
         );
@@ -161,9 +186,9 @@ export class NgFormRenderer extends Component {
         return (
           <div
             style={{
-              outline: '1px solid #41413e',
-              padding: 5,
-              margin: 5,
+              outline: clickable ? '1px solid #41413e' : 'none',
+              padding: clickable ? 5 : 0,
+              margin: clickable ? '5px 0' : '',
               display: 'flex',
               flexDirection: 'column',
               width: '100%',
@@ -175,7 +200,7 @@ export class NgFormRenderer extends Component {
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}>
-              {!noTitle && titleComponent}
+              {showTitle && titleComponent}
             </div>
             {this.props.children}
           </div>

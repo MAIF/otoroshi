@@ -197,6 +197,38 @@ export class NgStep extends Component {
   }
 }
 
+const Breadcrumb = ({ breadcrumb, setBreadcrumb }) => {
+
+  if (!breadcrumb)
+    return null
+
+  return <div style={{ margin: '5px 0' }}>
+    {breadcrumb
+      .map((part, i) => {
+        return <button
+          type='button'
+          className='btn'
+          style={{
+            padding: 0,
+            color: '#fff',
+            background: i === breadcrumb.length - 1 ? "#f9b000" : "#404040",
+            height: "100%",
+            borderRadius: "7px",
+            transition: 'all 0.3s ease',
+            display: "inline-flex",
+            justifyContent: "center",
+            alignItems: 'center',
+            margin: '4px 1px',
+            padding: "0 12px",
+            cursor: 'pointer',
+            transform: "skew(343deg)"
+          }} onClick={() => setBreadcrumb(i)}>
+          {part}
+        </button>
+      })}
+  </div>
+}
+
 export class NgForm extends Component {
   static DefaultTheme = {
     FormRenderer: NgFormRenderer,
@@ -226,7 +258,12 @@ export class NgForm extends Component {
     NgForm.DefaultTheme = theme;
   };
 
-  state = { validation: { valid: true, graph: {} } };
+  state = {
+    validation: {
+      valid: true,
+      graph: {}
+    }
+  };
   tasks = [];
 
   componentDidMount() {
@@ -324,7 +361,8 @@ export class NgForm extends Component {
       schema.style ||
       schema.render ||
       schema.itemRenderer ||
-      schema.conditionalSchema
+      schema.conditionalSchema ||
+      schema.props
     ) {
       const possible = {
         select: 'select',
@@ -354,6 +392,7 @@ export class NgForm extends Component {
         label: schema.label,
         itemRenderer: itemRenderer || schema.itemRenderer,
         props: {
+          ...schema.props,
           label: schema.label,
           placeholder: schema.placeholder,
           help: schema.help,
@@ -428,13 +467,18 @@ export class NgForm extends Component {
 
   renderGroupFlow({ name, fields, collapsed }, config) {
     const FormRenderer = config.components.FormRenderer;
+    const fullPath = (config.root ? [name] : [...config.path, isFunction(name) ? undefined : name])
+      .filter(f => f)
+      .map(n => n.split(/\.?(?=[A-Z])/).join('_').toLowerCase());
 
     return <FormRenderer
       embedded={true}
-      setBreadcrumb={() => {
-        console.log(config.path)
-        config.setBreadcrumb(config.path)
+      breadcrumb={config.breadcrumb}
+      setBreadcrumb={!config.setBreadcrumb ? null : () => {
+        config.setBreadcrumb(fullPath)
       }}
+      useBreadcrumb={config.useBreadcrumb}
+      path={fullPath}
       rawSchema={{
         label: isFunction(name) ? name(config) : name,
         collapsable: true,
@@ -458,8 +502,13 @@ export class NgForm extends Component {
     </div>
   }
 
+  match(test, breadcrumb) {
+    return test.join('-').startsWith(breadcrumb.join('-')) ||
+      breadcrumb.join('-').startsWith(test.join('-'))
+  }
+
   renderInlineStepFlow(name, {
-    schema, value, root, path, validation, components, StepNotFound, setBreadcrumb, breadcrumb
+    schema, value, root, path, validation, components, StepNotFound, setBreadcrumb, breadcrumb, useBreadcrumb
   }) {
     const stepSchema = schema[name];
 
@@ -472,6 +521,12 @@ export class NgForm extends Component {
           : true;
       if (visible) {
         const newPath = root ? [name] : [...path, name];
+
+        if (Array.isArray(path) &&
+          Array.isArray(breadcrumb) &&
+          !this.match(newPath, breadcrumb))
+          return null
+
         return (
           <NgStep
             key={newPath.join('/')}
@@ -487,10 +542,10 @@ export class NgForm extends Component {
             onChange={(e) => {
               const newValue = value ? { ...value, [name]: e } : { [name]: e };
               this.rootOnChange(newValue);
-              setBreadcrumb(newPath)
             }}
             breadcrumb={breadcrumb}
             setBreadcrumb={setBreadcrumb}
+            useBreadcrumb={useBreadcrumb}
             rootValue={value}
             rootOnChange={this.rootOnChange}
           />
@@ -540,34 +595,24 @@ export class NgForm extends Component {
 
     const config = {
       schema, value, root, path, validation, components, StepNotFound,
-      setBreadcrumb: !root ? this.props.setBreadcrumb : e => {
+      setBreadcrumb: this.props.useBreadcrumb ? (!root ? this.props.setBreadcrumb : e => {
         this.setState({ breadcrumb: e })
-      },
-      breadcrumb: root ? this.state.breadcrumb : this.props.breadcrumb
+      }) : null,
+      breadcrumb: root ? this.state.breadcrumb : this.props.breadcrumb,
+      useBreadcrumb: this.props.useBreadcrumb
     }
 
     return (
       <FormRenderer {...this.props}>
-        {this.state.breadcrumb && <div>
-          {this.state.breadcrumb
-            // .slice(1)
-            .map((part, i, length) => {
-              return <button className='btn' style={{
-                padding: 0,
-                color: '#fff'
-              }} onClick={() => {
-                // revenir vers la source et fermer tout ce qui est en dessous de ce path
-                // aut clic dans les groupes faire avancr le breadcrumb
-              }}>
-                {part} {i === length - 1 ? '' : '/'}
-              </button>
-            })}
-        </div>}
-        {
-          flow &&
-          flow.map(name => this.renderStepFlow(name, config))
-        }
-      </FormRenderer >
+        <Breadcrumb
+          breadcrumb={this.state.breadcrumb}
+          setBreadcrumb={i => {
+            this.setState({
+              breadcrumb: this.state.breadcrumb.slice(0, i + 1)
+            })
+          }} />
+        {flow && flow.map(name => this.renderStepFlow(name, config))}
+      </FormRenderer>
     );
   }
 }

@@ -120,9 +120,9 @@ class RouteForms extends React.Component {
             }),
           },
           backend: {
-            config_flow: DEFAULT_FLOW.Backend('').config_flow,
+            config_flow: DEFAULT_FLOW.Backend.config_flow,
             config_schema: toUpperCaseLabels(
-              DEFAULT_FLOW.Backend('').config_schema(backendForm.schema)
+              DEFAULT_FLOW.Backend.config_schema(backendForm.schema)
             ),
           },
         },

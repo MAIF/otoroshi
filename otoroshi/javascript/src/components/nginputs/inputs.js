@@ -13,29 +13,29 @@ export class NgLocationRenderer extends Component {
     const props = schema.props || {};
     const FormRenderer = this.props.components.FormRenderer;
 
-    return (
-      <FormRenderer
-        embedded={true}
-        rawSchema={{
-          label: 'Location',
-          collapsable: true,
-          collapsed: false
-        }}>
-        <Location
-          {...props}
-          tenant={this.props.value?.tenant || 'default'}
-          teams={this.props.value?.teams || ['default']}
-          onChangeTenant={tenant => this.props.onChange({
-            ...this.props.value,
-            tenant
-          })}
-          onChangeTeams={teams => this.props.onChange({
-            ...this.props.value,
-            teams
-          })}
-        />
-      </FormRenderer>
-    )
+    return <FormRenderer
+      embedded={true}
+      breadcrumb={[]} // TODO
+      setBreadcrumb={this.props.setBreadcrumb} // TODO
+      rawSchema={{
+        label: 'Location',
+        collapsable: true,
+        collapsed: true
+      }}>
+      <Location
+        {...props}
+        tenant={this.props.value?.tenant || 'default'}
+        teams={this.props.value?.teams || ['default']}
+        onChangeTenant={tenant => this.props.onChange({
+          ...this.props.value,
+          tenant
+        })}
+        onChangeTeams={teams => this.props.onChange({
+          ...this.props.value,
+          teams
+        })}
+      />
+    </FormRenderer>
   }
 }
 
@@ -51,7 +51,7 @@ export function LabelAndInput(_props) {
   const schema = _props.schema || {};
   const props = schema.props || {};
   const label = _props.label || props.label || _props.rawSchema?.label || _props.name || '...';
-  const ngOptions = _props.ngOptions || props.ngOptions || {};
+  const ngOptions = _props.ngOptions || props.ngOptions || _props.rawSchema?.props?.ngOptions || {};
   const labelColumn = _props.labelColumn || props.labelColumn || 2;
 
   if (ngOptions.spread)
@@ -264,24 +264,44 @@ export class NgBooleanRenderer extends Component {
 }
 
 export class NgArrayRenderer extends Component {
+
+  canShowActions() {
+    const breadcrumbAsArray = this.props.breadcrumb || [];
+    const pathAsArray = this.props.path || [];
+
+    if (this.props.breadcrumb === undefined)
+      return true
+
+    console.log(pathAsArray, breadcrumbAsArray)
+
+    return (pathAsArray.length >= breadcrumbAsArray.length) &&
+      (pathAsArray.join('-').startsWith(pathAsArray.join('-')) ||
+        pathAsArray.join('-').startsWith(pathAsArray.join('-')))
+  }
+
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
     const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;
 
+    const showActions = this.canShowActions()
+
     return (
       <LabelAndInput {...this.props}>
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+        <div style={{
+          display: 'flex', flexDirection: 'column', width: '100%'
+        }}>
           {Array.isArray(this.props.value) &&
             this.props.value.map((value, idx) => {
               return (
                 <div
                   style={{
                     display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    width: '100%'
+                    width: '100%',
+                    outline: ItemRenderer ? 'rgb(65, 65, 62) solid 1px' : 'none',
+                    padding: '6px',
+                    marginBottom: '6px'
                   }} key={`${value}-${idx}`}>
                   {!ItemRenderer && (
                     <input
@@ -305,6 +325,7 @@ export class NgArrayRenderer extends Component {
                       fromArray
                       breadcrumb={this.props.breadcrumb}
                       setBreadcrumb={this.props.setBreadcrumb}
+                      useBreadcrumb={this.props.useBreadcrumb}
                       path={[...this.props.path, String(idx)]}
                       flow={this.props.flow}
                       schema={this.props.schema}
@@ -329,7 +350,7 @@ export class NgArrayRenderer extends Component {
                       {...props}
                     />
                   )}
-                  <button
+                  {showActions && <button
                     type="button"
                     className="btn btn-sm btn-danger"
                     style={{ width: 42, marginLeft: 5 }}
@@ -339,20 +360,20 @@ export class NgArrayRenderer extends Component {
                       this.props.onChange(newArray);
                     }}>
                     <i className="fas fa-trash" />
-                  </button>
+                  </button>}
                 </div>
               );
             })}
-          <button
+          {showActions && <button
             type="button"
             className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
-            onClick={(e) => {
+            onClick={() => {
               const newArray = Array.isArray(this.props.value) ? [...this.props.value, ''] : [''];
               this.props.onChange(newArray);
             }}>
             <i className="fas fa-plus-circle" />
-          </button>
+          </button>}
         </div>
       </LabelAndInput>
     );

@@ -699,13 +699,13 @@ class Designer extends React.Component {
             nodeId: 'Frontend',
           },
           backend: {
-            ...DEFAULT_FLOW.Backend('plugin'),
+            ...DEFAULT_FLOW.Backend,
             ...backendForm,
             config_schema: toUpperCaseLabels(
-              DEFAULT_FLOW.Backend('plugin')
+              DEFAULT_FLOW.Backend
                 .config_schema(backendForm.schema, route, this.updateRoute)
             ),
-            config_flow: DEFAULT_FLOW.Backend('plugin').config_flow,
+            config_flow: DEFAULT_FLOW.Backend.config_flow,
             nodeId: 'Backend',
           },
           selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
@@ -2267,14 +2267,7 @@ class EditView extends React.Component {
                   schema={form.schema}
                   flow={hasCustomPluginForm ? ['status'] : form.flow}
                   onChange={this.onValidate}
-                // footer={() => (
-                //   <Actions
-                //     disabledSaveButton={disabledSaveButton}
-                //     valid={saveRoute}
-                //     selectedNode={selectedNode}
-                //     onRemove={onRemove}
-                //   />
-                // )}
+                  useBreadcrumb={selectedNode.id === 'Backend' ? true : false}
                 />
                 {hasCustomPluginForm &&
                   <EurekaForm

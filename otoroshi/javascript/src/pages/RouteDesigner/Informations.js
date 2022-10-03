@@ -179,7 +179,7 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
 
       <div className="d-flex align-items-center justify-content-end mt-3">
         <div className="displayGroupBtn">
-          <button className='btn btn-outline-info'
+          <button className='btn btn-info'
             onClick={() => showAdvancedForm ? toggleAdvancedForm(false) : toggleAdvancedForm(true)}>
             {showAdvancedForm ? 'Simple view' : 'Advanced view'}
           </button>
