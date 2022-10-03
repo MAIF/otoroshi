@@ -234,7 +234,7 @@ case class NgTreeNodePath(
             segmentStartsWithCache.get(
               head,
               _ => {
-                var sw = false
+                var sw       = false
                 val mSubTree = tree.keySet.toSeq
                   .sortWith((r1, r2) => r1.length.compareTo(r2.length) > 0)
                   .find {
@@ -250,10 +250,12 @@ case class NgTreeNodePath(
                     // NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = false).some
                     NgMatchedRoutes(routes, path, pathParams, noMoreSegments = false).some
                   case Some(ptree)            =>
-                    ptree.applyOnIf(sw) { pt =>
-                      // here returned matched routes can't have more possible segments or you will match anything
-                      pt.copy(tree = TrieMap.empty)
-                    }.find(segments.tail, endsWithSlash, s"$path/$head", pathParams) match {
+                    ptree
+                      .applyOnIf(sw) { pt =>
+                        // here returned matched routes can't have more possible segments or you will match anything
+                        pt.copy(tree = TrieMap.empty)
+                      }
+                      .find(segments.tail, endsWithSlash, s"$path/$head", pathParams) match {
                       case None if routes.isEmpty => None
                       case None                   => NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = false).some
                       case s                      => s

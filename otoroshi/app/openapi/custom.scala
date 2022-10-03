@@ -1,10 +1,19 @@
 package otoroshi.openapi
 
 import otoroshi.next.plugins.{
-  AuthModule, ContextValidation, GraphQLBackend, GraphQLQuery,
-  JwtVerification, MockFormData, NgAuthModuleConfig,
-  NgAuthModuleExpectedUser, NgAuthModuleUserExtractor, NgJwtVerificationConfig,
-  OtoroshiChallenge, OtoroshiInfos}
+  AuthModule,
+  ContextValidation,
+  GraphQLBackend,
+  GraphQLQuery,
+  JwtVerification,
+  MockFormData,
+  NgAuthModuleConfig,
+  NgAuthModuleExpectedUser,
+  NgAuthModuleUserExtractor,
+  NgJwtVerificationConfig,
+  OtoroshiChallenge,
+  OtoroshiInfos
+}
 import otoroshi.next.tunnel.TunnelPlugin
 import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.libs.json.Json
@@ -12,7 +21,7 @@ import play.api.libs.json.Json
 object CustomForms {
 
   val forms: Map[String, Form] = Map(
-    classOf[ContextValidation].getName -> Form(
+    classOf[ContextValidation].getName         -> Form(
       flow = Seq("validators"),
       schema = Json
         .parse("""{
@@ -41,7 +50,7 @@ object CustomForms {
           |""".stripMargin)
         .asObject
     ),
-    classOf[GraphQLQuery].getName      -> Form(
+    classOf[GraphQLQuery].getName              -> Form(
       flow = Seq("url", "method", "headers", "timeout", "query", "response_filter", "response_path"),
       schema = Json
         .parse("""{
@@ -83,7 +92,7 @@ object CustomForms {
           |}""".stripMargin)
         .asObject
     ),
-    classOf[GraphQLBackend].getName    -> Form(
+    classOf[GraphQLBackend].getName            -> Form(
       flow = Seq("schema", "permissions", "initialData", "maxDepth"),
       schema = Json
         .parse("""{
@@ -108,7 +117,7 @@ object CustomForms {
           |}""".stripMargin)
         .asObject
     ),
-    classOf[TunnelPlugin].getName      -> Form(
+    classOf[TunnelPlugin].getName              -> Form(
       flow = Seq("tunnel_id"),
       schema = Json
         .parse("""{
@@ -126,7 +135,7 @@ object CustomForms {
                  |}""".stripMargin)
         .asObject
     ),
-    classOf[JwtVerification].getName      -> Form(
+    classOf[JwtVerification].getName           -> Form(
       flow = Seq("verifiers"),
       schema = Json
         .parse("""{
@@ -143,7 +152,7 @@ object CustomForms {
                  |}""".stripMargin)
         .asObject
     ),
-    classOf[NgJwtVerificationConfig].getName      -> Form(
+    classOf[NgJwtVerificationConfig].getName   -> Form(
       flow = Seq("verifiers"),
       schema = Json
         .parse("""{
@@ -160,7 +169,7 @@ object CustomForms {
                  |}""".stripMargin)
         .asObject
     ),
-    classOf[NgAuthModuleConfig].getName      -> Form(
+    classOf[NgAuthModuleConfig].getName        -> Form(
       schema = Json
         .parse("""{
                  |  "module" : {
@@ -180,7 +189,7 @@ object CustomForms {
         .asObject,
       flow = Seq("module", "pass_with_apikey")
     ),
-    classOf[NgAuthModuleUserExtractor].getName      -> Form(
+    classOf[NgAuthModuleUserExtractor].getName -> Form(
       schema = Json
         .parse("""{
                  |  "module" : {
@@ -197,7 +206,7 @@ object CustomForms {
         .asObject,
       flow = Seq("module")
     ),
-    classOf[AuthModule].getName      -> Form(
+    classOf[AuthModule].getName                -> Form(
       schema = Json
         .parse("""{
                  |  "module" : {
@@ -217,7 +226,7 @@ object CustomForms {
         .asObject,
       flow = Seq("module", "pass_with_apikey")
     ),
-    classOf[MockFormData].getName      -> Form(
+    classOf[MockFormData].getName              -> Form(
       schema = Json
         .parse("""{
                  |  "endpoints" : {
@@ -326,9 +335,9 @@ object CustomForms {
         .asObject,
       flow = Seq("endpoints", "resources")
     ),
-    classOf[NgAuthModuleExpectedUser].getName      -> Form(
-    schema = Json
-      .parse("""{
+    classOf[NgAuthModuleExpectedUser].getName  -> Form(
+      schema = Json
+        .parse("""{
                |  "only_from" : {
                |    "type": "array-select",
                |    "props": {
@@ -340,12 +349,12 @@ object CustomForms {
                |    }
                |  }
                |}""".stripMargin)
-      .asObject,
-    flow = Seq("only_from")
-  ),
-    classOf[OtoroshiChallenge].getName      -> Form(
-    schema = Json
-      .parse("""{
+        .asObject,
+      flow = Seq("only_from")
+    ),
+    classOf[OtoroshiChallenge].getName         -> Form(
+      schema = Json
+        .parse("""{
                |    "version": { "type": "string" },
                |    "ttl": { "type": "number" },
                |    "request_header_name": { "type": "string" },
@@ -777,17 +786,18 @@ object CustomForms {
                |    }
                |}
                |""".stripMargin)
-      .asObject,
-      flow = Seq("version",
-            "ttl",
-            "request_header_name",
-            "response_header_name",
-            "algo_to_backend",
-            "algo_from_backend",
-            "state_resp_leeway"
+        .asObject,
+      flow = Seq(
+        "version",
+        "ttl",
+        "request_header_name",
+        "response_header_name",
+        "algo_to_backend",
+        "algo_from_backend",
+        "state_resp_leeway"
       )
     ),
-    classOf[OtoroshiInfos].getName      -> Form(
+    classOf[OtoroshiInfos].getName             -> Form(
       schema = Json
         .parse("""{
                  |  "version": {

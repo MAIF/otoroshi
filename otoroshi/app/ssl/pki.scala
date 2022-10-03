@@ -11,7 +11,15 @@ import otoroshi.env.Env
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x509._
-import org.bouncycastle.asn1.{ASN1EncodableVector, ASN1Integer, ASN1ObjectIdentifier, ASN1Sequence, DERIA5String, DERSequence, x509}
+import org.bouncycastle.asn1.{
+  x509,
+  ASN1EncodableVector,
+  ASN1Integer,
+  ASN1ObjectIdentifier,
+  ASN1Sequence,
+  DERIA5String,
+  DERSequence
+}
 import org.bouncycastle.cert.{X509ExtensionUtils, X509v3CertificateBuilder}
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils
 import org.bouncycastle.crypto.util.PrivateKeyFactory
@@ -281,8 +289,8 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
         existingSerialNumber
           .map(java.math.BigInteger.valueOf)
           .getOrElse(_serial) // new java.math.BigInteger(32, new SecureRandom)
-      val from    = DateTime.now().minusYears(4).toDate//new java.util.Date
-      val to      = DateTime.now().minusYears(3).toDate//new java.util.Date(System.currentTimeMillis + validity.toMillis)
+      val from    = new java.util.Date
+      val to      = new java.util.Date(System.currentTimeMillis + validity.toMillis)
       val certgen = new X509v3CertificateBuilder(issuer, serial, from, to, csr.getSubject, csr.getSubjectPublicKeyInfo)
       csr.getAttributes.foreach(attr => {
         attr.getAttributeValues.collect { case exts: Extensions =>

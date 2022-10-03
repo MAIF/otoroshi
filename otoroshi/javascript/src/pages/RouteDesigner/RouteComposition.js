@@ -23,13 +23,13 @@ const Methods = ({ frontend }) => {
   const hasMethods = frontend.methods && frontend.methods.length > 0;
   const methods = hasMethods
     ? frontend.methods.map((m, i) => (
-      <span
-        key={`frontendmethod-${i}`}
-        className={`badge me-1`}
-        style={{ backgroundColor: HTTP_COLORS[m] }}>
-        {m}
-      </span>
-    ))
+        <span
+          key={`frontendmethod-${i}`}
+          className={`badge me-1`}
+          style={{ backgroundColor: HTTP_COLORS[m] }}>
+          {m}
+        </span>
+      ))
     : [<span className="badge bg-dark">ALL</span>];
   return (
     <div className="d-flex-between">
@@ -131,7 +131,7 @@ class RouteForms extends React.Component {
     });
   }
 
-  saveChanges = newRoute => this.props.updateRoute(newRoute)
+  saveChanges = (newRoute) => this.props.updateRoute(newRoute);
 
   disabledSaveButton = () => {
     const { originalRoute } = this.props;
@@ -145,12 +145,7 @@ class RouteForms extends React.Component {
   };
 
   render() {
-    const {
-      schemas,
-      usingJsonView,
-      usingExistingBackend,
-      backends,
-    } = this.state;
+    const { schemas, usingJsonView, usingExistingBackend, backends } = this.state;
     const { saveRoute, route } = this.props;
 
     if (!schemas) return null;
@@ -175,7 +170,7 @@ class RouteForms extends React.Component {
             <h5 className="route-forms-title">Frontend</h5>
             <RouteForm
               onSubmit={(e) => {
-                this.saveChanges(e)
+                this.saveChanges(e);
               }}
               dirtyField="frontend"
               value={route}
@@ -197,16 +192,18 @@ class RouteForms extends React.Component {
                   value={route.backend_ref}
                   placeholder="Select an existing backend"
                   ngOptions={{
-                    spread: true
+                    spread: true,
                   }}
-                  onChange={backendRef =>
+                  onChange={(backendRef) =>
                     this.saveChanges({
                       ...route,
                       backend_ref: this.state.usingExistingBackend ? backendRef : null,
                     })
                   }
                   options={backends}
-                  optionsTransformer={arr => arr.map((item) => ({ label: item.name, value: item.id }))}
+                  optionsTransformer={(arr) =>
+                    arr.map((item) => ({ label: item.name, value: item.id }))
+                  }
                 />
               </div>
             )}
@@ -237,27 +234,29 @@ class RouteForms extends React.Component {
 
 const RouteForm = React.memo(
   ({ dirtyField, value, schema, flow, usingJsonView, onSubmit }) => {
-    return <NgForm
-      value={value}
-      schema={
-        usingJsonView
-          ? {
-            [dirtyField]: {
-              type: 'json',
-              props: {
-                label: '',
-                editorOnly: true,
-                ngOptions: {
-                  spread: true
-                }
+    return (
+      <NgForm
+        value={value}
+        schema={
+          usingJsonView
+            ? {
+                [dirtyField]: {
+                  type: 'json',
+                  props: {
+                    label: '',
+                    editorOnly: true,
+                    ngOptions: {
+                      spread: true,
+                    },
+                  },
+                },
               }
-            },
-          }
-          : schema
-      }
-      flow={usingJsonView ? [dirtyField] : flow}
-      onChange={onSubmit}
-    />
+            : schema
+        }
+        flow={usingJsonView ? [dirtyField] : flow}
+        onChange={onSubmit}
+      />
+    );
   },
   (prev, next) =>
     prev.value === next.value &&

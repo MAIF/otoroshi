@@ -55,8 +55,8 @@ export const PLUGINS = {
         type: 'code',
         props: {
           label: 'Envelope',
-          editorOnly: true
-        }
+          editorOnly: true,
+        },
       },
     },
   }),
@@ -68,8 +68,8 @@ export const PLUGINS = {
         type: 'code',
         props: {
           label: 'Envelope',
-          editorOnly: true
-        }
+          editorOnly: true,
+        },
       },
     },
   }),
@@ -133,15 +133,15 @@ export const DEFAULT_FLOW = {
         type: 'bool',
         props: {
           label: 'Strip path',
-          labelColumn: 6
-        }
+          labelColumn: 6,
+        },
       },
       exact: {
         type: 'bool',
         props: {
           label: 'Exact',
-          labelColumn: 6
-        }
+          labelColumn: 6,
+        },
       },
       domains: {
         type: 'string',
@@ -152,9 +152,11 @@ export const DEFAULT_FLOW = {
         type: 'array-select',
         props: {
           label: 'Methods',
-          options: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
-            .map(item => ({ label: item, value: item }))
-        }
+          options: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'].map((item) => ({
+            label: item,
+            value: item,
+          })),
+        },
       },
     },
     config_flow: [
@@ -162,15 +164,12 @@ export const DEFAULT_FLOW = {
       {
         type: 'grid',
         name: 'Flags',
-        fields: [
-          'strip_path',
-          'exact'
-        ]
+        fields: ['strip_path', 'exact'],
       },
       'headers',
       'methods',
-      'query'
-    ]
+      'query',
+    ],
   },
   Backend: {
     id: 'Backend',
@@ -181,7 +180,7 @@ export const DEFAULT_FLOW = {
       ...generatedSchema,
       rewrite: {
         ...generatedSchema.rewrite,
-        label: 'Full path rewrite'
+        label: 'Full path rewrite',
       },
       targets: {
         array: true,
@@ -196,70 +195,71 @@ export const DEFAULT_FLOW = {
           ...generatedSchema.targets.schema,
           tls_config: {
             ...generatedSchema.targets.schema.tls_config,
+            label: 'Custom TLS setup',
             schema: Object.entries({
               ...generatedSchema.targets.schema.tls_config.schema,
               certs: {
-                type: "array-select",
+                type: 'array-select',
                 props: {
-                  label: "Certificates",
-                  optionsFrom: "/bo/api/proxy/api/certificates",
+                  label: 'Certificates',
+                  optionsFrom: '/bo/api/proxy/api/certificates',
                   optionsTransformer: {
-                    label: "name",
-                    value: "id"
-                  }
-                }
+                    label: 'name',
+                    value: 'id',
+                  },
+                },
               },
               trusted_certs: {
-                type: "array-select",
+                type: 'array-select',
                 props: {
-                  label: "Trusted certificates",
-                  optionsFrom: "/bo/api/proxy/api/certificates",
+                  label: 'Trusted certificates',
+                  optionsFrom: '/bo/api/proxy/api/certificates',
                   optionsTransformer: {
-                    label: "name",
-                    value: "id"
-                  }
-                }
-              }
+                    label: 'name',
+                    value: 'id',
+                  },
+                },
+              },
             }).reduce((obj, entry) => {
               if (entry[0] === 'enabled')
                 return {
                   ...obj,
-                  [entry[0]]: entry[1]
-                }
+                  [entry[0]]: entry[1],
+                };
               else
                 return {
                   ...obj,
                   [entry[0]]: {
                     ...entry[1],
-                    visible: value => value?.enabled
-                  }
-                }
-            }, {})
+                    visible: (value) => value?.enabled,
+                  },
+                };
+            }, {}),
           },
           predicate: {
             ...generatedSchema.targets.schema.predicate,
             flow: (value) => {
-              const type = value?.type
+              const type = value?.type;
 
               return {
-                'GeolocationMatch': ['type', 'positions'],
-                'NetworkLocationMatch': ['type', 'provider', 'region', 'zone', 'dataCenter', 'rack'],
-                'AlwaysMatch': ['type'],
-                [undefined]: ['type']
-              }[type]
-            }
-          }
+                GeolocationMatch: ['type', 'positions'],
+                NetworkLocationMatch: ['type', 'provider', 'region', 'zone', 'dataCenter', 'rack'],
+                AlwaysMatch: ['type'],
+                [undefined]: ['type'],
+              }[type];
+            },
+          },
         },
         flow: [
           {
             type: 'group',
             collapsed: true,
-            name: props => {
-              const port = props.value?.port
+            name: (props) => {
+              const port = props.value?.port;
               const hostname = props.value?.hostname || '';
-              const isSecured = props.value?.tls
+              const isSecured = props.value?.tls;
 
-              return `${isSecured ? 'https' : 'http'}://${hostname}${port ? `:${port}` : ''}`
+              return `${isSecured ? 'https' : 'http'}://${hostname}${port ? `:${port}` : ''}`;
             },
             fields: [
               'hostname',
@@ -297,7 +297,7 @@ export const DEFAULT_FLOW = {
       {
         type: 'group',
         name: 'Targets',
-        fields: ['targets']
+        fields: ['targets'],
       },
       'health_check',
       'client',

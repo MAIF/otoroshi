@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.13
+1.5.14
 </div>
 </div>
 <div class="nav-toc">
@@ -98,6 +98,8 @@
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -154,7 +156,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.13
+1.5.14
 </div>
 </div>
 <div class="nav-toc">
@@ -217,6 +219,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -377,19 +381,40 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Pulsar topic</code>: topic on the pulsar server</li>
 </ul>
 <h2><a href="#kafka" name="kafka" class="anchor"><span class="anchor-link"></span></a>Kafka</h2>
-<p>With this kind of exporter, every matching event will be sent to an <a href="https://kafka.apache.org/">Apache Kafka topic</a></p>
+<p>With this kind of exporter, every matching event will be sent to an <a href="https://kafka.apache.org/">Apache Kafka topic</a>. You can find few <a href="../how-to-s/communicate-with-kafka.html">tutorials</a> about the connection between Otoroshi and Kafka based on docker images.</p>
 <ul>
   <li><code>Kafka Servers</code>: the list of servers to contact to connect the Kafka client with the Kafka cluster</li>
+  <li><code>Kafka topic</code>: the topic on which Otoroshi alerts will be sent</li>
+</ul>
+<p>By default, Kafka is installed with no authentication. Otoroshi supports the following authentication mechanisms and protocols for Kafka brokers.</p>
+<h3><a href="#sasl" name="sasl" class="anchor"><span class="anchor-link"></span></a>SASL</h3>
+<p>The Simple Authentication and Security Layer (SASL) [RFC4422] is a method for adding authentication support to connection-based protocols.</p>
+<ul>
+  <li><code>SASL username</code>: the client username</li>
+  <li><code>SASL password</code>: the client username</li>
+  <li><code>SASL Mechanism</code>:
+    <ul>
+      <li><code>PLAIN</code>: SASL/PLAIN uses a simple username and password for authentication.</li>
+      <li><code>SCRAM-SHA-256</code> and <code>SCRAM-SHA-512</code>: SASL/SCRAM uses usernames and passwords stored in ZooKeeper. Credentials are created during installation.</li>
+    </ul>
+  </li>
+</ul>
+<h3><a href="#ssl" name="ssl" class="anchor"><span class="anchor-link"></span></a>SSL</h3>
+<ul>
   <li><code>Kafka keypass</code>: the keystore password if you use a keystore/truststore to connect to Kafka cluster</li>
   <li><code>Kafka keystore path</code>: the keystore path on the server if you use a keystore/truststore to connect to Kafka cluster</li>
   <li><code>Kafka truststore path</code>: the truststore path on the server if you use a keystore/truststore to connect to Kafka cluster</li>
-  <li><code>Custom TLS Settings</code>: enable the TLS configuration for the communication with Elasticsearch</li>
-  <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
-  <li><code>TrustAll</code>: allows any server certificates even the self-signed ones</li>
-  <li><code>Client certificates</code>: list of client certificates used to communicate with elasticsearch</li>
-  <li><code>Trusted certificates</code>: list of trusted certificates received from elasticsearch</li>
-  <li><code>Kafka topic</code>: the topic on which Otoroshi alerts will be sent</li>
+  <li><code>Custom TLS Settings</code>: enable the TLS configuration for the communication with Elasticsearch
+    <ul>
+      <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
+      <li><code>TrustAll</code>: allows any server certificates even the self-signed ones</li>
+      <li><code>Client certificates</code>: list of client certificates used to communicate with elasticsearch</li>
+      <li><code>Trusted certificates</code>: list of trusted certificates received from elasticsearch</li>
+    </ul>
+  </li>
 </ul>
+<h3><a href="#sasl-ssl" name="sasl-ssl" class="anchor"><span class="anchor-link"></span></a>SASL + SSL</h3>
+<p>This mechanism uses the SSL configuration and the SASL configuration.</p>
 <h2><a href="#mailer" name="mailer" class="anchor"><span class="anchor-link"></span></a>Mailer</h2>
 <p>With this kind of exporter, every matching event will be sent in batch as an email (using one of the following email provider)</p>
 <p>Otoroshi supports 5 exporters of email type.</p>

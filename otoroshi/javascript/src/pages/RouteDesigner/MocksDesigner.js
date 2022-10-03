@@ -269,9 +269,9 @@ export default class MocksDesigner extends React.Component {
           this.setAndSave({
             [elementName]: Number.isFinite(idx)
               ? this.state[elementName].map((r, i) => {
-                if (i === idx) return value;
-                return r;
-              })
+                  if (i === idx) return value;
+                  return r;
+                })
               : [...this.state[elementName], value],
           });
         }
@@ -802,10 +802,7 @@ class NewEndpoint extends React.Component {
           </label>
           <div className="col-sm-10">
             <Suspense fallback={<div>Loading ...</div>}>
-              <CodeInput
-                value={body}
-                mode="json"
-                onChange={(v) => this.setState({ body: v })} />
+              <CodeInput value={body} mode="json" onChange={(v) => this.setState({ body: v })} />
             </Suspense>
           </div>
         </div>

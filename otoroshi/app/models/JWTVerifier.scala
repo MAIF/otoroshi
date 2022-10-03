@@ -704,7 +704,7 @@ case class KidAlgoSettings(onlyExposedCerts: Boolean) extends AlgoSettings {
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
     mode match {
       case InputMode(typ, Some(kid)) => {
-        val certs   = DynamicSSLEngineProvider.certificates
+        val certs = DynamicSSLEngineProvider.certificates
         val certOpt = {
           certs.get(kid).orElse(certs.values.find(_.entityMetadata.get("nextCertificate").contains(kid))).filter {
             case c if !c.exposed && onlyExposedCerts => false

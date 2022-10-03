@@ -140,15 +140,17 @@ class TunnelAgent(env: Env) {
               val ipAddress    = conf.getOptional[String]("ipAddress")
               val exportMeta   = conf.getOptional[Boolean]("export-routes").getOrElse(true)
               val exportTag    = conf.getOptional[String]("export-routes-tag")
-              val proxy = if (conf.getOptional[Boolean]("proxy.enabled").getOrElse(false)) {
-                Some(DefaultWSProxyServer(
-                  host = conf.getOptional[String]("proxy.host").get,
-                  port = conf.getOptional[Int]("proxy.port").get,
-                  protocol = Some("https"),
-                  principal = conf.getOptional[String]("proxy.principal"),
-                  password = conf.getOptional[String]("proxy.password"),
-                  nonProxyHosts = conf.getOptional[Seq[String]]("proxy.nonProxyHosts"),
-                ))
+              val proxy        = if (conf.getOptional[Boolean]("proxy.enabled").getOrElse(false)) {
+                Some(
+                  DefaultWSProxyServer(
+                    host = conf.getOptional[String]("proxy.host").get,
+                    port = conf.getOptional[Int]("proxy.port").get,
+                    protocol = Some("https"),
+                    principal = conf.getOptional[String]("proxy.principal"),
+                    password = conf.getOptional[String]("proxy.password"),
+                    nonProxyHosts = conf.getOptional[Seq[String]]("proxy.nonProxyHosts")
+                  )
+                )
               } else {
                 None
               }
@@ -431,15 +433,20 @@ class TunnelAgent(env: Env) {
       customizer = m => {
         (ipAddress, proxy) match {
           case (_, Some(proxySettings)) => {
-            val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
-            val transport = (proxySettings.principal, proxySettings.password) match {
-              case (Some(principal), Some(password)) => ClientTransport.httpsProxy(proxyAddress, akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password))
+            val proxyAddress = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
+            val transport    = (proxySettings.principal, proxySettings.password) match {
+              case (Some(principal), Some(password)) =>
+                ClientTransport.httpsProxy(
+                  proxyAddress,
+                  akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+                )
               case _                                 => ClientTransport.httpsProxy(proxyAddress)
             }
             m.withTransport(transport)
           }
-          case (Some(addr), _) =>  m.withTransport(ManualResolveTransport.resolveTo(InetSocketAddress.createUnresolved(addr, port)))
-          case _ => m
+          case (Some(addr), _)          =>
+            m.withTransport(ManualResolveTransport.resolveTo(InetSocketAddress.createUnresolved(addr, port)))
+          case _                        => m
         }
       }
     )
@@ -665,8 +672,10 @@ class LeaderConnection(
   private implicit val mat     = env.otoroshiMaterializer
   private implicit val factory = env.otoroshiActorSystem
 
-  private val useInternalPorts = env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-use-internal-ports").getOrElse(false)
-  private val useLoadbalancing = env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-use-loadbalancing").getOrElse(false)
+  private val useInternalPorts =
+    env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-use-internal-ports").getOrElse(false)
+  private val useLoadbalancing =
+    env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-use-loadbalancing").getOrElse(false)
 
   def location: String = member.location
 
@@ -717,7 +726,10 @@ class LeaderConnection(
     val url       = env.clusterConfig.leader.urls.head
     val ipAddress = member.location
     val secured   = url.startsWith("https")
-    val port      = if (useInternalPorts) (if (secured) member.internalHttpsPort else member.internalHttpPort) else (if (secured) member.httpsPort else member.httpPort)
+    val port      =
+      if (useInternalPorts) (if (secured) member.internalHttpsPort else member.internalHttpPort)
+      else (if (secured) member.httpsPort
+            else member.httpPort)
     val userpwd   = s"${env.clusterConfig.leader.clientId}:${env.clusterConfig.leader.clientSecret}".base64
     val uriRaw    = Uri(url + s"/api/tunnels/$tunnelId/relay").copy(scheme = if (secured) "wss" else "ws")
     val uri       = uriRaw.copy(authority = uriRaw.authority.copy(port = port))
@@ -780,12 +792,12 @@ class LeaderConnection(
   }
 
   def connectLoadBalanced(waiting: Long): LeaderConnection = {
-    val url       = env.clusterConfig.leader.urls.head
-    val secured   = url.startsWith("https")
-    val port      = if (secured) member.httpsPort else member.httpPort
-    val userpwd   = s"${env.clusterConfig.leader.clientId}:${env.clusterConfig.leader.clientSecret}".base64
-    val uriRaw    = Uri(url + s"/api/tunnels/$tunnelId/relay?mid=${member.id}").copy(scheme = if (secured) "wss" else "ws")
-    val uri       = uriRaw.copy(authority = uriRaw.authority.copy(port = port))
+    val url     = env.clusterConfig.leader.urls.head
+    val secured = url.startsWith("https")
+    val port    = if (secured) member.httpsPort else member.httpPort
+    val userpwd = s"${env.clusterConfig.leader.clientId}:${env.clusterConfig.leader.clientSecret}".base64
+    val uriRaw  = Uri(url + s"/api/tunnels/$tunnelId/relay?mid=${member.id}").copy(scheme = if (secured) "wss" else "ws")
+    val uri     = uriRaw.copy(authority = uriRaw.authority.copy(port = port))
     logger.debug(s"trying to find node at: '${uri.toString()}' from node '${ClusterConfig.clusterNodeId}'")
     logger.debug(s"from: '${ClusterConfig.clusterNodeId}' to '${member.id}'")
     env.Ws
@@ -849,11 +861,11 @@ class LeaderConnection(
             ref.set(System.currentTimeMillis())
             register(this)
           }
-          case 417 => 
+          case 417 =>
             // retry to find the right node
             logger.debug("lb retry ws connection to find the right leader")
             connectLoadBalanced(waiting)
-          case v => 
+          case v   =>
             logger.error(s"lb received unknown status: $v")
         }
       }
@@ -966,7 +978,7 @@ class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(i
             case Some(mid) if mid != ClusterConfig.clusterNodeId => {
               Left(Results.ExpectationFailed(Json.obj("error" -> "bad node"))).vfuture
             }
-            case _ => {
+            case _                                               => {
               Right(ActorFlow.actorRef { out =>
                 TunnelRelayActor.props(out, tunnelId, env)
               }).vfuture

@@ -9,16 +9,20 @@ export const toUpperCaseLabels = (obj) => {
   return Object.entries(obj).reduce((acc, [key, value]) => {
     const isLabelField = key === 'label';
     const v = isLabelField && value ? value.replace(/_/g, ' ') : value;
-    const [prefix, ...sequences] = isLabelField ? (v ? v.split(/(?=[A-Z])/) : []) : [];
 
     return {
       ...acc,
-      [key]: !value ? null : isLabelField ? prefix.charAt(0).toUpperCase() + prefix.slice(1) + ' ' + sequences.join(' ').toLowerCase() :
-        (typeof value === 'object' &&
+      [key]: !value
+        ? null
+        : isLabelField
+        ? v.charAt(0).toUpperCase() + v.slice(1)
+        : typeof value === 'object' &&
           value !== null &&
           key !== 'transformer' &&
           key !== 'optionsTransformer' &&
-          !Array.isArray(value)) ? toUpperCaseLabels(value) : value
+          !Array.isArray(value)
+        ? toUpperCaseLabels(value)
+        : value,
     };
   }, {});
 };
@@ -34,7 +38,7 @@ export const useEntityFromURI = () => {
   let entity = 'routes';
   try {
     entity = pathname.split('/')[1];
-  } catch (_) { }
+  } catch (_) {}
 
   const isRouteInstance = entity === 'routes';
 

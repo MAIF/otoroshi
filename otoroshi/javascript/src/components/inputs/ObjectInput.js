@@ -72,9 +72,11 @@ export function ObjectInput(props) {
     <div>
       {data.length === 0 && (
         <div className="row mb-3">
-          {!props.ngOptions?.spread && <label htmlFor={`input-${props.label}`} className="col-xs-12 col-sm-2 col-form-label">
-            {props.label} <Help text={props.help} />
-          </label>}
+          {!props.ngOptions?.spread && (
+            <label htmlFor={`input-${props.label}`} className="col-xs-12 col-sm-2 col-form-label">
+              {props.label} <Help text={props.help} />
+            </label>
+          )}
           <div className={`${props.ngOptions?.spread ? 'col-sm-12' : 'col-sm-10'}`}>
             <button
               disabled={props.disabled}
@@ -88,34 +90,37 @@ export function ObjectInput(props) {
       )}
       {data.map(({ key, value, idx }, i) => (
         <div className="row mb-3" key={`keys-${idx}`}>
-          {(i === 0 && !props.ngOptions?.spread) && (
+          {i === 0 && !props.ngOptions?.spread && (
             <label className="col-xs-12 col-sm-2 col-form-label">
               {props.label} <Help text={props.help} />
             </label>
           )}
-          {(i > 0 && !props.ngOptions?.spread) &&
-            <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>}
+          {i > 0 && !props.ngOptions?.spread && (
+            <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>
+          )}
           <div className={`${props.ngOptions?.spread ? 'col-sm-12' : 'col-sm-10'}`}>
             <div className="input-group justify-content-between">
               {props.itemRenderer && props.itemRenderer(key, value, idx)}
-              {!props.itemRenderer && <>
-                <input
-                  disabled={props.disabled}
-                  type="text"
-                  className="form-control"
-                  placeholder={props.placeholderKey}
-                  value={key}
-                  onChange={(e) => changeKey(idx, key, e)}
-                />
-                <input
-                  disabled={props.disabled}
-                  type="text"
-                  className="form-control"
-                  placeholder={props.placeholderValue}
-                  value={value}
-                  onChange={(e) => changeValue(idx, key, e)}
-                />
-              </>}
+              {!props.itemRenderer && (
+                <>
+                  <input
+                    disabled={props.disabled}
+                    type="text"
+                    className="form-control"
+                    placeholder={props.placeholderKey}
+                    value={key}
+                    onChange={(e) => changeKey(idx, key, e)}
+                  />
+                  <input
+                    disabled={props.disabled}
+                    type="text"
+                    className="form-control"
+                    placeholder={props.placeholderValue}
+                    value={value}
+                    onChange={(e) => changeValue(idx, key, e)}
+                  />
+                </>
+              )}
               <span className="input-group-btn">
                 <button
                   disabled={props.disabled}

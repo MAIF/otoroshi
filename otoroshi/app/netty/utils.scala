@@ -13,22 +13,22 @@ case class EventLoopGroupCreation(group: EventLoopGroup, native: Option[String])
 object EventLoopUtils {
   def create(config: NativeSettings, nThread: Int): EventLoopGroupCreation = {
     if (config.isEpoll && io.netty.channel.epoll.Epoll.isAvailable) {
-      val channelHttp = new io.netty.channel.epoll.EpollServerSocketChannel()
+      val channelHttp  = new io.netty.channel.epoll.EpollServerSocketChannel()
       val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(nThread)
       evlGroupHttp.register(channelHttp)
       EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
     } else if (config.isIOUring && io.netty.incubator.channel.uring.IOUring.isAvailable) {
-      val channelHttp = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
+      val channelHttp  = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
       val evlGroupHttp = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(nThread)
       evlGroupHttp.register(channelHttp)
       EventLoopGroupCreation(evlGroupHttp, Some("IO-Uring"))
     } else if (config.isKQueue && io.netty.channel.kqueue.KQueue.isAvailable) {
-      val channelHttp = new io.netty.channel.kqueue.KQueueServerSocketChannel()
+      val channelHttp  = new io.netty.channel.kqueue.KQueueServerSocketChannel()
       val evlGroupHttp = new io.netty.channel.kqueue.KQueueEventLoopGroup(nThread)
       evlGroupHttp.register(channelHttp)
       EventLoopGroupCreation(evlGroupHttp, Some("KQeue"))
     } else {
-      val channelHttp = new NioServerSocketChannel()
+      val channelHttp  = new NioServerSocketChannel()
       val evlGroupHttp = new NioEventLoopGroup(nThread)
       evlGroupHttp.register(channelHttp)
       EventLoopGroupCreation(evlGroupHttp, None)
@@ -42,12 +42,11 @@ object AccessLogHandler {
 
 class AccessLogHandler extends ChannelDuplexHandler {
 
-  var method: String = "NONE"
-  var status: Int = 0
-  var uri: String = "NONE"
-  var start: Long = 0L
+  var method: String      = "NONE"
+  var status: Int         = 0
+  var uri: String         = "NONE"
+  var start: Long         = 0L
   var contentLength: Long = 0L
-
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Object): Unit = {
     msg match {
@@ -56,15 +55,15 @@ class AccessLogHandler extends ChannelDuplexHandler {
         method = request.method().name()
         uri = request.uri()
       }
-      case _ =>
+      case _                    =>
     }
     ctx.fireChannelRead(msg);
   }
 
   override def write(ctx: ChannelHandlerContext, msg: Object, promise: ChannelPromise) {
     msg match {
-      case response: HttpResponse => {
-        val s = response.status()
+      case response: HttpResponse    => {
+        val s       = response.status()
         status = s.code()
         if (s.equals(HttpResponseStatus.CONTINUE)) {
           ctx.write(msg, promise)
@@ -78,18 +77,22 @@ class AccessLogHandler extends ChannelDuplexHandler {
       case response: LastHttpContent => {
         contentLength = contentLength + response.content().readableBytes()
         val duration = System.currentTimeMillis() - start
-        val addr = ctx.channel().remoteAddress().toString // not the right value :(
-        AccessLogHandler.logger.info(s"""0.0.0.0 - - [${DateTime.now().toString("yyyy-MM-dd HH:mm:ss.SSS Z")}] "${method} ${uri} HTTP/3.0" ${status} ${contentLength} ${duration}""")
+        val addr     = ctx.channel().remoteAddress().toString // not the right value :(
+        AccessLogHandler.logger.info(s"""0.0.0.0 - - [${DateTime
+          .now()
+          .toString(
+            "yyyy-MM-dd HH:mm:ss.SSS Z"
+          )}] "${method} ${uri} HTTP/3.0" ${status} ${contentLength} ${duration}""")
         ctx.write(msg, promise.unvoid())
         return
       }
-      case msg: ByteBuf => {
+      case msg: ByteBuf              => {
         contentLength = contentLength + msg.readableBytes()
       }
-      case msg: ByteBufHolder => {
+      case msg: ByteBufHolder        => {
         contentLength = contentLength + msg.content().readableBytes()
       }
-      case _ =>
+      case _                         =>
     }
     ctx.write(msg, promise)
   }

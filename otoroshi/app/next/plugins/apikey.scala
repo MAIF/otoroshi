@@ -85,7 +85,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
       case false => false.future
     }).flatMap { pass =>
       ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
-        case None if config.validate && config.mandatory && !pass => {
+        case None if config.validate && config.mandatory && !pass   => {
           // Here are 2 + 12 datastore calls to handle quotas
           val routeId = ctx.route.cacheableId // handling route groups
           ApiKeyHelper
@@ -97,15 +97,18 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
                 NgAccess.NgAllowed
             }
         }
-        case None if config.validate && !config.mandatory && !pass => {
+        case None if config.validate && !config.mandatory && !pass  => {
           // Here are 2 + 12 datastore calls to handle quotas
           val routeId = ctx.route.cacheableId // handling route groups
           ApiKeyHelper
             .passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId, config.updateQuotas)
             .map {
-              case Left(result) if result.header.status == 400 && result.header.headers.get(env.Headers.OtoroshiErrorMsg).contains("no apikey") =>
+              case Left(result)
+                  if result.header.status == 400 && result.header.headers
+                    .get(env.Headers.OtoroshiErrorMsg)
+                    .contains("no apikey") =>
                 NgAccess.NgAllowed
-              case Left(result) =>
+              case Left(result)  =>
                 NgAccess.NgDenied(result)
               case Right(apikey) =>
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
@@ -118,14 +121,14 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
           ApiKeyHelper
             .passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId, config.updateQuotas)
             .map {
-              case Left(result) =>
+              case Left(result)  =>
                 NgAccess.NgAllowed
               case Right(apikey) =>
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
                 NgAccess.NgAllowed
             }
         }
-        case _                                => NgAccess.NgAllowed.vfuture
+        case _                                                      => NgAccess.NgAllowed.vfuture
       }
     }
   }

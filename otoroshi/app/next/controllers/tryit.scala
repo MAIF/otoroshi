@@ -46,33 +46,35 @@ class TryItController(
               Try {
                 val seconds = (jsonBody \ "timeout").asOpt[Int].getOrElse(15)
 
-                val race = akka.pattern.after(new DurationInt(seconds).seconds,
-                  using = env.otoroshiActorSystem.scheduler)(Future.successful(BadRequest(Json.obj("error" -> "Failed to connect to kafka"))))
-                Future.firstCompletedOf(Seq(
-                  Future {
-                    Try {
-                      val consumerSettings = KafkaSettings.consumerTesterSettings(env, kafka)
-                      val consumer = ConsumerSettings
-                        .createKafkaConsumer(consumerSettings)
-                      consumer.listTopics(java.time.Duration.of(seconds, ChronoUnit.SECONDS))
-                      consumer.close()
-                      Ok(Json.obj("status" -> "success"))
-                    } recover {
-                      case e: Throwable =>
+                val race =
+                  akka.pattern.after(new DurationInt(seconds).seconds, using = env.otoroshiActorSystem.scheduler)(
+                    Future.successful(BadRequest(Json.obj("error" -> "Failed to connect to kafka")))
+                  )
+                Future.firstCompletedOf(
+                  Seq(
+                    Future {
+                      Try {
+                        val consumerSettings = KafkaSettings.consumerTesterSettings(env, kafka)
+                        val consumer         = ConsumerSettings
+                          .createKafkaConsumer(consumerSettings)
+                        consumer.listTopics(java.time.Duration.of(seconds, ChronoUnit.SECONDS))
+                        consumer.close()
+                        Ok(Json.obj("status" -> "success"))
+                      } recover { case e: Throwable =>
                         throw e
                         BadRequest(Json.obj("error" -> e.getMessage))
-                    } get
-                  },
-                  race
-                ))
-              } recover {
-                case e: Throwable =>
-                  throw e
-                  BadRequest(Json.obj("error" -> e.getMessage)).future
+                      } get
+                    },
+                    race
+                  )
+                )
+              } recover { case e: Throwable =>
+                throw e
+                BadRequest(Json.obj("error" -> e.getMessage)).future
               } get
-            case JsError(errors) => BadRequest(Json.obj("error" -> errors.toString, "message" -> "Bad config")).future
+            case JsError(errors)     => BadRequest(Json.obj("error" -> errors.toString, "message" -> "Bad config")).future
           }
-        case _: JsUndefined =>
+        case _: JsUndefined    =>
           BadRequest(Json.obj("error" -> "missing config")).future
       }
     }

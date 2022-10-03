@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.13
+1.5.14
 </div>
 </div>
 <div class="nav-toc">
@@ -98,6 +98,8 @@
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -154,7 +156,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.13
+1.5.14
 </div>
 </div>
 <div class="nav-toc">
@@ -217,6 +219,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -1733,21 +1737,31 @@ play.http {
         http {
           parsing {
             max-uri-length             = 4k
+            max-uri-length             = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_URI_LENGTH}
             max-method-length          = 16
+            max-method-length          = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_METHOD_LENGTH}
             max-response-reason-length = 64
+            max-response-reason-length = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_RESPONSE_REASON_LENGTH}
             max-header-name-length     = 128
+            max-header-name-length     = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_HEADER_NAME_LENGTH}
             max-header-value-length    = 16k
+            max-header-value-length    = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_HEADER_VALUE_LENGTH}
             max-header-count           = 128
+            max-header-count           = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_HEADER_COUNT}
             max-chunk-ext-length       = 256
+            max-chunk-ext-length       = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_CHUNK_EXT_LENGTH}
             max-chunk-size             = 256m
             max-chunk-size             = ${?AKKA_HTTP_CLIENT_MAX_CHUNK_SIZE}
             max-chunk-size             = ${?OTOROSHI_AKKA_HTTP_CLIENT_MAX_CHUNK_SIZE}
+            max-chunk-size             = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_CHUNK_SIZE}
             max-content-length         = infinite
             max-content-length         = ${?AKKA_HTTP_CLIENT_MAX_CONTENT_LENGHT}
             max-content-length         = ${?OTOROSHI_AKKA_HTTP_CLIENT_MAX_CONTENT_LENGHT}
+            max-content-length         = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_CONTENT_LENGHT}
             max-to-strict-bytes        = infinite
             max-to-strict-bytes        = ${?AKKA_HTTP_CLIENT_MAX_TO_STRICT_BYTES}
             max-to-strict-bytes        = ${?OTOROSHI_AKKA_HTTP_CLIENT_MAX_TO_STRICT_BYTES}
+            max-to-strict-bytes        = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_TO_STRICT_BYTES}
           }
         }
       }
@@ -1794,6 +1808,67 @@ otoroshi {
       merge-sync-steps = ${?OTOROSHI_NEXT_PLUGINS_MERGE_SYNC_STEPS}
       apply-legacy-checks = true
       apply-legacy-checks = ${?OTOROSHI_NEXT_PLUGINS_APPLY_LEGACY_CHECKS}
+    }
+    experimental {
+    	netty-client {
+    		wiretap = false
+    		wiretap = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_CLIENT_WIRETAP}
+    		enforce = false
+    		enforce = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_CLIENT_ENFORCE}
+    		enforce-akka = false
+				enforce-akka = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_CLIENT_ENFORCE_AKKA}
+    	}
+   		netty-server {
+   			enabled = false
+   			enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ENABLED}
+   			new-engine-only = false
+   			new-engine-only = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NEW_ENGINE_ONLY}
+   			host = &quot;0.0.0.0&quot;
+   			host = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HOST}
+   			http-port = 10049
+   			http-port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_PORT}
+   			https-port = 10048
+   			https-port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTPS_PORT}
+   			wiretap = false
+   			wiretap = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_WIRETAP}
+   			accesslog = false
+   			accesslog = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ACCESSLOG}
+        threads = 0
+        threads = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_THREADS}
+   			parser {
+   				allowDuplicateContentLengths = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_ALLOW_DUPLICATE_CONTENT_LENGTHS}
+          validateHeaders = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_VALIDATE_HEADERS}
+          h2cMaxContentLength = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_H_2_C_MAX_CONTENT_LENGTH}
+          initialBufferSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_INITIAL_BUFFER_SIZE}
+          maxHeaderSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_MAX_HEADER_SIZE}
+          maxInitialLineLength = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_MAX_INITIAL_LINE_LENGTH}
+          maxChunkSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_MAX_CHUNK_SIZE}
+   			}
+   			http2 {
+					enabled = true
+					enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP2_ENABLED}
+					h2c = true
+					h2c = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP2_H2C}
+				}
+   			http3 {
+   				enabled = false
+   				enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP3_ENABLED}
+   				port = 10048
+   				port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP3_PORT}
+          initialMaxStreamsBidirectional = 100000
+          initialMaxStreamDataBidirectionalRemote = 1000000
+          initialMaxStreamDataBidirectionalLocal = 1000000
+          initialMaxData = 10000000
+          maxRecvUdpPayloadSize = 1500
+          maxSendUdpPayloadSize = 1500
+   			}
+   			native {
+   				enabled = true
+   				enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NATIVE_ENABLED}
+   				driver = &quot;Auto&quot; # possible values are Auto, Epoll, KQueue, IOUring
+   				driver = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NATIVE_DRIVER}
+   			}
+   		}
     }
   }
   options {
@@ -1885,15 +1960,15 @@ otoroshi {
   tls = ${otoroshi.ssl}
   ssl {
     # the cipher suites used by otoroshi TLS termination
-    cipherSuitesJDK11 = [&quot;TLS_AES_128_GCM_SHA256&quot;, &quot;TLS_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_EMPTY_RENEGOTIATION_INFO_SCSV&quot;]
+    cipherSuitesJDK11 = [&quot;TLS_AES_256_GCM_SHA384&quot;, &quot;TLS_AES_128_GCM_SHA256&quot;, &quot;TLS_CHACHA20_POLY1305_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_EMPTY_RENEGOTIATION_INFO_SCSV&quot;]
     cipherSuitesJDK8 = [&quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_EMPTY_RENEGOTIATION_INFO_SCSV&quot;]
     # cipherSuites = [&quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_AES_128_GCM_SHA256&quot;, &quot;TLS_AES_256_GCM_SHA384&quot;]
-    cipherSuites = []
+    cipherSuites = ${otoroshi.ssl.cipherSuitesJDK11}
     # the protocols used by otoroshi TLS termination
     protocolsJDK11 = [&quot;TLSv1.3&quot;, &quot;TLSv1.2&quot;, &quot;TLSv1.1&quot;, &quot;TLSv1&quot;]
     protocolsJDK8 = [&quot;SSLv2Hello&quot;, &quot;TLSv1&quot;, &quot;TLSv1.1&quot;, &quot;TLSv1.2&quot;]
-    # protocols = [&quot;TLSv1.3&quot;, &quot;TLSv1.2&quot;]
-    protocols = []
+    modernProtocols = [&quot;TLSv1.3&quot;, &quot;TLSv1.2&quot;]
+    protocols = ${otoroshi.ssl.modernProtocols}
     # the JDK cacert access
     cacert {
       path = &quot;$JAVA_HOME/lib/security/cacerts&quot;
@@ -2200,6 +2275,10 @@ otoroshi {
     enabled = ${?OTOROSHI_TUNNELS_ENABLED}
     worker-ws = true
     worker-ws = ${?OTOROSHI_TUNNELS_WORKER_WS}
+    worker-use-internal-ports = false
+    worker-use-internal-ports = ${?OTOROSHI_TUNNELS_WORKER_USE_INTERNAL_PORTS}
+    worker-use-loadbalancing = false
+    worker-use-loadbalancing = ${?OTOROSHI_TUNNELS_WORKER_USE_LOADBALANCING}
     default {
       enabled = false
       enabled = ${?OTOROSHI_TUNNELS_DEFAULT_ENABLED}
@@ -2218,6 +2297,14 @@ otoroshi {
 			export-routes = true # send routes information to remote otoroshi instance to facilitate remote route exposition
 			export-routes = ${?OTOROSHI_TUNNELS_DEFAULT_EXPORT_ROUTES} # send routes information to remote otoroshi instance to facilitate remote route exposition
 			export-routes-tag = ${?OTOROSHI_TUNNELS_DEFAULT_EXPORT_TAG} # only send routes information if the route has this tag
+      proxy {
+        enabled = false
+        host = none
+        port = none
+        principal = none
+        password = none
+        nonProxyHosts = []
+      }
     }
   }
 }
@@ -2326,10 +2413,13 @@ akka { # akka specific configuration
     server {
       server-header = otoroshi
       max-connections = 2048
+      max-connections = ${?OTOROSHI_AKKA_HTTP_SERVER_MAX_CONNECTIONS}
       remote-address-header = on
       raw-request-uri-header = on
       pipelining-limit = 64
+      pipelining-limit = ${?OTOROSHI_AKKA_HTTP_SERVER_PIPELINING_LIMIT}
       backlog = 512
+      backlog = ${?OTOROSHI_AKKA_HTTP_SERVER_BACKLOG}
       socket-options {
         so-receive-buffer-size = undefined
         so-send-buffer-size = undefined
@@ -2359,8 +2449,11 @@ akka { # akka specific configuration
     }
     host-connection-pool {
       max-connections = 512
+      max-connections = ${?OTOROSHI_AKKA_HTTP_SERVER_HOST_CONNECTION_POOL_MAX_CONNECTIONS}
       max-open-requests = 2048
+      max-open-requests = ${?OTOROSHI_AKKA_HTTP_SERVER_HOST_CONNECTION_POOL_MAX_OPEN_REQUESTS}
       pipelining-limit = 32
+      pipelining-limit = ${?OTOROSHI_AKKA_HTTP_SERVER_HOST_CONNECTION_POOL_PIPELINING_LIMIT}
       client {
         user-agent-header = otoroshi
         socket-options {
@@ -2376,18 +2469,27 @@ akka { # akka specific configuration
     }
     parsing {
       max-uri-length             = 4k
+      max-uri-length             = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_URI_LENGTH}
       max-method-length          = 16
+      max-method-length          = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_METHOD_LENGTH}
       max-response-reason-length = 128
+      max-response-reason-length = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_RESPONSE_REASON_LENGTH}
       max-header-name-length     = 128
+      max-header-name-length     = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_HEADER_NAME_LENGTH}
       max-header-value-length    = 16k
+      max-header-value-length    = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_HEADER_VALUE_LENGTH}
       max-header-count           = 128
+      max-header-count           = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_HEADER_COUNT}
       max-chunk-ext-length       = 256
+      max-chunk-ext-length       = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_CHUNK_EXT_LENGTH}
       max-chunk-size             = 256m
       max-chunk-size             = ${?AKKA_HTTP_SERVER_MAX_CHUNK_SIZE}
       max-chunk-size             = ${?OTOROSHI_AKKA_HTTP_SERVER_MAX_CHUNK_SIZE}
+      max-chunk-size             = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_CHUNK_SIZE}
       max-content-length         = infinite
       max-content-length         = ${?AKKA_HTTP_SERVER_MAX_CONTENT_LENGHT}
       max-content-length         = ${?OTOROSHI_AKKA_HTTP_SERVER_MAX_CONTENT_LENGHT}
+      max-content-length         = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_CONTENT_LENGHT}
     }
   }
 }</code></pre>
@@ -2857,12 +2959,22 @@ akka { # akka specific configuration
         }
         http {
           parsing {
+            max-uri-length             = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_URI_LENGTH}
+            max-method-length          = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_METHOD_LENGTH}
+            max-response-reason-length = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_RESPONSE_REASON_LENGTH}
+            max-header-name-length     = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_HEADER_NAME_LENGTH}
+            max-header-value-length    = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_HEADER_VALUE_LENGTH}
+            max-header-count           = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_HEADER_COUNT}
+            max-chunk-ext-length       = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_CHUNK_EXT_LENGTH}
             max-chunk-size             = ${?AKKA_HTTP_CLIENT_MAX_CHUNK_SIZE}
             max-chunk-size             = ${?OTOROSHI_AKKA_HTTP_CLIENT_MAX_CHUNK_SIZE}
+            max-chunk-size             = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_CHUNK_SIZE}
             max-content-length         = ${?AKKA_HTTP_CLIENT_MAX_CONTENT_LENGHT}
             max-content-length         = ${?OTOROSHI_AKKA_HTTP_CLIENT_MAX_CONTENT_LENGHT}
+            max-content-length         = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_CONTENT_LENGHT}
             max-to-strict-bytes        = ${?AKKA_HTTP_CLIENT_MAX_TO_STRICT_BYTES}
             max-to-strict-bytes        = ${?OTOROSHI_AKKA_HTTP_CLIENT_MAX_TO_STRICT_BYTES}
+            max-to-strict-bytes        = ${?OTOROSHI_AKKA_HTTP_CLIENT_PARSING_MAX_TO_STRICT_BYTES}
           }
         }
       }
@@ -2891,6 +3003,44 @@ otoroshi {
     plugins {
       merge-sync-steps = ${?OTOROSHI_NEXT_PLUGINS_MERGE_SYNC_STEPS}
       apply-legacy-checks = ${?OTOROSHI_NEXT_PLUGINS_APPLY_LEGACY_CHECKS}
+    }
+    experimental {
+    	netty-client {
+    		wiretap = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_CLIENT_WIRETAP}
+    		enforce = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_CLIENT_ENFORCE}
+				enforce-akka = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_CLIENT_ENFORCE_AKKA}
+    	}
+   		netty-server {
+   			enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ENABLED}
+   			new-engine-only = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NEW_ENGINE_ONLY}
+   			host = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HOST}
+   			http-port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_PORT}
+   			https-port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTPS_PORT}
+   			wiretap = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_WIRETAP}
+   			accesslog = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ACCESSLOG}
+        threads = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_THREADS}
+   			parser {
+   				allowDuplicateContentLengths = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_ALLOW_DUPLICATE_CONTENT_LENGTHS}
+          validateHeaders = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_VALIDATE_HEADERS}
+          h2cMaxContentLength = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_H_2_C_MAX_CONTENT_LENGTH}
+          initialBufferSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_INITIAL_BUFFER_SIZE}
+          maxHeaderSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_MAX_HEADER_SIZE}
+          maxInitialLineLength = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_MAX_INITIAL_LINE_LENGTH}
+          maxChunkSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_PARSER_MAX_CHUNK_SIZE}
+   			}
+   			http2 {
+					enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP2_ENABLED}
+					h2c = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP2_H2C}
+				}
+   			http3 {
+   				enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP3_ENABLED}
+   				port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP3_PORT}
+   			}
+   			native {
+   				enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NATIVE_ENABLED}
+   				driver = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NATIVE_DRIVER}
+   			}
+   		}
     }
   }
   options {
@@ -2956,6 +3106,8 @@ otoroshi {
   }
   tls = ${otoroshi.ssl}
   ssl {
+    cipherSuites = ${otoroshi.ssl.cipherSuitesJDK11}
+    protocols = ${otoroshi.ssl.modernProtocols}
     cacert {
     }
     fromOutside {
@@ -3149,6 +3301,8 @@ otoroshi {
   tunnels {
     enabled = ${?OTOROSHI_TUNNELS_ENABLED}
     worker-ws = ${?OTOROSHI_TUNNELS_WORKER_WS}
+    worker-use-internal-ports = ${?OTOROSHI_TUNNELS_WORKER_USE_INTERNAL_PORTS}
+    worker-use-loadbalancing = ${?OTOROSHI_TUNNELS_WORKER_USE_LOADBALANCING}
     default {
       enabled = ${?OTOROSHI_TUNNELS_DEFAULT_ENABLED}
       id = ${?OTOROSHI_TUNNELS_DEFAULT_ID}
@@ -3159,6 +3313,8 @@ otoroshi {
 			clientSecret = ${?OTOROSHI_TUNNELS_DEFAULT_CLIENT_SECRET}
 			export-routes = ${?OTOROSHI_TUNNELS_DEFAULT_EXPORT_ROUTES} # send routes information to remote otoroshi instance to facilitate remote route exposition
 			export-routes-tag = ${?OTOROSHI_TUNNELS_DEFAULT_EXPORT_TAG} # only send routes information if the route has this tag
+      proxy {
+      }
     }
   }
 }
@@ -3222,6 +3378,9 @@ akka { # akka specific configuration
   }
   http {
     server {
+      max-connections = ${?OTOROSHI_AKKA_HTTP_SERVER_MAX_CONNECTIONS}
+      pipelining-limit = ${?OTOROSHI_AKKA_HTTP_SERVER_PIPELINING_LIMIT}
+      backlog = ${?OTOROSHI_AKKA_HTTP_SERVER_BACKLOG}
       socket-options {
       }
       http2 {
@@ -3232,16 +3391,28 @@ akka { # akka specific configuration
       }
     }
     host-connection-pool {
+      max-connections = ${?OTOROSHI_AKKA_HTTP_SERVER_HOST_CONNECTION_POOL_MAX_CONNECTIONS}
+      max-open-requests = ${?OTOROSHI_AKKA_HTTP_SERVER_HOST_CONNECTION_POOL_MAX_OPEN_REQUESTS}
+      pipelining-limit = ${?OTOROSHI_AKKA_HTTP_SERVER_HOST_CONNECTION_POOL_PIPELINING_LIMIT}
       client {
         socket-options {
         }
       }
     }
     parsing {
+      max-uri-length             = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_URI_LENGTH}
+      max-method-length          = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_METHOD_LENGTH}
+      max-response-reason-length = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_RESPONSE_REASON_LENGTH}
+      max-header-name-length     = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_HEADER_NAME_LENGTH}
+      max-header-value-length    = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_HEADER_VALUE_LENGTH}
+      max-header-count           = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_HEADER_COUNT}
+      max-chunk-ext-length       = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_CHUNK_EXT_LENGTH}
       max-chunk-size             = ${?AKKA_HTTP_SERVER_MAX_CHUNK_SIZE}
       max-chunk-size             = ${?OTOROSHI_AKKA_HTTP_SERVER_MAX_CHUNK_SIZE}
+      max-chunk-size             = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_CHUNK_SIZE}
       max-content-length         = ${?AKKA_HTTP_SERVER_MAX_CONTENT_LENGHT}
       max-content-length         = ${?OTOROSHI_AKKA_HTTP_SERVER_MAX_CONTENT_LENGHT}
+      max-content-length         = ${?OTOROSHI_AKKA_HTTP_SERVER_PARSING_MAX_CONTENT_LENGHT}
     }
   }
 }</code></pre>

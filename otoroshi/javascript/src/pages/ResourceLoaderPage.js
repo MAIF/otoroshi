@@ -47,7 +47,8 @@ const UPDATE_ENTITIES = {
   ClientValidator: (content) => BackOfficeServices.updateClientValidator(content),
   Script: (content) => BackOfficeServices.updateScript(content),
   ErrorTemplate: (content) => BackOfficeServices.updateTemplate(content),
-  Route: content => BackOfficeServices.nextClient.update(BackOfficeServices.nextClient.ENTITIES.ROUTES, content)
+  Route: (content) =>
+    BackOfficeServices.nextClient.update(BackOfficeServices.nextClient.ENTITIES.ROUTES, content),
 };
 
 export function ResourceLoaderPage({ setTitle }) {

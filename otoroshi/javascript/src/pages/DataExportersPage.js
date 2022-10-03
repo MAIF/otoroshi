@@ -14,7 +14,7 @@ import {
 import { Collapse } from '../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 import { CheckElasticsearchConnection } from '../components/elasticsearch';
-import { FeedbackButton } from './RouteDesigner/FeedbackButton'
+import { FeedbackButton } from './RouteDesigner/FeedbackButton';
 
 function tryOrTrue(f) {
   try {
@@ -320,59 +320,67 @@ export class DataExportersPage extends Component {
 }
 
 const ExporterTryIt = ({ exporter }) => {
-  const [status, setStatus] = useState("Not tested")
-  const [timeout, setConnectionTimeout] = useState(15)
+  const [status, setStatus] = useState('Not tested');
+  const [timeout, setConnectionTimeout] = useState(15);
 
-  return <div>
-    <div class="col-sm-12" role="button">
-      <Collapse initCollapsed={false} label="Try it">
-        <div className="row mb-3">
-          <label className="col-xs-12 col-sm-2 col-form-label">
-            Status
-          </label>
-          <div className="col-sm-10 " style={{
-            color: status === 'Successful' ? '#5cb85c' : status === 'Not tested' ? '#f39c12' : '#D5443F',
-            display: 'flex',
-            alignItems: 'center',
-            width: 'fit-content'
-          }}>
-            {status !== 'Successful' ?
-              <i className='fas fa-times-circle' /> :
-              <i className='fas fa-check' />}
-            <span className='ms-1'>{status}</span>
+  return (
+    <div>
+      <div class="col-sm-12" role="button">
+        <Collapse initCollapsed={false} label="Try it">
+          <div className="row mb-3">
+            <label className="col-xs-12 col-sm-2 col-form-label">Status</label>
+            <div
+              className="col-sm-10 "
+              style={{
+                color:
+                  status === 'Successful'
+                    ? '#5cb85c'
+                    : status === 'Not tested'
+                    ? '#f39c12'
+                    : '#D5443F',
+                display: 'flex',
+                alignItems: 'center',
+                width: 'fit-content',
+              }}>
+              {status !== 'Successful' ? (
+                <i className="fas fa-times-circle" />
+              ) : (
+                <i className="fas fa-check" />
+              )}
+              <span className="ms-1">{status}</span>
+            </div>
           </div>
-        </div>
-        <NumberInput
-          label="Try it connection timeout"
-          step="1"
-          min={0}
-          max={120}
-          value={timeout}
-          onChange={setConnectionTimeout}
-        />
-        <div className='row mb-3'>
-          <label className="col-xs-12 col-sm-2 col-form-label"></label>
-          <div className="col-sm-10 d-flex">
-            <FeedbackButton
-              text="Test connection"
-              icon={() => <i className='fas fa-hammer' />}
-              onPress={() => {
-                setStatus("Processing ...")
-                return BackOfficeServices.dataExportertryIt({ ...exporter, timeout })
-                  .then(res => {
-                    if (res.status === 200)
-                      setStatus("Successful")
-                    else
-                      res.json()
-                        .then(err => setStatus(err.error))
-                  })
-              }} />
+          <NumberInput
+            label="Try it connection timeout"
+            step="1"
+            min={0}
+            max={120}
+            value={timeout}
+            onChange={setConnectionTimeout}
+          />
+          <div className="row mb-3">
+            <label className="col-xs-12 col-sm-2 col-form-label"></label>
+            <div className="col-sm-10 d-flex">
+              <FeedbackButton
+                text="Test connection"
+                icon={() => <i className="fas fa-hammer" />}
+                onPress={() => {
+                  setStatus('Processing ...');
+                  return BackOfficeServices.dataExportertryIt({ ...exporter, timeout }).then(
+                    (res) => {
+                      if (res.status === 200) setStatus('Successful');
+                      else res.json().then((err) => setStatus(err.error));
+                    }
+                  );
+                }}
+              />
+            </div>
           </div>
-        </div>
-      </Collapse >
-    </div >
-  </div >
-}
+        </Collapse>
+      </div>
+    </div>
+  );
+};
 
 export class NewExporterForm extends Component {
   updateType = (type) => {
@@ -506,66 +514,94 @@ export class NewExporterForm extends Component {
 }
 
 const CustomMtlsChooser = ({ onChange, value, rawValue }) => {
-  console.log(value)
-  if (!["SASL_SSL", "SSL"].includes(rawValue.securityProtocol))
-    return null
+  console.log(value);
+  if (!['SASL_SSL', 'SSL'].includes(rawValue.securityProtocol)) return null;
 
-  return <div className="row mb-3">
-    <label className="col-xs-12 col-sm-2 col-form-label">
-      Custom TLS Settings
-    </label>
-    <div className="col-sm-10" style={{ display: 'flex' }}>
-      <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
-        <ChooserButton isActive={value === true}
-          onChange={onChange} value={true} label='Use Otoroshi certificates' style={{ minHeight: 'initial' }} />
-        <ChooserButton isActive={typeof value === "object" && Object.keys(value).length === 0}
-          onChange={onChange} value={false} label='Use your own keystore/truststore' style={{ minHeight: 'initial' }} />
+  return (
+    <div className="row mb-3">
+      <label className="col-xs-12 col-sm-2 col-form-label">Custom TLS Settings</label>
+      <div className="col-sm-10" style={{ display: 'flex' }}>
+        <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
+          <ChooserButton
+            isActive={value === true}
+            onChange={onChange}
+            value={true}
+            label="Use Otoroshi certificates"
+            style={{ minHeight: 'initial' }}
+          />
+          <ChooserButton
+            isActive={typeof value === 'object' && Object.keys(value).length === 0}
+            onChange={onChange}
+            value={false}
+            label="Use your own keystore/truststore"
+            style={{ minHeight: 'initial' }}
+          />
+        </div>
       </div>
     </div>
-  </div>
-}
+  );
+};
 
 const SecurityProtocol = ({ onChange, ...props }) => {
   const protocols = [
-    { value: 'PLAINTEXT', label: 'PLAINTEXT', description: '(Un-authenticated, non-encrypted channel)' },
-    { value: 'SASL_PLAINTEXT', label: 'SASL_PLAINTEXT', description: '(SASL authenticated, non-encrypted channel)' },
+    {
+      value: 'PLAINTEXT',
+      label: 'PLAINTEXT',
+      description: '(Un-authenticated, non-encrypted channel)',
+    },
+    {
+      value: 'SASL_PLAINTEXT',
+      label: 'SASL_PLAINTEXT',
+      description: '(SASL authenticated, non-encrypted channel)',
+    },
     { value: 'SASL_SSL', label: 'SASL_SSL', description: '(SASL authenticated, SSL channel)' },
-    { value: 'SSL', label: 'SSL channel' }
-  ]
-  return <div className="row mb-3">
-    <label className="col-xs-12 col-sm-2 col-form-label">
-      Security Protocol
-    </label>
-    <div className="col-sm-10" style={{ display: 'flex' }}>
-      <div style={{ display: 'flex', gap: '12px' }}>
-        {protocols.map(({ value, label, description }) => {
-          return <ChooserButton key={value} isActive={value === props.value} value={value} onChange={onChange} label={label} description={description} />
-        })}
+    { value: 'SSL', label: 'SSL channel' },
+  ];
+  return (
+    <div className="row mb-3">
+      <label className="col-xs-12 col-sm-2 col-form-label">Security Protocol</label>
+      <div className="col-sm-10" style={{ display: 'flex' }}>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          {protocols.map(({ value, label, description }) => {
+            return (
+              <ChooserButton
+                key={value}
+                isActive={value === props.value}
+                value={value}
+                onChange={onChange}
+                label={label}
+                description={description}
+              />
+            );
+          })}
+        </div>
       </div>
     </div>
-  </div>
-}
+  );
+};
 
 const ChooserButton = ({ isActive, value, onChange, label, description, style = {} }) => {
-  return <button
-    type="button"
-    className={`btn ${isActive ? 'btn-success' : 'btn-dark'}`}
-    onClick={() => onChange(value)}
-    style={{
-      flexDirection: 'column',
-      flex: 1,
-      maxWidth: '200px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      maxHeight: '80px !important',
-      minHeight: '80px',
-      ...style
-    }}>
-    <span>{label}</span>
-    {description && <span style={{ fontSize: '.75em' }}>{description}</span>}
-  </button>
-}
+  return (
+    <button
+      type="button"
+      className={`btn ${isActive ? 'btn-success' : 'btn-dark'}`}
+      onClick={() => onChange(value)}
+      style={{
+        flexDirection: 'column',
+        flex: 1,
+        maxWidth: '200px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        maxHeight: '80px !important',
+        minHeight: '80px',
+        ...style,
+      }}>
+      <span>{label}</span>
+      {description && <span style={{ fontSize: '.75em' }}>{description}</span>}
+    </button>
+  );
+};
 
 const possibleExporterConfigFormValues = {
   elastic: {
@@ -897,7 +933,7 @@ const possibleExporterConfigFormValues = {
       'mtlsConfig.loose',
       'mtlsConfig.certs',
       'mtlsConfig.trustedCerts',
-      'hostValidation'
+      'hostValidation',
     ],
     schema: {
       servers: {
@@ -911,7 +947,7 @@ const possibleExporterConfigFormValues = {
       securityProtocol: <SecurityProtocol />,
       keyPass: {
         type: 'string',
-        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls && v.securityProtocol.includes("SSL")),
+        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls && v.securityProtocol.includes('SSL')),
         props: {
           label: 'Kafka keypass',
           placeholder: 'secret',
@@ -922,7 +958,7 @@ const possibleExporterConfigFormValues = {
       },
       keystore: {
         type: 'string',
-        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls && v.securityProtocol.includes("SSL")),
+        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls && v.securityProtocol.includes('SSL')),
         props: {
           label: 'Kafka keystore path',
           placeholder: '/home/bas/client.keystore.jks',
@@ -932,7 +968,7 @@ const possibleExporterConfigFormValues = {
       },
       truststore: {
         type: 'string',
-        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls && v.securityProtocol.includes("SSL")),
+        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls && v.securityProtocol.includes('SSL')),
         props: {
           label: 'Kafka truststore path',
           placeholder: '/home/bas/client.truststore.jks',
@@ -942,7 +978,7 @@ const possibleExporterConfigFormValues = {
       },
       'saslConfig.username': {
         type: 'string',
-        display: (v) => tryOrTrue(() => v.securityProtocol.includes("SASL")),
+        display: (v) => tryOrTrue(() => v.securityProtocol.includes('SASL')),
         props: {
           label: 'SASL username',
           help: 'Kafka client user',
@@ -950,16 +986,17 @@ const possibleExporterConfigFormValues = {
       },
       'saslConfig.password': {
         type: 'string',
-        display: (v) => tryOrTrue(() => v.securityProtocol.includes("SASL")),
+        display: (v) => tryOrTrue(() => v.securityProtocol.includes('SASL')),
         props: {
           label: 'SASL password',
           help: 'Kafka client password',
-          type: 'password'
+          type: 'password',
         },
       },
       'saslConfig.mechanism': {
         type: 'select',
-        display: v => tryOrTrue(() => ['SASL_PLAINTEXT', 'SASL_SSL'].includes(v.securityProtocol)),
+        display: (v) =>
+          tryOrTrue(() => ['SASL_PLAINTEXT', 'SASL_SSL'].includes(v.securityProtocol)),
         props: {
           label: 'SASL Mechanism',
           possibleValues: [
@@ -968,12 +1005,13 @@ const possibleExporterConfigFormValues = {
             { value: 'SCRAM-SHA-256', label: 'SCRAM-SHA-256' },
             { value: 'SCRAM-SHA-512', label: 'SCRAM-SHA-512' },
             // {value: 'OAUTHBEARER', label: 'OAUTHBEARER' },
-          ]
-        }
+          ],
+        },
       },
       hostValidation: {
         type: 'bool',
-        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls || ['SSL', 'SASL_SSL'].includes(v.securityProtocol)),
+        display: (v) =>
+          tryOrTrue(() => v.mtlsConfig.mtls || ['SSL', 'SASL_SSL'].includes(v.securityProtocol)),
         props: {
           label: 'Hostname validation',
           help: 'Enabled TLS hostname validation',
@@ -1370,9 +1408,9 @@ const possibleExporterConfigFormValues = {
               <span>
                 <span className="badge bg-success" style={{ minWidth: 63 }}>
                   {a.certType}
-                </span > {' '}
+                </span>{' '}
                 {a.name}
-              </span >
+              </span>
             ),
           }),
         },

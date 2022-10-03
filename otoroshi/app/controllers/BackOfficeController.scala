@@ -604,11 +604,11 @@ class BackOfficeController(
     BackOfficeActionAuth.async { _ =>
       env.datastores.routeDataStore.findAll().map { routes =>
         Ok(
-            JsArray(
-              routes
+          JsArray(
+            routes
               .filter(r => r.plugins.hasPlugin[EurekaServerSink])
               .map(_.json)
-            )
+          )
         )
       }
     }
@@ -620,7 +620,7 @@ class BackOfficeController(
           env.Ws
             .url(s"$url/apps")
             .withMethod("GET")
-            .withHttpHeaders(Seq("Accept" -> "application/json"):_*)
+            .withHttpHeaders(Seq("Accept" -> "application/json"): _*)
             .execute()
             .map { res =>
               if (res.status == 200) {
@@ -629,9 +629,8 @@ class BackOfficeController(
                 BadRequest(Json.obj("error" -> s"bad server response: ${res.status} - ${res.headers} - ${res.body}"))
               }
             }
-        case None =>
-          BadRequest(Json.obj("error" -> "missing url"))
-            .vfuture
+        case None      =>
+          BadRequest(Json.obj("error" -> "missing url")).vfuture
       }
     }
 

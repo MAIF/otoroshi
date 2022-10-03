@@ -1,2 +1,2 @@
-libraryDependencies += "fr.maif" %% "otoroshi" % "1.5.13"
-libraryDependencies += "fr.maif" %% "otoroshi" % "1.5.13" classifier "assets"
+libraryDependencies += "fr.maif" %% "otoroshi" % "1.5.14"
+libraryDependencies += "fr.maif" %% "otoroshi" % "1.5.14" classifier "assets"

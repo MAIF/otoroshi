@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.13
+1.5.14
 </div>
 </div>
 <div class="nav-toc">
@@ -98,6 +98,8 @@
     <li><a href="../../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
   </ul></li>
   <li><a href="../../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -154,7 +156,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.13
+1.5.14
 </div>
 </div>
 <div class="nav-toc">
@@ -217,6 +219,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
     <li><a href="../../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
     <li><a href="../../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
   </ul></li>
   <li><a href="../../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -266,7 +270,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#otoroshi-tunnels" name="otoroshi-tunnels" class="anchor"><span class="anchor-link"></span></a>Otoroshi tunnels</h1><div class="callout warning "><div class="callout-title">Warning</div>
 <p>this feature is <strong>EXPERIMENTAL</strong> and might not work as expected. <br/> If you encounter any bugs, <a href="https://github.com/MAIF/otoroshi/issues/new">please fill an issue</a>, it will help us a lot :)</p></div>
-<p>Sometimes, exposing apis that lives in our private network can be a nightmare, especially from a networking point of view. With otoroshi tunnels, this is now trivial, as long as your internal otoroshi (that lives inside your private network) is able to contact an external otoroshi (exposed on the internet).</p>
+<p>Sometimes, exposing apis that lives in our private network can be a nightmare, especially from a networking point of view. With otoroshi tunnels, this is now trivial, as long as your internal otoroshi (that lives inside your private network) is able to contact an external otoroshi (exposed on the internet).</p><div class="callout warning margin-top-20"><div class="callout-title">Warning</div>
+<p>You have to enable cluster mode (Leader or Worker) to make this feature work. As this feature is experimental, we only support simple http request right now. Server Sent Event and Websocket request are not supported at the moment.</p></div>
 <h2><a href="#how-otoroshi-tunnels-works" name="how-otoroshi-tunnels-works" class="anchor"><span class="anchor-link"></span></a>How Otoroshi tunnels works</h2>
 <p>the main idea behind otoroshi tunnels is that the connection between your private network et the public network is initiated by the private network side. You don&rsquo;t have to expose a part of your private network, create a DMZ or whatever, you just have to authorize your private network otoroshi instance to contact your public network otoroshi instance.</p><div class="centered-img">
 <img src="../../imgs/tunnel-creation.jpeg" /></div>
@@ -319,7 +324,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>you can see all the connected tunnel instances on an otoroshi instance on the <code>Connected tunnels</code> (<code>Cog icon</code> / <code>Connected tunnels</code>). For each tunnel instance you will be able to check the tunnel health and also to easily expose all the routes available on the other end of the tunnel. Just clic on the <code>expose</code> button of the route you want to expose, and a new route will be created with the <code>Remote tunnel calls</code> plugin already setup.</p><div class="centered-img">
 <img src="../../imgs/tunnel-expose.png" /></div>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../../next/built-in-plugins.html">Built-in plugins</a></p>
+<p><strong>Next:</strong> <a href="../../next/topics/netty-server.html">Alternative HTTP server</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>

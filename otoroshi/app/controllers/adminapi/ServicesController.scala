@@ -6,7 +6,18 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}
 import otoroshi.next.models.NgRoute
-import otoroshi.utils.controllers.{AdminApiHelper, ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SendAuditAndAlert, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  AdminApiHelper,
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SendAuditAndAlert,
+  SeqEntityAndContext
+}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -546,10 +557,12 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
         val route = NgRoute.fromServiceDescriptor(desc, false)
         route.save().map { _ =>
           val port = if (ctx.request.theSecured) env.exposedHttpsPortInt else env.exposedHttpPortInt
-          Ok(route.json.asObject ++ Json.obj(
-            "resource_url" -> s"${ctx.request.theProtocol}://${env.adminApiExposedHost}:${port}/api/experimental/routes/${route.id}",
-            "resource_ui_url" -> s"${ctx.request.theProtocol}://${env.backOfficeHost}:${port}/bo/dashboard/routes/${route.id}",
-          ))
+          Ok(
+            route.json.asObject ++ Json.obj(
+              "resource_url"    -> s"${ctx.request.theProtocol}://${env.adminApiExposedHost}:${port}/api/experimental/routes/${route.id}",
+              "resource_ui_url" -> s"${ctx.request.theProtocol}://${env.backOfficeHost}:${port}/bo/dashboard/routes/${route.id}"
+            )
+          )
         }
       }
     }

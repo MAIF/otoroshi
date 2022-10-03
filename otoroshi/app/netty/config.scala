@@ -7,57 +7,57 @@ import play.api.Configuration
 import reactor.netty.http.HttpDecoderSpec
 
 case class HttpRequestParserConfig(
-  allowDuplicateContentLengths: Boolean,
-  validateHeaders: Boolean,
-  h2cMaxContentLength: Int,
-  initialBufferSize: Int,
-  maxHeaderSize: Int,
-  maxInitialLineLength: Int,
-  maxChunkSize: Int,
+    allowDuplicateContentLengths: Boolean,
+    validateHeaders: Boolean,
+    h2cMaxContentLength: Int,
+    initialBufferSize: Int,
+    maxHeaderSize: Int,
+    maxInitialLineLength: Int,
+    maxChunkSize: Int
 )
 
 sealed trait NativeDriver
 object NativeDriver {
-  case object Auto extends NativeDriver
-  case object Epoll extends NativeDriver
-  case object KQueue extends NativeDriver
+  case object Auto    extends NativeDriver
+  case object Epoll   extends NativeDriver
+  case object KQueue  extends NativeDriver
   case object IOUring extends NativeDriver
 }
 
 case class Http3Settings(
-  enabled: Boolean,
-  port: Int,
-  maxSendUdpPayloadSize: Long,
-  maxRecvUdpPayloadSize: Long,
-  initialMaxData: Long,
-  initialMaxStreamDataBidirectionalLocal: Long,
-  initialMaxStreamDataBidirectionalRemote: Long,
-  initialMaxStreamsBidirectional: Long
+    enabled: Boolean,
+    port: Int,
+    maxSendUdpPayloadSize: Long,
+    maxRecvUdpPayloadSize: Long,
+    initialMaxData: Long,
+    initialMaxStreamDataBidirectionalLocal: Long,
+    initialMaxStreamDataBidirectionalRemote: Long,
+    initialMaxStreamsBidirectional: Long
 )
 case class Http2Settings(enabled: Boolean, h2cEnabled: Boolean)
 case class NativeSettings(enabled: Boolean, driver: NativeDriver) {
-  def isEpoll: Boolean = enabled && (driver == NativeDriver.Auto || driver == NativeDriver.Epoll)
-  def isKQueue: Boolean = enabled && (driver == NativeDriver.Auto || driver == NativeDriver.KQueue)
+  def isEpoll: Boolean   = enabled && (driver == NativeDriver.Auto || driver == NativeDriver.Epoll)
+  def isKQueue: Boolean  = enabled && (driver == NativeDriver.Auto || driver == NativeDriver.KQueue)
   def isIOUring: Boolean = enabled && (driver == NativeDriver.Auto || driver == NativeDriver.IOUring)
 }
 
 case class ReactorNettyServerConfig(
-  enabled: Boolean,
-  newEngineOnly: Boolean,
-  host: String,
-  httpPort: Int,
-  httpsPort: Int,
-  nThread: Int,
-  wiretap: Boolean,
-  accessLog: Boolean,
-  cipherSuites: Option[Seq[String]],
-  protocols: Option[Seq[String]],
-  clientAuth: ClientAuth,
-  idleTimeout: java.time.Duration,
-  parser: HttpRequestParserConfig,
-  http2: Http2Settings,
-  http3: Http3Settings,
-  native: NativeSettings,
+    enabled: Boolean,
+    newEngineOnly: Boolean,
+    host: String,
+    httpPort: Int,
+    httpsPort: Int,
+    nThread: Int,
+    wiretap: Boolean,
+    accessLog: Boolean,
+    cipherSuites: Option[Seq[String]],
+    protocols: Option[Seq[String]],
+    clientAuth: ClientAuth,
+    idleTimeout: java.time.Duration,
+    parser: HttpRequestParserConfig,
+    http2: Http2Settings,
+    http3: Http3Settings,
+    native: NativeSettings
 )
 
 object ReactorNettyServerConfig {
@@ -72,15 +72,16 @@ object ReactorNettyServerConfig {
       nThread = config.getOptionalWithFileSupport[Int]("threads").getOrElse(0),
       wiretap = config.getOptionalWithFileSupport[Boolean]("wiretap").getOrElse(false),
       accessLog = config.getOptionalWithFileSupport[Boolean]("accesslog").getOrElse(false),
-      idleTimeout = config.getOptionalWithFileSupport[Long]("idleTimeout").map(l => java.time.Duration.ofMillis(l)).getOrElse(java.time.Duration.ofMillis(60000)),
-      cipherSuites =
-        env.configuration
-          .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
-          .filterNot(_.isEmpty),
-      protocols    =
-        env.configuration
-          .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols")
-          .filterNot(_.isEmpty),
+      idleTimeout = config
+        .getOptionalWithFileSupport[Long]("idleTimeout")
+        .map(l => java.time.Duration.ofMillis(l))
+        .getOrElse(java.time.Duration.ofMillis(60000)),
+      cipherSuites = env.configuration
+        .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
+        .filterNot(_.isEmpty),
+      protocols = env.configuration
+        .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols")
+        .filterNot(_.isEmpty),
       clientAuth = {
         val auth = env.configuration
           .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.clientAuth")
@@ -91,17 +92,29 @@ object ReactorNettyServerConfig {
         auth
       },
       parser = HttpRequestParserConfig(
-        allowDuplicateContentLengths = config.getOptionalWithFileSupport[Boolean]("parser.allowDuplicateContentLengths").getOrElse(HttpDecoderSpec.DEFAULT_ALLOW_DUPLICATE_CONTENT_LENGTHS),
-        validateHeaders = config.getOptionalWithFileSupport[Boolean]("parser.validateHeaders").getOrElse(HttpDecoderSpec.DEFAULT_VALIDATE_HEADERS),
+        allowDuplicateContentLengths = config
+          .getOptionalWithFileSupport[Boolean]("parser.allowDuplicateContentLengths")
+          .getOrElse(HttpDecoderSpec.DEFAULT_ALLOW_DUPLICATE_CONTENT_LENGTHS),
+        validateHeaders = config
+          .getOptionalWithFileSupport[Boolean]("parser.validateHeaders")
+          .getOrElse(HttpDecoderSpec.DEFAULT_VALIDATE_HEADERS),
         h2cMaxContentLength = config.getOptionalWithFileSupport[Int]("parser.h2cMaxContentLength").getOrElse(65536),
-        initialBufferSize = config.getOptionalWithFileSupport[Int]("parser.initialBufferSize").getOrElse(HttpDecoderSpec.DEFAULT_INITIAL_BUFFER_SIZE),
-        maxHeaderSize = config.getOptionalWithFileSupport[Int]("parser.maxHeaderSize").getOrElse(HttpDecoderSpec.DEFAULT_MAX_HEADER_SIZE),
-        maxInitialLineLength = config.getOptionalWithFileSupport[Int]("parser.maxInitialLineLength").getOrElse(HttpDecoderSpec.DEFAULT_MAX_INITIAL_LINE_LENGTH),
-        maxChunkSize = config.getOptionalWithFileSupport[Int]("parser.maxChunkSize").getOrElse(HttpDecoderSpec.DEFAULT_MAX_CHUNK_SIZE),
+        initialBufferSize = config
+          .getOptionalWithFileSupport[Int]("parser.initialBufferSize")
+          .getOrElse(HttpDecoderSpec.DEFAULT_INITIAL_BUFFER_SIZE),
+        maxHeaderSize = config
+          .getOptionalWithFileSupport[Int]("parser.maxHeaderSize")
+          .getOrElse(HttpDecoderSpec.DEFAULT_MAX_HEADER_SIZE),
+        maxInitialLineLength = config
+          .getOptionalWithFileSupport[Int]("parser.maxInitialLineLength")
+          .getOrElse(HttpDecoderSpec.DEFAULT_MAX_INITIAL_LINE_LENGTH),
+        maxChunkSize = config
+          .getOptionalWithFileSupport[Int]("parser.maxChunkSize")
+          .getOrElse(HttpDecoderSpec.DEFAULT_MAX_CHUNK_SIZE)
       ),
       http2 = Http2Settings(
         enabled = config.getOptionalWithFileSupport[Boolean]("http2.enabled").getOrElse(true),
-        h2cEnabled = config.getOptionalWithFileSupport[Boolean]("http2.h2c").getOrElse(true),
+        h2cEnabled = config.getOptionalWithFileSupport[Boolean]("http2.h2c").getOrElse(true)
       ),
       http3 = Http3Settings(
         enabled = config.getOptionalWithFileSupport[Boolean]("http3.enabled").getOrElse(false),
@@ -109,32 +122,38 @@ object ReactorNettyServerConfig {
         maxSendUdpPayloadSize = config.getOptionalWithFileSupport[Long]("http3.maxSendUdpPayloadSize").getOrElse(1500),
         maxRecvUdpPayloadSize = config.getOptionalWithFileSupport[Long]("http3.maxRecvUdpPayloadSize").getOrElse(1500),
         initialMaxData = config.getOptionalWithFileSupport[Long]("http3.initialMaxData").getOrElse(10000000),
-        initialMaxStreamDataBidirectionalLocal = config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamDataBidirectionalLocal").getOrElse(1000000),
-        initialMaxStreamDataBidirectionalRemote = config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamDataBidirectionalRemote").getOrElse(1000000),
-        initialMaxStreamsBidirectional = config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamsBidirectional").getOrElse(100000),
+        initialMaxStreamDataBidirectionalLocal =
+          config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamDataBidirectionalLocal").getOrElse(1000000),
+        initialMaxStreamDataBidirectionalRemote =
+          config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamDataBidirectionalRemote").getOrElse(1000000),
+        initialMaxStreamsBidirectional =
+          config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamsBidirectional").getOrElse(100000)
       ),
       native = NativeSettings(
         enabled = config.getOptionalWithFileSupport[Boolean]("native.enabled").getOrElse(true),
-        driver = config.getOptionalWithFileSupport[String]("native.driver").map {
-          case "Auto" => NativeDriver.Auto
-          case "Epoll" => NativeDriver.Epoll
-          case "KQueue" => NativeDriver.KQueue
-          case "IOUring" => NativeDriver.IOUring
-          case "auto" => NativeDriver.Auto
-          case "epoll" => NativeDriver.Epoll
-          case "kqueue" => NativeDriver.KQueue
-          case "iOUring" => NativeDriver.IOUring
-          case _ => NativeDriver.Auto
-        }.getOrElse(NativeDriver.Auto)
+        driver = config
+          .getOptionalWithFileSupport[String]("native.driver")
+          .map {
+            case "Auto"    => NativeDriver.Auto
+            case "Epoll"   => NativeDriver.Epoll
+            case "KQueue"  => NativeDriver.KQueue
+            case "IOUring" => NativeDriver.IOUring
+            case "auto"    => NativeDriver.Auto
+            case "epoll"   => NativeDriver.Epoll
+            case "kqueue"  => NativeDriver.KQueue
+            case "iOUring" => NativeDriver.IOUring
+            case _         => NativeDriver.Auto
+          }
+          .getOrElse(NativeDriver.Auto)
       )
     )
   }
 }
 
 case class NettyClientConfig(
-  wiretap: Boolean,
-  enforceAkkaClient: Boolean,
-  enforceAll: Boolean,
+    wiretap: Boolean,
+    enforceAkkaClient: Boolean,
+    enforceAll: Boolean
 )
 
 object NettyClientConfig {

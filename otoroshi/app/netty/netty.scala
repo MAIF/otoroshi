@@ -28,9 +28,16 @@ import reactor.netty.NettyOutbound
 import java.security.{Provider, SecureRandom}
 import java.util.function.BiFunction
 import javax.net.ssl._
+import scala.concurrent.Await
+import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.util.{Failure, Success, Try}
 
-case class HttpServerBodyResponse(body: Publisher[Array[Byte]], contentType: Option[String], contentLength: Option[Long], chunked: Boolean)
+case class HttpServerBodyResponse(
+    body: Publisher[Array[Byte]],
+    contentType: Option[String],
+    contentLength: Option[Long],
+    chunked: Boolean
+)
 
 class ReactorNettyServer(env: Env) {
 
@@ -38,29 +45,38 @@ class ReactorNettyServer(env: Env) {
   import reactor.netty.http.HttpProtocol
   import reactor.netty.http.server._
 
-  implicit private val ec = env.otoroshiExecutionContext
+  implicit private val ec  = env.otoroshiExecutionContext
   implicit private val mat = env.otoroshiMaterializer
-  implicit private val ev = env
+  implicit private val ev  = env
 
   private val logger = Logger("otoroshi-experimental-netty-server")
 
-  private val engine: ProxyEngine = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get.asInstanceOf[ProxyEngine]
+  private val engine: ProxyEngine = env.scriptManager
+    .getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}")
+    .right
+    .get
+    .asInstanceOf[ProxyEngine]
 
   private val config = ReactorNettyServerConfig.parseFrom(env)
 
   private val cookieSignerProvider = new CookieSignerProvider(env.httpConfiguration.secret)
-  private val sessionCookieBaker = new DefaultSessionCookieBaker(env.httpConfiguration.session, env.httpConfiguration.secret, cookieSignerProvider.get)
-  private val flashCookieBaker = new DefaultFlashCookieBaker(env.httpConfiguration.flash, env.httpConfiguration.secret, cookieSignerProvider.get)
-  private val cookieEncoder = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
+  private val sessionCookieBaker   =
+    new DefaultSessionCookieBaker(env.httpConfiguration.session, env.httpConfiguration.secret, cookieSignerProvider.get)
+  private val flashCookieBaker     =
+    new DefaultFlashCookieBaker(env.httpConfiguration.flash, env.httpConfiguration.secret, cookieSignerProvider.get)
+  private val cookieEncoder        = new DefaultCookieHeaderEncoding(env.httpConfiguration.cookies)
 
   private def sendResultAsHttpResponse(result: Result, res: HttpServerResponse): NettyOutbound = {
     val bresponse: HttpServerBodyResponse = result.body match {
-      case HttpEntity.NoEntity => HttpServerBodyResponse(Flux.empty[Array[Byte]](), None, None, false)
-      case HttpEntity.Strict(data, contentType) => HttpServerBodyResponse(Flux.just(Seq(data.toArray[Byte]): _*), contentType, Some(data.size.toLong), false)
-      case HttpEntity.Chunked(chunks, contentType) => {
-        val publisher = chunks.collect {
-          case HttpChunk.Chunk(data) => data.toArray[Byte]
-        }.runWith(Sink.asPublisher(false))
+      case HttpEntity.NoEntity                                   => HttpServerBodyResponse(Flux.empty[Array[Byte]](), None, None, false)
+      case HttpEntity.Strict(data, contentType)                  =>
+        HttpServerBodyResponse(Flux.just(Seq(data.toArray[Byte]): _*), contentType, Some(data.size.toLong), false)
+      case HttpEntity.Chunked(chunks, contentType)               => {
+        val publisher = chunks
+          .collect { case HttpChunk.Chunk(data) =>
+            data.toArray[Byte]
+          }
+          .runWith(Sink.asPublisher(false))
         HttpServerBodyResponse(publisher, contentType, None, true)
       }
       case HttpEntity.Streamed(data, contentLength, contentType) => {
@@ -68,9 +84,12 @@ class ReactorNettyServer(env: Env) {
         HttpServerBodyResponse(publisher, contentType, contentLength, false)
       }
     }
-    val headers = new DefaultHttpHeaders()
-    result.header.headers.map {
-      case (key, value) => headers.add(key, value)
+    val headers                           = new DefaultHttpHeaders()
+    result.header.headers.map { case (key, value) =>
+      if (key != "otoroshi-netty-trailers") headers.add(key, value)
+    }
+    if (bresponse.contentType.contains("application/grpc")) {
+      headers.add(HttpHeaderNames.TRAILER, "grpc-status, grpc-message")
     }
     bresponse.contentType.foreach(ct => headers.add("Content-Type", ct))
     bresponse.contentLength.foreach(cl => headers.addInt("Content-Length", cl.toInt))
@@ -86,9 +105,12 @@ class ReactorNettyServer(env: Env) {
           cookie.domain.foreach(d => nettyCookie.setDomain(d))
           cookie.maxAge.foreach(d => nettyCookie.setMaxAge(d.toLong))
           cookie.sameSite.foreach {
-            case play.api.mvc.Cookie.SameSite.None => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
-            case play.api.mvc.Cookie.SameSite.Strict => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
-            case play.api.mvc.Cookie.SameSite.Lax => nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
+            case play.api.mvc.Cookie.SameSite.None   =>
+              nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
+            case play.api.mvc.Cookie.SameSite.Strict =>
+              nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
+            case play.api.mvc.Cookie.SameSite.Lax    =>
+              nettyCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
           }
           r.addCookie(nettyCookie)
         }
@@ -96,7 +118,7 @@ class ReactorNettyServer(env: Env) {
       }
       .applyOnIf(result.newSession.isDefined) { r =>
         result.newSession.map { session =>
-          val cookie = sessionCookieBaker.encodeAsCookie(session)
+          val cookie        = sessionCookieBaker.encodeAsCookie(session)
           val sessionCookie = new io.netty.handler.codec.http.cookie.DefaultCookie(cookie.name, cookie.value)
           sessionCookie.setPath(cookie.path)
           sessionCookie.setHttpOnly(cookie.httpOnly)
@@ -104,9 +126,12 @@ class ReactorNettyServer(env: Env) {
           cookie.domain.foreach(d => sessionCookie.setDomain(d))
           cookie.maxAge.foreach(d => sessionCookie.setMaxAge(d.toLong))
           cookie.sameSite.foreach {
-            case play.api.mvc.Cookie.SameSite.None => sessionCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
-            case play.api.mvc.Cookie.SameSite.Strict => sessionCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
-            case play.api.mvc.Cookie.SameSite.Lax => sessionCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
+            case play.api.mvc.Cookie.SameSite.None   =>
+              sessionCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
+            case play.api.mvc.Cookie.SameSite.Strict =>
+              sessionCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
+            case play.api.mvc.Cookie.SameSite.Lax    =>
+              sessionCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
           }
           r.addCookie(sessionCookie)
         }
@@ -114,7 +139,7 @@ class ReactorNettyServer(env: Env) {
       }
       .applyOnIf(result.newFlash.isDefined) { r =>
         result.newFlash.map { flash =>
-          val cookie = flashCookieBaker.encodeAsCookie(flash)
+          val cookie      = flashCookieBaker.encodeAsCookie(flash)
           val flashCookie = new io.netty.handler.codec.http.cookie.DefaultCookie(cookie.name, cookie.value)
           flashCookie.setPath(cookie.path)
           flashCookie.setHttpOnly(cookie.httpOnly)
@@ -122,24 +147,60 @@ class ReactorNettyServer(env: Env) {
           cookie.domain.foreach(d => flashCookie.setDomain(d))
           cookie.maxAge.foreach(d => flashCookie.setMaxAge(d.toLong))
           cookie.sameSite.foreach {
-            case play.api.mvc.Cookie.SameSite.None => flashCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
-            case play.api.mvc.Cookie.SameSite.Strict => flashCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
-            case play.api.mvc.Cookie.SameSite.Lax => flashCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
+            case play.api.mvc.Cookie.SameSite.None   =>
+              flashCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.None)
+            case play.api.mvc.Cookie.SameSite.Strict =>
+              flashCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Strict)
+            case play.api.mvc.Cookie.SameSite.Lax    =>
+              flashCookie.setSameSite(io.netty.handler.codec.http.cookie.CookieHeaderNames.SameSite.Lax)
           }
           r.addCookie(flashCookie)
         }
         r
       }
       .chunkedTransfer(bresponse.chunked)
+      .trailerHeaders(theaders => {
+        import collection.JavaConverters._
+        result.header.headers.get("otoroshi-netty-trailers").foreach { trailersId =>
+          otoroshi.netty.NettyRequestAwaitingTrailers.get(trailersId).foreach {
+            case Left(future)    =>
+              // if (logger.isWarnEnabled) logger.warn(s"Unable to get trailer header for request '${trailersId}'")
+              otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+              val start    = System.nanoTime()
+              val trailers = Await.result(future, 10.seconds)
+              if (logger.isWarnEnabled)
+                logger.warn(
+                  s"Blocked thread for ${(System.nanoTime() - start).nanos.toHumanReadable} to get trailer header for request '${trailersId}'"
+                )
+              otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+              trailers.foreach { case (name, values) =>
+                try {
+                  theaders.add(name, values.asJava)
+                } catch {
+                  case e: Throwable => if (logger.isErrorEnabled) logger.error("error while adding trailer header", e)
+                }
+              }
+            case Right(trailers) =>
+              otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+              trailers.foreach { case (name, values) =>
+                try {
+                  theaders.add(name, values.asJava)
+                } catch {
+                  case e: Throwable => if (logger.isErrorEnabled) logger.error("error while adding trailer header", e)
+                }
+              }
+          }
+        }
+      })
       .keepAlive(true)
       .sendByteArray(bresponse.body)
   }
 
   private def frameToRawMessage(frame: WebSocketFrame): RawMessage = {
     Try {
-      val builder = ByteString.newBuilder
+      val builder     = ByteString.newBuilder
       frame.content().readBytes(builder.asOutputStream, frame.content().readableBytes())
-      val bytes = builder.result()
+      val bytes       = builder.result()
       val messageType = frame match {
         case _: TextWebSocketFrame         => MessageType.Text
         case _: BinaryWebSocketFrame       => MessageType.Binary
@@ -153,7 +214,7 @@ class ReactorNettyServer(env: Env) {
       case Failure(ex) =>
         ex.printStackTrace()
         RawMessage(MessageType.Text, ByteString("frameToRawMessage error: " + ex.getMessage), frame.isFinalFragment)
-      case Success(s) => s
+      case Success(s)  => s
     }
   }
 
@@ -176,19 +237,25 @@ class ReactorNettyServer(env: Env) {
     }
   }
 
-  private def handleWebsocket(req: HttpServerRequest, res: HttpServerResponse, secure: Boolean, session: Option[SSLSession]): Publisher[Void] = {
+  private def handleWebsocket(
+      req: HttpServerRequest,
+      res: HttpServerResponse,
+      secure: Boolean,
+      session: Option[SSLSession]
+  ): Publisher[Void] = {
     ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
       val otoReq = new ReactorNettyRequestHeader(req, secure, session, sessionCookieBaker, flashCookieBaker)
       engine.handleWs(otoReq, engine.badDefaultRoutingWs).map {
         case Left(result) => sendResultAsHttpResponse(result, res)
-        case Right(flow) => {
+        case Right(flow)  => {
           res.sendWebsocket { (wsInbound, wsOutbound) =>
-            val processor: Processor[RawMessage, Message] = WebSocketFlowHandler.webSocketProtocol(65536).join(flow).toProcessor.run()
+            val processor: Processor[RawMessage, Message] =
+              WebSocketFlowHandler.webSocketProtocol(65536).join(flow).toProcessor.run()
             wsInbound
               .receiveFrames()
               .map[RawMessage](frameToRawMessage)
               .subscribe(processor)
-            val fluxOut: Flux[WebSocketFrame] = Flux.from(processor).map(messageToFrame)
+            val fluxOut: Flux[WebSocketFrame]             = Flux.from(processor).map(messageToFrame)
             wsOutbound.sendObject(fluxOut)
           }
         }
@@ -196,12 +263,19 @@ class ReactorNettyServer(env: Env) {
     }
   }
 
-  private def handleHttp(req: HttpServerRequest, res: HttpServerResponse, secure: Boolean, channel: Channel): Publisher[Void] = {
-    val parent = channel.parent()
-    val sslHandler = Option(parent.pipeline().get(classOf[SslHandler]))
-    val sessionOpt = sslHandler.map(_.engine.getSession)
+  private def handleHttp(
+      req: HttpServerRequest,
+      res: HttpServerResponse,
+      secure: Boolean,
+      channel: Channel
+  ): Publisher[Void] = {
+    val parent      = channel.parent()
+    val sslHandler  = Option(parent.pipeline().get(classOf[SslHandler]))
+    val sessionOpt  = sslHandler.map(_.engine.getSession)
     val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
-      (req.requestHeaders().contains("Sec-WebSocket-Version") || req.requestHeaders().contains("Sec-WebSocket-Version".toLowerCase)) &&
+      (req.requestHeaders().contains("Sec-WebSocket-Version") || req
+        .requestHeaders()
+        .contains("Sec-WebSocket-Version".toLowerCase)) &&
       Option(req.requestHeaders().get("Upgrade")).contains("websocket")
     if (isWebSocket) {
       handleWebsocket(req, res, secure, sessionOpt)
@@ -215,18 +289,26 @@ class ReactorNettyServer(env: Env) {
     }
   }
 
-  private def handle(req: HttpServerRequest, res: HttpServerResponse, secure: Boolean, channel: Channel, handler: HttpRequestHandler): Publisher[Void] = {
-    val parent = channel.parent()
-    val sslHandler = Option(parent.pipeline().get(classOf[SslHandler]))
-    val sessionOpt = sslHandler.map(_.engine.getSession)
+  private def handle(
+      req: HttpServerRequest,
+      res: HttpServerResponse,
+      secure: Boolean,
+      channel: Channel,
+      handler: HttpRequestHandler
+  ): Publisher[Void] = {
+    val parent      = channel.parent()
+    val sslHandler  = Option(parent.pipeline().get(classOf[SslHandler]))
+    val sessionOpt  = sslHandler.map(_.engine.getSession)
     val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
-      (req.requestHeaders().contains("Sec-WebSocket-Version") || req.requestHeaders().contains("Sec-WebSocket-Version".toLowerCase)) &&
+      (req.requestHeaders().contains("Sec-WebSocket-Version") || req
+        .requestHeaders()
+        .contains("Sec-WebSocket-Version".toLowerCase)) &&
       Option(req.requestHeaders().get("Upgrade")).contains("websocket")
     ReactiveStreamUtils.FluxUtils.fromFPublisher[Void] {
-      val otoReq = new ReactorNettyRequest(req, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
+      val otoReq             = new ReactorNettyRequest(req, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
       val (nreq, reqHandler) = handler.handlerForRequest(otoReq)
       reqHandler match {
-        case a: EssentialAction => {
+        case a: EssentialAction          => {
           a.apply(nreq).run(otoReq.body).map { result =>
             sendResultAsHttpResponse(result, res)
           }
@@ -234,21 +316,25 @@ class ReactorNettyServer(env: Env) {
         case a: WebSocket if isWebSocket => {
           a.apply(nreq).map {
             case Left(result) => sendResultAsHttpResponse(result, res)
-            case Right(flow) => {
+            case Right(flow)  => {
               res.sendWebsocket { (wsInbound, wsOutbound) =>
-                val processor: Processor[RawMessage, Message] = WebSocketFlowHandler.webSocketProtocol(65536).join(flow).toProcessor.run()
+                val processor: Processor[RawMessage, Message] =
+                  WebSocketFlowHandler.webSocketProtocol(65536).join(flow).toProcessor.run()
                 wsInbound
                   .receiveFrames()
                   .map[RawMessage](frameToRawMessage)
                   .subscribe(processor)
-                val fluxOut: Flux[WebSocketFrame] = Flux.from(processor).map(messageToFrame)
+                val fluxOut: Flux[WebSocketFrame]             = Flux.from(processor).map(messageToFrame)
                 wsOutbound.sendObject(fluxOut)
               }
             }
           }
         }
-        case a => {
-          sendResultAsHttpResponse(Results.InternalServerError(Json.obj("err" -> s"unknown handler: ${a.getClass.getName} - ${a}")), res).vfuture
+        case a                           => {
+          sendResultAsHttpResponse(
+            Results.InternalServerError(Json.obj("err" -> s"unknown handler: ${a.getClass.getName} - ${a}")),
+            res
+          ).vfuture
         }
       }
     }
@@ -257,13 +343,14 @@ class ReactorNettyServer(env: Env) {
   private def setupSslContext(): SSLContext = {
     new SSLContext(
       new SSLContextSpi() {
-        override def engineCreateSSLEngine(): SSLEngine                     = DynamicSSLEngineProvider.createSSLEngine(config.clientAuth, config.cipherSuites, config.protocols, None)
+        override def engineCreateSSLEngine(): SSLEngine                     =
+          DynamicSSLEngineProvider.createSSLEngine(config.clientAuth, config.cipherSuites, config.protocols, None)
         override def engineCreateSSLEngine(s: String, i: Int): SSLEngine    = engineCreateSSLEngine()
         override def engineInit(
-                                 keyManagers: Array[KeyManager],
-                                 trustManagers: Array[TrustManager],
-                                 secureRandom: SecureRandom
-                               ): Unit                                                             = ()
+            keyManagers: Array[KeyManager],
+            trustManagers: Array[TrustManager],
+            secureRandom: SecureRandom
+        ): Unit                                                             = ()
         override def engineGetClientSessionContext(): SSLSessionContext     =
           DynamicSSLEngineProvider.currentServer.getClientSessionContext
         override def engineGetServerSessionContext(): SSLSessionContext     =
@@ -283,7 +370,7 @@ class ReactorNettyServer(env: Env) {
   }
 
   def createEventLoops(): (EventLoopGroup, EventLoopGroup) = {
-    val groupHttp = EventLoopUtils.create(config.native, config.nThread)
+    val groupHttp  = EventLoopUtils.create(config.native, config.nThread)
     val groupHttps = EventLoopUtils.create(config.native, config.nThread)
     groupHttp.native.foreach { name =>
       logger.info(s"  using ${name} native transport")
@@ -306,14 +393,16 @@ class ReactorNettyServer(env: Env) {
       logger.info(s"  http://${config.host}:${config.httpPort}  (HTTP/1.1, HTTP/2 H2C)")
       logger.info("")
 
-      def handleFunction(secure: Boolean): BiFunction[_ >: HttpServerRequest, _ >: HttpServerResponse, _ <: Publisher[Void]] = {
-        if (config.newEngineOnly) {
-          (req, res) => {
+      def handleFunction(
+          secure: Boolean
+      ): BiFunction[_ >: HttpServerRequest, _ >: HttpServerResponse, _ <: Publisher[Void]] = {
+        if (config.newEngineOnly) { (req, res) =>
+          {
             val channel = NettyHelper.getChannel(req)
             handleHttp(req, res, secure, channel)
           }
-        } else {
-          (req, res) => {
+        } else { (req, res) =>
+          {
             val channel = NettyHelper.getChannel(req)
             handle(req, res, secure, channel, handler)
           }
@@ -329,14 +418,15 @@ class ReactorNettyServer(env: Env) {
         .applyOnIf(config.http2.enabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
         .applyOnIf(!config.http2.enabled)(_.protocol(HttpProtocol.HTTP11))
         .runOn(groupHttps)
-        .httpRequestDecoder(spec => spec
-          .allowDuplicateContentLengths(config.parser.allowDuplicateContentLengths)
-          .h2cMaxContentLength(config.parser.h2cMaxContentLength)
-          .initialBufferSize(config.parser.initialBufferSize)
-          .maxHeaderSize(config.parser.maxHeaderSize)
-          .maxInitialLineLength(config.parser.maxInitialLineLength)
-          .maxChunkSize(config.parser.maxChunkSize)
-          .validateHeaders(config.parser.validateHeaders)
+        .httpRequestDecoder(spec =>
+          spec
+            .allowDuplicateContentLengths(config.parser.allowDuplicateContentLengths)
+            .h2cMaxContentLength(config.parser.h2cMaxContentLength)
+            .initialBufferSize(config.parser.initialBufferSize)
+            .maxHeaderSize(config.parser.maxHeaderSize)
+            .maxInitialLineLength(config.parser.maxInitialLineLength)
+            .maxChunkSize(config.parser.maxChunkSize)
+            .validateHeaders(config.parser.validateHeaders)
         )
         .idleTimeout(config.idleTimeout)
         .doOnChannelInit { (observer, channel, socket) =>
@@ -344,8 +434,8 @@ class ReactorNettyServer(env: Env) {
           engine.setHandshakeApplicationProtocolSelector((e, protocols) => {
             protocols match {
               case ps if ps.contains("h2") && config.http2.enabled => "h2"
-              case ps if ps.contains("spdy/3") => "spdy/3"
-              case _ => "http/1.1"
+              case ps if ps.contains("spdy/3")                     => "spdy/3"
+              case _                                               => "http/1.1"
             }
           })
           // we do not use .secure() because of no dynamic sni support and use SslHandler instead !
@@ -353,7 +443,7 @@ class ReactorNettyServer(env: Env) {
         }
         .handle(handleFunction(true))
         .bindNow()
-      val serverHttp = HttpServer
+      val serverHttp  = HttpServer
         .create()
         .host(config.host)
         .noSSL()
@@ -364,14 +454,15 @@ class ReactorNettyServer(env: Env) {
         .applyOnIf(!config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11))
         .handle(handleFunction(false))
         .runOn(groupHttp)
-        .httpRequestDecoder(spec => spec
-          .allowDuplicateContentLengths(config.parser.allowDuplicateContentLengths)
-          .h2cMaxContentLength(config.parser.h2cMaxContentLength)
-          .initialBufferSize(config.parser.initialBufferSize)
-          .maxHeaderSize(config.parser.maxHeaderSize)
-          .maxInitialLineLength(config.parser.maxInitialLineLength)
-          .maxChunkSize(config.parser.maxChunkSize)
-          .validateHeaders(config.parser.validateHeaders)
+        .httpRequestDecoder(spec =>
+          spec
+            .allowDuplicateContentLengths(config.parser.allowDuplicateContentLengths)
+            .h2cMaxContentLength(config.parser.h2cMaxContentLength)
+            .initialBufferSize(config.parser.initialBufferSize)
+            .maxHeaderSize(config.parser.maxHeaderSize)
+            .maxInitialLineLength(config.parser.maxInitialLineLength)
+            .maxChunkSize(config.parser.maxChunkSize)
+            .validateHeaders(config.parser.validateHeaders)
         )
         .idleTimeout(config.idleTimeout)
         .bindNow()
