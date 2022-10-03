@@ -1093,10 +1093,12 @@ class Env(
       .foreach { s =>
         DynamicSSLEngineProvider.logger.warn(s"Using custom SSL cipher suites: ${s.mkString(", ")}")
       }
-    configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty).foreach {
-      p =>
+    configuration
+      .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols")
+      .filterNot(_.isEmpty)
+      .foreach { p =>
         DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: ${p.mkString(", ")}")
-    }
+      }
     configuration.betterHas("app.importFrom")
     datastores.globalConfigDataStore
       .isOtoroshiEmpty()
