@@ -1086,17 +1086,16 @@ class Env(
     } else if (clusterConfig.mode == ClusterMode.Worker) {
       logger.info(s"Running Otoroshi Worker agent !")
       clusterAgent.startF()
-    } else {
-      configuration
-        .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
-        .filterNot(_.isEmpty)
-        .foreach { s =>
-          DynamicSSLEngineProvider.logger.warn(s"Using custom SSL cipher suites: ${s.mkString(", ")}")
-        }
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty).foreach {
-        p =>
-          DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: ${p.mkString(", ")}")
+    }
+    configuration
+      .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
+      .filterNot(_.isEmpty)
+      .foreach { s =>
+        DynamicSSLEngineProvider.logger.warn(s"Using custom SSL cipher suites: ${s.mkString(", ")}")
       }
+    configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty).foreach {
+      p =>
+        DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: ${p.mkString(", ")}")
     }
     configuration.betterHas("app.importFrom")
     datastores.globalConfigDataStore
