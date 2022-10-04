@@ -573,7 +573,7 @@ class Designer extends React.Component {
             hiddenSteps: hiddenSteps[route.id],
           });
         }
-      } catch (_) {}
+      } catch (_) { }
     }
   };
 
@@ -589,7 +589,7 @@ class Designer extends React.Component {
             [this.state.route.id]: newHiddenSteps,
           })
         );
-      } catch (_) {}
+      } catch (_) { }
     } else {
       localStorage.setItem(
         'hidden_steps',
@@ -616,11 +616,11 @@ class Designer extends React.Component {
       let route =
         this.props.viewPlugins !== null && this.props.viewPlugins !== -1
           ? {
-              ...r,
-              overridePlugins: true,
-              plugins: [],
-              ...r.routes[~~this.props.viewPlugins],
-            }
+            ...r,
+            overridePlugins: true,
+            plugins: [],
+            ...r.routes[~~this.props.viewPlugins],
+          }
           : r;
 
       if (route.error) {
@@ -697,16 +697,13 @@ class Designer extends React.Component {
             nodeId: 'Frontend',
           },
           backend: {
-            ...DEFAULT_FLOW.Backend('plugin'),
+            ...DEFAULT_FLOW.Backend,
             ...backendForm,
             config_schema: toUpperCaseLabels(
-              DEFAULT_FLOW.Backend('plugin').config_schema(
-                backendForm.schema,
-                route,
-                this.updateRoute
-              )
+              DEFAULT_FLOW.Backend
+                .config_schema(backendForm.schema, route, this.updateRoute)
             ),
-            config_flow: DEFAULT_FLOW.Backend('plugin').config_flow,
+            config_flow: DEFAULT_FLOW.Backend.config_flow,
             nodeId: 'Backend',
           },
           selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
@@ -1171,8 +1168,8 @@ class Designer extends React.Component {
           plugin_index: Object.fromEntries(
             Object.entries(
               plugin.plugin_index ||
-                this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
-                {}
+              this.state.nodes.find((n) => n.nodeId === plugin.nodeId)?.plugin_index ||
+              {}
             ).map(([key, v]) => [snakeCase(key), v])
           ),
         })),
@@ -1183,11 +1180,15 @@ class Designer extends React.Component {
         this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
         newRoute
       )
-      .then(() => {
-        this.setState({
-          originalRoute: { ...route },
-        });
-        this.injectSaveButton();
+      .then(r => {
+        if (r.error)
+          throw r.error
+        else {
+          this.setState({
+            originalRoute: { ...route },
+          });
+          this.injectSaveButton();
+        }
       });
   };
 
@@ -1372,17 +1373,17 @@ class Designer extends React.Component {
     const backendCallNodes =
       route && route.plugins
         ? route.plugins
-            .map((p) => {
-              const id = p.plugin;
-              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-              if (pluginDef) {
-                if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
-                  return { ...p, ...pluginDef };
-                }
+          .map((p) => {
+            const id = p.plugin;
+            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+            if (pluginDef) {
+              if (pluginDef.plugin_steps.indexOf('CallBackend') > -1) {
+                return { ...p, ...pluginDef };
               }
-              return null;
-            })
-            .filter((p) => !!p)
+            }
+            return null;
+          })
+          .filter((p) => !!p)
         : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
@@ -1728,13 +1729,13 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
     const allMethods =
       frontend.methods && frontend.methods.length > 0
         ? frontend.methods.map((m, i) => (
-            <span
-              key={`frontendmethod-${i}`}
-              className={`badge me-1`}
-              style={{ backgroundColor: HTTP_COLORS[m] }}>
-              {m}
-            </span>
-          ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}>
+            {m}
+          </span>
+        ))
         : [<span className="badge bg-success">ALL</span>];
     return (
       <>
@@ -1851,8 +1852,8 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
                 const start = target.tls ? 'https://' : 'http://';
                 const mtls =
                   target.tls_config &&
-                  target.tls_config.enabled &&
-                  [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
+                    target.tls_config.enabled &&
+                    [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])].length > 0 ? (
                     <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
                       mTLS
                     </span>
@@ -1905,9 +1906,8 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
   <div className="group-header d-flex-between editor-view-informations">
     <div className="d-flex-between">
       <i
-        className={`fas fa-${
-          icon || 'bars'
-        } group-icon designer-group-header-icon editor-view-icon`}
+        className={`fas fa-${icon || 'bars'
+          } group-icon designer-group-header-icon editor-view-icon`}
       />
       <span className="editor-view-text">{name || id}</span>
     </div>
@@ -1924,7 +1924,7 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
 );
 
 const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonClick }) => (
-  <div className={`d-flex justify-content-end ${asJsonFormat ? 'mb-3' : ''}`}>
+  <div className="d-flex justify-content-end mb-2">
     <button
       className="btn btn-sm toggle-form-buttons mt-3"
       disabled={errors && errors.length > 0}
@@ -2170,7 +2170,7 @@ class EditView extends React.Component {
     const { id, name, icon } = selectedNode;
     const { usingExistingBackend, form, offset, asJsonFormat, errors } = this.state;
 
-    const showActions = !selectedNode.legacy && !readOnly && 'Backend' !== id;
+    const showActions = !selectedNode.legacy && !readOnly // && 'Backend' !== id;
     const notOnBackendNode = !usingExistingBackend || id !== 'Backend';
 
     if (form.flow.length === 0 && Object.keys(form.schema).length === 0) return null;
@@ -2264,39 +2264,30 @@ class EditView extends React.Component {
                   )}
                 </>
               )}
-              {!asJsonFormat && (
-                <>
-                  <NgForm
-                    ref={this.formRef}
-                    value={form.value}
-                    schema={form.schema}
-                    flow={hasCustomPluginForm ? ['status'] : form.flow}
-                    onChange={this.onValidate}
-                    // footer={() => (
-                    //   <Actions
-                    //     disabledSaveButton={disabledSaveButton}
-                    //     valid={saveRoute}
-                    //     selectedNode={selectedNode}
-                    //     onRemove={onRemove}
-                    //   />
-                    // )}
-                  />
-                  {hasCustomPluginForm && (
-                    <EurekaForm
-                      route={route}
-                      update={(plugin) => {
-                        const { selectedNode } = this.props;
-                        const { nodeId } = selectedNode;
+              {!asJsonFormat && <>
+                <NgForm
+                  ref={this.formRef}
+                  value={form.value}
+                  schema={form.schema}
+                  flow={hasCustomPluginForm ? ['status'] : form.flow}
+                  onChange={this.onValidate}
+                  // useBreadcrumb={selectedNode.id === 'Backend' ? true : false}
+                  useBreadcrumb={true}
+                />
+                {hasCustomPluginForm &&
+                  <EurekaForm
+                    route={route}
+                    update={plugin => {
+                      const { selectedNode } = this.props;
+                      const { nodeId } = selectedNode;
 
-                        return this.props.updatePlugin(nodeId, selectedNode.id, {
-                          plugin,
-                          status: form.schema.status,
-                        });
-                      }}
-                    />
-                  )}
-                </>
-              )}
+                      return this.props.updatePlugin(nodeId, selectedNode.id, {
+                        plugin,
+                        status: form.schema.status,
+                      });
+                    }} />
+                }
+              </>}
             </div>
           )}
           {!notOnBackendNode && (
@@ -2353,9 +2344,8 @@ const BackendSelector = ({
             position: 'relative',
           }}>
           <div
-            className={`tryit-selector-cursor ${
-              !usingExistingBackend ? '' : 'tryit-selector-mode-right'
-            }`}
+            className={`tryit-selector-cursor ${!usingExistingBackend ? '' : 'tryit-selector-mode-right'
+              }`}
           />
           <button
             className="flex tryit-selector-mode"

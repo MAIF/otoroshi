@@ -171,7 +171,7 @@ export const DEFAULT_FLOW = {
       'query',
     ],
   },
-  Backend: (parentNode) => ({
+  Backend: {
     id: 'Backend',
     icon: 'bullseye',
     group: 'Targets',
@@ -184,9 +184,13 @@ export const DEFAULT_FLOW = {
       },
       targets: {
         array: true,
-        format: 'form',
-        type: 'object',
-        label: ' ',
+        format: "form",
+        type: "object",
+        props: {
+          ngOptions: {
+            spread: true
+          }
+        },
         schema: {
           ...generatedSchema.targets.schema,
           tls_config: {
@@ -261,15 +265,39 @@ export const DEFAULT_FLOW = {
               'hostname',
               'port',
               'weight',
-              'predicate',
               'protocol',
               'ip_address',
-              'tls',
-              'tls_config',
-            ],
-          },
+              'predicate',
+              'tls_config'
+            ]
+          }
         ],
       },
+      client: {
+        ...generatedSchema.client,
+        schema: {
+          ...generatedSchema.client.schema,
+          custom_timeouts: {
+            ...generatedSchema.client.schema.custom_timeouts,
+            flow: [
+              {
+                type: 'group',
+                collapsed: true,
+                name: props => `${props.path.slice(-1)}. ${generatedSchema.client.schema.custom_timeouts.label}`,
+                fields: generatedSchema.client.schema.custom_timeouts.flow
+              }
+            ]
+          }
+        },
+        flow: generatedSchema.client.flow.sort((a, b) => {
+          if (generatedSchema.client.schema[a]?.type === 'form')
+            return 1
+          if (generatedSchema.client.schema[b]?.type === 'form')
+            return -1
+
+          return 0
+        })
+      }
     }),
     config_flow: [
       'root',
@@ -283,5 +311,5 @@ export const DEFAULT_FLOW = {
       'client',
       'load_balancing',
     ],
-  }),
+  }
 };

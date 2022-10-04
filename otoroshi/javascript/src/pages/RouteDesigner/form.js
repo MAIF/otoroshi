@@ -266,7 +266,7 @@ export const schemas = {
       methods: {
         type: 'array',
         props: {
-          label: 'methods',
+          label: 'Methods',
           possibleValues: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'].map((e) => ({
             label: e,
             value: e,

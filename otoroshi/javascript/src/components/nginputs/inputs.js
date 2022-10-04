@@ -4,6 +4,7 @@ import isFunction from 'lodash/isFunction';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 import { Location } from '../Location';
 import { ObjectInput } from '../inputs';
+import isEqual from 'lodash/isEqual';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
@@ -13,33 +14,29 @@ export class NgLocationRenderer extends Component {
     const props = schema.props || {};
     const FormRenderer = this.props.components.FormRenderer;
 
-    return (
-      <FormRenderer
-        embedded={true}
-        rawSchema={{
-          label: 'Location',
-          collapsable: true,
-          collapsed: false,
-        }}>
-        <Location
-          {...props}
-          tenant={this.props.value?.tenant || 'default'}
-          teams={this.props.value?.teams || ['default']}
-          onChangeTenant={(tenant) =>
-            this.props.onChange({
-              ...this.props.value,
-              tenant,
-            })
-          }
-          onChangeTeams={(teams) =>
-            this.props.onChange({
-              ...this.props.value,
-              teams,
-            })
-          }
-        />
-      </FormRenderer>
-    );
+    return <FormRenderer
+      embedded={true}
+      breadcrumb={[]} // TODO
+      setBreadcrumb={this.props.setBreadcrumb} // TODO
+      rawSchema={{
+        label: 'Location',
+        collapsable: true,
+        collapsed: true
+      }}>
+      <Location
+        {...props}
+        tenant={this.props.value?.tenant || 'default'}
+        teams={this.props.value?.teams || ['default']}
+        onChangeTenant={tenant => this.props.onChange({
+          ...this.props.value,
+          tenant
+        })}
+        onChangeTeams={teams => this.props.onChange({
+          ...this.props.value,
+          teams
+        })}
+      />
+    </FormRenderer>
   }
 }
 
@@ -53,7 +50,7 @@ export function LabelAndInput(_props) {
   const schema = _props.schema || {};
   const props = schema.props || {};
   const label = _props.label || props.label || _props.rawSchema?.label || _props.name || '...';
-  const ngOptions = _props.ngOptions || props.ngOptions || {};
+  const ngOptions = _props.ngOptions || props.ngOptions || _props.rawSchema?.props?.ngOptions || {};
   const labelColumn = _props.labelColumn || props.labelColumn || 2;
 
   if (ngOptions.spread) return _props.children;
@@ -119,7 +116,7 @@ export class NgJsonRenderer extends Component {
           onChange={(e) => {
             try {
               this.props.onChange(JSON.parse(e));
-            } catch (ex) {}
+            } catch (ex) { }
           }}
           style={{ width: '100%' }}
         />
@@ -180,9 +177,7 @@ export class NgNumberRenderer extends Component {
           placeholder={props.placeholder}
           title={props.help}
           value={this.props.value}
-          onChange={(e) => {
-            this.props.onChange(~~e.target.value);
-          }}
+          onChange={(e) => this.props.onChange(~~e.target.value)}
           {...props}
         />
       </LabelAndInput>
@@ -271,25 +266,75 @@ export class NgBooleanRenderer extends Component {
 }
 
 export class NgArrayRenderer extends Component {
+
+  canShowActions(path) {
+    const breadcrumbAsArray = this.props.breadcrumb || [];
+    const pathAsArray = path || this.props.path || [];
+
+    if (this.props.breadcrumb === undefined)
+      return true;
+
+    if (path)
+      return isEqual(pathAsArray, breadcrumbAsArray)
+
+    return pathAsArray.length >= breadcrumbAsArray.length &&
+      (pathAsArray.join('-').startsWith(pathAsArray.join('-')) ||
+        pathAsArray.join('-').startsWith(pathAsArray.join('-')))
+  }
+
+  isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+  defaultValues = (current) => ({
+    number: () => 0,
+    boolean: () => false,
+    bool: () => false,
+    array: () => [],
+    select: () => current?.props?.options[0] || '',
+    form: () => ({
+      ...this.generateDefaultValue(current.schema)
+    }),
+    object: () => { },
+    json: () => { },
+  })
+
+  generateDefaultValue = obj => {
+    return Object.entries(obj)
+      .reduce((acc, current) => {
+        const value = this.defaultValues(current[1])[current[1].type]
+        return {
+          ...acc,
+          [current[0]]: value ? value() : ''
+        }
+      }, {})
+  }
+
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
     const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;
 
+    const showActions = this.canShowActions()
+
     return (
       <LabelAndInput {...this.props}>
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+        <div style={{
+          display: 'flex', flexDirection: 'column', width: '100%'
+        }}>
           {Array.isArray(this.props.value) &&
             this.props.value.map((value, idx) => {
+              const path = [...this.props.path, String(idx)]
+              const showItem = this.canShowActions(path)
+              // console.log(path, this.props.breadcrumb, showItem)
               return (
                 <div
                   style={{
                     display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
                     alignItems: 'center',
                     width: '100%',
-                  }}>
+                    outline: showItem ? 'rgb(65, 65, 62) solid 1px' : 'none',
+                    padding: showItem ? '6px' : 0,
+                    marginBottom: showItem ? '6px' : 0
+                  }} key={path}>
                   {!ItemRenderer && (
                     <input
                       type="text"
@@ -310,7 +355,10 @@ export class NgArrayRenderer extends Component {
                     <ItemRenderer
                       embedded
                       fromArray
-                      path={[...this.props.path, String(idx)]}
+                      breadcrumb={this.props.breadcrumb}
+                      setBreadcrumb={this.props.setBreadcrumb}
+                      useBreadcrumb={this.props.useBreadcrumb}
+                      path={path}
                       flow={this.props.flow}
                       schema={this.props.schema}
                       components={this.props.components}
@@ -334,7 +382,7 @@ export class NgArrayRenderer extends Component {
                       {...props}
                     />
                   )}
-                  <button
+                  {showActions && <button
                     type="button"
                     className="btn btn-sm btn-danger"
                     style={{ width: 42, marginLeft: 5 }}
@@ -344,20 +392,26 @@ export class NgArrayRenderer extends Component {
                       this.props.onChange(newArray);
                     }}>
                     <i className="fas fa-trash" />
-                  </button>
+                  </button>}
                 </div>
               );
             })}
-          <button
+          {showActions && <button
             type="button"
             className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
-            onClick={(e) => {
-              const newArray = Array.isArray(this.props.value) ? [...this.props.value, ''] : [''];
-              this.props.onChange(newArray);
+            onClick={() => {
+              let newArr = [...(this.props.value || [])]
+
+              if (schema.of)
+                return this.props.onChange([...newArr, ''])
+              else {
+                const newArray = [...newArr, this.generateDefaultValue(schema)]
+                this.props.onChange(newArray);
+              }
             }}>
             <i className="fas fa-plus-circle" />
-          </button>
+          </button>}
         </div>
       </LabelAndInput>
     );
@@ -384,21 +438,21 @@ export class NgObjectRenderer extends Component {
           itemRenderer={
             ItemRenderer
               ? (key, value, idx) => (
-                  <ItemRenderer
-                    embedded
-                    flow={this.props.flow}
-                    schema={this.props.schema}
-                    value={value}
-                    key={key}
-                    idx={idx}
-                    onChange={(e) => {
-                      const newObject = this.props.value ? { ...this.props.value } : {};
-                      newObject[key] = e;
-                      this.props.onChange(newObject);
-                    }}
-                    {...props}
-                  />
-                )
+                <ItemRenderer
+                  embedded
+                  flow={this.props.flow}
+                  schema={this.props.schema}
+                  value={value}
+                  key={key}
+                  idx={idx}
+                  onChange={(e) => {
+                    const newObject = this.props.value ? { ...this.props.value } : {};
+                    newObject[key] = e;
+                    this.props.onChange(newObject);
+                  }}
+                  {...props}
+                />
+              )
               : null
           }
         />
@@ -481,7 +535,7 @@ export class NgArraySelectRenderer extends Component {
                   <button
                     type="button"
                     className="btn btn-sm btn-danger"
-                    style={{ width: 42, marginLeft: 5, alignSelf: 'stretch' }}
+                    style={{ width: 42, marginLeft: 5, alignSelf: 'flex-start' }}
                     onClick={(e) => {
                       const newArray = this.props.value ? [...this.props.value] : [];
                       newArray.splice(idx, 1);
