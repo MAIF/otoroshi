@@ -288,7 +288,15 @@ export const DEFAULT_FLOW = {
               }
             ]
           }
-        }
+        },
+        flow: generatedSchema.client.flow.sort((a, b) => {
+          if (generatedSchema.client.schema[a]?.type === 'form')
+            return 1
+          if (generatedSchema.client.schema[b]?.type === 'form')
+            return -1
+
+          return 0
+        })
       }
     }),
     config_flow: [
