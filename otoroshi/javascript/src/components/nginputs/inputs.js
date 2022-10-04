@@ -115,7 +115,7 @@ export class NgJsonRenderer extends Component {
           onChange={(e) => {
             try {
               this.props.onChange(JSON.parse(e));
-            } catch (ex) {}
+            } catch (ex) { }
           }}
           style={{ width: '100%' }}
         />
@@ -266,16 +266,14 @@ export class NgBooleanRenderer extends Component {
 
 export class NgArrayRenderer extends Component {
 
-  canShowActions() {
+  canShowActions(path) {
     const breadcrumbAsArray = this.props.breadcrumb || [];
-    const pathAsArray = this.props.path || [];
+    const pathAsArray = path || this.props.path || [];
 
     if (this.props.breadcrumb === undefined)
-      return true
+      return true;
 
-    console.log(pathAsArray, breadcrumbAsArray)
-
-    return (pathAsArray.length >= breadcrumbAsArray.length) &&
+    return (path ? pathAsArray.length === breadcrumbAsArray.length : pathAsArray.length >= breadcrumbAsArray.length) &&
       (pathAsArray.join('-').startsWith(pathAsArray.join('-')) ||
         pathAsArray.join('-').startsWith(pathAsArray.join('-')))
   }
@@ -294,15 +292,17 @@ export class NgArrayRenderer extends Component {
         }}>
           {Array.isArray(this.props.value) &&
             this.props.value.map((value, idx) => {
+              const path = [...this.props.path, String(idx)]
+              const showItem = this.canShowActions(path)
               return (
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     width: '100%',
-                    outline: ItemRenderer ? 'rgb(65, 65, 62) solid 1px' : 'none',
-                    padding: '6px',
-                    marginBottom: '6px'
+                    outline: showItem ? 'rgb(65, 65, 62) solid 1px' : 'none',
+                    padding: showItem ? '6px' : 0,
+                    marginBottom: showItem ? '6px' : 0
                   }} key={`${value}-${idx}`}>
                   {!ItemRenderer && (
                     <input
@@ -327,7 +327,7 @@ export class NgArrayRenderer extends Component {
                       breadcrumb={this.props.breadcrumb}
                       setBreadcrumb={this.props.setBreadcrumb}
                       useBreadcrumb={this.props.useBreadcrumb}
-                      path={[...this.props.path, String(idx)]}
+                      path={path}
                       flow={this.props.flow}
                       schema={this.props.schema}
                       components={this.props.components}
@@ -401,21 +401,21 @@ export class NgObjectRenderer extends Component {
           itemRenderer={
             ItemRenderer
               ? (key, value, idx) => (
-                  <ItemRenderer
-                    embedded
-                    flow={this.props.flow}
-                    schema={this.props.schema}
-                    value={value}
-                    key={key}
-                    idx={idx}
-                    onChange={(e) => {
-                      const newObject = this.props.value ? { ...this.props.value } : {};
-                      newObject[key] = e;
-                      this.props.onChange(newObject);
-                    }}
-                    {...props}
-                  />
-                )
+                <ItemRenderer
+                  embedded
+                  flow={this.props.flow}
+                  schema={this.props.schema}
+                  value={value}
+                  key={key}
+                  idx={idx}
+                  onChange={(e) => {
+                    const newObject = this.props.value ? { ...this.props.value } : {};
+                    newObject[key] = e;
+                    this.props.onChange(newObject);
+                  }}
+                  {...props}
+                />
+              )
               : null
           }
         />

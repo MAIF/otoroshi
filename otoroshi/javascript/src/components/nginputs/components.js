@@ -78,9 +78,6 @@ export class NgFormRenderer extends Component {
     if (this.props.breadcrumb === undefined)
       return false;
 
-    console.log(pathAsArray, breadcrumbAsArray,
-      pathAsArray.length <= breadcrumbAsArray.length && this.match(pathAsArray, breadcrumbAsArray))
-
     return pathAsArray.length <= breadcrumbAsArray.length && this.match(pathAsArray, breadcrumbAsArray);
   }
 
