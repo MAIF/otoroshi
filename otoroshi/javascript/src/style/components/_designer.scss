@@ -300,8 +300,10 @@
 
     .editor-view-form {
         padding: 0 12px 12px;
+        .Select-menu-outer {
+        position: relative;
+      }
     }
-
     // .editor-view-form button:first-child {
     //     color: #fff;
     //     border: 1px solid;
