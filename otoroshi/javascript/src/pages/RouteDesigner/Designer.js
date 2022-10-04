@@ -1853,7 +1853,7 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
                 const mtls =
                   target.tls_config &&
                     target.tls_config.enabled &&
-                    [...target.tls_config.certs, ...target.tls_config.trusted_certs].length > 0 ? (
+                    [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])].length > 0 ? (
                     <span className="badge bg-warning text-dark" style={{ marginRight: 10 }}>
                       mTLS
                     </span>
