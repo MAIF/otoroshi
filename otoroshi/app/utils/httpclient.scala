@@ -1439,7 +1439,7 @@ case class AkkaWsClientRequest(
       uri = _uri,
       headers = akkaHeaders,
       entity = akkaHttpEntity,
-      protocol = targetOpt.map(_.protocol).getOrElse(protocol)
+      protocol = targetOpt.map(_.protocol.asAkka).getOrElse(protocol)
     )
   }
 

@@ -1,7 +1,6 @@
 package otoroshi.next.proxy
 
 import akka.Done
-import akka.http.scaladsl.model.HttpProtocols
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
@@ -150,7 +149,6 @@ class ProxyEngine() extends RequestHandler {
   def badDefaultRoutingWs(req: RequestHeader): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
     Results.InternalServerError("bad default routing").left.vfuture
 
-  private val httpClient           = reactor.netty.http.client.HttpClient.create()
   private val logger               = Logger("otoroshi-next-gen-proxy-engine")
   private val fakeFailureIndicator = new AtomicBoolean(false)
   private val reqCounter           = new AtomicInteger(0)
@@ -347,7 +345,7 @@ class ProxyEngine() extends RequestHandler {
                    }).applyOnIf(route.capture)(_.copy(capture = true))
       _          = report.markDoneAndStart("compute-plugins")
       gplugs     = global_plugins__.applyOnIf(
-                     env.http2ClientProxyEnabled && route.backend.targets.forall(_.protocol == HttpProtocols.`HTTP/2.0`)
+                     env.http2ClientProxyEnabled && route.backend.targets.forall(_.protocol == otoroshi.models.HttpProtocols.HTTP_2_0)
                    ) { o =>
                      o.add(NgPluginInstance("cp:otoroshi.next.plugins.Http2Caller"))
                    }
@@ -2588,9 +2586,9 @@ class ProxyEngine() extends RequestHandler {
       val (currentReqHasBody, shouldInjectContentLength) = request.hasBodyWithoutLength
       val wsCookiesIn                                    = request.cookies
       val clientConfig                                   = route.backend.client
-      val clientReq: WSRequest                           = if (route.useNettyClient) {
+      val clientReq: WSRequest                           = if (route.useNettyClient || finalTarget.protocol.isHttp2 || finalTarget.protocol.isHttp3) {
         NettyHttpClient
-          .url(UrlSanitizer.sanitize(request.url), httpClient)
+          .url(UrlSanitizer.sanitize(request.url), env.reactorClientGateway)
           .withTarget(finalTarget)
           .withClientConfig(clientConfig.legacy)
       } else {
@@ -2659,7 +2657,7 @@ class ProxyEngine() extends RequestHandler {
         .map { response =>
           val idOpt              = rawRequest.attrs.get(otoroshi.netty.NettyRequestKeys.TrailerHeadersIdKey)
           val shouldHaveTrailers =
-            route.useNettyClient && finalTarget.protocol == HttpProtocols.`HTTP/2.0` && rawRequest.attrs
+            route.useNettyClient && (finalTarget.protocol.isHttp2 || finalTarget.protocol.isHttp3) && rawRequest.attrs
               .get(RequestAttrKey.Server)
               .contains("netty-experimental") && rawRequest.headers.get("te").contains("trailers")
           if (shouldHaveTrailers) {
@@ -2673,6 +2671,7 @@ class ProxyEngine() extends RequestHandler {
                 val future = r.trailingHeaders()
                 otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Left(future))
                 future.map(trls => otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Right(trls)))
+                // TODO: support http3 client
               case _                                       =>
             }
           }

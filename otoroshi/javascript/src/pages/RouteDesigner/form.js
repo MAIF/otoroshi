@@ -54,10 +54,10 @@ export class Target extends Component {
       props: { label: 'Predicate rack' },
     },
     protocol: {
-      type: 'string',
+      type: 'select',
       props: {
         label: 'Protocol',
-        possibleValues: ['HTTP/1.0', 'HTTP/1.1', 'HTTP/2.0'].map((e) => ({ label: e, value: e })),
+        possibleValues: ['HTTP/1.0', 'HTTP/1.1', 'HTTP/2.0', 'HTTP/3.0'].map((e) => ({ label: e, value: e })),
       },
     },
     ip_address: { type: 'string', props: { label: 'IP Address' } },
@@ -475,6 +475,7 @@ export const schemas = {
 };
 
 export class RouteForm extends Component {
+
   state = { value: null, plugins: [], json: false };
 
   componentDidMount() {
@@ -521,6 +522,11 @@ export class RouteForm extends Component {
     return this.client.deleteById(this.state.value.id);
   };
 
+  updateValue = (value) => {
+    this.setState({ value })
+    this.props.setValue(value);
+  }
+
   render() {
     if (!this.state.value) {
       return null;
@@ -537,7 +543,7 @@ export class RouteForm extends Component {
               height={window.innerHeight - 180}
               label="plugin"
               value={this.state.value}
-              onChange={(value) => this.setState({ value })}
+              onChange={(value) => this.updateValue(value)}
             />
           </form>
         </div>
@@ -553,7 +559,7 @@ export class RouteForm extends Component {
             schema={schemas.route.schema}
             flow={schemas.route.flow}
             value={this.state.value}
-            onChange={(value) => this.setState({ value })}
+            onChange={(value) => this.updateValue(value)}
           />
         </Collapse>
         <Collapse key="frontend" initCollapsed label="Frontend">
@@ -561,7 +567,7 @@ export class RouteForm extends Component {
             schema={schemas.frontend.schema}
             flow={schemas.frontend.flow}
             value={this.state.value.frontend}
-            onChange={(frontend) => this.setState({ value: { ...this.state.value, frontend } })}
+            onChange={(frontend) => this.updateValue({ ...this.state.value, frontend })}
           />
         </Collapse>
         <Collapse key="backend_ref" initCollapsed label="Backend reference">
@@ -583,7 +589,7 @@ export class RouteForm extends Component {
             flow={['backend_ref']}
             value={{ backend_ref: this.state.value.backend_ref }}
             onChange={(obj) =>
-              this.setState({ value: { ...this.state.value, backend_ref: obj.backend_ref } })
+              this.updateValue({ ...this.state.value, backend_ref: obj.backend_ref })
             }
           />
         </Collapse>
@@ -593,7 +599,9 @@ export class RouteForm extends Component {
               schema={{ ...schemas.backend.schema }}
               flow={schemas.backend.flow}
               value={this.state.value.backend}
-              onChange={(backend) => this.setState({ value: { ...this.state.value, backend } })}
+              onChange={(backend) => {
+                this.updateValue({ ...this.state.value, backend })
+              }}
             />
           </Collapse>
         )}
@@ -614,12 +622,12 @@ export class RouteForm extends Component {
                 onChange={(plugin) => {
                   const plugins = this.state.value.plugins;
                   plugins[idx] = plugin;
-                  this.setState({ value: { ...this.state.value, plugins } });
+                  this.updateValue({ ...this.state.value, plugins });
                 }}
                 onDelete={() => {
                   const plugins = this.state.value.plugins;
                   plugins.splice(idx, 1);
-                  this.setState({ value: { ...this.state.value, plugins } });
+                  this.updateValue({ ...this.state.value, plugins });
                 }}
                 onUp={() => {
                   const plugins = this.state.value.plugins;
@@ -628,7 +636,7 @@ export class RouteForm extends Component {
                     const prev = plugins[newIdx];
                     plugins[newIdx] = plugin;
                     plugins[idx] = prev;
-                    this.setState({ value: { ...this.state.value, plugins } });
+                    this.updateValue({ ...this.state.value, plugins });
                   }
                 }}
                 onDown={() => {
@@ -638,7 +646,7 @@ export class RouteForm extends Component {
                     const prev = plugins[newIdx];
                     plugins[newIdx] = plugin;
                     plugins[idx] = prev;
-                    this.setState({ value: { ...this.state.value, plugins } });
+                    this.updateValue({ ...this.state.value, plugins });
                   }
                 }}
                 addBefore={() => {
@@ -652,7 +660,7 @@ export class RouteForm extends Component {
                     config: {},
                     plugin_index: null,
                   });
-                  this.setState({ value: { ...this.state.value, plugins } });
+                  this.updateValue({ ...this.state.value, plugins });
                 }}
                 addAfter={() => {
                   const plugins = this.state.value.plugins;
@@ -665,7 +673,7 @@ export class RouteForm extends Component {
                     config: {},
                     plugin_index: null,
                   });
-                  this.setState({ value: { ...this.state.value, plugins } });
+                  this.updateValue({ ...this.state.value, plugins });
                 }}
               />
             );

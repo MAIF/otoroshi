@@ -1,5 +1,6 @@
 package otoroshi.netty
 
+import akka.util.ByteString
 import io.netty.buffer.{ByteBuf, ByteBufHolder}
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
@@ -95,5 +96,16 @@ class AccessLogHandler extends ChannelDuplexHandler {
       case _                         =>
     }
     ctx.write(msg, promise)
+  }
+}
+
+object ImplicitUtils {
+  implicit class BetterByteBuf(val buf: ByteBuf) extends AnyVal {
+    def readContentAsByteString(): ByteString = {
+      val builder     = ByteString.newBuilder
+      buf.readBytes(builder.asOutputStream, buf.readableBytes())
+      val bytes       = builder.result()
+      bytes
+    }
   }
 }

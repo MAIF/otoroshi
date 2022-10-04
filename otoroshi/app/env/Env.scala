@@ -509,6 +509,10 @@ class Env(
   lazy val ahcStats         = new AtomicReference[Cancellable]()
   lazy val internalAhcStats = new AtomicReference[Cancellable]()
 
+  lazy val reactorClientInternal = reactor.netty.http.client.HttpClient.create() // TODO: custom connection provider for clientconfig ?
+  lazy val reactorClientGateway = reactor.netty.http.client.HttpClient.create() // TODO: custom connection provider for clientconfig ?
+  lazy val http3Client = new otoroshi.netty.NettyHttp3Client(this)
+
   lazy val gatewayClient = {
     val parser: WSConfigParser         = new WSConfigParser(configuration.underlying, environment.classLoader)
     val config: AhcWSClientConfig      = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
@@ -559,7 +563,7 @@ class Env(
     WsClientChooser(
       ahcClient,
       new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
-      reactor.netty.http.client.HttpClient.create(),
+      reactorClientGateway,
       configuration.getOptionalWithFileSupport[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
       this
     )
@@ -608,7 +612,7 @@ class Env(
     WsClientChooser(
       wsClient,
       new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
-      reactor.netty.http.client.HttpClient.create(),
+      reactorClientInternal,
       configuration.getOptionalWithFileSupport[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
       this
     )

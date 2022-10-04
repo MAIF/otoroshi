@@ -2,7 +2,6 @@ package otoroshi.models
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
-import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.{Materializer, OverflowStrategy}
@@ -15,6 +14,7 @@ import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.el.RedirectionExpressionLanguage
+import otoroshi.models.HttpProtocols.{HTTP_1_0, HTTP_1_1, HTTP_2_0, HTTP_3_0}
 import otoroshi.plugins.oidc.{OIDCThirdPartyApiKeyConfig, ThirdPartyApiKeyConfig}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
@@ -510,11 +510,40 @@ case class NetworkLocationMatch(
   }
 }
 
+case class HttpProtocol(value: String) {
+  def isHttp1: Boolean = value.toLowerCase().startsWith("http/1")
+  def isHttp2: Boolean = value.toLowerCase().startsWith("http/2")
+  def isHttp3: Boolean = value.toLowerCase().startsWith("http/3")
+  def json: JsValue = JsString(value)
+  def asAkka: akka.http.scaladsl.model.HttpProtocol = value.toLowerCase() match {
+    case "http/1.0" => akka.http.scaladsl.model.HttpProtocols.`HTTP/1.0`
+    case "http/1.1" => akka.http.scaladsl.model.HttpProtocols.`HTTP/1.1`
+    case "http/2.0" => akka.http.scaladsl.model.HttpProtocols.`HTTP/2.0`
+    case "http/3.0" => akka.http.scaladsl.model.HttpProtocols.`HTTP/2.0`
+    case _ => akka.http.scaladsl.model.HttpProtocols.`HTTP/1.1`
+  }
+}
+
+object HttpProtocols {
+  val HTTP_1_0 = HttpProtocol("HTTP/1.0")
+  val HTTP_1_1 = HttpProtocol("HTTP/1.1")
+  val HTTP_2_0 = HttpProtocol("HTTP/2.0")
+  val HTTP_3_0 = HttpProtocol("HTTP/3.0")
+  def parse(value: String): HttpProtocol = parseSafe(value).getOrElse(HTTP_1_1)
+  def parseSafe(value: String): Option[HttpProtocol] = value.toLowerCase() match {
+    case "http/1.0" => HTTP_1_0.some
+    case "http/1.1" => HTTP_1_1.some
+    case "http/2.0" => HTTP_2_0.some
+    case "http/3.0" => HTTP_3_0.some
+    case _ => None
+  }
+}
+
 case class Target(
     host: String,
     scheme: String = "https",
     weight: Int = 1,
-    protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`,
+    protocol: HttpProtocol = HttpProtocols.HTTP_1_0,
     predicate: TargetPredicate = AlwaysMatch,
     ipAddress: Option[String] = None,
     mtlsConfig: MtlsConfig = MtlsConfig(),
@@ -573,8 +602,8 @@ object Target {
           protocol = (json \ "protocol")
             .asOpt[String]
             .filterNot(_.trim.isEmpty)
-            .map(s => HttpProtocol.apply(s))
-            .getOrElse(HttpProtocols.`HTTP/1.1`),
+            .map(s => HttpProtocols.parse(s))
+            .getOrElse(HttpProtocols.HTTP_1_1),
           predicate = (json \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
           ipAddress = (json \ "ipAddress").asOpt[String].filterNot(_.trim.isEmpty),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),

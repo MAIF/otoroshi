@@ -345,7 +345,7 @@ class TunnelAgent(env: Env) {
     val target  = Target(
       host = uri.authority.host.toString(),
       scheme = uri.scheme,
-      protocol = HttpProtocols.`HTTP/1.1`,
+      protocol = otoroshi.models.HttpProtocols.HTTP_1_1,
       predicate = TargetPredicate.AlwaysMatch,
       ipAddress = ipAddress,
       mtlsConfig = tls.getOrElse(MtlsConfig())
