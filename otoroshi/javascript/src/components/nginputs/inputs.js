@@ -284,6 +284,30 @@ export class NgArrayRenderer extends Component {
 
   isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
 
+  defaultValues = (current) => ({
+    number: () => 0,
+    boolean: () => false,
+    bool: () => false,
+    array: () => [],
+    select: () => current?.props?.options[0] || '',
+    form: () => ({
+      ...this.generateDefaultValue(current.schema)
+    }),
+    object: () => { },
+    json: () => { },
+  })
+
+  generateDefaultValue = obj => {
+    return Object.entries(obj)
+      .reduce((acc, current) => {
+        const value = this.defaultValues(current[1])[current[1].type]
+        return {
+          ...acc,
+          [current[0]]: value ? value() : ''
+        }
+      }, {})
+  }
+
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
@@ -379,10 +403,10 @@ export class NgArrayRenderer extends Component {
             onClick={() => {
               let newArr = [...(this.props.value || [])]
 
-              if (newArr.length === 0)
-                return this.props.onChange([''])
+              if (schema.of)
+                return this.props.onChange([...newArr, ''])
               else {
-                const newArray = this.isAnObject(this.props.value[0]) ? [...newArr, this.props.value[0]] : [...newArr, ''];
+                const newArray = [...newArr, this.generateDefaultValue(schema)]
                 this.props.onChange(newArray);
               }
             }}>
