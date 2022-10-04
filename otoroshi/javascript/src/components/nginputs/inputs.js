@@ -378,8 +378,13 @@ export class NgArrayRenderer extends Component {
             style={{ width: 42, marginTop: 5 }}
             onClick={() => {
               let newArr = [...(this.props.value || [])]
-              const newArray = this.isAnObject(this.props.value[0]) ? [...newArr, this.props.value[0]] : [...newArr, ''];
-              this.props.onChange(newArray);
+
+              if (newArr.length === 0)
+                return this.props.onChange([''])
+              else {
+                const newArray = this.isAnObject(this.props.value[0]) ? [...newArr, this.props.value[0]] : [...newArr, ''];
+                this.props.onChange(newArray);
+              }
             }}>
             <i className="fas fa-plus-circle" />
           </button>}
