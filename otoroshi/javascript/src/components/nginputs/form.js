@@ -199,32 +199,17 @@ export class NgStep extends Component {
 
 const Breadcrumb = ({ breadcrumb, setBreadcrumb }) => {
 
-  if (!breadcrumb)
+  if (!breadcrumb || breadcrumb.length==1)
     return null
 
-  return <div style={{ margin: '5px 0' }}>
+  return <div className="breadcrumbs my-2">
     {breadcrumb
       .map((part, i) => {
-        return <button
-          type='button'
-          className='btn'
-          style={{
-            padding: 0,
-            color: '#fff',
-            background: i === breadcrumb.length - 1 ? "#f9b000" : "#404040",
-            height: "100%",
-            borderRadius: "7px",
-            transition: 'all 0.3s ease',
-            display: "inline-flex",
-            justifyContent: "center",
-            alignItems: 'center',
-            margin: '4px 1px',
-            padding: "0 12px",
-            cursor: 'pointer',
-            transform: "skew(343deg)"
-          }} onClick={() => setBreadcrumb(i)}>
+        return <span
+          className={`breadcrumbs__item ${i===breadcrumb.length-1 ? 'is-active' : ''}`}
+           onClick={() => setBreadcrumb(i)}>
           {part}
-        </button>
+        </span>
       })}
   </div>
 }
