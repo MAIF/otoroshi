@@ -506,7 +506,7 @@ export class NgArraySelectRenderer extends Component {
                   <button
                     type="button"
                     className="btn btn-sm btn-danger"
-                    style={{ width: 42, marginLeft: 5, alignSelf: 'stretch' }}
+                    style={{ width: 42, marginLeft: 5, alignSelf: 'flex-start' }}
                     onClick={(e) => {
                       const newArray = this.props.value ? [...this.props.value] : [];
                       newArray.splice(idx, 1);
