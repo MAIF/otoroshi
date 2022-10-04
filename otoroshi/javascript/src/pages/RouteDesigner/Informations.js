@@ -47,11 +47,11 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
       return nextClient
         .create(nextClient.ENTITIES[fetchName], informations)
         .then(() => history.push(`/${link}/${informations.id}?tab=flow`));
-    } else
+    } else {
       return nextClient.update(nextClient.ENTITIES[fetchName], informations).then((res) => {
-        if (!res.error)
-          setValue(res);
+        if (!res.error) setValue(res);
       });
+    }
   };
 
   const schema = {
@@ -160,12 +160,14 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
 
   return (
     <>
-      {showAdvancedForm && <RouteForm
-        routeId={routeId}
-        setValue={setValue}
-        history={history}
-        location={location}
-      />}
+      {showAdvancedForm && (
+        <RouteForm
+          routeId={routeId}
+          setValue={setValue}
+          history={history}
+          location={location}
+          isCreation={isCreation} />
+      )}
 
       {!showAdvancedForm && <NgForm
         schema={schema}

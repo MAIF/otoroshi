@@ -56,7 +56,7 @@ import scala.xml.{Elem, XML}
 
 object NettyHttpClient {
   // TODO: WebSocket
-  def url(rawUrl: String, client: HttpClient = HttpClient.create()): NettyWsClientRequest = {
+  def url(rawUrl: String, client: HttpClient): NettyWsClientRequest = {
     NettyWsClientRequest(
       client = client,
       _url = rawUrl,
@@ -273,155 +273,187 @@ case class NettyWsClientRequest(
   ///////
   override def execute(): Future[WSResponse] = {
     val env = OtoroshiEnvHolder.get()
-    stream().map(_.asInstanceOf[NettyWsResponse].toStrict())(env.otoroshiExecutionContext)
+    val proto  = protocol.orElse(targetOpt.map(_.protocol.value)).getOrElse("HTTP/1.1")
+    if (proto.toLowerCase().startsWith("http/3")) {
+      NettyHttp3ClientWsRequest(
+        client = env.http3Client,
+        _url = _url,
+        protocol = protocol,
+        method = method,
+        body = body,
+        headers = headers,
+        followRedirects = followRedirects,
+        requestTimeout = requestTimeout,
+        proxy = proxy,
+        tlsConfig = tlsConfig,
+        targetOpt = targetOpt,
+        clientConfig = clientConfig,
+      ).execute()
+    } else {
+      stream().map(_.asInstanceOf[NettyWsResponse].toStrict())(env.otoroshiExecutionContext)
+    }
   }
 
   override def stream(): Future[WSResponse] = {
-    // TODO: if protocol.toLowerCase().startsWith("http/3") ...
     val env    = OtoroshiEnvHolder.get()
     val config = NettyClientConfig.parseFrom(env)
     val proto  = protocol.orElse(targetOpt.map(_.protocol.value)).getOrElse("HTTP/1.1")
-    // val client = HttpClient.create() // TODO: custom connection provider for clientconfig ?
-    client
-      .disableRetry(false)
-      .followRedirect(followRedirects.getOrElse(false))
-      .keepAlive(true)
-      .compress(false)
-      .applyOnIf(config.wiretap)(_.wiretap("otoroshi-experimental-netty-client-wiretap", LogLevel.INFO))
-      .applyOn { client =>
-        // client config here
-        client
-          .responseTimeout(java.time.Duration.ofMillis(clientConfig.callAndStreamTimeout))
-          .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, java.lang.Integer.valueOf(clientConfig.connectionTimeout.toInt))
-      }
-      .applyOn { client =>
-        // target config and manual resolving
-        val host = targetOpt.map(_.theHost).getOrElse(_uri.authority.host.toString())
-        val port = targetOpt.map(_.thePort).getOrElse(_uri.authority.port)
-        client
-          .host(host)
-          .port(port)
-          .applyOnWithOpt(targetOpt.flatMap(_.ipAddress)) { case (cli, ip) =>
-            cli.remoteAddress(() => InetSocketAddress.createUnresolved(ip, port))
-          }
-      }
-      .applyOn { client =>
-        // tls config
-        val tls = targetOpt.map(_.scheme.startsWith("https")).getOrElse(_uri.scheme.startsWith("https"))
-        if (tls) {
-          val tlsConf   = tlsConfig.orElse(targetOpt.map(_.mtlsConfig))
-          val customTls = tlsConf.map(c => c.mtls && c.legit).getOrElse(false)
-          if (customTls) {
-            val certs: Seq[Cert]        = tlsConf.toSeq
-              .flatMap(_.actualCerts)
-            val trustedCerts: Seq[Cert] = tlsConf.toSeq
-              .flatMap(_.actualTrustedCerts)
-            val trustAll: Boolean       = tlsConf
-              .exists(_.trustAll)
-            val ctx                     = SslContextBuilder
-              .forClient()
-              .clientAuth(if (certs.isEmpty) ClientAuth.NONE else ClientAuth.REQUIRE)
-              .applyOn { ctx =>
-                if (NettyWsClientRequest.logger.isDebugEnabled)
-                  NettyWsClientRequest.logger.debug(
-                    s"Calling ${_uri.toString()} with mTLS context of ${certs.size} client certificates and ${trustedCerts.size} trusted certificates ($trustAll)"
-                  )
-                certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain: _*))
-                ctx
-              }
-              .applyOn { ctx =>
-                if (trustAll) {
-                  ctx.trustManager(new VeryNiceTrustManager(Seq.empty))
-                } else {
-                  ctx.trustManager(trustedCerts.map(_.certificatesChain.head): _*)
+    if (proto.toLowerCase().startsWith("http/3")) {
+      NettyHttp3ClientWsRequest(
+        client = env.http3Client,
+        _url = _url,
+        protocol = protocol,
+        method = method,
+        body = body,
+        headers = headers,
+        followRedirects = followRedirects,
+        requestTimeout = requestTimeout,
+        proxy = proxy,
+        tlsConfig = tlsConfig,
+        targetOpt = targetOpt,
+        clientConfig = clientConfig,
+      ).stream()
+    } else {
+      client
+        .disableRetry(false)
+        .followRedirect(followRedirects.getOrElse(false))
+        .keepAlive(true)
+        .compress(false)
+        .applyOnIf(config.wiretap)(_.wiretap("otoroshi-experimental-netty-client-wiretap", LogLevel.INFO))
+        .applyOn { client =>
+          // client config here
+          client
+            .responseTimeout(java.time.Duration.ofMillis(clientConfig.callAndStreamTimeout))
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, java.lang.Integer.valueOf(clientConfig.connectionTimeout.toInt))
+        }
+        .applyOn { client =>
+          // target config and manual resolving
+          val host = targetOpt.map(_.theHost).getOrElse(_uri.authority.host.toString())
+          val port = targetOpt.map(_.thePort).getOrElse(_uri.authority.port)
+          client
+            .host(host)
+            .port(port)
+            .applyOnWithOpt(targetOpt.flatMap(_.ipAddress)) { case (cli, ip) =>
+              cli.remoteAddress(() => InetSocketAddress.createUnresolved(ip, port))
+            }
+        }
+        .applyOn { client =>
+          // tls config
+          val tls = targetOpt.map(_.scheme.startsWith("https")).getOrElse(_uri.scheme.startsWith("https"))
+          if (tls) {
+            val tlsConf = tlsConfig.orElse(targetOpt.map(_.mtlsConfig))
+            val customTls = tlsConf.map(c => c.mtls && c.legit).getOrElse(false)
+            if (customTls) {
+              val certs: Seq[Cert] = tlsConf.toSeq
+                .flatMap(_.actualCerts)
+              val trustedCerts: Seq[Cert] = tlsConf.toSeq
+                .flatMap(_.actualTrustedCerts)
+              val trustAll: Boolean = tlsConf
+                .exists(_.trustAll)
+              val ctx = SslContextBuilder
+                .forClient()
+                .applyOn { ctx =>
+                  if (NettyWsClientRequest.logger.isDebugEnabled)
+                    NettyWsClientRequest.logger.debug(
+                      s"Calling ${_uri.toString()} with mTLS context of ${certs.size} client certificates and ${trustedCerts.size} trusted certificates ($trustAll)"
+                    )
+                  certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain: _*))
+                  ctx
                 }
-              }
-              .build()
-            client
-              .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
-            // TODO: if targetOpt.ipAddress, spec.sslContext(ctx).serverNames(new SNIHostName(targetOpt.theHost)))
+                .applyOn { ctx =>
+                  if (trustAll) {
+                    ctx.trustManager(new VeryNiceTrustManager(Seq.empty))
+                  } else {
+                    ctx.trustManager(trustedCerts.map(_.certificatesChain.head): _*)
+                  }
+                }
+                .build()
+              client
+                .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+              // TODO: if targetOpt.ipAddress, spec.sslContext(ctx).serverNames(new SNIHostName(targetOpt.theHost)))
+            } else {
+              client.secure()
+            }
           } else {
-            client.secure()
+            client.noSSL()
           }
-        } else {
-          client.noSSL()
         }
-      }
-      .applyOn { client =>
-        // proxy config
-        proxy match {
-          case None            => client.noProxy()
-          case Some(proxyconf) =>
-            client.proxy(spec =>
-              spec
-                .`type`(ProxyProvider.Proxy.HTTP)
-                .host(proxyconf.host)
-                .port(proxyconf.port)
-                .applyOnWithOpt(proxyconf.nonProxyHosts.filter(_.nonEmpty)) { case (pr, nph) =>
-                  pr.nonProxyHosts(nph.head)
-                }
-                .applyOnWithOpt(proxyconf.principal) { case (pr, principal) =>
-                  pr.username(principal)
-                }
-                .applyOnWithOpt(proxyconf.password) { case (pr, password) =>
-                  pr.password(usr => password)
-                }
-            )
-        }
-      }
-      .applyOnIf(proto.toLowerCase().startsWith("http/2")) { client =>
-        val tls = targetOpt.map(_.scheme.startsWith("https")).getOrElse(_uri.scheme.startsWith("https"))
-        if (tls) {
-          client.protocol(HttpProtocol.H2)
-        } else {
-          client.protocol(HttpProtocol.H2C)
-        }
-      }
-      .applyOnIf(proto.toLowerCase() == "h2c")(_.protocol(HttpProtocol.H2C))
-      .applyOnIf(proto.toLowerCase() == "h2")(_.protocol(HttpProtocol.H2C))
-      .applyOnIf(proto.toLowerCase().startsWith("http/1"))(_.protocol(HttpProtocol.HTTP11))
-      .applyOnIf(
-        proto.toLowerCase().startsWith("http/2") || proto.toLowerCase() == "h2c" || proto.toLowerCase() == "h2"
-      ) { client =>
-        client.http2Settings(builder => builder.build())
-      }
-      //.httpResponseDecoder(spec => spec) // TODO: check if needed
-      .headers { heads =>
-        import collection.JavaConverters._
-        headers.foreach { case (name, values) =>
-          heads.add(name, values.asJava)
-        }
-      }
-      .request(HttpMethod.valueOf(method.toUpperCase()))
-      .uri(_uri.toString())
-      .applyOn { client =>
-        body match {
-          case EmptyBody           =>
-            client
-              .responseConnection((resp, conn) =>
-                Mono.just(NettyWsResponse(resp, ByteBufFlux.fromInbound(conn.inbound().receive()), _uri, env))
+        .applyOn { client =>
+          // proxy config
+          proxy match {
+            case None => client.noProxy()
+            case Some(proxyconf) =>
+              client.proxy(spec =>
+                spec
+                  .`type`(ProxyProvider.Proxy.HTTP)
+                  .host(proxyconf.host)
+                  .port(proxyconf.port)
+                  .applyOnWithOpt(proxyconf.nonProxyHosts.filter(_.nonEmpty)) { case (pr, nph) =>
+                    pr.nonProxyHosts(nph.head)
+                  }
+                  .applyOnWithOpt(proxyconf.principal) { case (pr, principal) =>
+                    pr.username(principal)
+                  }
+                  .applyOnWithOpt(proxyconf.password) { case (pr, password) =>
+                    pr.password(usr => password)
+                  }
               )
-          case InMemoryBody(bytes) =>
-            client
-              .send(Mono.just(Unpooled.copiedBuffer(bytes.toArray)))
-              .responseConnection((resp, conn) =>
-                Mono.just(NettyWsResponse(resp, ByteBufFlux.fromInbound(conn.inbound().receive()), _uri, env))
-              )
-          case SourceBody(source)  =>
-            client
-              .send(
-                Flux.from(
-                  source
-                    .map(chunk => Unpooled.copiedBuffer(chunk.toArray))
-                    .runWith(Sink.asPublisher(true))(env.otoroshiMaterializer)
+          }
+        }
+        .applyOnIf(proto.toLowerCase().startsWith("http/2")) { client =>
+          val tls = targetOpt.map(_.scheme.startsWith("https")).getOrElse(_uri.scheme.startsWith("https"))
+          if (tls) {
+            client.protocol(HttpProtocol.H2)
+          } else {
+            client.protocol(HttpProtocol.H2C)
+          }
+        }
+        .applyOnIf(proto.toLowerCase() == "h2c")(_.protocol(HttpProtocol.H2C))
+        .applyOnIf(proto.toLowerCase() == "h2")(_.protocol(HttpProtocol.H2C))
+        .applyOnIf(proto.toLowerCase().startsWith("http/1"))(_.protocol(HttpProtocol.HTTP11))
+        .applyOnIf(
+          proto.toLowerCase().startsWith("http/2") || proto.toLowerCase() == "h2c" || proto.toLowerCase() == "h2"
+        ) { client =>
+          client.http2Settings(builder => builder.build())
+        }
+        //.httpResponseDecoder(spec => spec) // TODO: check if needed
+        .headers { heads =>
+          import collection.JavaConverters._
+          headers.foreach { case (name, values) =>
+            heads.add(name, values.asJava)
+          }
+        }
+        .request(HttpMethod.valueOf(method.toUpperCase()))
+        .uri(_uri.toString())
+        .applyOn { client =>
+          body match {
+            case EmptyBody =>
+              client
+                .responseConnection((resp, conn) =>
+                  Mono.just(NettyWsResponse(resp, ByteBufFlux.fromInbound(conn.inbound().receive()), _uri, env))
                 )
-              )
-              .responseConnection((resp, conn) =>
-                Mono.just(NettyWsResponse(resp, ByteBufFlux.fromInbound(conn.inbound().receive()), _uri, env))
-              )
+            case InMemoryBody(bytes) =>
+              client
+                .send(Mono.just(Unpooled.copiedBuffer(bytes.toArray)))
+                .responseConnection((resp, conn) =>
+                  Mono.just(NettyWsResponse(resp, ByteBufFlux.fromInbound(conn.inbound().receive()), _uri, env))
+                )
+            case SourceBody(source) =>
+              client
+                .send(
+                  Flux.from(
+                    source
+                      .map(chunk => Unpooled.copiedBuffer(chunk.toArray))
+                      .runWith(Sink.asPublisher(true))(env.otoroshiMaterializer)
+                  )
+                )
+                .responseConnection((resp, conn) =>
+                  Mono.just(NettyWsResponse(resp, ByteBufFlux.fromInbound(conn.inbound().receive()), _uri, env))
+                )
+          }
         }
-      }
-      .applyOn(flux => ReactiveStreamUtils.FluxUtils.toFuture(flux))
+        .applyOn(flux => ReactiveStreamUtils.FluxUtils.toFuture(flux))
+    }
   }
 }
 

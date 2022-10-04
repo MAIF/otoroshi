@@ -1,6 +1,5 @@
 package otoroshi.next.models
 
-import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
 import akka.stream.OverflowStrategy
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
@@ -456,7 +455,7 @@ case class NgTarget(
     port: Int,
     tls: Boolean,
     weight: Int = 1,
-    protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`,
+    protocol: HttpProtocol = HttpProtocols.HTTP_1_1,
     predicate: TargetPredicate = AlwaysMatch,
     ipAddress: Option[String] = None,
     tlsConfig: NgTlsConfig = NgTlsConfig()
@@ -525,8 +524,8 @@ object NgTarget {
       protocol = (obj \ "protocol")
         .asOpt[String]
         .filterNot(_.trim.isEmpty)
-        .map(s => HttpProtocol.apply(s))
-        .getOrElse(HttpProtocols.`HTTP/1.1`),
+        .map(s => HttpProtocols.parse(s))
+        .getOrElse(HttpProtocols.HTTP_1_1),
       predicate = (obj \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
       ipAddress = ipAddress
     )

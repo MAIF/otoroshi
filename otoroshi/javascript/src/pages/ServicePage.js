@@ -233,6 +233,10 @@ class Target extends Component {
                 value: 'HTTP/2.0',
                 label: 'HTTP/2.0',
               },
+              {
+                value: 'HTTP/3.0',
+                label: 'HTTP/3.0',
+              },
             ]}
             help="The protocol of the target. Only used with experimental client"
             onChange={(e) => this.changeTheValue('protocol', e)}

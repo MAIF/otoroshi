@@ -1,7 +1,7 @@
 package otoroshi.next.proxy
 
 import akka.Done
-import akka.http.scaladsl.model.{HttpProtocols, Uri}
+import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.joda.time.DateTime
@@ -142,7 +142,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
           Target(
             host = uri.authority.toString(),
             scheme = uri.scheme,
-            protocol = HttpProtocols.`HTTP/1.1`,
+            protocol = otoroshi.models.HttpProtocols.HTTP_1_1,
             predicate = TargetPredicate.AlwaysMatch,
             ipAddress = ipAddress,
             mtlsConfig = mtlsConfig
