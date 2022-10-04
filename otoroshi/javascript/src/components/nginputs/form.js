@@ -212,7 +212,7 @@ const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
       .map((part, i) => {
         return <span
           className={`breadcrumbs__item ${i===breadcrumb.length-1 ? 'is-active' : ''}`}
-           onClick={() => setBreadcrumb(i)}>
+           onClick={() => setBreadcrumb(i)} key={`${part}`}>
           {part}
         </span>
       })}
