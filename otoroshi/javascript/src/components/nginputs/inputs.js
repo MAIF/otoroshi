@@ -4,6 +4,7 @@ import isFunction from 'lodash/isFunction';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 import { Location } from '../Location';
 import { ObjectInput } from '../inputs';
+import isEqual from 'lodash/isEqual';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
@@ -273,10 +274,15 @@ export class NgArrayRenderer extends Component {
     if (this.props.breadcrumb === undefined)
       return true;
 
-    return (path ? pathAsArray.length === breadcrumbAsArray.length : pathAsArray.length >= breadcrumbAsArray.length) &&
+    if (path)
+      return isEqual(pathAsArray, breadcrumbAsArray)
+
+    return pathAsArray.length >= breadcrumbAsArray.length &&
       (pathAsArray.join('-').startsWith(pathAsArray.join('-')) ||
         pathAsArray.join('-').startsWith(pathAsArray.join('-')))
   }
+
+  isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
 
   render() {
     const schema = this.props.schema;
@@ -294,6 +300,7 @@ export class NgArrayRenderer extends Component {
             this.props.value.map((value, idx) => {
               const path = [...this.props.path, String(idx)]
               const showItem = this.canShowActions(path)
+              // console.log(path, this.props.breadcrumb, showItem)
               return (
                 <div
                   style={{
@@ -303,7 +310,7 @@ export class NgArrayRenderer extends Component {
                     outline: showItem ? 'rgb(65, 65, 62) solid 1px' : 'none',
                     padding: showItem ? '6px' : 0,
                     marginBottom: showItem ? '6px' : 0
-                  }} key={`${value}-${idx}`}>
+                  }} key={path}>
                   {!ItemRenderer && (
                     <input
                       type="text"
@@ -370,7 +377,8 @@ export class NgArrayRenderer extends Component {
             className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={() => {
-              const newArray = Array.isArray(this.props.value) ? [...this.props.value, ''] : [''];
+              let newArr = [...(this.props.value || [])]
+              const newArray = this.isAnObject(this.props.value[0]) ? [...newArr, this.props.value[0]] : [...newArr, ''];
               this.props.onChange(newArray);
             }}>
             <i className="fas fa-plus-circle" />

@@ -410,9 +410,7 @@ export class NgForm extends Component {
     return this.recursiveSearch(paths.slice(1), (value || {})[paths.slice(0, 1)]);
   };
 
-  isAnObject = (variable) => {
-    return typeof variable === 'object' && variable !== null && !Array.isArray(variable);
-  };
+  isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
 
   getFlow = (value, schema) => {
     if (isFunction(this.props.flow)) {
