@@ -197,13 +197,18 @@ export class NgStep extends Component {
   }
 }
 
-const Breadcrumb = ({ breadcrumb, setBreadcrumb }) => {
+const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
 
-  if (!breadcrumb || breadcrumb.length==1)
+  if (!breadcrumb && !toHome)
     return null
 
   return <div className="breadcrumbs my-2">
-    {breadcrumb
+    <span
+      className="breadcrumbs__item px-2"
+      onClick={toHome}>
+      <i className="fas fa-house"></i>
+    </span>
+    {breadcrumb && breadcrumb
       .map((part, i) => {
         return <span
           className={`breadcrumbs__item ${i===breadcrumb.length-1 ? 'is-active' : ''}`}
@@ -583,6 +588,11 @@ export class NgForm extends Component {
       <FormRenderer {...this.props}>
         <Breadcrumb
           breadcrumb={this.state.breadcrumb}
+          toHome={root ? () => {
+            this.setState({
+              breadcrumb: []
+            })
+          } : null}
           setBreadcrumb={i => {
             this.setState({
               breadcrumb: this.state.breadcrumb.slice(0, i + 1)
