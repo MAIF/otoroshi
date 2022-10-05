@@ -5,9 +5,8 @@ import io.netty.buffer.{ByteBuf, ByteBufHolder}
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.channel.{ChannelDuplexHandler, ChannelHandlerContext, ChannelPromise, EventLoopGroup}
-import io.netty.handler.codec.http.{HttpRequest, HttpResponse, HttpResponseStatus, HttpUtil, LastHttpContent}
+import io.netty.handler.codec.http._
 import org.joda.time.DateTime
-import reactor.netty.http.server.logging.AccessLogArgProvider
 
 case class EventLoopGroupCreation(group: EventLoopGroup, native: Option[String])
 
@@ -27,7 +26,7 @@ object EventLoopUtils {
       val channelHttp  = new io.netty.channel.kqueue.KQueueServerSocketChannel()
       val evlGroupHttp = new io.netty.channel.kqueue.KQueueEventLoopGroup(nThread)
       evlGroupHttp.register(channelHttp)
-      EventLoopGroupCreation(evlGroupHttp, Some("KQeue"))
+      EventLoopGroupCreation(evlGroupHttp, Some("KQueue"))
     } else {
       val channelHttp  = new NioServerSocketChannel()
       val evlGroupHttp = new NioEventLoopGroup(nThread)

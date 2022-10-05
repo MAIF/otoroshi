@@ -514,6 +514,7 @@ case class HttpProtocol(value: String) {
   def isHttp1: Boolean = value.toLowerCase().startsWith("http/1")
   def isHttp2: Boolean = value.toLowerCase().startsWith("http/2")
   def isHttp3: Boolean = value.toLowerCase().startsWith("http/3")
+  def isHttp2OrHttp3: Boolean = isHttp2 || isHttp3
   def json: JsValue = JsString(value)
   def asAkka: akka.http.scaladsl.model.HttpProtocol = value.toLowerCase() match {
     case "http/1.0" => akka.http.scaladsl.model.HttpProtocols.`HTTP/1.0`

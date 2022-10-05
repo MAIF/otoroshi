@@ -7,6 +7,7 @@ import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
+import io.netty.util.internal.PlatformDependent
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
@@ -509,8 +510,8 @@ class Env(
   lazy val ahcStats         = new AtomicReference[Cancellable]()
   lazy val internalAhcStats = new AtomicReference[Cancellable]()
 
-  lazy val reactorClientInternal = reactor.netty.http.client.HttpClient.create() // TODO: custom connection provider for clientconfig ?
-  lazy val reactorClientGateway = reactor.netty.http.client.HttpClient.create() // TODO: custom connection provider for clientconfig ?
+  lazy val reactorClientInternal = new otoroshi.netty.NettyHttpClient(this)
+  lazy val reactorClientGateway = new otoroshi.netty.NettyHttpClient(this)
   lazy val http3Client = new otoroshi.netty.NettyHttp3Client(this)
 
   lazy val gatewayClient = {
@@ -1076,6 +1077,8 @@ class Env(
     }
   }
 
+  lazy val javaVersion = PlatformDependent.javaVersion()
+
   timeout(300.millis).andThen { case _ =>
     implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
 
@@ -1091,18 +1094,33 @@ class Env(
       logger.info(s"Running Otoroshi Worker agent !")
       clusterAgent.startF()
     }
+
+    val modernTlsProtocols:    Seq[String] = configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.modernProtocols").getOrElse(Seq.empty)
+    val protocolsJDK11:        Seq[String] = configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK11").getOrElse(Seq.empty)
+    val protocolsJDK8:         Seq[String] = configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK8").getOrElse(Seq.empty)
+
+    val cipherSuitesJDK8:      Seq[String] = configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK8").getOrElse(Seq.empty)
+    val cipherSuitesJDK11:     Seq[String] = configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11").getOrElse(Seq.empty)
+    val cipherSuitesJDK11Plus: Seq[String] = configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11Plus").getOrElse(Seq.empty)
+
     configuration
       .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
       .filterNot(_.isEmpty)
       .foreach { s =>
-        DynamicSSLEngineProvider.logger.warn(s"Using custom SSL cipher suites: ${s.mkString(", ")}")
+        if (!(s == cipherSuitesJDK8 || s == cipherSuitesJDK11 || s == cipherSuitesJDK11Plus)) {
+          DynamicSSLEngineProvider.logger.warn(s"Using custom SSL cipher suites: ${s.mkString(", ")}")
+        }
       }
+
     configuration
       .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols")
       .filterNot(_.isEmpty)
       .foreach { p =>
-        DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: ${p.mkString(", ")}")
+        if (!(p == protocolsJDK11 || p == protocolsJDK8 || p == modernTlsProtocols)) {
+          DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: ${p.mkString(", ")}")
+        }
       }
+
     configuration.betterHas("app.importFrom")
     datastores.globalConfigDataStore
       .isOtoroshiEmpty()

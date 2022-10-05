@@ -12,7 +12,6 @@ import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.ssl.{ClientAuth, SslContextBuilder}
 import org.apache.commons.codec.binary.Base64
-import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, Target}
 import otoroshi.ssl.{Cert, VeryNiceTrustManager}
@@ -55,8 +54,16 @@ import scala.util.{Failure, Success}
 import scala.xml.{Elem, XML}
 
 object NettyHttpClient {
-  // TODO: WebSocket
-  def url(rawUrl: String, client: HttpClient): NettyWsClientRequest = {
+  val logger = Logger("otoroshi-netty-client")
+}
+
+class NettyHttpClient(env: Env) {
+
+  // TODO: custom connection provider for clientconfig ?
+  // TODO: support websockets
+  private val client = HttpClient.create()
+
+  def url(rawUrl: String): NettyWsClientRequest = {
     NettyWsClientRequest(
       client = client,
       _url = rawUrl,
@@ -69,13 +76,10 @@ object NettyHttpClient {
       proxy = None,
       targetOpt = None,
       clientConfig = ClientConfig(),
-      alreadyFailed = AkkaWsClientRequest.atomicFalse
+      alreadyFailed = AkkaWsClientRequest.atomicFalse,
+      env = env,
     )
   }
-}
-
-object NettyWsClientRequest {
-  val logger = Logger("otoroshi-netty-client")
 }
 
 case class NettyWsClientRequest(
@@ -92,7 +96,8 @@ case class NettyWsClientRequest(
     tlsConfig: Option[MtlsConfig] = None,
     targetOpt: Option[Target] = None,
     clientConfig: ClientConfig = ClientConfig(),
-    alreadyFailed: AtomicBoolean = AkkaWsClientRequest.atomicFalse
+    alreadyFailed: AtomicBoolean = AkkaWsClientRequest.atomicFalse,
+    env: Env,
 ) extends WSRequest {
 
   private val _uri = Uri(_url)
@@ -272,7 +277,6 @@ case class NettyWsClientRequest(
   }
   ///////
   override def execute(): Future[WSResponse] = {
-    val env = OtoroshiEnvHolder.get()
     val proto  = protocol.orElse(targetOpt.map(_.protocol.value)).getOrElse("HTTP/1.1")
     if (proto.toLowerCase().startsWith("http/3")) {
       NettyHttp3ClientWsRequest(
@@ -295,7 +299,6 @@ case class NettyWsClientRequest(
   }
 
   override def stream(): Future[WSResponse] = {
-    val env    = OtoroshiEnvHolder.get()
     val config = NettyClientConfig.parseFrom(env)
     val proto  = protocol.orElse(targetOpt.map(_.protocol.value)).getOrElse("HTTP/1.1")
     if (proto.toLowerCase().startsWith("http/3")) {
@@ -353,8 +356,8 @@ case class NettyWsClientRequest(
               val ctx = SslContextBuilder
                 .forClient()
                 .applyOn { ctx =>
-                  if (NettyWsClientRequest.logger.isDebugEnabled)
-                    NettyWsClientRequest.logger.debug(
+                  if (NettyHttpClient.logger.isDebugEnabled)
+                    NettyHttpClient.logger.debug(
                       s"Calling ${_uri.toString()} with mTLS context of ${certs.size} client certificates and ${trustedCerts.size} trusted certificates ($trustAll)"
                     )
                   certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain: _*))

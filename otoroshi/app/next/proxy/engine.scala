@@ -2586,9 +2586,9 @@ class ProxyEngine() extends RequestHandler {
       val (currentReqHasBody, shouldInjectContentLength) = request.hasBodyWithoutLength
       val wsCookiesIn                                    = request.cookies
       val clientConfig                                   = route.backend.client
-      val clientReq: WSRequest                           = if (route.useNettyClient || finalTarget.protocol.isHttp2 || finalTarget.protocol.isHttp3) {
-        NettyHttpClient
-          .url(UrlSanitizer.sanitize(request.url), env.reactorClientGateway)
+      val clientReq: WSRequest                           = if (route.useNettyClient || finalTarget.protocol.isHttp2OrHttp3) {
+        env.reactorClientGateway
+          .url(UrlSanitizer.sanitize(request.url))
           .withTarget(finalTarget)
           .withClientConfig(clientConfig.legacy)
       } else {
