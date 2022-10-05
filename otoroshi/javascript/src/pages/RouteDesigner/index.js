@@ -232,7 +232,7 @@ const Manager = ({ query, entity, ...props }) => {
             flow: 'Designer',
             informations: 'Informations',
             routes: 'Routes',
-            route_plugins: 'Route plugins',
+            route_plugins: 'Route plugins'
           }[query]
         }
       </h4>

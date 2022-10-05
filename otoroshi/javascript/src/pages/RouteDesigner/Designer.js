@@ -11,16 +11,18 @@ import { useParams, useLocation } from 'react-router';
 import {
   nextClient,
   getCategories,
-  getPlugins,
   getOldPlugins,
+  getPlugins,
 } from '../../services/BackOfficeServices';
+
+import { Backend, Frontend, Plugins } from './NgPlugins'
+
 import {
-  DEFAULT_FLOW,
   EXCLUDED_PLUGINS,
   LEGACY_PLUGINS_WRAPPER,
   PLUGINS,
   PLUGIN_INFORMATIONS_SCHEMA,
-} from './Graph';
+} from './DesignerConfig';
 import Loader from './Loader';
 import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
@@ -30,6 +32,7 @@ const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inp
 import snakeCase from 'lodash/snakeCase';
 import camelCase from 'lodash/camelCase';
 import isEqual from 'lodash/isEqual';
+import isFunction from 'lodash/isFunction';
 import _ from 'lodash';
 import { HTTP_COLORS } from './RouteComposition';
 
@@ -483,8 +486,7 @@ class Designer extends React.Component {
       TransformResponse: true,
     },
     advancedDesignerView: null,
-    showTryIt: false,
-    backendForm: undefined,
+    showTryIt: false
   };
 
   componentDidMount() {
@@ -608,11 +610,19 @@ class Designer extends React.Component {
         this.props.routeId
       ),
       getCategories(),
-      getPlugins(),
+      Promise.resolve(Plugins.map(plugin => {
+        return {
+          ...plugin,
+          config_schema: isFunction(plugin.config_schema) ? plugin.config_schema({
+            showAdvancedDesignerView: (pluginName) => {
+              this.setState({ advancedDesignerView: pluginName })
+            }
+          }) : plugin.config_schema
+        }
+      })),
       getOldPlugins(),
-      nextClient.form(nextClient.ENTITIES.FRONTENDS),
-      nextClient.form(nextClient.ENTITIES.BACKENDS),
-    ]).then(([backends, r, categories, plugins, oldPlugins, frontendForm, backendForm]) => {
+      getPlugins()
+    ]).then(([backends, r, categories, plugins, oldPlugins, metadataPlugins]) => {
       let route =
         this.props.viewPlugins !== null && this.props.viewPlugins !== -1
           ? {
@@ -632,7 +642,10 @@ class Designer extends React.Component {
       }
 
       const formattedPlugins = [
-        ...plugins,
+        ...plugins.map(p => ({
+          ...(metadataPlugins.find(metaPlugin => metaPlugin.id === p.id) || {}),
+          ...p,
+        })),
         ...oldPlugins.map((p) => ({
           ...p,
           legacy: true,
@@ -674,7 +687,6 @@ class Designer extends React.Component {
       this.setState(
         {
           backends,
-          backendForm,
           loading: false,
           categories: categories.filter((category) => !['Tunnel', 'Job'].includes(category)),
           route: { ...routeWithNodeId },
@@ -687,24 +699,16 @@ class Designer extends React.Component {
           })),
           nodes,
           frontend: {
-            ...DEFAULT_FLOW.Frontend,
-            ...frontendForm,
-            config_schema: toUpperCaseLabels({
-              ...frontendForm.schema,
-              ...DEFAULT_FLOW.Frontend.config_schema,
-            }),
-            config_flow: DEFAULT_FLOW.Frontend.config_flow,
-            nodeId: 'Frontend',
+            ...Frontend,
+            config_schema: toUpperCaseLabels(Frontend.schema),
+            config_flow: Frontend.flow,
+            nodeId: 'Frontend'
           },
           backend: {
-            ...DEFAULT_FLOW.Backend,
-            ...backendForm,
-            config_schema: toUpperCaseLabels(
-              DEFAULT_FLOW.Backend
-                .config_schema(backendForm.schema, route, this.updateRoute)
-            ),
-            config_flow: DEFAULT_FLOW.Backend.config_flow,
-            nodeId: 'Backend',
+            ...Backend,
+            config_schema: toUpperCaseLabels(Backend.schema),
+            config_flow: Backend.flow,
+            nodeId: 'Backend'
           },
           selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
         },
@@ -2033,6 +2037,8 @@ class EditView extends React.Component {
     const { id, flow, config_flow, schema, nodeId } = selectedNode;
     let { config_schema } = selectedNode;
 
+    console.log(selectedNode)
+
     const isFrontendOrBackend = ['Backend', 'Frontend'].includes(id);
     const isPluginWithConfiguration = Object.keys(config_schema).length > 0;
 
@@ -2051,26 +2057,18 @@ class EditView extends React.Component {
           label: 'Informations',
           schema: PLUGIN_INFORMATIONS_SCHEMA,
           flow: ['enabled', 'debug', 'include', 'exclude'],
-        },
+        }
       };
       if (isPluginWithConfiguration)
         formSchema = {
           ...formSchema,
           plugin: {
             type: 'form',
-            props: {
-              label: 'Plugin configuration',
-            },
+            label: 'Plugin configuration',
             schema: { ...convertTransformer(config_schema) },
             flow: [...(config_flow || flow)],
-          },
+          }
         };
-    }
-
-    const overridePlugin = PLUGINS[id];
-
-    if (overridePlugin) {
-      formSchema.plugin = overridePlugin(formSchema.plugin, this.props.showAdvancedDesignerView);
     }
 
     let value = route[selectedNode.field]; // matching Frontend and Backend case
@@ -2093,6 +2091,13 @@ class EditView extends React.Component {
         plugin: { ...value },
       };
     }
+
+    console.log({
+      schema: formSchema,
+      flow: formFlow,
+      value,
+      originalValue: value,
+    })
 
     this.setState({
       form: {
@@ -2271,9 +2276,14 @@ class EditView extends React.Component {
                   schema={form.schema}
                   flow={hasCustomPluginForm ? ['status'] : form.flow}
                   onChange={this.onValidate}
-                  // useBreadcrumb={selectedNode.id === 'Backend' ? true : false}
                   useBreadcrumb={true}
                 />
+                {!['Frontend', 'Backend'].includes(id) && <div className='d-flex'>
+                  <button className='btn btn-sm btn-danger ms-auto mt-3' onClick={onRemove}>
+                    <i className='fas fa-times me-2' />
+                    Remove plugin
+                  </button>
+                </div>}
                 {hasCustomPluginForm &&
                   <EurekaForm
                     route={route}
@@ -2305,6 +2315,7 @@ class EditView extends React.Component {
               )}
             </div>
           )}
+
         </div>
       </div>
     );

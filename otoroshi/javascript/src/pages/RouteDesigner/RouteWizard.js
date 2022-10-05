@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { TextInput } from '../../components/inputs';
 import { getOldPlugins, getPlugins, nextClient } from '../../services/BackOfficeServices';
+import { Plugins } from './NgPlugins';
 import Loader from './Loader';
 
 const RouteNameStep = ({ state, onChange }) => (
@@ -64,9 +65,8 @@ const RouteChooser = ({ state, onChange }) => (
       ].map(({ kind, title, text }) => (
         <button
           type="button"
-          className={`btn ${
-            state.route.kind === kind ? 'btn-save' : 'btn-dark'
-          } py-3 wizard-route-chooser`}
+          className={`btn ${state.route.kind === kind ? 'btn-save' : 'btn-dark'
+            } py-3 wizard-route-chooser`}
           onClick={() => onChange(kind)}
           key={kind}>
           <h3 className="wizard-h3--small">{title}</h3>
@@ -178,16 +178,17 @@ const ProcessStep = ({ state, history }) => {
 
   useEffect(() => {
     Promise.all([
-      getPlugins(),
+      Promise.resolve(Plugins),
       getOldPlugins(),
+      getPlugins(),
       nextClient.template(nextClient.ENTITIES.ROUTES),
-    ]).then(([plugins, oldPlugins, template]) => {
+    ]).then(([plugins, oldPlugins, metadataPlugins, template]) => {
       const url = ['mock', 'graphql'].includes(state.route.kind)
         ? {
-            pahtname: '/',
-            hostname: '',
-            protocol: 'https://',
-          }
+          pahtname: '/',
+          hostname: '',
+          protocol: 'https://',
+        }
         : new URL(state.route.url);
       const secured = url.protocol.includes('https');
 
@@ -202,7 +203,13 @@ const ProcessStep = ({ state, history }) => {
             ...template.frontend,
             domains: [state.route.domain],
           },
-          plugins: [...plugins, ...oldPlugins]
+          plugins: [
+            ...plugins.map(p => ({
+              ...(metadataPlugins.find(metaPlugin => metaPlugin.id === p.id) || {}),
+              ...p
+            })),
+            ...oldPlugins
+          ]
             .filter((f) => selectedPlugins.includes(f.id))
             .map((plugin) => {
               return {
@@ -297,8 +304,8 @@ const ProcessStep = ({ state, history }) => {
             {state.route.kind === 'mock'
               ? 'Start creating mocks'
               : state.route.kind === 'graphql'
-              ? 'Start creating schema'
-              : 'Start editing plugins'}
+                ? 'Start creating schema'
+                : 'Start editing plugins'}
           </button>
         </div>
       </Loader>

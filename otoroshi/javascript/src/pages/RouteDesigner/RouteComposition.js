@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useImperativeHandle } from 'react';
 
 import { nextClient } from '../../services/BackOfficeServices';
-import { DEFAULT_FLOW } from './Graph';
 import { toUpperCaseLabels } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
 import isEqual from 'lodash/isEqual';
 import cloneDeep from 'lodash/cloneDeep';
 import { useHistory, useRouteMatch } from 'react-router-dom';
 import { NgForm, NgSelectRenderer } from '../../components/nginputs';
+import { Backend, Frontend } from './NgPlugins';
 
 export const HTTP_COLORS = {
   GET: 'rgb(52, 170, 182)',
@@ -23,13 +23,13 @@ const Methods = ({ frontend }) => {
   const hasMethods = frontend.methods && frontend.methods.length > 0;
   const methods = hasMethods
     ? frontend.methods.map((m, i) => (
-        <span
-          key={`frontendmethod-${i}`}
-          className={`badge me-1`}
-          style={{ backgroundColor: HTTP_COLORS[m] }}>
-          {m}
-        </span>
-      ))
+      <span
+        key={`frontendmethod-${i}`}
+        className={`badge me-1`}
+        style={{ backgroundColor: HTTP_COLORS[m] }}>
+        {m}
+      </span>
+    ))
     : [<span className="badge bg-dark">ALL</span>];
   return (
     <div className="d-flex-between">
@@ -105,30 +105,22 @@ class RouteForms extends React.Component {
   };
 
   componentDidMount() {
-    Promise.all([
-      nextClient.form(nextClient.ENTITIES.FRONTENDS),
-      nextClient.form(nextClient.ENTITIES.BACKENDS),
-      nextClient.find(nextClient.ENTITIES.BACKENDS),
-    ]).then(([frontendForm, backendForm, backends]) => {
-      this.setState({
-        schemas: {
-          frontend: {
-            config_flow: DEFAULT_FLOW.Frontend.config_flow,
-            config_schema: toUpperCaseLabels({
-              ...frontendForm.schema,
-              ...DEFAULT_FLOW.Frontend.config_schema,
-            }),
+    nextClient.find(nextClient.ENTITIES.BACKENDS)
+      .then(backends => {
+        this.setState({
+          schemas: {
+            frontend: {
+              config_flow: Frontend.flow,
+              config_schema: toUpperCaseLabels(Frontend.schema),
+            },
+            backend: {
+              config_flow: Backend.flow,
+              config_schema: toUpperCaseLabels(Backend.schema),
+            },
           },
-          backend: {
-            config_flow: DEFAULT_FLOW.Backend.config_flow,
-            config_schema: toUpperCaseLabels(
-              DEFAULT_FLOW.Backend.config_schema(backendForm.schema)
-            ),
-          },
-        },
-        backends,
+          backends,
+        });
       });
-    });
   }
 
   saveChanges = (newRoute) => this.props.updateRoute(newRoute);
@@ -236,21 +228,22 @@ const RouteForm = React.memo(
   ({ dirtyField, value, schema, flow, usingJsonView, onSubmit }) => {
     return (
       <NgForm
+        useBreadcrumb={true}
         value={value}
         schema={
           usingJsonView
             ? {
-                [dirtyField]: {
-                  type: 'json',
-                  props: {
-                    label: '',
-                    editorOnly: true,
-                    ngOptions: {
-                      spread: true,
-                    },
+              [dirtyField]: {
+                type: 'json',
+                props: {
+                  label: '',
+                  editorOnly: true,
+                  ngOptions: {
+                    spread: true,
                   },
                 },
-              }
+              },
+            }
             : schema
         }
         flow={usingJsonView ? [dirtyField] : flow}
@@ -518,6 +511,11 @@ export default ({ service, setSaveButton, setService, viewPlugins, ref }) => {
             viewPlugins={viewPlugins}
           />
         ))}
+        {routes.length === 0 && <h4 className='text-center' style={{
+          fontSize: '1.25em'
+        }}>
+          Your route compositions is empty. Start by adding a new route or importing all routes from your open api.
+        </h4>}
       </div>
     </div>
   );
