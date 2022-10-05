@@ -115,7 +115,6 @@ export class NgFormRenderer extends Component {
       ).replace(/_/g, ' ');
       const showTitle = !noTitle && (isLeaf || clickable);
 
-
       const titleComponent = (
         <span
           style={{
@@ -128,6 +127,16 @@ export class NgFormRenderer extends Component {
           {title}
         </span>
       );
+
+      let EnabledTagComponent = null
+
+      if (this.props.rawSchema?.schema &&
+        Object.keys(this.props.rawSchema?.schema).includes('enabled') &&
+        this.props.value)
+        EnabledTagComponent = <span className={`badge bg-${this.props.value.enabled ? 'success' : 'danger'} me-3`}>
+          {this.props.value.enabled ? 'Enabled' : 'Disabled'}
+        </span>
+
       if (collapsable) {
         return (
           <div
@@ -151,20 +160,24 @@ export class NgFormRenderer extends Component {
                 alignItems: 'center',
               }}>
               {showTitle && titleComponent}
-              {!this.props.setBreadcrumb && (
-                <button
+              <div>
+                {showTitle && EnabledTagComponent}
+
+                {!this.props.setBreadcrumb && (
+                  <button
+                    type="button"
+                    className="btn btn-info float-end btn-sm"
+                    onClick={this.setBreadcrumb}>
+                    <i className={`fas fa-eye${this.state.folded ? '-slash' : ''}`} />
+                  </button>
+                )}
+                {(this.props.setBreadcrumb && clickable) && <button
                   type="button"
                   className="btn btn-info float-end btn-sm"
                   onClick={this.setBreadcrumb}>
-                  <i className={`fas fa-eye${this.state.folded ? '-slash' : ''}`} />
-                </button>
-              )}
-              {(this.props.setBreadcrumb && clickable) && <button
-                type="button"
-                className="btn btn-info float-end btn-sm"
-                onClick={this.setBreadcrumb}>
-                <i className="fas fa-chevron-right"></i>
-              </button>}
+                  <i className="fas fa-chevron-right"></i>
+                </button>}
+              </div>
             </div>
             {showChildren &&
               <div onClick={e => e.stopPropagation()}>

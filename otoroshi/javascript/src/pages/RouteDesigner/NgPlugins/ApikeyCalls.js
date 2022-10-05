@@ -65,12 +65,12 @@ export default {
         }
       },
       "flow": [
+        "enabled",
         "none_meta_keys_in",
         "all_meta_keys_in",
         "all_meta_in",
         "none_meta_in",
         "one_tag_in",
-        "enabled",
         "one_meta_in",
         "all_tags_in",
         "one_meta_key_in",
@@ -123,12 +123,12 @@ export default {
             }
           },
           "flow": [
+            "enabled",
             "include_request_attrs",
             "query_name",
             "header_name",
             "key_pair_signed",
             "secret_signed",
-            "enabled",
             "cookie_name"
           ]
         },
@@ -152,9 +152,9 @@ export default {
             }
           },
           "flow": [
+            "enabled",
             "query_name",
-            "header_name",
-            "enabled"
+            "header_name"
           ]
         },
         "client_id": {
@@ -177,9 +177,9 @@ export default {
             }
           },
           "flow": [
+            "enabled",
             "query_name",
-            "header_name",
-            "enabled"
+            "header_name"
           ]
         },
         "custom_headers": {
@@ -202,9 +202,9 @@ export default {
             }
           },
           "flow": [
+            "enabled",
             "client_secret_header_name",
-            "client_id_header_name",
-            "enabled"
+            "client_id_header_name"
           ]
         }
       },

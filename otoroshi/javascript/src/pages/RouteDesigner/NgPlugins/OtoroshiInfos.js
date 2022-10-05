@@ -20,14 +20,13 @@ export default {
       }
     },
     "algo": {
-      "format": "form",
-      "type": "object",
+      "type": "form",
+      collapsable: true,
+      collapsed: false,
       "flow": [
         "type"
       ],
-      "props": {
-        "label": " "
-      },
+      label: 'Algo.',
       "schema": {
         "type": {
           "format": "form",
@@ -82,8 +81,8 @@ export default {
           "schema": {
             "type": {
               "type": "select",
+              "label": "Type.",
               "props": {
-                "label": "Type",
                 "options": [
                   "HSAlgoSettings",
                   "RSAlgoSettings",
@@ -105,10 +104,10 @@ export default {
               "type": "boolean"
             },
             "publicKey": {
-              "type": "string"
+              "type": "text"
             },
             "privateKey": {
-              "type": "string"
+              "type": "text"
             },
             "url": {
               "type": "string"
@@ -130,6 +129,7 @@ export default {
             },
             "mtlsConfig": {
               "type": "object",
+              collapsable: true,
               "format": "form",
               "flow": [
                 "certs",
@@ -174,6 +174,7 @@ export default {
             },
             "proxy": {
               "format": "form",
+              collapsable: true,
               "flow": [
                 "host",
                 "port",

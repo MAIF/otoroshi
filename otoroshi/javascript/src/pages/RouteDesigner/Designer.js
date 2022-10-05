@@ -2037,8 +2037,6 @@ class EditView extends React.Component {
     const { id, flow, config_flow, schema, nodeId } = selectedNode;
     let { config_schema } = selectedNode;
 
-    console.log(selectedNode)
-
     const isFrontendOrBackend = ['Backend', 'Frontend'].includes(id);
     const isPluginWithConfiguration = Object.keys(config_schema).length > 0;
 
