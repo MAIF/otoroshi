@@ -1391,6 +1391,11 @@ class Designer extends React.Component {
         : [];
 
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
+    plugins.map(p => {
+      if (p.legacy) {
+        p.plugin_categories.push('Legacy');
+      }
+    });
 
     // TODO - better error display
     if (!loading && this.state.notFound) return <h1>Route not found</h1>;
@@ -1445,7 +1450,7 @@ class Designer extends React.Component {
             expandAll={expandAll}
             searched={searched}
             plugins={[...plugins, ...patterns]}
-            categories={[...categories, 'Patterns']}
+            categories={[...categories, 'Legacy', 'Patterns']}
             addNode={this.addNode}
             showPreview={(element) =>
               this.setState({

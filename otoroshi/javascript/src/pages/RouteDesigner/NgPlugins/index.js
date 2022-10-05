@@ -22,6 +22,7 @@ import GraphQLProxy from './GraphQLProxy'
 import GraphQLQuery from './GraphQLQuery'
 import GzipResponseCompressor from './GzipResponseCompressor'
 import HeadersValidation from './HeadersValidation'
+import HtmlPatcher from './HtmlPatcher'
 import IpAddressAllowedList from './IpAddressAllowedList'
 import IpAddressBlockList from './IpAddressBlockList'
 import JQ from './JQ'
@@ -92,6 +93,7 @@ export const Plugins = [
   GraphQLQuery,
   GzipResponseCompressor,
   HeadersValidation,
+  HtmlPatcher,
   IpAddressAllowedList,
   IpAddressBlockList,
   JQ,

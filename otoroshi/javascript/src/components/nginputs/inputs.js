@@ -357,6 +357,7 @@ export class NgArrayRenderer extends Component {
                       breadcrumb={this.props.breadcrumb}
                       setBreadcrumb={this.props.setBreadcrumb}
                       useBreadcrumb={this.props.useBreadcrumb}
+                      ngOptions={this.props.itemNgOptions || { spread: true }}
                       path={path}
                       flow={this.props.flow}
                       schema={this.props.schema}
@@ -365,9 +366,6 @@ export class NgArrayRenderer extends Component {
                       setValidation={this.props.setValidation}
                       rootValue={this.props.rootValue}
                       rootOnChange={this.props.rootOnChange}
-                      ngOptions={{
-                        spread: true
-                      }}
                       rawSchema={{
                         ...this.props.rawSchema,
                         collapsable: false,
