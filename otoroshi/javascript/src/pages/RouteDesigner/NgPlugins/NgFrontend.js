@@ -29,9 +29,8 @@ export default {
     },
     domains: {
       label: "domains",
-      type: "array",
+      type: "string",
       "array": true,
-      "format": null
     },
     "strip_path": {
       type: 'bool',

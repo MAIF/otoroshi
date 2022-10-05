@@ -324,7 +324,6 @@ export class NgArrayRenderer extends Component {
             this.props.value.map((value, idx) => {
               const path = [...this.props.path, String(idx)]
               const showItem = this.canShowActions(path)
-              // console.log(path, this.props.breadcrumb, showItem)
               return (
                 <div
                   style={{
@@ -366,6 +365,9 @@ export class NgArrayRenderer extends Component {
                       setValidation={this.props.setValidation}
                       rootValue={this.props.rootValue}
                       rootOnChange={this.props.rootOnChange}
+                      ngOptions={{
+                        spread: true
+                      }}
                       rawSchema={{
                         ...this.props.rawSchema,
                         collapsable: false,
