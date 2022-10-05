@@ -3,9 +3,12 @@ export default {
   "config_schema": {
     "append_head": {
       "label": "Append to document head",
-      "type": "array",
       "array": true,
-      "format": null
+      "type": "code",
+      "props": {
+        mode: 'html',
+        editorOnly: true
+      }
     },
     "append_body": {
       "label": "Append to document body",

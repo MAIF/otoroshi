@@ -34,7 +34,10 @@ import {
 
 const Helpers = {
   rendererFor: (type, components) => {
-    if (type === 'string') {
+    if (type.endsWith('-no-label')) {
+      const Renderer = Helpers.rendererFor(type.replace('-no-label', ''), components);
+      return (props) => <Renderer {...props} ngOptions={{ ...props.ngOptions, spread: true }} />
+    } else if (type === 'string') {
       return components.StringRenderer;
     } else if (type === 'bool' || type === 'boolean') {
       return components.BooleanRenderer;
@@ -368,6 +371,8 @@ export class NgForm extends Component {
       let itemRenderer = null;
       if (schema.array && schema.format === 'form') {
         itemRenderer = Helpers.rendererFor(renderer, this.props.components);
+      } else {
+        itemRenderer = Helpers.rendererFor(schema.type, this.props.components);
       }
       const config = {
         type: schema.array ? 'array' : schema.format === 'form' ? 'form' : schema.type,
