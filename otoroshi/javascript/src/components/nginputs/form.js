@@ -371,7 +371,7 @@ export class NgForm extends Component {
       let itemRenderer = null;
       if (schema.array && schema.format === 'form') {
         itemRenderer = Helpers.rendererFor(renderer, this.props.components);
-      } else {
+      } else if (schema.array) {
         itemRenderer = Helpers.rendererFor(schema.type, this.props.components);
       }
       const config = {
