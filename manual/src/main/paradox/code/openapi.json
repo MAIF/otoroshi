@@ -18405,16 +18405,6 @@
           }
         }
       },
-      "otoroshi.models.HttpProtocol" : {
-        "description" : "???",
-        "type" : "object",
-        "properties" : {
-          "value" : {
-            "description" : "???",
-            "type" : "string"
-          }
-        }
-      },
       "otoroshi.models.Team" : {
         "description" : "An otoroshi model for a team of users in the organization (otoroshi-ui)",
         "type" : "object",
@@ -22380,7 +22370,8 @@
           },
           "protocol" : {
             "description" : "???",
-            "$ref" : "#/components/schemas/otoroshi.models.HttpProtocol"
+            "type" : "string",
+            "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0" ]
           },
           "predicate" : {
             "description" : "???",
@@ -24285,7 +24276,8 @@
           },
           "protocol" : {
             "description" : "Protocol for the target",
-            "$ref" : "#/components/schemas/otoroshi.models.HttpProtocol"
+            "type" : "string",
+            "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0" ]
           },
           "predicate" : {
             "description" : "Predicate to choose this target",

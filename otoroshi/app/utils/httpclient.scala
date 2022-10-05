@@ -200,17 +200,17 @@ object WsClientChooser {
   def apply(
       standardClient: WSClient,
       akkaClient: AkkWsClient,
-      httpClient: HttpClient,
+      nettyClient: NettyHttpClient,
       // ahcCreator: SSLConfigSettings => WSClient,
       fullAkka: Boolean,
       env: Env
-  ): WsClientChooser = new WsClientChooser(standardClient, akkaClient, httpClient, /*ahcCreator, */ fullAkka, env)
+  ): WsClientChooser = new WsClientChooser(standardClient, akkaClient, nettyClient, /*ahcCreator, */ fullAkka, env)
 }
 
 class WsClientChooser(
     standardClient: WSClient,
     akkaClient: AkkWsClient,
-    val httpClient: HttpClient,
+    val nettyClient: NettyHttpClient,
     // ahcCreator: SSLConfigSettings => WSClient,
     fullAkka: Boolean,
     env: Env
@@ -276,7 +276,7 @@ class WsClientChooser(
 
   def akkaUrl(url: String, clientConfig: ClientConfig = ClientConfig()): WSRequest = {
     if (enforceNettyOnAkka || enforceAll) {
-      NettyHttpClient.url(url, httpClient).withClientConfig(clientConfig)
+      nettyClient.url(url).withClientConfig(clientConfig)
     } else {
       new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/1.1`, clientConfig = clientConfig, env = env)(
         akkaClient.mat
@@ -299,8 +299,8 @@ class WsClientChooser(
   def urlWithCert(url: String, mtlsConfig: Option[MtlsConfig]): WSRequest = {
     if (enforceNettyOnAkka || enforceAll) {
       mtlsConfig match {
-        case None    => NettyHttpClient.url(url, httpClient)
-        case Some(c) => NettyHttpClient.url(url, httpClient).withTlsConfig(c)
+        case None    => nettyClient.url(url)
+        case Some(c) => nettyClient.url(url).withTlsConfig(c)
       }
     } else {
       new AkkaWsClientRequest(
@@ -321,8 +321,8 @@ class WsClientChooser(
     }
   }
   def akkaUrlWithTarget(url: String, target: Target, clientConfig: ClientConfig = ClientConfig()): WSRequest = {
-    if (enforceNettyOnAkka || enforceAll) {
-      NettyHttpClient.url(url, httpClient).withTarget(target).withClientConfig(clientConfig)
+    if (enforceNettyOnAkka || enforceAll || target.protocol.isHttp2OrHttp3) {
+      nettyClient.url(url).withTarget(target).withClientConfig(clientConfig).withProtocol(target.protocol.value)
     } else {
       new AkkaWsClientRequest(
         akkaClient,
@@ -338,7 +338,7 @@ class WsClientChooser(
   }
   def akkaHttp2Url(url: String, clientConfig: ClientConfig = ClientConfig()): WSRequest = {
     if (enforceNettyOnAkka || enforceAll) {
-      NettyHttpClient.url(url, httpClient).withClientConfig(clientConfig)
+      nettyClient.url(url).withClientConfig(clientConfig).withProtocol("HTTP/2.0")
     } else {
       new AkkaWsClientRequest(akkaClient, url, None, HttpProtocols.`HTTP/2.0`, clientConfig = clientConfig, env = env)(
         akkaClient.mat
@@ -350,7 +350,7 @@ class WsClientChooser(
 
   def classicUrl(url: String): WSRequest = {
     if (enforceAll) {
-      NettyHttpClient.url(url, httpClient)
+      nettyClient.url(url)
     } else {
       standardClient.url(url)
     }
@@ -359,8 +359,8 @@ class WsClientChooser(
   def urlWithTarget(url: String, target: Target, clientConfig: ClientConfig = ClientConfig()): WSRequest = {
     val useAkkaHttpClient = env.datastores.globalConfigDataStore.latestSafe.map(_.useAkkaHttpClient).getOrElse(false)
     if (useAkkaHttpClient || fullAkka) {
-      if (enforceNettyOnAkka || enforceAll) {
-        NettyHttpClient.url(url, httpClient).withTarget(target).withClientConfig(clientConfig)
+      if (enforceNettyOnAkka || enforceAll || target.protocol.isHttp2OrHttp3) {
+        nettyClient.url(url).withTarget(target).withClientConfig(clientConfig).withProtocol(target.protocol.value)
       } else {
         new AkkaWsClientRequest(
           akkaClient,
@@ -374,8 +374,8 @@ class WsClientChooser(
         )
       }
     } else {
-      if (enforceAll) {
-        NettyHttpClient.url(url, httpClient).withTarget(target).withClientConfig(clientConfig)
+      if (enforceAll || target.protocol.isHttp2OrHttp3) {
+        nettyClient.url(url).withTarget(target).withClientConfig(clientConfig)
       } else {
         urlWithProtocol(target.scheme, url, clientConfig)
       }
@@ -386,9 +386,9 @@ class WsClientChooser(
     val useAkkaHttpClient = env.datastores.globalConfigDataStore.latestSafe.map(_.useAkkaHttpClient).getOrElse(false)
     protocol.toLowerCase() match {
       case _ if enforceAll                                            =>
-        NettyHttpClient.url(url, httpClient).withClientConfig(clientConfig).withProtocol(protocol)
+        nettyClient.url(url).withClientConfig(clientConfig).withProtocol(protocol)
       case _ if enforceNettyOnAkka && (useAkkaHttpClient || fullAkka) =>
-        NettyHttpClient.url(url, httpClient).withClientConfig(clientConfig).withProtocol(protocol)
+        nettyClient.url(url).withClientConfig(clientConfig).withProtocol(protocol)
       case "http" if useAkkaHttpClient || fullAkka                    =>
         new AkkaWsClientRequest(
           akkaClient,

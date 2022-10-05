@@ -1113,7 +1113,7 @@ object DynamicSSLEngineProvider {
     setupContextAndManagers(env, includeJdkCa, trustedCerts)._1
   }
 
-  private def setupContextAndManagers(
+  def setupContextAndManagers(
       env: HasMetrics,
       includeJdkCa: Boolean,
       trustedCerts: Seq[String]
@@ -1301,12 +1301,21 @@ object DynamicSSLEngineProvider {
    */
 
   def setupSslContextFor(
+    _certs: Seq[Cert],
+    _trustedCerts: Seq[Cert],
+    forceTrustAll: Boolean,
+    client: Boolean,
+    env: Env
+  ): SSLContext = setupSslContextForWithManagers(_certs, _trustedCerts, forceTrustAll, client, env)._1
+
+
+  def setupSslContextForWithManagers(
       _certs: Seq[Cert],
       _trustedCerts: Seq[Cert],
       forceTrustAll: Boolean,
       client: Boolean,
       env: Env
-  ): SSLContext =
+  ): (SSLContext, KeyManager, TrustManager) =
     env.metrics.withTimer("otoroshi.core.tls.setup-single-context") {
 
       val includeJdkCa: Boolean = if (client) {
@@ -1383,7 +1392,7 @@ object DynamicSSLEngineProvider {
       sslContext.init(keyManagers, tm, null)
       if (logger.isDebugEnabled) logger.debug(s"SSL Context init done ! (${keyStore1.size()} - ${keyStore2.size()})")
       SSLContext.setDefault(sslContext)
-      sslContext
+      (sslContext, keyManagers.head, tm.head)
     }
 
   def currentServerKeyManager   = currentKeyManagerServer.get()
