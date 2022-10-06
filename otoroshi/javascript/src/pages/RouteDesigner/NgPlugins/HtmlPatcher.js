@@ -12,10 +12,12 @@ export default {
     },
     "append_body": {
       "label": "Append to document body",
-      "type": "array",
-      "type": "array",
       "array": true,
-      "format": null
+      "type": "code",
+      "props": {
+        mode: 'html',
+        editorOnly: true
+      }
     }
   },
   "config_flow": [

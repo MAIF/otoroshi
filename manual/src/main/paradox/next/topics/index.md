@@ -14,6 +14,7 @@ If you encounter any bugs, [please fill an issue](https://github.com/MAIF/otoros
 * @ref:[Relay routing](./relay-routing.md)
 * @ref:[Otoroshi tunnels](./tunnels.md)
 * @ref:[Alternative http server](./netty-server.md)
+* @ref:[HTTP3](./http3.md)
 
 @@@ index
 
@@ -22,5 +23,6 @@ If you encounter any bugs, [please fill an issue](https://github.com/MAIF/otoros
 * [Relay routing](./relay-routing.md)
 * [Otoroshi tunnels](./tunnels.md)
 * [Alternative http server](./netty-server.md)
+* [HTTP3](./http3.md)
 
 @@@

@@ -166,7 +166,6 @@ class NettyHttp3Client(val env: Env) {
       new Http3RequestStreamInboundHandler() {
 
         var headers: Map[String, Seq[String]] = Map.empty
-        var body: ByteString = ByteString.empty
         var status: Int = 0
 
         val hotSource = Sinks.many().unicast().onBackpressureBuffer[ByteString]()
@@ -203,7 +202,6 @@ class NettyHttp3Client(val env: Env) {
           val content = frame.content().toString(CharsetUtil.US_ASCII)
           val chunk = ByteString(content)
           if (logger.isDebugEnabled) logger.debug(s"got data frame !!! - ${isLast}")
-          body = body ++ chunk
           hotSource.tryEmitNext(chunk)
           releaseFrameAndCloseIfLast(ctx, frame, isLast)
         }
