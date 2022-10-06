@@ -1856,11 +1856,17 @@ otoroshi {
    				port = 10048
    				port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP3_PORT}
           initialMaxStreamsBidirectional = 100000
+          initialMaxStreamsBidirectional = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_INITIAL_MAX_STREAMS_BIDIRECTIONAL}
           initialMaxStreamDataBidirectionalRemote = 1000000
+          initialMaxStreamDataBidirectionalRemote = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_INITIAL_MAX_STREAM_DATA_BIDIRECTIONAL_REMOTE}
           initialMaxStreamDataBidirectionalLocal = 1000000
+          initialMaxStreamDataBidirectionalLocal = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_INITIAL_MAX_STREAM_DATA_BIDIRECTIONAL_LOCAL}
           initialMaxData = 10000000
+          initialMaxData = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_INITIAL_MAX_DATA}
           maxRecvUdpPayloadSize = 1500
+          maxRecvUdpPayloadSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_MAX_RECV_UDP_PAYLOAD_SIZE}
           maxSendUdpPayloadSize = 1500
+          maxSendUdpPayloadSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_MAX_SEND_UDP_PAYLOAD_SIZE}
    			}
    			native {
    				enabled = true
@@ -3036,6 +3042,12 @@ otoroshi {
    			http3 {
    				enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP3_ENABLED}
    				port = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP3_PORT}
+          initialMaxStreamsBidirectional = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_INITIAL_MAX_STREAMS_BIDIRECTIONAL}
+          initialMaxStreamDataBidirectionalRemote = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_INITIAL_MAX_STREAM_DATA_BIDIRECTIONAL_REMOTE}
+          initialMaxStreamDataBidirectionalLocal = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_INITIAL_MAX_STREAM_DATA_BIDIRECTIONAL_LOCAL}
+          initialMaxData = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_INITIAL_MAX_DATA}
+          maxRecvUdpPayloadSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_MAX_RECV_UDP_PAYLOAD_SIZE}
+          maxSendUdpPayloadSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_MAX_SEND_UDP_PAYLOAD_SIZE}
    			}
    			native {
    				enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NATIVE_ENABLED}
