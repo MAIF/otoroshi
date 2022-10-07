@@ -10,7 +10,7 @@ export default {
           type="button"
           className="btn btn-sm btn-info mb-3"
           onClick={() => showAdvancedDesignerView(MocksDesigner)}>
-          Edit with the GraphQL Designer
+          Edit with the Mocks Designer
         </button>
       ),
     },
@@ -168,8 +168,8 @@ export default {
   }),
   "config_flow": [
     'turn_view',
-    "responses",
-    "pass_through",
-    "form_data"
+    // "responses",
+    // "pass_through",
+    // "form_data"
   ]
 }

@@ -2,14 +2,11 @@ import React, { Suspense, useState } from 'react';
 import faker from 'faker';
 import { FeedbackButton } from './FeedbackButton';
 import {
-  BooleanInput,
-  Help,
-  NumberInput,
-  ObjectInput,
-  SelectInput,
-  SimpleBooleanInput,
-  TextInput,
+  Help
 } from '../../components/inputs';
+
+import { NgForm } from '../../components/nginputs/form';
+import { NgBooleanRenderer, NgNumberRenderer, NgSelectRenderer, NgStringRenderer } from '../../components/nginputs/inputs';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
@@ -65,8 +62,8 @@ const generateFakerValues = (resources, endpoint) => {
         : fakeValue(item),
   });
 
-  if (endpoint.resource) {
-    const resource = resources.find((f) => f.name === endpoint.resource);
+  if (endpoint.model) {
+    const resource = resources.find((f) => f.name === endpoint.model);
     if (!resource) return {};
 
     const newItem = (r) =>
@@ -85,59 +82,147 @@ const generateFakerValues = (resources, endpoint) => {
   }
 };
 
-const CharlatanActions = ({ generateData, resetData, showGenerateEndpointForm }) => (
-  <div className="d-flex">
-    <FeedbackButton
-      onPress={generateData}
-      icon={() => <i className="fas fa-hammer me-1" />}
-      text="Generate missing data"
-    />
-    <button className="btn btn-sm btn-info mx-1" onClick={resetData}>
-      <i className="fas fa-times me-1" />
-      Reset all data
-    </button>
-    <button className="btn btn-sm btn-info" onClick={showGenerateEndpointForm}>
-      <i className="fas fa-hammer me-1" />
-      Generate endpoint
-    </button>
-  </div>
-);
+function PushView({ endpoints }) {
+  const [status, setStatus] = useState(endpoints.map(() => false))
+  return (
+    <>
+      <div className="d-flex">
+        <h3>Endpoints</h3>
+      </div>
+      <div className="mt-3">
+        {endpoints
+          .sort((a, b) => a.path.localeCompare(b.path))
+          .map((endpoint, idx) => {
+            return (
+              <div
+                className="mb-2 endpoint"
+                key={`${endpoint.path}${idx}`}
+                onClick={() => setStatus(
+                  status.map((s, i) => i === idx ? !s : s)
+                )}
+                style={{
+                  border: `1px solid ${HTTP_COLORS[endpoint.method]}`,
+                  padding: 0
+                }}>
+                <div className='d-flex-between p-1' style={{
+                  borderBottom: status[idx] ? `1px solid ${HTTP_COLORS[endpoint.method]}` : 'none'
+                }}>
+                  <div className="d-flex-between">
+                    <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
+                      <span
+                        className='flex'
+                        style={{
+                          backgroundColor: HTTP_COLORS[endpoint.method],
+                          padding: '2px',
+                          borderRadius: '4px',
+                          color: '#fff'
+                        }}>
+                        {endpoint.method}
+                      </span>
+                    </div>
+                    <span style={{ maxWidth: '50%', color: '#fff' }}>
+                      {endpoint.path}
+                    </span>
+                    <span className='ms-3' style={{ maxWidth: '50%', color: '#fff' }}>
+                      {endpoint.description}
+                    </span>
 
-const CharlatanResourcesList = ({ showResourceForm, resources, removeResource }) => (
-  <div className="col-md-4">
-    <div className="d-flex-between">
-      <h3>Resources</h3>
-      <button className="btn btn-sm btn-info" onClick={showResourceForm}>
-        <i className="fas fa-plus-circle me-1" />
-        New resource
+                    {endpoint.model && <span className="badge bg-dark ms-3 me-auto">{endpoint.model}</span>}
+                  </div>
+                  <div className="d-flex-between">
+                    {!endpoint.body && !endpoint.model && (
+                      <div className="mx-1 d-flex-between endpoint-helper">
+                        <Help
+                          text="Missing raw body or model"
+                          icon="fas fa-exclamation-triangle"
+                          iconColor="#D5443F"
+                        />
+                      </div>
+                    )}
+                    <button
+                      className="btn btn-sm btn-info me-1"
+                      type='button'>
+                      <i className={`fas fa-chevron-${status[idx] ? 'up' : 'down'}`} />
+                    </button>
+                  </div>
+                </div>
+                {status[idx] && <ResponseBody {...endpoints[idx]} />}
+              </div>
+            );
+          })}
+        {endpoints.length === 0 && <span>No endpoints available</span>}
+      </div>
+    </>
+  )
+}
+
+function CharlatanActions({ generateData, resetData }) {
+  return (
+    <div className="d-flex mt-auto ms-auto">
+      <FeedbackButton
+        className="btn-sm"
+        onPress={generateData}
+        icon={() => <i className="fas fa-hammer me-1" />}
+        text="Generate missing data"
+      />
+      <button className="btn btn-sm btn-info mx-1" onClick={resetData}>
+        <i className="fas fa-times me-1" />
+        Reset all override data and generate new ones
       </button>
     </div>
-    <div className="mt-3 flex-column">
+  )
+}
+
+function CharlatanResourcesList({ showResourceForm, resources, removeResource, endpoints }) {
+  return resources.length > 0 && <div className="mt-3">
+    <div className="d-flex">
+      <h3>Models</h3>
+      <button className="btn btn-sm btn-info ms-3" onClick={showResourceForm}>
+        <i className="fas fa-plus-circle me-1" />
+        New model
+      </button>
+    </div>
+    <div className="mt-3 d-flex">
       {resources.map((resource, idx) => {
         return (
           <div
-            className={`mt-${idx === 0 ? 0 : 1} d-flex-between endpoint`}
+            className="d-flex-between endpoint me-2"
             key={resource.name}
-            onClick={() => showResourceForm(idx)}>
-            <label>{resource.name}</label>
-            <button className="btn btn-sm btn-danger" onClick={() => removeResource(idx)}>
+            onClick={() => showResourceForm(idx)}
+            style={{
+              width: '125px',
+              height: '125px',
+              flexDirection: 'column',
+              gap: '12px',
+              justifyContent: 'center'
+            }}>
+            <label style={{ fontSize: '1.1rem' }}>{resource.name}</label>
+            {!endpoints.find(e => e.model === resource.name) && <Help
+              text="Model not used"
+              icon="fas fa-exclamation-triangle"
+              iconColor="#D5443F"
+            />}
+            <button className="btn btn-sm btn-danger" onClick={e => {
+              e.stopPropagation();
+              removeResource(idx)
+            }}>
               <i className="fas fa-trash" />
             </button>
           </div>
         );
       })}
     </div>
-    {resources.length === 0 && <span>No resources available</span>}
+    {resources.length === 0 && <span>No entities available</span>}
   </div>
-);
+}
 
-const CharlatanEndpointsList = ({ showEndpointForm, endpoints, removeEndpoint, showData }) => (
-  <div className="col-md-8">
-    <div className="d-flex-between">
+function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint }) {
+  return <>
+    <div className="d-flex">
       <h3>Endpoints</h3>
-      <button className="btn btn-sm btn-info" onClick={showEndpointForm}>
+      <button className="btn btn-sm btn-info ms-3" onClick={e => showEndpointForm(e, false)}>
         <i className="fas fa-plus-circle me-1" />
-        New endpoint
+        New endpoint(s)
       </button>
     </div>
     <div className="mt-3">
@@ -146,41 +231,44 @@ const CharlatanEndpointsList = ({ showEndpointForm, endpoints, removeEndpoint, s
         .map((endpoint, idx) => {
           return (
             <div
-              className="d-flex-between mt-1 endpoint"
+              className="d-flex-between mb-2 endpoint"
               key={`${endpoint.path}${idx}`}
-              onClick={() => showEndpointForm(idx)}>
-              <div className="d-flex-between flex">
-                <div style={{ minWidth: '68px' }}>
+              onClick={() => showEndpointForm(idx, true)}
+              style={{
+                border: `1px solid ${HTTP_COLORS[endpoint.method]}`
+              }}>
+              <div className="d-flex-between">
+                <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
                   <span
-                    className="badge me-1"
-                    style={{ backgroundColor: HTTP_COLORS[endpoint.method] }}>
+                    className='flex'
+                    style={{
+                      backgroundColor: HTTP_COLORS[endpoint.method],
+                      padding: '2px',
+                      borderRadius: '4px',
+                      color: '#fff'
+                    }}>
                     {endpoint.method}
                   </span>
                 </div>
-                <span className="flex" style={{ maxWidth: '50%' }}>
+                <span style={{ maxWidth: '50%', color: '#fff' }}>
                   {endpoint.path}
                 </span>
+                <span className='ms-3' style={{ maxWidth: '50%', color: '#fff' }}>
+                  {endpoint.description}
+                </span>
 
-                <span className="badge bg-secondary me-auto">{endpoint.status}</span>
+                {endpoint.model && <span className="badge bg-dark ms-3 me-auto">{endpoint.model}</span>}
               </div>
               <div className="d-flex-between">
-                {!endpoint.body && !endpoint.resource && (
+                {!endpoint.body && !endpoint.model && (
                   <div className="mx-1 d-flex-between endpoint-helper">
                     <Help
-                      text="Missing data, body or resource"
+                      text="Missing raw body or model"
                       icon="fas fa-exclamation-triangle"
                       iconColor="#D5443F"
                     />
                   </div>
                 )}
-                <button
-                  className="btn btn-sm btn-info me-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    showData(idx);
-                  }}>
-                  <i className="fas fa-eye" />
-                </button>
                 <button
                   className="btn btn-sm btn-danger"
                   onClick={(e) => {
@@ -200,36 +288,21 @@ const CharlatanEndpointsList = ({ showEndpointForm, endpoints, removeEndpoint, s
         })}
       {endpoints.length === 0 && <span>No endpoints available</span>}
     </div>
-  </div>
-);
+  </>
+}
 
 export default class MocksDesigner extends React.Component {
   state = {
-    resources: [],
-    endpoints: [],
+    onDesigner: true
   };
 
-  static getDerivedStateFromProps(props) {
-    if (props.route) {
-      const plugin = props.route.plugins.find(
-        (p) => p.plugin === 'cp:otoroshi.next.plugins.MockResponses'
-      )?.config;
-
-      if (plugin && plugin.form_data) return { ...plugin.form_data };
-    }
-    return {
-      resources: [],
-      endpoints: [],
-    };
-  }
-
-  saveRoute = (res) =>
-    Promise.resolve(
+  setAndSave = (res) => {
+    return Promise.resolve(
       this.props.saveRoute({
         ...this.props.route,
         plugins: this.props.route.plugins.map((p) => {
           const config = {
-            ...this.state,
+            ...this.getState(),
             ...(res || {}),
           };
           if (p.plugin === 'cp:otoroshi.next.plugins.MockResponses')
@@ -244,7 +317,8 @@ export default class MocksDesigner extends React.Component {
           return p;
         }),
       })
-    );
+    )
+  }
 
   configToResponses = (config) =>
     config.endpoints.map(({ path, method, status, headers, body }) => ({
@@ -255,112 +329,139 @@ export default class MocksDesigner extends React.Component {
       body: stringify(body),
     }));
 
-  setAndSave = (res) => this.saveRoute(res);
+  getState() {
+    const plugin = this.props.route.plugins.find(
+      (p) => p.plugin === 'cp:otoroshi.next.plugins.MockResponses'
+    )?.config;
+
+    return plugin?.form_data || {
+      resources: [],
+      endpoints: []
+    }
+  }
 
   showForm = (title, idx, elementName, render) => {
-    const resource = this.state[elementName].find((_, i) => i === idx);
+    const resource = this.getState()[elementName].find((_, i) => i === idx);
     window
       .popup(title, (ok, cancel) => render(ok, cancel, resource), {
         additionalClass: 'designer-modal-dialog',
       })
       .then((data) => {
         if (data) {
-          const { value, idx } = data;
-          this.setAndSave({
-            [elementName]: Number.isFinite(idx)
-              ? this.state[elementName].map((r, i) => {
+          const { idx } = data;
+          let value = data.value
+
+          console.log(value, elementName)
+
+          if (elementName === 'endpoints') {
+            const newEndpoint = {
+              ...value,
+              enabled_generation: false,
+              create_model: false,
+              model: value.resource?.name || value.model,
+              resource: undefined
+            }
+
+            const additionalEndpoints = []
+
+            if (value.enabled_generation) {
+              [
+                { field: 'find_one', path: `${value.path}/:id`, method: 'GET', status: 200 },
+                { field: 'put', path: `${value.path}/:id`, method: 'PUT', status: 204 },
+                { field: 'post', path: `${value.path}`, method: 'POST', status: 201 },
+                { field: 'delete', path: `${value.path}/:id`, method: 'DELETE', status: 202 },
+              ].forEach(({ field, path, method, status }) => {
+                if (value[field] === undefined || value[field]) {
+                  additionalEndpoints.push({
+                    ...newEndpoint,
+                    path,
+                    status,
+                    method
+                  })
+                }
+              })
+            }
+
+            this.setAndSave({
+              resources: value.resource ? [...this.getState().resources, value.resource] : this.getState().resources,
+              endpoints: Number.isFinite(idx)
+                ? this.getState()[elementName].map((r, i) => {
+                  if (i === idx) return newEndpoint;
+                  return r;
+                })
+                : [...this.getState()[elementName], newEndpoint, ...additionalEndpoints],
+            });
+          }
+          else {
+            this.setAndSave({
+              resources: Number.isFinite(idx)
+                ? this.getState().resources.map((r, i) => {
                   if (i === idx) return value;
                   return r;
                 })
-              : [...this.state[elementName], value],
-          });
+                : [...this.getState().resources, value],
+            });
+          }
         }
       });
   };
 
   showResourceForm = (idx) =>
-    this.showForm('Create a new resource', idx, 'resources', (ok, cancel, resource) => (
+    this.showForm('Create a new model', idx, 'resources', (ok, cancel, resource) => (
       <NewResource
         confirm={ok}
         cancel={cancel}
         resource={resource}
         idx={idx}
-        resources={this.state.resources}
+        resources={this.getState().resources}
       />
     ));
 
-  showEndpointForm = (idx) =>
+  showEndpointForm = (idx, onEdit) =>
     this.showForm('Create a new endpoint', idx, 'endpoints', (ok, cancel, endpoint) => (
       <NewEndpoint
         confirm={ok}
         cancel={cancel}
-        resources={this.state.resources}
+        resources={this.getState().resources}
         endpoint={endpoint}
         idx={idx}
+        onEdit={onEdit}
       />
     ));
 
-  showGenerateEndpointForm = () => {
-    window
-      .popup(
-        'Generate an endpoint',
-        (ok, cancel) => (
-          <GenerateEndpoint resources={this.state.resources} confirm={ok} cancel={cancel} />
-        ),
-        { additionalClass: 'designer-modal-dialog' }
-      )
-      .then((generateEndpoints) => {
-        this.setAndSave({
-          endpoints: [...this.state.endpoints, ...generateEndpoints],
-        });
-      });
-  };
-
   removeEndpoint = (idx) => {
     this.setAndSave({
-      endpoints: this.state.endpoints.filter((_, j) => j !== idx),
+      endpoints: this.getState().endpoints.filter((_, j) => j !== idx),
     });
   };
 
   removeResource = (idx) => {
-    this.setAndSave({
-      resources: this.state.resources.filter((_, j) => j !== idx),
-    });
-  };
-
-  showData = (idx) => {
-    window
-      .popup(
-        'Edit/replace data for users resource. Data must be an array and a valid JSON.',
-        (ok, cancel) => (
-          <Data body={this.state.endpoints[idx].body} idx={idx} confirm={ok} cancel={cancel} />
-        ),
-        { additionalClass: 'designer-modal-dialog' }
-      )
-      .then((res) => {
-        if (res)
-          this.setAndSave({
-            endpoints: this.state.endpoints.map((endpoint, i) => {
-              if (i === res.idx) return { ...endpoint, body: res.body };
-              return endpoint;
-            }),
-          });
+    if (this.getState().endpoints.find(endpoint => endpoint.model === this.getState().resources[idx].name)) {
+      window.newAlert(`This model can't be deleted because it is used by at least one endpoint`)
+    } else {
+      this.setAndSave({
+        resources: this.getState().resources.filter((_, j) => j !== idx),
       });
+    }
   };
 
-  generateData = () =>
-    this.setAndSave({
-      endpoints: this.state.endpoints.map((endpoint) => ({
+  generateData = () => {
+    return this.setAndSave({
+      endpoints: this.getState().endpoints.map((endpoint) => ({
         ...endpoint,
-        body: endpoint.body || generateFakerValues(this.state.resources, endpoint),
+        body: endpoint.body || generateFakerValues(this.getState().resources, endpoint),
       })),
-    });
+    })
+      .then(() => this.setState({
+        onDesigner: false
+      }))
+  }
 
   resetData = () => {
     window.newConfirm(`Are you sure you reset all data ?`).then((ok) => {
       if (ok) {
         this.setAndSave({
-          endpoints: this.state.endpoints.map((endpoint) => ({
+          endpoints: this.getState().endpoints.map((endpoint) => ({
             ...endpoint,
             body: null,
           })),
@@ -371,165 +472,61 @@ export default class MocksDesigner extends React.Component {
 
   render() {
     const { route, hide } = this.props;
-    const { resources, endpoints } = this.state;
+    const { resources, endpoints } = this.getState();
 
     if (!route) return null;
 
     return (
-      <div className="graphql-form p-3 pe-2 flex-column" style={{ overflowY: 'scroll' }}>
-        <Header hide={hide} />
+      <div className="graphql-form p-3 pe-2 flex-column">
+        <Header hide={hide}
+          setDesigner={value => this.setState({ onDesigner: value })}
+          onDesigner={this.state.onDesigner} />
 
-        <div className="m-3 ms-0">
-          <CharlatanActions
-            generateData={this.generateData}
-            resetData={this.resetData}
-            showGenerateEndpointForm={this.showGenerateEndpointForm}
-          />
+        {this.state.onDesigner && <>
           <div className="row my-3">
-            <CharlatanResourcesList
-              showResourceForm={this.showResourceForm}
-              resources={resources}
-              removeResource={this.removeResource}
-            />
             <CharlatanEndpointsList
               showEndpointForm={this.showEndpointForm}
               endpoints={endpoints}
               removeEndpoint={this.removeEndpoint}
-              showData={this.showData}
+            />
+            <CharlatanResourcesList
+              showResourceForm={this.showResourceForm}
+              resources={resources}
+              endpoints={endpoints}
+              removeResource={this.removeResource}
             />
           </div>
-        </div>
+          {resources.length > 0 && <CharlatanActions
+            generateData={this.generateData}
+            resetData={this.resetData}
+          />}
+        </>}
+
+        {!this.state.onDesigner && <PushView endpoints={endpoints} />}
       </div>
     );
   }
 }
 
-const Data = ({ idx, body, confirm, cancel }) => {
-  const [res, setRes] = useState(body);
-
+function ResponseBody({ body, status, description, model, resource_list }) {
   return (
     <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
-      <Suspense fallback={<div>Loading ....</div>}>
-        <CodeInput value={res} onChange={setRes} mode="json" />
-      </Suspense>
-
-      <div className="d-flex mt-3">
-        <button className="btn btn-sm btn-danger me-1 ms-auto" onClick={cancel}>
-          Cancel
-        </button>
-        <button
-          className="btn btn-sm btn-save"
-          onClick={() =>
-            confirm({
-              body: res,
-              idx,
-            })
-          }>
-          Save
-        </button>
+      <div className='d-flex' style={{ borderBottom: '1px solid' }}>
+        <p className='me-3'>Code</p>
+        <p className='flex'>Description</p>
       </div>
-    </div>
-  );
-};
-
-const GenerateEndpoint = ({ resources, confirm, cancel }) => {
-  const [resource, setResource] = useState('');
-  const [endpoints, setEndpoints] = useState([]);
-
-  const onResourceChange = (name, resourceName) => {
-    setEndpoints([
-      {
-        method: 'GET',
-        path: `/${name}s`,
-        enabled: true,
-        resource: resourceName,
-        resource_list: true,
-        status: 200,
-      },
-      { method: 'GET', path: `/${name}s/:id`, enabled: true, resource: resourceName, status: 200 },
-      { method: 'POST', path: `/${name}s`, enabled: true, resource: resourceName, status: 201 },
-      { method: 'PUT', path: `/${name}s/:id`, enabled: true, resource: resourceName, status: 204 },
-      {
-        method: 'DELETE',
-        path: `/${name}s/:id`,
-        enabled: true,
-        resource: resourceName,
-        status: 202,
-      },
-    ]);
-  };
-
-  return (
-    <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
-      <div className="row">
-        <label>Select a resource</label>
-        <SelectInput
-          flex={true}
-          value={resource}
-          onChange={(e) => {
-            setResource(e);
-            onResourceChange(e, e);
-          }}
-          possibleValues={resources.map((r) => r.name)}
-        />
-      </div>
-      <div className="row">
-        <label>or enter a singular resource name</label>
-        <TextInput
-          flex={true}
-          value={resource}
-          onChange={(e) => {
-            setResource(e);
-            onResourceChange(e);
-          }}
-        />
-      </div>
-      <div className="row">
-        <label>Generated endpoints</label>
-        {endpoints.map((endpoint, i) => (
-          <div className="d-flex-between generated-endpoint">
-            <div style={{ minWidth: '60px' }} className="me-1 mb-3">
-              <span className="badge" style={{ backgroundColor: HTTP_COLORS[endpoint.method] }}>
-                {endpoint.method}
-              </span>
-            </div>
-            <TextInput
-              flex={true}
-              value={endpoint.path}
-              onChange={(path) =>
-                setEndpoints(
-                  endpoints.map((e, j) => {
-                    if (j === i) return { ...e, path };
-                    return e;
-                  })
-                )
-              }
-            />
-            <div className="mb-3 ms-2">
-              <SimpleBooleanInput
-                value={endpoint.enabled}
-                onChange={(enabled) =>
-                  setEndpoints(
-                    endpoints.map((e, j) => {
-                      if (j === i) return { ...e, enabled };
-                      return e;
-                    })
-                  )
-                }
-              />
-            </div>
+      <div className='d-flex pt-2'>
+        <p className='me-3'>{status}</p>
+        <div className='flex'>
+          <p>{description || "No description"}</p>
+          <div className='d-flex' style={{ gap: "4px" }}>
+            <p style={{ borderRight: '1px solid', fontWeight: 'bold' }} className="pe-2">Example value</p>
+            <p>{resource_list ? `List of ${(model || 'Model')}` : (model || 'Model')}</p>
           </div>
-        ))}
-      </div>
-      <div className="d-flex-between">
-        <button className="btn btn-sm btn-danger ms-auto me-1" onClick={cancel}>
-          Cancel
-        </button>
-        <button
-          className="btn btn-sm btn-save"
-          onClick={() => confirm(endpoints.filter((d) => d.enabled))}>
-          Create
-        </button>
+          <Suspense fallback={<div>Loading ....</div>}>
+            <CodeInput value={body} onChange={() => { }} mode="json" editorOnly={true} />
+          </Suspense>
+        </div>
       </div>
     </div>
   );
@@ -539,151 +536,36 @@ class NewResource extends React.Component {
   state = {
     name: this.props.resource?.name || '',
     schema: this.props.resource?.schema || [],
-    objectTemplate: this.props.resource?.additional_data || {},
+    additional_data: this.props.resource?.additional_data || {},
   };
 
-  onSchemaFieldChange = (idx, field, value, callback) => {
-    this.setState(
-      {
-        schema: this.state.schema.map((s, j) => {
-          if (idx === j) return { ...s, [field]: value };
-          return s;
-        }),
-      },
-      callback
-    );
-  };
+  schema = {
+    ...MODEL_FOPM_SCHEMA.schema,
+    additional_data: {
+      type: 'code',
+      label: ' Additional data (raw fields)',
+      props: {
+        mode: 'json',
+        editorOnly: true
+      }
+    }
+  }
 
-  emptyField = (className) => (
-    <div className={`row mb-3 flex ${className}`}>
-      <div className="col-sm-12 d-flex">
-        <label className="flex text-center">-</label>
-      </div>
-    </div>
-  );
+  flow = [
+    'name',
+    'schema',
+    'additional_data'
+  ]
 
   render() {
-    const { name, schema, objectTemplate } = this.state;
-
     return (
       <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
-        <TextInput
-          label="Name"
-          help="Enter meaningful resource name, it will be used to generate API endpoints."
-          placeholder="Example: User, Comment, Article..."
-          value={name}
-          onChange={(v) => this.setState({ name: v })}
+        <NgForm
+          value={this.state}
+          schema={this.schema}
+          flow={this.flow}
+          onChange={e => this.setState({ ...e })}
         />
-        <div className="row mb-3">
-          <label htmlFor={`input-schema`} className="col-xs-12 col-sm-2 col-form-label">
-            Schema (optional){' '}
-            <Help text="Define Resource schema, it will be used to generate mock data." />
-          </label>
-          <div className="col-sm-10">
-            <div className="d-flex-between mb-2">
-              <label className="flex text-center">Field name</label>
-              <label className="flex text-center">Field type</label>
-              <label className="flex text-center">Faker value</label>
-              <label className="flex text-center">Value</label>
-            </div>
-            {schema.map((s, i) => {
-              const { field_name, field_type, value } = s;
-              const type = field_type;
-              return (
-                <div className="d-flex-between" key={`schema-${i}`}>
-                  <TextInput
-                    flex={true}
-                    value={field_name}
-                    placeholder="Field name"
-                    onChange={(v) => this.onSchemaFieldChange(i, 'field_name', v)}
-                  />
-                  <SelectInput
-                    flex={true}
-                    className="mx-1"
-                    value={type}
-                    onChange={(v) =>
-                      this.onSchemaFieldChange(i, 'field_type', v, () =>
-                        this.onSchemaFieldChange(i, 'value', '')
-                      )
-                    }
-                    possibleValues={[
-                      'String',
-                      'Number',
-                      'Boolean',
-                      'Object',
-                      'Array',
-                      'Date',
-                      'Child',
-                    ]}
-                  />
-
-                  {type && type !== 'Child' ? (
-                    <SelectInput
-                      flex={true}
-                      value={value}
-                      className="me-1"
-                      onChange={(v) => this.onSchemaFieldChange(i, 'value', v)}
-                      possibleValues={FakerOptions}
-                    />
-                  ) : (
-                    this.emptyField('me-1')
-                  )}
-                  {type === 'Child' && (
-                    <SelectInput
-                      flex={true}
-                      value={value}
-                      onChange={(v) => this.onSchemaFieldChange(i, 'value', v)}
-                      possibleValues={this.props.resources.map((a) => a.name)}
-                    />
-                  )}
-                  {!type ? (
-                    this.emptyField()
-                  ) : !['Child', 'Faker.js'].includes(type) ? (
-                    <TextInput
-                      flex={true}
-                      value={value}
-                      placeholder="or value"
-                      onChange={(v) => this.onSchemaFieldChange(i, 'value', castValue(v, type))}
-                    />
-                  ) : type !== 'Child' ? (
-                    this.emptyField()
-                  ) : null}
-                </div>
-              );
-            })}
-            <button
-              className="btn btn-sm btn-save"
-              onClick={() =>
-                this.setState({
-                  schema: [
-                    ...schema,
-                    {
-                      field_name: '',
-                      type: 'Faker.js',
-                      value: 'name.firstName',
-                    },
-                  ],
-                })
-              }>
-              <i className="fas fa-plus" />
-            </button>
-          </div>
-        </div>
-        <div className="row mb-3">
-          <label htmlFor={`input-object-template`} className="col-xs-12 col-sm-2 col-form-label">
-            Additional data (optional){' '}
-            <Help text="To define more complex structure for your data use JSON template. You can reference Faker.js methods using `$`." />
-          </label>
-          <div className="col-sm-10">
-            <Suspense fallback={<div>Loading ....</div>}>
-              <CodeInput
-                value={objectTemplate}
-                mode="json"
-                onChange={(v) => this.setState({ objectTemplate: v })}
-              />
-            </Suspense>
-          </div>
-        </div>
 
         <div className="d-flex-between">
           <button className="btn btn-sm btn-danger ms-auto me-1" onClick={this.props.cancel}>
@@ -691,7 +573,7 @@ class NewResource extends React.Component {
           </button>
           <button
             className="btn btn-sm btn-save"
-            disabled={name.length <= 0}
+            disabled={this.state.name.length <= 0}
             onClick={() =>
               this.props.confirm({
                 value: this.state,
@@ -706,10 +588,121 @@ class NewResource extends React.Component {
   }
 }
 
+function EndpointGenerationInput({ label, fieldName, rootOnChange, rootValue, onChange, path }) {
+  const additionalEndpoints = rootValue.additionalEndpoints
+  return <div className="d-flex align-items-center mb-3">
+    <NgStringRenderer
+      label={label}
+      onChange={e => rootOnChange({
+        ...rootValue,
+        additionalEndpoints: {
+          ...rootValue.additionalEndpoints,
+          [fieldName]: {
+            path: e
+          }
+        }
+      })}
+      value={additionalEndpoints && additionalEndpoints[fieldName] ? additionalEndpoints[fieldName].path : path}
+      schema={{
+        disabled: true
+      }}
+      margin="m-0 flex"
+    />
+    <NgBooleanRenderer
+      value={rootValue[fieldName] === undefined ? true : rootValue[fieldName]}
+      onChange={onChange}
+      schema={{}}
+      ngOptions={{
+        spread: true
+      }} />
+  </div>
+}
+
+const MODEL_FOPM_SCHEMA = {
+  type: 'form',
+  label: 'New model',
+  schema: {
+    name: {
+      type: 'string',
+      label: 'Model name'
+    },
+    schema: {
+      type: 'form',
+      array: true,
+      label: "Fields",
+      schema: {
+        field_name: {
+          type: 'string',
+          label: 'Field name'
+        },
+        field_type: {
+          type: 'select',
+          props: {
+            options: [
+              'String',
+              'Number',
+              'Boolean',
+              // 'Object',
+              // 'Array',
+              // 'Date',
+              'Model'
+            ]
+          },
+          label: 'Field type'
+        },
+        use_faker_value: {
+          visible: props => props.field_type === 'String',
+          type: 'boolean',
+          label: 'Use faker value'
+        },
+        value: {
+          renderer: props => {
+            const type = props?.rootValue?.field_type
+            const isChild = type === 'Model'
+            const isFaker = props?.rootValue?.use_faker_value
+
+            let Element = NgStringRenderer
+
+            if (isChild || isFaker)
+              return <NgSelectRenderer
+                label='Content value'
+                value={props?.rootValue?.value}
+                schema={{}}
+                options={isChild ? this.props.resources.map((a) => a.name) : FakerOptions}
+                onChange={props.onChange} />
+            else if (type === 'Number')
+              Element = NgNumberRenderer
+            else if (type === 'Boolean')
+              Element = NgBooleanRenderer
+            return React.createElement(Element, {
+              value: props?.rootValue?.value,
+              label: 'Content value',
+              onChange: props.onChange,
+              schema: {}
+            })
+          }
+        }
+      },
+      flow: [
+        {
+          type: 'group',
+          collapsed: true,
+          name: props => `Field ${props?.value?.field_name}`,
+          fields: ['field_name', 'field_type', 'use_faker_value', 'value']
+        }
+      ]
+    }
+  },
+  flow: [
+    'name',
+    'schema'
+  ]
+}
+
 class NewEndpoint extends React.Component {
   state = this.props.endpoint || {
     method: 'GET',
-    path: '/',
+    path: '/foo',
     status: 200,
     body: null,
     resource: '',
@@ -718,94 +711,188 @@ class NewEndpoint extends React.Component {
     length: 10,
   };
 
-  render() {
-    const { method, path, status, body, headers, resource, resource_list, length } = this.state;
+  schema = {
+    method: {
+      type: 'select',
+      label: 'Method',
+      props: {
+        options: [
+          'GET',
+          'HEAD',
+          'POST',
+          'PUT',
+          'DELETE',
+          'CONNECT',
+          'OPTIONS',
+          'TRACE',
+          'PATCH',
+        ]
+      }
+    },
+    path: {
+      type: 'string',
+      label: 'Request path'
+    },
+    description: {
+      type: 'string',
+      label: 'Description'
+    },
+    status: {
+      type: 'number',
+      label: 'Status'
+    },
+    headers: {
+      type: 'object',
+      label: 'Headers',
+      // defaultValue: {
+      //   'Content-Type': 'application/json'
+      // }
+    },
+    enabled_generation: {
+      type: 'boolean',
+      label: 'Enabled generation'
+    },
+    find_one: {
+      visible: props => props.enabled_generation,
+      renderer: props => <EndpointGenerationInput label='Find one' rootOnChange={props.rootOnChange} fieldName="find_one"
+        onChange={props.onChange} rootValue={props.rootValue} path={`${props.rootValue?.path}/:id`} />
+    },
+    put: {
+      visible: props => props.enabled_generation,
+      renderer: props => <EndpointGenerationInput label='Update endpoint' rootOnChange={props.rootOnChange} fieldName="put"
+        onChange={props.onChange} rootValue={props.rootValue} path={`${props.rootValue?.path}/:id`} />
+    },
+    post: {
+      visible: props => props.enabled_generation,
+      renderer: props => <EndpointGenerationInput label='Creation endpoint' rootOnChange={props.rootOnChange} fieldName="post"
+        onChange={props.onChange} rootValue={props.rootValue} path={`${props.rootValue?.path}`} />
+    },
+    delete: {
+      visible: props => props.enabled_generation,
+      renderer: props => <EndpointGenerationInput label='Delete endpoint' rootOnChange={props.rootOnChange} fieldName="delete"
+        onChange={props.onChange} rootValue={props.rootValue} path={`${props.rootValue?.path}/:id`} />
+    },
+    use_generation: {
+      label: 'Use generate data ?',
+      type: 'boolean'
+    },
+    model: {
+      type: 'select',
+      label: 'Model',
+      props: {
+        options: this.props.resources.map((r) => r.name)
+      },
+      visible: (props) => props.use_generation && !props.create_model
+    },
+    create_model: {
+      visible: (props) => props.use_generation && !props.create_model,
+      renderer: props => {
+        return <div className='d-flex justify-content-end'>
+          <button
+            type="button"
+            className="btn btn-sm btn-info"
+            onClick={() => {
+              props.onChange(true)
+            }}>
+            <i className='fas fa-plus-circle me-1' />
+            Create new model
+          </button>
+        </div>
+      }
+    },
+    resource_list: {
+      type: 'boolean',
+      label: 'Is a list of models ?',
+    },
+    length: {
+      type: 'number',
+      label: 'Number of elements to generate',
+      visible: (props) => props.resource_list
+    },
+    body: {
+      type: 'code',
+      label: 'Body',
+      props: {
+        editorOnly: true
+      },
+      visible: (props) => !props.use_generation
+    },
+    resource: {
+      visible: props => props.create_model && props.use_generation,
+      ...MODEL_FOPM_SCHEMA
+    },
+    additional_data: {
+      visible: props => props.create_model && props.use_generation,
+      type: 'code',
+      label: 'Additional data (raw fields)',
+      props: {
+        editorOnly: true
+      }
+    },
+    cancel_creation: {
+      visible: props => props.use_generation && props.create_model,
+      renderer: (props) => {
+        return <div className='d-flex justify-content-end'>
+          <button className='bnt btn-sm btn-danger'
+            type='button'
+            onClick={() => props.rootOnChange({
+              ...props.value,
+              create_model: false
+            })}>
+            <i className='fas fa-times me-1' />
+            Discard creation
+          </button>
+        </div>
+      }
+    }
+  }
 
+  flow = [
+    {
+      type: 'group',
+      name: 'Informations',
+      fields: ['method', 'path', 'description', 'status', 'headers']
+    },
+    {
+      type: 'group',
+      visible: () => !this.props.onEdit,
+      name: 'Endpoints generation',
+      fields: ['enabled_generation', 'find_one', 'put', 'post', 'delete']
+    },
+    {
+      type: 'group',
+      name: 'Response',
+      fields: [
+        'use_generation',
+        'model',
+        'create_model',
+        'resource',
+        'additional_data',
+        'cancel_creation',
+        {
+          type: 'group',
+          name: 'Generator informations',
+          visible: props => props.use_generation,
+          fields: ['resource_list', 'length']
+        },
+        'body'
+      ]
+    }
+  ]
+
+  render() {
+    // console.log(this.props)
     return (
       <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
-        <div className="row">
-          <div className="d-flex-between mb-1">
-            <label className="flex">Method</label>
-            <label style={{ flex: 3 }}>Path</label>
-          </div>
-          <div className="d-flex-between mb-1">
-            <SelectInput
-              flex={true}
-              possibleValues={[
-                'GET',
-                'HEAD',
-                'POST',
-                'PUT',
-                'DELETE',
-                'CONNECT',
-                'OPTIONS',
-                'TRACE',
-                'PATCH',
-              ]}
-              value={method}
-              onChange={(v) => this.setState({ method: v })}
-            />
-            <div style={{ flex: 3 }} className="ms-1">
-              <TextInput
-                flex={true}
-                value={path}
-                onChange={(v) => this.setState({ path: v })}
-                placeholder="Request path"
-              />
-            </div>
-          </div>
-        </div>
-        <div className="row mb-3">
-          <label htmlFor={`input-method`} className="col-xs-12 col-sm-2 col-form-label">
-            or Resource
-          </label>
-          <div className="col-sm-10">
-            <SelectInput
-              flex={true}
-              value={resource}
-              onChange={(v) => this.setState({ resource: v })}
-              possibleValues={this.props.resources.map((r) => r.name)}
-            />
-          </div>
-        </div>
-        <BooleanInput
-          label="Is a list of resource ?"
-          value={resource_list}
-          onChange={(v) => this.setState({ resource_list: v })}
+        <NgForm
+          value={this.state}
+          flow={this.flow}
+          schema={this.schema}
+          onChange={e => {
+            this.setState({ ...e })
+          }}
         />
-        {resource_list && (
-          <NumberInput
-            label="Array length"
-            min={1}
-            value={length || 10}
-            max={100}
-            className="me-2"
-            onChange={(e) => this.setState({ length: e })}
-          />
-        )}
-        <TextInput
-          label="Status"
-          value={status}
-          onChange={(v) => this.setState({ status: v })}
-          placeholder="200, 201, 400, 500..."
-        />
-        <ObjectInput
-          label="Headers"
-          placeholderKey="Header name"
-          placeholderValue="Header value"
-          value={headers}
-          onChange={(v) => this.setState({ headers: v })}
-        />
-        <div className="row mb-3">
-          <label htmlFor={`input-method`} className="col-xs-12 col-sm-2 col-form-label">
-            JSON Body
-          </label>
-          <div className="col-sm-10">
-            <Suspense fallback={<div>Loading ...</div>}>
-              <CodeInput value={body} mode="json" onChange={(v) => this.setState({ body: v })} />
-            </Suspense>
-          </div>
-        </div>
+
         <div className="d-flex-between">
           <button className="btn btn-sm btn-danger ms-auto me-1" onClick={this.props.cancel}>
             Cancel
@@ -826,21 +913,43 @@ class NewEndpoint extends React.Component {
   }
 }
 
-const Header = ({ hide }) => (
-  <div className="d-flex-between">
-    <div className="flex">
-      <div className="d-flex-between">
-        <h3>Charlatan</h3>
-        <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
-          <i className="fas fa-times" style={{ color: '#fff' }} />
+function Header({ hide, onDesigner, setDesigner }) {
+  return <>
+    <div className="d-flex-between">
+      <h3>Mock responses</h3>
+      <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
+        <i className="fas fa-times" style={{ color: '#fff' }} />
+      </button>
+    </div>
+    <div className='d-flex justify-content-center'>
+      <div
+        className='p-1'
+        style={{
+          borderRadius: '24px',
+          backgroundColor: '#373735',
+          position: 'relative',
+          width: 'fit-content'
+        }}>
+        <div className={`tryit-selector-cursor ${onDesigner ? '' : 'tryit-selector-mode-right'}`} />
+        <button
+          className="tryit-selector-mode"
+          type="button"
+          onClick={() => setDesigner(true)}>
+          Design
+        </button>
+        <button
+          className="tryit-selector-mode"
+          type="button"
+          onClick={() => setDesigner(false)}>
+          Push
         </button>
       </div>
     </div>
-  </div>
-);
+  </>
+}
 
 export const HTTP_COLORS = {
-  GET: 'rgb(52, 170, 182)',
+  GET: 'rgb(89, 179, 255)',
   POST: 'rgb(117, 189, 93)',
   DELETE: 'rgb(238, 106, 86)',
   PATCH: '#9b59b6',

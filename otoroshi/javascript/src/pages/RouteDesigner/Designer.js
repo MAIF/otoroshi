@@ -2095,13 +2095,6 @@ class EditView extends React.Component {
       };
     }
 
-    console.log({
-      schema: formSchema,
-      flow: formFlow,
-      value,
-      originalValue: value,
-    })
-
     this.setState({
       form: {
         schema: formSchema,

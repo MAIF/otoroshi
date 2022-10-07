@@ -3,6 +3,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import isFunction from 'lodash/isFunction';
 import isEqual from 'lodash/isEqual';
 import isString from 'lodash/isString';
+import snakeCase from 'lodash/snakeCase';
 
 import {
   NgPasswordRenderer,
@@ -34,7 +35,7 @@ import {
 
 const Helpers = {
   rendererFor: (type, components) => {
-    if (type.endsWith('-no-label')) {
+    if (type?.endsWith('-no-label')) {
       const Renderer = Helpers.rendererFor(type.replace('-no-label', ''), components);
       return (props) => <Renderer {...props} ngOptions={{ ...props.ngOptions, spread: true }} />
     } else if (type === 'string') {
@@ -451,11 +452,18 @@ export class NgForm extends Component {
     });
   }
 
-  renderGroupFlow({ name, fields, collapsed }, config) {
+  renderGroupFlow({ name, fields, collapsed, visible }, config) {
     const FormRenderer = config.components.FormRenderer;
     const fullPath = (config.root ? [name] : [...config.path, isFunction(name) ? undefined : name])
       .filter(f => f)
       .map(n => n.split(/\.?(?=[A-Z])/).join('_').toLowerCase());
+
+    const show = isFunction(visible) ? visible(config.value) : (visible !== undefined ? visible : true)
+
+    if (!show)
+      return null
+
+    const label = isFunction(name) ? name(config) : name
 
     return <FormRenderer
       embedded={true}
@@ -466,7 +474,7 @@ export class NgForm extends Component {
       useBreadcrumb={config.useBreadcrumb}
       path={fullPath}
       rawSchema={{
-        label: isFunction(name) ? name(config) : name,
+        label,
         collapsable: true,
         collapsed: collapsed === undefined ? false : true
       }}>
@@ -496,7 +504,8 @@ export class NgForm extends Component {
   }
 
   renderInlineStepFlow(name, {
-    schema, value, root, path, validation, components, StepNotFound, setBreadcrumb, breadcrumb, useBreadcrumb
+    schema, value, root, path, validation, components, StepNotFound,
+    setBreadcrumb, breadcrumb, useBreadcrumb
   }) {
     const stepSchema = schema[name];
 

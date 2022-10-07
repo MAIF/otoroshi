@@ -55,8 +55,10 @@ export function LabelAndInput(_props) {
 
   if (ngOptions.spread) return _props.children;
 
+  const margin = _props.margin || props.margin || _props.rawSchema?.props?.margin || "mb-3"
+
   return (
-    <div className="row mb-3">
+    <div className={`row ${margin}`}>
       <label
         className={`col-xs-12 col-sm-${labelColumn} col-form-label`}
         style={{
