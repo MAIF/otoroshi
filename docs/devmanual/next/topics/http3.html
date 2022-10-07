@@ -278,7 +278,7 @@ otoroshi.next.experimental.netty-server.http3.enabled = true
 otoroshi.next.experimental.netty-server.http3.port = 10048
 </code></pre>
 <p>then you will be able to send HTTP3 request on port 10048. For instance, using <a href="https://github.com/cloudflare/quiche">quiche-client</a></p>
-<pre class="prettyprint"><code class="language-sh">cargo run --bin quiche-client -- --no-verify https://my-service.oto.tools:10048
+<pre class="prettyprint"><code class="language-sh">cargo run --bin quiche-client -- --no-verify &#39;https://my-service.oto.tools:10048&#39;
 </code></pre>
 <h2><a href="#client" name="client" class="anchor"><span class="anchor-link"></span></a>Client</h2>
 <p>to consume services exposed with HTTP3, just select the <code>HTTP/3.0</code> protocol in the backend target.</p>
