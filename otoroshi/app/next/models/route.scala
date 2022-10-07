@@ -962,7 +962,7 @@ object NgRoute {
           ) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[ApikeyCalls],
-              include = service.privatePatterns,
+              include = if (service.publicPatterns.nonEmpty) Seq.empty else service.privatePatterns,
               exclude =
                 if (service.detectApiKeySooner) Seq.empty
                 else (

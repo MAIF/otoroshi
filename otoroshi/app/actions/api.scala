@@ -255,6 +255,8 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
       request.headers.get(env.Headers.OtoroshiClaim).get.split("\\.").toSeq match {
         case Seq(head, body, signature) => {
           val claim = Json.parse(new String(OtoroshiClaim.decoder.decode(body), Charsets.UTF_8))
+          val lastestApikey = (claim \ "access_type").asOpt[String].exists(v => v == "apikey" || v == "both")
+          val latestClientId = (claim \ "apikey" \ "clientId").asOpt[String]
           (claim \ "sub").as[String].split(":").toSeq match {
             case Seq("apikey", clientId) => {
               env.datastores.globalConfigDataStore
@@ -262,6 +264,34 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
                 .filter(c => request.method.toLowerCase() == "get" || !c.apiReadOnly)
                 .flatMap { _ =>
                   env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+                    case Some(apikey)
+                        if apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey
+                          .authorizedOnService(env.backOfficeDescriptor.id) => {
+                      block(ApiActionContext(apikey, request)).foldM {
+                        case Success(res) =>
+                          res
+                            .withHeaders(
+                              env.Headers.OtoroshiStateResp -> request.headers
+                                .get(env.Headers.OtoroshiState)
+                                .getOrElse("--")
+                            )
+                            .asFuture
+                        case Failure(err) => error(s"Server error : $err", Some(err))
+                      }
+                    }
+                    case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
+                  }
+                } recoverWith { case e =>
+                e.printStackTrace()
+                error(s"You're not authorized - ${request.method} ${request.uri}")
+              }
+            }
+            case _ if (lastestApikey && latestClientId.isDefined) => {
+              env.datastores.globalConfigDataStore
+                .singleton()
+                .filter(c => request.method.toLowerCase() == "get" || !c.apiReadOnly)
+                .flatMap { _ =>
+                  env.datastores.apiKeyDataStore.findById(latestClientId.get).flatMap {
                     case Some(apikey)
                         if apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey
                           .authorizedOnService(env.backOfficeDescriptor.id) => {

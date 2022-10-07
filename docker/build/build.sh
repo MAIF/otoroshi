@@ -39,12 +39,12 @@ build_jar_template_version () {
   JDK_VERSION="$2"
   echo "build version $OTO_VERSION with jdk $JDK_VERSION"
   docker build --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "otoroshi-jdk$JDK_VERSION" .
+  docker tag "otoroshi-jdk$JDK_VERSION" "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION"
   echo "build version $OTO_VERSION with jdk $JDK_VERSION from eclipse-temurin"
   docker build --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "otoroshi-temurin-jdk$JDK_VERSION" .
+  docker tag "otoroshi-temurin-jdk$JDK_VERSION" "maif/otoroshi:$OTO_VERSION-temurin-jdk$JDK_VERSION"
   echo "build version $OTO_VERSION with jdk $JDK_VERSION from amazon-correto"
   docker build --build-arg "IMG_FROM=amazoncorretto:$JDK_VERSION"  --no-cache -f ./Dockerfile -t "otoroshi-correto-jdk$JDK_VERSION" .
-  docker tag "otoroshi-jdk$JDK_VERSION" "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION"
-  docker tag "otoroshi-temurin-jdk$JDK_VERSION" "maif/otoroshi:$OTO_VERSION-temurin-jdk$JDK_VERSION"
   docker tag "otoroshi-correto-jdk$JDK_VERSION" "maif/otoroshi:$OTO_VERSION-correto-jdk$JDK_VERSION"
 }
 
