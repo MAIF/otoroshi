@@ -18,7 +18,7 @@ otoroshi.next.experimental.netty-server.http3.port = 10048
 then you will be able to send HTTP3 request on port 10048. For instance, using [quiche-client](https://github.com/cloudflare/quiche)
 
 ```sh
-cargo run --bin quiche-client -- --no-verify https://my-service.oto.tools:10048
+cargo run --bin quiche-client -- --no-verify 'https://my-service.oto.tools:10048'
 ```
 
 ## Client
