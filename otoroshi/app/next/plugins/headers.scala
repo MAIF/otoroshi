@@ -144,7 +144,7 @@ class AdditionalHeadersOut extends NgRequestTransformer {
   override def transformsRequest: Boolean                  = false
   override def transformsResponse: Boolean                 = true
   override def transformsError: Boolean                    = false
-  override def isTransformRequestAsync: Boolean            = true
+  override def isTransformRequestAsync: Boolean            = false
   override def isTransformResponseAsync: Boolean           = false
   override def name: String                                = "Additional headers out"
   override def description: Option[String]                 = "This plugin adds headers in the otoroshi response".some
@@ -153,8 +153,9 @@ class AdditionalHeadersOut extends NgRequestTransformer {
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
-    val additionalHeaders =
-      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.mapValues { value =>
+    val config = ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig())
+    val additionalHeaders = {
+      config.headers.mapValues { value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -166,6 +167,7 @@ class AdditionalHeadersOut extends NgRequestTransformer {
           env
         )
       }
+    }
     Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders))
   }
 }
