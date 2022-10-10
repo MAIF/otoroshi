@@ -126,7 +126,6 @@ class RouteForms extends React.Component {
 
     return (
       <div className="p-2" style={{
-        background: "#595959",
         borderBottomLeftRadius: '4px',
         borderBottomRightRadius: '4px'
       }} onClick={e => e.stopPropagation()}>

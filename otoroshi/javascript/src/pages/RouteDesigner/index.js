@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Route, Switch, useHistory, useLocation, useParams, useRouteMatch } from 'react-router-dom';
+import { Route, Switch, useHistory, useLocation, useParams, useRouteMatch, withRouter } from 'react-router-dom';
 import { nextClient } from '../../services/BackOfficeServices';
 import Designer from './Designer';
 import RouteCompositions from './RouteComposition';
@@ -14,16 +14,15 @@ import { ServiceAnalyticsPage } from '../ServiceAnalyticsPage';
 import { ServiceApiKeysPage } from '../ServiceApiKeysPage';
 import { RouteWizard } from './RouteWizard';
 import { ImportServiceDescriptor } from './ImportServiceDescriptor';
-import { useEntityFromURI } from '../../util';
+import { entityFromURI } from '../../util';
 import { v4 } from 'uuid';
-import { Help, HelpWrapper } from '../../components/inputs';
+import { HelpWrapper } from '../../components/inputs';
 
-const GridButton = ({ onClick, text, icon, level = "info" }) => {
+function GridButton({ onClick, text, icon, level = "info" }) {
   return <button
     type="button"
     className={`btn btn-sm btn-${level} d-flex align-items-center justify-content-center flex-column`}
     style={{
-      // minWidth: '50%',
       minWidth: '80px',
       minHeight: '80px',
       maxWidth: '80px',
@@ -41,8 +40,7 @@ const GridButton = ({ onClick, text, icon, level = "info" }) => {
   </button>
 }
 
-
-const BackToButton = ({ history }) => {
+function BackToButton({ history }) {
   return <GridButton
     onClick={() => {
       const what = window.location.pathname.split('/')[3];
@@ -52,7 +50,7 @@ const BackToButton = ({ history }) => {
     text={`Back to ${window.location.pathname.split('/')[3]}`} />
 }
 
-const DeleteRouteButton = () => {
+function DeleteRouteButton() {
   return <GridButton
     level="danger"
     onClick={() => {
@@ -77,7 +75,7 @@ const DeleteRouteButton = () => {
     text="Delete" />
 }
 
-const DuplicateButton = ({ value, history }) => {
+function DuplicateButton({ value, history }) {
   return <GridButton
     onClick={(e) => {
       const what = window.location.pathname.split('/')[3];
@@ -112,7 +110,7 @@ const DuplicateButton = ({ value, history }) => {
     text="Duplicate" />
 }
 
-const YAMLExportButton = ({ value }) => {
+function YAMLExportButton({ value }) {
   return <GridButton
     onClick={() => {
       const what = window.location.pathname.split('/')[3];
@@ -156,7 +154,7 @@ const YAMLExportButton = ({ value }) => {
     text="Export YAML" />
 }
 
-const JsonExportButton = ({ value }) => {
+function JsonExportButton({ value }) {
   return <GridButton
     onClick={() => {
       const what = window.location.pathname.split('/')[3];
@@ -227,7 +225,7 @@ const Manager = ({ query, entity, ...props }) => {
   const getTitle = () => {
     return <div className="page-header d-flex align-item-center justify-content-between ms-0 mb-3">
       <h4 className="flex" style={{ margin: 0 }}>
-        {
+        {location.pathname.includes('route-compositions') ? 'Route compositions' :
           {
             flow: 'Designer',
             informations: 'Informations',
@@ -452,31 +450,17 @@ const RoutesView = ({ history }) => {
   );
 };
 
-export default (props) => {
-  const match = useRouteMatch();
-  const history = useHistory();
-  const { search, pathname } = useLocation();
-  const entity = useEntityFromURI();
-  const query = new URLSearchParams(search).get('tab');
+class RouteDesigner extends React.Component {
 
-  useEffect(() => {
-    patchStyle(true);
+  componentDidMount() {
+    this.patchStyle(true);
+  }
 
-    return () => patchStyle(false);
-  }, []);
+  componentWillUnmount() {
+    this.patchStyle(false);
+  }
 
-  useEffect(() => {
-    if (pathname === '/routes' || pathname === '/routes') props.setSidebarContent(null);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (pathname.endsWith('route-compositions'))
-      props.setTitle('Routes compositions');
-    else if (!query)
-      props.setTitle('Routes');
-  }, [search]);
-
-  const patchStyle = (applyPatch) => {
+  patchStyle = (applyPatch) => {
     if (applyPatch) {
       document.getElementsByClassName('main')[0].classList.add('patch-main');
       [...document.getElementsByClassName('row')].map((r) => r.classList.add('patch-row', 'g-0'));
@@ -488,37 +472,46 @@ export default (props) => {
     }
   };
 
-  return (
-    <Switch>
-      {[
-        { path: `${match.url}/:routeId/health`, component: ServiceHealthPage },
-        { path: `${match.url}/:routeId/analytics`, component: ServiceAnalyticsPage },
-        { path: `${match.url}/:routeId/apikeys`, component: ServiceApiKeysPage },
-        { path: `${match.url}/:routeId/stats`, component: ServiceLiveStatsPage },
-        { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
-        {
-          path: `${match.url}/:routeId`,
-          component: () => <Manager query={query} {...props} entity={entity} />,
-        },
-      ].map(({ path, component }) => {
-        const Component = component;
-        return (
-          <Route
-            exact
-            key={path}
-            path={path}
-            component={(p) => (
-              <Component
-                setSidebarContent={props.setSidebarContent}
-                setTitle={props.setTitle}
-                {...p.match}
-                history={history}
-              />
-            )}
-          />
-        );
-      })}
-      <Route component={() => <RoutesView history={history} />} />
-    </Switch>
-  );
+  render() {
+    const { match, history, location } = this.props;
+
+    const entity = entityFromURI(location);
+    const query = new URLSearchParams(location.search).get('tab');
+
+    return (
+      <Switch>
+        {[
+          { path: `${match.url}/:routeId/health`, component: ServiceHealthPage },
+          { path: `${match.url}/:routeId/analytics`, component: ServiceAnalyticsPage },
+          { path: `${match.url}/:routeId/apikeys`, component: ServiceApiKeysPage },
+          { path: `${match.url}/:routeId/stats`, component: ServiceLiveStatsPage },
+          { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
+          {
+            path: `${match.url}/:routeId`,
+            component: () => <Manager query={query} {...this.props} entity={entity} />
+          }
+        ].map(({ path, component }) => {
+          const Component = component;
+          return (
+            <Route
+              exact
+              key={path}
+              path={path}
+              component={(p) => (
+                <Component
+                  setSidebarContent={this.props.setSidebarContent}
+                  setTitle={this.props.setTitle}
+                  {...p.match}
+                  history={history}
+                />
+              )}
+            />
+          );
+        })}
+        <Route component={() => <RoutesView history={history} />} />
+      </Switch>
+    );
+  }
 };
+
+export default withRouter(RouteDesigner);
