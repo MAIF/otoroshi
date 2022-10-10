@@ -40,6 +40,46 @@ export class NgLocationRenderer extends Component {
   }
 }
 
+export class NgDotsRenderer extends Component {
+  render() {
+    const schema = this.props.schema || {};
+    const props = schema.props || this.props || {};
+
+    const options = props.options || this.props.options;
+    const isValueArray = Array.isArray(this.props.value);
+
+    const onClick = selectedValue => {
+      if (isValueArray) {
+        if (this.props.value.includes(selectedValue))
+          return this.props.value.filter(opt => opt !== selectedValue);
+        else
+          return [...this.props.value, selectedValue];
+      }
+      else {
+        return selectedValue;
+      }
+    }
+
+    return (
+      <LabelAndInput {...this.props}>
+        {options.map(option => {
+          const selected = isValueArray ? this.props.value.includes(option) : this.props.value === option;
+          return <button className={`btn btn-sm ${selected ? 'btn-info' : 'btn-dark'} me-2 px-3`}
+            type="button"
+            key={option}
+            style={{
+              borderRadius: '24px'
+            }}
+            onClick={() => this.props.onChange(onClick(option))}>
+            {selected && <i className='fas fa-check me-1' />}
+            {option}
+          </button>
+        })}
+      </LabelAndInput>
+    )
+  }
+}
+
 export class SingleLineCode extends Component {
   render() {
     return <div>SingleLineCode</div>;

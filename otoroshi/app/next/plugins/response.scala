@@ -274,6 +274,7 @@ class MockResponses extends NgBackendCall {
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    println("MockResponses callBackend")
     val config = ctx.cachedConfig(internalName)(MockResponsesConfig.format).getOrElse(MockResponsesConfig())
     val paths  = config.responses
       .filter(r =>

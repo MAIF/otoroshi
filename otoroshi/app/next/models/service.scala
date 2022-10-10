@@ -179,7 +179,7 @@ object NgService {
       val name                        = json.select("info").select("title").as[String]
       val description                 = json.select("info").select("description").asOpt[String].getOrElse("")
       val version                     = json.select("info").select("version").asOpt[String].getOrElse("")
-      val targets                     = json.select("servers").as[Seq[JsObject]].map { server =>
+      val targets                     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { server =>
         val serverUrl    = server.select("url").asString
         val serverUri    = Uri(serverUrl)
         val serverDomain = serverUri.authority.host.toString()

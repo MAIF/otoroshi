@@ -35,19 +35,17 @@ const stringify = (body) => {
 const generateFakerValues = (resources, endpoint) => {
   const { resource_list, body, length } = endpoint;
 
-  const calculateResource = (resource) => {
-    const newItem = (r) =>
-      (r.schema || []).reduce(
-        (acc, item) => ({
-          ...acc,
-          ...calculateField(item),
-        }),
-        JSON.parse(resource.additional_data || '{}')
-      );
-    return newItem(resource);
+  function calculateResource(resource) {
+    return (resource.schema || []).reduce(
+      (acc, item) => ({
+        ...acc,
+        ...calculateField(item),
+      }),
+      isAnObject(resource.additional_data) ? resource.additional_data : JSON.parse(resource.additional_data || '{}')
+    )
   };
 
-  const fakeValue = (item) => {
+  function fakeValue(item) {
     try {
       return castValue(item.value.split('.').reduce((a, c) => a[c], faker)(), item.field_type);
     } catch (err) {
@@ -55,34 +53,40 @@ const generateFakerValues = (resources, endpoint) => {
     }
   };
 
-  const calculateField = (item) => ({
-    [item.field_name]:
-      item.field_type === 'Child'
-        ? calculateResource(resources.find((f) => f.name === item.value))
-        : fakeValue(item),
-  });
+  function calculateField(item) {
+    return {
+      [item.field_name]:
+        item.field_type === 'Model'
+          ? calculateResource(resources.find((f) => f.name === item.value))
+          : fakeValue(item),
+    }
+  }
+
+  function isAnObject(v) {
+    return typeof v === 'object' && v !== null && !Array.isArray(v);
+  }
 
   if (endpoint.model) {
     const resource = resources.find((f) => f.name === endpoint.model);
     if (!resource) return {};
 
-    const newItem = (r) =>
-      (r.schema || []).reduce(
-        (acc, item) => ({
-          ...acc,
-          ...calculateField(item),
-        }),
-        JSON.parse(resource.additional_data || '{}')
+    const newItem = calculateResource(resource)
+
+    if (resource_list) {
+      return Array.from(
+        { length: length || 10 },
+        (_, i) => ({ ...newItem })
       );
-    if (resource_list) return Array.from({ length: length || 10 }, (_, i) => newItem(resource));
-    return newItem(resource);
+    } else {
+      return newItem;
+    }
   } else {
     if (resource_list) return Array.from({ length: length || 10 }, (_, i) => body);
     return body;
   }
 };
 
-function PushView({ endpoints }) {
+function PushView({ endpoints, resources }) {
   const [status, setStatus] = useState(endpoints.map(() => false))
   return (
     <>
@@ -146,7 +150,8 @@ function PushView({ endpoints }) {
                     </button>
                   </div>
                 </div>
-                {status[idx] && <ResponseBody {...endpoints[idx]} />}
+                {status[idx] && <OpenAPIParameters {...endpoints[idx]} resources={resources} />}
+                {status[idx] && <OpenAPIResponse {...endpoints[idx]} />}
               </div>
             );
           })}
@@ -156,16 +161,16 @@ function PushView({ endpoints }) {
   )
 }
 
-function CharlatanActions({ generateData, resetData }) {
+function CharlatanActions({ generateData, resetData, endpoints }) {
   return (
     <div className="d-flex mt-auto ms-auto">
-      <FeedbackButton
+      {endpoints.find(endpoint => !endpoint.body && !endpoint.model) && <FeedbackButton
         className="btn-sm"
         onPress={generateData}
         icon={() => <i className="fas fa-hammer me-1" />}
         text="Generate missing data"
-      />
-      <button className="btn btn-sm btn-info mx-1" onClick={resetData}>
+      />}
+      <button className="btn btn-sm btn-success mx-1" onClick={resetData}>
         <i className="fas fa-times me-1" />
         Reset all override data and generate new ones
       </button>
@@ -197,11 +202,13 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
               justifyContent: 'center'
             }}>
             <label style={{ fontSize: '1.1rem' }}>{resource.name}</label>
-            {!endpoints.find(e => e.model === resource.name) && <Help
-              text="Model not used"
-              icon="fas fa-exclamation-triangle"
-              iconColor="#D5443F"
-            />}
+            {!endpoints.find(e => e.model === resource.name) &&
+              !resources.find(e => e.schema.find(f => f.field_type === 'Model' && f.value === resource.name)) &&
+              <Help
+                text="Model not used"
+                icon="fas fa-exclamation-triangle"
+                iconColor="#D5443F"
+              />}
             <button className="btn btn-sm btn-danger" onClick={e => {
               e.stopPropagation();
               removeResource(idx)
@@ -483,7 +490,7 @@ export default class MocksDesigner extends React.Component {
           onDesigner={this.state.onDesigner} />
 
         {this.state.onDesigner && <>
-          <div className="row my-3">
+          <div className="row">
             <CharlatanEndpointsList
               showEndpointForm={this.showEndpointForm}
               endpoints={endpoints}
@@ -497,26 +504,52 @@ export default class MocksDesigner extends React.Component {
             />
           </div>
           {resources.length > 0 && <CharlatanActions
+            endpoints={endpoints}
             generateData={this.generateData}
             resetData={this.resetData}
           />}
         </>}
 
-        {!this.state.onDesigner && <PushView endpoints={endpoints} />}
+        {!this.state.onDesigner && <PushView endpoints={endpoints} resources={resources} />}
       </div>
     );
   }
 }
 
-function ResponseBody({ body, status, description, model, resource_list }) {
+function OpenAPIParameters({ resources, ...props }) {
+  const model = resources.find(r => r.name === props.model)
   return (
     <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
+      <h4>Parameters</h4>
+      <div className='d-flex' style={{ borderBottom: '1px solid' }}>
+        <p style={{ minWidth: '120px' }} className='me-3'>Name</p>
+        <p className='flex'>Description</p>
+      </div>
+      {model?.schema.map(({ field_name, field_type, description, value }) => {
+        return (
+          <div className='d-flex pt-2' key={field_name}>
+            <p style={{ minWidth: '120px', color: "#fff" }} className='me-3'>{field_name}</p>
+            <div className='flex'>
+              <p>{field_type === 'Model' ? resources.find(r => r.name === value)?.name : field_type}</p>
+              <p>{description || 'No description'}</p>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  );
+};
+
+function OpenAPIResponse({ body, status, description, model, resource_list }) {
+  return (
+    <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
+      <h4>Responses</h4>
       <div className='d-flex' style={{ borderBottom: '1px solid' }}>
         <p className='me-3'>Code</p>
         <p className='flex'>Description</p>
       </div>
       <div className='d-flex pt-2'>
-        <p className='me-3'>{status}</p>
+        <p className='me-3' style={{ color: "#fff" }}>{status}</p>
         <div className='flex'>
           <p>{description || "No description"}</p>
           <div className='d-flex' style={{ gap: "4px" }}>
@@ -540,7 +573,7 @@ class NewResource extends React.Component {
   };
 
   schema = {
-    ...MODEL_FOPM_SCHEMA.schema,
+    ...MODEL_FOPM_SCHEMA(this.props.resources).schema,
     additional_data: {
       type: 'code',
       label: ' Additional data (raw fields)',
@@ -618,7 +651,7 @@ function EndpointGenerationInput({ label, fieldName, rootOnChange, rootValue, on
   </div>
 }
 
-const MODEL_FOPM_SCHEMA = {
+const MODEL_FOPM_SCHEMA = (resources) => ({
   type: 'form',
   label: 'New model',
   schema: {
@@ -659,7 +692,7 @@ const MODEL_FOPM_SCHEMA = {
           renderer: props => {
             const type = props?.rootValue?.field_type
             const isChild = type === 'Model'
-            const isFaker = props?.rootValue?.use_faker_value
+            const isFaker = props?.rootValue?.use_faker_value && props?.rootValue?.field_type === 'String'
 
             let Element = NgStringRenderer
 
@@ -668,7 +701,7 @@ const MODEL_FOPM_SCHEMA = {
                 label='Content value'
                 value={props?.rootValue?.value}
                 schema={{}}
-                options={isChild ? this.props.resources.map((a) => a.name) : FakerOptions}
+                options={isChild ? resources.map((a) => a.name) : FakerOptions}
                 onChange={props.onChange} />
             else if (type === 'Number')
               Element = NgNumberRenderer
@@ -697,7 +730,7 @@ const MODEL_FOPM_SCHEMA = {
     'name',
     'schema'
   ]
-}
+})
 
 class NewEndpoint extends React.Component {
   state = this.props.endpoint || {
@@ -811,15 +844,16 @@ class NewEndpoint extends React.Component {
     },
     body: {
       type: 'code',
-      label: 'Body',
+      label: 'JSON Body',
       props: {
+        mode: 'json',
         editorOnly: true
       },
       visible: (props) => !props.use_generation
     },
     resource: {
       visible: props => props.create_model && props.use_generation,
-      ...MODEL_FOPM_SCHEMA
+      ...MODEL_FOPM_SCHEMA(this.props.resources)
     },
     additional_data: {
       visible: props => props.create_model && props.use_generation,
@@ -941,7 +975,7 @@ function Header({ hide, onDesigner, setDesigner }) {
           className="tryit-selector-mode"
           type="button"
           onClick={() => setDesigner(false)}>
-          Push
+          Publish
         </button>
       </div>
     </div>

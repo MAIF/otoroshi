@@ -22,6 +22,7 @@ import {
   NgSingleCodeLineRenderer,
   NgCodeRenderer,
   NgLocationRenderer,
+  NgDotsRenderer,
   LabelAndInput,
 } from './inputs';
 
@@ -34,7 +35,7 @@ import {
 } from './components';
 
 const Helpers = {
-  rendererFor: (type, components) => {
+  rendererFor: (type, components = {}) => {
     if (type?.endsWith('-no-label')) {
       const Renderer = Helpers.rendererFor(type.replace('-no-label', ''), components);
       return (props) => <Renderer {...props} ngOptions={{ ...props.ngOptions, spread: true }} />
@@ -68,6 +69,8 @@ const Helpers = {
       return components.HiddenRenderer;
     } else if (type === 'password') {
       return components.PasswordRenderer;
+    } else if (type === 'dots') {
+      return components.DotsRenderer;
     } else if (type === 'form') {
       return NgForm;
     } else if (type === 'location') {
@@ -245,6 +248,7 @@ export class NgForm extends Component {
     PasswordRenderer: NgPasswordRenderer,
     JsonRenderer: NgJsonRenderer,
     LocationRenderer: NgLocationRenderer,
+    DotsRenderer: NgDotsRenderer,
     FlowNotFound: NgFlowNotFound,
   };
 
@@ -439,7 +443,7 @@ export class NgForm extends Component {
       else return flow;
     }
 
-    if (this.props.flow?.length === 0) return Object.keys(schema);
+    if (!this.props.flow || this.props.flow?.length === 0) return Object.keys(schema);
 
     return this.props.flow || [];
   };
@@ -483,17 +487,21 @@ export class NgForm extends Component {
   }
 
   renderGridFlow({ name, fields }, config) {
+
+    const children = <div className="d-flex flex-wrap ms-3">
+      {fields.map((subName) => (
+        <div className="flex" style={{ minWidth: '50%' }} key={`${name}-${subName}`}>
+          {this.renderStepFlow(subName, config)}
+        </div>
+      ))}
+    </div>
+
     return (
       <div className="row">
-        <LabelAndInput label={name}>
-          <div className="d-flex flex-wrap ms-3">
-            {fields.map((subName) => (
-              <div className="flex" style={{ minWidth: '50%' }} key={`${name}-${subName}`}>
-                {this.renderStepFlow(subName, config)}
-              </div>
-            ))}
-          </div>
-        </LabelAndInput>
+        {name && <LabelAndInput label={name}>
+          {children}
+        </LabelAndInput>}
+        {!name && children}
       </div>
     );
   }

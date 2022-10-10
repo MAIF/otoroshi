@@ -393,7 +393,10 @@ const Manager = ({ query, entity, ...props }) => {
             ref={viewRef}
             service={value}
             setSaveButton={setSaveButton}
-            setService={setValue}
+            setRoutes={routes => setValue({
+              ...value,
+              routes
+            })}
             viewPlugins={viewPlugins}
           />
         ),

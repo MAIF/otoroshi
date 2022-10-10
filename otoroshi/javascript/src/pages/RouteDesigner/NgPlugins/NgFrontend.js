@@ -10,9 +10,9 @@ export default {
       type: "object"
     },
     methods: {
-      type: 'array-select',
+      type: 'dots',
+      label: 'Methods',
       props: {
-        label: 'Methods',
         options: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
       }
     },
