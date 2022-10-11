@@ -3,6 +3,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import isFunction from 'lodash/isFunction';
 import isEqual from 'lodash/isEqual';
 import isString from 'lodash/isString';
+import snakeCase from 'lodash/snakeCase';
 
 import {
   NgPasswordRenderer,
@@ -21,6 +22,7 @@ import {
   NgSingleCodeLineRenderer,
   NgCodeRenderer,
   NgLocationRenderer,
+  NgDotsRenderer,
   LabelAndInput,
 } from './inputs';
 
@@ -33,8 +35,8 @@ import {
 } from './components';
 
 const Helpers = {
-  rendererFor: (type, components) => {
-    if (type.endsWith('-no-label')) {
+  rendererFor: (type, components = {}) => {
+    if (type?.endsWith('-no-label')) {
       const Renderer = Helpers.rendererFor(type.replace('-no-label', ''), components);
       return (props) => <Renderer {...props} ngOptions={{ ...props.ngOptions, spread: true }} />
     } else if (type === 'string') {
@@ -67,6 +69,8 @@ const Helpers = {
       return components.HiddenRenderer;
     } else if (type === 'password') {
       return components.PasswordRenderer;
+    } else if (type === 'dots') {
+      return components.DotsRenderer;
     } else if (type === 'form') {
       return NgForm;
     } else if (type === 'location') {
@@ -244,6 +248,7 @@ export class NgForm extends Component {
     PasswordRenderer: NgPasswordRenderer,
     JsonRenderer: NgJsonRenderer,
     LocationRenderer: NgLocationRenderer,
+    DotsRenderer: NgDotsRenderer,
     FlowNotFound: NgFlowNotFound,
   };
 
@@ -437,7 +442,7 @@ export class NgForm extends Component {
       else return flow;
     }
 
-    if (this.props.flow?.length === 0) return Object.keys(schema);
+    if (!this.props.flow || this.props.flow?.length === 0) return Object.keys(schema);
 
     return this.props.flow || [];
   };
@@ -450,11 +455,18 @@ export class NgForm extends Component {
     });
   }
 
-  renderGroupFlow({ name, fields, collapsed }, config) {
+  renderGroupFlow({ name, fields, collapsed, visible }, config) {
     const FormRenderer = config.components.FormRenderer;
     const fullPath = (config.root ? [name] : [...config.path, isFunction(name) ? undefined : name])
       .filter(f => f)
       .map(n => n.split(/\.?(?=[A-Z])/).join('_').toLowerCase());
+
+    const show = isFunction(visible) ? visible(config.value) : (visible !== undefined ? visible : true)
+
+    if (!show)
+      return null
+
+    const label = isFunction(name) ? name(config) : name
 
     return <FormRenderer
       embedded={true}
@@ -465,7 +477,7 @@ export class NgForm extends Component {
       useBreadcrumb={config.useBreadcrumb}
       path={fullPath}
       rawSchema={{
-        label: isFunction(name) ? name(config) : name,
+        label,
         collapsable: true,
         collapsed: collapsed === undefined ? false : true
       }}>
@@ -474,17 +486,21 @@ export class NgForm extends Component {
   }
 
   renderGridFlow({ name, fields }, config) {
+
+    const children = <div className="d-flex flex-wrap ms-3">
+      {fields.map((subName) => (
+        <div className="flex" style={{ minWidth: '50%' }} key={`${name}-${subName}`}>
+          {this.renderStepFlow(subName, config)}
+        </div>
+      ))}
+    </div>
+
     return (
       <div className="row">
-        <LabelAndInput label={name}>
-          <div className="d-flex flex-wrap ms-3">
-            {fields.map((subName) => (
-              <div className="flex" style={{ minWidth: '50%' }} key={`${name}-${subName}`}>
-                {this.renderStepFlow(subName, config)}
-              </div>
-            ))}
-          </div>
-        </LabelAndInput>
+        {name && <LabelAndInput label={name}>
+          {children}
+        </LabelAndInput>}
+        {!name && children}
       </div>
     );
   }
@@ -495,7 +511,8 @@ export class NgForm extends Component {
   }
 
   renderInlineStepFlow(name, {
-    schema, value, root, path, validation, components, StepNotFound, setBreadcrumb, breadcrumb, useBreadcrumb
+    schema, value, root, path, validation, components, StepNotFound,
+    setBreadcrumb, breadcrumb, useBreadcrumb
   }) {
     const stepSchema = schema[name];
 

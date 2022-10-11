@@ -15,14 +15,14 @@ export const toUpperCaseLabels = (obj) => {
       [key]: !value
         ? null
         : isLabelField
-        ? v.charAt(0).toUpperCase() + v.slice(1)
-        : typeof value === 'object' &&
-          value !== null &&
-          key !== 'transformer' &&
-          key !== 'optionsTransformer' &&
-          !Array.isArray(value)
-        ? toUpperCaseLabels(value)
-        : value,
+          ? v.charAt(0).toUpperCase() + v.slice(1)
+          : typeof value === 'object' &&
+            value !== null &&
+            key !== 'transformer' &&
+            key !== 'optionsTransformer' &&
+            !Array.isArray(value)
+            ? toUpperCaseLabels(value)
+            : value,
     };
   }, {});
 };
@@ -33,12 +33,17 @@ export function useQuery() {
 }
 
 export const useEntityFromURI = () => {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  return entityFromURI(location);
+};
+
+export const entityFromURI = location => {
+  const { pathname } = location;
 
   let entity = 'routes';
   try {
     entity = pathname.split('/')[1];
-  } catch (_) {}
+  } catch (_) { }
 
   const isRouteInstance = entity === 'routes';
 
@@ -50,4 +55,4 @@ export const useEntityFromURI = () => {
     fetchName: isRouteInstance ? 'ROUTES' : 'SERVICES',
     link: isRouteInstance ? 'routes' : 'route-compositions',
   };
-};
+}

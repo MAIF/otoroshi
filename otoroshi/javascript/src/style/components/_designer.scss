@@ -496,20 +496,10 @@
         margin: 0 !important;
     }
 
-    .route-designer {
-        position: relative;
-    }
-
     .route-item {
         flex: 1;
         border-radius: 4px;
         background-color: #494948;
-    }
-
-    .route-forms-form {
-        background-color: $fondBody;
-        border-radius: 4px;
-        // height: fit-content;
     }
 
     .route-forms-title {
@@ -567,9 +557,9 @@
 
     .graphql-form {
         position: absolute;
-        top: 0;
+        top: 56px;
         right: 0;
-        left: 0;
+        left: 16.66666667%;
         bottom: 0;
         background-color: rgb(73, 73, 72);
         z-index: 800;
@@ -595,7 +585,7 @@
     }
 
     .endpoint {
-        cursor: pointer;
+        // cursor: pointer;
         background-color: #595959;
         border-radius: 4px;
         padding: 4px 8px;
@@ -693,8 +683,6 @@
 
 .patch-main {
     .page-header {
-        padding-bottom: 0px;
-
         h4,
         .dropdown {
             padding-bottom: 9px;

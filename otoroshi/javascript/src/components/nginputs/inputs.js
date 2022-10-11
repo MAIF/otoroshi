@@ -40,6 +40,60 @@ export class NgLocationRenderer extends Component {
   }
 }
 
+export class NgDotsRenderer extends Component {
+
+  isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+  render() {
+    const schema = this.props.schema || {};
+    const props = schema.props || this.props || {};
+
+    const options = props.options || this.props.options;
+    const isValueArray = Array.isArray(this.props.value);
+
+    const onClick = selectedValue => {
+      if (isValueArray) {
+        if (this.props.value.includes(selectedValue))
+          return this.props.value.filter(opt => opt !== selectedValue);
+        else
+          return [...this.props.value, selectedValue];
+      }
+      else {
+        return selectedValue;
+      }
+    }
+
+    return (
+      <LabelAndInput {...this.props}>
+        {options.map(option => {
+          const optObj = this.isAnObject(option);
+
+          const value = optObj ? option.value : option
+          const selected = isValueArray ? this.props.value.includes(value) : this.props.value === value;
+
+          let backgroundColor = 'initial';
+
+          if (optObj && option.color)
+            backgroundColor = `rgba(${option.color.replace(')', '').replace('rgb(', '')}, ${selected ? 1 : .45})`
+
+          return <button className={`btn btn-sm ${optObj ? '' : (selected ? 'btn-info' : 'btn-dark')} me-2 px-3 mb-2`}
+            type="button"
+            key={value}
+            style={{
+              borderRadius: '24px',
+              backgroundColor,
+              color: '#fff'
+            }}
+            onClick={() => this.props.onChange(onClick(value))}>
+            {selected && <i className='fas fa-check me-1' />}
+            {value}
+          </button>
+        })}
+      </LabelAndInput>
+    )
+  }
+}
+
 export class SingleLineCode extends Component {
   render() {
     return <div>SingleLineCode</div>;
@@ -55,8 +109,10 @@ export function LabelAndInput(_props) {
 
   if (ngOptions.spread) return _props.children;
 
+  const margin = _props.margin || props.margin || _props.rawSchema?.props?.margin || "mb-3"
+
   return (
-    <div className="row mb-3">
+    <div className={`row ${margin}`}>
       <label
         className={`col-xs-12 col-sm-${labelColumn} col-form-label`}
         style={{

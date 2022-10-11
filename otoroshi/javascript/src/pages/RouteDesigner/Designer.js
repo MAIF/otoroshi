@@ -504,11 +504,13 @@ class Designer extends React.Component {
   };
 
   injectSaveButton = () => {
+    const isOnRouteCompositions = this.props.location.pathname.includes('route-compositions');
+    const entityName = isOnRouteCompositions ? 'route composition' : 'route'
     this.props.setSaveButton(
       <FeedbackButton
         className="ms-2"
         onPress={this.saveRoute}
-        text="Save route"
+        text={`Save ${entityName}`}
         _disabled={isEqual(this.state.route, this.state.originalRoute)}
         icon={() => <i className="fas fa-paper-plane" />}
       />
@@ -918,9 +920,13 @@ class Designer extends React.Component {
               debug: node.debug || false,
               include: node.include || [],
               exclude: node.exclude || [],
-              config: {
-                ...newNode.config,
-                plugin: newNode.legacy ? newNode.id : undefined,
+              config: newNode.legacy ? {
+                plugin: newNode.id,
+                [newNode.configRoot]: {
+                  ...newNode.config
+                }
+              } : {
+                ...newNode.config
               },
             },
           ],
@@ -2094,13 +2100,6 @@ class EditView extends React.Component {
         plugin: { ...value },
       };
     }
-
-    console.log({
-      schema: formSchema,
-      flow: formFlow,
-      value,
-      originalValue: value,
-    })
 
     this.setState({
       form: {

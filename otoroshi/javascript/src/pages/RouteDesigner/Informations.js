@@ -3,22 +3,18 @@ import { NgForm } from '../../components/nginputs';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
-import isEqual from 'lodash/isEqual';
 import { FeedbackButton } from './FeedbackButton';
 import { RouteForm } from './form'
 
 export const Informations = forwardRef(({ isCreation, value, setValue, setSaveButton, routeId }, ref) => {
   const history = useHistory();
   const location = useLocation()
-  const [informations, setInformations] = useState({ ...value });
-
   const [showAdvancedForm, toggleAdvancedForm] = useState(false)
 
   const { capitalize, lowercase, fetchName, link } = useEntityFromURI();
 
-  useEffect(() => {
-    setInformations({ ...value });
-  }, [value]);
+  const isOnRouteCompositions = location.pathname.includes('route-compositions');
+  const entityName = isOnRouteCompositions ? 'route composition' : 'route'
 
   useImperativeHandle(ref, () => ({
     onTestingButtonClick() {
@@ -27,30 +23,24 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
   }));
 
   useEffect(() => {
-    setSaveButton(saveButton('ms-2'));
-  }, [informations]);
+    setSaveButton(<FeedbackButton
+      className="ms-2"
+      onPress={saveRoute}
+      text={isCreation ? `Create ${entityName}` : `Save ${entityName}`}
+      icon={() => <i className="fas fa-paper-plane" />}
+    />);
+  }, [value]);
 
-  const saveButton = (className) => {
-    return (
-      <FeedbackButton
-        className={className}
-        onPress={saveRoute}
-        text={isCreation ? 'Create route' : 'Save route'}
-        _disabled={isEqual(informations, value)}
-        icon={() => <i className="fas fa-paper-plane" />}
-      />
-    );
-  };
-
-  const saveRoute = () => {
+  function saveRoute() {
     if (isCreation || location.state?.routeFromService) {
       return nextClient
-        .create(nextClient.ENTITIES[fetchName], informations)
-        .then(() => history.push(`/${link}/${informations.id}?tab=flow`));
+        .create(nextClient.ENTITIES[fetchName], value)
+        .then(() => history.push(`/${link}/${value.id}?tab=flow`));
     } else {
-      return nextClient.update(nextClient.ENTITIES[fetchName], informations).then((res) => {
-        if (!res.error) setValue(res);
-      });
+      return nextClient.update(nextClient.ENTITIES[fetchName], value)
+        .then((res) => {
+          if (!res.error) setValue(res);
+        });
     }
   };
 
@@ -156,7 +146,7 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     }
   ];
 
-  if (!informations || !value) return null;
+  if (!value) return null;
 
   return (
     <>
@@ -172,10 +162,9 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
       {!showAdvancedForm && <NgForm
         schema={schema}
         flow={flow}
-        value={informations}
-        onChange={(value, validation) => {
-          // TODO - manage validation
-          setInformations(value)
+        value={value}
+        onChange={v => {
+          setValue(v)
         }}
       />}
 
