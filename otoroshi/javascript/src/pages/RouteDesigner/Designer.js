@@ -920,9 +920,13 @@ class Designer extends React.Component {
               debug: node.debug || false,
               include: node.include || [],
               exclude: node.exclude || [],
-              config: {
-                ...newNode.config,
-                plugin: newNode.legacy ? newNode.id : undefined,
+              config: newNode.legacy ? {
+                plugin: newNode.id,
+                [newNode.configRoot]: {
+                  ...newNode.config
+                }
+              } : {
+                ...newNode.config
               },
             },
           ],

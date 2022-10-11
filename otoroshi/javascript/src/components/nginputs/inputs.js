@@ -41,6 +41,9 @@ export class NgLocationRenderer extends Component {
 }
 
 export class NgDotsRenderer extends Component {
+
+  isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
+
   render() {
     const schema = this.props.schema || {};
     const props = schema.props || this.props || {};
@@ -63,16 +66,27 @@ export class NgDotsRenderer extends Component {
     return (
       <LabelAndInput {...this.props}>
         {options.map(option => {
-          const selected = isValueArray ? this.props.value.includes(option) : this.props.value === option;
-          return <button className={`btn btn-sm ${selected ? 'btn-info' : 'btn-dark'} me-2 px-3`}
+          const optObj = this.isAnObject(option);
+
+          const value = optObj ? option.value : option
+          const selected = isValueArray ? this.props.value.includes(value) : this.props.value === value;
+
+          let backgroundColor = 'initial';
+
+          if (optObj && option.color)
+            backgroundColor = `rgba(${option.color.replace(')', '').replace('rgb(', '')}, ${selected ? 1 : .45})`
+
+          return <button className={`btn btn-sm ${optObj ? '' : (selected ? 'btn-info' : 'btn-dark')} me-2 px-3 mb-2`}
             type="button"
-            key={option}
+            key={value}
             style={{
-              borderRadius: '24px'
+              borderRadius: '24px',
+              backgroundColor,
+              color: '#fff'
             }}
-            onClick={() => this.props.onChange(onClick(option))}>
+            onClick={() => this.props.onChange(onClick(value))}>
             {selected && <i className='fas fa-check me-1' />}
-            {option}
+            {value}
           </button>
         })}
       </LabelAndInput>

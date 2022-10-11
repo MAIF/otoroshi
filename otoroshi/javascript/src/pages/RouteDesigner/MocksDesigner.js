@@ -232,7 +232,7 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
   </div>
 }
 
-function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint }) {
+function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, openResource }) {
   return <>
     <div className="d-flex">
       <h4 className="mb-0">Endpoints</h4>
@@ -305,7 +305,11 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint })
                   {endpoint.description}
                 </span>
 
-                {endpoint.model && <span className="badge bg-dark ms-3 me-3">{endpoint.model}</span>}
+                {endpoint.model && <span className="btn btn-sm btn-info ms-3 me-3"
+                  onClick={e => {
+                    e.stopPropagation()
+                    openResource(endpoint.model)
+                  }}>{endpoint.model}</span>}
               </div>
               <div className="d-flex-between" style={{ minWidth: '32px' }}>
                 {!endpoint.body && !endpoint.model && (
@@ -536,6 +540,7 @@ export default class MocksDesigner extends React.Component {
               showEndpointForm={this.showEndpointForm}
               endpoints={endpoints}
               removeEndpoint={this.removeEndpoint}
+              openResource={model => this.showResourceForm(resources.findIndex(f => f.name === model))}
             />
             <CharlatanResourcesList
               showResourceForm={this.showResourceForm}
@@ -1025,12 +1030,12 @@ function Header({ hide, onDesigner, setDesigner }) {
 
 export const HTTP_COLORS = {
   GET: 'rgb(89, 179, 255)',
-  POST: 'rgb(117, 189, 93)',
-  DELETE: 'rgb(238, 106, 86)',
-  PATCH: '#9b59b6',
-  HEAD: '#9b59b6',
-  PUT: 'rgb(230, 195, 0)',
-  OPTIONS: '#9b59b6',
+  POST: 'rgb(74, 203, 145)',
+  DELETE: 'rgb(249, 63, 62)',
+  PUT: 'rgb(251, 161, 47)',
+  HEAD: 'rgb(155, 89, 182)',
+  PATCH: 'rgb(155, 89, 182)',
+  OPTIONS: 'rgb(155, 89, 182)'
 };
 
 const FakerOptions = [

@@ -11,13 +11,13 @@ import { Backend, Frontend } from './NgPlugins';
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
 export const HTTP_COLORS = {
-  GET: 'rgb(52, 170, 182)',
-  POST: 'rgb(117, 189, 93)',
-  DELETE: 'rgb(238, 106, 86)',
-  PATCH: '#9b59b6',
-  HEAD: '#9b59b6',
-  PUT: 'rgb(230, 195, 0)',
-  OPTIONS: '#9b59b6',
+  GET: 'rgb(89, 179, 255)',
+  POST: 'rgb(74, 203, 145)',
+  DELETE: 'rgb(249, 63, 62)',
+  PUT: 'rgb(251, 161, 47)',
+  HEAD: 'rgb(155, 89, 182)',
+  PATCH: 'rgb(155, 89, 182)',
+  OPTIONS: 'rgb(155, 89, 182)'
 };
 
 function Methods({ frontend }) {
