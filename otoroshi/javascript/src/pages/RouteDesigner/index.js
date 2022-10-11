@@ -181,244 +181,303 @@ function JsonExportButton({ value }) {
     text="Export JSON" />
 }
 
-const Manager = ({ query, entity, ...props }) => {
-  const p = useParams();
-  const isCreation = p.routeId === 'new';
-  const history = useHistory();
-  const { url } = useRouteMatch();
-  const location = useLocation();
+function ManagerTitle({
+  query, isCreation, isOnViewPlugins, entity, menu, pathname,
+  value, viewPlugins, viewRef, location, history, saveButton,
+  url, setForceTester, forceHideTester }) {
 
-  const rawViewPlugins = new URLSearchParams(location.search).get('view_plugins');
-  const viewPlugins = rawViewPlugins !== null ? Number(rawViewPlugins) : -1;
-  const isOnViewPlugins = (viewPlugins !== -1) & (query === 'route_plugins');
-
-  const [value, setValue] = useState(location.state?.routeFromService);
-  const [saveButton, setSaveButton] = useState(null);
-  const [menu, setMenu] = useState();
-
-  const [forceHideTester, setForceTester] = useState(false)
-
-  const viewRef = useRef();
-
-  useEffect(() => {
-    if (p.routeId === 'new') {
-      nextClient.template(nextClient.ENTITIES[entity.fetchName]).then(setValue);
-    } else {
-      nextClient.fetch(nextClient.ENTITIES[entity.fetchName], p.routeId)
-        .then(res => {
-          if (!res.error)
-            setValue(res)
-        });
-    }
-  }, [p.routeId]);
-
-  useEffect(() => {
-    if (value && value.id) {
-      props.setSidebarContent(
-        <DesignerSidebar route={value} setSidebarContent={props.setSidebarContent} />
-      );
-
-      props.setTitle(getTitle);
-    }
-  }, [value, saveButton, menu, viewRef, forceHideTester, isOnViewPlugins]);
-
-  const getTitle = () => {
-    return <div className="page-header d-flex align-item-center justify-content-between ms-0 mb-3">
-      <h4 className="flex" style={{ margin: 0 }}>
-        {location.pathname.includes('route-compositions') ? 'Route compositions' :
+  return <div className="page-header d-flex align-item-center justify-content-between ms-0 mb-3" style={{
+    paddingBottom: pathname === '/routes' ? 'initial' : 0
+  }}>
+    <h4 className="flex" style={{ margin: 0 }}>
+      {location.pathname.includes('route-compositions') ? 'Route compositions' :
+        {
+          flow: 'Designer',
+          informations: 'Informations',
+          routes: 'Routes',
+          route_plugins: 'Route plugins'
+        }[query]
+      }
+    </h4>
+    <div className="d-flex align-item-center justify-content-between flex">
+      {!isCreation &&
+        [
           {
-            flow: 'Designer',
-            informations: 'Informations',
-            routes: 'Routes',
-            route_plugins: 'Route plugins'
-          }[query]
-        }
-      </h4>
-      <div className="d-flex align-item-center justify-content-between flex">
-        {!isCreation &&
-          [
-            {
-              onClick: () => history.replace(`${url}?tab=routes&view_plugins=${viewPlugins}`),
-              icon: 'fa-arrow-left',
-              title: 'Back to route',
-              enabled: () => isOnViewPlugins,
+            onClick: () => history.replace(`${url}?tab=routes&view_plugins=${viewPlugins}`),
+            icon: 'fa-arrow-left',
+            title: 'Back to route',
+            enabled: () => isOnViewPlugins,
+          },
+          {
+            to: `/${entity.link}/${value.id}?tab=informations`,
+            icon: 'fa-file-alt',
+            title: 'Informations',
+            tab: 'informations',
+            enabled: () => !isOnViewPlugins,
+          },
+          {
+            to: `/${entity.link}/${value.id}?tab=routes`,
+            icon: 'fa-road',
+            title: 'Routes',
+            tab: 'routes',
+            enabled: () => ['route-compositions'].includes(entity.link),
+          },
+          {
+            to: `/${entity.link}/${value.id}?tab=flow`,
+            icon: 'fa-pencil-ruler',
+            title: 'Designer',
+            tab: 'flow',
+            enabled: () => !isOnViewPlugins,
+          },
+          {
+            icon: 'fa-vials',
+            style: { marginLeft: 20 },
+            moreClass: 'pb-2',
+            title: 'Tester',
+            disabledHelp: 'Your route is disabled. Navigate to the informations page to turn it on again',
+            disabled: !value.enabled,
+            onClick: () => {
+              setForceTester(true)
+              viewRef?.current?.onTestingButtonClick(history, value)
             },
-            {
-              to: `/${entity.link}/${value.id}?tab=informations`,
-              icon: 'fa-file-alt',
-              title: 'Informations',
-              tab: 'informations',
-              enabled: () => !isOnViewPlugins,
+            hidden: !(isOnViewPlugins || forceHideTester !== true) || query === 'routes',
+          },
+          {
+            icon: 'fa-ellipsis-h',
+            onClick: () => { },
+            enabled: () => !isOnViewPlugins, //isOnViewPlugins || query == 'flow',
+            dropdown: true,
+            props: {
+              id: 'designer-menu',
+              'data-bs-toggle': 'dropdown',
+              'data-bs-auto-close': 'outside',
+              'aria-expanded': 'false',
             },
-            {
-              to: `/${entity.link}/${value.id}?tab=routes`,
-              icon: 'fa-road',
-              title: 'Routes',
-              tab: 'routes',
-              enabled: () => ['route-compositions'].includes(entity.link),
-            },
-            {
-              to: `/${entity.link}/${value.id}?tab=flow`,
-              icon: 'fa-pencil-ruler',
-              title: 'Designer',
-              tab: 'flow',
-              enabled: () => !isOnViewPlugins,
-            },
-            {
-              icon: 'fa-vials',
-              style: { marginLeft: 20 },
-              moreClass: 'pb-2',
-              title: 'Tester',
-              disabledHelp: 'Your route is disabled. Navigate to the informations page to turn it on again',
-              disabled: !value.enabled,
-              onClick: () => {
-                setForceTester(true)
-                viewRef?.current?.onTestingButtonClick(history, value)
-              },
-              hidden: !(isOnViewPlugins || forceHideTester !== true) || query === 'routes',
-            },
-            {
-              icon: 'fa-ellipsis-h',
-              onClick: () => { },
-              enabled: () => !isOnViewPlugins, //isOnViewPlugins || query == 'flow',
-              dropdown: true,
-              props: {
-                id: 'designer-menu',
-                'data-bs-toggle': 'dropdown',
-                'data-bs-auto-close': 'outside',
-                'aria-expanded': 'false',
-              },
-            },
-          ]
-            .filter((link) => !link.enabled || link.enabled())
-            .filter(link => location.state?.routeFromService ? link.tab === 'Informations' : true)
-            .map(({ to, icon, title, tooltip, tab, onClick, dropdown, moreClass, style, props = {}, hidden, disabledHelp, disabled }) => (
-              <HelpWrapper text={disabled ? disabledHelp : undefined} dataPlacement="bottom" key={icon}>
-                <div className={`ms-2 ${moreClass ? moreClass : ''} ${dropdown ? 'dropdown' : ''}`}
-                  style={{
-                    opacity: hidden ? 0 : 1,
-                    pointerEvents: hidden ? 'none' : 'auto',
-                    height: '100%'
-                  }}>
-                  <button
-                    key={title}
-                    disabled={disabled}
-                    type="button"
-                    className={`btn btn-sm toggle-form-buttons d-flex align-items-center`}
-                    onClick={
-                      onClick
-                        ? onClick
-                        : () => {
-                          if (query !== tab || viewPlugins) {
-                            if (!window.location.href.includes(to))
-                              history.push(to);
-                          }
+          },
+        ]
+          .filter((link) => !link.enabled || link.enabled())
+          .filter(link => location.state?.routeFromService ? link.tab === 'Informations' : true)
+          .map(({ to, icon, title, tooltip, tab, onClick, dropdown, moreClass, style, props = {}, hidden, disabledHelp, disabled }) => (
+            <HelpWrapper text={disabled ? disabledHelp : undefined} dataPlacement="bottom" key={icon}>
+              <div className={`ms-2 ${moreClass ? moreClass : ''} ${dropdown ? 'dropdown' : ''}`}
+                style={{
+                  opacity: hidden ? 0 : 1,
+                  pointerEvents: hidden ? 'none' : 'auto',
+                  height: '100%'
+                }}>
+                <button
+                  key={title}
+                  disabled={disabled}
+                  type="button"
+                  className={`btn btn-sm toggle-form-buttons d-flex align-items-center`}
+                  onClick={
+                    onClick
+                      ? onClick
+                      : () => {
+                        if (query !== tab || viewPlugins) {
+                          if (!window.location.href.includes(to))
+                            history.push(to);
                         }
-                    }
-                    {...(tooltip || {})}
+                      }
+                  }
+                  {...(tooltip || {})}
+                  style={{
+                    ...(style || {}),
+                    backgroundColor: tab === query ? '#f9b000' : '#494948',
+                    color: '#fff',
+                    height: '100%',
+                  }}
+                  {...props}>
+                  {icon && (
+                    <i
+                      className={`fas ${icon} ${title ? 'me-2' : ''}`}
+                      style={{ fontSize: '1.33333em' }}
+                    />
+                  )}{' '}
+                  {title}
+                </button>
+                {dropdown && (
+                  <ul
+                    className="dropdown-menu"
+                    aria-labelledby="designer-menu"
                     style={{
-                      ...(style || {}),
-                      backgroundColor: tab === query ? '#f9b000' : '#494948',
-                      color: '#fff',
-                      height: '100%',
+                      background: 'rgb(73, 73, 72)',
+                      border: '1px solid #373735',
+                      borderTop: 0,
+                      padding: '12px',
+                      zIndex: 4000,
                     }}
-                    {...props}>
-                    {icon && (
-                      <i
-                        className={`fas ${icon} ${title ? 'me-2' : ''}`}
-                        style={{ fontSize: '1.33333em' }}
-                      />
-                    )}{' '}
-                    {title}
-                  </button>
-                  {dropdown && (
-                    <ul
-                      className="dropdown-menu"
-                      aria-labelledby="designer-menu"
-                      style={{
-                        background: 'rgb(73, 73, 72)',
-                        border: '1px solid #373735',
-                        borderTop: 0,
-                        padding: '12px',
-                        zIndex: 4000,
-                      }}
-                      onClick={(e) => e.stopPropagation()}>
-                      <li className="d-flex flex-wrap" style={{
-                        gap: '8px',
-                        minWidth: '170px'
-                      }}>
-                        <DuplicateButton value={value} history={history} />
-                        <JsonExportButton value={value} />
-                        <YAMLExportButton value={value} />
-                        <DeleteRouteButton />
-                        {menu}
-                        <BackToButton history={history} />
-                      </li>
-                    </ul>
-                  )}
-                </div>
-              </HelpWrapper>
-            ))}
-        {saveButton}
-      </div>
+                    onClick={(e) => e.stopPropagation()}>
+                    <li className="d-flex flex-wrap" style={{
+                      gap: '8px',
+                      minWidth: '170px'
+                    }}>
+                      <DuplicateButton value={value} history={history} />
+                      <JsonExportButton value={value} />
+                      <YAMLExportButton value={value} />
+                      <DeleteRouteButton />
+                      {menu}
+                      <BackToButton history={history} />
+                    </li>
+                  </ul>
+                )}
+              </div>
+            </HelpWrapper>
+          ))}
+      {saveButton}
     </div>
+  </div>
+}
+
+class Manager extends React.Component {
+  state = {
+    value: undefined,
+    menu: undefined,
+    menuRefreshed: undefined,
+    saveButton: undefined,
+    saveTypeButton: undefined,
+    forceHideTester: false
   }
 
-  const divs = [
-    {
-      predicate: query && ['flow', 'route_plugins'].includes(query) && !isCreation,
-      render: () => (
-        <Designer
-          {...props}
-          toggleTesterButton={e => {
-            setForceTester(e)
-          }}
-          ref={viewRef}
-          tab={query}
-          history={history}
-          value={value}
-          setSaveButton={setSaveButton}
-          viewPlugins={viewPlugins}
-          setMenu={setMenu}
-        />
-      ),
-    },
-    {
-      predicate: query && query === 'routes',
-      render: () =>
-        value && (
-          <RouteCompositions
-            ref={viewRef}
-            service={value}
-            setSaveButton={setSaveButton}
-            setRoutes={routes => setValue({
-              ...value,
-              routes
-            })}
+  viewRef = React.createRef(null)
+
+  componentDidMount() {
+    this.loadRoute();
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.props.match.params.routeId !== prevProps.match.params.routeId)
+      this.loadRoute();
+
+    if (['saveTypeButton', 'menuRefreshed', 'forceHideTester']
+      .some(field => this.state[field] !== prevState[field])) {
+      this.setTitle()
+    }
+  }
+
+  setTitle = () => {
+    if (!this.state.value)
+      return;
+
+    const { query, entity, history, location } = this.props;
+
+    const p = this.props.match.params
+    const isCreation = p.routeId === 'new';
+
+    const rawViewPlugins = new URLSearchParams(location.search).get('view_plugins');
+    const viewPlugins = rawViewPlugins !== null ? Number(rawViewPlugins) : -1;
+    const isOnViewPlugins = (viewPlugins !== -1) & (query === 'route_plugins');
+    const url = p.url;
+
+    this.props.setTitle(() => <ManagerTitle
+      forceHideTester={this.state.forceHideTester}
+      setForceTester={va => this.setState({ forceHideTester: va })}
+      pathname={location.pathname}
+      menu={this.state.menu}
+      url={url}
+      query={query}
+      isCreation={isCreation}
+      isOnViewPlugins={isOnViewPlugins}
+      entity={entity}
+      value={this.state.value}
+      viewPlugins={viewPlugins}
+      viewRef={this.viewRef}
+      location={location}
+      history={history}
+      saveButton={this.state.saveButton} />);
+  }
+
+  loadRoute = () => {
+    const { routeId } = this.props.match.params || { routeId: undefined }
+    if (routeId === 'new') {
+      nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName])
+        .then(value => {
+          this.setState({ value }, this.updateSidebar)
+        });
+    } else {
+      nextClient.fetch(nextClient.ENTITIES[this.props.entity.fetchName], routeId)
+        .then(res => {
+          if (!res.error)
+            this.setState({ value: res }, this.updateSidebar)
+        });
+    }
+  }
+
+  updateSidebar = () => {
+    this.props.setSidebarContent(
+      <DesignerSidebar route={this.state.value} setSidebarContent={this.props.setSidebarContent} />
+    );
+
+    this.setTitle()
+  }
+
+  render() {
+    const { query, entity, history, location, ...props } = this.props;
+
+    const p = this.props.match.params
+    const isCreation = p.routeId === 'new';
+
+    const rawViewPlugins = new URLSearchParams(location.search).get('view_plugins');
+    const viewPlugins = rawViewPlugins !== null ? Number(rawViewPlugins) : -1;
+
+    // const isOnViewPlugins = (viewPlugins !== -1) & (query === 'route_plugins');
+    // const url = p.url;
+    // const [value, setValue] = useState(location.state?.routeFromService);
+
+    const { value } = this.state;
+    const divs = [
+      {
+        predicate: query && ['flow', 'route_plugins'].includes(query) && !isCreation,
+        render: () => (
+          <Designer
+            {...this.props}
+            toggleTesterButton={va => this.setState({ forceHideTester: va })}
+            ref={this.viewRef}
+            tab={query}
+            history={history}
+            value={value}
+            setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'routes' })}
             viewPlugins={viewPlugins}
+            setMenu={n => this.setState({ menu: n, menuRefreshed: Date.now() })}
           />
         ),
-    },
-  ];
+      },
+      {
+        predicate: query && query === 'routes',
+        render: () =>
+          value && (
+            <RouteCompositions
+              ref={this.viewRef}
+              service={value}
+              setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'route-compositions' })}
+              setRoutes={routes => setValue({ ...value, routes })}
+              viewPlugins={viewPlugins}
+            />
+          ),
+      },
+    ];
 
-  const component = divs.filter((p) => p.predicate);
+    const component = divs.filter((p) => p.predicate);
 
-  if (component.length > 0) return <div className="designer row">{component[0].render()}</div>;
+    if (component.length > 0) {
+      return <div className="designer row">{component[0].render()}</div>;
+    }
 
-  return (
-    <div className="designer row ps-3">
-      <Informations
-        {...props}
-        routeId={p.routeId}
-        ref={viewRef}
-        isCreation={isCreation}
-        value={value}
-        setValue={setValue}
-        setSaveButton={setSaveButton}
-      />
-    </div>
-  );
-};
+    return (
+      <div className="designer row ps-3">
+        <Informations
+          {...this.props}
+          routeId={p.routeId}
+          ref={this.viewRef}
+          isCreation={isCreation}
+          value={value}
+          setValue={n => this.setState({ value: n })}
+          setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'informations' })}
+        />
+      </div>
+    );
+  }
+}
 
 const RoutesView = ({ history }) => {
   const [creation, setCreation] = useState(false);
@@ -454,6 +513,8 @@ class RouteDesigner extends React.Component {
 
   componentDidMount() {
     this.patchStyle(true);
+
+    this.props.setTitle('Routes');
   }
 
   componentWillUnmount() {
@@ -488,7 +549,7 @@ class RouteDesigner extends React.Component {
           { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
           {
             path: `${match.url}/:routeId`,
-            component: () => <Manager query={query} {...this.props} entity={entity} />
+            component: p => <Manager query={query} {...this.props} {...p} entity={entity} />
           }
         ].map(({ path, component }) => {
           const Component = component;
@@ -497,14 +558,13 @@ class RouteDesigner extends React.Component {
               exact
               key={path}
               path={path}
-              component={(p) => (
-                <Component
+              component={p => {
+                return <Component
                   setSidebarContent={this.props.setSidebarContent}
                   setTitle={this.props.setTitle}
-                  {...p.match}
-                  history={history}
+                  {...p}
                 />
-              )}
+              }}
             />
           );
         })}
