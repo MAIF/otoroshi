@@ -196,13 +196,12 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
           <div
             className="d-flex-between endpoint me-2"
             key={resource.name}
-            onClick={() => showResourceForm(idx)}
             style={{
               width: '125px',
               height: '125px',
               flexDirection: 'column',
               gap: '12px',
-              justifyContent: 'center'
+              justifyContent: 'space-around'
             }}>
             <label style={{ fontSize: '1.1rem' }}>{resource.name}</label>
             {!endpoints.find(e => e.model === resource.name) &&
@@ -212,12 +211,19 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
                 icon="fas fa-exclamation-triangle"
                 iconColor="#D5443F"
               />}
-            <button className="btn btn-sm btn-danger" onClick={e => {
-              e.stopPropagation();
-              removeResource(idx)
-            }}>
-              <i className="fas fa-trash" />
-            </button>
+            <div>
+              <button className="btn btn-sm btn-success me-2" onClick={() => {
+                showResourceForm(idx, true)
+              }}>
+                <i className="fas fa-pencil-alt" />
+              </button>
+              <button className="btn btn-sm btn-danger" onClick={e => {
+                e.stopPropagation();
+                removeResource(idx)
+              }}>
+                <i className="fas fa-trash" />
+              </button>
+            </div>
           </div>
         );
       })}
@@ -448,8 +454,8 @@ export default class MocksDesigner extends React.Component {
       });
   };
 
-  showResourceForm = (idx) =>
-    this.showForm('Create a new model', idx, 'resources', (ok, cancel, resource) => (
+  showResourceForm = (idx, onEdit) =>
+    this.showForm(`${onEdit ? 'Edit a model' : 'Create a new model'}`, idx, 'resources', (ok, cancel, resource) => (
       <NewResource
         confirm={ok}
         cancel={cancel}
