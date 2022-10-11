@@ -540,7 +540,7 @@ export default class MocksDesigner extends React.Component {
               showEndpointForm={this.showEndpointForm}
               endpoints={endpoints}
               removeEndpoint={this.removeEndpoint}
-              openResource={model => this.showResourceForm(resources.findIndex(f => f.name === model))}
+              openResource={model => this.showResourceForm(resources.findIndex(f => f.name === model), true)}
             />
             <CharlatanResourcesList
               showResourceForm={this.showResourceForm}
@@ -571,13 +571,13 @@ function OpenAPIParameters({ resources, ...props }) {
         <p style={{ minWidth: '120px' }} className='me-3'>Name</p>
         <p className='flex'>Description</p>
       </div>
-      {model?.schema.map(({ field_name, field_type, description, value }) => {
+      {model?.schema.map(({ field_name, field_type, field_description, value }) => {
         return (
           <div className='d-flex pt-2' key={field_name}>
             <p style={{ minWidth: '120px', color: "#fff" }} className='me-3'>{field_name}</p>
             <div className='flex'>
               <p>{field_type === 'Model' ? resources.find(r => r.name === value)?.name : field_type}</p>
-              <p>{description || 'No description'}</p>
+              <p>{field_description || 'No description'}</p>
             </div>
           </div>
         )
@@ -714,6 +714,10 @@ const MODEL_FOPM_SCHEMA = (resources) => ({
           type: 'string',
           label: 'Field name'
         },
+        field_description: {
+          type: 'string',
+          label: 'Field description'
+        },
         field_type: {
           type: 'select',
           props: {
@@ -767,7 +771,7 @@ const MODEL_FOPM_SCHEMA = (resources) => ({
           type: 'group',
           collapsed: true,
           name: props => `Field ${props?.value?.field_name}`,
-          fields: ['field_name', 'field_type', 'use_faker_value', 'value']
+          fields: ['field_name', 'field_type', 'field_description', 'use_faker_value', 'value']
         }
       ]
     }
@@ -1021,7 +1025,7 @@ function Header({ hide, onDesigner, setDesigner }) {
           className="tryit-selector-mode"
           type="button"
           onClick={() => setDesigner(false)}>
-          Publish
+          Content
         </button>
       </div>
     </div>

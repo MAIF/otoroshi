@@ -181,12 +181,12 @@ function JsonExportButton({ value }) {
     text="Export JSON" />
 }
 
-function BackToRouteTab({ isActive, url, viewPlugins }) {
+function BackToRouteTab({ history, routeId, viewPlugins }) {
   return (
     <div className="ms-2" style={{ height: '100%' }}>
       <button type="button"
         className="btn btn-sm toggle-form-buttons d-flex align-items-center"
-        onClick={() => history.replace(`${url}?tab=routes&view_plugins=${viewPlugins}`)}
+        onClick={() => history.replace(`${routeId}?tab=routes&view_plugins=${viewPlugins}`)}
         style={{
           backgroundColor: '#494948',
           color: '#fff',
@@ -341,7 +341,7 @@ function MoreActionsButton({ value, menu, history }) {
 function ManagerTitle({
   query, isCreation, isOnViewPlugins, entity, menu, pathname,
   value, viewPlugins, viewRef, location, history, saveButton,
-  url, setForceTester, forceHideTester }) {
+  url, setForceTester, forceHideTester, routeId }) {
 
   const commonsProps = {
     entity, value, history
@@ -350,7 +350,7 @@ function ManagerTitle({
   const tabs = [
     {
       visible: () => isOnViewPlugins,
-      component: () => <BackToRouteTab url={url} viewPlugins={viewPlugins} />
+      component: () => <BackToRouteTab history={history} routeId={routeId} viewPlugins={viewPlugins} />
     },
     {
       visible: () => !isOnViewPlugins,
@@ -458,6 +458,7 @@ class Manager extends React.Component {
       setForceTester={va => this.setState({ forceHideTester: va })}
       pathname={location.pathname}
       menu={this.state.menu}
+      routeId={p.routeId}
       url={url}
       query={query}
       isCreation={isCreation}
@@ -535,7 +536,12 @@ class Manager extends React.Component {
               ref={this.viewRef}
               service={value}
               setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'route-compositions' })}
-              setRoutes={routes => setValue({ ...value, routes })}
+              setRoutes={routes => this.setState({
+                value: {
+                  ...value,
+                  routes
+                }
+              })}
               viewPlugins={viewPlugins}
             />
           ),
@@ -648,6 +654,7 @@ class RouteDesigner extends React.Component {
                   setSidebarContent={this.props.setSidebarContent}
                   setTitle={this.props.setTitle}
                   {...p}
+                  {...p.match}
                 />
               }}
             />
