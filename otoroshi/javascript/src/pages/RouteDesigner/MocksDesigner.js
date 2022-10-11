@@ -460,7 +460,7 @@ export default class MocksDesigner extends React.Component {
     ));
 
   showEndpointForm = (idx, onEdit) =>
-    this.showForm('Create a new endpoint', idx, 'endpoints', (ok, cancel, endpoint) => (
+    this.showForm(`${onEdit ? 'Edit an endpoint' : 'Create a new endpoint'}`, idx, 'endpoints', (ok, cancel, endpoint) => (
       <NewEndpoint
         confirm={ok}
         cancel={cancel}
