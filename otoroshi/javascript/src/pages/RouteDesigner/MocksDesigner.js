@@ -106,7 +106,10 @@ function PushView({ endpoints, resources }) {
                 )}
                 style={{
                   border: `1px solid ${HTTP_COLORS[endpoint.method]}`,
-                  padding: 0
+                  padding: 0,
+                  backgroundColor: `rgba(${HTTP_COLORS[endpoint.method]
+                    .replace(')', '')
+                    .replace('rgb(', '')}, .25)`,
                 }}>
                 <div className='d-flex-between p-1' style={{
                   borderBottom: status[idx] ? `1px solid ${HTTP_COLORS[endpoint.method]}` : 'none'
@@ -233,6 +236,35 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint })
       </button>
     </div>
     <div className="mt-3">
+      <div
+        className="d-flex-between mb-2 endpoint"
+        style={{
+          border: `1px solid rgba(25, 25, 25, .25)`,
+          backgroundColor: `rgba(25, 25, 25, .25)`,
+        }}>
+        <div className="d-flex-between flex">
+          <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
+            <span
+              className='flex'
+              style={{
+                backgroundColor: 'rgba(25, 25, 25, .25)',
+                padding: '2px',
+                borderRadius: '4px',
+                color: '#fff'
+              }}>
+              METHODS
+            </span>
+          </div>
+          <span style={{ maxWidth: '50%', color: '#fff', flex: 2 }}>
+            PATH
+          </span>
+          <span className='ms-3' style={{ maxWidth: '50%', color: '#fff', flex: 3 }}>
+            DESCRIPTION
+          </span>
+          <span className="badge bg-dark ms-3 me-auto">MODEL</span>
+        </div>
+        <div style={{ minWidth: '40px' }}></div>
+      </div>
       {endpoints
         .sort((a, b) => a.path.localeCompare(b.path))
         .map((endpoint, idx) => {
@@ -242,9 +274,12 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint })
               key={`${endpoint.path}${idx}`}
               onClick={() => showEndpointForm(idx, true)}
               style={{
-                border: `1px solid ${HTTP_COLORS[endpoint.method]}`
+                border: `1px solid ${HTTP_COLORS[endpoint.method]}`,
+                backgroundColor: `rgba(${HTTP_COLORS[endpoint.method]
+                  .replace(')', '')
+                  .replace('rgb(', '')}, .25)`,
               }}>
-              <div className="d-flex-between">
+              <div className="d-flex-between flex">
                 <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
                   <span
                     className='flex'
@@ -257,16 +292,16 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint })
                     {endpoint.method}
                   </span>
                 </div>
-                <span style={{ maxWidth: '50%', color: '#fff' }}>
+                <span style={{ maxWidth: '50%', color: '#fff', flex: 2 }}>
                   {endpoint.path}
                 </span>
-                <span className='ms-3' style={{ maxWidth: '50%', color: '#fff' }}>
+                <span className='ms-3' style={{ maxWidth: '50%', color: '#fff', flex: 3 }}>
                   {endpoint.description}
                 </span>
 
-                {endpoint.model && <span className="badge bg-dark ms-3 me-auto">{endpoint.model}</span>}
+                {endpoint.model && <span className="badge bg-dark ms-3 me-3">{endpoint.model}</span>}
               </div>
-              <div className="d-flex-between">
+              <div className="d-flex-between" style={{ minWidth: '32px' }}>
                 {!endpoint.body && !endpoint.model && (
                   <div className="mx-1 d-flex-between endpoint-helper">
                     <Help

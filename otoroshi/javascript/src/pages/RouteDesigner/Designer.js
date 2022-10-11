@@ -504,11 +504,13 @@ class Designer extends React.Component {
   };
 
   injectSaveButton = () => {
+    const isOnRouteCompositions = this.props.location.pathname.includes('route-compositions');
+    const entityName = isOnRouteCompositions ? 'route composition' : 'route'
     this.props.setSaveButton(
       <FeedbackButton
         className="ms-2"
         onPress={this.saveRoute}
-        text="Save route"
+        text={`Save ${entityName}`}
         _disabled={isEqual(this.state.route, this.state.originalRoute)}
         icon={() => <i className="fas fa-paper-plane" />}
       />
