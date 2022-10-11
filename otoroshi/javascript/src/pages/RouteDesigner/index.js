@@ -472,6 +472,7 @@ class Manager extends React.Component {
   }
 
   loadRoute = () => {
+    console.log('load route')
     const { routeId } = this.props.match.params || { routeId: undefined }
     if (routeId === 'new') {
       nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName])
@@ -556,7 +557,7 @@ class Manager extends React.Component {
           isCreation={isCreation}
           value={value}
           setValue={n => this.setState({ value: n })}
-          setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'informations' })}
+          setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'informations' }, this.setTitle)}
         />
       </div>
     );
