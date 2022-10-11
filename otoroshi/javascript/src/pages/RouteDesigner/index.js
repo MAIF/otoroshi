@@ -181,10 +181,210 @@ function JsonExportButton({ value }) {
     text="Export JSON" />
 }
 
+function BackToRouteTab({ isActive, url, viewPlugins }) {
+  return (
+    <div className="ms-2" style={{ height: '100%' }}>
+      <button type="button"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+        onClick={() => history.replace(`${url}?tab=routes&view_plugins=${viewPlugins}`)}
+        style={{
+          backgroundColor: '#494948',
+          color: '#fff',
+          height: '100%',
+        }}>
+        <i className="fas fa-arrow-left me-2" style={{ fontSize: '1.33333em' }} />
+        Back to route
+      </button>
+    </div>
+  )
+}
+
+function InformationsTab({ isActive, entity, value, history }) {
+  return (
+    <div className="ms-2" style={{ height: '100%' }}>
+      <button type="button"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+        onClick={() => {
+          const to = `/${entity.link}/${value.id}?tab=informations`;
+          if (!window.location.href.includes(to))
+            history.push(to);
+        }}
+        style={{
+          backgroundColor: isActive ? '#f9b000' : '#494948',
+          color: '#fff',
+          height: '100%',
+        }}>
+        <i className="fas fa-file-alt me-2" style={{ fontSize: '1.33333em' }} />
+        Informations
+      </button>
+    </div >
+  )
+}
+
+function RoutesTab({ isActive, entity, value, history }) {
+  return (
+    <div className="ms-2" style={{ height: '100%' }}>
+      <button type="button"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+        onClick={() => {
+          const to = `/${entity.link}/${value.id}?tab=routes`;
+          if (!window.location.href.includes(to))
+            history.push(to);
+        }}
+        style={{
+          backgroundColor: isActive ? '#f9b000' : '#494948',
+          color: '#fff',
+          height: '100%',
+        }}>
+        <i className="fas fa-road me-2" style={{ fontSize: '1.33333em' }} />
+        Routes
+      </button>
+    </div >
+  )
+}
+
+function DesignerTab({ isActive, entity, value, history }) {
+  return (
+    <div className="ms-2" style={{ height: '100%' }}>
+      <button type="button"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+        onClick={() => {
+          const to = `/${entity.link}/${value.id}?tab=flow`;
+          if (!window.location.href.includes(to))
+            history.push(to);
+        }}
+        style={{
+          backgroundColor: isActive ? '#f9b000' : '#494948',
+          color: '#fff',
+          height: '100%',
+        }}>
+        <i className="fas fa-pencil-ruler me-2" style={{ fontSize: '1.33333em' }} />
+        Designer
+      </button>
+    </div>
+  )
+}
+
+function TesterButton({ disabled, setForceTester, viewRef, history, value, isOnViewPlugins, forceHideTester, query }) {
+  const disabledHelp = 'Your route is disabled. Navigate to the informations page to turn it on again';
+  const hidden = !(isOnViewPlugins || forceHideTester !== true) || query === 'routes';
+
+  return (
+    <HelpWrapper text={disabled ? disabledHelp : undefined} dataPlacement="bottom">
+      <div className="ms-2 pb-2" style={{
+        height: '100%',
+        opacity: hidden ? 0 : 1,
+        pointerEvents: hidden ? 'none' : 'auto',
+      }}>
+        <button type="button"
+          className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+          onClick={() => {
+            setForceTester(true)
+            viewRef?.current?.onTestingButtonClick(history, value)
+          }}
+          style={{
+            marginLeft: 20,
+            backgroundColor: '#494948',
+            color: '#fff',
+            height: '100%',
+          }}>
+          <i className="fas fa-vials" style={{ fontSize: '1.33333em' }} />
+          Tester
+        </button>
+      </div>
+    </HelpWrapper>
+  )
+}
+
+function MoreActionsButton({ value, menu, history }) {
+  return <div className="ms-2 dropdown" style={{ height: '100%' }}>
+    <button type="button"
+      className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+      style={{
+        backgroundColor: '#494948',
+        color: '#fff',
+        height: '100%',
+      }}
+      id='designer-menu'
+      data-bs-toggle='dropdown'
+      data-bs-auto-close='outside'
+      aria-expanded='false'>
+      <i className="fas fa-ellipsis-h" style={{ fontSize: '1.33333em' }} />
+    </button>
+    <ul
+      className="dropdown-menu"
+      aria-labelledby="designer-menu"
+      style={{
+        background: 'rgb(73, 73, 72)',
+        border: '1px solid #373735',
+        borderTop: 0,
+        padding: '12px',
+        zIndex: 4000,
+      }}
+      onClick={(e) => e.stopPropagation()}>
+      <li className="d-flex flex-wrap" style={{
+        gap: '8px',
+        minWidth: '170px'
+      }}>
+        <DuplicateButton value={value} history={history} />
+        <JsonExportButton value={value} />
+        <YAMLExportButton value={value} />
+        <DeleteRouteButton />
+        {menu}
+        <BackToButton history={history} />
+      </li>
+    </ul>
+  </div>
+}
+
+
 function ManagerTitle({
   query, isCreation, isOnViewPlugins, entity, menu, pathname,
   value, viewPlugins, viewRef, location, history, saveButton,
   url, setForceTester, forceHideTester }) {
+
+  const commonsProps = {
+    entity, value, history
+  };
+
+  const tabs = [
+    {
+      visible: () => isOnViewPlugins,
+      component: () => <BackToRouteTab url={url} viewPlugins={viewPlugins} />
+    },
+    {
+      visible: () => !isOnViewPlugins,
+      tab: 'informations',
+      component: () => <InformationsTab
+        isActive={query === 'informations'} {...commonsProps} />
+    },
+    {
+      visible: () => ['route-compositions'].includes(entity.link),
+      component: () => <RoutesTab
+        isActive={query === 'routes'} {...commonsProps} />
+    },
+    {
+      visible: () => !isOnViewPlugins,
+      component: () => <DesignerTab
+        isActive={query === 'flow'} {...commonsProps} />
+    },
+    {
+      component: () => <TesterButton
+        disabled={!value.enabled}
+        setForceTester={setForceTester}
+        viewRef={viewRef}
+        history={history}
+        value={value}
+        isOnViewPlugins={isOnViewPlugins}
+        forceHideTester={forceHideTester}
+        query={query}
+      />
+    },
+    {
+      visible: () => !isOnViewPlugins,
+      component: () => <MoreActionsButton value={value} menu={menu} history={history} />
+    }
+  ];
 
   return <div className="page-header d-flex align-item-center justify-content-between ms-0 mb-3" style={{
     paddingBottom: pathname === '/routes' ? 'initial' : 0
@@ -201,129 +401,13 @@ function ManagerTitle({
     </h4>
     <div className="d-flex align-item-center justify-content-between flex">
       {!isCreation &&
-        [
-          {
-            onClick: () => history.replace(`${url}?tab=routes&view_plugins=${viewPlugins}`),
-            icon: 'fa-arrow-left',
-            title: 'Back to route',
-            enabled: () => isOnViewPlugins,
-          },
-          {
-            to: `/${entity.link}/${value.id}?tab=informations`,
-            icon: 'fa-file-alt',
-            title: 'Informations',
-            tab: 'informations',
-            enabled: () => !isOnViewPlugins,
-          },
-          {
-            to: `/${entity.link}/${value.id}?tab=routes`,
-            icon: 'fa-road',
-            title: 'Routes',
-            tab: 'routes',
-            enabled: () => ['route-compositions'].includes(entity.link),
-          },
-          {
-            to: `/${entity.link}/${value.id}?tab=flow`,
-            icon: 'fa-pencil-ruler',
-            title: 'Designer',
-            tab: 'flow',
-            enabled: () => !isOnViewPlugins,
-          },
-          {
-            icon: 'fa-vials',
-            style: { marginLeft: 20 },
-            moreClass: 'pb-2',
-            title: 'Tester',
-            disabledHelp: 'Your route is disabled. Navigate to the informations page to turn it on again',
-            disabled: !value.enabled,
-            onClick: () => {
-              setForceTester(true)
-              viewRef?.current?.onTestingButtonClick(history, value)
-            },
-            hidden: !(isOnViewPlugins || forceHideTester !== true) || query === 'routes',
-          },
-          {
-            icon: 'fa-ellipsis-h',
-            onClick: () => { },
-            enabled: () => !isOnViewPlugins, //isOnViewPlugins || query == 'flow',
-            dropdown: true,
-            props: {
-              id: 'designer-menu',
-              'data-bs-toggle': 'dropdown',
-              'data-bs-auto-close': 'outside',
-              'aria-expanded': 'false',
-            },
-          },
-        ]
-          .filter((link) => !link.enabled || link.enabled())
-          .filter(link => location.state?.routeFromService ? link.tab === 'Informations' : true)
-          .map(({ to, icon, title, tooltip, tab, onClick, dropdown, moreClass, style, props = {}, hidden, disabledHelp, disabled }) => (
-            <HelpWrapper text={disabled ? disabledHelp : undefined} dataPlacement="bottom" key={icon}>
-              <div className={`ms-2 ${moreClass ? moreClass : ''} ${dropdown ? 'dropdown' : ''}`}
-                style={{
-                  opacity: hidden ? 0 : 1,
-                  pointerEvents: hidden ? 'none' : 'auto',
-                  height: '100%'
-                }}>
-                <button
-                  key={title}
-                  disabled={disabled}
-                  type="button"
-                  className={`btn btn-sm toggle-form-buttons d-flex align-items-center`}
-                  onClick={
-                    onClick
-                      ? onClick
-                      : () => {
-                        if (query !== tab || viewPlugins) {
-                          if (!window.location.href.includes(to))
-                            history.push(to);
-                        }
-                      }
-                  }
-                  {...(tooltip || {})}
-                  style={{
-                    ...(style || {}),
-                    backgroundColor: tab === query ? '#f9b000' : '#494948',
-                    color: '#fff',
-                    height: '100%',
-                  }}
-                  {...props}>
-                  {icon && (
-                    <i
-                      className={`fas ${icon} ${title ? 'me-2' : ''}`}
-                      style={{ fontSize: '1.33333em' }}
-                    />
-                  )}{' '}
-                  {title}
-                </button>
-                {dropdown && (
-                  <ul
-                    className="dropdown-menu"
-                    aria-labelledby="designer-menu"
-                    style={{
-                      background: 'rgb(73, 73, 72)',
-                      border: '1px solid #373735',
-                      borderTop: 0,
-                      padding: '12px',
-                      zIndex: 4000,
-                    }}
-                    onClick={(e) => e.stopPropagation()}>
-                    <li className="d-flex flex-wrap" style={{
-                      gap: '8px',
-                      minWidth: '170px'
-                    }}>
-                      <DuplicateButton value={value} history={history} />
-                      <JsonExportButton value={value} />
-                      <YAMLExportButton value={value} />
-                      <DeleteRouteButton />
-                      {menu}
-                      <BackToButton history={history} />
-                    </li>
-                  </ul>
-                )}
-              </div>
-            </HelpWrapper>
-          ))}
+        tabs
+          .filter(tab => !tab.visible || tab.visible())
+          .filter(tab => location.state?.routeFromService ? tab.tab === 'Informations' : true)
+          .map(({ component }) => {
+            const Tab = component;
+            return <Tab key={Tab.type} />
+          })}
       {saveButton}
     </div>
   </div>

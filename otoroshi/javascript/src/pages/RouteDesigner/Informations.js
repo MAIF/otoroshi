@@ -11,10 +11,12 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
   const history = useHistory();
   const location = useLocation()
   const [informations, setInformations] = useState({ ...value });
-
   const [showAdvancedForm, toggleAdvancedForm] = useState(false)
 
   const { capitalize, lowercase, fetchName, link } = useEntityFromURI();
+
+  const isOnRouteCompositions = location.pathname.includes('route-compositions');
+  const entityName = isOnRouteCompositions ? 'route composition' : 'route'
 
   useEffect(() => {
     setInformations({ ...value });
@@ -27,20 +29,14 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
   }));
 
   useEffect(() => {
-    setSaveButton(saveButton('ms-2'));
+    setSaveButton(<FeedbackButton
+      className="ms-2"
+      onPress={saveRoute}
+      text={isCreation ? `Create ${entityName}` : `Save ${entityName}`}
+      _disabled={isEqual(informations, value)}
+      icon={() => <i className="fas fa-paper-plane" />}
+    />);
   }, [informations]);
-
-  const saveButton = (className) => {
-    return (
-      <FeedbackButton
-        className={className}
-        onPress={saveRoute}
-        text={isCreation ? 'Create route' : 'Save route'}
-        _disabled={isEqual(informations, value)}
-        icon={() => <i className="fas fa-paper-plane" />}
-      />
-    );
-  };
 
   const saveRoute = () => {
     if (isCreation || location.state?.routeFromService) {

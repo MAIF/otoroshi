@@ -496,10 +496,6 @@
         margin: 0 !important;
     }
 
-    .route-designer {
-        position: relative;
-    }
-
     .route-item {
         flex: 1;
         border-radius: 4px;
@@ -561,9 +557,9 @@
 
     .graphql-form {
         position: absolute;
-        top: 0;
+        top: 56px;
         right: 0;
-        left: 0;
+        left: 16.66666667%;
         bottom: 0;
         background-color: rgb(73, 73, 72);
         z-index: 800;
