@@ -91,7 +91,7 @@ function PushView({ endpoints, resources }) {
   return (
     <>
       <div className="d-flex">
-        <h3>Endpoints</h3>
+        <h4 className="mb-0">Endpoints</h4>
       </div>
       <div className="mt-3">
         {endpoints
@@ -181,7 +181,7 @@ function CharlatanActions({ generateData, resetData, endpoints }) {
 function CharlatanResourcesList({ showResourceForm, resources, removeResource, endpoints }) {
   return resources.length > 0 && <div className="mt-3">
     <div className="d-flex">
-      <h3>Models</h3>
+      <h4 className="mb-0">Models</h4>
       <button className="btn btn-sm btn-info ms-3" onClick={showResourceForm}>
         <i className="fas fa-plus-circle me-1" />
         New model
@@ -226,7 +226,7 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
 function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint }) {
   return <>
     <div className="d-flex">
-      <h3>Endpoints</h3>
+      <h4 className="mb-0">Endpoints</h4>
       <button className="btn btn-sm btn-info ms-3" onClick={e => showEndpointForm(e, false)}>
         <i className="fas fa-plus-circle me-1" />
         New endpoint(s)
