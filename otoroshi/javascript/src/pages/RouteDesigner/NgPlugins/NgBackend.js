@@ -55,7 +55,9 @@ export default {
             {
               type: "group",
               collapsed: true,
-              name: props => `${props.path.slice(-1)}. ${generatedSchema.client.schema.custom_timeouts.label}`,
+              name: props => {
+                return `${props.path.slice(-1)}. Custom timeouts`
+              },
               fields: [
                 "connection_timeout",
                 "call_and_stream_timeout",
@@ -307,22 +309,32 @@ export default {
         },
         "hostname": {
           "label": "hostname",
-          "type": "string"
+          "type": "string",
+          props: {
+            defaultValue: 'changeme.oto.tools'
+          }
         },
         "protocol": {
           type: "dots",
           label: "Protocol",
           props: {
-            options: ["HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0"]
+            options: ["HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0"],
+            defaultValue: 'HTTP/1.1'
           }
         },
         "port": {
           "label": "port",
-          "type": "number"
+          "type": "number",
+          props: {
+            defaultValue: 80
+          }
         },
         "weight": {
           "label": "weight",
-          "type": "number"
+          "type": "number",
+          props: {
+            defaultValue: 1
+          }
         },
         "tls": {
           "label": "tls",
@@ -392,10 +404,6 @@ export default {
             "trusted_certs"
           ]
         },
-        "id": {
-          "label": "id",
-          "type": "string"
-        },
         "ip_address": {
           "label": "ip_address",
           "type": "string"
@@ -412,15 +420,20 @@ export default {
 
             return `${isSecured ? 'https' : 'http'}://${hostname}${port ? `:${port}` : ''}`;
           },
-          fields: [
+          full_fields: [
             'hostname',
             'port',
-            'weight',
             'protocol',
+            'weight',
             'ip_address',
             'tls',
             'predicate',
             'tls_config'
+          ],
+          fields: [
+            'hostname',
+            'port',
+            'protocol',
           ]
         }
       ]
@@ -460,16 +473,26 @@ export default {
       ]
     }
   },
-  "flow": [
-    'root',
-    'rewrite',
-    {
-      type: 'group',
-      name: 'Targets',
-      fields: ['targets'],
-    },
-    'health_check',
-    'client',
-    'load_balancing'
-  ]
+  "flow": {
+    otoroshi_full_flow: [
+      'root',
+      'rewrite',
+      {
+        type: 'group',
+        name: 'Targets',
+        fields: ['targets']
+      },
+      'health_check',
+      'client',
+      'load_balancing'
+    ],
+    otoroshi_flow: [
+      'root',
+      {
+        type: 'group',
+        name: 'Targets',
+        fields: ['targets'],
+      }
+    ]
+  }
 }

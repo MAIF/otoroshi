@@ -1234,52 +1234,48 @@ class Designer extends React.Component {
     return [matchRoute, preRoute, validateAccess, transformRequest].map((nodes, i) => {
       if (nodes.length === 0) return null;
 
-      return (
-        <>
-          <>
-            <span
-              className="badge bg-warning text-dark"
-              style={{
-                cursor: 'pointer',
+      return <React.Fragment key={`inbound-${i}`}>
+        <span
+          className="badge bg-warning text-dark"
+          style={{
+            cursor: 'pointer',
+          }}
+          onClick={() => {
+            const hidden_steps = {
+              ...hiddenSteps,
+              [steps[i]]: !hiddenSteps[steps[i]],
+            };
+            this.storeHiddenStepsToLocalStorage(hidden_steps);
+            this.setState({
+              hiddenSteps: hidden_steps,
+            });
+          }}>
+          <i
+            className={`me-1 fas fa-chevron-${hiddenSteps[steps[i]] ? 'down' : 'right'}`}
+            style={{
+              minWidth: '10px',
+            }}
+          />
+          {steps[i]} {!hiddenSteps[steps[i]] && `(${nodes.length})`}
+        </span>
+        <Hr highlighted={!selectedNode} />
+        {hiddenSteps[steps[i]] &&
+          nodes.map((node) => (
+            <NodeElement
+              onUp={(e) => this.onUp(e, node, steps[i])}
+              onDown={(e) => this.onDown(e, node, steps[i])}
+              enabled={this.isPluginEnabled(node)}
+              element={node}
+              key={`${node.nodeId}-inbound-${i}`}
+              selectedNode={selectedNode}
+              setSelectedNode={() => {
+                if (!this.state.alertModal.show) this.setState({ selectedNode: node });
               }}
-              onClick={() => {
-                const hidden_steps = {
-                  ...hiddenSteps,
-                  [steps[i]]: !hiddenSteps[steps[i]],
-                };
-                this.storeHiddenStepsToLocalStorage(hidden_steps);
-                this.setState({
-                  hiddenSteps: hidden_steps,
-                });
-              }}>
-              <i
-                className={`me-1 fas fa-chevron-${hiddenSteps[steps[i]] ? 'down' : 'right'}`}
-                style={{
-                  minWidth: '10px',
-                }}
-              />
-              {steps[i]}
-            </span>
-            <Hr highlighted={!selectedNode} />
-          </>
-          {hiddenSteps[steps[i]] &&
-            nodes.map((node) => (
-              <NodeElement
-                onUp={(e) => this.onUp(e, node, steps[i])}
-                onDown={(e) => this.onDown(e, node, steps[i])}
-                enabled={this.isPluginEnabled(node)}
-                element={node}
-                key={`${node.nodeId}-${i}`}
-                selectedNode={selectedNode}
-                setSelectedNode={() => {
-                  if (!this.state.alertModal.show) this.setState({ selectedNode: node });
-                }}
-                onRemove={this.removeNode}
-                arrows={this.showArrows(node, steps[i])}
-              />
-            ))}
-        </>
-      );
+              onRemove={this.removeNode}
+              arrows={this.showArrows(node, steps[i])}
+            />
+          ))}
+      </React.Fragment>
     });
   };
 
@@ -1295,7 +1291,7 @@ class Designer extends React.Component {
           onDown={(e) => this.onUp(e, node, 'TransformResponse')}
           enabled={this.isPluginEnabled(node)}
           element={node}
-          key={`${node.nodeId}${i}`}
+          key={`${node.nodeId}-outbound-${i}`}
           setSelectedNode={() => {
             if (!this.state.alertModal.show) this.setState({ selectedNode: node });
           }}
@@ -1498,116 +1494,114 @@ class Designer extends React.Component {
                 backends={backends}
               />
             ) : (
-              <>
-                <div className="row h-100 mx-1">
-                  <Flow>
-                    <div className="row" style={{ height: '100%' }}>
-                      <InBoundFlow>
-                        <HeaderNode text="Request" icon="down" selectedNode={selectedNode} />
-                        <Hr highlighted={!selectedNode} />
-                        <FrontendNode
-                          frontend={frontend}
-                          selectedNode={selectedNode}
-                          removeNode={this.removeNode}
-                          setSelectedNode={() => {
-                            if (!this.state.alertModal.show)
-                              this.setState({ selectedNode: frontend });
-                          }}
-                        />
-                        {this.renderInBound()}
-                        <Hr highlighted={!selectedNode} flex={true} />
-                      </InBoundFlow>
-                      <OutBoundFlow>
-                        <HeaderNode text="Response" icon="up" selectedNode={selectedNode} />
-                        <Hr highlighted={!selectedNode} flex={true} />
-                        {this.renderOutBound()}
-                        {this.transformResponseBadge()}
-                        <Hr highlighted={!selectedNode} />
-                      </OutBoundFlow>
-                    </div>
-                    {backendCallNodes.length > 0 && (
-                      <>
-                        <div
+              <div className="row h-100 mx-1">
+                <Flow>
+                  <div className="row" style={{ height: '100%' }}>
+                    <InBoundFlow>
+                      <HeaderNode text="Request" icon="down" selectedNode={selectedNode} />
+                      <Hr highlighted={!selectedNode} />
+                      <FrontendNode
+                        frontend={frontend}
+                        selectedNode={selectedNode}
+                        removeNode={this.removeNode}
+                        setSelectedNode={() => {
+                          if (!this.state.alertModal.show)
+                            this.setState({ selectedNode: frontend });
+                        }}
+                      />
+                      {this.renderInBound()}
+                      <Hr highlighted={!selectedNode} flex={true} />
+                    </InBoundFlow>
+                    <OutBoundFlow>
+                      <HeaderNode text="Response" icon="up" selectedNode={selectedNode} />
+                      <Hr highlighted={!selectedNode} flex={true} />
+                      {this.renderOutBound()}
+                      {this.transformResponseBadge()}
+                      <Hr highlighted={!selectedNode} />
+                    </OutBoundFlow>
+                  </div>
+                  {backendCallNodes.length > 0 && (
+                    <>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          width: '100%',
+                        }}>
+                        <span
+                          className="badge bg-warning text-dark"
                           style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
                             width: '100%',
+                            opacity: !selectedNode ? 1 : 0.25,
+                            cursor: 'pointer',
                           }}>
-                          <span
-                            className="badge bg-warning text-dark"
-                            style={{
-                              width: '100%',
-                              opacity: !selectedNode ? 1 : 0.25,
-                              cursor: 'pointer',
-                            }}>
-                            CallBackend
-                          </span>
-                          <Hr highlighted={!selectedNode} />
-                        </div>
-                        {backendCallNodes.map((node) => (
-                          <BackendCallNode
-                            key={node.id}
-                            isPluginEnabled={this.isPluginEnabled}
-                            backendCall={node}
-                            selectedNode={selectedNode}
-                            hideLink={!node.plugin_backend_call_delegates}
-                            setSelectedNode={() => {
-                              if (!this.state.alertModal.show) {
-                                this.setState({ selectedNode: node });
-                              }
-                            }}
-                            onRemove={this.removeNode}
-                          />
-                        ))}
-                        {false && !backendCall.plugin_backend_call_delegates && (
-                          <div style={{ height: 10 }}></div>
-                        )}
-                      </>
-                    )}
-                    <BackendNode
-                      backend={backend}
-                      selectedNode={selectedNode}
-                      setSelectedNode={() => {
-                        if (!this.state.alertModal.show) this.setState({ selectedNode: backend });
-                      }}
-                      onRemove={this.removeNode}
-                    />
-                  </Flow>
-                  <FormContainer
-                    showAdvancedDesignerView={(pluginName) =>
-                      this.setState({ advancedDesignerView: pluginName })
-                    }
-                    serviceMode={serviceMode}
-                    clearPlugins={this.clearPlugins}
-                    deleteRoute={this.deleteRoute}
-                    updateRoute={this.updateRoute}
-                    saveRoute={this.saveRoute}
+                          CallBackend
+                        </span>
+                        <Hr highlighted={!selectedNode} />
+                      </div>
+                      {backendCallNodes.map((node) => (
+                        <BackendCallNode
+                          key={node.id}
+                          isPluginEnabled={this.isPluginEnabled}
+                          backendCall={node}
+                          selectedNode={selectedNode}
+                          hideLink={!node.plugin_backend_call_delegates}
+                          setSelectedNode={() => {
+                            if (!this.state.alertModal.show) {
+                              this.setState({ selectedNode: node });
+                            }
+                          }}
+                          onRemove={this.removeNode}
+                        />
+                      ))}
+                      {false && !backendCall.plugin_backend_call_delegates && (
+                        <div style={{ height: 10 }}></div>
+                      )}
+                    </>
+                  )}
+                  <BackendNode
+                    backend={backend}
                     selectedNode={selectedNode}
-                    route={route}
-                    setRoute={(n) => this.setState({ route: n })}
-                    setSelectedNode={(n) => {
-                      if (!this.state.alertModal.show) this.setState({ selectedNode: n });
+                    setSelectedNode={() => {
+                      if (!this.state.alertModal.show) this.setState({ selectedNode: backend });
                     }}
-                    updatePlugin={this.updatePlugin}
                     onRemove={this.removeNode}
-                    plugins={plugins}
-                    backends={backends}
-                    preview={preview}
-                    showPreview={(element) =>
-                      this.setState({
-                        preview: {
-                          ...this.state.preview,
-                          element,
-                        },
-                      })
-                    }
-                    originalRoute={originalRoute}
-                    alertModal={alertModal}
-                    disabledSaveButton={isEqual(route, originalRoute)}
                   />
-                </div>
-              </>
+                </Flow>
+                <FormContainer
+                  showAdvancedDesignerView={(pluginName) =>
+                    this.setState({ advancedDesignerView: pluginName })
+                  }
+                  serviceMode={serviceMode}
+                  clearPlugins={this.clearPlugins}
+                  deleteRoute={this.deleteRoute}
+                  updateRoute={this.updateRoute}
+                  saveRoute={this.saveRoute}
+                  selectedNode={selectedNode}
+                  route={route}
+                  setRoute={(n) => this.setState({ route: n })}
+                  setSelectedNode={(n) => {
+                    if (!this.state.alertModal.show) this.setState({ selectedNode: n });
+                  }}
+                  updatePlugin={this.updatePlugin}
+                  onRemove={this.removeNode}
+                  plugins={plugins}
+                  backends={backends}
+                  preview={preview}
+                  showPreview={(element) =>
+                    this.setState({
+                      preview: {
+                        ...this.state.preview,
+                        element,
+                      },
+                    })
+                  }
+                  originalRoute={originalRoute}
+                  alertModal={alertModal}
+                  disabledSaveButton={isEqual(route, originalRoute)}
+                />
+              </div>
             )}
           </div>
         </Container>
@@ -1741,17 +1735,21 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
     const backend = route.backend;
-    const allMethods =
-      frontend.methods && frontend.methods.length > 0
-        ? frontend.methods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}>
-            {m}
-          </span>
-        ))
-        : [<span className="badge bg-success">ALL</span>];
+
+    const rawMethods = (frontend.methods || []).filter(m => m.length);
+
+    const allMethods = rawMethods && rawMethods.length > 0
+      ? rawMethods.map((m, i) => (
+        <span
+          key={`frontendmethod-${i}`}
+          className={`badge me-1`}
+          style={{ backgroundColor: HTTP_COLORS[m] }}>
+          {m}
+        </span>
+      ))
+      : [<span className="badge bg-success">ALL</span>];
+
+    console.log(rawMethods, allMethods)
     return (
       <>
         <div className="d-flex-center justify-content-start dark-background py-2 ps-2">
@@ -1959,7 +1957,7 @@ const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonCli
 const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => (
   <>
     {value && value.toString().length > 0 && (
-      <Suspense fallback={() => <div>Loading ...</div>}>
+      <Suspense fallback={<div>Loading ...</div>}>
         <CodeInput
           mode="json"
           editorOnly={true}
@@ -2075,7 +2073,7 @@ class EditView extends React.Component {
             type: 'form',
             label: 'Plugin configuration',
             schema: { ...convertTransformer(config_schema) },
-            flow: [...(config_flow || flow)],
+            flow: Array.isArray(config_flow) ? [...(config_flow || flow)] : config_flow,
           }
         };
     }

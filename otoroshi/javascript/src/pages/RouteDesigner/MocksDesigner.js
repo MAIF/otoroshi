@@ -302,13 +302,6 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                   {endpoint.description}
                 </span>
 
-                {endpoint.model && <span className="btn btn-sm btn-info ms-3 me-3"
-                  onClick={e => {
-                    e.stopPropagation()
-                    openResource(endpoint.model)
-                  }}>{endpoint.model}</span>}
-              </div>
-              <div className="d-flex-between" style={{ minWidth: '32px' }}>
                 {!endpoint.body && !endpoint.model && (
                   <div className="mx-1 d-flex-between endpoint-helper">
                     <span style={{color:'#D5443F'}}
@@ -317,6 +310,15 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                   </span>
                   </div>
                 )}
+
+                {!endpoint.model && <span className="btn btn-sm ms-3 me-3"></span>}
+                {endpoint.model && <span className="btn btn-sm btn-info ms-3 me-3"
+                  onClick={e => {
+                    e.stopPropagation()
+                    openResource(endpoint.model)
+                  }}>{endpoint.model}</span>}
+              </div>
+              <div className="d-flex-between" style={{ minWidth: '32px' }}>
                 <button
                   className="btn btn-sm btn-danger"
                   onClick={(e) => {
@@ -398,8 +400,6 @@ export default class MocksDesigner extends React.Component {
         if (data) {
           const { idx } = data;
           let value = data.value
-
-          console.log(value, elementName)
 
           if (elementName === 'endpoints') {
             const newEndpoint = {

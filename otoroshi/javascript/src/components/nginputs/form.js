@@ -1,9 +1,8 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import cloneDeep from 'lodash/cloneDeep';
 import isFunction from 'lodash/isFunction';
 import isEqual from 'lodash/isEqual';
 import isString from 'lodash/isString';
-import snakeCase from 'lodash/snakeCase';
 
 import {
   NgPasswordRenderer,
@@ -226,6 +225,26 @@ const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
   </div>
 }
 
+function SubFlow({ fields, full_fields, render }) {
+  const [moreFields, showMoreFields] = useState(false);
+
+  const hasMoreFields = full_fields && full_fields.length > 0;
+
+  return <>
+    {!moreFields && fields.map(render)}
+    {hasMoreFields && moreFields && full_fields.map(render)}
+
+    {hasMoreFields && !moreFields && <button className='btn btn-sm btn-info mt-2'
+      onClick={() => showMoreFields(!moreFields)}
+      style={{
+        marginLeft: 'auto',
+        display: 'block'
+      }}>
+      Show advanced settings
+    </button>}
+  </>
+}
+
 export class NgForm extends Component {
   static DefaultTheme = {
     FormRenderer: NgFormRenderer,
@@ -414,37 +433,43 @@ export class NgForm extends Component {
 
   getFlow = (value, schema) => {
     if (isFunction(this.props.flow)) {
-      return this.props.flow(value, this.props);
-    }
-
-    // useful to match the case of a json flow
-    /*
+      return {
+        fields: this.props.flow(value, this.props)
+      }
+    } else if (this.isAnObject(this.props.flow) &&
+      this.props.flow['otoroshi_flow'] &&
+      this.props.flow['otoroshi_full_flow']) {
+      return {
+        fields: this.props.flow['otoroshi_flow'],
+        full_fields: this.props.flow['otoroshi_full_flow']
+      }
+    } else if (this.isAnObject(this.props.flow) &&
+      this.props.flow.field &&
+      this.props.flow.flow) {
+      /* useful to match the case of a json flow
       {
-        schema: {
-          name: { ...}
-        }
         flow: {
           field: 'name',
           flow: {
-            Foo: ['a sub flow'],
-            Bar: ['a other sub flow']
+            Foo: ['a sub flow'], Bar: ['a other sub flow']
           }
         }
-      }
-    */
-    if (this.isAnObject(this.props.flow) && this.props.flow.field && this.props.flow.flow) {
+      }*/
       const paths = this.props.flow.field.split('.');
       const flow =
         this.props.flow.flow[this.recursiveSearch(paths, value || {})] ||
         this.props.flow.flow[this.recursiveSearch(paths, this.props.rootValue || {})];
 
-      if (!flow) return Object.values(this.props.flow.flow)[0];
-      else return flow;
+      if (!flow) {
+        return { fields: Object.values(this.props.flow.flow)[0] };
+      } else {
+        return { fields: flow };
+      }
+    } else if (!this.props.flow || this.props.flow?.length === 0) {
+      return { fields: Object.keys(schema) };
+    } else {
+      return { fields: this.props.flow || [] };
     }
-
-    if (!this.props.flow || this.props.flow?.length === 0) return Object.keys(schema);
-
-    return this.props.flow || [];
   };
 
   renderCustomFlow({ name, fields, renderer }, config) {
@@ -455,7 +480,7 @@ export class NgForm extends Component {
     });
   }
 
-  renderGroupFlow({ name, fields, collapsed, visible }, config) {
+  renderGroupFlow({ name, fields, collapsed, visible, full_fields }, config) {
     const FormRenderer = config.components.FormRenderer;
     const fullPath = (config.root ? [name] : [...config.path, isFunction(name) ? undefined : name])
       .filter(f => f)
@@ -480,27 +505,35 @@ export class NgForm extends Component {
         label,
         collapsable: true,
         collapsed: collapsed === undefined ? false : true
-      }}>
-      {fields.map(subName => this.renderStepFlow(subName, config))}
+      }}
+      key={fullPath}
+    >
+      <SubFlow fields={fields} full_fields={full_fields} render={field => this.renderStepFlow(field, config)} />
     </FormRenderer>
   }
 
-  renderGridFlow({ name, fields }, config) {
+  renderGridFlow({ name, fields, visible }, config) {
+    const label = isFunction(name) ? name(config) : name;
+
+    const show = isFunction(visible) ? visible(config.value) : (visible !== undefined ? visible : true)
+
+    if (!show)
+      return null
 
     const children = <div className="d-flex flex-wrap ms-3">
       {fields.map((subName) => (
-        <div className="flex" style={{ minWidth: '50%' }} key={`${name}-${subName}`}>
+        <div className="flex" style={{ minWidth: '50%' }} key={`${config.path}-${subName}`}>
           {this.renderStepFlow(subName, config)}
         </div>
       ))}
     </div>
 
     return (
-      <div className="row">
-        {name && <LabelAndInput label={name}>
+      <div className="row" key={config.path}>
+        {label && <LabelAndInput label={label}>
           {children}
         </LabelAndInput>}
-        {!name && children}
+        {!label && children}
       </div>
     );
   }
@@ -558,7 +591,7 @@ export class NgForm extends Component {
         return null;
       }
     } else {
-      return <StepNotFound name={name} />;
+      return <StepNotFound name={name} key={path} />;
     }
   }
 
@@ -574,6 +607,7 @@ export class NgForm extends Component {
       } else {
         return React.createElement(config.components.FlowNotFound, {
           type: composedFlow.type,
+          key: config.name
         });
       }
     } else {
@@ -581,11 +615,26 @@ export class NgForm extends Component {
     }
   }
 
+  getBreadcrumb(root) {
+    if (this.props.useBreadcrumb) {
+      if (!root) {
+        return this.props.setBreadcrumb;
+      } else
+        return (e) => {
+          this.setState({ breadcrumb: e })
+        }
+    }
+
+    return null;
+  }
+
   render() {
     const value = this.getValue();
     const schema =
       (isFunction(this.props.schema) ? this.props.schema(value) : this.props.schema) || {};
+
     const flow = this.getFlow(value, schema);
+
     const propsComponents = isFunction(this.props.components)
       ? this.props.components(value)
       : this.props.components;
@@ -599,9 +648,7 @@ export class NgForm extends Component {
 
     const config = {
       schema, value, root, path, validation, components, StepNotFound,
-      setBreadcrumb: this.props.useBreadcrumb ? (!root ? this.props.setBreadcrumb : e => {
-        this.setState({ breadcrumb: e })
-      }) : null,
+      setBreadcrumb: this.getBreadcrumb(root),
       breadcrumb: root ? this.state.breadcrumb : this.props.breadcrumb,
       useBreadcrumb: this.props.useBreadcrumb
     }
@@ -622,7 +669,12 @@ export class NgForm extends Component {
               })
             }} />
         }
-        {flow && flow.map(name => this.renderStepFlow(name, config))}
+        {flow.fields &&
+          <SubFlow
+            {...flow}
+            render={name => this.renderStepFlow(name, config)} />
+        }
+        {/* {flow && flow.map(name => this.renderStepFlow(name, config))} */}
       </FormRenderer>
     );
   }
