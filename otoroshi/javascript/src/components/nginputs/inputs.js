@@ -49,27 +49,31 @@ export class NgDotsRenderer extends Component {
     const props = schema.props || this.props || {};
 
     const options = props.options || this.props.options;
+
     const isValueArray = Array.isArray(this.props.value);
 
     const onClick = selectedValue => {
+      const value = this.props.value || defaultValue;
+
       if (isValueArray) {
-        if (this.props.value.includes(selectedValue))
-          return this.props.value.filter(opt => opt !== selectedValue);
+        if (value.includes(selectedValue))
+          return value.filter(opt => opt !== selectedValue);
         else
-          return [...this.props.value, selectedValue];
+          return [...value, selectedValue];
       }
       else {
         return selectedValue;
       }
     }
 
+    const value = this.props.value || props.defaultValue;
+
     return (
       <LabelAndInput {...this.props}>
         {options.map(option => {
           const optObj = this.isAnObject(option);
-
-          const value = optObj ? option.value : option
-          const selected = isValueArray ? this.props.value.includes(value) : this.props.value === value;
+          const rawOption = optObj ? option.value : option;
+          const selected = isValueArray ? value.includes(rawOption) : value === rawOption;
 
           let backgroundColor = 'initial';
 
@@ -78,15 +82,15 @@ export class NgDotsRenderer extends Component {
 
           return <button className={`btn btn-sm ${optObj ? '' : (selected ? 'btn-info' : 'btn-dark')} me-2 px-3 mb-2`}
             type="button"
-            key={value}
+            key={rawOption}
             style={{
               borderRadius: '24px',
               backgroundColor,
               color: '#fff'
             }}
-            onClick={() => this.props.onChange(onClick(value))}>
+            onClick={() => this.props.onChange(onClick(rawOption))}>
             {selected && <i className='fas fa-check me-1' />}
-            {value}
+            {rawOption}
           </button>
         })}
       </LabelAndInput>
@@ -185,6 +189,10 @@ export class NgStringRenderer extends Component {
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
+
+    // avoid to have both value and defaultValue props
+    const { defaultValue, ...inputProps } = props;
+
     return (
       <LabelAndInput {...this.props}>
         <input
@@ -192,9 +200,9 @@ export class NgStringRenderer extends Component {
           className="form-control"
           placeholder={props.placeholder}
           title={props.help}
-          value={this.props.value}
+          value={this.props.value || defaultValue || ''}
           onChange={(e) => this.props.onChange(e.target.value)}
-          {...props}
+          {...inputProps}
         />
       </LabelAndInput>
     );
@@ -225,6 +233,10 @@ export class NgNumberRenderer extends Component {
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
+
+    // avoid to have both value and defaultValue props
+    const { defaultValue, ...inputProps } = props;
+
     return (
       <LabelAndInput {...this.props}>
         <input
@@ -232,9 +244,9 @@ export class NgNumberRenderer extends Component {
           className="form-control"
           placeholder={props.placeholder}
           title={props.help}
-          value={this.props.value}
+          value={this.props.value || defaultValue}
           onChange={(e) => this.props.onChange(~~e.target.value)}
-          {...props}
+          {...inputProps}
         />
       </LabelAndInput>
     );

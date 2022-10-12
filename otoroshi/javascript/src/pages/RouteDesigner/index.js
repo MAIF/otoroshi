@@ -404,9 +404,9 @@ function ManagerTitle({
         tabs
           .filter(tab => !tab.visible || tab.visible())
           .filter(tab => location.state?.routeFromService ? tab.tab === 'Informations' : true)
-          .map(({ component }) => {
+          .map(({ component }, i) => {
             const Tab = component;
-            return <Tab key={Tab.type} />
+            return <Tab key={`tab-${i}`} />
           })}
       {saveButton}
     </div>
@@ -473,7 +473,6 @@ class Manager extends React.Component {
   }
 
   loadRoute = () => {
-    console.log('load route')
     const { routeId } = this.props.match.params || { routeId: undefined }
     if (routeId === 'new') {
       nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName])
