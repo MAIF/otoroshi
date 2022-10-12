@@ -35,6 +35,7 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
     - provide a Brotli compression plugin
     - provide a graphql federation plugin
     - provide an orchestration plugin
+    - websocket validation: frame format, frame size, etc
   - cleanup kubernetes integration 
     - fix versioning in crds
     - check against latest kubernetes version
@@ -61,10 +62,16 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - minimal gRCP support
     - plugin to call gRPC services
     - expose routes as gRPC-Web
-  - serverless
+  - support serverless providers
     - plugin to call functions in AWS
     - plugin to call functions in Azure
     - plugin to call functions in GCP
+    - plugin to call functions in openfaas
+  - support plugins thats ships their own custom UI
+  - introduce event system bridges
+    - support event systems like kafka, pulsar, mqtt, amqp, gcp pub/sub, aws kinesis, azure storage queue, etc
+    - support event producing through http post, websockets
+    - support event subscriptions through webhooks, sse, websockets, grpc streaming
   - experiment around moving out of play framework and akka ...
 
 ## versioning
