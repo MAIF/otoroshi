@@ -53,7 +53,7 @@ export class NgDotsRenderer extends Component {
     const isValueArray = Array.isArray(this.props.value);
 
     const onClick = selectedValue => {
-      const value = this.props.value || defaultValue;
+      const value = this.props.value || props.defaultValue;
 
       if (isValueArray) {
         if (value.includes(selectedValue))

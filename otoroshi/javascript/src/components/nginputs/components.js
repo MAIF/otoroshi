@@ -107,12 +107,14 @@ export class NgFormRenderer extends Component {
         this.props.rawSchema.props.collapsable || this.props.rawSchema.collapsable;
       const noBorder = this.props.rawSchema.props.noBorder || this.props.rawSchema.noBorder;
       const noTitle = this.props.rawSchema.props.noTitle || this.props.rawSchema.noTitle;
-      const title = (
-        this.props.rawSchema.props.label ||
-        this.props.rawSchema.label ||
-        this.props.name ||
-        '...'
-      ).replace(/_/g, ' ');
+      let title = '...'
+
+      try {
+        title = (this.props.rawSchema.props.label ||
+          this.props.rawSchema.label ||
+          this.props.name).replace(/_/g, ' ');
+      } catch (e) { }
+
       const showTitle = !noTitle && (isLeaf || clickable);
 
       const titleComponent = (
