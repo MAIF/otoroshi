@@ -1750,7 +1750,6 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
       ))
       : [<span className="badge bg-success">ALL</span>];
 
-    console.log(rawMethods, allMethods)
     return (
       <>
         <div className="d-flex-center justify-content-start dark-background py-2 ps-2">
