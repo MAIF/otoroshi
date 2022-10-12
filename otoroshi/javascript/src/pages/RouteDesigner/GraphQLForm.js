@@ -40,7 +40,7 @@ export default class GraphQLForm extends React.Component {
                 props: {
                   editorOnly: true,
                   height: '100%',
-                  mode: 'graphql'
+                  mode: 'graphqlschema'
                 }
               }}
               value={this.state.tmpSchema}

@@ -1,13 +1,19 @@
 import React, { Component, useState } from 'react';
 import { Help } from './Help';
-import AceEditor from 'react-ace';
 import isFunction from 'lodash/isFunction';
-import 'brace/mode/html';
-import 'brace/mode/scala';
-import 'brace/mode/javascript';
-import 'brace/theme/monokai';
-import 'brace/ext/language_tools';
-import 'brace/ext/searchbox';
+
+import AceEditor from 'react-ace';
+
+import "ace-builds/src-noconflict/mode-scala";
+import "ace-builds/src-noconflict/mode-javascript";
+import "ace-builds/src-noconflict/mode-json";
+import "ace-builds/src-noconflict/mode-graphqlschema";
+import "ace-builds/src-noconflict/mode-html";
+
+import "ace-builds/src-noconflict/ext-language_tools";
+import "ace-builds/src-noconflict/ext-searchbox";
+
+import "ace-builds/src-noconflict/theme-monokai";
 
 export class JsonObjectAsCodeInput extends Component {
   render() {
@@ -73,22 +79,26 @@ export default class CodeInput extends Component {
     }
   };
 
+  getMode = mode => {
+    if (mode) {
+      return mode;
+    } else {
+      return 'javascript';
+    }
+  }
+
   render() {
     let code = this.state.value || this.props.value;
     if (this.props.mode === 'json' && typeof code !== 'string') {
       code = JSON.stringify(code, null, 2);
     }
 
+    const mode = this.getMode(this.props.mode)
+
     const editor = (
       <AceEditor
         {...(this.props.ace_config || {})}
-        mode={
-          this.props.mode
-            ? this.props.mode === 'json'
-              ? 'javascript'
-              : this.props.mode
-            : 'javascript'
-        }
+        mode={mode}
         theme="monokai"
         onChange={this.onChange}
         value={code || ''}
