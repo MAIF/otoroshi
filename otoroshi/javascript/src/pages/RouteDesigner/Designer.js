@@ -40,6 +40,7 @@ import { getPluginsPatterns } from './patterns';
 import { EurekaTargetForm } from './EurekaTargetForm';
 import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
+import GraphQLForm from './GraphQLForm';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -485,7 +486,7 @@ class Designer extends React.Component {
       TransformRequest: true,
       TransformResponse: true,
     },
-    advancedDesignerView: null,
+    advancedDesignerView: GraphQLForm, // TODO - replace by null
     showTryIt: false
   };
 

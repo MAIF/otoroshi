@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { graphqlSchemaToJson, jsonToGraphqlSchema } from '../../services/BackOfficeServices';
 import isEqual from 'lodash/isEqual';
-import { FeedbackButton } from './FeedbackButton';
-import { NgForm } from '../../components/nginputs';
-
-const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
+import { NgCodeRenderer, NgForm } from '../../components/nginputs';
 
 export default class GraphQLForm extends React.Component {
   state = {
@@ -35,7 +32,17 @@ export default class GraphQLForm extends React.Component {
         />
         {this.state.schemaView ? (
           <>
-            <CodeInput
+            <NgCodeRenderer
+              ngOptions={{
+                spread: true
+              }}
+              rawSchema={{
+                props: {
+                  editorOnly: true,
+                  height: '100%',
+                  mode: 'graphql'
+                }
+              }}
               value={this.state.tmpSchema}
               onChange={(e) => {
                 this.props.saveRoute({
@@ -268,7 +275,7 @@ class SideView extends React.Component {
 
     return (
       <>
-        <div className="row my-3 flex">
+        <div className="row flex">
           <div className="col-md-5 flex-column">
             <CreationButton
               text="New type"
@@ -710,29 +717,35 @@ const Type = ({
   );
 };
 
-const Header = ({ hide, schemaView, toggleSchema }) => (
+const Header = ({ hide, schemaView, toggleSchema }) => <>
   <div className="d-flex-between">
-    <div className="flex">
-      <div className="d-flex-between">
-        <h3>GraphQL Schema Editor</h3>
-        <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
-          <i className="fas fa-times" style={{ color: '#fff' }} />
-        </button>
-      </div>
-      <div className={`d-flex justify-content-end ms-3 ${schemaView ? 'mb-3' : ''}`}>
-        <button
-          className="btn btn-sm toggle-form-buttons mt-3"
-          onClick={() => toggleSchema(false)}
-          style={{ backgroundColor: schemaView ? '#373735' : '#f9b000' }}>
-          FORM
-        </button>
-        <button
-          className="btn btn-sm mx-1 toggle-form-buttons mt-3"
-          onClick={() => toggleSchema(true)}
-          style={{ backgroundColor: schemaView ? '#f9b000' : '#373735' }}>
-          SCHEMA
-        </button>
-      </div>
+    <h3>GraphQL Schema Editor</h3>
+    <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
+      <i className="fas fa-times" style={{ color: '#fff' }} />
+    </button>
+  </div>
+  <div className='d-flex justify-content-center mb-3'>
+    <div
+      className='p-1'
+      style={{
+        borderRadius: '24px',
+        backgroundColor: '#373735',
+        position: 'relative',
+        width: 'fit-content'
+      }}>
+      <div className={`tryit-selector-cursor ${!schemaView ? '' : 'tryit-selector-mode-right'}`} />
+      <button
+        className="tryit-selector-mode"
+        type="button"
+        onClick={() => toggleSchema(false)}>
+        Form
+      </button>
+      <button
+        className="tryit-selector-mode"
+        type="button"
+        onClick={() => toggleSchema(true)}>
+        Schema
+      </button>
     </div>
   </div>
-);
+</>
