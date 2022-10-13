@@ -506,7 +506,7 @@ export class NewExporterForm extends Component {
               />
             </Collapse>
           )}
-          <ExporterTryIt exporter={this.props.value} />
+          {this.data().type === 'kafka' && <ExporterTryIt exporter={this.props.value} />}
         </form>
       </>
     );
