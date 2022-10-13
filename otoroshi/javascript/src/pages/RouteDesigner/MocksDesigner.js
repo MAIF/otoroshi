@@ -1,9 +1,7 @@
 import React, { Suspense, useState } from 'react';
 import faker from 'faker';
 import { FeedbackButton } from './FeedbackButton';
-import {
-  Help
-} from '../../components/inputs';
+import { createTooltip } from '../../tooltips';
 
 import { NgForm } from '../../components/nginputs/form';
 import { NgBooleanRenderer, NgNumberRenderer, NgSelectRenderer, NgStringRenderer } from '../../components/nginputs/inputs';
@@ -139,11 +137,10 @@ function PushView({ endpoints, resources }) {
                   <div className="d-flex-between">
                     {!endpoint.body && !endpoint.model && (
                       <div className="mx-1 d-flex-between endpoint-helper">
-                        <Help
-                          text="Missing raw body or model"
-                          icon="fas fa-exclamation-triangle"
-                          iconColor="#D5443F"
-                        />
+                        <span style={{color:'#D5443F'}}
+                          {...createTooltip('Missing raw body or model')}
+                          ><i className="fas fa-exclamation-triangle" />
+                        </span>
                       </div>
                     )}
                     <button
@@ -201,16 +198,16 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
               height: '125px',
               flexDirection: 'column',
               gap: '12px',
-              justifyContent: 'space-around'
+              justifyContent: 'space-between'
             }}>
             <label style={{ fontSize: '1.1rem' }}>{resource.name}</label>
             {!endpoints.find(e => e.model === resource.name) &&
               !resources.find(e => e.schema.find(f => f.field_type === 'Model' && f.value === resource.name)) &&
-              <Help
-                text="Model not used"
-                icon="fas fa-exclamation-triangle"
-                iconColor="#D5443F"
-              />}
+              <span style={{color:'#D5443F'}}
+              {...createTooltip('Model not used')}
+              ><i className="fas fa-exclamation-triangle" />
+            </span>
+              }
             <div>
               <button className="btn btn-sm btn-success me-2" onClick={() => {
                 showResourceForm(idx, true)
@@ -307,11 +304,10 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
 
                 {!endpoint.body && !endpoint.model && (
                   <div className="mx-1 d-flex-between endpoint-helper">
-                    <Help
-                      text="Missing raw body or model"
-                      icon="fas fa-exclamation-triangle"
-                      iconColor="#D5443F"
-                    />
+                    <span style={{color:'#D5443F'}}
+                    {...createTooltip('Missing raw body or model')}
+                    ><i className="fas fa-exclamation-triangle" />
+                  </span>
                   </div>
                 )}
 
