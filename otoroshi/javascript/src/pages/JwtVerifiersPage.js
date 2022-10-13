@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table, TextInput } from '../components/inputs';
 import { JwtVerifier } from '../components/JwtVerifier';
-import { NgForm } from '../components/nginputs';
+import { LabelAndInput, NgCodeRenderer, NgForm, NgJsonRenderer } from '../components/nginputs';
 
 export class JwtVerifiersPage extends Component {
   state = {
@@ -109,7 +109,8 @@ class JwtVerifierWizard extends React.Component {
     step: 1,
     hasNextStep: true,
     jwtVerifier: {
-      strategy: 'Sign'
+      strategy: 'Sign',
+      // source: 'Header'
     }
   }
 
@@ -149,6 +150,16 @@ class JwtVerifierWizard extends React.Component {
       {
         component: StrategyStep,
         visbibleOnStep: 2,
+        large: true,
+        props: {
+          value: jwtVerifier,
+          onChange: value => this.setState({ jwtVerifier: value })
+        }
+      },
+      {
+        component: DefaultTokenStep,
+        visbibleOnStep: 3,
+        large: true,
         props: {
           value: jwtVerifier,
           onChange: value => this.setState({ jwtVerifier: value })
@@ -158,7 +169,9 @@ class JwtVerifierWizard extends React.Component {
 
     return (
       <div className="wizard">
-        <div className="wizard-container">
+        <div className="wizard-container" style={{
+          marginTop: STEPS[step - 1].large ? '2rem' : '5rem',
+        }}>
           <div className='d-flex flex' style={{ flexDirection: 'column', padding: '2.5rem' }}>
             <label style={{ fontSize: '1.15rem' }}>
               <i
@@ -231,11 +244,32 @@ function StrategyStep({ value, onChange }) {
             gap: '10px',
           }}>
           {[
-            { value: 'DefaultToken', title: ['Generate'], desc: 'DefaultToken will add a token if no present.' },
-            { value: 'PassThrough', title: ['Verify'], desc: 'PassThrough will only verifiy token signing and fields values if provided. ' },
-            { value: 'Sign', title: ['Verify', 'and re-sign'], desc: 'Sign will do the same as PassThrough plus will re-sign the JWT token with the provided algo. settings.' },
-            { value: 'Transform', title: ['Verify', 're-sign', 'and Transform'], desc: 'Transform will do the same as Sign plus will be able to transform the token.' }
-          ].map(({ value, desc, title }) => {
+            {
+              value: 'DefaultToken', title: ['Generate'],
+              desc: 'DefaultToken will add a token if no present.',
+              tags: ['generate']
+            },
+            {
+              value: 'StrictDefaultToken', title: ['Generate and failed if present'],
+              desc: 'DefaultToken will add a token if no present.',
+              tags: ['generate']
+            },
+            {
+              value: 'PassThrough', title: ['Verify'],
+              desc: 'PassThrough will only verifiy token signing and fields values if provided. ',
+              tags: ['verify']
+            },
+            {
+              value: 'Sign', title: ['Verify', 'and re-sign'],
+              desc: 'Sign will do the same as PassThrough plus will re-sign the JWT token with the provided algo. settings.',
+              tags: ['verify', 'sign']
+            },
+            {
+              value: 'Transform', title: ['Verify', 're-sign', 'and Transform'],
+              desc: 'Transform will do the same as Sign plus will be able to transform the token.',
+              tags: ['verify', 'sign', 'transform']
+            }
+          ].map(({ value, desc, title, tags }) => {
             return <button
               type="button"
               className={`btn ${props?.value === value ? 'btn-save' : 'btn-dark'} py-3 d-flex align-items-center`}
@@ -245,24 +279,47 @@ function StrategyStep({ value, onChange }) {
               onClick={() => props.onChange(value)}
               key={value}
             >
-              <div style={{ flex: .5 }}>
+              <div style={{ flex: .6 }}>
                 {title.map((t, i) => <h3 className="wizard-h3--small " style={{
-                  flex: .5,
                   margin: 0,
                   marginTop: i > 0 ? '1px' : 0
                 }} key={t}>{t}</h3>)}
               </div>
-              <label className='d-flex align-items-center' style={{ flex: 1 }}>
-                {desc}
-              </label>
+              <div style={{ flex: 1 }}>
+                <label className='d-flex align-items-center' style={{ textAlign: 'left' }}>
+                  {desc}
+                </label>
+                <div className='d-flex justify-content-between mt-3' style={{
+                  borderRadius: '16px',
+                  padding: '4px',
+                  background: '#515151'
+                }}>
+                  {[
+                    'Generate', 'Verify', 'Sign', 'Transform'
+                  ].map(tag => <div className='d-flex align-items-center me-1'
+                    key={tag}
+                    style={{
+                      minWidth: "80px",
+                      // background: 'rgb(238, 238, 238)',
+                      padding: '2px 8px 2px 3px',
+                      // borderRadius: '14px'
+                    }}>
+                    <i className={`fas fa-${tags.includes(tag.toLocaleLowerCase()) ? 'check' : 'times'} me-1`} style={{
+                      // borderRadius: '50%',
+                      color: tags.includes(tag.toLocaleLowerCase()) ? '#f9b000' : '#fff',
+                      padding: '4px',
+                      minWidth: '20px'
+                    }} />
+                    <span>{tag}</span>
+                  </div>)}
+                </div>
+              </div>
             </button>
           })}
         </div>
       }
     }
   }
-
-  console.log(value)
 
   const flow = [
     'strategy'
@@ -271,6 +328,108 @@ function StrategyStep({ value, onChange }) {
   return (
     <>
       <h3>What kind of strategy will be used.</h3>
+      <NgForm
+        value={value}
+        schema={schema}
+        flow={flow}
+        onChange={onChange}
+      />
+    </>
+  )
+}
+
+function DefaultTokenStep({ value, onChange }) {
+
+  const schema = {
+    source: {
+      type: 'dots',
+      props: {
+        ngOptions: {
+          spread: true
+        },
+        options: ['Header', 'Query string', 'Cookie']
+      }
+    },
+    header: {
+      type: 'form',
+      label: 'Header informations',
+      visible: props => props.source === 'Header',
+      flow: ['headerName', 'removeValue', 'debug'],
+      schema: {
+        headerName: {
+          type: 'string',
+          label: 'Header name'
+        },
+        removeValue: {
+          type: 'string',
+          placeholder: 'Bearer ',
+          label: 'Remove value',
+          props: {
+            subTitle: '(Optional): String to remove from the value to access to the token'
+          }
+        },
+        debug: {
+          renderer: () => {
+            return <LabelAndInput label="Examples">
+              <NgForm
+                schema={{
+                  header: {
+                    ngOptions: {
+                      spread: true
+                    },
+                    type: 'json',
+                    props: {
+                      editorOnly: true,
+                      height: '50px',
+                      defaultValue: {
+                        Authorization: 'Bearer XXX.XXX.XXX'
+                      }
+                    }
+                  },
+                  result: {
+                    type: 'form',
+                    label: 'Form values',
+                    schema: {
+                      headerName: {
+                        type: 'string',
+                        label: 'Header name',
+                        props:{
+                          disabled: true,
+                          defaultValue: 'Authorization'
+                        }
+                      },
+                      removeValue: {
+                        type: 'string',
+                        label: 'Remove value',
+                        props: {
+                          disabled: true,
+                          defaultValue: 'Bearer '
+                        }
+                      },
+                    },
+                    flow: ['headerName', 'removeValue']
+                  }
+                }}
+                flow={[
+                  {
+                    type: 'group',
+                    collapsed: true,
+                    name: 'Bearer Token from header',
+                    fields: ['header', 'result']
+                  }
+                ]} />
+            </LabelAndInput>
+          }
+        }
+      }
+    }
+  }
+
+  const flow = ['source', 'header'];
+
+  return (
+    <>
+      <h3>The location of the token.</h3>
       <NgForm
         value={value}
         schema={schema}

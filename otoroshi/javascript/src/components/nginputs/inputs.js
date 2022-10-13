@@ -70,29 +70,31 @@ export class NgDotsRenderer extends Component {
 
     return (
       <LabelAndInput {...this.props}>
-        {options.map(option => {
-          const optObj = this.isAnObject(option);
-          const rawOption = optObj ? option.value : option;
-          const selected = isValueArray ? value.includes(rawOption) : value === rawOption;
+        <div className='d-flex flex-wrap align-items-center' style={{ height: '100%', gap: '.6em' }}>
+          {options.map(option => {
+            const optObj = this.isAnObject(option);
+            const rawOption = optObj ? option.value : option;
+            const selected = isValueArray ? value.includes(rawOption) : value === rawOption;
 
-          let backgroundColor = 'initial';
+            let backgroundColor = 'initial';
 
-          if (optObj && option.color)
-            backgroundColor = `rgba(${option.color.replace(')', '').replace('rgb(', '')}, ${selected ? 1 : .45})`
+            if (optObj && option.color)
+              backgroundColor = `rgba(${option.color.replace(')', '').replace('rgb(', '')}, ${selected ? 1 : .45})`
 
-          return <button className={`btn btn-sm ${optObj ? '' : (selected ? 'btn-info' : 'btn-dark')} me-2 px-3 mb-2`}
-            type="button"
-            key={rawOption}
-            style={{
-              borderRadius: '24px',
-              backgroundColor,
-              color: '#fff'
-            }}
-            onClick={() => this.props.onChange(onClick(rawOption))}>
-            {selected && <i className='fas fa-check me-1' />}
-            {rawOption}
-          </button>
-        })}
+            return <button className={`btn btn-sm ${optObj ? '' : (selected ? 'btn-info' : 'btn-dark')} px-3`}
+              type="button"
+              key={rawOption}
+              style={{
+                borderRadius: '24px',
+                backgroundColor,
+                color: '#fff'
+              }}
+              onClick={() => this.props.onChange(onClick(rawOption))}>
+              {selected && <i className='fas fa-check me-1' />}
+              {rawOption}
+            </button>
+          })}
+        </div>
       </LabelAndInput>
     )
   }
@@ -172,13 +174,13 @@ export class NgJsonRenderer extends Component {
       <Suspense fallback={<div>Loading</div>}>
         <CodeInput
           {...this.props.rawSchema?.props}
-          value={JSON.stringify(this.props.value, null, 2)}
+          value={JSON.stringify(this.props.value || this.props.rawSchema?.props?.defaultValue, null, 2)}
           onChange={(e) => {
             try {
               this.props.onChange(JSON.parse(e));
             } catch (ex) { }
           }}
-          style={{ width: '100%' }}
+          style={{ width: '100%', ...(this.props.style || {}) }}
         />
       </Suspense>
     );
@@ -193,6 +195,8 @@ export class NgStringRenderer extends Component {
     // avoid to have both value and defaultValue props
     const { defaultValue, ...inputProps } = props;
 
+    console.log(this.props, props)
+
     return (
       <LabelAndInput {...this.props}>
         <input
@@ -204,6 +208,7 @@ export class NgStringRenderer extends Component {
           onChange={(e) => this.props.onChange(e.target.value)}
           {...inputProps}
         />
+        {props.subTitle && <span style={{ fontStyle: 'italic' }}>{props.subTitle}</span>}
       </LabelAndInput>
     );
   }
