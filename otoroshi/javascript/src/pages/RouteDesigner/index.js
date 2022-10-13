@@ -299,7 +299,7 @@ function TesterButton({ disabled, setForceTester, viewRef, history, value, isOnV
 function MoreActionsButton({ value, menu, history }) {
   return <div className="ms-2 dropdown" style={{ height: '100%' }}>
     <button type="button"
-      className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+      className="btn btn-sm toggle-form-buttons d-flex align-items-center dark-background"
       style={{
         backgroundColor: '#494948',
         color: '#fff',

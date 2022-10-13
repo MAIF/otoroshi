@@ -230,10 +230,12 @@ const Modal = ({ question, onOk, onCancel }) => (
   <div className="designer-modal d-flex align-items-center justify-content-start flex-column p-3 pt-4">
     <h4>{question}</h4>
     <div className="d-flex ms-auto">
-      <button type="button" className="btn btn-danger me-1" onClick={onCancel}>
+      <button type="button" className="btn btn-sm btn-danger me-1" onClick={onCancel}>
+        <i className='fas fa-times me-1' />
         Cancel
       </button>
-      <button type="button" className="btn btn-success" onClick={onOk}>
+      <button type="button" className="btn btn-sm btn-success" onClick={onOk}>
+        <i className='fas fa-check me-1' />
         Delete
       </button>
     </div>
@@ -1765,6 +1767,7 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
           <h3 style={{ fontSize: '1.25rem' }}>Frontend</h3>
           <span>this route is exposed on</span>
           <div
+            className='dark-background'
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -1843,6 +1846,7 @@ const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute }) => {
           <h3 style={{ fontSize: '1.25rem' }}>Backend</h3>
           <span>this route will forward requests to</span>
           <div
+            className='dark-background'
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -1937,7 +1941,7 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
 );
 
 const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonClick }) => (
-  <div className="d-flex justify-content-end mb-2">
+  <div className="d-flex justify-content-end mb-2 dark-background">
     <button
       className="btn btn-sm toggle-form-buttons mt-3"
       disabled={errors && errors.length > 0}
@@ -2202,7 +2206,7 @@ class EditView extends React.Component {
             hidePreview();
           }}
         />
-        <div style={{ backgroundColor: '#494949' }}>
+        <div className="dark-background">
           {selectedNode.description && (
             <Description
               text={selectedNode.description}

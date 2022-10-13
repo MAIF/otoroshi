@@ -788,7 +788,7 @@ const MODEL_FOPM_SCHEMA = (resources) => ({
           type: 'group',
           collapsed: true,
           name: props => `Field ${props?.value?.field_name}`,
-          fields: ['field_name', 'field_type', 'field_description', 'use_faker_value', 'value']
+          fields: ['field_name', 'field_description', 'field_type', 'use_faker_value', 'value']
         }
       ]
     }

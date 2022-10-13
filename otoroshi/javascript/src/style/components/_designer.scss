@@ -300,10 +300,12 @@
 
     .editor-view-form {
         padding: 0 12px 12px;
+
         .Select-menu-outer {
-        position: relative;
-      }
+            position: relative;
+        }
     }
+
     // .editor-view-form button:first-child {
     //     color: #fff;
     //     border: 1px solid;
@@ -478,7 +480,8 @@
         bottom: 0;
         left: 0;
         right: 0;
-        background: #494948f2;
+        border-radius: 4px;
+        background: rgb(73, 73, 72, .98);
     }
 
     .target_information {
@@ -680,6 +683,7 @@
 
 .patch-main {
     .page-header {
+
         h4,
         .dropdown {
             padding-bottom: 9px;
@@ -709,5 +713,63 @@
     0% {
         transform: rotate(678deg) translateX(30px);
         top: calc(100vh - 52px);
+    }
+}
+
+@import '../layout/bright-mode';
+
+.white-mode {
+
+    * {
+        outline-color: #fff !important;
+    }
+
+    .plugins-action,
+    .designer input[type=text],
+    .delete-node-button,
+    .editor-view-form,
+    .form-description,
+    .steps,
+    .backend-selector {
+        @include bright-mode_background-color--darker;
+    }
+
+    .frontend-button,
+    .dot,
+    .backend-selector>div {
+        background: #fff !important;
+        // background-color: #fff !important;
+    }
+
+    .dark-background {
+        background-color: #f3f3f4 !important;
+    }
+
+    .delete-node-button {
+        border: 1px solid #333;
+    }
+
+    .designer {
+        background: none !important;
+    }
+
+    .search-group-header,
+    .group-header,
+    .vertical-line,
+    .flow-container {
+        @include bright-mode_background--light;
+    }
+
+    .search-group-header span,
+    .search-group-header i,
+    .plugins-action,
+    .dot span,
+    .dot i,
+    .frontend-button i,
+    .form-description p,
+    .editor-view-informations i,
+    .editor-view-informations span,
+    .backend-selector>div button {
+        @include bright-mode_color--darker;
     }
 }

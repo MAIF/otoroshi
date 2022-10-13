@@ -29,7 +29,7 @@ body.white-mode,
 }
 
 body.white-mode, 
-.white-mode .designer .dark-background {
+.white-mode .dark-background {
   @include bright-mode_color--darker;
 }
 

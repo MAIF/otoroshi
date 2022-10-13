@@ -14,6 +14,7 @@ import "ace-builds/src-noconflict/ext-language_tools";
 import "ace-builds/src-noconflict/ext-searchbox";
 
 import "ace-builds/src-noconflict/theme-monokai";
+import "ace-builds/src-noconflict/theme-xcode";
 
 export class JsonObjectAsCodeInput extends Component {
   render() {
@@ -52,7 +53,36 @@ export default class CodeInput extends Component {
 
   state = {
     value: null,
+    mounted: true,
+    theme: document.body.classList.contains('white-mode') ? "xcode" : "monokai"
   };
+
+  componentDidMount() {
+    this.listenWhiteMode.bind(this);
+
+    const observer = new MutationObserver(this.listenWhiteMode)
+    observer.observe(document.body, {
+      attributes: true
+    })
+  }
+
+  componentWillUnmount() {
+    this.setState({
+      mounted: false
+    })
+  }
+
+  listenWhiteMode = mutationList => {
+    mutationList.forEach(mutation => {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        if (this.state.mounted)
+          this.setState({
+            theme: mutation.target.classList.contains('white-mode') ? "xcode" : "monokai"
+          })
+      }
+    })
+
+  }
 
   onChange = (e) => {
     // if (e && e.preventDefault) e.preventDefault();
@@ -99,7 +129,7 @@ export default class CodeInput extends Component {
       <AceEditor
         {...(this.props.ace_config || {})}
         mode={mode}
-        theme="monokai"
+        theme={this.state.theme}
         onChange={this.onChange}
         value={code || ''}
         name="scriptParam"
