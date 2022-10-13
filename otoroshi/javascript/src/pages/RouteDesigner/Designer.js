@@ -486,7 +486,7 @@ class Designer extends React.Component {
       TransformRequest: true,
       TransformResponse: true,
     },
-    advancedDesignerView: GraphQLForm, // TODO - replace by null
+    advancedDesignerView: null,
     showTryIt: false
   };
 
