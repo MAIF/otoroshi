@@ -137,9 +137,9 @@ function PushView({ endpoints, resources }) {
                   <div className="d-flex-between">
                     {!endpoint.body && !endpoint.model && (
                       <div className="mx-1 d-flex-between endpoint-helper">
-                        <span style={{color:'#D5443F'}}
+                        <span style={{ color: '#D5443F' }}
                           {...createTooltip('Missing raw body or model')}
-                          ><i className="fas fa-exclamation-triangle" />
+                        ><i className="fas fa-exclamation-triangle" />
                         </span>
                       </div>
                     )}
@@ -202,12 +202,12 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
             }}>
             <label style={{ fontSize: '1.1rem' }}>{resource.name}</label>
             {!endpoints.find(e => e.model === resource.name) &&
-              !resources.find(e => e.schema.find(f => f.field_type === 'Model' && f.value === resource.name)) &&
-              <span style={{color:'#D5443F'}}
-              {...createTooltip('Model not used')}
+              !resources.find(e => e.schema?.find(f => f.field_type === 'Model' && f.value === resource.name)) &&
+              <span style={{ color: '#D5443F' }}
+                {...createTooltip('Model not used')}
               ><i className="fas fa-exclamation-triangle" />
-            </span>
-              }
+              </span>
+            }
             <div>
               <button className="btn btn-sm btn-success me-2" onClick={() => {
                 showResourceForm(idx, true)
@@ -304,10 +304,10 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
 
                 {!endpoint.body && !endpoint.model && (
                   <div className="mx-1 d-flex-between endpoint-helper">
-                    <span style={{color:'#D5443F'}}
-                    {...createTooltip('Missing raw body or model')}
+                    <span style={{ color: '#D5443F' }}
+                      {...createTooltip('Missing raw body or model')}
                     ><i className="fas fa-exclamation-triangle" />
-                  </span>
+                    </span>
                   </div>
                 )}
 
@@ -384,9 +384,26 @@ export default class MocksDesigner extends React.Component {
       (p) => p.plugin === 'cp:otoroshi.next.plugins.MockResponses'
     )?.config;
 
-    return plugin?.form_data || {
-      resources: [],
-      endpoints: []
+    if (plugin?.form_data) {
+      return {
+        resources: plugin.form_data.resources,
+        endpoints: plugin.form_data.endpoints.map(endpoint => {
+          const { resource, ...props } = endpoint;
+          if (resource) {
+            return {
+              ...props,
+              model: resource
+            };
+          } else {
+            return endpoint;
+          }
+        })
+      }
+    } else {
+      return {
+        resources: [],
+        endpoints: []
+      }
     }
   }
 
@@ -524,8 +541,12 @@ export default class MocksDesigner extends React.Component {
 
     if (!route) return null;
 
+    console.log(resources, endpoints)
+
     return (
-      <div className="graphql-form p-3 pe-2 flex-column">
+      <div className="graphql-form p-3 pe-2 flex-column" style={{
+        overflowX: 'hidden'
+      }}>
         <Header hide={hide}
           setDesigner={value => this.setState({ onDesigner: value })}
           onDesigner={this.state.onDesigner} />
