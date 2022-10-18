@@ -192,10 +192,9 @@ export default {
                   "type": "string"
                 },
                 "nonProxyHosts": {
-                  "type": "array",
-                  "props": {
-                    "label": "Non proxy hosts"
-                  }
+                  "type": "string",
+                  array: true,
+                  "label": "Non proxy hosts"
                 }
               }
             },
@@ -328,7 +327,10 @@ export default {
               "type": "number"
             },
             "kty": {
-              "type": "string"
+              type: 'select',
+              props: {
+                options: ['RSA', 'EC']
+              }
             },
             "mtlsConfig": {
               "type": "form",

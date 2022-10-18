@@ -76,22 +76,26 @@ export class NgDotsRenderer extends Component {
             const rawOption = optObj ? option.value : option;
             const selected = isValueArray ? value.includes(rawOption) : value === rawOption;
 
-            let backgroundColor = 'initial';
+            let backgroundColorFromOption = 'initial';
+            let btnBackground = '';
 
             if (optObj && option.color)
-              backgroundColor = `rgba(${option.color.replace(')', '').replace('rgb(', '')}, ${selected ? 1 : .45})`
+              backgroundColorFromOption = `rgba(${option.color.replace(')', '').replace('rgb(', '')}, ${selected ? 1 : .45})`;
 
-            return <button className={`btn btn-sm ${optObj ? '' : (selected ? 'btn-info' : 'btn-dark')} px-3`}
+            if ((!optObj || backgroundColorFromOption === 'initial'))
+              btnBackground = selected ? 'btn-info' : 'btn-dark';
+
+            return <button className={`btn btn-sm ${btnBackground} px-3`}
               type="button"
               key={rawOption}
               style={{
                 borderRadius: '24px',
-                backgroundColor,
+                backgroundColor: backgroundColorFromOption,
                 color: '#fff'
               }}
               onClick={() => this.props.onChange(onClick(rawOption))}>
               {selected && <i className='fas fa-check me-1' />}
-              {rawOption}
+              {optObj ? (option.label || option.value) : option}
             </button>
           })}
         </div>
@@ -194,8 +198,6 @@ export class NgStringRenderer extends Component {
 
     // avoid to have both value and defaultValue props
     const { defaultValue, ...inputProps } = props;
-
-    console.log(this.props, props)
 
     return (
       <LabelAndInput {...this.props}>
@@ -329,10 +331,13 @@ export class NgBooleanRenderer extends Component {
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
+
+    const value = this.props.value === undefined ? props.defaultValue : this.props.value;
+
     return (
       <LabelAndInput {...this.props}>
-        {this.props.value && <OnSwitch onChange={this.toggleOff} />}
-        {!this.props.value && <OffSwitch onChange={this.toggleOn} />}
+        {value && <OnSwitch onChange={this.toggleOff} />}
+        {!value && <OffSwitch onChange={this.toggleOn} />}
       </LabelAndInput>
     );
   }
@@ -373,6 +378,7 @@ export class NgArrayRenderer extends Component {
   generateDefaultValue = obj => {
     return Object.entries(obj)
       .reduce((acc, current) => {
+        console.log(current)
         const value = this.defaultValues(current[1])[current[1].type]
         return {
           ...acc,

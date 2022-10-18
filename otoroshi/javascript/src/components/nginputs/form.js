@@ -144,7 +144,7 @@ export class NgStep extends Component {
 
   renderer = () => {
     if (this.props.schema.component) {
-      return this.props.schema.components;
+      return this.props.schema.component;
     } else if (this.props.schema.renderer) {
       if (isString(this.props.schema.renderer)) {
         return Helpers.rendererFor(this.props.schema.renderer, this.props.components);
@@ -480,9 +480,11 @@ export class NgForm extends Component {
     });
   }
 
-  renderGroupFlow({ name, fields, collapsed, visible, full_fields }, config) {
+  renderGroupFlow({ groupId, name, fields, collapsed, visible, full_fields }, config) {
     const FormRenderer = config.components.FormRenderer;
-    const fullPath = (config.root ? [name] : [...config.path, isFunction(name) ? undefined : name])
+
+    const part = groupId || name
+    const fullPath = (config.root ? [part] : [...config.path, isFunction(part) ? undefined : part])
       .filter(f => f)
       .map(n => n.split(/\.?(?=[A-Z])/).join('_').toLowerCase());
 
