@@ -18,10 +18,8 @@ import play.api.Logger
 import play.api.http.{HttpEntity, HttpRequestHandler}
 import play.api.libs.json.Json
 import play.api.mvc.{EssentialAction, FlashCookieBaker, SessionCookieBaker}
-import reactor.core.publisher.{Flux, FluxSink, Sinks}
+import reactor.core.publisher.{Flux, Sinks}
 
-import java.util.concurrent.atomic.AtomicReference
-import java.util.function.Consumer
 import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 
@@ -200,6 +198,8 @@ class Http1RequestHandler(
             } else {
               response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE)
             }
+            response.headers().remove("status").remove("Status")
+            logger.debug("write http3 response")
             result.body match {
               case HttpEntity.NoEntity             =>
                 ctx.writeAndFlush(response).applyOnIf(keepAlive)(_.addListener(ChannelFutureListener.CLOSE))
@@ -338,7 +338,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
       import io.netty.bootstrap._
       import io.netty.channel._
       import io.netty.channel.socket.nio._
-      import io.netty.incubator.codec.http3.{Http3, Http3FrameToHttpObjectCodec, Http3ServerConnectionHandler}
+      import io.netty.incubator.codec.http3.{Http3, Http3ServerConnectionHandler}
       import io.netty.incubator.codec.quic.{InsecureQuicTokenHandler, QuicChannel, QuicStreamChannel}
 
       import java.util.concurrent.TimeUnit
@@ -366,6 +366,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                 DynamicKeyManager.getServerCertificateForDomain(domain, validCerts, byDomain, env, logger) match {
                   case None => fakeCtx
                   case Some(cert) => {
+                    // logger.debug(s"found cert for domain: ${domain}: ${cert.name}")
                     val keypair = cert.cryptoKeyPair
                     val chain = cert.certificatesChain
                     if (logger.isDebugEnabled) logger.debug(s"for domain: ${domain}, found ${cert.name} / ${cert.id}")
@@ -387,9 +388,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
           }
         }
       })
-
       val codec = Http3.newQuicServerCodecBuilder
-        //.option(QuicChannelOption.UDP_SEGMENTS, 10)
         .sslContext(sslContext)
         .maxIdleTimeout(config.idleTimeout.toMillis, TimeUnit.MILLISECONDS)
         .maxSendUdpPayloadSize(config.http3.maxSendUdpPayloadSize)
@@ -407,19 +406,17 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
           override def initChannel(ch: QuicChannel): Unit = {
             ch.pipeline()
               .addLast(new ChannelInboundHandlerAdapter() {
-                @Override
-                override def channelInactive(ctx: ChannelHandlerContext): Unit = {}
+                override def channelInactive(ctx: ChannelHandlerContext): Unit = ctx.fireChannelInactive()
               })
             ch.pipeline()
               .addLast(new Http3ServerConnectionHandler(new ChannelInitializer[QuicStreamChannel]() {
-                // Called for each request-stream,
                 override def initChannel(ch: QuicStreamChannel): Unit = {
-                  ch.pipeline().addLast(new Http3FrameToHttpObjectCodec(true))
+                  ch.pipeline().addLast(new io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec(true))
                   if (config.accessLog) ch.pipeline().addLast(new AccessLogHandler())
                   ch.pipeline()
                     .addLast(new Http1RequestHandler(handler, sessionCookieBaker, flashCookieBaker, env, logger))
                 }
-              }))
+              }, null, null, null, config.http3.disableQpackDynamicTable))
           }
         })
         .build()
