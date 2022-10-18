@@ -2138,6 +2138,7 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
         )
       }
     } recover { case e =>
+      println(e)
       Left.apply[Throwable, GlobalJwtVerifier](e)
     } get
 }

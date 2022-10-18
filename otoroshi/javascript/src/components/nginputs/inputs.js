@@ -332,7 +332,7 @@ export class NgBooleanRenderer extends Component {
     const schema = this.props.schema;
     const props = schema.props || {};
 
-    const value = this.props.value === undefined ? props.defaultValue : this.props.value;
+    const value = (this.props.value === null || this.props.value === undefined) ? props.defaultValue : this.props.value;
 
     return (
       <LabelAndInput {...this.props}>

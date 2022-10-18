@@ -107,7 +107,11 @@ function WizardStepButton(props) {
 class JwtVerifierWizard extends React.Component {
   state = {
     step: 1,
-    jwtVerifier: {}
+    jwtVerifier: {
+      // strategy: {
+      //   type: 'Transform'
+      // }
+    }
   }
 
   onChange = (field, value) => {
@@ -145,7 +149,6 @@ class JwtVerifierWizard extends React.Component {
       {
         component: StrategyStep,
         visibleOnStep: 2,
-        large: true,
         props: {
           value: jwtVerifier.strategy?.type,
           onChange: value => {
@@ -163,8 +166,7 @@ class JwtVerifierWizard extends React.Component {
       },
       {
         component: DefaultTokenStep,
-        visibleOnStep: 3,
-        large: true
+        visibleOnStep: 3
       },
       {
         component: TokenSignatureStep,
@@ -197,17 +199,17 @@ class JwtVerifierWizard extends React.Component {
         condition: value => 'Transform' === value.strategy?.type,
         props: {
           value: jwtVerifier.strategy?.transformSettings,
-          onChange: value => this.setState({
-            jwtVerifier: {
-              ...jwtVerifier,
-              strategy: {
-                ...(jwtVerifier.strategy || {}),
-                transformSettings: {
-                  location: value?.location ? value?.source : value?.out_location
+          onChange: value => {
+            this.setState({
+              jwtVerifier: {
+                ...jwtVerifier,
+                strategy: {
+                  ...(jwtVerifier.strategy || {}),
+                  transformSettings: value
                 }
               }
-            }
-          })
+            })
+          }
         }
       }
     ];
@@ -216,19 +218,10 @@ class JwtVerifierWizard extends React.Component {
       return step === item.visibleOnStep && (item.condition ? item.condition(jwtVerifier) : true)
     })
 
-    console.log(this.state, showSummary, jwtVerifier.strategy?.transformSettings || {
-      location: true
-    })
-
     return (
       <div className="wizard">
-        <div
-          className="wizard-container"
-          style={{
-            marginTop: STEPS[step - 1]?.large ? '2rem' : '5rem',
-            maxWidth: STEPS[step - 1]?.large ? '60vw' : '50vw',
-          }}>
-          <div className='d-flex' style={{ flexDirection: 'column', padding: '2.5rem' }}>
+        <div className="wizard-container">
+          <div className='d-flex flex' style={{ flexDirection: 'column', padding: '2.5rem' }}>
             <label style={{ fontSize: '1.15rem' }}>
               <i
                 className="fas fa-times me-3"
@@ -252,8 +245,16 @@ class JwtVerifierWizard extends React.Component {
                   return null;
                 }
               })}
-              {showSummary && <WizardLastStep value={jwtVerifier} />}
-              <div className={`d-flex mt-5 align-items-center ${step !== 1 ? "justify-content-between" : "justify-content-end"}`}>
+              {showSummary && <WizardLastStep value={{
+                ...jwtVerifier,
+                strategy: {
+                  ...jwtVerifier.strategy,
+                  transformSettings: jwtVerifier.strategy.type === 'Transform' ? {
+                    location: jwtVerifier.strategy.transformSettings?.location ? jwtVerifier.source : jwtVerifier.strategy.transformSettings?.out_location?.source
+                  } : undefined
+                }
+              }} />}
+              <div className="d-flex mt-3 justify-content-between align-items-center">
                 {step !== 1 && <label style={{ color: '#f9b000' }} onClick={this.prevStep}>
                   <button className='btn btn-sm btn-outline-save'>Previous</button>
                 </label>}
@@ -275,10 +276,10 @@ function WizardLastStep({ value }) {
   useEffect(() => {
     BackOfficeServices.createNewJwtVerifier()
       .then(template => {
-        console.log({
+        BackOfficeServices.createJwtVerifier({
           ...template,
-          name: value.name,
-          strict: value.strategy === 'StrictDefaultToken',
+          name: value.name || 'Default name',
+          strict: value.strategy.type === 'StrictDefaultToken',
           source: value.source,
           algoSettings: {
             ...template.algoSettings,
@@ -287,22 +288,9 @@ function WizardLastStep({ value }) {
           strategy: {
             ...template.strategy,
             ...value.strategy,
+            type: value.strategy.type === 'StrictDefaultToken' ? 'DefaultToken' : value.strategy.type
           }
         })
-        // BackOfficeServices.createJwtVerifier({
-        //   ...template,
-        //   name: value.name,
-        //   strict: value.strategy === 'StrictDefaultToken',
-        //   source: value.source,
-        //   algoSettings: {
-        //     type: convertAlgo[value.signature.algo],
-        //     ...value.signature
-        //   },
-        //   strategy: {
-        //     ...template.strategy,
-        //     ...value.strategy,
-        //   }
-        // })
       })
   }, [])
 
@@ -454,12 +442,16 @@ const TokenLocationForm = {
             ngOptions: {
               spread: true
             },
-            options: ['Header', 'Query string', 'Cookie']
+            options: [
+              { value: 'InHeader', label: 'Header' },
+              { value: 'InQueryParam', label: 'Query string' },
+              { value: 'InCookie', label: 'Cookie' }
+            ]
           }
         },
         name: {
           type: 'string',
-          label: 'Header name'
+          label: 'Name'
         },
         remove: {
           type: 'string',
@@ -530,36 +522,27 @@ const TokenLocationForm = {
               spread: true
             }
           }
-        },
-        cookie: {
-          type: 'string',
-          placeholder: 'jwt-token',
-          props: {
-            ngOptions: {
-              spread: true
-            }
-          }
         }
       },
       flow: [
         'type',
         {
           type: 'group',
-          visible: props => props?.type === 'Header',
+          visible: props => props?.type === 'InHeader',
           name: 'Header informations',
           fields: ['name', 'remove', 'debug']
         },
         {
           type: 'group',
-          visible: props => props?.type === 'Query string',
+          visible: props => props?.type === 'InQueryParam',
           name: 'Query param name',
           fields: ['query']
         },
         {
           type: 'group',
-          visible: props => props?.type === 'Cookie',
+          visible: props => props?.type === 'InCookie',
           name: 'Cookie name',
-          fields: ['cookie']
+          fields: ['name']
         }
       ]
     }
@@ -588,7 +571,7 @@ function TokenSignatureStep({ root, value, onChange, title }) {
       type: 'form',
       label: 'Signature',
       schema: {
-        algo: {
+        type: {
           type: 'dots',
           label: 'Algo.',
           props: {
@@ -663,125 +646,26 @@ function TokenSignatureStep({ root, value, onChange, title }) {
           props: {
             options: ['RSA', 'EC']
           }
-        },
-        mtls_config: {
-          type: 'form',
-          noTitle: true,
-          flow: [
-            'mtls',
-            'loose',
-            'trustAll',
-            'certs',
-            'trustedCerts'
-          ],
-          schema: {
-            mtls: {
-              type: 'boolean',
-              label: 'Custom TLS Settings'
-            },
-            loose: {
-              type: 'boolean',
-              label: 'TLS loose'
-            },
-            trustAll: {
-              type: 'boolean',
-              label: 'Trust all'
-            },
-            certs: {
-              type: "array-select",
-              props: {
-                label: "Certificates",
-                optionsFrom: "/bo/api/proxy/api/certificates",
-                optionsTransformer: {
-                  label: "name",
-                  value: "id"
-                }
-              }
-            },
-            trustedCerts: {
-              type: "array-select",
-              props: {
-                label: "Trusted certificates",
-                optionsFrom: "/bo/api/proxy/api/certificates",
-                optionsTransformer: {
-                  label: "name",
-                  value: "id"
-                }
-              }
-            }
-          }
-        },
-        proxy: {
-          type: 'form',
-          "flow": [
-            "host",
-            "port",
-            "protocol",
-            "principal",
-            "password",
-            "ntlmDomain",
-            "encoding",
-            "nonProxyHosts"
-          ],
-          "schema": {
-            "host": {
-              "type": "string"
-            },
-            "port": {
-              "type": "number"
-            },
-            "protocol": {
-              "type": "string"
-            },
-            "principal": {
-              "type": "string"
-            },
-            "password": {
-              "type": "string"
-            },
-            "ntlmDomain": {
-              "type": "string"
-            },
-            "encoding": {
-              "type": "string"
-            },
-            "nonProxyHosts": {
-              "type": "string",
-              array: true,
-              "label": "Non proxy hosts"
-            }
-          }
         }
       },
       flow: (props, v) => {
         return {
-          KidAlgoSettings: ['algo', 'onlyExposedCerts'],
-          HSAlgoSettings: ['algo', 'size', 'secret', 'base64'],
-          RSAlgoSettings: ['algo', 'size', 'publicKey', 'privateKey'],
-          RSAKPAlgoSettings: ['algo', 'size', 'certId'],
-          ESKPAlgoSettings: ['algo', 'size', 'certId'],
-          ESAlgoSettings: ['algo', 'size', 'publicKey', 'privateKey'],
+          KidAlgoSettings: ['type', 'onlyExposedCerts'],
+          HSAlgoSettings: ['type', 'size', 'secret', 'base64'],
+          RSAlgoSettings: ['type', 'size', 'publicKey', 'privateKey'],
+          RSAKPAlgoSettings: ['type', 'size', 'certId'],
+          ESKPAlgoSettings: ['type', 'size', 'certId'],
+          ESAlgoSettings: ['type', 'size', 'publicKey', 'privateKey'],
           JWKSAlgoSettings: [
-            'algo',
+            'type',
             'url',
             'timeout',
             'ttl',
             'headers',
-            'kty',
-            {
-              type: 'group',
-              name: 'TLS settings for JWKS fetching',
-              groupId: 'mtls_config',
-              fields: ['mtls_config']
-            },
-            {
-              type: 'group',
-              name: 'Proxy',
-              fields: ['proxy']
-            }
+            'kty'
           ],
-          [undefined]: ['algo']
-        }[v.value?.algo]
+          [undefined]: ['type']
+        }[v.value?.type]
       }
     }
   }
@@ -793,7 +677,6 @@ function TokenSignatureStep({ root, value, onChange, title }) {
       <h3>{title || 'Generate token with'}</h3>
 
       <NgForm
-        // useBreadcrumb={true}
         value={value}
         schema={schema}
         flow={flow}
@@ -824,8 +707,6 @@ function TokenTransformStep({ value, onChange }) {
     'location',
     'out_location'
   ];
-
-  console.log(value)
 
   return (
     <>

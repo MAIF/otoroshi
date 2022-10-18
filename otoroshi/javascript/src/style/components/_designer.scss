@@ -620,11 +620,10 @@
     background: rgb(73, 73, 72);
     display: flex;
     flex-direction: column;
-    margin: auto;
-    margin-top: 5em;
-    // overflow: hidden;
+    margin-left: auto;
     max-width: 50vw;
-    border-radius: 4px;
+    height: 100vh;
+    overflow: hidden;
     box-shadow: 0px 0 2px 1px #f9b000c2;
 }
 
