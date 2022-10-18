@@ -23,6 +23,7 @@ import GraphQLQuery from './GraphQLQuery'
 import GzipResponseCompressor from './GzipResponseCompressor'
 import HeadersValidation from './HeadersValidation'
 import HtmlPatcher from './HtmlPatcher'
+import Http3Switch from './Http3Switch'
 import IpAddressAllowedList from './IpAddressAllowedList'
 import IpAddressBlockList from './IpAddressBlockList'
 import JQ from './JQ'
@@ -94,6 +95,7 @@ export const Plugins = [
   GzipResponseCompressor,
   HeadersValidation,
   HtmlPatcher,
+  Http3Switch,
   IpAddressAllowedList,
   IpAddressBlockList,
   JQ,

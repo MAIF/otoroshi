@@ -199,7 +199,7 @@ class Http1RequestHandler(
               response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE)
             }
             response.headers().remove("status").remove("Status")
-            logger.debug("write http3 response")
+            // logger.debug("write http3 response")
             result.body match {
               case HttpEntity.NoEntity             =>
                 ctx.writeAndFlush(response).applyOnIf(keepAlive)(_.addListener(ChannelFutureListener.CLOSE))

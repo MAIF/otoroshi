@@ -57,7 +57,7 @@ class ReactorNettyServer(env: Env) {
     .get
     .asInstanceOf[ProxyEngine]
 
-  private val config = ReactorNettyServerConfig.parseFrom(env)
+  val config = ReactorNettyServerConfig.parseFromWithCache(env)
 
   private val cookieSignerProvider = new CookieSignerProvider(env.httpConfiguration.secret)
   private val sessionCookieBaker   =
