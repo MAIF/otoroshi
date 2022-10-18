@@ -228,7 +228,7 @@ class JwtVerifierWizard extends React.Component {
             marginTop: STEPS[step - 1]?.large ? '2rem' : '5rem',
             maxWidth: STEPS[step - 1]?.large ? '60vw' : '50vw',
           }}>
-          <div className='d-flex flex' style={{ flexDirection: 'column', padding: '2.5rem' }}>
+          <div className='d-flex' style={{ flexDirection: 'column', padding: '2.5rem' }}>
             <label style={{ fontSize: '1.15rem' }}>
               <i
                 className="fas fa-times me-3"
@@ -237,6 +237,7 @@ class JwtVerifierWizard extends React.Component {
               />
               <span>{`Create a new JWT Verifier`}</span>
             </label>
+            <span>Name > Strategy > Location > Validation</span>
 
             <div className="wizard-content">
               {STEPS.map(({ component, visibleOnStep, props, condition }) => {
@@ -252,7 +253,7 @@ class JwtVerifierWizard extends React.Component {
                 }
               })}
               {showSummary && <WizardLastStep value={jwtVerifier} />}
-              <div className={`d-flex mt-3 align-items-center ${step !== 1 ? "justify-content-between" : "justify-content-end"}`}>
+              <div className={`d-flex mt-5 align-items-center ${step !== 1 ? "justify-content-between" : "justify-content-end"}`}>
                 {step !== 1 && <label style={{ color: '#f9b000' }} onClick={this.prevStep}>
                   <button className='btn btn-sm btn-outline-save'>Previous</button>
                 </label>}
@@ -343,8 +344,9 @@ function StrategyStep({ value, onChange }) {
         return <div
           style={{
             display: 'flex',
-            flexDirection: 'column',
             gap: '10px',
+            flexWrap:'wrap',
+            justifyContent:'center'
           }}>
           {[
             {
@@ -353,7 +355,7 @@ function StrategyStep({ value, onChange }) {
               tags: ['generate']
             },
             {
-              strategy: 'StrictDefaultToken', title: ['Generate', 'and failed if present'],
+              strategy: 'StrictDefaultToken', title: ['Generate and failed if present'],
               desc: 'DefaultToken will add a token if no present.',
               tags: ['generate']
             },
@@ -363,36 +365,36 @@ function StrategyStep({ value, onChange }) {
               tags: ['verify']
             },
             {
-              strategy: 'Sign', title: ['Verify', 'and re-sign'],
+              strategy: 'Sign', title: ['Verify and re-sign'],
               desc: 'Sign will do the same as PassThrough plus will re-sign the JWT token with the provided algo. settings.',
               tags: ['verify', 'sign']
             },
             {
-              strategy: 'Transform', title: ['Verify,', 're-sign', 'and Transform'],
+              strategy: 'Transform', title: ['Verify, re-sign and Transform'],
               desc: 'Transform will do the same as Sign plus will be able to transform the token.',
               tags: ['verify', 'sign', 'transform']
             }
           ].map(({ strategy, desc, title, tags }) => {
             return <button
               type="button"
-              className={`btn ${value === strategy ? 'btn-save' : 'btn-dark'} py-3 d-flex align-items-center`}
+              className={`btn ${value === strategy ? 'btn-save' : 'btn-dark'} py-3 d-flex align-items-center flex-column col-3`}
               style={{
                 gap: '12px'
               }}
               onClick={() => props.onChange(strategy)}
               key={strategy}
             >
-              <div style={{ flex: .6 }}>
+              <div style={{ }}>
                 {title.map((t, i) => <h3 className="wizard-h3--small " style={{
                   margin: 0,
                   marginTop: i > 0 ? '1px' : 0
                 }} key={t}>{t}</h3>)}
               </div>
-              <div style={{ flex: 1 }}>
+              <div className='d-flex flex-column align-items-center' style={{ }}>
                 <label className='d-flex align-items-center' style={{ textAlign: 'left' }}>
                   {desc}
                 </label>
-                <div className='d-flex mt-3' style={{
+                <div className='mt-3' style={{
                   borderRadius: '16px',
                   padding: '4px',
                   background: '#515151',
@@ -791,7 +793,7 @@ function TokenSignatureStep({ root, value, onChange, title }) {
       <h3>{title || 'Generate token with'}</h3>
 
       <NgForm
-        useBreadcrumb={true}
+        // useBreadcrumb={true}
         value={value}
         schema={schema}
         flow={flow}
