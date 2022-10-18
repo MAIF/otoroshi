@@ -136,7 +136,7 @@ class JwtVerifierWizard extends React.Component {
     const STEPS = [
       {
         component: InformationsStep,
-        visbibleOnStep: 1,
+        visibleOnStep: 1,
         props: {
           name: jwtVerifier.name,
           onChange: value => this.onChange('name', value)
@@ -144,7 +144,7 @@ class JwtVerifierWizard extends React.Component {
       },
       {
         component: StrategyStep,
-        visbibleOnStep: 2,
+        visibleOnStep: 2,
         large: true,
         props: {
           value: jwtVerifier.strategy?.type,
@@ -163,12 +163,12 @@ class JwtVerifierWizard extends React.Component {
       },
       {
         component: DefaultTokenStep,
-        visbibleOnStep: 3,
+        visibleOnStep: 3,
         large: true
       },
       {
         component: TokenSignatureStep,
-        visbibleOnStep: 4,
+        visibleOnStep: 4,
         props: {
           root: 'algoSettings',
           value: jwtVerifier,
@@ -177,7 +177,7 @@ class JwtVerifierWizard extends React.Component {
       },
       {
         component: TokenSignatureStep,
-        visbibleOnStep: 5,
+        visibleOnStep: 5,
         condition: value => ['Sign', 'Transform'].includes(value.strategy?.type),
         props: {
           value: jwtVerifier['strategy'],
@@ -193,7 +193,7 @@ class JwtVerifierWizard extends React.Component {
       },
       {
         component: TokenTransformStep,
-        visbibleOnStep: 6,
+        visibleOnStep: 6,
         condition: value => 'Transform' === value.strategy?.type,
         props: {
           value: jwtVerifier.strategy?.transformSettings,
@@ -213,7 +213,7 @@ class JwtVerifierWizard extends React.Component {
     ];
 
     const showSummary = !STEPS.find(item => {
-      return step === item.visbibleOnStep && (item.condition ? item.condition(jwtVerifier) : true)
+      return step === item.visibleOnStep && (item.condition ? item.condition(jwtVerifier) : true)
     })
 
     console.log(this.state, showSummary, jwtVerifier.strategy?.transformSettings || {
@@ -239,8 +239,8 @@ class JwtVerifierWizard extends React.Component {
             </label>
 
             <div className="wizard-content">
-              {STEPS.map(({ component, visbibleOnStep, props, condition }) => {
-                if (step === visbibleOnStep && (condition ? condition(jwtVerifier) : true)) {
+              {STEPS.map(({ component, visibleOnStep, props, condition }) => {
+                if (step === visibleOnStep && (condition ? condition(jwtVerifier) : true)) {
                   return React.createElement(component, {
                     ...(props || {
                       value: jwtVerifier,
