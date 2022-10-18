@@ -252,9 +252,9 @@ class JwtVerifierWizard extends React.Component {
                 }
               })}
               {showSummary && <WizardLastStep value={jwtVerifier} />}
-              <div className="d-flex mt-3 justify-content-between align-items-center">
+              <div className={`d-flex mt-3 align-items-center ${step !== 1 ? "justify-content-between" : "justify-content-end"}`}>
                 {step !== 1 && <label style={{ color: '#f9b000' }} onClick={this.prevStep}>
-                  Previous
+                  <button className='btn btn-sm btn-outline-save'>Previous</button>
                 </label>}
                 <WizardStepButton
                   onClick={this.nextStep}
@@ -430,7 +430,7 @@ function StrategyStep({ value, onChange }) {
 
   return (
     <>
-      <h3>What kind of strategy will be used.</h3>
+      <h3>What kind of strategy will be used</h3>
       <NgForm
         value={value}
         schema={schema}
@@ -443,11 +443,11 @@ function StrategyStep({ value, onChange }) {
 
 const TokenLocationForm = {
   schema: {
-    source: {
+    Source: {
       type: 'form',
       schema: {
         type: {
-          type: 'dots',
+          type: 'select',
           props: {
             ngOptions: {
               spread: true
@@ -568,7 +568,7 @@ function DefaultTokenStep({ value, onChange }) {
 
   return (
     <>
-      <h3>The location of the token.</h3>
+      <h3>The location of the token</h3>
       <NgForm
         value={value}
         schema={TokenLocationForm.schema}

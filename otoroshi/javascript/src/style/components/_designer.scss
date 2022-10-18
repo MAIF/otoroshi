@@ -643,7 +643,13 @@
     background-color: #f9b000 !important;
     border-color: #f9b000 !important;
 }
-
+.wizard-content .btn-outline-save {
+    border-color: #f9b000 !important;
+    color: #FFF;
+    &:hover{
+        background-color: #f9b000;
+    }
+}
 .wizard-route-chooser {
     flex: 1;
     display: flex;
