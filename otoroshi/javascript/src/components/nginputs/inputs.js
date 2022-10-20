@@ -5,6 +5,8 @@ import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 import { Location } from '../Location';
 import { ObjectInput } from '../inputs';
 import isEqual from 'lodash/isEqual';
+import { Forms } from '../../forms';
+import { Button } from '../Button';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
@@ -104,6 +106,39 @@ export class NgDotsRenderer extends Component {
   }
 }
 
+export class NgCustomFormsRenderer extends Component {
+  state = {
+    showComponent: false
+  }
+
+  render() {
+    const { showComponent } = this.state;
+    const schema = this.props.rawSchema
+    const props = schema?.props || {};
+
+    const Component = Forms[schema.type];
+
+    console.log(this.props)
+
+    return (
+      <div className='mb-3'>
+        {!showComponent && <Button
+          text={props.buttonText || "Configure"}
+          className='btn-sm'
+          style={{
+            width: '100%'
+          }}
+          onClick={() => this.setState({
+            showComponent: true
+          })} />}
+        {showComponent && <Component hide={() => this.setState({
+          showComponent: false
+        })} />}
+      </div>
+    )
+  }
+}
+
 export class SingleLineCode extends Component {
   render() {
     return <div>SingleLineCode</div>;
@@ -119,7 +154,7 @@ export function LabelAndInput(_props) {
 
   if (ngOptions.spread) return _props.children;
 
-  const margin = _props.margin || props.margin || _props.rawSchema?.props?.margin || "mb-3"
+  const margin = _props.margin || props.margin || _props.rawSchema?.props?.margin || "mb-3";
 
   return (
     <div className={`row ${margin}`}>

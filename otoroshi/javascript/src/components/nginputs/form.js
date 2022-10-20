@@ -23,6 +23,7 @@ import {
   NgLocationRenderer,
   NgDotsRenderer,
   LabelAndInput,
+  NgCustomFormsRenderer,
 } from './inputs';
 
 import {
@@ -32,6 +33,7 @@ import {
   NgFormRenderer,
   NgFlowNotFound,
 } from './components';
+import { Forms } from '../../forms';
 
 const Helpers = {
   rendererFor: (type, components = {}) => {
@@ -75,7 +77,12 @@ const Helpers = {
     } else if (type === 'location') {
       return components.LocationRenderer;
     } else {
-      return components.RendererNotFound;
+      const customForms = Forms[type]
+      if (customForms) {
+        return NgCustomFormsRenderer;
+      } else {
+        return components.RendererNotFound;
+      }
     }
   },
 };
@@ -225,14 +232,16 @@ const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
   </div>
 }
 
-function SubFlow({ fields, full_fields, render }) {
+function SubFlow({ fields = [], full_fields = [], render, config }) {
   const [moreFields, showMoreFields] = useState(false);
 
-  const hasMoreFields = full_fields && full_fields.length > 0;
+  const processedFields = isFunction(fields) ? fields(config) : fields;
+  const processedAllFields = isFunction(full_fields) ? full_fields(config) : full_fields;
+  const hasMoreFields = processedAllFields && processedAllFields.length > 0;
 
   return <>
-    {!moreFields && fields.map(render)}
-    {hasMoreFields && moreFields && full_fields.map(render)}
+    {!moreFields && processedFields.map(render)}
+    {hasMoreFields && moreFields && processedAllFields.map(render)}
 
     {hasMoreFields && !moreFields && <button className='btn btn-sm btn-info mt-2'
       onClick={() => showMoreFields(!moreFields)}
@@ -268,6 +277,7 @@ export class NgForm extends Component {
     JsonRenderer: NgJsonRenderer,
     LocationRenderer: NgLocationRenderer,
     DotsRenderer: NgDotsRenderer,
+    CustomFormsRenderer: NgCustomFormsRenderer,
     FlowNotFound: NgFlowNotFound,
   };
 
@@ -480,13 +490,16 @@ export class NgForm extends Component {
     });
   }
 
-  renderGroupFlow({ groupId, name, fields, collapsed, visible, full_fields }, config) {
+  renderGroupFlow({ groupId, name, fields, collapsed, visible, full_fields, collapsable }, config) {
     const FormRenderer = config.components.FormRenderer;
 
     const part = groupId || name
     const fullPath = (config.root ? [part] : [...config.path, isFunction(part) ? undefined : part])
       .filter(f => f)
-      .map(n => n.split(/\.?(?=[A-Z])/).join('_').toLowerCase());
+      .map(n => {
+        const part = isFunction(n) ? '' : n
+        return part.split(/\.?(?=[A-Z])/).join('_').toLowerCase()
+      });
 
     const show = isFunction(visible) ? visible(config.value) : (visible !== undefined ? visible : true)
 
@@ -505,12 +518,12 @@ export class NgForm extends Component {
       path={fullPath}
       rawSchema={{
         label,
-        collapsable: true,
+        collapsable: collapsable === undefined ? true : collapsable,
         collapsed: collapsed === undefined ? false : true
       }}
       key={fullPath}
     >
-      <SubFlow fields={fields} full_fields={full_fields} render={field => this.renderStepFlow(field, config)} />
+      <SubFlow fields={fields} full_fields={full_fields} render={field => this.renderStepFlow(field, config)} config={config} />
     </FormRenderer>
   }
 
@@ -674,7 +687,8 @@ export class NgForm extends Component {
         {flow.fields &&
           <SubFlow
             {...flow}
-            render={name => this.renderStepFlow(name, config)} />
+            render={name => this.renderStepFlow(name, config)}
+            config={config} />
         }
         {/* {flow && flow.map(name => this.renderStepFlow(name, config))} */}
       </FormRenderer>

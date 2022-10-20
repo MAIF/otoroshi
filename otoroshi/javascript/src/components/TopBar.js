@@ -526,7 +526,9 @@ export class TopBar extends Component {
   render() {
     const selected = (this.props.params || {}).lineId;
     return (
-      <nav className="navbar navbar-expand-md fixed-top">
+      <nav className="navbar navbar-expand-md fixed-top" 
+      // style={{ zIndex: 100 }}
+      >
         <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
           <div className="d-flex flex-column flex-md-row top-md-0 w-100">
             <div className="col-12 col-md-2 px-2 mb-2 mb-md-0 d-flex justify-content-between justify-content-lg-center align-items-center navbar-header">
@@ -673,9 +675,8 @@ export class TopBar extends Component {
                 />
                 <ul
                   id="dropdown"
-                  className={`custom-dropdown ${
-                    this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                  } py-2 pb-4`}
+                  className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                    } py-2 pb-4`}
                   aria-labelledby="dropdownMenuParams">
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>

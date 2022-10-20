@@ -30,7 +30,9 @@ import JQRequest from './JQRequest'
 import JQResponse from './JQResponse'
 import JsonToXmlRequest from './JsonToXmlRequest'
 import JsonToXmlResponse from './JsonToXmlResponse'
+import JwtSigner from './JwtSigner'
 import JwtVerification from './JwtVerification'
+import JwtVerificationOnly from './JwtVerificationOnly'
 import MaintenanceMode from './MaintenanceMode'
 import MissingHeadersIn from './MissingHeadersIn'
 import MissingHeadersOut from './MissingHeadersOut'
@@ -101,7 +103,9 @@ export const Plugins = [
   JQResponse,
   JsonToXmlRequest,
   JsonToXmlResponse,
+  JwtSigner,
   JwtVerification,
+  JwtVerificationOnly,
   MaintenanceMode,
   MissingHeadersIn,
   MissingHeadersOut,

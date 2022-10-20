@@ -6,7 +6,7 @@ import { FeedbackButton } from './FeedbackButton';
 import cloneDeep from 'lodash/cloneDeep';
 import { useHistory, useRouteMatch } from 'react-router-dom';
 import { NgForm } from '../../components/nginputs';
-import { Backend, Frontend } from './NgPlugins';
+import { Backend, Frontend } from '../../forms/ng_plugins'
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 

@@ -5,6 +5,7 @@ import { createTooltip } from '../../tooltips';
 
 import { NgForm } from '../../components/nginputs/form';
 import { NgBooleanRenderer, NgNumberRenderer, NgSelectRenderer, NgStringRenderer } from '../../components/nginputs/inputs';
+import { PillButton } from '../../components/PillButton';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
@@ -541,8 +542,6 @@ export default class MocksDesigner extends React.Component {
 
     if (!route) return null;
 
-    console.log(resources, endpoints)
-
     return (
       <div className="graphql-form p-3 pe-2 flex-column" style={{
         overflowX: 'hidden'
@@ -982,7 +981,6 @@ class NewEndpoint extends React.Component {
   ]
 
   render() {
-    // console.log(this.props)
     return (
       <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
         <NgForm
@@ -1022,30 +1020,11 @@ function Header({ hide, onDesigner, setDesigner }) {
         <i className="fas fa-times" style={{ color: '#fff' }} />
       </button>
     </div>
-    <div className='d-flex justify-content-center'>
-      <div
-        className='p-1'
-        style={{
-          borderRadius: '24px',
-          backgroundColor: '#373735',
-          position: 'relative',
-          width: 'fit-content'
-        }}>
-        <div className={`tryit-selector-cursor ${onDesigner ? '' : 'tryit-selector-mode-right'}`} />
-        <button
-          className="tryit-selector-mode"
-          type="button"
-          onClick={() => setDesigner(true)}>
-          Design
-        </button>
-        <button
-          className="tryit-selector-mode"
-          type="button"
-          onClick={() => setDesigner(false)}>
-          Content
-        </button>
-      </div>
-    </div>
+    <PillButton
+      rightEnabled={onDesigner}
+      onChange={setDesigner}
+      leftText='Design'
+      rightText='Content' />
   </>
 }
 

@@ -4,14 +4,10 @@ import {
   ArrayInput,
   ObjectInput,
   BooleanInput,
-  LinkDisplay,
   SelectInput,
   TextInput,
   TextareaInput,
   NumberInput,
-  FreeDomainInput,
-  Help,
-  Form,
 } from './inputs';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('./inputs/CodeInput')));
@@ -22,6 +18,116 @@ import { Separator } from './Separator';
 import { Proxy } from './Proxy';
 import { Location } from '../components/Location';
 import { Collapse } from '../components/inputs/Collapse';
+import { PillButton } from './PillButton';
+import * as BackOfficeServices from '../services/BackOfficeServices';
+
+import { YAMLExportButton } from '../components/exporters/YAMLButton';
+import { JsonExportButton } from '../components/exporters/JSONButton';
+import { SquareButton } from './SquareButton';
+import { Dropdown } from './Dropdown';
+import { NgForm } from './nginputs';
+import JwtVerifierForm from '../forms/entities/JwtVerifier';
+
+export class JwtVerifier extends Component {
+  state = {
+    isConfigView: true,
+    isLegacyView: false,
+    verifier: {
+      type: 'globale',
+      enabled: false,
+      strict: true,
+      source: { type: 'InHeader', name: 'X-JWT-Token', remove: '' },
+      algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
+      strategy: {
+        type: 'PassThrough',
+        verificationSettings: { fields: { iss: 'The Issuer' }, arrayFields: {} },
+      },
+    }
+  }
+
+  render() {
+    const { isConfigView, isLegacyView, verifier } = this.state;
+
+    return (
+      <div>
+        <Header
+          isConfigView={isConfigView}
+          onChange={isConfigView => this.setState({ isConfigView })} />
+
+        <div style={{ width: 'fit-content' }} className="ms-auto mt-3">
+          {isConfigView && <PillButton
+            style={{
+              backgroundColor: '#494949'
+            }}
+            rightEnabled={!isLegacyView}
+            leftText='New form'
+            rightText='Legacy form'
+            onChange={v => this.setState({ isLegacyView: !v })}
+          />}
+        </div>
+
+        {isLegacyView &&
+          <LegacyJwtVerifier
+            verifier={verifier}
+            changeTheValue={(path, value) => {
+              console.log(path, value);
+            }} />
+        }
+
+        {!isLegacyView &&
+          <NgForm
+            // useBreadcrumb={true}
+            value={verifier}
+            schema={JwtVerifierForm.config_schema}
+            flow={JwtVerifierForm.config_flow}
+            onChange={verifier => this.setState({ verifier })}
+          />
+        }
+      </div>
+    )
+  }
+}
+
+function Header({ isConfigView, onChange, verifier }) {
+  return <div style={{
+    position: 'relative'
+  }}>
+    <PillButton
+      style={{
+        backgroundColor: '#494949'
+      }}
+      rightEnabled={isConfigView}
+      leftText="Config"
+      rightText="Visualization"
+      onChange={onChange}
+    />
+    <div style={{ position: 'absolute', right: 0, top: 0 }}>
+      <Dropdown>
+        <YAMLExportButton value={verifier} />
+        <JsonExportButton value={verifier} />
+        <SquareButton
+          level="danger"
+          onClick={() => {
+            const what = window.location.pathname.split('/')[3];
+            const id = window.location.pathname.split('/')[4];
+            window
+              .newConfirm('Delete this verifier ?')
+              .then((ok) => {
+                if (ok) {
+                  BackOfficeServices.deleteJwtVerifier(id)
+                    .then(() => {
+                      history.push('/' + what);
+                    });
+                }
+              });
+          }}
+          icon="fa-trash"
+          text="Delete" />
+      </Dropdown>
+    </div>
+  </div>
+}
+
 
 export class LocationSettings extends Component {
   state = {
@@ -440,7 +546,7 @@ export class AlgoSettings extends Component {
   }
 }
 
-export class JwtVerifier extends Component {
+export class LegacyJwtVerifier extends Component {
   static defaultVerifier = {
     type: 'local',
     enabled: false,

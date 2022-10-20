@@ -1,60 +1,39 @@
-import React, { Component } from 'react';
+import React, { useEffect, useState } from 'react';
 
-export class Loader extends Component {
-  state = {
-    bigDot: 0,
-  };
+export default function Loader({ loading, children, loadingChildren, minLoaderTime = 150 }) {
+  const [internalLoading, setInternalLoading] = useState(true);
+  const [startingTime, setStartingTime] = useState(undefined);
 
-  next = () => {
-    if (!this.mounted) {
-      return;
+  useEffect(() => {
+    let timeout
+    if (loading) {
+      setInternalLoading(true);
+      setStartingTime(Date.now());
+    } else if (internalLoading) {
+      const delay = minLoaderTime - (Date.now() - startingTime);
+      if (delay <= 0) setInternalLoading(false);
+      else
+        timeout = setTimeout(() => {
+          setInternalLoading(false);
+        }, delay);
     }
-    if (this.state.bigDot === 2) {
-      this.setState({ bigDot: 0 }, () => {
-        this.timeout = setTimeout(this.next, 200);
-      });
-    } else {
-      this.setState({ bigDot: this.state.bigDot + 1 }, () => {
-        this.timeout = setTimeout(this.next, 200);
-      });
+
+    return () => {
+      if (timeout)
+        clearTimeout(timeout)
     }
-  };
 
-  componentDidMount() {
-    this.mounted = true;
-    this.timeout = setTimeout(this.next, 0);
-  }
+  }, [loading]);
 
-  componentWillUnmount() {
-    this.mounted = false;
-    clearTimeout(this.timeout);
-  }
-
-  render() {
+  if (internalLoading)
     return (
-      <div style={{ color: 'black' }}>
-        <span
-          style={{
-            fontSize: this.state.bigDot === 0 ? 16 : 12,
-            fontWeight: this.state.bigDot === 0 ? 'bold' : 'normal',
-          }}>
-          {'.'}
-        </span>
-        <span
-          style={{
-            fontSize: this.state.bigDot === 1 ? 16 : 12,
-            fontWeight: this.state.bigDot === 1 ? 'bold' : 'normal',
-          }}>
-          {'.'}
-        </span>
-        <span
-          style={{
-            fontSize: this.state.bigDot === 2 ? 16 : 12,
-            fontWeight: this.state.bigDot === 2 ? 'bold' : 'normal',
-          }}>
-          {'.'}
-        </span>
-      </div>
+      <>
+        <div className="d-flex justify-content-center">
+          <i className="fas fa-cog fa-spin" style={{ fontSize: '40px' }} />
+        </div>
+        {loadingChildren}
+      </>
     );
-  }
+
+  return children;
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { graphqlSchemaToJson, jsonToGraphqlSchema } from '../../services/BackOfficeServices';
 import { NgCodeRenderer, NgForm } from '../../components/nginputs';
+import { PillButton } from '../../components/PillButton';
 
 export default class GraphQLForm extends React.Component {
   state = {
@@ -645,8 +646,6 @@ class FieldForm extends React.Component {
   render() {
     const { onChange, field } = this.props;
 
-    console.log(this.props)
-
     if (!field) {
       return null;
     }
@@ -765,28 +764,10 @@ const Header = ({ schemaView, toggleSchema, hide }) => <>
       <i className='fas fa-times' />
     </button>
   </div>
-  <div className='d-flex justify-content-center mb-3'>
-    <div
-      className='p-1'
-      style={{
-        borderRadius: '24px',
-        backgroundColor: '#373735',
-        position: 'relative',
-        width: 'fit-content'
-      }}>
-      <div className={`tryit-selector-cursor ${!schemaView ? '' : 'tryit-selector-mode-right'}`} />
-      <button
-        className="tryit-selector-mode"
-        type="button"
-        onClick={() => toggleSchema(false)}>
-        Form
-      </button>
-      <button
-        className="tryit-selector-mode"
-        type="button"
-        onClick={() => toggleSchema(true)}>
-        Schema
-      </button>
-    </div>
-  </div>
+  <PillButton
+    className='mb-3'
+    rightEnabled={schemaView}
+    onChange={toggleSchema}
+    leftText='Form'
+    rightText='Schema' />
 </>

@@ -15,7 +15,7 @@ import {
   getPlugins,
 } from '../../services/BackOfficeServices';
 
-import { Backend, Frontend, Plugins } from './NgPlugins'
+import { Backend, Frontend, Plugins } from '../../forms/ng_plugins'
 
 import {
   EXCLUDED_PLUGINS,
@@ -23,7 +23,7 @@ import {
   PLUGINS,
   PLUGIN_INFORMATIONS_SCHEMA,
 } from './DesignerConfig';
-import Loader from './Loader';
+import Loader from '../../components/Loader';
 import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
 import { NgBooleanRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
@@ -2359,18 +2359,18 @@ const BackendSelector = ({
             position: 'relative',
           }}>
           <div
-            className={`tryit-selector-cursor ${!usingExistingBackend ? '' : 'tryit-selector-mode-right'
+            className={`pill-cursor ${!usingExistingBackend ? '' : 'pill-mode-right'
               }`}
           />
           <button
-            className="flex tryit-selector-mode"
+            className="flex pill-mode"
             onClick={() => {
               setUsingExistingBackend(false);
             }}>
             Create a new backend
           </button>
           <button
-            className="flex tryit-selector-mode"
+            className="flex pill-mode"
             onClick={() => setUsingExistingBackend(true)}>
             Select an existing backend
           </button>

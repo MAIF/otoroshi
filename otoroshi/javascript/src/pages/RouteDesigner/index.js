@@ -17,31 +17,13 @@ import { ImportServiceDescriptor } from './ImportServiceDescriptor';
 import { entityFromURI } from '../../util';
 import { v4 } from 'uuid';
 import { HelpWrapper } from '../../components/inputs';
-
-function GridButton({ onClick, text, icon, level = "info" }) {
-  return <button
-    type="button"
-    className={`btn btn-sm btn-${level} d-flex align-items-center justify-content-center flex-column`}
-    style={{
-      minWidth: '80px',
-      minHeight: '80px',
-      maxWidth: '80px',
-      maxHeight: '80px',
-
-      flex: 1
-    }}
-    onClick={onClick}>
-    <div>
-      <i className={`fas ${icon}`} />
-    </div>
-    <div>
-      {text}
-    </div>
-  </button>
-}
+import { SquareButton } from '../../components/SquareButton';
+import { YAMLExportButton } from '../../components/exporters/YAMLButton';
+import { JsonExportButton } from '../../components/exporters/JSONButton';
+import { Dropdown } from '../../components/Dropdown';
 
 function BackToButton({ history }) {
-  return <GridButton
+  return <SquareButton
     onClick={() => {
       const what = window.location.pathname.split('/')[3];
       history.push('/' + what);
@@ -51,7 +33,7 @@ function BackToButton({ history }) {
 }
 
 function DeleteRouteButton() {
-  return <GridButton
+  return <SquareButton
     level="danger"
     onClick={() => {
       const what = window.location.pathname.split('/')[3];
@@ -76,7 +58,7 @@ function DeleteRouteButton() {
 }
 
 function DuplicateButton({ value, history }) {
-  return <GridButton
+  return <SquareButton
     onClick={(e) => {
       const what = window.location.pathname.split('/')[3];
       const id = window.location.pathname.split('/')[4];
@@ -108,77 +90,6 @@ function DuplicateButton({ value, history }) {
     }}
     icon="fa-copy"
     text="Duplicate" />
-}
-
-function YAMLExportButton({ value }) {
-  return <GridButton
-    onClick={() => {
-      const what = window.location.pathname.split('/')[3];
-      const itemName = what === 'routes' ? 'route' : 'route-composition';
-      const kind = what === 'routes' ? 'Route' : 'RouteComposition';
-      const name = value.id
-        .replace(/ /g, '-')
-        .replace(/\(/g, '')
-        .replace(/\)/g, '')
-        .toLowerCase();
-
-      fetch('/bo/api/json_to_yaml', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          apiVersion: 'proxy.otoroshi.io/v1alpha1',
-          kind,
-          metadata: {
-            name,
-          },
-          spec: value,
-        }),
-      })
-        .then((r) => r.text())
-        .then((yaml) => {
-          const blob = new Blob([yaml], { type: 'application/yaml' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.id = String(Date.now());
-          a.style.display = 'none';
-          a.download = `${itemName}-${name}-${Date.now()}.yaml`;
-          a.href = url;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => document.body.removeChild(a), 300);
-        });
-    }}
-    icon="fa-file-export"
-    text="Export YAML" />
-}
-
-function JsonExportButton({ value }) {
-  return <GridButton
-    onClick={() => {
-      const what = window.location.pathname.split('/')[3];
-      const itemName = what === 'routes' ? 'route' : 'route-composition';
-      const kind = what === 'routes' ? 'Route' : 'RouteComposition';
-      const name = value.id
-        .replace(/ /g, '-')
-        .replace(/\(/g, '')
-        .replace(/\)/g, '')
-        .toLowerCase();
-      const json = JSON.stringify({ ...value, kind }, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.id = String(Date.now());
-      a.style.display = 'none';
-      a.download = `${itemName}-${name}-${Date.now()}.json`;
-      a.href = url;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => document.body.removeChild(a), 300);
-    }}
-    icon="fas fa-file-export"
-    text="Export JSON" />
 }
 
 function BackToRouteTab({ history, routeId, viewPlugins }) {
@@ -297,44 +208,14 @@ function TesterButton({ disabled, setForceTester, viewRef, history, value, isOnV
 }
 
 function MoreActionsButton({ value, menu, history }) {
-  return <div className="ms-2 dropdown" style={{ height: '100%' }}>
-    <button type="button"
-      className="btn btn-sm toggle-form-buttons d-flex align-items-center dark-background"
-      style={{
-        backgroundColor: '#494948',
-        color: '#fff',
-        height: '100%',
-      }}
-      id='designer-menu'
-      data-bs-toggle='dropdown'
-      data-bs-auto-close='outside'
-      aria-expanded='false'>
-      <i className="fas fa-ellipsis-h" style={{ fontSize: '1.33333em' }} />
-    </button>
-    <ul
-      className="dropdown-menu"
-      aria-labelledby="designer-menu"
-      style={{
-        background: 'rgb(73, 73, 72)',
-        border: '1px solid #373735',
-        borderTop: 0,
-        padding: '12px',
-        zIndex: 4000,
-      }}
-      onClick={(e) => e.stopPropagation()}>
-      <li className="d-flex flex-wrap" style={{
-        gap: '8px',
-        minWidth: '170px'
-      }}>
-        <DuplicateButton value={value} history={history} />
-        <JsonExportButton value={value} />
-        <YAMLExportButton value={value} />
-        <DeleteRouteButton />
-        {menu}
-        <BackToButton history={history} />
-      </li>
-    </ul>
-  </div>
+  return <Dropdown className="ms-2" style={{ height: '100%' }}>
+    <DuplicateButton value={value} history={history} />
+    <JsonExportButton value={value} />
+    <YAMLExportButton value={value} />
+    <DeleteRouteButton />
+    {menu}
+    <BackToButton history={history} />
+  </Dropdown>
 }
 
 
