@@ -114,7 +114,7 @@ const Dot = ({
 
 const RemoveButton = ({ onRemove }) => {
   return (
-    <div onClick={onRemove} className="delete-node-button">
+    <div onClick={onRemove} className="delete-node-button d-flex align-items-center justify-content-center">
       <i className="fas fa-times" />
     </div>
   );

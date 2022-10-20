@@ -364,15 +364,7 @@ export default function ({ route, hide }) {
         </div>
       ) : (
         <div
-          // className="h-100"
-          style={{
-            flexDirection: 'column',
-            background: 'rgb(60,60,60)',
-            padding: '12px',
-            borderRadius: '8px',
-            margin: '10px',
-            flex: 1,
-          }}>
+          className="sub-container">
           <div className="d-flex">
             <div style={{ minWidth: '200px' }}>
               <NgSelectRenderer
