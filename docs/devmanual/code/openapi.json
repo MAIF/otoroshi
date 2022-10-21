@@ -18123,9 +18123,9 @@
             "description" : "Destination email address"
           },
           "type" : {
-            "description" : "the kind of mailer",
+            "description" : "the kind of exporter",
             "type" : "string",
-            "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           }
         }
       },
@@ -19409,9 +19409,9 @@
         "type" : "object",
         "properties" : {
           "type" : {
-            "description" : "the kind of mailer",
+            "description" : "the kind of exporter",
             "type" : "string",
-            "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           }
         }
       },
@@ -19484,9 +19484,9 @@
             "description" : "Destination email address"
           },
           "type" : {
-            "description" : "the kind of mailer",
+            "description" : "the kind of exporter",
             "type" : "string",
-            "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           }
         }
       },
@@ -23114,9 +23114,9 @@
             "description" : "Destination email address"
           },
           "type" : {
-            "description" : "the kind of mailer",
+            "description" : "the kind of exporter",
             "type" : "string",
-            "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           }
         }
       },
@@ -24031,9 +24031,9 @@
         "type" : "object",
         "properties" : {
           "type" : {
-            "description" : "the kind of mailer",
+            "description" : "the kind of exporter",
             "type" : "string",
-            "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           }
         }
       },
@@ -24082,9 +24082,9 @@
             "description" : "Destination email address"
           },
           "type" : {
-            "description" : "the kind of mailer",
+            "description" : "the kind of exporter",
             "type" : "string",
-            "enum" : [ "none", "console", "generic", "mailgun", "mailjet", "sendgrid" ]
+            "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
           },
           "url" : {
             "description" : "Sender URL",
