@@ -53,19 +53,20 @@ lazy val root = (project in file("."))
   .enablePlugins(PlayScala, PlayAkkaHttp2Support)
   .disablePlugins(PlayFilters)
 
-lazy val scalaLangVersion    = "2.12.13"
+lazy val scalaLangVersion    = "2.12.16"
 // lazy val scalaLangVersion = "2.13.2"
 // * https://github.com/propensive/kaleidoscope/issues/24
 // * https://github.com/risksense/ipaddr/issues/11
 lazy val metricsVersion       = "4.2.12"
 lazy val acme4jVersion        = "2.14"
 lazy val prometheusVersion    = "0.16.0"
-lazy val playJsonVersion      = "2.9.3" //"2.8.1"
-lazy val webAuthnVersion      = "1.7.0" // breaks jackson modules at 1.7.0
-lazy val kubernetesVersion    = "16.0.1" //"8.0.2"
+lazy val playJsonVersion      = "2.9.3"
+lazy val webAuthnVersion      = "2.1.0" //"1.7.0" // breaks jackson modules at 1.7.0
+lazy val kubernetesVersion    = "16.0.1"
 lazy val bouncyCastleVersion  = "1.70"
-lazy val pulsarVersion        = "2.7.3" // "2.6.3"
+lazy val pulsarVersion        = "2.7.3"
 lazy val openTelemetryVersion = "1.19.0"
+lazy val jacksonVersion = "2.13.4"
 lazy val excludesJackson      = Seq(
   ExclusionRule(organization  = "com.fasterxml.jackson.core"),
   ExclusionRule(organization  = "com.fasterxml.jackson.datatype"),
@@ -75,7 +76,7 @@ lazy val excludesJackson      = Seq(
 libraryDependencies ++= Seq(
   ws,
   filters,
-  "com.softwaremill.macwire"         %% "macros"                                    % "2.3.7" % "provided",
+  "com.softwaremill.macwire"         %% "macros"                                    % "2.5.8" % "provided",
   "com.typesafe.play"                %% "play-json"                                 % playJsonVersion,
   "com.typesafe.play"                %% "play-json-joda"                            % playJsonVersion,
   "com.github.etaty"                 %% "rediscala"                                 % "1.9.0",
@@ -100,7 +101,7 @@ libraryDependencies ++= Seq(
   "com.yubico"                        % "webauthn-server-core"                      % webAuthnVersion excludeAll (excludesJackson: _*),
   "com.yubico"                        % "webauthn-server-attestation"               % webAuthnVersion excludeAll (excludesJackson: _*),
   "com.yubico"                        % "yubico-util"                               % webAuthnVersion excludeAll (excludesJackson: _*),
-  "com.maxmind.geoip2"                % "geoip2"                                    % "2.13.1",
+  "com.maxmind.geoip2"                % "geoip2"                                    % "3.0.1",
   "com.blueconic"                     % "browscap-java"                             % "1.3.13",
   "javax.xml.bind"                    % "jaxb-api"                                  % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
   "com.sun.xml.bind"                  % "jaxb-core"                                 % "2.3.0.1",
@@ -113,11 +114,11 @@ libraryDependencies ++= Seq(
   "io.vertx"                          % "vertx-pg-client"                           % "4.3.4",
   "com.ongres.scram"                  % "common"                                    % "2.1",
   "com.ongres.scram"                  % "client"                                    % "2.1",
-  "com.jayway.jsonpath"               % "json-path"                                 % "2.5.0",
+  "com.jayway.jsonpath"               % "json-path"                                 % "2.7.0",
   "com.cronutils"                     % "cron-utils"                                % "9.2.0",
   "commons-lang"                      % "commons-lang"                              % "2.6",
   "com.datastax.oss"                  % "java-driver-core"                          % "4.15.0" excludeAll (excludesJackson: _*),
-  "org.gnieh"                        %% "diffson-play-json"                         % "4.0.3" excludeAll ExclusionRule(organization = "com.typesafe.akka"),
+  "org.gnieh"                        %% "diffson-play-json"                         % "4.3.0" excludeAll ExclusionRule(organization = "com.typesafe.akka"),
   "org.scala-lang"                    % "scala-compiler"                            % scalaLangVersion,
   "org.scala-lang"                    % "scala-library"                             % scalaLangVersion,
   "io.kubernetes"                     % "client-java"                               % kubernetesVersion excludeAll (excludesJackson: _*),
@@ -137,10 +138,13 @@ libraryDependencies ++= Seq(
   "org.openjdk.jol"                   % "jol-core"                                  % "0.16",
   "org.typelevel"                    %% "squants"                                   % "1.8.3" excludeAll (excludesJackson: _*),
   // fix multiple CVEs
-  "com.fasterxml.jackson.core"        % "jackson-databind"                          % "2.11.4",
-  "com.fasterxml.jackson.dataformat"  % "jackson-dataformat-yaml"                   % "2.11.4",
-  "com.fasterxml.jackson.dataformat"  % "jackson-dataformat-cbor"                   % "2.11.4",
-  "com.fasterxml.jackson.datatype"    % "jackson-datatype-jdk8"                     % "2.11.4",
+  "com.fasterxml.jackson.core"        % "jackson-core"                              % jacksonVersion,
+  "com.fasterxml.jackson.core"        % "jackson-annotations"                       % jacksonVersion,
+  "com.fasterxml.jackson.core"        % "jackson-databind"                          % s"${jacksonVersion}.2",
+  "com.fasterxml.jackson.dataformat"  % "jackson-dataformat-yaml"                   % jacksonVersion,
+  "com.fasterxml.jackson.dataformat"  % "jackson-dataformat-cbor"                   % jacksonVersion,
+  "com.fasterxml.jackson.datatype"    % "jackson-datatype-jdk8"                     % jacksonVersion,
+  "com.fasterxml.jackson.module"     %% "jackson-module-scala"                      % jacksonVersion,
   "org.yaml"                          % "snakeyaml"                                 % "1.33" excludeAll (excludesJackson: _*),
   "com.arakelian"                     % "java-jq"                                   % "1.3.0" excludeAll (excludesJackson: _*),
   "io.opentelemetry"                  % "opentelemetry-api"                         % openTelemetryVersion excludeAll (excludesJackson: _*),
@@ -169,7 +173,8 @@ libraryDependencies ++= Seq(
   ),
   "org.iq80.leveldb"                  % "leveldb"                                   % "0.12",
   "org.apache.logging.log4j"          % "log4j-api"                                 % "2.19.0",
-  "org.sangria-graphql"              %% "sangria"                                   % "3.4.0"
+  "org.sangria-graphql"              %% "sangria"                                   % "3.4.0",
+  "org.scala-lang.modules"           %% "scala-java8-compat"                        % "0.9.1",
   /*"org.sangria-graphql"             %% "sangria-play-json"              % "2.0.1" excludeAll ExclusionRule(
     organization = "com.typesafe.play"
   )*/ // TODO - check if needed
