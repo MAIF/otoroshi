@@ -195,6 +195,12 @@ class NettyHttp3Client(val env: Env) {
           if (logger.isDebugEnabled) logger.debug(s"got header frame !!!! ${isLast}")
           status = frame.headers().status().toString.toInt
           headers = frame.headers().names().asScala.map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString))).toMap
+          // frame match {
+          //   case f: io.netty.incubator.codec.http3.DefaultHttp3HeadersFrame => f.
+          // }
+          // frame.headers() match {
+          //   case h: io.netty.incubator.codec.http3.DefaultHttp3Headers =>
+          // }
           releaseFrameAndCloseIfLast(ctx, frame, isLast)
         }
 
@@ -203,11 +209,15 @@ class NettyHttp3Client(val env: Env) {
           val chunk = ByteString(content)
           if (logger.isDebugEnabled) logger.debug(s"got data frame !!! - ${isLast}")
           hotSource.tryEmitNext(chunk)
+          // frame match {
+          //   case f: io.netty.incubator.codec.http3.DefaultHttp3DataFrame => f.
+          // }
           releaseFrameAndCloseIfLast(ctx, frame, isLast)
         }
 
         private def releaseFrameAndCloseIfLast(ctx: ChannelHandlerContext, frame: Http3RequestStreamFrame, isLast: Boolean) {
           ReferenceCountUtil.release(frame)
+          // println("releaseFrameAndCloseIfLast", isLast, frame.getClass.getName)
           if (isLast) {
             promise.trySuccess(Http3Response(status, headers, hotFlux))
             ctx.close()

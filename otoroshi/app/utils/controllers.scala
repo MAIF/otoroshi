@@ -733,8 +733,10 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         case v if prefix.isEmpty                                  => v
         case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
       }
-      .filterNot(a => a._1 == "page" || a._1 == "pageSize")
+      .filterNot(a => a._1 == "page" || a._1 == "pageSize" || a._1 == "fields")
     val hasFilters         = filters.nonEmpty
+    val fields = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+    val hasFields = fields.nonEmpty
 
     findAllOps(ctx.request).map {
       case Left(error)                                                        =>
@@ -755,7 +757,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         )
         val jsonElements: Seq[JsValue] =
           entities.filter(ctx.canUserRead).drop(paginationPosition).take(paginationPageSize).map(writeEntity)
-        val finalItems                 = if (hasFilters) {
+        val filteredItems                 = if (hasFilters) {
           val items: Seq[JsValue] = jsonElements.filter { elem =>
             filters.forall { case (key, value) =>
               (elem \ key).as[JsValue] match {
@@ -770,6 +772,15 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           items
         } else {
           jsonElements
+        }
+        val finalItems = if (hasFields) {
+          filteredItems.map { item =>
+            val obj = item.as[JsObject]
+            // TODO: support dotted notation ?
+            JsObject(obj.value.filterKeys(f => fields.contains(f)))
+          }
+        } else {
+          filteredItems
         }
         if (!ctx.request.accepts("application/json") && ctx.request.accepts("application/x-ndjson")) {
           Ok.sendEntity(
@@ -824,7 +835,15 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                 metadata
               )
             )
-            Ok(writeEntity(v))
+            val fields = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+            val hasFields = fields.nonEmpty
+            if (hasFields) {
+              val out = writeEntity(v).as[JsObject]
+              // TODO: support dotted notation ?
+              Ok(JsObject(out.value.filterKeys(f => fields.contains(f))))
+            } else {
+              Ok(writeEntity(v))
+            }
         }
     }
   }
