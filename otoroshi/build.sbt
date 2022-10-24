@@ -262,6 +262,7 @@ assemblyMergeStrategy in assembly := {
   case PathList(ps @ _*) if ps.contains("source_context.proto")       => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("native-image.properties")    => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("public-suffix-list.txt")     => MergeStrategy.first
+  case PathList(ps @ _*) if ps.contains("findbugsExclude.xml")        => MergeStrategy.first
   case path if path.contains("org/bouncycastle")                      => MergeStrategy.first
   case PathList("javax", xs @ _*)                                     => MergeStrategy.first
   case x                                                              =>
