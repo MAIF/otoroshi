@@ -1492,7 +1492,7 @@ class Env(
           domain = Some(host),
           httpOnly = sessionCookieValues.httpOnly,
           secure = sessionCookieValues.secure
-        ),
+        )
       } ++ userOpt.map { user =>
         play.api.mvc.Cookie(
           name = "oto-papps-tsess-" + suffix,

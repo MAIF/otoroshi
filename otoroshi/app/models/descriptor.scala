@@ -8,8 +8,8 @@ import akka.stream.{Materializer, OverflowStrategy}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import otoroshi.auth._
 import com.auth0.jwt.JWT
+import com.comcast.ip4s.{Cidr, IpAddress}
 import com.google.common.hash.Hashing
-import com.risksense.ipaddr.IpNetwork
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
@@ -627,7 +627,7 @@ case class IpFiltering(whitelist: Seq[String] = Seq.empty[String], blacklist: Se
     if (whitelist.nonEmpty) {
       whitelist.exists { ip =>
         if (ip.contains("/")) {
-          IpFiltering.network(ip).contains(ipAddress)
+          IpFiltering.cidr(ip).contains(ipAddress)
         } else {
           otoroshi.utils.RegexPool(ip).matches(ipAddress)
         }
@@ -640,7 +640,7 @@ case class IpFiltering(whitelist: Seq[String] = Seq.empty[String], blacklist: Se
     if (whitelist.nonEmpty) {
       !whitelist.exists { ip =>
         if (ip.contains("/")) {
-          IpFiltering.network(ip).contains(ipAddress)
+          IpFiltering.cidr(ip).contains(ipAddress)
         } else {
           otoroshi.utils.RegexPool(ip).matches(ipAddress)
         }
@@ -653,7 +653,7 @@ case class IpFiltering(whitelist: Seq[String] = Seq.empty[String], blacklist: Se
     if (blacklist.nonEmpty) {
       blacklist.exists { ip =>
         if (ip.contains("/")) {
-          IpFiltering.network(ip).contains(ipAddress)
+          IpFiltering.cidr(ip).contains(ipAddress)
         } else {
           otoroshi.utils.RegexPool(ip).matches(ipAddress)
         }
@@ -664,11 +664,25 @@ case class IpFiltering(whitelist: Seq[String] = Seq.empty[String], blacklist: Se
   }
 }
 
+class CidrOfString(cdr: String) {
+  private lazy val opt: Option[Cidr[IpAddress]] = Cidr.fromString(cdr)
+  def contains(ip: String): Boolean = {
+    opt match {
+      case None => false
+      case Some(cidr) => IpFiltering.ipaddrCache.getOrElseUpdate(ip, IpAddress.fromString(ip)) match {
+        case None => false
+        case Some(ipaddr) => cidr.contains(ipaddr)
+      }
+    }
+  }
+}
+
 object IpFiltering {
   implicit val format      = Json.format[IpFiltering]
-  private val networkCache = new TrieMap[String, IpNetwork]()
-  def network(cidr: String): IpNetwork = {
-    networkCache.getOrElseUpdate(cidr, IpNetwork(cidr))
+  private val cidrCache = new TrieMap[String, CidrOfString]()
+  private[models] val ipaddrCache = new TrieMap[String, Option[IpAddress]]()
+  def cidr(cdr: String): CidrOfString = {
+    cidrCache.getOrElseUpdate(cdr, new CidrOfString(cdr))
   }
 }
 

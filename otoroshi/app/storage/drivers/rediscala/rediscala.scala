@@ -592,7 +592,7 @@ abstract class AbstractRedisDataStores(
     )
   }
 
-  override def fullNdJsonImport(export: Source[JsValue, _]): Future[Unit] = {
+  override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
     implicit val ev  = env
     implicit val ecc = env.otoroshiExecutionContext
@@ -602,7 +602,7 @@ abstract class AbstractRedisDataStores(
       .keys(s"${env.storageRoot}:*")
       .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
       .flatMap { _ =>
-        export
+        exportSource
           .mapAsync(1) { json =>
             val key   = (json \ "k").as[String]
             val value = (json \ "v").as[JsValue]

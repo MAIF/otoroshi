@@ -53,24 +53,28 @@ lazy val root = (project in file("."))
   .enablePlugins(PlayScala, PlayAkkaHttp2Support)
   .disablePlugins(PlayFilters)
 
+// lazy val scalaLangVersion    = "2.13.10"
 lazy val scalaLangVersion    = "2.12.16"
-// lazy val scalaLangVersion = "2.13.2"
-// * https://github.com/propensive/kaleidoscope/issues/24
-// * https://github.com/risksense/ipaddr/issues/11
 lazy val metricsVersion       = "4.2.12"
 lazy val acme4jVersion        = "2.14"
 lazy val prometheusVersion    = "0.16.0"
 lazy val playJsonVersion      = "2.9.3"
-lazy val webAuthnVersion      = "2.1.0" //"1.7.0" // breaks jackson modules at 1.7.0
+lazy val webAuthnVersion      = "2.1.0"
 lazy val kubernetesVersion    = "16.0.1"
 lazy val bouncyCastleVersion  = "1.70"
-lazy val pulsarVersion        = "2.7.3"
+lazy val pulsarVersion        = "2.8.1"
 lazy val openTelemetryVersion = "1.19.0"
-lazy val jacksonVersion = "2.13.4"
+lazy val jacksonVersion       = "2.13.4"
+lazy val akkaHttpVersion      = "10.2.7"
+lazy val reactorNettyVersion  = "1.0.24"
+lazy val nettyVersion         = "4.1.84.Final"
 lazy val excludesJackson      = Seq(
   ExclusionRule(organization  = "com.fasterxml.jackson.core"),
   ExclusionRule(organization  = "com.fasterxml.jackson.datatype"),
   ExclusionRule(organization  = "com.fasterxml.jackson.dataformat")
+)
+lazy val excludeScalaJava8Compat = Seq(
+  ExclusionRule(organization  = "org.scala-lang.modules")
 )
 
 libraryDependencies ++= Seq(
@@ -83,10 +87,9 @@ libraryDependencies ++= Seq(
   "com.github.gphat"                 %% "censorinus"                                % "2.1.16",
   "com.typesafe.akka"                %% "akka-stream-kafka"                         % "2.0.7",
   "com.lightbend.akka"               %% "akka-stream-alpakka-s3"                    % "2.0.2",
-  "com.typesafe.akka"                %% "akka-http2-support"                        % "10.2.7",
-  "com.typesafe.akka"                %% "akka-http-xml"                             % "10.2.7",
+  "com.typesafe.akka"                %% "akka-http2-support"                        % akkaHttpVersion,
+  "com.typesafe.akka"                %% "akka-http-xml"                             % akkaHttpVersion,
   "com.spotify.metrics"               % "semantic-metrics-core"                     % "1.1.11",
-//  "io.dropwizard.metrics"    % "metrics-jvm"                 % metricsVersion,    // Apache 2.0
   "io.dropwizard.metrics"             % "metrics-jmx"                               % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "io.dropwizard.metrics"             % "metrics-json"                              % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "io.prometheus"                     % "simpleclient_common"                       % prometheusVersion excludeAll (excludesJackson: _*), // Apache 2.0
@@ -95,9 +98,9 @@ libraryDependencies ++= Seq(
   "com.auth0"                         % "jwks-rsa"                                  % "0.21.2" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
   "com.nimbusds"                      % "nimbus-jose-jwt"                           % "9.25.6",
   "de.svenkubiak"                     % "jBCrypt"                                   % "0.4.3",
-  "com.propensive"                   %% "kaleidoscope"                              % "0.1.0",
+  "com.propensive"                   %% "kaleidoscope-core"                         % "0.5.0",
   "io.github.classgraph"              % "classgraph"                                % "4.8.149" excludeAll (excludesJackson: _*),
-  "com.risksense"                    %% "ipaddr"                                    % "1.0.2",
+  "com.comcast"                      %% "ip4s-core"                                 % "3.2.0",
   "com.yubico"                        % "webauthn-server-core"                      % webAuthnVersion excludeAll (excludesJackson: _*),
   "com.yubico"                        % "webauthn-server-attestation"               % webAuthnVersion excludeAll (excludesJackson: _*),
   "com.yubico"                        % "yubico-util"                               % webAuthnVersion excludeAll (excludesJackson: _*),
@@ -105,8 +108,11 @@ libraryDependencies ++= Seq(
   "com.blueconic"                     % "browscap-java"                             % "1.3.13",
   "javax.xml.bind"                    % "jaxb-api"                                  % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
   "com.sun.xml.bind"                  % "jaxb-core"                                 % "2.3.0.1",
-  //"com.sun.xml.bind"         % "jaxb-impl"                   % "2.3.2",
-  "com.github.blemale"               %% "scaffeine"                                 % "4.0.2",
+  if (scalaLangVersion.startsWith("2.12")) {
+    "com.github.blemale"               %% "scaffeine"                                 % "4.0.2"
+  } else {
+    "com.github.blemale"               %% "scaffeine"                                 % "5.2.1"
+  },
   "org.shredzone.acme4j"              % "acme4j-client"                             % acme4jVersion excludeAll (excludesJackson: _*),
   "org.shredzone.acme4j"              % "acme4j-utils"                              % acme4jVersion excludeAll (excludesJackson: _*),
   "org.shredzone.acme4j"              % "acme4j"                                    % acme4jVersion excludeAll (excludesJackson: _*),
@@ -126,9 +132,9 @@ libraryDependencies ++= Seq(
   "org.bouncycastle"                  % "bcpkix-jdk15on"                            % bouncyCastleVersion excludeAll (excludesJackson: _*),
   "org.bouncycastle"                  % "bcprov-ext-jdk15on"                        % bouncyCastleVersion excludeAll (excludesJackson: _*),
   "org.bouncycastle"                  % "bcprov-jdk15on"                            % bouncyCastleVersion excludeAll (excludesJackson: _*),
-  "com.sksamuel.pulsar4s"            %% "pulsar4s-play-json"                        % pulsarVersion excludeAll (excludesJackson: _*),
-  "com.sksamuel.pulsar4s"            %% "pulsar4s-core"                             % pulsarVersion excludeAll (excludesJackson: _*),
-  "com.sksamuel.pulsar4s"            %% "pulsar4s-akka-streams"                     % pulsarVersion excludeAll (excludesJackson: _*),
+  "com.clever-cloud.pulsar4s"        %% "pulsar4s-play-json"                        % pulsarVersion excludeAll (excludesJackson: _*),
+  "com.clever-cloud.pulsar4s"        %% "pulsar4s-core"                             % pulsarVersion excludeAll (excludesJackson: _*),
+  "com.clever-cloud.pulsar4s"        %% "pulsar4s-akka-streams"                     % pulsarVersion excludeAll (excludesJackson: _*),
   "org.jsoup"                         % "jsoup"                                     % "1.15.3",
   "com.clever-cloud"                  % "biscuit-java"                              % "2.2.0",
   "org.opensaml"                      % "opensaml-core"                             % "4.0.1",
@@ -153,13 +159,23 @@ libraryDependencies ++= Seq(
   "io.opentelemetry"                  % "opentelemetry-exporter-zipkin"             % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                  % "opentelemetry-exporter-jaeger"             % openTelemetryVersion excludeAll (excludesJackson: _*),
   "com.amazonaws"                     % "aws-java-sdk-secretsmanager"               % "1.12.326" excludeAll (excludesJackson: _*),
+  "org.apache.logging.log4j"          % "log4j-api"                                 % "2.19.0",
+  "org.sangria-graphql"              %% "sangria"                                   % "3.4.0",
+  if (scalaLangVersion.startsWith("2.12")) {
+    "org.scala-lang.modules"           %% "scala-java8-compat"                        % "0.9.1"
+  } else {
+    "org.scala-lang.modules"           %% "scala-java8-compat"                        % "1.0.2"
+  },
+  /*"org.sangria-graphql"             %% "sangria-play-json"              % "2.0.1" excludeAll ExclusionRule(
+    organization = "com.typesafe.play"
+  )*/ // TODO - check if needed
   // new http stack ;)
-  "io.projectreactor.netty"           % "reactor-netty-core"                        % "1.0.24",
-  "io.projectreactor.netty"           % "reactor-netty-http"                        % "1.0.24",
-  "io.netty"                          % "netty-transport-native-kqueue"             % "4.1.84.Final",
-  "io.netty"                          % "netty-transport-native-kqueue"             % "4.1.84.Final" classifier "osx-aarch_64" classifier "osx-x86_64",
-  "io.netty"                          % "netty-transport-native-epoll"              % "4.1.84.Final",
-  "io.netty"                          % "netty-transport-native-epoll"              % "4.1.84.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
+  "io.projectreactor.netty"           % "reactor-netty-core"                        % reactorNettyVersion,
+  "io.projectreactor.netty"           % "reactor-netty-http"                        % reactorNettyVersion,
+  "io.netty"                          % "netty-transport-native-kqueue"             % nettyVersion,
+  "io.netty"                          % "netty-transport-native-kqueue"             % nettyVersion classifier "osx-aarch_64" classifier "osx-x86_64",
+  "io.netty"                          % "netty-transport-native-epoll"              % nettyVersion,
+  "io.netty"                          % "netty-transport-native-epoll"              % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
   "io.netty.incubator"                % "netty-incubator-transport-native-io_uring" % "0.0.15.Final",
   "io.netty.incubator"                % "netty-incubator-transport-native-io_uring" % "0.0.15.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
   "io.netty.incubator"                % "netty-incubator-codec-native-quic"         % "0.0.33.Final",
@@ -168,16 +184,8 @@ libraryDependencies ++= Seq(
   // tests
   "org.scalatestplus.play"           %% "scalatestplus-play"                        % "5.1.0" % Test,
   // do not update because the feature is deprecated and will be removed
-  "org.reactivemongo"                %% "reactivemongo"                             % "0.20.13" excludeAll ExclusionRule(organization =
-    "org.apache.logging.log4j"
-  ),
+  "org.reactivemongo"                %% "reactivemongo"                             % "0.20.13" excludeAll ExclusionRule(organization = "org.apache.logging.log4j"),
   "org.iq80.leveldb"                  % "leveldb"                                   % "0.12",
-  "org.apache.logging.log4j"          % "log4j-api"                                 % "2.19.0",
-  "org.sangria-graphql"              %% "sangria"                                   % "3.4.0",
-  "org.scala-lang.modules"           %% "scala-java8-compat"                        % "0.9.1",
-  /*"org.sangria-graphql"             %% "sangria-play-json"              % "2.0.1" excludeAll ExclusionRule(
-    organization = "com.typesafe.play"
-  )*/ // TODO - check if needed
 )
 
 scalacOptions ++= Seq(

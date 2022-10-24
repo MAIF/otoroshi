@@ -72,7 +72,7 @@ trait DataStores {
   def targetsDataStore: StoredNgTargetDataStore
   def backendsDataStore: StoredNgBackendDataStore
   ////
-  def fullNdJsonImport(export: Source[JsValue, _]): Future[Unit]
+  def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit]
   def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]]
 }
 
