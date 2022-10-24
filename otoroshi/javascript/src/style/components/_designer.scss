@@ -772,7 +772,7 @@
     .group-header,
     .vertical-line,
     .flow-container,
-    .wizard-container{
+    .wizard-container,.route-item {
         @include bright-mode_background--light;
     }
 
