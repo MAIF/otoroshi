@@ -625,7 +625,7 @@
 
 .wizard-container {
     position: relative;
-    background: rgb(73, 73, 72);
+    background: $fondNavbar;
     display: flex;
     flex-direction: column;
     margin: auto;
@@ -771,7 +771,8 @@
     .search-group-header,
     .group-header,
     .vertical-line,
-    .flow-container{
+    .flow-container,
+    .wizard-container{
         @include bright-mode_background--light;
     }
 

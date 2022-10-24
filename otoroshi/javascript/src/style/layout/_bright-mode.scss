@@ -111,6 +111,7 @@ body.white-mode,
   .btn-danger,
   .btn-danger .fa-lock,
   .btn-info,.btn-dark,.btn-dark:hover,
+  .btn-secondary,
   label,
   input.form-control,
   .Select-option.is-focused,
@@ -137,7 +138,7 @@ body.white-mode,
   .is-open > .Select-control,
   .Select.is-focused > .Select-control,
   .Select.is-focused:not(.is-open) > .Select-control,
-  .ant-calendar-input, .ant-input {
+  .ant-calendar-input, .ant-input, .custom-dropdown>li>a {
     @include bright-mode_color--darker;
   }
 
@@ -153,7 +154,7 @@ body.white-mode,
   }
   .dropdown .dropdown-toggle:hover,
   .sub-container__bg-color,
-  .jumbotron, nav {
+  .jumbotron, nav, .custom-dropdown {
     @include bright-mode_background-color--darkest;
   }
 
@@ -174,4 +175,12 @@ body.white-mode,
   .logo-xs:hover {
     transition: 1s filter linear;
   }
+
+  input.form-control {
+    border-color: rgb(206, 212, 218);
+  }
+  .Select-value, .Select-control {
+    border: 1px solid rgb(206, 212, 218)
+  }
+
 }
