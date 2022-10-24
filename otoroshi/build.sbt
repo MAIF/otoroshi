@@ -64,7 +64,7 @@ lazy val playJsonVersion      = "2.9.3" //"2.8.1"
 lazy val webAuthnVersion      = "1.7.0" // breaks jackson modules at 1.7.0
 lazy val kubernetesVersion    = "16.0.1" //"8.0.2"
 lazy val bouncyCastleVersion  = "1.70"
-lazy val pulsarVersion        = "2.6.3"
+lazy val pulsarVersion        = "2.7.3" // "2.6.3"
 lazy val openTelemetryVersion = "1.19.0"
 lazy val excludesJackson      = Seq(
   ExclusionRule(organization  = "com.fasterxml.jackson.core"),
@@ -90,9 +90,9 @@ libraryDependencies ++= Seq(
   "io.dropwizard.metrics"             % "metrics-json"                              % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "io.prometheus"                     % "simpleclient_common"                       % prometheusVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "io.prometheus"                     % "simpleclient_dropwizard"                   % prometheusVersion excludeAll (excludesJackson: _*), // Apache 2.0
-  "com.auth0"                         % "java-jwt"                                  % "3.19.2" excludeAll (excludesJackson: _*),
-  "com.auth0"                         % "jwks-rsa"                                  % "0.17.0" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
-  "com.nimbusds"                      % "nimbus-jose-jwt"                           % "9.7",
+  "com.auth0"                         % "java-jwt"                                  % "4.2.0" excludeAll (excludesJackson: _*),
+  "com.auth0"                         % "jwks-rsa"                                  % "0.21.2" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
+  "com.nimbusds"                      % "nimbus-jose-jwt"                           % "9.25.6",
   "de.svenkubiak"                     % "jBCrypt"                                   % "0.4.3",
   "com.propensive"                   %% "kaleidoscope"                              % "0.1.0",
   "io.github.classgraph"              % "classgraph"                                % "4.8.149" excludeAll (excludesJackson: _*),
