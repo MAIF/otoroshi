@@ -60,9 +60,9 @@ lazy val scalaLangVersion    = "2.12.13"
 lazy val metricsVersion       = "4.2.12"
 lazy val acme4jVersion        = "2.14"
 lazy val prometheusVersion    = "0.16.0"
-lazy val playJsonVersion      = "2.8.1"
+lazy val playJsonVersion      = "2.9.3" //"2.8.1"
 lazy val webAuthnVersion      = "1.7.0" // breaks jackson modules at 1.7.0
-lazy val kubernetesVersion    = "8.0.2"
+lazy val kubernetesVersion    = "16.0.1" //"8.0.2"
 lazy val bouncyCastleVersion  = "1.70"
 lazy val pulsarVersion        = "2.6.3"
 lazy val openTelemetryVersion = "1.19.0"
@@ -82,7 +82,8 @@ libraryDependencies ++= Seq(
   "com.github.gphat"                 %% "censorinus"                                % "2.1.16",
   "com.typesafe.akka"                %% "akka-stream-kafka"                         % "2.0.7",
   "com.lightbend.akka"               %% "akka-stream-alpakka-s3"                    % "2.0.2",
-  "com.typesafe.akka"                %% "akka-http-xml"                             % "10.1.15",
+  "com.typesafe.akka"                %% "akka-http2-support"                        % "10.2.7",
+  "com.typesafe.akka"                %% "akka-http-xml"                             % "10.2.7",
   "com.spotify.metrics"               % "semantic-metrics-core"                     % "1.1.11",
 //  "io.dropwizard.metrics"    % "metrics-jvm"                 % metricsVersion,    // Apache 2.0
   "io.dropwizard.metrics"             % "metrics-jmx"                               % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
@@ -109,25 +110,25 @@ libraryDependencies ++= Seq(
   "org.shredzone.acme4j"              % "acme4j-utils"                              % acme4jVersion excludeAll (excludesJackson: _*),
   "org.shredzone.acme4j"              % "acme4j"                                    % acme4jVersion excludeAll (excludesJackson: _*),
   "io.lettuce"                        % "lettuce-core"                              % "6.2.1.RELEASE" excludeAll (excludesJackson: _*),
-  "io.vertx"                          % "vertx-pg-client"                           % "4.0.3",
+  "io.vertx"                          % "vertx-pg-client"                           % "4.3.4",
   "com.ongres.scram"                  % "common"                                    % "2.1",
   "com.ongres.scram"                  % "client"                                    % "2.1",
   "com.jayway.jsonpath"               % "json-path"                                 % "2.5.0",
   "com.cronutils"                     % "cron-utils"                                % "9.2.0",
   "commons-lang"                      % "commons-lang"                              % "2.6",
-  "com.datastax.oss"                  % "java-driver-core"                          % "4.5.1",
+  "com.datastax.oss"                  % "java-driver-core"                          % "4.15.0" excludeAll (excludesJackson: _*),
   "org.gnieh"                        %% "diffson-play-json"                         % "4.0.3" excludeAll ExclusionRule(organization = "com.typesafe.akka"),
   "org.scala-lang"                    % "scala-compiler"                            % scalaLangVersion,
   "org.scala-lang"                    % "scala-library"                             % scalaLangVersion,
-  "io.kubernetes"                     % "client-java"                               % kubernetesVersion,
-  "io.kubernetes"                     % "client-java-extended"                      % kubernetesVersion,
+  "io.kubernetes"                     % "client-java"                               % kubernetesVersion excludeAll (excludesJackson: _*),
+  "io.kubernetes"                     % "client-java-extended"                      % kubernetesVersion excludeAll (excludesJackson: _*),
   "org.bouncycastle"                  % "bcpkix-jdk15on"                            % bouncyCastleVersion excludeAll (excludesJackson: _*),
   "org.bouncycastle"                  % "bcprov-ext-jdk15on"                        % bouncyCastleVersion excludeAll (excludesJackson: _*),
   "org.bouncycastle"                  % "bcprov-jdk15on"                            % bouncyCastleVersion excludeAll (excludesJackson: _*),
   "com.sksamuel.pulsar4s"            %% "pulsar4s-play-json"                        % pulsarVersion excludeAll (excludesJackson: _*),
   "com.sksamuel.pulsar4s"            %% "pulsar4s-core"                             % pulsarVersion excludeAll (excludesJackson: _*),
   "com.sksamuel.pulsar4s"            %% "pulsar4s-akka-streams"                     % pulsarVersion excludeAll (excludesJackson: _*),
-  "org.jsoup"                         % "jsoup"                                     % "1.14.3",
+  "org.jsoup"                         % "jsoup"                                     % "1.15.3",
   "com.clever-cloud"                  % "biscuit-java"                              % "2.2.0",
   "org.opensaml"                      % "opensaml-core"                             % "4.0.1",
   "org.opensaml"                      % "opensaml-saml-api"                         % "4.0.1",
@@ -147,7 +148,7 @@ libraryDependencies ++= Seq(
   "io.opentelemetry"                  % "opentelemetry-exporter-logging"            % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                  % "opentelemetry-exporter-zipkin"             % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                  % "opentelemetry-exporter-jaeger"             % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "com.amazonaws"                     % "aws-java-sdk-secretsmanager"               % "1.12.325" excludeAll (excludesJackson: _*),
+  "com.amazonaws"                     % "aws-java-sdk-secretsmanager"               % "1.12.326" excludeAll (excludesJackson: _*),
   // new http stack ;)
   "io.projectreactor.netty"           % "reactor-netty-core"                        % "1.0.24",
   "io.projectreactor.netty"           % "reactor-netty-http"                        % "1.0.24",
@@ -168,7 +169,7 @@ libraryDependencies ++= Seq(
   ),
   "org.iq80.leveldb"                  % "leveldb"                                   % "0.12",
   "org.apache.logging.log4j"          % "log4j-api"                                 % "2.19.0",
-  "org.sangria-graphql"              %% "sangria"                                   % "3.0.0"
+  "org.sangria-graphql"              %% "sangria"                                   % "3.4.0"
   /*"org.sangria-graphql"             %% "sangria-play-json"              % "2.0.1" excludeAll ExclusionRule(
     organization = "com.typesafe.play"
   )*/ // TODO - check if needed
