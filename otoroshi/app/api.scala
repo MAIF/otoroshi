@@ -217,8 +217,8 @@ object OtoroshiLoaderHelper {
             Source
               .tick(1.second, 1.second, ())
               .map { _ =>
-                DynamicSSLEngineProvider.isFirstSetupDone &&
-                DynamicSSLEngineProvider.getCurrentEnv() != null
+                  DynamicSSLEngineProvider.isFirstSetupDone &&
+                    DynamicSSLEngineProvider.getCurrentEnv() != null
               }
               .filter(identity)
               .take(1)
@@ -293,29 +293,29 @@ object OtoroshiLoaderHelper {
       val start   = System.currentTimeMillis()
       logger.info("waiting for subsystems initialization ...")
       val waiting = for {
-        w1 <- waitForFirstClusterStateCache()
-        w2 <- waitForFirstClusterFetch()
-        w3 <- waitForTlsInit()
-        w4 <- waitForPluginSearch()
-        w5 <- waitForPluginsCompilation()
-        w6 <- waitForFirstProxyStateSync()
-      } yield Seq(w1, w2, w3, w4, w5, w6)
+        task1 <- waitForFirstClusterStateCache()
+        task2 <- waitForFirstClusterFetch()
+        task3 <- waitForTlsInit()
+        task4 <- waitForPluginSearch()
+        task5 <- waitForPluginsCompilation()
+        task6 <- waitForFirstProxyStateSync()
+      } yield Seq(task1, task2, task3, task4, task5, task6)
       // AWAIT: valid
-      val tasksRes = Try(Await.result(waiting, globalWaitTimeout.millis))
+      val tasks = Try(Await.result(waiting, globalWaitTimeout.millis))
         .getOrElse(Seq(SubSystemInitializationState.Timeout("global-timeout", globalWaitTimeout)))
       logger.info(s"subsystems initialization done in ${System.currentTimeMillis() - start} ms.")
-      val errors = tasksRes.filter(!_.isSuccessful)
-      val successes = tasksRes.filter(_.isSuccessful)
+      val errors = tasks.filter(!_.isSuccessful)
+      val successes = tasks.filter(_.isSuccessful)
+      successes.foreach { task =>
+        logger.debug(s"${task.task} success in ${task.duration} ms.")
+      }
       errors.foreach {
         case SubSystemInitializationState.Failed(task, err, duration) => logger.error(s"${task} failed in ${duration} ms.", err)
         case SubSystemInitializationState.Timeout(task, duration) => logger.error(s"${task} timeout after ${duration} ms.")
         case _ =>
       }
-      successes.foreach { task =>
-        logger.debug(s"${task.task} success in ${task.duration} ms.")
-      }
       if (errors.nonEmpty && failOnTimeout) {
-        logger.error("stopping otoroshi because of subsystem initialization failure")
+        logger.error(s"stopping because of subsystem${if (errors.size > 1) "s" else ""} initialization failure")
         System.exit(-1)
       }
     } else {
