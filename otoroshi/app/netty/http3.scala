@@ -26,8 +26,6 @@ import scala.jdk.CollectionConverters._
 import scala.util.Failure
 
 // TODO: support working remotaddress
-// TODO: support tls session extraction ?
-// TODO: support client cert extraction ?
 class Http1RequestHandler(
     handler: HttpRequestHandler,
     sessionCookieBaker: SessionCookieBaker,
