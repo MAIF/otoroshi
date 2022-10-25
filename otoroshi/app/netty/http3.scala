@@ -20,9 +20,14 @@ import play.api.libs.json.Json
 import play.api.mvc.{EssentialAction, FlashCookieBaker, SessionCookieBaker}
 import reactor.core.publisher.{Flux, Sinks}
 
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.Await
+import scala.concurrent.duration.{DurationInt, DurationLong}
+import scala.jdk.CollectionConverters._
 import scala.util.Failure
 
+// TODO: support working remotaddress
+// TODO: support tls session extraction ?
+// TODO: support client cert extraction ?
 class Http1RequestHandler(
     handler: HttpRequestHandler,
     sessionCookieBaker: SessionCookieBaker,
@@ -118,8 +123,13 @@ class Http1RequestHandler(
               case HttpEntity.Streamed(_, _, _) =>
                 new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.valueOf(result.header.status))
             }
+            val trailerHeadersIdOpt = result.header.headers.get("otoroshi-netty-trailers")
+            val hasTrailer = trailerHeadersIdOpt.isDefined
             result.header.headers.foreach { case (key, value) =>
-              response.headers().set(key, value)
+              if (key != "otoroshi-netty-trailers") response.headers().set(key, value)
+            }
+            if (result.body.contentType.contains("application/grpc")) {
+              response.headers().add(HttpHeaderNames.TRAILER, "grpc-status, grpc-message")
             }
             var cookies  = Seq.empty[io.netty.handler.codec.http.cookie.Cookie]
             if (result.newSession.nonEmpty) {
@@ -201,14 +211,152 @@ class Http1RequestHandler(
             response.headers().remove("status").remove("Status")
             // logger.debug("write http3 response")
             result.body match {
+              case HttpEntity.NoEntity if hasTrailer =>
+                trailerHeadersIdOpt.foreach { trailersId =>
+                  otoroshi.netty.NettyRequestAwaitingTrailers.get(trailersId).foreach {
+                    case Left(future)    =>
+                      // if (logger.isWarnEnabled) logger.warn(s"Unable to get trailer header for request '${trailersId}'")
+                      otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+                      val start    = System.nanoTime()
+                      val trailers = Await.result(future, 10.seconds)
+                      if (logger.isWarnEnabled)
+                        logger.warn(
+                          s"Blocked thread for ${(System.nanoTime() - start).nanos.toHumanReadable} to get trailer header for request '${trailersId}'"
+                        )
+                      otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+                      val frtr = response.asInstanceOf[DefaultFullHttpResponse].trailingHeaders()
+                      trailers.foreach { case (name, values) =>
+                        try {
+                          frtr.add(name, values.asJava)
+                        } catch {
+                          case e: Throwable => if (logger.isErrorEnabled) logger.error("error while adding trailer header", e)
+                        }
+                      }
+                      ctx
+                        .writeAndFlush(response)
+                        .applyOnIf(keepAlive)(_.addListener(ChannelFutureListener.CLOSE))
+                      ReferenceCountUtil.release(msg)
+                    case Right(trailers) =>
+                      otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+                      val frtr = response.asInstanceOf[DefaultFullHttpResponse].trailingHeaders()
+                      trailers.foreach { case (name, values) =>
+                        try {
+                          frtr.add(name, values.asJava)
+                        } catch {
+                          case e: Throwable => if (logger.isErrorEnabled) logger.error("error while adding trailer header", e)
+                        }
+                      }
+                      ctx
+                        .writeAndFlush(response)
+                        .applyOnIf(keepAlive)(_.addListener(ChannelFutureListener.CLOSE))
+                      ReferenceCountUtil.release(msg)
+                  }
+                }
+                ().vfuture
               case HttpEntity.NoEntity             =>
                 ctx.writeAndFlush(response).applyOnIf(keepAlive)(_.addListener(ChannelFutureListener.CLOSE))
                 ReferenceCountUtil.release(msg)
+                ().vfuture
+              case HttpEntity.Strict(_, _) if hasTrailer =>
+                trailerHeadersIdOpt.foreach { trailersId =>
+                  otoroshi.netty.NettyRequestAwaitingTrailers.get(trailersId).foreach {
+                    case Left(future)    =>
+                      // if (logger.isWarnEnabled) logger.warn(s"Unable to get trailer header for request '${trailersId}'")
+                      otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+                      val start    = System.nanoTime()
+                      val trailers = Await.result(future, 10.seconds)
+                      if (logger.isWarnEnabled)
+                        logger.warn(
+                          s"Blocked thread for ${(System.nanoTime() - start).nanos.toHumanReadable} to get trailer header for request '${trailersId}'"
+                        )
+                      otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+                      val frtr = response.asInstanceOf[DefaultFullHttpResponse].trailingHeaders()
+                      trailers.foreach { case (name, values) =>
+                        try {
+                          frtr.add(name, values.asJava)
+                        } catch {
+                          case e: Throwable => if (logger.isErrorEnabled) logger.error("error while adding trailer header", e)
+                        }
+                      }
+                      ctx
+                        .writeAndFlush(response)
+                        .applyOnIf(keepAlive)(_.addListener(ChannelFutureListener.CLOSE))
+                      ReferenceCountUtil.release(msg)
+                    case Right(trailers) =>
+                      otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+                      val frtr = response.asInstanceOf[DefaultFullHttpResponse].trailingHeaders()
+                      trailers.foreach { case (name, values) =>
+                        try {
+                          frtr.add(name, values.asJava)
+                        } catch {
+                          case e: Throwable => if (logger.isErrorEnabled) logger.error("error while adding trailer header", e)
+                        }
+                      }
+                      ctx
+                        .writeAndFlush(response)
+                        .applyOnIf(keepAlive)(_.addListener(ChannelFutureListener.CLOSE))
+                      ReferenceCountUtil.release(msg)
+                  }
+                }
                 ().vfuture
               case HttpEntity.Strict(_, _)         =>
                 ctx.writeAndFlush(response).applyOnIf(keepAlive)(_.addListener(ChannelFutureListener.CLOSE))
                 ReferenceCountUtil.release(msg)
                 ().vfuture
+              case e @ HttpEntity.Chunked(_, _) if hasTrailer => {
+                response.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED)
+                ctx.write(response)
+                e.dataStream
+                  .runWith(Sink.foreach { chunk =>
+                    // val payload = ByteString(s"${Integer.toHexString(chunk.size)}\r\n") ++ chunk ++ ByteString("\r\n")
+                    ctx.write(new DefaultHttpContent(Unpooled.copiedBuffer(chunk.toArray)), ctx.newProgressivePromise())
+                  })
+                  .map { _ =>
+                    trailerHeadersIdOpt.foreach { trailersId =>
+                      otoroshi.netty.NettyRequestAwaitingTrailers.get(trailersId).foreach {
+                        case Left(future)    =>
+                          // if (logger.isWarnEnabled) logger.warn(s"Unable to get trailer header for request '${trailersId}'")
+                          otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+                          val start    = System.nanoTime()
+                          val trailers = Await.result(future, 10.seconds)
+                          if (logger.isWarnEnabled)
+                            logger.warn(
+                              s"Blocked thread for ${(System.nanoTime() - start).nanos.toHumanReadable} to get trailer header for request '${trailersId}'"
+                            )
+                          otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+                          val lastHeaders = new DefaultHttpHeaders()
+                          trailers.foreach { case (name, values) =>
+                            try {
+                              lastHeaders.add(name, values.asJava)
+                            } catch {
+                              case e: Throwable => if (logger.isErrorEnabled) logger.error("error while adding trailer header", e)
+                            }
+                          }
+                          val lastContent = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, lastHeaders)
+                          ctx
+                            .writeAndFlush(lastContent)
+                            .applyOnIf(keepAlive)(_.addListener(ChannelFutureListener.CLOSE))
+                          ReferenceCountUtil.release(msg)
+                        case Right(trailers) =>
+                          otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+                          val lastHeaders = new DefaultHttpHeaders()
+                          trailers.foreach { case (name, values) =>
+                            try {
+                              lastHeaders.add(name, values.asJava)
+                            } catch {
+                              case e: Throwable => if (logger.isErrorEnabled) logger.error("error while adding trailer header", e)
+                            }
+                          }
+                          val lastContent = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, lastHeaders)
+                          ctx
+                            .writeAndFlush(lastContent)
+                            .applyOnIf(keepAlive)(_.addListener(ChannelFutureListener.CLOSE))
+                          ReferenceCountUtil.release(msg)
+                      }
+                    }
+                  }
+                  .map(_ => ())
+              }
               case e @ HttpEntity.Chunked(_, _)    => {
                 response.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED)
                 ctx.write(response)
@@ -223,6 +371,58 @@ class Http1RequestHandler(
                       .applyOnIf(keepAlive)(_.addListener(ChannelFutureListener.CLOSE))
                     ReferenceCountUtil.release(msg)
                     ().vfuture
+                  }
+                  .map(_ => ())
+              }
+              case HttpEntity.Streamed(data, _, _) if hasTrailer => {
+                ctx.write(response)
+                data
+                  .runWith(Sink.foreach { chunk =>
+                    ctx.write(new DefaultHttpContent(Unpooled.copiedBuffer(chunk.toArray)), ctx.newProgressivePromise())
+                  })
+                  .map { _ =>
+                    trailerHeadersIdOpt.foreach { trailersId =>
+                      otoroshi.netty.NettyRequestAwaitingTrailers.get(trailersId).foreach {
+                        case Left(future)    =>
+                          // if (logger.isWarnEnabled) logger.warn(s"Unable to get trailer header for request '${trailersId}'")
+                          otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+                          val start    = System.nanoTime()
+                          val trailers = Await.result(future, 10.seconds)
+                          if (logger.isWarnEnabled)
+                            logger.warn(
+                              s"Blocked thread for ${(System.nanoTime() - start).nanos.toHumanReadable} to get trailer header for request '${trailersId}'"
+                            )
+                          otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+                          val lastHeaders = new DefaultHttpHeaders()
+                          trailers.foreach { case (name, values) =>
+                            try {
+                              lastHeaders.add(name, values.asJava)
+                            } catch {
+                              case e: Throwable => if (logger.isErrorEnabled) logger.error("error while adding trailer header", e)
+                            }
+                          }
+                          val lastContent = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, lastHeaders)
+                          ctx
+                            .writeAndFlush(lastContent)
+                            .applyOnIf(keepAlive)(_.addListener(ChannelFutureListener.CLOSE))
+                          ReferenceCountUtil.release(msg)
+                        case Right(trailers) =>
+                          otoroshi.netty.NettyRequestAwaitingTrailers.remove(trailersId)
+                          val lastHeaders = new DefaultHttpHeaders()
+                          trailers.foreach { case (name, values) =>
+                            try {
+                              lastHeaders.add(name, values.asJava)
+                            } catch {
+                              case e: Throwable => if (logger.isErrorEnabled) logger.error("error while adding trailer header", e)
+                            }
+                          }
+                          val lastContent = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, lastHeaders)
+                          ctx
+                            .writeAndFlush(lastContent)
+                            .applyOnIf(keepAlive)(_.addListener(ChannelFutureListener.CLOSE))
+                          ReferenceCountUtil.release(msg)
+                      }
+                    }
                   }
                   .map(_ => ())
               }

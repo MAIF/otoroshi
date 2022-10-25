@@ -41,9 +41,10 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, Future, Promise}
 import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success}
 import scala.xml.{Elem, XML}
 
-case class Http3Response(status: Int, headers: Map[String, Seq[String]], bodyFlux: Flux[ByteString])
+case class Http3Response(status: Int, headers: Map[String, Seq[String]], bodyFlux: Flux[ByteString], trailer: Future[Map[String, Seq[String]]])
 
 class NettySniSslContext(sslContext: QuicSslContext, host: String, port: Int) extends QuicSslContext {
   override def newEngine(alloc: ByteBufAllocator): QuicSslEngine = sslContext.newEngine(alloc, host, port)
@@ -59,8 +60,6 @@ case class NettyHttp3ClientBody(source: Flux[ByteString], contentType: Option[St
 
 class NettyHttp3Client(val env: Env) {
 
-  // TODO: support websockets
-  // TODO: support trailers
   // TODO: support proxy ????
 
   private[netty] val logger = NettyHttp3Client.logger
@@ -167,6 +166,8 @@ class NettyHttp3Client(val env: Env) {
 
         var headers: Map[String, Seq[String]] = Map.empty
         var status: Int = 0
+        var headersReceived: Boolean = false
+        val trailerPromise = Promise.apply[Map[String, Seq[String]]]()
 
         val hotSource = Sinks.many().unicast().onBackpressureBuffer[ByteString]()
         val hotFlux = hotSource.asFlux()
@@ -193,15 +194,16 @@ class NettyHttp3Client(val env: Env) {
 
         override def channelRead(ctx: ChannelHandlerContext, frame: Http3HeadersFrame, isLast: Boolean): Unit = {
           if (logger.isDebugEnabled) logger.debug(s"got header frame !!!! ${isLast}")
-          status = frame.headers().status().toString.toInt
-          headers = frame.headers().names().asScala.map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString))).toMap
-          // frame match {
-          //   case f: io.netty.incubator.codec.http3.DefaultHttp3HeadersFrame => f.
-          // }
-          // frame.headers() match {
-          //   case h: io.netty.incubator.codec.http3.DefaultHttp3Headers =>
-          // }
-          releaseFrameAndCloseIfLast(ctx, frame, isLast)
+          if (headersReceived) {
+            val trailerHeaders = frame.headers().names().asScala.map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString))).toMap
+            trailerPromise.trySuccess(trailerHeaders)
+          } else {
+            headersReceived = true
+            status = frame.headers().status().toString.toInt
+            headers = frame.headers().names().asScala.map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString))).toMap
+            promise.trySuccess(Http3Response(status, headers, hotFlux, trailerPromise.future))
+            releaseFrameAndCloseIfLast(ctx, frame, isLast)
+          }
         }
 
         override def channelRead(ctx: ChannelHandlerContext, frame: Http3DataFrame, isLast: Boolean): Unit = {
@@ -209,9 +211,6 @@ class NettyHttp3Client(val env: Env) {
           val chunk = ByteString(content)
           if (logger.isDebugEnabled) logger.debug(s"got data frame !!! - ${isLast}")
           hotSource.tryEmitNext(chunk)
-          // frame match {
-          //   case f: io.netty.incubator.codec.http3.DefaultHttp3DataFrame => f.
-          // }
           releaseFrameAndCloseIfLast(ctx, frame, isLast)
         }
 
@@ -219,7 +218,7 @@ class NettyHttp3Client(val env: Env) {
           ReferenceCountUtil.release(frame)
           // println("releaseFrameAndCloseIfLast", isLast, frame.getClass.getName)
           if (isLast) {
-            promise.trySuccess(Http3Response(status, headers, hotFlux))
+            //promise.trySuccess(Http3Response(status, headers, hotFlux))
             ctx.close()
             hotSource.tryEmitComplete()
           }
@@ -245,7 +244,7 @@ class NettyHttp3Client(val env: Env) {
   def url(rawUrl: String): NettyHttp3ClientWsRequest = NettyHttp3ClientWsRequest(this, rawUrl)
 }
 
-case class NettyHttp3ClientStrictWsResponse(resp: NettyHttp3ClientWsResponse, bodyAsBytes: ByteString) extends WSResponse {
+case class NettyHttp3ClientStrictWsResponse(resp: NettyHttp3ClientWsResponse, bodyAsBytes: ByteString) extends WSResponse with TrailerSupport {
 
   private lazy val _bodyAsString: String = bodyAsBytes.utf8String
   private lazy val _bodyAsXml: Elem      = XML.loadString(_bodyAsString)
@@ -265,11 +264,11 @@ case class NettyHttp3ClientStrictWsResponse(resp: NettyHttp3ClientWsResponse, bo
   override def xml: Elem                           = _bodyAsXml
   override def json: JsValue                       = _bodyAsJson
 
-  //def trailingHeaders(): Future[Map[String, Seq[String]]]                       = resp.trailingHeaders()
-  //def registerTrailingHeaders(promise: Promise[Map[String, Seq[String]]]): Unit = resp.registerTrailingHeaders(promise)
+  def trailingHeaders(): Future[Map[String, Seq[String]]]                       = resp.trailingHeaders()
+  def registerTrailingHeaders(promise: Promise[Map[String, Seq[String]]]): Unit = resp.registerTrailingHeaders(promise)
 }
 
-case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) extends WSResponse {
+case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) extends WSResponse with TrailerSupport {
 
   private lazy val _body: Source[ByteString, _] = Source.fromPublisher(resp.bodyFlux).filter(_.nonEmpty)
 
@@ -317,37 +316,16 @@ case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) 
 
   def toStrict(): NettyHttp3ClientStrictWsResponse = NettyHttp3ClientStrictWsResponse(this, _bodyAsBytes)
 
-  // def trailingHeaders(): Future[Map[String, Seq[String]]] = {
-  //   ReactiveStreamUtils.MonoUtils
-  //     .toFuture(resp.trailerHeaders())
-  //     .map { headers =>
-  //       headers
-  //         .names()
-  //         .asScala
-  //         .map { name =>
-  //           (name, headers.getAll(name).asScala.toSeq)
-  //         }
-  //         .toMap
-  //     }(env.otoroshiExecutionContext)
-  // }
+  def trailingHeaders(): Future[Map[String, Seq[String]]] = {
+    resp.trailer
+  }
 
-  // def registerTrailingHeaders(promise: Promise[Map[String, Seq[String]]]): Unit = {
-  //   ReactiveStreamUtils.MonoUtils
-  //     .toFuture(resp.trailerHeaders())
-  //     .map { headers =>
-  //       headers
-  //         .names()
-  //         .asScala
-  //         .map { name =>
-  //           (name, headers.getAll(name).asScala.toSeq)
-  //         }
-  //         .toMap
-  //     }(env.otoroshiExecutionContext)
-  //     .andThen {
-  //       case Failure(ex)      => promise.tryFailure(ex)
-  //       case Success(headers) => promise.trySuccess(headers)
-  //     }(env.otoroshiExecutionContext)
-  // }
+  def registerTrailingHeaders(promise: Promise[Map[String, Seq[String]]]): Unit = {
+    resp.trailer.andThen {
+      case Failure(ex)      => promise.tryFailure(ex)
+      case Success(headers) => promise.trySuccess(headers)
+    }(env.otoroshiExecutionContext)
+  }
 }
 
 case class NettyHttp3ClientWsRequest(

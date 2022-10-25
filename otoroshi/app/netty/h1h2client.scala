@@ -53,6 +53,11 @@ import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success}
 import scala.xml.{Elem, XML}
 
+trait TrailerSupport {
+  def trailingHeaders(): Future[Map[String, Seq[String]]]
+  def registerTrailingHeaders(promise: Promise[Map[String, Seq[String]]]): Unit
+}
+
 object NettyHttpClient {
   val logger = Logger("otoroshi-netty-client")
 }
@@ -460,7 +465,7 @@ case class NettyWsClientRequest(
   }
 }
 
-case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri: Uri, env: Env) extends WSResponse {
+case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri: Uri, env: Env) extends WSResponse with TrailerSupport {
 
   private lazy val _body: Source[ByteString, _] = {
     val flux: Flux[ByteString] = bodyflux.map { bb =>
@@ -558,7 +563,7 @@ case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri
   }
 }
 
-case class NettyWsStrictResponse(resp: NettyWsResponse, bodyAsBytes: ByteString) extends WSResponse {
+case class NettyWsStrictResponse(resp: NettyWsResponse, bodyAsBytes: ByteString) extends WSResponse with TrailerSupport {
 
   private lazy val _bodyAsString: String = bodyAsBytes.utf8String
   private lazy val _bodyAsXml: Elem      = XML.loadString(_bodyAsString)

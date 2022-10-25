@@ -2656,22 +2656,18 @@ class ProxyEngine() extends RequestHandler {
         .stream()
         .map { response =>
           val idOpt              = rawRequest.attrs.get(otoroshi.netty.NettyRequestKeys.TrailerHeadersIdKey)
+          val hasTrailerHeaders  = rawRequest.headers.get("te").contains("trailers") || response.headers.containsIgnoreCase("trailer")
           val shouldHaveTrailers =
-            route.useNettyClient && (finalTarget.protocol.isHttp2 || finalTarget.protocol.isHttp3) && rawRequest.attrs
+            (route.useNettyClient || finalTarget.protocol.isHttp2OrHttp3) && rawRequest.attrs // trailers works for http/1.1, h2 and h3
               .get(RequestAttrKey.Server)
-              .contains("netty-experimental") && rawRequest.headers.get("te").contains("trailers")
+              .contains("netty-experimental") && hasTrailerHeaders
           if (shouldHaveTrailers) {
             val id = idOpt.get
             response match {
-              case r: otoroshi.netty.NettyWsResponse       =>
+              case r: otoroshi.netty.TrailerSupport =>
                 val future = r.trailingHeaders()
                 otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Left(future))
                 future.map(trls => otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Right(trls)))
-              case r: otoroshi.netty.NettyWsStrictResponse =>
-                val future = r.trailingHeaders()
-                otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Left(future))
-                future.map(trls => otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Right(trls)))
-                // TODO: support http3 client
               case _                                       =>
             }
           }
