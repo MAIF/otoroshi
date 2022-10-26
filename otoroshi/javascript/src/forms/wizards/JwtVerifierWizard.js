@@ -389,7 +389,8 @@ function StrategyStep({ value, onChange }) {
               className="py-3 d-flex align-items-center flex-column col-3"
               style={{
                 gap: '12px',
-                minHeight: '325px'
+                minHeight: '325px',
+                maxWidth: '235px'
               }}
               onClick={() => props.onChange(strategy)}
               key={strategy}

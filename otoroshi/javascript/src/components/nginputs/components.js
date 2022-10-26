@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import isEqual from 'lodash/isEqual';
+import { isFunction } from 'lodash';
 
 export class NgStepNotFound extends Component {
   render() {
@@ -68,8 +69,11 @@ export class NgFormRenderer extends Component {
       })
   }
 
-  match = (test, breadcrumb) => test.join('-').startsWith(breadcrumb.join('-')) ||
-    breadcrumb.join('-').startsWith(test.join('-'));
+  match = (test, breadcrumb) => {
+    const lowerTest = test.join('-').toLowerCase();
+    const lowerBreadcrumb = breadcrumb.join('-').toLowerCase();
+    return lowerTest.startsWith(lowerBreadcrumb) || lowerBreadcrumb.startsWith(lowerTest);
+  }
 
   getChildrenVisibility = (pathAsArray, breadcrumbAsArray) => {
     if (!this.props.setBreadcrumb)
@@ -81,16 +85,31 @@ export class NgFormRenderer extends Component {
     return pathAsArray.length <= breadcrumbAsArray.length && this.match(pathAsArray, breadcrumbAsArray);
   }
 
+  isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
+  firstLetterUppercase = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+
+  displaySummary = fields => {
+    return (fields || [])
+      .filter(entry => !this.isAnObject(entry[1]) && !Array.isArray(entry[1]) && entry[1] !== undefined && entry[1].length > 0)
+      .map(entry => {
+        return <div className='d-flex me-3 flex-wrap' key={entry[0]}>
+          <span className='me-1' style={{ fontWeight: 'bold' }}>{this.firstLetterUppercase(entry[0])}: </span>
+          <span>{typeof entry[1] === 'boolean' ? (entry[1] ? ' true' : 'false') : entry[1]}</span>
+        </div>
+      })
+  }
+
   render() {
     const breadcrumbAsArray = this.props.breadcrumb || [];
     const pathAsArray = this.props.path || [];
 
     const showChildren = this.getChildrenVisibility(pathAsArray, breadcrumbAsArray)
-    const clickable = !this.props.setBreadcrumb ? true : !breadcrumbAsArray.join('-').startsWith(pathAsArray.join('-'));
+    const clickable = !this.props.setBreadcrumb ? true : !breadcrumbAsArray.join('-').toLowerCase()
+      .startsWith(pathAsArray.join('-').toLowerCase());
     const isLeaf = !this.props.setBreadcrumb ? true : pathAsArray.length >= breadcrumbAsArray.length;
 
     if (!this.match(pathAsArray, breadcrumbAsArray))
-      return null
+      return null;
 
     if (!this.props.embedded) {
       return (
@@ -107,28 +126,39 @@ export class NgFormRenderer extends Component {
         this.props.rawSchema.props.collapsable || this.props.rawSchema.collapsable;
       const noBorder = this.props.rawSchema.props.noBorder || this.props.rawSchema.noBorder;
       const noTitle = this.props.rawSchema.props.noTitle || this.props.rawSchema.noTitle;
-      let title = '...'
+      let title = '...';
+
+      const titleVar = this.props.rawSchema.props.label ||
+        this.props.rawSchema.label ||
+        this.props.name;
+
+      const showSummary = this.props.rawSchema.props.showSummary || this.props.rawSchema.showSummary;
 
       try {
-        title = (this.props.rawSchema.props.label ||
-          this.props.rawSchema.label ||
-          this.props.name).replace(/_/g, ' ');
-      } catch (e) { }
+        title = isFunction(titleVar) ? titleVar(this.props.value) : titleVar.replace(/_/g, ' ');
+      } catch (e) {
+        console.log(e)
+      }
 
       const showTitle = !noTitle && (isLeaf || clickable);
+      const summary = Object.entries(this.props.value || {});
 
-      const titleComponent = (
-        <span
-          style={{
+      const titleComponent = (!showChildren && showSummary) ?
+        <div style={{ marginLeft: 5, marginTop: 7, marginBottom: 10 }}>
+          <span style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold' }}>{title}</span>
+          {summary.length > 0 && <div className='d-flex mt-3 ms-3 flex-wrap'>
+            {this.displaySummary(summary)}
+          </div>}
+        </div>
+        : isFunction(titleVar) && React.isValidElement(title) && !showChildren ?
+          <div style={{ marginLeft: 5, marginTop: 7, marginBottom: 10 }}>{title}</div> :
+          <div style={{
             color: 'rgb(249, 176, 0)',
             fontWeight: 'bold',
             marginLeft: 5,
             marginTop: 7,
-            marginBottom: 10,
-          }}>
-          {title}
-        </span>
-      );
+            marginBottom: 10
+          }}>{title}</div>
 
       let EnabledTagComponent = null
 

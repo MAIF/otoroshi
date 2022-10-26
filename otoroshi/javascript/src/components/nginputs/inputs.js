@@ -69,6 +69,7 @@ export class NgDotsRenderer extends Component {
     }
 
     const value = this.props.value || props.defaultValue;
+    const schemaProps = this.props.rawSchema?.props;
 
     return (
       <LabelAndInput {...this.props}>
@@ -95,7 +96,17 @@ export class NgDotsRenderer extends Component {
                 backgroundColor: backgroundColorFromOption,
                 color: '#fff'
               }}
-              onClick={() => this.props.onChange(onClick(rawOption))}>
+              onClick={() => {
+                const newOption = onClick(rawOption);
+
+                if (schemaProps?.resetOnChange) {
+                  this.props.rootOnChange({
+                    [this.props.name]: newOption
+                  })
+                } else {
+                  this.props.onChange(newOption);
+                }
+              }}>
               {selected && <i className='fas fa-check me-1' />}
               {optObj ? (option.label || option.value) : option}
             </button>
@@ -437,7 +448,8 @@ export class NgArrayRenderer extends Component {
           {Array.isArray(this.props.value) &&
             this.props.value.map((value, idx) => {
               const path = [...this.props.path, String(idx)]
-              const showItem = this.canShowActions(path)
+              const showItem = this.canShowActions(path);
+
               return (
                 <div
                   style={{

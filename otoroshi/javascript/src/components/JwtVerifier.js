@@ -48,6 +48,8 @@ export class JwtVerifier extends Component {
   render() {
     const { isConfigView, isLegacyView, verifier } = this.state;
 
+    // console.log(verifier)
+
     return (
       <div>
         <Header
@@ -69,14 +71,17 @@ export class JwtVerifier extends Component {
         {isLegacyView &&
           <LegacyJwtVerifier
             verifier={verifier}
-            changeTheValue={(path, value) => {
-              console.log(path, value);
+            changeTheValue={(name, value) => {
+              const path = name.startsWith('.') ? name.substr(1) : name;
+              this.setState({
+                verifier: deepSet(cloneDeep(verifier), path, value)
+              })
             }} />
         }
 
         {!isLegacyView &&
           <NgForm
-            // useBreadcrumb={true}
+            useBreadcrumb={true}
             value={verifier}
             schema={JwtVerifierForm.config_schema}
             flow={JwtVerifierForm.config_flow}
@@ -127,7 +132,6 @@ function Header({ isConfigView, onChange, verifier }) {
     </div>
   </div>
 }
-
 
 export class LocationSettings extends Component {
   state = {

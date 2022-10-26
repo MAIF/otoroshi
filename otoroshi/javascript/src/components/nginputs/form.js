@@ -34,6 +34,7 @@ import {
   NgFlowNotFound,
 } from './components';
 import { Forms } from '../../forms';
+import { camelCase } from 'lodash';
 
 const Helpers = {
   rendererFor: (type, components = {}) => {
@@ -210,10 +211,13 @@ export class NgStep extends Component {
   }
 }
 
-const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
+const firstLetterUppercase = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
+const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
   if (!breadcrumb && !toHome)
     return null
+
+  console.log(`BREADCRUMB: ${breadcrumb}`);
 
   return <div className="breadcrumbs my-2">
     <span
@@ -226,7 +230,7 @@ const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
         return <span
           className={`breadcrumbs__item ${i === breadcrumb.length - 1 ? 'is-active' : ''}`}
           onClick={() => setBreadcrumb(i)} key={`${part}`}>
-          {part}
+          {firstLetterUppercase(camelCase(part))}
         </span>
       })}
   </div>
@@ -491,40 +495,48 @@ export class NgForm extends Component {
   }
 
   renderGroupFlow({ groupId, name, fields, collapsed, visible, full_fields, collapsable }, config) {
-    const FormRenderer = config.components.FormRenderer;
+    const show = isFunction(visible) ? visible(config.value) : (visible !== undefined ? visible : true);
+    if (!show) {
+      return null;
+    } else {
+      const part = groupId || name;
+      const fullPath = (config.root ? [part] : [...config.path, isFunction(part) ? undefined : part])
+        .filter(f => f)
+        .map(n => isFunction(n) ? '' : n);
 
-    const part = groupId || name
-    const fullPath = (config.root ? [part] : [...config.path, isFunction(part) ? undefined : part])
-      .filter(f => f)
-      .map(n => {
-        const part = isFunction(n) ? '' : n
-        return part.split(/\.?(?=[A-Z])/).join('_').toLowerCase()
-      });
+      const label = isFunction(name) ? name(config) : name;
 
-    const show = isFunction(visible) ? visible(config.value) : (visible !== undefined ? visible : true)
-
-    if (!show)
-      return null
-
-    const label = isFunction(name) ? name(config) : name
-
-    return <FormRenderer
-      embedded={true}
-      breadcrumb={config.breadcrumb}
-      setBreadcrumb={!config.setBreadcrumb ? null : () => {
-        config.setBreadcrumb(fullPath)
-      }}
-      useBreadcrumb={config.useBreadcrumb}
-      path={fullPath}
-      rawSchema={{
-        label,
-        collapsable: collapsable === undefined ? true : collapsable,
-        collapsed: collapsed === undefined ? false : true
-      }}
-      key={fullPath}
-    >
-      <SubFlow fields={fields} full_fields={full_fields} render={field => this.renderStepFlow(field, config)} config={config} />
-    </FormRenderer>
+      const FormRenderer = config.components.FormRenderer;
+      return <FormRenderer
+        embedded={true}
+        breadcrumb={config.breadcrumb}
+        setBreadcrumb={!config.setBreadcrumb ? null : () => {
+          config.setBreadcrumb(fullPath)
+        }}
+        useBreadcrumb={config.useBreadcrumb}
+        path={fullPath}
+        rawSchema={{
+          label,
+          collapsable: collapsable === undefined ? true : collapsable,
+          collapsed: collapsed === undefined ? false : true
+        }}
+        key={fullPath}
+      >
+        <SubFlow
+          fields={fields}
+          full_fields={full_fields}
+          render={field => this.renderStepFlow(field, {
+            ...config,
+            root: false,
+            parent: fullPath.slice(-1)[0]
+          })}
+          config={{
+            ...config,
+            root: false,
+            parent: fullPath.slice(-1)[0]
+          }} />
+      </FormRenderer>
+    }
   }
 
   renderGridFlow({ name, fields, visible }, config) {
@@ -554,13 +566,14 @@ export class NgForm extends Component {
   }
 
   match(test, breadcrumb) {
-    return test.join('-').startsWith(breadcrumb.join('-')) ||
-      breadcrumb.join('-').startsWith(test.join('-'))
+    const lowerTest = test.join('-').toLowerCase();
+    const lowerBreadcrumb = breadcrumb.join('-').toLowerCase();
+    return lowerTest.startsWith(lowerBreadcrumb) || lowerBreadcrumb.startsWith(lowerTest);
   }
 
   renderInlineStepFlow(name, {
     schema, value, root, path, validation, components, StepNotFound,
-    setBreadcrumb, breadcrumb, useBreadcrumb
+    parent, setBreadcrumb, breadcrumb, useBreadcrumb
   }) {
     const stepSchema = schema[name];
 
@@ -573,10 +586,10 @@ export class NgForm extends Component {
           : true;
       if (visible) {
         const newPath = root ? [name] : [...path, name];
+        const corePath = parent ? (root ? [name] : [...path, parent, name]) : newPath;
 
-        if (Array.isArray(path) &&
-          Array.isArray(breadcrumb) &&
-          !this.match(newPath, breadcrumb))
+        if (Array.isArray(newPath) && Array.isArray(breadcrumb) && Array.isArray(corePath) &&
+          !this.match(newPath, breadcrumb) && !this.match(corePath, breadcrumb))
           return null
 
         return (
@@ -690,7 +703,6 @@ export class NgForm extends Component {
             render={name => this.renderStepFlow(name, config)}
             config={config} />
         }
-        {/* {flow && flow.map(name => this.renderStepFlow(name, config))} */}
       </FormRenderer>
     );
   }
