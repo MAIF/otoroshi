@@ -236,12 +236,24 @@ const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
   </div>
 }
 
+
 function SubFlow({ fields = [], full_fields = [], render, config }) {
   const [moreFields, showMoreFields] = useState(false);
 
   const processedFields = isFunction(fields) ? fields(config) : fields;
   const processedAllFields = isFunction(full_fields) ? full_fields(config) : full_fields;
   const hasMoreFields = processedAllFields && processedAllFields.length > 0;
+
+
+  const match = (test, breadcrumb) => {
+    if (!breadcrumb) {
+      return true;
+    } else {
+      const lowerTest = (test || []).join('-').toLowerCase();
+      const lowerBreadcrumb = (breadcrumb || []).join('-').toLowerCase();
+      return lowerTest === lowerBreadcrumb;
+    }
+  }
 
   if (config.readOnly) {
     if (hasMoreFields)
@@ -253,14 +265,18 @@ function SubFlow({ fields = [], full_fields = [], render, config }) {
       {!moreFields && processedFields.map(render)}
       {hasMoreFields && moreFields && processedAllFields.map(render)}
 
-      {hasMoreFields && !moreFields && !config.readOnly && <button className='btn btn-sm btn-info mt-2'
-        onClick={() => showMoreFields(!moreFields)}
-        style={{
-          marginLeft: 'auto',
-          display: 'block'
-        }}>
-        Show advanced settings
-      </button>}
+      {hasMoreFields &&
+        !moreFields &&
+        !config.readOnly &&
+        match(config.path, config.breadcrumb) &&
+        <button className='btn btn-sm btn-info mt-2'
+          onClick={() => showMoreFields(!moreFields)}
+          style={{
+            marginLeft: 'auto',
+            display: 'block'
+          }}>
+          Show advanced settings
+        </button>}
     </>
   }
 }

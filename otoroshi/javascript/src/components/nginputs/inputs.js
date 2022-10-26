@@ -87,7 +87,7 @@ export class NgDotsRenderer extends Component {
     return (
       <LabelAndInput {...this.props}>
         <div className='d-flex flex-wrap align-items-center' style={{ height: '100%', gap: '.6em' }}>
-          {readOnly && isValueArray ? value.map(v => <ReadOnlyField value={v} key={v} />) : <ReadOnlyField value={value} />}
+          {readOnly && (isValueArray ? value.map(v => <ReadOnlyField value={v} key={v} />) : <ReadOnlyField value={value} />)}
           {!readOnly && options.map(option => {
             const optObj = this.isAnObject(option);
             const rawOption = optObj ? option.value : option;
