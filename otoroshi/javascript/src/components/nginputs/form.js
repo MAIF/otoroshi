@@ -517,8 +517,8 @@ export class NgForm extends Component {
         path={fullPath}
         rawSchema={{
           label,
-          collapsable: collapsable === undefined ? true : collapsable,
-          collapsed: collapsed === undefined ? false : true
+          collapsable: config.readOnly ? false : collapsable === undefined ? true : collapsable,
+          collapsed: config.readOnly ? false : collapsed === undefined ? false : true
         }}
         key={fullPath}
       >
@@ -573,7 +573,7 @@ export class NgForm extends Component {
 
   renderInlineStepFlow(name, {
     schema, value, root, path, validation, components, StepNotFound,
-    parent, setBreadcrumb, breadcrumb, useBreadcrumb
+    parent, setBreadcrumb, breadcrumb, useBreadcrumb, readOnly
   }) {
     const stepSchema = schema[name];
 
@@ -596,6 +596,7 @@ export class NgForm extends Component {
           <NgStep
             key={newPath.join('/')}
             name={name}
+            readOnly={readOnly}
             embedded
             fromArray={this.props.fromArray}
             path={newPath}
@@ -673,12 +674,14 @@ export class NgForm extends Component {
     const root = !embedded;
     const validation = root ? this.state.validation : this.props.validation;
     const path = this.props.path || [];
+    const readOnly = this.props.readOnly;
 
     const config = {
       schema, value, root, path, validation, components, StepNotFound,
       setBreadcrumb: this.getBreadcrumb(root),
       breadcrumb: root ? this.state.breadcrumb : this.props.breadcrumb,
-      useBreadcrumb: this.props.useBreadcrumb
+      useBreadcrumb: this.props.useBreadcrumb,
+      readOnly
     }
 
     return (

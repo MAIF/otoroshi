@@ -32,7 +32,7 @@ export class JwtVerifier extends Component {
   state = {
     isConfigView: true,
     isLegacyView: false,
-    verifier: {
+    verifier: this.props.value || this.props.verifier || {
       type: 'globale',
       enabled: false,
       strict: true,
@@ -68,26 +68,38 @@ export class JwtVerifier extends Component {
           />}
         </div>
 
-        {isLegacyView &&
-          <LegacyJwtVerifier
-            verifier={verifier}
-            changeTheValue={(name, value) => {
-              const path = name.startsWith('.') ? name.substr(1) : name;
-              this.setState({
-                verifier: deepSet(cloneDeep(verifier), path, value)
-              })
-            }} />
-        }
+        {isConfigView && <>
+          {isLegacyView &&
+            <LegacyJwtVerifier
+              verifier={verifier}
+              changeTheValue={(name, value) => {
+                const path = name.startsWith('.') ? name.substr(1) : name;
+                this.setState({
+                  verifier: deepSet(cloneDeep(verifier), path, value)
+                })
+              }} />
+          }
 
-        {!isLegacyView &&
+          {!isLegacyView &&
+            <NgForm
+              useBreadcrumb={true}
+              value={verifier}
+              schema={JwtVerifierForm.config_schema}
+              flow={JwtVerifierForm.config_flow}
+              onChange={verifier => this.setState({ verifier })}
+            />
+          }
+        </>}
+
+        {!isConfigView && <>
           <NgForm
-            useBreadcrumb={true}
             value={verifier}
             schema={JwtVerifierForm.config_schema}
             flow={JwtVerifierForm.config_flow}
-            onChange={verifier => this.setState({ verifier })}
+            onChange={() => { }}
+            readOnly={true}
           />
-        }
+        </>}
       </div>
     )
   }

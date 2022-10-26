@@ -10,35 +10,47 @@ import { Button } from '../Button';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
+const ReadOnlyField = ({ value }) => <span className='d-flex align-items-center' style={{ height: '100%', color: '#fff' }}>
+  {value}
+</span>
+
 export class NgLocationRenderer extends Component {
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
+    const readOnly = this.props.readOnly;
     const FormRenderer = this.props.components.FormRenderer;
 
-    return <FormRenderer
-      embedded={true}
-      breadcrumb={[]} // TODO
-      setBreadcrumb={this.props.setBreadcrumb} // TODO
-      rawSchema={{
-        label: 'Location',
-        collapsable: true,
-        collapsed: true
-      }}>
-      <Location
-        {...props}
-        tenant={this.props.value?.tenant || 'default'}
-        teams={this.props.value?.teams || ['default']}
-        onChangeTenant={tenant => this.props.onChange({
-          ...this.props.value,
-          tenant
-        })}
-        onChangeTeams={teams => this.props.onChange({
-          ...this.props.value,
-          teams
-        })}
-      />
-    </FormRenderer>
+    const component = <Location
+      {...props}
+      readOnly={readOnly}
+      tenant={this.props.value?.tenant || 'default'}
+      teams={this.props.value?.teams || ['default']}
+      onChangeTenant={tenant => this.props.onChange({
+        ...this.props.value,
+        tenant
+      })}
+      onChangeTeams={teams => this.props.onChange({
+        ...this.props.value,
+        teams
+      })}
+    />
+
+    if (readOnly) {
+      return component;
+    } else {
+      return <FormRenderer
+        embedded={true}
+        breadcrumb={[]} // TODO
+        setBreadcrumb={this.props.setBreadcrumb} // TODO
+        rawSchema={{
+          label: 'Location',
+          collapsable: true,
+          collapsed: true
+        }}>
+        {component}
+      </FormRenderer>
+    }
   }
 }
 
@@ -49,6 +61,7 @@ export class NgDotsRenderer extends Component {
   render() {
     const schema = this.props.schema || {};
     const props = schema.props || this.props || {};
+    const readOnly = this.props.readOnly;
 
     const options = props.options || this.props.options;
 
@@ -74,7 +87,8 @@ export class NgDotsRenderer extends Component {
     return (
       <LabelAndInput {...this.props}>
         <div className='d-flex flex-wrap align-items-center' style={{ height: '100%', gap: '.6em' }}>
-          {options.map(option => {
+          {readOnly && <ReadOnlyField value={value} />}
+          {!readOnly && options.map(option => {
             const optObj = this.isAnObject(option);
             const rawOption = optObj ? option.value : option;
             const selected = isValueArray ? value.includes(rawOption) : value === rawOption;
@@ -163,7 +177,7 @@ export function LabelAndInput(_props) {
   const ngOptions = _props.ngOptions || props.ngOptions || _props.rawSchema?.props?.ngOptions || {};
   const labelColumn = _props.labelColumn || props.labelColumn || 2;
 
-  if (ngOptions.spread) return _props.children;
+  if (ngOptions.spread && !_props.readOnly) return _props.children;
 
   const margin = _props.margin || props.margin || _props.rawSchema?.props?.margin || "mb-3";
 
@@ -241,22 +255,26 @@ export class NgStringRenderer extends Component {
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
+    const readOnly = this.props.readOnly;
 
     // avoid to have both value and defaultValue props
     const { defaultValue, ...inputProps } = props;
 
     return (
       <LabelAndInput {...this.props}>
-        <input
-          type="text"
-          className="form-control"
-          placeholder={props.placeholder}
-          title={props.help}
-          value={this.props.value || defaultValue || ''}
-          onChange={(e) => this.props.onChange(e.target.value)}
-          {...inputProps}
-        />
-        {props.subTitle && <span style={{ fontStyle: 'italic' }}>{props.subTitle}</span>}
+        {readOnly ? <ReadOnlyField value={this.props.value || defaultValue || 'Not specified'} /> :
+          <>
+            <input
+              type="text"
+              className="form-control"
+              placeholder={props.placeholder}
+              title={props.help}
+              value={this.props.value || defaultValue || ''}
+              onChange={(e) => this.props.onChange(e.target.value)}
+              {...inputProps}
+            />
+            {props.subTitle && <span style={{ fontStyle: 'italic' }}>{props.subTitle}</span>}
+          </>}
       </LabelAndInput>
     );
   }
@@ -377,13 +395,17 @@ export class NgBooleanRenderer extends Component {
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
+    const readOnly = this.props.readOnly;
 
     const value = (this.props.value === null || this.props.value === undefined) ? props.defaultValue : this.props.value;
 
     return (
       <LabelAndInput {...this.props}>
-        {value && <OnSwitch onChange={this.toggleOff} />}
-        {!value && <OffSwitch onChange={this.toggleOn} />}
+        {readOnly ? <ReadOnlyField value={value ? 'true' : 'false'} /> :
+          <>
+            {value && <OnSwitch onChange={this.toggleOff} />}
+            {!value && <OffSwitch onChange={this.toggleOn} />}
+          </>}
       </LabelAndInput>
     );
   }
@@ -436,6 +458,7 @@ export class NgArrayRenderer extends Component {
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
+    const readOnly = this.props.readOnly;
     const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;
 
     const showActions = this.canShowActions()
@@ -461,25 +484,27 @@ export class NgArrayRenderer extends Component {
                     marginBottom: showItem ? '6px' : 0
                   }} key={path}>
                   {!ItemRenderer && (
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder={props.placeholder}
-                      title={props.help}
-                      value={value}
-                      onChange={(e) => {
-                        const newArray = this.props.value ? [...this.props.value] : [];
-                        newArray.splice(idx, 1, e.target.value);
-                        this.props.onChange(newArray);
-                      }}
-                      style={{ width: '100%' }}
-                      {...props}
-                    />
+                    readOnly ? <ReadOnlyField value={value} /> :
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder={props.placeholder}
+                        title={props.help}
+                        value={value}
+                        onChange={(e) => {
+                          const newArray = this.props.value ? [...this.props.value] : [];
+                          newArray.splice(idx, 1, e.target.value);
+                          this.props.onChange(newArray);
+                        }}
+                        style={{ width: '100%' }}
+                        {...props}
+                      />
                   )}
                   {ItemRenderer && (
                     <ItemRenderer
                       embedded
                       fromArray
+                      readOnly={readOnly}
                       breadcrumb={this.props.breadcrumb}
                       setBreadcrumb={this.props.setBreadcrumb}
                       useBreadcrumb={this.props.useBreadcrumb}
@@ -522,7 +547,7 @@ export class NgArrayRenderer extends Component {
                 </div>
               );
             })}
-          {showActions && <button
+          {showActions && !this.props.readOnly && <button
             type="button"
             className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
@@ -548,40 +573,49 @@ export class NgObjectRenderer extends Component {
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
+    const readOnly = this.props.readOnly;
     const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;
 
     return (
       <LabelAndInput {...this.props}>
-        <ObjectInput
-          ngOptions={{
-            spread: true,
-          }}
-          label={null}
-          placeholderKey={props.placeholderKey}
-          placeholderValue={props.placeholderValue}
-          value={this.props.value}
-          onChange={this.props.onChange}
-          itemRenderer={
-            ItemRenderer
-              ? (key, value, idx) => (
-                <ItemRenderer
-                  embedded
-                  flow={this.props.flow}
-                  schema={this.props.schema}
-                  value={value}
-                  key={key}
-                  idx={idx}
-                  onChange={(e) => {
-                    const newObject = this.props.value ? { ...this.props.value } : {};
-                    newObject[key] = e;
-                    this.props.onChange(newObject);
-                  }}
-                  {...props}
-                />
-              )
-              : null
-          }
-        />
+        {readOnly ? <ReadOnlyField
+          value={Object.entries(this.props.value || {}).map(entry => {
+            return <>
+              {`${entry[0]} - ${entry[1]}`}
+              <br />
+            </>
+          })} /> :
+          <ObjectInput
+            ngOptions={{
+              spread: true,
+            }}
+            label={null}
+            placeholderKey={props.placeholderKey}
+            placeholderValue={props.placeholderValue}
+            value={this.props.value}
+            onChange={this.props.onChange}
+            itemRenderer={
+              ItemRenderer
+                ? (key, value, idx) => (
+                  <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={key}
+                    idx={idx}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                )
+                : null
+            }
+          />
+        }
       </LabelAndInput>
     );
   }
@@ -838,10 +872,12 @@ export class NgSelectRenderer extends Component {
   render() {
     const schema = this.props.schema || {};
     const props = schema.props || this.props || {};
+    const readOnly = this.props.readOnly;
 
     return (
       <LabelAndInput {...this.props}>
-        <Select
+        {readOnly && <ReadOnlyField value={this.props.value} />}
+        {!readOnly && <Select
           name={`selector-${this.props.name}`}
           value={this.props.value}
           isMulti={props.isMulti}
@@ -854,7 +890,7 @@ export class NgSelectRenderer extends Component {
             this.state.options || props.options || this.props.options
           )}
           onChange={(e) => this.props.onChange(e?.value)}
-        />
+        />}
       </LabelAndInput>
     );
   }

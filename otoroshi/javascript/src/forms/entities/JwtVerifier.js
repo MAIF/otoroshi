@@ -142,77 +142,126 @@ const StrategyForm = {
     renderer: props => {
       const [open, setOpen] = useState(false);
 
-      if (!open) {
-        return <div className='d-flex align-items-center mb-3'>
-          <label>Selected strategy : <span style={{ fontWeight: 'bold' }}>{props.value}</span></label>
-          <Button
-            onClick={() => setOpen(true)}
-            text="Change of strategy"
-            className='ms-3 btn-sm' />
-        </div>
+      if (props.readOnly) {
+        return <LabelAndInput label='Type' >
+          <span className='d-flex align-items-center' style={{ height: '100%', color: '#fff' }}>
+            {props.value}
+          </span>
+        </LabelAndInput>
       } else {
-        return <div
-          style={{
-            display: 'flex',
-            gap: '10px',
-            flexWrap: 'wrap',
-            justifyContent: 'flex-start'
-          }}>
-          {VERIFIER_STRATEGIES.map(({ strategy, desc, title, tags }) => {
-            return <Button
-              type={props.value === strategy ? 'save' : 'dark'}
-              className="py-3 d-flex align-items-center flex-column col-3"
-              style={{
-                gap: '12px',
-                minHeight: '325px',
-                maxWidth: '235px'
-              }}
-              onClick={() => {
-                props.onChange(strategy);
-                setOpen(false);
-              }}
-              key={strategy}
-            >
-              <div style={{ flex: .2 }}>
-                {title.map((t, i) => <h3 className="wizard-h3--small " style={{
-                  margin: 0,
-                  marginTop: i > 0 ? '1px' : 0
-                }} key={t}>
-                  {t}
-                </h3>)}
-              </div>
-              <div className='d-flex flex-column align-items-center' style={{ flex: 1 }}>
-                <label className='d-flex align-items-center' style={{ textAlign: 'left' }}>
-                  {desc}
-                </label>
-                <div className='mt-auto' style={{
-                  padding: '4px',
-                  background: '#515151',
-                  width: '100%'
-                }}>
-                  {[
-                    'Generate', 'Verify', 'Sign', 'Transform'
-                  ]
-                    .filter(tag => tags.includes(tag.toLocaleLowerCase()))
-                    .map(tag => <div className='d-flex align-items-center me-1'
-                      key={tag}
-                      style={{
-                        minWidth: "80px",
-                        padding: '2px 8px 2px 3px'
-                      }}>
-                      <i className={`fas fa-${tags.includes(tag.toLocaleLowerCase()) ? 'check' : 'times'} me-1`} style={{
-                        color: tags.includes(tag.toLocaleLowerCase()) ? '#f9b000' : '#fff',
-                        padding: '4px',
-                        minWidth: '20px'
-                      }} />
-                      <span>{tag}</span>
-                    </div>)}
+        if (!open) {
+          return <div className='d-flex align-items-center mb-3'>
+            <label>Selected strategy : <span style={{ fontWeight: 'bold' }}>{props.value}</span></label>
+            <Button
+              onClick={() => setOpen(true)}
+              text="Change of strategy"
+              className='ms-3 btn-sm' />
+          </div>
+        } else {
+          return <div
+            style={{
+              display: 'flex',
+              gap: '10px',
+              flexWrap: 'wrap',
+              justifyContent: 'flex-start'
+            }}>
+            {VERIFIER_STRATEGIES.map(({ strategy, desc, title, tags }) => {
+              return <Button
+                type={props.value === strategy ? 'save' : 'dark'}
+                className="py-3 d-flex align-items-center flex-column col-3"
+                style={{
+                  gap: '12px',
+                  minHeight: '325px',
+                  maxWidth: '235px'
+                }}
+                onClick={() => {
+                  props.onChange(strategy);
+                  setOpen(false);
+                }}
+                key={strategy}
+              >
+                <div style={{ flex: .2 }}>
+                  {title.map((t, i) => <h3 className="wizard-h3--small " style={{
+                    margin: 0,
+                    marginTop: i > 0 ? '1px' : 0
+                  }} key={t}>
+                    {t}
+                  </h3>)}
                 </div>
-              </div>
-            </Button>
-          })}
-        </div>
+                <div className='d-flex flex-column align-items-center' style={{ flex: 1 }}>
+                  <label className='d-flex align-items-center' style={{ textAlign: 'left' }}>
+                    {desc}
+                  </label>
+                  <div className='mt-auto' style={{
+                    padding: '4px',
+                    background: '#515151',
+                    width: '100%'
+                  }}>
+                    {[
+                      'Generate', 'Verify', 'Sign', 'Transform'
+                    ]
+                      .filter(tag => tags.includes(tag.toLocaleLowerCase()))
+                      .map(tag => <div className='d-flex align-items-center me-1'
+                        key={tag}
+                        style={{
+                          minWidth: "80px",
+                          padding: '2px 8px 2px 3px'
+                        }}>
+                        <i className={`fas fa-${tags.includes(tag.toLocaleLowerCase()) ? 'check' : 'times'} me-1`} style={{
+                          color: tags.includes(tag.toLocaleLowerCase()) ? '#f9b000' : '#fff',
+                          padding: '4px',
+                          minWidth: '20px'
+                        }} />
+                        <span>{tag}</span>
+                      </div>)}
+                  </div>
+                </div>
+              </Button>
+            })}
+          </div>
+        }
       }
+    }
+  }
+}
+
+const JwtLocationExamples = {
+  renderer: props => {
+    if (props.readOnly)
+      return null;
+    else {
+      return <div className='mt-3 p-3'>
+        <h4>Examples</h4>
+        <p style={{ color: '#fff' }}>
+          A common use case is a request containing a JSON Web token prefixed with Bearer to indicate that the user accessing the resources is authenticated.<br />
+          In our example, the token location is the Authorization header.<br />
+          To match this case, you must set Authorization for the name entry and Bearer followed by a space for the Remove value entry.
+        </p>
+        <NgForm
+          schema={{
+            header: {
+              ngOptions: {
+                spread: true
+              },
+              type: 'json',
+              props: {
+                editorOnly: true,
+                height: '50px',
+                defaultValue: {
+                  Authorization: 'Bearer XXX.XXX.XXX'
+                }
+              }
+            }
+          }}
+          flow={[
+            {
+              type: 'group',
+              collapsable: false,
+              name: 'A bearer token expected in Authorization header',
+              fields: ['header']
+            }
+          ]} />
+      </div>
     }
   }
 }
@@ -358,42 +407,7 @@ export default {
             subTitle: '(Optional): String to remove from the value to access to the token'
           }
         },
-        debug: {
-          renderer: () => {
-            return <div className='mt-3 p-3'>
-              <h4>Examples</h4>
-              <p style={{ color: '#fff' }}>
-                A common use case is a request containing a JSON Web token prefixed with Bearer to indicate that the user accessing the resources is authenticated.<br />
-                In our example, the token location is the Authorization header.<br />
-                To match this case, you must set Authorization for the name entry and Bearer followed by a space for the Remove value entry.
-              </p>
-              <NgForm
-                schema={{
-                  header: {
-                    ngOptions: {
-                      spread: true
-                    },
-                    type: 'json',
-                    props: {
-                      editorOnly: true,
-                      height: '50px',
-                      defaultValue: {
-                        Authorization: 'Bearer XXX.XXX.XXX'
-                      }
-                    }
-                  }
-                }}
-                flow={[
-                  {
-                    type: 'group',
-                    collapsable: false,
-                    name: 'A bearer token expected in Authorization header',
-                    fields: ['header']
-                  }
-                ]} />
-            </div>
-          }
-        }
+        debug: JwtLocationExamples
       },
       flow: [
         'type',
@@ -483,59 +497,7 @@ export default {
                     subTitle: '(Optional): String to remove from the value to access to the token'
                   }
                 },
-                debug: {
-                  renderer: () => {
-                    return <LabelAndInput label="Examples">
-                      <NgForm
-                        schema={{
-                          header: {
-                            ngOptions: {
-                              spread: true
-                            },
-                            type: 'json',
-                            props: {
-                              editorOnly: true,
-                              height: '50px',
-                              defaultValue: {
-                                Authorization: 'Bearer XXX.XXX.XXX'
-                              }
-                            }
-                          },
-                          result: {
-                            type: 'form',
-                            label: 'Form values',
-                            schema: {
-                              headerName: {
-                                type: 'string',
-                                label: 'Name',
-                                props: {
-                                  disabled: true,
-                                  defaultValue: 'Authorization'
-                                }
-                              },
-                              remove: {
-                                type: 'string',
-                                label: 'Remove value',
-                                props: {
-                                  disabled: true,
-                                  defaultValue: 'Bearer '
-                                }
-                              },
-                            },
-                            flow: ['headerName', 'remove']
-                          }
-                        }}
-                        flow={[
-                          {
-                            type: 'group',
-                            collapsable: false,
-                            name: 'A bearer token expected in Authorization header',
-                            fields: ['header', 'result']
-                          }
-                        ]} />
-                    </LabelAndInput>
-                  }
-                }
+                debug: JwtLocationExamples
               },
               flow: [
                 'type',

@@ -103,7 +103,7 @@ export class NgFormRenderer extends Component {
     const breadcrumbAsArray = this.props.breadcrumb || [];
     const pathAsArray = this.props.path || [];
 
-    const showChildren = this.getChildrenVisibility(pathAsArray, breadcrumbAsArray)
+    const showChildren = this.props.readOnly ? true : this.getChildrenVisibility(pathAsArray, breadcrumbAsArray);
     const clickable = !this.props.setBreadcrumb ? true : !breadcrumbAsArray.join('-').toLowerCase()
       .startsWith(pathAsArray.join('-').toLowerCase());
     const isLeaf = !this.props.setBreadcrumb ? true : pathAsArray.length >= breadcrumbAsArray.length;
@@ -122,8 +122,7 @@ export class NgFormRenderer extends Component {
         return null;
       }
       if (!this.props.rawSchema.props) this.props.rawSchema.props = {};
-      const collapsable =
-        this.props.rawSchema.props.collapsable || this.props.rawSchema.collapsable;
+      const collapsable = this.props.rawSchema.props.collapsable || this.props.rawSchema.collapsable;
       const noBorder = this.props.rawSchema.props.noBorder || this.props.rawSchema.noBorder;
       const noTitle = this.props.rawSchema.props.noTitle || this.props.rawSchema.noTitle;
       let title = '...';
@@ -132,7 +131,7 @@ export class NgFormRenderer extends Component {
         this.props.rawSchema.label ||
         this.props.name;
 
-      const showSummary = this.props.rawSchema.props.showSummary || this.props.rawSchema.showSummary;
+      const showSummary = this.props.readOnly ? false : (this.props.rawSchema.props.showSummary || this.props.rawSchema.showSummary);
 
       try {
         title = isFunction(titleVar) ? titleVar(this.props.value) : titleVar.replace(/_/g, ' ');
@@ -195,7 +194,7 @@ export class NgFormRenderer extends Component {
               <div>
                 {showTitle && EnabledTagComponent}
 
-                {!this.props.setBreadcrumb && (
+                {(!this.props.setBreadcrumb && !this.props.readOnly) && (
                   <button
                     type="button"
                     className="btn btn-info float-end btn-sm"
