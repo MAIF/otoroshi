@@ -25,7 +25,7 @@ import { YAMLExportButton } from '../components/exporters/YAMLButton';
 import { JsonExportButton } from '../components/exporters/JSONButton';
 import { SquareButton } from './SquareButton';
 import { Dropdown } from './Dropdown';
-import { NgForm } from './nginputs';
+import { NgForm, NgSelectRenderer } from './nginputs';
 import JwtVerifierForm from '../forms/entities/JwtVerifier';
 
 export class JwtVerifier extends Component {
@@ -47,8 +47,6 @@ export class JwtVerifier extends Component {
 
   render() {
     const { isConfigView, isLegacyView, verifier } = this.state;
-
-    // console.log(verifier)
 
     return (
       <div>
@@ -91,15 +89,14 @@ export class JwtVerifier extends Component {
           }
         </>}
 
-        {!isConfigView && <>
+        {!isConfigView &&
           <NgForm
             value={verifier}
             schema={JwtVerifierForm.config_schema}
             flow={JwtVerifierForm.config_flow}
             onChange={() => { }}
             readOnly={true}
-          />
-        </>}
+          />}
       </div>
     )
   }

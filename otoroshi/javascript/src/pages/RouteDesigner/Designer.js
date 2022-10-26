@@ -2275,6 +2275,7 @@ class EditView extends React.Component {
               )}
               {!asJsonFormat && <>
                 <NgForm
+                  readOnly={true}
                   ref={this.formRef}
                   value={form.value}
                   schema={form.schema}
