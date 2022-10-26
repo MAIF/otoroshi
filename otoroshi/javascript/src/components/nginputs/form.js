@@ -217,7 +217,7 @@ const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
   if (!breadcrumb && !toHome)
     return null
 
-  console.log(`BREADCRUMB: ${breadcrumb}`);
+  // console.log(`BREADCRUMB: ${breadcrumb}`);
 
   return <div className="breadcrumbs my-2">
     <span
@@ -243,19 +243,26 @@ function SubFlow({ fields = [], full_fields = [], render, config }) {
   const processedAllFields = isFunction(full_fields) ? full_fields(config) : full_fields;
   const hasMoreFields = processedAllFields && processedAllFields.length > 0;
 
-  return <>
-    {!moreFields && processedFields.map(render)}
-    {hasMoreFields && moreFields && processedAllFields.map(render)}
+  if (config.readOnly) {
+    if (hasMoreFields)
+      return processedAllFields.map(render);
+    else
+      return [...processedFields, ...processedAllFields].map(render);
+  } else {
+    return <>
+      {!moreFields && processedFields.map(render)}
+      {hasMoreFields && moreFields && processedAllFields.map(render)}
 
-    {hasMoreFields && !moreFields && <button className='btn btn-sm btn-info mt-2'
-      onClick={() => showMoreFields(!moreFields)}
-      style={{
-        marginLeft: 'auto',
-        display: 'block'
-      }}>
-      Show advanced settings
-    </button>}
-  </>
+      {hasMoreFields && !moreFields && !config.readOnly && <button className='btn btn-sm btn-info mt-2'
+        onClick={() => showMoreFields(!moreFields)}
+        style={{
+          marginLeft: 'auto',
+          display: 'block'
+        }}>
+        Show advanced settings
+      </button>}
+    </>
+  }
 }
 
 export class NgForm extends Component {
@@ -494,7 +501,7 @@ export class NgForm extends Component {
     });
   }
 
-  renderGroupFlow({ groupId, name, fields, collapsed, visible, full_fields, collapsable }, config) {
+  renderGroupFlow({ groupId, name, fields, collapsed, visible, full_fields, collapsable, summaryFields }, config) {
     const show = isFunction(visible) ? visible(config.value) : (visible !== undefined ? visible : true);
     if (!show) {
       return null;
@@ -518,8 +525,11 @@ export class NgForm extends Component {
         rawSchema={{
           label,
           collapsable: config.readOnly ? false : collapsable === undefined ? true : collapsable,
-          collapsed: config.readOnly ? false : collapsed === undefined ? false : true
+          collapsed: config.readOnly ? false : collapsed === undefined ? false : true,
+          showSummary: summaryFields,
+          summaryFields
         }}
+        value={config.value}
         key={fullPath}
       >
         <SubFlow
@@ -686,7 +696,7 @@ export class NgForm extends Component {
 
     return (
       <FormRenderer {...this.props}>
-        {config.useBreadcrumb &&
+        {config.useBreadcrumb && !readOnly &&
           <Breadcrumb
             breadcrumb={this.state.breadcrumb}
             toHome={root ? () => {

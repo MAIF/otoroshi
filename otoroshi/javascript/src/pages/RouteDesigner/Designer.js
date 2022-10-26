@@ -20,7 +20,6 @@ import { Backend, Frontend, Plugins } from '../../forms/ng_plugins'
 import {
   EXCLUDED_PLUGINS,
   LEGACY_PLUGINS_WRAPPER,
-  PLUGINS,
   PLUGIN_INFORMATIONS_SCHEMA,
 } from './DesignerConfig';
 import Loader from '../../components/Loader';
@@ -2066,8 +2065,7 @@ class EditView extends React.Component {
           collapsable: isPluginWithConfiguration ? true : false,
           collapsed: false,
           label: 'Informations',
-          schema: PLUGIN_INFORMATIONS_SCHEMA,
-          flow: ['enabled', 'debug', 'include', 'exclude'],
+          schema: PLUGIN_INFORMATIONS_SCHEMA
         }
       };
       if (isPluginWithConfiguration)
@@ -2275,7 +2273,6 @@ class EditView extends React.Component {
               )}
               {!asJsonFormat && <>
                 <NgForm
-                  readOnly={true}
                   ref={this.formRef}
                   value={form.value}
                   schema={form.schema}

@@ -1,27 +1,22 @@
 export const PLUGIN_INFORMATIONS_SCHEMA = {
   enabled: {
-    visibleOnCollapse: true,
     type: 'bool',
-    label: 'Enabled',
+    label: 'Enabled'
   },
   debug: {
     type: 'bool',
-    label: 'Debug',
+    label: 'Debug'
   },
   include: {
     label: 'Include',
-    format: 'singleLineCode',
     type: 'string',
-    array: true,
-    createOption: true,
+    array: true
   },
   exclude: {
     label: 'Exclude',
-    format: 'singleLineCode',
     type: 'string',
-    array: true,
-    createOption: true,
-  },
+    array: true
+  }
 };
 
 export const EXCLUDED_PLUGINS = {

@@ -88,9 +88,12 @@ export class NgFormRenderer extends Component {
   isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
   firstLetterUppercase = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
-  displaySummary = fields => {
+  displaySummary = (fields, expectedSummaryFields) => {
+    const subFilter = expectedSummaryFields.length > 0;
+
     return (fields || [])
-      .filter(entry => !this.isAnObject(entry[1]) && !Array.isArray(entry[1]) && entry[1] !== undefined && entry[1].length > 0)
+      .filter(entry => !this.isAnObject(entry[1]) && !Array.isArray(entry[1]) && entry[1] !== undefined && (typeof entry[1] === 'boolean' ? true : entry[1].length > 0))
+      .filter(entry => subFilter ? expectedSummaryFields.includes(entry[0]) : true)
       .map(entry => {
         return <div className='d-flex me-3 flex-wrap' key={entry[0]}>
           <span className='me-1' style={{ fontWeight: 'bold' }}>{this.firstLetterUppercase(entry[0])}: </span>
@@ -131,12 +134,18 @@ export class NgFormRenderer extends Component {
         this.props.rawSchema.label ||
         this.props.name;
 
-      const showSummary = this.props.readOnly ? false : (this.props.rawSchema.props.showSummary || this.props.rawSchema.showSummary);
+      const summaryFields = this.props.readOnly ? [] : (this.props.rawSchema.props.summaryFields || this.props.rawSchema.summaryFields || []);
+
+      let showSummary = false;
+
+      if (this.props.rawSchema.props.showSummary || this.props.rawSchema.showSummary || (summaryFields.length > 0)) {
+        showSummary = true
+      }
 
       try {
         title = isFunction(titleVar) ? titleVar(this.props.value) : titleVar.replace(/_/g, ' ');
       } catch (e) {
-        console.log(e)
+        // console.log(e)
       }
 
       const showTitle = !noTitle && (isLeaf || clickable);
@@ -146,7 +155,7 @@ export class NgFormRenderer extends Component {
         <div style={{ marginLeft: 5, marginTop: 7, marginBottom: 10 }}>
           <span style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold' }}>{title}</span>
           {summary.length > 0 && <div className='d-flex mt-3 ms-3 flex-wrap'>
-            {this.displaySummary(summary)}
+            {this.displaySummary(summary, summaryFields)}
           </div>}
         </div>
         : isFunction(titleVar) && React.isValidElement(title) && !showChildren ?
@@ -202,7 +211,7 @@ export class NgFormRenderer extends Component {
                     <i className={`fas fa-eye${this.state.folded ? '-slash' : ''}`} />
                   </button>
                 )}
-                {(this.props.setBreadcrumb && clickable) && <button
+                {(this.props.setBreadcrumb && clickable && !this.props.readOnly) && <button
                   type="button"
                   className="btn btn-info float-end btn-sm"
                   onClick={this.setBreadcrumb}>

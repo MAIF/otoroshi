@@ -260,7 +260,8 @@ export default {
     {
       type: 'group',
       name: 'Informations',
-      fields: ['id', 'enabled', 'strict', 'name', 'desc']
+      fields: ['id', 'enabled', 'strict', 'name', 'desc'],
+      summaryFields: ['name', 'enabled']
     },
     {
       type: 'group',
@@ -288,33 +289,23 @@ export default {
     },
     id: {
       type: 'string',
-      props: {
-        label: 'The verifier Id'
-      }
+      label: 'The verifier Id'
     },
     name: {
       type: 'string',
-      props: {
-        label: 'The verifier name'
-      }
+      label: 'The verifier name'
     },
     desc: {
       type: 'string',
-      props: {
-        label: 'The verifier description'
-      }
+      label: 'The verifier description'
     },
     enabled: {
       type: 'bool',
-      props: {
-        label: 'Enabled'
-      }
+      label: 'Enabled'
     },
     strict: {
       type: 'bool',
-      props: {
-        label: 'Strict'
-      }
+      label: 'Strict'
     },
     source: {
       type: 'form',

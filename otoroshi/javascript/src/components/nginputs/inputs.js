@@ -87,7 +87,7 @@ export class NgDotsRenderer extends Component {
     return (
       <LabelAndInput {...this.props}>
         <div className='d-flex flex-wrap align-items-center' style={{ height: '100%', gap: '.6em' }}>
-          {readOnly && <ReadOnlyField value={value} />}
+          {readOnly && isValueArray ? value.map(v => <ReadOnlyField value={v} key={v} />) : <ReadOnlyField value={value} />}
           {!readOnly && options.map(option => {
             const optObj = this.isAnObject(option);
             const rawOption = optObj ? option.value : option;
@@ -304,13 +304,15 @@ export class NgNumberRenderer extends Component {
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
+    const readOnly = this.props.readOnly;
 
     // avoid to have both value and defaultValue props
     const { defaultValue, ...inputProps } = props;
 
     return (
       <LabelAndInput {...this.props}>
-        <input
+        {readOnly && <ReadOnlyField value={this.props.value || defaultValue} />}
+        {!readOnly && <input
           type="number"
           className="form-control"
           placeholder={props.placeholder}
@@ -318,7 +320,7 @@ export class NgNumberRenderer extends Component {
           value={this.props.value || defaultValue}
           onChange={(e) => this.props.onChange(~~e.target.value)}
           {...inputProps}
-        />
+        />}
       </LabelAndInput>
     );
   }
@@ -533,7 +535,7 @@ export class NgArrayRenderer extends Component {
                       {...props}
                     />
                   )}
-                  {showActions && <button
+                  {showActions && !readOnly && <button
                     type="button"
                     className="btn btn-sm btn-danger"
                     style={{ width: 42, marginLeft: 5 }}
@@ -547,7 +549,7 @@ export class NgArrayRenderer extends Component {
                 </div>
               );
             })}
-          {showActions && !this.props.readOnly && <button
+          {showActions && !readOnly && <button
             type="button"
             className="btn btn-sm btn-info float-end"
             style={{ width: 42, marginTop: 5 }}
