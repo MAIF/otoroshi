@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import isEqual from 'lodash/isEqual';
-import { isFunction } from 'lodash';
+import isFunction from 'lodash/isFunction';
+import get from 'lodash/get';
 
 export class NgStepNotFound extends Component {
   render() {
@@ -90,14 +91,32 @@ export class NgFormRenderer extends Component {
 
   displaySummary = (fields, expectedSummaryFields) => {
     const subFilter = expectedSummaryFields.length > 0;
+    const formattedFields = (fields || [])
+      .map(entry => ({ key: entry[0], value: entry[1] }));
 
-    return (fields || [])
-      .filter(entry => !this.isAnObject(entry[1]) && !Array.isArray(entry[1]) && entry[1] !== undefined && (typeof entry[1] === 'boolean' ? true : entry[1].length > 0))
-      .filter(entry => subFilter ? expectedSummaryFields.includes(entry[0]) : true)
-      .map(entry => {
-        return <div className='d-flex me-3 flex-wrap' key={entry[0]}>
-          <span className='me-1' style={{ fontWeight: 'bold' }}>{this.firstLetterUppercase(entry[0])}: </span>
-          <span>{typeof entry[1] === 'boolean' ? (entry[1] ? ' true' : 'false') : entry[1]}</span>
+    // console.log(fields, expectedSummaryFields)
+    return formattedFields
+      .filter(({ key, value }) => {
+        const isNotAnObject = !this.isAnObject(value) &&
+          (!Array.isArray(value) || subFilter ? expectedSummaryFields.find(f => f.startsWith(key)) : false) &&
+          value !== undefined &&
+          (typeof value === 'boolean' ? true : (value && value.length > 0));
+
+        if (subFilter) {
+          return isNotAnObject && expectedSummaryFields.find(f => f.startsWith(key));
+        } else {
+          return isNotAnObject;
+        }
+      })
+      .map(({ key, value }) => {
+        return <div className='d-flex me-3 flex-wrap' key={key}>
+          <span className='me-1' style={{ fontWeight: 'bold' }}>{this.firstLetterUppercase(key)}: </span>
+          {Array.isArray(value) ? value.map(item => {
+            const path = expectedSummaryFields.find(f => f.startsWith(key));
+
+            return <span key={item}>{get(item, (path.split('.') || []).slice(1))}</span>
+          }) :
+            <span>{typeof value === 'boolean' ? (value ? ' true' : 'false') : value}</span>}
         </div>
       })
   }
