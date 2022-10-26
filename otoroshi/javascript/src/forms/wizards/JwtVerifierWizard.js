@@ -265,7 +265,7 @@ function WizardLastStep({ value, breadcrumb }) {
         BackOfficeServices.createJwtVerifier({
           ...template,
           name: value.name || 'Default name',
-          strict: value.strategy.type === 'StrictDefaultToken',
+          // strict: value.strategy.type === 'StrictDefaultToken',
           source: value.source,
           algoSettings: {
             ...template.algoSettings,
@@ -274,7 +274,8 @@ function WizardLastStep({ value, breadcrumb }) {
           strategy: {
             ...template.strategy,
             ...value.strategy,
-            type: value.strategy.type === 'StrictDefaultToken' ? 'DefaultToken' : value.strategy.type
+            // type: value.strategy.type === 'StrictDefaultToken' ? 'DefaultToken' : value.strategy.type
+            type: value.strategy.type
           }
         })
           .then(res => {
@@ -358,16 +359,6 @@ function StrategyStep({ value, onChange }) {
             justifyContent: 'flex-start'
           }}>
           {[
-            {
-              strategy: 'DefaultToken', title: ['Generate'],
-              desc: 'DefaultToken will add a token if no present.',
-              tags: ['generate']
-            },
-            {
-              strategy: 'StrictDefaultToken', title: ['Generate and failed if present'],
-              desc: 'DefaultToken will add a token if no present.',
-              tags: ['generate']
-            },
             {
               strategy: 'PassThrough', title: ['Verify'],
               desc: 'PassThrough will only verifiy token signing and fields values if provided. ',

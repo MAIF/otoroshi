@@ -111,16 +111,6 @@ const AlgoSettingsForm = {
 
 const VERIFIER_STRATEGIES = [
   {
-    strategy: 'DefaultToken', title: ['Generate'],
-    desc: 'DefaultToken will add a token if no present.',
-    tags: ['generate']
-  },
-  {
-    strategy: 'StrictDefaultToken', title: ['Generate and failed if present'],
-    desc: 'DefaultToken will add a token if no present.',
-    tags: ['generate']
-  },
-  {
     strategy: 'PassThrough', title: ['Verify'],
     desc: 'PassThrough will only verifiy token signing and fields values if provided. ',
     tags: ['verify']
@@ -265,51 +255,6 @@ const JwtLocationExamples = {
     }
   }
 }
-
-const DefaultTokenForm = {
-  strict: {
-    type: 'bool',
-    props: {
-      label: 'Strict',
-      help: "If token already present, the call will fail"
-    }
-  },
-  token: {
-    type: 'code',
-    label: 'Default value',
-    props: {
-      mode: 'json',
-      editorOnly: true
-    }
-  },
-  verificationSettings: {
-    type: 'form',
-    collapsable: true,
-    label: 'Verification settings',
-    flow: ['fields', 'arrayFields'],
-    schema: {
-      fields: {
-        type: 'object',
-        label: "Verify token fields",
-        props: {
-          placeholderKey: "Field name",
-          placeholderValue: "Field value",
-          help: "When the JWT token is checked, each field specified here will be verified with the provided value"
-        }
-      },
-      arrayFields: {
-        type: 'object',
-        label: "Verify token array value",
-        props: {
-          placeholderKey: "Field name",
-          placeholderValue: "One or more comma separated values in the array",
-          help: "When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array"
-        }
-      }
-    }
-  }
-}
-
 export default {
   config_flow: [
     {
@@ -436,9 +381,7 @@ export default {
     },
     algoSettings: {
       ...AlgoSettingsForm,
-      label: props => props?.strategy?.type === 'DefaultToken'
-        ? 'Default token signature'
-        : 'Token validation',
+      label: 'Token validation',
       props: {
         showSummary: true
       }
@@ -455,7 +398,32 @@ export default {
       },
       schema: {
         ...StrategyForm,
-        ...DefaultTokenForm,
+        verificationSettings: {
+          type: 'form',
+          collapsable: true,
+          label: 'Verification settings',
+          flow: ['fields', 'arrayFields'],
+          schema: {
+            fields: {
+              type: 'object',
+              label: "Verify token fields",
+              props: {
+                placeholderKey: "Field name",
+                placeholderValue: "Field value",
+                help: "When the JWT token is checked, each field specified here will be verified with the provided value"
+              }
+            },
+            arrayFields: {
+              type: 'object',
+              label: "Verify token array value",
+              props: {
+                placeholderKey: "Field name",
+                placeholderValue: "One or more comma separated values in the array",
+                help: "When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array"
+              }
+            }
+          }
+        },
         algoSettings: AlgoSettingsForm,
         transformSettings: {
           type: 'form',
@@ -567,8 +535,6 @@ export default {
       flow: (_, v) => {
         const strategy = v.value?.type
         return {
-          'StrictDefaultToken': ['type', 'strict', 'token'],
-          'DefaultToken': ['type', 'strict', 'token', 'verificationSettings'],
           'PassThrough': ['type', 'verificationSettings'],
           'Sign': ['type', 'verificationSettings', 'algoSettings'],
           'Transform': ['type', 'verificationSettings', 'algoSettings', 'transformSettings'],
