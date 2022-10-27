@@ -211,7 +211,7 @@ export class TopBar extends Component {
           label: 'SSL Certificates',
           value: 'certificates',
         });
-        if (this.state.env.clusterRole === 'Leader') {
+        if (this.props.env.clusterRole === 'Leader') {
           options.push({
             action: () => (window.location.href = '/bo/dashboard/cluster'),
             env: <span className="fas fa-network-wired-alt" />,
@@ -225,7 +225,7 @@ export class TopBar extends Component {
           label: 'Connected tunnels',
           value: 'tunnels-view',
         });
-        if (this.state.env.scriptingEnabled === true) {
+        if (this.props.env.scriptingEnabled === true) {
           options.push({
             action: () => (window.location.href = '/bo/dashboard/plugins'),
             env: <span className="fas fa-book-dead" />,
@@ -233,8 +233,8 @@ export class TopBar extends Component {
             value: 'plugins',
           });
         }
-        if (this.state.env.providerDashboardUrl) {
-          const providerDashboardTitle = this.state.env.providerDashboardTitle;
+        if (this.props.env.providerDashboardUrl) {
+          const providerDashboardTitle = this.props.env.providerDashboardTitle;
           options.push({
             action: () => (window.location.href = '/bo/dashboard/provider'),
             env: <img src="/assets/images/otoroshi-logo-inverse.png" width="16" />,
@@ -470,13 +470,12 @@ export class TopBar extends Component {
       document.addEventListener('keydown', this.listenToSlash, false);
       document.addEventListener('click', this.onClick, false);
     }
-    BackOfficeServices.env().then((env) => {
-      this.setState({ env });
-      if (this.state.env.instanceName.toLowerCase() !== 'otoroshi') {
-        const title = `Otoroshi - ${this.state.env.instanceName}`;
-        window.document.title = title;
-      }
-    });
+
+    if (this.props.env.instanceName.toLowerCase() !== 'otoroshi') {
+      const title = `Otoroshi - ${this.props.env.instanceName}`;
+      window.document.title = title;
+    }
+
   }
 
   componentWillUnmount() {
@@ -499,8 +498,8 @@ export class TopBar extends Component {
   };
 
   brandName = () => {
-    if (this.state.env && this.state.env.instanceName) {
-      const instanceName = this.state.env.instanceName;
+    if (this.props.env && this.props.env.instanceName) {
+      const instanceName = this.props.env.instanceName;
       if (instanceName.toLowerCase() === 'otoroshi') {
         return (
           <>
@@ -526,7 +525,7 @@ export class TopBar extends Component {
   render() {
     const selected = (this.props.params || {}).lineId;
     return (
-      <nav className="navbar navbar-expand-md fixed-top" 
+      <nav className="navbar navbar-expand-md fixed-top"
       // style={{ zIndex: 100 }}
       >
         <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
@@ -737,7 +736,7 @@ export class TopBar extends Component {
                     <a href="/bo/dashboard/certificates" className="dropdown-item">
                       <span className="fas fa-certificate" /> SSL/TLS Certificates
                     </a>
-                    {this.state.env.scriptingEnabled === true && (
+                    {this.props.env.scriptingEnabled === true && (
                       <a href="/bo/dashboard/plugins" className="dropdown-item">
                         <span className="fas fa-book-dead" /> Plugins
                       </a>
@@ -745,7 +744,7 @@ export class TopBar extends Component {
                   </li>
                   <li className="dropdown-divider" />
                   {window.__otoroshi__env__latest.userAdmin &&
-                    this.state.env.clusterRole === 'Leader' && (
+                    this.props.env.clusterRole === 'Leader' && (
                       <li>
                         <a href="/bo/dashboard/cluster" className="dropdown-item">
                           <span className="fas fa-network-wired" /> Cluster view
@@ -760,7 +759,7 @@ export class TopBar extends Component {
                     </li>
                   )}
                   {window.__otoroshi__env__latest.userAdmin &&
-                    this.state.env.clusterRole === 'Leader' && <li className="dropdown-divider" />}
+                    this.props.env.clusterRole === 'Leader' && <li className="dropdown-divider" />}
                   {(window.__otoroshi__env__latest.userAdmin || window.__user.tenantAdmin) && (
                     <>
                       {window.__otoroshi__env__latest.userAdmin && (
@@ -1008,13 +1007,13 @@ export class TopBar extends Component {
                       </li>
                     </>
                   )}
-                  {window.__otoroshi__env__latest.userAdmin && this.state.env.providerDashboardUrl && (
+                  {window.__otoroshi__env__latest.userAdmin && this.props.env.providerDashboardUrl && (
                     <>
                       <li className="dropdown-divider" />
                       <li>
                         <a href="/bo/dashboard/provider" className="dropdown-item">
                           <img src="/assets/images/otoroshi-logo-inverse.png" width="16" />{' '}
-                          {this.state.env.providerDashboardTitle}
+                          {this.props.env.providerDashboardTitle}
                         </a>
                       </li>
                     </>

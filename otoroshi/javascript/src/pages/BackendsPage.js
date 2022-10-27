@@ -39,11 +39,8 @@ export class BackendsPage extends Component {
     { title: 'Description', content: (item) => item.description },
   ];
 
-  state = { env: null };
-
   componentDidMount() {
     this.props.setTitle(`All backends`);
-    BackOfficeServices.env().then((env) => this.setState({ env }));
   }
 
   render() {

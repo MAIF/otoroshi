@@ -303,12 +303,12 @@ class Manager extends React.Component {
   viewRef = React.createRef(null)
 
   componentDidMount() {
-    this.loadRoute();
+    this.loadRoute('componentDidMount');
   }
 
   componentDidUpdate(prevProps, prevState) {
     if (this.props.match.params.routeId !== prevProps.match.params.routeId)
-      this.loadRoute();
+      this.loadRoute('componentDidUpdate');
 
     if (['saveTypeButton', 'menuRefreshed', 'forceHideTester']
       .some(field => this.state[field] !== prevState[field])) {
@@ -349,19 +349,21 @@ class Manager extends React.Component {
       saveButton={this.state.saveButton} />);
   }
 
-  loadRoute = () => {
-    const { routeId } = this.props.match.params || { routeId: undefined }
-    if (routeId === 'new') {
-      nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName])
-        .then(value => {
-          this.setState({ value }, this.updateSidebar)
-        });
-    } else {
-      nextClient.fetch(nextClient.ENTITIES[this.props.entity.fetchName], routeId)
-        .then(res => {
-          if (!res.error)
-            this.setState({ value: res }, this.updateSidebar)
-        });
+  loadRoute = from => {
+    if ((from === 'componentDidMount' && !this.state.value) || from === 'componentDidUpdate') {
+      const { routeId } = this.props.match.params || { routeId: undefined }
+      if (routeId === 'new') {
+        nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName])
+          .then(value => {
+            this.setState({ value }, this.updateSidebar)
+          });
+      } else {
+        nextClient.fetch(nextClient.ENTITIES[this.props.entity.fetchName], routeId)
+          .then(res => {
+            if (!res.error)
+              this.setState({ value: res }, this.updateSidebar)
+          });
+      }
     }
   }
 
@@ -480,7 +482,6 @@ class RouteDesigner extends React.Component {
 
   componentDidMount() {
     this.patchStyle(true);
-
     this.props.setTitle('Routes');
   }
 
