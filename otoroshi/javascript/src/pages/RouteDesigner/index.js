@@ -21,6 +21,7 @@ import { SquareButton } from '../../components/SquareButton';
 import { YAMLExportButton } from '../../components/exporters/YAMLButton';
 import { JsonExportButton } from '../../components/exporters/JSONButton';
 import { Dropdown } from '../../components/Dropdown';
+import PageTitle from '../../components/PageTitle';
 
 function BackToButton({ history }) {
   return <SquareButton
@@ -267,31 +268,26 @@ function ManagerTitle({
     }
   ];
 
-  return <div className="page-header d-flex align-item-center justify-content-between ms-0 mb-3" style={{
-    paddingBottom: pathname === '/routes' ? 'initial' : 0
-  }}>
-    <h4 className="flex" style={{ margin: 0 }}>
-      {location.pathname.includes('route-compositions') ? 'Route compositions' :
-        {
-          flow: 'Designer',
-          informations: 'Informations',
-          routes: 'Routes',
-          route_plugins: 'Route plugins'
-        }[query]
-      }
-    </h4>
-    <div className="d-flex align-item-center justify-content-between flex">
-      {!isCreation &&
-        tabs
-          .filter(tab => !tab.visible || tab.visible())
-          .filter(tab => location.state?.routeFromService ? tab.tab === 'Informations' : true)
-          .map(({ component }, i) => {
-            const Tab = component;
-            return <Tab key={`tab-${i}`} />
-          })}
-      {saveButton}
-    </div>
-  </div>
+  return <PageTitle
+    style={{
+      paddingBottom: pathname === '/routes' ? 'initial' : 0
+    }}
+    title={{
+      flow: 'Designer',
+      informations: 'Informations',
+      routes: 'Routes',
+      route_plugins: 'Route plugins'
+    }[query]}>
+    {!isCreation &&
+      tabs
+        .filter(tab => !tab.visible || tab.visible())
+        .filter(tab => location.state?.routeFromService ? tab.tab === 'Informations' : true)
+        .map(({ component }, i) => {
+          const Tab = component;
+          return <Tab key={`tab-${i}`} />
+        })}
+    {saveButton}
+  </PageTitle>
 }
 
 class Manager extends React.Component {

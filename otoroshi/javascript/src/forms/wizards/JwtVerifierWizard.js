@@ -36,14 +36,14 @@ function Breadcrumb({ value, onClick }) {
   })}</div>
 }
 
-function Header({ onClose }) {
+function Header({ onClose, mode }) {
   return <label style={{ fontSize: '1.15rem' }}>
     <i
       className="fas fa-times me-3"
       onClick={onClose}
       style={{ cursor: 'pointer' }}
     />
-    <span>{`Create a new JWT Verifier`}</span>
+    <span>{`${mode === 'selector' ? 'Choose your program' : 'Create a new JWT Verifier'}`}</span>
   </label>
 }
 
@@ -67,7 +67,8 @@ export class JwtVerifierWizard extends React.Component {
     jwtVerifier: {},
     breadcrumb: [
       'Informations'
-    ]
+    ],
+    mode: 'selector'
   }
 
   onChange = (field, value) => {
@@ -108,7 +109,8 @@ export class JwtVerifierWizard extends React.Component {
   }
 
   render() {
-    const { step, jwtVerifier } = this.state;
+    const { step, jwtVerifier, mode } = this.state;
+
 
     const STEPS = [
       {
@@ -215,35 +217,73 @@ export class JwtVerifierWizard extends React.Component {
       <div className="wizard">
         <div className="wizard-container">
           <div className='d-flex' style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
-            <Header onClose={this.props.hide} />
-            <Breadcrumb value={this.state.breadcrumb} onClick={i => this.setState({ step: i + 1 })} />
+            <Header onClose={this.props.hide} mode={mode} />
 
-            <div className="wizard-content">
-              {STEPS.map(({ component, visibleOnStep, props, condition, onChange }) => {
-                if (step === visibleOnStep && (condition ? condition(jwtVerifier) : true)) {
-                  return React.createElement(component, {
-                    ...(props || {
-                      value: jwtVerifier,
-                      onChange: value => this.setState({ jwtVerifier: value }, onChange)
-                    }), key: component.Type
-                  });
-                } else {
-                  return null;
-                }
-              })}
-              {showSummary && <WizardLastStep
-                breadcrumb={this.state.breadcrumb}
-                value={{
-                  ...jwtVerifier,
-                  strategy: {
-                    ...jwtVerifier.strategy,
-                    transformSettings: jwtVerifier.strategy?.type === 'Transform' ? {
-                      location: jwtVerifier.strategy?.transformSettings?.location ? jwtVerifier.source : jwtVerifier.strategy?.transformSettings?.out_location?.source
-                    } : undefined
+            {mode === 'selector' &&
+              <div className='py-3'>
+                <Button
+                  type='btn-dark'
+                  className="py-3 me-2"
+                  style={{ border: '1px solid #f9b000' }}
+                  onClick={() => this.setState({ mode: 'creation' })}>
+                  <h3 className="wizard-h3--small">NEW</h3>
+                  <label
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}>
+                    Create a new JWT verifier
+                  </label>
+                </Button>
+                <Button
+                  type='btn-dark'
+                  className="py-3"
+                  style={{ border: '1px solid #f9b000' }}
+                  onClick={() => this.setState({ mode: 'editition' })}>
+                  <h3 className="wizard-h3--small">EDIT</h3>
+                  <label
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}>
+                    Use an existing JWT verifier
+                  </label>
+                </Button>
+              </div>
+            }
+
+            {mode !== 'selector' && <>
+              <Breadcrumb value={this.state.breadcrumb} onClick={i => this.setState({ step: i + 1 })} />
+
+              <div className="wizard-content">
+                {STEPS.map(({ component, visibleOnStep, props, condition, onChange }) => {
+                  if (step === visibleOnStep && (condition ? condition(jwtVerifier) : true)) {
+                    return React.createElement(component, {
+                      ...(props || {
+                        value: jwtVerifier,
+                        onChange: value => this.setState({ jwtVerifier: value }, onChange)
+                      }), key: component.Type
+                    });
+                  } else {
+                    return null;
                   }
-                }} />}
-              {!showSummary && <WizardActions nextStep={this.nextStep} prevStep={this.prevStep} step={step} />}
-            </div>
+                })}
+                {showSummary && <WizardLastStep
+                  breadcrumb={this.state.breadcrumb}
+                  value={{
+                    ...jwtVerifier,
+                    strategy: {
+                      ...jwtVerifier.strategy,
+                      transformSettings: jwtVerifier.strategy?.type === 'Transform' ? {
+                        location: jwtVerifier.strategy?.transformSettings?.location ? jwtVerifier.source : jwtVerifier.strategy?.transformSettings?.out_location?.source
+                      } : undefined
+                    }
+                  }} />}
+                {!showSummary && <WizardActions nextStep={this.nextStep} prevStep={this.prevStep} step={step} />}
+              </div>
+            </>}
           </div>
         </div>
       </div>

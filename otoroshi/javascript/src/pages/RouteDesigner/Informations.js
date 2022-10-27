@@ -5,6 +5,7 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
 import { RouteForm } from './form'
+import { Button } from '../../components/Button';
 
 export const Informations = forwardRef(({ isCreation, value, setValue, setSaveButton, routeId }, ref) => {
   const history = useHistory();
@@ -168,15 +169,13 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
       />}
 
       <div className="d-flex align-items-center justify-content-end mt-3">
-        <div className="displayGroupBtn">
-          <button className='btn btn-info'
-            onClick={() => showAdvancedForm ? toggleAdvancedForm(false) : toggleAdvancedForm(true)}>
-            {showAdvancedForm ? 'Simple view' : 'Advanced view'}
-          </button>
-          <button className="btn btn-danger" onClick={() => history.push(`/${link}`)}>
-            Cancel
-          </button>
-        </div>
+        <Button type="info" className='btn-sm me-1'
+          onClick={() => showAdvancedForm ? toggleAdvancedForm(false) : toggleAdvancedForm(true)}
+          text={showAdvancedForm ? 'Simple view' : 'Advanced view'} />
+        <Button type="danger" className='btn-sm'
+          onClick={() => history.push(`/${link}`)}
+          text="Cancel"
+        />
       </div>
     </>
   );

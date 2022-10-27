@@ -94,11 +94,10 @@ export class NgFormRenderer extends Component {
     const formattedFields = (fields || [])
       .map(entry => ({ key: entry[0], value: entry[1] }));
 
-    // console.log(fields, expectedSummaryFields)
-    return formattedFields
+    const filteredFields = formattedFields
       .filter(({ key, value }) => {
         const isNotAnObject = !this.isAnObject(value) &&
-          (!Array.isArray(value) || subFilter ? expectedSummaryFields.find(f => f.startsWith(key)) : false) &&
+          (Array.isArray(value) ? (subFilter ? expectedSummaryFields.find(f => f.startsWith(key)) : false) : true) &&
           value !== undefined &&
           (typeof value === 'boolean' ? true : (value && value.length > 0));
 
@@ -107,18 +106,24 @@ export class NgFormRenderer extends Component {
         } else {
           return isNotAnObject;
         }
-      })
-      .map(({ key, value }) => {
-        return <div className='d-flex me-3 flex-wrap' key={key}>
-          <span className='me-1' style={{ fontWeight: 'bold' }}>{this.firstLetterUppercase(key)}: </span>
-          {Array.isArray(value) ? value.map(item => {
-            const path = expectedSummaryFields.find(f => f.startsWith(key));
+      });
 
-            return <span key={item}>{get(item, (path.split('.') || []).slice(1))}</span>
-          }) :
-            <span>{typeof value === 'boolean' ? (value ? ' true' : 'false') : value}</span>}
-        </div>
-      })
+    if (filteredFields.length === 0) {
+      return null;
+    } else {
+      return <div className='d-flex mt-3 ms-3 flex-wrap'>
+        {filteredFields.map(({ key, value }) => {
+          return <div className='d-flex me-3 flex-wrap' key={key}>
+            <span className='me-1' style={{ fontWeight: 'bold' }}>{this.firstLetterUppercase(key)}: </span>
+            {Array.isArray(value) ? value.map(item => {
+              const path = expectedSummaryFields.find(f => f.startsWith(key));
+              return <span key={item}>{get(item, (path.split('.') || []).slice(1))}</span>
+            }) :
+              <span>{typeof value === 'boolean' ? (value ? ' true' : 'false') : value}</span>}
+          </div>
+        })}
+      </div>
+    }
   }
 
   render() {
@@ -173,9 +178,7 @@ export class NgFormRenderer extends Component {
       const titleComponent = (!showChildren && showSummary) ?
         <div style={{ marginLeft: 5, marginTop: 7, marginBottom: 10 }}>
           <span style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold' }}>{title}</span>
-          {summary.length > 0 && <div className='d-flex mt-3 ms-3 flex-wrap'>
-            {this.displaySummary(summary, summaryFields)}
-          </div>}
+          {summary.length > 0 && this.displaySummary(summary, summaryFields)}
         </div>
         : isFunction(titleVar) && React.isValidElement(title) && !showChildren ?
           <div style={{ marginLeft: 5, marginTop: 7, marginBottom: 10 }}>{title}</div> :

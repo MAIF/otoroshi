@@ -19,19 +19,12 @@ import { Proxy } from './Proxy';
 import { Location } from '../components/Location';
 import { Collapse } from '../components/inputs/Collapse';
 import { PillButton } from './PillButton';
-import * as BackOfficeServices from '../services/BackOfficeServices';
-
-import { YAMLExportButton } from '../components/exporters/YAMLButton';
-import { JsonExportButton } from '../components/exporters/JSONButton';
-import { SquareButton } from './SquareButton';
-import { Dropdown } from './Dropdown';
-import { NgForm, NgSelectRenderer } from './nginputs';
+import { NgForm } from './nginputs';
 import JwtVerifierForm from '../forms/entities/JwtVerifier';
 
 export class JwtVerifier extends Component {
   state = {
     isConfigView: true,
-    isLegacyView: false,
     verifier: this.props.value || this.props.verifier || {
       type: 'globale',
       enabled: false,
@@ -46,25 +39,14 @@ export class JwtVerifier extends Component {
   }
 
   render() {
-    const { isConfigView, isLegacyView, verifier } = this.state;
+    const { isConfigView, verifier } = this.state;
+    const isLegacyView = this.props.showAdvancedForm;
 
     return (
       <div>
-        <Header
+        {this.props.showHeader && <Header
           isConfigView={isConfigView}
-          onChange={isConfigView => this.setState({ isConfigView })} />
-
-        <div style={{ width: 'fit-content' }} className="ms-auto mt-3">
-          {isConfigView && <PillButton
-            style={{
-              backgroundColor: '#494949'
-            }}
-            rightEnabled={!isLegacyView}
-            leftText='New form'
-            rightText='Legacy form'
-            onChange={v => this.setState({ isLegacyView: !v })}
-          />}
-        </div>
+          onChange={isConfigView => this.setState({ isConfigView })} />}
 
         {isConfigView && <>
           {isLegacyView &&
@@ -102,44 +84,16 @@ export class JwtVerifier extends Component {
   }
 }
 
-function Header({ isConfigView, onChange, verifier }) {
-  return <div style={{
-    position: 'relative'
-  }}>
-    <PillButton
-      style={{
-        backgroundColor: '#494949'
-      }}
-      rightEnabled={isConfigView}
-      leftText="Config"
-      rightText="Visualization"
-      onChange={onChange}
-    />
-    <div style={{ position: 'absolute', right: 0, top: 0 }}>
-      <Dropdown>
-        <YAMLExportButton value={verifier} />
-        <JsonExportButton value={verifier} />
-        <SquareButton
-          level="danger"
-          onClick={() => {
-            const what = window.location.pathname.split('/')[3];
-            const id = window.location.pathname.split('/')[4];
-            window
-              .newConfirm('Delete this verifier ?')
-              .then((ok) => {
-                if (ok) {
-                  BackOfficeServices.deleteJwtVerifier(id)
-                    .then(() => {
-                      history.push('/' + what);
-                    });
-                }
-              });
-          }}
-          icon="fa-trash"
-          text="Delete" />
-      </Dropdown>
-    </div>
-  </div>
+function Header({ isConfigView, onChange }) {
+  return <PillButton
+    style={{
+      backgroundColor: '#494949'
+    }}
+    rightEnabled={isConfigView}
+    leftText="Config"
+    rightText="Visualization"
+    onChange={onChange}
+  />
 }
 
 export class LocationSettings extends Component {
