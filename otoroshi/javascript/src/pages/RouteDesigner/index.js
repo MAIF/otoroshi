@@ -22,6 +22,7 @@ import { YAMLExportButton } from '../../components/exporters/YAMLButton';
 import { JsonExportButton } from '../../components/exporters/JSONButton';
 import { Dropdown } from '../../components/Dropdown';
 import PageTitle from '../../components/PageTitle';
+import Loader from '../../components/Loader';
 
 function BackToButton({ history }) {
   return <SquareButton
@@ -119,7 +120,12 @@ function InformationsTab({ isActive, entity, value, history }) {
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=informations`;
           if (!window.location.href.includes(to))
-            history.push(to);
+            history.replace({
+              pathname: to,
+              state: {
+                value
+              }
+            });
         }}
         style={{
           backgroundColor: isActive ? '#f9b000' : '#494948',
@@ -141,7 +147,12 @@ function RoutesTab({ isActive, entity, value, history }) {
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=routes`;
           if (!window.location.href.includes(to))
-            history.push(to);
+            history.replace({
+              pathname: to,
+              state: {
+                value
+              }
+            });
         }}
         style={{
           backgroundColor: isActive ? '#f9b000' : '#494948',
@@ -163,7 +174,12 @@ function DesignerTab({ isActive, entity, value, history }) {
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=flow`;
           if (!window.location.href.includes(to))
-            history.push(to);
+            history.replace({
+              pathname: to,
+              state: {
+                value
+              }
+            });
         }}
         style={{
           backgroundColor: isActive ? '#f9b000' : '#494948',
@@ -292,18 +308,23 @@ function ManagerTitle({
 
 class Manager extends React.Component {
   state = {
-    value: undefined,
+    value: this.props.location?.state?.value,
     menu: undefined,
     menuRefreshed: undefined,
     saveButton: undefined,
     saveTypeButton: undefined,
-    forceHideTester: false
+    forceHideTester: false,
+    loading: !this.props.location?.state?.value
   }
 
   viewRef = React.createRef(null)
 
   componentDidMount() {
-    this.loadRoute('componentDidMount');
+    if (!this.props.location?.state?.value) {
+      this.loadRoute('componentDidMount');
+    } else {
+      this.setTitle();
+    }
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -320,7 +341,13 @@ class Manager extends React.Component {
     if (!this.state.value)
       return;
 
-    const { query, entity, history, location } = this.props;
+    const { entity, history, location } = this.props;
+
+    let query = new URLSearchParams(location.search).get('tab');
+
+    if (!query && location.pathname.includes('?')) {
+      query = new URLSearchParams(`?${location.pathname.split('?')[1]}`).get('tab');
+    }
 
     const p = this.props.match.params
     const isCreation = p.routeId === 'new';
@@ -350,20 +377,20 @@ class Manager extends React.Component {
   }
 
   loadRoute = from => {
-    if ((from === 'componentDidMount' && !this.state.value) || from === 'componentDidUpdate') {
-      const { routeId } = this.props.match.params || { routeId: undefined }
-      if (routeId === 'new') {
-        nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName])
-          .then(value => {
-            this.setState({ value }, this.updateSidebar)
-          });
-      } else {
-        nextClient.fetch(nextClient.ENTITIES[this.props.entity.fetchName], routeId)
-          .then(res => {
-            if (!res.error)
-              this.setState({ value: res }, this.updateSidebar)
-          });
-      }
+    console.log(this.state.value, from)
+    const { routeId } = this.props.match.params || { routeId: undefined }
+    if (routeId === 'new') {
+      nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName])
+        .then(value => {
+          this.setState({ value, loading: false }, this.updateSidebar)
+        });
+    } else {
+      nextClient.fetch(nextClient.ENTITIES[this.props.entity.fetchName], routeId)
+        .then(res => {
+          if (!res.error) {
+            this.setState({ value: res, loading: false }, this.updateSidebar)
+          }
+        });
     }
   }
 
@@ -376,7 +403,13 @@ class Manager extends React.Component {
   }
 
   render() {
-    const { query, entity, history, location, ...props } = this.props;
+    const { entity, history, location, ...props } = this.props;
+
+    let query = new URLSearchParams(location.search).get('tab');
+
+    if (!query && location.pathname.includes('?')) {
+      query = new URLSearchParams(`?${location.pathname.split('?')[1]}`).get('tab');
+    }
 
     const p = this.props.match.params
     const isCreation = p.routeId === 'new';
@@ -384,11 +417,7 @@ class Manager extends React.Component {
     const rawViewPlugins = new URLSearchParams(location.search).get('view_plugins');
     const viewPlugins = rawViewPlugins !== null ? Number(rawViewPlugins) : -1;
 
-    // const isOnViewPlugins = (viewPlugins !== -1) & (query === 'route_plugins');
-    // const url = p.url;
-    // const [value, setValue] = useState(location.state?.routeFromService);
-
-    const { value } = this.state;
+    const { value, loading } = this.state;
     const divs = [
       {
         predicate: query && ['flow', 'route_plugins'].includes(query) && !isCreation,
@@ -399,7 +428,7 @@ class Manager extends React.Component {
             ref={this.viewRef}
             tab={query}
             history={history}
-            value={value}
+            value={this.state.value}
             setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'routes' })}
             viewPlugins={viewPlugins}
             setMenu={n => this.setState({ menu: n, menuRefreshed: Date.now() })}
@@ -412,11 +441,11 @@ class Manager extends React.Component {
           value && (
             <RouteCompositions
               ref={this.viewRef}
-              service={value}
+              service={this.state.value}
               setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'route-compositions' })}
               setRoutes={routes => this.setState({
                 value: {
-                  ...value,
+                  ...this.state.value,
                   routes
                 }
               })}
@@ -429,10 +458,12 @@ class Manager extends React.Component {
     const component = divs.filter((p) => p.predicate);
 
     if (component.length > 0) {
-      return <div className="designer row">{component[0].render()}</div>;
+      return <Loader loading={loading}>
+        <div className="designer row">{component[0].render()}</div>
+      </Loader>
     }
 
-    return (
+    return <Loader loading={loading}>
       <div className="designer row ps-3">
         <Informations
           {...this.props}
@@ -440,11 +471,11 @@ class Manager extends React.Component {
           ref={this.viewRef}
           isCreation={isCreation}
           value={value}
-          setValue={n => this.setState({ value: n })}
+          setValue={v => this.setState({ value: v })}
           setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'informations' }, this.setTitle)}
         />
       </div>
-    );
+    </Loader>
   }
 }
 
@@ -479,7 +510,6 @@ const RoutesView = ({ history }) => {
 };
 
 class RouteDesigner extends React.Component {
-
   componentDidMount() {
     this.patchStyle(true);
     this.props.setTitle('Routes');
@@ -505,7 +535,6 @@ class RouteDesigner extends React.Component {
     const { match, history, location } = this.props;
 
     const entity = entityFromURI(location);
-    const query = new URLSearchParams(location.search).get('tab');
 
     return (
       <Switch>
@@ -517,7 +546,10 @@ class RouteDesigner extends React.Component {
           { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
           {
             path: `${match.url}/:routeId`,
-            component: p => <Manager query={query} {...this.props} {...p} entity={entity} />
+            component: p => <Manager
+              {...this.props}
+              {...p}
+              entity={entity} />
           }
         ].map(({ path, component }) => {
           const Component = component;

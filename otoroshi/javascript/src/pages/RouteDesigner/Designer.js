@@ -609,7 +609,7 @@ class Designer extends React.Component {
   loadData = () => {
     Promise.all([
       nextClient.find(nextClient.ENTITIES.BACKENDS),
-      nextClient.fetch(
+      this.props.value ? Promise.resolve(this.props.value) : nextClient.fetch(
         this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
         this.props.routeId
       ),
