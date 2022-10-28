@@ -1,4 +1,4 @@
-import React, { Component, Suspense } from 'react';
+import React, { Component, Suspense, useEffect, useState } from 'react';
 
 import {
   ArrayInput,
@@ -21,6 +21,39 @@ import { Collapse } from '../components/inputs/Collapse';
 import { PillButton } from './PillButton';
 import { NgForm } from './nginputs';
 import JwtVerifierForm from '../forms/entities/JwtVerifier';
+import { getEntityGraph } from '../services/BackOfficeServices';
+
+function EntityGraph({ entity, id }) {
+  const [entities, setEntities] = useState({});
+
+  useEffect(() => {
+    getEntityGraph(entity, id)
+      .then(setEntities)
+  }, []);
+
+  return <div className='d-flex' style={{
+    outline: 'rgb(65, 65, 62) solid 1px',
+    padding: '5px',
+    margin: '5px 0px',
+    width: '100%'
+  }}>
+    <div className='d-flex justify-content-between flex-column'>
+      <div style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold', marginLeft: '5px', marginTop: '7px', marginBottom: '10px' }}>Find usages</div>
+      <div className='d-flex flex-wrap'>
+        {Object.entries(entities).map(entity => {
+          return <div style={{ fontWeight: 'bold', marginLeft: '5px', marginTop: '7px', marginBottom: '10px' }} key={entity[0]}>
+            <label style={{ textTransform: 'uppercase' }}>{entity[0]}</label>
+
+            {entity[1].map(r => <div key={r.id}>
+              {r.name}
+              {/* ADD LINK TO ENTITY */}
+            </div>)}
+          </div>
+        })}
+      </div>
+    </div>
+  </div >
+}
 
 export class JwtVerifier extends Component {
   state = {
@@ -60,7 +93,7 @@ export class JwtVerifier extends Component {
               }} />
           }
 
-          {!isLegacyView &&
+          {!isLegacyView && <>
             <NgForm
               useBreadcrumb={true}
               value={verifier}
@@ -72,6 +105,8 @@ export class JwtVerifier extends Component {
                   this.props.onChange(verifier);
               }}
             />
+            <EntityGraph entity='jwt-verifiers' id={verifier.id} />
+          </>
           }
         </>}
 

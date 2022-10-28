@@ -195,7 +195,7 @@ export function LabelAndInput(_props) {
 
   if (ngOptions.spread && !_props.readOnly) return _props.children;
 
-  const margin = _props.margin || props.margin || _props.rawSchema?.props?.margin || (_props ? "mb-0" : "mb-3");
+  const margin = _props.margin || props.margin || _props.rawSchema?.props?.margin || (_props.readOnly ? "mb-0" : "mb-3");
 
   return (
     <div className={`row ${margin}`}>

@@ -268,9 +268,9 @@ export default {
       name: "Organizations & teams",
       fields: ['_loc']
     },
-    'strategy',
     'source',
     'algoSettings',
+    'strategy',
     {
       type: 'group',
       name: 'Misc.',
