@@ -260,7 +260,7 @@ export default {
     {
       type: 'group',
       name: 'Informations',
-      fields: ['id', 'enabled', 'strict', 'name', 'desc'],
+      fields: ['id', 'enabled', 'name', 'desc'],
       summaryFields: ['name', 'enabled']
     },
     {
@@ -302,10 +302,6 @@ export default {
     enabled: {
       type: 'bool',
       label: 'Enabled'
-    },
-    strict: {
-      type: 'bool',
-      label: 'Strict'
     },
     source: {
       type: 'form',

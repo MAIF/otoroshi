@@ -78,7 +78,7 @@ export class JwtVerifiersPage extends Component {
 
     return (
       <div>
-        {showWizard && <JwtVerifierWizard hide={() => this.setState({ showWizard: false })} />}
+        {showWizard && <JwtVerifierWizard hide={() => this.setState({ showWizard: false })} disableSelectMode={true} />}
         <Table
           parentProps={{
             ...this.props,

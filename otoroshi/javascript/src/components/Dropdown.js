@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function Dropdown({ children, className = "", style = {} }) {
+export function Dropdown({ children, className = "", style = {}, buttonStyle }) {
   return <div className={`dropdown ${className}`} style={style}>
     <button
       className="btn btn-sm toggle-form-buttons d-flex align-items-center dark-background"
@@ -8,6 +8,7 @@ export function Dropdown({ children, className = "", style = {} }) {
         backgroundColor: '#494948',
         color: '#fff',
         height: '100%',
+        ...(buttonStyle || {})
       }}
       id='menu'
       data-bs-toggle='dropdown'

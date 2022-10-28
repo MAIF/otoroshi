@@ -5,6 +5,10 @@ import { LabelAndInput, NgForm } from '../../components/nginputs';
 import { Button } from '../../components/Button';
 import Loader from '../../components/Loader';
 import { useHistory } from 'react-router-dom';
+import JwtVerifierForm from '../entities/JwtVerifier';
+import { JwtVerifier } from '../../components/JwtVerifier';
+import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
+import { v4 as uuid } from 'uuid';
 
 function WizardStepButton(props) {
   return <Button
@@ -43,7 +47,12 @@ function Header({ onClose, mode }) {
       onClick={onClose}
       style={{ cursor: 'pointer' }}
     />
-    <span>{`${mode === 'selector' ? 'Choose your program' : 'Create a new JWT Verifier'}`}</span>
+    <span>
+      {mode === 'selector' && 'Verifier wizard'}
+      {mode === 'creation' && 'Create a new JWT Verifier'}
+      {['edition', 'clone', 'continue'].includes(mode) && 'Update the new JWT Verifier'}
+      {mode === 'update_in_wizard' && 'Update the verifier configuration'}
+    </span>
   </label>
 }
 
@@ -61,14 +70,73 @@ function WizardActions({ nextStep, prevStep, step }) {
   </div>
 }
 
+function Selector({ setMode, disableSelectMode }) {
+  return <div className='p-3 w-50'>
+    <h3>Getting started</h3>
+    <div className='d-flex flex-column'>
+      {[
+        { title: 'NEW', text: 'Create a new JWT verifier', mode: 'creation' },
+        { title: 'SELECT', text: 'Use an existing JWT verifier', mode: 'edition', disabled: disableSelectMode },
+        { title: 'CLONE', text: 'Create a new one fron an existing JWT verifier', mode: 'clone' }
+      ].map(({ title, text, mode, disabled }) => disabled ? null : <Button
+        key={mode}
+        type='dark'
+        className="py-3 my-2"
+        style={{ border: '1px solid #f9b000' }}
+        onClick={() => setMode(mode)}>
+        <h3 className="wizard-h3--small" style={{
+          textAlign: 'left',
+          fontWeight: 'bold'
+        }}>{title}</h3>
+        <label className='d-flex align-items-center justify-content-between'
+          style={{ flex: 1 }}>
+          {text}
+          <i className='fas fa-chevron-right ms-3' />
+        </label>
+      </Button>
+      )}
+    </div>
+  </div>
+}
+
+function JwtVerifierSelector({ handleSelect }) {
+  const [verifiers, setVerifiers] = useState([]);
+
+  useEffect(() => {
+    BackOfficeServices.findAllJwtVerifiers()
+      .then(setVerifiers)
+  }, []);
+
+  return <div className='d-flex flex-column mt-3' style={{ flex: 1, height: '100vh', overflowY: 'scroll', paddingBottom: '200px' }}>
+    <h3>Select an exisiting verifier</h3>
+    {verifiers.map(verifier => (
+      <Button type='dark' className="mt-2" onClick={() => handleSelect(verifier)}>
+        <NgForm
+          key={verifier.id}
+          readOnly={true}
+          value={verifier}
+          schema={JwtVerifierForm.config_schema}
+          flow={[
+            {
+              type: 'group',
+              name: props => props.value?.name,
+              fields: ['desc', 'enabled']
+            }
+          ]}
+        />
+      </Button>
+    ))}
+  </div>
+}
+
 export class JwtVerifierWizard extends React.Component {
   state = {
     step: 1,
-    jwtVerifier: {},
+    jwtVerifier: this.props.jwtVerifier || {},
     breadcrumb: [
       'Informations'
     ],
-    mode: 'selector'
+    mode: this.props.mode || 'selector'
   }
 
   onChange = (field, value) => {
@@ -111,187 +179,196 @@ export class JwtVerifierWizard extends React.Component {
   render() {
     const { step, jwtVerifier, mode } = this.state;
 
-
-    const STEPS = [
-      {
-        component: InformationsStep,
-        visibleOnStep: 1,
-        props: {
-          name: jwtVerifier.name,
-          onChange: value => {
-            this.onChange('name', value)
-            this.updateBreadcrumb(value, 0);
-          }
-        }
-      },
-      {
-        component: StrategyStep,
-        visibleOnStep: 2,
-        props: {
-          value: jwtVerifier.strategy?.type,
-          onChange: value => {
-            if (value?.strategy)
-              this.updateBreadcrumb(value.strategy, 1);
-            this.setState({
-              jwtVerifier: {
-                ...jwtVerifier,
-                strategy: {
-                  ...(jwtVerifier.strategy || {}),
-                  type: value?.strategy
-                }
-              }
-            }, () => {
-              if (value?.strategy)
-                this.nextStep()
-            })
-          }
-        }
-      },
-      {
-        component: DefaultTokenStep,
-        visibleOnStep: 3,
-        onChange: () => {
-          this.updateBreadcrumb(`${this.state.jwtVerifier.source?.type || 'Unknown'} Location`, 2);
-        }
-      },
-      {
-        component: TokenSignatureStep,
-        visibleOnStep: 4,
-        props: {
-          root: 'algoSettings',
-          value: jwtVerifier,
-          onChange: value => this.setState({ jwtVerifier: value }, () => {
-            this.updateBreadcrumb(`${this.state.jwtVerifier.algoSettings?.type || 'Unknown'} Algo.`, 3);
-          })
-        }
-      },
-      {
-        component: TokenSignatureStep,
-        visibleOnStep: 5,
-        condition: value => ['Sign', 'Transform'].includes(value.strategy?.type),
-        props: {
-          value: jwtVerifier['strategy'],
-          root: 'algoSettings',
-          title: 'Resign token with',
-          onChange: value => this.setState({
-            jwtVerifier: {
-              ...jwtVerifier,
-              ['strategy']: value
-            }
-          }, () => {
-            this.updateBreadcrumb(`${this.state.jwtVerifier.strategy?.algoSettings?.type || 'Unknown'} Resign Algo.`, 4);
-          })
-        }
-      },
-      {
-        component: TokenTransformStep,
-        visibleOnStep: 6,
-        condition: value => 'Transform' === value.strategy?.type,
-        props: {
-          value: jwtVerifier.strategy?.transformSettings,
-          onChange: value => {
-            this.setState({
-              jwtVerifier: {
-                ...jwtVerifier,
-                strategy: {
-                  ...(jwtVerifier.strategy || {}),
-                  transformSettings: value
-                }
-              }
-            }, () => {
-              const transformSettings = this.state.jwtVerifier.strategy?.transformSettings || {};
-              const sameLocation = transformSettings.location === undefined ? true : transformSettings.location;
-              const outLocation = transformSettings.out_location?.source?.type || 'Unknown';
-              this.updateBreadcrumb(`${sameLocation ? this.state.jwtVerifier.source?.type : outLocation} Out location.`, 5);
-            })
-          }
-        }
-      }
-    ];
-
-    const showSummary = !STEPS.find(item => {
-      return step === item.visibleOnStep && (item.condition ? item.condition(jwtVerifier) : true)
-    });
-
-    return (
-      <div className="wizard">
+    if (mode === 'update_in_wizard') {
+      return <div className="wizard">
         <div className="wizard-container">
           <div className='d-flex' style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
             <Header onClose={this.props.hide} mode={mode} />
+            <div className="wizard-content">
+              <JwtVerifier verifier={jwtVerifier} showHeader={true} onChange={jwtVerifier => this.setState({ jwtVerifier })} />
 
-            {mode === 'selector' &&
-              <div className='py-3'>
-                <Button
-                  type='btn-dark'
-                  className="py-3 me-2"
-                  style={{ border: '1px solid #f9b000' }}
-                  onClick={() => this.setState({ mode: 'creation' })}>
-                  <h3 className="wizard-h3--small">NEW</h3>
-                  <label
-                    style={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}>
-                    Create a new JWT verifier
-                  </label>
-                </Button>
-                <Button
-                  type='btn-dark'
-                  className="py-3"
-                  style={{ border: '1px solid #f9b000' }}
-                  onClick={() => this.setState({ mode: 'editition' })}>
-                  <h3 className="wizard-h3--small">EDIT</h3>
-                  <label
-                    style={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}>
-                    Use an existing JWT verifier
-                  </label>
-                </Button>
+              <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
+                <FeedbackButton
+                  style={{
+                    backgroundColor: '#f9b000',
+                    borderColor: '#f9b000',
+                    padding: '12px 48px'
+                  }}
+                  onPress={() => BackOfficeServices.updateJwtVerifier(jwtVerifier)}
+                  onSuccess={this.props.hide}
+                  icon={() => <i className='fas fa-paper-plane' />}
+                  text="Save the verifier"
+                />
               </div>
-            }
-
-            {mode !== 'selector' && <>
-              <Breadcrumb value={this.state.breadcrumb} onClick={i => this.setState({ step: i + 1 })} />
-
-              <div className="wizard-content">
-                {STEPS.map(({ component, visibleOnStep, props, condition, onChange }) => {
-                  if (step === visibleOnStep && (condition ? condition(jwtVerifier) : true)) {
-                    return React.createElement(component, {
-                      ...(props || {
-                        value: jwtVerifier,
-                        onChange: value => this.setState({ jwtVerifier: value }, onChange)
-                      }), key: component.Type
-                    });
-                  } else {
-                    return null;
-                  }
-                })}
-                {showSummary && <WizardLastStep
-                  breadcrumb={this.state.breadcrumb}
-                  value={{
-                    ...jwtVerifier,
-                    strategy: {
-                      ...jwtVerifier.strategy,
-                      transformSettings: jwtVerifier.strategy?.type === 'Transform' ? {
-                        location: jwtVerifier.strategy?.transformSettings?.location ? jwtVerifier.source : jwtVerifier.strategy?.transformSettings?.out_location?.source
-                      } : undefined
-                    }
-                  }} />}
-                {!showSummary && <WizardActions nextStep={this.nextStep} prevStep={this.prevStep} step={step} />}
-              </div>
-            </>}
+            </div>
           </div>
         </div>
       </div>
-    )
+    } else {
+      const STEPS = [
+        {
+          component: InformationsStep,
+          visibleOnStep: 1,
+          props: {
+            name: jwtVerifier.name,
+            onChange: value => {
+              this.onChange('name', value)
+              this.updateBreadcrumb(value, 0);
+            }
+          }
+        },
+        {
+          component: StrategyStep,
+          visibleOnStep: 2,
+          props: {
+            value: jwtVerifier.strategy?.type,
+            onChange: value => {
+              if (value?.strategy)
+                this.updateBreadcrumb(value.strategy, 1);
+              this.setState({
+                jwtVerifier: {
+                  ...jwtVerifier,
+                  strategy: {
+                    ...(jwtVerifier.strategy || {}),
+                    type: value?.strategy
+                  }
+                }
+              }, () => {
+                if (value?.strategy)
+                  this.nextStep()
+              })
+            }
+          }
+        },
+        {
+          component: DefaultTokenStep,
+          visibleOnStep: 3,
+          onChange: () => {
+            this.updateBreadcrumb(`${this.state.jwtVerifier.source?.type || 'Unknown'} Location`, 2);
+          }
+        },
+        {
+          component: TokenSignatureStep,
+          visibleOnStep: 4,
+          props: {
+            root: 'algoSettings',
+            value: jwtVerifier,
+            onChange: value => this.setState({ jwtVerifier: value }, () => {
+              this.updateBreadcrumb(`${this.state.jwtVerifier.algoSettings?.type || 'Unknown'} Algo.`, 3);
+            })
+          }
+        },
+        {
+          component: TokenSignatureStep,
+          visibleOnStep: 5,
+          condition: value => ['Sign', 'Transform'].includes(value.strategy?.type),
+          props: {
+            value: jwtVerifier['strategy'],
+            root: 'algoSettings',
+            title: 'Resign token with',
+            onChange: value => this.setState({
+              jwtVerifier: {
+                ...jwtVerifier,
+                ['strategy']: value
+              }
+            }, () => {
+              this.updateBreadcrumb(`${this.state.jwtVerifier.strategy?.algoSettings?.type || 'Unknown'} Resign Algo.`, 4);
+            })
+          }
+        },
+        {
+          component: TokenTransformStep,
+          visibleOnStep: 6,
+          condition: value => 'Transform' === value.strategy?.type,
+          props: {
+            value: jwtVerifier.strategy?.transformSettings,
+            onChange: value => {
+              this.setState({
+                jwtVerifier: {
+                  ...jwtVerifier,
+                  strategy: {
+                    ...(jwtVerifier.strategy || {}),
+                    transformSettings: value
+                  }
+                }
+              }, () => {
+                const transformSettings = this.state.jwtVerifier.strategy?.transformSettings || {};
+                const sameLocation = transformSettings.location === undefined ? true : transformSettings.location;
+                const outLocation = transformSettings.out_location?.source?.type || 'Unknown';
+                this.updateBreadcrumb(`${sameLocation ? this.state.jwtVerifier.source?.type : outLocation} Out location.`, 5);
+              })
+            }
+          }
+        }
+      ];
+
+      const showSummary = !STEPS.find(item => {
+        return step === item.visibleOnStep && (item.condition ? item.condition(jwtVerifier) : true)
+      });
+
+      return (
+        <div className="wizard">
+          <div className="wizard-container">
+            <div className='d-flex' style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
+              <Header onClose={this.props.hide} mode={mode} />
+
+              {mode === 'selector' && <Selector setMode={mode => this.setState({ mode })} disableSelectMode={this.props.disableSelectMode} />}
+
+              {mode !== 'selector' && <>
+                {['edition', 'clone'].includes(mode) ?
+                  <JwtVerifierSelector handleSelect={verifier => {
+                    if (this.props.onConfirm && mode === 'edition') {
+                      this.props.onConfirm(verifier.id);
+                    } else {
+                      this.setState({
+                        mode: 'continue',
+                        jwtVerifier: {
+                          ...verifier,
+                          id: `jwt_verifier_${uuid()}`
+                        }
+                      })
+                    }
+                  }} /> :
+                  <>
+                    <Breadcrumb value={this.state.breadcrumb} onClick={i => this.setState({ step: i + 1 })} />
+                    <div className="wizard-content">
+                      {STEPS.map(({ component, visibleOnStep, props, condition, onChange }) => {
+                        if (step === visibleOnStep && (condition ? condition(jwtVerifier) : true)) {
+                          return React.createElement(component, {
+                            ...(props || {
+                              value: jwtVerifier,
+                              onChange: value => this.setState({ jwtVerifier: value }, onChange)
+                            }), key: component.Type
+                          });
+                        } else {
+                          return null;
+                        }
+                      })}
+                      {showSummary && <WizardLastStep
+                        onConfirm={this.props.onConfirm}
+                        breadcrumb={this.state.breadcrumb}
+                        value={{
+                          ...jwtVerifier,
+                          strategy: {
+                            ...jwtVerifier.strategy,
+                            transformSettings: jwtVerifier.strategy?.type === 'Transform' ? {
+                              location: jwtVerifier.strategy?.transformSettings?.location ? jwtVerifier.source : jwtVerifier.strategy?.transformSettings?.out_location?.source
+                            } : undefined
+                          }
+                        }} />}
+                      {!showSummary && <WizardActions nextStep={this.nextStep} prevStep={this.prevStep} step={step} />}
+                    </div>
+                  </>}
+              </>}
+            </div>
+          </div>
+        </div>
+      );
+    }
   }
 }
 
-function WizardLastStep({ value, breadcrumb }) {
+function WizardLastStep({ value, breadcrumb, onConfirm }) {
   const [verifier, setVerifier] = useState();
   const history = useHistory();
 
@@ -305,7 +382,6 @@ function WizardLastStep({ value, breadcrumb }) {
         BackOfficeServices.createJwtVerifier({
           ...template,
           name: value.name || 'Default name',
-          // strict: value.strategy.type === 'StrictDefaultToken',
           source: value.source,
           algoSettings: {
             ...template.algoSettings,
@@ -314,13 +390,14 @@ function WizardLastStep({ value, breadcrumb }) {
           strategy: {
             ...template.strategy,
             ...value.strategy,
-            // type: value.strategy.type === 'StrictDefaultToken' ? 'DefaultToken' : value.strategy.type
             type: value.strategy.type
           }
         })
           .then(res => {
             if (res.error) {
               setError(true);
+            } else if (onConfirm) {
+              onConfirm(template.id)
             } else {
               setVerifier(template);
             }

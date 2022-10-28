@@ -66,7 +66,11 @@ export class JwtVerifier extends Component {
               value={verifier}
               schema={JwtVerifierForm.config_schema}
               flow={JwtVerifierForm.config_flow}
-              onChange={verifier => this.setState({ verifier })}
+              onChange={verifier => {
+                this.setState({ verifier })
+                if (this.props.onChange)
+                  this.props.onChange(verifier);
+              }}
             />
           }
         </>}
@@ -818,13 +822,13 @@ export class LegacyJwtVerifier extends Component {
             locationTitle="Token location"
             path={`${path}.strategy.transformSettings.location`}
             changeTheValue={this.changeTheValue}
-            location={verifier.strategy.transformSettings.location}
+            location={verifier.strategy.transformSettings?.location}
           />,
           <ObjectInput
             label="Rename token fields"
             placeholderKey="Field name"
             placeholderValue="Field value"
-            value={verifier.strategy.transformSettings.mappingSettings.map}
+            value={verifier.strategy.transformSettings?.mappingSettings.map}
             help="When the JWT token is transformed, it is possible to change a field name, just specify origin field name and target field name"
             onChange={(v) =>
               changeTheValue(path + '.strategy.transformSettings.mappingSettings.map', v)
@@ -834,7 +838,7 @@ export class LegacyJwtVerifier extends Component {
             label="Set token fields"
             placeholderKey="Field name"
             placeholderValue="Field value"
-            value={verifier.strategy.transformSettings.mappingSettings.values}
+            value={verifier.strategy.transformSettings?.mappingSettings.values}
             help="When the JWT token is transformed, it is possible to add new field with static values, just specify field name and value"
             onChange={(v) =>
               changeTheValue(path + '.strategy.transformSettings.mappingSettings.values', v)
@@ -843,7 +847,7 @@ export class LegacyJwtVerifier extends Component {
           <ArrayInput
             label="Remove token fields"
             placeholder="Field name"
-            value={verifier.strategy.transformSettings.mappingSettings.remove}
+            value={verifier.strategy.transformSettings?.mappingSettings.remove}
             help="When the JWT token is transformed, it is possible to remove fields"
             onChange={(v) =>
               changeTheValue(path + '.strategy.transformSettings.mappingSettings.remove', v)

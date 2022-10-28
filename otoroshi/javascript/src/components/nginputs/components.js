@@ -209,6 +209,7 @@ export class NgFormRenderer extends Component {
               display: 'flex',
               flexDirection: 'column',
               width: '100%',
+              ...(this.props.style || {}),
               ...(this.props.rawSchema.style || {})
             }} onClick={() => {
               if (clickable)

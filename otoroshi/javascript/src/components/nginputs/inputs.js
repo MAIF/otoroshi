@@ -133,32 +133,48 @@ export class NgDotsRenderer extends Component {
 
 export class NgCustomFormsRenderer extends Component {
   state = {
-    showComponent: false
+    showComponent: false,
+    propsFromParent: {}
+  }
+
+  hideComponent = () => {
+    this.setState({
+      showComponent: false
+    })
   }
 
   render() {
-    const { showComponent } = this.state;
+    const { showComponent, propsFromParent } = this.state;
     const schema = this.props.rawSchema
     const props = schema?.props || {};
 
     const Component = Forms[schema.type];
 
-    console.log(this.props)
+    const LauncherComponent = React.createElement(props.componentLauncher, {
+      value: this.props.value,
+      onChange: this.props.onChange,
+      openComponent: propsFromParent => {
+        this.setState({
+          showComponent: true,
+          propsFromParent
+        })
+      }
+    });
 
     return (
       <div className='mb-3'>
-        {!showComponent && <Button
-          text={props.buttonText || "Configure"}
-          className='btn-sm'
-          style={{
-            width: '100%'
-          }}
-          onClick={() => this.setState({
-            showComponent: true
-          })} />}
-        {showComponent && <Component hide={() => this.setState({
-          showComponent: false
-        })} />}
+        {!showComponent && LauncherComponent}
+        {showComponent &&
+          <Component
+            onChange={this.props.onChange}
+            onConfirm={value => {
+              this.props.onChange(value);
+              this.hideComponent();
+            }}
+            value={this.props.value}
+            hide={this.hideComponent}
+            {...(propsFromParent || {})} />
+        }
       </div>
     )
   }
