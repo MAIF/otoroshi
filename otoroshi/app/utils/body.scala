@@ -63,10 +63,10 @@ object BodyUtils {
   }
 
   def hasBodyWithoutLengthOrZeroGen(
-    method: String,
-    clength: Option[String],
-    ctype: Option[String],
-    transferEncoding: Option[String]
+      method: String,
+      clength: Option[String],
+      ctype: Option[String],
+      transferEncoding: Option[String]
   ): (Boolean, Boolean) = {
     (method.toUpperCase(), clength) match {
       case ("GET", Some("0"))                                       => (false, false)
@@ -75,7 +75,7 @@ object BodyUtils {
       case ("GET", None) if ctype.isDefined                         => (true, true)
       case ("GET", None) if transferEncoding.contains("chunked")    => (true, true)
       case ("GET", None)                                            => (false, false)
-    case ("HEAD", Some("0"))                                        => (false, false)
+      case ("HEAD", Some("0"))                                      => (false, false)
       case ("HEAD", Some(_))                                        => (true, false)
       // this one when trying to perform a HEAD with an empty body and a content-type. Play strips the content-length that should be 0. So it's not the best way but we can't do something else
       case ("HEAD", None) if ctype.isDefined                        => (true, true)
@@ -85,7 +85,7 @@ object BodyUtils {
       case ("POST", _)                                              => (true, false)
       case ("PUT", _)                                               => (true, false)
       case ("QUERY", _)                                             => (true, false)
-      case ("DELETE", Some("0"))                                      => (false, false)
+      case ("DELETE", Some("0"))                                    => (false, false)
       case ("DELETE", Some(_))                                      => (true, false)
       // this one when trying to perform a DELETE with an empty body and a content-type. Play strips the content-length that should be 0. So it's not the best way but we can't do something else
       case ("DELETE", None) if ctype.isDefined                      => (true, true)

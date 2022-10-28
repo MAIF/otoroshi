@@ -6,8 +6,8 @@ export default {
   field: 'frontend',
   schema: {
     headers: {
-      label: "headers",
-      type: "object"
+      label: 'headers',
+      type: 'object',
     },
     methods: {
       type: 'dots',
@@ -21,33 +21,33 @@ export default {
           { value: 'HEAD', label: 'HEAD', color: 'rgb(155, 89, 182)' },
           { value: 'OPTIONS', label: 'OPTIONS', color: 'rgb(155, 89, 182)' },
           { value: 'PATCH', label: 'PATCH', color: 'rgb(155, 89, 182)' },
-        ]
-      }
+        ],
+      },
     },
     query: {
-      label: "query",
-      type: "object"
+      label: 'query',
+      type: 'object',
     },
     exact: {
       type: 'bool',
       props: {
         label: 'Exact',
         labelColumn: 6,
-      }
+      },
     },
     domains: {
-      label: "domains",
-      type: "array",
+      label: 'domains',
+      type: 'array',
       array: true,
-      format: null
+      format: null,
     },
-    "strip_path": {
+    strip_path: {
       type: 'bool',
       props: {
         label: 'Strip path',
         labelColumn: 6,
-      }
-    }
+      },
+    },
   },
   flow: [
     'domains',
@@ -59,5 +59,5 @@ export default {
     'headers',
     'methods',
     'query',
-  ]
-}
+  ],
+};

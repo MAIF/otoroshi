@@ -17,20 +17,20 @@ export const HTTP_COLORS = {
   PUT: 'rgb(251, 161, 47)',
   HEAD: 'rgb(155, 89, 182)',
   PATCH: 'rgb(155, 89, 182)',
-  OPTIONS: 'rgb(155, 89, 182)'
+  OPTIONS: 'rgb(155, 89, 182)',
 };
 
 function Methods({ frontend }) {
   const hasMethods = frontend.methods && frontend.methods.length > 0;
   const methods = hasMethods
     ? frontend.methods.map((m, i) => (
-      <span
-        key={`frontendmethod-${i}`}
-        className={`badge me-1`}
-        style={{ backgroundColor: HTTP_COLORS[m] }}>
-        {m}
-      </span>
-    ))
+        <span
+          key={`frontendmethod-${i}`}
+          className={`badge me-1`}
+          style={{ backgroundColor: HTTP_COLORS[m] }}>
+          {m}
+        </span>
+      ))
     : [<span className="badge bg-dark">ALL</span>];
   return (
     <div className="d-flex-between">
@@ -41,7 +41,7 @@ function Methods({ frontend }) {
       ))}
     </div>
   );
-};
+}
 
 function Uri({ frontend, domain }) {
   const exact = frontend.exact;
@@ -61,18 +61,15 @@ function Uri({ frontend, domain }) {
       </span>
     </div>
   );
-};
+}
 
 class RouteForms extends React.Component {
   state = {
     usingExistingBackend: false,
-    usingJsonView: false
+    usingJsonView: false,
   };
 
-  flow = [
-    'frontend',
-    'backend'
-  ]
+  flow = ['frontend', 'backend'];
 
   render() {
     const { usingJsonView } = this.state;
@@ -84,29 +81,22 @@ class RouteForms extends React.Component {
         label: 'Frontend',
         flow: Frontend.flow,
         collapsable: true,
-        schema: toUpperCaseLabels(Frontend.schema)
+        schema: toUpperCaseLabels(Frontend.schema),
       },
       backend: {
         type: 'form',
         label: 'Backend',
         collapsable: true,
-        flow: props => {
+        flow: (props) => {
           if (props.backend_ref || props.using_backend_ref)
-            return [
-              'using_backend_ref',
-              'backend_ref'
-            ]
-          else
-            return [
-              'using_backend_ref',
-              ...Backend.flow
-            ]
+            return ['using_backend_ref', 'backend_ref'];
+          else return ['using_backend_ref', ...Backend.flow];
         },
         schema: {
           ...toUpperCaseLabels(Backend.schema),
           using_backend_ref: {
             type: 'boolean',
-            label: 'Using backend ref'
+            label: 'Using backend ref',
           },
           backend_ref: {
             type: 'select',
@@ -115,26 +105,31 @@ class RouteForms extends React.Component {
               options: this.props.backends,
               optionsTransformer: {
                 label: 'name',
-                value: 'id'
+                value: 'id',
               },
-              placeholder: "Select an existing backend"
-            }
-          }
-        }
-      }
-    }
+              placeholder: 'Select an existing backend',
+            },
+          },
+        },
+      },
+    };
 
     return (
-      <div className="p-2" style={{
-        borderBottomLeftRadius: '4px',
-        borderBottomRightRadius: '4px'
-      }} onClick={e => e.stopPropagation()}>
+      <div
+        className="p-2"
+        style={{
+          borderBottomLeftRadius: '4px',
+          borderBottomRightRadius: '4px',
+        }}
+        onClick={(e) => e.stopPropagation()}>
         <div className="d-flex justify-content-end">
           <button
             className="btn btn-sm btn-success me-1"
             onClick={(e) => {
               e.stopPropagation();
-              this.props.history.replace(`${this.props.url}?tab=route_plugins&view_plugins=${this.props.index}`);
+              this.props.history.replace(
+                `${this.props.url}?tab=route_plugins&view_plugins=${this.props.index}`
+              );
             }}>
             <i className="fas fa-pencil-ruler" />
           </button>
@@ -142,11 +137,9 @@ class RouteForms extends React.Component {
             className="btn btn-sm btn-danger me-1"
             onClick={(e) => {
               e.stopPropagation();
-              window.newConfirm('Delete this route ?')
-                .then((ok) => {
-                  if (ok)
-                    this.props.removeRoute(e);
-                })
+              window.newConfirm('Delete this route ?').then((ok) => {
+                if (ok) this.props.removeRoute(e);
+              });
             }}>
             <i className="fas fa-trash" />
           </button>
@@ -163,31 +156,39 @@ class RouteForms extends React.Component {
           </button>
         </div>
         <div className="flex p-3 pb-2 pt-0 route-forms-form">
-          {!usingJsonView && <NgForm
-            value={{
-              ...route,
-              backend: {
-                ...route.backend,
-                backend_ref: route.backend_ref,
-                using_backend_ref: route.backend_ref ? true : route.backend.using_backend_ref
-              }
-            }}
-            useBreadcrumb={true}
-            onChange={e => {
-              this.props.updateRoute({
-                ...e,
-                backend_ref: e.backend.using_backend_ref ? e.backend.backend_ref : undefined
-              })
-            }}
-            schema={schema}
-            flow={this.flow}
-          />}
-          {usingJsonView && <Suspense fallback={<div>Loading ....</div>}>
-            <div className='pt-2'>
-              <CodeInput value={route}
-                onChange={this.props.updateRoute} mode="json" editorOnly={true} />
-            </div>
-          </Suspense>}
+          {!usingJsonView && (
+            <NgForm
+              value={{
+                ...route,
+                backend: {
+                  ...route.backend,
+                  backend_ref: route.backend_ref,
+                  using_backend_ref: route.backend_ref ? true : route.backend.using_backend_ref,
+                },
+              }}
+              useBreadcrumb={true}
+              onChange={(e) => {
+                this.props.updateRoute({
+                  ...e,
+                  backend_ref: e.backend.using_backend_ref ? e.backend.backend_ref : undefined,
+                });
+              }}
+              schema={schema}
+              flow={this.flow}
+            />
+          )}
+          {usingJsonView && (
+            <Suspense fallback={<div>Loading ....</div>}>
+              <div className="pt-2">
+                <CodeInput
+                  value={route}
+                  onChange={this.props.updateRoute}
+                  mode="json"
+                  editorOnly={true}
+                />
+              </div>
+            </Suspense>
+          )}
         </div>
         <div className="d-flex align-items-center justify-content-end me-3">
           <FeedbackButton
@@ -196,7 +197,7 @@ class RouteForms extends React.Component {
             onPress={this.props.saveRoute}
           />
         </div>
-      </div >
+      </div>
     );
   }
 }
@@ -216,12 +217,15 @@ const Route = (props) => {
     const url = new URL(window.location);
     url.searchParams.set('view_plugins', newState ? props.index : null);
     window.history.pushState({}, '', url);
-  }
+  };
 
   const { frontend, plugins } = props.route;
 
   return (
-    <div className="route-item my-2" style={{ minHeight: open ? '200px' : 'initial' }} onClick={onClick}>
+    <div
+      className="route-item my-2"
+      style={{ minHeight: open ? '200px' : 'initial' }}
+      onClick={onClick}>
       <div
         className={`d-flex-between ${open ? 'route-forms-header' : ''}`}
         style={{
@@ -257,13 +261,13 @@ function OpenapiImport(props) {
   const schema = {
     openapi: {
       type: 'string',
-      label: 'Openapi URL'
+      label: 'Openapi URL',
     },
     domain: {
       type: 'string',
-      label: 'Exposed domain'
-    }
-  }
+      label: 'Exposed domain',
+    },
+  };
 
   return (
     <>
@@ -295,27 +299,27 @@ function OpenapiImport(props) {
 }
 
 export default class RouteCompositions extends React.Component {
-
   state = {
     templates: [],
-    backends: []
-  }
+    backends: [],
+  };
 
   componentDidMount() {
     Promise.all([
       nextClient.template(nextClient.ENTITIES.SERVICES),
-      nextClient.find(nextClient.ENTITIES.BACKENDS)
-    ])
-      .then(([templates, backends]) => {
-        this.setState({ templates, backends })
-      });
+      nextClient.find(nextClient.ENTITIES.BACKENDS),
+    ]).then(([templates, backends]) => {
+      this.setState({ templates, backends });
+    });
 
-    this.props.setSaveButton(<FeedbackButton
-      className="ms-2"
-      text="Save route composition"
-      icon={() => <i className="fas fa-paper-plane" />}
-      onPress={this.saveRoute}
-    />);
+    this.props.setSaveButton(
+      <FeedbackButton
+        className="ms-2"
+        text="Save route composition"
+        icon={() => <i className="fas fa-paper-plane" />}
+        onPress={this.saveRoute}
+      />
+    );
   }
 
   updateRoute(index, item) {
@@ -325,33 +329,34 @@ export default class RouteCompositions extends React.Component {
     });
 
     if (this.props.service.routes.length === 0) {
-      r = [item]
+      r = [item];
     } else if (index >= this.props.service.routes.length) {
       r = [...this.props.service.routes, item];
     }
 
     this.props.setRoutes(r);
-  };
+  }
 
-  saveRoute = routes => {
+  saveRoute = (routes) => {
     return nextClient
       .update(nextClient.ENTITIES.SERVICES, {
         ...this.props.service,
         routes: routes || this.props.service.routes,
       })
-      .then(service => this.props.setRoutes(service.routes));
+      .then((service) => this.props.setRoutes(service.routes));
   };
 
   removeRoute(idx) {
-    this.props.setRoutes(this.props.service.routes.filter((_, i) => i !== idx))
-  };
+    this.props.setRoutes(this.props.service.routes.filter((_, i) => i !== idx));
+  }
 
   importOpenApi = () => {
-    return window.popup(
-      'Import routes from openapi',
-      (ok, cancel) => <OpenapiImport ok={ok} cancel={cancel} />,
-      { __style: { width: '100%' } }
-    )
+    return window
+      .popup(
+        'Import routes from openapi',
+        (ok, cancel) => <OpenapiImport ok={ok} cancel={cancel} />,
+        { __style: { width: '100%' } }
+      )
       .then(this.importOpenApiModalResponse);
   };
 
@@ -361,16 +366,16 @@ export default class RouteCompositions extends React.Component {
         method: 'POST',
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       })
         .then((r) => r.json())
         .then((imported) => {
           this.saveRoute(imported.routes);
         });
     }
-  }
+  };
 
   render() {
     const { service, viewPlugins } = this.props;
@@ -392,7 +397,8 @@ export default class RouteCompositions extends React.Component {
             type="info"
             text="Import routes from openapi"
             icon={() => <i className="fas fa-file-code me-1" />}
-            onPress={this.importOpenApi} />
+            onPress={this.importOpenApi}
+          />
         </div>
         <div>
           {(service.routes || []).map((route, i) => (
@@ -408,13 +414,18 @@ export default class RouteCompositions extends React.Component {
               backends={this.state.backends}
             />
           ))}
-          {service.routes.length === 0 && <h4 className='text-center' style={{
-            fontSize: '1.25em'
-          }}>
-            Your route compositions is empty. Start by adding a new route or importing all routes from your open api.
-          </h4>}
+          {service.routes.length === 0 && (
+            <h4
+              className="text-center"
+              style={{
+                fontSize: '1.25em',
+              }}>
+              Your route compositions is empty. Start by adding a new route or importing all routes
+              from your open api.
+            </h4>
+          )}
         </div>
       </div>
-    )
+    );
   }
-};
+}

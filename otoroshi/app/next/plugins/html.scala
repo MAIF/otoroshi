@@ -12,13 +12,14 @@ import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class NgHtmlPatcherConfig(appendHead: Seq[String] = Seq.empty, appendBody: Seq[String] = Seq.empty) extends NgPluginConfig {
+case class NgHtmlPatcherConfig(appendHead: Seq[String] = Seq.empty, appendBody: Seq[String] = Seq.empty)
+    extends NgPluginConfig {
   def json: JsValue = Json.obj("append_head" -> appendHead, "append_body" -> appendBody)
 }
 
 class NgHtmlPatcher extends NgRequestTransformer {
 
-  override def name: String = "Html Patcher"
+  override def name: String                      = "Html Patcher"
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
@@ -31,32 +32,48 @@ class NgHtmlPatcher extends NgRequestTransformer {
   override def transformsError: Boolean                    = false
   override def isTransformRequestAsync: Boolean            = false
   override def isTransformResponseAsync: Boolean           = true
-  override def description: Option[String]                 = "This plugin can inject elements in html pages (in the body or in the head) returned by the service".some
+  override def description: Option[String]                 =
+    "This plugin can inject elements in html pages (in the body or in the head) returned by the service".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHtmlPatcherConfig().some
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponse(
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     ctx.rawResponse.headers.get("Content-Type").orElse(ctx.rawResponse.headers.get("content-type")) match {
       case Some(ctype) if ctype.contains("text/html") => {
-        val newHeaders = ctx.otoroshiResponse.headers.-("Content-Length").-("content-length").+("Transfer-Encoding" -> "chunked")
-        val isGzip = ctx.otoroshiResponse.headers.getIgnoreCase("Content-Encoding").contains("gzip")
+        val newHeaders    =
+          ctx.otoroshiResponse.headers.-("Content-Length").-("content-length").+("Transfer-Encoding" -> "chunked")
+        val isGzip        = ctx.otoroshiResponse.headers.getIgnoreCase("Content-Encoding").contains("gzip")
         val newBodySource = Source.future(
           ctx.otoroshiResponse.body
             .applyOnIf(isGzip)(_.via(GzipFlow.gunzip()))
-            .runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-              val body       = bodyRaw.utf8String
-              val appendHead = ctx.config.select("appendHead").asOpt[Seq[String]].orElse(ctx.config.select("append_head").asOpt[Seq[String]]).getOrElse(Seq.empty)
-              val appendBody = ctx.config.select("appendBody").asOpt[Seq[String]].orElse(ctx.config.select("append_body").asOpt[Seq[String]]).getOrElse(Seq.empty)
+            .runFold(ByteString.empty)(_ ++ _)
+            .map { bodyRaw =>
+              val body          = bodyRaw.utf8String
+              val appendHead    = ctx.config
+                .select("appendHead")
+                .asOpt[Seq[String]]
+                .orElse(ctx.config.select("append_head").asOpt[Seq[String]])
+                .getOrElse(Seq.empty)
+              val appendBody    = ctx.config
+                .select("appendBody")
+                .asOpt[Seq[String]]
+                .orElse(ctx.config.select("append_body").asOpt[Seq[String]])
+                .getOrElse(Seq.empty)
               val headInjection = appendHead.mkString("")
               val bodyInjection = appendBody.mkString("")
-              val newBody = body
+              val newBody       = body
                 .replace("</head>", s"${headInjection}</head>")
                 .replace("</body>", s"${bodyInjection}</body>")
               ByteString(newBody)
             }
         )
-        ctx.otoroshiResponse.copy(headers = newHeaders, body = newBodySource.applyOnIf(isGzip)(_.via(GzipFlow.gzip()))).right.future
+        ctx.otoroshiResponse
+          .copy(headers = newHeaders, body = newBodySource.applyOnIf(isGzip)(_.via(GzipFlow.gzip())))
+          .right
+          .future
       }
-      case _ => ctx.otoroshiResponse.rightf
+      case _                                          => ctx.otoroshiResponse.rightf
     }
   }
 }

@@ -8,7 +8,7 @@ export function FeedbackButton({
   feedbackTimeout = 1500,
   className,
   disabled,
-  style = {}
+  style = {},
 }) {
   const [uploading, setUploading] = useState(false);
   const [result, onResult] = useState('waiting');

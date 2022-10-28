@@ -1,243 +1,204 @@
 export default {
-  "id": "cp:otoroshi.next.plugins.OtoroshiInfos",
-  "config_schema": {
-    "header_name": {
-      "type": "string",
-      "props": {
-        "label": "Header name"
-      }
+  id: 'cp:otoroshi.next.plugins.OtoroshiInfos',
+  config_schema: {
+    header_name: {
+      type: 'string',
+      props: {
+        label: 'Header name',
+      },
     },
-    "version": {
-      "type": "string",
-      "props": {
-        "label": "Version"
-      }
+    version: {
+      type: 'string',
+      props: {
+        label: 'Version',
+      },
     },
-    "ttl": {
-      "type": "number",
-      "props": {
-        "label": "Time to live"
-      }
+    ttl: {
+      type: 'number',
+      props: {
+        label: 'Time to live',
+      },
     },
-    "algo": {
-      "type": "form",
+    algo: {
+      type: 'form',
       collapsable: true,
       collapsed: false,
-      "flow": [
-        "type"
-      ],
+      flow: ['type'],
       label: 'Algo.',
-      "schema": {
-        "type": {
-          "format": "form",
-          "label": "Algo settings",
-          "flow": {
-            "field": "type.type",
-            "flow": {
-              "HSAlgoSettings": [
-                "type",
-                "size",
-                "secret",
-                "base64"
+      schema: {
+        type: {
+          format: 'form',
+          label: 'Algo settings',
+          flow: {
+            field: 'type.type',
+            flow: {
+              HSAlgoSettings: ['type', 'size', 'secret', 'base64'],
+              RSAlgoSettings: ['type', 'size', 'publicKey', 'privateKey'],
+              ESAlgoSettings: ['type', 'size', 'publicKey', 'privateKey'],
+              JWKSAlgoSettings: [
+                'type',
+                'url',
+                'headers',
+                'timeout',
+                'ttl',
+                'kty',
+                'proxy',
+                'mtlsConfig',
               ],
-              "RSAlgoSettings": [
-                "type",
-                "size",
-                "publicKey",
-                "privateKey"
-              ],
-              "ESAlgoSettings": [
-                "type",
-                "size",
-                "publicKey",
-                "privateKey"
-              ],
-              "JWKSAlgoSettings": [
-                "type",
-                "url",
-                "headers",
-                "timeout",
-                "ttl",
-                "kty",
-                "proxy",
-                "mtlsConfig"
-              ],
-              "RSAKPAlgoSettings": [
-                "type",
-                "size",
-                "certId"
-              ],
-              "ESKPAlgoSettings": [
-                "type",
-                "size",
-                "certId"
-              ],
-              "KidAlgoSettings": [
-                "type",
-                "onlyExposedCerts"
-              ]
-            }
+              RSAKPAlgoSettings: ['type', 'size', 'certId'],
+              ESKPAlgoSettings: ['type', 'size', 'certId'],
+              KidAlgoSettings: ['type', 'onlyExposedCerts'],
+            },
           },
-          "schema": {
-            "type": {
-              "type": "select",
-              "label": "Type.",
-              "props": {
-                "options": [
-                  "HSAlgoSettings",
-                  "RSAlgoSettings",
-                  "ESAlgoSettings",
-                  "JWKSAlgoSettings",
-                  "RSAKPAlgoSettings",
-                  "ESKPAlgoSettings",
-                  "KidAlgoSettings"
-                ]
-              }
+          schema: {
+            type: {
+              type: 'select',
+              label: 'Type.',
+              props: {
+                options: [
+                  'HSAlgoSettings',
+                  'RSAlgoSettings',
+                  'ESAlgoSettings',
+                  'JWKSAlgoSettings',
+                  'RSAKPAlgoSettings',
+                  'ESKPAlgoSettings',
+                  'KidAlgoSettings',
+                ],
+              },
             },
-            "size": {
-              "type": "number"
+            size: {
+              type: 'number',
             },
-            "secret": {
-              "type": "string"
+            secret: {
+              type: 'string',
             },
-            "base64": {
-              "type": "boolean"
+            base64: {
+              type: 'boolean',
             },
-            "publicKey": {
-              "type": "text"
+            publicKey: {
+              type: 'text',
             },
-            "privateKey": {
-              "type": "text"
+            privateKey: {
+              type: 'text',
             },
-            "url": {
-              "type": "string"
+            url: {
+              type: 'string',
             },
-            "headers": {
-              "type": "object",
-              "props": {
-                "label": "Headers"
-              }
+            headers: {
+              type: 'object',
+              props: {
+                label: 'Headers',
+              },
             },
-            "timeout": {
-              "type": "number"
+            timeout: {
+              type: 'number',
             },
-            "ttl": {
-              "type": "number"
+            ttl: {
+              type: 'number',
             },
-            "kty": {
-              "type": "string"
+            kty: {
+              type: 'string',
             },
-            "mtlsConfig": {
-              "type": "object",
+            mtlsConfig: {
+              type: 'object',
               collapsable: true,
-              "format": "form",
-              "flow": [
-                "certs",
-                "trustedCerts",
-                "mtls",
-                "loose",
-                "trustAll"
-              ],
-              "schema": {
-                "certs": {
-                  "type": "array-select",
-                  "props": {
-                    "label": "Certificates",
-                    "optionsFrom": "/bo/api/proxy/api/certificates",
-                    "optionsTransformer": {
-                      "label": "name",
-                      "value": "id"
-                    }
-                  }
+              format: 'form',
+              flow: ['certs', 'trustedCerts', 'mtls', 'loose', 'trustAll'],
+              schema: {
+                certs: {
+                  type: 'array-select',
+                  props: {
+                    label: 'Certificates',
+                    optionsFrom: '/bo/api/proxy/api/certificates',
+                    optionsTransformer: {
+                      label: 'name',
+                      value: 'id',
+                    },
+                  },
                 },
-                "trustedCerts": {
-                  "type": "array-select",
-                  "props": {
-                    "label": "Trusted certificates",
-                    "optionsFrom": "/bo/api/proxy/api/certificates",
-                    "optionsTransformer": {
-                      "label": "name",
-                      "value": "id"
-                    }
-                  }
+                trustedCerts: {
+                  type: 'array-select',
+                  props: {
+                    label: 'Trusted certificates',
+                    optionsFrom: '/bo/api/proxy/api/certificates',
+                    optionsTransformer: {
+                      label: 'name',
+                      value: 'id',
+                    },
+                  },
                 },
-                "mtls": {
-                  "type": "boolean"
+                mtls: {
+                  type: 'boolean',
                 },
-                "loose": {
-                  "type": "boolean"
+                loose: {
+                  type: 'boolean',
                 },
-                "trustAll": {
-                  "type": "boolean"
-                }
-              }
+                trustAll: {
+                  type: 'boolean',
+                },
+              },
             },
-            "proxy": {
-              "format": "form",
+            proxy: {
+              format: 'form',
               collapsable: true,
-              "flow": [
-                "host",
-                "port",
-                "protocol",
-                "principal",
-                "password",
-                "ntlmDomain",
-                "encoding",
-                "nonProxyHosts"
+              flow: [
+                'host',
+                'port',
+                'protocol',
+                'principal',
+                'password',
+                'ntlmDomain',
+                'encoding',
+                'nonProxyHosts',
               ],
-              "schema": {
-                "host": {
-                  "type": "string"
+              schema: {
+                host: {
+                  type: 'string',
                 },
-                "port": {
-                  "type": "number"
+                port: {
+                  type: 'number',
                 },
-                "protocol": {
-                  "type": "string"
+                protocol: {
+                  type: 'string',
                 },
-                "principal": {
-                  "type": "string"
+                principal: {
+                  type: 'string',
                 },
-                "password": {
-                  "type": "string"
+                password: {
+                  type: 'string',
                 },
-                "ntlmDomain": {
-                  "type": "string"
+                ntlmDomain: {
+                  type: 'string',
                 },
-                "encoding": {
-                  "type": "string"
+                encoding: {
+                  type: 'string',
                 },
-                "nonProxyHosts": {
-                  "type": "array",
-                  "props": {
-                    "label": "Non proxy hosts"
-                  }
-                }
-              }
+                nonProxyHosts: {
+                  type: 'array',
+                  props: {
+                    label: 'Non proxy hosts',
+                  },
+                },
+              },
             },
-            "certId": {
-              "type": "array-select",
-              "props": {
-                "label": "Certificates",
-                "optionsFrom": "/bo/api/proxy/api/certificates",
-                "optionsTransformer": {
-                  "label": "name",
-                  "value": "id"
-                }
-              }
+            certId: {
+              type: 'array-select',
+              props: {
+                label: 'Certificates',
+                optionsFrom: '/bo/api/proxy/api/certificates',
+                optionsTransformer: {
+                  label: 'name',
+                  value: 'id',
+                },
+              },
             },
-            "onlyExposedCerts": {
-              "type": "boolean"
-            }
-          }
-        }
-      }
-    }
+            onlyExposedCerts: {
+              type: 'boolean',
+            },
+          },
+        },
+      },
+    },
   },
-  "config_flow": [
-    "version",
-    "ttl",
-    "header_name",
-    "algo"
-  ]
-}
+  config_flow: ['version', 'ttl', 'header_name', 'algo'],
+};

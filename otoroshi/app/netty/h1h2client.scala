@@ -82,7 +82,7 @@ class NettyHttpClient(env: Env) {
       targetOpt = None,
       clientConfig = ClientConfig(),
       alreadyFailed = AkkaWsClientRequest.atomicFalse,
-      env = env,
+      env = env
     )
   }
 }
@@ -102,7 +102,7 @@ case class NettyWsClientRequest(
     targetOpt: Option[Target] = None,
     clientConfig: ClientConfig = ClientConfig(),
     alreadyFailed: AtomicBoolean = AkkaWsClientRequest.atomicFalse,
-    env: Env,
+    env: Env
 ) extends WSRequest {
 
   private val _uri = Uri(_url)
@@ -282,7 +282,7 @@ case class NettyWsClientRequest(
   }
   ///////
   override def execute(): Future[WSResponse] = {
-    val proto  = protocol.orElse(targetOpt.map(_.protocol.value)).getOrElse("HTTP/1.1")
+    val proto = protocol.orElse(targetOpt.map(_.protocol.value)).getOrElse("HTTP/1.1")
     if (proto.toLowerCase().startsWith("http/3")) {
       NettyHttp3ClientWsRequest(
         client = env.http3Client,
@@ -296,7 +296,7 @@ case class NettyWsClientRequest(
         proxy = proxy,
         tlsConfig = tlsConfig,
         targetOpt = targetOpt,
-        clientConfig = clientConfig,
+        clientConfig = clientConfig
       ).execute()
     } else {
       stream().map(_.asInstanceOf[NettyWsResponse].toStrict())(env.otoroshiExecutionContext)
@@ -319,7 +319,7 @@ case class NettyWsClientRequest(
         proxy = proxy,
         tlsConfig = tlsConfig,
         targetOpt = targetOpt,
-        clientConfig = clientConfig,
+        clientConfig = clientConfig
       ).stream()
     } else {
       client
@@ -332,7 +332,10 @@ case class NettyWsClientRequest(
           // client config here
           client
             .responseTimeout(java.time.Duration.ofMillis(clientConfig.callAndStreamTimeout))
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, java.lang.Integer.valueOf(clientConfig.connectionTimeout.toInt))
+            .option(
+              ChannelOption.CONNECT_TIMEOUT_MILLIS,
+              java.lang.Integer.valueOf(clientConfig.connectionTimeout.toInt)
+            )
         }
         .applyOn { client =>
           // target config and manual resolving
@@ -349,16 +352,16 @@ case class NettyWsClientRequest(
           // tls config
           val tls = targetOpt.map(_.scheme.startsWith("https")).getOrElse(_uri.scheme.startsWith("https"))
           if (tls) {
-            val tlsConf = tlsConfig.orElse(targetOpt.map(_.mtlsConfig))
+            val tlsConf   = tlsConfig.orElse(targetOpt.map(_.mtlsConfig))
             val customTls = tlsConf.map(c => c.mtls && c.legit).getOrElse(false)
             if (customTls) {
-              val certs: Seq[Cert] = tlsConf.toSeq
+              val certs: Seq[Cert]        = tlsConf.toSeq
                 .flatMap(_.actualCerts)
               val trustedCerts: Seq[Cert] = tlsConf.toSeq
                 .flatMap(_.actualTrustedCerts)
-              val trustAll: Boolean = tlsConf
+              val trustAll: Boolean       = tlsConf
                 .exists(_.trustAll)
-              val ctx = SslContextBuilder
+              val ctx                     = SslContextBuilder
                 .forClient()
                 .applyOn { ctx =>
                   if (NettyHttpClient.logger.isDebugEnabled)
@@ -389,7 +392,7 @@ case class NettyWsClientRequest(
         .applyOn { client =>
           // proxy config
           proxy match {
-            case None => client.noProxy()
+            case None            => client.noProxy()
             case Some(proxyconf) =>
               client.proxy(spec =>
                 spec
@@ -435,7 +438,7 @@ case class NettyWsClientRequest(
         .uri(_uri.toString())
         .applyOn { client =>
           body match {
-            case EmptyBody =>
+            case EmptyBody           =>
               client
                 .responseConnection((resp, conn) =>
                   Mono.just(NettyWsResponse(resp, ByteBufFlux.fromInbound(conn.inbound().receive()), _uri, env))
@@ -446,7 +449,7 @@ case class NettyWsClientRequest(
                 .responseConnection((resp, conn) =>
                   Mono.just(NettyWsResponse(resp, ByteBufFlux.fromInbound(conn.inbound().receive()), _uri, env))
                 )
-            case SourceBody(source) =>
+            case SourceBody(source)  =>
               client
                 .send(
                   Flux.from(
@@ -465,7 +468,9 @@ case class NettyWsClientRequest(
   }
 }
 
-case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri: Uri, env: Env) extends WSResponse with TrailerSupport {
+case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri: Uri, env: Env)
+    extends WSResponse
+    with TrailerSupport {
 
   private lazy val _body: Source[ByteString, _] = {
     val flux: Flux[ByteString] = bodyflux.map { bb =>
@@ -563,7 +568,9 @@ case class NettyWsResponse(resp: HttpClientResponse, bodyflux: ByteBufFlux, _uri
   }
 }
 
-case class NettyWsStrictResponse(resp: NettyWsResponse, bodyAsBytes: ByteString) extends WSResponse with TrailerSupport {
+case class NettyWsStrictResponse(resp: NettyWsResponse, bodyAsBytes: ByteString)
+    extends WSResponse
+    with TrailerSupport {
 
   private lazy val _bodyAsString: String = bodyAsBytes.utf8String
   private lazy val _bodyAsXml: Elem      = XML.loadString(_bodyAsString)

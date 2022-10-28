@@ -404,7 +404,7 @@ class OpenApiGenerator(
                   .arr(HttpProtocols.`HTTP/1.0`.value, HttpProtocols.`HTTP/1.1`.value, HttpProtocols.`HTTP/2.0`.value)
               )
               .some
-          case "otoroshi.models.HttpProtocol"            =>
+          case "otoroshi.models.HttpProtocol"                     =>
             Json
               .obj(
                 "type" -> "string",
@@ -412,7 +412,7 @@ class OpenApiGenerator(
                   otoroshi.models.HttpProtocols.HTTP_1_0.value,
                   otoroshi.models.HttpProtocols.HTTP_1_1.value,
                   otoroshi.models.HttpProtocols.HTTP_2_0.value,
-                  otoroshi.models.HttpProtocols.HTTP_3_0.value,
+                  otoroshi.models.HttpProtocols.HTTP_3_0.value
                 )
               )
               .some

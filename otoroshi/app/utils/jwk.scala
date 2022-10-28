@@ -25,7 +25,8 @@ object StringJwkProvider {
     val x5c: java.util.List[String]           = values.remove("x5c").asInstanceOf[java.util.List[String]]
     val x5t: String                           = values.remove("x5t").asInstanceOf[String]
     if (kty == null) throw new IllegalArgumentException("Attributes " + map + " are not from a valid jwk")
-    if (keyOps.isInstanceOf[String]) new Jwk(kid, kty, alg, use, Collections.singletonList(keyOps.asInstanceOf[String]), x5u, x5c, x5t, values)
+    if (keyOps.isInstanceOf[String])
+      new Jwk(kid, kty, alg, use, Collections.singletonList(keyOps.asInstanceOf[String]), x5u, x5c, x5t, values)
     else new Jwk(kid, kty, alg, use, keyOps.asInstanceOf[java.util.List[String]], x5u, x5c, x5t, values)
   }
 }

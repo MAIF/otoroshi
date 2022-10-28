@@ -41,7 +41,6 @@ export class NgValidationRenderer extends Component {
 }
 
 export class NgFormRenderer extends Component {
-
   state = {
     folded: true,
   };
@@ -60,37 +59,40 @@ export class NgFormRenderer extends Component {
 
   setBreadcrumb = () => {
     if (this.props.setBreadcrumb) {
-      this.props.setBreadcrumb(this.props.path)
-    }
-    else
+      this.props.setBreadcrumb(this.props.path);
+    } else
       this.setState({
-        folded: !this.state.folded
-      })
-  }
+        folded: !this.state.folded,
+      });
+  };
 
-  match = (test, breadcrumb) => test.join('-').startsWith(breadcrumb.join('-')) ||
+  match = (test, breadcrumb) =>
+    test.join('-').startsWith(breadcrumb.join('-')) ||
     breadcrumb.join('-').startsWith(test.join('-'));
 
   getChildrenVisibility = (pathAsArray, breadcrumbAsArray) => {
-    if (!this.props.setBreadcrumb)
-      return !this.state.folded;
+    if (!this.props.setBreadcrumb) return !this.state.folded;
 
-    if (this.props.breadcrumb === undefined)
-      return false;
+    if (this.props.breadcrumb === undefined) return false;
 
-    return pathAsArray.length <= breadcrumbAsArray.length && this.match(pathAsArray, breadcrumbAsArray);
-  }
+    return (
+      pathAsArray.length <= breadcrumbAsArray.length && this.match(pathAsArray, breadcrumbAsArray)
+    );
+  };
 
   render() {
     const breadcrumbAsArray = this.props.breadcrumb || [];
     const pathAsArray = this.props.path || [];
 
-    const showChildren = this.getChildrenVisibility(pathAsArray, breadcrumbAsArray)
-    const clickable = !this.props.setBreadcrumb ? true : !breadcrumbAsArray.join('-').startsWith(pathAsArray.join('-'));
-    const isLeaf = !this.props.setBreadcrumb ? true : pathAsArray.length >= breadcrumbAsArray.length;
+    const showChildren = this.getChildrenVisibility(pathAsArray, breadcrumbAsArray);
+    const clickable = !this.props.setBreadcrumb
+      ? true
+      : !breadcrumbAsArray.join('-').startsWith(pathAsArray.join('-'));
+    const isLeaf = !this.props.setBreadcrumb
+      ? true
+      : pathAsArray.length >= breadcrumbAsArray.length;
 
-    if (!this.match(pathAsArray, breadcrumbAsArray))
-      return null
+    if (!this.match(pathAsArray, breadcrumbAsArray)) return null;
 
     if (!this.props.embedded) {
       return (
@@ -107,13 +109,15 @@ export class NgFormRenderer extends Component {
         this.props.rawSchema.props.collapsable || this.props.rawSchema.collapsable;
       const noBorder = this.props.rawSchema.props.noBorder || this.props.rawSchema.noBorder;
       const noTitle = this.props.rawSchema.props.noTitle || this.props.rawSchema.noTitle;
-      let title = '...'
+      let title = '...';
 
       try {
-        title = (this.props.rawSchema.props.label ||
+        title = (
+          this.props.rawSchema.props.label ||
           this.props.rawSchema.label ||
-          this.props.name).replace(/_/g, ' ');
-      } catch (e) { }
+          this.props.name
+        ).replace(/_/g, ' ');
+      } catch (e) {}
 
       const showTitle = !noTitle && (isLeaf || clickable);
 
@@ -130,14 +134,18 @@ export class NgFormRenderer extends Component {
         </span>
       );
 
-      let EnabledTagComponent = null
+      let EnabledTagComponent = null;
 
-      if (this.props.rawSchema?.schema &&
+      if (
+        this.props.rawSchema?.schema &&
         Object.keys(this.props.rawSchema?.schema).includes('enabled') &&
-        this.props.value)
-        EnabledTagComponent = <span className={`badge bg-${this.props.value.enabled ? 'success' : 'danger'} me-3`}>
-          {this.props.value.enabled ? 'Enabled' : 'Disabled'}
-        </span>
+        this.props.value
+      )
+        EnabledTagComponent = (
+          <span className={`badge bg-${this.props.value.enabled ? 'success' : 'danger'} me-3`}>
+            {this.props.value.enabled ? 'Enabled' : 'Disabled'}
+          </span>
+        );
 
       if (collapsable) {
         return (
@@ -149,10 +157,10 @@ export class NgFormRenderer extends Component {
               display: 'flex',
               flexDirection: 'column',
               width: '100%',
-              ...(this.props.rawSchema.style || {})
-            }} onClick={() => {
-              if (clickable)
-                this.setBreadcrumb()
+              ...(this.props.rawSchema.style || {}),
+            }}
+            onClick={() => {
+              if (clickable) this.setBreadcrumb();
             }}>
             <div
               style={{
@@ -173,18 +181,17 @@ export class NgFormRenderer extends Component {
                     <i className={`fas fa-eye${this.state.folded ? '-slash' : ''}`} />
                   </button>
                 )}
-                {(this.props.setBreadcrumb && clickable) && <button
-                  type="button"
-                  className="btn btn-info float-end btn-sm"
-                  onClick={this.setBreadcrumb}>
-                  <i className="fas fa-chevron-right"></i>
-                </button>}
+                {this.props.setBreadcrumb && clickable && (
+                  <button
+                    type="button"
+                    className="btn btn-info float-end btn-sm"
+                    onClick={this.setBreadcrumb}>
+                    <i className="fas fa-chevron-right"></i>
+                  </button>
+                )}
               </div>
             </div>
-            {showChildren &&
-              <div onClick={e => e.stopPropagation()}>
-                {this.props.children}
-              </div>}
+            {showChildren && <div onClick={(e) => e.stopPropagation()}>{this.props.children}</div>}
           </div>
         );
       } else if (noBorder) {

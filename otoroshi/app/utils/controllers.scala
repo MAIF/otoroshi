@@ -735,8 +735,8 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
       }
       .filterNot(a => a._1 == "page" || a._1 == "pageSize" || a._1 == "fields")
     val hasFilters         = filters.nonEmpty
-    val fields = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
-    val hasFields = fields.nonEmpty
+    val fields             = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+    val hasFields          = fields.nonEmpty
 
     findAllOps(ctx.request).map {
       case Left(error)                                                        =>
@@ -757,7 +757,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         )
         val jsonElements: Seq[JsValue] =
           entities.filter(ctx.canUserRead).drop(paginationPosition).take(paginationPageSize).map(writeEntity)
-        val filteredItems                 = if (hasFilters) {
+        val filteredItems              = if (hasFilters) {
           val items: Seq[JsValue] = jsonElements.filter { elem =>
             filters.forall { case (key, value) =>
               (elem \ key).as[JsValue] match {
@@ -773,7 +773,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         } else {
           jsonElements
         }
-        val finalItems = if (hasFields) {
+        val finalItems                 = if (hasFields) {
           filteredItems.map { item =>
             val obj = item.as[JsObject]
             // TODO: support dotted notation ?
@@ -835,7 +835,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                 metadata
               )
             )
-            val fields = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+            val fields    = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
             val hasFields = fields.nonEmpty
             if (hasFields) {
               val out = writeEntity(v).as[JsObject]

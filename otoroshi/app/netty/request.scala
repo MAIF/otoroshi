@@ -278,7 +278,8 @@ class NettyRequest(
   lazy val body: Source[ByteString, _] = {
     Source.fromPublisher(rawBody)
   }
-  def withBody(newBody: Flux[ByteString]): NettyRequest = new NettyRequest(req , ctx , newBody , secure , sessionOpt , sessionCookieBaker , flashCookieBaker)
+  def withBody(newBody: Flux[ByteString]): NettyRequest =
+    new NettyRequest(req, ctx, newBody, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
 }
 
 class NettyRequestHeader(

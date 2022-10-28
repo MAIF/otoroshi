@@ -20,12 +20,12 @@ export default class GraphQLForm extends React.Component {
   }
 
   schemaToJson = (schema, successCallback) => {
-    return graphqlSchemaToJson(schema)
-      .then((res) => {
-        if (res.error) {
-          this.setState({ error: res.error });
-        } else {
-          this.setState({
+    return graphqlSchemaToJson(schema).then((res) => {
+      if (res.error) {
+        this.setState({ error: res.error });
+      } else {
+        this.setState(
+          {
             error: undefined,
             types: res.types.map((type) => ({
               ...type,
@@ -43,10 +43,12 @@ export default class GraphQLForm extends React.Component {
                 })),
               })),
             })),
-          }, successCallback);
-        }
-      });
-  }
+          },
+          successCallback
+        );
+      }
+    });
+  };
 
   transformValue = (v) => {
     try {
@@ -55,7 +57,7 @@ export default class GraphQLForm extends React.Component {
     } catch (_) {
       return v;
     }
-  }
+  };
 
   transformTypes = (types) => {
     return types.map((type) => ({
@@ -70,7 +72,7 @@ export default class GraphQLForm extends React.Component {
         })),
       })),
     }));
-  }
+  };
 
   savePlugin = () => {
     const plugin = this.props.route.plugins.find(
@@ -111,9 +113,8 @@ export default class GraphQLForm extends React.Component {
     return (
       <div className="graphql-form p-3 pe-2 flex-column" style={{ overflowY: 'scroll' }}>
         <Header
-          hide={e => {
-            this.savePlugin()
-              .then(() => hide(e))
+          hide={(e) => {
+            this.savePlugin().then(() => hide(e));
           }}
           schemaView={this.state.schemaView}
           toggleSchema={(s) => {
@@ -132,22 +133,20 @@ export default class GraphQLForm extends React.Component {
         {this.state.schemaView ? (
           <>
             {this.state.error && (
-              <span
-                className="my-3"
-                style={{ color: '#D5443F', fontWeight: 'bold' }}>
+              <span className="my-3" style={{ color: '#D5443F', fontWeight: 'bold' }}>
                 {this.state.error}
               </span>
             )}
             <NgCodeRenderer
               ngOptions={{
-                spread: true
+                spread: true,
               }}
               rawSchema={{
                 props: {
                   editorOnly: true,
                   height: '100%',
-                  mode: 'graphqlschema'
-                }
+                  mode: 'graphqlschema',
+                },
               }}
               value={this.state.tmpSchema}
               onChange={(e) => {
@@ -170,10 +169,12 @@ export default class GraphQLForm extends React.Component {
             />
           </>
         ) : (
-          <SideView route={route}
+          <SideView
+            route={route}
             types={this.state.types}
-            setTypes={t => this.setState({ types: t })}
-            error={this.state.error} />
+            setTypes={(t) => this.setState({ types: t })}
+            error={this.state.error}
+          />
         )}
       </div>
     );
@@ -229,7 +230,7 @@ const CreationButton = ({ confirm, text, placeholder, className }) => {
 
 class SideView extends React.Component {
   state = {
-    selectedField: undefined
+    selectedField: undefined,
   };
 
   onSelectField = (typeIdx, fieldIdx) => {
@@ -248,51 +249,51 @@ class SideView extends React.Component {
   removeField = (e, typeIdx, fieldIdx) => {
     e.stopPropagation();
 
-    window.newConfirm('Delete this field')
-      .then(ok => {
-        if (ok) {
-          this.props.setTypes(
-            this.props.types.map((type, i) => ({
-              ...type,
-              fields: i === typeIdx ? type.fields.filter((_, j) => j !== fieldIdx) : type.fields,
-            }))
-          )
-        }
-      });
+    window.newConfirm('Delete this field').then((ok) => {
+      if (ok) {
+        this.props.setTypes(
+          this.props.types.map((type, i) => ({
+            ...type,
+            fields: i === typeIdx ? type.fields.filter((_, j) => j !== fieldIdx) : type.fields,
+          }))
+        );
+      }
+    });
   };
 
   removeType = (e, i) => {
     e.stopPropagation();
-    window.newConfirm('Delete this type')
-      .then(ok => {
-        if (ok) {
-          this.props.setTypes(this.props.types.filter((_, j) => j !== i));
-        }
-      });
+    window.newConfirm('Delete this type').then((ok) => {
+      if (ok) {
+        this.props.setTypes(this.props.types.filter((_, j) => j !== i));
+      }
+    });
   };
 
   createField = (fieldname, i) => {
-    this.props.setTypes(this.props.types.map((type, t) => {
-      if (t === i)
-        return {
-          ...type,
-          fields: [
-            ...type.fields,
-            {
-              name: fieldname,
-              fieldType: {
-                type: 'String',
-                isList: false,
+    this.props.setTypes(
+      this.props.types.map((type, t) => {
+        if (t === i)
+          return {
+            ...type,
+            fields: [
+              ...type.fields,
+              {
+                name: fieldname,
+                fieldType: {
+                  type: 'String',
+                  isList: false,
+                },
+                arguments: [],
+                directives: [],
               },
-              arguments: [],
-              directives: [],
-            },
-          ],
-        };
-      return type;
-    }));
+            ],
+          };
+        return type;
+      })
+    );
     this.onSelectField(i, this.props.types[i].fields.length - 1);
-  }
+  };
 
   render() {
     const { selectedField } = this.state;
@@ -302,7 +303,7 @@ class SideView extends React.Component {
       <>
         <div className="row flex">
           <div className="col-md-5 flex-column">
-            <div className='d-flex-between'>
+            <div className="d-flex-between">
               <h4 className="mb-0 me-3">Types</h4>
               <CreationButton
                 text="New type"
@@ -327,8 +328,7 @@ class SideView extends React.Component {
                     },
                   ]);
                   this.onSelectField(types.length - 1, 0);
-                }
-                }
+                }}
               />
             </div>
             {error && (
@@ -367,17 +367,19 @@ class SideView extends React.Component {
                   .filter((t) => t.name !== 'Query' && t.name !== types[selectedField.typeIdx].name)
                   .map((t) => t.name)}
                 onChange={(newField) =>
-                  this.props.setTypes(types.map((type, i) => {
-                    if (i === selectedField.typeIdx)
-                      return {
-                        ...type,
-                        fields: type.fields.map((field, j) => {
-                          if (j === selectedField.fieldIdx) return newField;
-                          return field;
-                        }),
-                      };
-                    return type;
-                  }))
+                  this.props.setTypes(
+                    types.map((type, i) => {
+                      if (i === selectedField.typeIdx)
+                        return {
+                          ...type,
+                          fields: type.fields.map((field, j) => {
+                            if (j === selectedField.fieldIdx) return newField;
+                            return field;
+                          }),
+                        };
+                      return type;
+                    })
+                  )
                 }
               />
             )}
@@ -395,14 +397,14 @@ class FieldForm extends React.Component {
     {
       type: 'group',
       name: 'Arguments',
-      fields: ['arguments']
+      fields: ['arguments'],
     },
     {
       type: 'group',
       name: 'Directives',
-      fields: ['directives']
-    }
-  ]
+      fields: ['directives'],
+    },
+  ];
   schema = {
     name: {
       type: 'string',
@@ -411,11 +413,7 @@ class FieldForm extends React.Component {
     fieldType: {
       type: 'form',
       label: ' ',
-      flow: [
-        'type',
-        'required',
-        'isList'
-      ],
+      flow: ['type', 'required', 'isList'],
       schema: {
         type: {
           type: 'select',
@@ -442,16 +440,18 @@ class FieldForm extends React.Component {
       format: 'form',
       props: {
         ngOptions: {
-          spread: true
-        }
+          spread: true,
+        },
       },
       array: true,
-      flow: [{
-        type: 'group',
-        collapsed: true,
-        name: (props) => props.value?.name || 'Argument',
-        fields: ['name', 'valueType']
-      }],
+      flow: [
+        {
+          type: 'group',
+          collapsed: true,
+          name: (props) => props.value?.name || 'Argument',
+          fields: ['name', 'valueType'],
+        },
+      ],
       schema: {
         name: {
           type: 'string',
@@ -488,16 +488,18 @@ class FieldForm extends React.Component {
       format: 'form',
       props: {
         ngOptions: {
-          spread: true
-        }
+          spread: true,
+        },
       },
       array: true,
-      flow: [{
-        type: 'group',
-        collapsed: true,
-        name: (props) => props.value?.name || 'Directive',
-        fields: ['name', 'arguments']
-      }],
+      flow: [
+        {
+          type: 'group',
+          collapsed: true,
+          name: (props) => props.value?.name || 'Directive',
+          fields: ['name', 'arguments'],
+        },
+      ],
       schema: {
         name: {
           type: 'select',
@@ -561,9 +563,9 @@ class FieldForm extends React.Component {
               props: {
                 options: [
                   { value: 'GET', label: 'GET', color: 'rgb(89, 179, 255)' },
-                  { value: 'POST', label: 'POST', color: 'rgb(74, 203, 145)' }
-                ]
-              }
+                  { value: 'POST', label: 'POST', color: 'rgb(74, 203, 145)' },
+                ],
+              },
             },
             headers: {
               type: 'object',
@@ -640,12 +642,12 @@ class FieldForm extends React.Component {
         },
       },
     },
-  }
+  };
 
   render() {
     const { onChange, field } = this.props;
 
-    console.log(this.props)
+    console.log(this.props);
 
     if (!field) {
       return null;
@@ -690,11 +692,13 @@ const Type = ({
 
   return (
     <div onClick={() => setOpen(!open)} className="mb-1">
-      <div className="graphql-form-type d-flex-between p-2" style={{
-        borderRadius: '4px',
-        borderBottomLeftRadius: open ? 0 : '4px',
-        borderBottomRightRadius: open ? 0 : '4px'
-      }}>
+      <div
+        className="graphql-form-type d-flex-between p-2"
+        style={{
+          borderRadius: '4px',
+          borderBottomLeftRadius: open ? 0 : '4px',
+          borderBottomRightRadius: open ? 0 : '4px',
+        }}>
         <div className="d-flex-between" style={{ cursor: 'pointer' }}>
           <i
             className={`fas fa-chevron-${open ? 'down' : 'right'}`}
@@ -706,11 +710,12 @@ const Type = ({
           <i className="fas fa-trash" />
         </button>
       </div>
-      <div style={{
-        backgroundColor: 'rgba(55, 55, 53, .5)',
-        border: open ? '1px solid rgb(55, 55, 53)' : 'none',
-        paddingTop: open ? '4px' : 0
-      }}>
+      <div
+        style={{
+          backgroundColor: 'rgba(55, 55, 53, .5)',
+          border: open ? '1px solid rgb(55, 55, 53)' : 'none',
+          paddingTop: open ? '4px' : 0,
+        }}>
         {open &&
           (fields || []).map((field, i) => (
             <div
@@ -723,7 +728,9 @@ const Type = ({
                   flex: 0.75,
                   opacity: isSelected(i) !== false ? 1 : 0.5,
                 }}>
-                <span className="me-2 flex" style={{ color: '#fff' }}>{field.name}</span>
+                <span className="me-2 flex" style={{ color: '#fff' }}>
+                  {field.name}
+                </span>
                 <span className="badge bg-light ms-2" style={{ color: '#000' }}>
                   {field.fieldType.type}
                 </span>
@@ -758,35 +765,33 @@ const Type = ({
   );
 };
 
-const Header = ({ schemaView, toggleSchema, hide }) => <>
-  <div className="d-flex-between">
-    <h3>GraphQL Schema Editor</h3>
-    <button className='btn btn-sm btn-info' onClick={hide}>
-      <i className='fas fa-times' />
-    </button>
-  </div>
-  <div className='d-flex justify-content-center mb-3'>
-    <div
-      className='p-1'
-      style={{
-        borderRadius: '24px',
-        backgroundColor: '#373735',
-        position: 'relative',
-        width: 'fit-content'
-      }}>
-      <div className={`tryit-selector-cursor ${!schemaView ? '' : 'tryit-selector-mode-right'}`} />
-      <button
-        className="tryit-selector-mode"
-        type="button"
-        onClick={() => toggleSchema(false)}>
-        Form
-      </button>
-      <button
-        className="tryit-selector-mode"
-        type="button"
-        onClick={() => toggleSchema(true)}>
-        Schema
+const Header = ({ schemaView, toggleSchema, hide }) => (
+  <>
+    <div className="d-flex-between">
+      <h3>GraphQL Schema Editor</h3>
+      <button className="btn btn-sm btn-info" onClick={hide}>
+        <i className="fas fa-times" />
       </button>
     </div>
-  </div>
-</>
+    <div className="d-flex justify-content-center mb-3">
+      <div
+        className="p-1"
+        style={{
+          borderRadius: '24px',
+          backgroundColor: '#373735',
+          position: 'relative',
+          width: 'fit-content',
+        }}>
+        <div
+          className={`tryit-selector-cursor ${!schemaView ? '' : 'tryit-selector-mode-right'}`}
+        />
+        <button className="tryit-selector-mode" type="button" onClick={() => toggleSchema(false)}>
+          Form
+        </button>
+        <button className="tryit-selector-mode" type="button" onClick={() => toggleSchema(true)}>
+          Schema
+        </button>
+      </div>
+    </div>
+  </>
+);

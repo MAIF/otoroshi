@@ -1,7 +1,7 @@
 package otoroshi.netty
 
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{RawHeader, `Content-Length`, `Content-Type`, `User-Agent`}
+import akka.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
 import akka.http.scaladsl.model.{ContentType, HttpHeader, StatusCode, Uri}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
@@ -44,78 +44,94 @@ import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success}
 import scala.xml.{Elem, XML}
 
-case class Http3Response(status: Int, headers: Map[String, Seq[String]], bodyFlux: Flux[ByteString], trailer: Future[Map[String, Seq[String]]])
+case class Http3Response(
+    status: Int,
+    headers: Map[String, Seq[String]],
+    bodyFlux: Flux[ByteString],
+    trailer: Future[Map[String, Seq[String]]]
+)
 
 class NettySniSslContext(sslContext: QuicSslContext, host: String, port: Int) extends QuicSslContext {
-  override def newEngine(alloc: ByteBufAllocator): QuicSslEngine = sslContext.newEngine(alloc, host, port)
-  override def newEngine(alloc: ByteBufAllocator, peerHost: String, peerPort: Int): QuicSslEngine = sslContext.newEngine(alloc, peerHost, peerPort)
-  override def isClient: Boolean = sslContext.isClient
-  override def cipherSuites(): util.List[String] = sslContext.cipherSuites()
-  override def applicationProtocolNegotiator(): ApplicationProtocolNegotiator = sslContext.applicationProtocolNegotiator()
-  override def sessionContext(): SSLSessionContext = sslContext.sessionContext()
+  override def newEngine(alloc: ByteBufAllocator): QuicSslEngine                                  = sslContext.newEngine(alloc, host, port)
+  override def newEngine(alloc: ByteBufAllocator, peerHost: String, peerPort: Int): QuicSslEngine =
+    sslContext.newEngine(alloc, peerHost, peerPort)
+  override def isClient: Boolean                                                                  = sslContext.isClient
+  override def cipherSuites(): util.List[String]                                                  = sslContext.cipherSuites()
+  override def applicationProtocolNegotiator(): ApplicationProtocolNegotiator                     =
+    sslContext.applicationProtocolNegotiator()
+  override def sessionContext(): SSLSessionContext                                                = sslContext.sessionContext()
 }
 
 case class NettyHttp3ClientBody(source: Flux[ByteString], contentType: Option[String], contentLength: Option[Long])
-
 
 class NettyHttp3Client(val env: Env) {
 
   // TODO: support proxy ????
 
   private[netty] val logger = NettyHttp3Client.logger
-  private val group = new NioEventLoopGroup(Runtime.getRuntime.availableProcessors() + 1)
-  private val bs = new Bootstrap()
+  private val group         = new NioEventLoopGroup(Runtime.getRuntime.availableProcessors() + 1)
+  private val bs            = new Bootstrap()
 
-  private val codecs = new TrieMap[String, ChannelHandler]()
-  private val channels = new TrieMap[String, Future[Channel]]()
+  private val codecs       = new TrieMap[String, ChannelHandler]()
+  private val channels     = new TrieMap[String, Future[Channel]]()
   private val quicChannels = new TrieMap[String, Future[QuicChannel]]()
 
   private[netty] def codecFor(context: QuicSslContext, host: String, port: Int): ChannelHandler = {
     val key = s"${host}:${port}"
-    codecs.getOrElseUpdate(key, {
-      val codec = Http3.newQuicClientCodecBuilder()
-        .sslContext(new NettySniSslContext(context, host, port))
-        .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
-        .initialMaxData(10000000)
-        .initialMaxStreamDataBidirectionalLocal(1000000)
-        .initialMaxStreamDataBidirectionalRemote(1000000)
-        .initialMaxStreamsBidirectional(100000)
-        .maxSendUdpPayloadSize(1500)
-        .maxRecvUdpPayloadSize(1500)
-        .build()
-      codec
-    })
+    codecs.getOrElseUpdate(
+      key, {
+        val codec = Http3
+          .newQuicClientCodecBuilder()
+          .sslContext(new NettySniSslContext(context, host, port))
+          .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
+          .initialMaxData(10000000)
+          .initialMaxStreamDataBidirectionalLocal(1000000)
+          .initialMaxStreamDataBidirectionalRemote(1000000)
+          .initialMaxStreamsBidirectional(100000)
+          .maxSendUdpPayloadSize(1500)
+          .maxRecvUdpPayloadSize(1500)
+          .build()
+        codec
+      }
+    )
   }
 
   private[netty] def getChannel(codec: ChannelHandler, host: String, port: Int): Future[Channel] = {
     val key = s"${host}:${port}"
-    channels.getOrElseUpdate(key, {
-      val promise = Promise.apply[Channel]()
-      val future = bs
-        .group(group)
-        .channel(classOf[NioDatagramChannel])
-        .handler(codec)
-        .bind(0)
-      future.addListener(new GenericFutureListener[io.netty.util.concurrent.Future[Void]] {
-        override def operationComplete(f: netty.util.concurrent.Future[Void]): Unit = {
-          if (f.isSuccess) {
-            promise.trySuccess(future.sync().channel())
-          } else {
-            promise.tryFailure(future.cause())
+    channels.getOrElseUpdate(
+      key, {
+        val promise = Promise.apply[Channel]()
+        val future  = bs
+          .group(group)
+          .channel(classOf[NioDatagramChannel])
+          .handler(codec)
+          .bind(0)
+        future.addListener(new GenericFutureListener[io.netty.util.concurrent.Future[Void]] {
+          override def operationComplete(f: netty.util.concurrent.Future[Void]): Unit = {
+            if (f.isSuccess) {
+              promise.trySuccess(future.sync().channel())
+            } else {
+              promise.tryFailure(future.cause())
+            }
           }
-        }
-      })
-      promise.future
-    })
+        })
+        promise.future
+      }
+    )
   }
 
-  private[netty] def getQuicChannel(channel: Channel, host: String, port: Int, target: Option[Target]): Future[QuicChannel] = {
+  private[netty] def getQuicChannel(
+      channel: Channel,
+      host: String,
+      port: Int,
+      target: Option[Target]
+  ): Future[QuicChannel] = {
     val address: InetSocketAddress = target.flatMap(_.ipAddress) match {
-      case None => new InetSocketAddress(host, port)
+      case None     => new InetSocketAddress(host, port)
       case Some(ip) => InetSocketAddress.createUnresolved(ip, port)
     }
-    val promise = Promise.apply[QuicChannel]()
-    val future = QuicChannel
+    val promise                    = Promise.apply[QuicChannel]()
+    val future                     = QuicChannel
       .newBootstrap(channel)
       .handler(new Http3ClientConnectionHandler())
       .remoteAddress(address)
@@ -147,7 +163,13 @@ class NettyHttp3Client(val env: Env) {
         .forClient()
         .applyOnIf(tlsSettings.trustAll)(_.trustManager(InsecureTrustManagerFactory.INSTANCE))
         .applyOnIf(tlsSettings.certs.nonEmpty || tlsSettings.trustedCerts.nonEmpty) { ctx =>
-          val (_, keyManager, trustManager) = DynamicSSLEngineProvider.setupSslContextForWithManagers(tlsSettings.actualCerts, tlsSettings.actualTrustedCerts, tlsSettings.trustAll, true, env)
+          val (_, keyManager, trustManager) = DynamicSSLEngineProvider.setupSslContextForWithManagers(
+            tlsSettings.actualCerts,
+            tlsSettings.actualTrustedCerts,
+            tlsSettings.trustAll,
+            true,
+            env
+          )
           ctx.keyManager(keyManager, null).trustManager(trustManager)
         }
         .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
@@ -159,18 +181,22 @@ class NettyHttp3Client(val env: Env) {
     }
   }
 
-  private[netty] def http3Channel(quicChannel: QuicChannel, promise: Promise[Http3Response]): Future[QuicStreamChannel] = {
+  private[netty] def http3Channel(
+      quicChannel: QuicChannel,
+      promise: Promise[Http3Response]
+  ): Future[QuicStreamChannel] = {
     val finalPromise = Promise.apply[QuicStreamChannel]()
-    val future = Http3.newRequestStream(quicChannel,
+    val future       = Http3.newRequestStream(
+      quicChannel,
       new Http3RequestStreamInboundHandler() {
 
         var headers: Map[String, Seq[String]] = Map.empty
-        var status: Int = 0
-        var headersReceived: Boolean = false
-        val trailerPromise = Promise.apply[Map[String, Seq[String]]]()
+        var status: Int                       = 0
+        var headersReceived: Boolean          = false
+        val trailerPromise                    = Promise.apply[Map[String, Seq[String]]]()
 
         val hotSource = Sinks.many().unicast().onBackpressureBuffer[ByteString]()
-        val hotFlux = hotSource.asFlux()
+        val hotFlux   = hotSource.asFlux()
 
         override def channelActive(ctx: ChannelHandlerContext): Unit = {
           if (logger.isDebugEnabled) logger.debug("channel active")
@@ -195,12 +221,22 @@ class NettyHttp3Client(val env: Env) {
         override def channelRead(ctx: ChannelHandlerContext, frame: Http3HeadersFrame, isLast: Boolean): Unit = {
           if (logger.isDebugEnabled) logger.debug(s"got header frame !!!! ${isLast}")
           if (headersReceived) {
-            val trailerHeaders = frame.headers().names().asScala.map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString))).toMap
+            val trailerHeaders = frame
+              .headers()
+              .names()
+              .asScala
+              .map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString)))
+              .toMap
             trailerPromise.trySuccess(trailerHeaders)
           } else {
             headersReceived = true
             status = frame.headers().status().toString.toInt
-            headers = frame.headers().names().asScala.map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString))).toMap
+            headers = frame
+              .headers()
+              .names()
+              .asScala
+              .map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString)))
+              .toMap
             promise.trySuccess(Http3Response(status, headers, hotFlux, trailerPromise.future))
             releaseFrameAndCloseIfLast(ctx, frame, isLast)
           }
@@ -208,13 +244,17 @@ class NettyHttp3Client(val env: Env) {
 
         override def channelRead(ctx: ChannelHandlerContext, frame: Http3DataFrame, isLast: Boolean): Unit = {
           val content = frame.content().toString(CharsetUtil.US_ASCII)
-          val chunk = ByteString(content)
+          val chunk   = ByteString(content)
           if (logger.isDebugEnabled) logger.debug(s"got data frame !!! - ${isLast}")
           hotSource.tryEmitNext(chunk)
           releaseFrameAndCloseIfLast(ctx, frame, isLast)
         }
 
-        private def releaseFrameAndCloseIfLast(ctx: ChannelHandlerContext, frame: Http3RequestStreamFrame, isLast: Boolean) {
+        private def releaseFrameAndCloseIfLast(
+            ctx: ChannelHandlerContext,
+            frame: Http3RequestStreamFrame,
+            isLast: Boolean
+        ) {
           ReferenceCountUtil.release(frame)
           // println("releaseFrameAndCloseIfLast", isLast, frame.getClass.getName)
           if (isLast) {
@@ -223,7 +263,8 @@ class NettyHttp3Client(val env: Env) {
             hotSource.tryEmitComplete()
           }
         }
-      })
+      }
+    )
     future.addListener(new GenericFutureListener[io.netty.util.concurrent.Future[QuicStreamChannel]] {
       override def operationComplete(f: netty.util.concurrent.Future[QuicStreamChannel]): Unit = {
         if (f.isSuccess) {
@@ -244,7 +285,9 @@ class NettyHttp3Client(val env: Env) {
   def url(rawUrl: String): NettyHttp3ClientWsRequest = NettyHttp3ClientWsRequest(this, rawUrl)
 }
 
-case class NettyHttp3ClientStrictWsResponse(resp: NettyHttp3ClientWsResponse, bodyAsBytes: ByteString) extends WSResponse with TrailerSupport {
+case class NettyHttp3ClientStrictWsResponse(resp: NettyHttp3ClientWsResponse, bodyAsBytes: ByteString)
+    extends WSResponse
+    with TrailerSupport {
 
   private lazy val _bodyAsString: String = bodyAsBytes.utf8String
   private lazy val _bodyAsXml: Elem      = XML.loadString(_bodyAsString)
@@ -278,26 +321,29 @@ case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) 
       FiniteDuration(10, TimeUnit.MINUTES)
     ) // AWAIT: valid
   }
-  private lazy val _allHeaders: Map[String, Seq[String]] = resp.headers.map {
-    case (name, values) => (name.replace(":", ""), values)
+  private lazy val _allHeaders: Map[String, Seq[String]] = resp.headers.map { case (name, values) =>
+    (name.replace(":", ""), values)
   }
-  private lazy val _bodyAsString: String   = _bodyAsBytes.utf8String
-  private lazy val _bodyAsXml: Elem        = XML.loadString(_bodyAsString)
-  private lazy val _bodyAsJson: JsValue    = Json.parse(_bodyAsString)
+  private lazy val _bodyAsString: String                 = _bodyAsBytes.utf8String
+  private lazy val _bodyAsXml: Elem                      = XML.loadString(_bodyAsString)
+  private lazy val _bodyAsJson: JsValue                  = Json.parse(_bodyAsString)
   private lazy val _cookies: Seq[WSCookie] = {
-    resp.headers.get("set-cookie").map { values =>
-      values.map(ClientCookieDecoder.LAX.decode).map { cookie =>
-        DefaultWSCookie(
-          name = cookie.name(),
-          value = cookie.value(),
-          domain = Option(cookie.domain()),
-          path = Option(cookie.path()),
-          maxAge = Option(cookie.maxAge()),
-          secure = cookie.isSecure,
-          httpOnly = cookie.isHttpOnly
-        )
+    resp.headers
+      .get("set-cookie")
+      .map { values =>
+        values.map(ClientCookieDecoder.LAX.decode).map { cookie =>
+          DefaultWSCookie(
+            name = cookie.name(),
+            value = cookie.value(),
+            domain = Option(cookie.domain()),
+            path = Option(cookie.path()),
+            maxAge = Option(cookie.maxAge()),
+            secure = cookie.isSecure,
+            httpOnly = cookie.isHttpOnly
+          )
+        }
       }
-    }.getOrElse(Seq.empty)
+      .getOrElse(Seq.empty)
   }
 
   override def bodyAsSource: Source[ByteString, _]    = _body
@@ -329,27 +375,27 @@ case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) 
 }
 
 case class NettyHttp3ClientWsRequest(
-  client: NettyHttp3Client,
-  _url: String,
-  method: String = "GET",
-  body: WSBody = EmptyBody,
-  headers: Map[String, Seq[String]] = Map.empty[String, Seq[String]],
-  protocol: Option[String] = None,
-  followRedirects: Option[Boolean] = None,
-  requestTimeout: Option[Duration] = None,
-  proxy: Option[WSProxyServer] = None,
-  //////
-  tlsConfig: Option[MtlsConfig] = None,
-  targetOpt: Option[Target] = None,
-  clientConfig: ClientConfig = ClientConfig(),
+    client: NettyHttp3Client,
+    _url: String,
+    method: String = "GET",
+    body: WSBody = EmptyBody,
+    headers: Map[String, Seq[String]] = Map.empty[String, Seq[String]],
+    protocol: Option[String] = None,
+    followRedirects: Option[Boolean] = None,
+    requestTimeout: Option[Duration] = None,
+    proxy: Option[WSProxyServer] = None,
+    //////
+    tlsConfig: Option[MtlsConfig] = None,
+    targetOpt: Option[Target] = None,
+    clientConfig: ClientConfig = ClientConfig()
 ) extends WSRequest {
 
   private val _uri = Uri(_url)
 
-  def withProtocol(proto: String): NettyHttp3ClientWsRequest                                                  = copy(protocol = proto.some)
-  def withTlsConfig(tlsConfig: MtlsConfig): NettyHttp3ClientWsRequest                                         = copy(tlsConfig = tlsConfig.some)
-  def withTarget(target: Target): NettyHttp3ClientWsRequest                                                   = copy(targetOpt = target.some)
-  def withClientConfig(clientConfig: ClientConfig): NettyHttp3ClientWsRequest                                 = copy(clientConfig = clientConfig)
+  def withProtocol(proto: String): NettyHttp3ClientWsRequest                                             = copy(protocol = proto.some)
+  def withTlsConfig(tlsConfig: MtlsConfig): NettyHttp3ClientWsRequest                                    = copy(tlsConfig = tlsConfig.some)
+  def withTarget(target: Target): NettyHttp3ClientWsRequest                                              = copy(targetOpt = target.some)
+  def withClientConfig(clientConfig: ClientConfig): NettyHttp3ClientWsRequest                            = copy(clientConfig = clientConfig)
   //////
   override def auth: Option[(String, String, WSAuthScheme)]                                              =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.auth)")
@@ -526,48 +572,50 @@ case class NettyHttp3ClientWsRequest(
   }
   override def stream(): Future[WSResponse] = {
     implicit val ec = client.env.otoroshiExecutionContext
-    val uri = new URI(url)
-    val thePort = uri.getPort match {
-      case -1 => uri.getScheme match {
-        case "https" => 443
-        case "http" => 80
-        case _ => 80
-      }
-      case v => v
+    val uri         = new URI(url)
+    val thePort     = uri.getPort match {
+      case -1 =>
+        uri.getScheme match {
+          case "https" => 443
+          case "http"  => 80
+          case _       => 80
+        }
+      case v  => v
     }
-    val promise = Promise.apply[Http3Response]()
-    val context = tlsConfig match {
-      case None => client.getStandardSslContext()
+    val promise     = Promise.apply[Http3Response]()
+    val context     = tlsConfig match {
+      case None      => client.getStandardSslContext()
       case Some(tls) => client.getSslContextFrom(tls)
     }
-    val codec = client.codecFor(context, uri.getHost, thePort)
+    val codec       = client.codecFor(context, uri.getHost, thePort)
     (for {
-      channel <- client.getChannel(codec, uri.getHost, thePort)
-      quicChannel <- client.getQuicChannel(channel, uri.getHost, thePort, targetOpt)
+      channel       <- client.getChannel(codec, uri.getHost, thePort)
+      quicChannel   <- client.getQuicChannel(channel, uri.getHost, thePort, targetOpt)
       streamChannel <- client.http3Channel(quicChannel, promise)
     } yield {
       if (client.logger.isDebugEnabled) client.logger.debug("building header frame !")
       val hasBody = body match {
         case EmptyBody => false
-        case _ => true
+        case _         => true
       }
-      val frame = new DefaultHttp3HeadersFrame()
-      frame.headers()
+      val frame   = new DefaultHttp3HeadersFrame()
+      frame
+        .headers()
         .method(method)
         .path(uri.getRawPath)
         .authority(uri.getHost)
         .scheme(uri.getScheme)
         .applyOn { heads =>
-          headers.map {
-            case (name, values) => heads.add(name.toLowerCase(), values.asJava)
+          headers.map { case (name, values) =>
+            heads.add(name.toLowerCase(), values.asJava)
           }
           heads
         }
         .add("content-length", "0")
       if (hasBody) {
         frame.headers().method(method)
-        headers.map {
-          case (name, values) => frame.headers().add(name.toLowerCase(), values.asJava)
+        headers.map { case (name, values) =>
+          frame.headers().add(name.toLowerCase(), values.asJava)
         }
         frame.headers().remove("content-length")
         realContentType.foreach(ct => frame.headers().add("content-type", ct.value))
@@ -576,8 +624,8 @@ case class NettyHttp3ClientWsRequest(
         streamChannel.write(frame)
         if (client.logger.isDebugEnabled) client.logger.debug("sending body chunks")
         val bodySource: Flux[ByteString] = body match {
-          case EmptyBody => Flux.empty[ByteString]
-          case InMemoryBody(bs) => Flux.just(Seq(bs): _*)
+          case EmptyBody          => Flux.empty[ByteString]
+          case InMemoryBody(bs)   => Flux.just(Seq(bs): _*)
           case SourceBody(source) => Flux.from(source.runWith(Sink.asPublisher(false))(client.env.otoroshiMaterializer))
         }
         bodySource

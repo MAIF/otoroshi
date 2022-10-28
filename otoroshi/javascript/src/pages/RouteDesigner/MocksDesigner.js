@@ -4,7 +4,12 @@ import { FeedbackButton } from './FeedbackButton';
 import { createTooltip } from '../../tooltips';
 
 import { NgForm } from '../../components/nginputs/form';
-import { NgBooleanRenderer, NgNumberRenderer, NgSelectRenderer, NgStringRenderer } from '../../components/nginputs/inputs';
+import {
+  NgBooleanRenderer,
+  NgNumberRenderer,
+  NgSelectRenderer,
+  NgStringRenderer,
+} from '../../components/nginputs/inputs';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
@@ -39,9 +44,11 @@ const generateFakerValues = (resources, endpoint) => {
         ...acc,
         ...calculateField(item),
       }),
-      isAnObject(resource.additional_data) ? resource.additional_data : JSON.parse(resource.additional_data || '{}')
-    )
-  };
+      isAnObject(resource.additional_data)
+        ? resource.additional_data
+        : JSON.parse(resource.additional_data || '{}')
+    );
+  }
 
   function fakeValue(item) {
     try {
@@ -49,7 +56,7 @@ const generateFakerValues = (resources, endpoint) => {
     } catch (err) {
       return castValue(item.value, item.field_type);
     }
-  };
+  }
 
   function calculateField(item) {
     return {
@@ -57,7 +64,7 @@ const generateFakerValues = (resources, endpoint) => {
         item.field_type === 'Model'
           ? calculateResource(resources.find((f) => f.name === item.value))
           : fakeValue(item),
-    }
+    };
   }
 
   function isAnObject(v) {
@@ -68,13 +75,10 @@ const generateFakerValues = (resources, endpoint) => {
     const resource = resources.find((f) => f.name === endpoint.model);
     if (!resource) return {};
 
-    const newItem = calculateResource(resource)
+    const newItem = calculateResource(resource);
 
     if (resource_list) {
-      return Array.from(
-        { length: length || 10 },
-        (_, i) => ({ ...newItem })
-      );
+      return Array.from({ length: length || 10 }, (_, i) => ({ ...newItem }));
     } else {
       return newItem;
     }
@@ -85,7 +89,7 @@ const generateFakerValues = (resources, endpoint) => {
 };
 
 function PushView({ endpoints, resources }) {
-  const [status, setStatus] = useState(endpoints.map(() => false))
+  const [status, setStatus] = useState(endpoints.map(() => false));
   return (
     <>
       <div className="d-flex">
@@ -99,9 +103,7 @@ function PushView({ endpoints, resources }) {
               <div
                 className="mb-2 endpoint"
                 key={`${endpoint.path}${idx}`}
-                onClick={() => setStatus(
-                  status.map((s, i) => i === idx ? !s : s)
-                )}
+                onClick={() => setStatus(status.map((s, i) => (i === idx ? !s : s)))}
                 style={{
                   border: `1px solid ${HTTP_COLORS[endpoint.method]}`,
                   padding: 0,
@@ -109,43 +111,46 @@ function PushView({ endpoints, resources }) {
                     .replace(')', '')
                     .replace('rgb(', '')}, .25)`,
                 }}>
-                <div className='d-flex-between p-1' style={{
-                  borderBottom: status[idx] ? `1px solid ${HTTP_COLORS[endpoint.method]}` : 'none'
-                }}>
+                <div
+                  className="d-flex-between p-1"
+                  style={{
+                    borderBottom: status[idx]
+                      ? `1px solid ${HTTP_COLORS[endpoint.method]}`
+                      : 'none',
+                  }}>
                   <div className="d-flex-between">
                     <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
                       <span
-                        className='flex'
+                        className="flex"
                         style={{
                           backgroundColor: HTTP_COLORS[endpoint.method],
                           padding: '2px',
                           borderRadius: '4px',
-                          color: '#fff'
+                          color: '#fff',
                         }}>
                         {endpoint.method}
                       </span>
                     </div>
-                    <span style={{ maxWidth: '50%', color: '#fff' }}>
-                      {endpoint.path}
-                    </span>
-                    <span className='ms-3' style={{ maxWidth: '50%', color: '#fff' }}>
+                    <span style={{ maxWidth: '50%', color: '#fff' }}>{endpoint.path}</span>
+                    <span className="ms-3" style={{ maxWidth: '50%', color: '#fff' }}>
                       {endpoint.description}
                     </span>
 
-                    {endpoint.model && <span className="badge bg-dark ms-3 me-auto">{endpoint.model}</span>}
+                    {endpoint.model && (
+                      <span className="badge bg-dark ms-3 me-auto">{endpoint.model}</span>
+                    )}
                   </div>
                   <div className="d-flex-between">
                     {!endpoint.body && !endpoint.model && (
                       <div className="mx-1 d-flex-between endpoint-helper">
-                        <span style={{ color: '#D5443F' }}
-                          {...createTooltip('Missing raw body or model')}
-                        ><i className="fas fa-exclamation-triangle" />
+                        <span
+                          style={{ color: '#D5443F' }}
+                          {...createTooltip('Missing raw body or model')}>
+                          <i className="fas fa-exclamation-triangle" />
                         </span>
                       </div>
                     )}
-                    <button
-                      className="btn btn-sm btn-info me-1"
-                      type='button'>
+                    <button className="btn btn-sm btn-info me-1" type="button">
                       <i className={`fas fa-chevron-${status[idx] ? 'up' : 'down'}`} />
                     </button>
                   </div>
@@ -158,192 +163,207 @@ function PushView({ endpoints, resources }) {
         {endpoints.length === 0 && <span>No endpoints available</span>}
       </div>
     </>
-  )
+  );
 }
 
 function CharlatanActions({ generateData, resetData, endpoints }) {
   return (
     <div className="d-flex mt-auto ms-auto">
-      {endpoints.find(endpoint => !endpoint.body && !endpoint.model) && <FeedbackButton
-        className="btn-sm"
-        onPress={generateData}
-        icon={() => <i className="fas fa-hammer me-1" />}
-        text="Generate missing data"
-      />}
+      {endpoints.find((endpoint) => !endpoint.body && !endpoint.model) && (
+        <FeedbackButton
+          className="btn-sm"
+          onPress={generateData}
+          icon={() => <i className="fas fa-hammer me-1" />}
+          text="Generate missing data"
+        />
+      )}
       <button className="btn btn-sm btn-success mx-1" onClick={resetData}>
         <i className="fas fa-times me-1" />
         Reset all override data and generate new ones
       </button>
     </div>
-  )
+  );
 }
 
 function CharlatanResourcesList({ showResourceForm, resources, removeResource, endpoints }) {
-  return resources.length > 0 && <div className="mt-3">
-    <div className="d-flex">
-      <h4 className="mb-0">Models</h4>
-      <button className="btn btn-sm btn-info ms-3" onClick={showResourceForm}>
-        <i className="fas fa-plus-circle me-1" />
-        New model
-      </button>
-    </div>
-    <div className="mt-3 d-flex">
-      {resources.map((resource, idx) => {
-        return (
-          <div
-            className="d-flex-between endpoint me-2"
-            key={resource.name}
-            style={{
-              width: '125px',
-              height: '125px',
-              flexDirection: 'column',
-              gap: '12px',
-              justifyContent: 'space-between'
-            }}>
-            <label style={{ fontSize: '1.1rem' }}>{resource.name}</label>
-            {!endpoints.find(e => e.model === resource.name) &&
-              !resources.find(e => e.schema?.find(f => f.field_type === 'Model' && f.value === resource.name)) &&
-              <span style={{ color: '#D5443F' }}
-                {...createTooltip('Model not used')}
-              ><i className="fas fa-exclamation-triangle" />
-              </span>
-            }
-            <div>
-              <button className="btn btn-sm btn-success me-2" onClick={() => {
-                showResourceForm(idx, true)
-              }}>
-                <i className="fas fa-pencil-alt" />
-              </button>
-              <button className="btn btn-sm btn-danger" onClick={e => {
-                e.stopPropagation();
-                removeResource(idx)
-              }}>
-                <i className="fas fa-trash" />
-              </button>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-    {resources.length === 0 && <span>No entities available</span>}
-  </div>
+  return (
+    resources.length > 0 && (
+      <div className="mt-3">
+        <div className="d-flex">
+          <h4 className="mb-0">Models</h4>
+          <button className="btn btn-sm btn-info ms-3" onClick={showResourceForm}>
+            <i className="fas fa-plus-circle me-1" />
+            New model
+          </button>
+        </div>
+        <div className="mt-3 d-flex">
+          {resources.map((resource, idx) => {
+            return (
+              <div
+                className="d-flex-between endpoint me-2"
+                key={resource.name}
+                style={{
+                  width: '125px',
+                  height: '125px',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  justifyContent: 'space-between',
+                }}>
+                <label style={{ fontSize: '1.1rem' }}>{resource.name}</label>
+                {!endpoints.find((e) => e.model === resource.name) &&
+                  !resources.find((e) =>
+                    e.schema?.find((f) => f.field_type === 'Model' && f.value === resource.name)
+                  ) && (
+                    <span style={{ color: '#D5443F' }} {...createTooltip('Model not used')}>
+                      <i className="fas fa-exclamation-triangle" />
+                    </span>
+                  )}
+                <div>
+                  <button
+                    className="btn btn-sm btn-success me-2"
+                    onClick={() => {
+                      showResourceForm(idx, true);
+                    }}>
+                    <i className="fas fa-pencil-alt" />
+                  </button>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeResource(idx);
+                    }}>
+                    <i className="fas fa-trash" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {resources.length === 0 && <span>No entities available</span>}
+      </div>
+    )
+  );
 }
 
 function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, openResource }) {
-  return <>
-    <div className="d-flex">
-      <h4 className="mb-0">Endpoints</h4>
-      <button className="btn btn-sm btn-info ms-3" onClick={e => showEndpointForm(e, false)}>
-        <i className="fas fa-plus-circle me-1" />
-        New endpoint(s)
-      </button>
-    </div>
-    <div className="mt-3">
-      <div
-        className="d-flex-between mb-2 endpoint"
-        style={{
-          border: `1px solid rgba(25, 25, 25, .25)`,
-          backgroundColor: `rgba(25, 25, 25, .25)`,
-        }}>
-        <div className="d-flex-between flex">
-          <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
-            <span
-              className='flex'
-              style={{
-                backgroundColor: 'rgba(25, 25, 25, .25)',
-                padding: '2px',
-                borderRadius: '4px',
-                color: '#fff'
-              }}>
-              METHODS
-            </span>
-          </div>
-          <span style={{ maxWidth: '50%', color: '#fff', flex: 2 }}>
-            PATH
-          </span>
-          <span className='ms-3' style={{ maxWidth: '50%', color: '#fff', flex: 3 }}>
-            DESCRIPTION
-          </span>
-          <span className="badge bg-dark ms-3 me-auto">MODEL</span>
-        </div>
-        <div style={{ minWidth: '40px' }}></div>
+  return (
+    <>
+      <div className="d-flex">
+        <h4 className="mb-0">Endpoints</h4>
+        <button className="btn btn-sm btn-info ms-3" onClick={(e) => showEndpointForm(e, false)}>
+          <i className="fas fa-plus-circle me-1" />
+          New endpoint(s)
+        </button>
       </div>
-      {endpoints
-        .sort((a, b) => a.path.localeCompare(b.path))
-        .map((endpoint, idx) => {
-          return (
-            <div
-              className="d-flex-between mb-2 endpoint"
-              key={`${endpoint.path}${idx}`}
-              onClick={() => showEndpointForm(idx, true)}
-              style={{
-                border: `1px solid ${HTTP_COLORS[endpoint.method]}`,
-                backgroundColor: `rgba(${HTTP_COLORS[endpoint.method]
-                  .replace(')', '')
-                  .replace('rgb(', '')}, .25)`,
-              }}>
-              <div className="d-flex-between flex">
-                <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
-                  <span
-                    className='flex'
-                    style={{
-                      backgroundColor: HTTP_COLORS[endpoint.method],
-                      padding: '2px',
-                      borderRadius: '4px',
-                      color: '#fff'
-                    }}>
-                    {endpoint.method}
-                  </span>
-                </div>
-                <span style={{ maxWidth: '50%', color: '#fff', flex: 2 }}>
-                  {endpoint.path}
-                </span>
-                <span className='ms-3' style={{ maxWidth: '50%', color: '#fff', flex: 3 }}>
-                  {endpoint.description}
-                </span>
-
-                {!endpoint.body && !endpoint.model && (
-                  <div className="mx-1 d-flex-between endpoint-helper">
-                    <span style={{ color: '#D5443F' }}
-                      {...createTooltip('Missing raw body or model')}
-                    ><i className="fas fa-exclamation-triangle" />
+      <div className="mt-3">
+        <div
+          className="d-flex-between mb-2 endpoint"
+          style={{
+            border: `1px solid rgba(25, 25, 25, .25)`,
+            backgroundColor: `rgba(25, 25, 25, .25)`,
+          }}>
+          <div className="d-flex-between flex">
+            <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
+              <span
+                className="flex"
+                style={{
+                  backgroundColor: 'rgba(25, 25, 25, .25)',
+                  padding: '2px',
+                  borderRadius: '4px',
+                  color: '#fff',
+                }}>
+                METHODS
+              </span>
+            </div>
+            <span style={{ maxWidth: '50%', color: '#fff', flex: 2 }}>PATH</span>
+            <span className="ms-3" style={{ maxWidth: '50%', color: '#fff', flex: 3 }}>
+              DESCRIPTION
+            </span>
+            <span className="badge bg-dark ms-3 me-auto">MODEL</span>
+          </div>
+          <div style={{ minWidth: '40px' }}></div>
+        </div>
+        {endpoints
+          .sort((a, b) => a.path.localeCompare(b.path))
+          .map((endpoint, idx) => {
+            return (
+              <div
+                className="d-flex-between mb-2 endpoint"
+                key={`${endpoint.path}${idx}`}
+                onClick={() => showEndpointForm(idx, true)}
+                style={{
+                  border: `1px solid ${HTTP_COLORS[endpoint.method]}`,
+                  backgroundColor: `rgba(${HTTP_COLORS[endpoint.method]
+                    .replace(')', '')
+                    .replace('rgb(', '')}, .25)`,
+                }}>
+                <div className="d-flex-between flex">
+                  <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
+                    <span
+                      className="flex"
+                      style={{
+                        backgroundColor: HTTP_COLORS[endpoint.method],
+                        padding: '2px',
+                        borderRadius: '4px',
+                        color: '#fff',
+                      }}>
+                      {endpoint.method}
                     </span>
                   </div>
-                )}
+                  <span style={{ maxWidth: '50%', color: '#fff', flex: 2 }}>{endpoint.path}</span>
+                  <span className="ms-3" style={{ maxWidth: '50%', color: '#fff', flex: 3 }}>
+                    {endpoint.description}
+                  </span>
 
-                {!endpoint.model && <span className="btn btn-sm ms-3 me-3"></span>}
-                {endpoint.model && <span className="btn btn-sm btn-info ms-3 me-3"
-                  onClick={e => {
-                    e.stopPropagation()
-                    openResource(endpoint.model)
-                  }}>{endpoint.model}</span>}
-              </div>
-              <div className="d-flex-between" style={{ minWidth: '32px' }}>
-                <button
-                  className="btn btn-sm btn-danger"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.newConfirm('Delete this endpoint ?').then((ok) => {
-                      if (ok) {
+                  {!endpoint.body && !endpoint.model && (
+                    <div className="mx-1 d-flex-between endpoint-helper">
+                      <span
+                        style={{ color: '#D5443F' }}
+                        {...createTooltip('Missing raw body or model')}>
+                        <i className="fas fa-exclamation-triangle" />
+                      </span>
+                    </div>
+                  )}
+
+                  {!endpoint.model && <span className="btn btn-sm ms-3 me-3"></span>}
+                  {endpoint.model && (
+                    <span
+                      className="btn btn-sm btn-info ms-3 me-3"
+                      onClick={(e) => {
                         e.stopPropagation();
-                        removeEndpoint(idx);
-                      }
-                    });
-                  }}>
-                  <i className="fas fa-trash" />
-                </button>
+                        openResource(endpoint.model);
+                      }}>
+                      {endpoint.model}
+                    </span>
+                  )}
+                </div>
+                <div className="d-flex-between" style={{ minWidth: '32px' }}>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.newConfirm('Delete this endpoint ?').then((ok) => {
+                        if (ok) {
+                          e.stopPropagation();
+                          removeEndpoint(idx);
+                        }
+                      });
+                    }}>
+                    <i className="fas fa-trash" />
+                  </button>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      {endpoints.length === 0 && <span>No endpoints available</span>}
-    </div>
-  </>
+            );
+          })}
+        {endpoints.length === 0 && <span>No endpoints available</span>}
+      </div>
+    </>
+  );
 }
 
 export default class MocksDesigner extends React.Component {
   state = {
-    onDesigner: true
+    onDesigner: true,
   };
 
   setAndSave = (res) => {
@@ -367,8 +387,8 @@ export default class MocksDesigner extends React.Component {
           return p;
         }),
       })
-    )
-  }
+    );
+  };
 
   configToResponses = (config) =>
     config.endpoints.map(({ path, method, status, headers, body }) => ({
@@ -387,23 +407,23 @@ export default class MocksDesigner extends React.Component {
     if (plugin?.form_data) {
       return {
         resources: plugin.form_data.resources,
-        endpoints: plugin.form_data.endpoints.map(endpoint => {
+        endpoints: plugin.form_data.endpoints.map((endpoint) => {
           const { resource, ...props } = endpoint;
           if (resource) {
             return {
               ...props,
-              model: resource
+              model: resource,
             };
           } else {
             return endpoint;
           }
-        })
-      }
+        }),
+      };
     } else {
       return {
         resources: [],
-        endpoints: []
-      }
+        endpoints: [],
+      };
     }
   }
 
@@ -416,7 +436,7 @@ export default class MocksDesigner extends React.Component {
       .then((data) => {
         if (data) {
           const { idx } = data;
-          let value = data.value
+          let value = data.value;
 
           if (elementName === 'endpoints') {
             const newEndpoint = {
@@ -424,10 +444,10 @@ export default class MocksDesigner extends React.Component {
               enabled_generation: false,
               create_model: false,
               model: value.resource?.name || value.model,
-              resource: undefined
-            }
+              resource: undefined,
+            };
 
-            const additionalEndpoints = []
+            const additionalEndpoints = [];
 
             if (value.enabled_generation) {
               [
@@ -441,29 +461,30 @@ export default class MocksDesigner extends React.Component {
                     ...newEndpoint,
                     path,
                     status,
-                    method
-                  })
+                    method,
+                  });
                 }
-              })
+              });
             }
 
             this.setAndSave({
-              resources: value.resource ? [...this.getState().resources, value.resource] : this.getState().resources,
+              resources: value.resource
+                ? [...this.getState().resources, value.resource]
+                : this.getState().resources,
               endpoints: Number.isFinite(idx)
                 ? this.getState()[elementName].map((r, i) => {
-                  if (i === idx) return newEndpoint;
-                  return r;
-                })
+                    if (i === idx) return newEndpoint;
+                    return r;
+                  })
                 : [...this.getState()[elementName], newEndpoint, ...additionalEndpoints],
             });
-          }
-          else {
+          } else {
             this.setAndSave({
               resources: Number.isFinite(idx)
                 ? this.getState().resources.map((r, i) => {
-                  if (i === idx) return value;
-                  return r;
-                })
+                    if (i === idx) return value;
+                    return r;
+                  })
                 : [...this.getState().resources, value],
             });
           }
@@ -472,27 +493,37 @@ export default class MocksDesigner extends React.Component {
   };
 
   showResourceForm = (idx, onEdit) =>
-    this.showForm(`${onEdit ? 'Edit a model' : 'Create a new model'}`, idx, 'resources', (ok, cancel, resource) => (
-      <NewResource
-        confirm={ok}
-        cancel={cancel}
-        resource={resource}
-        idx={idx}
-        resources={this.getState().resources}
-      />
-    ));
+    this.showForm(
+      `${onEdit ? 'Edit a model' : 'Create a new model'}`,
+      idx,
+      'resources',
+      (ok, cancel, resource) => (
+        <NewResource
+          confirm={ok}
+          cancel={cancel}
+          resource={resource}
+          idx={idx}
+          resources={this.getState().resources}
+        />
+      )
+    );
 
   showEndpointForm = (idx, onEdit) =>
-    this.showForm(`${onEdit ? 'Edit an endpoint' : 'Create a new endpoint'}`, idx, 'endpoints', (ok, cancel, endpoint) => (
-      <NewEndpoint
-        confirm={ok}
-        cancel={cancel}
-        resources={this.getState().resources}
-        endpoint={endpoint}
-        idx={idx}
-        onEdit={onEdit}
-      />
-    ));
+    this.showForm(
+      `${onEdit ? 'Edit an endpoint' : 'Create a new endpoint'}`,
+      idx,
+      'endpoints',
+      (ok, cancel, endpoint) => (
+        <NewEndpoint
+          confirm={ok}
+          cancel={cancel}
+          resources={this.getState().resources}
+          endpoint={endpoint}
+          idx={idx}
+          onEdit={onEdit}
+        />
+      )
+    );
 
   removeEndpoint = (idx) => {
     this.setAndSave({
@@ -501,8 +532,12 @@ export default class MocksDesigner extends React.Component {
   };
 
   removeResource = (idx) => {
-    if (this.getState().endpoints.find(endpoint => endpoint.model === this.getState().resources[idx].name)) {
-      window.newAlert(`This model can't be deleted because it is used by at least one endpoint`)
+    if (
+      this.getState().endpoints.find(
+        (endpoint) => endpoint.model === this.getState().resources[idx].name
+      )
+    ) {
+      window.newAlert(`This model can't be deleted because it is used by at least one endpoint`);
     } else {
       this.setAndSave({
         resources: this.getState().resources.filter((_, j) => j !== idx),
@@ -516,11 +551,12 @@ export default class MocksDesigner extends React.Component {
         ...endpoint,
         body: endpoint.body || generateFakerValues(this.getState().resources, endpoint),
       })),
-    })
-      .then(() => this.setState({
-        onDesigner: false
-      }))
-  }
+    }).then(() =>
+      this.setState({
+        onDesigner: false,
+      })
+    );
+  };
 
   resetData = () => {
     window.newConfirm(`Are you sure you reset all data ?`).then((ok) => {
@@ -541,37 +577,50 @@ export default class MocksDesigner extends React.Component {
 
     if (!route) return null;
 
-    console.log(resources, endpoints)
+    console.log(resources, endpoints);
 
     return (
-      <div className="graphql-form p-3 pe-2 flex-column" style={{
-        overflowX: 'hidden'
-      }}>
-        <Header hide={hide}
-          setDesigner={value => this.setState({ onDesigner: value })}
-          onDesigner={this.state.onDesigner} />
+      <div
+        className="graphql-form p-3 pe-2 flex-column"
+        style={{
+          overflowX: 'hidden',
+        }}>
+        <Header
+          hide={hide}
+          setDesigner={(value) => this.setState({ onDesigner: value })}
+          onDesigner={this.state.onDesigner}
+        />
 
-        {this.state.onDesigner && <>
-          <div className="row">
-            <CharlatanEndpointsList
-              showEndpointForm={this.showEndpointForm}
-              endpoints={endpoints}
-              removeEndpoint={this.removeEndpoint}
-              openResource={model => this.showResourceForm(resources.findIndex(f => f.name === model), true)}
-            />
-            <CharlatanResourcesList
-              showResourceForm={this.showResourceForm}
-              resources={resources}
-              endpoints={endpoints}
-              removeResource={this.removeResource}
-            />
-          </div>
-          {resources.length > 0 && <CharlatanActions
-            endpoints={endpoints}
-            generateData={this.generateData}
-            resetData={this.resetData}
-          />}
-        </>}
+        {this.state.onDesigner && (
+          <>
+            <div className="row">
+              <CharlatanEndpointsList
+                showEndpointForm={this.showEndpointForm}
+                endpoints={endpoints}
+                removeEndpoint={this.removeEndpoint}
+                openResource={(model) =>
+                  this.showResourceForm(
+                    resources.findIndex((f) => f.name === model),
+                    true
+                  )
+                }
+              />
+              <CharlatanResourcesList
+                showResourceForm={this.showResourceForm}
+                resources={resources}
+                endpoints={endpoints}
+                removeResource={this.removeResource}
+              />
+            </div>
+            {resources.length > 0 && (
+              <CharlatanActions
+                endpoints={endpoints}
+                generateData={this.generateData}
+                resetData={this.resetData}
+              />
+            )}
+          </>
+        )}
 
         {!this.state.onDesigner && <PushView endpoints={endpoints} resources={resources} />}
       </div>
@@ -580,53 +629,65 @@ export default class MocksDesigner extends React.Component {
 }
 
 function OpenAPIParameters({ resources, ...props }) {
-  const model = resources.find(r => r.name === props.model)
+  const model = resources.find((r) => r.name === props.model);
   return (
     <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
       <h4>Parameters</h4>
-      <div className='d-flex' style={{ borderBottom: '1px solid' }}>
-        <p style={{ minWidth: '120px' }} className='me-3'>Name</p>
-        <p className='flex'>Description</p>
+      <div className="d-flex" style={{ borderBottom: '1px solid' }}>
+        <p style={{ minWidth: '120px' }} className="me-3">
+          Name
+        </p>
+        <p className="flex">Description</p>
       </div>
       {model?.schema.map(({ field_name, field_type, field_description, value }) => {
         return (
-          <div className='d-flex pt-2' key={field_name}>
-            <p style={{ minWidth: '120px', color: "#fff" }} className='me-3'>{field_name}</p>
-            <div className='flex'>
-              <p>{field_type === 'Model' ? resources.find(r => r.name === value)?.name : field_type}</p>
+          <div className="d-flex pt-2" key={field_name}>
+            <p style={{ minWidth: '120px', color: '#fff' }} className="me-3">
+              {field_name}
+            </p>
+            <div className="flex">
+              <p>
+                {field_type === 'Model'
+                  ? resources.find((r) => r.name === value)?.name
+                  : field_type}
+              </p>
               <p>{field_description || 'No description'}</p>
             </div>
           </div>
-        )
+        );
       })}
     </div>
   );
-};
+}
 
 function OpenAPIResponse({ body, status, description, model, resource_list }) {
   return (
     <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
       <h4>Responses</h4>
-      <div className='d-flex' style={{ borderBottom: '1px solid' }}>
-        <p className='me-3'>Code</p>
-        <p className='flex'>Description</p>
+      <div className="d-flex" style={{ borderBottom: '1px solid' }}>
+        <p className="me-3">Code</p>
+        <p className="flex">Description</p>
       </div>
-      <div className='d-flex pt-2'>
-        <p className='me-3' style={{ color: "#fff" }}>{status}</p>
-        <div className='flex'>
-          <p>{description || "No description"}</p>
-          <div className='d-flex' style={{ gap: "4px" }}>
-            <p style={{ borderRight: '1px solid', fontWeight: 'bold' }} className="pe-2">Example value</p>
-            <p>{resource_list ? `List of ${(model || 'Model')}` : (model || 'Model')}</p>
+      <div className="d-flex pt-2">
+        <p className="me-3" style={{ color: '#fff' }}>
+          {status}
+        </p>
+        <div className="flex">
+          <p>{description || 'No description'}</p>
+          <div className="d-flex" style={{ gap: '4px' }}>
+            <p style={{ borderRight: '1px solid', fontWeight: 'bold' }} className="pe-2">
+              Example value
+            </p>
+            <p>{resource_list ? `List of ${model || 'Model'}` : model || 'Model'}</p>
           </div>
           <Suspense fallback={<div>Loading ....</div>}>
-            <CodeInput value={body} onChange={() => { }} mode="json" editorOnly={true} />
+            <CodeInput value={body} onChange={() => {}} mode="json" editorOnly={true} />
           </Suspense>
         </div>
       </div>
     </div>
   );
-};
+}
 
 class NewResource extends React.Component {
   state = {
@@ -642,16 +703,12 @@ class NewResource extends React.Component {
       label: ' Additional data (raw fields)',
       props: {
         mode: 'json',
-        editorOnly: true
-      }
-    }
-  }
+        editorOnly: true,
+      },
+    },
+  };
 
-  flow = [
-    'name',
-    'schema',
-    'additional_data'
-  ]
+  flow = ['name', 'schema', 'additional_data'];
 
   render() {
     return (
@@ -660,7 +717,7 @@ class NewResource extends React.Component {
           value={this.state}
           schema={this.schema}
           flow={this.flow}
-          onChange={e => this.setState({ ...e })}
+          onChange={(e) => this.setState({ ...e })}
         />
 
         <div className="d-flex-between">
@@ -685,33 +742,42 @@ class NewResource extends React.Component {
 }
 
 function EndpointGenerationInput({ label, fieldName, rootOnChange, rootValue, onChange, path }) {
-  const additionalEndpoints = rootValue.additionalEndpoints
-  return <div className="d-flex align-items-center mb-3">
-    <NgStringRenderer
-      label={label}
-      onChange={e => rootOnChange({
-        ...rootValue,
-        additionalEndpoints: {
-          ...rootValue.additionalEndpoints,
-          [fieldName]: {
-            path: e
-          }
+  const additionalEndpoints = rootValue.additionalEndpoints;
+  return (
+    <div className="d-flex align-items-center mb-3">
+      <NgStringRenderer
+        label={label}
+        onChange={(e) =>
+          rootOnChange({
+            ...rootValue,
+            additionalEndpoints: {
+              ...rootValue.additionalEndpoints,
+              [fieldName]: {
+                path: e,
+              },
+            },
+          })
         }
-      })}
-      value={additionalEndpoints && additionalEndpoints[fieldName] ? additionalEndpoints[fieldName].path : path}
-      schema={{
-        disabled: true
-      }}
-      margin="m-0 flex"
-    />
-    <NgBooleanRenderer
-      value={rootValue[fieldName] === undefined ? true : rootValue[fieldName]}
-      onChange={onChange}
-      schema={{}}
-      ngOptions={{
-        spread: true
-      }} />
-  </div>
+        value={
+          additionalEndpoints && additionalEndpoints[fieldName]
+            ? additionalEndpoints[fieldName].path
+            : path
+        }
+        schema={{
+          disabled: true,
+        }}
+        margin="m-0 flex"
+      />
+      <NgBooleanRenderer
+        value={rootValue[fieldName] === undefined ? true : rootValue[fieldName]}
+        onChange={onChange}
+        schema={{}}
+        ngOptions={{
+          spread: true,
+        }}
+      />
+    </div>
+  );
 }
 
 const MODEL_FOPM_SCHEMA = (resources) => ({
@@ -720,20 +786,20 @@ const MODEL_FOPM_SCHEMA = (resources) => ({
   schema: {
     name: {
       type: 'string',
-      label: 'Model name'
+      label: 'Model name',
     },
     schema: {
       type: 'form',
       array: true,
-      label: "Fields",
+      label: 'Fields',
       schema: {
         field_name: {
           type: 'string',
-          label: 'Field name'
+          label: 'Field name',
         },
         field_description: {
           type: 'string',
-          label: 'Field description'
+          label: 'Field description',
         },
         field_type: {
           type: 'select',
@@ -745,59 +811,58 @@ const MODEL_FOPM_SCHEMA = (resources) => ({
               // 'Object',
               // 'Array',
               // 'Date',
-              'Model'
-            ]
+              'Model',
+            ],
           },
-          label: 'Field type'
+          label: 'Field type',
         },
         use_faker_value: {
-          visible: props => props.field_type === 'String',
+          visible: (props) => props.field_type === 'String',
           type: 'boolean',
-          label: 'Use faker value'
+          label: 'Use faker value',
         },
         value: {
-          renderer: props => {
-            const type = props?.rootValue?.field_type
-            const isChild = type === 'Model'
-            const isFaker = props?.rootValue?.use_faker_value && props?.rootValue?.field_type === 'String'
+          renderer: (props) => {
+            const type = props?.rootValue?.field_type;
+            const isChild = type === 'Model';
+            const isFaker =
+              props?.rootValue?.use_faker_value && props?.rootValue?.field_type === 'String';
 
-            let Element = NgStringRenderer
+            let Element = NgStringRenderer;
 
             if (isChild || isFaker)
-              return <NgSelectRenderer
-                label='Content value'
-                value={props?.rootValue?.value}
-                schema={{}}
-                options={isChild ? resources.map((a) => a.name) : FakerOptions}
-                onChange={props.onChange} />
-            else if (type === 'Number')
-              Element = NgNumberRenderer
-            else if (type === 'Boolean')
-              Element = NgBooleanRenderer
+              return (
+                <NgSelectRenderer
+                  label="Content value"
+                  value={props?.rootValue?.value}
+                  schema={{}}
+                  options={isChild ? resources.map((a) => a.name) : FakerOptions}
+                  onChange={props.onChange}
+                />
+              );
+            else if (type === 'Number') Element = NgNumberRenderer;
+            else if (type === 'Boolean') Element = NgBooleanRenderer;
             return React.createElement(Element, {
               value: props?.rootValue?.value,
               label: 'Content value',
               onChange: props.onChange,
-              schema: {}
-            })
-          }
-        }
+              schema: {},
+            });
+          },
+        },
       },
       flow: [
         {
           type: 'group',
           collapsed: true,
-          name: props => `Field ${props?.value?.field_name}`,
-          fields: ['field_name', 'field_description', 'field_type', 'use_faker_value', 'value']
-        }
-      ]
-    }
+          name: (props) => `Field ${props?.value?.field_name}`,
+          fields: ['field_name', 'field_description', 'field_type', 'use_faker_value', 'value'],
+        },
+      ],
+    },
   },
-  flow: [
-    'name',
-    'schema'
-  ]
-})
+  flow: ['name', 'schema'],
+});
 
 class NewEndpoint extends React.Component {
   state = this.props.endpoint || {
@@ -816,30 +881,20 @@ class NewEndpoint extends React.Component {
       type: 'select',
       label: 'Method',
       props: {
-        options: [
-          'GET',
-          'HEAD',
-          'POST',
-          'PUT',
-          'DELETE',
-          'CONNECT',
-          'OPTIONS',
-          'TRACE',
-          'PATCH',
-        ]
-      }
+        options: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH'],
+      },
     },
     path: {
       type: 'string',
-      label: 'Request path'
+      label: 'Request path',
     },
     description: {
       type: 'string',
-      label: 'Description'
+      label: 'Description',
     },
     status: {
       type: 'number',
-      label: 'Status'
+      label: 'Status',
     },
     headers: {
       type: 'object',
@@ -850,55 +905,89 @@ class NewEndpoint extends React.Component {
     },
     enabled_generation: {
       type: 'boolean',
-      label: 'Enabled generation'
+      label: 'Enabled generation',
     },
     find_one: {
-      visible: props => props.enabled_generation,
-      renderer: props => <EndpointGenerationInput label='Find one' rootOnChange={props.rootOnChange} fieldName="find_one"
-        onChange={props.onChange} rootValue={props.rootValue} path={`${props.rootValue?.path}/:id`} />
+      visible: (props) => props.enabled_generation,
+      renderer: (props) => (
+        <EndpointGenerationInput
+          label="Find one"
+          rootOnChange={props.rootOnChange}
+          fieldName="find_one"
+          onChange={props.onChange}
+          rootValue={props.rootValue}
+          path={`${props.rootValue?.path}/:id`}
+        />
+      ),
     },
     put: {
-      visible: props => props.enabled_generation,
-      renderer: props => <EndpointGenerationInput label='Update endpoint' rootOnChange={props.rootOnChange} fieldName="put"
-        onChange={props.onChange} rootValue={props.rootValue} path={`${props.rootValue?.path}/:id`} />
+      visible: (props) => props.enabled_generation,
+      renderer: (props) => (
+        <EndpointGenerationInput
+          label="Update endpoint"
+          rootOnChange={props.rootOnChange}
+          fieldName="put"
+          onChange={props.onChange}
+          rootValue={props.rootValue}
+          path={`${props.rootValue?.path}/:id`}
+        />
+      ),
     },
     post: {
-      visible: props => props.enabled_generation,
-      renderer: props => <EndpointGenerationInput label='Creation endpoint' rootOnChange={props.rootOnChange} fieldName="post"
-        onChange={props.onChange} rootValue={props.rootValue} path={`${props.rootValue?.path}`} />
+      visible: (props) => props.enabled_generation,
+      renderer: (props) => (
+        <EndpointGenerationInput
+          label="Creation endpoint"
+          rootOnChange={props.rootOnChange}
+          fieldName="post"
+          onChange={props.onChange}
+          rootValue={props.rootValue}
+          path={`${props.rootValue?.path}`}
+        />
+      ),
     },
     delete: {
-      visible: props => props.enabled_generation,
-      renderer: props => <EndpointGenerationInput label='Delete endpoint' rootOnChange={props.rootOnChange} fieldName="delete"
-        onChange={props.onChange} rootValue={props.rootValue} path={`${props.rootValue?.path}/:id`} />
+      visible: (props) => props.enabled_generation,
+      renderer: (props) => (
+        <EndpointGenerationInput
+          label="Delete endpoint"
+          rootOnChange={props.rootOnChange}
+          fieldName="delete"
+          onChange={props.onChange}
+          rootValue={props.rootValue}
+          path={`${props.rootValue?.path}/:id`}
+        />
+      ),
     },
     use_generation: {
       label: 'Use generate data ?',
-      type: 'boolean'
+      type: 'boolean',
     },
     model: {
       type: 'select',
       label: 'Model',
       props: {
-        options: this.props.resources.map((r) => r.name)
+        options: this.props.resources.map((r) => r.name),
       },
-      visible: (props) => props.use_generation && !props.create_model
+      visible: (props) => props.use_generation && !props.create_model,
     },
     create_model: {
       visible: (props) => props.use_generation && !props.create_model,
-      renderer: props => {
-        return <div className='d-flex justify-content-end'>
-          <button
-            type="button"
-            className="btn btn-sm btn-info"
-            onClick={() => {
-              props.onChange(true)
-            }}>
-            <i className='fas fa-plus-circle me-1' />
-            Create new model
-          </button>
-        </div>
-      }
+      renderer: (props) => {
+        return (
+          <div className="d-flex justify-content-end">
+            <button
+              type="button"
+              className="btn btn-sm btn-info"
+              onClick={() => {
+                props.onChange(true);
+              }}>
+              <i className="fas fa-plus-circle me-1" />
+              Create new model
+            </button>
+          </div>
+        );
+      },
     },
     resource_list: {
       type: 'boolean',
@@ -907,58 +996,63 @@ class NewEndpoint extends React.Component {
     length: {
       type: 'number',
       label: 'Number of elements to generate',
-      visible: (props) => props.resource_list
+      visible: (props) => props.resource_list,
     },
     body: {
       type: 'code',
       label: 'JSON Body',
       props: {
         mode: 'json',
-        editorOnly: true
+        editorOnly: true,
       },
-      visible: (props) => !props.use_generation
+      visible: (props) => !props.use_generation,
     },
     resource: {
-      visible: props => props.create_model && props.use_generation,
-      ...MODEL_FOPM_SCHEMA(this.props.resources)
+      visible: (props) => props.create_model && props.use_generation,
+      ...MODEL_FOPM_SCHEMA(this.props.resources),
     },
     additional_data: {
-      visible: props => props.create_model && props.use_generation,
+      visible: (props) => props.create_model && props.use_generation,
       type: 'code',
       label: 'Additional data (raw fields)',
       props: {
-        editorOnly: true
-      }
+        editorOnly: true,
+      },
     },
     cancel_creation: {
-      visible: props => props.use_generation && props.create_model,
+      visible: (props) => props.use_generation && props.create_model,
       renderer: (props) => {
-        return <div className='d-flex justify-content-end'>
-          <button className='bnt btn-sm btn-danger'
-            type='button'
-            onClick={() => props.rootOnChange({
-              ...props.value,
-              create_model: false
-            })}>
-            <i className='fas fa-times me-1' />
-            Discard creation
-          </button>
-        </div>
-      }
-    }
-  }
+        return (
+          <div className="d-flex justify-content-end">
+            <button
+              className="bnt btn-sm btn-danger"
+              type="button"
+              onClick={() =>
+                props.rootOnChange({
+                  ...props.value,
+                  create_model: false,
+                })
+              }>
+              <i className="fas fa-times me-1" />
+              Discard creation
+            </button>
+          </div>
+        );
+      },
+    },
+  };
 
   flow = [
     {
       type: 'group',
       name: 'Informations',
-      fields: ['method', 'path', 'description', 'status', 'headers']
+      fields: ['method', 'path', 'description', 'status', 'headers'],
     },
     {
       type: 'group',
       visible: () => !this.props.onEdit,
       name: 'Endpoints generation',
-      fields: ['enabled_generation', 'find_one', 'put', 'post', 'delete']
+      fields: ['enabled_generation', 'find_one', 'put', 'post', 'delete'],
     },
     {
       type: 'group',
@@ -973,13 +1067,13 @@ class NewEndpoint extends React.Component {
         {
           type: 'group',
           name: 'Generator informations',
-          visible: props => props.use_generation,
-          fields: ['resource_list', 'length']
+          visible: (props) => props.use_generation,
+          fields: ['resource_list', 'length'],
         },
-        'body'
-      ]
-    }
-  ]
+        'body',
+      ],
+    },
+  ];
 
   render() {
     // console.log(this.props)
@@ -989,8 +1083,8 @@ class NewEndpoint extends React.Component {
           value={this.state}
           flow={this.flow}
           schema={this.schema}
-          onChange={e => {
-            this.setState({ ...e })
+          onChange={(e) => {
+            this.setState({ ...e });
           }}
         />
 
@@ -1015,38 +1109,36 @@ class NewEndpoint extends React.Component {
 }
 
 function Header({ hide, onDesigner, setDesigner }) {
-  return <>
-    <div className="d-flex-between">
-      <h3>Mock responses</h3>
-      <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
-        <i className="fas fa-times" style={{ color: '#fff' }} />
-      </button>
-    </div>
-    <div className='d-flex justify-content-center'>
-      <div
-        className='p-1'
-        style={{
-          borderRadius: '24px',
-          backgroundColor: '#373735',
-          position: 'relative',
-          width: 'fit-content'
-        }}>
-        <div className={`tryit-selector-cursor ${onDesigner ? '' : 'tryit-selector-mode-right'}`} />
-        <button
-          className="tryit-selector-mode"
-          type="button"
-          onClick={() => setDesigner(true)}>
-          Design
-        </button>
-        <button
-          className="tryit-selector-mode"
-          type="button"
-          onClick={() => setDesigner(false)}>
-          Content
+  return (
+    <>
+      <div className="d-flex-between">
+        <h3>Mock responses</h3>
+        <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
+          <i className="fas fa-times" style={{ color: '#fff' }} />
         </button>
       </div>
-    </div>
-  </>
+      <div className="d-flex justify-content-center">
+        <div
+          className="p-1"
+          style={{
+            borderRadius: '24px',
+            backgroundColor: '#373735',
+            position: 'relative',
+            width: 'fit-content',
+          }}>
+          <div
+            className={`tryit-selector-cursor ${onDesigner ? '' : 'tryit-selector-mode-right'}`}
+          />
+          <button className="tryit-selector-mode" type="button" onClick={() => setDesigner(true)}>
+            Design
+          </button>
+          <button className="tryit-selector-mode" type="button" onClick={() => setDesigner(false)}>
+            Content
+          </button>
+        </div>
+      </div>
+    </>
+  );
 }
 
 export const HTTP_COLORS = {
@@ -1056,7 +1148,7 @@ export const HTTP_COLORS = {
   PUT: 'rgb(251, 161, 47)',
   HEAD: 'rgb(155, 89, 182)',
   PATCH: 'rgb(155, 89, 182)',
-  OPTIONS: 'rgb(155, 89, 182)'
+  OPTIONS: 'rgb(155, 89, 182)',
 };
 
 const FakerOptions = [

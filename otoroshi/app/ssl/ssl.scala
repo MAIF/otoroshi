@@ -1301,13 +1301,12 @@ object DynamicSSLEngineProvider {
    */
 
   def setupSslContextFor(
-    _certs: Seq[Cert],
-    _trustedCerts: Seq[Cert],
-    forceTrustAll: Boolean,
-    client: Boolean,
-    env: Env
+      _certs: Seq[Cert],
+      _trustedCerts: Seq[Cert],
+      forceTrustAll: Boolean,
+      client: Boolean,
+      env: Env
   ): SSLContext = setupSslContextForWithManagers(_certs, _trustedCerts, forceTrustAll, client, env)._1
-
 
   def setupSslContextForWithManagers(
       _certs: Seq[Cert],

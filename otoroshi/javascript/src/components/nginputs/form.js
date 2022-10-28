@@ -37,7 +37,7 @@ const Helpers = {
   rendererFor: (type, components = {}) => {
     if (type?.endsWith('-no-label')) {
       const Renderer = Helpers.rendererFor(type.replace('-no-label', ''), components);
-      return (props) => <Renderer {...props} ngOptions={{ ...props.ngOptions, spread: true }} />
+      return (props) => <Renderer {...props} ngOptions={{ ...props.ngOptions, spread: true }} />;
     } else if (type === 'string') {
       return components.StringRenderer;
     } else if (type === 'bool' || type === 'boolean') {
@@ -204,45 +204,55 @@ export class NgStep extends Component {
 }
 
 const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
+  if (!breadcrumb && !toHome) return null;
 
-  if (!breadcrumb && !toHome)
-    return null
-
-  return <div className="breadcrumbs my-2">
-    <span
-      className="breadcrumbs__item px-2"
-      onClick={toHome}>
-      <img width="20px" style={{ scale: '2.5' }} src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iNzUycHQiIGhlaWdodD0iNzUycHQiIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDc1MiA3NTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiA8Zz4KICA8cGF0aCBkPSJtMjk0LjYxIDUxNi42aC0zN2MtNC4wODU5IDAtNy4zOTg0LTMuMzE2NC03LjM5ODQtNy40MDIzdi0xNjIuNzloMTQuODAxdjE1NS4zOWgyOS41OTh6Ii8+CiAgPHBhdGggZD0ibTMzOSA1MDEuOGgyMi4xOTl2MTQuODAxaC0yMi4xOTl6Ii8+CiAgPHBhdGggZD0ibTQ5NC40IDUxNi42aC01OS4xOTl2LTE0LjgwMWg1MS43OTd2LTE1NS4zOWgxNC44MDF2MTYyLjc5YzAgMS45NjQ4LTAuNzgxMjUgMy44NDM4LTIuMTY4IDUuMjM0NC0xLjM4NjcgMS4zODY3LTMuMjY5NSAyLjE2OC01LjIzMDUgMi4xNjh6Ii8+CiAgPHBhdGggZD0ibTUxMi42OCAzNjcuNDktMTM2LjY4LTg2LjM1NS0xMzYuNjcgODYuMzU1LTcuOTE4LTEyLjUwNCAxNDAuNTktODguNzk3YzIuNDE4LTEuNTMxMiA1LjUwMzktMS41MzEyIDcuOTE4IDBsMTQwLjU5IDg4Ljc5N3oiLz4KICA8cGF0aCBkPSJtMzYxLjIgMzI0LjJoMjkuNTk4djE0LjgwMWgtMjkuNTk4eiIvPgogIDxwYXRoIGQ9Im0yODcuMiAzMzEuNmgtMTQuNzk3di00NC4zOThjMC00LjA4NTkgMy4zMTI1LTcuMzk4NCA3LjM5ODQtNy4zOTg0aDI5LjU5OGMxLjk2NDggMCAzLjg0NzcgMC43ODEyNSA1LjIzNDQgMi4xNjggMS4zODY3IDEuMzg2NyAyLjE2OCAzLjI2OTUgMi4xNjggNS4yMzA1djI5LjU5OGwtMTQuODAxIDAuMDAzOTA3di0yMi4xOTloLTE0LjgwMXoiLz4KICA8cGF0aCBkPSJtNDEzIDQ0Mi42aC03My45OTZjLTQuMDg1OSAwLTcuNDAyMy0zLjMxMjUtNy40MDIzLTcuMzk4NHYtNzMuOTk2YzAtNC4wODU5IDMuMzE2NC03LjQwMjMgNy40MDIzLTcuNDAyM2g3My45OTZjMS45NjA5IDAgMy44NDM4IDAuNzgxMjUgNS4yMzA1IDIuMTY4IDEuMzkwNiAxLjM4NjcgMi4xNjggMy4yNjk1IDIuMTY4IDUuMjM0NHY3My45OTZjMCAxLjk2MDktMC43NzczNCAzLjg0MzgtMi4xNjggNS4yMzA1LTEuMzg2NyAxLjM5MDYtMy4yNjk1IDIuMTY4LTUuMjMwNSAyLjE2OHptLTY2LjU5OC0xNC44MDFoNTkuMTk5di01OS4xOTVoLTU5LjE5OXoiLz4KICA8cGF0aCBkPSJtMzM5IDM5MC44aDczLjk5NnYxNC44MDFoLTczLjk5NnoiLz4KICA8cGF0aCBkPSJtMzY4LjYgMzYxLjJoMTQuODAxdjczLjk5NmgtMTQuODAxeiIvPgogIDxwYXRoIGQ9Im00OTQuNCA1MDEuOGgyOS41OTh2MTQuODAxaC0yOS41OTh6Ii8+CiAgPHBhdGggZD0ibTUxNi42IDQ5NC40aDE0LjgwMXY0NC4zOThoLTE0LjgwMXoiLz4KICA8cGF0aCBkPSJtMzE2LjggNTM4Ljc5Yy03Ljg1MTYgMC0xNS4zNzktMy4xMTcyLTIwLjkzLTguNjY4cy04LjY3MTktMTMuMDc4LTguNjcxOS0yMC45M2MwLTcuODQ3NyAzLjEyMTEtMTUuMzc5IDguNjcxOS0yMC45M3MxMy4wNzgtOC42NjggMjAuOTMtOC42NjhjNy44NDc3IDAgMTUuMzc5IDMuMTE3MiAyMC45MyA4LjY2OHM4LjY2OCAxMy4wODIgOC42NjggMjAuOTNjMCA3Ljg1MTYtMy4xMTcyIDE1LjM3OS04LjY2OCAyMC45M3MtMTMuMDgyIDguNjY4LTIwLjkzIDguNjY4em0wLTQ0LjM5OHYwLjAwMzkwN2MtMy45MjU4IDAtNy42OTE0IDEuNTU4Ni0xMC40NjUgNC4zMzItMi43NzczIDIuNzc3My00LjMzNTkgNi41MzkxLTQuMzM1OSAxMC40NjUgMCAzLjkyNTggMS41NTg2IDcuNjkxNCA0LjMzNTkgMTAuNDY1IDIuNzczNCAyLjc3NzMgNi41MzkxIDQuMzM1OSAxMC40NjUgNC4zMzU5IDMuOTI1OCAwIDcuNjg3NS0xLjU1ODYgMTAuNDY1LTQuMzM1OSAyLjc3MzQtMi43NzM0IDQuMzMyLTYuNTM5MSA0LjMzMi0xMC40NjUgMC0zLjkyNTgtMS41NTg2LTcuNjg3NS00LjMzMi0xMC40NjUtMi43NzczLTIuNzczNC02LjUzOTEtNC4zMzItMTAuNDY1LTQuMzMyeiIvPgogIDxwYXRoIGQ9Im0zODMuNCA1MzguNzljLTcuODUxNiAwLTE1LjM3OS0zLjExNzItMjAuOTMtOC42NjgtNS41NTA4LTUuNTUwOC04LjY3MTktMTMuMDc4LTguNjcxOS0yMC45MyAwLTcuODQ3NyAzLjEyMTEtMTUuMzc5IDguNjcxOS0yMC45MyA1LjU1MDgtNS41NTA4IDEzLjA3OC04LjY2OCAyMC45My04LjY2OCA3Ljg0NzcgMCAxNS4zNzkgMy4xMTcyIDIwLjkzIDguNjY4czguNjY4IDEzLjA4MiA4LjY2OCAyMC45M2MwIDcuODUxNi0zLjExNzIgMTUuMzc5LTguNjY4IDIwLjkzcy0xMy4wODIgOC42NjgtMjAuOTMgOC42Njh6bTAtNDQuMzk4djAuMDAzOTA3Yy0zLjkyNTggMC03LjY5MTQgMS41NTg2LTEwLjQ2NSA0LjMzMi0yLjc3NzMgMi43NzczLTQuMzM1OSA2LjUzOTEtNC4zMzU5IDEwLjQ2NSAwIDMuOTI1OCAxLjU1ODYgNy42OTE0IDQuMzM1OSAxMC40NjUgMi43NzM0IDIuNzc3MyA2LjUzOTEgNC4zMzU5IDEwLjQ2NSA0LjMzNTkgMy45MjE5IDAgNy42ODc1LTEuNTU4NiAxMC40NjUtNC4zMzU5IDIuNzczNC0yLjc3MzQgNC4zMzItNi41MzkxIDQuMzMyLTEwLjQ2NSAwLTMuOTI1OC0xLjU1ODYtNy42ODc1LTQuMzMyLTEwLjQ2NS0yLjc3NzMtMi43NzM0LTYuNTQzLTQuMzMyLTEwLjQ2NS00LjMzMnoiLz4KICA8cGF0aCBkPSJtMjk0LjYxIDI2NS4wMWMtMTIuNTEyIDAuMTQ4NDQtMjQuNjMzLTQuMzMyLTM0LjAzOS0xMi41ODItNi44NDM4LTYuMzEyNS0xNS44NTItOS43NTM5LTI1LjE2LTkuNjE3MnYtMTQuODAxYzEyLjUxMi0wLjE1MjM0IDI0LjYzMyA0LjMyODEgMzQuMDM5IDEyLjU3OCA2Ljg0MzggNi4zMTI1IDE1Ljg1MiA5Ljc1NzggMjUuMTYgOS42MjExeiIvPgogPC9nPgo8L3N2Zz4K" />
-    </span>
-    {breadcrumb && breadcrumb
-      .map((part, i) => {
-        return <span
-          className={`breadcrumbs__item ${i === breadcrumb.length - 1 ? 'is-active' : ''}`}
-          onClick={() => setBreadcrumb(i)} key={`${part}`}>
-          {part}
-        </span>
-      })}
-  </div>
-}
+  return (
+    <div className="breadcrumbs my-2">
+      <span className="breadcrumbs__item px-2" onClick={toHome}>
+        <img
+          width="20px"
+          style={{ scale: '2.5' }}
+          src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iNzUycHQiIGhlaWdodD0iNzUycHQiIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDc1MiA3NTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiA8Zz4KICA8cGF0aCBkPSJtMjk0LjYxIDUxNi42aC0zN2MtNC4wODU5IDAtNy4zOTg0LTMuMzE2NC03LjM5ODQtNy40MDIzdi0xNjIuNzloMTQuODAxdjE1NS4zOWgyOS41OTh6Ii8+CiAgPHBhdGggZD0ibTMzOSA1MDEuOGgyMi4xOTl2MTQuODAxaC0yMi4xOTl6Ii8+CiAgPHBhdGggZD0ibTQ5NC40IDUxNi42aC01OS4xOTl2LTE0LjgwMWg1MS43OTd2LTE1NS4zOWgxNC44MDF2MTYyLjc5YzAgMS45NjQ4LTAuNzgxMjUgMy44NDM4LTIuMTY4IDUuMjM0NC0xLjM4NjcgMS4zODY3LTMuMjY5NSAyLjE2OC01LjIzMDUgMi4xNjh6Ii8+CiAgPHBhdGggZD0ibTUxMi42OCAzNjcuNDktMTM2LjY4LTg2LjM1NS0xMzYuNjcgODYuMzU1LTcuOTE4LTEyLjUwNCAxNDAuNTktODguNzk3YzIuNDE4LTEuNTMxMiA1LjUwMzktMS41MzEyIDcuOTE4IDBsMTQwLjU5IDg4Ljc5N3oiLz4KICA8cGF0aCBkPSJtMzYxLjIgMzI0LjJoMjkuNTk4djE0LjgwMWgtMjkuNTk4eiIvPgogIDxwYXRoIGQ9Im0yODcuMiAzMzEuNmgtMTQuNzk3di00NC4zOThjMC00LjA4NTkgMy4zMTI1LTcuMzk4NCA3LjM5ODQtNy4zOTg0aDI5LjU5OGMxLjk2NDggMCAzLjg0NzcgMC43ODEyNSA1LjIzNDQgMi4xNjggMS4zODY3IDEuMzg2NyAyLjE2OCAzLjI2OTUgMi4xNjggNS4yMzA1djI5LjU5OGwtMTQuODAxIDAuMDAzOTA3di0yMi4xOTloLTE0LjgwMXoiLz4KICA8cGF0aCBkPSJtNDEzIDQ0Mi42aC03My45OTZjLTQuMDg1OSAwLTcuNDAyMy0zLjMxMjUtNy40MDIzLTcuMzk4NHYtNzMuOTk2YzAtNC4wODU5IDMuMzE2NC03LjQwMjMgNy40MDIzLTcuNDAyM2g3My45OTZjMS45NjA5IDAgMy44NDM4IDAuNzgxMjUgNS4yMzA1IDIuMTY4IDEuMzkwNiAxLjM4NjcgMi4xNjggMy4yNjk1IDIuMTY4IDUuMjM0NHY3My45OTZjMCAxLjk2MDktMC43NzczNCAzLjg0MzgtMi4xNjggNS4yMzA1LTEuMzg2NyAxLjM5MDYtMy4yNjk1IDIuMTY4LTUuMjMwNSAyLjE2OHptLTY2LjU5OC0xNC44MDFoNTkuMTk5di01OS4xOTVoLTU5LjE5OXoiLz4KICA8cGF0aCBkPSJtMzM5IDM5MC44aDczLjk5NnYxNC44MDFoLTczLjk5NnoiLz4KICA8cGF0aCBkPSJtMzY4LjYgMzYxLjJoMTQuODAxdjczLjk5NmgtMTQuODAxeiIvPgogIDxwYXRoIGQ9Im00OTQuNCA1MDEuOGgyOS41OTh2MTQuODAxaC0yOS41OTh6Ii8+CiAgPHBhdGggZD0ibTUxNi42IDQ5NC40aDE0LjgwMXY0NC4zOThoLTE0LjgwMXoiLz4KICA8cGF0aCBkPSJtMzE2LjggNTM4Ljc5Yy03Ljg1MTYgMC0xNS4zNzktMy4xMTcyLTIwLjkzLTguNjY4cy04LjY3MTktMTMuMDc4LTguNjcxOS0yMC45M2MwLTcuODQ3NyAzLjEyMTEtMTUuMzc5IDguNjcxOS0yMC45M3MxMy4wNzgtOC42NjggMjAuOTMtOC42NjhjNy44NDc3IDAgMTUuMzc5IDMuMTE3MiAyMC45MyA4LjY2OHM4LjY2OCAxMy4wODIgOC42NjggMjAuOTNjMCA3Ljg1MTYtMy4xMTcyIDE1LjM3OS04LjY2OCAyMC45M3MtMTMuMDgyIDguNjY4LTIwLjkzIDguNjY4em0wLTQ0LjM5OHYwLjAwMzkwN2MtMy45MjU4IDAtNy42OTE0IDEuNTU4Ni0xMC40NjUgNC4zMzItMi43NzczIDIuNzc3My00LjMzNTkgNi41MzkxLTQuMzM1OSAxMC40NjUgMCAzLjkyNTggMS41NTg2IDcuNjkxNCA0LjMzNTkgMTAuNDY1IDIuNzczNCAyLjc3NzMgNi41MzkxIDQuMzM1OSAxMC40NjUgNC4zMzU5IDMuOTI1OCAwIDcuNjg3NS0xLjU1ODYgMTAuNDY1LTQuMzM1OSAyLjc3MzQtMi43NzM0IDQuMzMyLTYuNTM5MSA0LjMzMi0xMC40NjUgMC0zLjkyNTgtMS41NTg2LTcuNjg3NS00LjMzMi0xMC40NjUtMi43NzczLTIuNzczNC02LjUzOTEtNC4zMzItMTAuNDY1LTQuMzMyeiIvPgogIDxwYXRoIGQ9Im0zODMuNCA1MzguNzljLTcuODUxNiAwLTE1LjM3OS0zLjExNzItMjAuOTMtOC42NjgtNS41NTA4LTUuNTUwOC04LjY3MTktMTMuMDc4LTguNjcxOS0yMC45MyAwLTcuODQ3NyAzLjEyMTEtMTUuMzc5IDguNjcxOS0yMC45MyA1LjU1MDgtNS41NTA4IDEzLjA3OC04LjY2OCAyMC45My04LjY2OCA3Ljg0NzcgMCAxNS4zNzkgMy4xMTcyIDIwLjkzIDguNjY4czguNjY4IDEzLjA4MiA4LjY2OCAyMC45M2MwIDcuODUxNi0zLjExNzIgMTUuMzc5LTguNjY4IDIwLjkzcy0xMy4wODIgOC42NjgtMjAuOTMgOC42Njh6bTAtNDQuMzk4djAuMDAzOTA3Yy0zLjkyNTggMC03LjY5MTQgMS41NTg2LTEwLjQ2NSA0LjMzMi0yLjc3NzMgMi43NzczLTQuMzM1OSA2LjUzOTEtNC4zMzU5IDEwLjQ2NSAwIDMuOTI1OCAxLjU1ODYgNy42OTE0IDQuMzM1OSAxMC40NjUgMi43NzM0IDIuNzc3MyA2LjUzOTEgNC4zMzU5IDEwLjQ2NSA0LjMzNTkgMy45MjE5IDAgNy42ODc1LTEuNTU4NiAxMC40NjUtNC4zMzU5IDIuNzczNC0yLjc3MzQgNC4zMzItNi41MzkxIDQuMzMyLTEwLjQ2NSAwLTMuOTI1OC0xLjU1ODYtNy42ODc1LTQuMzMyLTEwLjQ2NS0yLjc3NzMtMi43NzM0LTYuNTQzLTQuMzMyLTEwLjQ2NS00LjMzMnoiLz4KICA8cGF0aCBkPSJtMjk0LjYxIDI2NS4wMWMtMTIuNTEyIDAuMTQ4NDQtMjQuNjMzLTQuMzMyLTM0LjAzOS0xMi41ODItNi44NDM4LTYuMzEyNS0xNS44NTItOS43NTM5LTI1LjE2LTkuNjE3MnYtMTQuODAxYzEyLjUxMi0wLjE1MjM0IDI0LjYzMyA0LjMyODEgMzQuMDM5IDEyLjU3OCA2Ljg0MzggNi4zMTI1IDE1Ljg1MiA5Ljc1NzggMjUuMTYgOS42MjExeiIvPgogPC9nPgo8L3N2Zz4K"
+        />
+      </span>
+      {breadcrumb &&
+        breadcrumb.map((part, i) => {
+          return (
+            <span
+              className={`breadcrumbs__item ${i === breadcrumb.length - 1 ? 'is-active' : ''}`}
+              onClick={() => setBreadcrumb(i)}
+              key={`${part}`}>
+              {part}
+            </span>
+          );
+        })}
+    </div>
+  );
+};
 
 function SubFlow({ fields, full_fields, render }) {
   const [moreFields, showMoreFields] = useState(false);
 
   const hasMoreFields = full_fields && full_fields.length > 0;
 
-  return <>
-    {!moreFields && fields.map(render)}
-    {hasMoreFields && moreFields && full_fields.map(render)}
+  return (
+    <>
+      {!moreFields && fields.map(render)}
+      {hasMoreFields && moreFields && full_fields.map(render)}
 
-    {hasMoreFields && !moreFields && <button className='btn btn-sm btn-info mt-2'
-      onClick={() => showMoreFields(!moreFields)}
-      style={{
-        marginLeft: 'auto',
-        display: 'block'
-      }}>
-      Show advanced settings
-    </button>}
-  </>
+      {hasMoreFields && !moreFields && (
+        <button
+          className="btn btn-sm btn-info mt-2"
+          onClick={() => showMoreFields(!moreFields)}
+          style={{
+            marginLeft: 'auto',
+            display: 'block',
+          }}>
+          Show advanced settings
+        </button>
+      )}
+    </>
+  );
 }
 
 export class NgForm extends Component {
@@ -278,8 +288,8 @@ export class NgForm extends Component {
   state = {
     validation: {
       valid: true,
-      graph: {}
-    }
+      graph: {},
+    },
   };
   tasks = [];
 
@@ -395,7 +405,7 @@ export class NgForm extends Component {
       let itemRenderer = null;
       if (schema.array && schema.format === 'form') {
         itemRenderer = Helpers.rendererFor(renderer, this.props.components);
-      } else if (schema.array && schema.type !== "array") {
+      } else if (schema.array && schema.type !== 'array') {
         itemRenderer = Helpers.rendererFor(schema.type, this.props.components);
       }
       const config = {
@@ -429,23 +439,23 @@ export class NgForm extends Component {
     return this.recursiveSearch(paths.slice(1), (value || {})[paths.slice(0, 1)]);
   };
 
-  isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
+  isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
   getFlow = (value, schema) => {
     if (isFunction(this.props.flow)) {
       return {
-        fields: this.props.flow(value, this.props)
-      }
-    } else if (this.isAnObject(this.props.flow) &&
+        fields: this.props.flow(value, this.props),
+      };
+    } else if (
+      this.isAnObject(this.props.flow) &&
       this.props.flow['otoroshi_flow'] &&
-      this.props.flow['otoroshi_full_flow']) {
+      this.props.flow['otoroshi_full_flow']
+    ) {
       return {
         fields: this.props.flow['otoroshi_flow'],
-        full_fields: this.props.flow['otoroshi_full_flow']
-      }
-    } else if (this.isAnObject(this.props.flow) &&
-      this.props.flow.field &&
-      this.props.flow.flow) {
+        full_fields: this.props.flow['otoroshi_full_flow'],
+      };
+    } else if (this.isAnObject(this.props.flow) && this.props.flow.field && this.props.flow.flow) {
       /* useful to match the case of a json flow
       {
         flow: {
@@ -483,70 +493,103 @@ export class NgForm extends Component {
   renderGroupFlow({ name, fields, collapsed, visible, full_fields }, config) {
     const FormRenderer = config.components.FormRenderer;
     const fullPath = (config.root ? [name] : [...config.path, isFunction(name) ? undefined : name])
-      .filter(f => f)
-      .map(n => n.split(/\.?(?=[A-Z])/).join('_').toLowerCase());
+      .filter((f) => f)
+      .map((n) =>
+        n
+          .split(/\.?(?=[A-Z])/)
+          .join('_')
+          .toLowerCase()
+      );
 
-    const show = isFunction(visible) ? visible(config.value) : (visible !== undefined ? visible : true)
+    const show = isFunction(visible)
+      ? visible(config.value)
+      : visible !== undefined
+      ? visible
+      : true;
 
-    if (!show)
-      return null
+    if (!show) return null;
 
-    const label = isFunction(name) ? name(config) : name
+    const label = isFunction(name) ? name(config) : name;
 
-    return <FormRenderer
-      embedded={true}
-      breadcrumb={config.breadcrumb}
-      setBreadcrumb={!config.setBreadcrumb ? null : () => {
-        config.setBreadcrumb(fullPath)
-      }}
-      useBreadcrumb={config.useBreadcrumb}
-      path={fullPath}
-      rawSchema={{
-        label,
-        collapsable: true,
-        collapsed: collapsed === undefined ? false : true
-      }}
-      key={fullPath}
-    >
-      <SubFlow fields={fields} full_fields={full_fields} render={field => this.renderStepFlow(field, config)} />
-    </FormRenderer>
+    return (
+      <FormRenderer
+        embedded={true}
+        breadcrumb={config.breadcrumb}
+        setBreadcrumb={
+          !config.setBreadcrumb
+            ? null
+            : () => {
+                config.setBreadcrumb(fullPath);
+              }
+        }
+        useBreadcrumb={config.useBreadcrumb}
+        path={fullPath}
+        rawSchema={{
+          label,
+          collapsable: true,
+          collapsed: collapsed === undefined ? false : true,
+        }}
+        key={fullPath}>
+        <SubFlow
+          fields={fields}
+          full_fields={full_fields}
+          render={(field) => this.renderStepFlow(field, config)}
+        />
+      </FormRenderer>
+    );
   }
 
   renderGridFlow({ name, fields, visible }, config) {
     const label = isFunction(name) ? name(config) : name;
 
-    const show = isFunction(visible) ? visible(config.value) : (visible !== undefined ? visible : true)
+    const show = isFunction(visible)
+      ? visible(config.value)
+      : visible !== undefined
+      ? visible
+      : true;
 
-    if (!show)
-      return null
+    if (!show) return null;
 
-    const children = <div className="d-flex flex-wrap ms-3">
-      {fields.map((subName) => (
-        <div className="flex" style={{ minWidth: '50%' }} key={`${config.path}-${subName}`}>
-          {this.renderStepFlow(subName, config)}
-        </div>
-      ))}
-    </div>
+    const children = (
+      <div className="d-flex flex-wrap ms-3">
+        {fields.map((subName) => (
+          <div className="flex" style={{ minWidth: '50%' }} key={`${config.path}-${subName}`}>
+            {this.renderStepFlow(subName, config)}
+          </div>
+        ))}
+      </div>
+    );
 
     return (
       <div className="row" key={config.path}>
-        {label && <LabelAndInput label={label}>
-          {children}
-        </LabelAndInput>}
+        {label && <LabelAndInput label={label}>{children}</LabelAndInput>}
         {!label && children}
       </div>
     );
   }
 
   match(test, breadcrumb) {
-    return test.join('-').startsWith(breadcrumb.join('-')) ||
+    return (
+      test.join('-').startsWith(breadcrumb.join('-')) ||
       breadcrumb.join('-').startsWith(test.join('-'))
+    );
   }
 
-  renderInlineStepFlow(name, {
-    schema, value, root, path, validation, components, StepNotFound,
-    setBreadcrumb, breadcrumb, useBreadcrumb
-  }) {
+  renderInlineStepFlow(
+    name,
+    {
+      schema,
+      value,
+      root,
+      path,
+      validation,
+      components,
+      StepNotFound,
+      setBreadcrumb,
+      breadcrumb,
+      useBreadcrumb,
+    }
+  ) {
     const stepSchema = schema[name];
 
     if (stepSchema) {
@@ -559,10 +602,8 @@ export class NgForm extends Component {
       if (visible) {
         const newPath = root ? [name] : [...path, name];
 
-        if (Array.isArray(path) &&
-          Array.isArray(breadcrumb) &&
-          !this.match(newPath, breadcrumb))
-          return null
+        if (Array.isArray(path) && Array.isArray(breadcrumb) && !this.match(newPath, breadcrumb))
+          return null;
 
         return (
           <NgStep
@@ -607,7 +648,7 @@ export class NgForm extends Component {
       } else {
         return React.createElement(config.components.FlowNotFound, {
           type: composedFlow.type,
-          key: config.name
+          key: config.name,
         });
       }
     } else {
@@ -621,8 +662,8 @@ export class NgForm extends Component {
         return this.props.setBreadcrumb;
       } else
         return (e) => {
-          this.setState({ breadcrumb: e })
-        }
+          this.setState({ breadcrumb: e });
+        };
     }
 
     return null;
@@ -647,33 +688,40 @@ export class NgForm extends Component {
     const path = this.props.path || [];
 
     const config = {
-      schema, value, root, path, validation, components, StepNotFound,
+      schema,
+      value,
+      root,
+      path,
+      validation,
+      components,
+      StepNotFound,
       setBreadcrumb: this.getBreadcrumb(root),
       breadcrumb: root ? this.state.breadcrumb : this.props.breadcrumb,
-      useBreadcrumb: this.props.useBreadcrumb
-    }
+      useBreadcrumb: this.props.useBreadcrumb,
+    };
 
     return (
       <FormRenderer {...this.props}>
-        {config.useBreadcrumb &&
+        {config.useBreadcrumb && (
           <Breadcrumb
             breadcrumb={this.state.breadcrumb}
-            toHome={root ? () => {
+            toHome={
+              root
+                ? () => {
+                    this.setState({
+                      breadcrumb: [],
+                    });
+                  }
+                : null
+            }
+            setBreadcrumb={(i) => {
               this.setState({
-                breadcrumb: []
-              })
-            } : null}
-            setBreadcrumb={i => {
-              this.setState({
-                breadcrumb: this.state.breadcrumb.slice(0, i + 1)
-              })
-            }} />
-        }
-        {flow.fields &&
-          <SubFlow
-            {...flow}
-            render={name => this.renderStepFlow(name, config)} />
-        }
+                breadcrumb: this.state.breadcrumb.slice(0, i + 1),
+              });
+            }}
+          />
+        )}
+        {flow.fields && <SubFlow {...flow} render={(name) => this.renderStepFlow(name, config)} />}
         {/* {flow && flow.map(name => this.renderStepFlow(name, config))} */}
       </FormRenderer>
     );

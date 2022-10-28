@@ -14,35 +14,40 @@ export class NgLocationRenderer extends Component {
     const props = schema.props || {};
     const FormRenderer = this.props.components.FormRenderer;
 
-    return <FormRenderer
-      embedded={true}
-      breadcrumb={[]} // TODO
-      setBreadcrumb={this.props.setBreadcrumb} // TODO
-      rawSchema={{
-        label: 'Location',
-        collapsable: true,
-        collapsed: true
-      }}>
-      <Location
-        {...props}
-        tenant={this.props.value?.tenant || 'default'}
-        teams={this.props.value?.teams || ['default']}
-        onChangeTenant={tenant => this.props.onChange({
-          ...this.props.value,
-          tenant
-        })}
-        onChangeTeams={teams => this.props.onChange({
-          ...this.props.value,
-          teams
-        })}
-      />
-    </FormRenderer>
+    return (
+      <FormRenderer
+        embedded={true}
+        breadcrumb={[]} // TODO
+        setBreadcrumb={this.props.setBreadcrumb} // TODO
+        rawSchema={{
+          label: 'Location',
+          collapsable: true,
+          collapsed: true,
+        }}>
+        <Location
+          {...props}
+          tenant={this.props.value?.tenant || 'default'}
+          teams={this.props.value?.teams || ['default']}
+          onChangeTenant={(tenant) =>
+            this.props.onChange({
+              ...this.props.value,
+              tenant,
+            })
+          }
+          onChangeTeams={(teams) =>
+            this.props.onChange({
+              ...this.props.value,
+              teams,
+            })
+          }
+        />
+      </FormRenderer>
+    );
   }
 }
 
 export class NgDotsRenderer extends Component {
-
-  isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
+  isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
   render() {
     const schema = this.props.schema || {};
@@ -52,25 +57,22 @@ export class NgDotsRenderer extends Component {
 
     const isValueArray = Array.isArray(this.props.value);
 
-    const onClick = selectedValue => {
+    const onClick = (selectedValue) => {
       const value = this.props.value || props.defaultValue;
 
       if (isValueArray) {
-        if (value.includes(selectedValue))
-          return value.filter(opt => opt !== selectedValue);
-        else
-          return [...value, selectedValue];
-      }
-      else {
+        if (value.includes(selectedValue)) return value.filter((opt) => opt !== selectedValue);
+        else return [...value, selectedValue];
+      } else {
         return selectedValue;
       }
-    }
+    };
 
     const value = this.props.value || props.defaultValue;
 
     return (
       <LabelAndInput {...this.props}>
-        {options.map(option => {
+        {options.map((option) => {
           const optObj = this.isAnObject(option);
           const rawOption = optObj ? option.value : option;
           const selected = isValueArray ? value.includes(rawOption) : value === rawOption;
@@ -78,23 +80,30 @@ export class NgDotsRenderer extends Component {
           let backgroundColor = 'initial';
 
           if (optObj && option.color)
-            backgroundColor = `rgba(${option.color.replace(')', '').replace('rgb(', '')}, ${selected ? 1 : .45})`
+            backgroundColor = `rgba(${option.color.replace(')', '').replace('rgb(', '')}, ${
+              selected ? 1 : 0.45
+            })`;
 
-          return <button className={`btn btn-sm ${optObj ? '' : (selected ? 'btn-info' : 'btn-dark')} me-2 px-3 mb-2`}
-            type="button"
-            key={rawOption}
-            style={{
-              borderRadius: '24px',
-              backgroundColor,
-              color: '#fff'
-            }}
-            onClick={() => this.props.onChange(onClick(rawOption))}>
-            {selected && <i className='fas fa-check me-1' />}
-            {rawOption}
-          </button>
+          return (
+            <button
+              className={`btn btn-sm ${
+                optObj ? '' : selected ? 'btn-info' : 'btn-dark'
+              } me-2 px-3 mb-2`}
+              type="button"
+              key={rawOption}
+              style={{
+                borderRadius: '24px',
+                backgroundColor,
+                color: '#fff',
+              }}
+              onClick={() => this.props.onChange(onClick(rawOption))}>
+              {selected && <i className="fas fa-check me-1" />}
+              {rawOption}
+            </button>
+          );
         })}
       </LabelAndInput>
-    )
+    );
   }
 }
 
@@ -113,7 +122,7 @@ export function LabelAndInput(_props) {
 
   if (ngOptions.spread) return _props.children;
 
-  const margin = _props.margin || props.margin || _props.rawSchema?.props?.margin || "mb-3"
+  const margin = _props.margin || props.margin || _props.rawSchema?.props?.margin || 'mb-3';
 
   return (
     <div className={`row ${margin}`}>
@@ -176,7 +185,7 @@ export class NgJsonRenderer extends Component {
           onChange={(e) => {
             try {
               this.props.onChange(JSON.parse(e));
-            } catch (ex) { }
+            } catch (ex) {}
           }}
           style={{ width: '100%' }}
         />
@@ -334,23 +343,22 @@ export class NgBooleanRenderer extends Component {
 }
 
 export class NgArrayRenderer extends Component {
-
   canShowActions(path) {
     const breadcrumbAsArray = this.props.breadcrumb || [];
     const pathAsArray = path || this.props.path || [];
 
-    if (this.props.breadcrumb === undefined)
-      return true;
+    if (this.props.breadcrumb === undefined) return true;
 
-    if (path)
-      return isEqual(pathAsArray, breadcrumbAsArray)
+    if (path) return isEqual(pathAsArray, breadcrumbAsArray);
 
-    return pathAsArray.length >= breadcrumbAsArray.length &&
+    return (
+      pathAsArray.length >= breadcrumbAsArray.length &&
       (pathAsArray.join('-').startsWith(pathAsArray.join('-')) ||
         pathAsArray.join('-').startsWith(pathAsArray.join('-')))
+    );
   }
 
-  isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
+  isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
   defaultValues = (current) => ({
     number: () => 0,
@@ -359,39 +367,41 @@ export class NgArrayRenderer extends Component {
     array: () => [],
     select: () => current?.props?.options[0] || '',
     form: () => ({
-      ...this.generateDefaultValue(current.schema)
+      ...this.generateDefaultValue(current.schema),
     }),
-    object: () => { },
-    json: () => { },
-  })
+    object: () => {},
+    json: () => {},
+  });
 
-  generateDefaultValue = obj => {
-    return Object.entries(obj)
-      .reduce((acc, current) => {
-        const value = this.defaultValues(current[1])[current[1].type]
-        return {
-          ...acc,
-          [current[0]]: value ? value() : ''
-        }
-      }, {})
-  }
+  generateDefaultValue = (obj) => {
+    return Object.entries(obj).reduce((acc, current) => {
+      const value = this.defaultValues(current[1])[current[1].type];
+      return {
+        ...acc,
+        [current[0]]: value ? value() : '',
+      };
+    }, {});
+  };
 
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
     const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;
 
-    const showActions = this.canShowActions()
+    const showActions = this.canShowActions();
 
     return (
       <LabelAndInput {...this.props}>
-        <div style={{
-          display: 'flex', flexDirection: 'column', width: '100%'
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+          }}>
           {Array.isArray(this.props.value) &&
             this.props.value.map((value, idx) => {
-              const path = [...this.props.path, String(idx)]
-              const showItem = this.canShowActions(path)
+              const path = [...this.props.path, String(idx)];
+              const showItem = this.canShowActions(path);
               return (
                 <div
                   style={{
@@ -400,8 +410,9 @@ export class NgArrayRenderer extends Component {
                     width: '100%',
                     outline: showItem ? 'rgb(65, 65, 62) solid 1px' : 'none',
                     padding: showItem ? '6px' : 0,
-                    marginBottom: showItem ? '6px' : 0
-                  }} key={path}>
+                    marginBottom: showItem ? '6px' : 0,
+                  }}
+                  key={path}>
                   {!ItemRenderer && (
                     <input
                       type="text"
@@ -450,36 +461,39 @@ export class NgArrayRenderer extends Component {
                       {...props}
                     />
                   )}
-                  {showActions && <button
-                    type="button"
-                    className="btn btn-sm btn-danger"
-                    style={{ width: 42, marginLeft: 5 }}
-                    onClick={(e) => {
-                      const newArray = this.props.value ? [...this.props.value] : [];
-                      newArray.splice(idx, 1);
-                      this.props.onChange(newArray);
-                    }}>
-                    <i className="fas fa-trash" />
-                  </button>}
+                  {showActions && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-danger"
+                      style={{ width: 42, marginLeft: 5 }}
+                      onClick={(e) => {
+                        const newArray = this.props.value ? [...this.props.value] : [];
+                        newArray.splice(idx, 1);
+                        this.props.onChange(newArray);
+                      }}>
+                      <i className="fas fa-trash" />
+                    </button>
+                  )}
                 </div>
               );
             })}
-          {showActions && <button
-            type="button"
-            className="btn btn-sm btn-info float-end"
-            style={{ width: 42, marginTop: 5 }}
-            onClick={() => {
-              let newArr = [...(this.props.value || [])]
+          {showActions && (
+            <button
+              type="button"
+              className="btn btn-sm btn-info float-end"
+              style={{ width: 42, marginTop: 5 }}
+              onClick={() => {
+                let newArr = [...(this.props.value || [])];
 
-              if (schema.of)
-                return this.props.onChange([...newArr, ''])
-              else {
-                const newArray = [...newArr, this.generateDefaultValue(schema)]
-                this.props.onChange(newArray);
-              }
-            }}>
-            <i className="fas fa-plus-circle" />
-          </button>}
+                if (schema.of) return this.props.onChange([...newArr, '']);
+                else {
+                  const newArray = [...newArr, this.generateDefaultValue(schema)];
+                  this.props.onChange(newArray);
+                }
+              }}>
+              <i className="fas fa-plus-circle" />
+            </button>
+          )}
         </div>
       </LabelAndInput>
     );
@@ -506,21 +520,21 @@ export class NgObjectRenderer extends Component {
           itemRenderer={
             ItemRenderer
               ? (key, value, idx) => (
-                <ItemRenderer
-                  embedded
-                  flow={this.props.flow}
-                  schema={this.props.schema}
-                  value={value}
-                  key={key}
-                  idx={idx}
-                  onChange={(e) => {
-                    const newObject = this.props.value ? { ...this.props.value } : {};
-                    newObject[key] = e;
-                    this.props.onChange(newObject);
-                  }}
-                  {...props}
-                />
-              )
+                  <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={key}
+                    idx={idx}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                )
               : null
           }
         />

@@ -18,7 +18,7 @@ import io.kubernetes.client.util.{CallGeneratorParams, ClientBuilder}
 import okhttp3.Call
 
 import scala.reflect.ClassTag
-*/
+ */
 
 object KubernetesSupport {
   /*

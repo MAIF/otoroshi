@@ -345,7 +345,9 @@ class ProxyEngine() extends RequestHandler {
                    }).applyOnIf(route.capture)(_.copy(capture = true))
       _          = report.markDoneAndStart("compute-plugins")
       gplugs     = global_plugins__.applyOnIf(
-                     env.http2ClientProxyEnabled && route.backend.targets.forall(_.protocol == otoroshi.models.HttpProtocols.HTTP_2_0)
+                     env.http2ClientProxyEnabled && route.backend.targets.forall(
+                       _.protocol == otoroshi.models.HttpProtocols.HTTP_2_0
+                     )
                    ) { o =>
                      o.add(NgPluginInstance("cp:otoroshi.next.plugins.Http2Caller"))
                    }
@@ -2656,7 +2658,8 @@ class ProxyEngine() extends RequestHandler {
         .stream()
         .map { response =>
           val idOpt              = rawRequest.attrs.get(otoroshi.netty.NettyRequestKeys.TrailerHeadersIdKey)
-          val hasTrailerHeaders  = rawRequest.headers.get("te").contains("trailers") || response.headers.containsIgnoreCase("trailer")
+          val hasTrailerHeaders  =
+            rawRequest.headers.get("te").contains("trailers") || response.headers.containsIgnoreCase("trailer")
           val shouldHaveTrailers =
             (route.useNettyClient || finalTarget.protocol.isHttp2OrHttp3) && rawRequest.attrs // trailers works for http/1.1, h2 and h3
               .get(RequestAttrKey.Server)
@@ -2668,7 +2671,7 @@ class ProxyEngine() extends RequestHandler {
                 val future = r.trailingHeaders()
                 otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Left(future))
                 future.map(trls => otoroshi.netty.NettyRequestAwaitingTrailers.add(id, Right(trls)))
-              case _                                       =>
+              case _                                =>
             }
           }
           BackendCallResponse(

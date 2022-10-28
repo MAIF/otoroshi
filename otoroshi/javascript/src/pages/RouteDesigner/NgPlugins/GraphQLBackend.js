@@ -1,11 +1,11 @@
 import React from 'react';
-import GraphQLForm from "../GraphQLForm";
+import GraphQLForm from '../GraphQLForm';
 
 export default {
-  "id": "cp:otoroshi.next.plugins.GraphQLBackend",
-  "name": "GraphQL Composer",
-  "description": "This plugin exposes a GraphQL API that you can compose with whatever you want",
-  "config_schema": ({ showAdvancedDesignerView }) => ({
+  id: 'cp:otoroshi.next.plugins.GraphQLBackend',
+  name: 'GraphQL Composer',
+  description: 'This plugin exposes a GraphQL API that you can compose with whatever you want',
+  config_schema: ({ showAdvancedDesignerView }) => ({
     designer: {
       renderer: () => (
         <button
@@ -15,9 +15,7 @@ export default {
           Edit with the GraphQL Designer
         </button>
       ),
-    }
+    },
   }),
-  "config_flow": [
-    'designer'
-  ],
-}
+  config_flow: ['designer'],
+};
