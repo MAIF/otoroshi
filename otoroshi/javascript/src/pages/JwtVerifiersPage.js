@@ -10,6 +10,7 @@ import { Dropdown } from '../components/Dropdown';
 import { YAMLExportButton } from '../components/exporters/YAMLButton';
 import { JsonExportButton } from '../components/exporters/JSONButton';
 import { SquareButton } from '../components/SquareButton';
+import { ENTITIES, FormSelector } from '../components/FormSelector';
 
 export class JwtVerifiersPage extends Component {
   state = {
@@ -112,10 +113,10 @@ export class JwtVerifiersPage extends Component {
           }}
           injectBottomBar={({ closeEditForm, state, setState }) => {
             return <div className="d-flex align-items-center justify-content-end">
-              <Button type="info" className='btn-sm'
-                onClick={() => state.showAdvancedForm ? setState({ showAdvancedForm: false }) : setState({ showAdvancedForm: true })}>
-                {state.showAdvancedForm ? 'Simple view' : 'Advanced view'}
-              </Button>
+              <FormSelector
+                onChange={showAdvancedForm => setState({ showAdvancedForm })}
+                entity={ENTITIES.JWT_VERIFIERS}
+              />
               <Button type="danger" className='btn-sm' onClick={closeEditForm}>
                 <i className="fas fa-times" /> Cancel
               </Button>

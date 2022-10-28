@@ -289,15 +289,15 @@ export default {
     },
     id: {
       type: 'string',
-      label: 'The verifier Id'
+      label: 'Id'
     },
     name: {
       type: 'string',
-      label: 'The verifier name'
+      label: 'Name'
     },
     desc: {
       type: 'string',
-      label: 'The verifier description'
+      label: 'Description'
     },
     enabled: {
       type: 'bool',
@@ -316,6 +316,7 @@ export default {
       schema: {
         type: {
           type: 'select',
+          label: 'Type',
           props: {
             ngOptions: {
               spread: true

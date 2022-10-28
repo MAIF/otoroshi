@@ -580,7 +580,6 @@ export class Table extends Component {
                   onChange: (currentItem) => {
                     this.setState({ currentItem });
 
-                    console.log(currentItem)
                     if (this.props.parentProps.setTitle)
                       this.props.parentProps.setTitle(`Update a ${this.props.itemName}`, this.updateItemAndStay, this.state.currentItem)
                   },

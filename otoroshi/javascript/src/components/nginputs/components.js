@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import isEqual from 'lodash/isEqual';
 import isFunction from 'lodash/isFunction';
 import get from 'lodash/get';
 
@@ -45,7 +44,7 @@ export class NgValidationRenderer extends Component {
 export class NgFormRenderer extends Component {
 
   state = {
-    folded: true,
+    folded: true
   };
 
   componentDidMount() {
@@ -148,30 +147,27 @@ export class NgFormRenderer extends Component {
       if (!this.props.rawSchema) {
         return null;
       }
-      if (!this.props.rawSchema.props) this.props.rawSchema.props = {};
-      const collapsable = this.props.rawSchema.props.collapsable || this.props.rawSchema.collapsable;
-      const noBorder = this.props.rawSchema.props.noBorder || this.props.rawSchema.noBorder;
-      const noTitle = this.props.rawSchema.props.noTitle || this.props.rawSchema.noTitle;
-      let title = '...';
 
-      const titleVar = this.props.rawSchema.props.label ||
-        this.props.rawSchema.label ||
-        this.props.name;
-
-      const summaryFields = this.props.readOnly ? [] : (this.props.rawSchema.props.summaryFields || this.props.rawSchema.summaryFields || []);
-
-      let showSummary = false;
-
-      if (this.props.rawSchema.props.showSummary || this.props.rawSchema.showSummary || (summaryFields.length > 0)) {
-        showSummary = true
+      if (!this.props.rawSchema.props) {
+        this.props.rawSchema.props = {};
       }
 
+      const rawSchema = this.props.rawSchema;
+      const rawSchemaProps = rawSchema.props;
+
+      const collapsable = rawSchemaProps.collapsable || rawSchema.collapsable;
+      const titleVar = rawSchemaProps.label || rawSchema.label || this.props.name;
+      const summaryFields = this.props.readOnly ? [] : (rawSchemaProps.summaryFields || rawSchema.summaryFields || []);
+      const showSummary = rawSchemaProps.showSummary || rawSchema.showSummary || (summaryFields.length > 0);
+
+      let title = '...';
       try {
         title = isFunction(titleVar) ? titleVar(this.props.value) : titleVar.replace(/_/g, ' ');
       } catch (e) {
         // console.log(e)
       }
 
+      const noTitle = rawSchemaProps.noTitle || rawSchema.noTitle;
       const showTitle = !noTitle && (isLeaf || clickable);
       const summary = Object.entries(this.props.value || {});
 
@@ -192,9 +188,9 @@ export class NgFormRenderer extends Component {
 
       let EnabledTagComponent = null
 
-      if (this.props.rawSchema?.schema &&
-        Object.keys(this.props.rawSchema?.schema).includes('enabled') &&
-        this.props.value)
+      if (rawSchema?.schema &&
+        Object.keys(rawSchema?.schema).includes('enabled') &&
+        this.props.value && showTitle)
         EnabledTagComponent = <span className={`badge bg-${this.props.value.enabled ? 'success' : 'danger'} me-3`}>
           {this.props.value.enabled ? 'Enabled' : 'Disabled'}
         </span>
@@ -210,7 +206,7 @@ export class NgFormRenderer extends Component {
               flexDirection: 'column',
               width: '100%',
               ...(this.props.style || {}),
-              ...(this.props.rawSchema.style || {})
+              ...(rawSchema.style || {})
             }} onClick={() => {
               if (clickable)
                 this.setBreadcrumb()
@@ -224,7 +220,7 @@ export class NgFormRenderer extends Component {
               }}>
               {showTitle && titleComponent}
               <div>
-                {showTitle && EnabledTagComponent}
+                {EnabledTagComponent}
 
                 {(!this.props.setBreadcrumb && !this.props.readOnly) && (
                   <button
@@ -248,7 +244,7 @@ export class NgFormRenderer extends Component {
               </div>}
           </div>
         );
-      } else if (noBorder) {
+      } else if (rawSchemaProps.noBorder || rawSchema.noBorder) {
         return (
           <div style={{ width: '100%' }}>
             {showTitle && titleComponent}

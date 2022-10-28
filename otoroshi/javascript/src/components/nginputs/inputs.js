@@ -195,7 +195,7 @@ export function LabelAndInput(_props) {
 
   if (ngOptions.spread && !_props.readOnly) return _props.children;
 
-  const margin = _props.margin || props.margin || _props.rawSchema?.props?.margin || "mb-3";
+  const margin = _props.margin || props.margin || _props.rawSchema?.props?.margin || (_props ? "mb-0" : "mb-3");
 
   return (
     <div className={`row ${margin}`}>
@@ -481,6 +481,9 @@ export class NgArrayRenderer extends Component {
 
     const showActions = this.canShowActions()
 
+    if (readOnly && Array.isArray(this.props.value) && this.props.value.length === 0)
+      return null;
+
     return (
       <LabelAndInput {...this.props}>
         <div style={{
@@ -593,6 +596,9 @@ export class NgObjectRenderer extends Component {
     const props = schema.props || {};
     const readOnly = this.props.readOnly;
     const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;
+
+    if (readOnly && Object.entries(this.props.value || {}).length === 0)
+      return null;
 
     return (
       <LabelAndInput {...this.props}>

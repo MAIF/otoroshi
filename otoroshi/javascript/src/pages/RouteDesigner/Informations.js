@@ -6,6 +6,7 @@ import { useEntityFromURI } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
 import { RouteForm } from './form'
 import { Button } from '../../components/Button';
+import { ENTITIES, FormSelector } from '../../components/FormSelector';
 
 export const Informations = forwardRef(({ isCreation, value, setValue, setSaveButton, routeId }, ref) => {
   const history = useHistory();
@@ -169,9 +170,11 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
       />}
 
       <div className="d-flex align-items-center justify-content-end mt-3">
-        <Button type="info" className='btn-sm me-1'
-          onClick={() => showAdvancedForm ? toggleAdvancedForm(false) : toggleAdvancedForm(true)}
-          text={showAdvancedForm ? 'Simple view' : 'Advanced view'} />
+        <FormSelector
+          onChange={toggleAdvancedForm}
+          entity={ENTITIES.ROUTES}
+          className="me-1"
+        />
         <Button type="danger" className='btn-sm'
           onClick={() => history.push(`/${link}`)}
           text="Cancel"
