@@ -35,8 +35,6 @@ class JwtVerifierLauncher extends React.Component {
     const { verifier } = this.state;
     const { openComponent, onChange } = this.props;
 
-    console.log(this.props)
-
     if (!verifier) {
       return <Button
         type="info"

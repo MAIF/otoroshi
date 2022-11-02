@@ -22,7 +22,9 @@ class EntitiesController(ApiAction: ApiAction, cc: ControllerComponents)(implici
           Ok(Json.obj(
             "routes" -> env.proxyState
               .allRoutes()
-              .filter(route => Json.stringify(Json.arr(route.plugins.slots.map(p => p.config.raw))).contains(id))
+              .filter(route => Json.stringify(Json.arr(route.plugins.slots
+                .map(p => p.config.raw))).contains(id)
+              )
               .map(_.json)
           )).as("application/json").vfuture
         case _ =>

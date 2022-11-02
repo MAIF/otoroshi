@@ -393,15 +393,17 @@ export class Table extends Component {
         },
       };
     });
+
     if (this.props.showActions) {
       columns.push({
         Header: 'Actions',
         id: 'actions',
-        width: 140,
+        minWidth: 160,
+        maxWidth: 160,
         style: { textAlign: 'center' },
         filterable: false,
         accessor: (item) => (
-          <td style={{ width: 140, textAlign: 'center' }}>
+          <div style={{ textAlign: 'center' }}>
             <div className="displayGroupBtn">
               <button
                 type="button"
@@ -451,7 +453,7 @@ export class Table extends Component {
                 </button>
               )}
             </div>
-          </td>
+          </div>
         ),
       });
     }

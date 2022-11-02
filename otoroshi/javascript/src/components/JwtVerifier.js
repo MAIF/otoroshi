@@ -22,6 +22,8 @@ import { PillButton } from './PillButton';
 import { NgForm } from './nginputs';
 import JwtVerifierForm from '../forms/entities/JwtVerifier';
 import { getEntityGraph } from '../services/BackOfficeServices';
+import { Link } from 'react-router-dom';
+import { Button } from './Button';
 
 function EntityGraph({ entity, id }) {
   const [entities, setEntities] = useState({});
@@ -37,22 +39,50 @@ function EntityGraph({ entity, id }) {
     margin: '5px 0px',
     width: '100%'
   }}>
-    <div className='d-flex justify-content-between flex-column'>
-      <div style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold', marginLeft: '5px', marginTop: '7px', marginBottom: '10px' }}>Find usages</div>
-      <div className='d-flex flex-wrap'>
+    <div className='d-flex justify-content-between flex-column' style={{ flex: 1 }}>
+      <div style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold', marginLeft: '5px', marginTop: '7px', marginBottom: '10px' }}>Found usages</div>
+      <div className='me-1'>
         {Object.entries(entities).map(entity => {
-          return <div style={{ fontWeight: 'bold', marginLeft: '5px', marginTop: '7px', marginBottom: '10px' }} key={entity[0]}>
-            <label style={{ textTransform: 'uppercase' }}>{entity[0]}</label>
+          const name = entity[0];
+          const content = entity[1];
 
-            {entity[1].map(r => <div key={r.id}>
-              {r.name}
-              {/* ADD LINK TO ENTITY */}
-            </div>)}
+          return <div style={{ fontWeight: 'bold', marginLeft: '5px', marginTop: '7px', marginBottom: '10px' }} key={name}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px' }}>
+              <label style={{ textTransform: 'uppercase' }}>{name}</label>
+              <label>Used by plugins</label>
+            </div>
+
+            {content.map(r => {
+              const pathname = name === 'routes' ? `/${name}/${r.id}?tab=flow` : `/${name}/edit/${r.id}`;
+              return <div key={r.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px' }} className="align-items-center mb-1">
+                <p className='m-0'>{r.name}</p>
+                <div className='d-flex align-items-center'>
+                  {r.plugins
+                    .filter(p => JSON.stringify(p.config || {}).includes(id))
+                    .map(plugin => {
+                      const pluginName = plugin.plugin.split('.').at(-1);
+                      return <Link to={name === 'routes' ? {
+                        pathname,
+                        state: {
+                          plugin: plugin.plugin
+                        }
+                      } : pathname} key={`${entity[0]}-${pluginName}`}>
+                        <span className="badge bg-warning me-2">{pluginName}</span>
+                      </Link>
+                    })}
+                </div>
+                <Link to={pathname}>
+                  <Button type="info" className="btn-sm" >
+                    <i className='fas fa-chevron-right' />
+                  </Button>
+                </Link>
+              </div>
+            })}
           </div>
         })}
       </div>
     </div>
-  </div >
+  </div>
 }
 
 export class JwtVerifier extends Component {
