@@ -103,8 +103,8 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     },
     tags: {
       type: 'array',
+      label: 'Tags',
       props: {
-        label: 'Tags'
       }
     },
     _loc: {

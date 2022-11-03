@@ -30,8 +30,8 @@ export default {
     },
     exact: {
       type: 'bool',
+      label: 'Exact',
       props: {
-        label: 'Exact',
         labelColumn: 3,
       }
     },
@@ -43,8 +43,8 @@ export default {
     },
     "strip_path": {
       type: 'bool',
+      label: 'Strip path',
       props: {
-        label: 'Strip path',
         labelColumn: 3,
       }
     }
