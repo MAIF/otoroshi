@@ -99,7 +99,7 @@ class RouteForms extends React.Component {
           else
             return [
               'using_backend_ref',
-              ...Backend.flow
+              Backend.flow
             ]
         },
         schema: {
@@ -132,6 +132,7 @@ class RouteForms extends React.Component {
         <div className="d-flex justify-content-end">
           <button
             className="btn btn-sm btn-success me-1"
+            title="Edit this route"
             onClick={(e) => {
               e.stopPropagation();
               this.props.history.replace(`${this.props.url}?tab=route_plugins&view_plugins=${this.props.index}`);
@@ -140,6 +141,7 @@ class RouteForms extends React.Component {
           </button>
           <button
             className="btn btn-sm btn-danger me-1"
+            title="Delete this route"
             onClick={(e) => {
               e.stopPropagation();
               window.newConfirm('Delete this route ?')
@@ -153,6 +155,7 @@ class RouteForms extends React.Component {
           <button
             className="btn btn-sm me-3"
             style={{ backgroundColor: '#f9b000', color: '#fff' }}
+            title="Switch Form view / Json view"
             onClick={(e) => {
               e.stopPropagation();
               this.setState({
