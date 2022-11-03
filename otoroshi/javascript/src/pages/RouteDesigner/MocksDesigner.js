@@ -1019,7 +1019,7 @@ function Header({ hide, onDesigner, setDesigner }) {
     <div className="d-flex-between">
       <h3>Mock responses</h3>
       <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
-        <i className="fas fa-times" style={{ color: '#fff' }} />
+        <i className="fas fa-times"/>
       </button>
     </div>
     <div className='d-flex justify-content-center'>

@@ -332,7 +332,7 @@ export default function ({ route, hide }) {
             </div>
           )}
         <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
-          <i className="fas fa-times" style={{ color: '#fff' }} />
+          <i className="fas fa-times"/>
         </button>
       </div>
       {testerView === 'graphql' ? (
