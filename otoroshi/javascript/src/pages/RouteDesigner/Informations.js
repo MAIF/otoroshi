@@ -64,23 +64,23 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     },
     capture: {
       type: 'bool',
+      label: 'Capture route traffic',
       props: {
-        label: 'Capture route traffic',
         labelColumn: 3
       }
     },
     debug_flow: {
       type: 'bool',
+      label: 'Debug the flow',
       props: {
-        label: 'Debug the flow',
-        labelColumn: 6
+        labelColumn: 3
       }
     },
     export_reporting: {
       type: 'bool',
+      label: 'Export reporting',
       props: {
-        label: 'Export reporting',
-        labelColumn: 6
+        labelColumn: 3
       }
     },
     description: {
