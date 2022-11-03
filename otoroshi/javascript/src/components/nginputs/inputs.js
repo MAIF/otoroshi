@@ -156,7 +156,10 @@ export class NgCustomFormsRenderer extends Component {
       openComponent: propsFromParent => {
         this.setState({
           showComponent: true,
-          propsFromParent
+          propsFromParent: {
+            ...(propsFromParent || {}),
+            ...(props.componentsProps || {})
+          }
         })
       }
     });
@@ -268,6 +271,10 @@ export class NgJsonRenderer extends Component {
 }
 
 export class NgStringRenderer extends Component {
+  state = {
+    touched: false
+  }
+
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
@@ -285,8 +292,13 @@ export class NgStringRenderer extends Component {
               className="form-control"
               placeholder={props.placeholder}
               title={props.help}
-              value={this.props.value || defaultValue || ''}
-              onChange={(e) => this.props.onChange(e.target.value)}
+              value={this.state.touched ? (this.props.value || '') : (this.props.value || defaultValue || '')}
+              onChange={(e) => {
+                this.props.onChange(e.target.value)
+
+                if (!this.state.touched)
+                  this.setState({ touched: true });
+              }}
               {...inputProps}
             />
             {props.subTitle && <span style={{ fontStyle: 'italic' }}>{props.subTitle}</span>}
@@ -317,6 +329,9 @@ export class NgPasswordRenderer extends Component {
 }
 
 export class NgNumberRenderer extends Component {
+  state = {
+    touched: false
+  }
   render() {
     const schema = this.props.schema;
     const props = schema.props || {};
@@ -333,8 +348,12 @@ export class NgNumberRenderer extends Component {
           className="form-control"
           placeholder={props.placeholder}
           title={props.help}
-          value={this.props.value || defaultValue}
-          onChange={(e) => this.props.onChange(~~e.target.value)}
+          value={this.state.touched ? this.props.value : (this.props.value || defaultValue)}
+          onChange={(e) => {
+            this.props.onChange(~~e.target.value)
+            if (!this.state.touched)
+              this.setState({ touched: true });
+          }}
           {...inputProps}
         />}
       </LabelAndInput>
@@ -425,6 +444,59 @@ export class NgBooleanRenderer extends Component {
             {!value && <OffSwitch onChange={this.toggleOn} />}
           </>}
       </LabelAndInput>
+    );
+  }
+}
+
+export class NgBoxBooleanRenderer extends Component {
+  toggleOff = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!this.props.disabled) this.props.onChange(false);
+  };
+
+  toggleOn = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!this.props.disabled) this.props.onChange(true);
+  };
+
+  render() {
+    const schema = this.props.schema;
+    const props = schema.props || {};
+    const readOnly = this.props.readOnly;
+
+    const value = (this.props.value === null || this.props.value === undefined) ? props.defaultValue : this.props.value;
+    const label = this.props.label || props.label || this.props.rawSchema?.label || this.props.name || '...';
+    const description = this.props.description || props.description || this.props.rawSchema?.description || '...';
+
+    return (
+      <div className='d-flex' style={{
+        outline: 'rgb(65, 65, 62) solid 1px',
+        padding: '5px',
+        margin: '5px 0px',
+        width: '100%',
+        borderRadius: '4px'
+      }}>
+        <div className='d-flex justify-content-between flex-column' style={{ flex: 1 }}>
+          <div style={{
+            color: 'rgb(249, 176, 0)',
+            fontWeight: 'bold',
+            marginLeft: '5px',
+            marginTop: '7px',
+            marginBottom: '10px'
+          }}>{label}</div>
+          <div className='me-1' style={{ marginLeft: '5px', marginBottom: '10px' }}>
+            <p>{description}</p>
+            {readOnly ?
+              <ReadOnlyField value={value ? 'true' : 'false'} /> :
+              <div className="d-flex align-items-center">
+                {value && <OnSwitch onChange={this.toggleOff} style={{ margin: 0 }} />}
+                {!value && <OffSwitch onChange={this.toggleOn} style={{ margin: 0 }} />}
+                <p className='m-0 ms-2'>{value ? 'On' : 'Off'}</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
     );
   }
 }

@@ -33,6 +33,9 @@ function EntityGraph({ entity, id }) {
       .then(setEntities)
   }, []);
 
+  if (Object.values(entities).flat().length === 0)
+    return null;
+
   return <div className='d-flex' style={{
     outline: 'rgb(65, 65, 62) solid 1px',
     padding: '5px',
@@ -117,9 +120,10 @@ export class JwtVerifier extends Component {
               verifier={verifier}
               changeTheValue={(name, value) => {
                 const path = name.startsWith('.') ? name.substr(1) : name;
-                this.setState({
-                  verifier: deepSet(cloneDeep(verifier), path, value)
-                })
+                const updatedVerifier = deepSet(cloneDeep(verifier), path, value);
+                this.setState({ verifier: updatedVerifier });
+                if (this.props.onChange)
+                  this.props.onChange(updatedVerifier);
               }} />
           }
 
@@ -127,15 +131,36 @@ export class JwtVerifier extends Component {
             <NgForm
               useBreadcrumb={true}
               value={verifier}
-              schema={JwtVerifierForm.config_schema}
-              flow={JwtVerifierForm.config_flow}
+              schema={{
+                ...({
+                  ...JwtVerifierForm.config_schema,
+                  source: {
+                    ...JwtVerifierForm.config_schema.source,
+                    label: 'Exit Token location',
+                    flow: JwtVerifierForm.config_schema.source.flow.map(step => {
+                      if (step?.name === 'Header informations')
+                        return { ...step, fields: ['name'] }
+                      return step
+                    })
+                  }
+                }),
+                graph: {
+                  renderer: () => {
+                    return <EntityGraph entity='jwt-verifiers' id={verifier.id} />
+                  }
+                }
+              }}
+              flow={[
+                ...JwtVerifierForm.config_flow
+                  .filter(step => this.props.strategy ? step !== 'strategy' : true),
+                'graph'
+              ]}
               onChange={verifier => {
                 this.setState({ verifier })
                 if (this.props.onChange)
                   this.props.onChange(verifier);
               }}
             />
-            <EntityGraph entity='jwt-verifiers' id={verifier.id} />
           </>
           }
         </>}

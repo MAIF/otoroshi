@@ -260,8 +260,8 @@ export default {
     {
       type: 'group',
       name: 'Informations',
-      fields: ['id', 'enabled', 'name', 'desc'],
-      summaryFields: ['name', 'enabled']
+      fields: ['id', 'name', 'desc'],
+      summaryFields: ['name', 'desc']
     },
     {
       type: 'group',
@@ -298,10 +298,6 @@ export default {
     desc: {
       type: 'string',
       label: 'Description'
-    },
-    enabled: {
-      type: 'bool',
-      label: 'Enabled'
     },
     source: {
       type: 'form',
@@ -524,8 +520,8 @@ export default {
         const strategy = v.value?.type
         return {
           'PassThrough': ['type', 'verificationSettings'],
-          'Sign': ['type', 'verificationSettings', 'algoSettings'],
-          'Transform': ['type', 'verificationSettings', 'algoSettings', 'transformSettings'],
+          'Sign': ['type', 'algoSettings', 'verificationSettings'],
+          'Transform': ['type', 'algoSettings', 'verificationSettings', 'transformSettings'],
           [undefined]: ['type']
         }[strategy]
       }

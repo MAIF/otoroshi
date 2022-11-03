@@ -242,7 +242,7 @@ const Modal = ({ question, onOk, onCancel }) => (
 );
 
 export default forwardRef(
-  ({ value, setSaveButton, setTestingButton, setMenu, history, ...props }, ref) => {
+  ({ value, setSaveButton, setTestingButton, setMenu, history, setValue, ...props }, ref) => {
     const { routeId } = useParams();
     const location = useLocation();
 
@@ -274,6 +274,7 @@ export default forwardRef(
         routeId={routeId}
         location={location}
         value={value}
+        setValue={setValue}
         setSaveButton={setSaveButton}
         setTestingButton={setTestingButton}
         setMenu={setMenu}
@@ -1187,6 +1188,10 @@ class Designer extends React.Component {
         })),
       };
     }
+
+    if (this.props.setValue)
+      this.props.setValue(newRoute);
+
     return nextClient
       .update(
         this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
@@ -1208,6 +1213,10 @@ class Designer extends React.Component {
     new Promise((resolve) => {
       this.setState({ route: r }, () => {
         this.injectSaveButton();
+
+        if (this.props.setValue)
+          this.props.setValue(r);
+
         resolve();
       });
     });

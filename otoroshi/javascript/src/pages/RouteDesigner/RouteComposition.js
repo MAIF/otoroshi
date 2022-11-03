@@ -84,12 +84,18 @@ class RouteForms extends React.Component {
         label: 'Frontend',
         flow: Frontend.flow,
         collapsable: true,
-        schema: toUpperCaseLabels(Frontend.schema)
+        schema: toUpperCaseLabels(Frontend.schema),
+        props: {
+          showSummary: true
+        }
       },
       backend: {
         type: 'form',
         label: 'Backend',
         collapsable: true,
+        props: {
+          showSummary: true
+        },
         flow: props => {
           if (props.backend_ref || props.using_backend_ref)
             return [
@@ -99,7 +105,7 @@ class RouteForms extends React.Component {
           else
             return [
               'using_backend_ref',
-              ...Backend.flow
+              ...Backend.flow.otoroshi_full_flow
             ]
         },
         schema: {

@@ -12,6 +12,7 @@ import {
   NgTextRenderer,
   NgNumberRenderer,
   NgBooleanRenderer,
+  NgBoxBooleanRenderer,
   NgArrayRenderer,
   NgObjectRenderer,
   NgArraySelectRenderer,
@@ -36,6 +37,8 @@ import {
 import { Forms } from '../../forms';
 import { camelCase } from 'lodash';
 
+const isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
+
 const Helpers = {
   rendererFor: (type, components = {}) => {
     if (type?.endsWith('-no-label')) {
@@ -45,6 +48,8 @@ const Helpers = {
       return components.StringRenderer;
     } else if (type === 'bool' || type === 'boolean') {
       return components.BooleanRenderer;
+    } else if (type === 'box-bool' || type === 'box-boolean') {
+      return components.BoxBooleanRenderer;
     } else if (type === 'number') {
       return components.NumberRenderer;
     } else if (type === 'array') {
@@ -215,9 +220,7 @@ const firstLetterUppercase = (str) => str.charAt(0).toUpperCase() + str.slice(1)
 
 const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
   if (!breadcrumb && !toHome)
-    return null
-
-  // console.log(`BREADCRUMB: ${breadcrumb}`);
+    return null;
 
   return <div className="breadcrumbs my-2">
     <span
@@ -240,6 +243,11 @@ const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
 function SubFlow({ fields = [], full_fields = [], render, config }) {
   const [moreFields, showMoreFields] = useState(false);
 
+  if (isAnObject(fields)) {
+    fields = fields.otoroshi_flow
+    full_fields = fields.otoroshi_full_flow
+  }
+
   const processedFields = isFunction(fields) ? fields(config) : fields;
   const processedAllFields = isFunction(full_fields) ? full_fields(config) : full_fields;
   const hasMoreFields = processedAllFields && processedAllFields.length > 0;
@@ -260,25 +268,26 @@ function SubFlow({ fields = [], full_fields = [], render, config }) {
       return processedAllFields.map(render);
     else
       return [...processedFields, ...processedAllFields].map(render);
-  } else {
-    return <>
-      {!moreFields && processedFields.map(render)}
-      {hasMoreFields && moreFields && processedAllFields.map(render)}
 
-      {hasMoreFields &&
-        !moreFields &&
-        !config.readOnly &&
-        match(config.path, config.breadcrumb) &&
-        <button className='btn btn-sm btn-info mt-2'
-          onClick={() => showMoreFields(!moreFields)}
-          style={{
-            marginLeft: 'auto',
-            display: 'block'
-          }}>
-          Show advanced settings
-        </button>}
-    </>
   }
+
+  return <>
+    {!moreFields && processedFields.map(render)}
+    {hasMoreFields && moreFields && processedAllFields.map(render)}
+
+    {hasMoreFields &&
+      !moreFields &&
+      !config.readOnly &&
+      match(config.path, config.breadcrumb) &&
+      <button className='btn btn-sm btn-info mt-2'
+        onClick={() => showMoreFields(!moreFields)}
+        style={{
+          marginLeft: 'auto',
+          display: 'block'
+        }}>
+        Show advanced settings
+      </button>}
+  </>
 }
 
 export class NgForm extends Component {
@@ -304,6 +313,7 @@ export class NgForm extends Component {
     JsonRenderer: NgJsonRenderer,
     LocationRenderer: NgLocationRenderer,
     DotsRenderer: NgDotsRenderer,
+    BoxBooleanRenderer: NgBoxBooleanRenderer,
     CustomFormsRenderer: NgCustomFormsRenderer,
     FlowNotFound: NgFlowNotFound,
   };
@@ -466,21 +476,19 @@ export class NgForm extends Component {
     return this.recursiveSearch(paths.slice(1), (value || {})[paths.slice(0, 1)]);
   };
 
-  isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
-
   getFlow = (value, schema) => {
     if (isFunction(this.props.flow)) {
       return {
         fields: this.props.flow(value, this.props)
       }
-    } else if (this.isAnObject(this.props.flow) &&
+    } else if (isAnObject(this.props.flow) &&
       this.props.flow['otoroshi_flow'] &&
       this.props.flow['otoroshi_full_flow']) {
       return {
         fields: this.props.flow['otoroshi_flow'],
         full_fields: this.props.flow['otoroshi_full_flow']
       }
-    } else if (this.isAnObject(this.props.flow) &&
+    } else if (isAnObject(this.props.flow) &&
       this.props.flow.field &&
       this.props.flow.flow) {
       /* useful to match the case of a json flow
@@ -651,7 +659,7 @@ export class NgForm extends Component {
   }
 
   renderStepFlow(name, config) {
-    if (this.isAnObject(name)) {
+    if (isAnObject(name)) {
       const composedFlow = name;
       if (composedFlow.type === 'grid') {
         return this.renderGridFlow(composedFlow, config);

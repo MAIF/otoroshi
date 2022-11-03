@@ -325,6 +325,8 @@ class Manager extends React.Component {
     } else {
       this.setTitle();
     }
+
+    window.history.replaceState({}, document.title);
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -377,7 +379,7 @@ class Manager extends React.Component {
   }
 
   loadRoute = from => {
-    console.log(this.state.value, from)
+    // console.log(this.state.value, from)
     const { routeId } = this.props.match.params || { routeId: undefined }
     if (routeId === 'new') {
       nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName])
@@ -429,6 +431,7 @@ class Manager extends React.Component {
             tab={query}
             history={history}
             value={this.state.value}
+            setValue={v => this.setState({ value: v }, this.setTitle)}
             setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'routes' })}
             viewPlugins={viewPlugins}
             setMenu={n => this.setState({ menu: n, menuRefreshed: Date.now() })}
@@ -448,7 +451,7 @@ class Manager extends React.Component {
                   ...this.state.value,
                   routes
                 }
-              })}
+              }, this.setTitle)}
               viewPlugins={viewPlugins}
             />
           ),

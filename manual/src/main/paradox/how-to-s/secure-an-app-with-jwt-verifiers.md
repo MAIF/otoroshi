@@ -47,7 +47,7 @@ curl -X GET \
   'http://myservice.oto.tools:8080'
 ```
 
-This should output a json with `authorization` in headers field. His value is exactly the same as the passed token.
+This should output a json with `authorization` in headers field. Its value is exactly the same as the passed token.
 
 ```json
 {

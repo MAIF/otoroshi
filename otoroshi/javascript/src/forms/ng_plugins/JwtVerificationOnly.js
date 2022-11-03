@@ -1,20 +1,24 @@
+import { JwtVerifierLauncher } from "../wizards/JwtVerifierLauncher";
+
 export default {
   id: "cp:otoroshi.next.plugins.JwtVerificationOnly",
   config_schema: {
     verifier: {
-      label: "verifier",
-      type: "select",
+      label: "Verifier",
+      type: "JwtVerifierWizard",
       props: {
-        optionsFrom: "/bo/api/proxy/api/verifiers",
-        optionsTransformer: {
-          label: "name",
-          value: "id"
+        componentLauncher: JwtVerifierLauncher,
+        componentsProps: {
+          allowedStrategy: 'PassThrough'
         }
       }
     },
     fail_if_absent: {
-      label: "fail_if_absent",
-      type: "bool"
+      type: "box-bool",
+      label: "Fail if absent",
+      props: {
+        description: 'If a token is present in the incoming request, the call will fail.'
+      }
     }
   },
   config_flow: [

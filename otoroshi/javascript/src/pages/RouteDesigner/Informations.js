@@ -151,30 +151,29 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
 
   return (
     <>
-      {showAdvancedForm && (
+      {showAdvancedForm ?
         <RouteForm
           routeId={routeId}
           setValue={setValue}
           history={history}
           location={location}
           isCreation={isCreation} />
-      )}
+        :
+        <NgForm
+          schema={schema}
+          flow={flow}
+          value={value}
+          onChange={v => {
+            setValue(v)
+          }}
+        />}
 
-      {!showAdvancedForm && <NgForm
-        schema={schema}
-        flow={flow}
-        value={value}
-        onChange={v => {
-          setValue(v)
-        }}
-      />}
-
-      <div className="d-flex align-items-center justify-content-end mt-3">
-        <FormSelector
+      <div className="d-flex align-items-center justify-content-end mt-3 p-0">
+        {!isOnRouteCompositions && <FormSelector
           onChange={toggleAdvancedForm}
           entity={ENTITIES.ROUTES}
           className="me-1"
-        />
+        />}
         <Button type="danger" className='btn-sm'
           onClick={() => history.push(`/${link}`)}
           text="Cancel"

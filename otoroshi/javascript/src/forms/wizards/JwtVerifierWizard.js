@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { TextInput } from '../../components/inputs';
-import { LabelAndInput, NgForm } from '../../components/nginputs';
+import { LabelAndInput, NgForm, NgSelectRenderer } from '../../components/nginputs';
 import { Button } from '../../components/Button';
 import Loader from '../../components/Loader';
 import { useHistory } from 'react-router-dom';
@@ -56,13 +56,13 @@ function Header({ onClose, mode }) {
   </label>
 }
 
-function WizardActions({ nextStep, prevStep, step }) {
+function WizardActions({ nextStep, prevStep, step, goBack }) {
   return <div className="d-flex mt-auto justify-content-between align-items-center">
-    {step !== 1 && <label style={{ color: '#f9b000' }} onClick={prevStep}>
+    <label style={{ color: '#f9b000' }} onClick={step !== 1 ? prevStep : goBack}>
       <Button type='outline-save'
         text="Previous"
       />
-    </label>}
+    </label>
     <WizardStepButton
       className="ms-auto"
       onClick={nextStep}
@@ -99,7 +99,7 @@ function Selector({ setMode, disableSelectMode }) {
   </div>
 }
 
-function JwtVerifierSelector({ handleSelect }) {
+function JwtVerifierSelector({ handleSelect, allowedStrategy, mode }) {
   const [verifiers, setVerifiers] = useState([]);
 
   useEffect(() => {
@@ -107,32 +107,69 @@ function JwtVerifierSelector({ handleSelect }) {
       .then(setVerifiers)
   }, []);
 
-  return <div className='d-flex flex-column mt-3' style={{ flex: 1, height: '100vh', overflowY: 'scroll', paddingBottom: '200px' }}>
-    <h3>Select an exisiting verifier</h3>
-    {verifiers.map(verifier => (
-      <Button type='dark' className="mt-2" onClick={() => handleSelect(verifier)}>
-        <NgForm
-          key={verifier.id}
-          readOnly={true}
-          value={verifier}
-          schema={JwtVerifierForm.config_schema}
-          flow={[
-            {
-              type: 'group',
-              name: props => props.value?.name,
-              fields: ['desc', 'enabled']
-            }
-          ]}
-        />
-      </Button>
-    ))}
+  return <div className='d-flex flex-column mt-3' style={{ flex: 1 }}>
+    <div className='d-flex align-items-center justify-content-between'>
+      <h3>Select {mode === 'clone' ? 'the verifier to clone' : 'a verifier'}</h3>
+    </div>
+    <div style={{ maxHeight: '36px' }} className="mt-3">
+      <NgSelectRenderer
+        placeholder="Select a verifier to continue"
+        ngOptions={{
+          spread: true
+        }}
+        onChange={id => {
+          handleSelect(verifiers.find(v => v.id === id))
+        }}
+        options={verifiers.filter(verifier => allowedStrategy ? verifier.strategy.type === allowedStrategy : true)}
+        optionsTransformer={arr => arr.map(item => ({ value: item.id, label: item.name }))} />
+    </div>
+  </div>
+}
+
+function GoBackSelection({ goBack }) {
+  return <div className="d-flex mt-auto justify-content-between align-items-center m-@">
+    <Button type='info'
+      className='d-flex align-items-center'
+      onClick={goBack}>
+      <i className='fas fa-chevron-left me-2' />
+      <p className='m-0'>Go back to selection</p>
+    </Button>
   </div>
 }
 
 export class JwtVerifierWizard extends React.Component {
+  init = () => {
+    if (this.props.jwtVerifier) {
+      if (!this.props.allowedNewStrategy) {
+        return this.props.jwtVerifier
+      } else {
+        return {
+          ...this.props.jwtVerifier,
+          strict: false,
+          strategy: {
+            type: 'PassThrough',
+            verificationSettings: { fields: { iss: 'The Issuer' }, arrayFields: {} },
+          }
+        }
+      }
+    }
+    else {
+      return {
+        type: 'global',
+        strict: false,
+        source: { type: 'InHeader', name: 'X-JWT-Token', remove: '' },
+        algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
+        strategy: {
+          type: 'PassThrough',
+          verificationSettings: { fields: { iss: 'The Issuer' }, arrayFields: {} },
+        }
+      }
+    }
+  }
+
   state = {
     step: 1,
-    jwtVerifier: this.props.jwtVerifier || {},
+    jwtVerifier: this.init(),
     breadcrumb: [
       'Informations'
     ],
@@ -185,7 +222,11 @@ export class JwtVerifierWizard extends React.Component {
           <div className='d-flex' style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
             <Header onClose={this.props.hide} mode={mode} />
             <div className="wizard-content">
-              <JwtVerifier verifier={jwtVerifier} showHeader={true} onChange={jwtVerifier => this.setState({ jwtVerifier })} />
+              <JwtVerifier
+                verifier={jwtVerifier}
+                showHeader={true}
+                strategy={this.props.allowedNewStrategy}
+                onChange={jwtVerifier => this.setState({ jwtVerifier })} />
 
               <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
                 <FeedbackButton
@@ -208,7 +249,6 @@ export class JwtVerifierWizard extends React.Component {
       const STEPS = [
         {
           component: InformationsStep,
-          visibleOnStep: 1,
           props: {
             name: jwtVerifier.name,
             onChange: value => {
@@ -219,7 +259,7 @@ export class JwtVerifierWizard extends React.Component {
         },
         {
           component: StrategyStep,
-          visibleOnStep: 2,
+          hide: this.props.allowedNewStrategy ? true : undefined,
           props: {
             value: jwtVerifier.strategy?.type,
             onChange: value => {
@@ -242,25 +282,23 @@ export class JwtVerifierWizard extends React.Component {
         },
         {
           component: DefaultTokenStep,
-          visibleOnStep: 3,
+          hide: this.props.allowedNewStrategy ? true : undefined,
           onChange: () => {
-            this.updateBreadcrumb(`${this.state.jwtVerifier.source?.type || 'Unknown'} Location`, 2);
+            this.updateBreadcrumb(`${this.state.jwtVerifier.source?.type || ''} Location`, 2);
           }
         },
         {
           component: TokenSignatureStep,
-          visibleOnStep: 4,
           props: {
             root: 'algoSettings',
             value: jwtVerifier,
             onChange: value => this.setState({ jwtVerifier: value }, () => {
-              this.updateBreadcrumb(`${this.state.jwtVerifier.algoSettings?.type || 'Unknown'} Algo.`, 3);
+              this.updateBreadcrumb(`${this.state.jwtVerifier.algoSettings?.type || ''} Algo.`, 3);
             })
           }
         },
         {
           component: TokenSignatureStep,
-          visibleOnStep: 5,
           condition: value => ['Sign', 'Transform'].includes(value.strategy?.type),
           props: {
             value: jwtVerifier['strategy'],
@@ -272,13 +310,12 @@ export class JwtVerifierWizard extends React.Component {
                 ['strategy']: value
               }
             }, () => {
-              this.updateBreadcrumb(`${this.state.jwtVerifier.strategy?.algoSettings?.type || 'Unknown'} Resign Algo.`, 4);
+              this.updateBreadcrumb(`${this.state.jwtVerifier.strategy?.algoSettings?.type || ''} Resign Algo.`, 4);
             })
           }
         },
         {
           component: TokenTransformStep,
-          visibleOnStep: 6,
           condition: value => 'Transform' === value.strategy?.type,
           props: {
             value: jwtVerifier.strategy?.transformSettings,
@@ -294,16 +331,17 @@ export class JwtVerifierWizard extends React.Component {
               }, () => {
                 const transformSettings = this.state.jwtVerifier.strategy?.transformSettings || {};
                 const sameLocation = transformSettings.location === undefined ? true : transformSettings.location;
-                const outLocation = transformSettings.out_location?.source?.type || 'Unknown';
+                const outLocation = transformSettings.out_location?.source?.type || '';
                 this.updateBreadcrumb(`${sameLocation ? this.state.jwtVerifier.source?.type : outLocation} Out location.`, 5);
               })
             }
           }
         }
-      ];
+      ]
+        .filter(item => item.hide === undefined)
 
-      const showSummary = !STEPS.find(item => {
-        return step === item.visibleOnStep && (item.condition ? item.condition(jwtVerifier) : true)
+      const showSummary = !STEPS.find((item, i) => {
+        return step === (i + 1) && (item.condition ? item.condition(jwtVerifier) : true)
       });
 
       return (
@@ -316,24 +354,27 @@ export class JwtVerifierWizard extends React.Component {
 
               {mode !== 'selector' && <>
                 {['edition', 'clone'].includes(mode) ?
-                  <JwtVerifierSelector handleSelect={verifier => {
-                    if (this.props.onConfirm && mode === 'edition') {
-                      this.props.onConfirm(verifier.id);
-                    } else {
-                      this.setState({
-                        mode: 'continue',
-                        jwtVerifier: {
-                          ...verifier,
-                          id: `jwt_verifier_${uuid()}`
-                        }
-                      })
-                    }
-                  }} /> :
+                  <JwtVerifierSelector
+                    mode={mode}
+                    allowedStrategy={this.props.allowedStrategy}
+                    handleSelect={verifier => {
+                      if (this.props.onConfirm && mode === 'edition') {
+                        this.props.onConfirm(verifier.id);
+                      } else {
+                        this.setState({
+                          mode: 'continue',
+                          jwtVerifier: {
+                            ...verifier,
+                            id: `jwt_verifier_${uuid()}`
+                          }
+                        })
+                      }
+                    }} /> :
                   <>
                     <Breadcrumb value={this.state.breadcrumb} onClick={i => this.setState({ step: i + 1 })} />
                     <div className="wizard-content">
-                      {STEPS.map(({ component, visibleOnStep, props, condition, onChange }) => {
-                        if (step === visibleOnStep && (condition ? condition(jwtVerifier) : true)) {
+                      {STEPS.map(({ component, props, condition, onChange }, i) => {
+                        if (step === (i + 1) && (condition ? condition(jwtVerifier) : true)) {
                           return React.createElement(component, {
                             ...(props || {
                               value: jwtVerifier,
@@ -356,10 +397,23 @@ export class JwtVerifierWizard extends React.Component {
                             } : undefined
                           }
                         }} />}
-                      {!showSummary && <WizardActions nextStep={this.nextStep} prevStep={this.prevStep} step={step} />}
+                      {!showSummary && <WizardActions
+                        nextStep={this.nextStep}
+                        prevStep={this.prevStep}
+                        step={step}
+                        goBack={() => {
+                          this.setState({
+                            mode: this.props.mode || 'selector'
+                          })
+                        }} />}
                     </div>
                   </>}
               </>}
+              {['edition', 'clone'].includes(mode) && <GoBackSelection goBack={() => {
+                this.setState({
+                  mode: this.props.mode || 'selector'
+                })
+              }} />}
             </div>
           </div>
         </div>
@@ -424,7 +478,7 @@ function WizardLastStep({ value, breadcrumb, onConfirm }) {
         onClick={create}
       >
         <i className='fas fa-check me-1' />
-        Create with all informations
+        Confirm
       </Button>}
 
       {(verifier || error) && <Button type='save'

@@ -1,132 +1,36 @@
-import React from "react";
-import { Button } from "../../components/Button";
-import { NgForm } from "../../components/nginputs";
-import { findJwtVerifierById } from "../../services/BackOfficeServices";
-import JwtVerifierForm from '../entities/JwtVerifier';
-
-class JwtVerifierLauncher extends React.Component {
-  state = {
-    verifier: undefined
-  }
-
-  componentDidMount() {
-    this.loadVerifier(this.props.value);
-  }
-
-  componentDidUpdate(prevProps) {
-    if (prevProps.value !== this.props.value) {
-      this.loadVerifier(this.props.value);
-    }
-  }
-
-  loadVerifier = (value) => {
-    if (value) {
-      findJwtVerifierById(value)
-        .then(verifier => {
-          this.setState({ verifier })
-        });
-    } else
-      this.setState({
-        verifier: undefined
-      })
-  }
-
-  render() {
-    const { verifier } = this.state;
-    const { openComponent, onChange } = this.props;
-
-    if (!verifier) {
-      return <Button
-        type="info"
-        text="Start by select or create a JWT verifier"
-        onClick={openComponent}
-        className="w-100" />
-    } else {
-      return <div>
-        <NgForm
-          style={{
-            position: 'relative'
-          }}
-          key={verifier.id}
-          readOnly={true}
-          value={verifier}
-          schema={{
-            ...JwtVerifierForm.config_schema,
-            actions: {
-              renderer: () => {
-                return <div className="d-flex justify-content-end">
-                  <Button
-                    className="btn-sm"
-                    type="danger"
-                    onClick={() => onChange(undefined)} >
-                    <i className="fas fa-times me-1" />Unselect
-                  </Button>
-                  <Button
-                    type="info"
-                    onClick={() => openComponent()}
-                    className="mx-1 btn-sm" >
-                    <i className="fas fa-key me-1" />Choose another
-                  </Button>
-                  <Button
-                    type="info"
-                    className="btn-sm"
-                    onClick={() => openComponent({
-                      mode: 'update_in_wizard',
-                      jwtVerifier: verifier
-                    })} >
-                    <i className="fas fa-pencil-alt me-1" />Edit
-                  </Button>
-                </div>
-              }
-            }
-          }}
-          flow={[
-            {
-              type: 'group',
-              name: props => props.value?.name,
-              fields: ['desc', 'enabled', 'actions']
-            }
-          ]}
-        />
-      </div>
-    }
-  }
-}
+import { JwtVerifierLauncher } from "../wizards/JwtVerifierLauncher";
 
 export default {
   id: "cp:otoroshi.next.plugins.JwtSigner",
   config_schema: {
     "fail_if_present": {
-      type: "bool",
+      type: "box-bool",
+      label: "Fail if present",
       props: {
-        label: "Fail if present",
-        labelColumn: 6
+        description: "If a token is present in the incoming request, the plugin will reject the call."
       }
     },
     "replace_if_present": {
-      type: "bool",
+      type: "box-bool",
+      label: "Replace if present",
       props: {
-        label: "Replace if present",
-        labelColumn: 6
+        description: "If a token is present in the incoming request, the plugin will always replace the token with a new one."
       }
     },
     verifier: {
-      label: "verifier",
+      label: "Verifier",
       type: "JwtVerifierWizard",
       props: {
-        componentLauncher: JwtVerifierLauncher
+        componentLauncher: JwtVerifierLauncher,
+        componentsProps: {
+          allowedNewStrategy: 'Generate'
+        }
       }
     }
   },
   config_flow: [
     "verifier",
-    {
-      type: 'grid',
-      name: 'Override',
-      fields: [
-        "replace_if_present",
-        "fail_if_present"
-      ]
-    }
+    "replace_if_present",
+    "fail_if_present"
   ]
 }
