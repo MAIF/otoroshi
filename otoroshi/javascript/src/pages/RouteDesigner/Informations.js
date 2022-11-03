@@ -58,8 +58,8 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     },
     enabled: {
       type: 'bool',
+      label: 'Enabled',
       props: {
-        label: 'Enabled'
       }
     },
     capture: {
@@ -91,10 +91,10 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     },
     groups: {
       type: 'array-select',
+      label: 'Groups',
       props: {
         optionsFrom: "/bo/api/proxy/api/groups",
         optionsTransformer: arr => arr.map(item => ({ value: item.id, label: item.name })),
-        label: 'Groups'
       }
     },
     metadata: {

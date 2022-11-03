@@ -32,7 +32,7 @@ export default {
       type: 'bool',
       props: {
         label: 'Exact',
-        labelColumn: 6,
+        labelColumn: 3,
       }
     },
     domains: {
@@ -45,7 +45,7 @@ export default {
       type: 'bool',
       props: {
         label: 'Strip path',
-        labelColumn: 6,
+        labelColumn: 3,
       }
     }
   },
