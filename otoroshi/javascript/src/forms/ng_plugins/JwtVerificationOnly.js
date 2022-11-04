@@ -9,7 +9,8 @@ export default {
       props: {
         componentLauncher: JwtVerifierLauncher,
         componentsProps: {
-          allowedStrategy: 'PassThrough'
+          allowedStrategy: 'PassThrough',
+          allowedNewStrategy: 'PassThrough'
         }
       }
     },
@@ -22,7 +23,7 @@ export default {
     }
   },
   config_flow: [
-    "fail_if_absent",
-    "verifier"
+    "verifier",
+    "fail_if_absent"
   ]
 }

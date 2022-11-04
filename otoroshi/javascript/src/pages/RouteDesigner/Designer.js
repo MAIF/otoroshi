@@ -2428,7 +2428,7 @@ const Description = ({ text, steps, legacy }) => {
         />
       )}
       {steps.length > 0 && (
-        <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
+        <div className="steps" style={{ paddingLeft: 12 }}>
           active on{' '}
           {steps.map((step, i) => (
             <span

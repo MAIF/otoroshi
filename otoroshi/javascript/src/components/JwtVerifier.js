@@ -132,22 +132,22 @@ export class JwtVerifier extends Component {
               useBreadcrumb={true}
               value={verifier}
               schema={{
-                ...({
-                  ...JwtVerifierForm.config_schema,
-                  source: {
-                    ...JwtVerifierForm.config_schema.source,
-                    label: 'Exit Token location',
-                    flow: JwtVerifierForm.config_schema.source.flow.map(step => {
-                      if (step?.name === 'Header informations')
-                        return { ...step, fields: ['name'] }
-                      return step
-                    })
-                  }
-                }),
+                ...JwtVerifierForm.config_schema,
+                source: this.props.allowedNewStrategy ? {
+                  ...JwtVerifierForm.config_schema.source,
+                  props: {
+                    ...JwtVerifierForm.config_schema.source.props,
+                    showSummary: false
+                  },
+                  label: 'Exit Token location',
+                  flow: JwtVerifierForm.config_schema.source.flow.map(step => {
+                    if (step?.name === 'Header informations')
+                      return { ...step, fields: ['name'] }
+                    return step
+                  })
+                } : JwtVerifierForm.config_schema.source,
                 graph: {
-                  renderer: () => {
-                    return <EntityGraph entity='jwt-verifiers' id={verifier.id} />
-                  }
+                  renderer: () => <EntityGraph entity='jwt-verifiers' id={verifier.id} />
                 }
               }}
               flow={[

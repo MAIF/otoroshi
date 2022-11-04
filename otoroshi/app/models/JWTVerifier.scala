@@ -1203,7 +1203,7 @@ sealed trait JwtVerifier extends AsJson {
             val verificationResult = JwtVerifier.signatureCache.get(key, _ => Try(verification.build().verify(token)))
             verificationResult match {
               case Failure(e)            =>
-                // logger.error("Bad JWT token", e)
+                logger.error("Bad JWT token", e)
                 Errors
                   .craftResponseResultSync(
                     "error.bad.token",

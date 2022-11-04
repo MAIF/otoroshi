@@ -217,6 +217,7 @@
         background-color: $fondNavbar;
         color: $grisTexte;
         padding: 12px;
+        padding-bottom: 0;
     }
 
     .input-group-append {
@@ -616,13 +617,16 @@
     background-color: #f9b000 !important;
     border-color: #f9b000 !important;
 }
+
 .wizard-content .btn-outline-save {
     border-color: #f9b000 !important;
     color: #FFF;
-    &:hover{
+
+    &:hover {
         background-color: #f9b000;
     }
 }
+
 .wizard-route-chooser {
     flex: 1;
     display: flex;
@@ -658,6 +662,8 @@
 
 .patch-row {
     margin-right: 0 !important;
+    --bs-gutter-x: 0;
+    --bs-gutter-y: 0;
 }
 
 .patch-main {

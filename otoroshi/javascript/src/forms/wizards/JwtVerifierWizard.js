@@ -215,6 +215,7 @@ export class JwtVerifierWizard extends React.Component {
 
   render() {
     const { step, jwtVerifier, mode } = this.state;
+    console.log(this.props.allowedNewStrategy)
 
     if (mode === 'update_in_wizard') {
       return <div className="wizard">
@@ -283,8 +284,8 @@ export class JwtVerifierWizard extends React.Component {
         {
           component: DefaultTokenStep,
           hide: this.props.allowedNewStrategy ? true : undefined,
-          onChange: () => {
-            this.updateBreadcrumb(`${this.state.jwtVerifier.source?.type || ''} Location`, 2);
+          onChange: (_, index) => {
+            this.updateBreadcrumb(`${this.state.jwtVerifier.source?.type || ''} Location`, index);
           }
         },
         {
@@ -292,8 +293,9 @@ export class JwtVerifierWizard extends React.Component {
           props: {
             root: 'algoSettings',
             value: jwtVerifier,
-            onChange: value => this.setState({ jwtVerifier: value }, () => {
-              this.updateBreadcrumb(`${this.state.jwtVerifier.algoSettings?.type || ''} Algo.`, 3);
+            title: this.props.allowedNewStrategy === 'PassThrough' ? 'Verify token with' : undefined,
+            onChange: (value, index) => this.setState({ jwtVerifier: value }, () => {
+              this.updateBreadcrumb(`${this.state.jwtVerifier.algoSettings?.type || ''} Algo.`, index);
             })
           }
         },
@@ -304,13 +306,13 @@ export class JwtVerifierWizard extends React.Component {
             value: jwtVerifier['strategy'],
             root: 'algoSettings',
             title: 'Resign token with',
-            onChange: value => this.setState({
+            onChange: (value, index) => this.setState({
               jwtVerifier: {
                 ...jwtVerifier,
                 ['strategy']: value
               }
             }, () => {
-              this.updateBreadcrumb(`${this.state.jwtVerifier.strategy?.algoSettings?.type || ''} Resign Algo.`, 4);
+              this.updateBreadcrumb(`${this.state.jwtVerifier.strategy?.algoSettings?.type || ''} Resign Algo.`, index);
             })
           }
         },
@@ -319,7 +321,7 @@ export class JwtVerifierWizard extends React.Component {
           condition: value => 'Transform' === value.strategy?.type,
           props: {
             value: jwtVerifier.strategy?.transformSettings,
-            onChange: value => {
+            onChange: (value, index) => {
               this.setState({
                 jwtVerifier: {
                   ...jwtVerifier,
@@ -332,7 +334,7 @@ export class JwtVerifierWizard extends React.Component {
                 const transformSettings = this.state.jwtVerifier.strategy?.transformSettings || {};
                 const sameLocation = transformSettings.location === undefined ? true : transformSettings.location;
                 const outLocation = transformSettings.out_location?.source?.type || '';
-                this.updateBreadcrumb(`${sameLocation ? this.state.jwtVerifier.source?.type : outLocation} Out location.`, 5);
+                this.updateBreadcrumb(`${sameLocation ? this.state.jwtVerifier.source?.type : outLocation} Out location.`, index);
               })
             }
           }
@@ -375,12 +377,17 @@ export class JwtVerifierWizard extends React.Component {
                     <div className="wizard-content">
                       {STEPS.map(({ component, props, condition, onChange }, i) => {
                         if (step === (i + 1) && (condition ? condition(jwtVerifier) : true)) {
-                          return React.createElement(component, {
-                            ...(props || {
-                              value: jwtVerifier,
-                              onChange: value => this.setState({ jwtVerifier: value }, onChange)
-                            }), key: component.Type
-                          });
+                          const defaultProps = {
+                            value: jwtVerifier,
+                            onChange: value => this.setState({ jwtVerifier: value }, onChange)
+                          };
+
+                          const allProps = props ? {
+                            ...props,
+                            onChange: e => props.onChange(e, i)
+                          } : defaultProps;
+
+                          return React.createElement(component, { key: component.Type, ...allProps });
                         } else {
                           return null;
                         }
