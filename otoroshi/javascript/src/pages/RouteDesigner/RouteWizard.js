@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { TextInput } from '../../components/inputs';
 import { getOldPlugins, getPlugins, nextClient } from '../../services/BackOfficeServices';
-import { Plugins } from './NgPlugins';
-import Loader from './Loader';
+import { Plugins } from '../../forms/ng_plugins'
+import Loader from '../../components/Loader';
 
 const RouteNameStep = ({ state, onChange }) => (
   <>
@@ -270,7 +270,7 @@ const ProcessStep = ({ state, history }) => {
         minLoaderTime={pluginsLength === 0 ? 1500 : 100 + timers[timers.length - 1]}
         loadingChildren={
           <h3 style={{ textAlign: 'center' }} className="mt-3">
-            Creation in process ...
+            Creation steps
           </h3>
         }>
         {pluginsLength === 0 && (

@@ -2,13 +2,13 @@ import React, { Component } from 'react';
 import { Help } from './Help';
 
 export const OnSwitch = (props) => (
-  <div className="content-switch-button-on" onClick={props.onChange}>
+  <div className="content-switch-button-on" onClick={props.onChange} style={props?.style || {}}>
     <div className="switch-button-on" />
   </div>
 );
 
 export const OffSwitch = (props) => (
-  <div className="content-switch-button-off" onClick={props.onChange}>
+  <div className="content-switch-button-off" onClick={props.onChange} style={props?.style || {}}>
     <div className="switch-button-off" />
   </div>
 );

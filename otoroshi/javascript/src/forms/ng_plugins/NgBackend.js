@@ -454,6 +454,7 @@ export default {
         type: 'group',
         name: 'Targets',
         fields: ['targets'],
+        summaryFields: ['targets.hostname']
       },
       'health_check',
       'client',
@@ -465,7 +466,8 @@ export default {
         type: 'group',
         name: 'Targets',
         fields: ['targets'],
-      },
-    ],
-  },
-};
+        summaryFields: ['targets.hostname']
+      }
+    ]
+  }
+}

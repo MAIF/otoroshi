@@ -174,7 +174,30 @@ export default {
                   label: 'name',
                   value: 'id',
                 },
-              },
+                "port": {
+                  "type": "number"
+                },
+                "protocol": {
+                  "type": "string"
+                },
+                "principal": {
+                  "type": "string"
+                },
+                "password": {
+                  "type": "string"
+                },
+                "ntlmDomain": {
+                  "type": "string"
+                },
+                "encoding": {
+                  "type": "string"
+                },
+                "nonProxyHosts": {
+                  "type": "string",
+                  array: true,
+                  "label": "Non proxy hosts"
+                }
+              }
             },
             onlyExposedCerts: {
               type: 'boolean',
@@ -265,8 +288,11 @@ export default {
             ttl: {
               type: 'number',
             },
-            kty: {
-              type: 'string',
+            "kty": {
+              type: 'select',
+              props: {
+                options: ['RSA', 'EC']
+              }
             },
             mtlsConfig: {
               type: 'form',

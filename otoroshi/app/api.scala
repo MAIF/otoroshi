@@ -468,6 +468,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val pluginsController            = wire[NgPluginsController]
   lazy val tryItController              = wire[TryItController]
   lazy val tunnelController             = wire[TunnelController]
+  lazy val entitiesController           = wire[EntitiesController]
 
   override lazy val assets: Assets = wire[Assets]
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import MocksDesigner from '../MocksDesigner';
+import MocksDesigner from "../../pages/RouteDesigner/MocksDesigner";
 
 export default {
   id: 'cp:otoroshi.next.plugins.MockResponses',

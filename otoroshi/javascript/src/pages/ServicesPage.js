@@ -134,7 +134,6 @@ export class ServicesPage extends Component {
   }
 
   displayName = (item) => {
-    console.log(this.state);
     return this.state && this.state.env && this.state.env.adminApiId === item.id ? (
       <span className="badge bg-danger">{item.name}</span>
     ) : (

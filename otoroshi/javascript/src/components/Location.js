@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { SelectInput, ArrayInput } from './inputs';
 import * as BackOfficeServices from '../services/BackOfficeServices';
+import { LabelAndInput } from './nginputs';
 
 export class Location extends Component {
   state = { possibleTeams: [], possibleTenants: [], tenant: 'default' };
@@ -56,64 +57,77 @@ export class Location extends Component {
     if (window.__otoroshi__env__latest.bypassUserRightsCheck) {
       return null;
     }
-    // if (!(window.__user.superAdmin || window.__user.tenantAdmin)) {
-    //   return null;
-    // }
-    return (
-      <>
-        {
+
+    if (this.props.readOnly) {
+      return <>
+        <LabelAndInput label="Organization">
+          <span className='d-flex align-items-center' style={{ height: '100%', color: '#fff' }}>
+            {this.props.tenant || window.localStorage.getItem('Otoroshi-Tenant') || 'default'}
+          </span>
+        </LabelAndInput>
+        <LabelAndInput label="Teams">
+          <span className='d-flex align-items-center' style={{ height: '100%', color: '#fff' }}>
+            {this.props.teams.join(' | ')}
+          </span>
+        </LabelAndInput>
+      </>
+    } else {
+      return (
+        <>
+          {
           /*window.__otoroshi__env__latest.userAdmin*/ window.__user.superAdmin && (
-            <SelectInput
-              label="Organization"
-              value={
-                this.props.tenant || window.localStorage.getItem('Otoroshi-Tenant') || 'default'
-              }
-              onChange={this.onChangeTenant}
-              __valuesFrom="/bo/api/proxy/api/tenants"
-              __transformer={(a) => ({
-                value: a.id,
-                label: a.name + ' - ' + a.description,
-              })}
-              possibleValues={this.state.possibleTenants.map((a) => {
-                return {
+              <SelectInput
+                label="Organization"
+                value={
+                  this.props.tenant || window.localStorage.getItem('Otoroshi-Tenant') || 'default'
+                }
+                onChange={this.onChangeTenant}
+                __valuesFrom="/bo/api/proxy/api/tenants"
+                __transformer={(a) => ({
                   value: a.id,
                   label: a.name + ' - ' + a.description,
-                };
-              })}
-              help="The organization where this entity will belong"
-            />
-          )
-        }
-        {/* TODO: only show to tenant admins ????? */}
-        <ArrayInput
-          label="Teams"
-          value={this.props.teams}
-          onChange={this.props.onChangeTeams}
-          possibleValues={this.state.possibleTeams.map((a) => {
-            return {
-              value: a.id,
-              label: a.name + ' - ' + a.description,
-            };
-          })}
-          help="The teams where this entity will belong"
-        />
-        <div className="row mb-3">
-          <label className="col-xs-12 col-sm-2 col-form-label"></label>
-          <div className="col-sm-10 d-flex justify-content-end input-group-btn">
-            {window.__user.superAdmin && (
-              <a className="btn btn-sm btn-info" href="/bo/dashboard/organizations">
-                <i className="fas fa-edit"></i> Manage organizations
-              </a>
-            )}
-            {window.__user.tenantAdmin && (
-              <a className="btn btn-sm btn-info" href="/bo/dashboard/teams">
-                <i className="fas fa-edit"></i> Manage teams
-              </a>
-            )}
+                })}
+                possibleValues={this.state.possibleTenants.map((a) => {
+                  return {
+                    value: a.id,
+                    label: a.name + ' - ' + a.description,
+                  };
+                })}
+                help="The organization where this entity will belong"
+              />
+            )
+          }
+          {/* TODO: only show to tenant admins ????? */}
+          <ArrayInput
+            label="Teams"
+            value={this.props.teams}
+            onChange={this.props.onChangeTeams}
+            possibleValues={this.state.possibleTeams.map((a) => {
+              return {
+                value: a.id,
+                label: a.name + ' - ' + a.description,
+              };
+            })}
+            help="The teams where this entity will belong"
+          />
+          <div className="row mb-3">
+            <label className="col-xs-12 col-sm-2 col-form-label"></label>
+            <div className="col-sm-10 d-flex justify-content-end input-group-btn">
+              {window.__user.superAdmin && (
+                <a className="btn btn-sm btn-info" href="/bo/dashboard/organizations">
+                  <i className="fas fa-edit"></i> Manage organizations
+                </a>
+              )}
+              {window.__user.tenantAdmin && (
+                <a className="btn btn-sm btn-info" href="/bo/dashboard/teams">
+                  <i className="fas fa-edit"></i> Manage teams
+                </a>
+              )}
+            </div>
           </div>
-        </div>
-        {this.props.lineEnd && <hr />}
-      </>
-    );
+          {this.props.lineEnd && <hr />}
+        </>
+      );
+    }
   }
 }

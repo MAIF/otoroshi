@@ -1,17 +1,13 @@
-import React, { Component, Suspense } from 'react';
+import React, { Component, Suspense, useEffect, useState } from 'react';
 
 import {
   ArrayInput,
   ObjectInput,
   BooleanInput,
-  LinkDisplay,
   SelectInput,
   TextInput,
   TextareaInput,
   NumberInput,
-  FreeDomainInput,
-  Help,
-  Form,
 } from './inputs';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('./inputs/CodeInput')));
@@ -22,6 +18,204 @@ import { Separator } from './Separator';
 import { Proxy } from './Proxy';
 import { Location } from '../components/Location';
 import { Collapse } from '../components/inputs/Collapse';
+import { PillButton } from './PillButton';
+import { NgForm } from './nginputs';
+import JwtVerifierForm from '../forms/entities/JwtVerifier';
+import { getEntityGraph } from '../services/BackOfficeServices';
+import { Link } from 'react-router-dom';
+import { Button } from './Button';
+
+function EntityGraph({ entity, id }) {
+  const [entities, setEntities] = useState({});
+  const [loadedEntities, setLoadedEntities] = useState(false);
+
+  const findEntities = () => {
+    getEntityGraph(entity, id)
+      .then(entities => {
+        setEntities(entities);
+        setLoadedEntities(true);
+      });
+  }
+
+  if (Object.values(entities).flat().length === 0 && loadedEntities)
+    return null;
+
+  return <div className='d-flex' style={{
+    outline: 'rgb(65, 65, 62) solid 1px',
+    padding: '5px',
+    margin: '5px 0px',
+    width: '100%'
+  }}>
+    <div className='d-flex justify-content-between flex-column' style={{ flex: 1 }}>
+      <div style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold', marginLeft: '5px', marginTop: '7px', marginBottom: '10px' }}>Found usages</div>
+      <div className='me-1'>
+        {Object.entries(entities).map(entity => {
+          const name = entity[0];
+          const content = entity[1];
+
+          return <div style={{ fontWeight: 'bold', marginLeft: '5px', marginTop: '7px', marginBottom: '10px' }} key={name}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px' }}>
+              <label style={{ textTransform: 'uppercase' }}>{name}</label>
+              <label>Used by plugins</label>
+            </div>
+
+            {content.map(r => {
+              const pathname = name === 'routes' ? `/${name}/${r.id}?tab=flow` : `/${name}/edit/${r.id}`;
+              return <div key={r.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px' }} className="align-items-center mb-1">
+                <p className='m-0'>{r.name}</p>
+                <div className='d-flex align-items-center'>
+                  {r.plugins
+                    .filter(p => JSON.stringify(p.config || {}).includes(id))
+                    .map(plugin => {
+                      const pluginName = plugin.plugin.split('.').at(-1);
+                      return <Link to={name === 'routes' ? {
+                        pathname,
+                        state: {
+                          plugin: plugin.plugin
+                        }
+                      } : pathname} key={`${entity[0]}-${pluginName}`}>
+                        <span className="badge bg-warning me-2">{pluginName}</span>
+                      </Link>
+                    })}
+                </div>
+                <Link to={pathname}>
+                  <Button type="info" className="btn-sm" >
+                    <i className='fas fa-chevron-right' />
+                  </Button>
+                </Link>
+              </div>
+            })}
+          </div>
+        })}
+      </div>
+
+      {!loadedEntities && <Button
+        className='btn-sm ms-auto'
+        onClick={findEntities}
+        text='Find usages'
+      />}
+    </div>
+  </div>
+}
+
+export class JwtVerifier extends Component {
+  state = {
+    isConfigView: true,
+    verifier: this.props.value || this.props.verifier || {
+      type: 'globale',
+      enabled: false,
+      strict: true,
+      source: { type: 'InHeader', name: 'X-JWT-Token', remove: '' },
+      algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
+      strategy: {
+        type: 'PassThrough',
+        verificationSettings: {
+          fields: { iss: 'The Issuer' },
+          arrayFields: {}
+        },
+      },
+    }
+  }
+
+  render() {
+    const { isConfigView, verifier } = this.state;
+    const isLegacyView = this.props.showAdvancedForm;
+
+    const restrictedStrategy = this.props.allowedNewStrategy || this.props.strategy;
+
+    return (
+      <div>
+        {this.props.showHeader && <Header
+          isConfigView={isConfigView}
+          onChange={isConfigView => this.setState({ isConfigView })} />}
+
+        {isConfigView && <>
+          {isLegacyView &&
+            <LegacyJwtVerifier
+              verifier={verifier}
+              changeTheValue={(name, value) => {
+                const path = name.startsWith('.') ? name.substr(1) : name;
+                const updatedVerifier = deepSet(cloneDeep(verifier), path, value);
+                this.setState({ verifier: updatedVerifier });
+                if (this.props.onChange)
+                  this.props.onChange(updatedVerifier);
+              }} />
+          }
+
+          {!isLegacyView && <>
+            <NgForm
+              useBreadcrumb={true}
+              value={verifier}
+              schema={{
+                ...JwtVerifierForm.config_schema,
+                source: restrictedStrategy ? {
+                  ...JwtVerifierForm.config_schema.source,
+                  props: {
+                    ...JwtVerifierForm.config_schema.source.props,
+                    showSummary: false
+                  },
+                  label: 'Exit Token location',
+                  flow: JwtVerifierForm.config_schema.source.flow.map(step => {
+                    if (step?.name === 'Header informations')
+                      return { ...step, fields: ['name'] }
+                    return step
+                  })
+                } : JwtVerifierForm.config_schema.source,
+                graph: {
+                  renderer: () => <EntityGraph entity='jwt-verifiers' id={verifier.id} />
+                }
+              }}
+              flow={[
+                ...JwtVerifierForm.config_flow
+                  .filter(step => this.props.strategy ? step !== 'strategy' : true),
+                (restrictedStrategy ? {
+                  type: 'group',
+                  name: 'Token payload',
+                  fields: ['token']
+                } : undefined),
+                'graph'
+              ].filter(f => f)}
+              onChange={verifier => {
+                this.setState({ verifier })
+                if (this.props.onChange)
+                  this.props.onChange(verifier);
+              }}
+            />
+          </>
+          }
+        </>}
+
+        {!isConfigView &&
+          <NgForm
+            value={verifier}
+            schema={JwtVerifierForm.config_schema}
+            flow={[
+              ...JwtVerifierForm.config_flow,
+              restrictedStrategy ? {
+                type: 'group',
+                name: 'Token payload',
+                fields: ['token']
+              } : undefined
+            ].filter(f => f)}
+            onChange={() => { }}
+            readOnly={true}
+          />}
+      </div>
+    )
+  }
+}
+
+function Header({ isConfigView, onChange }) {
+  return <PillButton
+    style={{
+      backgroundColor: '#494949'
+    }}
+    rightEnabled={isConfigView}
+    leftText="Edition"
+    rightText="Visualization"
+    onChange={onChange}
+  />
+}
 
 export class LocationSettings extends Component {
   state = {
@@ -440,7 +634,7 @@ export class AlgoSettings extends Component {
   }
 }
 
-export class JwtVerifier extends Component {
+export class LegacyJwtVerifier extends Component {
   static defaultVerifier = {
     type: 'local',
     enabled: false,
@@ -745,13 +939,13 @@ export class JwtVerifier extends Component {
             locationTitle="Token location"
             path={`${path}.strategy.transformSettings.location`}
             changeTheValue={this.changeTheValue}
-            location={verifier.strategy.transformSettings.location}
+            location={verifier.strategy.transformSettings?.location}
           />,
           <ObjectInput
             label="Rename token fields"
             placeholderKey="Field name"
             placeholderValue="Field value"
-            value={verifier.strategy.transformSettings.mappingSettings.map}
+            value={verifier.strategy.transformSettings?.mappingSettings.map}
             help="When the JWT token is transformed, it is possible to change a field name, just specify origin field name and target field name"
             onChange={(v) =>
               changeTheValue(path + '.strategy.transformSettings.mappingSettings.map', v)
@@ -761,7 +955,7 @@ export class JwtVerifier extends Component {
             label="Set token fields"
             placeholderKey="Field name"
             placeholderValue="Field value"
-            value={verifier.strategy.transformSettings.mappingSettings.values}
+            value={verifier.strategy.transformSettings?.mappingSettings.values}
             help="When the JWT token is transformed, it is possible to add new field with static values, just specify field name and value"
             onChange={(v) =>
               changeTheValue(path + '.strategy.transformSettings.mappingSettings.values', v)
@@ -770,7 +964,7 @@ export class JwtVerifier extends Component {
           <ArrayInput
             label="Remove token fields"
             placeholder="Field name"
-            value={verifier.strategy.transformSettings.mappingSettings.remove}
+            value={verifier.strategy.transformSettings?.mappingSettings.remove}
             help="When the JWT token is transformed, it is possible to remove fields"
             onChange={(v) =>
               changeTheValue(path + '.strategy.transformSettings.mappingSettings.remove', v)

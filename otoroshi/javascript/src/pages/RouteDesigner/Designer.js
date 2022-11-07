@@ -15,15 +15,14 @@ import {
   getPlugins,
 } from '../../services/BackOfficeServices';
 
-import { Backend, Frontend, Plugins } from './NgPlugins';
+import { Backend, Frontend, Plugins } from '../../forms/ng_plugins'
 
 import {
   EXCLUDED_PLUGINS,
   LEGACY_PLUGINS_WRAPPER,
-  PLUGINS,
   PLUGIN_INFORMATIONS_SCHEMA,
 } from './DesignerConfig';
-import Loader from './Loader';
+import Loader from '../../components/Loader';
 import { FeedbackButton } from './FeedbackButton';
 import { toUpperCaseLabels, REQUEST_STEPS_FLOW, firstLetterUppercase } from '../../util';
 import { NgBooleanRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
@@ -243,7 +242,7 @@ const Modal = ({ question, onOk, onCancel }) => (
 );
 
 export default forwardRef(
-  ({ value, setSaveButton, setTestingButton, setMenu, history, ...props }, ref) => {
+  ({ value, setSaveButton, setTestingButton, setMenu, history, setValue, ...props }, ref) => {
     const { routeId } = useParams();
     const location = useLocation();
 
@@ -275,6 +274,7 @@ export default forwardRef(
         routeId={routeId}
         location={location}
         value={value}
+        setValue={setValue}
         setSaveButton={setSaveButton}
         setTestingButton={setTestingButton}
         setMenu={setMenu}
@@ -610,7 +610,7 @@ class Designer extends React.Component {
   loadData = () => {
     Promise.all([
       nextClient.find(nextClient.ENTITIES.BACKENDS),
-      nextClient.fetch(
+      this.props.value ? Promise.resolve(this.props.value) : nextClient.fetch(
         this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
         this.props.routeId
       ),
@@ -1194,6 +1194,10 @@ class Designer extends React.Component {
         })),
       };
     }
+
+    if (this.props.setValue)
+      this.props.setValue(newRoute);
+
     return nextClient
       .update(
         this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
@@ -1214,6 +1218,10 @@ class Designer extends React.Component {
     new Promise((resolve) => {
       this.setState({ route: r }, () => {
         this.injectSaveButton();
+
+        if (this.props.setValue)
+          this.props.setValue(r);
+
         resolve();
       });
     });
@@ -2076,9 +2084,8 @@ class EditView extends React.Component {
           collapsable: isPluginWithConfiguration ? true : false,
           collapsed: false,
           label: 'Informations',
-          schema: PLUGIN_INFORMATIONS_SCHEMA,
-          flow: ['enabled', 'debug', 'include', 'exclude'],
-        },
+          schema: PLUGIN_INFORMATIONS_SCHEMA
+        }
       };
       if (isPluginWithConfiguration)
         formSchema = {
@@ -2373,19 +2380,18 @@ const BackendSelector = ({
             position: 'relative',
           }}>
           <div
-            className={`tryit-selector-cursor ${
-              !usingExistingBackend ? '' : 'tryit-selector-mode-right'
-            }`}
+            className={`pill-cursor ${!usingExistingBackend ? '' : 'pill-mode-right'
+              }`}
           />
           <button
-            className="flex tryit-selector-mode"
+            className="flex pill-mode"
             onClick={() => {
               setUsingExistingBackend(false);
             }}>
             Create a new backend
           </button>
           <button
-            className="flex tryit-selector-mode"
+            className="flex pill-mode"
             onClick={() => setUsingExistingBackend(true)}>
             Select an existing backend
           </button>
@@ -2436,7 +2442,7 @@ const Description = ({ text, steps, legacy }) => {
         />
       )}
       {steps.length > 0 && (
-        <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
+        <div className="steps" style={{ paddingLeft: 12 }}>
           active on{' '}
           {steps.map((step, i) => (
             <span

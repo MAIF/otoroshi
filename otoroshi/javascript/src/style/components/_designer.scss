@@ -217,6 +217,7 @@
         background-color: $fondNavbar;
         color: $grisTexte;
         padding: 12px;
+        padding-bottom: 0;
     }
 
     .input-group-append {
@@ -318,7 +319,7 @@
 
     .editor-view {
         position: absolute;
-        z-index: 100;
+        // z-index: 100;
         left: 12px;
         right: 0;
         padding-bottom: 80px;
@@ -522,34 +523,6 @@
         height: 100%;
     }
 
-    .tryit-selector-mode {
-        border: none;
-        padding: 2px 0;
-        color: #fff;
-        text-align: center;
-        background: none;
-        z-index: 21;
-        position: relative;
-        width: 115px;
-    }
-
-    .tryit-selector-mode-right {
-        left: calc(50% - 4px) !important;
-        width: 50% !important;
-    }
-
-    .tryit-selector-cursor {
-        transition: left .25s;
-        position: absolute;
-        background-color: #f9b000;
-        top: 4px;
-        bottom: 4px;
-        left: 4px;
-        border-radius: 24px;
-        width: calc(50% - 8px);
-        z-index: 20;
-    }
-
     .tryit-prettify-button {
         position: absolute;
         top: 16px;
@@ -606,25 +579,26 @@
 }
 
 .wizard {
-    position: absolute;
+    position: fixed;
     top: 0;
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 10000;
+    z-index: 1050;
     background-color: #494948a6;
 }
 
 .wizard-container {
     position: relative;
-    background: rgb(73, 73, 72);
+    // background: rgb(73, 73, 72);
+    background-color: $fondBody;
     display: flex;
     flex-direction: column;
-    margin: auto;
-    margin-top: 5em;
-    // overflow: hidden;
-    max-width: 50vw;
-    border-radius: 4px;
+    margin-left: auto;
+    max-width: 80vw;
+    height: 100vh;
+    min-height: 100vh;
+    overflow-y: scroll;
     box-shadow: 0px 0 2px 1px #f9b000c2;
 }
 
@@ -642,6 +616,15 @@
 .wizard-content .btn-save {
     background-color: #f9b000 !important;
     border-color: #f9b000 !important;
+}
+
+.wizard-content .btn-outline-save {
+    border-color: #f9b000 !important;
+    color: #FFF;
+
+    &:hover {
+        background-color: #f9b000;
+    }
 }
 
 .wizard-route-chooser {
@@ -679,6 +662,8 @@
 
 .patch-row {
     margin-right: 0 !important;
+    --bs-gutter-x: 0;
+    --bs-gutter-y: 0;
 }
 
 .patch-main {
