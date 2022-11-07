@@ -247,6 +247,7 @@
     "entity_description.otoroshi.next.plugins.JwtSigner": "???",
     "entity_description.otoroshi.next.plugins.JwtVerification": "???",
     "entity_description.otoroshi.next.plugins.JwtVerificationOnly": "???",
+    "entity_description.otoroshi.next.plugins.JwtVerifierUtils": "???",
     "entity_description.otoroshi.next.plugins.Keys": "???",
     "entity_description.otoroshi.next.plugins.MaintenanceMode": "???",
     "entity_description.otoroshi.next.plugins.MissingHeadersIn": "???",

@@ -11,7 +11,8 @@ export default {
     },
     protocols: {
       label: 'Protocols',
-      type: 'array',
+      type: 'string',
+      array: true
     },
   },
   config_flow: ['ma', 'domain', 'protocols'],
