@@ -341,8 +341,22 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
                     }) match {
                       case Left(result) => result.left
                       case Right(newValue) =>
-                        ctx.attrs.put(JwtInjectionKey -> newValue)
-                        ctx.otoroshiRequest.right
+                        ctx.otoroshiRequest
+                          .applyOnIf(newValue.removeCookies.nonEmpty) { req =>
+                            req.copy(cookies = req.cookies.filterNot(c => newValue.removeCookies.contains(c.name)))
+                          }
+                          .applyOnIf(newValue.removeHeaders.nonEmpty) { req =>
+                            req.copy(headers =
+                              req.headers.filterNot(tuple => newValue.removeHeaders.map(_.toLowerCase).contains(tuple._1.toLowerCase))
+                            )
+                          }
+                          .applyOnIf(newValue.additionalHeaders.nonEmpty) { req =>
+                            req.copy(headers = req.headers ++ newValue.additionalHeaders)
+                          }
+                          .applyOnIf(newValue.additionalCookies.nonEmpty) { req =>
+                            req.copy(cookies = req.cookies ++ newValue.additionalCookies.map(t => DefaultWSCookie(t._1, t._2)))
+                          }
+                          .right
                     }
                   }
                 }
