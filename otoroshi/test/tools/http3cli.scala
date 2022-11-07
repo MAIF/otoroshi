@@ -16,10 +16,20 @@ class Http3ClientSpec extends AnyWordSpec with Matchers with OptionValues {
 
   implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
-  val fu = (for {
-    resp0 <- NettyHttp3Client.getUrl("GET", "https://test-basic-apikey-next-gen.oto.tools:10048/api?foo=bar#a", Map.empty, None)
+  val fu = for {
+    resp0 <- NettyHttp3Client.getUrl(
+               "GET",
+               "https://test-basic-apikey-next-gen.oto.tools:10048/api?foo=bar#a",
+               Map.empty,
+               None
+             )
     resp1 <- NettyHttp3Client.getUrl("GET", "https://test-basic-apikey-next-gen.oto.tools:10048/", Map.empty, None)
-    resp2 <- NettyHttp3Client.getUrl("POST", "https://test-basic-apikey-next-gen.oto.tools:10048/", Map.empty, Some(NettyHttp3ClientBody(Flux.just(Seq(ByteString("coucou")): _*), "text/plain".some, 6L.some)))
+    resp2 <- NettyHttp3Client.getUrl(
+               "POST",
+               "https://test-basic-apikey-next-gen.oto.tools:10048/",
+               Map.empty,
+               Some(NettyHttp3ClientBody(Flux.just(Seq(ByteString("coucou")): _*), "text/plain".some, 6L.some))
+             )
     resp4 <- NettyHttp3Client.getUrl("GET", "https://www.google.fr", Map.empty, None)
   } yield {
 
@@ -38,13 +48,12 @@ class Http3ClientSpec extends AnyWordSpec with Matchers with OptionValues {
     println(s"resp2 status:  ${resp2.status}")
     println(s"resp2 headers: ${resp2.headers}")
     println(s"resp2 body:    ${resp2.body}")
-  })
+  }
 
   Await.result(fu, 10.seconds)
 }
 
-
 class Http3ClientTests
-  extends Suites(
-    new Http3ClientSpec()
-  )
+    extends Suites(
+      new Http3ClientSpec()
+    )

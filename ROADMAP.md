@@ -62,6 +62,7 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - minimal gRCP support
     - plugin to call gRPC services
     - expose routes as gRPC-Web
+    - grpc transformation
   - support serverless providers
     - plugin to call functions in AWS
     - plugin to call functions in Azure

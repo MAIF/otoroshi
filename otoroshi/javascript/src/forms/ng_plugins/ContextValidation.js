@@ -1,32 +1,27 @@
 export default {
-  "id": "cp:otoroshi.next.plugins.ContextValidation",
-  "config_schema": {
-    "validators": {
-      "label": "validators",
-      "type": "object",
-      "array": true,
-      "format": "form",
-      "schema": {
-        "path": {
-          "label": "path",
-          "type": "string"
+  id: 'cp:otoroshi.next.plugins.ContextValidation',
+  config_schema: {
+    validators: {
+      label: 'validators',
+      type: 'object',
+      array: true,
+      format: 'form',
+      schema: {
+        path: {
+          label: 'path',
+          type: 'string',
         },
-        "value": {
-          "type": "code",
-          "props": {
-            "label": "Value",
-            "type": "json",
-            "editorOnly": true
-          }
-        }
+        value: {
+          type: 'code',
+          props: {
+            label: 'Value',
+            type: 'json',
+            editorOnly: true,
+          },
+        },
       },
-      "flow": [
-        "path",
-        "value"
-      ]
-    }
+      flow: ['path', 'value'],
+    },
   },
-  "config_flow": [
-    "validators"
-  ]
-}
+  config_flow: ['validators'],
+};

@@ -420,15 +420,15 @@ class GraphQLBackend extends NgBackendCall {
     description = Some("Raw JSON value"),
     coerceOutput = (value, _) => value,
     coerceUserInput = {
-      case v: String     ⇒ Right(JsString(v))
-      case v: Boolean    ⇒ Right(JsBoolean(v))
-      case v: Int        ⇒ Right(JsNumber(v))
-      case v: Long       ⇒ Right(JsNumber(v))
-      case v: Float      ⇒ Right(JsNumber(v))
-      case v: Double     ⇒ Right(JsNumber(v))
-      case v: BigInt     ⇒ Right(JsNumber(v.intValue()))
-      case v: BigDecimal ⇒ Right(JsNumber(v))
-      case v: JsValue    ⇒ Right(v)
+      case v: String     => Right(JsString(v))
+      case v: Boolean    => Right(JsBoolean(v))
+      case v: Int        => Right(JsNumber(v))
+      case v: Long       => Right(JsNumber(v))
+      case v: Float      => Right(JsNumber(v))
+      case v: Double     => Right(JsNumber(v))
+      case v: BigInt     => Right(JsNumber(v.intValue()))
+      case v: BigDecimal => Right(JsNumber(v))
+      case v: JsValue    => Right(v)
     },
     coerceInput = {
       case ast.StringValue(jsonStr, _, _, _, _) =>

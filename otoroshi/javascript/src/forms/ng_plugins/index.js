@@ -96,6 +96,7 @@ export const Plugins = [
   GzipResponseCompressor,
   HeadersValidation,
   HtmlPatcher,
+  Http3Switch,
   IpAddressAllowedList,
   IpAddressBlockList,
   JQ,
@@ -136,5 +137,5 @@ export const Plugins = [
   W3CTracing,
   XForwardedHeaders,
   XmlToJsonRequest,
-  XmlToJsonResponse
-]
+  XmlToJsonResponse,
+];

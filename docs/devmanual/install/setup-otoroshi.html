@@ -1009,6 +1009,9 @@ play.http {
   adminPassword = ${?OTOROSHI_INITIAL_ADMIN_PASSWORD} # the initial admin password
   initialCustomization = ${?OTOROSHI_INITIAL_CUSTOMIZATION} # otoroshi inital configuration that will be merged with a new confguration. Shaped like an otoroshi export
   boot {
+  	failOnTimeout = false # otoroshi will exit if a subsystem failed its init
+  	failOnTimeout = ${?OTOROSHI_BOOT_FAIL_ON_TIMEOUT} # otoroshi will exit if a subsystem failed its init
+
     globalWait = true # should we wait until everything is setup to accept http requests
     globalWait = ${?OTOROSHI_BOOT_GLOBAL_WAIT} # should we wait until everything is setup to accept http requests
     globalWaitTimeout = 60000 # max wait before accepting requests
@@ -1867,6 +1870,8 @@ otoroshi {
           maxRecvUdpPayloadSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_MAX_RECV_UDP_PAYLOAD_SIZE}
           maxSendUdpPayloadSize = 1500
           maxSendUdpPayloadSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_MAX_SEND_UDP_PAYLOAD_SIZE}
+          disableQpackDynamicTable = true
+          disableQpackDynamicTable = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_DISABLE_QPACK_DYNAMIC_TABLE}
    			}
    			native {
    				enabled = true
@@ -2393,7 +2398,7 @@ play.http {
 
 
 akka { # akka specific configuration
-  version = &quot;2.6.19&quot;
+  version = &quot;2.6.20&quot;
   loglevel = ERROR
   logger-startup-timeout = 60s
   log-dead-letters-during-shutdown = false
@@ -2536,6 +2541,7 @@ akka { # akka specific configuration
   adminPassword = ${?OTOROSHI_INITIAL_ADMIN_PASSWORD} # the initial admin password
   initialCustomization = ${?OTOROSHI_INITIAL_CUSTOMIZATION} # otoroshi inital configuration that will be merged with a new confguration. Shaped like an otoroshi export
   boot {
+  	failOnTimeout = ${?OTOROSHI_BOOT_FAIL_ON_TIMEOUT} # otoroshi will exit if a subsystem failed its init
     globalWait = ${?OTOROSHI_BOOT_GLOBAL_WAIT} # should we wait until everything is setup to accept http requests
     globalWaitTimeout = ${?OTOROSHI_BOOT_GLOBAL_WAIT_TIMEOUT} # max wait before accepting requests
     waitForPluginsSearch = ${?OTOROSHI_BOOT_WAIT_FOR_PLUGINS_SEARCH} # should we wait for classpath plugins search before accepting http requests
@@ -3048,6 +3054,7 @@ otoroshi {
           initialMaxData = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_INITIAL_MAX_DATA}
           maxRecvUdpPayloadSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_MAX_RECV_UDP_PAYLOAD_SIZE}
           maxSendUdpPayloadSize = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_MAX_SEND_UDP_PAYLOAD_SIZE}
+          disableQpackDynamicTable = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_HTTP_3_DISABLE_QPACK_DYNAMIC_TABLE}
    			}
    			native {
    				enabled = ${?OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_NATIVE_ENABLED}

@@ -42,7 +42,6 @@ export class NgValidationRenderer extends Component {
 }
 
 export class NgFormRenderer extends Component {
-
   state = {
     folded: true
   };
@@ -61,13 +60,12 @@ export class NgFormRenderer extends Component {
 
   setBreadcrumb = () => {
     if (this.props.setBreadcrumb) {
-      this.props.setBreadcrumb(this.props.path)
-    }
-    else
+      this.props.setBreadcrumb(this.props.path);
+    } else
       this.setState({
-        folded: !this.state.folded
-      })
-  }
+        folded: !this.state.folded,
+      });
+  };
 
   match = (test, breadcrumb) => {
     const lowerTest = test.join('-').toLowerCase();
@@ -76,14 +74,14 @@ export class NgFormRenderer extends Component {
   }
 
   getChildrenVisibility = (pathAsArray, breadcrumbAsArray) => {
-    if (!this.props.setBreadcrumb)
-      return !this.state.folded;
+    if (!this.props.setBreadcrumb) return !this.state.folded;
 
-    if (this.props.breadcrumb === undefined)
-      return false;
+    if (this.props.breadcrumb === undefined) return false;
 
-    return pathAsArray.length <= breadcrumbAsArray.length && this.match(pathAsArray, breadcrumbAsArray);
-  }
+    return (
+      pathAsArray.length <= breadcrumbAsArray.length && this.match(pathAsArray, breadcrumbAsArray)
+    );
+  };
 
   isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
   firstLetterUppercase = (str) => str.charAt(0).toUpperCase() + str.slice(1);
@@ -186,7 +184,7 @@ export class NgFormRenderer extends Component {
             marginBottom: 10
           }}>{title}</div>
 
-      let EnabledTagComponent = null
+      let EnabledTagComponent = null;
 
       if (rawSchema?.schema &&
         Object.keys(rawSchema?.schema).includes('enabled') &&
@@ -238,10 +236,7 @@ export class NgFormRenderer extends Component {
                 </button>}
               </div>
             </div>
-            {showChildren &&
-              <div onClick={e => e.stopPropagation()}>
-                {this.props.children}
-              </div>}
+            {showChildren && <div onClick={(e) => e.stopPropagation()}>{this.props.children}</div>}
           </div>
         );
       } else if (rawSchemaProps.noBorder || rawSchema.noBorder) {

@@ -6,6 +6,8 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Configuration
 import reactor.netty.http.HttpDecoderSpec
 
+import java.util.concurrent.atomic.AtomicReference
+
 case class HttpRequestParserConfig(
     allowDuplicateContentLengths: Boolean,
     validateHeaders: Boolean,
@@ -27,12 +29,14 @@ object NativeDriver {
 case class Http3Settings(
     enabled: Boolean,
     port: Int,
+    exposedPort: Int,
     maxSendUdpPayloadSize: Long,
     maxRecvUdpPayloadSize: Long,
     initialMaxData: Long,
     initialMaxStreamDataBidirectionalLocal: Long,
     initialMaxStreamDataBidirectionalRemote: Long,
-    initialMaxStreamsBidirectional: Long
+    initialMaxStreamsBidirectional: Long,
+    disableQpackDynamicTable: Boolean
 )
 case class Http2Settings(enabled: Boolean, h2cEnabled: Boolean)
 case class NativeSettings(enabled: Boolean, driver: NativeDriver) {
@@ -46,7 +50,9 @@ case class ReactorNettyServerConfig(
     newEngineOnly: Boolean,
     host: String,
     httpPort: Int,
+    exposedHttpPort: Int,
     httpsPort: Int,
+    exposedHttpsPort: Int,
     nThread: Int,
     wiretap: Boolean,
     accessLog: Boolean,
@@ -61,14 +67,24 @@ case class ReactorNettyServerConfig(
 )
 
 object ReactorNettyServerConfig {
-  def parseFrom(env: Env): ReactorNettyServerConfig = {
+
+  private val cache = new AtomicReference[ReactorNettyServerConfig](null)
+
+  def parseFromWithCache(env: Env): ReactorNettyServerConfig = {
+    cache.compareAndSet(null, _parseFrom(env))
+    cache.get()
+  }
+
+  def _parseFrom(env: Env): ReactorNettyServerConfig = {
     val config = env.configuration.get[Configuration]("otoroshi.next.experimental.netty-server")
     ReactorNettyServerConfig(
       enabled = config.getOptionalWithFileSupport[Boolean]("enabled").getOrElse(false),
       newEngineOnly = config.getOptionalWithFileSupport[Boolean]("new-engine-only").getOrElse(false),
       host = config.getOptionalWithFileSupport[String]("host").getOrElse("0.0.0.0"),
       httpPort = config.getOptionalWithFileSupport[Int]("http-port").getOrElse(env.httpPort + 50),
+      exposedHttpPort = config.getOptionalWithFileSupport[Int]("exposed-http-port").getOrElse(env.httpPort + 50),
       httpsPort = config.getOptionalWithFileSupport[Int]("https-port").getOrElse(env.httpsPort + 50),
+      exposedHttpsPort = config.getOptionalWithFileSupport[Int]("exposed-https-port").getOrElse(env.httpsPort + 50),
       nThread = config.getOptionalWithFileSupport[Int]("threads").getOrElse(0),
       wiretap = config.getOptionalWithFileSupport[Boolean]("wiretap").getOrElse(false),
       accessLog = config.getOptionalWithFileSupport[Boolean]("accesslog").getOrElse(false),
@@ -119,6 +135,7 @@ object ReactorNettyServerConfig {
       http3 = Http3Settings(
         enabled = config.getOptionalWithFileSupport[Boolean]("http3.enabled").getOrElse(false),
         port = config.getOptionalWithFileSupport[Int]("http3.port").getOrElse(10048),
+        exposedPort = config.getOptionalWithFileSupport[Int]("http3.exposedPort").getOrElse(10048),
         maxSendUdpPayloadSize = config.getOptionalWithFileSupport[Long]("http3.maxSendUdpPayloadSize").getOrElse(1500),
         maxRecvUdpPayloadSize = config.getOptionalWithFileSupport[Long]("http3.maxRecvUdpPayloadSize").getOrElse(1500),
         initialMaxData = config.getOptionalWithFileSupport[Long]("http3.initialMaxData").getOrElse(10000000),
@@ -127,7 +144,10 @@ object ReactorNettyServerConfig {
         initialMaxStreamDataBidirectionalRemote =
           config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamDataBidirectionalRemote").getOrElse(1000000),
         initialMaxStreamsBidirectional =
-          config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamsBidirectional").getOrElse(100000)
+          config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamsBidirectional").getOrElse(100000),
+        disableQpackDynamicTable = config
+          .getOptionalWithFileSupport[Boolean]("http3.disableQpackDynamicTable")
+          .getOrElse(true) // cause it doesn't work in browsers if enabled
       ),
       native = NativeSettings(
         enabled = config.getOptionalWithFileSupport[Boolean]("native.enabled").getOrElse(true),

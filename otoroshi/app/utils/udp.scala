@@ -57,7 +57,7 @@ private[utils] final class UdpBindLogic(localAddress: InetSocketAddress, boundPr
 
   private def processIncoming(event: (ActorRef, Any)): Unit =
     event match {
-      case (sender, Udp.Bound(boundAddress))      ⇒
+      case (sender, Udp.Bound(boundAddress))     =>
         boundPromise.success(boundAddress)
         listener = sender
         pull(in)

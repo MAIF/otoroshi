@@ -3,13 +3,13 @@ package otoroshi.utils.jwk
 import java.security.KeyFactory
 import java.security.interfaces.{ECPublicKey, RSAPublicKey}
 import java.security.spec.X509EncodedKeySpec
-
 import com.auth0.jwk.{GuavaCachedJwkProvider, Jwk, JwkProvider, UrlJwkProvider}
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.collect.Maps
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import play.api.libs.json.{JsArray, JsObject, Json}
 
+import java.util.Collections
 import scala.collection.JavaConverters._
 import scala.collection.concurrent.TrieMap
 
@@ -25,7 +25,8 @@ object StringJwkProvider {
     val x5c: java.util.List[String]           = values.remove("x5c").asInstanceOf[java.util.List[String]]
     val x5t: String                           = values.remove("x5t").asInstanceOf[String]
     if (kty == null) throw new IllegalArgumentException("Attributes " + map + " are not from a valid jwk")
-    if (keyOps.isInstanceOf[String]) new Jwk(kid, kty, alg, use, keyOps.asInstanceOf[String], x5u, x5c, x5t, values)
+    if (keyOps.isInstanceOf[String])
+      new Jwk(kid, kty, alg, use, Collections.singletonList(keyOps.asInstanceOf[String]), x5u, x5c, x5t, values)
     else new Jwk(kid, kty, alg, use, keyOps.asInstanceOf[java.util.List[String]], x5u, x5c, x5t, values)
   }
 }

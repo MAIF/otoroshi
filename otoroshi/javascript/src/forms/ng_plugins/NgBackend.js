@@ -3,300 +3,286 @@ export default {
   icon: 'bullseye',
   group: 'Targets',
   field: 'backend',
-  "schema": {
-    "target_refs": {
-      "label": "target_refs",
-      "type": "array",
-      "array": true,
-      "format": null
+  schema: {
+    target_refs: {
+      label: 'target_refs',
+      type: 'array',
+      array: true,
+      format: null,
     },
-    "root": {
-      "label": "root",
-      "type": "string"
+    root: {
+      label: 'root',
+      type: 'string',
     },
-    "client": {
-      "label": "client",
-      "type": "form",
-      "collapsable": true,
-      "collapsed": true,
-      "schema": {
-        "custom_timeouts": {
-          "label": "custom_timeouts",
-          "type": "array",
-          "array": true,
-          "format": "form",
-          "schema": {
-            "connection_timeout": {
-              "label": "connection_timeout",
-              "type": "number"
+    client: {
+      label: 'client',
+      type: 'form',
+      collapsable: true,
+      collapsed: true,
+      schema: {
+        custom_timeouts: {
+          label: 'custom_timeouts',
+          type: 'array',
+          array: true,
+          format: 'form',
+          schema: {
+            connection_timeout: {
+              label: 'connection_timeout',
+              type: 'number',
             },
-            "call_and_stream_timeout": {
-              "label": "call_and_stream_timeout",
-              "type": "number"
+            call_and_stream_timeout: {
+              label: 'call_and_stream_timeout',
+              type: 'number',
             },
-            "path": {
-              "label": "path",
-              "type": "string"
+            path: {
+              label: 'path',
+              type: 'string',
             },
-            "call_timeout": {
-              "label": "call_timeout",
-              "type": "number"
+            call_timeout: {
+              label: 'call_timeout',
+              type: 'number',
             },
-            "idle_timeout": {
-              "label": "idle_timeout",
-              "type": "number"
+            idle_timeout: {
+              label: 'idle_timeout',
+              type: 'number',
             },
-            "global_timeout": {
-              "label": "global_timeout",
-              "type": "number"
-            }
+            global_timeout: {
+              label: 'global_timeout',
+              type: 'number',
+            },
           },
-          "flow": [
+          flow: [
             {
-              type: "group",
+              type: 'group',
               collapsed: true,
-              name: props => {
-                return `${props.path.slice(-1)}. Custom timeouts`
+              name: (props) => {
+                return `${props.path.slice(-1)}. Custom timeouts`;
               },
               fields: [
-                "connection_timeout",
-                "call_and_stream_timeout",
-                "path",
-                "call_timeout",
-                "idle_timeout",
-                "global_timeout"
-              ]
-            }
-          ]
-        },
-        "global_timeout": {
-          "label": "global_timeout",
-          "type": "number"
-        },
-        "max_errors": {
-          "label": "max_errors",
-          "type": "number"
-        },
-        "retry_initial_delay": {
-          "label": "retry_initial_delay",
-          "type": "number"
-        },
-        "backoff_factor": {
-          "label": "backoff_factor",
-          "type": "number"
-        },
-        "cache_connection_settings": {
-          "label": "cache_connection_settings",
-          "type": "form",
-          "collapsable": true,
-          "collapsed": true,
-          "schema": {
-            "queue_size": {
-              "label": "queue_size",
-              "type": "number"
+                'connection_timeout',
+                'call_and_stream_timeout',
+                'path',
+                'call_timeout',
+                'idle_timeout',
+                'global_timeout',
+              ],
             },
-            "enabled": {
-              "label": "enabled",
-              "type": "bool"
-            }
+          ],
+        },
+        global_timeout: {
+          label: 'global_timeout',
+          type: 'number',
+        },
+        max_errors: {
+          label: 'max_errors',
+          type: 'number',
+        },
+        retry_initial_delay: {
+          label: 'retry_initial_delay',
+          type: 'number',
+        },
+        backoff_factor: {
+          label: 'backoff_factor',
+          type: 'number',
+        },
+        cache_connection_settings: {
+          label: 'cache_connection_settings',
+          type: 'form',
+          collapsable: true,
+          collapsed: true,
+          schema: {
+            queue_size: {
+              label: 'queue_size',
+              type: 'number',
+            },
+            enabled: {
+              label: 'enabled',
+              type: 'bool',
+            },
           },
-          "flow": [
-            "queue_size",
-            "enabled"
-          ]
+          flow: ['queue_size', 'enabled'],
         },
-        "sample_interval": {
-          "label": "sample_interval",
-          "type": "number"
+        sample_interval: {
+          label: 'sample_interval',
+          type: 'number',
         },
-        "call_and_stream_timeout": {
-          "label": "call_and_stream_timeout",
-          "type": "number"
+        call_and_stream_timeout: {
+          label: 'call_and_stream_timeout',
+          type: 'number',
         },
-        "retries": {
-          "label": "retries",
-          "type": "number"
+        retries: {
+          label: 'retries',
+          type: 'number',
         },
-        "proxy": {
-          "label": "proxy",
-          "type": "form",
-          "collapsable": true,
-          "collapsed": true,
-          "schema": {
-            "host": {
-              "label": "host",
-              "type": "string"
+        proxy: {
+          label: 'proxy',
+          type: 'form',
+          collapsable: true,
+          collapsed: true,
+          schema: {
+            host: {
+              label: 'host',
+              type: 'string',
             },
-            "port": {
-              "label": "port",
-              "type": "string"
+            port: {
+              label: 'port',
+              type: 'string',
             },
-            "protocol": {
-              type: "dots",
-              label: "Protocol",
+            protocol: {
+              type: 'dots',
+              label: 'Protocol',
               props: {
-                options: ["HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0"]
-              }
+                options: ['HTTP/1.0', 'HTTP/1.1', 'HTTP/2.0', 'HTTP/3.0'],
+              },
             },
-            "principal": {
-              "label": "principal",
-              "type": "string"
+            principal: {
+              label: 'principal',
+              type: 'string',
             },
-            "password": {
-              "label": "password",
-              "type": "string"
+            password: {
+              label: 'password',
+              type: 'string',
             },
-            "ntlmDomain": {
-              "label": "ntlmDomain",
-              "type": "string"
+            ntlmDomain: {
+              label: 'ntlmDomain',
+              type: 'string',
             },
-            "encoding": {
-              "label": "encoding",
-              "type": "string"
+            encoding: {
+              label: 'encoding',
+              type: 'string',
             },
-            "nonProxyHosts": {
-              "label": "nonProxyHosts",
-              "type": "string"
-            }
+            nonProxyHosts: {
+              label: 'nonProxyHosts',
+              type: 'string',
+            },
           },
-          "flow": [
-            "host",
-            "port",
-            "protocol",
-            "principal",
-            "password",
-            "ntlmDomain",
-            "encoding",
-            "nonProxyHosts"
-          ]
+          flow: [
+            'host',
+            'port',
+            'protocol',
+            'principal',
+            'password',
+            'ntlmDomain',
+            'encoding',
+            'nonProxyHosts',
+          ],
         },
-        "call_timeout": {
-          "label": "call_timeout",
-          "type": "number"
+        call_timeout: {
+          label: 'call_timeout',
+          type: 'number',
         },
-        "idle_timeout": {
-          "label": "idle_timeout",
-          "type": "number"
+        idle_timeout: {
+          label: 'idle_timeout',
+          type: 'number',
         },
-        "connection_timeout": {
-          "label": "connection_timeout",
-          "type": "number"
-        }
+        connection_timeout: {
+          label: 'connection_timeout',
+          type: 'number',
+        },
       },
-      "flow": [
-        "custom_timeouts",
-        "global_timeout",
-        "max_errors",
-        "retry_initial_delay",
-        "backoff_factor",
-        "sample_interval",
-        "call_and_stream_timeout",
-        "retries",
-        "call_timeout",
-        "idle_timeout",
-        "connection_timeout",
-        "cache_connection_settings",
-        "proxy",
-      ]
+      flow: [
+        'custom_timeouts',
+        'global_timeout',
+        'max_errors',
+        'retry_initial_delay',
+        'backoff_factor',
+        'sample_interval',
+        'call_and_stream_timeout',
+        'retries',
+        'call_timeout',
+        'idle_timeout',
+        'connection_timeout',
+        'cache_connection_settings',
+        'proxy',
+      ],
     },
-    "health_check": {
-      "label": "health_check",
-      "type": "form",
-      "collapsable": true,
-      "collapsed": true,
-      "schema": {
-        "enabled": {
-          "label": "enabled",
-          "type": "bool"
+    health_check: {
+      label: 'health_check',
+      type: 'form',
+      collapsable: true,
+      collapsed: true,
+      schema: {
+        enabled: {
+          label: 'enabled',
+          type: 'bool',
         },
-        "url": {
-          "label": "url",
-          "type": "string"
-        }
+        url: {
+          label: 'url',
+          type: 'string',
+        },
       },
-      "flow": [
-        "enabled",
-        "url"
-      ]
+      flow: ['enabled', 'url'],
     },
-    "targets": {
+    targets: {
       array: true,
-      format: "form",
-      type: "object",
+      format: 'form',
+      type: 'object',
       props: {
         ngOptions: {
-          spread: true
-        }
+          spread: true,
+        },
       },
-      "schema": {
-        "predicate": {
-          "label": "Predicate",
-          "type": "form",
-          "collapsable": true,
-          "collapsed": true,
-          "schema": {
-            "rack": {
-              "label": "rack",
-              "type": "string"
+      schema: {
+        predicate: {
+          label: 'Predicate',
+          type: 'form',
+          collapsable: true,
+          collapsed: true,
+          schema: {
+            rack: {
+              label: 'rack',
+              type: 'string',
             },
-            "provider": {
-              "label": "provider",
-              "type": "string"
+            provider: {
+              label: 'provider',
+              type: 'string',
             },
-            "dataCenter": {
-              "label": "dataCenter",
-              "type": "string"
+            dataCenter: {
+              label: 'dataCenter',
+              type: 'string',
             },
-            "zone": {
-              "label": "zone",
-              "type": "string"
+            zone: {
+              label: 'zone',
+              type: 'string',
             },
-            "positions": {
-              "label": "positions",
-              "type": "array",
-              "array": true,
-              "format": "form",
-              "schema": {
-                "latitude": {
-                  "label": "latitude",
-                  "type": "number"
+            positions: {
+              label: 'positions',
+              type: 'array',
+              array: true,
+              format: 'form',
+              schema: {
+                latitude: {
+                  label: 'latitude',
+                  type: 'number',
                 },
-                "longitude": {
-                  "label": "longitude",
-                  "type": "number"
+                longitude: {
+                  label: 'longitude',
+                  type: 'number',
                 },
-                "radius": {
-                  "label": "radius",
-                  "type": "number"
-                }
+                radius: {
+                  label: 'radius',
+                  type: 'number',
+                },
               },
-              "flow": [
-                "latitude",
-                "longitude",
-                "radius"
-              ]
+              flow: ['latitude', 'longitude', 'radius'],
             },
-            "type": {
-              "type": "select",
-              "props": {
-                "label": "type",
-                "options": [
-                  "AlwaysMatch",
-                  "NetworkLocationMatch",
-                  "GeolocationMatch"
-                ]
-              }
+            type: {
+              type: 'select',
+              props: {
+                label: 'type',
+                options: ['AlwaysMatch', 'NetworkLocationMatch', 'GeolocationMatch'],
+              },
             },
-            "region": {
-              "label": "region",
-              "type": "string"
+            region: {
+              label: 'region',
+              type: 'string',
             },
-            "dc": {
-              "label": "dc",
-              "type": "string"
-            }
+            dc: {
+              label: 'dc',
+              type: 'string',
+            },
           },
-          "flow": (value) => {
+          flow: (value) => {
             const type = value?.type;
 
             return {
@@ -305,51 +291,51 @@ export default {
               AlwaysMatch: ['type'],
               [undefined]: ['type'],
             }[type];
-          }
+          },
         },
-        "hostname": {
-          "label": "hostname",
-          "type": "string",
+        hostname: {
+          label: 'hostname',
+          type: 'string',
           props: {
-            defaultValue: 'changeme.oto.tools'
-          }
+            defaultValue: 'changeme.oto.tools',
+          },
         },
-        "protocol": {
-          type: "dots",
-          label: "Protocol",
+        protocol: {
+          type: 'dots',
+          label: 'Protocol',
           props: {
-            options: ["HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0"],
-            defaultValue: 'HTTP/1.1'
-          }
+            options: ['HTTP/1.0', 'HTTP/1.1', 'HTTP/2.0', 'HTTP/3.0'],
+            defaultValue: 'HTTP/1.1',
+          },
         },
-        "port": {
-          "label": "port",
-          "type": "number",
+        port: {
+          label: 'port',
+          type: 'number',
           props: {
-            defaultValue: 80
-          }
+            defaultValue: 80,
+          },
         },
-        "weight": {
-          "label": "weight",
-          "type": "number",
+        weight: {
+          label: 'weight',
+          type: 'number',
           props: {
-            defaultValue: 1
-          }
+            defaultValue: 1,
+          },
         },
-        "tls": {
-          "label": "tls",
-          "type": "bool"
+        tls: {
+          label: 'tls',
+          type: 'bool',
         },
-        "tls_config": {
+        tls_config: {
           label: 'Custom TLS setup',
-          "type": "form",
-          "collapsable": true,
-          "collapsed": true,
+          type: 'form',
+          collapsable: true,
+          collapsed: true,
           label: 'Custom TLS setup',
-          "schema": Object.entries({
+          schema: Object.entries({
             enabled: {
-              "label": "enabled",
-              "type": "bool"
+              label: 'enabled',
+              type: 'bool',
             },
             certs: {
               type: 'array-select',
@@ -374,13 +360,13 @@ export default {
               },
             },
             loose: {
-              "label": "loose",
-              "type": "bool"
+              label: 'loose',
+              type: 'bool',
             },
             trust_all: {
-              "label": "trust_all",
-              "type": "bool"
-            }
+              label: 'trust_all',
+              type: 'bool',
+            },
           }).reduce((obj, entry) => {
             if (entry[0] === 'enabled')
               return {
@@ -396,20 +382,14 @@ export default {
                 },
               };
           }, {}),
-          "flow": [
-            "enabled",
-            "certs",
-            "loose",
-            "trust_all",
-            "trusted_certs"
-          ]
+          flow: ['enabled', 'certs', 'loose', 'trust_all', 'trusted_certs'],
         },
-        "ip_address": {
-          "label": "ip_address",
-          "type": "string"
-        }
+        ip_address: {
+          label: 'ip_address',
+          type: 'string',
+        },
       },
-      "flow": [
+      flow: [
         {
           type: 'group',
           collapsed: true,
@@ -428,52 +408,45 @@ export default {
             'ip_address',
             'tls',
             'predicate',
-            'tls_config'
+            'tls_config',
           ],
-          fields: [
-            'hostname',
-            'port',
-            'protocol',
-          ]
-        }
-      ]
-    },
-    "rewrite": {
-      label: 'Full path rewrite',
-      "type": "bool"
-    },
-    "load_balancing": {
-      "label": "load_balancing",
-      "type": "form",
-      "collapsable": true,
-      "collapsed": true,
-      "schema": {
-        "type": {
-          "type": "select",
-          "props": {
-            "label": "type",
-            "options": [
-              "BestResponseTime",
-              "IpAddressHash",
-              "Random",
-              "RoundRobin",
-              "Sticky",
-              "WeightedBestResponseTime"
-            ]
-          }
+          fields: ['hostname', 'port', 'protocol'],
         },
-        "ratio": {
-          "label": "ratio",
-          "type": "number"
-        }
+      ],
+    },
+    rewrite: {
+      label: 'Full path rewrite',
+      type: 'bool',
+    },
+    load_balancing: {
+      label: 'load_balancing',
+      type: 'form',
+      collapsable: true,
+      collapsed: true,
+      schema: {
+        type: {
+          type: 'select',
+          props: {
+            label: 'type',
+            options: [
+              'BestResponseTime',
+              'IpAddressHash',
+              'Random',
+              'RoundRobin',
+              'Sticky',
+              'WeightedBestResponseTime',
+            ],
+          },
+        },
+        ratio: {
+          label: 'ratio',
+          type: 'number',
+        },
       },
-      "flow": [
-        "type",
-        "ratio"
-      ]
-    }
+      flow: ['type', 'ratio'],
+    },
   },
-  "flow": {
+  flow: {
     otoroshi_full_flow: [
       'root',
       'rewrite',
@@ -485,7 +458,7 @@ export default {
       },
       'health_check',
       'client',
-      'load_balancing'
+      'load_balancing',
     ],
     otoroshi_flow: [
       'root',

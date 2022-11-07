@@ -511,8 +511,8 @@ class Env(
   lazy val internalAhcStats = new AtomicReference[Cancellable]()
 
   lazy val reactorClientInternal = new otoroshi.netty.NettyHttpClient(this)
-  lazy val reactorClientGateway = new otoroshi.netty.NettyHttpClient(this)
-  lazy val http3Client = new otoroshi.netty.NettyHttp3Client(this)
+  lazy val reactorClientGateway  = new otoroshi.netty.NettyHttpClient(this)
+  lazy val http3Client           = new otoroshi.netty.NettyHttp3Client(this)
 
   lazy val gatewayClient = {
     val parser: WSConfigParser         = new WSConfigParser(configuration.underlying, environment.classLoader)
@@ -1095,13 +1095,19 @@ class Env(
       clusterAgent.startF()
     }
 
-    val modernTlsProtocols:    Seq[String] = configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.modernProtocols").getOrElse(Seq.empty)
-    val protocolsJDK11:        Seq[String] = configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK11").getOrElse(Seq.empty)
-    val protocolsJDK8:         Seq[String] = configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK8").getOrElse(Seq.empty)
+    val modernTlsProtocols: Seq[String] =
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.modernProtocols").getOrElse(Seq.empty)
+    val protocolsJDK11: Seq[String]     =
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK11").getOrElse(Seq.empty)
+    val protocolsJDK8: Seq[String]      =
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK8").getOrElse(Seq.empty)
 
-    val cipherSuitesJDK8:      Seq[String] = configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK8").getOrElse(Seq.empty)
-    val cipherSuitesJDK11:     Seq[String] = configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11").getOrElse(Seq.empty)
-    val cipherSuitesJDK11Plus: Seq[String] = configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11Plus").getOrElse(Seq.empty)
+    val cipherSuitesJDK8: Seq[String]      =
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK8").getOrElse(Seq.empty)
+    val cipherSuitesJDK11: Seq[String]     =
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11").getOrElse(Seq.empty)
+    val cipherSuitesJDK11Plus: Seq[String] =
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11Plus").getOrElse(Seq.empty)
 
     configuration
       .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
@@ -1492,7 +1498,7 @@ class Env(
           domain = Some(host),
           httpOnly = sessionCookieValues.httpOnly,
           secure = sessionCookieValues.secure
-        ),
+        )
       } ++ userOpt.map { user =>
         play.api.mvc.Cookie(
           name = "oto-papps-tsess-" + suffix,

@@ -57,7 +57,10 @@ export class Target extends Component {
       type: 'select',
       props: {
         label: 'Protocol',
-        possibleValues: ['HTTP/1.0', 'HTTP/1.1', 'HTTP/2.0', 'HTTP/3.0'].map((e) => ({ label: e, value: e })),
+        possibleValues: ['HTTP/1.0', 'HTTP/1.1', 'HTTP/2.0', 'HTTP/3.0'].map((e) => ({
+          label: e,
+          value: e,
+        })),
       },
     },
     ip_address: { type: 'string', props: { label: 'IP Address' } },
@@ -475,7 +478,6 @@ export const schemas = {
 };
 
 export class RouteForm extends Component {
-
   state = { value: null, plugins: [], json: false };
 
   componentDidMount() {
@@ -523,9 +525,9 @@ export class RouteForm extends Component {
   };
 
   updateValue = (value) => {
-    this.setState({ value })
+    this.setState({ value });
     this.props.setValue(value);
-  }
+  };
 
   render() {
     if (!this.state.value) {
@@ -600,7 +602,7 @@ export class RouteForm extends Component {
               flow={schemas.backend.flow}
               value={this.state.value.backend}
               onChange={(backend) => {
-                this.updateValue({ ...this.state.value, backend })
+                this.updateValue({ ...this.state.value, backend });
               }}
             />
           </Collapse>

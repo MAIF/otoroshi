@@ -43,7 +43,7 @@ const Helpers = {
   rendererFor: (type, components = {}) => {
     if (type?.endsWith('-no-label')) {
       const Renderer = Helpers.rendererFor(type.replace('-no-label', ''), components);
-      return (props) => <Renderer {...props} ngOptions={{ ...props.ngOptions, spread: true }} />
+      return (props) => <Renderer {...props} ngOptions={{ ...props.ngOptions, spread: true }} />;
     } else if (type === 'string') {
       return components.StringRenderer;
     } else if (type === 'bool' || type === 'boolean') {
@@ -325,8 +325,8 @@ export class NgForm extends Component {
   state = {
     validation: {
       valid: true,
-      graph: {}
-    }
+      graph: {},
+    },
   };
   tasks = [];
 
@@ -442,7 +442,7 @@ export class NgForm extends Component {
       let itemRenderer = null;
       if (schema.array && schema.format === 'form') {
         itemRenderer = Helpers.rendererFor(renderer, this.props.components);
-      } else if (schema.array && schema.type !== "array") {
+      } else if (schema.array && schema.type !== 'array') {
         itemRenderer = Helpers.rendererFor(schema.type, this.props.components);
       }
       const config = {
@@ -483,7 +483,8 @@ export class NgForm extends Component {
       }
     } else if (isAnObject(this.props.flow) &&
       this.props.flow['otoroshi_flow'] &&
-      this.props.flow['otoroshi_full_flow']) {
+      this.props.flow['otoroshi_full_flow']
+    ) {
       return {
         fields: this.props.flow['otoroshi_flow'],
         full_fields: this.props.flow['otoroshi_full_flow']
@@ -576,24 +577,27 @@ export class NgForm extends Component {
   renderGridFlow({ name, fields, visible }, config) {
     const label = isFunction(name) ? name(config) : name;
 
-    const show = isFunction(visible) ? visible(config.value) : (visible !== undefined ? visible : true)
+    const show = isFunction(visible)
+      ? visible(config.value)
+      : visible !== undefined
+        ? visible
+        : true;
 
-    if (!show)
-      return null
+    if (!show) return null;
 
-    const children = <div className="d-flex flex-wrap ms-3">
-      {fields.map((subName) => (
-        <div className="flex" style={{ minWidth: '50%' }} key={`${config.path}-${subName}`}>
-          {this.renderStepFlow(subName, config)}
-        </div>
-      ))}
-    </div>
+    const children = (
+      <div className="d-flex flex-wrap ms-3">
+        {fields.map((subName) => (
+          <div className="flex" style={{ minWidth: '50%' }} key={`${config.path}-${subName}`}>
+            {this.renderStepFlow(subName, config)}
+          </div>
+        ))}
+      </div>
+    );
 
     return (
       <div className="row" key={config.path}>
-        {label && <LabelAndInput label={label}>
-          {children}
-        </LabelAndInput>}
+        {label && <LabelAndInput label={label}>{children}</LabelAndInput>}
         {!label && children}
       </div>
     );
@@ -688,7 +692,7 @@ export class NgForm extends Component {
       } else {
         return React.createElement(config.components.FlowNotFound, {
           type: composedFlow.type,
-          key: config.name
+          key: config.name,
         });
       }
     } else {
@@ -702,8 +706,8 @@ export class NgForm extends Component {
         return this.props.setBreadcrumb;
       } else
         return (e) => {
-          this.setState({ breadcrumb: e })
-        }
+          this.setState({ breadcrumb: e });
+        };
     }
 
     return null;
@@ -729,7 +733,13 @@ export class NgForm extends Component {
     const readOnly = this.props.readOnly;
 
     const config = {
-      schema, value, root, path, validation, components, StepNotFound,
+      schema,
+      value,
+      root,
+      path,
+      validation,
+      components,
+      StepNotFound,
       setBreadcrumb: this.getBreadcrumb(root),
       breadcrumb: root ? this.state.breadcrumb : this.props.breadcrumb,
       useBreadcrumb: this.props.useBreadcrumb,

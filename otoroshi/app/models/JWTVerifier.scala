@@ -2,10 +2,9 @@ package otoroshi.models
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
-import com.auth0.jwt.JWT
+import com.auth0.jwt.{JWT, RegisteredClaims}
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.InvalidClaimException
-import com.auth0.jwt.impl.PublicClaims
 import com.auth0.jwt.interfaces.{DecodedJWT, Verification}
 import com.github.blemale.scaffeine.Scaffeine
 import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
@@ -832,11 +831,11 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
         .require(algorithm)
         .acceptLeeway(10)
     ) {
-      case (a, b) if b._1 == PublicClaims.AUDIENCE => a.withAudience(b._2)
-      case (a, b) if b._1 == PublicClaims.ISSUER   => a.withIssuer(b._2)
-      case (a, b) if b._1 == PublicClaims.JWT_ID   => a.withJWTId(b._2)
-      case (a, b) if b._1 == PublicClaims.SUBJECT  => a.withSubject(b._2)
-      case (a, b)                                  => a.withClaim(b._1, b._2)
+      case (a, b) if b._1 == RegisteredClaims.AUDIENCE => a.withAudience(b._2)
+      case (a, b) if b._1 == RegisteredClaims.ISSUER   => a.withIssuer(b._2)
+      case (a, b) if b._1 == RegisteredClaims.JWT_ID   => a.withJWTId(b._2)
+      case (a, b) if b._1 == RegisteredClaims.SUBJECT  => a.withSubject(b._2)
+      case (a, b)                                      => a.withClaim(b._1, b._2)
     }
     arrayFields.foldLeft(verification)((a, b) => {
       if (b._2.contains(",")) {

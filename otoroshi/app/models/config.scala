@@ -623,7 +623,7 @@ case class GlobalConfig(
     if (endlessIpAddresses.nonEmpty) {
       endlessIpAddresses.exists { ip =>
         if (ip.contains("/")) {
-          IpFiltering.network(ip).contains(ipAddress)
+          IpFiltering.cidr(ip).contains(ipAddress)
         } else {
           RegexPool(ip).matches(ipAddress)
         }
@@ -890,7 +890,7 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
   def singleton()(implicit ec: ExecutionContext, env: Env): Future[GlobalConfig]
   def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig
   def latestSafe: Option[GlobalConfig]
-  def fullImport(export: JsObject)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def fullImport(exportSource: JsObject)(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue]
   def allEnv()(implicit ec: ExecutionContext, env: Env): Future[Set[String]]
   def quotasValidationFor(from: String)(implicit ec: ExecutionContext, env: Env): Future[(Boolean, Long, Option[Long])]

@@ -27,9 +27,13 @@ object JWKSHelper {
           .filter(c => (c.exposed || ids.contains(c.id)) && c.notRevoked) // && c.notExpired)
           .filterNot(_.chain.trim.isEmpty)
           .filterNot(_.privateKey.trim.isEmpty)
-          .flatMap(c => Try((c.id, c.cryptoKeyPair.getPublic))
-            .seffectOnWithPredicate(t => t.isFailure)(t => t.asInstanceOf[Failure[Tuple2[String, PublicKey]]].exception.printStackTrace())
-            .toOption)
+          .flatMap(c =>
+            Try((c.id, c.cryptoKeyPair.getPublic))
+              .seffectOnWithPredicate(t => t.isFailure)(t =>
+                t.asInstanceOf[Failure[Tuple2[String, PublicKey]]].exception.printStackTrace()
+              )
+              .toOption
+          )
           .flatMap {
             case (id, pub: RSAPublicKey) => new RSAKey.Builder(pub).keyID(id).build().toJSONString.parseJson.some
             case (id, pub: ECPublicKey)  =>

@@ -4,17 +4,17 @@ import isFunction from 'lodash/isFunction';
 
 import AceEditor from 'react-ace';
 
-import "ace-builds/src-noconflict/mode-scala";
-import "ace-builds/src-noconflict/mode-javascript";
-import "ace-builds/src-noconflict/mode-json";
-import "ace-builds/src-noconflict/mode-graphqlschema";
-import "ace-builds/src-noconflict/mode-html";
+import 'ace-builds/src-noconflict/mode-scala';
+import 'ace-builds/src-noconflict/mode-javascript';
+import 'ace-builds/src-noconflict/mode-json';
+import 'ace-builds/src-noconflict/mode-graphqlschema';
+import 'ace-builds/src-noconflict/mode-html';
 
-import "ace-builds/src-noconflict/ext-language_tools";
-import "ace-builds/src-noconflict/ext-searchbox";
+import 'ace-builds/src-noconflict/ext-language_tools';
+import 'ace-builds/src-noconflict/ext-searchbox';
 
-import "ace-builds/src-noconflict/theme-monokai";
-import "ace-builds/src-noconflict/theme-xcode";
+import 'ace-builds/src-noconflict/theme-monokai';
+import 'ace-builds/src-noconflict/theme-xcode';
 
 export class JsonObjectAsCodeInput extends Component {
   render() {
@@ -26,7 +26,7 @@ export class JsonObjectAsCodeInput extends Component {
         onChange={(e) => {
           try {
             this.props.onChange(JSON.parse(e));
-          } catch (ex) { }
+          } catch (ex) {}
         }}
       />
     );
@@ -54,35 +54,34 @@ export default class CodeInput extends Component {
   state = {
     value: null,
     mounted: true,
-    theme: document.body.classList.contains('white-mode') ? "xcode" : "monokai"
+    theme: document.body.classList.contains('white-mode') ? 'xcode' : 'monokai',
   };
 
   componentDidMount() {
     this.listenWhiteMode.bind(this);
 
-    const observer = new MutationObserver(this.listenWhiteMode)
+    const observer = new MutationObserver(this.listenWhiteMode);
     observer.observe(document.body, {
-      attributes: true
-    })
+      attributes: true,
+    });
   }
 
   componentWillUnmount() {
     this.setState({
-      mounted: false
-    })
+      mounted: false,
+    });
   }
 
-  listenWhiteMode = mutationList => {
-    mutationList.forEach(mutation => {
+  listenWhiteMode = (mutationList) => {
+    mutationList.forEach((mutation) => {
       if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
         if (this.state.mounted)
           this.setState({
-            theme: mutation.target.classList.contains('white-mode') ? "xcode" : "monokai"
-          })
+            theme: mutation.target.classList.contains('white-mode') ? 'xcode' : 'monokai',
+          });
       }
-    })
-
-  }
+    });
+  };
 
   onChange = (e) => {
     // if (e && e.preventDefault) e.preventDefault();
@@ -109,13 +108,13 @@ export default class CodeInput extends Component {
     }
   };
 
-  getMode = mode => {
+  getMode = (mode) => {
     if (mode) {
       return mode;
     } else {
       return 'javascript';
     }
-  }
+  };
 
   render() {
     let code = this.state.value || this.props.value;
@@ -123,7 +122,7 @@ export default class CodeInput extends Component {
       code = JSON.stringify(code, null, 2);
     }
 
-    const mode = this.getMode(this.props.mode)
+    const mode = this.getMode(this.props.mode);
 
     const editor = (
       <AceEditor

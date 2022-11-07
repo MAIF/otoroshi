@@ -122,10 +122,15 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
 
         schema._1 -> Form(
           schema = schemaAsJsObject,
-          flow = outSchema.as[JsObject].keys.toSeq
+          flow = outSchema
+            .as[JsObject]
+            .keys
+            .toSeq
             .sortWith((a, _) => {
-              schemaAsJsObject.fields.find(_._1 == a)
-                .map(item => (item._2 \ "type").asOpt[String]).forall(item => item.forall(i => !(i == "form")))
+              schemaAsJsObject.fields
+                .find(_._1 == a)
+                .map(item => (item._2 \ "type").asOpt[String])
+                .forall(item => item.forall(i => !(i == "form")))
             })
         )
       })

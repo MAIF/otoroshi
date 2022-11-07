@@ -1682,7 +1682,7 @@ object ManualResolveTransport {
           settings.idleTimeout
         )
         .mapMaterializedValue(
-          _.map(tcpConn ⇒ OutgoingConnection(tcpConn.localAddress, tcpConn.remoteAddress))(system.dispatcher)
+          _.map(tcpConn => OutgoingConnection(tcpConn.localAddress, tcpConn.remoteAddress))(system.dispatcher)
         )
     }
   }*/
@@ -1696,7 +1696,7 @@ object ManualResolveTransport {
   //      halfClose = true,
   //      settings.connectingTimeout,
   //      settings.idleTimeout
-  //    ).mapMaterializedValue(_.map(tcpConn ⇒ OutgoingConnection(tcpConn.localAddress, tcpConn.remoteAddress))(system.dispatcher))
+  //    ).mapMaterializedValue(_.map(tcpConn => OutgoingConnection(tcpConn.localAddress, tcpConn.remoteAddress))(system.dispatcher))
   //}
   //
   //private case class ManualResolveTransportTLS(ipAddress: String, sslContext: SSLContext, neg: NegotiateNewSession) extends ClientTransport {
@@ -1709,6 +1709,6 @@ object ManualResolveTransport {
   //      options = settings.socketOptions,
   //      connectTimeout =  settings.connectingTimeout,
   //      idleTimeout = settings.idleTimeout
-  //    ).mapMaterializedValue(_.map(tcpConn ⇒ OutgoingConnection(tcpConn.localAddress, tcpConn.remoteAddress))(system.dispatcher))
+  //    ).mapMaterializedValue(_.map(tcpConn => OutgoingConnection(tcpConn.localAddress, tcpConn.remoteAddress))(system.dispatcher))
   //}
 }
