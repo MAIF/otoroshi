@@ -60,29 +60,29 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     },
     enabled: {
       type: 'bool',
+      label: 'Enabled',
       props: {
-        label: 'Enabled'
       }
     },
     capture: {
       type: 'bool',
+      label: 'Capture route traffic',
       props: {
-        label: 'Capture route traffic',
         labelColumn: 3
       }
     },
     debug_flow: {
       type: 'bool',
+      label: 'Debug the flow',
       props: {
-        label: 'Debug the flow',
-        labelColumn: 6
+        labelColumn: 3
       }
     },
     export_reporting: {
       type: 'bool',
+      label: 'Export reporting',
       props: {
-        label: 'Export reporting',
-        labelColumn: 6
+        labelColumn: 3
       }
     },
     description: {
@@ -93,10 +93,10 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     },
     groups: {
       type: 'array-select',
+      label: 'Groups',
       props: {
         optionsFrom: "/bo/api/proxy/api/groups",
         optionsTransformer: arr => arr.map(item => ({ value: item.id, label: item.name })),
-        label: 'Groups'
       }
     },
     metadata: {

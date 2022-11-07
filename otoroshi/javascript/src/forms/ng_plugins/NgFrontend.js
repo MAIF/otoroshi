@@ -30,10 +30,10 @@ export default {
     },
     exact: {
       type: 'bool',
+      label: 'Exact',
       props: {
-        label: 'Exact',
-        labelColumn: 6,
-      },
+        labelColumn: 3,
+      }
     },
     domains: {
       label: 'domains',
@@ -43,11 +43,11 @@ export default {
     },
     strip_path: {
       type: 'bool',
+      label: 'Strip path',
       props: {
-        label: 'Strip path',
-        labelColumn: 6,
-      },
-    },
+        labelColumn: 3,
+      }
+    }
   },
   flow: [
     'domains',

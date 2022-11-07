@@ -113,7 +113,7 @@ const Dot = ({
 
 const RemoveButton = ({ onRemove }) => {
   return (
-    <div onClick={onRemove} className="delete-node-button">
+    <div onClick={onRemove} className="delete-node-button d-flex align-items-center justify-content-center">
       <i className="fas fa-times" />
     </div>
   );
@@ -1952,7 +1952,7 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
         type="button"
         style={{ minWidth: '36px' }}
         onClick={onCloseForm}>
-        <i className="fas fa-times" style={{ color: '#fff' }} />
+        <i className="fas fa-times" />
       </button>
     </div>
   </div>

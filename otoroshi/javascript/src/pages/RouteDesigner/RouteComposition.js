@@ -138,6 +138,7 @@ class RouteForms extends React.Component {
         <div className="d-flex justify-content-end">
           <button
             className="btn btn-sm btn-success me-1"
+            title="Edit this route"
             onClick={(e) => {
               e.stopPropagation();
               this.props.history.replace(
@@ -148,6 +149,7 @@ class RouteForms extends React.Component {
           </button>
           <button
             className="btn btn-sm btn-danger me-1"
+            title="Delete this route"
             onClick={(e) => {
               e.stopPropagation();
               window.newConfirm('Delete this route ?').then((ok) => {
@@ -159,6 +161,7 @@ class RouteForms extends React.Component {
           <button
             className="btn btn-sm me-3"
             style={{ backgroundColor: '#f9b000', color: '#fff' }}
+            title="Switch Form view / Json view"
             onClick={(e) => {
               e.stopPropagation();
               this.setState({

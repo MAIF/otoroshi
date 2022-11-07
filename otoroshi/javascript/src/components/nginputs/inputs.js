@@ -110,7 +110,7 @@ export class NgDotsRenderer extends Component {
             if ((!optObj || backgroundColorFromOption === 'initial'))
               btnBackground = selected ? 'btn-info' : 'btn-dark';
 
-            return <button className={`btn btn-sm ${btnBackground} px-3`}
+            return <button className={`btn btn-radius-25 btn-sm ${optObj ? '' : (selected ? 'btn-info' : 'btn-dark')} me-2 px-3 mb-2`}
               type="button"
               key={rawOption}
               style={{

@@ -585,15 +585,13 @@ export class NgForm extends Component {
 
     if (!show) return null;
 
-    const children = (
-      <div className="d-flex flex-wrap ms-3">
-        {fields.map((subName) => (
-          <div className="flex" style={{ minWidth: '50%' }} key={`${config.path}-${subName}`}>
-            {this.renderStepFlow(subName, config)}
-          </div>
-        ))}
-      </div>
-    );
+    const children = <div className="d-flex flex-wrap ms-3">
+      {fields.map((subName) => (
+        <div style={{ minWidth: '50%', flex: '0 1 33%' }} key={`${config.path}-${subName}`}>
+          {this.renderStepFlow(subName, config)}
+        </div>
+      ))}
+    </div>
 
     return (
       <div className="row" key={config.path}>

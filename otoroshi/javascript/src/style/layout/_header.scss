@@ -95,6 +95,9 @@
 
 .fa-cog {
   font-size: 1.5em;
+  &:hover{
+    cursor: pointer;
+  }
 }
 
 .fa-lightbulb, .fa-moon, .fa-cog{

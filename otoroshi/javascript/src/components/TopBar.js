@@ -221,7 +221,7 @@ export class TopBar extends Component {
         }
         options.push({
           action: () => (window.location.href = '/bo/dashboard/tunnels'),
-          env: <span className="fab fa-fa-pied-piper" />,
+          env: <span className="fab fa-pied-piper-alt" />,
           label: 'Connected tunnels',
           value: 'tunnels-view',
         });
