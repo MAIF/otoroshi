@@ -379,7 +379,6 @@ class Manager extends React.Component {
   }
 
   loadRoute = from => {
-    // console.log(this.state.value, from)
     const { routeId } = this.props.match.params || { routeId: undefined }
     if (routeId === 'new') {
       nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName])

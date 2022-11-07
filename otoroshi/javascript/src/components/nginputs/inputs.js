@@ -10,9 +10,17 @@ import { Button } from '../Button';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
-const ReadOnlyField = ({ value }) => <span className='d-flex align-items-center' style={{ height: '100%', color: '#fff' }}>
-  {value}
-</span>
+const ReadOnlyField = ({ value, pre }) => {
+  if (pre) {
+    return <pre className='d-flex align-items-center' style={{ height: '100%', color: '#fff' }}>
+      {value}
+    </pre>
+  } else {
+    return <span className='d-flex align-items-center' style={{ height: '100%', color: '#fff' }}>
+      {value}
+    </span>
+  }
+}
 
 export class NgLocationRenderer extends Component {
   render() {
@@ -165,7 +173,7 @@ export class NgCustomFormsRenderer extends Component {
     });
 
     return (
-      <div className='mb-3'>
+      <>
         {!showComponent && LauncherComponent}
         {showComponent &&
           <Component
@@ -178,7 +186,7 @@ export class NgCustomFormsRenderer extends Component {
             hide={this.hideComponent}
             {...(propsFromParent || {})} />
         }
-      </div>
+      </>
     )
   }
 }
@@ -235,17 +243,26 @@ export class NgSingleCodeLineRenderer extends Component {
 }
 
 export class NgCodeRenderer extends Component {
+
   render() {
+    const schema = this.props.schema;
+    const props = schema.props || {};
+    const readOnly = this.props.readOnly;
+
+    const { defaultValue } = props;
+
     return (
       <LabelAndInput {...this.props}>
-        <Suspense fallback={<div>Loading</div>}>
-          <CodeInput
-            {...this.props.rawSchema?.props}
-            value={this.props.value}
-            onChange={(e) => this.props.onChange(e)}
-            style={{ width: '100%' }}
-          />
-        </Suspense>
+        {readOnly ?
+          <ReadOnlyField value={this.props.value || defaultValue || '{}'} pre={true} /> :
+          <Suspense fallback={<div>Loading</div>}>
+            <CodeInput
+              {...this.props.rawSchema?.props}
+              value={this.props.value}
+              onChange={(e) => this.props.onChange(e)}
+              style={{ width: '100%' }}
+            />
+          </Suspense>}
       </LabelAndInput>
     );
   }
@@ -536,8 +553,8 @@ export class NgArrayRenderer extends Component {
   generateDefaultValue = obj => {
     return Object.entries(obj)
       .reduce((acc, current) => {
-        console.log(current)
-        const value = this.defaultValues(current[1])[current[1].type]
+        const type = current[1] ? current[1].type : undefined;
+        const value = this.defaultValues(current[1])[type];
         return {
           ...acc,
           [current[0]]: value ? value() : ''

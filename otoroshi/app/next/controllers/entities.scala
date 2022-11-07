@@ -22,6 +22,7 @@ class EntitiesController(ApiAction: ApiAction, cc: ControllerComponents)(implici
           Ok(Json.obj(
             "routes" -> env.proxyState
               .allRoutes()
+              .filter(route => ctx.canUserRead(route))
               .filter(route => Json.stringify(Json.arr(route.plugins.slots
                 .map(p => p.config.raw))).contains(id)
               )

@@ -605,11 +605,26 @@ export class NgForm extends Component {
     return lowerTest.startsWith(lowerBreadcrumb) || lowerBreadcrumb.startsWith(lowerTest);
   }
 
+  newValueFrom = (value, paths, newValue) => {
+    if (paths.length === 1) {
+      return {
+        ...(value || {}),
+        [paths[0]]: newValue
+      }
+    } else {
+      return {
+        ...(value || {}),
+        [paths[0]]: this.newValueFrom(value[paths[0]], paths.slice(1), newValue)
+      }
+    }
+  }
+
   renderInlineStepFlow(name, {
     schema, value, root, path, validation, components, StepNotFound,
     parent, setBreadcrumb, breadcrumb, useBreadcrumb, readOnly
   }) {
-    const stepSchema = schema[name];
+    const paths = name.includes(".") ? name.split(".") : [name];
+    const stepSchema = paths.reduce((acc, path) => acc[path] || acc.schema[path], schema);
 
     if (stepSchema) {
       const visible =
@@ -619,8 +634,8 @@ export class NgForm extends Component {
             : stepSchema.visible
           : true;
       if (visible) {
-        const newPath = root ? [name] : [...path, name];
-        const corePath = parent ? (root ? [name] : [...path, parent, name]) : newPath;
+        const newPath = root ? [...paths] : [...path, ...paths];
+        const corePath = parent ? (root ? [...paths] : [...path, parent, ...paths]) : newPath;
 
         if (Array.isArray(newPath) && Array.isArray(breadcrumb) && Array.isArray(corePath) &&
           !this.match(newPath, breadcrumb) && !this.match(corePath, breadcrumb))
@@ -638,9 +653,12 @@ export class NgForm extends Component {
             setValidation={this.setValidation}
             components={components}
             schema={this.convertSchema(stepSchema)}
-            value={value ? value[name] : null}
+            value={value ? (name.includes(".") ? name
+              .split(".")
+              .reduce(
+                (acc, path) => acc[path] || (acc.schema || {})[path], value || {}) : value[name]) : null}
             onChange={(e) => {
-              const newValue = value ? { ...value, [name]: e } : { [name]: e };
+              const newValue = this.newValueFrom(value, name.includes(".") ? name.split(".") : [name], e);
               this.rootOnChange(newValue);
             }}
             breadcrumb={breadcrumb}

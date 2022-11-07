@@ -20,7 +20,7 @@ export class JwtVerifierLauncher extends React.Component {
   }
 
   loadVerifier = (value) => {
-    if (value) {
+    if (value && typeof value === 'string') {
       findJwtVerifierById(value)
         .then(verifier => {
           this.setState({ verifier })
@@ -42,7 +42,7 @@ export class JwtVerifierLauncher extends React.Component {
         onClick={openComponent}
         className="w-100" />
     } else {
-      return <div>
+      return <div style={{ flex: 1 }}>
         <NgForm
           style={{
             position: 'relative'
@@ -54,7 +54,7 @@ export class JwtVerifierLauncher extends React.Component {
             ...JwtVerifierForm.config_schema,
             actions: {
               renderer: () => {
-                return <div className="d-flex justify-content-end">
+                return <div className="d-flex justify-content-end mt-3">
                   <Button
                     className="btn-sm"
                     type="danger"
@@ -83,8 +83,14 @@ export class JwtVerifierLauncher extends React.Component {
           flow={[
             {
               type: 'group',
-              name: props => props.value?.name,
-              fields: ['desc', 'actions']
+              name: props => {
+                if (!props.value)
+                  return 'Selected verifier'
+                else {
+                  return `${props.value.name} - ${props.value.desc}`
+                }
+              },
+              fields: ['actions']
             }
           ]}
         />

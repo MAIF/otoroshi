@@ -27,13 +27,17 @@ import { Button } from './Button';
 
 function EntityGraph({ entity, id }) {
   const [entities, setEntities] = useState({});
+  const [loadedEntities, setLoadedEntities] = useState(false);
 
-  useEffect(() => {
+  const findEntities = () => {
     getEntityGraph(entity, id)
-      .then(setEntities)
-  }, []);
+      .then(entities => {
+        setEntities(entities);
+        setLoadedEntities(true);
+      });
+  }
 
-  if (Object.values(entities).flat().length === 0)
+  if (Object.values(entities).flat().length === 0 && loadedEntities)
     return null;
 
   return <div className='d-flex' style={{
@@ -84,6 +88,12 @@ function EntityGraph({ entity, id }) {
           </div>
         })}
       </div>
+
+      {!loadedEntities && <Button
+        className='btn-sm ms-auto'
+        onClick={findEntities}
+        text='Find usages'
+      />}
     </div>
   </div>
 }
@@ -99,7 +109,10 @@ export class JwtVerifier extends Component {
       algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
       strategy: {
         type: 'PassThrough',
-        verificationSettings: { fields: { iss: 'The Issuer' }, arrayFields: {} },
+        verificationSettings: {
+          fields: { iss: 'The Issuer' },
+          arrayFields: {}
+        },
       },
     }
   }
@@ -107,6 +120,8 @@ export class JwtVerifier extends Component {
   render() {
     const { isConfigView, verifier } = this.state;
     const isLegacyView = this.props.showAdvancedForm;
+
+    const restrictedStrategy = this.props.allowedNewStrategy || this.props.strategy;
 
     return (
       <div>
@@ -133,7 +148,7 @@ export class JwtVerifier extends Component {
               value={verifier}
               schema={{
                 ...JwtVerifierForm.config_schema,
-                source: this.props.allowedNewStrategy ? {
+                source: restrictedStrategy ? {
                   ...JwtVerifierForm.config_schema.source,
                   props: {
                     ...JwtVerifierForm.config_schema.source.props,
@@ -153,8 +168,13 @@ export class JwtVerifier extends Component {
               flow={[
                 ...JwtVerifierForm.config_flow
                   .filter(step => this.props.strategy ? step !== 'strategy' : true),
+                (restrictedStrategy ? {
+                  type: 'group',
+                  name: 'Token payload',
+                  fields: ['token']
+                } : undefined),
                 'graph'
-              ]}
+              ].filter(f => f)}
               onChange={verifier => {
                 this.setState({ verifier })
                 if (this.props.onChange)
@@ -169,7 +189,14 @@ export class JwtVerifier extends Component {
           <NgForm
             value={verifier}
             schema={JwtVerifierForm.config_schema}
-            flow={JwtVerifierForm.config_flow}
+            flow={[
+              ...JwtVerifierForm.config_flow,
+              restrictedStrategy ? {
+                type: 'group',
+                name: 'Token payload',
+                fields: ['token']
+              } : undefined
+            ].filter(f => f)}
             onChange={() => { }}
             readOnly={true}
           />}
@@ -184,7 +211,7 @@ function Header({ isConfigView, onChange }) {
       backgroundColor: '#494949'
     }}
     rightEnabled={isConfigView}
-    leftText="Config"
+    leftText="Edition"
     rightText="Visualization"
     onChange={onChange}
   />

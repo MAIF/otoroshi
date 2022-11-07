@@ -144,12 +144,12 @@ export class JwtVerifierWizard extends React.Component {
         return this.props.jwtVerifier
       } else {
         return {
-          ...this.props.jwtVerifier,
           strict: false,
           strategy: {
             type: 'PassThrough',
             verificationSettings: { fields: { iss: 'The Issuer' }, arrayFields: {} },
-          }
+          },
+          ...this.props.jwtVerifier
         }
       }
     }
@@ -215,7 +215,6 @@ export class JwtVerifierWizard extends React.Component {
 
   render() {
     const { step, jwtVerifier, mode } = this.state;
-    console.log(this.props.allowedNewStrategy)
 
     if (mode === 'update_in_wizard') {
       return <div className="wizard">

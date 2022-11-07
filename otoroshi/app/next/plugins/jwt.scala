@@ -37,8 +37,6 @@ object NgJwtVerificationConfig {
 
 class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 
-  private val configReads: Reads[NgJwtVerificationConfig] = NgJwtVerificationConfig.format
-
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess, NgStep.TransformRequest)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
@@ -59,45 +57,11 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
   override def defaultConfigObject: Option[NgPluginConfig] = NgJwtVerificationConfig().some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val NgJwtVerificationConfig(verifiers) =
-      ctx.cachedConfig(internalName)(configReads).getOrElse(NgJwtVerificationConfig())
-    if (verifiers.nonEmpty) {
-      val verifier = RefJwtVerifier(verifiers, true, Seq.empty)
-      if (verifier.isAsync) {
-        val promise = Promise[NgAccess]()
-        verifier
-          .verifyFromCache(
-            request = ctx.request,
-            desc = ctx.route.serviceDescriptor.some,
-            apikey = ctx.apikey,
-            user = ctx.user,
-            elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-            attrs = ctx.attrs
-          )
-          .map {
-            case Left(result)     => promise.trySuccess(NgAccess.NgDenied(result))
-            case Right(injection) =>
-              ctx.attrs.put(JwtInjectionKey -> injection)
-              promise.trySuccess(NgAccess.NgAllowed)
-          }
-        promise.future
-      } else {
-        verifier.verifyFromCacheSync(
-          request = ctx.request,
-          desc = ctx.route.serviceDescriptor.some,
-          apikey = ctx.apikey,
-          user = ctx.user,
-          elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-          attrs = ctx.attrs
-        ) match {
-          case Left(result)     => NgAccess.NgDenied(result).vfuture
-          case Right(injection) =>
-            ctx.attrs.put(JwtInjectionKey -> injection)
-            NgAccess.NgAllowed.vfuture
-        }
-      }
-    } else {
-      NgAccess.NgAllowed.vfuture
+    val config   = ctx.cachedConfig(internalName)(NgJwtVerificationConfig.format).getOrElse(NgJwtVerificationConfig())
+
+    config.verifiers match {
+      case Nil => JwtVerifierUtils.onError()
+      case verifierIds  => JwtVerifierUtils.verify(ctx, verifierIds)
     }
   }
 
@@ -123,6 +87,47 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
             req.copy(cookies = req.cookies ++ injection.additionalCookies.map(t => DefaultWSCookie(t._1, t._2)))
           }
           .right
+      }
+    }
+  }
+}
+
+object JwtVerifierUtils {
+  def onError = () => NgAccess.NgDenied(
+    Results.BadRequest(Json.obj("error" -> "bad request"))
+  ).vfuture
+
+  def verify(ctx: NgAccessContext, verifierIds: Seq[String])
+            (implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val verifier = RefJwtVerifier(verifierIds, enabled = true, Seq.empty)
+    if (verifier.isAsync) {
+      verifier.verifyFromCache(
+        request = ctx.request,
+        desc = ctx.route.serviceDescriptor.some,
+        apikey = ctx.apikey,
+        user = ctx.user,
+        elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+        attrs = ctx.attrs
+      )
+        .flatMap {
+          case Left(result)     => onError()
+          case Right(injection) =>
+            ctx.attrs.put(JwtInjectionKey -> injection)
+            NgAccess.NgAllowed.vfuture
+        }
+    } else {
+      verifier.verifyFromCacheSync(
+        request = ctx.request,
+        desc = ctx.route.serviceDescriptor.some,
+        apikey = ctx.apikey,
+        user = ctx.user,
+        elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+        attrs = ctx.attrs
+      ) match {
+        case Left(result)     => onError()
+        case Right(injection) =>
+          ctx.attrs.put(JwtInjectionKey -> injection)
+          NgAccess.NgAllowed.vfuture
       }
     }
   }
@@ -155,7 +160,7 @@ class JwtVerificationOnly extends NgAccessValidator with NgRequestTransformer {
 
   override def defaultConfigObject: Option[NgPluginConfig] = NgJwtVerificationOnlyConfig().some
 
-  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess, NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
@@ -176,72 +181,26 @@ class JwtVerificationOnly extends NgAccessValidator with NgRequestTransformer {
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config   = ctx.cachedConfig(internalName)(NgJwtVerificationOnlyConfig.format).getOrElse(NgJwtVerificationOnlyConfig())
 
-    def onError = () => NgAccess.NgDenied(
-      Results.BadRequest(Json.obj("error" -> "bad request"))
-    ).vfuture
-
     if (config.failIfAbsent) {
       config.verifier match {
-        case None => onError()
+        case None => JwtVerifierUtils.onError()
         case Some(verifierId) =>
-          env.proxyState.allJwtVerifiers()
-            .find(verifier => verifier.id == verifierId) match {
-            case None => onError()
+          env.proxyState.jwtVerifier(verifierId) match {
+            case None => JwtVerifierUtils.onError()
             case Some(verifier) =>
               verifier.source.token(ctx.request) match {
-                case Some(_) => NgAccess.NgAllowed.vfuture
-                case _ => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "bad request"))).vfuture
+                case Some(_) =>
+                  config.verifier match {
+                    case None => JwtVerifierUtils.onError()
+                    case Some(verifierId) => JwtVerifierUtils.verify(ctx, Seq(verifierId))
+                  }
+                  NgAccess.NgAllowed.vfuture
+                case _ => JwtVerifierUtils.onError()
               }
           }
       }
     } else {
       NgAccess.NgAllowed.vfuture
-    }
-  }
-
-  override def transformRequest(ctx: NgTransformerRequestContext)
-                                   (implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
-    val config   = ctx.cachedConfig(internalName)(NgJwtVerificationOnlyConfig.format).getOrElse(NgJwtVerificationOnlyConfig())
-
-    config.verifier match {
-      case None => Results
-        .BadRequest(Json.obj("error" -> "bad request"))
-        .left
-        .vfuture
-      case Some(verifierId) =>
-        val verifier = RefJwtVerifier(Seq(verifierId), enabled = true, Seq.empty)
-        println(verifier)
-        if (verifier.isAsync) {
-          verifier
-            .verifyFromCache(
-              request = ctx.request,
-              desc = ctx.route.serviceDescriptor.some,
-              apikey = ctx.apikey,
-              user = ctx.user,
-              elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-              attrs = ctx.attrs
-            )
-            .map {
-              case Left(result)     => result.left
-              case Right(injection) =>
-                ctx.attrs.put(JwtInjectionKey -> injection)
-                ctx.otoroshiRequest.right
-            }
-        } else {
-          verifier.verifyFromCacheSync(
-            request = ctx.request,
-            desc = ctx.route.serviceDescriptor.some,
-            apikey = ctx.apikey,
-            user = ctx.user,
-            elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-            attrs = ctx.attrs
-          ) match {
-            case Left(result)     => result.left.vfuture
-            case Right(injection) =>
-              ctx.attrs.put(JwtInjectionKey -> injection)
-              ctx.otoroshiRequest.right.vfuture
-          }
-        }
     }
   }
 }

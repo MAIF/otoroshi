@@ -271,6 +271,8 @@ export default {
     'source',
     'algoSettings',
     'strategy',
+    'strategy.verificationSettings',
+    'strategy.transformSettings',
     {
       type: 'group',
       name: 'Misc.',
@@ -281,6 +283,14 @@ export default {
     }
   ],
   config_schema: {
+    token: {
+      type: 'code',
+      label: 'JSON Payload',
+      props: {
+        mode: 'json',
+        editorOnly: true
+      }
+    },
     _loc: {
       type: 'location',
       props: {
@@ -413,6 +423,7 @@ export default {
           type: 'form',
           collapsable: true,
           label: 'Transform settings',
+          visible: value => value?.strategy?.type === 'Transform',
           schema: {
             location: {
               type: 'form',
@@ -519,9 +530,9 @@ export default {
       flow: (_, v) => {
         const strategy = v.value?.type
         return {
-          'PassThrough': ['type', 'verificationSettings'],
-          'Sign': ['type', 'algoSettings', 'verificationSettings'],
-          'Transform': ['type', 'algoSettings', 'verificationSettings', 'transformSettings'],
+          'PassThrough': ['type'],
+          'Sign': ['type', 'algoSettings'],
+          'Transform': ['type', 'algoSettings'],
           [undefined]: ['type']
         }[strategy]
       }
