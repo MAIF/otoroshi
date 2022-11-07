@@ -13,6 +13,7 @@ import { useLocation } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { Playground, store, getSettings, setSettingsString } from 'graphql-playground-react';
 import { NgSelectRenderer } from '../../components/nginputs';
+import { PillButton } from '../../components/PillButton';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
@@ -86,10 +87,10 @@ export default function ({ route, hide }) {
 
       setTesterView(
         route &&
-          route.plugins.find((f) => f.plugin.includes('GraphQLBackend')) &&
-          route.plugins.find((f) => f.plugin.includes('GraphQLBackend')).enabled &&
-          playgroundUrl &&
-          lastQuery
+        route.plugins.find((f) => f.plugin.includes('GraphQLBackend')) &&
+        route.plugins.find((f) => f.plugin.includes('GraphQLBackend')).enabled &&
+        playgroundUrl &&
+        lastQuery
       );
     }
   }, [route]);
@@ -133,7 +134,7 @@ export default function ({ route, hide }) {
       if (storedData && r) {
         setRequest(r);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const saveTestingRouteHistory = (request) => {
@@ -285,15 +286,15 @@ export default function ({ route, hide }) {
       ),
       ...(format === 'basic'
         ? {
-            'authorization-header': {
-              key: apikeyHeader || request.apikeyHeader,
-              value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-            },
-          }
+          'authorization-header': {
+            key: apikeyHeader || request.apikeyHeader,
+            value: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+          },
+        }
         : {
-            'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
-            'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
-          }),
+          'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
+          'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
+        }),
     };
   };
 
@@ -305,31 +306,18 @@ export default function ({ route, hide }) {
         <h3>Testing</h3>
         {route &&
           route.plugins.find((f) => f.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend') && (
-            <div
+            <PillButton
               style={{
                 padding: '5px',
                 borderRadius: '24px',
                 backgroundColor: '#373735',
-                position: 'relative',
-              }}>
-              <div
-                className={`tryit-selector-cursor ${
-                  !testerView || testerView === 'rest' ? '' : 'tryit-selector-mode-right'
-                }`}
-              />
-              <button
-                className="tryit-selector-mode"
-                type="button"
-                onClick={() => setTesterView('rest')}>
-                REST Tester
-              </button>
-              <button
-                className="tryit-selector-mode"
-                type="button"
-                onClick={() => setTesterView('graphql')}>
-                GraphQL Tester
-              </button>
-            </div>
+                position: 'relative'
+              }}
+              rightEnabled={(!testerView || testerView === 'rest')}
+              onLeftClick={() => setTesterView('rest')}
+              onRightClick={() => setTesterView('graphql')}
+              leftText='REST Tester'
+              rightText='GraphQL Tester' />
           )}
         <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
           <i className="fas fa-times"/>
@@ -781,9 +769,9 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     search.length <= 0
       ? true
       : step.task.includes(search) ||
-        [...(step?.ctx?.plugins || [])].find((plugin) =>
-          search.length <= 0 ? true : plugin.name.includes(search)
-        );
+      [...(step?.ctx?.plugins || [])].find((plugin) =>
+        search.length <= 0 ? true : plugin.name.includes(search)
+      );
 
   const isPluginNameMatchingSearch = (plugin) =>
     search.length <= 0 ? true : plugin.name.includes(search);
@@ -803,8 +791,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
       return unit === 'ms'
         ? roundNsTo(report.duration_ns)
         : unit === 'ns'
-        ? report.duration_ns
-        : 100;
+          ? report.duration_ns
+          : 100;
     else {
       const value = [...steps]
         .filter(isOnFlow)
@@ -813,8 +801,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           const userPluginsFlow =
             step.ctx && step.ctx.plugins
               ? [...(step.ctx?.plugins || [])]
-                  .filter(isPluginNameMatchingSearch)
-                  .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
+                .filter(isPluginNameMatchingSearch)
+                .reduce((subAcc, step) => subAcc + step.duration_ns, 0)
               : 0;
 
           if (flow === 'user')
@@ -873,9 +861,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
         </div>
         <div
           onClick={() => setSelectedStep(-1)}
-          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${
-            informations.state === 'Successful' ? 'success' : 'danger'
-          }`}>
+          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${informations.state === 'Successful' ? 'success' : 'danger'
+            }`}>
           <span>Report</span>
           <span>
             {reportDuration()} {unit}
@@ -897,15 +884,13 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                     setSelectedPlugin(-1);
                     setSelectedStep(step.task);
                   }}
-                  className={`d-flex-between mt-1 px-3 py-2 report-step ${
-                    step.task === selectedStep ? 'btn-dark' : ''
-                  }`}>
+                  className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep ? 'btn-dark' : ''
+                    }`}>
                   <div className="d-flex align-items-center">
                     {displaySubList && (
                       <i
-                        className={`fas fa-chevron-${
-                          step.open || flow === 'user' ? 'down' : 'right'
-                        } me-1`}
+                        className={`fas fa-chevron-${step.open || flow === 'user' ? 'down' : 'right'
+                          } me-1`}
                         onClick={() =>
                           setSteps(
                             steps.map((s) =>
@@ -922,8 +907,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                       {unit === 'ms'
                         ? roundNsTo(step.duration_ns)
                         : unit === 'ns'
-                        ? step.duration_ns
-                        : percentage}{' '}
+                          ? step.duration_ns
+                          : percentage}{' '}
                       {unit}
                     </span>
                   )}
@@ -945,18 +930,17 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                           key={plugin.name}
                           style={{ width: 'calc(100% - 12px)', marginLeft: '12px' }}
                           onClick={() => setSelectedPlugin(plugin.name)}
-                          className={`d-flex-between mt-1 px-3 py-2 report-step ${
-                            step.task === selectedStep && plugin.name === selectedPlugin
-                              ? 'btn-dark'
-                              : ''
-                          }`}>
+                          className={`d-flex-between mt-1 px-3 py-2 report-step ${step.task === selectedStep && plugin.name === selectedPlugin
+                            ? 'btn-dark'
+                            : ''
+                            }`}>
                           <span>{firstLetterUppercase(pluginName)}</span>
                           <span style={{ maxWidth: '100px', textAlign: 'right' }}>
                             {unit === 'ms'
                               ? roundNsTo(plugin.duration_ns)
                               : unit === 'ns'
-                              ? plugin.duration_ns
-                              : pluginPercentage}{' '}
+                                ? plugin.duration_ns
+                                : pluginPercentage}{' '}
                             {unit}
                           </span>
                         </div>
@@ -980,8 +964,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                 ? informations
                 : steps.find((t) => t.task === selectedStep)
               : steps
-                  .find((t) => t.task === selectedStep)
-                  ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
+                .find((t) => t.task === selectedStep)
+                ?.ctx?.plugins.find((f) => f.name === selectedPlugin),
             null,
             4
           ) +

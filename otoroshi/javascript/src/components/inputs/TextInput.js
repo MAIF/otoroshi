@@ -49,6 +49,7 @@ export class TextInput extends Component {
             <div className="input-group">
               {this.props.prefix && <div className="input-group-text">{this.props.prefix}</div>}
               <input
+                autoFocus={this.props.autoFocus}
                 type={this.props.type || 'text'}
                 className="form-control"
                 disabled={this.props.disabled}
@@ -64,6 +65,7 @@ export class TextInput extends Component {
           )}
           {!(this.props.prefix || this.props.suffix) && (
             <input
+              autoFocus={this.props.autoFocus}
               type={this.props.type || 'text'}
               className="form-control"
               disabled={this.props.disabled}

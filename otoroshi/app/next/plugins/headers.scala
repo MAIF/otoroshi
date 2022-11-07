@@ -22,7 +22,10 @@ object NgHeaderNamesConfig {
   val format = new Format[NgHeaderNamesConfig] {
     override def reads(json: JsValue): JsResult[NgHeaderNamesConfig] = Try {
       NgHeaderNamesConfig(
-        names = json.select("header_names").asOpt[Seq[String]].filter(_.nonEmpty)
+        names = json
+          .select("header_names")
+          .asOpt[Seq[String]]
+          .filter(_.nonEmpty)
           .orElse(json.select("headers").asOpt[Seq[String]].filter(_.nonEmpty))
           .orElse(json.select("names").asOpt[Seq[String]].filter(_.nonEmpty))
           .getOrElse(Seq.empty)
@@ -31,7 +34,7 @@ object NgHeaderNamesConfig {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: NgHeaderNamesConfig): JsValue = Json.obj("header_names" -> o.names)
+    override def writes(o: NgHeaderNamesConfig): JsValue             = Json.obj("header_names" -> o.names)
   }
 }
 

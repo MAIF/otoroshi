@@ -58,7 +58,7 @@ class IpAddressAllowedList extends NgAccessValidator {
     val shouldPass                     = if (addresses.nonEmpty) {
       addresses.exists { ip =>
         if (ip.contains("/")) {
-          IpFiltering.network(ip).contains(remoteAddress)
+          IpFiltering.cidr(ip).contains(remoteAddress)
         } else {
           otoroshi.utils.RegexPool(ip).matches(remoteAddress)
         }
@@ -109,7 +109,7 @@ class IpAddressBlockList extends NgAccessValidator {
     val shouldNotPass                  = if (addresses.nonEmpty) {
       addresses.exists { ip =>
         if (ip.contains("/")) {
-          IpFiltering.network(ip).contains(remoteAddress)
+          IpFiltering.cidr(ip).contains(remoteAddress)
         } else {
           otoroshi.utils.RegexPool(ip).matches(remoteAddress)
         }
@@ -190,7 +190,7 @@ class EndlessHttpResponse extends NgRequestTransformer {
     val shouldPass                                     = if (addresses.nonEmpty) {
       addresses.exists { ip =>
         if (ip.contains("/")) {
-          IpFiltering.network(ip).contains(remoteAddress)
+          IpFiltering.cidr(ip).contains(remoteAddress)
         } else {
           otoroshi.utils.RegexPool(ip).matches(remoteAddress)
         }

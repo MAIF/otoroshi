@@ -23,7 +23,14 @@ import io.netty.handler.codec.http.HttpScheme
 import io.netty.handler.codec.http.HttpUtil
 import io.netty.handler.codec.http.HttpVersion
 import io.netty.handler.codec.http.LastHttpContent
-import io.netty.incubator.codec.http3.{DefaultHttp3DataFrame, DefaultHttp3HeadersFrame, Http3ConversionUtil, Http3HeadersFrame, Http3RequestStreamInboundHandler, HttpConversionUtil}
+import io.netty.incubator.codec.http3.{
+  DefaultHttp3DataFrame,
+  DefaultHttp3HeadersFrame,
+  Http3ConversionUtil,
+  Http3HeadersFrame,
+  Http3RequestStreamInboundHandler,
+  HttpConversionUtil
+}
 import io.netty.incubator.codec.quic.QuicStreamChannel
 import otoroshi.utils.syntax.implicits._
 
@@ -35,8 +42,8 @@ class Http3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler wit
 
   override def channelRead(ctx: ChannelHandlerContext, frame: Http3HeadersFrame, isLast: Boolean): Unit = {
     val headers = frame.headers()
-    val id = ctx.channel().asInstanceOf[QuicStreamChannel].streamId()
-    val status = headers.status()
+    val id      = ctx.channel().asInstanceOf[QuicStreamChannel].streamId()
+    val status  = headers.status()
     if (null != status && HttpResponseStatus.CONTINUE.codeAsText().contentEquals(status)) {
       val fullMsg = newFullMessage(id, headers, ctx.alloc())
       ctx.fireChannelRead(fullMsg)
@@ -60,7 +67,11 @@ class Http3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler wit
     }
   }
 
-  override def channelRead(ctx: ChannelHandlerContext, frame: io.netty.incubator.codec.http3.Http3DataFrame, isLast: Boolean): Unit = {
+  override def channelRead(
+      ctx: ChannelHandlerContext,
+      frame: io.netty.incubator.codec.http3.Http3DataFrame,
+      isLast: Boolean
+  ): Unit = {
     if (isLast) {
       ctx.fireChannelRead(new DefaultLastHttpContent(frame.content()))
     } else {
@@ -73,7 +84,7 @@ class Http3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler wit
       throw new UnsupportedMessageTypeException()
     }
     msg match {
-      case res: HttpResponse => {
+      case res: HttpResponse     => {
         if (res.status().equals(HttpResponseStatus.CONTINUE)) {
           res match {
             case fres: FullHttpResponse => {
@@ -82,16 +93,16 @@ class Http3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler wit
               fres.release()
               return
             }
-            case _ => throw new EncoderException(HttpResponseStatus.CONTINUE.toString() + " must be a FullHttpResponse")
+            case _                      => throw new EncoderException(HttpResponseStatus.CONTINUE.toString() + " must be a FullHttpResponse")
           }
         }
       }
-      case msg: HttpMessage => {
+      case msg: HttpMessage      => {
         val headers = toHttp3Headers(msg)
         ctx.write(new DefaultHttp3HeadersFrame(headers).debugPrintln)
       }
       case last: LastHttpContent => {
-        val readable = last.content().isReadable()
+        val readable    = last.content().isReadable()
         val hasTrailers = !last.trailingHeaders().isEmpty()
 
         if (readable) {
@@ -106,15 +117,15 @@ class Http3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler wit
         }
         ctx.channel().asInstanceOf[QuicStreamChannel].shutdownOutput()
       }
-      case content: HttpContent => ctx.write(new DefaultHttp3DataFrame((content).content()))
-      case _ => throw new RuntimeException("error")
+      case content: HttpContent  => ctx.write(new DefaultHttp3DataFrame(content.content()))
+      case _                     => throw new RuntimeException("error")
     }
   }
 
   def toHttp3Headers(msg: HttpMessage): io.netty.incubator.codec.http3.Http3Headers = {
-    msg match  {
-      case r: HttpRequest =>  msg.headers().set(HttpConversionUtil.ExtensionHeaderNames.SCHEME.text(), HttpScheme.HTTPS)
-      case _ =>
+    msg match {
+      case r: HttpRequest => msg.headers().set(HttpConversionUtil.ExtensionHeaderNames.SCHEME.text(), HttpScheme.HTTPS)
+      case _              =>
     }
     Http3ConversionUtil.toHttp3Headers(msg, validateHeaders)
   }
@@ -123,7 +134,11 @@ class Http3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler wit
     Http3ConversionUtil.toHttpRequest(id, headers, validateHeaders)
   }
 
-  def newFullMessage(id: Long, headers: io.netty.incubator.codec.http3.Http3Headers, alloc: ByteBufAllocator): FullHttpMessage = {
+  def newFullMessage(
+      id: Long,
+      headers: io.netty.incubator.codec.http3.Http3Headers,
+      alloc: ByteBufAllocator
+  ): FullHttpMessage = {
     Http3ConversionUtil.toFullHttpRequest(id, headers, alloc, validateHeaders)
   }
 
@@ -135,7 +150,12 @@ class Http3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler wit
     ctx.bind(localAddress, promise)
   }
 
-  override def connect(ctx: ChannelHandlerContext, remoteAddress: SocketAddress, localAddress: SocketAddress, promise: ChannelPromise): Unit = {
+  override def connect(
+      ctx: ChannelHandlerContext,
+      remoteAddress: SocketAddress,
+      localAddress: SocketAddress,
+      promise: ChannelPromise
+  ): Unit = {
     ctx.connect(remoteAddress, localAddress, promise)
   }
 
@@ -155,4 +175,3 @@ class Http3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler wit
     ctx.read()
   }
 }
-

@@ -5,6 +5,8 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
 import { FeedbackButton } from './FeedbackButton';
 import { RouteForm } from './form'
+import { Button } from '../../components/Button';
+import { ENTITIES, FormSelector } from '../../components/FormSelector';
 
 export const Informations = forwardRef(({ isCreation, value, setValue, setSaveButton, routeId }, ref) => {
   const history = useHistory();
@@ -102,10 +104,9 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
       label: 'Metadata'
     },
     tags: {
-      type: 'array',
-      label: 'Tags',
-      props: {
-      }
+      type: 'string',
+      array: true,
+      label: 'Tags'
     },
     _loc: {
       type: 'location',
@@ -150,34 +151,33 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
 
   return (
     <>
-      {showAdvancedForm && (
+      {showAdvancedForm ?
         <RouteForm
           routeId={routeId}
           setValue={setValue}
           history={history}
           location={location}
           isCreation={isCreation} />
-      )}
+        :
+        <NgForm
+          schema={schema}
+          flow={flow}
+          value={value}
+          onChange={v => {
+            setValue(v)
+          }}
+        />}
 
-      {!showAdvancedForm && <NgForm
-        schema={schema}
-        flow={flow}
-        value={value}
-        onChange={v => {
-          setValue(v)
-        }}
-      />}
-
-      <div className="d-flex align-items-center justify-content-end mt-3">
-        <div className="displayGroupBtn">
-          <button className='btn btn-info'
-            onClick={() => showAdvancedForm ? toggleAdvancedForm(false) : toggleAdvancedForm(true)}>
-            {showAdvancedForm ? 'Simple view' : 'Advanced view'}
-          </button>
-          <button className="btn btn-danger" onClick={() => history.push(`/${link}`)}>
-            Cancel
-          </button>
-        </div>
+      <div className="d-flex align-items-center justify-content-end mt-3 p-0">
+        {!isOnRouteCompositions && <FormSelector
+          onChange={toggleAdvancedForm}
+          entity={ENTITIES.ROUTES}
+          className="me-1"
+        />}
+        <Button type="danger" className='btn-sm'
+          onClick={() => history.push(`/${link}`)}
+          text="Cancel"
+        />
       </div>
     </>
   );

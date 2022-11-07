@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.15] - 2022-10-28
+
+https://github.com/MAIF/otoroshi/milestone/47?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.14...v1.5.15
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.15
+
+- support gRPC calls (#45)
+- add experimental HTTP/3 support for netty client backend (#1255)
+- bad public/private path translation for apikeycalls plugin (#1259)
+- fix qpack dynamic table compression in http3 server when called from a browser (#1265)
+- add an alt-svc plugin for h3 (#1266)
+- fix CHACHA20 incompatibility with JDK11 (#1267)
+- migrate HtmlPatcher plugin to new plugin API (#1268)
+- do not fail jwks gen. on cert error (#1269)
+- jvm dependencies upgrade (#1270)
+- support trailer headers passing with http3 (#1271)
+- reporting on subsystems initialization failures (#1272)
+
 ## [1.5.14] - 2022-09-30
 
 https://github.com/MAIF/otoroshi/milestone/46?closed=1

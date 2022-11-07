@@ -101,9 +101,9 @@ class AccessLogHandler extends ChannelDuplexHandler {
 object ImplicitUtils {
   implicit class BetterByteBuf(val buf: ByteBuf) extends AnyVal {
     def readContentAsByteString(): ByteString = {
-      val builder     = ByteString.newBuilder
+      val builder = ByteString.newBuilder
       buf.readBytes(builder.asOutputStream, buf.readableBytes())
-      val bytes       = builder.result()
+      val bytes   = builder.result()
       bytes
     }
   }

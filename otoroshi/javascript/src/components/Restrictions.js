@@ -57,7 +57,6 @@ export class Restrictions extends Component {
   };
   render() {
     const value = this.props.value;
-    console.log(value);
     return (
       <div>
         <BooleanInput

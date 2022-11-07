@@ -12,6 +12,7 @@ import {
   NgTextRenderer,
   NgNumberRenderer,
   NgBooleanRenderer,
+  NgBoxBooleanRenderer,
   NgArrayRenderer,
   NgObjectRenderer,
   NgArraySelectRenderer,
@@ -23,6 +24,7 @@ import {
   NgLocationRenderer,
   NgDotsRenderer,
   LabelAndInput,
+  NgCustomFormsRenderer,
 } from './inputs';
 
 import {
@@ -32,16 +34,22 @@ import {
   NgFormRenderer,
   NgFlowNotFound,
 } from './components';
+import { Forms } from '../../forms';
+import { camelCase } from 'lodash';
+
+const isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 const Helpers = {
   rendererFor: (type, components = {}) => {
     if (type?.endsWith('-no-label')) {
       const Renderer = Helpers.rendererFor(type.replace('-no-label', ''), components);
-      return (props) => <Renderer {...props} ngOptions={{ ...props.ngOptions, spread: true }} />
+      return (props) => <Renderer {...props} ngOptions={{ ...props.ngOptions, spread: true }} />;
     } else if (type === 'string') {
       return components.StringRenderer;
     } else if (type === 'bool' || type === 'boolean') {
       return components.BooleanRenderer;
+    } else if (type === 'box-bool' || type === 'box-boolean') {
+      return components.BoxBooleanRenderer;
     } else if (type === 'number') {
       return components.NumberRenderer;
     } else if (type === 'array') {
@@ -75,7 +83,12 @@ const Helpers = {
     } else if (type === 'location') {
       return components.LocationRenderer;
     } else {
-      return components.RendererNotFound;
+      const customForms = Forms[type]
+      if (customForms) {
+        return NgCustomFormsRenderer;
+      } else {
+        return components.RendererNotFound;
+      }
     }
   },
 };
@@ -144,7 +157,7 @@ export class NgStep extends Component {
 
   renderer = () => {
     if (this.props.schema.component) {
-      return this.props.schema.components;
+      return this.props.schema.component;
     } else if (this.props.schema.renderer) {
       if (isString(this.props.schema.renderer)) {
         return Helpers.rendererFor(this.props.schema.renderer, this.props.components);
@@ -203,10 +216,11 @@ export class NgStep extends Component {
   }
 }
 
-const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
+const firstLetterUppercase = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
+const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
   if (!breadcrumb && !toHome)
-    return null
+    return null;
 
   return <div className="breadcrumbs my-2">
     <span
@@ -219,29 +233,60 @@ const Breadcrumb = ({ breadcrumb, setBreadcrumb, toHome }) => {
         return <span
           className={`breadcrumbs__item ${i === breadcrumb.length - 1 ? 'is-active' : ''}`}
           onClick={() => setBreadcrumb(i)} key={`${part}`}>
-          {part}
+          {firstLetterUppercase(camelCase(part))}
         </span>
       })}
   </div>
 }
 
-function SubFlow({ fields, full_fields, render }) {
+
+function SubFlow({ fields = [], full_fields = [], render, config }) {
   const [moreFields, showMoreFields] = useState(false);
 
-  const hasMoreFields = full_fields && full_fields.length > 0;
+  if (isAnObject(fields)) {
+    fields = fields.otoroshi_flow
+    full_fields = fields.otoroshi_full_flow
+  }
+
+  const processedFields = isFunction(fields) ? fields(config) : fields;
+  const processedAllFields = isFunction(full_fields) ? full_fields(config) : full_fields;
+  const hasMoreFields = processedAllFields && processedAllFields.length > 0;
+
+
+  const match = (test, breadcrumb) => {
+    if (!breadcrumb) {
+      return true;
+    } else {
+      const lowerTest = (test || []).join('-').toLowerCase();
+      const lowerBreadcrumb = (breadcrumb || []).join('-').toLowerCase();
+      return lowerTest === lowerBreadcrumb;
+    }
+  }
+
+  if (config.readOnly) {
+    if (hasMoreFields)
+      return processedAllFields.map(render);
+    else
+      return [...processedFields, ...processedAllFields].map(render);
+
+  }
 
   return <>
-    {!moreFields && fields.map(render)}
-    {hasMoreFields && moreFields && full_fields.map(render)}
+    {!moreFields && processedFields.map(render)}
+    {hasMoreFields && moreFields && processedAllFields.map(render)}
 
-    {hasMoreFields && !moreFields && <button className='btn btn-sm btn-info mt-2'
-      onClick={() => showMoreFields(!moreFields)}
-      style={{
-        marginLeft: 'auto',
-        display: 'block'
-      }}>
-      Show advanced settings
-    </button>}
+    {hasMoreFields &&
+      !moreFields &&
+      !config.readOnly &&
+      match(config.path, config.breadcrumb) &&
+      <button className='btn btn-sm btn-info mt-2'
+        onClick={() => showMoreFields(!moreFields)}
+        style={{
+          marginLeft: 'auto',
+          display: 'block'
+        }}>
+        Show advanced settings
+      </button>}
   </>
 }
 
@@ -268,6 +313,8 @@ export class NgForm extends Component {
     JsonRenderer: NgJsonRenderer,
     LocationRenderer: NgLocationRenderer,
     DotsRenderer: NgDotsRenderer,
+    BoxBooleanRenderer: NgBoxBooleanRenderer,
+    CustomFormsRenderer: NgCustomFormsRenderer,
     FlowNotFound: NgFlowNotFound,
   };
 
@@ -278,8 +325,8 @@ export class NgForm extends Component {
   state = {
     validation: {
       valid: true,
-      graph: {}
-    }
+      graph: {},
+    },
   };
   tasks = [];
 
@@ -395,7 +442,7 @@ export class NgForm extends Component {
       let itemRenderer = null;
       if (schema.array && schema.format === 'form') {
         itemRenderer = Helpers.rendererFor(renderer, this.props.components);
-      } else if (schema.array && schema.type !== "array") {
+      } else if (schema.array && schema.type !== 'array') {
         itemRenderer = Helpers.rendererFor(schema.type, this.props.components);
       }
       const config = {
@@ -429,21 +476,20 @@ export class NgForm extends Component {
     return this.recursiveSearch(paths.slice(1), (value || {})[paths.slice(0, 1)]);
   };
 
-  isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
-
   getFlow = (value, schema) => {
     if (isFunction(this.props.flow)) {
       return {
         fields: this.props.flow(value, this.props)
       }
-    } else if (this.isAnObject(this.props.flow) &&
+    } else if (isAnObject(this.props.flow) &&
       this.props.flow['otoroshi_flow'] &&
-      this.props.flow['otoroshi_full_flow']) {
+      this.props.flow['otoroshi_full_flow']
+    ) {
       return {
         fields: this.props.flow['otoroshi_flow'],
         full_fields: this.props.flow['otoroshi_full_flow']
       }
-    } else if (this.isAnObject(this.props.flow) &&
+    } else if (isAnObject(this.props.flow) &&
       this.props.flow.field &&
       this.props.flow.flow) {
       /* useful to match the case of a json flow
@@ -480,49 +526,68 @@ export class NgForm extends Component {
     });
   }
 
-  renderGroupFlow({ name, fields, collapsed, visible, full_fields }, config) {
-    const FormRenderer = config.components.FormRenderer;
-    const fullPath = (config.root ? [name] : [...config.path, isFunction(name) ? undefined : name])
-      .filter(f => f)
-      .map(n => n.split(/\.?(?=[A-Z])/).join('_').toLowerCase());
+  renderGroupFlow({ groupId, name, fields, collapsed, visible, full_fields, collapsable, summaryFields }, config) {
+    const show = isFunction(visible) ? visible(config.value) : (visible !== undefined ? visible : true);
+    if (!show) {
+      return null;
+    } else {
+      const part = groupId || name;
+      const fullPath = (config.root ? [part] : [...config.path, isFunction(part) ? undefined : part])
+        .filter(f => f)
+        .map(n => isFunction(n) ? '' : n);
 
-    const show = isFunction(visible) ? visible(config.value) : (visible !== undefined ? visible : true)
+      const label = isFunction(name) ? name(config) : name;
 
-    if (!show)
-      return null
-
-    const label = isFunction(name) ? name(config) : name
-
-    return <FormRenderer
-      embedded={true}
-      breadcrumb={config.breadcrumb}
-      setBreadcrumb={!config.setBreadcrumb ? null : () => {
-        config.setBreadcrumb(fullPath)
-      }}
-      useBreadcrumb={config.useBreadcrumb}
-      path={fullPath}
-      rawSchema={{
-        label,
-        collapsable: true,
-        collapsed: collapsed === undefined ? false : true
-      }}
-      key={fullPath}
-    >
-      <SubFlow fields={fields} full_fields={full_fields} render={field => this.renderStepFlow(field, config)} />
-    </FormRenderer>
+      const FormRenderer = config.components.FormRenderer;
+      return <FormRenderer
+        embedded={true}
+        breadcrumb={config.breadcrumb}
+        setBreadcrumb={!config.setBreadcrumb ? null : () => {
+          config.setBreadcrumb(fullPath)
+        }}
+        useBreadcrumb={config.useBreadcrumb}
+        path={fullPath}
+        rawSchema={{
+          label,
+          collapsable: config.readOnly ? false : collapsable === undefined ? true : collapsable,
+          collapsed: config.readOnly ? false : collapsed === undefined ? false : true,
+          showSummary: summaryFields,
+          summaryFields
+        }}
+        value={config.value}
+        key={fullPath}
+      >
+        <SubFlow
+          fields={fields}
+          full_fields={full_fields}
+          render={field => this.renderStepFlow(field, {
+            ...config,
+            root: false,
+            parent: fullPath.slice(-1)[0]
+          })}
+          config={{
+            ...config,
+            root: false,
+            parent: fullPath.slice(-1)[0]
+          }} />
+      </FormRenderer>
+    }
   }
 
   renderGridFlow({ name, fields, visible }, config) {
     const label = isFunction(name) ? name(config) : name;
 
-    const show = isFunction(visible) ? visible(config.value) : (visible !== undefined ? visible : true)
+    const show = isFunction(visible)
+      ? visible(config.value)
+      : visible !== undefined
+        ? visible
+        : true;
 
-    if (!show)
-      return null
+    if (!show) return null;
 
     const children = <div className="d-flex flex-wrap ms-3">
       {fields.map((subName) => (
-        <div style={{ minWidth: '50%', flex:'0 1 33%' }} key={`${config.path}-${subName}`}>
+        <div style={{ minWidth: '50%', flex: '0 1 33%' }} key={`${config.path}-${subName}`}>
           {this.renderStepFlow(subName, config)}
         </div>
       ))}
@@ -530,24 +595,38 @@ export class NgForm extends Component {
 
     return (
       <div className="row" key={config.path}>
-        {label && <LabelAndInput label={label}>
-          {children}
-        </LabelAndInput>}
+        {label && <LabelAndInput label={label}>{children}</LabelAndInput>}
         {!label && children}
       </div>
     );
   }
 
   match(test, breadcrumb) {
-    return test.join('-').startsWith(breadcrumb.join('-')) ||
-      breadcrumb.join('-').startsWith(test.join('-'))
+    const lowerTest = test.join('-').toLowerCase();
+    const lowerBreadcrumb = breadcrumb.join('-').toLowerCase();
+    return lowerTest.startsWith(lowerBreadcrumb) || lowerBreadcrumb.startsWith(lowerTest);
+  }
+
+  newValueFrom = (value, paths, newValue) => {
+    if (paths.length === 1) {
+      return {
+        ...(value || {}),
+        [paths[0]]: newValue
+      }
+    } else {
+      return {
+        ...(value || {}),
+        [paths[0]]: this.newValueFrom(value[paths[0]], paths.slice(1), newValue)
+      }
+    }
   }
 
   renderInlineStepFlow(name, {
     schema, value, root, path, validation, components, StepNotFound,
-    setBreadcrumb, breadcrumb, useBreadcrumb
+    parent, setBreadcrumb, breadcrumb, useBreadcrumb, readOnly
   }) {
-    const stepSchema = schema[name];
+    const paths = name.includes(".") ? name.split(".") : [name];
+    const stepSchema = paths.reduce((acc, path) => acc[path] || acc.schema[path], schema);
 
     if (stepSchema) {
       const visible =
@@ -557,17 +636,18 @@ export class NgForm extends Component {
             : stepSchema.visible
           : true;
       if (visible) {
-        const newPath = root ? [name] : [...path, name];
+        const newPath = root ? [...paths] : [...path, ...paths];
+        const corePath = parent ? (root ? [...paths] : [...path, parent, ...paths]) : newPath;
 
-        if (Array.isArray(path) &&
-          Array.isArray(breadcrumb) &&
-          !this.match(newPath, breadcrumb))
+        if (Array.isArray(newPath) && Array.isArray(breadcrumb) && Array.isArray(corePath) &&
+          !this.match(newPath, breadcrumb) && !this.match(corePath, breadcrumb))
           return null
 
         return (
           <NgStep
             key={newPath.join('/')}
             name={name}
+            readOnly={readOnly}
             embedded
             fromArray={this.props.fromArray}
             path={newPath}
@@ -575,9 +655,12 @@ export class NgForm extends Component {
             setValidation={this.setValidation}
             components={components}
             schema={this.convertSchema(stepSchema)}
-            value={value ? value[name] : null}
+            value={value ? (name.includes(".") ? name
+              .split(".")
+              .reduce(
+                (acc, path) => acc[path] || (acc.schema || {})[path], value || {}) : value[name]) : null}
             onChange={(e) => {
-              const newValue = value ? { ...value, [name]: e } : { [name]: e };
+              const newValue = this.newValueFrom(value, name.includes(".") ? name.split(".") : [name], e);
               this.rootOnChange(newValue);
             }}
             breadcrumb={breadcrumb}
@@ -596,7 +679,7 @@ export class NgForm extends Component {
   }
 
   renderStepFlow(name, config) {
-    if (this.isAnObject(name)) {
+    if (isAnObject(name)) {
       const composedFlow = name;
       if (composedFlow.type === 'grid') {
         return this.renderGridFlow(composedFlow, config);
@@ -607,7 +690,7 @@ export class NgForm extends Component {
       } else {
         return React.createElement(config.components.FlowNotFound, {
           type: composedFlow.type,
-          key: config.name
+          key: config.name,
         });
       }
     } else {
@@ -621,8 +704,8 @@ export class NgForm extends Component {
         return this.props.setBreadcrumb;
       } else
         return (e) => {
-          this.setState({ breadcrumb: e })
-        }
+          this.setState({ breadcrumb: e });
+        };
     }
 
     return null;
@@ -645,17 +728,25 @@ export class NgForm extends Component {
     const root = !embedded;
     const validation = root ? this.state.validation : this.props.validation;
     const path = this.props.path || [];
+    const readOnly = this.props.readOnly;
 
     const config = {
-      schema, value, root, path, validation, components, StepNotFound,
+      schema,
+      value,
+      root,
+      path,
+      validation,
+      components,
+      StepNotFound,
       setBreadcrumb: this.getBreadcrumb(root),
       breadcrumb: root ? this.state.breadcrumb : this.props.breadcrumb,
-      useBreadcrumb: this.props.useBreadcrumb
+      useBreadcrumb: this.props.useBreadcrumb,
+      readOnly
     }
 
     return (
       <FormRenderer {...this.props}>
-        {config.useBreadcrumb &&
+        {config.useBreadcrumb && !readOnly &&
           <Breadcrumb
             breadcrumb={this.state.breadcrumb}
             toHome={root ? () => {
@@ -672,9 +763,9 @@ export class NgForm extends Component {
         {flow.fields &&
           <SubFlow
             {...flow}
-            render={name => this.renderStepFlow(name, config)} />
+            render={name => this.renderStepFlow(name, config)}
+            config={config} />
         }
-        {/* {flow && flow.map(name => this.renderStepFlow(name, config))} */}
       </FormRenderer>
     );
   }

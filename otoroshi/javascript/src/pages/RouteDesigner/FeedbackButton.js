@@ -5,10 +5,11 @@ export function FeedbackButton({
   text,
   icon,
   onPress = () => Promise.resolve(),
+  onSuccess,
   feedbackTimeout = 1500,
   className,
   disabled,
-  style = {}
+  style = {},
 }) {
   const [uploading, setUploading] = useState(false);
   const [result, onResult] = useState('waiting');
@@ -64,10 +65,16 @@ export function FeedbackButton({
           onPress()
             .then(() => {
               const diff = Date.now() - timer;
-              if (diff > 150) onResult('success');
-              setTimeout(() => {
+              if (diff > 150) {
+                if (onSuccess)
+                  setTimeout(onSuccess, 250)
                 onResult('success');
-              }, 150 - diff);
+              } else {
+                setTimeout(() => {
+                  onResult('success');
+                  setTimeout(onSuccess, 250)
+                }, 150 - diff);
+              }
             })
             .catch((err) => {
               onResult('failed');

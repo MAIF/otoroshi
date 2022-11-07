@@ -182,8 +182,8 @@ export function allServices(env, group) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?filter.groups=${group}`
-    : `/bo/api/proxy/api/services`;
+      ? `/bo/api/proxy/api/services?filter.groups=${group}`
+      : `/bo/api/proxy/api/services`;
   return fetch(url, {
     method: 'GET',
     credentials: 'include',
@@ -1949,3 +1949,5 @@ export const convertAsRoute = (id) =>
       Accept: 'application/json',
     },
   }).then((r) => r.json());
+
+export const getEntityGraph = (entity, id) => fetchWrapper(`/entities/${entity}/${id}`)

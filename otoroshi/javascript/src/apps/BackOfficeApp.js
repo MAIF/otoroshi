@@ -61,6 +61,7 @@ import { TenantsPage } from '../pages/TenantsPage';
 import { TeamsPage } from '../pages/TeamsPage';
 import { Toasts } from '../components/Toasts';
 import { NgFormPlayground } from '../components/nginputs';
+import Loader from '../components/Loader';
 
 class BackOfficeAppContainer extends Component {
   constructor(props) {
@@ -70,6 +71,7 @@ class BackOfficeAppContainer extends Component {
       lines: [],
       catchedError: null,
       env: null,
+      loading: true
     };
   }
 
@@ -90,23 +92,10 @@ class BackOfficeAppContainer extends Component {
   }
 
   componentDidMount() {
-    this.props.history.listen(() => {
-      // document.getElementById('sidebar').setAttribute('class', 'col-sm-2 sidebar collapse');
-      // document.getElementById('navbar').setAttribute('class', 'navbar-collapse collapse');
-      //document
-      //  .getElementById('toggle-sidebar')
-      //  .setAttribute('class', 'navbar-toggler menu collapsed');
-      // document.getElementById('toggle-navigation').setAttribute('class', 'navbar-toggle collapsed');
-    });
-    BackOfficeServices.env().then((env) => {
-      // console.log(env);
-      this.setState({ env });
-    });
-    BackOfficeServices.fetchLines().then((lines) => {
-      BackOfficeServices.findAllGroups().then((groups) => {
-        this.setState({ lines, groups });
-      });
-    });
+    Promise.all([BackOfficeServices.env(), BackOfficeServices.fetchLines(), BackOfficeServices.findAllGroups()])
+      .then(([env, lines, groups]) => {
+        this.setState({ env, lines, groups, loading: false });
+      })
   }
 
   componentDidCatch(e) {
@@ -138,13 +127,14 @@ class BackOfficeAppContainer extends Component {
     ) {
       classes.push(this.props.children.type.backOfficeClassName);
     }
+
     return (
-      <div>
+      <Loader loading={this.state.loading}>
         <ReloadNewVersion />
         {this.state.env && (
           <>
             <UpdateOtoroshiVersion env={this.state.env} />
-            <TopBar {...this.props} changePassword={this.state.env.changePassword} />
+            <TopBar {...this.props} changePassword={this.state.env.changePassword} env={this.state.env} />
           </>
         )}
         <div className="container-fluid">
@@ -152,7 +142,7 @@ class BackOfficeAppContainer extends Component {
             <div className="col-sm-2 sidebar" id="sidebar">
               <div className="sidebar-container">
                 <div className="sidebar-content">
-                  <GlobalTenantSelector />
+                  {this.state.env && <GlobalTenantSelector env={this.state.env} />}
                   <ul className="nav flex-column nav-sidebar">
                     <li>
                       <h2>
@@ -608,7 +598,7 @@ class BackOfficeAppContainer extends Component {
           </div>
         </div>
         <Toasts />
-      </div>
+      </Loader>
     );
   }
 }
@@ -629,7 +619,7 @@ class GlobalTenantSelector extends Component {
   state = { tenants: ['default'], loading: false };
 
   componentDidMount() {
-    BackOfficeServices.env().then(() => this.forceUpdate());
+    this.forceUpdate();
     this.update();
   }
 

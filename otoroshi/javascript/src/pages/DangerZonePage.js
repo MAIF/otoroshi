@@ -213,7 +213,6 @@ class Mailer extends Component {
   render() {
     const settings = this.props.value;
     const type = settings.type;
-    console.log(settings);
     return (
       <div>
         <SelectInput

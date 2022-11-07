@@ -17,31 +17,15 @@ import { ImportServiceDescriptor } from './ImportServiceDescriptor';
 import { entityFromURI } from '../../util';
 import { v4 } from 'uuid';
 import { HelpWrapper } from '../../components/inputs';
-
-function GridButton({ onClick, text, icon, level = "info" }) {
-  return <button
-    type="button"
-    className={`btn btn-sm btn-${level} d-flex align-items-center justify-content-center flex-column`}
-    style={{
-      minWidth: '80px',
-      minHeight: '80px',
-      maxWidth: '80px',
-      maxHeight: '80px',
-
-      flex: 1
-    }}
-    onClick={onClick}>
-    <div>
-      <i className={`fas ${icon}`} />
-    </div>
-    <div>
-      {text}
-    </div>
-  </button>
-}
+import { SquareButton } from '../../components/SquareButton';
+import { YAMLExportButton } from '../../components/exporters/YAMLButton';
+import { JsonExportButton } from '../../components/exporters/JSONButton';
+import { Dropdown } from '../../components/Dropdown';
+import PageTitle from '../../components/PageTitle';
+import Loader from '../../components/Loader';
 
 function BackToButton({ history }) {
-  return <GridButton
+  return <SquareButton
     onClick={() => {
       const what = window.location.pathname.split('/')[3];
       history.push('/' + what);
@@ -51,7 +35,7 @@ function BackToButton({ history }) {
 }
 
 function DeleteRouteButton() {
-  return <GridButton
+  return <SquareButton
     level="danger"
     onClick={() => {
       const what = window.location.pathname.split('/')[3];
@@ -76,7 +60,7 @@ function DeleteRouteButton() {
 }
 
 function DuplicateButton({ value, history }) {
-  return <GridButton
+  return <SquareButton
     onClick={(e) => {
       const what = window.location.pathname.split('/')[3];
       const id = window.location.pathname.split('/')[4];
@@ -110,77 +94,6 @@ function DuplicateButton({ value, history }) {
     text="Duplicate" />
 }
 
-function YAMLExportButton({ value }) {
-  return <GridButton
-    onClick={() => {
-      const what = window.location.pathname.split('/')[3];
-      const itemName = what === 'routes' ? 'route' : 'route-composition';
-      const kind = what === 'routes' ? 'Route' : 'RouteComposition';
-      const name = value.id
-        .replace(/ /g, '-')
-        .replace(/\(/g, '')
-        .replace(/\)/g, '')
-        .toLowerCase();
-
-      fetch('/bo/api/json_to_yaml', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          apiVersion: 'proxy.otoroshi.io/v1alpha1',
-          kind,
-          metadata: {
-            name,
-          },
-          spec: value,
-        }),
-      })
-        .then((r) => r.text())
-        .then((yaml) => {
-          const blob = new Blob([yaml], { type: 'application/yaml' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.id = String(Date.now());
-          a.style.display = 'none';
-          a.download = `${itemName}-${name}-${Date.now()}.yaml`;
-          a.href = url;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => document.body.removeChild(a), 300);
-        });
-    }}
-    icon="fa-file-export"
-    text="Export YAML" />
-}
-
-function JsonExportButton({ value }) {
-  return <GridButton
-    onClick={() => {
-      const what = window.location.pathname.split('/')[3];
-      const itemName = what === 'routes' ? 'route' : 'route-composition';
-      const kind = what === 'routes' ? 'Route' : 'RouteComposition';
-      const name = value.id
-        .replace(/ /g, '-')
-        .replace(/\(/g, '')
-        .replace(/\)/g, '')
-        .toLowerCase();
-      const json = JSON.stringify({ ...value, kind }, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.id = String(Date.now());
-      a.style.display = 'none';
-      a.download = `${itemName}-${name}-${Date.now()}.json`;
-      a.href = url;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => document.body.removeChild(a), 300);
-    }}
-    icon="fas fa-file-export"
-    text="Export JSON" />
-}
-
 function BackToRouteTab({ history, routeId, viewPlugins }) {
   return (
     <div className="ms-2" style={{ height: '100%' }}>
@@ -207,7 +120,12 @@ function InformationsTab({ isActive, entity, value, history }) {
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=informations`;
           if (!window.location.href.includes(to))
-            history.push(to);
+            history.replace({
+              pathname: to,
+              state: {
+                value
+              }
+            });
         }}
         style={{
           backgroundColor: isActive ? '#f9b000' : '#494948',
@@ -229,7 +147,12 @@ function RoutesTab({ isActive, entity, value, history }) {
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=routes`;
           if (!window.location.href.includes(to))
-            history.push(to);
+            history.replace({
+              pathname: to,
+              state: {
+                value
+              }
+            });
         }}
         style={{
           backgroundColor: isActive ? '#f9b000' : '#494948',
@@ -251,7 +174,12 @@ function DesignerTab({ isActive, entity, value, history }) {
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=flow`;
           if (!window.location.href.includes(to))
-            history.push(to);
+            history.replace({
+              pathname: to,
+              state: {
+                value
+              }
+            });
         }}
         style={{
           backgroundColor: isActive ? '#f9b000' : '#494948',
@@ -297,44 +225,14 @@ function TesterButton({ disabled, setForceTester, viewRef, history, value, isOnV
 }
 
 function MoreActionsButton({ value, menu, history }) {
-  return <div className="ms-2 dropdown" style={{ height: '100%' }}>
-    <button type="button"
-      className="btn btn-sm toggle-form-buttons d-flex align-items-center dark-background"
-      style={{
-        backgroundColor: '#494948',
-        color: '#fff',
-        height: '100%',
-      }}
-      id='designer-menu'
-      data-bs-toggle='dropdown'
-      data-bs-auto-close='outside'
-      aria-expanded='false'>
-      <i className="fas fa-ellipsis-h" style={{ fontSize: '1.33333em' }} />
-    </button>
-    <ul
-      className="dropdown-menu"
-      aria-labelledby="designer-menu"
-      style={{
-        background: 'rgb(73, 73, 72)',
-        border: '1px solid #373735',
-        borderTop: 0,
-        padding: '12px',
-        zIndex: 4000,
-      }}
-      onClick={(e) => e.stopPropagation()}>
-      <li className="d-flex flex-wrap" style={{
-        gap: '8px',
-        minWidth: '170px'
-      }}>
-        <DuplicateButton value={value} history={history} />
-        <JsonExportButton value={value} />
-        <YAMLExportButton value={value} />
-        <DeleteRouteButton />
-        {menu}
-        <BackToButton history={history} />
-      </li>
-    </ul>
-  </div>
+  return <Dropdown className="ms-2" style={{ height: '100%' }}>
+    <DuplicateButton value={value} history={history} />
+    <JsonExportButton value={value} />
+    <YAMLExportButton value={value} />
+    <DeleteRouteButton />
+    {menu}
+    <BackToButton history={history} />
+  </Dropdown>
 }
 
 
@@ -386,52 +284,54 @@ function ManagerTitle({
     }
   ];
 
-  return <div className="page-header d-flex align-item-center justify-content-between ms-0 mb-3" style={{
-    paddingBottom: pathname === '/routes' ? 'initial' : 0
-  }}>
-    <h4 className="flex" style={{ margin: 0 }}>
-      {location.pathname.includes('route-compositions') ? 'Route compositions' :
-        {
-          flow: 'Designer',
-          informations: 'Informations',
-          routes: 'Routes',
-          route_plugins: 'Route plugins'
-        }[query]
-      }
-    </h4>
-    <div className="d-flex align-item-center justify-content-between flex">
-      {!isCreation &&
-        tabs
-          .filter(tab => !tab.visible || tab.visible())
-          .filter(tab => location.state?.routeFromService ? tab.tab === 'Informations' : true)
-          .map(({ component }, i) => {
-            const Tab = component;
-            return <Tab key={`tab-${i}`} />
-          })}
-      {saveButton}
-    </div>
-  </div>
+  return <PageTitle
+    style={{
+      paddingBottom: pathname === '/routes' ? 'initial' : 0
+    }}
+    title={{
+      flow: 'Designer',
+      informations: 'Informations',
+      routes: 'Routes',
+      route_plugins: 'Route plugins'
+    }[query]}>
+    {!isCreation &&
+      tabs
+        .filter(tab => !tab.visible || tab.visible())
+        .filter(tab => location.state?.routeFromService ? tab.tab === 'Informations' : true)
+        .map(({ component }, i) => {
+          const Tab = component;
+          return <Tab key={`tab-${i}`} />
+        })}
+    {saveButton}
+  </PageTitle>
 }
 
 class Manager extends React.Component {
   state = {
-    value: undefined,
+    value: this.props.location?.state?.value,
     menu: undefined,
     menuRefreshed: undefined,
     saveButton: undefined,
     saveTypeButton: undefined,
-    forceHideTester: false
+    forceHideTester: false,
+    loading: !this.props.location?.state?.value
   }
 
   viewRef = React.createRef(null)
 
   componentDidMount() {
-    this.loadRoute();
+    if (!this.props.location?.state?.value) {
+      this.loadRoute('componentDidMount');
+    } else {
+      this.setTitle();
+    }
+
+    window.history.replaceState({}, document.title);
   }
 
   componentDidUpdate(prevProps, prevState) {
     if (this.props.match.params.routeId !== prevProps.match.params.routeId)
-      this.loadRoute();
+      this.loadRoute('componentDidUpdate');
 
     if (['saveTypeButton', 'menuRefreshed', 'forceHideTester']
       .some(field => this.state[field] !== prevState[field])) {
@@ -443,7 +343,13 @@ class Manager extends React.Component {
     if (!this.state.value)
       return;
 
-    const { query, entity, history, location } = this.props;
+    const { entity, history, location } = this.props;
+
+    let query = new URLSearchParams(location.search).get('tab');
+
+    if (!query && location.pathname.includes('?')) {
+      query = new URLSearchParams(`?${location.pathname.split('?')[1]}`).get('tab');
+    }
 
     const p = this.props.match.params
     const isCreation = p.routeId === 'new';
@@ -472,18 +378,19 @@ class Manager extends React.Component {
       saveButton={this.state.saveButton} />);
   }
 
-  loadRoute = () => {
+  loadRoute = from => {
     const { routeId } = this.props.match.params || { routeId: undefined }
     if (routeId === 'new') {
       nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName])
         .then(value => {
-          this.setState({ value }, this.updateSidebar)
+          this.setState({ value, loading: false }, this.updateSidebar)
         });
     } else {
       nextClient.fetch(nextClient.ENTITIES[this.props.entity.fetchName], routeId)
         .then(res => {
-          if (!res.error)
-            this.setState({ value: res }, this.updateSidebar)
+          if (!res.error) {
+            this.setState({ value: res, loading: false }, this.updateSidebar)
+          }
         });
     }
   }
@@ -497,7 +404,13 @@ class Manager extends React.Component {
   }
 
   render() {
-    const { query, entity, history, location, ...props } = this.props;
+    const { entity, history, location, ...props } = this.props;
+
+    let query = new URLSearchParams(location.search).get('tab');
+
+    if (!query && location.pathname.includes('?')) {
+      query = new URLSearchParams(`?${location.pathname.split('?')[1]}`).get('tab');
+    }
 
     const p = this.props.match.params
     const isCreation = p.routeId === 'new';
@@ -505,11 +418,7 @@ class Manager extends React.Component {
     const rawViewPlugins = new URLSearchParams(location.search).get('view_plugins');
     const viewPlugins = rawViewPlugins !== null ? Number(rawViewPlugins) : -1;
 
-    // const isOnViewPlugins = (viewPlugins !== -1) & (query === 'route_plugins');
-    // const url = p.url;
-    // const [value, setValue] = useState(location.state?.routeFromService);
-
-    const { value } = this.state;
+    const { value, loading } = this.state;
     const divs = [
       {
         predicate: query && ['flow', 'route_plugins'].includes(query) && !isCreation,
@@ -520,7 +429,8 @@ class Manager extends React.Component {
             ref={this.viewRef}
             tab={query}
             history={history}
-            value={value}
+            value={this.state.value}
+            setValue={v => this.setState({ value: v }, this.setTitle)}
             setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'routes' })}
             viewPlugins={viewPlugins}
             setMenu={n => this.setState({ menu: n, menuRefreshed: Date.now() })}
@@ -533,14 +443,14 @@ class Manager extends React.Component {
           value && (
             <RouteCompositions
               ref={this.viewRef}
-              service={value}
+              service={this.state.value}
               setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'route-compositions' })}
               setRoutes={routes => this.setState({
                 value: {
-                  ...value,
+                  ...this.state.value,
                   routes
                 }
-              })}
+              }, this.setTitle)}
               viewPlugins={viewPlugins}
             />
           ),
@@ -550,10 +460,12 @@ class Manager extends React.Component {
     const component = divs.filter((p) => p.predicate);
 
     if (component.length > 0) {
-      return <div className="designer row">{component[0].render()}</div>;
+      return <Loader loading={loading}>
+        <div className="designer row">{component[0].render()}</div>
+      </Loader>
     }
 
-    return (
+    return <Loader loading={loading}>
       <div className="designer row ps-3">
         <Informations
           {...this.props}
@@ -561,11 +473,11 @@ class Manager extends React.Component {
           ref={this.viewRef}
           isCreation={isCreation}
           value={value}
-          setValue={n => this.setState({ value: n })}
+          setValue={v => this.setState({ value: v })}
           setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'informations' }, this.setTitle)}
         />
       </div>
-    );
+    </Loader>
   }
 }
 
@@ -600,10 +512,8 @@ const RoutesView = ({ history }) => {
 };
 
 class RouteDesigner extends React.Component {
-
   componentDidMount() {
     this.patchStyle(true);
-
     this.props.setTitle('Routes');
   }
 
@@ -627,7 +537,6 @@ class RouteDesigner extends React.Component {
     const { match, history, location } = this.props;
 
     const entity = entityFromURI(location);
-    const query = new URLSearchParams(location.search).get('tab');
 
     return (
       <Switch>
@@ -639,7 +548,10 @@ class RouteDesigner extends React.Component {
           { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
           {
             path: `${match.url}/:routeId`,
-            component: p => <Manager query={query} {...this.props} {...p} entity={entity} />
+            component: p => <Manager
+              {...this.props}
+              {...p}
+              entity={entity} />
           }
         ].map(({ path, component }) => {
           const Component = component;

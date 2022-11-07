@@ -1,5 +1,6 @@
 package otoroshi.plugins.jobs.kubernetes
 
+/*
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{Executors, TimeUnit}
 
@@ -17,9 +18,10 @@ import io.kubernetes.client.util.{CallGeneratorParams, ClientBuilder}
 import okhttp3.Call
 
 import scala.reflect.ClassTag
+ */
 
 object KubernetesSupport {
-
+  /*
   class OfficialSDKKubernetesController(config: KubernetesConfig) {
 
     private val ref = new AtomicReference[LeaderElectingController]()
@@ -151,4 +153,5 @@ object KubernetesSupport {
       this
     }
   }
+   */
 }

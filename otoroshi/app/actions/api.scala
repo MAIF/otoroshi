@@ -254,11 +254,11 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
     def perform(): Future[Result] = {
       request.headers.get(env.Headers.OtoroshiClaim).get.split("\\.").toSeq match {
         case Seq(head, body, signature) => {
-          val claim = Json.parse(new String(OtoroshiClaim.decoder.decode(body), Charsets.UTF_8))
-          val lastestApikey = (claim \ "access_type").asOpt[String].exists(v => v == "apikey" || v == "both")
+          val claim          = Json.parse(new String(OtoroshiClaim.decoder.decode(body), Charsets.UTF_8))
+          val lastestApikey  = (claim \ "access_type").asOpt[String].exists(v => v == "apikey" || v == "both")
           val latestClientId = (claim \ "apikey" \ "clientId").asOpt[String]
           (claim \ "sub").as[String].split(":").toSeq match {
-            case Seq("apikey", clientId) => {
+            case Seq("apikey", clientId)                        => {
               env.datastores.globalConfigDataStore
                 .singleton()
                 .filter(c => request.method.toLowerCase() == "get" || !c.apiReadOnly)
@@ -286,7 +286,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
                 error(s"You're not authorized - ${request.method} ${request.uri}")
               }
             }
-            case _ if (lastestApikey && latestClientId.isDefined) => {
+            case _ if lastestApikey && latestClientId.isDefined => {
               env.datastores.globalConfigDataStore
                 .singleton()
                 .filter(c => request.method.toLowerCase() == "get" || !c.apiReadOnly)
@@ -314,7 +314,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
                 error(s"You're not authorized - ${request.method} ${request.uri}")
               }
             }
-            case _                       => error(s"You're not authorized - ${request.method} ${request.uri}")
+            case _                                              => error(s"You're not authorized - ${request.method} ${request.uri}")
           }
         }
         case _                          => error(s"You're not authorized - ${request.method} ${request.uri}")

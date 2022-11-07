@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 
 import AceEditor from 'react-ace';
 
-import "ace-builds/src-noconflict/mode-json";
-import "ace-builds/src-noconflict/mode-yaml";
+import 'ace-builds/src-noconflict/mode-json';
+import 'ace-builds/src-noconflict/mode-yaml';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { SimpleBooleanInput } from '../components/inputs';

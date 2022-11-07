@@ -36,6 +36,28 @@ import router.Routes
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.util.Try
+
+trait SubSystemInitializationState  {
+  def isSuccessful: Boolean
+  def duration: Long
+  def task: String
+}
+object SubSystemInitializationState {
+  case class NoWait(task: String)                                 extends SubSystemInitializationState {
+    def isSuccessful: Boolean = true
+    def duration: Long        = 0L
+  }
+  case class Successful(task: String, duration: Long)             extends SubSystemInitializationState {
+    def isSuccessful: Boolean = true
+  }
+  case class Failed(task: String, err: Throwable, duration: Long) extends SubSystemInitializationState {
+    def isSuccessful: Boolean = false
+  }
+  case class Timeout(task: String, duration: Long)                extends SubSystemInitializationState {
+    def isSuccessful: Boolean = false
+  }
+}
 
 object OtoroshiLoaderHelper {
 
@@ -53,6 +75,8 @@ object OtoroshiLoaderHelper {
     implicit val scheduler = components.env.otoroshiScheduler
     implicit val mat       = components.env.otoroshiMaterializer
 
+    val failOnTimeout                        =
+      components.env.configuration.betterGetOptional[Boolean]("app.boot.failOnTimeout").getOrElse(false)
     val globalWait                           = components.env.configuration.betterGetOptional[Boolean]("app.boot.globalWait").getOrElse(true)
     val waitForTlsInitEnabled                =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.waitForTlsInit").getOrElse(true)
@@ -86,22 +110,24 @@ object OtoroshiLoaderHelper {
     val waitProxyStateSyncTimeout: Long            =
       components.env.configuration.betterGetOptional[Long]("app.boot.waitProxyStateSyncTimeout").getOrElse(10000)
 
-    def timeout(duration: FiniteDuration): Future[Unit] = {
-      val promise = Promise[Unit]
+    def timeout(task: String, duration: FiniteDuration): Future[SubSystemInitializationState] = {
+      val promise = Promise[SubSystemInitializationState]
       scheduler.scheduleOnce(duration) {
-        promise.trySuccess(())
+        promise.trySuccess(SubSystemInitializationState.Timeout(task, duration.toMillis))
       }
       promise.future
     }
 
-    def waitForFirstClusterStateCache(): Future[Unit] = {
+    def waitForFirstClusterStateCache(): Future[SubSystemInitializationState] = {
+      val task  = "first-cluster-state-extraction"
+      val start = System.currentTimeMillis()
       if (
         components.env.clusterConfig.mode == ClusterMode.Leader /*&& components.env.clusterConfig.autoUpdateState*/ && waitForFirstClusterStateCacheEnabled
       ) {
         logger.info("waiting for first cluster state extraction ...")
         Future.firstCompletedOf(
           Seq(
-            timeout(waitForFirstClusterStateCacheTimeout.millis),
+            timeout(task, waitForFirstClusterStateCacheTimeout.millis),
             Source
               .tick(1.second, 1.second, ())
               .map { _ =>
@@ -114,21 +140,26 @@ object OtoroshiLoaderHelper {
               .filter(identity)
               .take(1)
               .runWith(Sink.head)(mat)
-              .map(_ => ())
+              .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
+              .recover { case e: Throwable =>
+                SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
+              }
           )
         )
       } else {
-        FastFuture.successful(())
+        FastFuture.successful(SubSystemInitializationState.NoWait(task))
       }
     }
 
-    def waitForFirstClusterFetch(): Future[Unit] = {
+    def waitForFirstClusterFetch(): Future[SubSystemInitializationState] = {
+      val task  = "first-cluster-fetch"
+      val start = System.currentTimeMillis()
       if (components.env.clusterConfig.mode == ClusterMode.Worker && waitForFirstClusterFetchEnabled) {
         logger.info("waiting for first cluster fetch ...")
         Future
           .firstCompletedOf(
             Seq(
-              timeout(waitForFirstClusterFetchTimeout.millis),
+              timeout(task, waitForFirstClusterFetchTimeout.millis),
               Source
                 .tick(1.second, 1.second, ())
                 .map { _ =>
@@ -139,23 +170,30 @@ object OtoroshiLoaderHelper {
                 .filter(identity)
                 .take(1)
                 .runWith(Sink.head)(mat)
-                .map(_ => ())
+                .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
+                .recover { case e: Throwable =>
+                  SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
+                }
             )
           )
-          .flatMap { _ =>
-            components.env.proxyState.sync()
+          .flatMap { r =>
+            components.env.proxyState.sync().map { _ =>
+              r
+            }
           }
       } else {
-        FastFuture.successful(())
+        FastFuture.successful(SubSystemInitializationState.NoWait(task))
       }
     }
 
-    def waitForPluginSearch(): Future[Unit] = {
+    def waitForPluginSearch(): Future[SubSystemInitializationState] = {
+      val task  = "plugins-search"
+      val start = System.currentTimeMillis()
       if (waitForPluginsSearch) {
         logger.info("waiting for plugins search and start ...")
         Future.firstCompletedOf(
           Seq(
-            timeout(waitForPluginsSearchTimeout.millis),
+            timeout(task, waitForPluginsSearchTimeout.millis),
             Source
               .tick(1.second, 1.second, ())
               .map { _ =>
@@ -164,20 +202,25 @@ object OtoroshiLoaderHelper {
               .filter(identity)
               .take(1)
               .runWith(Sink.head)(mat)
-              .map(_ => ())
+              .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
+              .recover { case e: Throwable =>
+                SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
+              }
           )
         )
       } else {
-        FastFuture.successful(())
+        FastFuture.successful(SubSystemInitializationState.NoWait(task))
       }
     }
 
-    def waitForTlsInit(): Future[Unit] = {
+    def waitForTlsInit(): Future[SubSystemInitializationState] = {
+      val task  = "tls-init"
+      val start = System.currentTimeMillis()
       if (waitForTlsInitEnabled) {
         logger.info("waiting for TLS initialization ...")
         Future.firstCompletedOf(
           Seq(
-            timeout(waitForTlsInitTimeout.millis),
+            timeout(task, waitForTlsInitTimeout.millis),
             Source
               .tick(1.second, 1.second, ())
               .map { _ =>
@@ -187,20 +230,25 @@ object OtoroshiLoaderHelper {
               .filter(identity)
               .take(1)
               .runWith(Sink.head)(mat)
-              .map(_ => ())
+              .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
+              .recover { case e: Throwable =>
+                SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
+              }
           )
         )
       } else {
-        FastFuture.successful(())
+        FastFuture.successful(SubSystemInitializationState.NoWait(task))
       }
     }
 
-    def waitForPluginsCompilation(): Future[Unit] = {
+    def waitForPluginsCompilation(): Future[SubSystemInitializationState] = {
+      val task  = "plugins-compilation"
+      val start = System.currentTimeMillis()
       if (waitForScriptsCompilation) {
         logger.info("waiting for scripts initialization ...")
         Future.firstCompletedOf(
           Seq(
-            timeout(waitForScriptsCompilationTimeout.millis),
+            timeout(task, waitForScriptsCompilationTimeout.millis),
             Source
               .tick(1.second, 1.second, ())
               .mapAsync(1) { _ =>
@@ -210,20 +258,25 @@ object OtoroshiLoaderHelper {
               .filter(identity)
               .take(1)
               .runWith(Sink.head)(mat)
-              .map(_ => ())
+              .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
+              .recover { case e: Throwable =>
+                SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
+              }
           )
         )
       } else {
-        FastFuture.successful(())
+        FastFuture.successful(SubSystemInitializationState.NoWait(task))
       }
     }
 
-    def waitForFirstProxyStateSync(): Future[Unit] = {
+    def waitForFirstProxyStateSync(): Future[SubSystemInitializationState] = {
+      val task  = "first-proxy-state-sync"
+      val start = System.currentTimeMillis()
       if (waitProxyStateSync) {
         logger.info("waiting for proxy-state initialization ...")
         Future.firstCompletedOf(
           Seq(
-            timeout(waitProxyStateSyncTimeout.millis),
+            timeout(task, waitProxyStateSyncTimeout.millis),
             Source
               .tick(1.second, 1.second, ())
               .map { _ =>
@@ -232,28 +285,48 @@ object OtoroshiLoaderHelper {
               .filter(identity)
               .take(1)
               .runWith(Sink.head)(mat)
-              .map(_ => ())
+              .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
+              .recover { case e: Throwable =>
+                SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
+              }
           )
         )
       } else {
-        FastFuture.successful(())
+        FastFuture.successful(SubSystemInitializationState.NoWait(task))
       }
     }
 
     if (globalWait) {
-      val start   = System.currentTimeMillis()
+      val start     = System.currentTimeMillis()
       logger.info("waiting for subsystems initialization ...")
-      val waiting = for {
-        _ <- waitForFirstClusterStateCache()
-        _ <- waitForFirstClusterFetch()
-        _ <- waitForTlsInit()
-        _ <- waitForPluginSearch()
-        _ <- waitForPluginsCompilation()
-        _ <- waitForFirstProxyStateSync()
-      } yield ()
+      val waiting   = for {
+        task1 <- waitForFirstClusterStateCache()
+        task2 <- waitForFirstClusterFetch()
+        task3 <- waitForTlsInit()
+        task4 <- waitForPluginSearch()
+        task5 <- waitForPluginsCompilation()
+        task6 <- waitForFirstProxyStateSync()
+      } yield Seq(task1, task2, task3, task4, task5, task6)
       // AWAIT: valid
-      Await.result(waiting, globalWaitTimeout.millis)
+      val tasks     = Try(Await.result(waiting, globalWaitTimeout.millis))
+        .getOrElse(Seq(SubSystemInitializationState.Timeout("global-timeout", globalWaitTimeout)))
       logger.info(s"subsystems initialization done in ${System.currentTimeMillis() - start} ms.")
+      val errors    = tasks.filter(!_.isSuccessful)
+      val successes = tasks.filter(_.isSuccessful)
+      successes.foreach { task =>
+        logger.debug(s"${task.task} success in ${task.duration} ms.")
+      }
+      errors.foreach {
+        case SubSystemInitializationState.Failed(task, err, duration) =>
+          logger.error(s"${task} failed in ${duration} ms.", err)
+        case SubSystemInitializationState.Timeout(task, duration)     =>
+          logger.error(s"${task} timeout after ${duration} ms.")
+        case _                                                        =>
+      }
+      if (errors.nonEmpty && failOnTimeout) {
+        logger.error(s"stopping because of subsystem${if (errors.size > 1) "s" else ""} initialization failure")
+        System.exit(-1)
+      }
     } else {
       ()
     }
@@ -395,6 +468,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val pluginsController            = wire[NgPluginsController]
   lazy val tryItController              = wire[TryItController]
   lazy val tunnelController             = wire[TunnelController]
+  lazy val entitiesController           = wire[EntitiesController]
 
   override lazy val assets: Assets = wire[Assets]
 

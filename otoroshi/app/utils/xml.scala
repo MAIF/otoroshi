@@ -48,8 +48,8 @@ object Xml {
       case XNode(xs)                   => JsObject(mkFields(xs))
       case XArray(elems)               =>
         elems match {
-          case (_: XValue) :: _ => JsArray(elems.map(y ⇒ toJsValue(y)))
-          case _                => JsArray(elems.map(y ⇒ toJsValue(y, flatten = true)))
+          case (_: XValue) :: _ => JsArray(elems.map(y => toJsValue(y)))
+          case _                => JsArray(elems.map(y => toJsValue(y, flatten = true)))
         }
     }
 
@@ -77,7 +77,7 @@ object Xml {
         else if (isLeaf(n)) XLeaf((nameOf(n), XValue(n.text)), buildAttrs(n)) :: Nil
         else {
           val children = directChildren(n)
-            .map(cn ⇒ (nameOf(cn), buildNodes(cn).head))
+            .map(cn => (nameOf(cn), buildNodes(cn).head))
             .groupBy(_._1)
             .map({ case (k, v) => (k, if (v.length > 1) XArray(v.toList.map(_._2)) else v.head._2) })
             .toList
@@ -97,7 +97,7 @@ object Xml {
     buildNodes(xml) match {
       case List(x @ XLeaf(_, _ :: _)) => toJsValue(x)
       case List(x)                    => play.api.libs.json.Json.obj(nameOf(xml.head) -> toJsValue(x))
-      case x                          => JsArray(x.map(y ⇒ toJsValue(y, flatten = true)))
+      case x                          => JsArray(x.map(y => toJsValue(y, flatten = true)))
     }
 
   }

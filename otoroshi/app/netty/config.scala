@@ -36,7 +36,7 @@ case class Http3Settings(
     initialMaxStreamDataBidirectionalLocal: Long,
     initialMaxStreamDataBidirectionalRemote: Long,
     initialMaxStreamsBidirectional: Long,
-    disableQpackDynamicTable: Boolean,
+    disableQpackDynamicTable: Boolean
 )
 case class Http2Settings(enabled: Boolean, h2cEnabled: Boolean)
 case class NativeSettings(enabled: Boolean, driver: NativeDriver) {
@@ -145,8 +145,9 @@ object ReactorNettyServerConfig {
           config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamDataBidirectionalRemote").getOrElse(1000000),
         initialMaxStreamsBidirectional =
           config.getOptionalWithFileSupport[Long]("http3.initialMaxStreamsBidirectional").getOrElse(100000),
-        disableQpackDynamicTable =
-          config.getOptionalWithFileSupport[Boolean]("http3.disableQpackDynamicTable").getOrElse(true), // cause it doesn't work in browsers if enabled
+        disableQpackDynamicTable = config
+          .getOptionalWithFileSupport[Boolean]("http3.disableQpackDynamicTable")
+          .getOrElse(true) // cause it doesn't work in browsers if enabled
       ),
       native = NativeSettings(
         enabled = config.getOptionalWithFileSupport[Boolean]("native.enabled").getOrElse(true),
