@@ -25,57 +25,57 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - [ ] rollout new proxy engine (version 16)
   - [ ] introduce wizards to help resources creation
 - [ ] next (2023 - 202x)
-  - create an official github project
-  - research around new UX 
-  - research around WASM integration
-  - introduce new versioning scheme (see below)
-  - new plugins
+  - [ ] create an official github project
+  - [ ] research around new UX 
+  - [ ] research around WASM integration
+  - [ ] introduce new versioning scheme (see below)
+  - [ ] introduce event system bridges (bundle)
+    - [ ] support event systems like kafka, pulsar, mqtt, amqp, gcp pub/sub, aws kinesis, azure storage queue, etc
+    - [ ] support event producing through http post, websockets
+    - [ ] support event subscriptions through webhooks, sse, websockets, grpc streaming
+  - [ ] minimal gRCP support
+    - [ ] plugin to call gRPC services
+    - [ ] expose routes as gRPC-Web
+    - [ ] grpc transformation
+  - [ ] new plugins
     - [x] provide a plugin to act as an Eureka 2 backend
     - [x] provide a plugin to handle backend discovery backed by Eureka 2
-    - provide a Brotli compression plugin
-    - provide a graphql federation plugin
-    - provide an orchestration plugin
-    - websocket validation: frame format, frame size, etc
-  - cleanup kubernetes integration 
-    - fix versioning in crds
-    - check against latest kubernetes version
-    - support external-dns (https://github.com/kubernetes-sigs/external-dns)
-    - implement k8s SMI spec support (if it fits the use case)
-    - implement k8s Gateway API support (https://github.com/kubernetes-sigs/gateway-api)
-  - pluggable authentication modules
-  - upgrade scala version (2.13.x) 
-  - better testing infrastructure for multi node environments (test-containers or something like that)
-  - new documentation website generator
-  - upgrade all frontend libs
-  - stored tunnels
-  - expand vault mechanism to config. file
+    - [ ] provide a Brotli compression plugin
+    - [ ] provide a graphql federation plugin
+    - [ ] provide an orchestration plugin
+    - [ ] websocket validation: frame format, frame size, etc
+  - [ ] cleanup kubernetes integration 
+    - [ ] fix versioning in crds
+    - [ ] check against latest kubernetes version
+    - [ ] support external-dns (https://github.com/kubernetes-sigs/external-dns)
+    - [ ] implement k8s SMI spec support (if it fits the use case)
+    - [ ] implement k8s Gateway API support (https://github.com/kubernetes-sigs/gateway-api)
+  - [ ] pluggable authentication modules
+  - [ ] upgrade scala version (2.13.x) 
+  - [ ] better testing infrastructure for multi node environments (test-containers or something like that)
+  - [ ] new documentation website generator
+  - [ ] upgrade all frontend libs
+  - [ ] stored tunnels
+  - [ ] expand vault mechanism to config. file
   - [x] disable TLS 1.0 and 1.1 by default
-  - support websocket calls in relay routing
-  - improve tunnels 
-    - improve stability
-    - improve performances (use binary format ?)
-    - improve resilience
-    - support websocket calls
-    - support long/streaming calls
-  - new data exporters
-    - TCP
-    - UDP
-    - Syslog
-  - minimal gRCP support
-    - plugin to call gRPC services
-    - expose routes as gRPC-Web
-    - grpc transformation
-  - support serverless providers
-    - plugin to call functions in AWS
-    - plugin to call functions in Azure
-    - plugin to call functions in GCP
-    - plugin to call functions in openfaas
-  - support plugins thats ships their own custom UI
-  - introduce event system bridges (bundle)
-    - support event systems like kafka, pulsar, mqtt, amqp, gcp pub/sub, aws kinesis, azure storage queue, etc
-    - support event producing through http post, websockets
-    - support event subscriptions through webhooks, sse, websockets, grpc streaming
-  - experiment around moving out of play framework and akka ...
+  - [ ] support websocket calls in relay routing
+  - [ ] improve tunnels 
+    - [ ] improve stability
+    - [ ] improve performances (use binary format ?)
+    - [ ] improve resilience
+    - [ ] support websocket calls
+    - [ ] support long/streaming calls
+  - [ ] new data exporters
+    - [ ] TCP
+    - [ ] UDP
+    - [ ] Syslog
+  - [ ] support serverless providers
+    - [ ] plugin to call functions in AWS
+    - [ ] plugin to call functions in Azure
+    - [ ] plugin to call functions in GCP
+    - [ ] plugin to call functions in openfaas
+  - [ ] support plugins thats ships their own custom UI
+  - [ ] experiment around moving out of play framework and akka ...
 
 ## versioning
 
