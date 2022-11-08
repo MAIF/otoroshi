@@ -20,13 +20,14 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - remote tunnels for easier exposition
   - relay routing
 - [ ] Q4 2022  
-  - experimental netty stuff
-  - http3 preview
-  - rollout new proxy engine (version 16)
-  - introduce wizards to help resources creation
+  - [x] experimental netty stuff
+  - [x] http3 preview
+  - [ ] rollout new proxy engine (version 16)
+  - [ ] introduce wizards to help resources creation
 - [ ] next (2023 - 202x)
   - create an official github project
   - research around new UX 
+  - research around WASM integration
   - introduce new versioning scheme (see below)
   - new plugins
     - [x] provide a plugin to act as an Eureka 2 backend
