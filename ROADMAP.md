@@ -16,7 +16,7 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
     - reporting
   - implement secret vaults
   - implement grapql plugins (except federation)
-- [ ] Q3 2022  
+- [x] Q3 2022  
   - remote tunnels for easier exposition
   - relay routing
 - [ ] Q4 2022  
@@ -24,14 +24,13 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - http3 preview
   - rollout new proxy engine (version 16)
   - introduce wizards to help resources creation
-  - kubernetes integration upgrades
-    - implement k8s SMI spec support (if it fits the use case)
-    - implement k8s Gateway API support (https://github.com/kubernetes-sigs/gateway-api)
 - [ ] next (2023 - 202x)
+  - create an official github project
+  - research around new UX 
   - introduce new versioning scheme (see below)
   - new plugins
-    - provide a plugin to act as an Eureka 2 backend
-    - provide a plugin to handle backend discovery backed by Eureka 2
+    - [x] provide a plugin to act as an Eureka 2 backend
+    - [x] provide a plugin to handle backend discovery backed by Eureka 2
     - provide a Brotli compression plugin
     - provide a graphql federation plugin
     - provide an orchestration plugin
@@ -40,6 +39,8 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
     - fix versioning in crds
     - check against latest kubernetes version
     - support external-dns (https://github.com/kubernetes-sigs/external-dns)
+    - implement k8s SMI spec support (if it fits the use case)
+    - implement k8s Gateway API support (https://github.com/kubernetes-sigs/gateway-api)
   - pluggable authentication modules
   - upgrade scala version (2.13.x) 
   - better testing infrastructure for multi node environments (test-containers or something like that)
@@ -47,7 +48,7 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - upgrade all frontend libs
   - stored tunnels
   - expand vault mechanism to config. file
-  - disable TLS 1.0 and 1.1 by default
+  - [x] disable TLS 1.0 and 1.1 by default
   - support websocket calls in relay routing
   - improve tunnels 
     - improve stability
@@ -69,7 +70,7 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
     - plugin to call functions in GCP
     - plugin to call functions in openfaas
   - support plugins thats ships their own custom UI
-  - introduce event system bridges
+  - introduce event system bridges (bundle)
     - support event systems like kafka, pulsar, mqtt, amqp, gcp pub/sub, aws kinesis, azure storage queue, etc
     - support event producing through http post, websockets
     - support event subscriptions through webhooks, sse, websockets, grpc streaming
