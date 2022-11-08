@@ -349,7 +349,7 @@ const LoaderItem = ({ text, timeout }) => {
         style={{
           flex: 1,
           marginLeft: '12px',
-          color: loading ? '#eee' : '#fff',
+          color: loading ? '#eee' : '#ccc',
           fontWeight: loading ? 'normal' : 'bold',
         }}>
         {text}

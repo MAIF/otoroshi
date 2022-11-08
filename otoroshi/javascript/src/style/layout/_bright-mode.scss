@@ -72,7 +72,9 @@ body.white-mode,
   .dropdown-menu > li > a:focus,
   .dropdown-menu > li > a:hover,
   .ReactTable .-next .-btn:hover,
-  .ReactTable .-previous .-btn:hover {
+  .ReactTable .-previous .-btn:hover,
+  .btn-dark:hover .wizard-h3--small,
+  .btn-dark:hover label {
     @include bright-mode_color--light;
   }
   .ReactTable input,
@@ -138,7 +140,8 @@ body.white-mode,
   .is-open > .Select-control,
   .Select.is-focused > .Select-control,
   .Select.is-focused:not(.is-open) > .Select-control,
-  .ant-calendar-input, .ant-input, .custom-dropdown>li>a {
+  .ant-calendar-input, .ant-input, .custom-dropdown>li>a,
+  .wizard-h3--small {
     @include bright-mode_color--darker;
   }
 
