@@ -42,6 +42,7 @@ import NgAuthModuleExpectedUser from './NgAuthModuleExpectedUser'
 import NgAuthModuleUserExtractor from './NgAuthModuleUserExtractor'
 import NgBackend from './NgBackend'
 import NgFrontend from './NgFrontend'
+import NgLegacyApikeyCall from './NgLegacyApikeyCall'
 import OtoroshiChallenge from './OtoroshiChallenge'
 import OtoroshiInfos from './OtoroshiInfos'
 import OverrideHost from './OverrideHost'
@@ -114,6 +115,7 @@ export const Plugins = [
   MockResponses,
   NgAuthModuleExpectedUser,
   NgAuthModuleUserExtractor,
+  NgLegacyApikeyCall,
   OtoroshiChallenge,
   OtoroshiInfos,
   OverrideHost,

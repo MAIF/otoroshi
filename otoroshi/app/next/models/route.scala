@@ -955,59 +955,69 @@ object NgRoute {
               config = NgPluginInstanceConfig(NgCorsSettings.fromLegacy(service.cors).json.asObject)
             )
           }
-          .applyOnIf(
-            (service.publicPatterns.isEmpty && service.privatePatterns.isEmpty) || 
-            service.privatePatterns.nonEmpty || 
-            !service.publicPatterns.contains("/.*") || 
-            service.detectApiKeySooner
-          ) { seq =>
-            val pluginConfig = NgPluginInstanceConfig(
-              NgApikeyCallsConfig
-                .fromLegacy(service.apiKeyConstraints)
-                .copy(
-                  validate = !service.detectApiKeySooner,
-                  passWithUser = !service.strictlyPrivate
-                )
-                .json
-                .asObject
-            )
-            /*
+          .applyOn { seq =>
             seq :+ NgPluginInstance(
-              plugin = pluginId[ApikeyCalls],
-              include = if (service.publicPatterns.nonEmpty) Seq.empty else service.privatePatterns,
-              exclude =
-                if (service.detectApiKeySooner) Seq.empty
-                else (
-                  if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) Seq.empty
-                  else service.publicPatterns
-                ),
-              config = pluginConfig
+              plugin = pluginId[NgLegacyApikeyCall],
+              config = NgPluginInstanceConfig(NgLegacyApikeyCallConfig(
+                publicPatterns = service.publicPatterns,
+                privatePatterns = service.privatePatterns,
+                config = NgApikeyCallsConfig.fromLegacy(service.apiKeyConstraints)
+              ).json.asObject)
             )
-            */
-            val inst = if (service.detectApiKeySooner) {
-              NgPluginInstance(
-                plugin = pluginId[ApikeyCalls],
-                include = if (service.publicPatterns.nonEmpty) Seq.empty else service.privatePatterns,
-                exclude = Seq.empty,
-                config = pluginConfig
-              )
-            } else if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) {
-              NgPluginInstance(
-                plugin = pluginId[ApikeyCalls],
-                include = service.privatePatterns,
-                exclude = Seq.empty,
-                config = pluginConfig
-              )
-            } else {
-              NgPluginInstance(
-                plugin = pluginId[ApikeyCalls],
-                include = service.privatePatterns,
-                exclude = service.publicPatterns,
-                config = pluginConfig
-              )
-            }
-            seq :+ inst
           }
+          //.applyOnIf(
+          //  (service.publicPatterns.isEmpty && service.privatePatterns.isEmpty) ||
+          //  service.privatePatterns.nonEmpty ||
+          //  !service.publicPatterns.contains("/.*") ||
+          //  service.detectApiKeySooner
+          //) { seq =>
+          //  val pluginConfig = NgPluginInstanceConfig(
+          //    NgApikeyCallsConfig
+          //      .fromLegacy(service.apiKeyConstraints)
+          //      .copy(
+          //        validate = !service.detectApiKeySooner,
+          //        passWithUser = !service.strictlyPrivate
+          //      )
+          //      .json
+          //      .asObject
+          //  )
+          //  /*
+          //  seq :+ NgPluginInstance(
+          //    plugin = pluginId[ApikeyCalls],
+          //    include = if (service.publicPatterns.nonEmpty) Seq.empty else service.privatePatterns,
+          //    exclude =
+          //      if (service.detectApiKeySooner) Seq.empty
+          //      else (
+          //        if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) Seq.empty
+          //        else service.publicPatterns
+          //      ),
+          //    config = pluginConfig
+          //  )
+          //  */
+          //  val inst = if (service.detectApiKeySooner) {
+          //    NgPluginInstance(
+          //      plugin = pluginId[ApikeyCalls],
+          //      include = if (service.publicPatterns.nonEmpty) Seq.empty else service.privatePatterns,
+          //      exclude = Seq.empty,
+          //      config = pluginConfig
+          //    )
+          //  } else if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) {
+          //    NgPluginInstance(
+          //      plugin = pluginId[ApikeyCalls],
+          //      include = service.privatePatterns,
+          //      exclude = Seq.empty,
+          //      config = pluginConfig
+          //    )
+          //  } else {
+          //    NgPluginInstance(
+          //      plugin = pluginId[ApikeyCalls],
+          //      include = service.privatePatterns,
+          //      exclude = service.publicPatterns,
+          //      config = pluginConfig
+          //    )
+          //  }
+          //  seq :+ inst
+          //}
           .applyOnIf(service.privateApp && service.authConfigRef.isDefined) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[AuthModule],
