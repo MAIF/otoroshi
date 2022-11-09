@@ -39,11 +39,12 @@ export function ImportServiceDescriptor({ hide }) {
             text="Migrate and start editing"
             className="mt-3"
             onPress={() =>
-              convertAsRoute(service).then((res) =>
-                history.push(`/routes/${res.id}?tab=informations`, {
-                  routeFromService: res,
+              convertAsRoute(service)
+                .then((res) => {
+                  history.push(`/routes/${res.id}?tab=informations`, {
+                    routeFromService: res,
+                  })
                 })
-              )
             }
             icon={() => <i className="fas fa-paper-plane" />}
           />

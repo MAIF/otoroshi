@@ -76,7 +76,7 @@ object NgPluginInstance {
   def readFrom(obj: JsValue): NgPluginInstance = {
     NgPluginInstance(
       plugin = obj.select("plugin").asString,
-      debug = obj.select("debug").asOpt[Boolean].getOrElse(true),
+      debug = obj.select("debug").asOpt[Boolean].getOrElse(false),
       enabled = obj.select("enabled").asOpt[Boolean].getOrElse(true),
       include = obj.select("include").asOpt[Seq[String]].getOrElse(Seq.empty),
       exclude = obj.select("exclude").asOpt[Seq[String]].getOrElse(Seq.empty),

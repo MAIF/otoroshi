@@ -196,13 +196,13 @@ object LoadBalancing {
   val format: Format[LoadBalancing] = new Format[LoadBalancing] {
     override def writes(o: LoadBalancing): JsValue             = o.toJson
     override def reads(json: JsValue): JsResult[LoadBalancing] =
-      (json \ "type").as[String] match {
-        case "RoundRobin"               => JsSuccess(RoundRobin)
-        case "Random"                   => JsSuccess(Random)
-        case "Sticky"                   => JsSuccess(Sticky)
-        case "IpAddressHash"            => JsSuccess(IpAddressHash)
-        case "BestResponseTime"         => JsSuccess(BestResponseTime)
-        case "WeightedBestResponseTime" =>
+      (json \ "type").asOpt[String] match {
+        case Some("RoundRobin")               => JsSuccess(RoundRobin)
+        case Some("Random")                   => JsSuccess(Random)
+        case Some("Sticky")                   => JsSuccess(Sticky)
+        case Some("IpAddressHash")            => JsSuccess(IpAddressHash)
+        case Some("BestResponseTime")         => JsSuccess(BestResponseTime)
+        case Some("WeightedBestResponseTime") =>
           JsSuccess(WeightedBestResponseTime((json \ "ratio").asOpt[Double].getOrElse(0.5)))
         case _                          => JsSuccess(RoundRobin)
       }

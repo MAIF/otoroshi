@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Route, Switch, useHistory, useLocation, useParams, useRouteMatch, withRouter } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Route, Switch, useLocation, withRouter } from 'react-router-dom';
 import { nextClient } from '../../services/BackOfficeServices';
 import Designer from './Designer';
 import RouteCompositions from './RouteComposition';
@@ -379,19 +379,23 @@ class Manager extends React.Component {
   }
 
   loadRoute = from => {
-    const { routeId } = this.props.match.params || { routeId: undefined }
+    const { routeId } = this.props.match.params || { routeId: undefined };
+
     if (routeId === 'new') {
       nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName])
         .then(value => {
           this.setState({ value, loading: false }, this.updateSidebar)
         });
     } else {
-      nextClient.fetch(nextClient.ENTITIES[this.props.entity.fetchName], routeId)
-        .then(res => {
-          if (!res.error) {
-            this.setState({ value: res, loading: false }, this.updateSidebar)
-          }
-        });
+      if (this.props.location.state?.routeFromService)
+        this.setState({ value: this.props.location.state?.routeFromService, loading: false }, this.updateSidebar)
+      else
+        nextClient.fetch(nextClient.ENTITIES[this.props.entity.fetchName], routeId)
+          .then(res => {
+            if (!res.error) {
+              this.setState({ value: res, loading: false }, this.updateSidebar)
+            }
+          });
     }
   }
 
