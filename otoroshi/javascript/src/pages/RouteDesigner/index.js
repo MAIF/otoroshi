@@ -379,6 +379,7 @@ class Manager extends React.Component {
   }
 
   loadRoute = from => {
+    
     const { routeId } = this.props.match.params || { routeId: undefined };
 
     if (routeId === 'new') {
@@ -387,15 +388,16 @@ class Manager extends React.Component {
           this.setState({ value, loading: false }, this.updateSidebar)
         });
     } else {
-      if (this.props.location.state?.routeFromService)
-        this.setState({ value: this.props.location.state?.routeFromService, loading: false }, this.updateSidebar)
-      else
+      if (this.props.location.state && this.props.location.state.routeFromService) {
+        this.setState({ value: this.props.location.state.routeFromService, loading: false }, this.updateSidebar)
+      } else {
         nextClient.fetch(nextClient.ENTITIES[this.props.entity.fetchName], routeId)
           .then(res => {
             if (!res.error) {
               this.setState({ value: res, loading: false }, this.updateSidebar)
             }
           });
+      }
     }
   }
 

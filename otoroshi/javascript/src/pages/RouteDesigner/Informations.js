@@ -73,7 +73,7 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
     },
     debug_flow: {
       type: 'bool',
-      label: 'Debug the flow',
+      label: 'Debug the route',
       props: {
         labelColumn: 3
       }
