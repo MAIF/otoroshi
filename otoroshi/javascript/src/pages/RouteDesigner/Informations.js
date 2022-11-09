@@ -155,6 +155,7 @@ export const Informations = forwardRef(({ isCreation, value, setValue, setSaveBu
         <RouteForm
           routeId={routeId}
           setValue={setValue}
+          value={value}
           history={history}
           location={location}
           isCreation={isCreation} />

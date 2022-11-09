@@ -478,26 +478,19 @@ export const schemas = {
 };
 
 export class RouteForm extends Component {
-  state = { value: null, plugins: [], json: false };
+  state = { value: this.props.value, plugins: [], json: false };
 
   componentDidMount() {
     this.entity = window.location.pathname.split('/')[3];
     this.client = nextClient.forEntity(
       this.entity === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES
     );
-    this.load();
     this.loadPlugins();
   }
 
   onTestingButtonClick(history, value) {
     history.push(`/routes/${value.id}?tab=flow`, { showTryIt: true });
   }
-
-  load = () => {
-    return this.client.findById(this.props.routeId).then((value) => {
-      this.setState({ value });
-    });
-  };
 
   loadPlugins = () => {
     return fetch('/bo/api/proxy/api/experimental/plugins/all', {
