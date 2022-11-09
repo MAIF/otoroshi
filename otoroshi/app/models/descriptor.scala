@@ -516,7 +516,7 @@ case class HttpProtocol(value: String) {
   def isHttp3: Boolean                              = value.toLowerCase().startsWith("http/3")
   def isHttp2OrHttp3: Boolean                       = isHttp2 || isHttp3
   def json: JsValue                                 = JsString(value)
-  def asAkka: akka.http.scaladsl.model.HttpProtocol = value.toLowerCase() match {
+  def asAkka: akka.http.scaladsl.model.HttpProtocol = value.toLowerCase().trim() match {
     case "http/1.0" => akka.http.scaladsl.model.HttpProtocols.`HTTP/1.0`
     case "http/1.1" => akka.http.scaladsl.model.HttpProtocols.`HTTP/1.1`
     case "http/2.0" => akka.http.scaladsl.model.HttpProtocols.`HTTP/2.0`
@@ -531,7 +531,7 @@ object HttpProtocols {
   val HTTP_2_0                                       = HttpProtocol("HTTP/2.0")
   val HTTP_3_0                                       = HttpProtocol("HTTP/3.0")
   def parse(value: String): HttpProtocol             = parseSafe(value).getOrElse(HTTP_1_1)
-  def parseSafe(value: String): Option[HttpProtocol] = value.toLowerCase() match {
+  def parseSafe(value: String): Option[HttpProtocol] = value.toLowerCase().trim() match {
     case "http/1.0" => HTTP_1_0.some
     case "http/1.1" => HTTP_1_1.some
     case "http/2.0" => HTTP_2_0.some
@@ -544,7 +544,7 @@ case class Target(
     host: String,
     scheme: String = "https",
     weight: Int = 1,
-    protocol: HttpProtocol = HttpProtocols.HTTP_1_0,
+    protocol: HttpProtocol = HttpProtocols.HTTP_1_1,
     predicate: TargetPredicate = AlwaysMatch,
     ipAddress: Option[String] = None,
     mtlsConfig: MtlsConfig = MtlsConfig(),
