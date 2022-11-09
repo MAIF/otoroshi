@@ -26,6 +26,7 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
   - [ ] introduce wizards to help resources creation
 - [ ] next (2023 - 202x)
   - [ ] create an official github project
+  - [ ] add an anonymous telemetry agent to gather usage statistics
   - [ ] research around new UX 
   - [ ] research around WASM integration
   - [ ] introduce new versioning scheme (see below)
