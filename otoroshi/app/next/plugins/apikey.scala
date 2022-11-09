@@ -60,7 +60,7 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
   override def isTransformResponseAsync: Boolean           = false
   override def isAccessAsync: Boolean                      = true
   override def name: String                                = "Legacy apikeys"
-  override def description: Option[String]                 = "This plugin expects to find an apikey to allow the request to pass. This plugin behaves exactly like the service descriptor apikeys does".some
+  override def description: Option[String]                 = "This plugin expects to find an apikey to allow the request to pass. This plugin behaves exactly like the service descriptor does".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgLegacyApikeyCallConfig.default.some
 
   override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
