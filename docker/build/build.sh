@@ -48,6 +48,18 @@ build_jar_template_version () {
   docker tag "otoroshi-correto-jdk$JDK_VERSION" "maif/otoroshi:$OTO_VERSION-correto-jdk$JDK_VERSION"
 }
 
+build_jar_template_version_multi_arch () {
+  # https://docs.docker.com/build/building/multi-platform/
+  # docker buildx create --name mybuilder --driver docker-container --bootstrap
+  # docker buildx use mybuilder
+  # docker buildx inspect
+  # docker buildx ls
+  OTO_VERSION="$1"
+  JDK_VERSION="$2"
+  echo "build version $OTO_VERSION with jdk $JDK_VERSION"
+  docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" -t "maif/otoroshi:dev"  .
+}
+
 push_otoroshi_version () {
   OTO_VERSION="$1"
   JDK_VERSION="$2"
@@ -123,8 +135,9 @@ case "${1}" in
     OTO_VERSION="dev-${NBR}"
     echo "Will build version $OTO_VERSION"
     copy_build
-    build_jar_template_version "$OTO_VERSION" "19"
-    push_otoroshi_version "$OTO_VERSION" "19"
+    build_jar_template_version_multi_arch "$OTO_VERSION" "19"
+    # build_jar_template_version "$OTO_VERSION" "19"
+    # push_otoroshi_version "$OTO_VERSION" "19"
     cleanup
     ;;
   build-snapshot)
