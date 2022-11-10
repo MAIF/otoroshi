@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.16] - 2022-11-10
+
+https://github.com/MAIF/otoroshi/milestone/48?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.15...v1.5.16
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.16
+
+- button stay displayed inside Breadcrumb (#1264)
+- fix public/private patterns issue again when converting service descriptors (#1274)
+- fix bad default value for target protocol (#1306)
+- fix long running issues on apikey plugin conversion on routes from service descriptors (#1307)
+- otoroshi docker image not running on Apple Silicon (#1308)
+
 ## [1.5.15] - 2022-10-28
 
 https://github.com/MAIF/otoroshi/milestone/47?closed=1
