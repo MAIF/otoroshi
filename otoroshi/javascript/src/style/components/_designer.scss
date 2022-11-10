@@ -80,7 +80,7 @@
     }
 
     .element-arrow {
-        color: #494948;
+        color: $fondNavbar;
     }
 
     .group {
@@ -108,12 +108,12 @@
     }
 
     div[class^='nestedform__border'] {
-        background-color: rgb(73, 73, 72);
+        background-color: $fondNavbar;
     }
 
     .search-group-header,
     .group-header {
-        background-color: #494948;
+        background-color: $fondNavbar;
         display: flex;
         align-items: center;
         font-weight: 500;
@@ -154,7 +154,7 @@
         background: none;
         color: #fff;
         border: none;
-        background-color: rgb(73, 73, 72);
+        background-color: $fondNavbar;
         border-radius: 8px;
         height: 42px;
         width: 42px;
@@ -414,7 +414,7 @@
     input[type="time"] {
         color: #E6E6E6;
         background-color: #595959;
-        border-color: #494948;
+        border-color: $fondNavbar;
     }
 
     .react-form-select__control,
@@ -422,7 +422,7 @@
     .react-form-select__single-value {
         color: #E6E6E6;
         background-color: #595959 !important;
-        border-color: #494948;
+        border-color: $fondNavbar;
     }
 
     .node-cursor {
@@ -489,7 +489,7 @@
     .target_information {
         color: #E6E6E6;
         background-color: #595959;
-        border-color: #494948;
+        border-color: $fondNavbar;
         padding: 4px 8px;
         border-radius: 4px;
         margin-right: 4px;
@@ -504,7 +504,7 @@
     .route-item {
         flex: 1;
         border-radius: 4px;
-        background-color: #494948;
+        background-color: $fondNavbar;
     }
 
     .route-forms-title {
@@ -598,7 +598,6 @@
 
 .wizard-container {
     position: relative;
-    // background: rgb(73, 73, 72);
     background-color: $fondBody;
     display: flex;
     flex-direction: column;
