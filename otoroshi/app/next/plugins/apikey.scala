@@ -14,15 +14,19 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class NgLegacyApikeyCallConfig(publicPatterns: Seq[String] = Seq.empty, privatePatterns: Seq[String] = Seq.empty, config: NgApikeyCallsConfig) extends NgPluginConfig {
+case class NgLegacyApikeyCallConfig(
+    publicPatterns: Seq[String] = Seq.empty,
+    privatePatterns: Seq[String] = Seq.empty,
+    config: NgApikeyCallsConfig
+) extends NgPluginConfig {
   override def json: JsValue = NgLegacyApikeyCallConfig.format.writes(this)
 }
 object NgLegacyApikeyCallConfig {
   val default = NgLegacyApikeyCallConfig(Seq.empty, Seq.empty, NgApikeyCallsConfig())
-  val format = new Format[NgLegacyApikeyCallConfig] {
-    override def writes(o: NgLegacyApikeyCallConfig): JsValue = Json.obj(
-      "public_patterns" -> o.publicPatterns,
-      "private_patterns" -> o.privatePatterns,
+  val format  = new Format[NgLegacyApikeyCallConfig] {
+    override def writes(o: NgLegacyApikeyCallConfig): JsValue             = Json.obj(
+      "public_patterns"  -> o.publicPatterns,
+      "private_patterns" -> o.privatePatterns
     ) ++ o.config.json.asObject
     override def reads(json: JsValue): JsResult[NgLegacyApikeyCallConfig] = Try {
       NgLegacyApikeyCallConfig(
@@ -31,7 +35,7 @@ object NgLegacyApikeyCallConfig {
         config = NgApikeyCallsConfig.format.reads(json).asOpt.getOrElse(NgApikeyCallsConfig())
       )
     } match {
-      case Failure(e) => JsError(e.getMessage)
+      case Failure(e)     => JsError(e.getMessage)
       case Success(value) => JsSuccess(value)
     }
   }
@@ -60,24 +64,38 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
   override def isTransformResponseAsync: Boolean           = false
   override def isAccessAsync: Boolean                      = true
   override def name: String                                = "Legacy apikeys"
-  override def description: Option[String]                 = "This plugin expects to find an apikey to allow the request to pass. This plugin behaves exactly like the service descriptor does".some
+  override def description: Option[String]                 =
+    "This plugin expects to find an apikey to allow the request to pass. This plugin behaves exactly like the service descriptor does".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgLegacyApikeyCallConfig.default.some
 
   override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
-    val plugin = env.scriptManager.getAnyScript[NgRouteMatcher](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext).right.get
+    val plugin = env.scriptManager
+      .getAnyScript[NgRouteMatcher](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext)
+      .right
+      .get
     plugin.matches(ctx)(env)
   }
   override def transformRequestSync(
-    ctx: NgTransformerRequestContext
+      ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
-    val plugin = env.scriptManager.getAnyScript[NgRequestTransformer](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext).right.get
+    val plugin = env.scriptManager
+      .getAnyScript[NgRequestTransformer](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext)
+      .right
+      .get
     plugin.transformRequestSync(ctx)(env, ec, mat)
   }
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val plugin = env.scriptManager.getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext).right.get
-    val config = configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgLegacyApikeyCallConfig.default))
-    val descriptor = ctx.route.legacy.copy(publicPatterns = config.publicPatterns, privatePatterns = config.privatePatterns)
-    val req = ctx.request
+    val plugin     = env.scriptManager
+      .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext)
+      .right
+      .get
+    val config     = configCache.get(
+      ctx.route.cacheableId,
+      _ => configReads.reads(ctx.config).getOrElse(NgLegacyApikeyCallConfig.default)
+    )
+    val descriptor =
+      ctx.route.legacy.copy(publicPatterns = config.publicPatterns, privatePatterns = config.privatePatterns)
+    val req        = ctx.request
     if (descriptor.isUriPublic(req.path)) {
       if (
         env.detectApiKeySooner && descriptor.detectApiKeySooner && ApiKeyHelper

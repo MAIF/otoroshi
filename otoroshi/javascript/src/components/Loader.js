@@ -5,7 +5,7 @@ export default function Loader({ loading, children, loadingChildren, minLoaderTi
   const [startingTime, setStartingTime] = useState(undefined);
 
   useEffect(() => {
-    let timeout
+    let timeout;
     if (loading) {
       setInternalLoading(true);
       setStartingTime(Date.now());
@@ -19,10 +19,8 @@ export default function Loader({ loading, children, loadingChildren, minLoaderTi
     }
 
     return () => {
-      if (timeout)
-        clearTimeout(timeout)
-    }
-
+      if (timeout) clearTimeout(timeout);
+    };
   }, [loading]);
 
   if (internalLoading)

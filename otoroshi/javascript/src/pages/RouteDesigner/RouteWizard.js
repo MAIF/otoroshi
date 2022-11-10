@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { TextInput } from '../../components/inputs';
 import { getOldPlugins, getPlugins, nextClient } from '../../services/BackOfficeServices';
-import { Plugins } from '../../forms/ng_plugins'
+import { Plugins } from '../../forms/ng_plugins';
 import Loader from '../../components/Loader';
 
 const RouteNameStep = ({ state, onChange }) => (

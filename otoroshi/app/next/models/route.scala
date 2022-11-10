@@ -958,11 +958,13 @@ object NgRoute {
           .applyOn { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[NgLegacyApikeyCall],
-              config = NgPluginInstanceConfig(NgLegacyApikeyCallConfig(
-                publicPatterns = service.publicPatterns,
-                privatePatterns = service.privatePatterns,
-                config = NgApikeyCallsConfig.fromLegacy(service.apiKeyConstraints)
-              ).json.asObject)
+              config = NgPluginInstanceConfig(
+                NgLegacyApikeyCallConfig(
+                  publicPatterns = service.publicPatterns,
+                  privatePatterns = service.privatePatterns,
+                  config = NgApikeyCallsConfig.fromLegacy(service.apiKeyConstraints)
+                ).json.asObject
+              )
             )
           }
           //.applyOnIf(
@@ -1022,7 +1024,8 @@ object NgRoute {
             seq :+ NgPluginInstance(
               plugin = pluginId[AuthModule],
               include = if (service.publicPatterns.nonEmpty) {
-                if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) Seq.empty else service.publicPatterns
+                if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) Seq.empty
+                else service.publicPatterns
               } else {
                 Seq.empty
               },

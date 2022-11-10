@@ -15,7 +15,7 @@ import {
   getPlugins,
 } from '../../services/BackOfficeServices';
 
-import { Backend, Frontend, Plugins } from '../../forms/ng_plugins'
+import { Backend, Frontend, Plugins } from '../../forms/ng_plugins';
 
 import {
   EXCLUDED_PLUGINS,
@@ -113,7 +113,9 @@ const Dot = ({
 
 const RemoveButton = ({ onRemove }) => {
   return (
-    <div onClick={onRemove} className="delete-node-button d-flex align-items-center justify-content-center">
+    <div
+      onClick={onRemove}
+      className="delete-node-button d-flex align-items-center justify-content-center">
       <i className="fas fa-times" />
     </div>
   );
@@ -548,7 +550,6 @@ class Designer extends React.Component {
     <button
       type="button"
       className="btn btn-sm btn-danger d-flex align-items-center justify-content-center flex-column square-button"
-
       onClick={this.clearPlugins}>
       <div>
         <i className="fas fa-ban" />
@@ -603,10 +604,12 @@ class Designer extends React.Component {
   loadData = () => {
     Promise.all([
       nextClient.find(nextClient.ENTITIES.BACKENDS),
-      this.props.value ? Promise.resolve(this.props.value) : nextClient.fetch(
-        this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
-        this.props.routeId
-      ),
+      this.props.value
+        ? Promise.resolve(this.props.value)
+        : nextClient.fetch(
+            this.props.serviceMode ? nextClient.ENTITIES.SERVICES : nextClient.ENTITIES.ROUTES,
+            this.props.routeId
+          ),
       getCategories(),
       Promise.resolve(
         Plugins.map((plugin) => {
@@ -1188,8 +1191,7 @@ class Designer extends React.Component {
       };
     }
 
-    if (this.props.setValue)
-      this.props.setValue(newRoute);
+    if (this.props.setValue) this.props.setValue(newRoute);
 
     return nextClient
       .update(
@@ -1212,8 +1214,7 @@ class Designer extends React.Component {
       this.setState({ route: r }, () => {
         this.injectSaveButton();
 
-        if (this.props.setValue)
-          this.props.setValue(r);
+        if (this.props.setValue) this.props.setValue(r);
 
         resolve();
       });
@@ -2077,8 +2078,8 @@ class EditView extends React.Component {
           collapsable: isPluginWithConfiguration ? true : false,
           collapsed: false,
           label: 'Informations',
-          schema: PLUGIN_INFORMATIONS_SCHEMA
-        }
+          schema: PLUGIN_INFORMATIONS_SCHEMA,
+        },
       };
       if (isPluginWithConfiguration)
         formSchema = {
@@ -2372,10 +2373,7 @@ const BackendSelector = ({
             backgroundColor: '#373735',
             position: 'relative',
           }}>
-          <div
-            className={`pill-cursor ${!usingExistingBackend ? '' : 'pill-mode-right'
-              }`}
-          />
+          <div className={`pill-cursor ${!usingExistingBackend ? '' : 'pill-mode-right'}`} />
           <button
             className="flex pill-mode"
             onClick={() => {
@@ -2383,9 +2381,7 @@ const BackendSelector = ({
             }}>
             Create a new backend
           </button>
-          <button
-            className="flex pill-mode"
-            onClick={() => setUsingExistingBackend(true)}>
+          <button className="flex pill-mode" onClick={() => setUsingExistingBackend(true)}>
             Select an existing backend
           </button>
         </div>

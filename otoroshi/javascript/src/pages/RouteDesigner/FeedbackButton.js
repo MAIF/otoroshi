@@ -66,13 +66,12 @@ export function FeedbackButton({
             .then(() => {
               const diff = Date.now() - timer;
               if (diff > 150) {
-                if (onSuccess)
-                  setTimeout(onSuccess, 250)
+                if (onSuccess) setTimeout(onSuccess, 250);
                 onResult('success');
               } else {
                 setTimeout(() => {
                   onResult('success');
-                  setTimeout(onSuccess, 250)
+                  setTimeout(onSuccess, 250);
                 }, 150 - diff);
               }
             })

@@ -57,11 +57,11 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
   override def defaultConfigObject: Option[NgPluginConfig] = NgJwtVerificationConfig().some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val config   = ctx.cachedConfig(internalName)(NgJwtVerificationConfig.format).getOrElse(NgJwtVerificationConfig())
+    val config = ctx.cachedConfig(internalName)(NgJwtVerificationConfig.format).getOrElse(NgJwtVerificationConfig())
 
     config.verifiers match {
-      case Nil => JwtVerifierUtils.onError()
-      case verifierIds  => JwtVerifierUtils.verify(ctx, verifierIds)
+      case Nil         => JwtVerifierUtils.onError()
+      case verifierIds => JwtVerifierUtils.verify(ctx, verifierIds)
     }
   }
 
@@ -93,22 +93,28 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 }
 
 object JwtVerifierUtils {
-  def onError = () => NgAccess.NgDenied(
-    Results.BadRequest(Json.obj("error" -> "bad request"))
-  ).vfuture
+  def onError = () =>
+    NgAccess
+      .NgDenied(
+        Results.BadRequest(Json.obj("error" -> "bad request"))
+      )
+      .vfuture
 
-  def verify(ctx: NgAccessContext, verifierIds: Seq[String])
-            (implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  def verify(ctx: NgAccessContext, verifierIds: Seq[String])(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[NgAccess] = {
     val verifier = RefJwtVerifier(verifierIds, enabled = true, Seq.empty)
     if (verifier.isAsync) {
-      verifier.verifyFromCache(
-        request = ctx.request,
-        desc = ctx.route.serviceDescriptor.some,
-        apikey = ctx.apikey,
-        user = ctx.user,
-        elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-        attrs = ctx.attrs
-      )
+      verifier
+        .verifyFromCache(
+          request = ctx.request,
+          desc = ctx.route.serviceDescriptor.some,
+          apikey = ctx.apikey,
+          user = ctx.user,
+          elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+          attrs = ctx.attrs
+        )
         .flatMap {
           case Left(result)     => onError()
           case Right(injection) =>
@@ -133,8 +139,8 @@ object JwtVerifierUtils {
   }
 }
 
-
-case class NgJwtVerificationOnlyConfig(verifier: Option[String] = None, failIfAbsent: Boolean = true) extends NgPluginConfig {
+case class NgJwtVerificationOnlyConfig(verifier: Option[String] = None, failIfAbsent: Boolean = true)
+    extends NgPluginConfig {
   def json: JsValue = NgJwtVerificationOnlyConfig.format.writes(this)
 }
 
@@ -150,7 +156,7 @@ object NgJwtVerificationOnlyConfig {
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: NgJwtVerificationOnlyConfig): JsValue             = Json.obj(
-      "verifier" -> o.verifier,
+      "verifier"       -> o.verifier,
       "fail_if_absent" -> o.failIfAbsent
     )
   }
@@ -171,31 +177,32 @@ class JwtVerificationOnly extends NgAccessValidator with NgRequestTransformer {
   override def transformsResponse: Boolean = false
   override def transformsError: Boolean    = false
 
-  override def isAccessAsync: Boolean                      = true
-  override def isTransformRequestAsync: Boolean            = false
-  override def isTransformResponseAsync: Boolean           = true
-  override def name: String                                = "Jwt verification only"
-  override def description: Option[String]                 =
+  override def isAccessAsync: Boolean            = true
+  override def isTransformRequestAsync: Boolean  = false
+  override def isTransformResponseAsync: Boolean = true
+  override def name: String                      = "Jwt verification only"
+  override def description: Option[String]       =
     "This plugin verifies the current request with one jwt verifier".some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val config   = ctx.cachedConfig(internalName)(NgJwtVerificationOnlyConfig.format).getOrElse(NgJwtVerificationOnlyConfig())
+    val config =
+      ctx.cachedConfig(internalName)(NgJwtVerificationOnlyConfig.format).getOrElse(NgJwtVerificationOnlyConfig())
 
     if (config.failIfAbsent) {
       config.verifier match {
-        case None => JwtVerifierUtils.onError()
+        case None             => JwtVerifierUtils.onError()
         case Some(verifierId) =>
           env.proxyState.jwtVerifier(verifierId) match {
-            case None => JwtVerifierUtils.onError()
+            case None           => JwtVerifierUtils.onError()
             case Some(verifier) =>
               verifier.source.token(ctx.request) match {
                 case Some(_) =>
                   config.verifier match {
-                    case None => JwtVerifierUtils.onError()
+                    case None             => JwtVerifierUtils.onError()
                     case Some(verifierId) => JwtVerifierUtils.verify(ctx, Seq(verifierId))
                   }
                   NgAccess.NgAllowed.vfuture
-                case _ => JwtVerifierUtils.onError()
+                case _       => JwtVerifierUtils.onError()
               }
           }
       }
@@ -205,7 +212,11 @@ class JwtVerificationOnly extends NgAccessValidator with NgRequestTransformer {
   }
 }
 
-case class NgJwtSignerConfig(verifier: Option[String] = None, replaceIfPresent: Boolean = true, failIfPresent: Boolean = false) extends NgPluginConfig {
+case class NgJwtSignerConfig(
+    verifier: Option[String] = None,
+    replaceIfPresent: Boolean = true,
+    failIfPresent: Boolean = false
+) extends NgPluginConfig {
   def json: JsValue = NgJwtSignerConfig.format.writes(this)
 }
 
@@ -215,16 +226,16 @@ object NgJwtSignerConfig {
       NgJwtSignerConfig(
         verifier = json.select("verifier").asOpt[String],
         replaceIfPresent = json.select("replace_if_present").asOpt[Boolean].getOrElse(true),
-        failIfPresent = json.select("fail_if_present").asOpt[Boolean].getOrElse(true),
+        failIfPresent = json.select("fail_if_present").asOpt[Boolean].getOrElse(true)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: NgJwtSignerConfig): JsValue             = Json.obj(
-      "verifier" -> o.verifier,
+      "verifier"           -> o.verifier,
       "replace_if_present" -> o.replaceIfPresent,
-      "fail_if_present" -> o.failIfPresent
+      "fail_if_present"    -> o.failIfPresent
     )
   }
 }
@@ -244,25 +255,25 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
   override def transformsResponse: Boolean = false
   override def transformsError: Boolean    = false
 
-  override def isAccessAsync: Boolean                      = true
-  override def isTransformRequestAsync: Boolean            = false
-  override def isTransformResponseAsync: Boolean           = true
-  override def name: String                                = "Jwt signer"
-  override def description: Option[String]                 = "This plugin can only generate token".some
+  override def isAccessAsync: Boolean            = true
+  override def isTransformRequestAsync: Boolean  = false
+  override def isTransformResponseAsync: Boolean = true
+  override def name: String                      = "Jwt signer"
+  override def description: Option[String]       = "This plugin can only generate token".some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val config   = ctx.cachedConfig(internalName)(NgJwtSignerConfig.format).getOrElse(NgJwtSignerConfig())
+    val config = ctx.cachedConfig(internalName)(NgJwtSignerConfig.format).getOrElse(NgJwtSignerConfig())
 
     if (config.failIfPresent) {
       config.verifier match {
-        case None => NgAccess.NgAllowed.vfuture
+        case None             => NgAccess.NgAllowed.vfuture
         case Some(verifierId) =>
           env.proxyState.jwtVerifier(verifierId) match {
-            case None => NgAccess.NgAllowed.vfuture
+            case None           => NgAccess.NgAllowed.vfuture
             case Some(verifier) =>
               verifier.source.token(ctx.request) match {
                 case None => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "bad request"))).vfuture
-                case _ => NgAccess.NgAllowed.vfuture
+                case _    => NgAccess.NgAllowed.vfuture
               }
           }
       }
@@ -272,96 +283,107 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
   }
 
   override def transformRequestSync(
-                                     ctx: NgTransformerRequestContext
-                                   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
-    val config   = ctx.cachedConfig(internalName)(NgJwtSignerConfig.format).getOrElse(NgJwtSignerConfig())
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+    val config = ctx.cachedConfig(internalName)(NgJwtSignerConfig.format).getOrElse(NgJwtSignerConfig())
 
     config.verifier match {
-      case None => Results
-        .BadRequest(Json.obj("error" -> "bad request"))
-        .left
+      case None             =>
+        Results
+          .BadRequest(Json.obj("error" -> "bad request"))
+          .left
       case Some(verifierId) =>
         env.proxyState.jwtVerifier(verifierId) match {
-            case None => Results
+          case None                 =>
+            Results
               .BadRequest(Json.obj("error" -> "bad request"))
               .left
-            case Some(globalVerifier) =>
-              if(!config.replaceIfPresent && globalVerifier.source.token(ctx.request).isDefined) {
-                ctx.otoroshiRequest.right
-              } else {
-                globalVerifier.algoSettings.asAlgorithm(OutputMode) match {
-                  case None                  =>
-                    Results
-                      .BadRequest(Json.obj("error" -> "bad request"))
-                      .left
-                  case Some(tokenSigningAlgorithm) => {
-                    val user = ctx.user.orElse(ctx.attrs.get(otoroshi.plugins.Keys.UserKey))
-                    val apikey = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
-                    val optSub: Option[String] = apikey.map(_.clientName).orElse(user.map(_.email))
+          case Some(globalVerifier) =>
+            if (!config.replaceIfPresent && globalVerifier.source.token(ctx.request).isDefined) {
+              ctx.otoroshiRequest.right
+            } else {
+              globalVerifier.algoSettings.asAlgorithm(OutputMode) match {
+                case None                        =>
+                  Results
+                    .BadRequest(Json.obj("error" -> "bad request"))
+                    .left
+                case Some(tokenSigningAlgorithm) => {
+                  val user                   = ctx.user.orElse(ctx.attrs.get(otoroshi.plugins.Keys.UserKey))
+                  val apikey                 = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
+                  val optSub: Option[String] = apikey.map(_.clientName).orElse(user.map(_.email))
 
-                    val token           = Json.obj(
-                      "jti" -> IdGenerator.uuid,
-                      "iat" -> System.currentTimeMillis(),
-                      "nbf" -> System.currentTimeMillis(),
-                      "iss" -> "Otoroshi",
-                      "exp" -> (System.currentTimeMillis() + 60000L),
-                      "sub" -> JsString(optSub.getOrElse("anonymous")),
-                      "aud" -> "backend"
+                  val token = Json.obj(
+                    "jti" -> IdGenerator.uuid,
+                    "iat" -> System.currentTimeMillis(),
+                    "nbf" -> System.currentTimeMillis(),
+                    "iss" -> "Otoroshi",
+                    "exp" -> (System.currentTimeMillis() + 60000L),
+                    "sub" -> JsString(optSub.getOrElse("anonymous")),
+                    "aud" -> "backend"
+                  )
+
+                  val headerJson     = Json
+                    .obj("alg" -> tokenSigningAlgorithm.getName, "typ" -> "JWT")
+                    .applyOnWithOpt(globalVerifier.algoSettings.keyId)((h, id) => h ++ Json.obj("kid" -> id))
+                  val header         =
+                    ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
+                  val payload        =
+                    ApacheBase64.encodeBase64URLSafeString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
+                  val content        = String.format("%s.%s", header, payload)
+                  val signatureBytes =
+                    tokenSigningAlgorithm.sign(
+                      header.getBytes(StandardCharsets.UTF_8),
+                      payload.getBytes(StandardCharsets.UTF_8)
                     )
+                  val signature      = ApacheBase64.encodeBase64URLSafeString(signatureBytes)
 
-                    val headerJson     = Json
-                      .obj("alg" -> tokenSigningAlgorithm.getName, "typ" -> "JWT")
-                      .applyOnWithOpt(globalVerifier.algoSettings.keyId)((h, id) => h ++ Json.obj("kid" -> id))
-                    val header         = ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
-                    val payload        = ApacheBase64.encodeBase64URLSafeString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
-                    val content        = String.format("%s.%s", header, payload)
-                    val signatureBytes =
-                      tokenSigningAlgorithm.sign(header.getBytes(StandardCharsets.UTF_8), payload.getBytes(StandardCharsets.UTF_8))
-                    val signature      = ApacheBase64.encodeBase64URLSafeString(signatureBytes)
+                  val signedToken = s"$content.$signature"
 
-                    val signedToken       = s"$content.$signature"
+                  val originalToken = JWT.decode(signedToken)
+                  ctx.attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> token)
 
-                    val originalToken = JWT.decode(signedToken)
-                    ctx.attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> token)
-
-                    (globalVerifier.source match {
-                      case _: InQueryParam =>
-                        globalVerifier.source.asJwtInjection(originalToken, signedToken).right[Result]
-                      case InHeader(n, _) =>
-                        val inj = globalVerifier.source.asJwtInjection(originalToken, signedToken)
-                        globalVerifier.source match {
-                          case InHeader(nn, _) if nn == n => inj.right[Result]
-                          case _ => inj.copy(removeHeaders = Seq(n)).right[Result]
+                  (globalVerifier.source match {
+                    case _: InQueryParam =>
+                      globalVerifier.source.asJwtInjection(originalToken, signedToken).right[Result]
+                    case InHeader(n, _)  =>
+                      val inj = globalVerifier.source.asJwtInjection(originalToken, signedToken)
+                      globalVerifier.source match {
+                        case InHeader(nn, _) if nn == n => inj.right[Result]
+                        case _                          => inj.copy(removeHeaders = Seq(n)).right[Result]
+                      }
+                    case InCookie(n)     =>
+                      globalVerifier.source
+                        .asJwtInjection(originalToken, signedToken)
+                        .copy(removeCookies = Seq(n))
+                        .right[Result]
+                  }) match {
+                    case Left(result)    => result.left
+                    case Right(newValue) =>
+                      ctx.otoroshiRequest
+                        .applyOnIf(newValue.removeCookies.nonEmpty) { req =>
+                          req.copy(cookies = req.cookies.filterNot(c => newValue.removeCookies.contains(c.name)))
                         }
-                      case InCookie(n) =>
-                        globalVerifier.source
-                          .asJwtInjection(originalToken, signedToken)
-                          .copy(removeCookies = Seq(n))
-                          .right[Result]
-                    }) match {
-                      case Left(result) => result.left
-                      case Right(newValue) =>
-                        ctx.otoroshiRequest
-                          .applyOnIf(newValue.removeCookies.nonEmpty) { req =>
-                            req.copy(cookies = req.cookies.filterNot(c => newValue.removeCookies.contains(c.name)))
-                          }
-                          .applyOnIf(newValue.removeHeaders.nonEmpty) { req =>
-                            req.copy(headers =
-                              req.headers.filterNot(tuple => newValue.removeHeaders.map(_.toLowerCase).contains(tuple._1.toLowerCase))
+                        .applyOnIf(newValue.removeHeaders.nonEmpty) { req =>
+                          req.copy(headers =
+                            req.headers.filterNot(tuple =>
+                              newValue.removeHeaders.map(_.toLowerCase).contains(tuple._1.toLowerCase)
                             )
-                          }
-                          .applyOnIf(newValue.additionalHeaders.nonEmpty) { req =>
-                            req.copy(headers = req.headers ++ newValue.additionalHeaders)
-                          }
-                          .applyOnIf(newValue.additionalCookies.nonEmpty) { req =>
-                            req.copy(cookies = req.cookies ++ newValue.additionalCookies.map(t => DefaultWSCookie(t._1, t._2)))
-                          }
-                          .right
-                    }
+                          )
+                        }
+                        .applyOnIf(newValue.additionalHeaders.nonEmpty) { req =>
+                          req.copy(headers = req.headers ++ newValue.additionalHeaders)
+                        }
+                        .applyOnIf(newValue.additionalCookies.nonEmpty) { req =>
+                          req.copy(cookies =
+                            req.cookies ++ newValue.additionalCookies.map(t => DefaultWSCookie(t._1, t._2))
+                          )
+                        }
+                        .right
                   }
                 }
               }
-          }
+            }
+        }
     }
   }
 }
