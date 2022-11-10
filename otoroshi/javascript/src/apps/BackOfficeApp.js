@@ -71,7 +71,7 @@ class BackOfficeAppContainer extends Component {
       lines: [],
       catchedError: null,
       env: null,
-      loading: true
+      loading: true,
     };
   }
 
@@ -92,10 +92,13 @@ class BackOfficeAppContainer extends Component {
   }
 
   componentDidMount() {
-    Promise.all([BackOfficeServices.env(), BackOfficeServices.fetchLines(), BackOfficeServices.findAllGroups()])
-      .then(([env, lines, groups]) => {
-        this.setState({ env, lines, groups, loading: false });
-      })
+    Promise.all([
+      BackOfficeServices.env(),
+      BackOfficeServices.fetchLines(),
+      BackOfficeServices.findAllGroups(),
+    ]).then(([env, lines, groups]) => {
+      this.setState({ env, lines, groups, loading: false });
+    });
   }
 
   componentDidCatch(e) {
@@ -134,7 +137,11 @@ class BackOfficeAppContainer extends Component {
         {this.state.env && (
           <>
             <UpdateOtoroshiVersion env={this.state.env} />
-            <TopBar {...this.props} changePassword={this.state.env.changePassword} env={this.state.env} />
+            <TopBar
+              {...this.props}
+              changePassword={this.state.env.changePassword}
+              env={this.state.env}
+            />
           </>
         )}
         <div className="container-fluid">

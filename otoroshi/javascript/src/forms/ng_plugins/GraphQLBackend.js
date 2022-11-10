@@ -1,5 +1,5 @@
 import React from 'react';
-import GraphQLForm from "../../pages/RouteDesigner/GraphQLForm";
+import GraphQLForm from '../../pages/RouteDesigner/GraphQLForm';
 
 export default {
   id: 'cp:otoroshi.next.plugins.GraphQLBackend',

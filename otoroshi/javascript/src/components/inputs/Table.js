@@ -149,7 +149,11 @@ export class Table extends Component {
     if (e && e.preventDefault) e.preventDefault();
     this.unmountShortcuts();
     if (this.props.parentProps.setTitle) {
-      this.props.parentProps.setTitle(this.props.defaultTitle, this.updateItemAndStay, this.state.currentItem);
+      this.props.parentProps.setTitle(
+        this.props.defaultTitle,
+        this.updateItemAndStay,
+        this.state.currentItem
+      );
     }
     this.setState({ currentItem: null, showAddForm: false });
     this.update();
@@ -164,7 +168,11 @@ export class Table extends Component {
     const defVal = this.props.defaultValue();
 
     if (this.props.parentProps.setTitle) {
-      this.props.parentProps.setTitle(`Create a new ${this.props.itemName}`, this.updateItemAndStay, defVal);
+      this.props.parentProps.setTitle(
+        `Create a new ${this.props.itemName}`,
+        this.updateItemAndStay,
+        defVal
+      );
     }
 
     if (defVal.then) {
@@ -193,7 +201,11 @@ export class Table extends Component {
     else urlTo(`/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`);
 
     if (this.props.parentProps.setTitle) {
-      this.props.parentProps.setTitle(`Update a ${this.props.itemName}`, this.updateItemAndStay, item);
+      this.props.parentProps.setTitle(
+        `Update a ${this.props.itemName}`,
+        this.updateItemAndStay,
+        item
+      );
     }
     this.setState({ currentItem: item, showEditForm: true });
   };
@@ -526,10 +538,14 @@ export class Table extends Component {
               <form className="form-horizontal" style={{ paddingTop: '30px', ...this.props.style }}>
                 {React.createElement(this.props.formComponent, {
                   onChange: (currentItem) => {
-                    this.setState({ currentItem })
+                    this.setState({ currentItem });
 
                     if (this.props.parentProps.setTitle)
-                      this.props.parentProps.setTitle(`Create a new ${this.props.itemName}`, this.updateItemAndStay, this.state.currentItem)
+                      this.props.parentProps.setTitle(
+                        `Create a new ${this.props.itemName}`,
+                        this.updateItemAndStay,
+                        this.state.currentItem
+                      );
                   },
                   value: this.state.currentItem,
                   ...(this.props.formPassProps || {}),
@@ -583,7 +599,11 @@ export class Table extends Component {
                     this.setState({ currentItem });
 
                     if (this.props.parentProps.setTitle)
-                      this.props.parentProps.setTitle(`Update a ${this.props.itemName}`, this.updateItemAndStay, this.state.currentItem)
+                      this.props.parentProps.setTitle(
+                        `Update a ${this.props.itemName}`,
+                        this.updateItemAndStay,
+                        this.state.currentItem
+                      );
                   },
                   value: this.state.currentItem,
                   showAdvancedForm: this.state.showAdvancedForm,
@@ -657,23 +677,28 @@ export class Table extends Component {
                   <i className="fas fa-trash" /> Delete
                 </button>
               )}
-              {!this.props.newForm && <button type="button" className="btn btn-danger" onClick={this.closeEditForm}>
-                <i className="fas fa-times" /> Cancel
-              </button>}
+              {!this.props.newForm && (
+                <button type="button" className="btn btn-danger" onClick={this.closeEditForm}>
+                  <i className="fas fa-times" /> Cancel
+                </button>
+              )}
               {this.props.stayAfterSave && !this.props.newForm && (
                 <button type="button" className="btn btn-success" onClick={this.updateItemAndStay}>
                   <i className="fas fa-hdd" /> Update and stay on this {this.props.itemName}
                 </button>
               )}
-              {!this.props.newForm && <button type="button" className="btn btn-success" onClick={this.updateItem}>
-                <i className="fas fa-hdd" /> Update {this.props.itemName}
-              </button>}
+              {!this.props.newForm && (
+                <button type="button" className="btn btn-success" onClick={this.updateItem}>
+                  <i className="fas fa-hdd" /> Update {this.props.itemName}
+                </button>
+              )}
 
-              {this.props.injectBottomBar && this.props.injectBottomBar({
-                closeEditForm: this.closeEditForm,
-                state: this.state,
-                setState: v => this.setState(v)
-              })}
+              {this.props.injectBottomBar &&
+                this.props.injectBottomBar({
+                  closeEditForm: this.closeEditForm,
+                  state: this.state,
+                  setState: (v) => this.setState(v),
+                })}
             </div>
           </div>
         )}

@@ -59,23 +59,25 @@ export class Location extends Component {
     }
 
     if (this.props.readOnly) {
-      return <>
-        <LabelAndInput label="Organization">
-          <span className='d-flex align-items-center' style={{ height: '100%', color: '#fff' }}>
-            {this.props.tenant || window.localStorage.getItem('Otoroshi-Tenant') || 'default'}
-          </span>
-        </LabelAndInput>
-        <LabelAndInput label="Teams">
-          <span className='d-flex align-items-center' style={{ height: '100%', color: '#fff' }}>
-            {this.props.teams.join(' | ')}
-          </span>
-        </LabelAndInput>
-      </>
+      return (
+        <>
+          <LabelAndInput label="Organization">
+            <span className="d-flex align-items-center" style={{ height: '100%', color: '#fff' }}>
+              {this.props.tenant || window.localStorage.getItem('Otoroshi-Tenant') || 'default'}
+            </span>
+          </LabelAndInput>
+          <LabelAndInput label="Teams">
+            <span className="d-flex align-items-center" style={{ height: '100%', color: '#fff' }}>
+              {this.props.teams.join(' | ')}
+            </span>
+          </LabelAndInput>
+        </>
+      );
     } else {
       return (
         <>
           {
-          /*window.__otoroshi__env__latest.userAdmin*/ window.__user.superAdmin && (
+            /*window.__otoroshi__env__latest.userAdmin*/ window.__user.superAdmin && (
               <SelectInput
                 label="Organization"
                 value={

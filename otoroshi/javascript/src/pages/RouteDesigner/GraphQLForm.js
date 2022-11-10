@@ -764,17 +764,20 @@ const Type = ({
   );
 };
 
-const Header = ({ schemaView, toggleSchema, hide }) => <>
-  <div className="d-flex-between">
-    <h3>GraphQL Schema Editor</h3>
-    <button className='btn btn-sm btn-info' onClick={hide}>
-      <i className='fas fa-times' />
-    </button>
-  </div>
-  <PillButton
-    className='mb-3'
-    rightEnabled={schemaView}
-    onChange={toggleSchema}
-    leftText='Form'
-    rightText='Schema' />
-</>
+const Header = ({ schemaView, toggleSchema, hide }) => (
+  <>
+    <div className="d-flex-between">
+      <h3>GraphQL Schema Editor</h3>
+      <button className="btn btn-sm btn-info" onClick={hide}>
+        <i className="fas fa-times" />
+      </button>
+    </div>
+    <PillButton
+      className="mb-3"
+      rightEnabled={schemaView}
+      onChange={toggleSchema}
+      leftText="Form"
+      rightText="Schema"
+    />
+  </>
+);

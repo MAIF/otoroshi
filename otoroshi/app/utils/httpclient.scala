@@ -1435,8 +1435,11 @@ case class AkkaWsClientRequest(
       .toList // ++ ua
 
     val onInternalApi = updatedHeaders.getIgnoreCase("Host").map(_.last).contains(env.adminApiHost)
-    val proto = targetOpt.map(_.protocol.asAkka).getOrElse(protocol)
-    val finalProtocol = if (proto == HttpProtocols.`HTTP/1.0` && onInternalApi) HttpProtocols.`HTTP/1.1` else (if (akkaHttpEntity.isChunked() && proto == HttpProtocols.`HTTP/1.0`) HttpProtocols.`HTTP/1.1` else proto)
+    val proto         = targetOpt.map(_.protocol.asAkka).getOrElse(protocol)
+    val finalProtocol =
+      if (proto == HttpProtocols.`HTTP/1.0` && onInternalApi) HttpProtocols.`HTTP/1.1`
+      else (if (akkaHttpEntity.isChunked() && proto == HttpProtocols.`HTTP/1.0`) HttpProtocols.`HTTP/1.1`
+            else proto)
 
     HttpRequest(
       method = _method,

@@ -12,7 +12,7 @@ export default {
     protocols: {
       label: 'Protocols',
       type: 'string',
-      array: true
+      array: true,
     },
   },
   config_flow: ['ma', 'domain', 'protocols'],

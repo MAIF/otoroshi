@@ -1,22 +1,22 @@
 export const PLUGIN_INFORMATIONS_SCHEMA = {
   enabled: {
     type: 'bool',
-    label: 'Enabled'
+    label: 'Enabled',
   },
   debug: {
     type: 'bool',
-    label: 'Debug'
+    label: 'Debug',
   },
   include: {
     label: 'Include',
     type: 'string',
-    array: true
+    array: true,
   },
   exclude: {
     label: 'Exclude',
     type: 'string',
-    array: true
-  }
+    array: true,
+  },
 };
 
 export const EXCLUDED_PLUGINS = {

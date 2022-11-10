@@ -33,7 +33,7 @@ export default {
       label: 'Exact',
       props: {
         labelColumn: 3,
-      }
+      },
     },
     domains: {
       label: 'domains',
@@ -46,8 +46,8 @@ export default {
       label: 'Strip path',
       props: {
         labelColumn: 3,
-      }
-    }
+      },
+    },
   },
   flow: [
     'domains',

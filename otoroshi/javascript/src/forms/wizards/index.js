@@ -1,5 +1,5 @@
-import { JwtVerifierWizard } from "./JwtVerifierWizard";
+import { JwtVerifierWizard } from './JwtVerifierWizard';
 
 export const Wizards = {
-  'JwtVerifierWizard': JwtVerifierWizard
-}
+  JwtVerifierWizard: JwtVerifierWizard,
+};
