@@ -48,47 +48,44 @@ build_jar_template_version () {
   docker tag "otoroshi-correto-jdk$JDK_VERSION" "maif/otoroshi:$OTO_VERSION-correto-jdk$JDK_VERSION"
 }
 
-build_jar_template_version_multi_arch () {
-  # https://docs.docker.com/build/building/multi-platform/
-  # docker buildx create --name mybuilder --driver docker-container --bootstrap
-  # docker buildx use mybuilder
-  # docker buildx inspect
-  # docker buildx ls
+build_and_push_jar_template_version_multi_arch () {
+  OTO_VERSION="$1"
+  JDK_VERSION="$2"
+  echo "build and push version $OTO_VERSION with jdk $JDK_VERSION"
+  docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" .
+  echo "build and push version $OTO_VERSION with jdk $JDK_VERSION from eclipse-temurin"
+  docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-temurin-jdk$JDK_VERSION" .
+  echo "build and push version $OTO_VERSION with jdk $JDK_VERSION from amazon-correto"
+  docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=amazoncorretto:$JDK_VERSION"  --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-correto-jdk$JDK_VERSION" .
+}
+
+build_and_push_jar_template_version_multi_arch_latest () {
+  OTO_VERSION="$1"
+  JDK_VERSION="$2"
+  echo "build and push version $OTO_VERSION with jdk $JDK_VERSION latest"
+  docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION" -t "maif/otoroshi:latest" .
+}
+
+build_and_push_jar_template_version_multi_arch_temurin () {
   OTO_VERSION="$1"
   JDK_VERSION="$2"
   echo "build version $OTO_VERSION with jdk $JDK_VERSION"
   docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" -t "maif/otoroshi:dev"  .
 }
 
-push_otoroshi_version () {
+build_and_push_jar_templates () {
   OTO_VERSION="$1"
-  JDK_VERSION="$2"
-  echo "\nnow pushing maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION\n"
-  docker push "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION"
-  echo "\nnow pushing maif/otoroshi:$OTO_VERSION-temurin-jdk$JDK_VERSION\n"
-  docker push "maif/otoroshi:$OTO_VERSION-temurin-jdk$JDK_VERSION"
-  echo "\nnow pushing maif/otoroshi:$OTO_VERSION-correto-jdk$JDK_VERSION\n"
-  docker push "maif/otoroshi:$OTO_VERSION-correto-jdk$JDK_VERSION"
+  build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "11"
+  build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "17"
+  build_and_push_jar_template_version_multi_arch "$OTO_VERSION" "19"
 }
 
-build_jar_templates () {
-  OTO_VERSION="$1"
-  build_jar_template_version "$OTO_VERSION" "11"
-  build_jar_template_version "$OTO_VERSION" "17"
-  build_jar_template_version "$OTO_VERSION" "19"
-}
-
-push_jar_templates () {
-  OTO_VERSION="$1"
-  docker tag otoroshi-jdk11 "maif/otoroshi:latest" 
-  docker tag otoroshi-jdk11 "maif/otoroshi:$OTO_VERSION" 
-  echo "\nnow pushing maif/otoroshi:$OTO_VERSION\n"
-  docker push "maif/otoroshi:$OTO_VERSION"
-  echo "\nnow pushing maif/otoroshi:latest\n"
-  docker push "maif/otoroshi:latest"
-  push_otoroshi_version "$OTO_VERSION" "11"
-  push_otoroshi_version "$OTO_VERSION" "17"
-  push_otoroshi_version "$OTO_VERSION" "19"
+setup_docker_builder () {
+  # https://docs.docker.com/build/building/multi-platform/
+  docker buildx create --name multiarchbuilder --driver docker-container --bootstrap
+  docker buildx use multiarchbuilder
+  docker buildx inspect
+  docker buildx ls
 }
 
 echo "Docker images for otoroshi version $2"
@@ -103,70 +100,45 @@ case "${1}" in
   build-all)
     OTO_VERSION="$2"
     prepare_build
-    build_jar_templates "$OTO_VERSION"
+    build_and_push_jar_templates "$OTO_VERSION"
+    build_and_push_jar_template_version_multi_arch_latest "$OTO_VERSION" "11"
     build_graal "$OTO_VERSION"
     cleanup
-    ;;
-  push-all)
-    OTO_VERSION="$2"
-    prepare_build
-    build_jar_templates "$OTO_VERSION"
-    build_graal "$OTO_VERSION"
-    cleanup
-    push_jar_templates "$OTO_VERSION"
-    push_graal "$OTO_VERSION"
-    ;;
-  push-only-all)
-    OTO_VERSION="$2"
-    push_jar_templates "$OTO_VERSION"
     push_graal "$OTO_VERSION"
     ;;
   test-release-builds)
     OTO_VERSION="dev"
     prepare_build
-    build_jar_templates "$OTO_VERSION"
-    build_graal "$OTO_VERSION"
+    build_and_push_jar_templates "$OTO_VERSION"
     cleanup
-    #push_jar_templates "$OTO_VERSION"
-    #push_graal "$OTO_VERSION"
+    ;;
+  build-and-push-dev)
+    OTO_VERSION="dev"
+    copy_build
+    build_and_push_jar_template_version_multi_arch_temurin "$OTO_VERSION" "19"
+    cleanup
     ;;
   build-and-push-snapshot)
     NBR=`date +%s`
     OTO_VERSION="dev-${NBR}"
     echo "Will build version $OTO_VERSION"
     copy_build
-    build_jar_template_version_multi_arch "$OTO_VERSION" "19"
-    # build_jar_template_version "$OTO_VERSION" "19"
-    # push_otoroshi_version "$OTO_VERSION" "19"
+    build_and_push_jar_template_version_multi_arch_temurin "$OTO_VERSION" "19"
     cleanup
     ;;
-  build-snapshot)
+  build-snapshots)
     NBR=`date +%s`
     OTO_VERSION="dev-${NBR}"
     echo "Will build version $OTO_VERSION"
     copy_build
-    build_jar_template_version "$OTO_VERSION" "11"
-    build_jar_template_version "$OTO_VERSION" "17"
-    build_jar_template_version "$OTO_VERSION" "19"
+    build_and_push_jar_templates "$OTO_VERSION"
     cleanup
     ;;
-  build-and-push-local)
-    NBR=`local`
-    OTO_VERSION="dev-${NBR}"
-    echo "Will build version $OTO_VERSION"
-    copy_build
-    build_jar_template_version "$OTO_VERSION" "19"
-    docker tag otoroshi-jdk19 "registry.oto.tools:5000/maif/otoroshi:${OTO_VERSION}"
-    docker push "registry.oto.tools:5000/maif/otoroshi:${OTO_VERSION}"
-    cleanup
-    ;;
-  prepare)
+  copy)
     copy_build
     ;;
-  build_jar_templates)
-    copy_build
-    build_jar_templates "dev"
-    cleanup
+  setup-docker)
+    setup_docker_builder
     ;;
   *)
     echo "Build otoroshi docker images"
@@ -177,12 +149,11 @@ case "${1}" in
     echo " - prepare: copy otoroshi.jar"
     echo " - cleanup: delete otoroshi.jar"
     echo " - build-all {version}: build and tag all docker images"
-    echo " - push-all {version}: build, tag and push all docker images"
-    echo " - push-only-all {version}: push all docker images"
     echo " - test-release-builds"
     echo " - build-and-push-snapshot"
-    echo " - build-snapshot"
-    echo " - build-and-push-local"
+    echo " - build-snapshots"
+    echo " - build-and-push-dev"
+    echo " - setup-docker: setup the docker builder"
     ;;
 esac
 
