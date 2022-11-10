@@ -51,10 +51,10 @@ build_jar_template_version () {
 build_and_push_jar_template_version_multi_arch () {
   OTO_VERSION="$1"
   JDK_VERSION="$2"
-  echo "build and push version $OTO_VERSION with jdk $JDK_VERSION"
-  docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" .
+  #echo "build and push version $OTO_VERSION with jdk $JDK_VERSION"
+  #docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" .
   echo "build and push version $OTO_VERSION with jdk $JDK_VERSION from eclipse-temurin"
-  docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-temurin-jdk$JDK_VERSION" .
+  docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=eclipse-temurin:$JDK_VERSION" --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-temurin-jdk$JDK_VERSION" -t "maif/otoroshi:$OTO_VERSION-jdk$JDK_VERSION" .
   echo "build and push version $OTO_VERSION with jdk $JDK_VERSION from amazon-correto"
   docker buildx build --platform=linux/arm64,linux/amd64 --push --build-arg "IMG_FROM=amazoncorretto:$JDK_VERSION"  --no-cache -f ./Dockerfile -t "maif/otoroshi:$OTO_VERSION-correto-jdk$JDK_VERSION" .
 }
