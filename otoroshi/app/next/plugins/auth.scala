@@ -14,10 +14,10 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class NgLegacyAuthModuleCallConfig(
-                                     publicPatterns: Seq[String] = Seq.empty,
-                                     privatePatterns: Seq[String] = Seq.empty,
-                                     config: NgAuthModuleConfig
-                                   ) extends NgPluginConfig {
+    publicPatterns: Seq[String] = Seq.empty,
+    privatePatterns: Seq[String] = Seq.empty,
+    config: NgAuthModuleConfig
+) extends NgPluginConfig {
   override def json: JsValue = NgLegacyAuthModuleCallConfig.format.writes(this)
 }
 object NgLegacyAuthModuleCallConfig {
@@ -50,13 +50,14 @@ class NgLegacyAuthModuleCall extends NgAccessValidator {
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Legacy Authentication"
-  override def description: Option[String]                 = "This plugin applies an authentication module the same way service descriptor does".some
+  override def description: Option[String]                 =
+    "This plugin applies an authentication module the same way service descriptor does".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgLegacyAuthModuleCallConfig.default.some
 
   override def isAccessAsync: Boolean = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val authPlugin     = env.scriptManager
+    val authPlugin   = env.scriptManager
       .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[AuthModule])(env.otoroshiExecutionContext)
       .right
       .get
@@ -64,20 +65,24 @@ class NgLegacyAuthModuleCall extends NgAccessValidator {
       .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[NgLegacyApikeyCall])(env.otoroshiExecutionContext)
       .right
       .get
-    val config = ctx.cachedConfig(internalName)(configReads).getOrElse(NgLegacyAuthModuleCallConfig.default)
-    val apikeyConfig = NgLegacyApikeyCallConfig(config.publicPatterns, config.privatePatterns, NgApikeyCallsConfig.fromLegacy(ctx.route.legacy.apiKeyConstraints))
-    val descriptor =
+    val config       = ctx.cachedConfig(internalName)(configReads).getOrElse(NgLegacyAuthModuleCallConfig.default)
+    val apikeyConfig = NgLegacyApikeyCallConfig(
+      config.publicPatterns,
+      config.privatePatterns,
+      NgApikeyCallsConfig.fromLegacy(ctx.route.legacy.apiKeyConstraints)
+    )
+    val descriptor   =
       ctx.route.legacy.copy(publicPatterns = config.publicPatterns, privatePatterns = config.privatePatterns)
-    val req        = ctx.request
+    val req          = ctx.request
     if (descriptor.isUriPublic(req.path)) {
       authPlugin.access(ctx)(env, ec)
     } else {
       PrivateAppsUserHelper.isPrivateAppsSessionValid(req, descriptor, ctx.attrs).flatMap {
-        case Some(_) if descriptor.strictlyPrivate                     => apikeyPlugin.access(ctx.copy(config = apikeyConfig.json))
-        case Some(user)                                                =>
+        case Some(_) if descriptor.strictlyPrivate => apikeyPlugin.access(ctx.copy(config = apikeyConfig.json))
+        case Some(user)                            =>
           ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
           NgAccess.NgAllowed.vfuture
-        case None                                                      =>
+        case None                                  =>
           apikeyPlugin.access(ctx.copy(config = apikeyConfig.json))
       }
     }

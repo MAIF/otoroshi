@@ -1166,7 +1166,7 @@ object NgRoute {
               }
           }
       )
-    )/*.debug { route =>
+    ) /*.debug { route =>
       if (route.id == "service_dev_4357b93e-f952-4de8-9d30-4c69650b22c4") {
         route.json.prettify.debugPrintln
       }
