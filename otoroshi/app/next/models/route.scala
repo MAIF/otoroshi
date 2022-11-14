@@ -318,7 +318,12 @@ case class NgRoute(
       privateApp = plugins.getPluginByClass[AuthModule].isDefined,
       authConfigRef = plugins
         .getPluginByClass[AuthModule]
-        .flatMap(p => NgAuthModuleConfig.format.reads(p.config.raw).asOpt.flatMap(_.module)),
+        .flatMap(p => NgAuthModuleConfig.format.reads(p.config.raw).asOpt.flatMap(_.module))
+        .orElse(
+          plugins
+            .getPluginByClass[NgLegacyAuthModuleCall]
+            .flatMap(p => NgLegacyAuthModuleCallConfig.format.reads(p.config.raw).asOpt.flatMap(_.config.module))
+        ),
       securityExcludedPatterns = plugins.getPluginByClass[AuthModule].map(_.exclude).getOrElse(Seq.empty),
       // ///////////////////////////////////////////////////////////
       publicPatterns = plugins
@@ -955,6 +960,20 @@ object NgRoute {
               config = NgPluginInstanceConfig(NgCorsSettings.fromLegacy(service.cors).json.asObject)
             )
           }
+          .applyOnIf(service.privateApp && service.authConfigRef.isDefined) { seq =>
+            seq :+ NgPluginInstance(
+              plugin = pluginId[NgLegacyAuthModuleCall],
+              include = Seq.empty,
+              exclude = service.securityExcludedPatterns,
+              config = NgPluginInstanceConfig(
+                NgLegacyAuthModuleCallConfig(
+                  service.publicPatterns,
+                  service.privatePatterns,
+                  NgAuthModuleConfig(service.authConfigRef, !service.strictlyPrivate)
+                ).json.asObject
+              )
+            )
+          }
           .applyOn { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[NgLegacyApikeyCall],
@@ -1020,21 +1039,21 @@ object NgRoute {
           //  }
           //  seq :+ inst
           //}
-          .applyOnIf(service.privateApp && service.authConfigRef.isDefined) { seq =>
-            seq :+ NgPluginInstance(
-              plugin = pluginId[AuthModule],
-              include = if (service.publicPatterns.nonEmpty) {
-                if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) Seq.empty
-                else service.publicPatterns
-              } else {
-                Seq.empty
-              },
-              exclude = (service.securityExcludedPatterns ++ service.privatePatterns).distinct,
-              config = NgPluginInstanceConfig(
-                NgAuthModuleConfig(service.authConfigRef, !service.strictlyPrivate).json.asObject
-              )
-            )
-          }
+          // .applyOnIf(service.privateApp && service.authConfigRef.isDefined) { seq =>
+          //   seq :+ NgPluginInstance(
+          //     plugin = pluginId[AuthModule],
+          //     include = if (service.publicPatterns.nonEmpty) {
+          //       if (service.publicPatterns.size == 1 && service.publicPatterns.contains("/.*")) Seq.empty
+          //       else service.publicPatterns
+          //     } else {
+          //       Seq.empty
+          //     },
+          //     exclude = (service.securityExcludedPatterns ++ service.privatePatterns).distinct,
+          //     config = NgPluginInstanceConfig(
+          //       NgAuthModuleConfig(service.authConfigRef, !service.strictlyPrivate).json.asObject
+          //     )
+          //   )
+          //}
           .applyOnIf(service.gzip.enabled) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[GzipResponseCompressor],
@@ -1147,8 +1166,8 @@ object NgRoute {
               }
           }
       )
-    ) /*.debug { route =>
-      if (route.id == "service_dev_e7ad992b-10e6-4038-a593-8f3953996af6") {
+    )/*.debug { route =>
+      if (route.id == "service_dev_4357b93e-f952-4de8-9d30-4c69650b22c4") {
         route.json.prettify.debugPrintln
       }
     }*/

@@ -96,7 +96,9 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
     val descriptor =
       ctx.route.legacy.copy(publicPatterns = config.publicPatterns, privatePatterns = config.privatePatterns)
     val req        = ctx.request
-    if (descriptor.isUriPublic(req.path)) {
+    if (!descriptor.strictlyPrivate && ctx.attrs.get(otoroshi.plugins.Keys.UserKey).nonEmpty) {
+      NgAccess.NgAllowed.vfuture
+    } else if (descriptor.isUriPublic(req.path)) {
       if (
         env.detectApiKeySooner && descriptor.detectApiKeySooner && ApiKeyHelper
           .detectApiKey(req, descriptor, ctx.attrs)
