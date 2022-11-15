@@ -245,7 +245,7 @@ export class NgSingleCodeLineRenderer extends Component {
 export class NgCodeRenderer extends Component {
 
   render() {
-    const schema = this.props.schema;
+    const schema = this.props.schema || {};
     const props = schema.props || {};
     const readOnly = this.props.readOnly;
 
@@ -293,9 +293,10 @@ export class NgStringRenderer extends Component {
   }
 
   render() {
-    const schema = this.props.schema;
+    const schema = this.props.schema || {};
     const props = schema.props || {};
     const readOnly = this.props.readOnly;
+    const inputStyle = this.props.inputStyle || {};
 
     // avoid to have both value and defaultValue props
     const { defaultValue, ...inputProps } = props;
@@ -307,6 +308,7 @@ export class NgStringRenderer extends Component {
             <input
               type="text"
               className="form-control"
+              style={inputStyle}
               placeholder={props.placeholder}
               title={props.help}
               value={this.state.touched ? (this.props.value || '') : (this.props.value || defaultValue || '')}

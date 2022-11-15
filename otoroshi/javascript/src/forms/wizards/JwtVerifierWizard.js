@@ -3,12 +3,11 @@ import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { TextInput } from '../../components/inputs';
 import { LabelAndInput, NgForm, NgSelectRenderer } from '../../components/nginputs';
 import { Button } from '../../components/Button';
-import Loader from '../../components/Loader';
 import { useHistory } from 'react-router-dom';
-import JwtVerifierForm from '../entities/JwtVerifier';
 import { JwtVerifier } from '../../components/JwtVerifier';
 import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
 import { v4 as uuid } from 'uuid';
+import { FakeLoader } from './FakeLoader';
 
 function WizardStepButton(props) {
   return <Button
@@ -386,7 +385,7 @@ export class JwtVerifierWizard extends React.Component {
                             onChange: e => props.onChange(e, i)
                           } : defaultProps;
 
-                          return React.createElement(component, { key: component.Type, ...allProps });
+                          return React.createElement(component, { key: component.name, ...allProps });
                         } else {
                           return null;
                         }
@@ -475,7 +474,7 @@ function WizardLastStep({ value, breadcrumb, onConfirm }) {
         flexDirection: 'column'
       }}>
         {breadcrumb.map((part, i) => {
-          return <LoaderItem text={i === 0 ? `Informations` : part} timeout={1000 + i * 250} key={part} started={creating} />
+          return <FakeLoader text={i === 0 ? `Informations` : part} timeout={1000 + i * 250} key={part} started={creating} />
         })}
       </div>
 
@@ -908,40 +907,3 @@ function TokenTransformStep({ value, onChange }) {
     </>
   )
 }
-
-function LoaderItem({ text, timeout, started }) {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (started) {
-      const timeout = setTimeout(() => setLoading(false), timeout);
-      return () => timeout;
-    }
-  }, [started]);
-
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '42px 1fr',
-        minHeight: '42px',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        marginBottom: '6px'
-      }} className="mt-3">
-      {started && <Loader loading={loading} minLoaderTime={timeout}>
-        <i className="fas fa-check fa-2x" style={{ color: '#f9b000' }} />
-      </Loader>}
-      {!started && <i className="fas fa-square fa-2x" />}
-      <div
-        style={{
-          flex: 1,
-          marginLeft: '12px',
-          color: loading ? '#eee' : '#fff',
-          fontWeight: loading ? 'normal' : 'bold',
-        }}>
-        <div>{text}</div>
-      </div>
-    </div>
-  );
-};
