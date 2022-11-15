@@ -6,6 +6,7 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.channel.{ChannelDuplexHandler, ChannelHandlerContext, ChannelPromise, EventLoopGroup}
 import io.netty.handler.codec.http._
+import io.netty.incubator.codec.quic.QuicConnectionEvent
 import org.joda.time.DateTime
 
 case class EventLoopGroupCreation(group: EventLoopGroup, native: Option[String])
@@ -40,7 +41,7 @@ object AccessLogHandler {
   val logger = reactor.util.Loggers.getLogger("reactor.netty.http.server.AccessLog")
 }
 
-class AccessLogHandler extends ChannelDuplexHandler {
+class AccessLogHandler(addressGet: () => String) extends ChannelDuplexHandler {
 
   var method: String      = "NONE"
   var status: Int         = 0
@@ -57,7 +58,41 @@ class AccessLogHandler extends ChannelDuplexHandler {
       }
       case _                    =>
     }
-    ctx.fireChannelRead(msg);
+    ctx.fireChannelRead(msg)
+  }
+
+  def lastContent(ctx: ChannelHandlerContext, response: LastHttpContent, promise: ChannelPromise): Unit = {
+    contentLength = contentLength + response.content().readableBytes()
+    val duration = System.currentTimeMillis() - start
+    val addr     = addressGet()
+    val session                  = ctx.channel() match {
+      case c: io.netty.incubator.codec.quic.QuicChannel       =>
+        Option(c)
+          .flatMap(p => Option(p.sslEngine()))
+          .flatMap(p => Option(p.getSession()))
+          .orElse(
+            Option(c)
+              .flatMap(p => Option(p.sslEngine()))
+              .flatMap(p => Option(p.getHandshakeSession()))
+          )
+      case c: io.netty.incubator.codec.quic.QuicStreamChannel =>
+        Option(c.parent())
+          .flatMap(p => Option(p.sslEngine()))
+          .flatMap(p => Option(p.getSession()))
+          .orElse(
+            Option(c.parent())
+              .flatMap(p => Option(p.sslEngine()))
+              .flatMap(p => Option(p.getHandshakeSession()))
+          )
+      case _                                                  => None
+    }
+    AccessLogHandler.logger.info(s"""${addr} - - [${DateTime
+      .now()
+      .toString(
+        "dd/MMM/yyyy:HH:mm:ss Z"
+        //"yyyy-MM-dd HH:mm:ss.SSS Z"
+      )}] "${method} ${uri} HTTP/3.0" ${status} ${contentLength} ${duration} ${session.map(_.getProtocol).getOrElse("")}""")
+    ctx.write(response, promise.unvoid())
   }
 
   override def write(ctx: ChannelHandlerContext, msg: Object, promise: ChannelPromise) {
@@ -73,18 +108,13 @@ class AccessLogHandler extends ChannelDuplexHandler {
         if (!chunked) {
           contentLength = contentLength + HttpUtil.getContentLength(response, 0)
         }
+        msg match {
+          case response: LastHttpContent => lastContent(ctx, response, promise)
+          case _ =>
+        }
       }
       case response: LastHttpContent => {
-        contentLength = contentLength + response.content().readableBytes()
-        val duration = System.currentTimeMillis() - start
-        val addr     = ctx.channel().remoteAddress().toString // not the right value :(
-        AccessLogHandler.logger.info(s"""0.0.0.0 - - [${DateTime
-          .now()
-          .toString(
-            "yyyy-MM-dd HH:mm:ss.SSS Z"
-          )}] "${method} ${uri} HTTP/3.0" ${status} ${contentLength} ${duration}""")
-        ctx.write(msg, promise.unvoid())
-        return
+        lastContent(ctx, response, promise)
       }
       case msg: ByteBuf              => {
         contentLength = contentLength + msg.readableBytes()

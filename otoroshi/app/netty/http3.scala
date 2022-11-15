@@ -8,7 +8,7 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.{ChannelFutureListener, ChannelHandlerContext, ChannelInboundHandlerAdapter}
 import io.netty.handler.codec.http._
 import io.netty.handler.ssl.util.SelfSignedCertificate
-import io.netty.incubator.codec.quic.{QuicSslContext, QuicSslContextBuilder}
+import io.netty.incubator.codec.quic.{QuicConnectionEvent, QuicSslContext, QuicSslContextBuilder}
 import io.netty.util.{CharsetUtil, Mapping, ReferenceCountUtil}
 import otoroshi.env.Env
 import otoroshi.netty.ImplicitUtils._
@@ -20,10 +20,11 @@ import play.api.libs.json.Json
 import play.api.mvc.{EssentialAction, FlashCookieBaker, SessionCookieBaker}
 import reactor.core.publisher.{Flux, Sinks}
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.Await
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.jdk.CollectionConverters._
-import scala.util.Failure
+import scala.util.{Failure, Try}
 
 // TODO: support working remotaddress
 class Http1RequestHandler(
@@ -31,7 +32,8 @@ class Http1RequestHandler(
     sessionCookieBaker: SessionCookieBaker,
     flashCookieBaker: FlashCookieBaker,
     env: Env,
-    logger: Logger
+    logger: Logger,
+    addressGet: () => String,
 ) extends ChannelInboundHandlerAdapter {
 
   private implicit val ec  = env.otoroshiExecutionContext
@@ -93,7 +95,7 @@ class Http1RequestHandler(
           )
       case _                                                  => None
     }
-    val rawOtoReq                = new NettyRequest(req, ctx, Flux.empty(), true, session, sessionCookieBaker, flashCookieBaker)
+    val rawOtoReq                = new NettyRequest(req, ctx, Flux.empty(), true, session, sessionCookieBaker, flashCookieBaker, addressGet)
     val hasBody                  = otoroshi.utils.body.BodyUtils.hasBodyWithoutOrZeroLength(rawOtoReq)._1
     val bodyIn: Flux[ByteString] = if (hasBody) hotFlux else Flux.empty()
     val otoReq                   = rawOtoReq.withBody(bodyIn)
@@ -612,10 +614,25 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
         .initialMaxStreamsBidirectional(config.http3.initialMaxStreamsBidirectional)
         .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
         .handler(new ChannelInitializer[QuicChannel]() {
+          val address = new AtomicReference[String]("0.0.0.0")
+          def addressAccess(): String = address.get()
           override def initChannel(ch: QuicChannel): Unit = {
             ch.pipeline()
               .addLast(new ChannelInboundHandlerAdapter() {
                 override def channelInactive(ctx: ChannelHandlerContext): Unit = ctx.fireChannelInactive()
+                override def userEventTriggered(ctx: ChannelHandlerContext, evt: Any): Unit = {
+                  evt match {
+                    case event: QuicConnectionEvent => {
+                      ctx.channel().remoteAddress().debugPrintln
+                      Option(event.newAddress())
+                        .flatMap(v => Try(v.toString).toOption)
+                        .flatMap(v => Try(v.split("/").last).toOption)
+                        .flatMap(v => Try(v.split(":").head).toOption)
+                        .foreach(add => address.set(add))
+                    }
+                    case _ =>
+                  }
+                }
               })
             ch.pipeline()
               .addLast(
@@ -623,9 +640,9 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                   new ChannelInitializer[QuicStreamChannel]() {
                     override def initChannel(ch: QuicStreamChannel): Unit = {
                       ch.pipeline().addLast(new io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec(true))
-                      if (config.accessLog) ch.pipeline().addLast(new AccessLogHandler())
+                      if (config.accessLog) ch.pipeline().addLast(new AccessLogHandler(addressAccess))
                       ch.pipeline()
-                        .addLast(new Http1RequestHandler(handler, sessionCookieBaker, flashCookieBaker, env, logger))
+                        .addLast(new Http1RequestHandler(handler, sessionCookieBaker, flashCookieBaker, env, logger, addressAccess))
                     }
                   },
                   null,

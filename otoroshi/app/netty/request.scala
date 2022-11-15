@@ -216,15 +216,10 @@ class NettyRemoteConnection(
     req: HttpRequest,
     ctx: ChannelHandlerContext,
     val secure: Boolean,
-    sessionOpt: Option[SSLSession]
+    sessionOpt: Option[SSLSession],
+    addressGet: () => String
 ) extends RemoteConnection {
-  lazy val remoteAddress: InetAddress = {
-    ctx.channel() match {
-      case c: io.netty.incubator.codec.quic.QuicChannel       => InetAddress.getLocalHost
-      case c: io.netty.incubator.codec.quic.QuicStreamChannel => InetAddress.getLocalHost
-      case _                                                  => InetAddress.getLocalHost
-    }
-  }
+  lazy val remoteAddress: InetAddress = InetAddress.getByName(addressGet())
   lazy val clientCertificateChain: Option[Seq[X509Certificate]] = {
     if (secure) {
       sessionOpt match {
@@ -272,14 +267,15 @@ class NettyRequest(
     secure: Boolean,
     sessionOpt: Option[SSLSession],
     sessionCookieBaker: SessionCookieBaker,
-    flashCookieBaker: FlashCookieBaker
-) extends NettyRequestHeader(req, ctx, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
+    flashCookieBaker: FlashCookieBaker,
+    addressGet: () => String
+) extends NettyRequestHeader(req, ctx, secure, sessionOpt, sessionCookieBaker, flashCookieBaker, addressGet)
     with Request[Source[ByteString, _]] {
   lazy val body: Source[ByteString, _] = {
     Source.fromPublisher(rawBody)
   }
   def withBody(newBody: Flux[ByteString]): NettyRequest =
-    new NettyRequest(req, ctx, newBody, secure, sessionOpt, sessionCookieBaker, flashCookieBaker)
+    new NettyRequest(req, ctx, newBody, secure, sessionOpt, sessionCookieBaker, flashCookieBaker, addressGet)
 }
 
 class NettyRequestHeader(
@@ -288,7 +284,8 @@ class NettyRequestHeader(
     secure: Boolean,
     sessionOpt: Option[SSLSession],
     sessionCookieBaker: SessionCookieBaker,
-    flashCookieBaker: FlashCookieBaker
+    flashCookieBaker: FlashCookieBaker,
+    addressGet: () => String
 ) extends RequestHeader {
 
   lazy val _cookies                     = Option(req.headers().get("Cookie"))
@@ -364,7 +361,7 @@ class NettyRequestHeader(
       ("Tls-Session-Info", s.toString)
     )): _*
   )
-  lazy val connection: RemoteConnection = new NettyRemoteConnection(req, ctx, secure, sessionOpt)
+  lazy val connection: RemoteConnection = new NettyRemoteConnection(req, ctx, secure, sessionOpt, addressGet)
   lazy val target: RequestTarget        = new NettyRequestTarget(req)
 }
 
