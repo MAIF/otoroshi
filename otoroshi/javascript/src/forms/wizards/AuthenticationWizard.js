@@ -967,9 +967,55 @@ function InMemoryConfiguration({ value, onChange }) {
   </div>
 }
 
+function GetPassword({ password }) {
+  const [copied, setCopied] = useState(false);
+
+  return <div>
+    <p>The generated password is</p>
+    <div class="d-flex align-items-center justify-content-center p-3"
+      style={{
+        fontWeight: 'bold',
+        background: '#494949',
+        borderRadius: '4px',
+        position: 'relative'
+      }}>
+      <p className='m-0'>{password}</p>
+
+      <Button
+        style={{
+          position: 'absolute',
+          margin: 'auto',
+          right: '6px',
+          border: '1px solid #eee',
+          padding: '8px',
+          borderRadius: '4px'
+        }}
+        onClick={() => {
+          setCopied(true);
+          setTimeout(() => {
+            setCopied(false)
+          }, 450);
+
+          const el = document.createElement('textarea');
+          el.value = password;
+          el.setAttribute('readonly', '');
+          el.style.position = 'absolute';
+          el.style.left = '-9999px';
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+        }}>
+        {!copied && <i className="fas fa-copy" />}
+        {copied && <i className="fas fa-check" />}
+      </Button>
+    </div>
+  </div>
+}
+
 class User extends React.Component {
   state = {
-    rawUser: JSON.stringify(this.props.metadata),
+    rawUser: JSON.stringify(this.props.metadata)
   };
 
   handleErrorWithMessage = (message) => () => {
@@ -1058,14 +1104,11 @@ class User extends React.Component {
     });
   };
 
-  hashPassword = (email, password) => {
-    const newValue = cloneDeep(this.props.value);
-    newValue.users.map((user) => {
-      if (user.email === email) {
-        user.password = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
-      }
-    });
-    this.props.onChange(newValue);
+  hashPassword = (password) => {
+    this.props.onChange({
+      ...this.props,
+      password: bcrypt.hashSync(password, bcrypt.genSaltSync(10))
+    })
   };
 
   setPassword = () => {
@@ -1074,7 +1117,7 @@ class User extends React.Component {
         window.newPrompt('Re-type password', { type: 'password' })
           .then((value2) => {
             if (value1 && value2 && value1 === value2) {
-              hashPassword(email, value1);
+              this.hashPassword(value1);
             } else {
               window.newAlert('Passwords does not match !', 'Error');
             }
@@ -1084,8 +1127,8 @@ class User extends React.Component {
 
   generatePassword = () => {
     const password = faker.random.alphaNumeric(16);
-    hashPassword(email, password);
-    window.newAlert(`The generated password is: ${password}`, 'Generated password');
+    this.hashPassword(password);
+    window.newAlert(() => <GetPassword password={password} />, 'Generated password');
   }
 
   render() {
@@ -1120,24 +1163,18 @@ class User extends React.Component {
             <i className={`fas fa-${password ? 'check' : 'times'}`} />
           </div>
           <div style={{ minWidth: '84px' }} className='d-flex align-items-center justify-content-center'>
-            <Dropdown className='ms-1'>
+            <Dropdown>
               <SquareButton
-                onClick={() => {
-
-                }}
-                icon="fa-key"
-                text="Set password" />
-              <SquareButton
-                type="danger"
+                className='btn-sm'
+                type='danger'
                 onClick={this.props.removeUser}
-                icon="fa-trash"
-                text="Remove user" />
+                text="Remove user"
+                icon="fa-trash" />
               <SquareButton
-                onClick={() => {
-
-                }}
-                icon="fa-user"
-                text="Add profile" />
+                className='btn-sm'
+                onClick={this.generatePassword}
+                text="Generate password"
+                icon="fa-cog" />
             </Dropdown>
           </div>
         </div>
