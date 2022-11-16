@@ -3,8 +3,14 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table } from '../components/inputs';
 import faker from 'faker';
 import { AuthModuleConfig, Oauth2ModuleConfig } from '../components/AuthModuleConfig';
+import { Button } from '../components/Button';
+import { ClassifiedForms } from '../forms';
 
 export class AuthModuleConfigsPage extends Component {
+  state = {
+    showWizard: false
+  }
+
   columns = [
     { title: 'Name', content: (item) => item.name },
     { title: 'Description', content: (item) => item.desc },
@@ -36,8 +42,13 @@ export class AuthModuleConfigsPage extends Component {
   };
 
   render() {
+    const { showWizard } = this.state;
+
+    const AuthenticationWizard = ClassifiedForms.wizards.AuthenticationWizard;
+
     return (
       <div>
+        {showWizard && <AuthenticationWizard hide={() => this.setState({ showWizard: false })} disableSelectMode={true} />}
         <Table
           parentProps={this.props}
           selfUrl="auth-configs"
@@ -87,6 +98,18 @@ export class AuthModuleConfigsPage extends Component {
               </div>
             );
           }}
+          injectTopBar={() => (
+            <Button
+              type="primary"
+              onClick={() => {
+                this.setState({
+                  showWizard: true
+                })
+              }}
+              style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+              <i className="fas fa-hat-wizard" /> Create with wizard
+            </Button>
+          )}
         />
       </div>
     );

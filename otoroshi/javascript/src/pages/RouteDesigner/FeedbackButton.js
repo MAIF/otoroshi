@@ -49,15 +49,22 @@ export function FeedbackButton({
     return `btn-${type}`;
   };
 
+  const setStyle = () => {
+    if (failed) {
+      const { backgroundColor, borderColor, ...rest } = style || {};
+      return rest;
+    } else {
+      return style;
+    }
+  }
+
   return (
     <button
       id={text}
       type="button"
       disabled={disabled}
       className={`btn ${color} ${className || ''}`}
-      style={{
-        ...style,
-      }}
+      style={setStyle()}
       onClick={() => {
         if (!uploading && waiting) {
           setUploading(true);

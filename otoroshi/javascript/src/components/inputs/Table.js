@@ -198,7 +198,8 @@ export class Table extends Component {
     this.mountShortcuts();
     if (this.props.rawEditUrl)
       urlTo(`/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`);
-    else urlTo(`/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`);
+    else
+      urlTo(`/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`);
 
     if (this.props.parentProps.setTitle) {
       this.props.parentProps.setTitle(
