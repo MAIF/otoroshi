@@ -146,28 +146,25 @@ export const Informations = forwardRef(
       },
     ];
 
-    if (!value) return null;
-
     return (
       <>
-        {showAdvancedForm ? (
+        {showAdvancedForm ?
           <RouteForm
             routeId={routeId}
             setValue={setValue}
+            value={value}
             history={history}
             location={location}
-            isCreation={isCreation}
-          />
-        ) : (
+            isCreation={isCreation} />
+          :
           <NgForm
             schema={schema}
             flow={flow}
             value={value}
-            onChange={(v) => {
-              setValue(v);
+            onChange={v => {
+              setValue(v)
             }}
-          />
-        )}
+          />}
 
         <div className="d-flex align-items-center justify-content-end mt-3 p-0">
           {!isOnRouteCompositions && (
