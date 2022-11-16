@@ -101,6 +101,7 @@ export class JwtVerifiersPage extends Component {
           displayTrash={false}
           newForm={true}
           showActions={true}
+          hideAllActions={true}
           showLink={false}
           rowNavigation={true}
           firstSort={0}
@@ -119,18 +120,17 @@ export class JwtVerifiersPage extends Component {
             global: true,
             showHeader: window.location.href.includes('edit'),
           }}
-          injectBottomBar={({ closeEditForm, state, setState }) => {
-            return (
-              <div className="d-flex align-items-center justify-content-end">
-                <FormSelector
-                  onChange={(showAdvancedForm) => setState({ showAdvancedForm })}
-                  entity={ENTITIES.JWT_VERIFIERS}
-                />
-                <Button type="danger" className="btn-sm" onClick={closeEditForm}>
-                  <i className="fas fa-times" /> Cancel
-                </Button>
-              </div>
-            );
+          injectBottomBar={({ closeEditForm, state, setState, buttons }) => {
+            return <div className="d-flex align-items-center justify-content-end">
+              {buttons || null}
+              <FormSelector
+                onChange={showAdvancedForm => setState({ showAdvancedForm })}
+                entity={ENTITIES.JWT_VERIFIERS}
+              />
+              <Button type="danger" className='btn-sm ms-1' onClick={closeEditForm}>
+                <i className="fas fa-times" /> Cancel
+              </Button>
+            </div>
           }}
           injectTopBar={() => (
             <Button
