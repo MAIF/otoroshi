@@ -734,9 +734,9 @@ export class TopBar extends Component {
                     <a href="/bo/dashboard/jwt-verifiers" className="dropdown-item">
                       <span className="fas fa-key" /> Jwt Verifiers
                     </a>
-                    <a href="/bo/dashboard/auth-configs" className="dropdown-item">
+                    <Link to="auth-configs" className="dropdown-item">
                       <span className="fas fa-lock" /> Authentication configs
-                    </a>
+                    </Link>
                     <a href="/bo/dashboard/certificates" className="dropdown-item">
                       <span className="fas fa-certificate" /> SSL/TLS Certificates
                     </a>
