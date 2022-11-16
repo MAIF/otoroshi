@@ -25,6 +25,8 @@ import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 object NettyRequestKeys {
+  val TlsSessionKey = TypedKey[Option[SSLSession]]("Tls-Session")
+  val TlsVersionKey = TypedKey[Option[TlsVersion]]("Tls-Version")
   val TrailerHeadersIdKey = TypedKey[String]("Trailer-Headers-Id")
 }
 
@@ -62,6 +64,8 @@ object ReactorNettyRequest {
 
 class ReactorNettyRemoteConnection(req: HttpServerRequest, val secure: Boolean, sessionOpt: Option[SSLSession])
     extends RemoteConnection {
+  lazy val session: Option[SSLSession] = sessionOpt
+  lazy val tlsVersion: Option[TlsVersion] = sessionOpt.map(_.getProtocol).flatMap(TlsVersion.parseSafe)
   lazy val remoteAddress: InetAddress = req.remoteAddress().getAddress
   lazy val clientCertificateChain: Option[Seq[X509Certificate]] = {
     if (secure) {
@@ -152,6 +156,8 @@ class ReactorNettyRequestHeader(
     RequestAttrKey.Flash                 -> Cell(zeFlash),
     RequestAttrKey.Server                -> "netty-experimental",
     NettyRequestKeys.TrailerHeadersIdKey -> s"${IdGenerator.uuid}-${count}",
+    NettyRequestKeys.TlsSessionKey -> sessionOpt,
+    NettyRequestKeys.TlsVersionKey -> sessionOpt.flatMap(s => TlsVersion.parseSafe(s.getProtocol)),
     RequestAttrKey.Cookies               -> Cell(Cookies(req.cookies().asScala.toSeq.flatMap { case (_, cookies) =>
       cookies.asScala.map {
         case cookie: io.netty.handler.codec.http.cookie.DefaultCookie => {
@@ -192,8 +198,10 @@ class ReactorNettyRequestHeader(
   lazy val method: String               = req.method().toString
   lazy val version: String              = req.version().toString
   lazy val headers: Headers             = Headers(
-    (req.requestHeaders().entries().asScala.map(e => (e.getKey, e.getValue)) ++ sessionOpt.map(s =>
-      ("Tls-Session-Info", s.toString)
+    (req.requestHeaders().entries().asScala.map(e => (e.getKey, e.getValue)) ++ sessionOpt.toSeq.flatMap(s =>
+      Seq(
+        ("Tls-Session-Info", s.toString),
+      )
     )): _*
   )
   lazy val connection: RemoteConnection = new ReactorNettyRemoteConnection(req, secure, sessionOpt)
@@ -219,6 +227,8 @@ class NettyRemoteConnection(
     sessionOpt: Option[SSLSession],
     addressGet: () => String
 ) extends RemoteConnection {
+  lazy val session: Option[SSLSession] = sessionOpt
+  lazy val tlsVersion: Option[TlsVersion] = sessionOpt.map(_.getProtocol).flatMap(TlsVersion.parseSafe)
   lazy val remoteAddress: InetAddress = InetAddress.getByName(addressGet())
   lazy val clientCertificateChain: Option[Seq[X509Certificate]] = {
     if (secure) {
@@ -317,6 +327,8 @@ class NettyRequestHeader(
     RequestAttrKey.Flash                 -> Cell(zeFlash),
     RequestAttrKey.Server                -> "netty-experimental",
     NettyRequestKeys.TrailerHeadersIdKey -> s"${IdGenerator.uuid}-${count}",
+    NettyRequestKeys.TlsSessionKey -> sessionOpt,
+    NettyRequestKeys.TlsVersionKey -> sessionOpt.flatMap(s => TlsVersion.parseSafe(s.getProtocol)),
     RequestAttrKey.Cookies               -> Cell(Cookies(_cookies.toSeq.flatMap { case (_, cookies) =>
       cookies.map {
         case cookie: io.netty.handler.codec.http.cookie.DefaultCookie => {
@@ -357,8 +369,10 @@ class NettyRequestHeader(
   lazy val method: String               = req.method().toString
   lazy val version: String              = req.protocolVersion().toString
   lazy val headers: Headers             = Headers(
-    (req.headers().entries().asScala.map(e => (e.getKey, e.getValue)) ++ sessionOpt.map(s =>
-      ("Tls-Session-Info", s.toString)
+    (req.headers().entries().asScala.map(e => (e.getKey, e.getValue)) ++ sessionOpt.toSeq.flatMap(s =>
+      Seq(
+        ("Tls-Session-Info", s.toString),
+      )
     )): _*
   )
   lazy val connection: RemoteConnection = new NettyRemoteConnection(req, ctx, secure, sessionOpt, addressGet)

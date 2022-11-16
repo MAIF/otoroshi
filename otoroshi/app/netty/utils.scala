@@ -8,6 +8,32 @@ import io.netty.channel.{ChannelDuplexHandler, ChannelHandlerContext, ChannelPro
 import io.netty.handler.codec.http._
 import io.netty.incubator.codec.quic.QuicConnectionEvent
 import org.joda.time.DateTime
+import otoroshi.utils.syntax.implicits._
+
+sealed trait TlsVersion {
+  def name: String
+}
+object TlsVersion {
+  case class Unknown(raw: String) extends TlsVersion { def name: String = s"Unknown($raw)" }
+  case class SSL(raw: String) extends TlsVersion { def name: String = s"SSL($raw)" }
+  case object SSLv1 extends TlsVersion   { def name: String = s"SSLv1"   }
+  case object SSLv2 extends TlsVersion   { def name: String = s"SSLv2"   }
+  case object TLS_1_0 extends TlsVersion { def name: String = s"TLSv1"   }
+  case object TLS_1_1 extends TlsVersion { def name: String = s"TLSv1.1" }
+  case object TLS_1_2 extends TlsVersion { def name: String = s"TLSv1.2" }
+  case object TLS_1_3 extends TlsVersion { def name: String = s"TLSv1.3" }
+  def parse(version: String): TlsVersion = parseSafe(version).getOrElse(Unknown(version))
+  def parseSafe(version: String): Option[TlsVersion] = version match {
+    case "TLSv1.3" => TLS_1_3.some
+    case "TLSv1.2" => TLS_1_2.some
+    case "TLSv1.1" => TLS_1_1.some
+    case "TLSv1" => TLS_1_0.some
+    case v if v.toLowerCase().startsWith("sslv1") => SSLv1.some
+    case v if v.toLowerCase().startsWith("sslv2") => SSLv2.some
+    case v if v.toLowerCase().startsWith("ssl") => SSL(v).some
+    case _ => None
+  }
+}
 
 case class EventLoopGroupCreation(group: EventLoopGroup, native: Option[String])
 
@@ -86,12 +112,13 @@ class AccessLogHandler(addressGet: () => String) extends ChannelDuplexHandler {
           )
       case _                                                  => None
     }
+    val protocol = session.map(_.getProtocol).flatMap(TlsVersion.parseSafe).map(_.name).getOrElse("-")
     AccessLogHandler.logger.info(s"""${addr} - - [${DateTime
       .now()
       .toString(
         "dd/MMM/yyyy:HH:mm:ss Z"
         //"yyyy-MM-dd HH:mm:ss.SSS Z"
-      )}] "${method} ${uri} HTTP/3.0" ${status} ${contentLength} ${duration} ${session.map(_.getProtocol).getOrElse("")}""")
+      )}] "${method} ${uri} HTTP/3.0" ${status} ${contentLength} ${duration} ${protocol}""")
     ctx.write(response, promise.unvoid())
   }
 

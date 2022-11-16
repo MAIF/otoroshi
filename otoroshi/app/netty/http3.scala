@@ -623,7 +623,6 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                 override def userEventTriggered(ctx: ChannelHandlerContext, evt: Any): Unit = {
                   evt match {
                     case event: QuicConnectionEvent => {
-                      ctx.channel().remoteAddress().debugPrintln
                       Option(event.newAddress())
                         .flatMap(v => Try(v.toString).toOption)
                         .flatMap(v => Try(v.split("/").last).toOption)

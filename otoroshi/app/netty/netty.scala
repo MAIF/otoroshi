@@ -3,7 +3,7 @@ package otoroshi.netty
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.channel.{Channel, EventLoopGroup}
+import io.netty.channel.{Channel, ChannelPipeline, EventLoopGroup}
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.websocketx._
 import io.netty.handler.logging.LogLevel
@@ -24,9 +24,11 @@ import play.api.mvc._
 import play.core.server.common.WebSocketFlowHandler
 import play.core.server.common.WebSocketFlowHandler.{MessageType, RawMessage}
 import reactor.netty.NettyOutbound
+import reactor.netty.http.server.logging.{AccessLog, AccessLogArgProvider, AccessLogFactory}
 
+import java.net.{InetSocketAddress, SocketAddress}
 import java.security.{Provider, SecureRandom}
-import java.util.function.BiFunction
+import java.util.function.{BiFunction, Function}
 import javax.net.ssl._
 import scala.concurrent.Await
 import scala.concurrent.duration.{DurationInt, DurationLong}
@@ -270,8 +272,9 @@ class ReactorNettyServer(env: Env) {
       channel: Channel
   ): Publisher[Void] = {
     val parent      = channel.parent()
-    val sslHandler  = Option(parent.pipeline().get(classOf[SslHandler]))
+    val sslHandler = Option(parent.pipeline().get(classOf[SslHandler])).orElse(Option(channel.pipeline().get(classOf[SslHandler])))
     val sessionOpt  = sslHandler.map(_.engine.getSession)
+    sessionOpt.foreach(s  => req.requestHeaders().set("Tls-Version", TlsVersion.parse(s.getProtocol).name))
     val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
       (req.requestHeaders().contains("Sec-WebSocket-Version") || req
         .requestHeaders()
@@ -297,8 +300,9 @@ class ReactorNettyServer(env: Env) {
       handler: HttpRequestHandler
   ): Publisher[Void] = {
     val parent      = channel.parent()
-    val sslHandler  = Option(parent.pipeline().get(classOf[SslHandler]))
+    val sslHandler = Option(parent.pipeline().get(classOf[SslHandler])).orElse(Option(channel.pipeline().get(classOf[SslHandler])))
     val sessionOpt  = sslHandler.map(_.engine.getSession)
+    sessionOpt.foreach(s  => req.requestHeaders().set("Tls-Version", TlsVersion.parse(s.getProtocol).name))
     val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
       (req.requestHeaders().contains("Sec-WebSocket-Version") || req
         .requestHeaders()
@@ -409,10 +413,33 @@ class ReactorNettyServer(env: Env) {
         }
       }
 
+      def applyAddress(socketAddress: SocketAddress) = socketAddress match {
+        case address: InetSocketAddress => address.getHostString
+        case _ => "-"
+      }
+      val defaultLogFormat = "{} - {} [{}] \"{} {} {}\" {} {} {} {}"
+      val logCustom = new AccessLogFactory {
+        override def apply(args: AccessLogArgProvider): AccessLog = {
+          AccessLog.create(
+            defaultLogFormat,
+            applyAddress(args.remoteAddress()),
+            args.user(),
+            args.zonedDateTime(),
+            args.method(),
+            args.uri(),
+            args.protocol(),
+            args.status(),
+            if (args.contentLength() > -1L) args.contentLength().toString else "-",
+            args.duration().toString,
+            args.requestHeader("Tls-Version")
+          )
+        }
+      }
+
       val serverHttps = HttpServer
         .create()
         .host(config.host)
-        .accessLog(config.accessLog)
+        .accessLog(config.accessLog, logCustom)
         .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-https", LogLevel.INFO))
         .port(config.httpsPort)
         .applyOnIf(config.http2.enabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
@@ -447,7 +474,7 @@ class ReactorNettyServer(env: Env) {
         .create()
         .host(config.host)
         .noSSL()
-        .accessLog(config.accessLog)
+        .accessLog(config.accessLog, logCustom)
         .applyOnIf(config.wiretap)(_.wiretap(logger.logger.getName + "-wiretap-http", LogLevel.INFO))
         .port(config.httpPort)
         .applyOnIf(config.http2.h2cEnabled)(_.protocol(HttpProtocol.HTTP11, HttpProtocol.H2C))
