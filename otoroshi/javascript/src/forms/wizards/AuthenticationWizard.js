@@ -14,6 +14,7 @@ import { JwtVerifier } from '../../components/JwtVerifier';
 import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
 import { v4 as uuid } from 'uuid';
 import { FakeLoader } from './FakeLoader';
+import { AuthModuleConfig } from '../../components/AuthModuleConfig';
 
 function WizardStepButton(props) {
   return <Button
@@ -104,7 +105,7 @@ function Selector({ setMode, disableSelectMode }) {
   </div>
 }
 
-function AuthenticationSelector({ handleSelect, allowedStrategy, mode }) {
+function AuthenticationSelector({ handleSelect, mode }) {
   const [authentications, setAuthentications] = useState([]);
 
   useEffect(() => {
@@ -125,7 +126,7 @@ function AuthenticationSelector({ handleSelect, allowedStrategy, mode }) {
         onChange={id => {
           handleSelect(authentications.find(v => v.id === id))
         }}
-        options={authentications.filter(authentication => allowedStrategy ? authentication.strategy.type === allowedStrategy : true)}
+        options={authentications}
         optionsTransformer={arr => arr.map(item => ({ value: item.id, label: item.name }))} />
     </div>
   </div>
@@ -146,7 +147,7 @@ export class AuthenticationWizard extends React.Component {
   state = {
     step: 1,
     mode: this.props.mode || 'selector',
-    authenticationConfig: {
+    authenticationConfig: this.props.authentication || {
       name: ''
     },
     breadcrumb: ['Informations']
@@ -198,10 +199,8 @@ export class AuthenticationWizard extends React.Component {
           <div className='d-flex' style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
             <Header onClose={this.props.hide} mode={mode} />
             <div className="wizard-content">
-              <JwtVerifier
-                verifier={authenticationConfig}
-                showHeader={true}
-                strategy={this.props.allowedNewStrategy}
+              <AuthModuleConfig
+                value={authenticationConfig}
                 onChange={authenticationConfig => this.setState({ authenticationConfig })} />
 
               <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
@@ -211,10 +210,10 @@ export class AuthenticationWizard extends React.Component {
                     borderColor: '#f9b000',
                     padding: '12px 48px'
                   }}
-                  onPress={() => BackOfficeServices.updateJwtVerifier(authenticationConfig)}
+                  onPress={() => BackOfficeServices.updateAuthConfig(authenticationConfig)}
                   onSuccess={this.props.hide}
                   icon={() => <i className='fas fa-paper-plane' />}
-                  text="Save the verifier"
+                  text="Save the authentication configuration"
                 />
               </div>
             </div>
@@ -358,16 +357,15 @@ export class AuthenticationWizard extends React.Component {
                 {['edition', 'clone'].includes(mode) ?
                   <AuthenticationSelector
                     mode={mode}
-                    allowedStrategy={this.props.allowedStrategy}
-                    handleSelect={verifier => {
+                    handleSelect={authentication => {
                       if (this.props.onConfirm && mode === 'edition') {
-                        this.props.onConfirm(verifier.id);
+                        this.props.onConfirm(authentication.id);
                       } else {
                         this.setState({
                           mode: 'continue',
                           authenticationConfig: {
-                            ...verifier,
-                            id: `jwt_verifier_${uuid()}`
+                            ...authentication,
+                            id: `auth_mod_${uuid()}`
                           }
                         })
                       }

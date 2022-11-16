@@ -158,6 +158,7 @@ export class NgCustomFormsRenderer extends Component {
     const LauncherComponent = React.createElement(props.componentLauncher, {
       value: this.props.value,
       onChange: this.props.onChange,
+      ...(props.componentLauncherProps),
       openComponent: propsFromParent => {
         this.setState({
           showComponent: true,
