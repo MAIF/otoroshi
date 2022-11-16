@@ -9,37 +9,39 @@ export const ENTITIES = {
   JWT_VERIFIERS: 'jwt-verifiers',
   AUTH_MODULES: 'auth-modules',
   API_KEYS: 'api-keys',
-}
+};
 
 export function FormSelector({ onChange, entity, className = '' }) {
   const [showLegacyForm, toggleLegacyForm] = useState(false);
 
   useEffect(() => {
     loadEntities(entity);
-  }, [entity])
+  }, [entity]);
 
-
-  const loadEntities = entity => {
+  const loadEntities = (entity) => {
     try {
       const values = JSON.parse(localStorage.getItem(FORM_SELECTOR_KEY) || '{}');
       toggleLegacyForm(values[entity]);
       onChange(values[entity]);
     } catch (e) {
-      console.log(e)
+      console.log(e);
     }
-  }
+  };
 
   const saveEntities = (entity, value) => {
     try {
       const values = JSON.parse(localStorage.getItem(FORM_SELECTOR_KEY) || '{}');
-      localStorage.setItem(FORM_SELECTOR_KEY, JSON.stringify({
-        ...values,
-        [entity]: value
-      }));
+      localStorage.setItem(
+        FORM_SELECTOR_KEY,
+        JSON.stringify({
+          ...values,
+          [entity]: value,
+        })
+      );
     } catch (e) {
       console.log(e);
     }
-  }
+  };
 
   return (
     <Button
@@ -50,6 +52,7 @@ export function FormSelector({ onChange, entity, className = '' }) {
         onChange(!showLegacyForm);
         saveEntities(entity, !showLegacyForm);
       }}
-      text={showLegacyForm ? 'Simple view' : 'Advanced view'} />
-  )
+      text={showLegacyForm ? 'Simple view' : 'Advanced view'}
+    />
+  );
 }

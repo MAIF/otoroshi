@@ -19,16 +19,25 @@ class EntitiesController(ApiAction: ApiAction, cc: ControllerComponents)(implici
     ApiAction.async { ctx =>
       entity match {
         case "jwt-verifiers" =>
-          Ok(Json.obj(
-            "routes" -> env.proxyState
-              .allRoutes()
-              .filter(route => ctx.canUserRead(route))
-              .filter(route => Json.stringify(Json.arr(route.plugins.slots
-                .map(p => p.config.raw))).contains(id)
-              )
-              .map(_.json)
-          )).as("application/json").vfuture
-        case _ =>
+          Ok(
+            Json.obj(
+              "routes" -> env.proxyState
+                .allRoutes()
+                .filter(route => ctx.canUserRead(route))
+                .filter(route =>
+                  Json
+                    .stringify(
+                      Json.arr(
+                        route.plugins.slots
+                          .map(p => p.config.raw)
+                      )
+                    )
+                    .contains(id)
+                )
+                .map(_.json)
+            )
+          ).as("application/json").vfuture
+        case _               =>
           Ok(Json.obj()).as("application/json").vfuture
       }
     }

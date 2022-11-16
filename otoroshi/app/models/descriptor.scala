@@ -204,7 +204,7 @@ object LoadBalancing {
         case Some("BestResponseTime")         => JsSuccess(BestResponseTime)
         case Some("WeightedBestResponseTime") =>
           JsSuccess(WeightedBestResponseTime((json \ "ratio").asOpt[Double].getOrElse(0.5)))
-        case _                          => JsSuccess(RoundRobin)
+        case _                                => JsSuccess(RoundRobin)
       }
   }
 }

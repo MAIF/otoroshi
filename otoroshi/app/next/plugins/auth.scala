@@ -13,6 +13,82 @@ import play.api.mvc.Results
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+case class NgLegacyAuthModuleCallConfig(
+    publicPatterns: Seq[String] = Seq.empty,
+    privatePatterns: Seq[String] = Seq.empty,
+    config: NgAuthModuleConfig
+) extends NgPluginConfig {
+  override def json: JsValue = NgLegacyAuthModuleCallConfig.format.writes(this)
+}
+object NgLegacyAuthModuleCallConfig {
+  val default = NgLegacyAuthModuleCallConfig(Seq.empty, Seq.empty, NgAuthModuleConfig())
+  val format  = new Format[NgLegacyAuthModuleCallConfig] {
+    override def writes(o: NgLegacyAuthModuleCallConfig): JsValue             = Json.obj(
+      "public_patterns"  -> o.publicPatterns,
+      "private_patterns" -> o.privatePatterns
+    ) ++ o.config.json.asObject
+    override def reads(json: JsValue): JsResult[NgLegacyAuthModuleCallConfig] = Try {
+      NgLegacyAuthModuleCallConfig(
+        publicPatterns = json.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
+        privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
+        config = NgAuthModuleConfig.format.reads(json).asOpt.getOrElse(NgAuthModuleConfig())
+      )
+    } match {
+      case Failure(e)     => JsError(e.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
+class NgLegacyAuthModuleCall extends NgAccessValidator {
+  private val configReads: Reads[NgLegacyAuthModuleCallConfig] = NgLegacyAuthModuleCallConfig.format
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication, NgPluginCategory.Classic)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Legacy Authentication"
+  override def description: Option[String]                 =
+    "This plugin applies an authentication module the same way service descriptor does".some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgLegacyAuthModuleCallConfig.default.some
+
+  override def isAccessAsync: Boolean = true
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val authPlugin   = env.scriptManager
+      .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[AuthModule])(env.otoroshiExecutionContext)
+      .right
+      .get
+    val apikeyPlugin = env.scriptManager
+      .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[NgLegacyApikeyCall])(env.otoroshiExecutionContext)
+      .right
+      .get
+    val config       = ctx.cachedConfig(internalName)(configReads).getOrElse(NgLegacyAuthModuleCallConfig.default)
+    val apikeyConfig = NgLegacyApikeyCallConfig(
+      config.publicPatterns,
+      config.privatePatterns,
+      NgApikeyCallsConfig.fromLegacy(ctx.route.legacy.apiKeyConstraints)
+    )
+    val descriptor   =
+      ctx.route.legacy.copy(publicPatterns = config.publicPatterns, privatePatterns = config.privatePatterns)
+    val req          = ctx.request
+    if (descriptor.isUriPublic(req.path)) {
+      authPlugin.access(ctx)(env, ec)
+    } else {
+      PrivateAppsUserHelper.isPrivateAppsSessionValid(req, descriptor, ctx.attrs).flatMap {
+        case Some(_) if descriptor.strictlyPrivate => apikeyPlugin.access(ctx.copy(config = apikeyConfig.json))
+        case Some(user)                            =>
+          ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+          NgAccess.NgAllowed.vfuture
+        case None                                  =>
+          apikeyPlugin.access(ctx.copy(config = apikeyConfig.json))
+      }
+    }
+  }
+}
+
 case class NgAuthModuleConfig(module: Option[String] = None, passWithApikey: Boolean = false) extends NgPluginConfig {
   def json: JsValue = NgAuthModuleConfig.format.writes(this)
 }

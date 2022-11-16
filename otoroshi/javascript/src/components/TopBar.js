@@ -476,7 +476,6 @@ export class TopBar extends Component {
       const title = `Otoroshi - ${this.props.env.instanceName}`;
       window.document.title = title;
     }
-
   }
 
   componentWillUnmount() {
@@ -526,8 +525,9 @@ export class TopBar extends Component {
   render() {
     const selected = (this.props.params || {}).lineId;
     return (
-      <nav className="navbar navbar-expand-md fixed-top"
-      // style={{ zIndex: 100 }}
+      <nav
+        className="navbar navbar-expand-md fixed-top"
+        // style={{ zIndex: 100 }}
       >
         <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
           <div className="d-flex flex-column flex-md-row top-md-0 w-100">
@@ -675,8 +675,9 @@ export class TopBar extends Component {
                 />
                 <ul
                   id="dropdown"
-                  className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                    } py-2 pb-4`}
+                  className={`custom-dropdown ${
+                    this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                  } py-2 pb-4`}
                   aria-labelledby="dropdownMenuParams">
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>

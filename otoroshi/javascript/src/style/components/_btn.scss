@@ -277,3 +277,13 @@
   width: calc(50% - 8px);
   z-index: 20;
 }
+
+.square-button{
+  min-width: 80px;
+  min-height: 80px;
+  max-width: 80px;
+  max-height: 80px;
+  flex: 1;
+  line-height: 0.9rem;
+  word-wrap: anywhere;
+}

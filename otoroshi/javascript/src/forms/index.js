@@ -1,22 +1,19 @@
-import { Plugins } from "./ng_plugins";
-import { Wizards } from "./wizards";
+import { Plugins } from './ng_plugins';
+import { Wizards } from './wizards';
 
 const ClassifiedForms = {
   plugins: Plugins.reduce((acc, c) => {
     return {
       ...acc,
-      [c.id.split('.').slice(-1)]: c
-    }
+      [c.id.split('.').slice(-1)]: c,
+    };
   }, {}),
-  wizards: Wizards
-}
+  wizards: Wizards,
+};
 
-const Forms = ({
+const Forms = {
   ...ClassifiedForms.plugins,
   ...ClassifiedForms.wizards,
-})
+};
 
-export {
-  ClassifiedForms,
-  Forms
-} 
+export { ClassifiedForms, Forms };

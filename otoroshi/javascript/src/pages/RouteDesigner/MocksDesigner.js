@@ -4,7 +4,12 @@ import { FeedbackButton } from './FeedbackButton';
 import { createTooltip } from '../../tooltips';
 
 import { NgForm } from '../../components/nginputs/form';
-import { NgBooleanRenderer, NgNumberRenderer, NgSelectRenderer, NgStringRenderer } from '../../components/nginputs/inputs';
+import {
+  NgBooleanRenderer,
+  NgNumberRenderer,
+  NgSelectRenderer,
+  NgStringRenderer,
+} from '../../components/nginputs/inputs';
 import { PillButton } from '../../components/PillButton';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
@@ -1102,19 +1107,22 @@ class NewEndpoint extends React.Component {
 }
 
 function Header({ hide, onDesigner, setDesigner }) {
-  return <>
-    <div className="d-flex-between">
-      <h3>Mock responses</h3>
-      <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
-        <i className="fas fa-times"/>
-      </button>
-    </div>
-    <PillButton
-      rightEnabled={onDesigner}
-      onChange={setDesigner}
-      leftText='Design'
-      rightText='Content' />
-  </>
+  return (
+    <>
+      <div className="d-flex-between">
+        <h3>Mock responses</h3>
+        <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
+          <i className="fas fa-times" />
+        </button>
+      </div>
+      <PillButton
+        rightEnabled={onDesigner}
+        onChange={setDesigner}
+        leftText="Design"
+        rightText="Content"
+      />
+    </>
+  );
 }
 
 export const HTTP_COLORS = {

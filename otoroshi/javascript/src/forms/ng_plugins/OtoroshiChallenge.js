@@ -174,30 +174,30 @@ export default {
                   label: 'name',
                   value: 'id',
                 },
-                "port": {
-                  "type": "number"
+                port: {
+                  type: 'number',
                 },
-                "protocol": {
-                  "type": "string"
+                protocol: {
+                  type: 'string',
                 },
-                "principal": {
-                  "type": "string"
+                principal: {
+                  type: 'string',
                 },
-                "password": {
-                  "type": "string"
+                password: {
+                  type: 'string',
                 },
-                "ntlmDomain": {
-                  "type": "string"
+                ntlmDomain: {
+                  type: 'string',
                 },
-                "encoding": {
-                  "type": "string"
+                encoding: {
+                  type: 'string',
                 },
-                "nonProxyHosts": {
-                  "type": "string",
+                nonProxyHosts: {
+                  type: 'string',
                   array: true,
-                  "label": "Non proxy hosts"
-                }
-              }
+                  label: 'Non proxy hosts',
+                },
+              },
             },
             onlyExposedCerts: {
               type: 'boolean',
@@ -288,11 +288,11 @@ export default {
             ttl: {
               type: 'number',
             },
-            "kty": {
+            kty: {
               type: 'select',
               props: {
-                options: ['RSA', 'EC']
-              }
+                options: ['RSA', 'EC'],
+              },
             },
             mtlsConfig: {
               type: 'form',

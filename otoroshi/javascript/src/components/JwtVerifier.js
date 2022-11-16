@@ -30,92 +30,125 @@ function EntityGraph({ entity, id }) {
   const [loadedEntities, setLoadedEntities] = useState(false);
 
   const findEntities = () => {
-    getEntityGraph(entity, id)
-      .then(entities => {
-        setEntities(entities);
-        setLoadedEntities(true);
-      });
-  }
+    getEntityGraph(entity, id).then((entities) => {
+      setEntities(entities);
+      setLoadedEntities(true);
+    });
+  };
 
-  if (Object.values(entities).flat().length === 0 && loadedEntities)
-    return null;
+  if (Object.values(entities).flat().length === 0 && loadedEntities) return null;
 
-  return <div className='d-flex' style={{
-    outline: 'rgb(65, 65, 62) solid 1px',
-    padding: '5px',
-    margin: '5px 0px',
-    width: '100%'
-  }}>
-    <div className='d-flex justify-content-between flex-column' style={{ flex: 1 }}>
-      <div style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold', marginLeft: '5px', marginTop: '7px', marginBottom: '10px' }}>Found usages</div>
-      <div className='me-1'>
-        {Object.entries(entities).map(entity => {
-          const name = entity[0];
-          const content = entity[1];
+  return (
+    <div
+      className="d-flex"
+      style={{
+        outline: 'rgb(65, 65, 62) solid 1px',
+        padding: '5px',
+        margin: '5px 0px',
+        width: '100%',
+      }}>
+      <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
+        <div
+          style={{
+            color: 'rgb(249, 176, 0)',
+            fontWeight: 'bold',
+            marginLeft: '5px',
+            marginTop: '7px',
+            marginBottom: '10px',
+          }}>
+          Found usages
+        </div>
+        <div className="me-1">
+          {Object.entries(entities).map((entity) => {
+            const name = entity[0];
+            const content = entity[1];
 
-          return <div style={{ fontWeight: 'bold', marginLeft: '5px', marginTop: '7px', marginBottom: '10px' }} key={name}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px' }}>
-              <label style={{ textTransform: 'uppercase' }}>{name}</label>
-              <label>Used by plugins</label>
-            </div>
-
-            {content.map(r => {
-              const pathname = name === 'routes' ? `/${name}/${r.id}?tab=flow` : `/${name}/edit/${r.id}`;
-              return <div key={r.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px' }} className="align-items-center mb-1">
-                <p className='m-0'>{r.name}</p>
-                <div className='d-flex align-items-center'>
-                  {r.plugins
-                    .filter(p => JSON.stringify(p.config || {}).includes(id))
-                    .map(plugin => {
-                      const pluginName = plugin.plugin.split('.').at(-1);
-                      return <Link to={name === 'routes' ? {
-                        pathname,
-                        state: {
-                          plugin: plugin.plugin
-                        }
-                      } : pathname} key={`${entity[0]}-${pluginName}`}>
-                        <span className="badge bg-warning me-2">{pluginName}</span>
-                      </Link>
-                    })}
+            return (
+              <div
+                style={{
+                  fontWeight: 'bold',
+                  marginLeft: '5px',
+                  marginTop: '7px',
+                  marginBottom: '10px',
+                }}
+                key={name}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px' }}>
+                  <label style={{ textTransform: 'uppercase' }}>{name}</label>
+                  <label>Used by plugins</label>
                 </div>
-                <Link to={pathname}>
-                  <Button type="info" className="btn-sm" >
-                    <i className='fas fa-chevron-right' />
-                  </Button>
-                </Link>
-              </div>
-            })}
-          </div>
-        })}
-      </div>
 
-      {!loadedEntities && <Button
-        className='btn-sm ms-auto'
-        onClick={findEntities}
-        text='Find usages'
-      />}
+                {content.map((r) => {
+                  const pathname =
+                    name === 'routes' ? `/${name}/${r.id}?tab=flow` : `/${name}/edit/${r.id}`;
+                  return (
+                    <div
+                      key={r.id}
+                      style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px' }}
+                      className="align-items-center mb-1">
+                      <p className="m-0">{r.name}</p>
+                      <div className="d-flex align-items-center">
+                        {r.plugins
+                          .filter((p) => JSON.stringify(p.config || {}).includes(id))
+                          .map((plugin) => {
+                            const pluginName = plugin.plugin.split('.').at(-1);
+                            return (
+                              <Link
+                                to={
+                                  name === 'routes'
+                                    ? {
+                                        pathname,
+                                        state: {
+                                          plugin: plugin.plugin,
+                                        },
+                                      }
+                                    : pathname
+                                }
+                                key={`${entity[0]}-${pluginName}`}>
+                                <span className="badge bg-warning me-2">{pluginName}</span>
+                              </Link>
+                            );
+                          })}
+                      </div>
+                      <Link to={pathname}>
+                        <Button type="info" className="btn-sm">
+                          <i className="fas fa-chevron-right" />
+                        </Button>
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+
+        {!loadedEntities && (
+          <Button className="btn-sm ms-auto" onClick={findEntities} text="Find usages" />
+        )}
+      </div>
     </div>
-  </div>
+  );
 }
 
 export class JwtVerifier extends Component {
   state = {
     isConfigView: true,
-    verifier: this.props.value || this.props.verifier || {
-      type: 'globale',
-      enabled: false,
-      strict: true,
-      source: { type: 'InHeader', name: 'X-JWT-Token', remove: '' },
-      algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
-      strategy: {
-        type: 'PassThrough',
-        verificationSettings: {
-          fields: { iss: 'The Issuer' },
-          arrayFields: {}
+    verifier: this.props.value ||
+      this.props.verifier || {
+        type: 'globale',
+        enabled: false,
+        strict: true,
+        source: { type: 'InHeader', name: 'X-JWT-Token', remove: '' },
+        algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
+        strategy: {
+          type: 'PassThrough',
+          verificationSettings: {
+            fields: { iss: 'The Issuer' },
+            arrayFields: {},
+          },
         },
       },
-    }
-  }
+  };
 
   render() {
     const { isConfigView, verifier } = this.state;
@@ -125,96 +158,111 @@ export class JwtVerifier extends Component {
 
     return (
       <div>
-        {this.props.showHeader && <Header
-          isConfigView={isConfigView}
-          onChange={isConfigView => this.setState({ isConfigView })} />}
+        {this.props.showHeader && (
+          <Header
+            isConfigView={isConfigView}
+            onChange={(isConfigView) => this.setState({ isConfigView })}
+          />
+        )}
 
-        {isConfigView && <>
-          {isLegacyView &&
-            <LegacyJwtVerifier
-              verifier={verifier}
-              changeTheValue={(name, value) => {
-                const path = name.startsWith('.') ? name.substr(1) : name;
-                const updatedVerifier = deepSet(cloneDeep(verifier), path, value);
-                this.setState({ verifier: updatedVerifier });
-                if (this.props.onChange)
-                  this.props.onChange(updatedVerifier);
-              }} />
-          }
+        {isConfigView && (
+          <>
+            {isLegacyView && (
+              <LegacyJwtVerifier
+                verifier={verifier}
+                changeTheValue={(name, value) => {
+                  const path = name.startsWith('.') ? name.substr(1) : name;
+                  const updatedVerifier = deepSet(cloneDeep(verifier), path, value);
+                  this.setState({ verifier: updatedVerifier });
+                  if (this.props.onChange) this.props.onChange(updatedVerifier);
+                }}
+              />
+            )}
 
-          {!isLegacyView && <>
-            <NgForm
-              useBreadcrumb={true}
-              value={verifier}
-              schema={{
-                ...JwtVerifierForm.config_schema,
-                source: restrictedStrategy ? {
-                  ...JwtVerifierForm.config_schema.source,
-                  props: {
-                    ...JwtVerifierForm.config_schema.source.props,
-                    showSummary: false
-                  },
-                  label: 'Exit Token location',
-                  flow: JwtVerifierForm.config_schema.source.flow.map(step => {
-                    if (step?.name === 'Header informations')
-                      return { ...step, fields: ['name'] }
-                    return step
-                  })
-                } : JwtVerifierForm.config_schema.source,
-                graph: {
-                  renderer: () => <EntityGraph entity='jwt-verifiers' id={verifier.id} />
-                }
-              }}
-              flow={[
-                ...JwtVerifierForm.config_flow
-                  .filter(step => this.props.strategy ? step !== 'strategy' : true),
-                (restrictedStrategy ? {
-                  type: 'group',
-                  name: 'Token payload',
-                  fields: ['token']
-                } : undefined),
-                'graph'
-              ].filter(f => f)}
-              onChange={verifier => {
-                this.setState({ verifier })
-                if (this.props.onChange)
-                  this.props.onChange(verifier);
-              }}
-            />
+            {!isLegacyView && (
+              <>
+                <NgForm
+                  useBreadcrumb={true}
+                  value={verifier}
+                  schema={{
+                    ...JwtVerifierForm.config_schema,
+                    source: restrictedStrategy
+                      ? {
+                          ...JwtVerifierForm.config_schema.source,
+                          props: {
+                            ...JwtVerifierForm.config_schema.source.props,
+                            showSummary: false,
+                          },
+                          label: 'Exit Token location',
+                          flow: JwtVerifierForm.config_schema.source.flow.map((step) => {
+                            if (step?.name === 'Header informations')
+                              return { ...step, fields: ['name'] };
+                            return step;
+                          }),
+                        }
+                      : JwtVerifierForm.config_schema.source,
+                    graph: {
+                      renderer: () => <EntityGraph entity="jwt-verifiers" id={verifier.id} />,
+                    },
+                  }}
+                  flow={[
+                    ...JwtVerifierForm.config_flow.filter((step) =>
+                      this.props.strategy ? step !== 'strategy' : true
+                    ),
+                    restrictedStrategy
+                      ? {
+                          type: 'group',
+                          name: 'Token payload',
+                          fields: ['token'],
+                        }
+                      : undefined,
+                    'graph',
+                  ].filter((f) => f)}
+                  onChange={(verifier) => {
+                    this.setState({ verifier });
+                    if (this.props.onChange) this.props.onChange(verifier);
+                  }}
+                />
+              </>
+            )}
           </>
-          }
-        </>}
+        )}
 
-        {!isConfigView &&
+        {!isConfigView && (
           <NgForm
             value={verifier}
             schema={JwtVerifierForm.config_schema}
             flow={[
               ...JwtVerifierForm.config_flow,
-              restrictedStrategy ? {
-                type: 'group',
-                name: 'Token payload',
-                fields: ['token']
-              } : undefined
-            ].filter(f => f)}
-            onChange={() => { }}
+              restrictedStrategy
+                ? {
+                    type: 'group',
+                    name: 'Token payload',
+                    fields: ['token'],
+                  }
+                : undefined,
+            ].filter((f) => f)}
+            onChange={() => {}}
             readOnly={true}
-          />}
+          />
+        )}
       </div>
-    )
+    );
   }
 }
 
 function Header({ isConfigView, onChange }) {
-  return <PillButton
-    style={{
-      backgroundColor: '#494949'
-    }}
-    rightEnabled={isConfigView}
-    leftText="Edition"
-    rightText="Visualization"
-    onChange={onChange}
-  />
+  return (
+    <PillButton
+      style={{
+        backgroundColor: '#494949',
+      }}
+      rightEnabled={isConfigView}
+      leftText="Edition"
+      rightText="Visualization"
+      onChange={onChange}
+    />
+  );
 }
 
 export class LocationSettings extends Component {

@@ -149,7 +149,11 @@ export class Table extends Component {
     if (e && e.preventDefault) e.preventDefault();
     this.unmountShortcuts();
     if (this.props.parentProps.setTitle) {
-      this.props.parentProps.setTitle(this.props.defaultTitle, this.updateItemAndStay, this.state.currentItem);
+      this.props.parentProps.setTitle(
+        this.props.defaultTitle,
+        this.updateItemAndStay,
+        this.state.currentItem
+      );
     }
     this.setState({ currentItem: null, showAddForm: false });
     this.update();
@@ -164,7 +168,11 @@ export class Table extends Component {
     const defVal = this.props.defaultValue();
 
     if (this.props.parentProps.setTitle) {
-      this.props.parentProps.setTitle(`Create a new ${this.props.itemName}`, this.updateItemAndStay, defVal);
+      this.props.parentProps.setTitle(
+        `Create a new ${this.props.itemName}`,
+        this.updateItemAndStay,
+        defVal
+      );
     }
 
     if (defVal.then) {
@@ -194,7 +202,11 @@ export class Table extends Component {
       urlTo(`/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`);
 
     if (this.props.parentProps.setTitle) {
-      this.props.parentProps.setTitle(`Update a ${this.props.itemName}`, this.updateItemAndStay, item);
+      this.props.parentProps.setTitle(
+        `Update a ${this.props.itemName}`,
+        this.updateItemAndStay,
+        item
+      );
     }
     this.setState({ currentItem: item, showEditForm: true });
   };
@@ -520,23 +532,39 @@ export class Table extends Component {
         )}
         {this.state.showAddForm && (
           <div className="" role="dialog">
-            {this.props.formComponent && [
-              this.props.injectToolbar
+            {this.props.formComponent && <>
+              {this.props.injectToolbar
                 ? this.props.injectToolbar(this.state, (s) => this.setState(s))
-                : null,
+                : null}
               <form className="form-horizontal" style={{ paddingTop: '30px', ...this.props.style }}>
                 {React.createElement(this.props.formComponent, {
+                  showAdvancedForm: this.state.showAdvancedForm,
                   onChange: (currentItem) => {
-                    this.setState({ currentItem })
+                    this.setState({ currentItem });
 
                     if (this.props.parentProps.setTitle)
-                      this.props.parentProps.setTitle(`Create a new ${this.props.itemName}`, this.updateItemAndStay, this.state.currentItem)
+                      this.props.parentProps.setTitle(
+                        `Create a new ${this.props.itemName}`,
+                        this.updateItemAndStay,
+                        this.state.currentItem
+                      );
                   },
                   value: this.state.currentItem,
                   ...(this.props.formPassProps || {}),
                 })}
-              </form>,
-            ]}
+              </form>
+              {this.props.hideAllActions && <div className='mt-3'>
+                {this.props.injectBottomBar &&
+                  this.props.injectBottomBar({
+                    buttons: <button type="button" className="btn btn-sm btn-primary me-1" onClick={this.createItem}>
+                      <i className="fas fa-hdd" /> Create {this.props.itemName}
+                    </button>,
+                    closeEditForm: this.closeAddForm,
+                    state: this.state,
+                    setState: v => this.setState(v)
+                  })}
+              </div>}
+            </>}
             {this.props.formFunction && [
               this.props.injectToolbar
                 ? this.props.injectToolbar(this.state, (s) => this.setState(s))
@@ -557,19 +585,21 @@ export class Table extends Component {
               />
             )}
             <hr />
-            <div className="displayGroupBtn float-end">
-              <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
-                Cancel
-              </button>
-              {this.props.stayAfterSave && (
-                <button type="button" className="btn btn-primary" onClick={this.createItemAndStay}>
-                  <i className="fas fa-hdd" /> Create and stay on this {this.props.itemName}
+            {!this.props.hideAllActions && <>
+              <div className="displayGroupBtn float-end">
+                <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
+                  Cancel
                 </button>
-              )}
-              <button type="button" className="btn btn-primary" onClick={this.createItem}>
-                <i className="fas fa-hdd" /> Create {this.props.itemName}
-              </button>
-            </div>
+                {this.props.stayAfterSave && (
+                  <button type="button" className="btn btn-primary" onClick={this.createItemAndStay}>
+                    <i className="fas fa-hdd" /> Create and stay on this {this.props.itemName}
+                  </button>
+                )}
+                <button type="button" className="btn btn-primary" onClick={this.createItem}>
+                  <i className="fas fa-hdd" /> Create {this.props.itemName}
+                </button>
+              </div>
+            </>}
           </div>
         )}
         {this.state.showEditForm && (
@@ -584,7 +614,11 @@ export class Table extends Component {
                     this.setState({ currentItem });
 
                     if (this.props.parentProps.setTitle)
-                      this.props.parentProps.setTitle(`Update a ${this.props.itemName}`, this.updateItemAndStay, this.state.currentItem)
+                      this.props.parentProps.setTitle(
+                        `Update a ${this.props.itemName}`,
+                        this.updateItemAndStay,
+                        this.state.currentItem
+                      );
                   },
                   value: this.state.currentItem,
                   showAdvancedForm: this.state.showAdvancedForm,
@@ -658,23 +692,28 @@ export class Table extends Component {
                   <i className="fas fa-trash" /> Delete
                 </button>
               )}
-              {!this.props.newForm && <button type="button" className="btn btn-danger" onClick={this.closeEditForm}>
-                <i className="fas fa-times" /> Cancel
-              </button>}
+              {!this.props.newForm && (
+                <button type="button" className="btn btn-danger" onClick={this.closeEditForm}>
+                  <i className="fas fa-times" /> Cancel
+                </button>
+              )}
               {this.props.stayAfterSave && !this.props.newForm && (
                 <button type="button" className="btn btn-success" onClick={this.updateItemAndStay}>
                   <i className="fas fa-hdd" /> Update and stay on this {this.props.itemName}
                 </button>
               )}
-              {!this.props.newForm && <button type="button" className="btn btn-success" onClick={this.updateItem}>
-                <i className="fas fa-hdd" /> Update {this.props.itemName}
-              </button>}
+              {!this.props.newForm && (
+                <button type="button" className="btn btn-success" onClick={this.updateItem}>
+                  <i className="fas fa-hdd" /> Update {this.props.itemName}
+                </button>
+              )}
 
-              {this.props.injectBottomBar && this.props.injectBottomBar({
-                closeEditForm: this.closeEditForm,
-                state: this.state,
-                setState: v => this.setState(v)
-              })}
+              {this.props.injectBottomBar &&
+                this.props.injectBottomBar({
+                  closeEditForm: this.closeEditForm,
+                  state: this.state,
+                  setState: (v) => this.setState(v),
+                })}
             </div>
           </div>
         )}

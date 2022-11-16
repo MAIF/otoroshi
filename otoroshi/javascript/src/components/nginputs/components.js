@@ -43,7 +43,7 @@ export class NgValidationRenderer extends Component {
 
 export class NgFormRenderer extends Component {
   state = {
-    folded: true
+    folded: true,
   };
 
   componentDidMount() {
@@ -71,7 +71,7 @@ export class NgFormRenderer extends Component {
     const lowerTest = test.join('-').toLowerCase();
     const lowerBreadcrumb = breadcrumb.join('-').toLowerCase();
     return lowerTest.startsWith(lowerBreadcrumb) || lowerBreadcrumb.startsWith(lowerTest);
-  }
+  };
 
   getChildrenVisibility = (pathAsArray, breadcrumbAsArray) => {
     if (!this.props.setBreadcrumb) return !this.state.folded;
@@ -83,57 +83,73 @@ export class NgFormRenderer extends Component {
     );
   };
 
-  isAnObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
+  isAnObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
   firstLetterUppercase = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
   displaySummary = (fields, expectedSummaryFields) => {
     const subFilter = expectedSummaryFields.length > 0;
-    const formattedFields = (fields || [])
-      .map(entry => ({ key: entry[0], value: entry[1] }));
+    const formattedFields = (fields || []).map((entry) => ({ key: entry[0], value: entry[1] }));
 
-    const filteredFields = formattedFields
-      .filter(({ key, value }) => {
-        const isNotAnObject = !this.isAnObject(value) &&
-          (Array.isArray(value) ? (subFilter ? expectedSummaryFields.find(f => f.startsWith(key)) : false) : true) &&
-          value !== undefined &&
-          (typeof value === 'boolean' ? true : (value && value.length > 0));
+    const filteredFields = formattedFields.filter(({ key, value }) => {
+      const isNotAnObject =
+        !this.isAnObject(value) &&
+        (Array.isArray(value)
+          ? subFilter
+            ? expectedSummaryFields.find((f) => f.startsWith(key))
+            : false
+          : true) &&
+        value !== undefined &&
+        (typeof value === 'boolean' ? true : value && value.length > 0);
 
-        if (subFilter) {
-          return isNotAnObject && expectedSummaryFields.find(f => f.startsWith(key));
-        } else {
-          return isNotAnObject;
-        }
-      });
+      if (subFilter) {
+        return isNotAnObject && expectedSummaryFields.find((f) => f.startsWith(key));
+      } else {
+        return isNotAnObject;
+      }
+    });
 
     if (filteredFields.length === 0) {
       return null;
     } else {
-      return <div className='d-flex mt-3 ms-3 flex-wrap'>
-        {filteredFields.map(({ key, value }) => {
-          return <div className='d-flex me-3 flex-wrap' key={key}>
-            <span className='me-1' style={{ fontWeight: 'bold' }}>{this.firstLetterUppercase(key)}: </span>
-            {Array.isArray(value) ? value.map(item => {
-              const path = expectedSummaryFields.find(f => f.startsWith(key));
-              return <span key={item}>{get(item, (path.split('.') || []).slice(1))}</span>
-            }) :
-              <span>{typeof value === 'boolean' ? (value ? ' true' : 'false') : value}</span>}
-          </div>
-        })}
-      </div>
+      return (
+        <div className="d-flex mt-3 ms-3 flex-wrap">
+          {filteredFields.map(({ key, value }) => {
+            return (
+              <div className="d-flex me-3 flex-wrap" key={key}>
+                <span className="me-1" style={{ fontWeight: 'bold' }}>
+                  {this.firstLetterUppercase(key)}:{' '}
+                </span>
+                {Array.isArray(value) ? (
+                  value.map((item) => {
+                    const path = expectedSummaryFields.find((f) => f.startsWith(key));
+                    return <span key={item}>{get(item, (path.split('.') || []).slice(1))}</span>;
+                  })
+                ) : (
+                  <span>{typeof value === 'boolean' ? (value ? ' true' : 'false') : value}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
     }
-  }
+  };
 
   render() {
     const breadcrumbAsArray = this.props.breadcrumb || [];
     const pathAsArray = this.props.path || [];
 
-    const showChildren = this.props.readOnly ? true : this.getChildrenVisibility(pathAsArray, breadcrumbAsArray);
-    const clickable = !this.props.setBreadcrumb ? true : !breadcrumbAsArray.join('-').toLowerCase()
-      .startsWith(pathAsArray.join('-').toLowerCase());
-    const isLeaf = !this.props.setBreadcrumb ? true : pathAsArray.length >= breadcrumbAsArray.length;
+    const showChildren = this.props.readOnly
+      ? true
+      : this.getChildrenVisibility(pathAsArray, breadcrumbAsArray);
+    const clickable = !this.props.setBreadcrumb
+      ? true
+      : !breadcrumbAsArray.join('-').toLowerCase().startsWith(pathAsArray.join('-').toLowerCase());
+    const isLeaf = !this.props.setBreadcrumb
+      ? true
+      : pathAsArray.length >= breadcrumbAsArray.length;
 
-    if (!this.match(pathAsArray, breadcrumbAsArray))
-      return null;
+    if (!this.match(pathAsArray, breadcrumbAsArray)) return null;
 
     if (!this.props.embedded) {
       return (
@@ -155,8 +171,11 @@ export class NgFormRenderer extends Component {
 
       const collapsable = rawSchemaProps.collapsable || rawSchema.collapsable;
       const titleVar = rawSchemaProps.label || rawSchema.label || this.props.name;
-      const summaryFields = this.props.readOnly ? [] : (rawSchemaProps.summaryFields || rawSchema.summaryFields || []);
-      const showSummary = rawSchemaProps.showSummary || rawSchema.showSummary || (summaryFields.length > 0);
+      const summaryFields = this.props.readOnly
+        ? []
+        : rawSchemaProps.summaryFields || rawSchema.summaryFields || [];
+      const showSummary =
+        rawSchemaProps.showSummary || rawSchema.showSummary || summaryFields.length > 0;
 
       let title = '...';
       try {
@@ -169,29 +188,40 @@ export class NgFormRenderer extends Component {
       const showTitle = !noTitle && (isLeaf || clickable);
       const summary = Object.entries(this.props.value || {});
 
-      const titleComponent = (!showChildren && showSummary) ?
-        <div style={{ marginLeft: 5, marginTop: 7, marginBottom: 10 }}>
-          <span style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold' }}>{title}</span>
-          {summary.length > 0 && this.displaySummary(summary, summaryFields)}
-        </div>
-        : isFunction(titleVar) && React.isValidElement(title) && !showChildren ?
-          <div style={{ marginLeft: 5, marginTop: 7, marginBottom: 10 }}>{title}</div> :
-          <div style={{
-            color: 'rgb(249, 176, 0)',
-            fontWeight: 'bold',
-            marginLeft: 5,
-            marginTop: 7,
-            marginBottom: 10
-          }}>{title}</div>
+      const titleComponent =
+        !showChildren && showSummary ? (
+          <div style={{ marginLeft: 5, marginTop: 7, marginBottom: 10 }}>
+            <span style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold' }}>{title}</span>
+            {summary.length > 0 && this.displaySummary(summary, summaryFields)}
+          </div>
+        ) : isFunction(titleVar) && React.isValidElement(title) && !showChildren ? (
+          <div style={{ marginLeft: 5, marginTop: 7, marginBottom: 10 }}>{title}</div>
+        ) : (
+          <div
+            style={{
+              color: 'rgb(249, 176, 0)',
+              fontWeight: 'bold',
+              marginLeft: 5,
+              marginTop: 7,
+              marginBottom: 10,
+            }}>
+            {title}
+          </div>
+        );
 
       let EnabledTagComponent = null;
 
-      if (rawSchema?.schema &&
+      if (
+        rawSchema?.schema &&
         Object.keys(rawSchema?.schema).includes('enabled') &&
-        this.props.value && showTitle)
-        EnabledTagComponent = <span className={`badge bg-${this.props.value.enabled ? 'success' : 'danger'} me-3`}>
-          {this.props.value.enabled ? 'Enabled' : 'Disabled'}
-        </span>
+        this.props.value &&
+        showTitle
+      )
+        EnabledTagComponent = (
+          <span className={`badge bg-${this.props.value.enabled ? 'success' : 'danger'} me-3`}>
+            {this.props.value.enabled ? 'Enabled' : 'Disabled'}
+          </span>
+        );
 
       if (collapsable) {
         return (
@@ -204,10 +234,10 @@ export class NgFormRenderer extends Component {
               flexDirection: 'column',
               width: '100%',
               ...(this.props.style || {}),
-              ...(rawSchema.style || {})
-            }} onClick={() => {
-              if (clickable)
-                this.setBreadcrumb()
+              ...(rawSchema.style || {}),
+            }}
+            onClick={() => {
+              if (clickable) this.setBreadcrumb();
             }}>
             <div
               style={{
@@ -220,7 +250,7 @@ export class NgFormRenderer extends Component {
               <div>
                 {EnabledTagComponent}
 
-                {(!this.props.setBreadcrumb && !this.props.readOnly) && (
+                {!this.props.setBreadcrumb && !this.props.readOnly && (
                   <button
                     type="button"
                     className="btn btn-info float-end btn-sm"
@@ -228,12 +258,14 @@ export class NgFormRenderer extends Component {
                     <i className={`fas fa-eye${this.state.folded ? '-slash' : ''}`} />
                   </button>
                 )}
-                {(this.props.setBreadcrumb && clickable && !this.props.readOnly) && <button
-                  type="button"
-                  className="btn btn-info float-end btn-sm"
-                  onClick={this.setBreadcrumb}>
-                  <i className="fas fa-chevron-right"></i>
-                </button>}
+                {this.props.setBreadcrumb && clickable && !this.props.readOnly && (
+                  <button
+                    type="button"
+                    className="btn btn-info float-end btn-sm"
+                    onClick={this.setBreadcrumb}>
+                    <i className="fas fa-chevron-right"></i>
+                  </button>
+                )}
               </div>
             </div>
             {showChildren && <div onClick={(e) => e.stopPropagation()}>{this.props.children}</div>}

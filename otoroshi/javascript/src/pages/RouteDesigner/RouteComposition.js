@@ -6,7 +6,7 @@ import { FeedbackButton } from './FeedbackButton';
 import cloneDeep from 'lodash/cloneDeep';
 import { useHistory, useRouteMatch } from 'react-router-dom';
 import { NgForm } from '../../components/nginputs';
-import { Backend, Frontend } from '../../forms/ng_plugins'
+import { Backend, Frontend } from '../../forms/ng_plugins';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
@@ -83,27 +83,20 @@ class RouteForms extends React.Component {
         collapsable: true,
         schema: toUpperCaseLabels(Frontend.schema),
         props: {
-          showSummary: true
-        }
+          showSummary: true,
+        },
       },
       backend: {
         type: 'form',
         label: 'Backend',
         collapsable: true,
         props: {
-          showSummary: true
+          showSummary: true,
         },
-        flow: props => {
+        flow: (props) => {
           if (props.backend_ref || props.using_backend_ref)
-            return [
-              'using_backend_ref',
-              'backend_ref'
-            ]
-          else
-            return [
-              'using_backend_ref',
-              ...Backend.flow.otoroshi_full_flow
-            ]
+            return ['using_backend_ref', 'backend_ref'];
+          else return ['using_backend_ref', ...Backend.flow.otoroshi_full_flow];
         },
         schema: {
           ...toUpperCaseLabels(Backend.schema),

@@ -25,28 +25,27 @@ import PageTitle from '../../components/PageTitle';
 import Loader from '../../components/Loader';
 
 function BackToButton({ history }) {
-  return <SquareButton
-    onClick={() => {
-      const what = window.location.pathname.split('/')[3];
-      history.push('/' + what);
-    }}
-    icon="fa-arrow-left"
-    text={`Back to ${window.location.pathname.split('/')[3]}`} />
+  return (
+    <SquareButton
+      onClick={() => {
+        const what = window.location.pathname.split('/')[3];
+        history.push('/' + what);
+      }}
+      icon="fa-arrow-left"
+      text={`Back to ${window.location.pathname.split('/')[3]}`}
+    />
+  );
 }
 
 function DeleteRouteButton() {
-  return <SquareButton
-    level="danger"
-    onClick={() => {
-      const what = window.location.pathname.split('/')[3];
-      const id = window.location.pathname.split('/')[4];
-      const kind =
-        what === 'routes'
-          ? nextClient.ENTITIES.ROUTES
-          : nextClient.ENTITIES.SERVICES;
-      window
-        .newConfirm('are you sure you want to delete this entity ?')
-        .then((ok) => {
+  return (
+    <SquareButton
+      level="danger"
+      onClick={() => {
+        const what = window.location.pathname.split('/')[3];
+        const id = window.location.pathname.split('/')[4];
+        const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
+        window.newConfirm('are you sure you want to delete this entity ?').then((ok) => {
           if (ok) {
             nextClient.deleteById(kind, id).then(() => {
               // window.location = '/bo/dashboard/' + what;
@@ -54,25 +53,23 @@ function DeleteRouteButton() {
             });
           }
         });
-    }}
-    icon="fa-trash"
-    text="Delete" />
+      }}
+      icon="fa-trash"
+      text="Delete"
+    />
+  );
 }
 
 function DuplicateButton({ value, history }) {
-  return <SquareButton
-    onClick={(e) => {
-      const what = window.location.pathname.split('/')[3];
-      const id = window.location.pathname.split('/')[4];
-      const prefix = (id.split('_')[0] || what) + '_';
-      const newId = `${prefix}${v4()}`;
-      const kind =
-        what === 'routes'
-          ? nextClient.ENTITIES.ROUTES
-          : nextClient.ENTITIES.SERVICES;
-      window
-        .newConfirm('are you sure you want to duplicate this entity ?')
-        .then((ok) => {
+  return (
+    <SquareButton
+      onClick={(e) => {
+        const what = window.location.pathname.split('/')[3];
+        const id = window.location.pathname.split('/')[4];
+        const prefix = (id.split('_')[0] || what) + '_';
+        const newId = `${prefix}${v4()}`;
+        const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
+        window.newConfirm('are you sure you want to duplicate this entity ?').then((ok) => {
           if (ok) {
             nextClient
               .create(kind, {
@@ -83,21 +80,22 @@ function DuplicateButton({ value, history }) {
               })
               .then(() => {
                 // window.location = '/bo/dashboard/' + what + '/' + newId + '?tab=informations';
-                history.push(
-                  '/' + what + '/' + newId + '?tab=informations'
-                );
+                history.push('/' + what + '/' + newId + '?tab=informations');
               });
           }
         });
-    }}
-    icon="fa-copy"
-    text="Duplicate" />
+      }}
+      icon="fa-copy"
+      text="Duplicate"
+    />
+  );
 }
 
 function BackToRouteTab({ history, routeId, viewPlugins }) {
   return (
     <div className="ms-2" style={{ height: '100%' }}>
-      <button type="button"
+      <button
+        type="button"
         className="btn btn-sm toggle-form-buttons d-flex align-items-center"
         onClick={() => history.replace(`${routeId}?tab=routes&view_plugins=${viewPlugins}`)}
         style={{
@@ -109,13 +107,14 @@ function BackToRouteTab({ history, routeId, viewPlugins }) {
         Back to route
       </button>
     </div>
-  )
+  );
 }
 
 function InformationsTab({ isActive, entity, value, history }) {
   return (
     <div className="ms-2" style={{ height: '100%' }}>
-      <button type="button"
+      <button
+        type="button"
         className="btn btn-sm toggle-form-buttons d-flex align-items-center"
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=informations`;
@@ -123,8 +122,8 @@ function InformationsTab({ isActive, entity, value, history }) {
             history.replace({
               pathname: to,
               state: {
-                value
-              }
+                value,
+              },
             });
         }}
         style={{
@@ -135,14 +134,15 @@ function InformationsTab({ isActive, entity, value, history }) {
         <i className="fas fa-file-alt me-2" style={{ fontSize: '1.33333em' }} />
         Informations
       </button>
-    </div >
-  )
+    </div>
+  );
 }
 
 function RoutesTab({ isActive, entity, value, history }) {
   return (
     <div className="ms-2" style={{ height: '100%' }}>
-      <button type="button"
+      <button
+        type="button"
         className="btn btn-sm toggle-form-buttons d-flex align-items-center"
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=routes`;
@@ -150,8 +150,8 @@ function RoutesTab({ isActive, entity, value, history }) {
             history.replace({
               pathname: to,
               state: {
-                value
-              }
+                value,
+              },
             });
         }}
         style={{
@@ -162,14 +162,15 @@ function RoutesTab({ isActive, entity, value, history }) {
         <i className="fas fa-road me-2" style={{ fontSize: '1.33333em' }} />
         Routes
       </button>
-    </div >
-  )
+    </div>
+  );
 }
 
 function DesignerTab({ isActive, entity, value, history }) {
   return (
     <div className="ms-2" style={{ height: '100%' }}>
-      <button type="button"
+      <button
+        type="button"
         className="btn btn-sm toggle-form-buttons d-flex align-items-center"
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=flow`;
@@ -177,8 +178,8 @@ function DesignerTab({ isActive, entity, value, history }) {
             history.replace({
               pathname: to,
               state: {
-                value
-              }
+                value,
+              },
             });
         }}
         style={{
@@ -190,25 +191,38 @@ function DesignerTab({ isActive, entity, value, history }) {
         Designer
       </button>
     </div>
-  )
+  );
 }
 
-function TesterButton({ disabled, setForceTester, viewRef, history, value, isOnViewPlugins, forceHideTester, query }) {
-  const disabledHelp = 'Your route is disabled. Navigate to the informations page to turn it on again';
+function TesterButton({
+  disabled,
+  setForceTester,
+  viewRef,
+  history,
+  value,
+  isOnViewPlugins,
+  forceHideTester,
+  query,
+}) {
+  const disabledHelp =
+    'Your route is disabled. Navigate to the informations page to turn it on again';
   const hidden = !(isOnViewPlugins || forceHideTester !== true) || query === 'routes';
 
   return (
     <HelpWrapper text={disabled ? disabledHelp : undefined} dataPlacement="bottom">
-      <div className="ms-2 pb-2" style={{
-        height: '100%',
-        opacity: hidden ? 0 : 1,
-        pointerEvents: hidden ? 'none' : 'auto',
-      }}>
-        <button type="button"
+      <div
+        className="ms-2 pb-2"
+        style={{
+          height: '100%',
+          opacity: hidden ? 0 : 1,
+          pointerEvents: hidden ? 'none' : 'auto',
+        }}>
+        <button
+          type="button"
           className="btn btn-sm toggle-form-buttons d-flex align-items-center"
           onClick={() => {
-            setForceTester(true)
-            viewRef?.current?.onTestingButtonClick(history, value)
+            setForceTester(true);
+            viewRef?.current?.onTestingButtonClick(history, value);
           }}
           style={{
             marginLeft: 20,
@@ -221,89 +235,110 @@ function TesterButton({ disabled, setForceTester, viewRef, history, value, isOnV
         </button>
       </div>
     </HelpWrapper>
-  )
+  );
 }
 
 function MoreActionsButton({ value, menu, history }) {
-  return <Dropdown className="ms-2" style={{ height: '100%' }}>
-    <DuplicateButton value={value} history={history} />
-    <JsonExportButton value={value} />
-    <YAMLExportButton value={value} />
-    <DeleteRouteButton />
-    {menu}
-    <BackToButton history={history} />
-  </Dropdown>
+  return (
+    <Dropdown className="ms-2" style={{ height: '100%' }}>
+      <DuplicateButton value={value} history={history} />
+      <JsonExportButton value={value} />
+      <YAMLExportButton value={value} />
+      <DeleteRouteButton />
+      {menu}
+      <BackToButton history={history} />
+    </Dropdown>
+  );
 }
 
-
 function ManagerTitle({
-  query, isCreation, isOnViewPlugins, entity, menu, pathname,
-  value, viewPlugins, viewRef, location, history, saveButton,
-  url, setForceTester, forceHideTester, routeId }) {
-
+  query,
+  isCreation,
+  isOnViewPlugins,
+  entity,
+  menu,
+  pathname,
+  value,
+  viewPlugins,
+  viewRef,
+  location,
+  history,
+  saveButton,
+  url,
+  setForceTester,
+  forceHideTester,
+  routeId,
+}) {
   const commonsProps = {
-    entity, value, history
+    entity,
+    value,
+    history,
   };
 
   const tabs = [
     {
       visible: () => isOnViewPlugins,
-      component: () => <BackToRouteTab history={history} routeId={routeId} viewPlugins={viewPlugins} />
+      component: () => (
+        <BackToRouteTab history={history} routeId={routeId} viewPlugins={viewPlugins} />
+      ),
     },
     {
       visible: () => !isOnViewPlugins,
       tab: 'informations',
-      component: () => <InformationsTab
-        isActive={query === 'informations'} {...commonsProps} />
+      component: () => <InformationsTab isActive={query === 'informations'} {...commonsProps} />,
     },
     {
       visible: () => ['route-compositions'].includes(entity.link),
-      component: () => <RoutesTab
-        isActive={query === 'routes'} {...commonsProps} />
+      component: () => <RoutesTab isActive={query === 'routes'} {...commonsProps} />,
     },
     {
       visible: () => !isOnViewPlugins,
-      component: () => <DesignerTab
-        isActive={query === 'flow'} {...commonsProps} />
+      component: () => <DesignerTab isActive={query === 'flow'} {...commonsProps} />,
     },
     {
-      component: () => <TesterButton
-        disabled={!value.enabled}
-        setForceTester={setForceTester}
-        viewRef={viewRef}
-        history={history}
-        value={value}
-        isOnViewPlugins={isOnViewPlugins}
-        forceHideTester={forceHideTester}
-        query={query}
-      />
+      component: () => (
+        <TesterButton
+          disabled={!value.enabled}
+          setForceTester={setForceTester}
+          viewRef={viewRef}
+          history={history}
+          value={value}
+          isOnViewPlugins={isOnViewPlugins}
+          forceHideTester={forceHideTester}
+          query={query}
+        />
+      ),
     },
     {
       visible: () => !isOnViewPlugins,
-      component: () => <MoreActionsButton value={value} menu={menu} history={history} />
-    }
+      component: () => <MoreActionsButton value={value} menu={menu} history={history} />,
+    },
   ];
 
-  return <PageTitle
-    style={{
-      paddingBottom: pathname === '/routes' ? 'initial' : 0
-    }}
-    title={{
-      flow: 'Designer',
-      informations: 'Informations',
-      routes: 'Routes',
-      route_plugins: 'Route plugins'
-    }[query]}>
-    {!isCreation &&
-      tabs
-        .filter(tab => !tab.visible || tab.visible())
-        .filter(tab => location.state?.routeFromService ? tab.tab === 'Informations' : true)
-        .map(({ component }, i) => {
-          const Tab = component;
-          return <Tab key={`tab-${i}`} />
-        })}
-    {saveButton}
-  </PageTitle>
+  return (
+    <PageTitle
+      style={{
+        paddingBottom: pathname === '/routes' ? 'initial' : 0,
+      }}
+      title={
+        {
+          flow: 'Designer',
+          informations: 'Informations',
+          routes: 'Routes',
+          route_plugins: 'Route plugins',
+        }[query]
+      }>
+      {!isCreation &&
+        tabs
+          .filter((tab) => !tab.visible || tab.visible())
+          .filter((tab) => (location.state?.routeFromService ? tab.tab === 'Informations' : true))
+          .map(({ component }, i) => {
+            const Tab = component;
+            return <Tab key={`tab-${i}`} />;
+          })}
+      {saveButton}
+    </PageTitle>
+  );
 }
 
 class Manager extends React.Component {
@@ -314,10 +349,10 @@ class Manager extends React.Component {
     saveButton: undefined,
     saveTypeButton: undefined,
     forceHideTester: false,
-    loading: !this.props.location?.state?.value
-  }
+    loading: !this.props.location?.state?.value,
+  };
 
-  viewRef = React.createRef(null)
+  viewRef = React.createRef(null);
 
   componentDidMount() {
     if (!this.props.location?.state?.value) {
@@ -333,15 +368,17 @@ class Manager extends React.Component {
     if (this.props.match.params.routeId !== prevProps.match.params.routeId)
       this.loadRoute('componentDidUpdate');
 
-    if (['saveTypeButton', 'menuRefreshed', 'forceHideTester']
-      .some(field => this.state[field] !== prevState[field])) {
-      this.setTitle()
+    if (
+      ['saveTypeButton', 'menuRefreshed', 'forceHideTester'].some(
+        (field) => this.state[field] !== prevState[field]
+      )
+    ) {
+      this.setTitle();
     }
   }
 
   setTitle = () => {
-    if (!this.state.value)
-      return;
+    if (!this.state.value) return;
 
     const { entity, history, location } = this.props;
 
@@ -351,7 +388,7 @@ class Manager extends React.Component {
       query = new URLSearchParams(`?${location.pathname.split('?')[1]}`).get('tab');
     }
 
-    const p = this.props.match.params
+    const p = this.props.match.params;
     const isCreation = p.routeId === 'new';
 
     const rawViewPlugins = new URLSearchParams(location.search).get('view_plugins');
@@ -359,53 +396,58 @@ class Manager extends React.Component {
     const isOnViewPlugins = (viewPlugins !== -1) & (query === 'route_plugins');
     const url = p.url;
 
-    this.props.setTitle(() => <ManagerTitle
-      forceHideTester={this.state.forceHideTester}
-      setForceTester={va => this.setState({ forceHideTester: va })}
-      pathname={location.pathname}
-      menu={this.state.menu}
-      routeId={p.routeId}
-      url={url}
-      query={query}
-      isCreation={isCreation}
-      isOnViewPlugins={isOnViewPlugins}
-      entity={entity}
-      value={this.state.value}
-      viewPlugins={viewPlugins}
-      viewRef={this.viewRef}
-      location={location}
-      history={history}
-      saveButton={this.state.saveButton} />);
-  }
+    this.props.setTitle(() => (
+      <ManagerTitle
+        forceHideTester={this.state.forceHideTester}
+        setForceTester={(va) => this.setState({ forceHideTester: va })}
+        pathname={location.pathname}
+        menu={this.state.menu}
+        routeId={p.routeId}
+        url={url}
+        query={query}
+        isCreation={isCreation}
+        isOnViewPlugins={isOnViewPlugins}
+        entity={entity}
+        value={this.state.value}
+        viewPlugins={viewPlugins}
+        viewRef={this.viewRef}
+        location={location}
+        history={history}
+        saveButton={this.state.saveButton}
+      />
+    ));
+  };
 
-  loadRoute = from => {
+  loadRoute = (from) => {
     const { routeId } = this.props.match.params || { routeId: undefined };
 
     if (routeId === 'new') {
-      nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName])
-        .then(value => {
-          this.setState({ value, loading: false }, this.updateSidebar)
-        });
+      nextClient.template(nextClient.ENTITIES[this.props.entity.fetchName]).then((value) => {
+        this.setState({ value, loading: false }, this.updateSidebar);
+      });
     } else {
-      if (this.props.location.state?.routeFromService)
-        this.setState({ value: this.props.location.state?.routeFromService, loading: false }, this.updateSidebar)
-      else
-        nextClient.fetch(nextClient.ENTITIES[this.props.entity.fetchName], routeId)
-          .then(res => {
-            if (!res.error) {
-              this.setState({ value: res, loading: false }, this.updateSidebar)
-            }
-          });
+      if (this.props.location.state && this.props.location.state.routeFromService) {
+        this.setState(
+          { value: this.props.location.state.routeFromService, loading: false },
+          this.updateSidebar
+        );
+      } else {
+        nextClient.fetch(nextClient.ENTITIES[this.props.entity.fetchName], routeId).then((res) => {
+          if (!res.error) {
+            this.setState({ value: res, loading: false }, this.updateSidebar);
+          }
+        });
+      }
     }
-  }
+  };
 
   updateSidebar = () => {
     this.props.setSidebarContent(
       <DesignerSidebar route={this.state.value} setSidebarContent={this.props.setSidebarContent} />
     );
 
-    this.setTitle()
-  }
+    this.setTitle();
+  };
 
   render() {
     const { entity, history, location, ...props } = this.props;
@@ -416,7 +458,7 @@ class Manager extends React.Component {
       query = new URLSearchParams(`?${location.pathname.split('?')[1]}`).get('tab');
     }
 
-    const p = this.props.match.params
+    const p = this.props.match.params;
     const isCreation = p.routeId === 'new';
 
     const rawViewPlugins = new URLSearchParams(location.search).get('view_plugins');
@@ -429,15 +471,15 @@ class Manager extends React.Component {
         render: () => (
           <Designer
             {...this.props}
-            toggleTesterButton={va => this.setState({ forceHideTester: va })}
+            toggleTesterButton={(va) => this.setState({ forceHideTester: va })}
             ref={this.viewRef}
             tab={query}
             history={history}
             value={this.state.value}
-            setValue={v => this.setState({ value: v }, this.setTitle)}
-            setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'routes' })}
+            setValue={(v) => this.setState({ value: v }, this.setTitle)}
+            setSaveButton={(n) => this.setState({ saveButton: n, saveTypeButton: 'routes' })}
             viewPlugins={viewPlugins}
-            setMenu={n => this.setState({ menu: n, menuRefreshed: Date.now() })}
+            setMenu={(n) => this.setState({ menu: n, menuRefreshed: Date.now() })}
           />
         ),
       },
@@ -448,13 +490,20 @@ class Manager extends React.Component {
             <RouteCompositions
               ref={this.viewRef}
               service={this.state.value}
-              setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'route-compositions' })}
-              setRoutes={routes => this.setState({
-                value: {
-                  ...this.state.value,
-                  routes
-                }
-              }, this.setTitle)}
+              setSaveButton={(n) =>
+                this.setState({ saveButton: n, saveTypeButton: 'route-compositions' })
+              }
+              setRoutes={(routes) =>
+                this.setState(
+                  {
+                    value: {
+                      ...this.state.value,
+                      routes,
+                    },
+                  },
+                  this.setTitle
+                )
+              }
               viewPlugins={viewPlugins}
             />
           ),
@@ -464,52 +513,63 @@ class Manager extends React.Component {
     const component = divs.filter((p) => p.predicate);
 
     if (component.length > 0) {
-      return <Loader loading={loading}>
-        <div className="designer row">{component[0].render()}</div>
-      </Loader>
+      return (
+        <Loader loading={loading}>
+          <div className="designer row">{component[0].render()}</div>
+        </Loader>
+      );
     }
 
-    return <Loader loading={loading}>
-      <div className="designer row ps-3">
-        <Informations
-          {...this.props}
-          routeId={p.routeId}
-          ref={this.viewRef}
-          isCreation={isCreation}
-          value={value}
-          setValue={v => this.setState({ value: v })}
-          setSaveButton={n => this.setState({ saveButton: n, saveTypeButton: 'informations' }, this.setTitle)}
-        />
-      </div>
-    </Loader>
+    return (
+      <Loader loading={loading}>
+        <div className="designer row ps-3">
+          <Informations
+            {...this.props}
+            routeId={p.routeId}
+            ref={this.viewRef}
+            isCreation={isCreation}
+            value={value}
+            setValue={(v) => this.setState({ value: v })}
+            setSaveButton={(n) =>
+              this.setState({ saveButton: n, saveTypeButton: 'informations' }, this.setTitle)
+            }
+          />
+        </div>
+      </Loader>
+    );
   }
 }
 
 const RoutesView = ({ history }) => {
   const [creation, setCreation] = useState(false);
   const [importServiceDescriptor, setImportServiceDescriptor] = useState(false);
-  const { pathname } = useLocation()
+  const { pathname } = useLocation();
 
   return (
     <>
       {creation && <RouteWizard hide={() => setCreation(false)} history={history} />}
-      {importServiceDescriptor && <ImportServiceDescriptor hide={() => setImportServiceDescriptor(false)} history={history} />}
+      {importServiceDescriptor && (
+        <ImportServiceDescriptor hide={() => setImportServiceDescriptor(false)} history={history} />
+      )}
       <Routes
-        injectTopBar={pathname.includes('route-compositions') ?
-          null : <>
-            <button
-              onClick={() => setCreation(true)}
-              className="btn btn-primary"
-              style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
-              <i className="fas fa-hat-wizard" /> Create with wizard
-            </button>
-            <button
-              onClick={() => setImportServiceDescriptor(true)}
-              className="btn btn-primary"
-              style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
-              <i className="fas fas fa-exchange-alt" /> Convert a service descriptor
-            </button>
-          </>}
+        injectTopBar={
+          pathname.includes('route-compositions') ? null : (
+            <>
+              <button
+                onClick={() => setCreation(true)}
+                className="btn btn-primary"
+                style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+                <i className="fas fa-hat-wizard" /> Create with wizard
+              </button>
+              <button
+                onClick={() => setImportServiceDescriptor(true)}
+                className="btn btn-primary"
+                style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+                <i className="fas fas fa-exchange-alt" /> Convert a service descriptor
+              </button>
+            </>
+          )
+        }
       />
     </>
   );
@@ -552,11 +612,8 @@ class RouteDesigner extends React.Component {
           { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
           {
             path: `${match.url}/:routeId`,
-            component: p => <Manager
-              {...this.props}
-              {...p}
-              entity={entity} />
-          }
+            component: (p) => <Manager {...this.props} {...p} entity={entity} />,
+          },
         ].map(({ path, component }) => {
           const Component = component;
           return (
@@ -564,13 +621,15 @@ class RouteDesigner extends React.Component {
               exact
               key={path}
               path={path}
-              component={p => {
-                return <Component
-                  setSidebarContent={this.props.setSidebarContent}
-                  setTitle={this.props.setTitle}
-                  {...p}
-                  {...p.match}
-                />
+              component={(p) => {
+                return (
+                  <Component
+                    setSidebarContent={this.props.setSidebarContent}
+                    setTitle={this.props.setTitle}
+                    {...p}
+                    {...p.match}
+                  />
+                );
               }}
             />
           );
@@ -579,6 +638,6 @@ class RouteDesigner extends React.Component {
       </Switch>
     );
   }
-};
+}
 
 export default withRouter(RouteDesigner);

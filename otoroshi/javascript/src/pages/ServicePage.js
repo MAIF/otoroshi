@@ -1494,22 +1494,26 @@ export class ServicePage extends Component {
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length === 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.domain
-                        }${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                        this.state.service.domain
+                      }${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length > 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
-                        }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                        this.state.service.subdomain
+                      }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env !== 'prod' && (
                   <LinkDisplay
-                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
-                      }.${this.state.service.env}.${this.state.service.domain}${this.state.service.matchingRoot || ''
-                      }/`}
+                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                      this.state.service.subdomain
+                    }.${this.state.service.env}.${this.state.service.domain}${
+                      this.state.service.matchingRoot || ''
+                    }/`}
                   />
                 )}
               </>
@@ -3459,10 +3463,11 @@ export class TemplateInput extends Component {
             </a>
         </div>
         <div class="jumbotron">
-            ${error
-        ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
-        : `<h2 style="color:white;">${title}</h2>`
-      }
+            ${
+              error
+                ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
+                : `<h2 style="color:white;">${title}</h2>`
+            }
             <p class="lead">
               ${message}
             </p>
@@ -3565,9 +3570,7 @@ export class TemplateInput extends Component {
         <div className="row mb-3">
           <label className="col-xs-12 col-sm-2 col-form-label" />
           <div className="col-sm-8">
-            <p className="sub-container sub-container__bg-color">
-              {this.message}
-            </p>
+            <p className="sub-container sub-container__bg-color">{this.message}</p>
           </div>
           <div className="col-sm-2">
             <button
