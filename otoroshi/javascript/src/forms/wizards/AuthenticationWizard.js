@@ -104,28 +104,28 @@ function Selector({ setMode, disableSelectMode }) {
   </div>
 }
 
-function JwtVerifierSelector({ handleSelect, allowedStrategy, mode }) {
-  const [verifiers, setVerifiers] = useState([]);
+function AuthenticationSelector({ handleSelect, allowedStrategy, mode }) {
+  const [authentications, setAuthentications] = useState([]);
 
   useEffect(() => {
-    BackOfficeServices.findAllJwtVerifiers()
-      .then(setVerifiers)
+    BackOfficeServices.findAllAuthConfigs()
+      .then(setAuthentications)
   }, []);
 
   return <div className='d-flex flex-column mt-3' style={{ flex: 1 }}>
     <div className='d-flex align-items-center justify-content-between'>
-      <h3>Select {mode === 'clone' ? 'the verifier to clone' : 'a verifier'}</h3>
+      <h3>Select {mode === 'clone' ? 'the authentication configuration to clone' : 'a authentication configuration'}</h3>
     </div>
     <div style={{ maxHeight: '36px' }} className="mt-3">
       <NgSelectRenderer
-        placeholder="Select a verifier to continue"
+        placeholder="Select a authentication configuration to continue"
         ngOptions={{
           spread: true
         }}
         onChange={id => {
-          handleSelect(verifiers.find(v => v.id === id))
+          handleSelect(authentications.find(v => v.id === id))
         }}
-        options={verifiers.filter(verifier => allowedStrategy ? verifier.strategy.type === allowedStrategy : true)}
+        options={authentications.filter(authentication => allowedStrategy ? authentication.strategy.type === allowedStrategy : true)}
         optionsTransformer={arr => arr.map(item => ({ value: item.id, label: item.name }))} />
     </div>
   </div>
@@ -304,6 +304,32 @@ export class AuthenticationWizard extends React.Component {
           }
         },
         {
+          component: LdapConfiguration,
+          index: 3,
+          condition: value => 'ldap' === value.type,
+          props: {
+            value: authenticationConfig,
+            onChange: authenticationConfig => {
+              this.setState({ authenticationConfig }, () => {
+                this.updateBreadcrumb('configuration', 2);
+              })
+            }
+          }
+        },
+        {
+          component: SAMLConfiguration,
+          index: 3,
+          condition: value => 'saml' === value.type,
+          props: {
+            value: authenticationConfig,
+            onChange: authenticationConfig => {
+              this.setState({ authenticationConfig }, () => {
+                this.updateBreadcrumb('configuration', 2);
+              })
+            }
+          }
+        },
+        {
           component: OAuth2RawConfiguration,
           condition: value => 'oauth2' === value.type && "raw-config" === value.configuration,
           index: 4
@@ -330,7 +356,7 @@ export class AuthenticationWizard extends React.Component {
 
               {mode !== 'selector' && <>
                 {['edition', 'clone'].includes(mode) ?
-                  <JwtVerifierSelector
+                  <AuthenticationSelector
                     mode={mode}
                     allowedStrategy={this.props.allowedStrategy}
                     handleSelect={verifier => {
@@ -404,7 +430,7 @@ export class AuthenticationWizard extends React.Component {
 }
 
 function WizardLastStep({ value, breadcrumb, onConfirm }) {
-  const [verifier, setVerifier] = useState();
+  const [authentication, setAuthentication] = useState();
   const history = useHistory();
 
   const [error, setError] = useState(false);
@@ -412,29 +438,20 @@ function WizardLastStep({ value, breadcrumb, onConfirm }) {
 
   const create = () => {
     setCreating(true);
-    BackOfficeServices.createNewJwtVerifier()
+    return BackOfficeServices.createNewAuthConfig(value.type)
       .then(template => {
-        BackOfficeServices.createJwtVerifier({
+        console.log(template)
+        BackOfficeServices.createAuthConfig({
           ...template,
-          name: value.name || 'Default name',
-          source: value.source,
-          algoSettings: {
-            ...template.algoSettings,
-            ...value.algoSettings,
-          },
-          strategy: {
-            ...template.strategy,
-            ...value.strategy,
-            type: value.strategy.type
-          }
+          ...value
         })
           .then(res => {
             if (res.error) {
               setError(true);
             } else if (onConfirm) {
-              onConfirm(template.id)
+              onConfirm(res.id)
             } else {
-              setVerifier(template);
+              setAuthentication(res);
             }
           })
       })
@@ -466,13 +483,13 @@ function WizardLastStep({ value, breadcrumb, onConfirm }) {
         Confirm
       </Button>}
 
-      {(verifier || error) && <Button type='save'
+      {(authentication || error) && <Button type='save'
         className='mx-auto mt-3'
         disabled={error}
-        onClick={() => history.push(`/jwt-verifiers/edit/${verifier.id}`)}
+        onClick={() => history.push(`/auth-configs/edit/${authentication.id}`)}
       >
         <i className={`fas fa-${error ? 'times' : 'check'} me-1`} />
-        {error ? 'Something wrong happened : try to check your configuration' : 'See the created verifier'}
+        {error ? 'Something wrong happened : try to check your configuration' : 'Check the created authentication configuration'}
       </Button>}
     </>
   )
@@ -842,6 +859,7 @@ function OAuth1Configuration({ value, onChange }) {
       type: 'dots',
       label: 'Http Method',
       props: {
+        defaultValue: 'get',
         help: 'Method used to get request_token and access token',
         options: ['post', 'get']
       },
@@ -972,7 +990,7 @@ function GetPassword({ password }) {
 
   return <div>
     <p>The generated password is</p>
-    <div class="d-flex align-items-center justify-content-center p-3"
+    <div className="d-flex align-items-center justify-content-center p-3"
       style={{
         fontWeight: 'bold',
         background: '#494949',
@@ -1211,7 +1229,6 @@ class User extends React.Component {
   }
 }
 
-
 function SelectableButton({ value, expected, title, desc, onChange }) {
   return <Button
     type={value === expected ? 'save' : 'dark'}
@@ -1235,4 +1252,269 @@ function SelectableButton({ value, expected, title, desc, onChange }) {
       </label>
     </div>
   </Button>
+}
+
+function LdapConfiguration({ value, onChange }) {
+
+  const schema = {
+    serverUrls: {
+      type: 'string',
+      array: true,
+      label: "LDAP Server URL",
+      props: {
+        subTitle: "Set your LDAP server"
+      }
+    },
+    searchBase: {
+      type: 'string',
+      label: 'Search base',
+      props: {
+        subTitle: 'Example: dc=example,dc=com'
+      }
+    },
+    userBase: {
+      type: 'string',
+      label: 'Users search base'
+    },
+    searchFilter: {
+      type: 'string',
+      label: 'Search Filter',
+      props: {
+        subTitle: "Example: (uid=${username})"
+      }
+    },
+    adminUsername: {
+      type: 'string',
+      label: "Admin username (bind DN)",
+      props: {
+        subTitle: "Example: cn=read-only-admin,dc=example,dc=com"
+      }
+    },
+    adminPassword: {
+      type: 'password',
+      label: "Admin password",
+      props: {
+        subTitle: "Example: password"
+      }
+    },
+    nameField: {
+      type: 'string',
+      label: 'Name field name',
+      props: {
+        subTitle: "Example: cn"
+      }
+    },
+    emailField: {
+      type: 'string',
+      label: 'Email field name',
+      props: {
+        subTitle: "Example: email"
+      }
+    }
+  }
+
+  const flow = [
+    {
+      type: 'group',
+      name: 'Server URLs',
+      collapsable: false,
+      fields: ['serverUrls']
+    },
+    {
+      type: 'group',
+      name: 'Search bases',
+      collapsable: false,
+      fields: ['searchBase', 'userBase', 'searchFilter']
+    },
+    {
+      type: 'group',
+      name: 'Admin credentials',
+      collapsable: false,
+      fields: ['adminUsername', 'adminPassword']
+    },
+    {
+      type: 'group',
+      name: 'Extracted fields',
+      collapsable: false,
+      fields: ['nameField', 'emailField']
+    },
+  ];
+
+  return <>
+    <h3>LDAP Configuration</h3>
+    <NgForm
+      value={value}
+      flow={flow}
+      schema={schema}
+      onChange={onChange}
+    />
+  </>
+}
+
+function SAMLConfiguration({ value, onChange }) {
+
+  const _fetchConfig = (body) => {
+    return fetch('/bo/api/saml/_fetchConfig', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    }).then((res) => {
+      res.json()
+        .then((r) => {
+          if (res.status >= 400)
+            throw "Can't fetch data"
+          else
+            onChange({
+              ...r,
+              from: 'Raw values',
+              configuration: value.configuration,
+              name: value.name,
+              source: value.source,
+              type: value.type,
+              url: value.url
+            });
+        });
+    });
+  };
+
+  const fetchFromURL = () => _fetchConfig({ url: value.url });
+
+  const fetchConfig = () => _fetchConfig({ xml: value.pasteConfig })
+
+  const schema = {
+    from: {
+      type: 'dots',
+      label: 'Source',
+      props: {
+        options: [
+          'Get entity descriptor from URL',
+          'Paste configuration',
+          'Raw values'
+        ]
+      }
+    },
+    url: {
+      type: 'string',
+      visible: props => props.from === 'Get entity descriptor from URL',
+      label: 'URL'
+    },
+    pasteConfig: {
+      type: 'code',
+      visible: props => props.from === 'Paste configuration',
+      label: 'Configuration',
+      props: {
+        editorOnly: true,
+        mode: 'xml'
+      }
+    },
+    singleSignOnUrl: {
+      type: 'string',
+      label: 'Single sign on URL'
+    },
+    ssoProtocolBinding: {
+      type: 'dots',
+      label: 'The protocol binding for the login request',
+      props: {
+        defaultValue: 'post',
+        options: [
+          { value: 'post', label: 'Post' },
+          { value: 'redirect', label: 'Redirect' },
+        ],
+      },
+    },
+    singleLogoutUrl: {
+      type: 'string',
+      label: 'Single Logout URL'
+    },
+    singleLogoutProtocolBinding: {
+      type: 'dots',
+      label: 'The protocol binding for the logout request',
+      props: {
+        defaultValue: 'post',
+        options: [
+          { value: 'post', label: 'Post' },
+          { value: 'redirect', label: 'Redirect' },
+        ],
+      },
+    },
+    nameIDFormat: {
+      type: 'dots',
+      label: 'Name ID Format',
+      props: {
+        options: [
+          { value: 'unspecified', label: 'Unspecified' },
+          { value: 'emailAddress', label: 'Email address' },
+          { value: 'persistent', label: 'Persistent' },
+          { value: 'transient', label: 'Transient' },
+          { value: 'kerberos', label: 'Kerberos' },
+          { value: 'entity', label: 'Entity' },
+        ],
+      },
+    },
+    issuer: {
+      type: 'string',
+      label: 'URL issuer'
+    },
+    fetchConfig: {
+      renderer: props => {
+        if (value.url?.length > 0 || value.pasteConfig?.length > 0) {
+          return <LabelAndInput label=" ">
+            <FeedbackButton
+              style={{
+                backgroundColor: '#f9b000',
+                borderColor: '#f9b000'
+              }}
+              onPress={'Paste configuration' === value.from ? fetchConfig : fetchFromURL}
+              icon={() => <i className='fas fa-paper-plane' />}
+              text="Fetch configuration"
+            />
+          </LabelAndInput>
+        } else {
+          return null;
+        }
+      }
+    }
+  }
+
+  const flow = [
+    {
+      type: 'group',
+      name: 'Source',
+      collapsable: false,
+      fields: [
+        'from',
+        'url',
+        'pasteConfig',
+        'fetchConfig'
+      ]
+    },
+    {
+      type: 'group',
+      visible: () => value?.length > 5 || value?.from === 'Raw values',
+      name: 'Informations',
+      collapsable: false,
+      fields: [
+        'singleSignOnUrl',
+        'ssoProtocolBinding',
+        'singleLogoutUrl',
+        'singleLogoutProtocolBinding',
+        'nameIDFormat',
+        'issuer'
+      ]
+    }
+  ];
+
+  return <>
+    <h3>SAML V2 Configuration</h3>
+
+    <NgForm
+      value={value}
+      schema={schema}
+      onChange={onChange}
+      flow={flow}
+    />
+  </>
 }

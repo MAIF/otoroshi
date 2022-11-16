@@ -8,6 +8,7 @@ import { DefaultAdminPopover } from '../components/inputs';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { JsonObjectAsCodeInput } from './inputs/CodeInput';
+import { Link } from 'react-router-dom';
 
 function extractEnv(value = '') {
   const parts = value.split(' ');
@@ -703,9 +704,12 @@ export class TopBar extends Component {
                         <span className="fas fa-folder-open" /> Teams
                       </a>
                     )}
-                    <a href="/bo/dashboard/groups" className="dropdown-item">
+                    {/* <a href="/bo/dashboard/groups" className="dropdown-item">
                       <span className="fas fa-folder-open" /> Service groups
-                    </a>
+                    </a> */}
+                    <Link to="groups" className="dropdown-item">
+                      <span className="fas fa-folder-open" /> Service groups
+                    </Link>
 
                     {window.__otoroshi__env__latest.userAdmin && (
                       <a href="/bo/dashboard/clever" className="dropdown-item">

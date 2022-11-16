@@ -44,11 +44,11 @@ export class AuthModuleConfigsPage extends Component {
   render() {
     const { showWizard } = this.state;
 
-    const JwtVerifierWizard = ClassifiedForms.wizards.AuthenticationWizard;
+    const AuthenticationWizard = ClassifiedForms.wizards.AuthenticationWizard;
 
     return (
       <div>
-        {showWizard && <JwtVerifierWizard hide={() => this.setState({ showWizard: false })} disableSelectMode={true} />}
+        {showWizard && <AuthenticationWizard hide={() => this.setState({ showWizard: false })} disableSelectMode={true} />}
         <Table
           parentProps={this.props}
           selfUrl="auth-configs"

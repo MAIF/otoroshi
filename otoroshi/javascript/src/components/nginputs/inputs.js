@@ -102,15 +102,12 @@ export class NgDotsRenderer extends Component {
             const selected = isValueArray ? value.includes(rawOption) : value === rawOption;
 
             let backgroundColorFromOption = 'initial';
-            let btnBackground = '';
-
-            if (optObj && option.color)
+            
+            if (optObj && option.color) {
               backgroundColorFromOption = `rgba(${option.color.replace(')', '').replace('rgb(', '')}, ${selected ? 1 : .45})`;
+            }
 
-            if ((!optObj || backgroundColorFromOption === 'initial'))
-              btnBackground = selected ? 'btn-info' : 'btn-dark';
-
-            return <button className={`btn btn-radius-25 btn-sm ${optObj ? '' : (selected ? 'btn-info' : 'btn-dark')} me-2 px-3 mb-2`}
+            return <button className={`btn btn-radius-25 btn-sm ${option.color ? '' : (selected ? 'btn-info' : 'btn-dark')} me-2 px-3 mb-2`}
               type="button"
               key={rawOption}
               style={{
