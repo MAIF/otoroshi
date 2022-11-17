@@ -877,10 +877,11 @@ export class ServicePage extends Component {
         .then((name) => {
           if (name && name === this.state.service.name) {
             BackOfficeServices.deleteService(this.state.service).then(() => {
-              window.location.href = `/bo/dashboard/services`;
-              // this.props.history.push({
-              //   pathname: `/lines/${this.state.service.env}/services`
-              // });
+              if(this.props.history) {
+                this.props.history.push('/services');
+              } else {
+                window.location.href = `/bo/dashboard/services`;
+              }
             });
           }
         });

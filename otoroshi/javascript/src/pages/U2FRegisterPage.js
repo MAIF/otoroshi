@@ -218,7 +218,11 @@ export class U2FRegisterPage extends Component {
                 fetch('/backoffice/auth0/logout', {
                   credentials: 'include',
                 }).then(() => {
-                  window.location.href = '/bo/dashboard/admins';
+                  if (this.props.history) {
+                    this.props.history.push('/admins')
+                  } else {
+                    window.location.href = '/bo/dashboard/admins';
+                  }
                 });
               }
             }, 1000);
