@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 import { createTooltip } from '../tooltips';
 
@@ -19,44 +20,44 @@ export function DefaultSidebar(props) {
         </h3>
       </li>
       <li className="nav-item" key="all">
-        <a
-          href={`/bo/dashboard/services`}
+        <Link
+          to="/services"
           className={`nav-link ${rootClassName('services')}`}
           {...createTooltip('List all services declared in Otoroshi')}>
           {' '}
           All services
-        </a>
+        </Link>
       </li>
       {props.lines.map((line) => (
         <li className="nav-item" key={line}>
-          <a
-            href={`/bo/dashboard/services?env=${line}`}
+          <Link
+            to={`/services?env=${line}`}
             className={`nav-link ${className(line)}`}
             {...createTooltip(`List all services declared in Otoroshi for line ${line}`)}>
             {' '}
             For line {line}
-          </a>
+          </Link>
         </li>
       ))}
       <li className="nav-item">
-        <a
-          href="#"
+        <Link
+          to="#"
           onClick={props.addService}
           className="nav-link"
           {...createTooltip('Create a new service descriptor')}>
           <i className="fas fa-plus" /> Add service
-        </a>
+        </Link>
       </li>
       {props.env && props.env.clevercloud && (
         <li className="nav-item">
-          <a
-            href="/bo/dashboard/clever"
+          <Link
+            to="/clever"
             className={`nav-link ${rootClassName('clever')}`}
             {...createTooltip(
               'Create a new service descriptor based on an existing Clever Cloud application'
             )}>
             <i className="fas fa-plus" /> Add service from a CleverApp
-          </a>
+          </Link>
         </li>
       )}
       <li className="nav-item">
@@ -65,21 +66,21 @@ export function DefaultSidebar(props) {
         </h3>
       </li>
       <li className="nav-item" key="all-apikeys">
-        <a
-          href={`/bo/dashboard/apikeys`}
+        <Link
+          to="/apikeys"
           className={`nav-link ${rootClassName('apikeys')}`}
           {...createTooltip('List all apikeys declared in Otoroshi')}>
           {' '}
           All apikeys
-        </a>
+        </Link>
       </li>
       <li className="nav-item">
-        <a
-          href={`/bo/dashboard/apikeys/add`}
+        <Link
+          to="/apikeys/add"
           className="nav-link"
           {...createTooltip('Create a new apikey')}>
           <i className="fas fa-plus" /> Add apikey
-        </a>
+        </Link>
       </li>
       <li className="nav-item">
         <h3 className="mt-3">
@@ -87,21 +88,21 @@ export function DefaultSidebar(props) {
         </h3>
       </li>
       <li className="nav-item" key="all-tcp-services">
-        <a
-          href={`/bo/dashboard/tcp/services`}
+        <Link
+          to="/tcp/services"
           className={`nav-link ${rootClassName('tcp-services')}`}
           {...createTooltip('List all Tcp services declared in Otoroshi')}>
           {' '}
           All services
-        </a>
+        </Link>
       </li>
       <li className="nav-item">
-        <a
-          href={`/bo/dashboard/tcp/services/add`}
+        <Link
+          to="/tcp/services/add"
           className="nav-link"
           {...createTooltip('Create a new Tcp service')}>
           <i className="fas fa-plus" /> Add Tcp service
-        </a>
+        </Link>
       </li>
     </ul>
   );
