@@ -557,9 +557,9 @@ export class TopBar extends Component {
                 aria-expanded="false">
                 <span className="navbar-toggler-icon">Menu</span>
               </button>
-              <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
+              <Link className="navbar-brand" to="/" style={{ display: 'flex' }}>
                 {this.brandName()}
-              </a>
+              </Link>
             </div>
             <form id="navbar" className="navbar-form navbar-left align-self-center">
               {selected && (

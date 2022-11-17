@@ -45,6 +45,7 @@ import { Scripts } from '../components/Scripts';
 import { Location } from '../components/Location';
 
 import Loader from '../components/Loader';
+import { Link } from 'react-router-dom';
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -877,7 +878,7 @@ export class ServicePage extends Component {
         .then((name) => {
           if (name && name === this.state.service.name) {
             BackOfficeServices.deleteService(this.state.service).then(() => {
-              if(this.props.history) {
+              if (this.props.history) {
                 this.props.history.push('/services');
               } else {
                 window.location.href = `/bo/dashboard/services`;
@@ -1495,26 +1496,22 @@ export class ServicePage extends Component {
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length === 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                        this.state.service.domain
-                      }${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.domain
+                        }${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length > 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                        this.state.service.subdomain
-                      }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
+                        }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env !== 'prod' && (
                   <LinkDisplay
-                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                      this.state.service.subdomain
-                    }.${this.state.service.env}.${this.state.service.domain}${
-                      this.state.service.matchingRoot || ''
-                    }/`}
+                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
+                      }.${this.state.service.env}.${this.state.service.domain}${this.state.service.matchingRoot || ''
+                      }/`}
                   />
                 )}
               </>
@@ -1993,20 +1990,20 @@ export class ServicePage extends Component {
               <label className="col-xs-12 col-sm-2 col-form-label" />
               <div className="col-sm-10 input-group-btn">
                 {!this.state.service.authConfigRef && (
-                  <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
+                  <Link to="/auth-configs/add" className="btn btn-sm btn-primary">
                     <i className="fas fa-plus" /> Create a new auth. config.
-                  </a>
+                  </Link>
                 )}
                 {this.state.service.authConfigRef && (
-                  <a
-                    href={`/bo/dashboard/auth-configs/edit/${this.state.service.authConfigRef}`}
+                  <Link
+                    to={`/auth-configs/edit/${this.state.service.authConfigRef}`}
                     className="btn btn-sm btn-success">
                     <i className="fas fa-edit" /> Edit the auth. config.
-                  </a>
+                  </Link>
                 )}
-                <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
+                <Link to="/auth-configs" className="btn btn-sm btn-primary">
                   <i className="fas fa-link" /> all auth. config.
-                </a>
+                </Link>
               </div>
             </div>
             <ArrayInput
@@ -3464,11 +3461,10 @@ export class TemplateInput extends Component {
             </a>
         </div>
         <div class="jumbotron">
-            ${
-              error
-                ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
-                : `<h2 style="color:white;">${title}</h2>`
-            }
+            ${error
+        ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
+        : `<h2 style="color:white;">${title}</h2>`
+      }
             <p class="lead">
               ${message}
             </p>

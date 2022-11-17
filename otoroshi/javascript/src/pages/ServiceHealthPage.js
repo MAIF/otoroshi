@@ -8,6 +8,7 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import DesignerSidebar from './RouteDesigner/Sidebar';
 
 import 'antd/dist/antd.css';
+import { Link } from 'react-router-dom';
 
 export class ServiceHealthPage extends Component {
   state = {
@@ -98,9 +99,9 @@ export class ServiceHealthPage extends Component {
             instance connected to your Otoroshi
           </p>
           <p>
-            To do that, add a <a href="/bo/dashboard/exporters">data exporter</a> sending events to
+            To do that, add a <Link to="/exporters">data exporter</Link> sending events to
             an ElasticSearch and settings to read events from your ElasticSeach in the{' '}
-            <a href="/bo/dashboard/dangerzone">Danger Zone</a>
+            <Link to="/dangerzone">Danger Zone</Link>
           </p>
         </>
       );

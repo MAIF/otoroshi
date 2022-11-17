@@ -5,6 +5,7 @@ import { ArrayInput, Form } from './inputs';
 import showdown from 'showdown';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/monokai.css';
+import { Link } from 'react-router-dom';
 
 window.hljs = window.hljs || hljs;
 
@@ -280,13 +281,12 @@ export class Scripts extends Component {
   render() {
     const url = this.props.type
       ? this.props.excludedTypes
-        ? `/bo/api/proxy/api/scripts/_list?type=${
-            this.props.type
-          }&excluded_types=${this.props.excludedTypes.join(',')}`
+        ? `/bo/api/proxy/api/scripts/_list?type=${this.props.type
+        }&excluded_types=${this.props.excludedTypes.join(',')}`
         : `/bo/api/proxy/api/scripts/_list?type=${this.props.type}`
       : this.props.excludedTypes
-      ? `/bo/api/proxy/api/scripts/_list?excluded_types=${this.props.excludedTypes.join(',')}`
-      : '/bo/api/proxy/api/scripts/_list';
+        ? `/bo/api/proxy/api/scripts/_list?excluded_types=${this.props.excludedTypes.join(',')}`
+        : '/bo/api/proxy/api/scripts/_list';
     const displayKind = !this.props.type;
     return (
       <div data-scripts={this.props.label}>
@@ -313,13 +313,13 @@ export class Scripts extends Component {
           <label className="col-xs-12 col-sm-2 col-form-label" />
           <div className="col-sm-10 input-group-btn">
             {this.props.refs && this.props.refs.length === 0 && (
-              <a href={`/bo/dashboard/plugins/add`} className="btn btn-sm btn-primary">
+              <Link to="/plugins/add" className="btn btn-sm btn-primary">
                 <i className="fas fa-plus" /> Create a new plugin.
-              </a>
+              </Link>
             )}
-            <a href={`/bo/dashboard/plugins`} className="btn btn-sm btn-primary">
+            <Link to="/plugins" className="btn btn-sm btn-primary">
               <i className="fas fa-link" /> all plugins.
-            </a>
+            </Link>
           </div>
         </div>
       </div>

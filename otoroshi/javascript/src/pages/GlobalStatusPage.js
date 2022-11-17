@@ -46,9 +46,9 @@ export class GlobalStatusPage extends Component {
             instance connected to your Otoroshi
           </p>
           <p>
-            To do that, add a <a href="/bo/dashboard/exporters">data exporter</a> sending events to
+            To do that, add a <Link to="/exporters">data exporter</Link> sending events to
             an ElasticSearch and settings to read events from your ElasticSeach in the{' '}
-            <a href="/bo/dashboard/dangerzone">Danger Zone</a>
+            <Link to="/dangerzone">Danger Zone</Link>
           </p>
         </>
       );

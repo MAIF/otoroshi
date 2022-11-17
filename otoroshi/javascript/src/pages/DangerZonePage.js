@@ -14,6 +14,7 @@ import Select from 'react-select';
 import Creatable from 'react-select/lib/Creatable';
 
 import { CheckElasticsearchConnection } from '../components/elasticsearch';
+import { Link } from 'react-router-dom';
 
 function tryOrTrue(f) {
   try {
@@ -1450,20 +1451,20 @@ class BackOfficeAuthButtons extends Component {
         <label className="col-xs-12 col-sm-2 col-form-label" />
         <div className="col-sm-10 input-group-btn">
           {!this.props.rawValue.backOfficeAuthRef && (
-            <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
+            <Link to="/auth-configs/add" className="btn btn-sm btn-primary">
               <i className="fas fa-plus" /> Create a new auth. config.
-            </a>
+            </Link>
           )}
           {this.props.rawValue.backOfficeAuthRef && (
-            <a
-              href={`/bo/dashboard/auth-configs/edit/${this.props.rawValue.backOfficeAuthRef}`}
+            <Link
+              to={`/auth-configs/edit/${this.props.rawValue.backOfficeAuthRef}`}
               className="btn btn-sm btn-success">
               <i className="fas fa-edit" /> Edit the auth. config.
-            </a>
+            </Link>
           )}
-          <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
+          <Link to="/auth-configs" className="btn btn-sm btn-primary">
             <i className="fas fa-link" /> all auth. config.
-          </a>
+          </Link>
         </div>
       </div>
     );

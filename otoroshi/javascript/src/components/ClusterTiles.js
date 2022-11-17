@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { converterBase2 } from 'byte-converter';
 import { Sparklines, SparklinesLine, SparklinesSpots } from 'react-sparklines';
+import { Link } from 'react-router-dom';
 
 function init(size, value = 0) {
   const arr = [];
@@ -45,7 +46,7 @@ class Metric extends Component {
     const props = this.props;
     const mode = window.localStorage.getItem('otoroshi-dark-light-mode') || 'dark';
     return (
-      <a href={this.props.link}>
+      <Link to={this.props.link}>
         <div
           className="metric"
           style={{
@@ -65,7 +66,7 @@ class Metric extends Component {
             </Sparklines>
           </div>
         </div>
-      </a>
+      </Link>
     );
   }
 }
@@ -156,19 +157,19 @@ export class ClusterTiles extends Component {
         <div className="rowMetrics">
           <Metric
             time={Date.now()}
-            link="/bo/dashboard/cluster"
+            link="/cluster"
             value={this.state.workers}
             legend=""
           />
           <Metric
             time={Date.now()}
-            link="/bo/dashboard/cluster"
+            link="/cluster"
             value={this.state.payload}
             legend=""
           />
           <Metric
             time={Date.now()}
-            link="/bo/dashboard/cluster"
+            link="/cluster"
             hideValueText
             value={healthValue}
             legend={

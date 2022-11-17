@@ -5,6 +5,7 @@ import { Table, Form } from '../components/inputs';
 import { v4 } from 'uuid';
 import ReactTable from 'react-table';
 import { Collapse } from '../components/inputs/Collapse';
+import { Link } from 'react-router-dom';
 
 export class TunnelsPage extends Component {
   state = { env: null };
@@ -40,9 +41,9 @@ export class TunnelsPage extends Component {
       cell: (a, item) => {
         return (
           <div style={{ width: '100%' }}>
-            <a className="btn btn-info btn-sm" href={`/bo/dashboard/tunnels/${item.tunnel_id}`}>
+            <Link className="btn btn-info btn-sm" to={`/tunnels/${item.tunnel_id}`}>
               <i className="fas fa-eye" />
-            </a>
+            </Link>
           </div>
         );
       },
@@ -362,12 +363,12 @@ export class TunnelPage extends Component {
             justifyContent: 'flex-end',
             width: '100%',
           }}>
-          <a
+          <Link
             className="btn btn-danger btn-sm"
-            href="/bo/dashboard/tunnels"
+            to="/tunnels"
             style={{ marginTop: 30 }}>
             <i className="fas fa-times" /> Cancel
-          </a>
+          </Link>
         </div>
       </>
     );
