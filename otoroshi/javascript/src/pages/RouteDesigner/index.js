@@ -628,6 +628,7 @@ class RouteDesigner extends React.Component {
                     setTitle={this.props.setTitle}
                     {...p}
                     {...p.match}
+                    env={this.props.env}
                   />
                 );
               }}

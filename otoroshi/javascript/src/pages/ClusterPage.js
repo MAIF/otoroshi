@@ -119,13 +119,11 @@ export class ClusterPage extends Component {
   componentDidMount() {
     this.props.setTitle(`Cluster view`);
     this.interval = setInterval(this.update, 5000);
-    BackOfficeServices.env().then((env) => {
-      if (env.clusterRole === 'Off') {
-        this.props.setTitle(`Cluster mode is not enabled`);
-      } else {
-        this.props.setTitle(`Cluster members`);
-      }
-    });
+    if (this.props.env.clusterRole === 'Off') {
+      this.props.setTitle(`Cluster mode is not enabled`);
+    } else {
+      this.props.setTitle(`Cluster members`);
+    }
   }
 
   componentWillUnmount() {

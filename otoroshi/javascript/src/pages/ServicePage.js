@@ -611,7 +611,7 @@ export class ServicePage extends Component {
     neverSaved: false,
     allCollapsed: false,
     freeDomain: true,
-    loading: true,
+    loading: true
   };
 
   toggleCollapsed = (e) => {
@@ -666,7 +666,13 @@ export class ServicePage extends Component {
   componentDidMount() {
     this.load();
     this.mountShortcuts();
-    BackOfficeServices.env().then((env) => this.setState({ env }));
+
+    if (this.props.env) {
+      BackOfficeServices.env()
+        .then((env) => this.setState({ env }));
+    } else {
+      this.setState({ env: this.props.env })
+    }
   }
 
   componentWillReceiveProps(nextProps) {

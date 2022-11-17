@@ -31,11 +31,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
-            rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
-            rawValue.clientSecret
-          }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${rawValue.clientId
+            }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${rawValue.clientSecret
+            }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -563,8 +561,7 @@ const ApiKeysConstants = {
           type="button"
           className="btn btn-sm btn-success"
           onClick={(e) =>
-            (window.location = `/bo/dashboard/lines/prod/services/${
-              that.state.service ? that.state.service.id : '-'
+          (window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
             }/apikeys/edit/${item.clientId}/stats`)
           }>
           <i className="fas fa-chart-bar" />
@@ -617,6 +614,7 @@ const ApiKeysConstants = {
 export class ServiceApiKeysPage extends Component {
   state = {
     service: null,
+    env: this.props.env
   };
 
   onRoutes = window.location.pathname.indexOf('/bo/dashboard/routes') === 0;
@@ -640,7 +638,6 @@ export class ServiceApiKeysPage extends Component {
   }
 
   componentDidMount() {
-    BackOfficeServices.env().then((env) => this.setState({ env }));
     const fu = this.onRoutes
       ? BackOfficeServices.nextClient.fetch('routes', this.props.params.routeId)
       : BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId);
@@ -747,10 +744,10 @@ export class ServiceApiKeysPage extends Component {
 export class ApiKeysPage extends Component {
   state = {
     service: null,
+    env: this.props.env
   };
 
   componentDidMount() {
-    BackOfficeServices.env().then((env) => this.setState({ env }));
     this.props.setTitle(`All apikeys`);
   }
 

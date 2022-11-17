@@ -85,8 +85,8 @@ export class ServicesPage extends Component {
         item.publicPatterns.indexOf('/.*') > -1,
       cell: (v, item) =>
         !item.privateApp &&
-        item.privatePatterns.length === 0 &&
-        item.publicPatterns.indexOf('/.*') > -1 ? (
+          item.privatePatterns.length === 0 &&
+          item.publicPatterns.indexOf('/.*') > -1 ? (
           <i className="fas fa-times-circle alertorange" />
         ) : (
           <i className="fas fa-globe-americas fa-lg" aria-hidden="true" />
@@ -113,7 +113,7 @@ export class ServicesPage extends Component {
         item.targets.length,
       cell: (v, item) =>
         item.targets.map((i) => i.scheme).filter((i) => i.toLowerCase() === 'https').length ===
-        item.targets.length ? (
+          item.targets.length ? (
           <i className="fas fa-lock fa-lg" />
         ) : (
           <i className="fas fa-unlock-alt fa-lg" />
@@ -196,7 +196,14 @@ export class ServicesPage extends Component {
       this.title = `All services`;
     }
     this.props.setTitle(this.title);
-    BackOfficeServices.env().then((env) => this.setState({ env }));
+
+
+    if (this.props.env) {
+      this.setState({ env: this.props.env })
+    } else {
+      BackOfficeServices.env().then((env) => this.setState({ env }));
+    }
+
     this.props.setSidebarContent(null);
   }
 

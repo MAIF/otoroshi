@@ -16,7 +16,7 @@ export class HomePage extends Component {
           {this.props.env && <img src={this.props.env.otoroshiLogo} className="logoOtoroshi" />}
         </div>
         <LiveStatTiles url="/bo/api/proxy/api/live/global?every=2000" />
-        <ClusterTiles url="/bo/api/proxy/api/cluster/live?every=2000" />
+        <ClusterTiles url="/bo/api/proxy/api/cluster/live?every=2000" env={this.props.env} />
       </div>
     );
   }

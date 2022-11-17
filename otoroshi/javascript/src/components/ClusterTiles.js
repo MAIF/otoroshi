@@ -81,13 +81,11 @@ export class ClusterTiles extends Component {
   };
 
   componentDidMount() {
-    BackOfficeServices.env().then((env) => {
-      if (env.clusterRole === 'Leader') {
-        this.setState({ show: true });
-        this.evtSource = new EventSource(this.props.url);
-        this.evtSource.onmessage = (e) => this.onMessage(e);
-      }
-    });
+    if (this.props.env.clusterRole === 'Leader') {
+      this.setState({ show: true });
+      this.evtSource = new EventSource(this.props.url);
+      this.evtSource.onmessage = (e) => this.onMessage(e);
+    }
   }
 
   componentWillUnmount() {

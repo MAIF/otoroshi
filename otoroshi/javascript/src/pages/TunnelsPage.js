@@ -8,7 +8,7 @@ import { Collapse } from '../components/inputs/Collapse';
 import { Link } from 'react-router-dom';
 
 export class TunnelsPage extends Component {
-  state = { env: null };
+  state = {};
 
   columns = [
     {
@@ -53,9 +53,6 @@ export class TunnelsPage extends Component {
   componentDidMount() {
     this.props.setTitle(`Connected tunnels`);
     this.interval = setInterval(this.update, 5000);
-    BackOfficeServices.env().then((env) => {
-      this.setState({ env });
-    });
   }
 
   componentWillUnmount() {
@@ -108,9 +105,8 @@ export class TunnelPage extends Component {
 
   componentDidMount() {
     const id = this.props.match.params.id;
-    BackOfficeServices.env().then((env) => {
-      this.setState({ env });
-      BackOfficeServices.fetchTunnels().then((tunnels) => {
+    BackOfficeServices.fetchTunnels()
+      .then((tunnels) => {
         const tunnel = tunnels.filter((t) => t.tunnel_id == id)[0];
         this.props.setTitle(`Connected tunnel '${tunnel.name}'`);
         this.setState({ tunnel });
@@ -121,7 +117,6 @@ export class TunnelPage extends Component {
             this.setState({ routes });
           });
       });
-    });
   }
 
   exposeRoute = (originalRoute) => {
