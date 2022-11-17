@@ -57,43 +57,43 @@ export class TopBar extends Component {
         }));
         options.sort((a, b) => a.label.localeCompare(b.label));
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/routes'),
+          action: () => this.routeTo('/routes'),
           env: <span className="fas fa-road" />,
           label: 'Routes',
           value: 'Routes',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/route-compositions'),
+          action: () => this.routeTo('/route-compositions'),
           env: <span className="fas fa-road" />,
           label: 'Route compositions',
           value: 'compositions',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/backends'),
+          action: () => this.routeTo('/backends'),
           env: <span className="fas fa-microchip" />,
           label: 'Backends',
           value: 'Backends',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/admins'),
+          action: () => this.routeTo('/admins'),
           env: <span className="fas fa-user" />,
           label: 'Admins',
           value: 'Admins',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/alerts'),
+          action: () => this.routeTo('/alerts'),
           env: <span className="fas fa-list" />,
           label: 'Alerts Log',
           value: 'Alerts-Log',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/exporters'),
+          action: () => this.routeTo('/exporters'),
           env: <span className="fas fa-paper-plane" />,
           label: 'Exporters',
           value: 'exporters',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/audit'),
+          action: () => this.routeTo('/audit'),
           env: <span className="fas fa-list" />,
           label: 'Audit Log',
           value: 'Audit-Log',
@@ -102,16 +102,16 @@ export class TopBar extends Component {
           label: 'CleverCloud Apps',
           value: 'CleverCloud-Apps',
           env: <i className="fas fa-list-alt" />,
-          action: () => (window.location.href = '/bo/dashboard/clever'),
+          action: () => this.routeTo('/clever'),
         });
         options.push({
           label: 'Eureka Servers',
           value: 'Eureka-Servers',
           env: <i className="fas fa-list-alt" />,
-          action: () => (window.location.href = '/bo/dashboard/eureka-servers'),
+          action: () => this.routeTo('/eureka-servers'),
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/dangerzone'),
+          action: () => this.routeTo('/dangerzone'),
           env: <span className="fas fa-exclamation-triangle" />,
           label: 'Danger Zone',
           value: 'Danger-Zone',
@@ -123,13 +123,13 @@ export class TopBar extends Component {
           action: () => (window.location.href = '/docs/index.html'),
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/stats'),
+          action: () => this.routeTo('/stats'),
           env: <span className="fas fa-signal" />,
           label: 'Global Analytics',
           value: 'Global-Analytics',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/events'),
+          action: () => this.routeTo('/events'),
           env: <span className="fas fa-list" />,
           label: 'Global Events',
           value: 'Global-Events',
@@ -138,22 +138,22 @@ export class TopBar extends Component {
           label: 'Groups',
           value: 'Groups',
           env: <i className="fas fa-folder-open" />,
-          action: () => (window.location.href = '/bo/dashboard/groups'),
+          action: () => this.routeTo('/groups'),
         });
         options.push({
           label: 'Organizations',
           value: 'Organizations',
           env: <i className="fas fa-folder-open" />,
-          action: () => (window.location.href = '/bo/dashboard/organizations'),
+          action: () => this.routeTo('/organizations'),
         });
         options.push({
           label: 'Teams',
           value: 'Teams',
           env: <i className="fas fa-folder-open" />,
-          action: () => (window.location.href = '/bo/dashboard/teams'),
+          action: () => this.routeTo('/teams'),
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/loggers'),
+          action: () => this.routeTo('/loggers'),
           env: <span className="fas fa-book" />,
           label: 'Loggers level',
           value: 'Loggers-level',
@@ -162,73 +162,73 @@ export class TopBar extends Component {
           label: 'Services',
           value: 'Services',
           env: <i className="fas fa-cubes" />,
-          action: () => (window.location.href = '/bo/dashboard/services'),
+          action: () => this.routeTo('/services'),
         });
         options.push({
           label: 'Tcp Services',
           value: 'tcp-services',
           env: <i className="fas fa-cubes" />,
-          action: () => (window.location.href = '/bo/dashboard/tcp/services'),
+          action: () => this.routeTo('/tcp/services'),
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/map'),
+          action: () => this.routeTo('/map'),
           env: <span className="fas fa-globe" />,
           label: 'Services map',
           value: 'Services-map',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/sessions/admin'),
+          action: () => this.routeTo('/sessions/admin'),
           env: <span className="fas fa-user" />,
           label: 'Admin. sessions',
           value: 'Admin-sessions',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/sessions/private'),
+          action: () => this.routeTo('/sessions/private'),
           env: <span className="fas fa-lock" />,
           label: 'Priv. apps sessions',
           value: 'Priv-apps-sessions',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/top10'),
+          action: () => this.routeTo('/top10'),
           env: <span className="fas fa-fire" />,
           label: 'Top 10 services',
           value: 'Top-10-services',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/jwt-verifiers'),
+          action: () => this.routeTo('/jwt-verifiers'),
           env: <span className="fas fa-key" />,
           label: 'Global Jwt Verifiers',
           value: 'Jwt-Verifiers',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/auth-configs'),
+          action: () => this.routeTo('/auth-configs'),
           env: <span className="fas fa-lock" />,
           label: 'Global auth. configs',
           value: 'auth-configs',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/certificates'),
+          action: () => this.routeTo('/certificates'),
           env: <span className="fas fa-certificate" />,
           label: 'SSL Certificates',
           value: 'certificates',
         });
         if (this.props.env.clusterRole === 'Leader') {
           options.push({
-            action: () => (window.location.href = '/bo/dashboard/cluster'),
+            action: () => this.routeTo('/cluster'),
             env: <span className="fas fa-network-wired-alt" />,
             label: 'Cluster view',
             value: 'cluster-view',
           });
         }
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/tunnels'),
+          action: () => this.routeTo('/tunnels'),
           env: <span className="fab fa-pied-piper-alt" />,
           label: 'Connected tunnels',
           value: 'tunnels-view',
         });
         if (this.props.env.scriptingEnabled === true) {
           options.push({
-            action: () => (window.location.href = '/bo/dashboard/plugins'),
+            action: () => this.routeTo('/plugins'),
             env: <span className="fas fa-book-dead" />,
             label: 'Plugins',
             value: 'plugins',
@@ -237,7 +237,7 @@ export class TopBar extends Component {
         if (this.props.env.providerDashboardUrl) {
           const providerDashboardTitle = this.props.env.providerDashboardTitle;
           options.push({
-            action: () => (window.location.href = '/bo/dashboard/provider'),
+            action: () => this.routeTo('/provider'),
             env: <img src="/assets/images/otoroshi-logo-inverse.png" width="16" />,
             label: providerDashboardTitle,
             value: providerDashboardTitle.toLowerCase(),
@@ -252,7 +252,7 @@ export class TopBar extends Component {
           value: 'flags',
         });
         options.push({
-          action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
+          action: () => this.routeTo('/snowmonkey'),
           env: (
             <span>
               <svg
@@ -426,15 +426,31 @@ export class TopBar extends Component {
       });
   };
 
+  routeTo = url => {
+    if (this.props.history) {
+      this.props.history.push(url);
+    } else {
+      window.location.href = `/bo/dashboard${url}`;
+    }
+  }
+
   gotoService = (e) => {
     if (e) {
-      window.location.href = `/bo/dashboard/lines/${e.env}/services/${e.value}`;
+      if (this.props.history) {
+        this.props.history.push(`/lines/${e.env}/services/${e.value}`);
+      } else {
+        window.location.href = `/bo/dashboard/lines/${e.env}/services/${e.value}`;
+      }
     }
   };
 
   gotoTcpService = (e) => {
     if (e) {
-      window.location.href = `/bo/dashboard/tcp/services/edit/${e.value}`;
+      if (this.props.history) {
+        this.props.history.push(`/tcp/services/edit/${e.value}`)
+      } else {
+        window.location.href = `/bo/dashboard/tcp/services/edit/${e.value}`;
+      }
     }
   };
 
@@ -676,7 +692,10 @@ export class TopBar extends Component {
                 <ul
                   id="dropdown"
                   className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''} py-2 pb-4`}
-                  aria-labelledby="dropdownMenuParams">
+                  aria-labelledby="dropdownMenuParams"
+                  onClick={e => {
+                    this.setState({ dropdownStatus: 'closed' })
+                  }}>
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
                   </li>*/}
