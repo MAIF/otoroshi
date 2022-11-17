@@ -33,7 +33,7 @@
 }
 
 .custom-dropdown {
-  position: absolute;
+  position: fixed;
   z-index: 1050;
   top: 52px;
   bottom: 0;
@@ -44,6 +44,7 @@
   background-color: $fondBody;
   list-style-type: none;
   padding-inline-start: 12px;
+  padding-right: 12px;
 
   >li>a {
     color: $colorGris;

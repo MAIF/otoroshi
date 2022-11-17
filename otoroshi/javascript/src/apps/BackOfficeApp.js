@@ -113,6 +113,8 @@ class BackOfficeAppContainer extends Component {
     return (
       <Component
         globalEnv={this.state.env}
+        // Pass env to the child to avoid to fetch it again
+        env={this.state.env}
         setTitle={(t) => DynamicTitle.setContent(t)}
         getTitle={() => DynamicTitle.getContent()}
         setSidebarContent={(c) => DynamicSidebar.setContent(c)}

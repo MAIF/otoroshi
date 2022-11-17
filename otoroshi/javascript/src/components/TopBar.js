@@ -527,7 +527,7 @@ export class TopBar extends Component {
     return (
       <nav
         className="navbar navbar-expand-md fixed-top"
-        // style={{ zIndex: 100 }}
+      // style={{ zIndex: 100 }}
       >
         <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
           <div className="d-flex flex-column flex-md-row top-md-0 w-100">
@@ -675,92 +675,93 @@ export class TopBar extends Component {
                 />
                 <ul
                   id="dropdown"
-                  className={`custom-dropdown ${
-                    this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                  } py-2 pb-4`}
+                  className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''} py-2 pb-4`}
                   aria-labelledby="dropdownMenuParams">
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
                   </li>*/}
                   <li>
-                    <a href="#" className="dropdown-item logo-xs">
-                      <img src="/assets/images/otoroshi-logo-inverse.png" width="16" /> version{' '}
-                      {window.__currentVersion}
-                    </a>
+                    <Link to="#" className="dropdown-item logo-xs d-flex align-items-center justify-content-between">
+                      {/* <img src="/assets/images/otoroshi-logo-inverse.png" width="16" /> version{' '} */}
+                      <div>
+                        VERSION
+                      </div>
+                      <div style={{
+                        color: '#f9b000',
+                        fontWeight: 'bold'
+                      }}>{window.__currentVersion}</div>
+                    </Link>
                   </li>
                   <li>
-                    <a href="/docs/index.html" target="_blank" className="dropdown-item">
+                    <a to="/docs/index.html" target="_blank" className="dropdown-item">
                       <span className="fas fa-book" /> User manual
                     </a>
                   </li>
                   <li className="dropdown-divider" />
                   <li>
                     {window.__otoroshi__env__latest.userAdmin && (
-                      <a href="/bo/dashboard/organizations" className="dropdown-item">
+                      <Link to="/organizations" className="dropdown-item">
                         <span className="fas fa-folder-open" /> Organizations
-                      </a>
+                      </Link>
                     )}
                     {window.__user.tenantAdmin && (
-                      <a href="/bo/dashboard/teams" className="dropdown-item">
+                      <Link to="/teams" className="dropdown-item">
                         <span className="fas fa-folder-open" /> Teams
-                      </a>
+                      </Link>
                     )}
-                    {/* <a href="/bo/dashboard/groups" className="dropdown-item">
-                      <span className="fas fa-folder-open" /> Service groups
-                    </a> */}
-                    <Link to="groups" className="dropdown-item">
+                    <Link to="/groups" className="dropdown-item">
                       <span className="fas fa-folder-open" /> Service groups
                     </Link>
 
                     {window.__otoroshi__env__latest.userAdmin && (
-                      <a href="/bo/dashboard/clever" className="dropdown-item">
+                      <Link to="/clever" className="dropdown-item">
                         <span className="fas fa-list-alt" /> Clever apps
-                      </a>
+                      </Link>
                     )}
 
                     {window.__otoroshi__env__latest.userAdmin && (
-                      <a href="/bo/dashboard/eureka-servers" className="dropdown-item">
+                      <Link to="/eureka-servers" className="dropdown-item">
                         <span className="fas fa-desktop" /> Eureka servers
-                      </a>
+                      </Link>
                     )}
                   </li>
                   <li className="dropdown-divider" />
                   <li>
-                    <a href="/bo/dashboard/resources-loader" className="dropdown-item">
+                    <Link to="/resources-loader" className="dropdown-item">
                       <span className="fas fa-hammer" /> Resources Loader
-                    </a>
+                    </Link>
                   </li>
                   <li className="dropdown-divider" />
                   <li>
-                    <a href="/bo/dashboard/jwt-verifiers" className="dropdown-item">
+                    <Link to="/jwt-verifiers" className="dropdown-item">
                       <span className="fas fa-key" /> Jwt Verifiers
-                    </a>
-                    <Link to="auth-configs" className="dropdown-item">
+                    </Link>
+                    <Link to="/auth-configs" className="dropdown-item">
                       <span className="fas fa-lock" /> Authentication configs
                     </Link>
-                    <a href="/bo/dashboard/certificates" className="dropdown-item">
+                    <Link to="/certificates" className="dropdown-item">
                       <span className="fas fa-certificate" /> SSL/TLS Certificates
-                    </a>
+                    </Link>
                     {this.props.env.scriptingEnabled === true && (
-                      <a href="/bo/dashboard/plugins" className="dropdown-item">
+                      <Link to="/plugins" className="dropdown-item">
                         <span className="fas fa-book-dead" /> Plugins
-                      </a>
+                      </Link>
                     )}
                   </li>
                   <li className="dropdown-divider" />
                   {window.__otoroshi__env__latest.userAdmin &&
                     this.props.env.clusterRole === 'Leader' && (
                       <li>
-                        <a href="/bo/dashboard/cluster" className="dropdown-item">
+                        <Link to="/cluster" className="dropdown-item">
                           <span className="fas fa-network-wired" /> Cluster view
-                        </a>
+                        </Link>
                       </li>
                     )}
                   {window.__otoroshi__env__latest.userAdmin && (
                     <li>
-                      <a href="/bo/dashboard/tunnels" className="dropdown-item">
+                      <Link to="/tunnels" className="dropdown-item">
                         <span className="fab fa-pied-piper-alt" /> Connected tunnels
-                      </a>
+                      </Link>
                     </li>
                   )}
                   {window.__otoroshi__env__latest.userAdmin &&
@@ -770,52 +771,52 @@ export class TopBar extends Component {
                       {window.__otoroshi__env__latest.userAdmin && (
                         <>
                           <li>
-                            <a href="/bo/dashboard/stats" className="dropdown-item">
+                            <Link to="/stats" className="dropdown-item">
                               <i className="fas fa-signal" /> Analytics
-                            </a>
+                            </Link>
                           </li>
                           <li>
-                            <a href="/bo/dashboard/status" className="dropdown-item">
+                            <Link to="/status" className="dropdown-item">
                               <i className="fas fa-heart" /> Status
-                            </a>
+                            </Link>
                           </li>
                           <li>
-                            <a href="/bo/dashboard/events" className="dropdown-item">
+                            <Link to="/events" className="dropdown-item">
                               <i className="fas fa-list" /> Events log
-                            </a>
+                            </Link>
                           </li>
                           <li className="hide">
-                            <a href="/bo/dashboard/top10" className="dropdown-item">
+                            <Link to="/top10" className="dropdown-item">
                               <span className="fas fa-fire" /> Top 10 services
-                            </a>
+                            </Link>
                           </li>
                           <li className="hide">
-                            <a href="/bo/dashboard/map" className="dropdown-item">
+                            <Link to="/map" className="dropdown-item">
                               <span className="fas fa-globe" /> Services map
-                            </a>
+                            </Link>
                           </li>
                           <li role="separator" className="divider hide" />
                           <li className="hide">
-                            <a href="/bo/dashboard/loggers" className="dropdown-item">
+                            <Link to="/loggers" className="dropdown-item">
                               <span className="fas fa-book" /> Loggers level
-                            </a>
+                            </Link>
                           </li>
                           <li>
-                            <a href="/bo/dashboard/audit" className="dropdown-item">
+                            <Link to="/audit" className="dropdown-item">
                               <span className="fas fa-list" /> Audit log
-                            </a>
+                            </Link>
                           </li>
                           <li>
-                            <a href="/bo/dashboard/alerts" className="dropdown-item">
+                            <Link to="/alerts" className="dropdown-item">
                               <span className="fas fa-list" /> Alerts log
-                            </a>
+                            </Link>
                           </li>
                         </>
                       )}
                       <li>
-                        <a href="/bo/dashboard/exporters" className="dropdown-item">
+                        <Link to="/exporters" className="dropdown-item">
                           <span className="fas fa-paper-plane" /> Exporters
-                        </a>
+                        </Link>
                       </li>
                       <li className="dropdown-divider" />
                     </>
@@ -823,19 +824,19 @@ export class TopBar extends Component {
                   {window.__user.tenantAdmin && (
                     <>
                       <li>
-                        <a href="/bo/dashboard/admins" className="dropdown-item">
+                        <Link to="/admins" className="dropdown-item">
                           <span className="fas fa-user" /> Admins
-                        </a>
+                        </Link>
                       </li>
                       <li>
-                        <a href="/bo/dashboard/sessions/admin" className="dropdown-item">
+                        <Link to="/sessions/admin" className="dropdown-item">
                           <span className="fas fa-user" /> Admins sessions
-                        </a>
+                        </Link>
                       </li>
                       <li>
-                        <a href="/bo/dashboard/sessions/private" className="dropdown-item">
+                        <Link to="/sessions/private" className="dropdown-item">
                           <span className="fas fa-lock" /> Priv. apps sessions
-                        </a>
+                        </Link>
                       </li>
                     </>
                   )}
@@ -843,7 +844,7 @@ export class TopBar extends Component {
                     <>
                       <li className="dropdown-divider" />
                       <li>
-                        <a href="/bo/dashboard/snowmonkey" className="dropdown-item">
+                        <Link to="/snowmonkey" className="dropdown-item">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="monkeyMenu"
@@ -1008,7 +1009,7 @@ export class TopBar extends Component {
                             </g>
                           </svg>{' '}
                           Snow Monkey
-                        </a>
+                        </Link>
                       </li>
                     </>
                   )}
@@ -1016,10 +1017,10 @@ export class TopBar extends Component {
                     <>
                       <li className="dropdown-divider" />
                       <li>
-                        <a href="/bo/dashboard/provider" className="dropdown-item">
+                        <Link to="/provider" className="dropdown-item">
                           <img src="/assets/images/otoroshi-logo-inverse.png" width="16" />{' '}
                           {this.props.env.providerDashboardTitle}
-                        </a>
+                        </Link>
                       </li>
                     </>
                   )}
@@ -1027,9 +1028,9 @@ export class TopBar extends Component {
                     <>
                       <li className="dropdown-divider" />
                       <li>
-                        <a href="/bo/dashboard/dangerzone" className="dropdown-item">
+                        <Link to="/dangerzone" className="dropdown-item">
                           <span className="fas fa-exclamation-triangle" /> Danger Zone
-                        </a>
+                        </Link>
                       </li>
                     </>
                   )}
@@ -1045,7 +1046,7 @@ export class TopBar extends Component {
             </div>
           </div>
         </div>
-      </nav>
+      </nav >
     );
   }
 }
