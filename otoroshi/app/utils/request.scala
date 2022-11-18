@@ -1,6 +1,7 @@
 package otoroshi.utils.http
 
 import akka.http.scaladsl.model.Uri
+import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import play.api.mvc.RequestHeader
 
@@ -9,7 +10,7 @@ import scala.util.Try
 
 object RequestImplicits {
 
-  private val uriCache = new ConcurrentHashMap[String, String]()
+  private val uriCache = Scaffeine().maximumSize(9999).build[String, String]()
 
   implicit class EnhancedRequestHeader(val requestHeader: RequestHeader) extends AnyVal {
     def contentLengthStr: Option[String]     = requestHeader.headers.get("Content-Length")
@@ -17,7 +18,11 @@ object RequestImplicits {
     def thePath: String                      = theUri.path.toString()
     def relativeUri: String = {
       val uri = requestHeader.uri
-      uriCache.computeIfAbsent(
+      val map = uriCache.asMap()
+      if (map.size % 10 == 0) {
+        println(s"cache size: ${map.size}")
+      }
+      uriCache.get(
         uri,
         _ => {
           // println(s"computing uri for $uri")

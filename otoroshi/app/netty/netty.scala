@@ -300,7 +300,7 @@ class ReactorNettyServer(env: Env) {
       handler: HttpRequestHandler
   ): Publisher[Void] = {
     val parent      = channel.parent()
-    val sslHandler = Option(parent.pipeline().get(classOf[SslHandler])).orElse(Option(channel.pipeline().get(classOf[SslHandler])))
+    val sslHandler  = Option(parent.pipeline().get(classOf[SslHandler])).orElse(Option(channel.pipeline().get(classOf[SslHandler])))
     val sessionOpt  = sslHandler.map(_.engine.getSession)
     sessionOpt.foreach(s  => req.requestHeaders().set("Tls-Version", TlsVersion.parse(s.getProtocol).name))
     val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&

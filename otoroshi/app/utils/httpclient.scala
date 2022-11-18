@@ -661,8 +661,6 @@ object SSLConfigSettingsCustomizer {
 class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem, materializer: Materializer)
     extends WSClient {
 
-  import otoroshi.utils.cache.CacheImplicits._
-
   val ec     = system.dispatcher
   val mat    = materializer
   val client = Http(system)
