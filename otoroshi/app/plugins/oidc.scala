@@ -22,6 +22,7 @@ import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.Results.TooManyRequests
 import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.security.IdGenerator
+import otoroshi.utils.cache.types.LegitTrieMap
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
@@ -771,7 +772,7 @@ object OIDCThirdPartyApiKeyConfig {
 
   lazy val logger = Logger("otoroshi-oidc-apikey-config")
 
-  val cache: TrieMap[String, (Long, Boolean)] = new TrieMap[String, (Long, Boolean)]()
+  val cache: TrieMap[String, (Long, Boolean)] = new LegitTrieMap[String, (Long, Boolean)]()
 
   implicit val format = new Format[OIDCThirdPartyApiKeyConfig] {
 

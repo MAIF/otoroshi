@@ -14,6 +14,7 @@ import otoroshi.events._
 import otoroshi.health.HealthCheck
 import otoroshi.models.{ApiKey, ClientConfig, GlobalConfig, LoadBalancing, ServiceDescriptor, Target}
 import otoroshi.utils.TypedMap
+import otoroshi.utils.cache.types.LegitTrieMap
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.mvc.{RequestHeader, Result}
@@ -22,7 +23,7 @@ import play.api.libs.json.Json
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
-import scala.concurrent.{duration, ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise, duration}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success}
 
@@ -124,7 +125,7 @@ case class AkkaCircuitBreakerWrapper(
 class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler: Scheduler, env: Env) {
 
   val reqCounter = new AtomicInteger(0)
-  val breakers   = new TrieMap[String, AkkaCircuitBreakerWrapper]()
+  val breakers   = new LegitTrieMap[String, AkkaCircuitBreakerWrapper]()
 
   lazy val logger = Logger("otoroshi-circuit-breaker")
 
@@ -393,17 +394,17 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
 
 class CircuitBreakersHolder() {
 
-  val circuitBreakers = new ConcurrentHashMap[String, ServiceDescriptorCircuitBreaker]()
+  private val circuitBreakers = new LegitTrieMap[String, ServiceDescriptorCircuitBreaker]()
 
   def get(id: String, defaultValue: () => ServiceDescriptorCircuitBreaker): ServiceDescriptorCircuitBreaker = {
-    if (!circuitBreakers.containsKey(id)) {
-      circuitBreakers.putIfAbsent(id, defaultValue())
-    }
-    circuitBreakers.get(id)
+    circuitBreakers.getOrElseUpdate(id, defaultValue())
   }
 
-  def resetAllCircuitBreakers(): Unit = circuitBreakers.clear()
+  def resetAllCircuitBreakers(): Unit = {
+    circuitBreakers.clear()
+  }
 
-  def resetCircuitBreakersFor(id: String): Unit =
-    Option(circuitBreakers.get(id)).foreach(_.clear())
+  def resetCircuitBreakersFor(id: String): Unit = {
+    circuitBreakers.get(id).foreach(_.clear())
+  }
 }

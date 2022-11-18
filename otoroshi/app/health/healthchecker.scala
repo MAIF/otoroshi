@@ -15,6 +15,7 @@ import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import play.api.Logger
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.utils.cache.types.LegitTrieMap
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,7 +32,7 @@ object HealthCheck {
 
   import otoroshi.utils.http.Implicits._
 
-  val badHealth = new TrieMap[String, Unit]()
+  val badHealth = new LegitTrieMap[String, Unit]()
 
   def checkTarget(desc: ServiceDescriptor, target: Target, logger: Logger)(implicit
       env: Env,

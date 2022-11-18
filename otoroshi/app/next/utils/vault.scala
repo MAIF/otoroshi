@@ -14,6 +14,7 @@ import otoroshi.env.Env
 import otoroshi.plugins.hmac.HMACUtils
 import otoroshi.plugins.jobs.kubernetes.{KubernetesClient, KubernetesConfig}
 import otoroshi.utils.ReplaceAllWith
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -603,7 +604,7 @@ class Vaults(env: Env) {
   private val cache                          =
     Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
   private val expressionReplacer             = ReplaceAllWith("\\$\\{vault://([^}]*)\\}")
-  private val vaults: TrieMap[String, Vault] = new TrieMap[String, Vault]()
+  private val vaults: TrieMap[String, Vault] = new LegitTrieMap[String, Vault]()
   private implicit val _env                  = env
   private implicit val ec                    = env.otoroshiExecutionContext
 

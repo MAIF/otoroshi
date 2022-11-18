@@ -8,6 +8,7 @@ import otoroshi.models.Target
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
 import otoroshi.security.IdGenerator
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -238,7 +239,7 @@ class DiscoverySelfRegistrationTransformer extends RequestTransformer {
 
   import kaleidoscope._
 
-  private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new LegitTrieMap[String, Promise[Source[ByteString, _]]]()
 
   override def name: String = "Self registration endpoints (service discovery)"
 

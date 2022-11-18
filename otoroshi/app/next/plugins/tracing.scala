@@ -18,6 +18,7 @@ import io.opentelemetry.sdk.trace.data.SpanData
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -102,7 +103,7 @@ case class SdkWrapper(config: W3CTracingConfig, sdk: OpenTelemetrySdk, traceProv
 
 class W3CTracing extends NgRequestTransformer {
 
-  private val opentelemetrysdks = new TrieMap[String, SdkWrapper]()
+  private val opentelemetrysdks = new LegitTrieMap[String, SdkWrapper]()
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)

@@ -31,23 +31,14 @@ import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.jobs.updates.Version
 import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}
-import otoroshi.next.models.{
-  KvNgRouteDataStore,
-  KvNgServiceDataStore,
-  KvStoredNgBackendDataStore,
-  KvStoredNgTargetDataStore,
-  NgRouteDataStore,
-  NgServiceDataStore,
-  StoredNgBackendDataStore,
-  StoredNgTargetDataStore
-}
+import otoroshi.next.models.{KvNgRouteDataStore, KvNgServiceDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils
-import otoroshi.utils.{future, SchedulerHelper}
+import otoroshi.utils.{SchedulerHelper, future}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -59,6 +50,7 @@ import redis.RedisClientMasterSlaves
 import otoroshi.security.IdGenerator
 import otoroshi.ssl._
 import otoroshi.storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
+import otoroshi.utils.cache.types.{LegitConcurrentHashMap, LegitTrieMap}
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
@@ -1201,9 +1193,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   }
 
   /////////////
-  private val apiIncrementsRef      = new AtomicReference[TrieMap[String, AtomicLong]](new TrieMap[String, AtomicLong]())
+  private val apiIncrementsRef      = new AtomicReference[TrieMap[String, AtomicLong]](new LegitTrieMap[String, AtomicLong]())
   private val servicesIncrementsRef = new AtomicReference[TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]](
-    new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
+    new LegitTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
   )
   private val workerSessionsCache   = Scaffeine()
     .maximumSize(1000L)
@@ -1576,7 +1568,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         Some(list)
       }
       case "hash" if modern => {
-        val map = new TrieMap[String, ByteString]()
+        val map = new LegitTrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
@@ -1591,7 +1583,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         Some(list)
       }
       case "hash"           => {
-        val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
+        val map = new LegitConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
@@ -1661,8 +1653,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   Cluster.logger.debug(
                     s"[${env.clusterConfig.mode.name}] Fetching state from Otoroshi leader cluster done ! (${DateTime.now()})"
                   )
-                val store          = new ConcurrentHashMap[String, Any]()
-                val expirations    = new ConcurrentHashMap[String, Long]()
+                val store          = new LegitConcurrentHashMap[String, Any]()
+                val expirations    = new LegitConcurrentHashMap[String, Long]()
                 val responseFrom   = resp.header("X-Data-From").map(_.toLong)
                 val responseDigest = resp.header("X-Data-Digest")
                 val responseCount  = resp.header("X-Data-Count")
@@ -1773,9 +1765,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     try {
       implicit val _env = env
       if (isPushingQuotas.compareAndSet(false, true)) {
-        val oldApiIncr     = apiIncrementsRef.getAndSet(new TrieMap[String, AtomicLong]())
+        val oldApiIncr     = apiIncrementsRef.getAndSet(new LegitTrieMap[String, AtomicLong]())
         val oldServiceIncr =
-          servicesIncrementsRef.getAndSet(new TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
+          servicesIncrementsRef.getAndSet(new LegitTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]())
         //if (oldApiIncr.nonEmpty || oldServiceIncr.nonEmpty) {
         val start          = System.currentTimeMillis()
         Retry
@@ -2069,8 +2061,8 @@ class SwappableInMemoryDataStores(
 
   private def readStateFromDisk(source: Seq[String]): Unit = {
     if (Cluster.logger.isDebugEnabled) Cluster.logger.debug("Reading state from disk ...")
-    val store       = new ConcurrentHashMap[String, Any]()
-    val expirations = new ConcurrentHashMap[String, Long]()
+    val store       = new LegitConcurrentHashMap[String, Any]()
+    val expirations = new LegitConcurrentHashMap[String, Long]()
     source.foreach { raw =>
       val item  = Json.parse(raw)
       val key   = (item \ "k").as[String]
@@ -2103,7 +2095,7 @@ class SwappableInMemoryDataStores(
         Some(list)
       }
       case "hash" if modern => {
-        val map = new TrieMap[String, ByteString]()
+        val map = new LegitTrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
@@ -2118,7 +2110,7 @@ class SwappableInMemoryDataStores(
         Some(list)
       }
       case "hash"           => {
-        val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
+        val map = new LegitConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }

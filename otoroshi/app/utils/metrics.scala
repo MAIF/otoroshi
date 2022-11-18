@@ -4,12 +4,7 @@ import akka.actor.Cancellable
 import akka.http.scaladsl.util.FastFuture
 import com.codahale.metrics.jmx.JmxReporter
 import com.codahale.metrics.json.MetricsModule
-import com.codahale.metrics.jvm.{
-  GarbageCollectorMetricSet,
-  JvmAttributeGaugeSet,
-  MemoryUsageGaugeSet,
-  ThreadStatesGaugeSet
-}
+import com.codahale.metrics.jvm.{GarbageCollectorMetricSet, JvmAttributeGaugeSet, MemoryUsageGaugeSet, ThreadStatesGaugeSet}
 import com.codahale.metrics._
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry, SemanticMetricSet}
@@ -19,6 +14,7 @@ import otoroshi.cluster.{ClusterMode, StatsView}
 import otoroshi.env.Env
 import otoroshi.events.StatsDReporter
 import otoroshi.utils.RegexPool
+import otoroshi.utils.cache.types.LegitConcurrentHashMap
 import otoroshi.utils.prometheus.CustomCollector
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
@@ -80,7 +76,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   private val lastdataInRate                = new AtomicLong(0L)
   private val lastdataOutRate               = new AtomicLong(0L)
   private val lastconcurrentHandledRequests = new AtomicLong(0L)
-  private val lastData                      = new ConcurrentHashMap[String, AtomicReference[Any]]()
+  private val lastData                      = new LegitConcurrentHashMap[String, AtomicReference[Any]]() // TODO: analyze growth over time
 
   // metricRegistry.register("jvm.buffer", new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()))
   // metricRegistry.register("jvm.classloading", new ClassLoadingGaugeSet())

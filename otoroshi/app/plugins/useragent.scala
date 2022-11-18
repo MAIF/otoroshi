@@ -8,12 +8,14 @@ import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.Keys
 import otoroshi.script._
+import otoroshi.utils.cache.Caches
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}
 import otoroshi.utils.future.Implicits._
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -27,7 +29,7 @@ object UserAgentHelper {
   private val parserInitializing       = new AtomicBoolean(false)
   private val parserInitializationDone = new AtomicBoolean(false)
   private val parserRef                = new AtomicReference[UserAgentParser]()
-  private val cache                    = new TrieMap[String, Option[JsObject]]()
+  private val cache                    = Caches.expireAfterWrite[String, Option[JsObject]](10.minutes, 999)
 
   def userAgentDetails(ua: String)(implicit env: Env): Option[JsObject] = {
     env.metrics.withTimer("otoroshi.plugins.useragent.details") {
@@ -42,20 +44,20 @@ object UserAgentHelper {
           case Failure(e) => logger.error("User-Agent parser initialization failed", e)
         }(ec)
       }
-      cache.get(ua) match {
+      cache.getIfPresent(ua) match {
         case details @ Some(_)                      => details.flatten
         case None if parserInitializationDone.get() => {
           Try(parserRef.get().parse(ua)) match {
             case Failure(e)            =>
-              cache.putIfAbsent(ua, None)
+              cache.put(ua, None)
             case Success(capabilities) => {
               val details = Some(JsObject(capabilities.getValues.asScala.map { case (field, value) =>
                 (field.name().toLowerCase(), JsString(value))
               }.toMap))
-              cache.putIfAbsent(ua, details)
+              cache.put(ua, details)
             }
           }
-          cache.get(ua).flatten
+          cache.getIfPresent(ua).flatten
         }
         case _                                      => None // initialization in progress
       }

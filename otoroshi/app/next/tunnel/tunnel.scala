@@ -38,6 +38,7 @@ import scala.util.{Failure, Success, Try}
 import otoroshi.cluster.ClusterConfig
 import play.api.libs.ws.DefaultWSProxyServer
 import akka.http.scaladsl.ClientTransport
+import otoroshi.utils.cache.types.LegitTrieMap
 
 case class TunnelPluginConfig(tunnelId: String) extends NgPluginConfig {
   override def json: JsValue = Json.obj("tunnel_id" -> tunnelId)
@@ -624,7 +625,7 @@ class TunnelManager(env: Env) {
     }
   }
 
-  private val leaderConnections = new TrieMap[String, LeaderConnection]()
+  private val leaderConnections = new LegitTrieMap[String, LeaderConnection]()
 
   private def forwardRequestWs(
       tunnelId: String,
@@ -694,7 +695,7 @@ class LeaderConnection(
       q
     }
   private val source: Source[akka.http.scaladsl.model.ws.Message, _]                                              = pushSource.merge(pingSource)
-  private val awaitingResponse                                                                                    = new scala.collection.concurrent.TrieMap[String, Promise[Result]]()
+  private val awaitingResponse                                                                                    = new LegitTrieMap[String, Promise[Result]]()
 
   def close(): Unit = {
     unregister(this)
@@ -1184,7 +1185,7 @@ class TunnelActor(
 
   private val logger           = Logger(s"otoroshi-tunnel-actor")
   // private val counter = new AtomicLong(0L)
-  private val awaitingResponse = new scala.collection.concurrent.TrieMap[String, Promise[Result]]()
+  private val awaitingResponse = new LegitTrieMap[String, Promise[Result]]()
 
   private def closeTunnel(): Unit = {
     awaitingResponse.values.map(p => p.trySuccess(Results.InternalServerError(Json.obj("error" -> "tunnel closed !"))))

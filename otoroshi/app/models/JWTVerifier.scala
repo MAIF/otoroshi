@@ -17,6 +17,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.ssl.{DynamicSSLEngineProvider, PemUtils}
 import otoroshi.storage.BasicStore
 import otoroshi.utils
+import otoroshi.utils.cache.Caches
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.{RegexPool, TypedMap}
@@ -200,11 +201,11 @@ object AlgoSettings                                                           ex
       Left(e)
     } get
 
-  private val cache = new TrieMap[String, String]()
+  private val cache = Caches.bounded[String, String](10000)
 
   def fromCacheOrNot(key: String, orElse: => String): String = {
     key match {
-      case k if k.startsWith("${") => cache.getOrElseUpdate(key, orElse)
+      case k if k.startsWith("${") => cache.get(key, _ => orElse)
       case k                       => key
     }
   }
@@ -409,8 +410,7 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
 }
 object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
 
-  val cache: TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK], Boolean)] =
-    new TrieMap[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK], Boolean)]()
+  val cache = Caches.bounded[String, (Long, Map[String, com.nimbusds.jose.jwk.JWK], Boolean)](1000)
 
   override def fromJson(json: JsValue): Either[Throwable, JWKSAlgoSettings] = {
     Try {
@@ -456,7 +456,7 @@ case class JWKSAlgoSettings(
   def keyId: Option[String] = None
 
   def isAsync: Boolean = {
-    JWKSAlgoSettings.cache.get(url) match {
+    JWKSAlgoSettings.cache.getIfPresent(url) match {
       case Some((stop, keys, false)) if stop > System.currentTimeMillis()  => false
       case Some((stop, keys, false)) if stop <= System.currentTimeMillis() => true
       case Some((_, keys, true))                                           => false
@@ -544,7 +544,7 @@ case class JWKSAlgoSettings(
 
     mode match {
       case InputMode(alg, Some(kid)) => {
-        JWKSAlgoSettings.cache.get(url) match {
+        JWKSAlgoSettings.cache.getIfPresent(url) match {
           case Some((stop, keys, false)) if stop > System.currentTimeMillis()  => {
             keys.get(kid) match {
               case Some(jwk) => FastFuture.successful(algoFromJwk(alg, jwk))

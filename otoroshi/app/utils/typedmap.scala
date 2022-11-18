@@ -4,6 +4,7 @@ import akka.http.scaladsl.model.DateTime
 import otoroshi.gateway.GwError
 import otoroshi.models.{ApiKey, ApiKeyRotationInfo, ApikeyTuple, JwtInjection, PrivateAppsUser, RemainingQuotas, Target}
 import otoroshi.next.models.{NgBackend, NgContextualPlugins, NgMatchedRoute, NgRoute, NgTarget}
+import otoroshi.utils.cache.types.LegitTrieMap
 import play.api.libs.json.{JsArray, JsBoolean, JsNumber, JsObject, JsString, JsValue, Json}
 import play.api.libs.typedmap.{TypedEntry, TypedKey}
 import otoroshi.utils.json._
@@ -26,7 +27,7 @@ trait TypedMap {
 }
 
 object TypedMap {
-  def empty: TypedMap = new ConcurrentMutableTypedMap(new TrieMap[TypedKey[_], Any])
+  def empty: TypedMap = new ConcurrentMutableTypedMap(new LegitTrieMap[TypedKey[_], Any])
   def apply(entries: TypedEntry[_]*): TypedMap = {
     TypedMap.empty.put(entries: _*)
   }

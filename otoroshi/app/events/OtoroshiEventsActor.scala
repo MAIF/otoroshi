@@ -24,6 +24,7 @@ import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.drivers.inmemory.S3Configuration
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
@@ -55,7 +56,7 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
   implicit val e  = env
   implicit val ec = env.analyticsExecutionContext
 
-  val dataExporters: TrieMap[String, DataExporter] = new TrieMap[String, DataExporter]()
+  val dataExporters: TrieMap[String, DataExporter] = new LegitTrieMap[String, DataExporter]()
   val lastUpdate                                   = new AtomicReference[Long](0L)
 
   override def receive: Receive = {

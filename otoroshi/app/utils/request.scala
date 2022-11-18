@@ -18,10 +18,6 @@ object RequestImplicits {
     def thePath: String                      = theUri.path.toString()
     def relativeUri: String = {
       val uri = requestHeader.uri
-      val map = uriCache.asMap()
-      if (map.size % 10 == 0) {
-        println(s"cache size: ${map.size}")
-      }
       uriCache.get(
         uri,
         _ => {

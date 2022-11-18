@@ -1,7 +1,7 @@
 package otoroshi.netty
 
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
+import akka.http.scaladsl.model.headers.{RawHeader, `Content-Length`, `Content-Type`, `User-Agent`}
 import akka.http.scaladsl.model.{ContentType, HttpHeader, StatusCode, Uri}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
@@ -24,6 +24,7 @@ import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, Target}
 import otoroshi.ssl.DynamicSSLEngineProvider
+import otoroshi.utils.cache.Caches
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -72,34 +73,31 @@ class NettyHttp3Client(val env: Env) {
   private val group         = new NioEventLoopGroup(Runtime.getRuntime.availableProcessors() + 1)
   private val bs            = new Bootstrap()
 
-  private val codecs       = new TrieMap[String, ChannelHandler]()
-  private val channels     = new TrieMap[String, Future[Channel]]()
-  private val quicChannels = new TrieMap[String, Future[QuicChannel]]()
+  private val codecs       = Caches.bounded[String, ChannelHandler](999)
+  private val channels     = Caches.bounded[String, Future[Channel]](999)
 
   private[netty] def codecFor(context: QuicSslContext, host: String, port: Int): ChannelHandler = {
     val key = s"${host}:${port}"
-    codecs.getOrElseUpdate(
-      key, {
-        val codec = Http3
-          .newQuicClientCodecBuilder()
-          .sslContext(new NettySniSslContext(context, host, port))
-          .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
-          .initialMaxData(10000000)
-          .initialMaxStreamDataBidirectionalLocal(1000000)
-          .initialMaxStreamDataBidirectionalRemote(1000000)
-          .initialMaxStreamsBidirectional(100000)
-          .maxSendUdpPayloadSize(1500)
-          .maxRecvUdpPayloadSize(1500)
-          .build()
-        codec
-      }
-    )
+    codecs.get(key, _ => {
+      val codec = Http3
+        .newQuicClientCodecBuilder()
+        .sslContext(new NettySniSslContext(context, host, port))
+        .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
+        .initialMaxData(10000000)
+        .initialMaxStreamDataBidirectionalLocal(1000000)
+        .initialMaxStreamDataBidirectionalRemote(1000000)
+        .initialMaxStreamsBidirectional(100000)
+        .maxSendUdpPayloadSize(1500)
+        .maxRecvUdpPayloadSize(1500)
+        .build()
+      codec
+    })
   }
 
   private[netty] def getChannel(codec: ChannelHandler, host: String, port: Int): Future[Channel] = {
     val key = s"${host}:${port}"
-    channels.getOrElseUpdate(
-      key, {
+    channels.get(
+      key, _ => {
         val promise = Promise.apply[Channel]()
         val future  = bs
           .group(group)
@@ -278,7 +276,7 @@ class NettyHttp3Client(val env: Env) {
   }
 
   def close(): Unit = {
-    channels.toSeq.map(_._2).map(_.map(c => c.close().sync())(env.otoroshiExecutionContext))
+    channels.asMap().values.map(_.map(c => c.close().sync())(env.otoroshiExecutionContext))
     group.shutdownGracefully()
   }
 

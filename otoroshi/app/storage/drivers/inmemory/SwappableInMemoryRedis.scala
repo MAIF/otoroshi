@@ -7,6 +7,7 @@ import otoroshi.cluster.Cluster
 import otoroshi.env.Env
 import otoroshi.storage._
 import otoroshi.utils.SchedulerHelper
+import otoroshi.utils.cache.types.{LegitConcurrentHashMap, LegitTrieMap}
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
@@ -28,14 +29,14 @@ object SwapStrategy       {
 
 object ModernMemory {
   def apply(
-      store: TrieMap[String, Any] = new TrieMap[String, Any](),
-      expirations: TrieMap[String, Long] = new TrieMap[String, Long]()
+      store: TrieMap[String, Any] = new LegitTrieMap[String, Any](),
+      expirations: TrieMap[String, Long] = new LegitTrieMap[String, Long]()
   ): ModernMemory = new ModernMemory(store, expirations)
 }
 
 class ModernMemory(
-    store: TrieMap[String, Any] = new TrieMap[String, Any](),
-    expirations: TrieMap[String, Long] = new TrieMap[String, Long]()
+    store: TrieMap[String, Any] = new LegitTrieMap[String, Any](),
+    expirations: TrieMap[String, Long] = new LegitTrieMap[String, Long]()
 ) {
   def size: Int                                                              = store.size
   def get(key: String): Option[Any]                                          = store.get(key)
@@ -78,7 +79,7 @@ class ModernMemory(
 class Memory(
     val store: ConcurrentHashMap[String, Any],
     val expirations: ConcurrentHashMap[String, Long],
-    val newStore: TrieMap[String, Any] = new TrieMap[String, Any]()
+    val newStore: TrieMap[String, Any] = new LegitTrieMap[String, Any]()
 )
 
 object Memory {
@@ -104,12 +105,12 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
   import collection.JavaConverters._
   import scala.concurrent.duration._
 
-  val patterns: ConcurrentHashMap[String, Pattern] = new ConcurrentHashMap[String, Pattern]()
+  val patterns: ConcurrentHashMap[String, Pattern] = new LegitConcurrentHashMap[String, Pattern]()
 
   private lazy val _storeHolder = new AtomicReference[Memory](
     Memory(
-      store = new ConcurrentHashMap[String, Any],
-      expirations = new ConcurrentHashMap[String, Long]
+      store = new LegitConcurrentHashMap[String, Any],
+      expirations = new LegitConcurrentHashMap[String, Long]
     )
   )
 
@@ -138,7 +139,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
         if (env.clusterConfig.mode.isWorker) {
           strategy match {
             case SwapStrategy.Replace => {
-              val newStore = new ConcurrentHashMap[String, Any]()
+              val newStore = new LegitConcurrentHashMap[String, Any]()
               _memory.store.keySet.asScala
                 .filterNot(key => Cluster.filteredKey(key, env))
                 .map { k =>
@@ -273,7 +274,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
 
   override def hdel(key: String, fields: String*): Future[Long] = {
     val hash  = if (!store.containsKey(key)) {
-      new ConcurrentHashMap[String, ByteString]()
+      new LegitConcurrentHashMap[String, ByteString]()
     } else {
       store.get(key).asInstanceOf[ConcurrentHashMap[String, ByteString]]
     }
@@ -291,7 +292,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
 
   override def hgetall(key: String): Future[Map[String, ByteString]] = {
     val hash = if (!store.containsKey(key)) {
-      new ConcurrentHashMap[String, ByteString]()
+      new LegitConcurrentHashMap[String, ByteString]()
     } else {
       store.get(key).asInstanceOf[ConcurrentHashMap[String, ByteString]]
     }
@@ -302,7 +303,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
 
   override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] = {
     val hash = if (!store.containsKey(key)) {
-      new ConcurrentHashMap[String, ByteString]()
+      new LegitConcurrentHashMap[String, ByteString]()
     } else {
       store.get(key).asInstanceOf[ConcurrentHashMap[String, ByteString]]
     }
@@ -444,7 +445,7 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   lazy val logger = Logger("otoroshi-datastores")
 
-  val patterns: TrieMap[String, Pattern] = new TrieMap[String, Pattern]()
+  val patterns: TrieMap[String, Pattern] = new LegitTrieMap[String, Pattern]()
 
   // private lazy val _storeHolder = new AtomicReference[ModernMemory](ModernMemory())
 
@@ -563,7 +564,7 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   override def hdel(key: String, fields: String*): Future[Long] = {
-    val hash = memory.getTypedOrUpdate[TrieMap[String, ByteString]](key, new TrieMap[String, ByteString]())
+    val hash = memory.getTypedOrUpdate[TrieMap[String, ByteString]](key, new LegitTrieMap[String, ByteString]())
     hash.keySet
       .filter(k => fields.contains(k))
       .map(k => {
@@ -575,14 +576,14 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
   }
 
   override def hgetall(key: String): Future[Map[String, ByteString]] = {
-    val hash = memory.getTypedOrUpdate[TrieMap[String, ByteString]](key, new TrieMap[String, ByteString]())
+    val hash = memory.getTypedOrUpdate[TrieMap[String, ByteString]](key, new LegitTrieMap[String, ByteString]())
     hash.toMap.future
   }
 
   override def hset(key: String, field: String, value: String): Future[Boolean] = hsetBS(key, field, ByteString(value))
 
   override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] = {
-    val hash = memory.getTypedOrUpdate[TrieMap[String, ByteString]](key, new TrieMap[String, ByteString]())
+    val hash = memory.getTypedOrUpdate[TrieMap[String, ByteString]](key, new LegitTrieMap[String, ByteString]())
     hash.put(field, value)
     memory.put(key, hash)
     true.future

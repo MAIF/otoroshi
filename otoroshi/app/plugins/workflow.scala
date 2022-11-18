@@ -7,6 +7,7 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}
 import play.api.Logger
@@ -104,7 +105,7 @@ class WorkflowJob extends Job {
 
 class WorkflowEndpoint extends RequestTransformer {
 
-  private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new LegitTrieMap[String, Promise[Source[ByteString, _]]]()
 
   override def beforeRequest(
       ctx: BeforeRequestContext

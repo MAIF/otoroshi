@@ -9,6 +9,7 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.utils.JsonPathUtils
 import otoroshi.utils.ReplaceAllWith
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -252,8 +253,8 @@ class WorkFlow(spec: WorkFlowSpec) {
   )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResponse] = {
     val ctx = WorkFlowTaskContext(
       input.input,
-      new TrieMap[String, JsValue](),
-      new TrieMap[String, JsValue](),
+      new LegitTrieMap[String, JsValue](),
+      new LegitTrieMap[String, JsValue](),
       new AtomicReference[JsValue](
         Json.obj(
           "status"  -> 200,

@@ -8,25 +8,19 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.ServiceDescriptor
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script.{
-  AfterRequestContext,
-  BeforeRequestContext,
-  HttpRequest,
-  RequestTransformer,
-  TransformerRequestBodyContext,
-  TransformerRequestContext
-}
+import otoroshi.script.{AfterRequestContext, BeforeRequestContext, HttpRequest, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext}
 import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}
 import otoroshi.utils.syntax.implicits._
 import otoroshi.ssl.Cert
+import otoroshi.utils.cache.types.LegitTrieMap
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class EnvoyControlPlane extends RequestTransformer {
 
-  private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new LegitTrieMap[String, Promise[Source[ByteString, _]]]()
 
   override def name: String = "Envoy Control Plane (experimental)"
 
