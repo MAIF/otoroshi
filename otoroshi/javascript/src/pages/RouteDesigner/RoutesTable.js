@@ -60,7 +60,7 @@ export default ({ injectTopBar }) => {
         formSchema={null}
         formFlow={null}
         columns={columns}
-        fetchItems={() => nextClient.find(nextClient.ENTITIES[entity.fetchName])}
+        fetchItems={paginationState => nextClient.findAllWithPagination(nextClient.ENTITIES[entity.fetchName], paginationState)}
         deleteItem={(item) => nextClient.remove(nextClient.ENTITIES[entity.fetchName], item)}
         showActions={true}
         showLink={false}

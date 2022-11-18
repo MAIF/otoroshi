@@ -182,8 +182,8 @@ export function allServices(env, group) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?filter.groups=${group}`
-    : `/bo/api/proxy/api/services`;
+      ? `/bo/api/proxy/api/services?filter.groups=${group}`
+      : `/bo/api/proxy/api/services`;
   return fetch(url, {
     method: 'GET',
     credentials: 'include',
@@ -1905,7 +1905,37 @@ export const nextClient = {
     SERVICES: 'services',
   },
   find: (entity) => fetchWrapper(`/${entity}`),
-  findAll: (entity) => fetchWrapper(`/${entity}`),
+  findAll: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {
+    let url = `/${entity}?page=${page}`;
+    if (pageSize)
+      url = `${url}&pageSize=${pageSize}`;
+
+    return fetchWrapper(url);
+  },
+  findAllWithPagination: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {
+    let url = `/${entity}?page=${page}`;
+    if (pageSize)
+      url = `${url}&pageSize=${pageSize}`;
+
+    return fetch(`/bo/api/proxy/api/experimental${url}`, {
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json'
+      }
+    })
+      .then(res => {
+        const { headers } = res;
+        const xOffset = ~~headers.get('X-Offset');
+        const xCount = ~~headers.get('X-Count');
+        const xPageSize = ~~headers.get('X-Page-Size');
+        return res.json()
+          .then(rows => ({
+            data: rows,
+            pages: Math.ceil(xCount / xPageSize),
+            offset: xOffset
+          }))
+      })
+  },
   create: (entity, content) => fetchWrapper(`/${entity}`, 'POST', content),
   update: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
   fetch: (entity, entityId) => fetchWrapper(`/${entity}/${entityId}`),

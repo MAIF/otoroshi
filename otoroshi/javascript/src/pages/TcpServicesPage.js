@@ -352,7 +352,6 @@ export class TcpServicesPage extends Component {
           selfUrl="tcp/services"
           formSchema={this.formSchema}
           formFlow={this.formFlow}
-          defaultTitle={this.title}
           defaultValue={BackOfficeServices.createNewTcpService}
           itemName="Tcp Service"
           defaultTitle="All Tcp Services"

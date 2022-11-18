@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 import { Form } from '.';
 import debounce from 'lodash/debounce';
 import { createTooltip } from '../../tooltips';
-import YAML from 'yaml';
-
 import ReactTable from 'react-table';
 
 function urlTo(url) {
@@ -48,11 +46,12 @@ export class Table extends Component {
   static defaultProps = {
     rowNavigation: false,
     stayAfterSave: false,
-    pageSize: 15,
+    pageSize: 5,
   };
 
   state = {
     items: [],
+    pages: 1,
     showAddForm: false,
     showEditForm: false,
     loading: false,
@@ -61,11 +60,11 @@ export class Table extends Component {
 
   componentDidMount() {
     this.registerSizeChanges();
-    this.update().then(() => {
-      if (this.props.search) {
-        console.log('Todo: default search');
-      }
-    });
+    // this.update().then(() => {
+    //   if (this.props.search) {
+    //     console.log('Todo: default search');
+    //   }
+    // });
     if (this.props.injectTable) {
       this.props.injectTable(this);
     }
@@ -126,18 +125,28 @@ export class Table extends Component {
     }
   };
 
-  update = () => {
+  update = (paginationState) => {
     this.setState({ loading: true });
-    return this.props.fetchItems().then(
-      (rawItems) => {
-        this.setState({ items: rawItems, loading: false }, () => {
-          if (this.props.onUpdate) {
-            this.props.onUpdate(rawItems);
-          }
-        });
-      },
-      () => this.setState({ loading: false })
-    );
+    console.log(paginationState)
+    return this.props.fetchItems({
+      ...paginationState,
+      page: paginationState.page + 1
+    })
+      .then(rawItems => {
+        console.log(rawItems)
+        if (Array.isArray(rawItems)) {
+          this.setState({
+            items: rawItems,
+            loading: false
+          });
+        } else {
+          this.setState({
+            items: rawItems.data,
+            pages: rawItems.pages,
+            loading: false
+          });
+        }
+      });
   };
 
   gotoItem = (e, item) => {
@@ -499,6 +508,11 @@ export class Table extends Component {
             <div className="rrow">
               <ReactTable
                 className="fulltable -striped -highlight"
+                manual
+                minRows={5}
+                showPageSizeOptions={true}
+                pageSizeOptions={[5, 10, 20, 25, 50, 100]}
+                pages={this.state.pages}
                 data={this.state.items}
                 loading={this.state.loading}
                 filterable={true}
@@ -514,6 +528,10 @@ export class Table extends Component {
                     ? [{ id: this.props.columns[0].title, value: this.props.search }]
                     : []
                 }
+                onFetchData={(state, instance) => {
+                  console.log(state, instance)
+                  this.update(state)
+                }}
                 defaultPageSize={this.props.pageSize}
                 columns={columns}
                 LoadingComponent={LoadingComponent}
