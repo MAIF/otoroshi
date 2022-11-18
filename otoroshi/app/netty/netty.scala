@@ -420,6 +420,7 @@ class ReactorNettyServer(env: Env) {
       val defaultLogFormat = "{} - {} [{}] \"{} {} {}\" {} {} {} {}"
       val logCustom = new AccessLogFactory {
         override def apply(args: AccessLogArgProvider): AccessLog = {
+          val tlsVersion = args.requestHeader("Tls-Version")
           AccessLog.create(
             defaultLogFormat,
             applyAddress(args.remoteAddress()),
@@ -431,7 +432,7 @@ class ReactorNettyServer(env: Env) {
             args.status(),
             if (args.contentLength() > -1L) args.contentLength().toString else "-",
             args.duration().toString,
-            args.requestHeader("Tls-Version")
+            if (tlsVersion == null) "-" else tlsVersion
           )
         }
       }
