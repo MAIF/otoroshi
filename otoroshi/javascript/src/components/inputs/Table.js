@@ -4,6 +4,7 @@ import { Form } from '.';
 import debounce from 'lodash/debounce';
 import { createTooltip } from '../../tooltips';
 import ReactTable from 'react-table';
+import { NgSelectRenderer } from '../nginputs';
 
 function urlTo(url) {
   window.history.replaceState({}, '', url);
@@ -46,7 +47,7 @@ export class Table extends Component {
   static defaultProps = {
     rowNavigation: false,
     stayAfterSave: false,
-    pageSize: 5,
+    pageSize: 15
   };
 
   state = {
@@ -56,6 +57,8 @@ export class Table extends Component {
     showEditForm: false,
     loading: false,
     hasError: false,
+    rowsPerPage: this.props.pageSize || 15,
+    page: 0
   };
 
   componentDidMount() {
@@ -95,10 +98,15 @@ export class Table extends Component {
         this.showAddForm();
       } else if (action === 'edit') {
         const item = this.props.parentProps.params.titem;
-        this.props.fetchItems().then((data) => {
+        this.props.fetchItems().then((res) => {
           //console.log(this.props.parentProps.params);
-          //console.log(data);
-          const row = data.filter((d) => this.props.extractKey(d) === item)[0];
+          // console.log(res)
+
+          let row = [];
+          if (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
+            row = res.data.filter((d) => this.props.extractKey(d) === item)[0];
+          else
+            row = res.filter((d) => this.props.extractKey(d) === item)[0];
           this.showEditForm(null, row);
         });
       }
@@ -125,25 +133,28 @@ export class Table extends Component {
     }
   };
 
-  update = (paginationState) => {
+  update = (paginationState = {}) => {
     this.setState({ loading: true });
-    console.log(paginationState)
+    const page = paginationState.page ? paginationState.page : this.state.page;
     return this.props.fetchItems({
       ...paginationState,
-      page: paginationState.page + 1
+      pageSize: this.state.rowsPerPage,
+      page: page + 1
     })
       .then(rawItems => {
-        console.log(rawItems)
+        // console.log(rawItems)
         if (Array.isArray(rawItems)) {
           this.setState({
             items: rawItems,
-            loading: false
+            loading: false,
+            page
           });
         } else {
           this.setState({
             items: rawItems.data,
             pages: rawItems.pages,
-            loading: false
+            loading: false,
+            page
           });
         }
       });
@@ -479,6 +490,9 @@ export class Table extends Component {
         ),
       });
     }
+
+    // console.log(this.state)
+
     return (
       <div>
         {!this.state.showEditForm && !this.state.showAddForm && (
@@ -505,16 +519,14 @@ export class Table extends Component {
                 {this.props.injectTopBar && this.props.injectTopBar()}
               </div>
             </div>
-            <div className="rrow">
+            <div className="rrow" style={{ position: 'relative' }}>
               <ReactTable
                 className="fulltable -striped -highlight"
                 manual
-                minRows={5}
-                showPageSizeOptions={true}
-                pageSizeOptions={[5, 10, 20, 25, 50, 100]}
                 pages={this.state.pages}
                 data={this.state.items}
                 loading={this.state.loading}
+                defaultPageSize={this.state.rowsPerPage}
                 filterable={true}
                 filterAll={true}
                 defaultSorted={[
@@ -529,10 +541,9 @@ export class Table extends Component {
                     : []
                 }
                 onFetchData={(state, instance) => {
-                  console.log(state, instance)
+                  // console.log(state, instance)
                   this.update(state)
                 }}
-                defaultPageSize={this.props.pageSize}
                 columns={columns}
                 LoadingComponent={LoadingComponent}
                 defaultFilterMethod={(filter, row, column) => {
@@ -545,6 +556,24 @@ export class Table extends Component {
                   }
                 }}
               />
+              <div className='d-flex align-items-center'
+                style={{
+                  position: 'absolute',
+                  bottom: 0, left: 0,
+                  padding: '6px'
+                }}>
+                <p className='m-0 me-2'>Rows per page</p>
+                <div style={{ minWidth: '80px' }}>
+                  <NgSelectRenderer
+                    id="rows-per-page"
+                    value={this.state.rowsPerPage}
+                    label={' '}
+                    ngOptions={{ spread: true }}
+                    onChange={rowsPerPage => this.setState({ rowsPerPage }, this.update)}
+                    options={[5, 15, 20, 50, 100]}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}

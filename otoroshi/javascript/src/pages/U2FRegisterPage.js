@@ -775,7 +775,9 @@ export class AdminEditionModal extends Component {
     },
     _loc: {
       type: 'location',
-      props: {},
+      props: {
+        useLegacy: true
+      },
     },
   };
 

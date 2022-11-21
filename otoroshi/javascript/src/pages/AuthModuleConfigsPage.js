@@ -69,7 +69,10 @@ export class AuthModuleConfigsPage extends Component {
           formFlow={this.formFlow}
           columns={this.columns}
           stayAfterSave={true}
-          fetchItems={BackOfficeServices.findAllAuthConfigs}
+          fetchItems={paginationState => BackOfficeServices.findAllAuthConfigs({
+            ...paginationState,
+            fields: ['id', 'name', 'description']
+          })}
           updateItem={BackOfficeServices.updateAuthConfig}
           deleteItem={BackOfficeServices.deleteAuthConfig}
           createItem={BackOfficeServices.createAuthConfig}

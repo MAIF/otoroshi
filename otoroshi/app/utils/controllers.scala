@@ -776,8 +776,37 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         val finalItems                 = if (hasFields) {
           filteredItems.map { item =>
             val obj = item.as[JsObject]
-            // TODO: support dotted notation ?
-            JsObject(obj.value.filterKeys(f => fields.contains(f)))
+            val out = fields.map(input => {
+              var acc = obj
+              var out = JsString("").as[JsValue]
+              input.split("\\.")
+                .foreach(path => {
+                  acc \ path match {
+                    case JsDefined(a @ JsObject(_)) =>
+                      acc = a
+                    case JsDefined(value) =>
+                      out = value
+                    case _: JsUndefined =>
+                      acc = Json.obj()
+                  }
+                })
+              (input, out)
+            })
+
+            def insertAtPath (acc: JsObject, path: Seq[String], value: JsValue): JsObject = {
+                if (path.length == 1) {
+                  acc.deepMerge(Json.obj(path.head -> value))
+                } else {
+                  print(path.head, acc)
+                  acc.deepMerge(Json.obj(
+                    path.head -> insertAtPath((acc \ path.head).asOpt[JsObject].getOrElse(Json.obj()), path.tail, value)
+                  ))
+                }
+            }
+
+            out.foldLeft(Json.obj()) {
+              case (acc, curr) => insertAtPath(acc, curr._1.split("\\."), curr._2)
+            }
           }
         } else {
           filteredItems

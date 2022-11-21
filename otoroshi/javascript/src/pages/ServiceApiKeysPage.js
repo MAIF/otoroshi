@@ -751,8 +751,11 @@ export class ApiKeysPage extends Component {
     this.props.setTitle(`All apikeys`);
   }
 
-  fetchAllApiKeys = () => {
-    return BackOfficeServices.fetchAllApikeys();
+  fetchAllApiKeys = paginationState => {
+    return BackOfficeServices.fetchAllApikeys({
+      ...paginationState,
+      fields: ['id', 'name', 'enabled', 'clientId', 'clientName', 'clientSecret']
+    });
   };
 
   createItem = (ak) => {

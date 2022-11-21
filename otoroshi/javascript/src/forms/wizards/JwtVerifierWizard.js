@@ -121,7 +121,7 @@ function JwtVerifierSelector({ handleSelect, allowedStrategy, mode }) {
   const [verifiers, setVerifiers] = useState([]);
 
   useEffect(() => {
-    BackOfficeServices.findAllJwtVerifiers().then(setVerifiers);
+    BackOfficeServices.findAllJwtVerifiers().then(r => setVerifiers(r.data));
   }, []);
 
   return (

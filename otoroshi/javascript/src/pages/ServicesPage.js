@@ -221,11 +221,20 @@ export class ServicesPage extends Component {
     });
   };
 
-  fetchServices = () => {
+  fetchServices = paginationState => {
     // console.log('fetchServices', this.props);
     return BackOfficeServices.allServices(
       this.props.location.query.env,
-      this.props.location.query.group
+      this.props.location.query.group,
+      {
+        ...paginationState,
+        fields: [
+          'id', 'name', 'enabled',
+          'env', 'privateApp', 'privatePatterns',
+          'publicPatterns', 'enforceSecureCommunication',
+          'targets', 'redirectToLocal'
+        ]
+      }
     );
   };
 

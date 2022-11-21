@@ -216,8 +216,8 @@ export default function ({ route, hide }) {
   };
 
   useEffect(() => {
-    fetchAllApikeys().then(setApikeys);
-    findAllCertificates().then(setCertificates);
+    fetchAllApikeys().then(r => setApikeys(r.data));
+    findAllCertificates().then(res => setCertificates(res.data));
   }, []);
 
   const send = () => {
