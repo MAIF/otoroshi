@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import PropTypes from 'prop-types';
 import Select, { Async } from 'react-select';
 import last from 'lodash/last';
@@ -19,6 +19,19 @@ function extractEnv(value = '') {
   } else {
     return [null, value];
   }
+}
+
+function VersionButton() {
+  const [black, setBlack] = useState(false);
+  return (
+    <>    
+      <a href={`https://github.com/MAIF/otoroshi/releases/tag/v${window.__currentVersion}`} target="_blank" className="dropdown-item logo-xs d-flex align-items-center justify-content-start" onMouseOver={e => setBlack(true)} onMouseOut={e => setBlack(false)}>
+        <img src={black ? `/assets/images/otoroshi-logo-inverse-black.png` : `/assets/images/otoroshi-logo-inverse.png`} width="16" /> 
+        <span style={{ marginLeft: 5, marginRight: 5 }}>version</span>
+        <div style={{ color: '#f9b000', fontWeight: 'bold' }}>{window.__currentVersion}</div>
+      </a>
+    </>
+  );
 }
 
 // http://yokai.com/otoroshi/
@@ -700,19 +713,10 @@ export class TopBar extends Component {
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
                   </li>*/}
                   <li>
-                    <Link to="#" className="dropdown-item logo-xs d-flex align-items-center justify-content-between">
-                      {/* <img src="/assets/images/otoroshi-logo-inverse.png" width="16" /> version{' '} */}
-                      <div>
-                        VERSION
-                      </div>
-                      <div style={{
-                        color: '#f9b000',
-                        fontWeight: 'bold'
-                      }}>{window.__currentVersion}</div>
-                    </Link>
+                    <VersionButton />
                   </li>
                   <li>
-                    <a to="/docs/index.html" target="_blank" className="dropdown-item">
+                    <a to="https://maif.github.io/otoroshi/manual/index.html" target="_blank" className="dropdown-item">
                       <span className="fas fa-book" /> User manual
                     </a>
                   </li>
