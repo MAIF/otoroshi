@@ -737,7 +737,7 @@ export class ServicePage extends Component {
           service: newService,
           originalService: newService,
         });
-        window.location.reload();
+        this.props.history.push(`/lines/${newService.line}/services/${newService.id}`)
       });
     } else {
       BackOfficeServices.updateService(this.state.service.id, this.state.service).then(
