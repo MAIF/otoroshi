@@ -545,6 +545,7 @@ object DefaultTemplates {
 case class GlobalConfig(
     letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
     lines: Seq[String] = Seq("prod"),
+    initWithNewEngine: Boolean = true,
     enableEmbeddedMetrics: Boolean = true,
     streamEntityOnly: Boolean = true,
     autoLinkToDefaultGroup: Boolean = true,
@@ -682,6 +683,7 @@ object GlobalConfig {
         "tags" -> JsArray(o.tags.map(JsString.apply)),
         "letsEncryptSettings"     -> o.letsEncryptSettings.json,
         "lines"                   -> JsArray(o.lines.map(JsString.apply)),
+        "initWithNewEngine"       -> o.initWithNewEngine,
         "maintenanceMode"         -> o.maintenanceMode,
         "enableEmbeddedMetrics"   -> o.enableEmbeddedMetrics,
         "streamEntityOnly"        -> o.streamEntityOnly,
@@ -729,6 +731,7 @@ object GlobalConfig {
       Try {
         GlobalConfig(
           lines = (json \ "lines").asOpt[Seq[String]].getOrElse(Seq("prod")),
+          initWithNewEngine = (json \ "initWithNewEngine").asOpt[Boolean].getOrElse(false),
           enableEmbeddedMetrics = (json \ "enableEmbeddedMetrics").asOpt[Boolean].getOrElse(true),
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),

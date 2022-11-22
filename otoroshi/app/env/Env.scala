@@ -18,6 +18,7 @@ import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
 import otoroshi.health.HealthCheckerActor
 import otoroshi.jobs.updates.Version
 import otoroshi.models._
+import otoroshi.next.models.NgRoute
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.next.tunnel.{TunnelAgent, TunnelManager}
 import otoroshi.next.utils.Vaults
@@ -59,6 +60,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}
+
+case class RoutingInfo(id: String, name: String)
 
 case class SidecarConfig(
     serviceId: String,
@@ -939,6 +942,7 @@ class Env(
     configuration.getOptionalWithFileSupport[Int]("otoroshi.next.experimental.http2-client-proxy.port").getOrElse(8555)
 
   lazy val defaultConfig = GlobalConfig(
+    initWithNewEngine = true,
     trustXForwarded = initialTrustXForwarded,
     perIpThrottlingQuota = 500,
     throttlingQuota = 100000,
@@ -956,7 +960,7 @@ class Env(
           "enabled"          -> true,
           "debug"            -> false,
           "debug_headers"    -> false,
-          "domains"          -> Seq("*-next-gen.oto.tools"),
+          "domains"          -> Seq("*"),
           "routing_strategy" -> "tree"
         ),
         "ClientCredentialService" -> Json.obj(
@@ -989,7 +993,8 @@ class Env(
 
   lazy val adminHosts: Seq[String] =
     adminApiExposedDomains ++ adminApiAdditionalExposedDomain :+ s"${adminApiExposedSubDomain}.${domain}"
-  lazy val backOfficeDescriptor    = ServiceDescriptor(
+
+  lazy val backOfficeServiceDescriptor = ServiceDescriptor(
     id = backOfficeServiceId,
     groups = Seq(backOfficeGroupId),
     name = "otoroshi-admin-api",
@@ -1020,6 +1025,13 @@ class Env(
     missingOnlyHeadersOut = Map.empty,
     stripPath = true,
     useAkkaHttpClient = true
+  )
+
+  lazy val backofficeRoute = NgRoute.fromServiceDescriptor(backOfficeServiceDescriptor, false)(otoroshiExecutionContext, this)
+
+  lazy val backOfficeDescriptor = RoutingInfo(
+    id = backofficeRoute.id,
+    name = backofficeRoute.name
   )
 
   lazy val otoroshiVersion    = "1.5.0-dev"
@@ -1230,7 +1242,8 @@ class Env(
 
                 val baseExport = OtoroshiExport(
                   config = defaultConfig,
-                  descs = Seq(backOfficeDescriptor),
+                  descs = if (defaultConfig.initWithNewEngine) Seq.empty else Seq(backOfficeServiceDescriptor),
+                  routes = if (defaultConfig.initWithNewEngine) Seq(backofficeRoute) else Seq.empty,
                   apikeys = Seq(backOfficeApiKey, defaultGroupApiKey),
                   groups = Seq(backOfficeGroup, defaultGroup),
                   simpleAdmins = Seq(admin),

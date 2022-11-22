@@ -19762,6 +19762,10 @@
             "type" : "boolean",
             "description" : "Global maintenant mode"
           },
+          "initWithNewEngine" : {
+            "type" : "boolean",
+            "description" : "Was this instance init with new engine as default"
+          },
           "letsEncryptSettings" : {
             "$ref" : "#/components/schemas/otoroshi.utils.letsencrypt.LetsEncryptSettings",
             "description" : "Let's encrypt (ACME) settings"

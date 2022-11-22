@@ -398,6 +398,7 @@ class BackOfficeController(
           }.nonEmpty
           Ok(
             Json.obj(
+              "initWithNewEngine"       -> config.initWithNewEngine,
               "scriptingEnabled"        -> env.scriptingEnabled,
               "otoroshiLogo"            -> env.otoroshiLogo,
               "clusterRole"             -> env.clusterConfig.mode.name,

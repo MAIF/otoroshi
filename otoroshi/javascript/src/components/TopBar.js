@@ -756,6 +756,11 @@ export class TopBar extends Component {
                   </li>
                   <li className="dropdown-divider" />
                   <li>
+                    {this.props && this.props.env.initWithNewEngine && (
+                      <Link to="/services" className="dropdown-item">
+                        <span className="fas fa-cubes" /> Service descriptors
+                      </Link>
+                    )}
                     <Link to="/jwt-verifiers" className="dropdown-item">
                       <span className="fas fa-key" /> Jwt Verifiers
                     </Link>

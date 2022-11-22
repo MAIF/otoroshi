@@ -4,7 +4,8 @@ import { Table } from '../../components/inputs';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useEntityFromURI } from '../../util';
 
-export default ({ injectTopBar }) => {
+export function RoutesTable(props) {
+
   const params = useParams();
   const history = useHistory();
   const entity = useEntityFromURI();
@@ -43,10 +44,46 @@ export default ({ injectTopBar }) => {
     {
       title: 'Name',
       content: (item) => item.name,
+      wrappedCell: (v, item, table) => {
+        if (props.globalEnv && props.globalEnv.adminApiId === item.id) {
+          return (
+            <span
+              title="This route is the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
+              className="badge bg-danger">
+              {item.name}
+            </span>
+          );
+        }
+        return item.name;
+      },
     },
     entity.lowercase == 'route' ? domainToTargetColumn : undefined,
     exposedColumn,
   ].filter((c) => c);
+
+  const deleteItem = (item, table) => {
+    if (props.globalEnv.adminApiId === item.id) {
+      window
+        .newConfirm(
+          `The route you're trying to delete is the Otoroshi Admin API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. Do you really want to do that ?`
+        )
+        .then((ok1) => {
+          if (ok1) {
+            window.newConfirm(`Are you sure you really want to do that ?`).then((ok2) => {
+              if (ok1 && ok2) {
+                nextClient.remove(nextClient.ENTITIES[entity.fetchName], item).then(() => {
+                  table.update();
+                });
+              }
+            });
+          }
+        });
+    } else {
+      nextClient.remove(nextClient.ENTITIES[entity.fetchName], item).then(() => {
+        table.update();
+      });
+    }
+  }
 
   return (
     <div className="designer">
@@ -61,19 +98,20 @@ export default ({ injectTopBar }) => {
         formFlow={null}
         columns={columns}
         fetchItems={() => nextClient.find(nextClient.ENTITIES[entity.fetchName])}
-        deleteItem={(item) => nextClient.remove(nextClient.ENTITIES[entity.fetchName], item)}
+        deleteItem={(item) => deleteItem(item)}
         showActions={true}
         showLink={false}
         extractKey={(item) => item.id}
         rowNavigation={true}
         hideAddItemAction={true}
         rawEditUrl={true}
+        displayTrash={(item) => item.id === props.globalEnv.adminApiId}
         injectTopBar={() => (
           <div className="btn-group input-group-btn">
             <Link className="btn btn-primary" to={`${entity.link}/new?tab=informations`}>
               <i className="fas fa-plus-circle" /> Create new {entity.lowercase}
             </Link>
-            {injectTopBar}
+            {props.injectTopBar}
           </div>
         )}
       />
