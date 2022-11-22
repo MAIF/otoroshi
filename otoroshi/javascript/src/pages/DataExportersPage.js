@@ -294,7 +294,10 @@ export class DataExportersPage extends Component {
           defaultValue={() => BackOfficeServices.createNewDataExporterConfig('file')}
           itemName="data exporter"
           columns={this.columns}
-          fetchItems={BackOfficeServices.findAllDataExporterConfigs}
+          fetchItems={paginationState => BackOfficeServices.findAllDataExporterConfigs({
+            ...paginationState,
+            fields: ['id', 'name', 'type', 'enabled']
+          })}
           updateItem={BackOfficeServices.updateDataExporterConfig}
           deleteItem={BackOfficeServices.deleteDataExporterConfig}
           createItem={BackOfficeServices.createDataExporterConfig}
@@ -336,8 +339,8 @@ const ExporterTryIt = ({ exporter }) => {
                   status === 'Successful'
                     ? '#5cb85c'
                     : status === 'Not tested'
-                    ? '#f39c12'
-                    : '#D5443F',
+                      ? '#f39c12'
+                      : '#D5443F',
                 display: 'flex',
                 alignItems: 'center',
                 width: 'fit-content',

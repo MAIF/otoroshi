@@ -10,13 +10,15 @@ export function PillButton({
   style = {},
   className = '',
 }) {
+  const isWhiteMode = document.body.classList.contains('white-mode');
   return (
     <div className={`d-flex justify-content-center ${className}`}>
       <div
         className="p-1"
         style={{
           borderRadius: '24px',
-          backgroundColor: '#373735',
+          backgroundColor: isWhiteMode ? '#fff' : '#373735',
+          color: isWhiteMode ? '#000' : '#fff',
           position: 'relative',
           width: 'fit-content',
           ...style,

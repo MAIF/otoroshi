@@ -3,9 +3,8 @@ import PropTypes from 'prop-types';
 import { Form } from '.';
 import debounce from 'lodash/debounce';
 import { createTooltip } from '../../tooltips';
-import YAML from 'yaml';
-
 import ReactTable from 'react-table';
+import { NgSelectRenderer } from '../nginputs';
 
 function urlTo(url) {
   window.history.replaceState({}, '', url);
@@ -48,24 +47,27 @@ export class Table extends Component {
   static defaultProps = {
     rowNavigation: false,
     stayAfterSave: false,
-    pageSize: 15,
+    pageSize: 15
   };
 
   state = {
     items: [],
+    pages: 1,
     showAddForm: false,
     showEditForm: false,
     loading: false,
     hasError: false,
+    rowsPerPage: this.props.pageSize || 15,
+    page: 0
   };
 
   componentDidMount() {
     this.registerSizeChanges();
-    this.update().then(() => {
-      if (this.props.search) {
-        console.log('Todo: default search');
-      }
-    });
+    // this.update().then(() => {
+    //   if (this.props.search) {
+    //     console.log('Todo: default search');
+    //   }
+    // });
     if (this.props.injectTable) {
       this.props.injectTable(this);
     }
@@ -96,10 +98,15 @@ export class Table extends Component {
         this.showAddForm();
       } else if (action === 'edit') {
         const item = this.props.parentProps.params.titem;
-        this.props.fetchItems().then((data) => {
+        this.props.fetchItems().then((res) => {
           //console.log(this.props.parentProps.params);
-          //console.log(data);
-          const row = data.filter((d) => this.props.extractKey(d) === item)[0];
+          // console.log(res)
+
+          let row = [];
+          if (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
+            row = res.data.filter((d) => this.props.extractKey(d) === item)[0];
+          else
+            row = res.filter((d) => this.props.extractKey(d) === item)[0];
           this.showEditForm(null, row);
         });
       }
@@ -126,18 +133,31 @@ export class Table extends Component {
     }
   };
 
-  update = () => {
+  update = (paginationState = {}) => {
     this.setState({ loading: true });
-    return this.props.fetchItems().then(
-      (rawItems) => {
-        this.setState({ items: rawItems, loading: false }, () => {
-          if (this.props.onUpdate) {
-            this.props.onUpdate(rawItems);
-          }
-        });
-      },
-      () => this.setState({ loading: false })
-    );
+    const page = paginationState.page ? paginationState.page : this.state.page;
+    return this.props.fetchItems({
+      ...paginationState,
+      pageSize: this.state.rowsPerPage,
+      page: page + 1
+    })
+      .then(rawItems => {
+        // console.log(rawItems)
+        if (Array.isArray(rawItems)) {
+          this.setState({
+            items: rawItems,
+            loading: false,
+            page
+          });
+        } else {
+          this.setState({
+            items: rawItems.data,
+            pages: rawItems.pages,
+            loading: false,
+            page
+          });
+        }
+      });
   };
 
   gotoItem = (e, item) => {
@@ -220,9 +240,10 @@ export class Table extends Component {
           .then(() => {
             return this.props.fetchItems();
           })
-          .then((items) => {
+          .then((res) => {
+            const isPaginate = (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
             urlTo(`/bo/dashboard/${this.props.selfUrl}`);
-            this.setState({ items, showEditForm: false, showAddForm: false });
+            this.setState({ items: isPaginate ? res.data : res, showEditForm: false, showAddForm: false });
           });
       }
     });
@@ -235,9 +256,10 @@ export class Table extends Component {
       .then(() => {
         return this.props.fetchItems();
       })
-      .then((items) => {
+      .then((res) => {
+        const isPaginate = (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
         urlTo(`/bo/dashboard/${this.props.selfUrl}`);
-        this.setState({ items, showAddForm: false });
+        this.setState({ items: isPaginate ? res.data : res, showAddForm: false });
       });
   };
 
@@ -258,8 +280,9 @@ export class Table extends Component {
       .then(() => {
         return this.props.fetchItems();
       })
-      .then((items) => {
-        this.setState({ items, showEditForm: false });
+      .then((res) => {
+        const isPaginate = (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
+        this.setState({ items: isPaginate ? res.data : res, showEditForm: false });
       });
   };
 
@@ -470,6 +493,9 @@ export class Table extends Component {
         ),
       });
     }
+
+    // console.log(this.state)
+
     return (
       <div>
         {!this.state.showEditForm && !this.state.showAddForm && (
@@ -496,11 +522,14 @@ export class Table extends Component {
                 {this.props.injectTopBar && this.props.injectTopBar()}
               </div>
             </div>
-            <div className="rrow">
+            <div className="rrow" style={{ position: 'relative' }}>
               <ReactTable
                 className="fulltable -striped -highlight"
+                manual
+                pages={this.state.pages}
                 data={this.state.items}
                 loading={this.state.loading}
+                defaultPageSize={this.state.rowsPerPage}
                 filterable={true}
                 filterAll={true}
                 defaultSorted={[
@@ -514,7 +543,10 @@ export class Table extends Component {
                     ? [{ id: this.props.columns[0].title, value: this.props.search }]
                     : []
                 }
-                defaultPageSize={this.props.pageSize}
+                onFetchData={(state, instance) => {
+                  // console.log(state, instance)
+                  this.update(state)
+                }}
                 columns={columns}
                 LoadingComponent={LoadingComponent}
                 defaultFilterMethod={(filter, row, column) => {
@@ -527,6 +559,24 @@ export class Table extends Component {
                   }
                 }}
               />
+              <div className='d-flex align-items-center'
+                style={{
+                  position: 'absolute',
+                  bottom: 0, left: 0,
+                  padding: '6px'
+                }}>
+                <p className='m-0 me-2'>Rows per page</p>
+                <div style={{ minWidth: '80px' }}>
+                  <NgSelectRenderer
+                    id="rows-per-page"
+                    value={this.state.rowsPerPage}
+                    label={' '}
+                    ngOptions={{ spread: true }}
+                    onChange={rowsPerPage => this.setState({ rowsPerPage }, this.update)}
+                    options={[5, 15, 20, 50, 100]}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}

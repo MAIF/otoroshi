@@ -132,8 +132,8 @@ function PushView({ endpoints, resources }) {
                         {endpoint.method}
                       </span>
                     </div>
-                    <span style={{ maxWidth: '50%', color: '#fff' }}>{endpoint.path}</span>
-                    <span className="ms-3" style={{ maxWidth: '50%', color: '#fff' }}>
+                    <span style={{ maxWidth: '50%' }}>{endpoint.path}</span>
+                    <span className="ms-3" style={{ maxWidth: '50%' }}>
                       {endpoint.description}
                     </span>
 
@@ -271,13 +271,13 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                   backgroundColor: 'rgba(25, 25, 25, .25)',
                   padding: '2px',
                   borderRadius: '4px',
-                  color: '#fff',
+                  // color: '#fff',
                 }}>
                 METHODS
               </span>
             </div>
-            <span style={{ maxWidth: '50%', color: '#fff', flex: 2 }}>PATH</span>
-            <span className="ms-3" style={{ maxWidth: '50%', color: '#fff', flex: 3 }}>
+            <span style={{ maxWidth: '50%', flex: 2 }}>PATH</span>
+            <span className="ms-3" style={{ maxWidth: '50%', flex: 3 }}>
               DESCRIPTION
             </span>
             <span className="badge bg-dark ms-3 me-auto">MODEL</span>
@@ -311,8 +311,14 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                       {endpoint.method}
                     </span>
                   </div>
-                  <span style={{ maxWidth: '50%', color: '#fff', flex: 2 }}>{endpoint.path}</span>
-                  <span className="ms-3" style={{ maxWidth: '50%', color: '#fff', flex: 3 }}>
+                  <span style={{
+                    maxWidth: '50%',
+                    flex: 2
+                  }}>{endpoint.path}</span>
+                  <span className="ms-3" style={{
+                    maxWidth: '50%',
+                    flex: 3
+                  }}>
                     {endpoint.description}
                   </span>
 
@@ -474,18 +480,18 @@ export default class MocksDesigner extends React.Component {
                 : this.getState().resources,
               endpoints: Number.isFinite(idx)
                 ? this.getState()[elementName].map((r, i) => {
-                    if (i === idx) return newEndpoint;
-                    return r;
-                  })
+                  if (i === idx) return newEndpoint;
+                  return r;
+                })
                 : [...this.getState()[elementName], newEndpoint, ...additionalEndpoints],
             });
           } else {
             this.setAndSave({
               resources: Number.isFinite(idx)
                 ? this.getState().resources.map((r, i) => {
-                    if (i === idx) return value;
-                    return r;
-                  })
+                  if (i === idx) return value;
+                  return r;
+                })
                 : [...this.getState().resources, value],
             });
           }
@@ -641,7 +647,7 @@ function OpenAPIParameters({ resources, ...props }) {
       {model?.schema.map(({ field_name, field_type, field_description, value }) => {
         return (
           <div className="d-flex pt-2" key={field_name}>
-            <p style={{ minWidth: '120px', color: '#fff' }} className="me-3">
+            <p style={{ minWidth: '120px' }} className="me-3">
               {field_name}
             </p>
             <div className="flex">
@@ -668,7 +674,7 @@ function OpenAPIResponse({ body, status, description, model, resource_list }) {
         <p className="flex">Description</p>
       </div>
       <div className="d-flex pt-2">
-        <p className="me-3" style={{ color: '#fff' }}>
+        <p className="me-3">
           {status}
         </p>
         <div className="flex">
@@ -680,7 +686,7 @@ function OpenAPIResponse({ body, status, description, model, resource_list }) {
             <p>{resource_list ? `List of ${model || 'Model'}` : model || 'Model'}</p>
           </div>
           <Suspense fallback={<div>Loading ....</div>}>
-            <CodeInput value={body} onChange={() => {}} mode="json" editorOnly={true} />
+            <CodeInput value={body} onChange={() => { }} mode="json" editorOnly={true} />
           </Suspense>
         </div>
       </div>

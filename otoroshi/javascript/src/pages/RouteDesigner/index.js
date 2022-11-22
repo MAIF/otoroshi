@@ -111,6 +111,8 @@ function BackToRouteTab({ history, routeId, viewPlugins }) {
 }
 
 function InformationsTab({ isActive, entity, value, history }) {
+  const isWhiteMode = document.body.classList.contains('white-mode');
+
   return (
     <div className="ms-2" style={{ height: '100%' }}>
       <button
@@ -127,9 +129,9 @@ function InformationsTab({ isActive, entity, value, history }) {
             });
         }}
         style={{
-          backgroundColor: isActive ? '#f9b000' : '#494948',
-          color: '#fff',
+          backgroundColor: isActive ? '#f9b000' : (isWhiteMode ? '#fff' : '#494948'),
           height: '100%',
+          color: isWhiteMode && !isActive ? '#000' : '#fff'
         }}>
         <i className="fas fa-file-alt me-2" style={{ fontSize: '1.33333em' }} />
         Informations
@@ -167,6 +169,8 @@ function RoutesTab({ isActive, entity, value, history }) {
 }
 
 function DesignerTab({ isActive, entity, value, history }) {
+  const isWhiteMode = document.body.classList.contains('white-mode');
+
   return (
     <div className="ms-2" style={{ height: '100%' }}>
       <button
@@ -183,9 +187,9 @@ function DesignerTab({ isActive, entity, value, history }) {
             });
         }}
         style={{
-          backgroundColor: isActive ? '#f9b000' : '#494948',
-          color: '#fff',
+          backgroundColor: isActive ? '#f9b000' : (isWhiteMode ? '#fff' : '#494948'),
           height: '100%',
+          color: isWhiteMode && !isActive ? '#000' : '#fff'
         }}>
         <i className="fas fa-pencil-ruler me-2" style={{ fontSize: '1.33333em' }} />
         Designer
@@ -219,16 +223,15 @@ function TesterButton({
         }}>
         <button
           type="button"
-          className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+          className="btn btn-sm btn-dark d-flex align-items-center dark-background"
           onClick={() => {
             setForceTester(true);
             viewRef?.current?.onTestingButtonClick(history, value);
           }}
           style={{
             marginLeft: 20,
-            backgroundColor: '#494948',
-            color: '#fff',
             height: '100%',
+            borderRadius: '.2rem !important'
           }}>
           <i className="fas fa-vials" style={{ fontSize: '1.33333em' }} />
           Tester
@@ -375,6 +378,12 @@ class Manager extends React.Component {
     ) {
       this.setTitle();
     }
+  }
+
+  componentWillUnmount() {
+    this.props.setSidebarContent(
+      null
+    );
   }
 
   setTitle = () => {

@@ -57,7 +57,10 @@ export class BackendsPage extends Component {
         columns={this.columns}
         stayAfterSave={true}
         deleteItem={(item) => client.deleteById(item.id)}
-        fetchItems={() => client.findAll()}
+        fetchItems={paginationState => client.findAllWithPagination({
+          ...paginationState,
+          fields: ['id', 'name', 'description']
+        })}
         updateItem={(item) => client.update(item)}
         createItem={(item) => client.create(item)}
         navigateTo={(item) => {

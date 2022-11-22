@@ -65,9 +65,7 @@ function Header({ onClose, mode }) {
 function WizardActions({ nextStep, prevStep, step, goBack }) {
   return (
     <div className="d-flex mt-auto justify-content-between align-items-center">
-      <label style={{ color: '#f9b000' }} onClick={step !== 1 ? prevStep : goBack}>
-        <Button type="outline-save" text="Previous" />
-      </label>
+      <Button type="save" text="Previous" onClick={step !== 1 ? prevStep : goBack} />
       <WizardStepButton className="ms-auto" onClick={nextStep} text="Continue" />
     </div>
   );
@@ -121,7 +119,7 @@ function JwtVerifierSelector({ handleSelect, allowedStrategy, mode }) {
   const [verifiers, setVerifiers] = useState([]);
 
   useEffect(() => {
-    BackOfficeServices.findAllJwtVerifiers().then(setVerifiers);
+    BackOfficeServices.findAllJwtVerifiers().then(r => setVerifiers(r.data));
   }, []);
 
   return (
@@ -153,7 +151,7 @@ function GoBackSelection({ goBack }) {
     <div className="d-flex mt-auto justify-content-between align-items-center m-@">
       <Button type="info" className="d-flex align-items-center" onClick={goBack}>
         <i className="fas fa-chevron-left me-2" />
-        <p className="m-0">Go back to selection</p>
+        <p className="m-0">Previous</p>
       </Button>
     </div>
   );
@@ -540,7 +538,7 @@ function WizardLastStep({ value, breadcrumb, onConfirm }) {
   return (
     <>
       <h3 style={{ textAlign: 'center' }} className="mt-3">
-        Creation steps
+      Summary
       </h3>
 
       <div
@@ -648,14 +646,14 @@ function StrategyStep({ value, onChange }) {
                   style={{
                     gap: '12px',
                     minHeight: '325px',
-                    maxWidth: '235px',
+                    maxWidth: '235px'
                   }}
                   onClick={() => props.onChange(strategy)}
                   key={strategy}>
                   <div style={{ flex: 0.2 }}>
                     {title.map((t, i) => (
                       <h3
-                        className="wizard-h3--small "
+                        className="wizard-h3--small"
                         style={{
                           margin: 0,
                           marginTop: i > 0 ? '1px' : 0,
@@ -666,14 +664,13 @@ function StrategyStep({ value, onChange }) {
                     ))}
                   </div>
                   <div className="d-flex flex-column align-items-center" style={{ flex: 1 }}>
-                    <label className="d-flex align-items-center" style={{ textAlign: 'left' }}>
+                    < label className="d-flex align-items-center" style={{ textAlign: 'left' }}>
                       {desc}
                     </label>
                     <div
-                      className="mt-auto"
+                      className="mt-auto dark-background"
                       style={{
                         padding: '4px',
-                        background: '#515151',
                         width: '100%',
                       }}>
                       {['Generate', 'Verify', 'Sign', 'Transform']
@@ -702,8 +699,9 @@ function StrategyStep({ value, onChange }) {
                   </div>
                 </Button>
               );
-            })}
-          </div>
+            })
+            }
+          </div >
         );
       },
     },

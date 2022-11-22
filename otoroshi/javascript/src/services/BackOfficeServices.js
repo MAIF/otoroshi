@@ -178,19 +178,13 @@ export function resetCanaryCampaign(serviceId) {
   }).then((r) => r.json());
 }
 
-export function allServices(env, group) {
+export function allServices(env, group, paginationState) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?filter.groups=${group}`
-    : `/bo/api/proxy/api/services`;
-  return fetch(url, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+      ? `/bo/api/proxy/api/services?filter.groups=${group}`
+      : `/bo/api/proxy/api/services`;
+  return findAllWithPagination(url, paginationState);
 }
 
 export function fetchRemainingQuotas(groupId, clientId) {
@@ -432,14 +426,8 @@ export function fetchApiKeysForPage(serviceId) {
   }).then((r) => r.json());
 }
 
-export function fetchAllApikeys() {
-  return fetch(`/bo/api/proxy/api/apikeys`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+export function fetchAllApikeys(paginationState) {
+  return findAllWithPagination('/bo/api/proxy/api/apikeys', paginationState);
 }
 
 export function fetchApiKeyById(serviceId, apkid) {
@@ -1014,14 +1002,8 @@ export function updateTemplate(ak) {
   }).then((r) => r.json());
 }
 
-export function findAllJwtVerifiers() {
-  return fetch('/bo/api/proxy/api/verifiers', {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+export function findAllJwtVerifiers(paginationState) {
+  return findAllWithPagination('/bo/api/proxy/api/verifiers', paginationState)
 }
 
 export function findJwtVerifierById(id) {
@@ -1068,14 +1050,8 @@ export function updateJwtVerifier(ak) {
   }).then((r) => r.json());
 }
 
-export function findAllAuthConfigs() {
-  return fetch('/bo/api/proxy/api/auths', {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+export function findAllAuthConfigs(paginationState) {
+  return findAllWithPagination('/bo/api/proxy/api/auths', paginationState);
 }
 
 export function findAuthConfigById(id) {
@@ -1134,14 +1110,8 @@ export function updateAuthConfig(ak) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-export function findAllCertificates() {
-  return fetch('/bo/api/proxy/api/certificates', {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+export function findAllCertificates(paginationState) {
+  return findAllWithPagination('/bo/api/proxy/api/certificates', paginationState)
 }
 
 export function findCertificateById(id) {
@@ -1703,14 +1673,8 @@ export function createNewDataExporterConfig(type) {
   }).then((r) => r.json());
 }
 
-export function findAllDataExporterConfigs() {
-  return fetch('/bo/api/proxy/api/data-exporter-configs', {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+export function findAllDataExporterConfigs(paginationState) {
+  return findAllWithPagination('/bo/api/proxy/api/data-exporter-configs', paginationState)
 }
 
 export function findDataExporterConfigById(id) {
@@ -1897,6 +1861,73 @@ const fetchWrapper = (url, method = 'GET', body) =>
     body: body ? JSON.stringify(body) : undefined,
   }).then((r) => r.json());
 
+const findAllWithPagination = (prefix, { page, pageSize, fields } = { page: 1 }) => {
+  let url = prefix
+
+  if (page) {
+    url = `${url}?page=${page}`;
+
+    if (pageSize)
+      url = `${url}&pageSize=${pageSize}`;
+
+    if (fields)
+      url = `${url}&fields=${fields.join(',')}`;
+  }
+
+  return fetch(url, {
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json'
+    }
+  })
+    .then(res => {
+      const { headers } = res;
+      const xOffset = ~~headers.get('X-Offset');
+      const xCount = ~~headers.get('X-Count');
+      const xPageSize = ~~headers.get('X-Page-Size');
+      return res.json()
+        .then(rows => ({
+          data: rows,
+          pages: Math.ceil(xCount / xPageSize),
+          offset: xOffset
+        }))
+    })
+}
+
+const findAllWithPaginationAndEntity = (entity, { page, pageSize, fields } = { page: 1 }) => {
+  let url = `/${entity}`;
+
+  if (page) {
+    url = `${url}?page=${page}`;
+
+    if (pageSize)
+      url = `${url}&pageSize=${pageSize}`;
+
+    if (fields)
+      url = `${url}&fields=${fields.join(',')}`;
+  }
+
+
+  return fetch(`/bo/api/proxy/api/experimental${url}`, {
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json'
+    }
+  })
+    .then(res => {
+      const { headers } = res;
+      const xOffset = ~~headers.get('X-Offset');
+      const xCount = ~~headers.get('X-Count');
+      const xPageSize = ~~headers.get('X-Page-Size');
+      return res.json()
+        .then(rows => ({
+          data: rows,
+          pages: Math.ceil(xCount / xPageSize),
+          offset: xOffset
+        }))
+    })
+}
+
 export const nextClient = {
   ENTITIES: {
     ROUTES: 'routes',
@@ -1905,7 +1936,14 @@ export const nextClient = {
     SERVICES: 'services',
   },
   find: (entity) => fetchWrapper(`/${entity}`),
-  findAll: (entity) => fetchWrapper(`/${entity}`),
+  findAll: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {
+    let url = `/${entity}?page=${page}`;
+    if (pageSize)
+      url = `${url}&pageSize=${pageSize}`;
+
+    return fetchWrapper(url);
+  },
+  findAllWithPagination: findAllWithPaginationAndEntity,
   create: (entity, content) => fetchWrapper(`/${entity}`, 'POST', content),
   update: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
   fetch: (entity, entityId) => fetchWrapper(`/${entity}/${entityId}`),
@@ -1917,6 +1955,7 @@ export const nextClient = {
   forEntity: (entity) => {
     return {
       findAll: () => fetchWrapper(`/${entity}`),
+      findAllWithPagination: paginationState => findAllWithPaginationAndEntity(entity, paginationState),
       create: (content) => fetchWrapper(`/${entity}`, 'POST', content),
       update: (content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
       findById: (entityId) => fetchWrapper(`/${entity}/${entityId}`),
