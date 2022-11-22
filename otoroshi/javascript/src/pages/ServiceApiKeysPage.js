@@ -763,7 +763,6 @@ export class ApiKeysPage extends Component {
   };
 
   updateItem = (ak) => {
-    console.log(ak);
     return BackOfficeServices.updateStandaloneApiKey(ak);
   };
 
