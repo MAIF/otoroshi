@@ -97,8 +97,14 @@ export function RoutesTable(props) {
         formSchema={null}
         formFlow={null}
         columns={columns}
-        fetchItems={() => nextClient.find(nextClient.ENTITIES[entity.fetchName])}
         deleteItem={(item) => deleteItem(item)}
+        fetchItems={paginationState => nextClient.findAllWithPagination(
+          nextClient.ENTITIES[entity.fetchName],
+          {
+            ...paginationState,
+            fields: ['name', 'enabled', 'frontend.domains', 'backend.targets', 'id']
+          }
+        )}
         showActions={true}
         showLink={false}
         extractKey={(item) => item.id}

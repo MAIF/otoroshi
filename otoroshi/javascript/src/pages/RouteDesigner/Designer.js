@@ -40,6 +40,8 @@ import { EurekaTargetForm } from './EurekaTargetForm';
 import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
 import GraphQLForm from './GraphQLForm';
+import { Button } from '../../components/Button';
+import { PillButton } from '../../components/PillButton';
 
 const TryItComponent = React.lazy(() => import('./TryIt'));
 
@@ -1959,19 +1961,29 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
 
 const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonClick }) => (
   <div className="d-flex justify-content-end mb-2 dark-background">
-    <button
-      className="btn btn-sm toggle-form-buttons mt-3"
+    <PillButton
+      className='mt-3'
+      rightEnabled={!asJsonFormat}
+      leftText="FORM"
+      rightText="RAW JSON"
+      onLeftClick={onFormClick}
+      onRightClick={onRawJsonClick}
+    />
+    {/* <Button
+      type='dark'
+      className="btn-sm mt-3"
       disabled={errors && errors.length > 0}
       onClick={onFormClick}
       style={{ backgroundColor: asJsonFormat ? '#373735' : '#f9b000' }}>
       FORM
-    </button>
-    <button
-      className="btn btn-sm mx-1 toggle-form-buttons mt-3"
+    </Button>
+    <Button
+      type='dark'
+      className="btn-sm mx-1 mt-3"
       onClick={onRawJsonClick}
       style={{ backgroundColor: asJsonFormat ? '#f9b000' : '#373735' }}>
       RAW JSON
-    </button>
+    </Button> */}
   </div>
 );
 

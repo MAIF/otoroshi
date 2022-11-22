@@ -639,7 +639,6 @@ export class ServicePage extends Component {
         this.setState({ loading: false });
         if (ServicePage.__willCreateService) {
           const service = { ...ServicePage.__willCreateService };
-          console.log('create ' + service);
           delete ServicePage.__willCreateService;
           this.props.setTitle(`Service descriptor`);
           this.setState(

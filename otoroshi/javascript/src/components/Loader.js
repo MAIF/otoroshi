@@ -33,5 +33,5 @@ export default function Loader({ loading, children, loadingChildren, minLoaderTi
       </>
     );
 
-  return children;
+  return children ? children : null;
 }

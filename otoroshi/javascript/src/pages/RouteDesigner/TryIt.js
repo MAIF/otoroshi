@@ -216,8 +216,8 @@ export default function ({ route, hide }) {
   };
 
   useEffect(() => {
-    fetchAllApikeys().then(setApikeys);
-    findAllCertificates().then(setCertificates);
+    fetchAllApikeys().then(r => setApikeys(r.data));
+    findAllCertificates().then(res => setCertificates(res.data));
   }, []);
 
   const send = () => {
@@ -321,7 +321,7 @@ export default function ({ route, hide }) {
             />
           )}
         <button className="btn btn-sm" type="button" style={{ minWidth: '36px' }} onClick={hide}>
-          <i className="fas fa-times" />
+          <i className="fas fa-times dark-background" />
         </button>
       </div>
       {testerView === 'graphql' ? (

@@ -21,7 +21,7 @@ export class DateTimeInput extends Component {
           {this.props.label} <Help text={this.props.help} />
         </label>
         <div className="col-sm-10" style={{ display: 'flex' }}>
-          <OtoDateTimePicker date={moment(this.props.value)} onChange={this.onChange} />
+          <OtoDateTimePicker date={this.props.value === '' ? null : moment(this.props.value)} onChange={this.onChange} />
         </div>
       </div>
     );

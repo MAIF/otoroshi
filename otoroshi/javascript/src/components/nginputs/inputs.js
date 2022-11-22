@@ -117,29 +117,35 @@ export class NgDotsRenderer extends Component {
               const rawOption = optObj ? option.value : option;
               const selected = isValueArray ? value.includes(rawOption) : value === rawOption;
 
-              let backgroundColorFromOption = 'initial';
-              let btnBackground = '';
+              let backgroundColorFromOption = null;
+              // let btnBackground = '';
 
-              if (optObj && option.color)
+              if (option.color)
                 backgroundColorFromOption = `rgba(${option.color
                   .replace(')', '')
                   .replace('rgb(', '')}, ${selected ? 1 : 0.45})`;
 
-              if (!optObj || backgroundColorFromOption === 'initial')
-                btnBackground = selected ? 'btn-info' : 'btn-dark';
+              // if (!optObj || backgroundColorFromOption === 'initial')
+              //   btnBackground = selected ? 'btn-info' : 'btn-dark';
+
+              let style = {
+                borderRadius: '24px',
+                backgroundColor: backgroundColorFromOption
+              }
+
+              if (backgroundColorFromOption) {
+                style = {
+                  ...style,
+                  color: '#fff'
+                }
+              }
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${
-                    optObj ? '' : selected ? 'btn-info' : 'btn-dark'
-                  } me-2 px-3 mb-2`}
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-info' : 'btn-dark'} me-2 px-3 mb-2`}
                   type="button"
                   key={rawOption}
-                  style={{
-                    borderRadius: '24px',
-                    backgroundColor: backgroundColorFromOption,
-                    color: '#fff',
-                  }}
+                  style={style}
                   onClick={() => {
                     const newOption = onClick(rawOption);
 
@@ -311,7 +317,7 @@ export class NgJsonRenderer extends Component {
           onChange={(e) => {
             try {
               this.props.onChange(JSON.parse(e));
-            } catch (ex) {}
+            } catch (ex) { }
           }}
           style={{ width: '100%', ...(this.props.style || {}) }}
         />
@@ -600,8 +606,8 @@ export class NgArrayRenderer extends Component {
     form: () => ({
       ...this.generateDefaultValue(current.schema),
     }),
-    object: () => {},
-    json: () => {},
+    object: () => { },
+    json: () => { },
   });
 
   generateDefaultValue = (obj) => {
@@ -775,21 +781,21 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
-                    <ItemRenderer
-                      embedded
-                      flow={this.props.flow}
-                      schema={this.props.schema}
-                      value={value}
-                      key={key}
-                      idx={idx}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        newObject[key] = e;
-                        this.props.onChange(newObject);
-                      }}
-                      {...props}
-                    />
-                  )
+                  <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={key}
+                    idx={idx}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                )
                 : null
             }
           />

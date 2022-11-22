@@ -3,6 +3,7 @@ import { TextInput } from '../../components/inputs';
 import { getOldPlugins, getPlugins, nextClient } from '../../services/BackOfficeServices';
 import { Plugins } from '../../forms/ng_plugins';
 import Loader from '../../components/Loader';
+import { Button } from '../../components/Button';
 
 const RouteNameStep = ({ state, onChange }) => (
   <>
@@ -65,9 +66,8 @@ const RouteChooser = ({ state, onChange }) => (
       ].map(({ kind, title, text }) => (
         <button
           type="button"
-          className={`btn ${
-            state.route.kind === kind ? 'btn-save' : 'btn-dark'
-          } py-3 wizard-route-chooser`}
+          className={`btn ${state.route.kind === kind ? 'btn-save' : 'btn-dark'
+            } py-3 wizard-route-chooser`}
           onClick={() => onChange(kind)}
           key={kind}>
           <h3 className="wizard-h3--small">{title}</h3>
@@ -186,10 +186,10 @@ const ProcessStep = ({ state, history }) => {
     ]).then(([plugins, oldPlugins, metadataPlugins, template]) => {
       const url = ['mock', 'graphql'].includes(state.route.kind)
         ? {
-            pahtname: '/',
-            hostname: '',
-            protocol: 'https://',
-          }
+          pahtname: '/',
+          hostname: '',
+          protocol: 'https://',
+        }
         : new URL(state.route.url);
       const secured = url.protocol.includes('https');
 
@@ -270,7 +270,7 @@ const ProcessStep = ({ state, history }) => {
         minLoaderTime={pluginsLength === 0 ? 1500 : 100 + timers[timers.length - 1]}
         loadingChildren={
           <h3 style={{ textAlign: 'center' }} className="mt-3">
-            Creation steps
+            Summary
           </h3>
         }>
         {pluginsLength === 0 && (
@@ -305,8 +305,8 @@ const ProcessStep = ({ state, history }) => {
             {state.route.kind === 'mock'
               ? 'Start creating mocks'
               : state.route.kind === 'graphql'
-              ? 'Start creating schema'
-              : 'Start editing plugins'}
+                ? 'Start creating schema'
+                : 'Start editing plugins'}
           </button>
         </div>
       </Loader>
@@ -451,12 +451,10 @@ export class RouteWizard extends React.Component {
               {step <= steps && (
                 <div
                   style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                  className="mt-3">
-                  {step !== 1 && (
-                    <label style={{ color: '#f9b000' }} onClick={this.prevStep}>
-                      Previous
-                    </label>
-                  )}
+                  className="mt-auto">
+                  {step !== 1 &&
+                    <Button type="save" text="Previous" onClick={this.prevStep} />
+                  }
                   <button
                     className="btn btn-save"
                     style={{
