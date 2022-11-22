@@ -3,6 +3,7 @@ import { TextInput } from '../../components/inputs';
 import { getOldPlugins, getPlugins, nextClient } from '../../services/BackOfficeServices';
 import { Plugins } from '../../forms/ng_plugins';
 import Loader from '../../components/Loader';
+import { Button } from '../../components/Button';
 
 const RouteNameStep = ({ state, onChange }) => (
   <>
@@ -450,12 +451,10 @@ export class RouteWizard extends React.Component {
               {step <= steps && (
                 <div
                   style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                  className="mt-3">
-                  {step !== 1 && (
-                    <label style={{ color: '#f9b000' }} onClick={this.prevStep}>
-                      Previous
-                    </label>
-                  )}
+                  className="mt-auto">
+                  {step !== 1 &&
+                    <Button type="save" text="Previous" onClick={this.prevStep} />
+                  }
                   <button
                     className="btn btn-save"
                     style={{

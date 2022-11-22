@@ -570,7 +570,9 @@ export class TopBar extends Component {
                 aria-expanded="false">
                 <span className="navbar-toggler-icon">Menu</span>
               </button>
-              <Link className="navbar-brand" to="/" style={{ display: 'flex' }}>
+              <Link className="navbar-brand" to="/" style={{ display: 'flex' }} onClick={() => {
+                this.props.setTitle(null)
+              }}>
                 {this.brandName()}
               </Link>
             </div>

@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { TextInput } from '../../components/inputs';
-import { LabelAndInput, NgCodeRenderer, NgForm, NgObjectRenderer, NgSelectRenderer, NgStringRenderer } from '../../components/nginputs';
+import { LabelAndInput, NgForm, NgSelectRenderer, NgStringRenderer } from '../../components/nginputs';
 import { Button } from '../../components/Button';
 import { SquareButton } from '../../components/SquareButton';
-import Loader from '../../components/Loader';
 import { Dropdown } from '../../components/Dropdown';
 import faker from 'faker';
 import bcrypt from 'bcryptjs';
 import { useHistory } from 'react-router-dom';
-import JwtVerifierForm from '../entities/JwtVerifier';
-import { JwtVerifier } from '../../components/JwtVerifier';
 import { FeedbackButton } from '../../pages/RouteDesigner/FeedbackButton';
 import { v4 as uuid } from 'uuid';
 import { FakeLoader } from './FakeLoader';

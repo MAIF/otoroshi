@@ -140,6 +140,7 @@ class BackOfficeAppContainer extends Component {
           <>
             <UpdateOtoroshiVersion env={this.state.env} />
             <TopBar
+              setTitle={(t) => DynamicTitle.setContent(t)}
               {...this.props}
               changePassword={this.state.env.changePassword}
               env={this.state.env}
