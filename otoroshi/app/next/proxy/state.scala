@@ -12,6 +12,8 @@ import otoroshi.script._
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.TypedMap
+import otoroshi.utils.cache.types
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -32,26 +34,26 @@ class NgProxyState(env: Env) {
     .newBuilder[String, NgRoute]
     .result()
 
-  private val apikeys             = new TrieMap[String, ApiKey]()
-  private val targets             = new TrieMap[String, NgTarget]()
-  private val backends            = new TrieMap[String, NgBackend]()
-  private val ngservices          = new TrieMap[String, NgService]()
-  private val ngbackends          = new TrieMap[String, StoredNgBackend]()
-  private val ngtargets           = new TrieMap[String, StoredNgTarget]()
-  private val jwtVerifiers        = new TrieMap[String, GlobalJwtVerifier]()
-  private val certificates        = new TrieMap[String, Cert]()
-  private val authModules         = new TrieMap[String, AuthModuleConfig]()
-  private val errorTemplates      = new TrieMap[String, ErrorTemplate]()
-  private val services            = new TrieMap[String, ServiceDescriptor]()
-  private val teams               = new TrieMap[String, Team]()
-  private val tenants             = new TrieMap[String, Tenant]()
-  private val serviceGroups       = new TrieMap[String, ServiceGroup]()
-  private val dataExporters       = new TrieMap[String, DataExporterConfig]()
-  private val otoroshiAdmins      = new TrieMap[String, OtoroshiAdmin]()
-  private val backofficeSessions  = new TrieMap[String, BackOfficeUser]()
-  private val privateAppsSessions = new TrieMap[String, PrivateAppsUser]()
-  private val tcpServices         = new TrieMap[String, TcpService]()
-  private val scripts             = new TrieMap[String, Script]()
+  private val apikeys             = new LegitTrieMap[String, ApiKey]()
+  private val targets             = new LegitTrieMap[String, NgTarget]()
+  private val backends            = new LegitTrieMap[String, NgBackend]()
+  private val ngservices          = new LegitTrieMap[String, NgService]()
+  private val ngbackends          = new LegitTrieMap[String, StoredNgBackend]()
+  private val ngtargets           = new LegitTrieMap[String, StoredNgTarget]()
+  private val jwtVerifiers        = new LegitTrieMap[String, GlobalJwtVerifier]()
+  private val certificates        = new LegitTrieMap[String, Cert]()
+  private val authModules         = new LegitTrieMap[String, AuthModuleConfig]()
+  private val errorTemplates      = new LegitTrieMap[String, ErrorTemplate]()
+  private val services            = new LegitTrieMap[String, ServiceDescriptor]()
+  private val teams               = new LegitTrieMap[String, Team]()
+  private val tenants             = new LegitTrieMap[String, Tenant]()
+  private val serviceGroups       = new LegitTrieMap[String, ServiceGroup]()
+  private val dataExporters       = new LegitTrieMap[String, DataExporterConfig]()
+  private val otoroshiAdmins      = new LegitTrieMap[String, OtoroshiAdmin]()
+  private val backofficeSessions  = new LegitTrieMap[String, BackOfficeUser]()
+  private val privateAppsSessions = new LegitTrieMap[String, PrivateAppsUser]()
+  private val tcpServices         = new LegitTrieMap[String, TcpService]()
+  private val scripts             = new LegitTrieMap[String, Script]()
   private val tryItEnabledReports = Scaffeine()
     .expireAfterWrite(5.minutes)
     .maximumSize(100)
@@ -61,7 +63,7 @@ class NgProxyState(env: Env) {
     .maximumSize(100)
     .build[String, NgExecutionReport]()
 
-  private val routesByDomain    = new TrieMap[String, Seq[NgRoute]]()
+  private val routesByDomain    = new LegitTrieMap[String, Seq[NgRoute]]()
   private val domainPathTreeRef = new AtomicReference[NgTreeRouter](NgTreeRouter.empty)
 
   def enableReportFor(id: String): Unit = {

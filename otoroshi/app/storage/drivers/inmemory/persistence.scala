@@ -14,6 +14,7 @@ import com.google.common.base.Charsets
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginConfig
 import otoroshi.utils.SchedulerHelper
+import otoroshi.utils.cache.types.{LegitConcurrentHashMap, LegitTrieMap}
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -96,8 +97,8 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def readStateFromDisk(source: Seq[String]): Unit = {
     if (logger.isDebugEnabled) logger.debug("Reading state from disk ...")
-    val store       = new ConcurrentHashMap[String, Any]()
-    val expirations = new ConcurrentHashMap[String, Long]()
+    val store       = new LegitConcurrentHashMap[String, Any]()
+    val expirations = new LegitConcurrentHashMap[String, Long]()
     source.filterNot(_.trim.isEmpty).foreach { raw =>
       val item  = Json.parse(raw)
       val key   = (item \ "k").as[String]
@@ -132,7 +133,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         Some(list)
       }
       case "hash" if modern => {
-        val map = new TrieMap[String, ByteString]()
+        val map = new LegitTrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
@@ -147,7 +148,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         Some(list)
       }
       case "hash"           => {
-        val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
+        val map = new LegitConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
@@ -223,8 +224,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     if (logger.isDebugEnabled) logger.debug("Reading state from http db ...")
     implicit val ec  = ds.actorSystem.dispatcher
     implicit val mat = ds.materializer
-    val store        = new ConcurrentHashMap[String, Any]()
-    val expirations  = new ConcurrentHashMap[String, Long]()
+    val store        = new LegitConcurrentHashMap[String, Any]()
+    val expirations  = new LegitConcurrentHashMap[String, Long]()
     val headers      = stateHeaders.toSeq ++ Seq(
       "Accept" -> "application/x-ndjson"
     )
@@ -277,7 +278,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         Some(list)
       }
       case "hash" if modern => {
-        val map = new TrieMap[String, ByteString]()
+        val map = new LegitTrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
@@ -292,7 +293,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         Some(list)
       }
       case "hash"           => {
-        val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
+        val map = new LegitConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
@@ -481,8 +482,8 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def readStateFromS3(): Future[Unit] = {
     if (logger.isDebugEnabled) logger.debug(s"Reading state from $url")
-    val store                                                       = new ConcurrentHashMap[String, Any]()
-    val expirations                                                 = new ConcurrentHashMap[String, Long]()
+    val store                                                       = new LegitConcurrentHashMap[String, Any]()
+    val expirations                                                 = new LegitConcurrentHashMap[String, Long]()
     val none: Option[(Source[ByteString, NotUsed], ObjectMetadata)] = None
     S3.download(conf.bucket, conf.key).withAttributes(s3ClientSettingsAttrs).runFold(none)((_, opt) => opt).map {
       case None                 =>
@@ -532,7 +533,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         Some(list)
       }
       case "hash" if modern => {
-        val map = new TrieMap[String, ByteString]()
+        val map = new LegitTrieMap[String, ByteString]()
         map.++=(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))))
         Some(map)
       }
@@ -547,7 +548,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         Some(list)
       }
       case "hash"           => {
-        val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
+        val map = new LegitConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }

@@ -8,22 +8,14 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script.{
-  AfterRequestContext,
-  BeforeRequestContext,
-  HttpRequest,
-  HttpResponse,
-  RequestTransformer,
-  TransformerRequestBodyContext,
-  TransformerRequestContext,
-  TransformerResponseContext
-}
+import otoroshi.script.{AfterRequestContext, BeforeRequestContext, HttpRequest, HttpResponse, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseContext}
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.ws.{DefaultWSCookie, WSAuthScheme, WSCookie}
 import otoroshi.security.IdGenerator
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.{MtlsConfig, WSCookieWithSameSite}
 import otoroshi.utils.http.WSCookieWithSameSite
@@ -133,7 +125,7 @@ class IzanamiProxy extends RequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new LegitTrieMap[String, Promise[Source[ByteString, _]]]()
 
   override def beforeRequest(
       ctx: BeforeRequestContext
@@ -332,7 +324,7 @@ object IzanamiCanaryRoutingConfig {
 
 class IzanamiCanary extends RequestTransformer {
 
-  private val cookieJar = new TrieMap[String, WSCookie]()
+  private val cookieJar = new LegitTrieMap[String, WSCookie]()
 
   private val cache: Cache[String, JsValue] = Scaffeine()
     .recordStats()

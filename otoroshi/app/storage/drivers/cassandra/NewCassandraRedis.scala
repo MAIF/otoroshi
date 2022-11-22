@@ -17,6 +17,7 @@ import otoroshi.env.Env
 import play.api.{Configuration, Logger}
 import otoroshi.storage._
 import otoroshi.utils.SchedulerHelper
+import otoroshi.utils.cache.types.LegitConcurrentHashMap
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -87,7 +88,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
 
   private val metrics = new MetricRegistry()
 
-  private val patterns = new ConcurrentHashMap[String, Pattern]()
+  private val patterns = new LegitConcurrentHashMap[String, Pattern]()
 
   private val cassandraDurableWrites: String       =
     configuration.getOptionalWithFileSupport[Boolean]("app.cassandra.durableWrites").map(_.toString).getOrElse("true")
@@ -177,7 +178,6 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
   private case object CassandraSessionClosed extends RuntimeException("Cassandra session closed") with NoStackTrace
 
   //private val blockAsync         = false
-  //private val preparedStatements = new TrieMap[String, PreparedStatement]()
   private def executeAsync(query: String, params: Map[String, Any] = Map.empty): Future[AsyncResultSet] = {
     if (_session.isClosed) {
       FastFuture.failed(CassandraSessionClosed)

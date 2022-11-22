@@ -12,6 +12,8 @@ import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.Keys
 import otoroshi.script._
+import otoroshi.utils.cache.Caches
+import otoroshi.utils.cache.types.LegitTrieMap
 import play.api.Logger
 import play.api.libs.json.{JsNumber, JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
@@ -245,14 +247,14 @@ object IpStackGeolocationHelper {
 
   import scala.concurrent.duration._
 
-  private val cache = new TrieMap[String, Option[JsValue]]()
+  private val cache = Caches.bounded[String, Option[JsValue]](10000)
 
   def find(ip: String, apikey: String, timeout: Long)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] = {
     env.metrics.withTimerAsync("otoroshi.plugins.geolocation.ipstack.details") {
-      cache.get(ip) match {
+      cache.getIfPresent(ip) match {
         case Some(details) => FastFuture.successful(details)
         case None          => {
           env.Ws // no need for mtls here
@@ -263,7 +265,7 @@ object IpStackGeolocationHelper {
             .map {
               case resp if resp.status == 200 && resp.header("Content-Type").exists(_.contains("application/json")) =>
                 val res = Some(resp.json)
-                cache.putIfAbsent(ip, res)
+                cache.put(ip, res)
                 res
               case _                                                                                                => None
             }
@@ -278,9 +280,9 @@ object MaxMindGeolocationHelper {
   import scala.concurrent.duration._
 
   private val logger  = Logger("otoroshi-plugins-maxmind-geolocation-helper")
-  private val ipCache = new TrieMap[String, InetAddress]()
-  private val cache   = new TrieMap[String, Option[JsValue]]()
-  private val dbs     = new TrieMap[String, (AtomicReference[DatabaseReader], AtomicBoolean, AtomicBoolean)]()
+  private val ipCache = Caches.bounded[String, InetAddress](10000)
+  private val cache   = Caches.bounded[String, Option[JsValue]](10000)
+  private val dbs     = new LegitTrieMap[String, (AtomicReference[DatabaseReader], AtomicBoolean, AtomicBoolean)]()
   private val exc     =
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() + 1))
 
@@ -514,10 +516,10 @@ s                     |mv *.mmdb geolite.mmdb
   def find(ip: String, file: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     env.metrics.withTimerAsync("otoroshi.plugins.geolocation.maxmind.details") {
       dbRefInit(file)
-      cache.get(ip) match {
+      cache.getIfPresent(ip) match {
         case loc @ Some(_)                         => FastFuture.successful(loc.flatten)
         case None if dbInitializationDoneGet(file) => {
-          val inet = ipCache.getOrElseUpdate(ip, InetAddress.getByName(ip))
+          val inet = ipCache.get(ip, _ => InetAddress.getByName(ip))
           //dbs.get(file) match {
           //  case None =>
           //    logger.error(s"Did not found db for $file")
@@ -529,7 +531,7 @@ s                     |mv *.mmdb geolite.mmdb
             case Some(db) => {
               Try(db.city(inet)) match { // TODO: blocking ???
                 case Failure(e)    =>
-                  cache.putIfAbsent(ip, None)
+                  cache.put(ip, None)
                 case Success(city) => {
                   Option(city)
                     .map { c =>
@@ -556,10 +558,10 @@ s                     |mv *.mmdb geolite.mmdb
                           "is_eu"      -> c.getCountry.isInEuropeanUnion
                         )
                       )
-                      cache.putIfAbsent(ip, Some(location))
+                      cache.put(ip, Some(location))
                     }
                     .getOrElse {
-                      cache.putIfAbsent(ip, None)
+                      cache.put(ip, None)
                     }
                 }
               }
@@ -567,7 +569,7 @@ s                     |mv *.mmdb geolite.mmdb
           }
           //}
           //}
-          FastFuture.successful(cache.get(ip).flatten)
+          FastFuture.successful(cache.getIfPresent(ip).flatten)
         }
         case _                                     =>
           FastFuture.successful(None) // initialization in progress

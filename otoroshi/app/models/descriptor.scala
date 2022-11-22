@@ -32,6 +32,8 @@ import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.config.ConfigUtils
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.ReplaceAllWith
+import otoroshi.utils.cache.Caches
+import otoroshi.utils.cache.types.{LegitConcurrentHashMap, LegitTrieMap}
 import otoroshi.utils.http.{CacheConnectionSettings, MtlsConfig}
 
 import scala.collection.concurrent.TrieMap
@@ -60,9 +62,9 @@ case class ServiceDescriptorQuery(
       case s                                => s"$subdomain.$line.$domain"
     }
 
-  private val existsCache     = new java.util.concurrent.ConcurrentHashMap[String, Boolean]
-  private val serviceIdsCache = new java.util.concurrent.ConcurrentHashMap[String, Seq[String]]
-  private val servicesCache   = new java.util.concurrent.ConcurrentHashMap[String, Seq[ServiceDescriptor]]
+  private val existsCache     = new LegitConcurrentHashMap[String, Boolean]
+  private val serviceIdsCache = new LegitConcurrentHashMap[String, Seq[String]]
+  private val servicesCache   = new LegitConcurrentHashMap[String, Seq[ServiceDescriptor]]
 
   def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     val key = this.asKey
@@ -286,7 +288,7 @@ case class AtomicAverage(count: AtomicLong, sum: AtomicLong) {
 object BestResponseTime extends LoadBalancing {
 
   private[models] val random        = new scala.util.Random
-  private[models] val responseTimes = new TrieMap[String, AtomicAverage]()
+  private[models] val responseTimes = new LegitTrieMap[String, AtomicAverage]()
 
   def incrementAverage(desc: ServiceDescriptor, target: Target, responseTime: Long): Unit = {
     val key = s"${desc.id}-${target.asKey}"
@@ -670,7 +672,7 @@ class CidrOfString(cdr: String) {
     opt match {
       case None       => false
       case Some(cidr) =>
-        IpFiltering.ipaddrCache.getOrElseUpdate(ip, IpAddress.fromString(ip)) match {
+        IpFiltering.ipaddrCache.get(ip, _ => IpAddress.fromString(ip)) match {
           case None         => false
           case Some(ipaddr) => cidr.contains(ipaddr)
         }
@@ -680,10 +682,10 @@ class CidrOfString(cdr: String) {
 
 object IpFiltering {
   implicit val format             = Json.format[IpFiltering]
-  private val cidrCache           = new TrieMap[String, CidrOfString]()
-  private[models] val ipaddrCache = new TrieMap[String, Option[IpAddress]]()
+  private val cidrCache           = Caches.bounded[String, CidrOfString](10000)
+  private[models] val ipaddrCache = Caches.bounded[String, Option[IpAddress]](10000)
   def cidr(cdr: String): CidrOfString = {
-    cidrCache.getOrElseUpdate(cdr, new CidrOfString(cdr))
+    cidrCache.get(cdr, _ => new CidrOfString(cdr))
   }
 }
 
@@ -1390,7 +1392,7 @@ case class Restrictions(
       }
   }
 
-  private val cache = new TrieMap[String, (Boolean, Future[Result])]() // Not that clean but perfs matters
+  private val cache = Caches.bounded[String, (Boolean, Future[Result])](10000) // Not that clean but perfs matters
 
   // def handleRestrictions(descriptor: ServiceDescriptor, apk: Option[ApiKey], req: RequestHeader, attrs: TypedMap)(
   def handleRestrictions(
@@ -1411,8 +1413,8 @@ case class Restrictions(
       val domain = req.theDomain
       val path   = req.thePath
       val key    = s"${id}:${apk.map(_.clientId).getOrElse("none")}:$method:$domain:$path"
-      cache.getOrElseUpdate(
-        key, {
+      cache.get(
+        key, _ => {
           if (allowLast) {
             if (isNotFound(method, domain, path)) {
               (
@@ -2460,7 +2462,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       }
      */
 
-    val matched                 = new TrieMap[String, String]()
+    val matched                 = new LegitTrieMap[String, String]()
     val filtered1               = services.filter { sr =>
       val allHeadersMatched = matchAllHeaders(sr, query)
       val rootMatched       = sr.allPaths match {

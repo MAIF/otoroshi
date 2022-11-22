@@ -2,10 +2,10 @@ package otoroshi.openapi
 
 import io.github.classgraph.{ClassGraph, ScanResult}
 import otoroshi.env.Env
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
-
 import otoroshi.utils.syntax.implicits._
 
 import java.io.File
@@ -73,7 +73,7 @@ class ClassGraphScanner {
       asForms = asForms /*{
         val jsonRaw = Files.readString(formFile.toPath)
         val obj     = Json.parse(jsonRaw).as[JsObject]
-        val map     = new TrieMap[String, Form]()
+        val map     = new LegitTrieMap[String, Form]()
         map.++=(obj.value.mapValues(Form.fromJson)).toMap
       }*/
     )
@@ -92,13 +92,13 @@ class ClassGraphScanner {
       val flattenedOpenapiSchema = {
         val jsonRaw = new String(openapiflatres.readAllBytes(), StandardCharsets.UTF_8)
         val obj     = Json.parse(jsonRaw).as[JsObject]
-        val map     = new TrieMap[String, JsValue]()
+        val map     = new LegitTrieMap[String, JsValue]()
         map.++=(obj.value)
       }
       val asForms = {
         val jsonRaw = new String(openapiformres.readAllBytes(), StandardCharsets.UTF_8)
         val obj     = Json.parse(jsonRaw).as[JsObject]
-        val map     = new TrieMap[String, Form]()
+        val map     = new LegitTrieMap[String, Form]()
         map.++=(obj.value.mapValues(Form.fromJson)).toMap
       }
       OpenApiSchema(
@@ -130,12 +130,12 @@ class ClassGraphScanner {
       .enableAllInfo()
       .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws") ++ configurationPackages: _*)
       .scan()
-    val dev        = env.isDev
+    val dev = env.isDev
     if (dev) {
       scanAndGenerateSchema(scanResult)
     } else {
       readSchemaFromFiles(scanResult, env) match {
-        case Left(err)  => throw new RuntimeException(err)
+        case Left(err) => throw new RuntimeException(err)
         case Right(oas) => oas
       }
     }

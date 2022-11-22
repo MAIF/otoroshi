@@ -10,6 +10,7 @@ import otoroshi.events.KafkaWrapper
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpResponse, RequestTransformer, TransformerErrorContext, TransformerResponseContext}
 import otoroshi.utils.RegexPool
+import otoroshi.utils.cache.types.LegitTrieMap
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Result
@@ -479,7 +480,7 @@ class KafkaAccessLog extends RequestTransformer {
 
   private val logger = Logger("otoroshi-plugins-kafka-access-log")
 
-  private val kafkaWrapperCache = new TrieMap[String, KafkaWrapper]
+  private val kafkaWrapperCache = new LegitTrieMap[String, KafkaWrapper]
 
   override def name: String = "Kafka access log"
 

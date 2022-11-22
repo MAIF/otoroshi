@@ -22,6 +22,7 @@ import play.api.{Configuration, Environment, Logger}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
 import otoroshi.storage.drivers.inmemory.{Memory, SwapStrategy, SwappableRedis}
 import otoroshi.storage.stores.{DataExporterConfigDataStore, TeamDataStore, TenantDataStore}
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
@@ -893,7 +894,7 @@ case class IncrOptimizerItem(
 }
 
 class IncrOptimizer(ops: Int, time: Int) {
-  private val cache = new TrieMap[String, IncrOptimizerItem]()
+  private val cache = new LegitTrieMap[String, IncrOptimizerItem]()
   def incrBy(key: String, increment: Long)(f: Long => Future[Long])(implicit ec: ExecutionContext): Future[Long] = {
     cache.get(key) match {
       case None       =>

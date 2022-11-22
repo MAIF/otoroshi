@@ -5,6 +5,7 @@ import io.github.classgraph._
 import otoroshi.env.Env
 import otoroshi.models.Entity
 import otoroshi.utils.RegexPool
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -172,7 +173,7 @@ class OpenApiGenerator(
       .values).toSeq.distinct
 
   var adts              = Seq.empty[JsObject]
-  val foundDescriptions = new TrieMap[String, String]()
+  val foundDescriptions = new LegitTrieMap[String, String]()
   val found             = new AtomicLong(0L)
   val notFound          = new AtomicLong(0L)
   val resFound          = new AtomicLong(0L)
@@ -1060,7 +1061,7 @@ class OpenApiGenerator(
 
   def runAndMaybeWrite(): (JsValue, Boolean) = {
     val config = getConfig()
-    val result = new TrieMap[String, JsValue]()
+    val result = new LegitTrieMap[String, JsValue]()
 
     config.add_schemas.value.map { case (key, value) =>
       result.put(key, value)
@@ -1159,7 +1160,7 @@ class OpenApiGenerator(
 
     val filteredEntities = result.filter(p => returnEntities.contains(p._1))
 
-    val openApiEntities = new TrieMap[String, JsValue]()
+    val openApiEntities = new LegitTrieMap[String, JsValue]()
     filteredEntities.foreach(ent => {
       discoverEntities(result, ent, openApiEntities)
     })
@@ -1244,8 +1245,8 @@ class OpenApiGenerator(
     val f      = new File(oldSpecPath)
     if (f.exists()) {
       val oldSpec      = Json.parse(Files.readAllLines(f.toPath).asScala.mkString("\n"))
-      val descriptions = new TrieMap[String, String]()
-      val examples     = new TrieMap[String, String]()
+      val descriptions = new LegitTrieMap[String, String]()
+      val examples     = new LegitTrieMap[String, String]()
       oldSpec.select("components").select("schemas").asObject.value.map {
         case (key, value) => {
           val path = s"old.${key}"

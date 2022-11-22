@@ -14,6 +14,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import com.google.common.hash.Hashing
+import io.github.classgraph.ClassgraphUtils
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.events.{AnalyticEvent, OtoroshiEvent}
@@ -30,6 +31,7 @@ import play.api.mvc._
 import redis.RedisClientMasterSlaves
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.{SchedulerHelper, TypedMap}
 import otoroshi.utils.config.ConfigUtils
 import otoroshi.utils.syntax.implicits._
@@ -601,7 +603,7 @@ trait NanoApp extends RequestTransformer {
 
   override def pluginType: PluginType = PluginType.AppType
 
-  private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new LegitTrieMap[String, Promise[Source[ByteString, _]]]()
 
   override def beforeRequest(
       ctx: BeforeRequestContext
@@ -741,10 +743,10 @@ class ScriptManager(env: Env) {
   private val logger       = Logger("otoroshi-script-manager")
   private val updateRef    = new AtomicReference[Cancellable]()
   private val firstScan    = new AtomicBoolean(false)
-  private val compiling    = new TrieMap[String, Unit]()
-  private val cache        = new TrieMap[String, (String, PluginType, Any)]()
-  private val cpCache      = new TrieMap[String, (PluginType, Any)]()
-  private val cpTryCache   = new TrieMap[String, Unit]()
+  private val compiling    = new LegitTrieMap[String, Unit]()
+  private val cache        = new LegitTrieMap[String, (String, PluginType, Any)]()
+  private val cpCache      = new LegitTrieMap[String, (PluginType, Any)]()
+  private val cpTryCache   = new LegitTrieMap[String, Unit]()
 
   private val listeningCpScripts = new AtomicReference[Seq[InternalEventListener]](Seq.empty)
 
@@ -972,7 +974,9 @@ class ScriptManager(env: Env) {
             Seq.empty[String],
             Seq.empty[String]
           )
-      } finally if (scanResult != null) scanResult.close()
+      } finally {
+        if (scanResult != null) ClassgraphUtils.clear(scanResult)
+      }
     } getOrElse (
       Seq.empty[String],
       Seq.empty[String],

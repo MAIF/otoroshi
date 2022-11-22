@@ -30,6 +30,7 @@ import play.api.mvc.MultipartFormData
 import play.shaded.ahc.org.asynchttpclient.util.Assertions
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.syntax.implicits._
 import reactor.netty.http.client.HttpClient
 
@@ -661,8 +662,6 @@ object SSLConfigSettingsCustomizer {
 class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem, materializer: Materializer)
     extends WSClient {
 
-  import otoroshi.utils.cache.CacheImplicits._
-
   val ec     = system.dispatcher
   val mat    = materializer
   val client = Http(system)
@@ -793,7 +792,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
     }
   }
 
-  private val queueCache = new TrieMap[String, SourceQueueWithComplete[(HttpRequest, Promise[HttpResponse])]]()
+  private val queueCache = new LegitTrieMap[String, SourceQueueWithComplete[(HttpRequest, Promise[HttpResponse])]]()
 
   private def getQueue(
       request: HttpRequest,

@@ -1,86 +1,21 @@
 package otoroshi.utils.cache
 
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
+
 import java.util.concurrent.ConcurrentHashMap
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration.FiniteDuration
 
-import com.github.blemale.scaffeine.Cache
-
-object SimpleCache {
-  def apply[K, V](initialValue: Map[K, (Long, V)] = Map.empty) = new SimpleCache[K, V](initialValue)
+package object types {
+  type LegitTrieMap[A, B] = TrieMap[A, B]
+  type LegitConcurrentHashMap[A, B] = ConcurrentHashMap[A, B]
 }
 
-class SimpleCache[K, V](initialValue: Map[K, (Long, V)] = Map.empty) {
-
-  import collection.JavaConverters._
-  import scala.concurrent.duration._
-
-  private val cache: ConcurrentHashMap[K, (Long, V)] = new ConcurrentHashMap[K, (Long, V)](initialValue.asJava)
-
-  def remove(k: K): Option[V] =
-    cleanup { _ =>
-      Option(cache.remove(k)).map(_._2)
-    }
-
-  def removeAll(keys: Seq[K]): Unit =
-    cleanup { _ =>
-      keys.map(k => cache.remove(k))
-    }
-
-  def get(k: K): Option[V] =
-    cleanup { _ =>
-      Option(cache.get(k)).map(_._2)
-    }
-
-  def ttl(k: K): Option[Duration] =
-    cleanup { _ =>
-      Option(cache.get(k)).map { case (time, _) =>
-        (time - System.currentTimeMillis()).millis
-      }
-    }
-
-  def contains(k: K): Boolean =
-    cleanup { _ =>
-      cache.contains(k)
-    }
-
-  def put(key: K, value: V, ttl: Duration = Duration.Inf): Unit =
-    cleanup { time =>
-      ttl match {
-        case Duration.Inf => cache.put(key, (-1, value))
-        case _            => cache.put(key, (time + ttl.toMillis, value))
-      }
-    }
-
-  def putIfAbsent(key: K, value: V, ttl: Duration = Duration.Inf): Unit =
-    cleanup { time =>
-      ttl match {
-        case Duration.Inf => cache.putIfAbsent(key, (-1, value))
-        case _            => cache.putIfAbsent(key, (time + ttl.toMillis, value))
-      }
-    }
-
-  def asMap: Map[K, V] =
-    cleanup { _ =>
-      cache.asScala.mapValues(_._2).toMap
-    }
-
-  private def cleanup[A](f: Long => A): A = {
-    val time     = System.currentTimeMillis()
-    val killKeys = cache.asScala.collect {
-      case (k, (expiration, _)) if expiration != -1 && expiration < time => k
-    }.toSet
-    killKeys.map(k => cache.remove(k))
-    f(time)
+object Caches {
+  def bounded[A, B](maxItems: Int): Cache[A, B] = {
+    Scaffeine().maximumSize(maxItems).build[A, B]()
   }
-}
-
-object CacheImplicits {
-  implicit class BetterCache[A, B](val cache: Cache[A, B]) extends AnyVal {
-    def getOrElse(key: A, el: => B): B = {
-      cache.getIfPresent(key).getOrElse {
-        val res = el
-        cache.put(key, res)
-        res
-      }
-    }
+  def expireAfterWrite[A, B](duration: FiniteDuration, maxItems: Int = Int.MaxValue): Cache[A, B] = {
+    Scaffeine().expireAfterWrite(duration).maximumSize(maxItems).build[A, B]()
   }
 }

@@ -14,10 +14,11 @@ import otoroshi.events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedE
 import otoroshi.models.GlobalConfig
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils
-import otoroshi.utils.{future, SchedulerHelper, TypedMap}
+import otoroshi.utils.{SchedulerHelper, TypedMap, future}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.config.ConfigUtils
 
 import scala.collection.concurrent.TrieMap
@@ -499,8 +500,8 @@ class JobManager(env: Env) {
 
   private[script] val jobActorSystem = ActorSystem("jobs-system")
   private[script] val jobScheduler   = jobActorSystem.scheduler
-  private val registeredJobs         = new TrieMap[JobId, RegisteredJobContext]()
-  private val registeredLocks        = new TrieMap[JobId, (String, String)]()
+  private val registeredJobs         = new LegitTrieMap[JobId, RegisteredJobContext]()
+  private val registeredLocks        = new LegitTrieMap[JobId, (String, String)]()
   private val scanRef                = new AtomicReference[Cancellable]()
   private val lockRef                = new AtomicReference[Cancellable]()
 
