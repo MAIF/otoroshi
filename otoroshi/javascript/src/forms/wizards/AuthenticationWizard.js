@@ -64,11 +64,11 @@ function Header({ onClose, mode }) {
 
 function WizardActions({ nextStep, prevStep, step, goBack }) {
   return <div className="d-flex mt-auto justify-content-between align-items-center">
-    <label style={{ color: '#f9b000' }} onClick={step !== 1 ? prevStep : goBack}>
-      <Button type='outline-save'
-        text="Previous"
-      />
-    </label>
+    <Button
+      type='save'
+      onClick={step !== 1 ? prevStep : goBack}
+      text="Previous"
+    />
     <WizardStepButton
       className="ms-auto"
       onClick={nextStep}
@@ -110,7 +110,7 @@ function AuthenticationSelector({ handleSelect, mode }) {
 
   useEffect(() => {
     BackOfficeServices.findAllAuthConfigs()
-      .then(setAuthentications)
+      .then(r => setAuthentications(r.data))
   }, []);
 
   return <div className='d-flex flex-column mt-3' style={{ flex: 1 }}>
@@ -138,7 +138,7 @@ function GoBackSelection({ goBack }) {
       className='d-flex align-items-center'
       onClick={goBack}>
       <i className='fas fa-chevron-left me-2' />
-      <p className='m-0'>Go back to selection</p>
+      <p className='m-0'>Previous</p>
     </Button>
   </div>
 }
@@ -458,7 +458,7 @@ function WizardLastStep({ value, breadcrumb, onConfirm }) {
   return (
     <>
       <h3 style={{ textAlign: 'center' }} className="mt-3">
-        Creation steps
+        Summary
       </h3>
 
       <div className='d-flex mx-auto' style={{
