@@ -50,7 +50,7 @@ export function DefaultSidebar(props) {
           </Link>
         </li>
       </>}
-      {props.env && props.env.initWithNewEngine && <>
+      <>
         <li className="nav-item">
           <h3 className="">
             <i className="fas fa-cubes" /> Routes
@@ -73,7 +73,7 @@ export function DefaultSidebar(props) {
             <i className="fas fa-plus" /> Add route
           </Link>
         </li>
-      </>}
+      </>
       {props.env && props.env.clevercloud && (
         <li className="nav-item">
           <Link
