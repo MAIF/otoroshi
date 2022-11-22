@@ -228,7 +228,7 @@ export class TopBar extends Component {
         if (this.props.env.clusterRole === 'Leader') {
           options.push({
             action: () => this.routeTo('/cluster'),
-            env: <span className="fas fa-network-wired-alt" />,
+            env: <span className="fas fa-network-wired" />,
             label: 'Cluster view',
             value: 'cluster-view',
           });

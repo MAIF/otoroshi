@@ -11,7 +11,7 @@ export class TenantsPage extends Component {
     },
     {
       title: 'Description',
-      content: (item) => item.descripiton,
+      content: (item) => item.description,
     },
   ];
 

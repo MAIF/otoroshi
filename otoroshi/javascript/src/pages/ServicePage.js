@@ -682,6 +682,7 @@ export class ServicePage extends Component {
 
   componentWillUnmount() {
     this.unmountShortcuts();
+    this.props.setSidebarContent(null)
   }
 
   mountShortcuts = () => {
@@ -995,15 +996,13 @@ export class ServicePage extends Component {
       )
       .then((form) => {
         if (form) {
-          BackOfficeServices.createCertificateFromForm(form).then((cert) => {
-            this.props.setTitle(`Create a new Certificate`);
-            window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-            if (form.letsEncrypt) {
-              this.table.setState({ currentItem: cert, showEditForm: true });
-            } else {
-              this.table.setState({ currentItem: cert, showAddForm: true });
-            }
-          });
+          BackOfficeServices.createCertificateFromForm(form)
+            .then((cert) => {
+              this.props.history.push('/certificates/add', {
+                cert,
+                showEditForm: form.letsEncrypt
+              })
+            });
         }
       });
   };
@@ -1033,13 +1032,10 @@ export class ServicePage extends Component {
                 `Ordering certificate for ${host}`
               );
             } else {
-              this.props.setTitle(`Create a new Certificate`);
-              window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-              if (form.letsEncrypt) {
-                this.table.setState({ currentItem: cert, showEditForm: true });
-              } else {
-                this.table.setState({ currentItem: cert, showAddForm: true });
-              }
+              this.props.history.push('/certificates/add', {
+                cert,
+                showEditForm: form.letsEncrypt
+              })
             }
           });
         }

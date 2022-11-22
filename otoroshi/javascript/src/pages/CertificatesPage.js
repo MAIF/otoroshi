@@ -608,9 +608,13 @@ export class CertificatesPage extends Component {
 
   componentDidMount() {
     this.props.setTitle(`All certificates`);
-    if (window.history.state && window.history.state.cert) {
+    if ((window.history.state && window.history.state.cert) ||
+      (this.props.location && this.props.location.state && this.props.location.state.cert)) {
       this.props.setTitle(`Create a new certificate`);
-      this.table.setState({ currentItem: window.history.state.cert, showAddForm: true });
+      this.table.setState({
+        currentItem: (window.history.state && window.history.state.cert) ? window.history.state.cert : this.props.location.state.cert,
+        showAddForm: (this.props.location && this.props.location.state && this.props.location.state.showEditForm) ? !this.props.location.state.showEditForm : true
+      });
     }
   }
 
