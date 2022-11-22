@@ -380,6 +380,12 @@ class Manager extends React.Component {
     }
   }
 
+  componentWillUnmount() {
+    this.props.setSidebarContent(
+      null
+    );
+  }
+
   setTitle = () => {
     if (!this.state.value) return;
 
