@@ -240,9 +240,10 @@ export class Table extends Component {
           .then(() => {
             return this.props.fetchItems();
           })
-          .then((items) => {
+          .then((res) => {
+            const isPaginate = (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
             urlTo(`/bo/dashboard/${this.props.selfUrl}`);
-            this.setState({ items, showEditForm: false, showAddForm: false });
+            this.setState({ items: isPaginate ? res.data : res, showEditForm: false, showAddForm: false });
           });
       }
     });
@@ -255,9 +256,10 @@ export class Table extends Component {
       .then(() => {
         return this.props.fetchItems();
       })
-      .then((items) => {
+      .then((res) => {
+        const isPaginate = (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
         urlTo(`/bo/dashboard/${this.props.selfUrl}`);
-        this.setState({ items, showAddForm: false });
+        this.setState({ items: isPaginate ? res.data : res, showAddForm: false });
       });
   };
 
@@ -278,8 +280,9 @@ export class Table extends Component {
       .then(() => {
         return this.props.fetchItems();
       })
-      .then((items) => {
-        this.setState({ items, showEditForm: false });
+      .then((res) => {
+        const isPaginate = (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
+        this.setState({ items: isPaginate ? res.data : res, showEditForm: false });
       });
   };
 

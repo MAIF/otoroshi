@@ -111,7 +111,7 @@ export class JwtVerifiersPage extends Component {
           defaultValue={BackOfficeServices.createNewJwtVerifier}
           fetchItems={paginationState => BackOfficeServices.findAllJwtVerifiers({
             ...paginationState,
-            fields: ['id', 'name', 'description', 'strategy.type']
+            fields: ['id', 'name', 'desc', 'strategy.type']
           })}
           updateItem={BackOfficeServices.updateJwtVerifier}
           deleteItem={BackOfficeServices.deleteJwtVerifier}
