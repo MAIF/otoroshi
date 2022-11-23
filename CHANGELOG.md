@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.18] - 2022-11-14
+
+https://github.com/MAIF/otoroshi/milestone/50?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.17...v1.5.18
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.18
+
+- server side pagination for entities (#1256)
+- provide QUIC remote address when using http3 (#1317)
+- tls session extraction fails with HTTP/1.1 on netty backend (#1319)
+- uriCache causes memory leaks in some cases (#1321)
+- cleanup cache usage in codebase to avoid unbounded behaviors (#1322)
+- upgrade swagger-ui (#1324)
+- bad error message when using jwt verifiers (#1328)
+
 ## [1.5.17] - 2022-11-14
 
 https://github.com/MAIF/otoroshi/milestone/49?closed=1
