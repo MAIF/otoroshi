@@ -61,7 +61,7 @@ object HeadersHelperImplicits {
       if (f) seq ++ other else seq
 
     def debug(name: String): Seq[(String, String)] = {
-      println(name, seq.mkString("\n"))
+      // println(name, seq.mkString("\n"))
       seq
     }
   }

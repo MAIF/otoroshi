@@ -1861,7 +1861,7 @@ const fetchWrapper = (url, method = 'GET', body) =>
     body: body ? JSON.stringify(body) : undefined,
   }).then((r) => r.json());
 
-const findAllWithPagination = (prefix, { page, pageSize, fields } = { page: 1 }) => {
+const findAllWithPagination = (prefix, { page, pageSize, fields, filtered } = { page: 1, filtered: [] }) => {
   let url = prefix
 
   if (page) {
@@ -1872,6 +1872,9 @@ const findAllWithPagination = (prefix, { page, pageSize, fields } = { page: 1 })
 
     if (fields)
       url = `${url}&fields=${fields.join(',')}`;
+
+    if (filtered && filtered.length > 0)
+      url = `${url}&filtered=${filtered.map(field => `${field.id}:${field.value}`).join(',')}`
   }
 
   return fetch(url, {
@@ -1894,7 +1897,7 @@ const findAllWithPagination = (prefix, { page, pageSize, fields } = { page: 1 })
     })
 }
 
-const findAllWithPaginationAndEntity = (entity, { page, pageSize, fields } = { page: 1 }) => {
+const findAllWithPaginationAndEntity = (entity, { page, pageSize, fields, filtered } = { page: 1, filtered: [] }) => {
   let url = `/${entity}`;
 
   if (page) {
@@ -1905,6 +1908,9 @@ const findAllWithPaginationAndEntity = (entity, { page, pageSize, fields } = { p
 
     if (fields)
       url = `${url}&fields=${fields.join(',')}`;
+
+    if (filtered && filtered.length > 0)
+      url = `${url}&filtered=${filtered.map(field => `${field.id}:${field.value}`).join(',')}`
   }
 
 

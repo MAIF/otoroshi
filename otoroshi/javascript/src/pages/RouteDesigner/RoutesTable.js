@@ -11,6 +11,7 @@ export default ({ injectTopBar }) => {
 
   const domainToTargetColumn = {
     title: 'Domain → Target',
+    notFilterable: true,
     cell: (item) => {
       return (
         <>

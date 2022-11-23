@@ -63,11 +63,9 @@ export class Table extends Component {
 
   componentDidMount() {
     this.registerSizeChanges();
-    // this.update().then(() => {
-    //   if (this.props.search) {
-    //     console.log('Todo: default search');
-    //   }
-    // });
+
+    this.setPlaceholders();
+
     if (this.props.injectTable) {
       this.props.injectTable(this);
     }
@@ -77,6 +75,7 @@ export class Table extends Component {
   registerSizeChanges = () => {
     this.sizeListener = debounce((e) => {
       this.forceUpdate();
+      this.setPlaceholders();
     }, 400);
     window.addEventListener('resize', this.sizeListener);
   };
@@ -89,6 +88,10 @@ export class Table extends Component {
   componentDidCatch(err, info) {
     this.setState({ hasError: true });
     console.log('Table has error', err, info);
+  }
+
+  setPlaceholders = () => {
+    [...document.querySelectorAll('.rt-table input[type=text]')].map(r => r.setAttribute("placeholder", "Search ..."));
   }
 
   readRoute = () => {
@@ -133,9 +136,10 @@ export class Table extends Component {
     }
   };
 
-  update = (paginationState = {}) => {
+  update = debounce((paginationState = {}) => {
     this.setState({ loading: true });
-    const page = paginationState.page ? paginationState.page : this.state.page;
+
+    const page = paginationState.page !== undefined ? paginationState.page : this.state.page;
     return this.props.fetchItems({
       ...paginationState,
       pageSize: this.state.rowsPerPage,
@@ -157,8 +161,8 @@ export class Table extends Component {
             page
           });
         }
-      });
-  };
+      })
+  }, 200)
 
   gotoItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -392,15 +396,18 @@ export class Table extends Component {
         filterable: !c.notFilterable,
         sortMethod: c.sortMethod,
         accessor: (d) => (c.content ? c.content(d) : d),
-        Filter: (d) => (
-          <input
-            type="text"
-            className="form-control input-sm"
-            value={d.filter ? d.filter.value : ''}
-            onChange={(e) => d.onChange(e.target.value)}
-            placeholder="Search ..."
-          />
-        ),
+        // Filter: (d) => {
+        //   return <input
+        //     type="text"
+        //     id={`input-${c.title}`}
+        //     className="form-control input-sm"
+        //     value={d.filter ? d.filter.value : ''}
+        //     onChange={(e) => {
+        //       d.onChange(e.target.value)
+        //     }}
+        //     placeholder="Search ..."
+        //   />
+        // },
         Cell: (r) => {
           const value = r.value;
           const original = r.original;
@@ -525,7 +532,7 @@ export class Table extends Component {
             <div className="rrow" style={{ position: 'relative' }}>
               <ReactTable
                 className="fulltable -striped -highlight"
-                manual
+                // manual
                 pages={this.state.pages}
                 data={this.state.items}
                 loading={this.state.loading}
@@ -545,7 +552,13 @@ export class Table extends Component {
                 }
                 onFetchData={(state, instance) => {
                   // console.log(state, instance)
+                  // console.log('onFetchData')
                   this.update(state)
+                }}
+                onFilteredChange={(column, value) => {
+                  // console.log('onFilteredChange')
+                  if (this.state.lastFocus)
+                    document.getElementById(this.state.lastFocus)?.focus()
                 }}
                 columns={columns}
                 LoadingComponent={LoadingComponent}

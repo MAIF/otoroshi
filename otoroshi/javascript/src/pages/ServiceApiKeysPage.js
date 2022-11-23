@@ -726,12 +726,17 @@ export class ServiceApiKeysPage extends Component {
         rowNavigation={true}
         export={true}
         kubernetesKind="ApiKey"
-        navigateTo={(item) =>
-          this.props.history.push({
-            pathname: `/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${item.clientId}`,
-            query: { group: item.id, groupName: item.name },
-          })
-        }
+        navigateTo={(item) => {
+          if (this.onRoutes) {
+            this.props.history.push(
+              `/apikeys/edit/${item.clientId}`
+            )
+          } else {
+            this.props.history.push(
+              `/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${item.clientId}?group=${item.id}`
+            )
+          }
+        }}
         itemUrl={(i) =>
           `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`
         }

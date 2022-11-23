@@ -737,6 +737,11 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     val hasFilters         = filters.nonEmpty
     val fields             = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
     val hasFields          = fields.nonEmpty
+    val filtered           = ctx.request.getQueryString("filtered").map(_.split(",").map(r => {
+      val field = r.split(":")
+      (field.head, field.last)
+    }).toSeq)
+      .getOrElse(Seq.empty[(String, String)])
 
     findAllOps(ctx.request).map {
       case Left(error)                                                        =>
@@ -756,8 +761,8 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           )
         )
         val jsonElements: Seq[JsValue] =
-          entities.filter(ctx.canUserRead).drop(paginationPosition).take(paginationPageSize).map(writeEntity)
-        val filteredItems              = if (hasFilters) {
+          entities.filter(ctx.canUserRead).map(writeEntity)
+        val reducedItems              = if (hasFilters) {
           val items: Seq[JsValue] = jsonElements.filter { elem =>
             filters.forall { case (key, value) =>
               (elem \ key).as[JsValue] match {
@@ -773,7 +778,26 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         } else {
           jsonElements
         }
-        val finalItems                 = if (hasFields) {
+        val filteredItems              = if (filtered.nonEmpty) {
+          val items: Seq[JsValue] = reducedItems.filter { elem =>
+            filtered.forall { case (key, value) =>
+              (elem \ key.toLowerCase()).asOpt[JsValue] match {
+                case Some(v) => v match {
+                  case JsString(v)     => v.toLowerCase().indexOf(value) != -1
+                  case JsBoolean(v)    => v == value.toBoolean
+                  case JsNumber(v)     => v.toDouble == value.toDouble
+                  case JsArray(values) => values.contains(JsString(value))
+                  case _               => false
+                }
+                case _               => false
+              }
+            }
+          }
+          items
+        } else {
+          reducedItems
+        }
+        val finalItems                 = (if (hasFields) {
           filteredItems.map { item =>
             val obj = item.as[JsObject]
             val out = fields.map(input => {
@@ -782,7 +806,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
               input.split("\\.")
                 .foreach(path => {
                   acc \ path match {
-                    case JsDefined(a @ JsObject(_)) =>
+                    case JsDefined(a@JsObject(_)) =>
                       acc = a
                     case JsDefined(value) =>
                       out = value
@@ -793,15 +817,15 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
               (input, out)
             })
 
-            def insertAtPath (acc: JsObject, path: Seq[String], value: JsValue): JsObject = {
-                if (path.length == 1) {
-                  acc.deepMerge(Json.obj(path.head -> value))
-                } else {
-                  print(path.head, acc)
-                  acc.deepMerge(Json.obj(
-                    path.head -> insertAtPath((acc \ path.head).asOpt[JsObject].getOrElse(Json.obj()), path.tail, value)
-                  ))
-                }
+            def insertAtPath(acc: JsObject, path: Seq[String], value: JsValue): JsObject = {
+              if (path.length == 1) {
+                acc.deepMerge(Json.obj(path.head -> value))
+              } else {
+                print(path.head, acc)
+                acc.deepMerge(Json.obj(
+                  path.head -> insertAtPath((acc \ path.head).asOpt[JsObject].getOrElse(Json.obj()), path.tail, value)
+                ))
+              }
             }
 
             out.foldLeft(Json.obj()) {
@@ -810,7 +834,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           }
         } else {
           filteredItems
-        }
+        }).slice(paginationPosition, paginationPosition + paginationPageSize)
         if (!ctx.request.accepts("application/json") && ctx.request.accepts("application/x-ndjson")) {
           Ok.sendEntity(
             HttpEntity.Streamed(
