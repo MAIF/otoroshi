@@ -167,7 +167,6 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
                 "pluginType"  -> PluginType.CompositeType.name
               )
             case (c, Right(instance)) =>
-              println(c.id, c.name)
               Json.obj(
                 "id"                -> c.id,
                 "name"              -> JsString(Option(c.name).map(_.trim).filter(_.nonEmpty).getOrElse(instance.name)),
