@@ -19,11 +19,14 @@ export function FakeLoader({ text, timeout, started }) {
         minHeight: '42px',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        marginBottom: '6px'
-      }} className="mt-3">
-      {started && <Loader loading={loading} minLoaderTime={timeout}>
-        <i className="fas fa-check fa-2x" style={{ color: '#f9b000' }} />
-      </Loader>}
+        marginBottom: '6px',
+      }}
+      className="mt-3">
+      {started && (
+        <Loader loading={loading} minLoaderTime={timeout}>
+          <i className="fas fa-check fa-2x" style={{ color: '#f9b000' }} />
+        </Loader>
+      )}
       {!started && <i className="fas fa-square fa-2x" />}
       <div
         style={{
@@ -36,4 +39,4 @@ export function FakeLoader({ text, timeout, started }) {
       </div>
     </div>
   );
-};
+}

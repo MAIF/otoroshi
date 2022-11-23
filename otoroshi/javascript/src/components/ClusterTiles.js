@@ -153,18 +153,8 @@ export class ClusterTiles extends Component {
       <div>
         <h4 className="live-title">CLUSTER METRICS</h4>
         <div className="rowMetrics">
-          <Metric
-            time={Date.now()}
-            link="/cluster"
-            value={this.state.workers}
-            legend=""
-          />
-          <Metric
-            time={Date.now()}
-            link="/cluster"
-            value={this.state.payload}
-            legend=""
-          />
+          <Metric time={Date.now()} link="/cluster" value={this.state.workers} legend="" />
+          <Metric time={Date.now()} link="/cluster" value={this.state.payload} legend="" />
           <Metric
             time={Date.now()}
             link="/cluster"

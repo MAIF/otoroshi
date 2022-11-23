@@ -129,9 +129,9 @@ function InformationsTab({ isActive, entity, value, history }) {
             });
         }}
         style={{
-          backgroundColor: isActive ? '#f9b000' : (isWhiteMode ? '#fff' : '#494948'),
+          backgroundColor: isActive ? '#f9b000' : isWhiteMode ? '#fff' : '#494948',
           height: '100%',
-          color: isWhiteMode && !isActive ? '#000' : '#fff'
+          color: isWhiteMode && !isActive ? '#000' : '#fff',
         }}>
         <i className="fas fa-file-alt me-2" style={{ fontSize: '1.33333em' }} />
         Informations
@@ -187,9 +187,9 @@ function DesignerTab({ isActive, entity, value, history }) {
             });
         }}
         style={{
-          backgroundColor: isActive ? '#f9b000' : (isWhiteMode ? '#fff' : '#494948'),
+          backgroundColor: isActive ? '#f9b000' : isWhiteMode ? '#fff' : '#494948',
           height: '100%',
-          color: isWhiteMode && !isActive ? '#000' : '#fff'
+          color: isWhiteMode && !isActive ? '#000' : '#fff',
         }}>
         <i className="fas fa-pencil-ruler me-2" style={{ fontSize: '1.33333em' }} />
         Designer
@@ -231,7 +231,7 @@ function TesterButton({
           style={{
             marginLeft: 20,
             height: '100%',
-            borderRadius: '.2rem !important'
+            borderRadius: '.2rem !important',
           }}>
           <i className="fas fa-vials" style={{ fontSize: '1.33333em' }} />
           Tester
@@ -381,9 +381,7 @@ class Manager extends React.Component {
   }
 
   componentWillUnmount() {
-    this.props.setSidebarContent(
-      null
-    );
+    this.props.setSidebarContent(null);
   }
 
   setTitle = () => {

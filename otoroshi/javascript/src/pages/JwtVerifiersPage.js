@@ -109,10 +109,12 @@ export class JwtVerifiersPage extends Component {
           formComponent={JwtVerifier}
           navigateTo={this.gotoVerifier}
           defaultValue={BackOfficeServices.createNewJwtVerifier}
-          fetchItems={paginationState => BackOfficeServices.findAllJwtVerifiers({
-            ...paginationState,
-            fields: ['id', 'name', 'desc', 'strategy.type']
-          })}
+          fetchItems={(paginationState) =>
+            BackOfficeServices.findAllJwtVerifiers({
+              ...paginationState,
+              fields: ['id', 'name', 'desc', 'strategy.type'],
+            })
+          }
           updateItem={BackOfficeServices.updateJwtVerifier}
           deleteItem={BackOfficeServices.deleteJwtVerifier}
           createItem={BackOfficeServices.createJwtVerifier}
@@ -124,16 +126,18 @@ export class JwtVerifiersPage extends Component {
             showHeader: window.location.href.includes('edit'),
           }}
           injectBottomBar={({ closeEditForm, state, setState, buttons }) => {
-            return <div className="d-flex align-items-center justify-content-end">
-              {buttons || null}
-              <FormSelector
-                onChange={showAdvancedForm => setState({ showAdvancedForm })}
-                entity={ENTITIES.JWT_VERIFIERS}
-              />
-              <Button type="danger" className='btn-sm ms-1' onClick={closeEditForm}>
-                <i className="fas fa-times" /> Cancel
-              </Button>
-            </div>
+            return (
+              <div className="d-flex align-items-center justify-content-end">
+                {buttons || null}
+                <FormSelector
+                  onChange={(showAdvancedForm) => setState({ showAdvancedForm })}
+                  entity={ENTITIES.JWT_VERIFIERS}
+                />
+                <Button type="danger" className="btn-sm ms-1" onClick={closeEditForm}>
+                  <i className="fas fa-times" /> Cancel
+                </Button>
+              </div>
+            );
           }}
           injectTopBar={() => (
             <Button

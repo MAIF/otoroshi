@@ -1414,7 +1414,8 @@ case class Restrictions(
       val path   = req.thePath
       val key    = s"${id}:${apk.map(_.clientId).getOrElse("none")}:$method:$domain:$path"
       cache.get(
-        key, _ => {
+        key,
+        _ => {
           if (allowLast) {
             if (isNotFound(method, domain, path)) {
               (

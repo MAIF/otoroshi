@@ -281,12 +281,13 @@ export class Scripts extends Component {
   render() {
     const url = this.props.type
       ? this.props.excludedTypes
-        ? `/bo/api/proxy/api/scripts/_list?type=${this.props.type
-        }&excluded_types=${this.props.excludedTypes.join(',')}`
+        ? `/bo/api/proxy/api/scripts/_list?type=${
+            this.props.type
+          }&excluded_types=${this.props.excludedTypes.join(',')}`
         : `/bo/api/proxy/api/scripts/_list?type=${this.props.type}`
       : this.props.excludedTypes
-        ? `/bo/api/proxy/api/scripts/_list?excluded_types=${this.props.excludedTypes.join(',')}`
-        : '/bo/api/proxy/api/scripts/_list';
+      ? `/bo/api/proxy/api/scripts/_list?excluded_types=${this.props.excludedTypes.join(',')}`
+      : '/bo/api/proxy/api/scripts/_list';
     const displayKind = !this.props.type;
     return (
       <div data-scripts={this.props.label}>

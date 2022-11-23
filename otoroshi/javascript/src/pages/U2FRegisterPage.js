@@ -219,7 +219,7 @@ export class U2FRegisterPage extends Component {
                   credentials: 'include',
                 }).then(() => {
                   if (this.props.history) {
-                    this.props.history.push('/admins')
+                    this.props.history.push('/admins');
                   } else {
                     window.location.href = '/bo/dashboard/admins';
                   }
@@ -776,7 +776,7 @@ export class AdminEditionModal extends Component {
     _loc: {
       type: 'location',
       props: {
-        useLegacy: true
+        useLegacy: true,
       },
     },
   };

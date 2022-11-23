@@ -611,7 +611,7 @@ export class ServicePage extends Component {
     neverSaved: false,
     allCollapsed: false,
     freeDomain: true,
-    loading: true
+    loading: true,
   };
 
   toggleCollapsed = (e) => {
@@ -667,10 +667,9 @@ export class ServicePage extends Component {
     this.mountShortcuts();
 
     if (this.props.env) {
-      BackOfficeServices.env()
-        .then((env) => this.setState({ env }));
+      BackOfficeServices.env().then((env) => this.setState({ env }));
     } else {
-      this.setState({ env: this.props.env })
+      this.setState({ env: this.props.env });
     }
   }
 
@@ -682,7 +681,7 @@ export class ServicePage extends Component {
 
   componentWillUnmount() {
     this.unmountShortcuts();
-    this.props.setSidebarContent(null)
+    this.props.setSidebarContent(null);
   }
 
   mountShortcuts = () => {
@@ -737,7 +736,7 @@ export class ServicePage extends Component {
           service: newService,
           originalService: newService,
         });
-        this.props.history.push(`/lines/${newService.line}/services/${newService.id}`)
+        this.props.history.push(`/lines/${newService.line}/services/${newService.id}`);
       });
     } else {
       BackOfficeServices.updateService(this.state.service.id, this.state.service).then(
@@ -996,13 +995,12 @@ export class ServicePage extends Component {
       )
       .then((form) => {
         if (form) {
-          BackOfficeServices.createCertificateFromForm(form)
-            .then((cert) => {
-              this.props.history.push('/certificates/add', {
-                cert,
-                showEditForm: form.letsEncrypt
-              })
+          BackOfficeServices.createCertificateFromForm(form).then((cert) => {
+            this.props.history.push('/certificates/add', {
+              cert,
+              showEditForm: form.letsEncrypt,
             });
+          });
         }
       });
   };
@@ -1034,8 +1032,8 @@ export class ServicePage extends Component {
             } else {
               this.props.history.push('/certificates/add', {
                 cert,
-                showEditForm: form.letsEncrypt
-              })
+                showEditForm: form.letsEncrypt,
+              });
             }
           });
         }
@@ -1497,22 +1495,26 @@ export class ServicePage extends Component {
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length === 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.domain
-                        }${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                        this.state.service.domain
+                      }${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length > 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
-                        }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                        this.state.service.subdomain
+                      }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env !== 'prod' && (
                   <LinkDisplay
-                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
-                      }.${this.state.service.env}.${this.state.service.domain}${this.state.service.matchingRoot || ''
-                      }/`}
+                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                      this.state.service.subdomain
+                    }.${this.state.service.env}.${this.state.service.domain}${
+                      this.state.service.matchingRoot || ''
+                    }/`}
                   />
                 )}
               </>
@@ -3462,10 +3464,11 @@ export class TemplateInput extends Component {
             </a>
         </div>
         <div class="jumbotron">
-            ${error
-        ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
-        : `<h2 style="color:white;">${title}</h2>`
-      }
+            ${
+              error
+                ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
+                : `<h2 style="color:white;">${title}</h2>`
+            }
             <p class="lead">
               ${message}
             </p>

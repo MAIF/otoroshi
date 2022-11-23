@@ -116,23 +116,26 @@ export class Location extends Component {
           <div className="row mb-3">
             <label className="col-xs-12 col-sm-2 col-form-label"></label>
             <div className="col-sm-10 d-flex justify-content-end input-group-btn">
-              {window.__user.superAdmin && (
-                this.props.useLegacy ? <a className="btn btn-sm btn-info" href="/bo/dashboard/organizations">
-                  <i className="fas fa-edit"></i> Manage organizations
-                </a> :
+              {window.__user.superAdmin &&
+                (this.props.useLegacy ? (
+                  <a className="btn btn-sm btn-info" href="/bo/dashboard/organizations">
+                    <i className="fas fa-edit"></i> Manage organizations
+                  </a>
+                ) : (
                   <Link className="btn btn-sm btn-info" to="/organizations">
                     <i className="fas fa-edit"></i> Manage organizations
                   </Link>
-              )}
-              {window.__user.tenantAdmin && (
-                this.props.useLegacy ?
+                ))}
+              {window.__user.tenantAdmin &&
+                (this.props.useLegacy ? (
                   <a className="btn btn-sm btn-info" href="/bo/dashboard/teams">
                     <i className="fas fa-edit"></i> Manage teams
                   </a>
-                  : <Link className="btn btn-sm btn-info" to="/teams">
+                ) : (
+                  <Link className="btn btn-sm btn-info" to="/teams">
                     <i className="fas fa-edit"></i> Manage teams
                   </Link>
-              )}
+                ))}
             </div>
           </div>
           {this.props.lineEnd && <hr />}

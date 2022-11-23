@@ -8,7 +8,14 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.ServiceDescriptor
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script.{AfterRequestContext, BeforeRequestContext, HttpRequest, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext}
+import otoroshi.script.{
+  AfterRequestContext,
+  BeforeRequestContext,
+  HttpRequest,
+  RequestTransformer,
+  TransformerRequestBodyContext,
+  TransformerRequestContext
+}
 import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}
 import otoroshi.utils.syntax.implicits._

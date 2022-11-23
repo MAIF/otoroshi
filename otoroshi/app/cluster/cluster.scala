@@ -31,14 +31,23 @@ import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.jobs.updates.Version
 import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}
-import otoroshi.next.models.{KvNgRouteDataStore, KvNgServiceDataStore, KvStoredNgBackendDataStore, KvStoredNgTargetDataStore, NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
+import otoroshi.next.models.{
+  KvNgRouteDataStore,
+  KvNgServiceDataStore,
+  KvStoredNgBackendDataStore,
+  KvStoredNgTargetDataStore,
+  NgRouteDataStore,
+  NgServiceDataStore,
+  StoredNgBackendDataStore,
+  StoredNgTargetDataStore
+}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils
-import otoroshi.utils.{SchedulerHelper, future}
+import otoroshi.utils.{future, SchedulerHelper}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -1193,7 +1202,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   }
 
   /////////////
-  private val apiIncrementsRef      = new AtomicReference[TrieMap[String, AtomicLong]](new LegitTrieMap[String, AtomicLong]())
+  private val apiIncrementsRef      =
+    new AtomicReference[TrieMap[String, AtomicLong]](new LegitTrieMap[String, AtomicLong]())
   private val servicesIncrementsRef = new AtomicReference[TrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]](
     new LegitTrieMap[String, (AtomicLong, AtomicLong, AtomicLong)]()
   )

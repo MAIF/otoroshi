@@ -182,8 +182,8 @@ export function allServices(env, group, paginationState) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-      ? `/bo/api/proxy/api/services?filter.groups=${group}`
-      : `/bo/api/proxy/api/services`;
+    ? `/bo/api/proxy/api/services?filter.groups=${group}`
+    : `/bo/api/proxy/api/services`;
   return findAllWithPagination(url, paginationState);
 }
 
@@ -1003,7 +1003,7 @@ export function updateTemplate(ak) {
 }
 
 export function findAllJwtVerifiers(paginationState) {
-  return findAllWithPagination('/bo/api/proxy/api/verifiers', paginationState)
+  return findAllWithPagination('/bo/api/proxy/api/verifiers', paginationState);
 }
 
 export function findJwtVerifierById(id) {
@@ -1111,7 +1111,7 @@ export function updateAuthConfig(ak) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 export function findAllCertificates(paginationState) {
-  return findAllWithPagination('/bo/api/proxy/api/certificates', paginationState)
+  return findAllWithPagination('/bo/api/proxy/api/certificates', paginationState);
 }
 
 export function findCertificateById(id) {
@@ -1674,7 +1674,7 @@ export function createNewDataExporterConfig(type) {
 }
 
 export function findAllDataExporterConfigs(paginationState) {
-  return findAllWithPagination('/bo/api/proxy/api/data-exporter-configs', paginationState)
+  return findAllWithPagination('/bo/api/proxy/api/data-exporter-configs', paginationState);
 }
 
 export function findDataExporterConfigById(id) {
@@ -1861,78 +1861,75 @@ const fetchWrapper = (url, method = 'GET', body) =>
     body: body ? JSON.stringify(body) : undefined,
   }).then((r) => r.json());
 
-const findAllWithPagination = (prefix, { page, pageSize, fields, filtered } = { page: 1, filtered: [] }) => {
-  let url = prefix
+const findAllWithPagination = (
+  prefix,
+  { page, pageSize, fields, filtered } = { page: 1, filtered: [] }
+) => {
+  let url = prefix;
 
   if (page) {
     url = `${url}?page=${page}`;
 
-    if (pageSize)
-      url = `${url}&pageSize=${pageSize}`;
+    if (pageSize) url = `${url}&pageSize=${pageSize}`;
 
-    if (fields)
-      url = `${url}&fields=${fields.join(',')}`;
+    if (fields) url = `${url}&fields=${fields.join(',')}`;
 
     if (filtered && filtered.length > 0)
-      url = `${url}&filtered=${filtered.map(field => `${field.id}:${field.value}`).join(',')}`
+      url = `${url}&filtered=${filtered.map((field) => `${field.id}:${field.value}`).join(',')}`;
   }
 
   return fetch(url, {
     credentials: 'include',
     headers: {
-      Accept: 'application/json'
-    }
-  })
-    .then(res => {
-      const { headers } = res;
-      const xOffset = ~~headers.get('X-Offset');
-      const xCount = ~~headers.get('X-Count');
-      const xPageSize = ~~headers.get('X-Page-Size');
-      return res.json()
-        .then(rows => ({
-          data: rows,
-          pages: Math.ceil(xCount / xPageSize),
-          offset: xOffset
-        }))
-    })
-}
+      Accept: 'application/json',
+    },
+  }).then((res) => {
+    const { headers } = res;
+    const xOffset = ~~headers.get('X-Offset');
+    const xCount = ~~headers.get('X-Count');
+    const xPageSize = ~~headers.get('X-Page-Size');
+    return res.json().then((rows) => ({
+      data: rows,
+      pages: Math.ceil(xCount / xPageSize),
+      offset: xOffset,
+    }));
+  });
+};
 
-const findAllWithPaginationAndEntity = (entity, { page, pageSize, fields, filtered } = { page: 1, filtered: [] }) => {
+const findAllWithPaginationAndEntity = (
+  entity,
+  { page, pageSize, fields, filtered } = { page: 1, filtered: [] }
+) => {
   let url = `/${entity}`;
 
   if (page) {
     url = `${url}?page=${page}`;
 
-    if (pageSize)
-      url = `${url}&pageSize=${pageSize}`;
+    if (pageSize) url = `${url}&pageSize=${pageSize}`;
 
-    if (fields)
-      url = `${url}&fields=${fields.join(',')}`;
+    if (fields) url = `${url}&fields=${fields.join(',')}`;
 
     if (filtered && filtered.length > 0)
-      url = `${url}&filtered=${filtered.map(field => `${field.id}:${field.value}`).join(',')}`
+      url = `${url}&filtered=${filtered.map((field) => `${field.id}:${field.value}`).join(',')}`;
   }
-
 
   return fetch(`/bo/api/proxy/api/experimental${url}`, {
     credentials: 'include',
     headers: {
-      Accept: 'application/json'
-    }
-  })
-    .then(res => {
-      const { headers } = res;
-      const xOffset = ~~headers.get('X-Offset');
-      const xCount = ~~headers.get('X-Count');
-      const xPageSize = ~~headers.get('X-Page-Size');
-      return res.json()
-        .then(rows => ({
-          data: rows,
-          pages: Math.ceil(xCount / xPageSize),
-          offset: xOffset
-        }))
-    })
-}
+      Accept: 'application/json',
+    },
+  }).then((res) => {
+    const { headers } = res;
+    const xOffset = ~~headers.get('X-Offset');
+    const xCount = ~~headers.get('X-Count');
+    const xPageSize = ~~headers.get('X-Page-Size');
+    return res.json().then((rows) => ({
+      data: rows,
+      pages: Math.ceil(xCount / xPageSize),
+      offset: xOffset,
+    }));
+  });
+};
 
 export const nextClient = {
   ENTITIES: {
@@ -1944,8 +1941,7 @@ export const nextClient = {
   find: (entity) => fetchWrapper(`/${entity}`),
   findAll: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {
     let url = `/${entity}?page=${page}`;
-    if (pageSize)
-      url = `${url}&pageSize=${pageSize}`;
+    if (pageSize) url = `${url}&pageSize=${pageSize}`;
 
     return fetchWrapper(url);
   },
@@ -1961,7 +1957,8 @@ export const nextClient = {
   forEntity: (entity) => {
     return {
       findAll: () => fetchWrapper(`/${entity}`),
-      findAllWithPagination: paginationState => findAllWithPaginationAndEntity(entity, paginationState),
+      findAllWithPagination: (paginationState) =>
+        findAllWithPaginationAndEntity(entity, paginationState),
       create: (content) => fetchWrapper(`/${entity}`, 'POST', content),
       update: (content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
       findById: (entityId) => fetchWrapper(`/${entity}/${entityId}`),

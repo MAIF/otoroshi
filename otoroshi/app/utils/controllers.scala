@@ -737,10 +737,16 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     val hasFilters         = filters.nonEmpty
     val fields             = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
     val hasFields          = fields.nonEmpty
-    val filtered           = ctx.request.getQueryString("filtered").map(_.split(",").map(r => {
-      val field = r.split(":")
-      (field.head, field.last)
-    }).toSeq)
+    val filtered           = ctx.request
+      .getQueryString("filtered")
+      .map(
+        _.split(",")
+          .map(r => {
+            val field = r.split(":")
+            (field.head, field.last)
+          })
+          .toSeq
+      )
       .getOrElse(Seq.empty[(String, String)])
 
     findAllOps(ctx.request).map {
@@ -762,7 +768,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         )
         val jsonElements: Seq[JsValue] =
           entities.filter(ctx.canUserRead).map(writeEntity)
-        val reducedItems              = if (hasFilters) {
+        val reducedItems               = if (hasFilters) {
           val items: Seq[JsValue] = jsonElements.filter { elem =>
             filters.forall { case (key, value) =>
               (elem \ key).as[JsValue] match {
@@ -782,14 +788,15 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           val items: Seq[JsValue] = reducedItems.filter { elem =>
             filtered.forall { case (key, value) =>
               (elem \ key.toLowerCase()).asOpt[JsValue] match {
-                case Some(v) => v match {
-                  case JsString(v)     => v.toLowerCase().indexOf(value) != -1
-                  case JsBoolean(v)    => v == value.toBoolean
-                  case JsNumber(v)     => v.toDouble == value.toDouble
-                  case JsArray(values) => values.contains(JsString(value))
-                  case _               => false
-                }
-                case _               => false
+                case Some(v) =>
+                  v match {
+                    case JsString(v)     => v.toLowerCase().indexOf(value) != -1
+                    case JsBoolean(v)    => v == value.toBoolean
+                    case JsNumber(v)     => v.toDouble == value.toDouble
+                    case JsArray(values) => values.contains(JsString(value))
+                    case _               => false
+                  }
+                case _       => false
               }
             }
           }
@@ -798,43 +805,50 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           reducedItems
         }
         val finalItems                 = (if (hasFields) {
-          filteredItems.map { item =>
-            val obj = item.as[JsObject]
-            val out = fields.map(input => {
-              var acc = obj
-              var out = JsString("").as[JsValue]
-              input.split("\\.")
-                .foreach(path => {
-                  acc \ path match {
-                    case JsDefined(a@JsObject(_)) =>
-                      acc = a
-                    case JsDefined(value) =>
-                      out = value
-                    case _: JsUndefined =>
-                      acc = Json.obj()
-                  }
-                })
-              (input, out)
-            })
+                            filteredItems.map { item =>
+                              val obj = item.as[JsObject]
+                              val out = fields.map(input => {
+                                var acc = obj
+                                var out = JsString("").as[JsValue]
+                                input
+                                  .split("\\.")
+                                  .foreach(path => {
+                                    acc \ path match {
+                                      case JsDefined(a @ JsObject(_)) =>
+                                        acc = a
+                                      case JsDefined(value)           =>
+                                        out = value
+                                      case _: JsUndefined             =>
+                                        acc = Json.obj()
+                                    }
+                                  })
+                                (input, out)
+                              })
 
-            def insertAtPath(acc: JsObject, path: Seq[String], value: JsValue): JsObject = {
-              if (path.length == 1) {
-                acc.deepMerge(Json.obj(path.head -> value))
-              } else {
-                print(path.head, acc)
-                acc.deepMerge(Json.obj(
-                  path.head -> insertAtPath((acc \ path.head).asOpt[JsObject].getOrElse(Json.obj()), path.tail, value)
-                ))
-              }
-            }
+                              def insertAtPath(acc: JsObject, path: Seq[String], value: JsValue): JsObject = {
+                                if (path.length == 1) {
+                                  acc.deepMerge(Json.obj(path.head -> value))
+                                } else {
+                                  print(path.head, acc)
+                                  acc.deepMerge(
+                                    Json.obj(
+                                      path.head -> insertAtPath(
+                                        (acc \ path.head).asOpt[JsObject].getOrElse(Json.obj()),
+                                        path.tail,
+                                        value
+                                      )
+                                    )
+                                  )
+                                }
+                              }
 
-            out.foldLeft(Json.obj()) {
-              case (acc, curr) => insertAtPath(acc, curr._1.split("\\."), curr._2)
-            }
-          }
-        } else {
-          filteredItems
-        }).slice(paginationPosition, paginationPosition + paginationPageSize)
+                              out.foldLeft(Json.obj()) { case (acc, curr) =>
+                                insertAtPath(acc, curr._1.split("\\."), curr._2)
+                              }
+                            }
+                          } else {
+                            filteredItems
+                          }).slice(paginationPosition, paginationPosition + paginationPageSize)
         if (!ctx.request.accepts("application/json") && ctx.request.accepts("application/x-ndjson")) {
           Ok.sendEntity(
             HttpEntity.Streamed(

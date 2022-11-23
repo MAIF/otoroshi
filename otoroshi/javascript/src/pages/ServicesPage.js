@@ -85,8 +85,8 @@ export class ServicesPage extends Component {
         item.publicPatterns.indexOf('/.*') > -1,
       cell: (v, item) =>
         !item.privateApp &&
-          item.privatePatterns.length === 0 &&
-          item.publicPatterns.indexOf('/.*') > -1 ? (
+        item.privatePatterns.length === 0 &&
+        item.publicPatterns.indexOf('/.*') > -1 ? (
           <i className="fas fa-times-circle alertorange" />
         ) : (
           <i className="fas fa-globe-americas fa-lg" aria-hidden="true" />
@@ -113,7 +113,7 @@ export class ServicesPage extends Component {
         item.targets.length,
       cell: (v, item) =>
         item.targets.map((i) => i.scheme).filter((i) => i.toLowerCase() === 'https').length ===
-          item.targets.length ? (
+        item.targets.length ? (
           <i className="fas fa-lock fa-lg" />
         ) : (
           <i className="fas fa-unlock-alt fa-lg" />
@@ -184,7 +184,7 @@ export class ServicesPage extends Component {
   };
 
   componentDidMount() {
-    console.log(this.props)
+    console.log(this.props);
     const env = this.props.location.query.env;
     const group = this.props.location.query.group;
     if (env && group) {
@@ -198,9 +198,8 @@ export class ServicesPage extends Component {
     }
     this.props.setTitle(this.title);
 
-
     if (this.props.env) {
-      this.setState({ env: this.props.env })
+      this.setState({ env: this.props.env });
     } else {
       BackOfficeServices.env().then((env) => this.setState({ env }));
     }
@@ -222,7 +221,7 @@ export class ServicesPage extends Component {
     });
   };
 
-  fetchServices = paginationState => {
+  fetchServices = (paginationState) => {
     // console.log('fetchServices', this.props);
     return BackOfficeServices.allServices(
       this.props.location.query.env,
@@ -230,11 +229,17 @@ export class ServicesPage extends Component {
       {
         ...paginationState,
         fields: [
-          'id', 'name', 'enabled',
-          'env', 'privateApp', 'privatePatterns',
-          'publicPatterns', 'enforceSecureCommunication',
-          'targets', 'redirectToLocal'
-        ]
+          'id',
+          'name',
+          'enabled',
+          'env',
+          'privateApp',
+          'privatePatterns',
+          'publicPatterns',
+          'enforceSecureCommunication',
+          'targets',
+          'redirectToLocal',
+        ],
       }
     );
   };

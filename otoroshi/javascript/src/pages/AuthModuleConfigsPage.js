@@ -8,8 +8,8 @@ import { ClassifiedForms } from '../forms';
 
 export class AuthModuleConfigsPage extends Component {
   state = {
-    showWizard: false
-  }
+    showWizard: false,
+  };
 
   columns = [
     { title: 'Name', content: (item) => item.name },
@@ -48,7 +48,12 @@ export class AuthModuleConfigsPage extends Component {
 
     return (
       <div>
-        {showWizard && <AuthenticationWizard hide={() => this.setState({ showWizard: false })} disableSelectMode={true} />}
+        {showWizard && (
+          <AuthenticationWizard
+            hide={() => this.setState({ showWizard: false })}
+            disableSelectMode={true}
+          />
+        )}
         <Table
           parentProps={this.props}
           selfUrl="auth-configs"
@@ -69,10 +74,12 @@ export class AuthModuleConfigsPage extends Component {
           formFlow={this.formFlow}
           columns={this.columns}
           stayAfterSave={true}
-          fetchItems={paginationState => BackOfficeServices.findAllAuthConfigs({
-            ...paginationState,
-            fields: ['id', 'name', 'desc']
-          })}
+          fetchItems={(paginationState) =>
+            BackOfficeServices.findAllAuthConfigs({
+              ...paginationState,
+              fields: ['id', 'name', 'desc'],
+            })
+          }
           updateItem={BackOfficeServices.updateAuthConfig}
           deleteItem={BackOfficeServices.deleteAuthConfig}
           createItem={BackOfficeServices.createAuthConfig}
@@ -106,8 +113,8 @@ export class AuthModuleConfigsPage extends Component {
               type="primary"
               onClick={() => {
                 this.setState({
-                  showWizard: true
-                })
+                  showWizard: true,
+                });
               }}
               style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
               <i className="fas fa-hat-wizard" /> Create with wizard
