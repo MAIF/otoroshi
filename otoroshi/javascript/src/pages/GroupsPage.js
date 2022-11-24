@@ -81,7 +81,12 @@ export class GroupsPage extends Component {
         formFlow={this.formFlow}
         columns={this.columns}
         stayAfterSave={true}
-        fetchItems={BackOfficeServices.findAllGroups}
+        fetchItems={(paginationState) =>
+          BackOfficeServices.findAllGroups({
+            ...paginationState,
+            fields: ['id', 'name', 'description'],
+          })
+        }
         updateItem={BackOfficeServices.updateGroup}
         deleteItem={BackOfficeServices.deleteGroup}
         createItem={BackOfficeServices.createGroup}

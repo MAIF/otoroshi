@@ -360,7 +360,12 @@ export class TcpServicesPage extends Component {
           defaultTitle="All Tcp Services"
           columns={this.columns}
           stayAfterSave={true}
-          fetchItems={BackOfficeServices.findAllTcpServices}
+          fetchItems={(paginationState) =>
+            BackOfficeServices.findAllTcpServices({
+              ...paginationState,
+              fields: ['id', 'name', 'port', 'interface', 'tls', 'sni', 'clientAuth'],
+            })
+          }
           updateItem={BackOfficeServices.updateTcpService}
           deleteItem={BackOfficeServices.deleteTcpService}
           createItem={BackOfficeServices.createTcpService}

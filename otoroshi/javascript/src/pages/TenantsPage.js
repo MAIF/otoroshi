@@ -77,7 +77,12 @@ export class TenantsPage extends Component {
           itemName="Organization"
           columns={this.columns}
           stayAfterSave={true}
-          fetchItems={BackOfficeServices.findAllTenants}
+          fetchItems={(paginationState) =>
+            BackOfficeServices.findAllTenants({
+              ...paginationState,
+              fields: ['id', 'name', 'description'],
+            })
+          }
           updateItem={BackOfficeServices.updateTenant}
           deleteItem={BackOfficeServices.deleteTenant}
           createItem={BackOfficeServices.createTenant}

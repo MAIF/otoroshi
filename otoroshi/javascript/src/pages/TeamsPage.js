@@ -88,7 +88,12 @@ export class TeamsPage extends Component {
           itemName="Team"
           columns={this.columns}
           stayAfterSave={true}
-          fetchItems={BackOfficeServices.findAllTeams}
+          fetchItems={(paginationState) =>
+            BackOfficeServices.findAllTeams({
+              ...paginationState,
+              fields: ['id', 'name', 'description'],
+            })
+          }
           updateItem={BackOfficeServices.updateTeam}
           deleteItem={BackOfficeServices.deleteTeam}
           createItem={BackOfficeServices.createTeam}
