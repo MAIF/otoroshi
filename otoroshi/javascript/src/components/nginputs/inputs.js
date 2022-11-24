@@ -142,8 +142,9 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-info' : 'btn-dark'
-                    } me-2 px-3 mb-2`}
+                  className={`btn btn-radius-25 btn-sm ${
+                    backgroundColorFromOption ? '' : selected ? 'btn-info' : 'btn-dark'
+                  } me-2 px-3 mb-2`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -320,7 +321,7 @@ export class NgJsonRenderer extends Component {
           onChange={(e) => {
             try {
               this.props.onChange(JSON.parse(e));
-            } catch (ex) { }
+            } catch (ex) {}
           }}
           style={{ width: '100%', ...(this.props.style || {}) }}
         />
@@ -609,8 +610,8 @@ export class NgArrayRenderer extends Component {
     form: () => ({
       ...this.generateDefaultValue(current.schema),
     }),
-    object: () => { },
-    json: () => { },
+    object: () => {},
+    json: () => {},
   });
 
   generateDefaultValue = (obj) => {
@@ -784,21 +785,21 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
-                  <ItemRenderer
-                    embedded
-                    flow={this.props.flow}
-                    schema={this.props.schema}
-                    value={value}
-                    key={key}
-                    idx={idx}
-                    onChange={(e) => {
-                      const newObject = this.props.value ? { ...this.props.value } : {};
-                      newObject[key] = e;
-                      this.props.onChange(newObject);
-                    }}
-                    {...props}
-                  />
-                )
+                    <ItemRenderer
+                      embedded
+                      flow={this.props.flow}
+                      schema={this.props.schema}
+                      value={value}
+                      key={key}
+                      idx={idx}
+                      onChange={(e) => {
+                        const newObject = this.props.value ? { ...this.props.value } : {};
+                        newObject[key] = e;
+                        this.props.onChange(newObject);
+                      }}
+                      {...props}
+                    />
+                  )
                 : null
             }
           />

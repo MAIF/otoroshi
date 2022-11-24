@@ -12,7 +12,7 @@ export default {
         componentsProps: {
           entityName: 'Authentication configuration',
           entityField: 'authentication',
-          findById: findAuthConfigById
+          findById: findAuthConfigById,
         },
       },
     },

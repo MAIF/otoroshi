@@ -12,7 +12,6 @@ export const ENTITIES = {
 };
 
 export function FormSelector({ onChange, entity, className = '' }) {
-
   const [showLegacyForm, toggleLegacyForm] = useState(false);
 
   useEffect(() => {
@@ -22,7 +21,7 @@ export function FormSelector({ onChange, entity, className = '' }) {
   const loadEntities = (entity) => {
     try {
       const values = JSON.parse(localStorage.getItem(FORM_SELECTOR_KEY) || '{}');
-      const showLegacy = values[entity] === 'true'
+      const showLegacy = values[entity] === 'true';
       toggleLegacyForm(showLegacy);
       onChange(showLegacy);
     } catch (e) {

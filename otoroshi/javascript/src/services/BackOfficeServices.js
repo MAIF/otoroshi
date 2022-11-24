@@ -182,8 +182,8 @@ export function allServices(env, group, paginationState) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-      ? `/bo/api/proxy/api/services?filter.groups=${group}`
-      : `/bo/api/proxy/api/services`;
+    ? `/bo/api/proxy/api/services?filter.groups=${group}`
+    : `/bo/api/proxy/api/services`;
   return findAllWithPagination(url, paginationState);
 }
 
@@ -573,7 +573,7 @@ export function findServicesForGroup(group) {
 }
 
 export function findAllGroups(paginationState) {
-  return findAllWithPagination('/bo/api/proxy/api/groups', paginationState)
+  return findAllWithPagination('/bo/api/proxy/api/groups', paginationState);
   // return fetch('/bo/api/proxy/api/groups', {
   //   method: 'GET',
   //   credentials: 'include',
@@ -749,7 +749,7 @@ export function discardSession(id) {
 
 export function fetchSessions(paginateState) {
   // return fetch(`/bo/api/sessions`, {
-  return findAllWithPagination(`/bo/api/proxy/api/admin-sessions`, paginateState)
+  return findAllWithPagination(`/bo/api/proxy/api/admin-sessions`, paginateState);
 }
 
 export function discardAllPrivateAppsSessions() {
@@ -792,8 +792,8 @@ export function panicMode() {
 
 export function fetchAdmins(paginationState) {
   // return fetch(`/bo/simple/admins`, {
-  return findAllWithPagination(`/bo/api/proxy/api/admins/simple`, paginationState)
-    .then((_admins) => {
+  return findAllWithPagination(`/bo/api/proxy/api/admins/simple`, paginationState).then(
+    (_admins) => {
       // return fetch(`/bo/webauthn/admins`, {
       return fetch(`/bo/api/proxy/api/admins/webauthn`, {
         method: 'GET',
@@ -808,7 +808,8 @@ export function fetchAdmins(paginationState) {
           const webauthnadmins = _webauthnadmins.map((admin) => ({ ...admin, type: 'WEBAUTHN' }));
           return [...webauthnadmins, ...admins];
         });
-    });
+    }
+  );
 }
 
 export function discardAdmin(username, id, type) {
@@ -1845,7 +1846,11 @@ const fetchWrapper = (url, method = 'GET', body) =>
     body: body ? JSON.stringify(body) : undefined,
   }).then((r) => r.json());
 
-const findAllWithPagination = (route, { page, pageSize, fields, filtered, sorted, ...props } = { page: 1 }, prefix = '') => {
+const findAllWithPagination = (
+  route,
+  { page, pageSize, fields, filtered, sorted, ...props } = { page: 1 },
+  prefix = ''
+) => {
   let url = route;
 
   // console.log(props)
@@ -1855,8 +1860,7 @@ const findAllWithPagination = (route, { page, pageSize, fields, filtered, sorted
 
     if (pageSize) url = `${url}&pageSize=${pageSize}`;
 
-    if (fields && fields.length > 0)
-      url = `${url}&fields=${fields.join(',')}`;
+    if (fields && fields.length > 0) url = `${url}&fields=${fields.join(',')}`;
 
     if (filtered && filtered.length > 0)
       url = `${url}&filtered=${filtered.map((field) => `${field.id}:${field.value}`).join(',')}`;
@@ -1897,7 +1901,8 @@ export const nextClient = {
 
     return fetchWrapper(url);
   },
-  findAllWithPagination: (entity, props) => findAllWithPagination(`/${entity}`, props, '/bo/api/proxy/api/experimental'),
+  findAllWithPagination: (entity, props) =>
+    findAllWithPagination(`/${entity}`, props, '/bo/api/proxy/api/experimental'),
   create: (entity, content) => fetchWrapper(`/${entity}`, 'POST', content),
   update: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
   fetch: (entity, entityId) => fetchWrapper(`/${entity}/${entityId}`),

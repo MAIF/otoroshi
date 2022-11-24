@@ -113,7 +113,7 @@ export class JwtVerifiersPage extends Component {
             return BackOfficeServices.findAllJwtVerifiers({
               ...paginationState,
               fields: ['id', 'name', 'desc', 'strategy.type'],
-            })
+            });
           }}
           updateItem={BackOfficeServices.updateJwtVerifier}
           deleteItem={BackOfficeServices.deleteJwtVerifier}
@@ -129,10 +129,12 @@ export class JwtVerifiersPage extends Component {
             return (
               <div className="d-flex align-items-center justify-content-end">
                 {buttons || null}
-                {state.showEditForm && <FormSelector
-                  onChange={(showAdvancedForm) => setState({ showAdvancedForm })}
-                  entity={ENTITIES.JWT_VERIFIERS}
-                />}
+                {state.showEditForm && (
+                  <FormSelector
+                    onChange={(showAdvancedForm) => setState({ showAdvancedForm })}
+                    entity={ENTITIES.JWT_VERIFIERS}
+                  />
+                )}
                 <Button type="danger" className="btn-sm ms-1" onClick={closeEditForm}>
                   <i className="fas fa-times" /> Cancel
                 </Button>

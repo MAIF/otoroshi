@@ -158,10 +158,12 @@ export class SessionsPage extends Component {
           defaultValue={() => ({})}
           itemName="session"
           columns={this.columns}
-          fetchItems={paginateState => BackOfficeServices.fetchSessions({
-            ...paginateState,
-            fields: ['name', 'email', 'createdAt', 'expiredAt', 'profile', 'rights', 'randomId']
-          })}
+          fetchItems={(paginateState) =>
+            BackOfficeServices.fetchSessions({
+              ...paginateState,
+              fields: ['name', 'email', 'createdAt', 'expiredAt', 'profile', 'rights', 'randomId'],
+            })
+          }
           showActions={false}
           showLink={false}
           extractKey={(item) => item.randomId}

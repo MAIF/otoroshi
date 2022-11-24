@@ -19,7 +19,7 @@ export class SelectorWizardLauncher extends React.Component {
 
   loadEntity = (value) => {
     if (value && typeof value === 'string') {
-      console.log(this.props)
+      console.log(this.props);
       if (this.props.findById) {
         this.props.findById(value).then((entity) => {
           this.setState({ entity });
@@ -35,7 +35,7 @@ export class SelectorWizardLauncher extends React.Component {
     const { entity } = this.state;
     const { openComponent, onChange, entityName, entityField } = this.props;
 
-    console.log(this.props)
+    console.log(this.props);
 
     if (!entity) {
       return (

@@ -376,10 +376,12 @@ export class U2FRegisterPage extends Component {
           defaultValue={() => ({})}
           itemName="session"
           columns={this.columns}
-          fetchItems={paginationState => BackOfficeServices.fetchAdmins({
-            ...paginationState,
-            fields: ['username', 'label', 'createdAt', 'type', 'registration']
-          })}
+          fetchItems={(paginationState) =>
+            BackOfficeServices.fetchAdmins({
+              ...paginationState,
+              fields: ['username', 'label', 'createdAt', 'type', 'registration'],
+            })
+          }
           showActions={false}
           showLink={false}
           injectTable={(t) => (this.table = t)}

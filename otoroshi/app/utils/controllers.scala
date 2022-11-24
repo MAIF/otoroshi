@@ -737,36 +737,43 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     val hasFilters         = filters.nonEmpty
     val fields             = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
     val hasFields          = fields.nonEmpty
-    val filtered           = ctx.request.getQueryString("filtered").map(_.split(",").map(r => {
-      val field = r.split(":")
-      (field.head, field.last)
-    }).toSeq)
+    val filtered           = ctx.request
+      .getQueryString("filtered")
+      .map(
+        _.split(",")
+          .map(r => {
+            val field = r.split(":")
+            (field.head, field.last)
+          })
+          .toSeq
+      )
       .getOrElse(Seq.empty[(String, String)])
 
     def getValueAtPath(input: String, obj: JsValue) = {
       var acc = obj
       var out = JsString("").as[JsValue]
 
-      input.split("\\.")
+      input
+        .split("\\.")
         .foreach(path => {
-          if(path.forall(Character.isDigit)) {
+          if (path.forall(Character.isDigit)) {
             acc.asOpt[JsArray] match {
               case Some(value) =>
                 acc = value.value(path.toInt)
                 out = acc
-              case None => acc = Json.obj()
+              case None        => acc = Json.obj()
             }
           } else {
             acc \ path match {
-              case JsDefined(a@JsObject(_)) =>
+              case JsDefined(a @ JsObject(_)) =>
                 acc = a
                 out = a
-              case JsDefined(a@JsArray(_)) =>
+              case JsDefined(a @ JsArray(_))  =>
                 acc = a
                 out = a
-              case JsDefined(value) =>
+              case JsDefined(value)           =>
                 out = value
-              case _: JsUndefined =>
+              case _: JsUndefined             =>
                 acc = Json.obj()
                 out = Json.obj()
             }
@@ -780,31 +787,38 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
       if (path.length == 1) {
         acc.deepMerge(Json.obj(path.head -> value))
       } else {
-        acc.deepMerge(Json.obj(
-          path.head -> insertAtPath((acc \ path.head).asOpt[JsObject].getOrElse(Json.obj()), path.tail, value)
-        ))
+        acc.deepMerge(
+          Json.obj(
+            path.head -> insertAtPath((acc \ path.head).asOpt[JsObject].getOrElse(Json.obj()), path.tail, value)
+          )
+        )
       }
     }
 
     def sortFinalItems(values: Seq[JsValue]): Seq[JsValue] = {
-      val sorted               = ctx.request.getQueryString("sorted").map(_.split(",").map(r => {
-        val field = r.split(":")
-        (field.head, field.last.toBoolean)
-      }).toSeq)
+      val sorted    = ctx.request
+        .getQueryString("sorted")
+        .map(
+          _.split(",")
+            .map(r => {
+              val field = r.split(":")
+              (field.head, field.last.toBoolean)
+            })
+            .toSeq
+        )
         .getOrElse(Seq.empty[(String, Boolean)])
-      val hasSorted            = sorted.nonEmpty
+      val hasSorted = sorted.nonEmpty
 
       // println(sorted, hasSorted)
       if (hasSorted) {
-        sorted.foldLeft(values) {
-          case (sortedArray, sort) =>
-            val out = sortedArray
-              .sortBy(r => {
-                // println(r, sort._1.toLowerCase(), getValueAtPath(sort._1.toLowerCase(), r)._2)
-                String.valueOf(getValueAtPath(sort._1.toLowerCase(), r)._2)
-              })(Ordering[String].reverse)
+        sorted.foldLeft(values) { case (sortedArray, sort) =>
+          val out = sortedArray
+            .sortBy(r => {
+              // println(r, sort._1.toLowerCase(), getValueAtPath(sort._1.toLowerCase(), r)._2)
+              String.valueOf(getValueAtPath(sort._1.toLowerCase(), r)._2)
+            })(Ordering[String].reverse)
 
-            // sort._2 = descending order
+          // sort._2 = descending order
           if (sort._2) {
             out.reverse
           } else {
@@ -836,7 +850,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         )
         val jsonElements: Seq[JsValue] =
           entities.filter(ctx.canUserRead).map(writeEntity)
-        val reducedItems              = if (hasFilters) {
+        val reducedItems               = if (hasFilters) {
           val items: Seq[JsValue] = jsonElements.filter { elem =>
             filters.forall { case (key, value) =>
               (elem \ key).as[JsValue] match {
@@ -856,14 +870,15 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           val items: Seq[JsValue] = reducedItems.filter { elem =>
             filtered.forall { case (key, value) =>
               getValueAtPath(key.toLowerCase(), elem)._2.asOpt[JsValue] match {
-                case Some(v) => v match {
-                  case JsString(v)     => v.toLowerCase().indexOf(value) != -1
-                  case JsBoolean(v)    => v == value.toBoolean
-                  case JsNumber(v)     => v.toDouble == value.toDouble
-                  case JsArray(values) => values.contains(JsString(value))
-                  case _               => false
-                }
-                case _               => false
+                case Some(v) =>
+                  v match {
+                    case JsString(v)     => v.toLowerCase().indexOf(value) != -1
+                    case JsBoolean(v)    => v == value.toBoolean
+                    case JsNumber(v)     => v.toDouble == value.toDouble
+                    case JsArray(values) => values.contains(JsString(value))
+                    case _               => false
+                  }
+                case _       => false
               }
             }
           }
@@ -876,8 +891,8 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
             val obj = item.as[JsObject]
             val out = fields.map(input => getValueAtPath(input, obj))
 
-            out.foldLeft(Json.obj()) {
-              case (acc, curr) => insertAtPath(acc, curr._1.split("\\."), curr._2)
+            out.foldLeft(Json.obj()) { case (acc, curr) =>
+              insertAtPath(acc, curr._1.split("\\."), curr._2)
             }
           }
         } else {

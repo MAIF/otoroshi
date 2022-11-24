@@ -184,10 +184,21 @@ export class PrivateAppsSessionsPage extends Component {
           defaultValue={() => ({})}
           itemName="session"
           columns={this.columns}
-          fetchItems={paginationState => BackOfficeServices.fetchPrivateAppsSessions({
-            ...paginationState,
-            fields: ['name', 'email', 'createdAt', 'expiredAt', 'profile', 'rights', 'randomId', 'otoroshiData']
-          })}
+          fetchItems={(paginationState) =>
+            BackOfficeServices.fetchPrivateAppsSessions({
+              ...paginationState,
+              fields: [
+                'name',
+                'email',
+                'createdAt',
+                'expiredAt',
+                'profile',
+                'rights',
+                'randomId',
+                'otoroshiData',
+              ],
+            })
+          }
           showActions={false}
           showLink={false}
           extractKey={(item) => item.randomId}

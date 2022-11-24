@@ -142,28 +142,29 @@ export class Table extends Component {
     this.setState({ loading: true });
 
     const page = paginationState.page !== undefined ? paginationState.page : this.state.page;
-    return ((this.state.showAddForm || this.state.showEditForm) ? this.props.fetchItems() : this.props
-      .fetchItems({
-        ...paginationState,
-        pageSize: this.state.rowsPerPage,
-        page: page + 1,
-      }))
-      .then((rawItems) => {
-        if (Array.isArray(rawItems)) {
-          this.setState({
-            items: rawItems,
-            loading: false,
-            page,
-          });
-        } else {
-          this.setState({
-            items: rawItems.data,
-            pages: rawItems.pages,
-            loading: false,
-            page,
-          });
-        }
-      });
+    return (this.state.showAddForm || this.state.showEditForm
+      ? this.props.fetchItems()
+      : this.props.fetchItems({
+          ...paginationState,
+          pageSize: this.state.rowsPerPage,
+          page: page + 1,
+        })
+    ).then((rawItems) => {
+      if (Array.isArray(rawItems)) {
+        this.setState({
+          items: rawItems,
+          loading: false,
+          page,
+        });
+      } else {
+        this.setState({
+          items: rawItems.data,
+          pages: rawItems.pages,
+          loading: false,
+          page,
+        });
+      }
+    });
   }, 200);
 
   gotoItem = (e, item) => {
@@ -223,13 +224,13 @@ export class Table extends Component {
     if (e && e.preventDefault) e.preventDefault();
     this.mountShortcuts();
 
-    let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`
+    let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`;
 
     if (this.props.rawEditUrl) {
-      routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`
+      routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
     }
 
-    console.log(window.location.pathname, routeTo)
+    console.log(window.location.pathname, routeTo);
     if (window.location.pathname !== routeTo) {
       window.location.href = routeTo;
     } else {
