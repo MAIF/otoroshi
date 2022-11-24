@@ -1848,7 +1848,7 @@ const fetchWrapper = (url, method = 'GET', body) =>
 const findAllWithPagination = (route, { page, pageSize, fields, filtered, sorted, ...props } = { page: 1 }, prefix = '') => {
   let url = route;
 
-  console.log(props)
+  // console.log(props)
 
   if (page) {
     url = `${url}?page=${page}`;

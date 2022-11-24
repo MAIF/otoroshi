@@ -129,10 +129,10 @@ export class JwtVerifiersPage extends Component {
             return (
               <div className="d-flex align-items-center justify-content-end">
                 {buttons || null}
-                <FormSelector
+                {state.showEditForm && <FormSelector
                   onChange={(showAdvancedForm) => setState({ showAdvancedForm })}
                   entity={ENTITIES.JWT_VERIFIERS}
-                />
+                />}
                 <Button type="danger" className="btn-sm ms-1" onClick={closeEditForm}>
                   <i className="fas fa-times" /> Cancel
                 </Button>

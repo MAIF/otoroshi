@@ -622,7 +622,7 @@ export class Table extends Component {
                   className="form-horizontal"
                   style={{ paddingTop: '30px', ...this.props.style }}>
                   {React.createElement(this.props.formComponent, {
-                    showAdvancedForm: this.state.showAdvancedForm,
+                    showAdvancedForm: true, //this.state.showAdvancedForm, // advanced view in creation mode
                     onChange: (currentItem) => {
                       this.setState({ currentItem });
 
