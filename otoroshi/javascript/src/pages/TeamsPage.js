@@ -89,7 +89,7 @@ export class TeamsPage extends Component {
           columns={this.columns}
           stayAfterSave={true}
           fetchItems={(paginationState) =>
-            BackOfficeServices.findAllTeams({
+            BackOfficeServices.findAllTeamsWithPagination({
               ...paginationState,
               fields: ['id', 'name', 'description'],
             })

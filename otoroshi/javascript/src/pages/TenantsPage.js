@@ -78,7 +78,7 @@ export class TenantsPage extends Component {
           columns={this.columns}
           stayAfterSave={true}
           fetchItems={(paginationState) =>
-            BackOfficeServices.findAllTenants({
+            BackOfficeServices.findAllTenantsWithPagination({
               ...paginationState,
               fields: ['id', 'name', 'description'],
             })

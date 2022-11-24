@@ -1504,15 +1504,18 @@ export function updateTcpService(ak) {
 // Teams
 ///////////////////////////////
 
-export function findAllTeams(ps) {
+export function findAllTeamsWithPagination(ps) {
   return findAllWithPagination('/bo/api/proxy/api/teams', ps);
-  //return fetch('/bo/api/proxy/api/teams', {
-  //  method: 'GET',
-  //  credentials: 'include',
-  //  headers: {
-  //    Accept: 'application/json',
-  //  },
-  //}).then((r) => r.json());
+}
+
+export function findAllTeams() {
+  return fetch('/bo/api/proxy/api/teams', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
 }
 
 export function findTeamById(id) {
@@ -1573,15 +1576,18 @@ export function updateTeam(ak) {
 // Tenants
 ///////////////////////////////
 
-export function findAllTenants(ps) {
+export function findAllTenantsWithPagination(ps) {
   return findAllWithPagination('/bo/api/proxy/api/tenants', ps);
-  //return fetch('/bo/api/proxy/api/tenants', {
-  //  method: 'GET',
-  //  credentials: 'include',
-  //  headers: {
-  //    Accept: 'application/json',
-  //  },
-  //}).then((r) => r.json());
+}
+
+export function findAllTenants() {
+  return fetch('/bo/api/proxy/api/tenants', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
 }
 
 export function findTenantById(id) {

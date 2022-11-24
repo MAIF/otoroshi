@@ -265,7 +265,7 @@ object SOAPActionConfig {
     } match {
       case Success(value)     => JsSuccess(value)
       case Failure(exception) =>
-        println(exception.getMessage)
+        // println(exception.getMessage)
         JsError(exception.getMessage)
     }
 

@@ -829,7 +829,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                                 if (path.length == 1) {
                                   acc.deepMerge(Json.obj(path.head -> value))
                                 } else {
-                                  print(path.head, acc)
+                                  // print(path.head, acc)
                                   acc.deepMerge(
                                     Json.obj(
                                       path.head -> insertAtPath(
