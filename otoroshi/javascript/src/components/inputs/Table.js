@@ -106,7 +106,7 @@ export class Table extends Component {
         this.props.fetchItems().then((res) => {
           //console.log(this.props.parentProps.params);
           // console.log(res)
-          console.log('here')
+          // console.log('here')
 
           let row = [];
           if (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
