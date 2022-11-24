@@ -106,6 +106,7 @@ export class Table extends Component {
         this.props.fetchItems().then((res) => {
           //console.log(this.props.parentProps.params);
           // console.log(res)
+          console.log('here')
 
           let row = [];
           if (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
@@ -141,14 +142,13 @@ export class Table extends Component {
     this.setState({ loading: true });
 
     const page = paginationState.page !== undefined ? paginationState.page : this.state.page;
-    return this.props
+    return ((this.state.showAddForm || this.state.showEditForm) ? this.props.fetchItems() : this.props
       .fetchItems({
         ...paginationState,
         pageSize: this.state.rowsPerPage,
         page: page + 1,
-      })
+      }))
       .then((rawItems) => {
-        console.log(rawItems)
         if (Array.isArray(rawItems)) {
           this.setState({
             items: rawItems,

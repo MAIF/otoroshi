@@ -363,7 +363,7 @@ export class TcpServicesPage extends Component {
           fetchItems={(paginationState) =>
             BackOfficeServices.findAllTcpServices({
               ...paginationState,
-              fields: ['id', 'name', 'port', 'interface', 'tls', 'sni', 'clientAuth'],
+              fields: ['id', 'name', 'port', 'interface', 'tls', 'sni', 'clientAuth', 'env'],
             })
           }
           updateItem={BackOfficeServices.updateTcpService}

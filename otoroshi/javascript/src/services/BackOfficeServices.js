@@ -802,16 +802,9 @@ export function panicMode() {
   }).then((r) => r.json());
 }
 
-export function fetchAdmins() {
+export function fetchAdmins(paginationState) {
   // return fetch(`/bo/simple/admins`, {
-  return fetch(`/bo/api/proxy/api/admins/simple`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  })
-    .then((r) => r.json())
+  return findAllWithPagination(`/bo/api/proxy/api/admins/simple`, paginationState)
     .then((_admins) => {
       // return fetch(`/bo/webauthn/admins`, {
       return fetch(`/bo/api/proxy/api/admins/webauthn`, {
@@ -1436,14 +1429,8 @@ export function fetchStats(by, id, from, to, limit = 500) {
   ).then((r) => r.json());
 }
 
-export function findAllTcpServices() {
-  return fetch('/bo/api/proxy/api/tcp/services', {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+export function findAllTcpServices(paginationState) {
+  return findAllWithPagination('/bo/api/proxy/api/tcp/services', paginationState);
 }
 
 export function findTcpServiceById(id) {
@@ -1870,8 +1857,10 @@ const fetchWrapper = (url, method = 'GET', body) =>
     body: body ? JSON.stringify(body) : undefined,
   }).then((r) => r.json());
 
-const findAllWithPagination = (route, { page, pageSize, fields, filtered, sorted } = { page: 1 }, prefix = '') => {
+const findAllWithPagination = (route, { page, pageSize, fields, filtered, sorted, ...props } = { page: 1 }, prefix = '') => {
   let url = route;
+
+  console.log(props)
 
   if (page) {
     url = `${url}?page=${page}`;

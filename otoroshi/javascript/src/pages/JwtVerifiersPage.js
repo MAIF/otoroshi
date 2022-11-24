@@ -20,7 +20,7 @@ export class JwtVerifiersPage extends Component {
   columns = [
     { title: 'Name', filterId: 'name', content: (item) => item.name },
     { title: 'Description', filterId: 'desc', content: (item) => item.desc },
-    { title: 'Strategy', filterId: 'strategy.type',  content: (item) => item.strategy?.type },
+    { title: 'Strategy', filterId: 'strategy.type', content: (item) => item.strategy?.type },
   ];
 
   componentDidMount() {
@@ -109,12 +109,12 @@ export class JwtVerifiersPage extends Component {
           formComponent={JwtVerifier}
           navigateTo={this.gotoVerifier}
           defaultValue={BackOfficeServices.createNewJwtVerifier}
-          fetchItems={(paginationState) =>
-            BackOfficeServices.findAllJwtVerifiers({
+          fetchItems={(paginationState) => {
+            return BackOfficeServices.findAllJwtVerifiers({
               ...paginationState,
               fields: ['id', 'name', 'desc', 'strategy.type'],
             })
-          }
+          }}
           updateItem={BackOfficeServices.updateJwtVerifier}
           deleteItem={BackOfficeServices.deleteJwtVerifier}
           createItem={BackOfficeServices.createJwtVerifier}
