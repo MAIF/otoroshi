@@ -46,6 +46,7 @@ import { ResourceLoaderPage } from '../pages/ResourceLoaderPage';
 import RouteDesignerPage from '../pages/RouteDesigner';
 import { BackendsPage } from '../pages/BackendsPage';
 import { MetricsPage } from '../pages/MetricsPage';
+import { AtomicDesignPage } from '../pages/AtomicDesignPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -555,6 +556,10 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/provider"
                           component={(props) => this.decorate(ProvidersDashboardPage, props)}
+                        />
+                        <Route
+                          path="/atomicdesign"
+                          component={(props) => this.decorate(AtomicDesignPage, props)}
                         />
                         <Route
                           path="/admins"
