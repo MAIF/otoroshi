@@ -222,18 +222,26 @@ export class Table extends Component {
   showEditForm = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
     this.mountShortcuts();
-    if (this.props.rawEditUrl)
-      urlTo(`/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`);
-    else urlTo(`/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`);
 
-    if (this.props.parentProps.setTitle) {
-      this.props.parentProps.setTitle(
-        `Update a ${this.props.itemName}`,
-        this.updateItemAndStay,
-        item
-      );
+    let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`
+
+    if (this.props.rawEditUrl) {
+      routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`
     }
-    this.setState({ currentItem: item, showEditForm: true });
+
+    console.log(window.location.pathname, routeTo)
+    if (window.location.pathname !== routeTo) {
+      window.location.href = routeTo;
+    } else {
+      if (this.props.parentProps.setTitle) {
+        this.props.parentProps.setTitle(
+          `Update a ${this.props.itemName}`,
+          this.updateItemAndStay,
+          item
+        );
+      }
+      this.setState({ currentItem: item, showEditForm: true });
+    }
   };
 
   deleteItem = (e, item) => {
