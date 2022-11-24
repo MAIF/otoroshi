@@ -747,15 +747,9 @@ export function discardSession(id) {
   }).then((r) => r.json());
 }
 
-export function fetchSessions() {
+export function fetchSessions(paginateState) {
   // return fetch(`/bo/api/sessions`, {
-  return fetch(`/bo/api/proxy/api/admin-sessions`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+  return findAllWithPagination(`/bo/api/proxy/api/admin-sessions`, paginateState)
 }
 
 export function discardAllPrivateAppsSessions() {
@@ -782,13 +776,7 @@ export function discardPrivateAppsSession(id) {
 
 export function fetchPrivateAppsSessions() {
   // return fetch(`/bo/api/papps/sessions`, {
-  return fetch(`/bo/api/proxy/api/apps-sessions`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+  return findAllWithPagination(`/bo/api/proxy/api/apps-sessions`, paginationState);
 }
 
 export function panicMode() {
@@ -816,7 +804,7 @@ export function fetchAdmins(paginationState) {
       })
         .then((r) => r.json())
         .then((_webauthnadmins) => {
-          const admins = _admins.map((admin) => ({ ...admin, type: 'SIMPLE' }));
+          const admins = _admins.data.map((admin) => ({ ...admin, type: 'SIMPLE' }));
           const webauthnadmins = _webauthnadmins.map((admin) => ({ ...admin, type: 'WEBAUTHN' }));
           return [...webauthnadmins, ...admins];
         });
