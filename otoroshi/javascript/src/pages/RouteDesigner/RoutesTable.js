@@ -11,7 +11,7 @@ export default ({ injectTopBar }) => {
 
   const domainColumn = {
     title: 'Domain',
-    id: 'frontend.domains.0',
+    filterId: 'frontend.domains.0',
     cell: (item) => {
       return (
         <>
@@ -26,7 +26,7 @@ export default ({ injectTopBar }) => {
 
   const targetColumn = {
     title: 'Domain',
-    id: 'item.backend.targets.0.hostname',
+    filterId: 'backend.targets.0.hostname',
     cell: (item) => {
       return (
         <>
@@ -78,7 +78,7 @@ export default ({ injectTopBar }) => {
         fetchItems={(paginationState) =>
           nextClient.findAllWithPagination(nextClient.ENTITIES[entity.fetchName], {
             ...paginationState,
-            fields: ['name', 'enabled', 'frontend.domains', 'backend.targets', 'id'],
+            fields: ['name', 'enabled', 'frontend.domains.0', 'backend.targets.0.hostname', 'id'],
           })
         }
         deleteItem={(item) => nextClient.remove(nextClient.ENTITIES[entity.fetchName], item)}

@@ -148,7 +148,7 @@ export class Table extends Component {
         page: page + 1,
       })
       .then((rawItems) => {
-        // console.log(rawItems)
+        console.log(rawItems)
         if (Array.isArray(rawItems)) {
           this.setState({
             items: rawItems,
@@ -453,6 +453,7 @@ export class Table extends Component {
         maxWidth: 160,
         style: { textAlign: 'center' },
         filterable: false,
+        sortable: false,
         accessor: (item) => (
           <div style={{ textAlign: 'center' }}>
             <div className="displayGroupBtn">
@@ -540,7 +541,7 @@ export class Table extends Component {
             <div className="rrow" style={{ position: 'relative' }}>
               <ReactTable
                 className="fulltable -striped -highlight"
-                // manual
+                manual
                 pages={this.state.pages}
                 data={this.state.items}
                 loading={this.state.loading}
