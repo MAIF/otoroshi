@@ -9,17 +9,28 @@ export default ({ injectTopBar }) => {
   const history = useHistory();
   const entity = useEntityFromURI();
 
-  const domainToTargetColumn = {
-    title: 'Domain → Target',
-    notFilterable: true,
+  const domainColumn = {
+    title: 'Domain',
+    id: 'frontend.domains.0',
     cell: (item) => {
       return (
         <>
           {item.frontend.domains[0] || '-'}{' '}
           {item.frontend.domains.length > 1 && (
             <span className="badge bg-secondary">{item.frontend.domains.length - 1} more</span>
-          )}{' '}
-          → {item.backend.targets[0]?.hostname || '-'}{' '}
+          )}
+        </>
+      );
+    },
+  };
+
+  const targetColumn = {
+    title: 'Domain',
+    id: 'item.backend.targets.0.hostname',
+    cell: (item) => {
+      return (
+        <>
+          {item.backend.targets[0]?.hostname || '-'}{' '}
           {item.backend.targets.length > 1 && (
             <span className="badge bg-secondary">{item.backend.targets.length - 1} more</span>
           )}
@@ -30,6 +41,7 @@ export default ({ injectTopBar }) => {
 
   const exposedColumn = {
     title: 'Enabled',
+    id: 'enabled',
     style: { textAlign: 'center', width: 70 },
     notFilterable: true,
     cell: (_, item) =>
@@ -46,7 +58,8 @@ export default ({ injectTopBar }) => {
       filterId: 'name',
       content: (item) => item.name,
     },
-    entity.lowercase == 'route' ? domainToTargetColumn : undefined,
+    entity.lowercase == 'route' ? domainColumn : undefined,
+    entity.lowercase == 'route' ? targetColumn : undefined,
     exposedColumn,
   ].filter((c) => c);
 
