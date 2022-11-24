@@ -43,6 +43,7 @@ export default ({ injectTopBar }) => {
   const columns = [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
     },
     entity.lowercase == 'route' ? domainToTargetColumn : undefined,

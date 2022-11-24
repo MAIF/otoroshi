@@ -32,6 +32,7 @@ export class GroupsPage extends Component {
   columns = [
     {
       title: 'Name',
+      filterId: 'name', 
       content: (item) => item.name,
       wrappedCell: (v, item, table) => {
         if (this.props && this.props.env && this.props.env.adminGroupId === item.id) {
@@ -46,7 +47,7 @@ export class GroupsPage extends Component {
         return item.name;
       },
     },
-    { title: 'Description', content: (item) => item.description },
+    { title: 'Description', filterId: 'description', content: (item) => item.description },
     {
       title: 'Stats',
       style: { textAlign: 'center', width: 70 },

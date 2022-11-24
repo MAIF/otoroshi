@@ -10,19 +10,22 @@ import orderBy from 'lodash/orderBy';
 
 export class PrivateAppsSessionsPage extends Component {
   columns = [
-    { title: 'Name', content: (item) => item.name },
+    { title: 'Name', filterId: 'name', content: (item) => item.name },
     {
       title: 'Email',
+      filterId: 'email', 
       content: (item) => item.email,
     },
     {
       title: 'Created At',
+      filterId: 'createdAt', 
       content: (item) => (item.createdAt ? item.createdAt : 0),
       cell: (v, item) =>
         item.createdAt ? moment(item.createdAt).format('DD/MM/YYYY HH:mm:ss') : '',
     },
     {
       title: 'Expires At',
+      filterId: 'expiredAt', 
       content: (item) => (item.expiredAt ? item.expiredAt : 0),
       cell: (v, item) =>
         item.expiredAt ? moment(item.expiredAt).format('DD/MM/YYYY HH:mm:ss') : '',
@@ -86,6 +89,7 @@ export class PrivateAppsSessionsPage extends Component {
     },
     {
       title: 'Realm',
+      filterId: 'realm', 
       content: (item) => item.realm,
     },
     {

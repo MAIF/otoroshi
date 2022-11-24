@@ -7,10 +7,12 @@ export class TenantsPage extends Component {
   columns = [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
     },
     {
       title: 'Description',
+      filterId: 'description',
       content: (item) => item.description,
     },
   ];

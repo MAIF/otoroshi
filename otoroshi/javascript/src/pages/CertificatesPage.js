@@ -483,10 +483,10 @@ export class CertificatesPage extends Component {
   };
 
   columns = [
-    { title: 'Name', content: (item) => item.name },
-    { title: 'Description', content: (item) => item.description },
+    { title: 'Name', filterId: 'name', content: (item) => item.name },
+    { title: 'Description', filterId: 'description', content: (item) => item.description },
     // { title: 'Domain', content: item => (!item.ca ? item.domain : '') },
-    { title: 'Subject', content: (item) => item.subject },
+    { title: 'Subject', filterId: 'subject', content: (item) => item.subject },
     // {
     //   title: 'Valid',
     //   content: item => {
@@ -572,6 +572,7 @@ export class CertificatesPage extends Component {
     // },
     {
       title: 'From',
+      filterId: 'from',
       content: (item) => moment(item.from).format('DD/MM/YYYY HH:mm:ss'),
       sortMethod: (a, b) => moment(a).diff(moment(b)),
       style: { textAlign: 'center', width: 150 },
@@ -579,6 +580,7 @@ export class CertificatesPage extends Component {
     },
     {
       title: 'To',
+      filterId: 'to',
       content: (item) => moment(item.to).format('DD/MM/YYYY HH:mm:ss'),
       sortMethod: (a, b) => moment(a).diff(moment(b)),
       style: { textAlign: 'center', width: 150 },

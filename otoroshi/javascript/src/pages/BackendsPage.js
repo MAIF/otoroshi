@@ -34,9 +34,10 @@ export class BackendsPage extends Component {
   columns = [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
     },
-    { title: 'Description', content: (item) => item.description },
+    { title: 'Description', filterId: 'description', content: (item) => item.description },
   ];
 
   componentDidMount() {

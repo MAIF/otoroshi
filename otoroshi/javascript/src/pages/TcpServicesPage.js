@@ -161,15 +161,18 @@ export class TcpServicesPage extends Component {
   columns = [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
     },
     {
       title: 'Port',
+      filterId: 'port',
       style: { textAlign: 'center', width: 80 },
       content: (item) => item.port,
     },
     {
       title: 'Interface',
+      filterId: 'interface',
       style: { textAlign: 'center', width: 80 },
       content: (item) => item.interface,
     },

@@ -24,6 +24,7 @@ export class ServicesPage extends Component {
   columns = [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
       wrappedCell: (v, item, table) => {
         if (this.state && this.state.env && this.state.env.adminApiId === item.id) {
@@ -57,6 +58,7 @@ export class ServicesPage extends Component {
     },
     {
       title: 'Env.',
+      filterId: 'env',
       style: { textAlign: 'center', width: 120 },
       content: (item) => item.env,
       cell: (v, item) => <span className={`badge ${this.color(item.env)}`}>{item.env}</span>,

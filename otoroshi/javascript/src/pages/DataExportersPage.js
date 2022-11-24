@@ -249,15 +249,18 @@ export class DataExportersPage extends Component {
   columns = [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
     },
     {
       title: 'Type',
+      filterId: 'type',
       style: { textAlign: 'center', width: 100 },
       content: (item) => item.type,
     },
     {
       title: 'Enabled',
+      filterId: 'enabled',
       style: { textAlign: 'center', width: 100 },
       content: (item) => item.enabled,
       cell: (v, item, table) => {

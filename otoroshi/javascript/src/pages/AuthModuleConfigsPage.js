@@ -12,8 +12,8 @@ export class AuthModuleConfigsPage extends Component {
   };
 
   columns = [
-    { title: 'Name', content: (item) => item.name },
-    { title: 'Description', content: (item) => item.desc },
+    { title: 'Name', filterId: 'name', content: (item) => item.name },
+    { title: 'Description', filterId: 'desc', content: (item) => item.desc },
   ];
 
   componentDidMount() {

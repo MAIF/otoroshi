@@ -507,6 +507,7 @@ const ApiKeysConstants = {
   columns: (that) => [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.clientName,
       wrappedCell: (v, item, table) => {
         if (that.state && that.state.env && that.state.env.adminApikeyId === item.clientId) {
@@ -523,6 +524,7 @@ const ApiKeysConstants = {
     },
     {
       title: 'ApiKey Id',
+      filterId: 'clientId',
       content: (item) => item.clientId,
     },
     {

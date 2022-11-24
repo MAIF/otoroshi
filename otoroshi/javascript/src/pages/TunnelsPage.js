@@ -13,10 +13,12 @@ export class TunnelsPage extends Component {
   columns = [
     {
       title: 'Id',
+      filterId: 'id',
       content: (item) => item.tunnel_id,
     },
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
     },
     {
@@ -31,6 +33,7 @@ export class TunnelsPage extends Component {
     },
     {
       title: 'Last Seen',
+      filterId: 'last_seen',
       content: (item) => item.last_seen,
     },
     {

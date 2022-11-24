@@ -396,7 +396,7 @@ export class Table extends Component {
     const columns = this.props.columns.map((c) => {
       return {
         Header: c.title,
-        id: c.title,
+        id: c.filterId || c.title,
         headerStyle: c.style,
         width: c.style && c.style.width ? c.style.width : undefined,
         style: { ...c.style, height: 30 },

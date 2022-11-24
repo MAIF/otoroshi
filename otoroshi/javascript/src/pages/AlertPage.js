@@ -7,14 +7,15 @@ export class AlertPage extends Component {
   columns = [
     {
       title: 'Date',
+      filterId: '@timestamp',
       content: (item) => item['@timestamp'],
       cell: (v, item) => moment(item['@timestamp']).format('DD/MM/YYYY HH:mm:ss:SSS'),
     },
-    { title: 'User', content: (item) => (item.user || {}).name || '--' },
-    { title: 'From', content: (item) => (item.audit || {}).from || '--' },
-    { title: 'Alert', content: (item) => item.alert },
-    { title: 'Action', content: (item) => (item.audit || {}).action || '--' },
-    { title: 'Message', content: (item) => (item.audit || {}).message || '--' },
+    { title: 'User',    filterId: 'user.name', content: (item) => (item.user || {}).name || '--' },
+    { title: 'From',    filterId: 'user.from', content: (item) => (item.audit || {}).from || '--' },
+    { title: 'Alert',   filterId: 'alert', content: (item) => item.alert },
+    { title: 'Action',  filterId: 'audit.action', content: (item) => (item.audit || {}).action || '--' },
+    { title: 'Message', filterId: 'audit.message', content: (item) => (item.audit || {}).message || '--' },
     {
       title: 'Content',
       content: (item) => item['@timestamp'],

@@ -128,14 +128,17 @@ export class U2FRegisterPage extends Component {
   columns = [
     {
       title: 'Username',
+      filterId: 'username',
       content: (item) => item.username,
     },
     {
       title: 'Label',
+      filterId: 'label',
       content: (item) => item.label,
     },
     {
       title: 'Created At',
+      filterId: 'createdAt',
       content: (item) => (item.createdAt ? item.createdAt : 0),
       cell: (v, item) =>
         item.createdAt ? moment(item.createdAt).format('DD/MM/YYYY HH:mm:ss') : '',

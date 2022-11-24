@@ -7,13 +7,14 @@ export class AuditPage extends Component {
   columns = [
     {
       title: 'Date',
+      filterId: '@timestamp',
       content: (item) => item['@timestamp'],
       cell: (v, item) => moment(item['@timestamp']).format('DD/MM/YYYY HH:mm:ss:SSS'),
     },
-    { title: 'User', content: (item) => (item.user || {}).name || '--' },
-    { title: 'From', content: (item) => item.from },
-    { title: 'Action', content: (item) => item.action },
-    { title: 'Message', content: (item) => item.message },
+    { title: 'User',    filterId: 'user.name', content: (item) => (item.user || {}).name || '--' },
+    { title: 'From',    filterId: 'from', content: (item) => item.from },
+    { title: 'Action',  filterId: 'action', content: (item) => item.action },
+    { title: 'Message', filterId: 'message', content: (item) => item.message },
     {
       title: 'Content',
       content: (item) => item['@timestamp'],

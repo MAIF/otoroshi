@@ -9,6 +9,7 @@ export class CleverPage extends Component {
   columns = [
     {
       title: 'Clever App',
+      filterId: 'name',
       content: (item) => item.name,
     },
     {

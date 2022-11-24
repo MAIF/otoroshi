@@ -18,9 +18,9 @@ export class JwtVerifiersPage extends Component {
   };
 
   columns = [
-    { title: 'Name', content: (item) => item.name },
-    { title: 'Description', content: (item) => item.desc },
-    { title: 'Strategy', content: (item) => item.strategy?.type },
+    { title: 'Name', filterId: 'name', content: (item) => item.name },
+    { title: 'Description', filterId: 'desc', content: (item) => item.desc },
+    { title: 'Strategy', filterId: 'strategy.type',  content: (item) => item.strategy?.type },
   ];
 
   componentDidMount() {
