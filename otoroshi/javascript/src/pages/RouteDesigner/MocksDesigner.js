@@ -76,12 +76,10 @@ const generateFakerValues = (resources, endpoint) => {
     const resource = resources.find((f) => f.name === endpoint.model);
     if (!resource) return {};
 
-    const newItem = calculateResource(resource);
-
     if (resource_list) {
-      return Array.from({ length: length || 10 }, (_, i) => ({ ...newItem }));
+      return Array.from({ length: length || 10 }, (_, i) => ({ ...calculateResource(resource) }));
     } else {
-      return newItem;
+      return calculateResource(resource);
     }
   } else {
     if (resource_list) return Array.from({ length: length || 10 }, (_, i) => body);
