@@ -8,10 +8,10 @@ function OtoroshiMiddleware(opts = {}) {
     const state = req.get("Otoroshi-State") || "none";
     const v2 = state.indexOf("eyJ") === 0 && state.indexOf(".") > -1;
     if (v2) {
-      jwt.verify(req.get("Otoroshi-State") || 'none', tokenKey, { issuer: 'Otoroshi' }, (err, decodedState) => {
-        jwt.verify(req.get("Otoroshi-Claim") || 'none', tokenKey, { issuer: 'Otoroshi' }, (err, decoded) => {
-          if (err) {
-            res.status(500).send({ error: 'error decoding jwt', nerror_description: err.message });
+      jwt.verify(req.get("Otoroshi-State") || 'none', tokenKey, { issuer: 'Otoroshi' }, (err1, decodedState) => {
+        jwt.verify(req.get("Otoroshi-Claim") || 'none', tokenKey, { issuer: 'Otoroshi' }, (err2, decoded) => {
+          if (err1 || err2) {
+            res.status(500).send({ error: 'error decoding jwt', error_state_description: (err1 || {message:'--)'}).message, error_info_description: (err2 || {message:'--)'}).message });
           } else {
             req.challengeVersion = "V2";
             req.token = decoded;
