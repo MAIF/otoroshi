@@ -13,6 +13,9 @@ Otoroshi comes with a solution to create and meet your customers' needs without 
 <img src="../../imgs/graphql-composer.png" width="620px" />
 @@@
 
+
+## Tutorial
+
 Let's take an example to get a better view of this plugin. We want to build a schema with two types: 
 
 * an user with a name and a password 
@@ -24,8 +27,8 @@ To build this schema, we need to use three custom directives. A `directive` deco
 * @ref:[permission](#directives) : to restrict the access to the sensitive field
 * @ref:[graphql](#directives) : to call a graphQL service by passing a url and the associated query
 
-The corresponding schema should look like this
-```js
+The final schema of our tutorial should look like this
+```graphql
 type Country {
   name: String
   users: [User] @rest(url: "http://localhost:5000/countries/${item.name}/users")
@@ -33,17 +36,15 @@ type Country {
 
 type User {
   name: String
-  password: String
+  password: String @password(value: "ADMIN")
 }
 
 type Query {
   users: [User] @rest(url: "http://localhost:5000/users", paginate: true)
-  user(id: String): RestrictedUser @rest(url: "http://localhost:5000/users/${params.id}")
-  countries: [Country] @graphql(url: "https://countries.trevorblades.com", query: "{ countries { name }}")
+  user(id: String): User @rest(url: "http://localhost:5000/users/${params.id}")
+  countries: [Country] @graphql(url: "https://countries.trevorblades.com", query: "{ countries { name }}", paginate: true)
 }
 ```
-
-## Tutorial
 
 Now you know the GraphQL Composer basics and how it works, let's configure it on our project:
 
@@ -158,7 +159,7 @@ curl -X PUT 'http://otoroshi-api.oto.tools:8080/api/experimental/routes/countrie
 The route is created but it expects an API, exposed on the localhost:8181, to work. 
 
 Let's create this simple API which returns a list of users and of countries. This should look like the following snippet.
-The API uses express as http server and exposes a list of raw users and countries.
+The API uses express as http server.
 
 ```js
 const express = require('express')
@@ -239,13 +240,13 @@ You should see the following content in your terminal.
 }
 ```
 
-If we try to create the call graph, it should seem to the following snippet
+The call graph should looks like
 
-```sh
-calls https://countries.trevorblades.com
-  -> for each country
-    -> extract the field name
-    -> calls http://localhost:8181/countries/${item.name}/users replacing item.name with the name of each country
+```
+1. Calls https://countries.trevorblades.com
+2. For each country:
+   - extract the field name
+   - calls http://localhost:8181/countries/${country}/users to get the list of users for this country
 ```
 
 You may have noticed that we added an argument at the end of the graphql directive named `paginate`. It enabled the paging for the client accepting limit and offset parameters. These parameters are used by the plugin to filter and reduce the content.
@@ -271,6 +272,8 @@ You should see the following content in your terminal.
   }
 }
 ```
+
+Let's move on to the next section to secure sensitive field of our API.
 
 ### Basics of permissions 
 
@@ -349,7 +352,7 @@ type User {
 
 *Arguments : path, value and unauthorized_value*
 
-The authorize directive has one more required argument, named `path`, which indicates the path to value, in the context. Unlike the last three directives, the authorize directive doesn't search in the entire context but the specified path.
+The authorize directive has one more required argument, named `path`, which indicates the path to value, in the context. Unlike the last three directives, the authorize directive doesn't search in the entire context but at the specified path.
 
 **Example**
 ```js
@@ -565,7 +568,7 @@ This example supposes that the Mock Responses plugin is set on the route's feed,
 
 @@@
 
-### List of direcrtive arguments
+### List of directive arguments
 
 | Argument           | Type             | Optional                    | Default value |
 | ------------------ | ---------------- | --------------------------- | ------------- |
@@ -584,4 +587,4 @@ This example supposes that the Mock Responses plugin is set on the route's feed,
 | values             | LIST of *STRING* |                             |
 | path               | *STRING*         |                             |               |
 | paginate           | *BOOLEAN*        | x                           |               |
-| unauthorized_value | *STRING*         | x                           |               |
+| unauthorized_value | *STRING*         | x (only for permissions directive) |               |
