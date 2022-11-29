@@ -92,7 +92,7 @@ curl -X POST 'http://otoroshi-api.oto.tools:8080/api/experimental/routes' \
   "id": "countries-api",
   "name": "My countries API",
   "frontend": {
-    "domains": ["countries-next-gen.oto.tools"]
+    "domains": ["countries.oto.tools"]
   },
   "backend": {
     "targets": [
@@ -127,7 +127,7 @@ curl -X PUT 'http://otoroshi-api.oto.tools:8080/api/experimental/routes/countrie
     "name": "My countries API",
     "frontend": {
         "domains": [
-            "countries-next-gen.oto.tools"
+            "countries.oto.tools"
         ]
     },
     "backend": {
@@ -214,7 +214,7 @@ app.listen(8181, () => {
 Let's try to make a first call to our countries API.
 
 ```sh
-curl 'countries-next-gen.oto.tools:9999/' \
+curl 'countries.oto.tools:9999/' \
 --header 'Content-Type: application/json' \
 --data-binary @- << EOF
 {
@@ -254,7 +254,7 @@ You may have noticed that we added an argument at the end of the graphql directi
 Let's make a new call that does not accept any country.
 
 ```sh
-curl 'countries-next-gen.oto.tools:9999/' \
+curl 'countries.oto.tools:9999/' \
 --header 'Content-Type: application/json' \
 --data-binary @- << EOF
 {
@@ -385,7 +385,7 @@ type User {
 Let's make a call with the role header
 
 ```sh
-curl 'countries-next-gen.oto.tools:9999/' \
+curl 'countries.oto.tools:9999/' \
 --header 'Content-Type: application/json' \
 --header 'role: ADMIN'
 --data-binary @- << EOF
@@ -398,7 +398,7 @@ EOF
 Now try to change the value of the role header
 
 ```sh
-curl 'countries-next-gen.oto.tools:9999/' \
+curl 'countries.oto.tools:9999/' \
 --header 'Content-Type: application/json' \
 --header 'role: USER'
 --data-binary @- << EOF
