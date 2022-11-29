@@ -1,6 +1,6 @@
 # Apikeys
 
-An API key is linked to one or more service group and service descriptor to allow you to access any service descriptor linked or contained in one of the linked service group. You can, of course, create multiple API key for given service groups/service descriptors.
+An API key is a unique identifier used to connect to, or perform, an route call. 
 
 @@@ div { .centered-img }
 <img src="../imgs/models-apikey.png" />

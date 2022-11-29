@@ -1,10 +1,8 @@
 # Authentication modules
 
-The authentication modules are the resources to manage the the access to Otoroshi UI and to protect a service.
+The authentication modules manage the access to Otoroshi UI and can protect a route.
 
-An authentication module can be as well use on guard to access to the Otoroshi UI as to protect an app.
-
-A `private app` is an Otoroshi service with an authentication module.
+A `private Otoroshi app` is an Otoroshi route with the Authentication plugin enabled.
 
 The list of supported authentication are :
 
@@ -23,7 +21,7 @@ Each module has also the following fields :
 * `HttpOnly`: if enabled, the cookie cannot be accessed through client side script, prevent cross-site scripting (XSS) by not revealing the cookie to a third party
 * `Secure`: if enabled, avoid to include cookie in an HTTP Request without secure channel, typically HTTPs.
 * `Session max. age`: duration until the session expired
-* `User validators`: a list of validator that will check if a user that successfully logged in has the right to actually pass otoroshi based on the content of it's profile. A validator is composed of a [JSONPath](https://goessner.net/articles/JsonPath/) that will tell what to check and a value that is the expected value. The JSONPath will be applied on a document that will look like
+* `User validators`: a list of validator that will check if, a user that successfully logged in has the right to actually, pass otoroshi based on the content of it's profile. A validator is composed of a [JSONPath](https://goessner.net/articles/JsonPath/) that will tell what to check and a value that is the expected value. The JSONPath will be applied on a document that will look like
 
 ```javascript
 {
