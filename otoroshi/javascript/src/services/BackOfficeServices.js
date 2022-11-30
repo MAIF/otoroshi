@@ -1836,7 +1836,7 @@ export function jsonToGraphqlSchema(schema, types) {
 // NgRoutes
 
 const fetchWrapper = (url, method = 'GET', body) =>
-  fetch(`/bo/api/proxy/api/experimental${url}`, {
+  fetch(`/bo/api/proxy/api${url}`, {
     method,
     credentials: 'include',
     headers: {
@@ -1892,7 +1892,7 @@ export const nextClient = {
     ROUTES: 'routes',
     BACKENDS: 'backends',
     FRONTENDS: 'frontends',
-    SERVICES: 'services',
+    SERVICES: 'route-compositions',
   },
   find: (entity) => fetchWrapper(`/${entity}`),
   findAll: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {
@@ -1902,7 +1902,7 @@ export const nextClient = {
     return fetchWrapper(url);
   },
   findAllWithPagination: (entity, props) =>
-    findAllWithPagination(`/${entity}`, props, '/bo/api/proxy/api/experimental'),
+    findAllWithPagination(`/${entity}`, props, '/bo/api/proxy/api/'),
   create: (entity, content) => fetchWrapper(`/${entity}`, 'POST', content),
   update: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
   fetch: (entity, entityId) => fetchWrapper(`/${entity}/${entityId}`),
@@ -1915,7 +1915,7 @@ export const nextClient = {
     return {
       findAll: () => fetchWrapper(`/${entity}`),
       findAllWithPagination: (paginationState) =>
-        findAllWithPaginationAndEntity(entity, paginationState),
+        findAllWithPagination(entity, paginationState, '/bo/api/proxy/api/'),
       create: (content) => fetchWrapper(`/${entity}`, 'POST', content),
       update: (content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
       findById: (entityId) => fetchWrapper(`/${entity}/${entityId}`),

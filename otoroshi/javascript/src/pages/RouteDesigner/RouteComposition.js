@@ -371,7 +371,7 @@ export default class RouteCompositions extends React.Component {
 
   importOpenApiModalResponse = (body) => {
     if (body) {
-      fetch('/bo/api/proxy/api/experimental/services/_openapi', {
+      fetch('/bo/api/proxy/api/services/_openapi', {
         method: 'POST',
         credentials: 'include',
         headers: {
