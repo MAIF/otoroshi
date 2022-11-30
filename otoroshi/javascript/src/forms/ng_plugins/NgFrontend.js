@@ -44,6 +44,7 @@ export default {
     strip_path: {
       type: 'bool',
       label: 'Strip path',
+      help: "When matching, strip the matching prefix from the upstream request URL. Defaults to true",
       props: {
         labelColumn: 3,
       },

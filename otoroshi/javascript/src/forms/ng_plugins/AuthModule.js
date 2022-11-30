@@ -21,7 +21,7 @@ export default {
       label: 'Pass with apikey',
       props: {
         description: 'Authentication config can only be called with an API key',
-      },
+      }
     },
   },
   config_flow: ['module', 'pass_with_apikey'],

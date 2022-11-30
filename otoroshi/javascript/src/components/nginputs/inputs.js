@@ -3,7 +3,7 @@ import Select from 'react-select';
 import isFunction from 'lodash/isFunction';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 import { Location } from '../Location';
-import { ObjectInput } from '../inputs';
+import { Help, ObjectInput } from '../inputs';
 import isEqual from 'lodash/isEqual';
 import { Forms } from '../../forms';
 import { Button } from '../Button';
@@ -104,7 +104,7 @@ export class NgDotsRenderer extends Component {
       <LabelAndInput {...this.props}>
         <div
           className="d-flex flex-wrap align-items-center"
-          style={{ height: '100%', gap: '.6em' }}>
+          style={{ height: '100%', gap: '.25em' }}>
           {readOnly &&
             (isValueArray ? (
               value.map((v) => <ReadOnlyField value={v} key={v} />)
@@ -142,9 +142,8 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-info' : 'btn-dark'
-                  } me-2 px-3 mb-2`}
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-info' : 'btn-dark'
+                    } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -235,10 +234,13 @@ export function LabelAndInput(_props) {
   const schema = _props.schema || {};
   const props = schema.props || {};
   const label = _props.label || props.label || _props.rawSchema?.label || _props.name || '...';
+  const help = _props.help || props.help || _props.rawSchema?.help || _props.help;
   const ngOptions = _props.ngOptions || props.ngOptions || _props.rawSchema?.props?.ngOptions || {};
   const labelColumn = _props.labelColumn || props.labelColumn || 2;
 
-  if (ngOptions.spread && !_props.readOnly) return _props.children;
+  if (ngOptions.spread && !_props.readOnly) {
+    return _props.children;
+  }
 
   const margin =
     _props.margin ||
@@ -254,18 +256,9 @@ export function LabelAndInput(_props) {
           textAlign: labelColumn === 2 ? 'right' : 'left',
         }}>
         {label.replace(/_/g, ' ')}{' '}
-        {_props.help && (
-          <i
-            className="far fa-question-circle"
-            data-toggle="tooltip"
-            data-placement="top"
-            title={_props.help}
-            data-bs-original-title={_props.help}
-            aria-label={_props.help}
-          />
-        )}
+        {help && <Help text={help} />}
       </label>
-      <div className={`col-sm-${12 - labelColumn}`}>{_props.children}</div>
+      <div className={`col-sm-${12-labelColumn}`}>{_props.children}</div>
     </div>
   );
 }
@@ -321,7 +314,7 @@ export class NgJsonRenderer extends Component {
           onChange={(e) => {
             try {
               this.props.onChange(JSON.parse(e));
-            } catch (ex) {}
+            } catch (ex) { }
           }}
           style={{ width: '100%', ...(this.props.style || {}) }}
         />
@@ -611,8 +604,8 @@ export class NgArrayRenderer extends Component {
     form: () => ({
       ...this.generateDefaultValue(current.schema),
     }),
-    object: () => {},
-    json: () => {},
+    object: () => { },
+    json: () => { },
   });
 
   generateDefaultValue = (obj) => {
@@ -786,21 +779,21 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
-                    <ItemRenderer
-                      embedded
-                      flow={this.props.flow}
-                      schema={this.props.schema}
-                      value={value}
-                      key={key}
-                      idx={idx}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        newObject[key] = e;
-                        this.props.onChange(newObject);
-                      }}
-                      {...props}
-                    />
-                  )
+                  <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={key}
+                    idx={idx}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                )
                 : null
             }
           />
