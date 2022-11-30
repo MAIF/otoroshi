@@ -53,7 +53,7 @@ export function DefaultSidebar(props) {
       <>
         <li className="nav-item">
           <h3 className="">
-            <i className="fas fa-cubes" /> Routes
+            <i className="fas fa-road" /> Routes
           </h3>
         </li>
         <li className="nav-item" key="all">
@@ -73,7 +73,32 @@ export function DefaultSidebar(props) {
             <i className="fas fa-plus" /> Add route
           </Link>
         </li>
+    </>
+    <>
+        <li className="nav-item">
+          <h3 className="">
+            <i className="fas fa-microchip" /> Backends
+          </h3>
+        </li>
+        <li className="nav-item" key="all">
+          <Link
+            to="/backends"
+            className={`nav-link ${rootClassName('backends')}`}
+            {...createTooltip('List all backends declared in Otoroshi')}>
+            {' '}
+            All backends
+          </Link>
+        </li>
+        <li className="nav-item">
+          <Link
+            to="/backends/add"
+            className="nav-link"
+            {...createTooltip('Create a new backend')}>
+            <i className="fas fa-plus" /> Add backend
+          </Link>
+        </li>
       </>
+
       {props.env && props.env.clevercloud && (
         <li className="nav-item">
           <Link

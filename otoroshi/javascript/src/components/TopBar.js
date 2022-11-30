@@ -784,6 +784,12 @@ export class TopBar extends Component {
                         <span className="fas fa-cubes" /> Service descriptors
                       </Link>
                     )}
+                    <Link to="/routes" className="dropdown-item">
+                      <span className="fas fa-road" /> Routes
+                    </Link>
+                    <Link to="/backends" className="dropdown-item">
+                      <span className="fas fa-microchip" /> Backends
+                    </Link>
                     <Link to="/jwt-verifiers" className="dropdown-item">
                       <span className="fas fa-key" /> Jwt Verifiers
                     </Link>
