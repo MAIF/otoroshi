@@ -89,7 +89,7 @@ class Http3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler wit
           res match {
             case fres: FullHttpResponse => {
               val headers = toHttp3Headers(res)
-              ctx.write(new DefaultHttp3HeadersFrame(headers).debugPrintln)
+              ctx.write(new DefaultHttp3HeadersFrame(headers))
               fres.release()
               return
             }
@@ -99,7 +99,7 @@ class Http3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler wit
       }
       case msg: HttpMessage      => {
         val headers = toHttp3Headers(msg)
-        ctx.write(new DefaultHttp3HeadersFrame(headers).debugPrintln)
+        ctx.write(new DefaultHttp3HeadersFrame(headers))
       }
       case last: LastHttpContent => {
         val readable    = last.content().isReadable()
@@ -110,7 +110,7 @@ class Http3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandler wit
         }
         if (hasTrailers) {
           val headers = Http3ConversionUtil.toHttp3Headers(last.trailingHeaders(), validateHeaders)
-          ctx.write(new DefaultHttp3HeadersFrame(headers).debugPrintln)
+          ctx.write(new DefaultHttp3HeadersFrame(headers))
         }
         if (!readable) {
           last.release();

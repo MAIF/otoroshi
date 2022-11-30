@@ -203,7 +203,7 @@ class Commands extends Component {
   componentDidMount() {
     const cert = this.props.rawValue.chain
       ? this.props.rawValue.chain.split('-----END CERTIFICATE-----')[0] +
-      '-----END CERTIFICATE-----'
+        '-----END CERTIFICATE-----'
       : '';
     this.setState({
       fullChainUrl: URL.createObjectURL(
@@ -483,10 +483,10 @@ export class CertificatesPage extends Component {
   };
 
   columns = [
-    { title: 'Name', content: (item) => item.name },
-    { title: 'Description', content: (item) => item.description },
+    { title: 'Name', filterId: 'name', content: (item) => item.name },
+    { title: 'Description', filterId: 'description', content: (item) => item.description },
     // { title: 'Domain', content: item => (!item.ca ? item.domain : '') },
-    { title: 'Subject', content: (item) => item.subject },
+    { title: 'Subject', filterId: 'subject', content: (item) => item.subject },
     // {
     //   title: 'Valid',
     //   content: item => {
@@ -530,14 +530,14 @@ export class CertificatesPage extends Component {
         item.client
           ? 'client'
           : item.ca
-            ? 'ca'
-            : item.letsEncrypt
-              ? 'letsencrypt'
-              : item.keypair
-                ? 'keypair'
-                : item.selfSigned
-                  ? 'selfsigned'
-                  : 'certificate',
+          ? 'ca'
+          : item.letsEncrypt
+          ? 'letsencrypt'
+          : item.keypair
+          ? 'keypair'
+          : item.selfSigned
+          ? 'selfsigned'
+          : 'certificate',
       style: { textAlign: 'center', width: 100 },
       notFilterable: false,
     },
@@ -572,6 +572,7 @@ export class CertificatesPage extends Component {
     // },
     {
       title: 'From',
+      filterId: 'from',
       content: (item) => moment(item.from).format('DD/MM/YYYY HH:mm:ss'),
       sortMethod: (a, b) => moment(a).diff(moment(b)),
       style: { textAlign: 'center', width: 150 },
@@ -579,6 +580,7 @@ export class CertificatesPage extends Component {
     },
     {
       title: 'To',
+      filterId: 'to',
       content: (item) => moment(item.to).format('DD/MM/YYYY HH:mm:ss'),
       sortMethod: (a, b) => moment(a).diff(moment(b)),
       style: { textAlign: 'center', width: 150 },
@@ -608,9 +610,21 @@ export class CertificatesPage extends Component {
 
   componentDidMount() {
     this.props.setTitle(`All certificates`);
-    if (window.history.state && window.history.state.cert) {
+    if (
+      (window.history.state && window.history.state.cert) ||
+      (this.props.location && this.props.location.state && this.props.location.state.cert)
+    ) {
       this.props.setTitle(`Create a new certificate`);
-      this.table.setState({ currentItem: window.history.state.cert, showAddForm: true });
+      this.table.setState({
+        currentItem:
+          window.history.state && window.history.state.cert
+            ? window.history.state.cert
+            : this.props.location.state.cert,
+        showAddForm:
+          this.props.location && this.props.location.state && this.props.location.state.showEditForm
+            ? !this.props.location.state.showEditForm
+            : true,
+      });
     }
   }
 
@@ -788,31 +802,40 @@ export class CertificatesPage extends Component {
     BackOfficeServices.updateCertificate(cert);
   };
 
-  findAllCertificates = paginationState => {
+  findAllCertificates = (paginationState) => {
     return BackOfficeServices.findAllCertificates({
       ...paginationState,
       fields: [
-        'id', 'name', 'description', 'subject', 'client', 'ca',
-        'letsEncrypt', 'keypair', 'selfSigned',
-        'from', 'to', 'revoked', 'metadata'
-      ]
-    })
-      .then(res => {
-        return {
-          ...res,
-          data: res.data.map((cert) => {
-            if (cert.metadata.revocationReason)
-              cert.revoked = RevocationReason[cert.metadata.revocationReason]
-                ? RevocationReason[cert.metadata.revocationReason].value
-                : RevocationReason.UNSPECIFIED;
-            else if (cert.revoked)
-              // cert was revoked before revocation reason list implementation so set unspecified as reason
-              cert.revoked = RevocationReason.UNSPECIFIED.value;
-            else cert.revoked = RevocationReason.VALID.value;
-            return cert;
-          })
-        }
-      });
+        'id',
+        'name',
+        'description',
+        'subject',
+        'client',
+        'ca',
+        'letsEncrypt',
+        'keypair',
+        'selfSigned',
+        'from',
+        'to',
+        'revoked',
+        'metadata',
+      ],
+    }).then((res) => {
+      return {
+        ...res,
+        data: res.data.map((cert) => {
+          if (cert.metadata.revocationReason)
+            cert.revoked = RevocationReason[cert.metadata.revocationReason]
+              ? RevocationReason[cert.metadata.revocationReason].value
+              : RevocationReason.UNSPECIFIED;
+          else if (cert.revoked)
+            // cert was revoked before revocation reason list implementation so set unspecified as reason
+            cert.revoked = RevocationReason.UNSPECIFIED.value;
+          else cert.revoked = RevocationReason.VALID.value;
+          return cert;
+        }),
+      };
+    });
   };
 
   render() {
@@ -1063,15 +1086,15 @@ export class NewCertificateForm extends Component {
               possibleValues={
                 this.state.keyType === 'RSA'
                   ? [
-                    { label: '2048', value: 2048 },
-                    { label: '4096', value: 4096 },
-                    { label: '6144', value: 6144 },
-                  ]
+                      { label: '2048', value: 2048 },
+                      { label: '4096', value: 4096 },
+                      { label: '6144', value: 6144 },
+                    ]
                   : [
-                    { label: 'P256', value: 256 },
-                    { label: 'P384', value: 384 },
-                    { label: 'P521', value: 521 },
-                  ]
+                      { label: 'P256', value: 256 },
+                      { label: 'P384', value: 384 },
+                      { label: 'P521', value: 521 },
+                    ]
               }
             />
             <SelectInput
@@ -1082,16 +1105,16 @@ export class NewCertificateForm extends Component {
               possibleValues={
                 this.state.keyType === 'RSA'
                   ? [
-                    { label: 'SHA224WithRSAEncryption', value: 'SHA224WithRSAEncryption' },
-                    { label: 'SHA256WithRSAEncryption', value: 'SHA256WithRSAEncryption' },
-                    { label: 'SHA384WithRSAEncryption', value: 'SHA384WithRSAEncryption' },
-                    { label: 'SHA512WithRSAEncryption', value: 'SHA512WithRSAEncryption' },
-                  ]
+                      { label: 'SHA224WithRSAEncryption', value: 'SHA224WithRSAEncryption' },
+                      { label: 'SHA256WithRSAEncryption', value: 'SHA256WithRSAEncryption' },
+                      { label: 'SHA384WithRSAEncryption', value: 'SHA384WithRSAEncryption' },
+                      { label: 'SHA512WithRSAEncryption', value: 'SHA512WithRSAEncryption' },
+                    ]
                   : [
-                    { label: 'SHA256withECDSA', value: 'SHA256withECDSA' },
-                    { label: 'SHA384withECDSA', value: 'SHA384withECDSA' },
-                    { label: 'SHA512withECDSA', value: 'SHA512withECDSA' },
-                  ]
+                      { label: 'SHA256withECDSA', value: 'SHA256withECDSA' },
+                      { label: 'SHA384withECDSA', value: 'SHA384withECDSA' },
+                      { label: 'SHA512withECDSA', value: 'SHA512withECDSA' },
+                    ]
               }
             />
             <SelectInput

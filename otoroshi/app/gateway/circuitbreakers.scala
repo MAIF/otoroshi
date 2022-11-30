@@ -23,7 +23,7 @@ import play.api.libs.json.Json
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, Promise, duration}
+import scala.concurrent.{duration, ExecutionContext, Future, Promise}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success}
 

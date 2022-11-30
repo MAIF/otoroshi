@@ -2,14 +2,57 @@
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
-1. Navigate to http://otoroshi.oto.tools:8080/bo/services and create a new service
-2. Jump to `Service exposition settings` and add http://myservice.oto.tools as `Exposed domain`
-3. Jump to `Service targets` and add http://localhost:8081/ as `Target 1`
-4. Jump to the `URL Patterns` section
-5. Enable your service as `Public UI`
-6. Don't forget to save your service
+Let's create a new route with the Otorochi challenge plugin enabled.
 
-We need of a simple service which handle the exchange protocol. For this tutorial, we'll use the following application, developed in NodeJS, which supports both versions of the exchange protocol.
+```sh
+curl -X POST http://otoroshi-api.oto.tools:8080/api/experimental/routes \
+-H "Content-type: application/json" \
+-u admin-api-apikey-id:admin-api-apikey-secret \
+-d @- <<'EOF'
+{
+  "name": "myapi",
+  "frontend": {
+    "domains": ["myapi.oto.tools"]
+  },
+  "backend": {
+    "targets": [
+      {
+        "hostname": "localhost",
+        "port": 8081,
+        "tls": true
+      }
+    ]
+  },
+  "plugins": [
+    {
+      "enabled": true,
+      "plugin": "cp:otoroshi.next.plugins.OtoroshiChallenge",
+      "config": {
+        "version": 2,
+        "ttl": 30,
+        "request_header_name": "Otoroshi-State",
+        "response_header_name": "Otoroshi-State-Resp",
+        "algo_to_backend": {
+            "type": "HSAlgoSettings",
+            "size": 512,
+            "secret": "secret",
+            "base64": false
+        },
+        "algo_from_backend": {
+            "type": "HSAlgoSettings",
+            "size": 512,
+            "secret": "secret",
+            "base64": false
+        },
+        "state_resp_leeway": 10
+      }
+    }
+  ]
+}
+EOF
+```
+
+Let's use the following application, developed in NodeJS, which supports both versions of the exchange protocol.
 
 Clone this @link:[repository](https://github.com/MAIF/otoroshi/blob/master/demos/challenge) and run the installation of the dependencies.
 
@@ -28,7 +71,7 @@ challenge-verifier listening on http://0.0.0.0:8081
 
 This project runs an express client with one middleware. The middleware handles each request, and check if the header `State token header` is present in headers. By default, the incoming expected header is `Otoroshi-State` by the application and `Otoroshi-State-Resp` header in the headers of the return request. 
 
-Try to call your service via http://myservice.oto.tools:8080/. This should return a successful response with all headers received by the backend app. 
+Try to call your service via http://myapi.oto.tools:8080/. This should return a successful response with all headers received by the backend app. 
 
 Now try to disable the middleware in the nodejs file by commenting the following line. 
 

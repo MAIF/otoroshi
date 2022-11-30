@@ -5,9 +5,10 @@ import { Table } from '../components/inputs';
 
 export class Top10servicesPage extends Component {
   columns = [
-    { title: 'Name', content: (item) => item.name },
+    { title: 'Name', filterId: 'name', content: (item) => item.name },
     {
       title: 'Rate',
+      notFilterable: true,
       content: (item) => item.rate.toFixed(3) + ' calls per sec.',
     },
   ];

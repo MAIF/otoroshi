@@ -56,7 +56,7 @@ export function FeedbackButton({
     } else {
       return style;
     }
-  }
+  };
 
   return (
     <button

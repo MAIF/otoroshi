@@ -7,7 +7,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
 
 package object types {
-  type LegitTrieMap[A, B] = TrieMap[A, B]
+  type LegitTrieMap[A, B]           = TrieMap[A, B]
   type LegitConcurrentHashMap[A, B] = ConcurrentHashMap[A, B]
 }
 

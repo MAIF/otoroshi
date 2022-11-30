@@ -161,15 +161,18 @@ export class TcpServicesPage extends Component {
   columns = [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
     },
     {
       title: 'Port',
+      filterId: 'port',
       style: { textAlign: 'center', width: 80 },
       content: (item) => item.port,
     },
     {
       title: 'Interface',
+      filterId: 'interface',
       style: { textAlign: 'center', width: 80 },
       content: (item) => item.interface,
     },
@@ -236,7 +239,7 @@ export class TcpServicesPage extends Component {
 
   gotoService = (service) => {
     this.props.history.push({
-      pathname: `/lines/${service.env}/tcp/services/${service.id}`,
+      pathname: `/tcp/services/edit/${service.id}`,
     });
   };
 
@@ -357,7 +360,12 @@ export class TcpServicesPage extends Component {
           defaultTitle="All Tcp Services"
           columns={this.columns}
           stayAfterSave={true}
-          fetchItems={BackOfficeServices.findAllTcpServices}
+          fetchItems={(paginationState) =>
+            BackOfficeServices.findAllTcpServices({
+              ...paginationState,
+              fields: ['id', 'name', 'port', 'interface', 'tls', 'sni', 'clientAuth', 'env'],
+            })
+          }
           updateItem={BackOfficeServices.updateTcpService}
           deleteItem={BackOfficeServices.deleteTcpService}
           createItem={BackOfficeServices.createTcpService}

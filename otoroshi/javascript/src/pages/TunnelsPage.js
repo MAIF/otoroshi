@@ -13,10 +13,12 @@ export class TunnelsPage extends Component {
   columns = [
     {
       title: 'Id',
+      filterId: 'id',
       content: (item) => item.tunnel_id,
     },
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
     },
     {
@@ -31,6 +33,7 @@ export class TunnelsPage extends Component {
     },
     {
       title: 'Last Seen',
+      filterId: 'last_seen',
       content: (item) => item.last_seen,
     },
     {
@@ -105,18 +108,17 @@ export class TunnelPage extends Component {
 
   componentDidMount() {
     const id = this.props.match.params.id;
-    BackOfficeServices.fetchTunnels()
-      .then((tunnels) => {
-        const tunnel = tunnels.filter((t) => t.tunnel_id == id)[0];
-        this.props.setTitle(`Connected tunnel '${tunnel.name}'`);
-        this.setState({ tunnel });
-        BackOfficeServices.nextClient
-          .forEntity('routes')
-          .findAll()
-          .then((routes) => {
-            this.setState({ routes });
-          });
-      });
+    BackOfficeServices.fetchTunnels().then((tunnels) => {
+      const tunnel = tunnels.filter((t) => t.tunnel_id == id)[0];
+      this.props.setTitle(`Connected tunnel '${tunnel.name}'`);
+      this.setState({ tunnel });
+      BackOfficeServices.nextClient
+        .forEntity('routes')
+        .findAll()
+        .then((routes) => {
+          this.setState({ routes });
+        });
+    });
   }
 
   exposeRoute = (originalRoute) => {
@@ -358,10 +360,7 @@ export class TunnelPage extends Component {
             justifyContent: 'flex-end',
             width: '100%',
           }}>
-          <Link
-            className="btn btn-danger btn-sm"
-            to="/tunnels"
-            style={{ marginTop: 30 }}>
+          <Link className="btn btn-danger btn-sm" to="/tunnels" style={{ marginTop: 30 }}>
             <i className="fas fa-times" /> Cancel
           </Link>
         </div>

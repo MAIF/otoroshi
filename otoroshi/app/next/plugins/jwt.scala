@@ -93,12 +93,13 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 }
 
 object JwtVerifierUtils {
-  def onError = () =>
+  def onError(result: Option[Result] = None): Future[NgAccess] = {
     NgAccess
       .NgDenied(
-        Results.BadRequest(Json.obj("error" -> "bad request"))
+        result.getOrElse(Results.BadRequest(Json.obj("error" -> "bad request")))
       )
       .vfuture
+  }
 
   def verify(ctx: NgAccessContext, verifierIds: Seq[String])(implicit
       env: Env,
@@ -116,7 +117,7 @@ object JwtVerifierUtils {
           attrs = ctx.attrs
         )
         .flatMap {
-          case Left(result)     => onError()
+          case Left(result)     => onError(result.some)
           case Right(injection) =>
             ctx.attrs.put(JwtInjectionKey -> injection)
             NgAccess.NgAllowed.vfuture
@@ -130,7 +131,7 @@ object JwtVerifierUtils {
         elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
         attrs = ctx.attrs
       ) match {
-        case Left(result)     => onError()
+        case Left(result)     => onError(result.some)
         case Right(injection) =>
           ctx.attrs.put(JwtInjectionKey -> injection)
           NgAccess.NgAllowed.vfuture

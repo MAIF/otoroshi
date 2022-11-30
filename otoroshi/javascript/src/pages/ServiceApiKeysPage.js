@@ -31,9 +31,11 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${rawValue.clientId
-            }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${rawValue.clientSecret
-            }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
+            rawValue.clientId
+          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
+            rawValue.clientSecret
+          }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -505,6 +507,7 @@ const ApiKeysConstants = {
   columns: (that) => [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.clientName,
       wrappedCell: (v, item, table) => {
         if (that.state && that.state.env && that.state.env.adminApikeyId === item.clientId) {
@@ -521,6 +524,7 @@ const ApiKeysConstants = {
     },
     {
       title: 'ApiKey Id',
+      filterId: 'clientId',
       content: (item) => item.clientId,
     },
     {
@@ -561,7 +565,8 @@ const ApiKeysConstants = {
           type="button"
           className="btn btn-sm btn-success"
           onClick={(e) =>
-          (window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
+            (window.location = `/bo/dashboard/lines/prod/services/${
+              that.state.service ? that.state.service.id : '-'
             }/apikeys/edit/${item.clientId}/stats`)
           }>
           <i className="fas fa-chart-bar" />
@@ -614,7 +619,7 @@ const ApiKeysConstants = {
 export class ServiceApiKeysPage extends Component {
   state = {
     service: null,
-    env: this.props.env
+    env: this.props.env,
   };
 
   onRoutes = window.location.pathname.indexOf('/bo/dashboard/routes') === 0;
@@ -726,12 +731,15 @@ export class ServiceApiKeysPage extends Component {
         rowNavigation={true}
         export={true}
         kubernetesKind="ApiKey"
-        navigateTo={(item) =>
-          this.props.history.push({
-            pathname: `/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${item.clientId}`,
-            query: { group: item.id, groupName: item.name },
-          })
-        }
+        navigateTo={(item) => {
+          if (this.onRoutes) {
+            this.props.history.push(`/apikeys/edit/${item.clientId}`);
+          } else {
+            this.props.history.push(
+              `/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${item.clientId}?group=${item.id}`
+            );
+          }
+        }}
         itemUrl={(i) =>
           `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`
         }
@@ -744,17 +752,17 @@ export class ServiceApiKeysPage extends Component {
 export class ApiKeysPage extends Component {
   state = {
     service: null,
-    env: this.props.env
+    env: this.props.env,
   };
 
   componentDidMount() {
     this.props.setTitle(`All apikeys`);
   }
 
-  fetchAllApiKeys = paginationState => {
+  fetchAllApiKeys = (paginationState) => {
     return BackOfficeServices.fetchAllApikeys({
       ...paginationState,
-      fields: ['id', 'name', 'enabled', 'clientId', 'clientName', 'clientSecret']
+      fields: ['id', 'name', 'enabled', 'clientId', 'clientName', 'clientSecret'],
     });
   };
 

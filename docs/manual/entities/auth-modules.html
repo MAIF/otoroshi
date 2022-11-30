@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.17
+1.5.20
 </div>
 </div>
 <div class="nav-toc">
@@ -52,12 +52,12 @@
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
     <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
-    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/auth-modules.html" class="active page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
@@ -156,7 +156,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.17
+1.5.20
 </div>
 </div>
 <div class="nav-toc">
@@ -173,12 +173,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
     <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
-    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/auth-modules.html" class="active page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
@@ -268,9 +268,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#authentication-modules" name="authentication-modules" class="anchor"><span class="anchor-link"></span></a>Authentication modules</h1>
-<p>The authentication modules are the resources to manage the the access to Otoroshi UI and to protect a service.</p>
-<p>An authentication module can be as well use on guard to access to the Otoroshi UI as to protect an app.</p>
-<p>A <code>private app</code> is an Otoroshi service with an authentication module.</p>
+<p>The authentication modules manage the access to Otoroshi UI and can protect a route.</p>
+<p>A <code>private Otoroshi app</code> is an Otoroshi route with the Authentication plugin enabled.</p>
 <p>The list of supported authentication are :</p>
 <ul>
   <li><code>OAuth 2.0/2.1</code> : an authorization standard that allows a user to grant limited access to their resources on one site to another site, without having to expose their credentials</li>
@@ -287,7 +286,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>HttpOnly</code>: if enabled, the cookie cannot be accessed through client side script, prevent cross-site scripting (XSS) by not revealing the cookie to a third party</li>
   <li><code>Secure</code>: if enabled, avoid to include cookie in an HTTP Request without secure channel, typically HTTPs.</li>
   <li><code>Session max. age</code>: duration until the session expired</li>
-  <li><code>User validators</code>: a list of validator that will check if a user that successfully logged in has the right to actually pass otoroshi based on the content of it&rsquo;s profile. A validator is composed of a <a href="https://goessner.net/articles/JsonPath/">JSONPath</a> that will tell what to check and a value that is the expected value. The JSONPath will be applied on a document that will look like</li>
+  <li><code>User validators</code>: a list of validator that will check if, a user that successfully logged in has the right to actually, pass otoroshi based on the content of it&rsquo;s profile. A validator is composed of a <a href="https://goessner.net/articles/JsonPath/">JSONPath</a> that will tell what to check and a value that is the expected value. The JSONPath will be applied on a document that will look like</li>
 </ul>
 <pre class="prettyprint"><code class="language-javascript">{
     &quot;_loc&quot;: {

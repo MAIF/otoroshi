@@ -34,9 +34,10 @@ export class BackendsPage extends Component {
   columns = [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
     },
-    { title: 'Description', content: (item) => item.description },
+    { title: 'Description', filterId: 'description', content: (item) => item.description },
   ];
 
   componentDidMount() {
@@ -57,10 +58,12 @@ export class BackendsPage extends Component {
         columns={this.columns}
         stayAfterSave={true}
         deleteItem={(item) => client.deleteById(item.id)}
-        fetchItems={paginationState => client.findAllWithPagination({
-          ...paginationState,
-          fields: ['id', 'name', 'description']
-        })}
+        fetchItems={(paginationState) =>
+          client.findAllWithPagination({
+            ...paginationState,
+            fields: ['id', 'name', 'description'],
+          })
+        }
         updateItem={(item) => client.update(item)}
         createItem={(item) => client.create(item)}
         navigateTo={(item) => {

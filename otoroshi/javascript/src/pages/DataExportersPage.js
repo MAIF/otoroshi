@@ -249,15 +249,18 @@ export class DataExportersPage extends Component {
   columns = [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
     },
     {
       title: 'Type',
+      filterId: 'type',
       style: { textAlign: 'center', width: 100 },
       content: (item) => item.type,
     },
     {
       title: 'Enabled',
+      filterId: 'enabled',
       style: { textAlign: 'center', width: 100 },
       content: (item) => item.enabled,
       cell: (v, item, table) => {
@@ -294,10 +297,12 @@ export class DataExportersPage extends Component {
           defaultValue={() => BackOfficeServices.createNewDataExporterConfig('file')}
           itemName="data exporter"
           columns={this.columns}
-          fetchItems={paginationState => BackOfficeServices.findAllDataExporterConfigs({
-            ...paginationState,
-            fields: ['id', 'name', 'type', 'enabled']
-          })}
+          fetchItems={(paginationState) =>
+            BackOfficeServices.findAllDataExporterConfigs({
+              ...paginationState,
+              fields: ['id', 'name', 'type', 'enabled'],
+            })
+          }
           updateItem={BackOfficeServices.updateDataExporterConfig}
           deleteItem={BackOfficeServices.deleteDataExporterConfig}
           createItem={BackOfficeServices.createDataExporterConfig}
@@ -339,8 +344,8 @@ const ExporterTryIt = ({ exporter }) => {
                   status === 'Successful'
                     ? '#5cb85c'
                     : status === 'Not tested'
-                      ? '#f39c12'
-                      : '#D5443F',
+                    ? '#f39c12'
+                    : '#D5443F',
                 display: 'flex',
                 alignItems: 'center',
                 width: 'fit-content',

@@ -101,10 +101,7 @@ export function DefaultSidebar(props) {
         </Link>
       </li>
       <li className="nav-item">
-        <Link
-          to="/apikeys/add"
-          className="nav-link"
-          {...createTooltip('Create a new apikey')}>
+        <Link to="/apikeys/add" className="nav-link" {...createTooltip('Create a new apikey')}>
           <i className="fas fa-plus" /> Add apikey
         </Link>
       </li>

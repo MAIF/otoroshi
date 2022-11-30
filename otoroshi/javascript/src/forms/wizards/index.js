@@ -1,7 +1,7 @@
-import { JwtVerifierWizard } from "./JwtVerifierWizard";
-import { AuthenticationWizard } from "./AuthenticationWizard";
+import { JwtVerifierWizard } from './JwtVerifierWizard';
+import { AuthenticationWizard } from './AuthenticationWizard';
 
 export const Wizards = {
-  'JwtVerifierWizard': JwtVerifierWizard,
-  'AuthenticationWizard': AuthenticationWizard
-}
+  JwtVerifierWizard: JwtVerifierWizard,
+  AuthenticationWizard: AuthenticationWizard,
+};

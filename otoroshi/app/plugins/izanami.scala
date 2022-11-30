@@ -8,7 +8,16 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script.{AfterRequestContext, BeforeRequestContext, HttpRequest, HttpResponse, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseContext}
+import otoroshi.script.{
+  AfterRequestContext,
+  BeforeRequestContext,
+  HttpRequest,
+  HttpResponse,
+  RequestTransformer,
+  TransformerRequestBodyContext,
+  TransformerRequestContext,
+  TransformerResponseContext
+}
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}

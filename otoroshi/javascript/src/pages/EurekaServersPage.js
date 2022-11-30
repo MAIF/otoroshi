@@ -8,6 +8,7 @@ export function EurekaServersPage(props) {
   const columns = [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
     },
   ];

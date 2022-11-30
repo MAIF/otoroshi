@@ -7,16 +7,19 @@ export class ClusterPage extends Component {
   columns = [
     {
       title: 'Member name',
+      filterId: 'name',
       style: { textAlign: 'left', width: 250 },
       content: (item) => item.name.toLowerCase(),
     },
     {
       title: 'Type',
+      filterId: 'type',
       style: { textAlign: 'center', width: 80 },
       content: (item) => item.type,
     },
     {
       title: 'Location',
+      filterId: 'location',
       style: { textAlign: 'center', width: 180 },
       content: (item) => item.location,
     },

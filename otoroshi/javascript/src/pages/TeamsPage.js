@@ -7,11 +7,13 @@ export class TeamsPage extends Component {
   columns = [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
     },
     {
       title: 'Description',
-      content: (item) => item.descripiton,
+      filterId: 'description',
+      content: (item) => item.description,
     },
   ];
 
@@ -86,7 +88,12 @@ export class TeamsPage extends Component {
           itemName="Team"
           columns={this.columns}
           stayAfterSave={true}
-          fetchItems={BackOfficeServices.findAllTeams}
+          fetchItems={(paginationState) =>
+            BackOfficeServices.findAllTeamsWithPagination({
+              ...paginationState,
+              fields: ['id', 'name', 'description'],
+            })
+          }
           updateItem={BackOfficeServices.updateTeam}
           deleteItem={BackOfficeServices.deleteTeam}
           createItem={BackOfficeServices.createTeam}

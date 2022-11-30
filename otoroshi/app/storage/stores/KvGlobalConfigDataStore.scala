@@ -35,7 +35,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
   def throttlingKey(): String = s"${_env.storageRoot}:throttling:global"
 
-  private val callsForIpAddressCache  =
+  private val callsForIpAddressCache =
     new LegitConcurrentHashMap[String, java.util.concurrent.atomic.AtomicLong]() // TODO: check growth over time
   private val quotasForIpAddressCache =
     new LegitConcurrentHashMap[String, java.util.concurrent.atomic.AtomicLong]() // TODO: check growth over time

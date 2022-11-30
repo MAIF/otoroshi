@@ -10,16 +10,28 @@ export function RoutesTable(props) {
   const history = useHistory();
   const entity = useEntityFromURI();
 
-  const domainToTargetColumn = {
-    title: 'Domain → Target',
+  const domainColumn = {
+    title: 'Domain',
+    filterId: 'frontend.domains.0',
     cell: (item) => {
       return (
         <>
           {item.frontend.domains[0] || '-'}{' '}
           {item.frontend.domains.length > 1 && (
             <span className="badge bg-secondary">{item.frontend.domains.length - 1} more</span>
-          )}{' '}
-          → {item.backend.targets[0]?.hostname || '-'}{' '}
+          )}
+        </>
+      );
+    },
+  };
+
+  const targetColumn = {
+    title: 'Domain',
+    filterId: 'backend.targets.0.hostname',
+    cell: (item) => {
+      return (
+        <>
+          {item.backend.targets[0]?.hostname || '-'}{' '}
           {item.backend.targets.length > 1 && (
             <span className="badge bg-secondary">{item.backend.targets.length - 1} more</span>
           )}
@@ -30,6 +42,7 @@ export function RoutesTable(props) {
 
   const exposedColumn = {
     title: 'Enabled',
+    id: 'enabled',
     style: { textAlign: 'center', width: 70 },
     notFilterable: true,
     cell: (_, item) =>
@@ -43,6 +56,7 @@ export function RoutesTable(props) {
   const columns = [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
       wrappedCell: (v, item, table) => {
         if (props.globalEnv && props.globalEnv.adminApiId === item.id) {
@@ -57,7 +71,8 @@ export function RoutesTable(props) {
         return item.name;
       },
     },
-    entity.lowercase == 'route' ? domainToTargetColumn : undefined,
+    entity.lowercase == 'route' ? domainColumn : undefined,
+    entity.lowercase == 'route' ? targetColumn : undefined,
     exposedColumn,
   ].filter((c) => c);
 
@@ -98,13 +113,12 @@ export function RoutesTable(props) {
         formFlow={null}
         columns={columns}
         deleteItem={(item) => deleteItem(item)}
-        fetchItems={paginationState => nextClient.findAllWithPagination(
-          nextClient.ENTITIES[entity.fetchName],
-          {
+        fetchItems={(paginationState) => 
+          nextClient.findAllWithPagination(nextClient.ENTITIES[entity.fetchName], {
             ...paginationState,
-            fields: ['name', 'enabled', 'frontend.domains', 'backend.targets', 'id']
-          }
-        )}
+            fields: ['name', 'enabled', 'frontend.domains.0', 'backend.targets.0.hostname', 'id'],
+          })
+        }
         showActions={true}
         showLink={false}
         extractKey={(item) => item.id}

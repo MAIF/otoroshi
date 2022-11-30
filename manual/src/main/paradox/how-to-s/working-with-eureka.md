@@ -39,7 +39,7 @@ Enter the following values in for each step:
 
 1. An Eureka Server instance
 2. Choose the first choice : **BLANK ROUTE** and click on continue
-3. As exposed domain, set `eureka-server-next-gen.oto.tools/eureka`
+3. As exposed domain, set `eureka-server.oto.tools/eureka`
 4. As Target URL, set `http://foo.bar` (this value has no importance and will be skip by the Otoroshi Instance plugin)
 5. Validate the creation
 
@@ -77,7 +77,7 @@ eureka:
    client:
       fetch-registry: false # disable the discovery services mechanism for the client
       serviceUrl:
-         defaultZone: http://eureka-server-next-gen.oto.tools:8080/eureka
+         defaultZone: http://eureka-server.oto.tools:8080/eureka
 
 spring:
    application:
@@ -128,7 +128,7 @@ It should also displays a timer for each application which represents the elapse
 
 Let's define a new route to exposed our registered eureka client.
 
-* Create a new route, named `Eureka client`, exposed on `http://eureka-client-next-gen.oto.tools:8080` and targeting `http://foo.bar`
+* Create a new route, named `Eureka client`, exposed on `http://eureka-client.oto.tools:8080` and targeting `http://foo.bar`
 * Search and add the `Internal Eureka server` plugin 
 * Edit the plugin and choose your eureka server and your app (in our case, `Eureka Server` and `FOO_APP` respectively)
 * Save your route
@@ -136,7 +136,7 @@ Let's define a new route to exposed our registered eureka client.
 Now try to call the new route.
 
 ````sh
-curl 'http://eureka-client-next-gen.oto.tools:8080/port'
+curl 'http://eureka-client.oto.tools:8080/port'
 ````
 
 If everything is working, you should get the port 8085 as the response.The setup is working as expected, but we can improve him by scaling our eureka client.
@@ -150,13 +150,13 @@ mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8083
 Just wait a few seconds and retry to call your new route.
 
 ````sh
-curl 'http://eureka-client-next-gen.oto.tools:8080/port'
+curl 'http://eureka-client.oto.tools:8080/port'
 $ 8082
-curl 'http://eureka-client-next-gen.oto.tools:8080/port'
+curl 'http://eureka-client.oto.tools:8080/port'
 $ 8085
-curl 'http://eureka-client-next-gen.oto.tools:8080/port'
+curl 'http://eureka-client.oto.tools:8080/port'
 $ 8085
-curl 'http://eureka-client-next-gen.oto.tools:8080/port'
+curl 'http://eureka-client.oto.tools:8080/port'
 $ 8082
 ````
 

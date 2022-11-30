@@ -7,11 +7,13 @@ export class TenantsPage extends Component {
   columns = [
     {
       title: 'Name',
+      filterId: 'name',
       content: (item) => item.name,
     },
     {
       title: 'Description',
-      content: (item) => item.descripiton,
+      filterId: 'description',
+      content: (item) => item.description,
     },
   ];
 
@@ -75,7 +77,12 @@ export class TenantsPage extends Component {
           itemName="Organization"
           columns={this.columns}
           stayAfterSave={true}
-          fetchItems={BackOfficeServices.findAllTenants}
+          fetchItems={(paginationState) =>
+            BackOfficeServices.findAllTenantsWithPagination({
+              ...paginationState,
+              fields: ['id', 'name', 'description'],
+            })
+          }
           updateItem={BackOfficeServices.updateTenant}
           deleteItem={BackOfficeServices.deleteTenant}
           createItem={BackOfficeServices.createTenant}

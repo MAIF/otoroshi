@@ -272,9 +272,10 @@ class ReactorNettyServer(env: Env) {
       channel: Channel
   ): Publisher[Void] = {
     val parent      = channel.parent()
-    val sslHandler = Option(parent.pipeline().get(classOf[SslHandler])).orElse(Option(channel.pipeline().get(classOf[SslHandler])))
+    val sslHandler  =
+      Option(parent.pipeline().get(classOf[SslHandler])).orElse(Option(channel.pipeline().get(classOf[SslHandler])))
     val sessionOpt  = sslHandler.map(_.engine.getSession)
-    sessionOpt.foreach(s  => req.requestHeaders().set("Tls-Version", TlsVersion.parse(s.getProtocol).name))
+    sessionOpt.foreach(s => req.requestHeaders().set("Tls-Version", TlsVersion.parse(s.getProtocol).name))
     val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
       (req.requestHeaders().contains("Sec-WebSocket-Version") || req
         .requestHeaders()
@@ -300,9 +301,10 @@ class ReactorNettyServer(env: Env) {
       handler: HttpRequestHandler
   ): Publisher[Void] = {
     val parent      = channel.parent()
-    val sslHandler  = Option(parent.pipeline().get(classOf[SslHandler])).orElse(Option(channel.pipeline().get(classOf[SslHandler])))
+    val sslHandler  =
+      Option(parent.pipeline().get(classOf[SslHandler])).orElse(Option(channel.pipeline().get(classOf[SslHandler])))
     val sessionOpt  = sslHandler.map(_.engine.getSession)
-    sessionOpt.foreach(s  => req.requestHeaders().set("Tls-Version", TlsVersion.parse(s.getProtocol).name))
+    sessionOpt.foreach(s => req.requestHeaders().set("Tls-Version", TlsVersion.parse(s.getProtocol).name))
     val isWebSocket = (req.requestHeaders().contains("Upgrade") || req.requestHeaders().contains("upgrade")) &&
       (req.requestHeaders().contains("Sec-WebSocket-Version") || req
         .requestHeaders()
@@ -415,10 +417,10 @@ class ReactorNettyServer(env: Env) {
 
       def applyAddress(socketAddress: SocketAddress) = socketAddress match {
         case address: InetSocketAddress => address.getHostString
-        case _ => "-"
+        case _                          => "-"
       }
-      val defaultLogFormat = "{} - {} [{}] \"{} {} {}\" {} {} {} {}"
-      val logCustom = new AccessLogFactory {
+      val defaultLogFormat                           = "{} - {} [{}] \"{} {} {}\" {} {} {} {}"
+      val logCustom                                  = new AccessLogFactory {
         override def apply(args: AccessLogArgProvider): AccessLog = {
           val tlsVersion = args.requestHeader("Tls-Version")
           AccessLog.create(

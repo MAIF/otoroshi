@@ -33,7 +33,7 @@ class Http1RequestHandler(
     flashCookieBaker: FlashCookieBaker,
     env: Env,
     logger: Logger,
-    addressGet: () => String,
+    addressGet: () => String
 ) extends ChannelInboundHandlerAdapter {
 
   private implicit val ec  = env.otoroshiExecutionContext
@@ -95,7 +95,8 @@ class Http1RequestHandler(
           )
       case _                                                  => None
     }
-    val rawOtoReq                = new NettyRequest(req, ctx, Flux.empty(), true, session, sessionCookieBaker, flashCookieBaker, addressGet)
+    val rawOtoReq                =
+      new NettyRequest(req, ctx, Flux.empty(), true, session, sessionCookieBaker, flashCookieBaker, addressGet)
     val hasBody                  = otoroshi.utils.body.BodyUtils.hasBodyWithoutOrZeroLength(rawOtoReq)._1
     val bodyIn: Flux[ByteString] = if (hasBody) hotFlux else Flux.empty()
     val otoReq                   = rawOtoReq.withBody(bodyIn)
@@ -614,7 +615,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
         .initialMaxStreamsBidirectional(config.http3.initialMaxStreamsBidirectional)
         .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
         .handler(new ChannelInitializer[QuicChannel]() {
-          val address = new AtomicReference[String]("0.0.0.0")
+          val address                 = new AtomicReference[String]("0.0.0.0")
           def addressAccess(): String = address.get()
           override def initChannel(ch: QuicChannel): Unit = {
             ch.pipeline()
@@ -629,7 +630,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                         .flatMap(v => Try(v.split(":").head).toOption)
                         .foreach(add => address.set(add))
                     }
-                    case _ =>
+                    case _                          =>
                   }
                 }
               })
@@ -641,7 +642,16 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                       ch.pipeline().addLast(new io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec(true))
                       if (config.accessLog) ch.pipeline().addLast(new AccessLogHandler(addressAccess))
                       ch.pipeline()
-                        .addLast(new Http1RequestHandler(handler, sessionCookieBaker, flashCookieBaker, env, logger, addressAccess))
+                        .addLast(
+                          new Http1RequestHandler(
+                            handler,
+                            sessionCookieBaker,
+                            flashCookieBaker,
+                            env,
+                            logger,
+                            addressAccess
+                          )
+                        )
                     }
                   },
                   null,

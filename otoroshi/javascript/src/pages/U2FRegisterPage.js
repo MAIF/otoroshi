@@ -128,14 +128,17 @@ export class U2FRegisterPage extends Component {
   columns = [
     {
       title: 'Username',
+      filterId: 'username',
       content: (item) => item.username,
     },
     {
       title: 'Label',
+      filterId: 'label',
       content: (item) => item.label,
     },
     {
       title: 'Created At',
+      filterId: 'createdAt',
       content: (item) => (item.createdAt ? item.createdAt : 0),
       cell: (v, item) =>
         item.createdAt ? moment(item.createdAt).format('DD/MM/YYYY HH:mm:ss') : '',
@@ -219,7 +222,7 @@ export class U2FRegisterPage extends Component {
                   credentials: 'include',
                 }).then(() => {
                   if (this.props.history) {
-                    this.props.history.push('/admins')
+                    this.props.history.push('/admins');
                   } else {
                     window.location.href = '/bo/dashboard/admins';
                   }
@@ -373,7 +376,12 @@ export class U2FRegisterPage extends Component {
           defaultValue={() => ({})}
           itemName="session"
           columns={this.columns}
-          fetchItems={BackOfficeServices.fetchAdmins}
+          fetchItems={(paginationState) =>
+            BackOfficeServices.fetchAdmins({
+              ...paginationState,
+              fields: ['username', 'label', 'createdAt', 'type', 'registration'],
+            })
+          }
           showActions={false}
           showLink={false}
           injectTable={(t) => (this.table = t)}
@@ -776,7 +784,7 @@ export class AdminEditionModal extends Component {
     _loc: {
       type: 'location',
       props: {
-        useLegacy: true
+        useLegacy: true,
       },
     },
   };

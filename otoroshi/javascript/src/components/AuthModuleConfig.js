@@ -319,6 +319,12 @@ export class Oauth2ModuleConfig extends Component {
           onChange={(v) => changeTheValue(path + '.useCookie', v)}
         />
         <BooleanInput
+          label="Client side session"
+          value={settings.clientSideSessionEnabled}
+          help="When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet."
+          onChange={(v) => changeTheValue(path + '.clientSideSessionEnabled', v)}
+        />
+        <BooleanInput
           label="Use json payloads"
           value={settings.useJson}
           help="..."
@@ -995,6 +1001,12 @@ export class BasicModuleConfig extends Component {
           help="..."
           onChange={(v) => changeTheValue(path + '.webauthn', v)}
         />
+        <BooleanInput
+          label="Client side session"
+          value={settings.clientSideSessionEnabled}
+          help="When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet."
+          onChange={(v) => changeTheValue(path + '.clientSideSessionEnabled', v)}
+        />
         <div className="row mb-3">
           <label htmlFor={`input-users`} className="col-sm-2 col-form-label">
             Users
@@ -1155,6 +1167,12 @@ export class LdapModuleConfig extends Component {
           value={settings.basicAuth}
           help="..."
           onChange={(v) => changeTheValue(path + '.basicAuth', v)}
+        />
+        <BooleanInput
+          label="Client side session"
+          value={settings.clientSideSessionEnabled}
+          help="When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet."
+          onChange={(v) => changeTheValue(path + '.clientSideSessionEnabled', v)}
         />
         <BooleanInput
           label="Allow empty password"
@@ -1700,6 +1718,7 @@ export class SamlModuleConfig extends Component {
     'id',
     'name',
     'desc',
+    'clientSideSessionEnabled',
     'singleSignOnUrl',
     'ssoProtocolBinding',
     'singleLogoutUrl',
@@ -1752,6 +1771,14 @@ export class SamlModuleConfig extends Component {
           );
         }
         return null;
+      },
+    },
+    clientSideSessionEnabled: {
+      type: 'bool',
+      props: {
+        label: 'Client side session',
+        help:
+          'When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet.',
       },
     },
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
@@ -2063,6 +2090,7 @@ export class OAuth1ModuleConfig extends Component {
     'id',
     'name',
     'desc',
+    'clientSideSessionEnabled',
     'httpMethod',
     'consumerKey',
     'consumerSecret',
@@ -2090,6 +2118,14 @@ export class OAuth1ModuleConfig extends Component {
 
   schema = {
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
+    clientSideSessionEnabled: {
+      type: 'bool',
+      props: {
+        label: 'Client side session',
+        help:
+          'When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet.',
+      },
+    },
     httpMethod: {
       type: 'select',
       props: {

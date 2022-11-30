@@ -1,14 +1,16 @@
 # Secure an api with jwt verifiers
 
-A Jwt verifier is the guard which check the signature of tokens present in incoming requests on a service. It can be a simple verifier, a tokens generator, or extend to be a verifier and a tokens generator.
+A Jwt verifier is the guard that verifies the signature of tokens in requests. 
+
+A verifier can obvisouly verify or generate.
 
 ### Before you start
 
 @@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
 
-### Your first jwt verifier : a verifier of tokens
+### Your first jwt verifier
 
-Let's start navigating the @link:[page of verifier creation](http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers/add) { open=new }. By default, the type of jwt verifier is a **Verify JWT token**.
+Let's start by navigating to the @link:[page of verifier creation](http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers/add) { open=new }. By default, the type of jwt verifier is a **Verify JWT token**.
 
 Create the following verifier : 
 

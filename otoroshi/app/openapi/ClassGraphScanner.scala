@@ -130,12 +130,12 @@ class ClassGraphScanner {
       .enableAllInfo()
       .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws") ++ configurationPackages: _*)
       .scan()
-    val dev = env.isDev
+    val dev        = env.isDev
     if (dev) {
       scanAndGenerateSchema(scanResult)
     } else {
       readSchemaFromFiles(scanResult, env) match {
-        case Left(err) => throw new RuntimeException(err)
+        case Left(err)  => throw new RuntimeException(err)
         case Right(oas) => oas
       }
     }

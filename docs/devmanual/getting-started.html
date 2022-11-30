@@ -52,12 +52,12 @@
   </ul></li>
   <li><a href="entities/index.html" class="page">Main entities</a>
   <ul>
+    <li><a href="entities/routes.html" class="page">Routes</a></li>
     <li><a href="entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="entities/teams.html" class="page">Teams</a></li>
     <li><a href="entities/global-config.html" class="page">Global config</a></li>
     <li><a href="entities/apikeys.html" class="page">Apikeys</a></li>
     <li><a href="entities/service-groups.html" class="page">Service groups</a></li>
-    <li><a href="entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
@@ -173,12 +173,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="entities/index.html" class="page">Main entities</a>
   <ul>
+    <li><a href="entities/routes.html" class="page">Routes</a></li>
     <li><a href="entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="entities/teams.html" class="page">Teams</a></li>
     <li><a href="entities/global-config.html" class="page">Global config</a></li>
     <li><a href="entities/apikeys.html" class="page">Apikeys</a></li>
     <li><a href="entities/service-groups.html" class="page">Service groups</a></li>
-    <li><a href="entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
@@ -277,17 +277,45 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>Once downloading, run Otoroshi.</p>
 <pre class="prettyprint"><code class="language-sh">java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
 </code></pre>
-<h2><a href="#protect-the-access-to-your-api-with-the-otoroshi-management-of-api-keys" name="protect-the-access-to-your-api-with-the-otoroshi-management-of-api-keys" class="anchor"><span class="anchor-link"></span></a>Protect the access to your api with the Otoroshi management of api keys</h2>
-<p>Create a service, exposed on <code>http://myapi.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/services&#39; \
--d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;myapi&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;myapi&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;mirror.otoroshi.io&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;&quot;],&quot;privatePatterns&quot;:[&quot;\/.*&quot;],&quot;kind&quot;:&quot;ServiceDescriptor&quot;}&#39; \
+<p>Yes, that command is all it took to start it up.</p>
+<h2><a href="#protect-your-service-with-otoroshi-apikey" name="protect-your-service-with-otoroshi-apikey" class="anchor"><span class="anchor-link"></span></a>Protect your service with Otoroshi ApiKey</h2>
+<p>Create a new route, exposed on <code>http://myapi.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>.</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/experimental/routes \
 -H &quot;Content-type: application/json&quot; \
--u admin-api-apikey-id:admin-api-apikey-secret
+-u admin-api-apikey-id:admin-api-apikey-secret \
+-d @- &lt;&lt;&#39;EOF&#39;
+{
+  &quot;name&quot;: &quot;myapi&quot;,
+  &quot;frontend&quot;: {
+    &quot;domains&quot;: [&quot;myapi.oto.tools&quot;]
+  },
+  &quot;backend&quot;: {
+    &quot;targets&quot;: [
+      {
+        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;port&quot;: 443,
+        &quot;tls&quot;: true
+      }
+    ]
+  },
+  &quot;plugins&quot;: [
+    {
+        &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.ApikeyCalls&quot;,
+        &quot;enabled&quot;: true,
+        &quot;config&quot;: {
+            &quot;validate&quot;: true,
+            &quot;mandatory&quot;: true,
+            &quot;update_quotas&quot;: true
+        }
+    }
+  ]
+}
+EOF
 </code></pre>
-<p>Try to call this service. You should receive an error from Otoroshi about a missing api key in our request.</p>
+<p>Now that we have created our route, let’s see if our request reaches our upstream service. You should receive an error from Otoroshi about a missing api key in our request.</p>
 <pre class="prettyprint"><code class="language-sh">curl &#39;http://myapi.oto.tools:8080&#39;
 </code></pre>
-<p>Create your first api key with a quota of 10 calls by day and month.</p>
+<p>It looks like we don’t have access to it. Create your first api key with a quota of 10 calls by day and month.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/apikeys&#39; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
@@ -336,7 +364,7 @@ Otoroshi-Monthly-Calls-Remaining: 6
 }
 </code></pre>
 <p>Well done, you have secured your first api with the apikeys system with limited call quotas.</p>
-<h2><a href="#secure-your-web-app-in-5-minutes-with-an-authentication" name="secure-your-web-app-in-5-minutes-with-an-authentication" class="anchor"><span class="anchor-link"></span></a>Secure your web app in 5 minutes with an authentication</h2>
+<h2><a href="#secure-your-web-app-in-2-calls-with-an-authentication" name="secure-your-web-app-in-2-calls-with-an-authentication" class="anchor"><span class="anchor-link"></span></a>Secure your web app in 2 calls with an authentication</h2>
 <p>Create an in-memory authentication module, with one registered user, to protect your service.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/auths&#39; \
 -H &quot;Otoroshi-Client-Id: admin-api-apikey-id&quot; \
@@ -372,10 +400,37 @@ Otoroshi-Monthly-Calls-Remaining: 6
 EOF
 </code></pre>
 <p>Then create a service secure by the previous authentication module, which proxies <code>google.fr</code> on <code>webapp.oto.tools</code>.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/services&#39; \
--d &#39;{&quot;enforceSecureCommunication&quot;: false, &quot;forceHttps&quot;: false, &quot;_loc&quot;:{&quot;tenant&quot;:&quot;default&quot;,&quot;teams&quot;:[&quot;default&quot;]},&quot;groupId&quot;:&quot;default&quot;,&quot;groups&quot;:[&quot;default&quot;],&quot;name&quot;:&quot;webapp&quot;,&quot;description&quot;:&quot;a service&quot;,&quot;env&quot;:&quot;prod&quot;,&quot;domain&quot;:&quot;oto.tools&quot;,&quot;subdomain&quot;:&quot;webapp&quot;,&quot;targetsLoadBalancing&quot;:{&quot;type&quot;:&quot;RoundRobin&quot;},&quot;targets&quot;:[{&quot;host&quot;:&quot;google.fr&quot;,&quot;scheme&quot;:&quot;https&quot;,&quot;weight&quot;:1,&quot;mtlsConfig&quot;:{&quot;certs&quot;:[],&quot;trustedCerts&quot;:[],&quot;mtls&quot;:false,&quot;loose&quot;:false,&quot;trustAll&quot;:false},&quot;tags&quot;:[],&quot;metadata&quot;:{},&quot;protocol&quot;:&quot;HTTP\/1.1&quot;,&quot;predicate&quot;:{&quot;type&quot;:&quot;AlwaysMatch&quot;},&quot;ipAddress&quot;:null}],&quot;root&quot;:&quot;\/&quot;,&quot;matchingRoot&quot;:null,&quot;stripPath&quot;:true,&quot;enabled&quot;:true,&quot;secComHeaders&quot;:{&quot;claimRequestName&quot;:null,&quot;stateRequestName&quot;:null,&quot;stateResponseName&quot;:null},&quot;publicPatterns&quot;:[&quot;\/.*&quot;],&quot;privatePatterns&quot;:[&quot;&quot;],&quot;kind&quot;:&quot;ServiceDescriptor&quot;,&quot;authConfigRef&quot;:&quot;auth_mod_in_memory_auth&quot;,&quot;privateApp&quot;:true}&#39; \
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/experimental/routes&#39; \
 -H &quot;Content-type: application/json&quot; \
--u admin-api-apikey-id:admin-api-apikey-secret
+-u admin-api-apikey-id:admin-api-apikey-secret \
+-d @- &lt;&lt;&#39;EOF&#39;
+{
+  &quot;name&quot;: &quot;myapi&quot;,
+  &quot;frontend&quot;: {
+    &quot;domains&quot;: [&quot;myapi.oto.tools&quot;]
+  },
+  &quot;backend&quot;: {
+    &quot;targets&quot;: [
+      {
+        &quot;hostname&quot;: &quot;google.fr&quot;,
+        &quot;port&quot;: 443,
+        &quot;tls&quot;: true
+      }
+    ]
+  },
+  &quot;plugins&quot;: [
+    {
+        &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.AuthModule&quot;,
+        &quot;enabled&quot;: true,
+        &quot;config&quot;: {
+            &quot;pass_with_apikey&quot;: false,
+            &quot;auth_module&quot;: null,
+            &quot;module&quot;: &quot;auth_mod_in_memory_auth&quot;
+        }
+    }
+  ]
+}
+EOF
 </code></pre>
 <p>Navigate to <a href="http://webapp.oto.tools:8080">http://webapp.oto.tools:8080</a>, login with <code>user@foo.bar/password</code> and check that you&rsquo;re redirect to <code>google</code> page.</p>
 <p>Well done! You completed the discovery tutorial.</p>
@@ -391,8 +446,8 @@ EOF
 <ul>
   <li><a href="getting-started.html#getting-started" class="header">Getting Started</a>
   <ul>
-    <li><a href="getting-started.html#protect-the-access-to-your-api-with-the-otoroshi-management-of-api-keys" class="header">Protect the access to your api with the Otoroshi management of api keys</a></li>
-    <li><a href="getting-started.html#secure-your-web-app-in-5-minutes-with-an-authentication" class="header">Secure your web app in 5 minutes with an authentication</a></li>
+    <li><a href="getting-started.html#protect-your-service-with-otoroshi-apikey" class="header">Protect your service with Otoroshi ApiKey</a></li>
+    <li><a href="getting-started.html#secure-your-web-app-in-2-calls-with-an-authentication" class="header">Secure your web app in 2 calls with an authentication</a></li>
   </ul></li>
 </ul>
 </div>

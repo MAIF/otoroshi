@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.17
+1.5.20
 </div>
 </div>
 <div class="nav-toc">
@@ -52,12 +52,12 @@
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
     <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
-    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
@@ -156,7 +156,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.17
+1.5.20
 </div>
 </div>
 <div class="nav-toc">
@@ -173,12 +173,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
     <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
-    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
@@ -279,7 +279,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>If you want to deploy otoroshi into your kubernetes cluster, you can download the deployment descriptors from <a href="https://github.com/MAIF/otoroshi/tree/master/kubernetes">https://github.com/MAIF/otoroshi/tree/master/kubernetes</a> and use kustomize to create your own overlay.</p>
 <p>You can also create a <code>kustomization.yaml</code> file with a remote base</p>
 <pre class="prettyprint"><code class="language-yaml">bases:
-- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v1.5.17
+- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v1.5.20
 </code></pre>
 <p>Then deploy it with <code>kubectl apply -k ./overlays/myoverlay</code>. </p>
 <p>You can also use Helm to deploy a simple otoroshi cluster on your kubernetes cluster</p>
@@ -332,7 +332,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:1.5.17
+      - image: maif/otoroshi:1.5.20
         imagePullPolicy: IfNotPresent
         name: otoroshi
         args: [&#39;-Dconfig.file=/usr/app/otoroshi/conf/oto.conf&#39;]
@@ -1021,7 +1021,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:1.5.17-jdk11
+      - image: maif/otoroshi:1.5.20-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
@@ -1258,7 +1258,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:1.5.17-jdk11
+      - image: maif/otoroshi:1.5.20-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
@@ -1569,7 +1569,7 @@ spec:
       restartPolicy: Always
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:1.5.17-jdk11
+      - image: maif/otoroshi:1.5.20-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
@@ -1860,7 +1860,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:1.5.17-jdk11
+      - image: maif/otoroshi:1.5.20-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -2037,7 +2037,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:1.5.17-dev
+      - image: maif/otoroshi:1.5.20-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -2249,7 +2249,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:1.5.17-jdk11
+      - image: maif/otoroshi:1.5.20-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -2426,7 +2426,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:1.5.17-dev
+      - image: maif/otoroshi:1.5.20-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -2691,7 +2691,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:1.5.17-jdk11
+      - image: maif/otoroshi:1.5.20-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -2882,7 +2882,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:1.5.17-dev
+      - image: maif/otoroshi:1.5.20-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:

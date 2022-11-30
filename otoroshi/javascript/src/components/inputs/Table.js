@@ -47,7 +47,7 @@ export class Table extends Component {
   static defaultProps = {
     rowNavigation: false,
     stayAfterSave: false,
-    pageSize: 15
+    pageSize: 15,
   };
 
   state = {
@@ -58,16 +58,14 @@ export class Table extends Component {
     loading: false,
     hasError: false,
     rowsPerPage: this.props.pageSize || 15,
-    page: 0
+    page: 0,
   };
 
   componentDidMount() {
     this.registerSizeChanges();
-    // this.update().then(() => {
-    //   if (this.props.search) {
-    //     console.log('Todo: default search');
-    //   }
-    // });
+
+    this.setPlaceholders();
+
     if (this.props.injectTable) {
       this.props.injectTable(this);
     }
@@ -77,6 +75,7 @@ export class Table extends Component {
   registerSizeChanges = () => {
     this.sizeListener = debounce((e) => {
       this.forceUpdate();
+      this.setPlaceholders();
     }, 400);
     window.addEventListener('resize', this.sizeListener);
   };
@@ -91,6 +90,12 @@ export class Table extends Component {
     console.log('Table has error', err, info);
   }
 
+  setPlaceholders = () => {
+    [...document.querySelectorAll('.rt-table input[type=text]')].map((r) =>
+      r.setAttribute('placeholder', 'Search ...')
+    );
+  };
+
   readRoute = () => {
     if (this.props.parentProps.params.taction) {
       const action = this.props.parentProps.params.taction;
@@ -101,12 +106,12 @@ export class Table extends Component {
         this.props.fetchItems().then((res) => {
           //console.log(this.props.parentProps.params);
           // console.log(res)
+          // console.log('here')
 
           let row = [];
           if (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
             row = res.data.filter((d) => this.props.extractKey(d) === item)[0];
-          else
-            row = res.filter((d) => this.props.extractKey(d) === item)[0];
+          else row = res.filter((d) => this.props.extractKey(d) === item)[0];
           this.showEditForm(null, row);
         });
       }
@@ -133,32 +138,34 @@ export class Table extends Component {
     }
   };
 
-  update = (paginationState = {}) => {
+  update = debounce((paginationState = {}) => {
     this.setState({ loading: true });
-    const page = paginationState.page ? paginationState.page : this.state.page;
-    return this.props.fetchItems({
-      ...paginationState,
-      pageSize: this.state.rowsPerPage,
-      page: page + 1
-    })
-      .then(rawItems => {
-        // console.log(rawItems)
-        if (Array.isArray(rawItems)) {
-          this.setState({
-            items: rawItems,
-            loading: false,
-            page
-          });
-        } else {
-          this.setState({
-            items: rawItems.data,
-            pages: rawItems.pages,
-            loading: false,
-            page
-          });
-        }
-      });
-  };
+
+    const page = paginationState.page !== undefined ? paginationState.page : this.state.page;
+    return (this.state.showAddForm || this.state.showEditForm
+      ? this.props.fetchItems()
+      : this.props.fetchItems({
+          ...paginationState,
+          pageSize: this.state.rowsPerPage,
+          page: page + 1,
+        })
+    ).then((rawItems) => {
+      if (Array.isArray(rawItems)) {
+        this.setState({
+          items: rawItems,
+          loading: false,
+          page,
+        });
+      } else {
+        this.setState({
+          items: rawItems.data,
+          pages: rawItems.pages,
+          loading: false,
+          page,
+        });
+      }
+    });
+  }, 200);
 
   gotoItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -216,19 +223,26 @@ export class Table extends Component {
   showEditForm = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
     this.mountShortcuts();
-    if (this.props.rawEditUrl)
-      urlTo(`/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`);
-    else
-      urlTo(`/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`);
 
-    if (this.props.parentProps.setTitle) {
-      this.props.parentProps.setTitle(
-        `Update a ${this.props.itemName}`,
-        this.updateItemAndStay,
-        item
-      );
+    let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`;
+
+    if (this.props.rawEditUrl) {
+      routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
     }
-    this.setState({ currentItem: item, showEditForm: true });
+
+    console.log(window.location.pathname, routeTo);
+    if (window.location.pathname !== routeTo) {
+      window.location.href = routeTo;
+    } else {
+      if (this.props.parentProps.setTitle) {
+        this.props.parentProps.setTitle(
+          `Update a ${this.props.itemName}`,
+          this.updateItemAndStay,
+          item
+        );
+      }
+      this.setState({ currentItem: item, showEditForm: true });
+    }
   };
 
   deleteItem = (e, item) => {
@@ -241,9 +255,14 @@ export class Table extends Component {
             return this.props.fetchItems();
           })
           .then((res) => {
-            const isPaginate = (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
+            const isPaginate =
+              typeof res === 'object' && res !== null && !Array.isArray(res) && res.data;
             urlTo(`/bo/dashboard/${this.props.selfUrl}`);
-            this.setState({ items: isPaginate ? res.data : res, showEditForm: false, showAddForm: false });
+            this.setState({
+              items: isPaginate ? res.data : res,
+              showEditForm: false,
+              showAddForm: false,
+            });
           });
       }
     });
@@ -257,7 +276,8 @@ export class Table extends Component {
         return this.props.fetchItems();
       })
       .then((res) => {
-        const isPaginate = (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
+        const isPaginate =
+          typeof res === 'object' && res !== null && !Array.isArray(res) && res.data;
         urlTo(`/bo/dashboard/${this.props.selfUrl}`);
         this.setState({ items: isPaginate ? res.data : res, showAddForm: false });
       });
@@ -281,7 +301,8 @@ export class Table extends Component {
         return this.props.fetchItems();
       })
       .then((res) => {
-        const isPaginate = (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
+        const isPaginate =
+          typeof res === 'object' && res !== null && !Array.isArray(res) && res.data;
         this.setState({ items: isPaginate ? res.data : res, showEditForm: false });
       });
   };
@@ -384,7 +405,7 @@ export class Table extends Component {
     const columns = this.props.columns.map((c) => {
       return {
         Header: c.title,
-        id: c.title,
+        id: c.filterId || c.title,
         headerStyle: c.style,
         width: c.style && c.style.width ? c.style.width : undefined,
         style: { ...c.style, height: 30 },
@@ -392,15 +413,18 @@ export class Table extends Component {
         filterable: !c.notFilterable,
         sortMethod: c.sortMethod,
         accessor: (d) => (c.content ? c.content(d) : d),
-        Filter: (d) => (
-          <input
-            type="text"
-            className="form-control input-sm"
-            value={d.filter ? d.filter.value : ''}
-            onChange={(e) => d.onChange(e.target.value)}
-            placeholder="Search ..."
-          />
-        ),
+        // Filter: (d) => {
+        //   return <input
+        //     type="text"
+        //     id={`input-${c.title}`}
+        //     className="form-control input-sm"
+        //     value={d.filter ? d.filter.value : ''}
+        //     onChange={(e) => {
+        //       d.onChange(e.target.value)
+        //     }}
+        //     placeholder="Search ..."
+        //   />
+        // },
         Cell: (r) => {
           const value = r.value;
           const original = r.original;
@@ -438,6 +462,7 @@ export class Table extends Component {
         maxWidth: 160,
         style: { textAlign: 'center' },
         filterable: false,
+        sortable: false,
         accessor: (item) => (
           <div style={{ textAlign: 'center' }}>
             <div className="displayGroupBtn">
@@ -545,7 +570,12 @@ export class Table extends Component {
                 }
                 onFetchData={(state, instance) => {
                   // console.log(state, instance)
-                  this.update(state)
+                  // console.log('onFetchData')
+                  this.update(state);
+                }}
+                onFilteredChange={(column, value) => {
+                  // console.log('onFilteredChange')
+                  if (this.state.lastFocus) document.getElementById(this.state.lastFocus)?.focus();
                 }}
                 columns={columns}
                 LoadingComponent={LoadingComponent}
@@ -559,20 +589,22 @@ export class Table extends Component {
                   }
                 }}
               />
-              <div className='d-flex align-items-center'
+              <div
+                className="d-flex align-items-center"
                 style={{
                   position: 'absolute',
-                  bottom: 0, left: 0,
-                  padding: '6px'
+                  bottom: 0,
+                  left: 0,
+                  padding: '6px',
                 }}>
-                <p className='m-0 me-2'>Rows per page</p>
+                <p className="m-0 me-2">Rows per page</p>
                 <div style={{ minWidth: '80px' }}>
                   <NgSelectRenderer
                     id="rows-per-page"
                     value={this.state.rowsPerPage}
                     label={' '}
                     ngOptions={{ spread: true }}
-                    onChange={rowsPerPage => this.setState({ rowsPerPage }, this.update)}
+                    onChange={(rowsPerPage) => this.setState({ rowsPerPage }, this.update)}
                     options={[5, 15, 20, 50, 100]}
                   />
                 </div>
@@ -582,39 +614,50 @@ export class Table extends Component {
         )}
         {this.state.showAddForm && (
           <div className="" role="dialog">
-            {this.props.formComponent && <>
-              {this.props.injectToolbar
-                ? this.props.injectToolbar(this.state, (s) => this.setState(s))
-                : null}
-              <form className="form-horizontal" style={{ paddingTop: '30px', ...this.props.style }}>
-                {React.createElement(this.props.formComponent, {
-                  showAdvancedForm: this.state.showAdvancedForm,
-                  onChange: (currentItem) => {
-                    this.setState({ currentItem });
+            {this.props.formComponent && (
+              <>
+                {this.props.injectToolbar
+                  ? this.props.injectToolbar(this.state, (s) => this.setState(s))
+                  : null}
+                <form
+                  className="form-horizontal"
+                  style={{ paddingTop: '30px', ...this.props.style }}>
+                  {React.createElement(this.props.formComponent, {
+                    showAdvancedForm: true, //this.state.showAdvancedForm, // advanced view in creation mode
+                    onChange: (currentItem) => {
+                      this.setState({ currentItem });
 
-                    if (this.props.parentProps.setTitle)
-                      this.props.parentProps.setTitle(
-                        `Create a new ${this.props.itemName}`,
-                        this.updateItemAndStay,
-                        this.state.currentItem
-                      );
-                  },
-                  value: this.state.currentItem,
-                  ...(this.props.formPassProps || {}),
-                })}
-              </form>
-              {this.props.hideAllActions && <div className='mt-3'>
-                {this.props.injectBottomBar &&
-                  this.props.injectBottomBar({
-                    buttons: <button type="button" className="btn btn-sm btn-primary me-1" onClick={this.createItem}>
-                      <i className="fas fa-hdd" /> Create {this.props.itemName}
-                    </button>,
-                    closeEditForm: this.closeAddForm,
-                    state: this.state,
-                    setState: v => this.setState(v)
+                      if (this.props.parentProps.setTitle)
+                        this.props.parentProps.setTitle(
+                          `Create a new ${this.props.itemName}`,
+                          this.updateItemAndStay,
+                          this.state.currentItem
+                        );
+                    },
+                    value: this.state.currentItem,
+                    ...(this.props.formPassProps || {}),
                   })}
-              </div>}
-            </>}
+                </form>
+                {this.props.hideAllActions && (
+                  <div className="mt-3">
+                    {this.props.injectBottomBar &&
+                      this.props.injectBottomBar({
+                        buttons: (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary me-1"
+                            onClick={this.createItem}>
+                            <i className="fas fa-hdd" /> Create {this.props.itemName}
+                          </button>
+                        ),
+                        closeEditForm: this.closeAddForm,
+                        state: this.state,
+                        setState: (v) => this.setState(v),
+                      })}
+                  </div>
+                )}
+              </>
+            )}
             {this.props.formFunction && [
               this.props.injectToolbar
                 ? this.props.injectToolbar(this.state, (s) => this.setState(s))
@@ -635,21 +678,26 @@ export class Table extends Component {
               />
             )}
             <hr />
-            {!this.props.hideAllActions && <>
-              <div className="displayGroupBtn float-end">
-                <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
-                  Cancel
-                </button>
-                {this.props.stayAfterSave && (
-                  <button type="button" className="btn btn-primary" onClick={this.createItemAndStay}>
-                    <i className="fas fa-hdd" /> Create and stay on this {this.props.itemName}
+            {!this.props.hideAllActions && (
+              <>
+                <div className="displayGroupBtn float-end">
+                  <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
+                    Cancel
                   </button>
-                )}
-                <button type="button" className="btn btn-primary" onClick={this.createItem}>
-                  <i className="fas fa-hdd" /> Create {this.props.itemName}
-                </button>
-              </div>
-            </>}
+                  {this.props.stayAfterSave && (
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={this.createItemAndStay}>
+                      <i className="fas fa-hdd" /> Create and stay on this {this.props.itemName}
+                    </button>
+                  )}
+                  <button type="button" className="btn btn-primary" onClick={this.createItem}>
+                    <i className="fas fa-hdd" /> Create {this.props.itemName}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
         {this.state.showEditForm && (

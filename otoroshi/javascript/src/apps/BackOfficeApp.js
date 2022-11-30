@@ -156,12 +156,11 @@ class BackOfficeAppContainer extends Component {
                   <ul className="nav flex-column nav-sidebar">
                     <li>
                       <h2>
-                        <Link to="/"
-                          {...createTooltip(
-                            'Home dashboard of Otoroshi displaying global metrics'
-                          )}
+                        <Link
+                          to="/"
+                          {...createTooltip('Home dashboard of Otoroshi displaying global metrics')}
                           onClick={() => {
-                            DynamicTitle.setContent(null)
+                            DynamicTitle.setContent(null);
                           }}>
                           <i className="fas fa-tachometer-alt" />
                           Dashboard
@@ -592,9 +591,12 @@ class BackOfficeAppContainer extends Component {
                             type="button"
                             className="btn btn-success"
                             onClick={(e) => {
-                              this.setState({
-                                catchedError: undefined
-                              }, window.history.back)
+                              this.setState(
+                                {
+                                  catchedError: undefined,
+                                },
+                                window.history.back
+                              );
                             }}>
                             <i className="fas fa-arrow-left" /> back
                           </button>

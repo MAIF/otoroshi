@@ -24,9 +24,21 @@ function extractEnv(value = '') {
 function VersionButton() {
   const [black, setBlack] = useState(false);
   return (
-    <>    
-      <a href={`https://github.com/MAIF/otoroshi/releases/tag/v${window.__currentVersion}`} target="_blank" className="dropdown-item logo-xs d-flex align-items-center justify-content-start" onMouseOver={e => setBlack(true)} onMouseOut={e => setBlack(false)}>
-        <img src={black ? `/assets/images/otoroshi-logo-inverse-black.png` : `/assets/images/otoroshi-logo-inverse.png`} width="16" /> 
+    <>
+      <a
+        href={`https://github.com/MAIF/otoroshi/releases/tag/v${window.__currentVersion}`}
+        target="_blank"
+        className="dropdown-item logo-xs d-flex align-items-center justify-content-start"
+        onMouseOver={(e) => setBlack(true)}
+        onMouseOut={(e) => setBlack(false)}>
+        <img
+          src={
+            black
+              ? `/assets/images/otoroshi-logo-inverse-black.png`
+              : `/assets/images/otoroshi-logo-inverse.png`
+          }
+          width="16"
+        />
         <span style={{ marginLeft: 5, marginRight: 5 }}>version</span>
         <div>{window.__currentVersion}</div>
       </a>
@@ -228,7 +240,7 @@ export class TopBar extends Component {
         if (this.props.env.clusterRole === 'Leader') {
           options.push({
             action: () => this.routeTo('/cluster'),
-            env: <span className="fas fa-network-wired-alt" />,
+            env: <span className="fas fa-network-wired" />,
             label: 'Cluster view',
             value: 'cluster-view',
           });
@@ -439,13 +451,13 @@ export class TopBar extends Component {
       });
   };
 
-  routeTo = url => {
+  routeTo = (url) => {
     if (this.props.history) {
       this.props.history.push(url);
     } else {
       window.location.href = `/bo/dashboard${url}`;
     }
-  }
+  };
 
   gotoService = (e) => {
     if (e) {
@@ -460,7 +472,7 @@ export class TopBar extends Component {
   gotoTcpService = (e) => {
     if (e) {
       if (this.props.history) {
-        this.props.history.push(`/tcp/services/edit/${e.value}`)
+        this.props.history.push(`/tcp/services/edit/${e.value}`);
       } else {
         window.location.href = `/bo/dashboard/tcp/services/edit/${e.value}`;
       }
@@ -556,7 +568,7 @@ export class TopBar extends Component {
     return (
       <nav
         className="navbar navbar-expand-md fixed-top"
-      // style={{ zIndex: 100 }}
+        // style={{ zIndex: 100 }}
       >
         <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
           <div className="d-flex flex-column flex-md-row top-md-0 w-100">
@@ -570,9 +582,13 @@ export class TopBar extends Component {
                 aria-expanded="false">
                 <span className="navbar-toggler-icon">Menu</span>
               </button>
-              <Link className="navbar-brand" to="/" style={{ display: 'flex' }} onClick={() => {
-                this.props.setTitle(null)
-              }}>
+              <Link
+                className="navbar-brand"
+                to="/"
+                style={{ display: 'flex' }}
+                onClick={() => {
+                  this.props.setTitle(null);
+                }}>
                 {this.brandName()}
               </Link>
             </div>
@@ -706,10 +722,12 @@ export class TopBar extends Component {
                 />
                 <ul
                   id="dropdown"
-                  className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''} py-2 pb-4`}
+                  className={`custom-dropdown ${
+                    this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                  } py-2 pb-4`}
                   aria-labelledby="dropdownMenuParams"
-                  onClick={e => {
-                    this.setState({ dropdownStatus: 'closed' })
+                  onClick={(e) => {
+                    this.setState({ dropdownStatus: 'closed' });
                   }}>
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
@@ -718,7 +736,10 @@ export class TopBar extends Component {
                     <VersionButton />
                   </li>
                   <li>
-                    <a to="https://maif.github.io/otoroshi/manual/index.html" target="_blank" className="dropdown-item">
+                    <a
+                      to="https://maif.github.io/otoroshi/manual/index.html"
+                      target="_blank"
+                      className="dropdown-item">
                       <span className="fas fa-book" /> User manual
                     </a>
                   </li>
@@ -1076,7 +1097,7 @@ export class TopBar extends Component {
             </div>
           </div>
         </div>
-      </nav >
+      </nav>
     );
   }
 }

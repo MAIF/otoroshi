@@ -182,8 +182,8 @@ export function allServices(env, group, paginationState) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-      ? `/bo/api/proxy/api/services?filter.groups=${group}`
-      : `/bo/api/proxy/api/services`;
+    ? `/bo/api/proxy/api/services?filter.groups=${group}`
+    : `/bo/api/proxy/api/services`;
   return findAllWithPagination(url, paginationState);
 }
 
@@ -572,14 +572,15 @@ export function findServicesForGroup(group) {
   }).then((r) => r.json());
 }
 
-export function findAllGroups() {
-  return fetch('/bo/api/proxy/api/groups', {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+export function findAllGroups(paginationState) {
+  return findAllWithPagination('/bo/api/proxy/api/groups', paginationState);
+  // return fetch('/bo/api/proxy/api/groups', {
+  //   method: 'GET',
+  //   credentials: 'include',
+  //   headers: {
+  //     Accept: 'application/json',
+  //   },
+  // }).then((r) => r.json());
 }
 
 export function findGroupById(id) {
@@ -746,15 +747,9 @@ export function discardSession(id) {
   }).then((r) => r.json());
 }
 
-export function fetchSessions() {
+export function fetchSessions(paginateState) {
   // return fetch(`/bo/api/sessions`, {
-  return fetch(`/bo/api/proxy/api/admin-sessions`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+  return findAllWithPagination(`/bo/api/proxy/api/admin-sessions`, paginateState);
 }
 
 export function discardAllPrivateAppsSessions() {
@@ -781,13 +776,7 @@ export function discardPrivateAppsSession(id) {
 
 export function fetchPrivateAppsSessions() {
   // return fetch(`/bo/api/papps/sessions`, {
-  return fetch(`/bo/api/proxy/api/apps-sessions`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+  return findAllWithPagination(`/bo/api/proxy/api/apps-sessions`, paginationState);
 }
 
 export function panicMode() {
@@ -801,17 +790,10 @@ export function panicMode() {
   }).then((r) => r.json());
 }
 
-export function fetchAdmins() {
+export function fetchAdmins(paginationState) {
   // return fetch(`/bo/simple/admins`, {
-  return fetch(`/bo/api/proxy/api/admins/simple`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  })
-    .then((r) => r.json())
-    .then((_admins) => {
+  return findAllWithPagination(`/bo/api/proxy/api/admins/simple`, paginationState).then(
+    (_admins) => {
       // return fetch(`/bo/webauthn/admins`, {
       return fetch(`/bo/api/proxy/api/admins/webauthn`, {
         method: 'GET',
@@ -822,11 +804,12 @@ export function fetchAdmins() {
       })
         .then((r) => r.json())
         .then((_webauthnadmins) => {
-          const admins = _admins.map((admin) => ({ ...admin, type: 'SIMPLE' }));
+          const admins = _admins.data.map((admin) => ({ ...admin, type: 'SIMPLE' }));
           const webauthnadmins = _webauthnadmins.map((admin) => ({ ...admin, type: 'WEBAUTHN' }));
           return [...webauthnadmins, ...admins];
         });
-    });
+    }
+  );
 }
 
 export function discardAdmin(username, id, type) {
@@ -1003,7 +986,7 @@ export function updateTemplate(ak) {
 }
 
 export function findAllJwtVerifiers(paginationState) {
-  return findAllWithPagination('/bo/api/proxy/api/verifiers', paginationState)
+  return findAllWithPagination('/bo/api/proxy/api/verifiers', paginationState);
 }
 
 export function findJwtVerifierById(id) {
@@ -1111,7 +1094,7 @@ export function updateAuthConfig(ak) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 export function findAllCertificates(paginationState) {
-  return findAllWithPagination('/bo/api/proxy/api/certificates', paginationState)
+  return findAllWithPagination('/bo/api/proxy/api/certificates', paginationState);
 }
 
 export function findCertificateById(id) {
@@ -1435,14 +1418,8 @@ export function fetchStats(by, id, from, to, limit = 500) {
   ).then((r) => r.json());
 }
 
-export function findAllTcpServices() {
-  return fetch('/bo/api/proxy/api/tcp/services', {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+export function findAllTcpServices(paginationState) {
+  return findAllWithPagination('/bo/api/proxy/api/tcp/services', paginationState);
 }
 
 export function findTcpServiceById(id) {
@@ -1502,6 +1479,10 @@ export function updateTcpService(ak) {
 ///////////////////////////////
 // Teams
 ///////////////////////////////
+
+export function findAllTeamsWithPagination(ps) {
+  return findAllWithPagination('/bo/api/proxy/api/teams', ps);
+}
 
 export function findAllTeams() {
   return fetch('/bo/api/proxy/api/teams', {
@@ -1570,6 +1551,10 @@ export function updateTeam(ak) {
 ///////////////////////////////
 // Tenants
 ///////////////////////////////
+
+export function findAllTenantsWithPagination(ps) {
+  return findAllWithPagination('/bo/api/proxy/api/tenants', ps);
+}
 
 export function findAllTenants() {
   return fetch('/bo/api/proxy/api/tenants', {
@@ -1674,7 +1659,7 @@ export function createNewDataExporterConfig(type) {
 }
 
 export function findAllDataExporterConfigs(paginationState) {
-  return findAllWithPagination('/bo/api/proxy/api/data-exporter-configs', paginationState)
+  return findAllWithPagination('/bo/api/proxy/api/data-exporter-configs', paginationState);
 }
 
 export function findDataExporterConfigById(id) {
@@ -1861,72 +1846,46 @@ const fetchWrapper = (url, method = 'GET', body) =>
     body: body ? JSON.stringify(body) : undefined,
   }).then((r) => r.json());
 
-const findAllWithPagination = (prefix, { page, pageSize, fields } = { page: 1 }) => {
-  let url = prefix
+const findAllWithPagination = (
+  route,
+  { page, pageSize, fields, filtered, sorted, ...props } = { page: 1 },
+  prefix = ''
+) => {
+  let url = route;
+
+  // console.log(props)
 
   if (page) {
     url = `${url}?page=${page}`;
 
-    if (pageSize)
-      url = `${url}&pageSize=${pageSize}`;
+    if (pageSize) url = `${url}&pageSize=${pageSize}`;
 
-    if (fields)
-      url = `${url}&fields=${fields.join(',')}`;
+    if (fields && fields.length > 0) url = `${url}&fields=${fields.join(',')}`;
+
+    if (filtered && filtered.length > 0)
+      url = `${url}&filtered=${filtered.map((field) => `${field.id}:${field.value}`).join(',')}`;
+
+    if (sorted && sorted.length > 0)
+      url = `${url}&sorted=${sorted.map((field) => `${field.id}:${field.desc}`).join(',')}`;
   }
 
-  return fetch(url, {
+  return fetch(`${prefix}${url}`, {
     credentials: 'include',
     headers: {
-      Accept: 'application/json'
-    }
-  })
-    .then(res => {
-      const { headers } = res;
-      const xOffset = ~~headers.get('X-Offset');
-      const xCount = ~~headers.get('X-Count');
-      const xPageSize = ~~headers.get('X-Page-Size');
-      return res.json()
-        .then(rows => ({
-          data: rows,
-          pages: Math.ceil(xCount / xPageSize),
-          offset: xOffset
-        }))
-    })
-}
-
-const findAllWithPaginationAndEntity = (entity, { page, pageSize, fields } = { page: 1 }) => {
-  let url = `/${entity}`;
-
-  if (page) {
-    url = `${url}?page=${page}`;
-
-    if (pageSize)
-      url = `${url}&pageSize=${pageSize}`;
-
-    if (fields)
-      url = `${url}&fields=${fields.join(',')}`;
-  }
-
-
-  return fetch(`/bo/api/proxy/api/experimental${url}`, {
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json'
-    }
-  })
-    .then(res => {
-      const { headers } = res;
-      const xOffset = ~~headers.get('X-Offset');
-      const xCount = ~~headers.get('X-Count');
-      const xPageSize = ~~headers.get('X-Page-Size');
-      return res.json()
-        .then(rows => ({
-          data: rows,
-          pages: Math.ceil(xCount / xPageSize),
-          offset: xOffset
-        }))
-    })
-}
+      Accept: 'application/json',
+    },
+  }).then((res) => {
+    const { headers } = res;
+    const xOffset = ~~headers.get('X-Offset');
+    const xCount = ~~headers.get('X-Count');
+    const xPageSize = ~~headers.get('X-Page-Size');
+    return res.json().then((rows) => ({
+      data: rows,
+      pages: Math.ceil(xCount / xPageSize),
+      offset: xOffset,
+    }));
+  });
+};
 
 export const nextClient = {
   ENTITIES: {
@@ -1938,12 +1897,12 @@ export const nextClient = {
   find: (entity) => fetchWrapper(`/${entity}`),
   findAll: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {
     let url = `/${entity}?page=${page}`;
-    if (pageSize)
-      url = `${url}&pageSize=${pageSize}`;
+    if (pageSize) url = `${url}&pageSize=${pageSize}`;
 
     return fetchWrapper(url);
   },
-  findAllWithPagination: findAllWithPaginationAndEntity,
+  findAllWithPagination: (entity, props) =>
+    findAllWithPagination(`/${entity}`, props, '/bo/api/proxy/api/experimental'),
   create: (entity, content) => fetchWrapper(`/${entity}`, 'POST', content),
   update: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
   fetch: (entity, entityId) => fetchWrapper(`/${entity}/${entityId}`),
@@ -1955,7 +1914,8 @@ export const nextClient = {
   forEntity: (entity) => {
     return {
       findAll: () => fetchWrapper(`/${entity}`),
-      findAllWithPagination: paginationState => findAllWithPaginationAndEntity(entity, paginationState),
+      findAllWithPagination: (paginationState) =>
+        findAllWithPaginationAndEntity(entity, paginationState),
       create: (content) => fetchWrapper(`/${entity}`, 'POST', content),
       update: (content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
       findById: (entityId) => fetchWrapper(`/${entity}/${entityId}`),
