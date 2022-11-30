@@ -13,6 +13,25 @@ Any entity has the following properties
 * `metadata`: free key/value tuples that you can put on any entity to help you manage it, automate it, etc.
 
 @@@div { .plugin .entities }
+<img src="../imgs/entities-routes.png">
+<div>
+<span>Routes</span>
+<span>Proxy your applications with routes</span>
+</div>
+@ref:[View](./routes.md)
+@@@
+
+@@@div { .plugin .entities }
+<img src="../imgs/entities-keys.png">
+<div>
+<span>Apikeys</span>
+<span>Add security to your services using apikeys</span>
+</div>
+@ref:[View](./apikeys.md)
+@@@
+
+
+@@@div { .plugin .entities }
 <img src="../imgs/entities-groups.png">
 <div>
 <span>Organizations</span>
@@ -49,30 +68,12 @@ Any entity has the following properties
 @@@
 
 @@@div { .plugin .entities }
-<img src="../imgs/entities-keys.png">
-<div>
-<span>Apikeys</span>
-<span>Add security to your services using apikeys</span>
-</div>
-@ref:[View](./apikeys.md)
-@@@
-
-@@@div { .plugin .entities }
 <img src="../imgs/entities-danger-zone.png">
 <div>
 <span>Global Config</span>
 <span>The danger zone of Otoroshi</span>
 </div>
 @ref:[View](./global-config.md)
-@@@
-
-@@@div { .plugin .entities }
-<img src="../imgs/entities-services.png">
-<div>
-<span>Service descriptors</span>
-<span>Proxy your applications with service descriptors</span>
-</div>
-@ref:[View](./service-descriptors.md)
 @@@
 
 @@@div { .plugin .entities }
@@ -122,12 +123,12 @@ Any entity has the following properties
 
 @@@ index
 
+* [Routes](./routes.md)
 * [Organizations](./organizations.md)
 * [Teams](./teams.md)
 * [Global Config](./global-config.md)
 * [Apikeys](./apikeys.md)
 * [Service groups](./service-groups.md)
-* [Service descriptors](./service-descriptors.md)
 * [Auth. modules](./auth-modules.md)
 * [Certificates](./certificates.md)
 * [JWT verifiers](./jwt-verifiers.md)

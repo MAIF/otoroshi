@@ -9,6 +9,7 @@ export function PillButton({
   onRightClick,
   style = {},
   className = '',
+  pillButtonStyle = {}
 }) {
   const isWhiteMode = document.body.classList.contains('white-mode');
   return (
@@ -27,12 +28,14 @@ export function PillButton({
         <button
           className="pill-mode"
           type="button"
+          style={pillButtonStyle}
           onClick={() => (onLeftClick ? onLeftClick() : onChange(true))}>
           {leftText}
         </button>
         <button
           className="pill-mode"
           type="button"
+          style={pillButtonStyle}
           onClick={() => (onRightClick ? onRightClick() : onChange(false))}>
           {rightText}
         </button>

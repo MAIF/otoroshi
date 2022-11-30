@@ -410,7 +410,7 @@ export default {
             'predicate',
             'tls_config',
           ],
-          fields: ['hostname', 'port', 'protocol'],
+          fields: ['hostname', 'port', 'protocol', 'tls'],
         },
       ],
     },

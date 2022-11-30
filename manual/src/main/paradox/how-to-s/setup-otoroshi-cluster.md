@@ -74,69 +74,40 @@ docker (on macos)
 docker (on windows)
 :   @@snip [run.sh](../snippets/cluster-run-ha.sh) { #docker_windows }
 
-The last step is to create a service, add a rule to add, in the headers, a specific value to identify the worker used.
+The last step is to create a route, add a rule to add, in the headers, a specific value to identify the worker used.
 
-Create this service, exposed on `http://myapi.oto.tools:xxxx`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
+Create this route, exposed on `http://api.oto.tools:xxxx`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
 
 ```sh
-curl -X POST http://otoroshi-api.oto.tools:8091/api/services \
+curl -X POST 'http://otoroshi-api.oto.tools:8091/api/experimental/routes' \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'
 {
-    "enforceSecureCommunication": false,
-    "forceHttps": false,
-    "_loc": {
-        "tenant": "default",
-        "teams": [
-            "default"
-        ]
-    },
-    "groupId": "default",
-    "groups": [
-        "default"
-    ],
-    "id": "myapi",
-    "name": "myapi",
-    "description": "myapi",
-    "env": "prod",
-    "domain": "oto.tools",
-    "subdomain": "api",
-    "targetsLoadBalancing": {
-        "type": "RoundRobin"
-    },
+  "name": "myapi",
+  "frontend": {
+    "domains": ["api.oto.tools"]
+  },
+  "backend": {
     "targets": [
-        {
-            "host": "mirror.otoroshi.io",
-            "scheme": "https",
-            "weight": 1,
-            "mtlsConfig": {
-                "certs": [],
-                "trustedCerts": [],
-                "mtls": false,
-                "loose": false,
-                "trustAll": false
-            },
-            "tags": [],
-            "metadata": {},
-            "protocol": "HTTP\/1.1",
-            "predicate": {
-                "type": "AlwaysMatch"
-            },
-            "ipAddress": null
+      {
+        "hostname": "mirror.otoroshi.io",
+        "port": 443,
+        "tls": true
+      }
+    ]
+  },
+  "plugins": [
+    {
+        "enabled": true,
+        "plugin": "cp:otoroshi.next.plugins.AdditionalHeadersIn",
+        "config": {
+            "headers": {
+                "worker-name": "${config.otoroshi.cluster.worker.name}"
+            }
         }
-    ],
-    "root": "\/",
-    "matchingRoot": null,
-    "stripPath": true,
-    "enabled": true,
-    "publicPatterns": [
-        "/.*"
-    ],
-    "kind": "ServiceDescriptor",
-    "additionalHeaders": {
-        "worker-name": "${config.otoroshi.cluster.worker.name}"
     }
+  ]
 }
 EOF
 ```

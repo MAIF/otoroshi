@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { graphqlSchemaToJson, jsonToGraphqlSchema } from '../../services/BackOfficeServices';
 import { NgCodeRenderer, NgForm } from '../../components/nginputs';
 import { PillButton } from '../../components/PillButton';
+import debounce from 'lodash/debounce';
 
 export default class GraphQLForm extends React.Component {
   state = {
@@ -106,6 +107,26 @@ export default class GraphQLForm extends React.Component {
     });
   };
 
+  onSchemaChanges = debounce((e) => {
+    this.schemaToJson(e, () => {
+      this.props.saveRoute({
+        ...this.props.route,
+        plugins: this.props.route.plugins.map((p) => {
+          if (p.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend')
+            return {
+              ...p,
+              config: {
+                ...p.config,
+                schema: e,
+              },
+            };
+          return p;
+        }),
+      });
+      this.setState({ tmpSchema: e, error: undefined });
+    })
+  }, 500)
+
   render() {
     const { route, hide } = this.props;
 
@@ -140,32 +161,18 @@ export default class GraphQLForm extends React.Component {
             )}
             <NgCodeRenderer
               ngOptions={{
-                spread: true,
+                spread: true
               }}
               rawSchema={{
                 props: {
                   editorOnly: true,
                   height: '100%',
-                  mode: 'graphqlschema',
-                },
+                  mode: 'graphqlschema'
+                }
               }}
               value={this.state.tmpSchema}
               onChange={(e) => {
-                this.props.saveRoute({
-                  ...route,
-                  plugins: route.plugins.map((p) => {
-                    if (p.plugin === 'cp:otoroshi.next.plugins.GraphQLBackend')
-                      return {
-                        ...p,
-                        config: {
-                          ...p.config,
-                          schema: e,
-                        },
-                      };
-                    return p;
-                  }),
-                });
-                this.setState({ tmpSchema: e, error: undefined });
+                this.onSchemaChanges(e)
               }}
             />
           </>
@@ -511,6 +518,7 @@ class FieldForm extends React.Component {
               'graphql',
               'json',
               'soap',
+              'mock',
               'permission',
               'allpermissions',
               'onePermissionsOf',
@@ -537,6 +545,7 @@ class FieldForm extends React.Component {
                 'response_filter_arg',
               ],
               json: ['path'],
+              mock: ['url'],
               permission: ['value', 'unauthorized_value'],
               allpermissions: ['values', 'unauthorized_value'],
               onePermissionsOf: ['values', 'unauthorized_value'],

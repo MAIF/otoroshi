@@ -282,7 +282,7 @@ export class NgSingleCodeLineRenderer extends Component {
 
 export class NgCodeRenderer extends Component {
   render() {
-    const schema = this.props.schema;
+    const schema = this.props.schema || {};
     const props = schema.props || {};
     const readOnly = this.props.readOnly;
 
@@ -421,6 +421,7 @@ export class NgNumberRenderer extends Component {
             {...inputProps}
           />
         )}
+        {props.subTitle && <span style={{ fontStyle: 'italic' }}>{props.subTitle}</span>}
       </LabelAndInput>
     );
   }
