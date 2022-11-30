@@ -124,8 +124,8 @@ export default class GraphQLForm extends React.Component {
         }),
       });
       this.setState({ tmpSchema: e, error: undefined });
-    })
-  }, 500)
+    });
+  }, 500);
 
   render() {
     const { route, hide } = this.props;
@@ -161,18 +161,18 @@ export default class GraphQLForm extends React.Component {
             )}
             <NgCodeRenderer
               ngOptions={{
-                spread: true
+                spread: true,
               }}
               rawSchema={{
                 props: {
                   editorOnly: true,
                   height: '100%',
-                  mode: 'graphqlschema'
-                }
+                  mode: 'graphqlschema',
+                },
               }}
               value={this.state.tmpSchema}
               onChange={(e) => {
-                this.onSchemaChanges(e)
+                this.onSchemaChanges(e);
               }}
             />
           </>

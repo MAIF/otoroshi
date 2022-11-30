@@ -197,7 +197,7 @@ export default {
         onlyExposedCerts: {
           type: 'boolean',
         },
-      }
+      },
     },
     version: {
       type: 'string',
@@ -375,7 +375,7 @@ export default {
           ESKPAlgoSettings: ['type', 'size', 'certId'],
           KidAlgoSettings: ['type', 'onlyExposedCerts'],
         },
-      }
+      },
     },
     request_header_name: {
       type: 'string',

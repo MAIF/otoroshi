@@ -23,7 +23,29 @@ import sangria.ast._
 import sangria.execution.deferred.DeferredResolver
 import sangria.execution.{ExceptionHandler, Executor, HandledException, QueryReducer}
 import sangria.parser.QueryParser
-import sangria.schema.{Action, AdditionalTypes, AnyFieldResolver, Argument, AstDirectiveContext, AstSchemaBuilder, AstSchemaMaterializer, BooleanType, DefaultAstSchemaBuilder, Directive, DirectiveResolver, FieldResolver, InstanceCheck, IntType, IntrospectionSchemaBuilder, ListInputType, OptionInputType, ResolverBasedAstSchemaBuilder, ScalarType, Schema, StringType}
+import sangria.schema.{
+  Action,
+  AdditionalTypes,
+  AnyFieldResolver,
+  Argument,
+  AstDirectiveContext,
+  AstSchemaBuilder,
+  AstSchemaMaterializer,
+  BooleanType,
+  DefaultAstSchemaBuilder,
+  Directive,
+  DirectiveResolver,
+  FieldResolver,
+  InstanceCheck,
+  IntType,
+  IntrospectionSchemaBuilder,
+  ListInputType,
+  OptionInputType,
+  ResolverBasedAstSchemaBuilder,
+  ScalarType,
+  Schema,
+  StringType
+}
 import sangria.util.tag.@@
 import sangria.validation.{QueryValidator, ValueCoercionViolation, Violation}
 
@@ -501,11 +523,13 @@ class GraphQLBackend extends NgBackendCall {
   def permissionResponse(authorized: Boolean, c: AstDirectiveContext[Unit]) = {
     if (!authorized)
       c.arg(unauthorizedValueArg)
-        .map(value => if (value.isEmpty) {
-          throw AuthorisationException("You're not authorized")
-        } else {
-          value
-        })
+        .map(value =>
+          if (value.isEmpty) {
+            throw AuthorisationException("You're not authorized")
+          } else {
+            value
+          }
+        )
         .getOrElse(throw AuthorisationException("You're not authorized"))
     else {
       ResolverBasedAstSchemaBuilder.extractFieldValue(c.ctx)
@@ -747,7 +771,7 @@ class GraphQLBackend extends NgBackendCall {
               .getOrElse {
                 throw MockResponseNotFoundException("Mock response not found for this uri")
               }
-          case JsError(err)          =>
+          case JsError(err)        =>
             println(err)
             throw MissingMockResponsesException("Missing mock response plugin")
         }
@@ -778,7 +802,7 @@ class GraphQLBackend extends NgBackendCall {
       acc + (s"params.$key" -> value)
     }
 
-    val extractedField = (ResolverBasedAstSchemaBuilder.extractFieldValue(c.ctx) match {
+    val extractedField = ResolverBasedAstSchemaBuilder.extractFieldValue(c.ctx) match {
       case Some(v: JsObject) =>
         v.value.foldLeft(Map.empty[String, String]) { case (acc, (key, value)) =>
           acc + (s"item.$key" -> (value match {
@@ -788,9 +812,9 @@ class GraphQLBackend extends NgBackendCall {
           }))
         }
       case _                 => Map.empty // TODO - throw exception or whatever
-    })
+    }
 
-    val fieldsFromValue = (c.ctx.value match {
+    val fieldsFromValue = c.ctx.value match {
       case JsObject(fields) =>
         fields.foldLeft(Map.empty[String, String]) { case (acc, (key, value)) =>
           acc + (s"item.$key" -> (value match {
@@ -799,8 +823,8 @@ class GraphQLBackend extends NgBackendCall {
             case v           => v.toString()
           }))
         }
-      case _ =>  Map.empty
-    })
+      case _                => Map.empty
+    }
 
     val ctx = extractedField ++ paramsArgs ++ fieldsFromValue
 

@@ -1691,9 +1691,9 @@ export class AuthModuleConfig extends Component {
         </Collapse>
         {selector}
         {settings.type === 'oauth2' && <Oauth2ModuleConfig {...this.props} />}
-        {settings.type === 'basic'  && <BasicModuleConfig  {...this.props} />}
-        {settings.type === 'ldap'   && <LdapModuleConfig   {...this.props} />}
-        {settings.type === 'saml'   && <SamlModuleConfig   {...this.props} />}
+        {settings.type === 'basic' && <BasicModuleConfig {...this.props} />}
+        {settings.type === 'ldap' && <LdapModuleConfig {...this.props} />}
+        {settings.type === 'saml' && <SamlModuleConfig {...this.props} />}
         {settings.type === 'oauth1' && <OAuth1ModuleConfig {...this.props} />}
         <Separator title="Module metadata" />
         <ArrayInput
@@ -1776,9 +1776,10 @@ export class SamlModuleConfig extends Component {
     clientSideSessionEnabled: {
       type: 'bool',
       props: {
-        label: "Client side session",
-        help: "When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet."
-      }
+        label: 'Client side session',
+        help:
+          'When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet.',
+      },
     },
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
     name: {
@@ -2120,9 +2121,10 @@ export class OAuth1ModuleConfig extends Component {
     clientSideSessionEnabled: {
       type: 'bool',
       props: {
-        label: "Client side session",
-        help: "When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet."
-      }
+        label: 'Client side session',
+        help:
+          'When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet.',
+      },
     },
     httpMethod: {
       type: 'select',

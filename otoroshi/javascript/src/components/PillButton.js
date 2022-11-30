@@ -9,7 +9,7 @@ export function PillButton({
   onRightClick,
   style = {},
   className = '',
-  pillButtonStyle = {}
+  pillButtonStyle = {},
 }) {
   const isWhiteMode = document.body.classList.contains('white-mode');
   return (

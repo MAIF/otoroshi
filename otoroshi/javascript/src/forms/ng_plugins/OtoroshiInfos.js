@@ -191,7 +191,7 @@ export default {
           ESKPAlgoSettings: ['type', 'size', 'certId'],
           KidAlgoSettings: ['type', 'onlyExposedCerts'],
         },
-      }
+      },
     },
   },
   config_flow: ['version', 'ttl', 'header_name', 'algo'],
