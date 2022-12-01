@@ -10,9 +10,9 @@ import {
   ArrayInput,NumberInput
 } from "../components/inputs";
 
-import { NgSelectRenderer, LabelAndInput } from "../components/nginputs";
+import { NgSelectRenderer, LabelAndInput, NgForm } from "../components/nginputs";
 export class AtomicDesignPage extends Component {
-  state = {
+state = {
     pillButton: false,
     booleanInput: false,
   };
@@ -238,7 +238,7 @@ export class AtomicDesignPage extends Component {
         </div>
 
         <hr />
-        <p style={{ color: "var(--color-primary)" }}>Formulaires</p>
+        <p style={{ color: "var(--color-primary)" }}>Formulaires (old school)</p>
         TextInput (label, help, value)
         <TextInput
           label="My label"
@@ -287,6 +287,8 @@ export class AtomicDesignPage extends Component {
           ]}
           help="Here comes the help"
         />
+        <p style={{ color: "var(--color-primary)" }}>Formulaires (new way)</p>
+
       NgSelectRenderer
       <NgSelectRenderer
         id="rows-per-page"
@@ -296,21 +298,55 @@ export class AtomicDesignPage extends Component {
       />
       LabelAndInput
             <LabelAndInput label="My label" help="Here comes the help">
-            <span className="d-flex align-items-center" style={{ height: '100%', color: '#fff' }}>
-             haha
-            </span>
+            <NgForm
+                  schema={{
+                    header: {
+                      ngOptions: {
+                        spread: true,
+                      },
+                      type: 'json',
+                      props: {
+                        editorOnly: true,
+                        height: '50px',
+                        defaultValue: {
+                          Authorization: 'Bearer XXX.XXX.XXX',
+                        },
+                      },
+                    },
+                    result: {
+                      type: 'form',
+                      label: 'Form values',
+                      schema: {
+                        headerName: {
+                          type: 'string',
+                          label: 'Name',
+                          props: {
+                            disabled: true,
+                            defaultValue: 'Authorization',
+                          },
+                        },
+                        remove: {
+                          type: 'string',
+                          label: 'Remove value',
+                          props: {
+                            disabled: true,
+                            defaultValue: 'Bearer ',
+                          },
+                        },
+                      },
+                      flow: ['headerName', 'remove'],
+                    },
+                  }}
+                  flow={[
+                    {
+                      type: 'group',
+                      collapsable: false,
+                      name: 'A bearer token expected in Authorization header',
+                      fields: ['header', 'result'],
+                    },
+                  ]}
+                />
           </LabelAndInput>
-          LabelAndInput & FeedbackButton
-          <LabelAndInput label="My label">
-              <FeedbackButton
-                style={{
-                  backgroundColor: '#f9b000',
-                  borderColor: '#f9b000',
-                }}
-                icon={() => <i className="fas fa-paper-plane" />}
-                text="Fetch configuration"
-              />
-            </LabelAndInput>
   </div>
       
     );
