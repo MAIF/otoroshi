@@ -7,6 +7,7 @@ import { ObjectInput } from '../inputs';
 import isEqual from 'lodash/isEqual';
 import { Forms } from '../../forms';
 import { Button } from '../Button';
+import ReactTooltip from 'react-tooltip';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
@@ -253,14 +254,12 @@ export function LabelAndInput(_props) {
         }}>
         {label.replace(/_/g, ' ')}{' '}
         {_props.help && (
-          <i
+          <span>
+            <i 
             className="far fa-question-circle"
-            data-toggle="tooltip"
-            data-placement="top"
-            title={_props.help}
-            data-bs-original-title={_props.help}
-            aria-label={_props.help}
-          />
+            data-tip={_props.help} />
+            <ReactTooltip />
+          </span>
         )}
       </label>
       <div className={`col-sm-${12 - labelColumn}`}>{_props.children}</div>
