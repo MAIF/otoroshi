@@ -13718,7 +13718,7 @@
       "get" : {
         "tags" : [ "route-compositions" ],
         "summary" : "???",
-        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.form",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRouteCompositionsController.form",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13772,7 +13772,7 @@
       "post" : {
         "tags" : [ "route-compositions" ],
         "summary" : "???",
-        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.fromOpenapi",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRouteCompositionsController.fromOpenapi",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13838,7 +13838,7 @@
       "get" : {
         "tags" : [ "route-compositions" ],
         "summary" : "???",
-        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.initiateService",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRouteCompositionsController.initiateRouteComposition",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13891,8 +13891,8 @@
     "/api/route-compositions/_bulk" : {
       "post" : {
         "tags" : [ "route-compositions" ],
-        "summary" : "Create multiple NgServices at the same time",
-        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.bulkCreateAction",
+        "summary" : "Create multiple NgRouteCompositions at the same time",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRouteCompositionsController.bulkCreateAction",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13947,7 +13947,7 @@
               "schema" : {
                 "type" : "array",
                 "items" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRouteComposition"
                 }
               }
             }
@@ -13956,8 +13956,8 @@
       },
       "put" : {
         "tags" : [ "route-compositions" ],
-        "summary" : "Update multiple NgServices at the same time",
-        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.bulkUpdateAction",
+        "summary" : "Update multiple NgRouteCompositions at the same time",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRouteCompositionsController.bulkUpdateAction",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -14012,7 +14012,7 @@
               "schema" : {
                 "type" : "array",
                 "items" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRouteComposition"
                 }
               }
             }
@@ -14021,8 +14021,8 @@
       },
       "patch" : {
         "tags" : [ "route-compositions" ],
-        "summary" : "Update (using json-patch) multiple NgServices at the same time",
-        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.bulkPatchAction",
+        "summary" : "Update (using json-patch) multiple NgRouteCompositions at the same time",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRouteCompositionsController.bulkPatchAction",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -14083,8 +14083,8 @@
       },
       "delete" : {
         "tags" : [ "route-compositions" ],
-        "summary" : "Delete multiple NgServices at the same time",
-        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.bulkDeleteAction",
+        "summary" : "Delete multiple NgRouteCompositions at the same time",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRouteCompositionsController.bulkDeleteAction",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -14136,8 +14136,8 @@
     "/api/route-compositions/{id}" : {
       "get" : {
         "tags" : [ "route-compositions" ],
-        "summary" : "Find a specific NgService using its id",
-        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.findEntityByIdAction",
+        "summary" : "Find a specific NgRouteComposition using its id",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRouteCompositionsController.findEntityByIdAction",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -14186,7 +14186,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRouteComposition"
                 }
               }
             }
@@ -14195,8 +14195,8 @@
       },
       "delete" : {
         "tags" : [ "route-compositions" ],
-        "summary" : "Deletes a specific NgService using its id",
-        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.deleteEntityAction",
+        "summary" : "Deletes a specific NgRouteComposition using its id",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRouteCompositionsController.deleteEntityAction",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -14245,7 +14245,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRouteComposition"
                 }
               }
             }
@@ -14254,8 +14254,8 @@
       },
       "put" : {
         "tags" : [ "route-compositions" ],
-        "summary" : "Updates a specific NgService using its id",
-        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.updateEntityAction",
+        "summary" : "Updates a specific NgRouteComposition using its id",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRouteCompositionsController.updateEntityAction",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -14304,7 +14304,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRouteComposition"
                 }
               }
             }
@@ -14316,7 +14316,7 @@
           "content" : {
             "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                "$ref" : "#/components/schemas/otoroshi.next.models.NgRouteComposition"
               }
             }
           }
@@ -14324,8 +14324,8 @@
       },
       "patch" : {
         "tags" : [ "route-compositions" ],
-        "summary" : "Updates (using json-patch) a specific NgService using its id",
-        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.patchEntityAction",
+        "summary" : "Updates (using json-patch) a specific NgRouteComposition using its id",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRouteCompositionsController.patchEntityAction",
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -14374,7 +14374,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRouteComposition"
                 }
               }
             }
@@ -14386,7 +14386,7 @@
           "content" : {
             "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                "$ref" : "#/components/schemas/otoroshi.next.models.NgRouteComposition"
               }
             }
           }
@@ -14396,8 +14396,8 @@
     "/api/route-compositions" : {
       "get" : {
         "tags" : [ "route-compositions" ],
-        "summary" : "Find all possible NgServices entities",
-        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.findAllEntitiesAction",
+        "summary" : "Find all possible NgRouteCompositions entities",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRouteCompositionsController.findAllEntitiesAction",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -14440,7 +14440,7 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
-                    "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                    "$ref" : "#/components/schemas/otoroshi.next.models.NgRouteComposition"
                   }
                 }
               }
@@ -14450,8 +14450,8 @@
       },
       "post" : {
         "tags" : [ "route-compositions" ],
-        "summary" : "Creates a NgService",
-        "operationId" : "otoroshi.next.controllers.adminapi.NgServicesController.createAction",
+        "summary" : "Creates a NgRouteComposition",
+        "operationId" : "otoroshi.next.controllers.adminapi.NgRouteCompositionsController.createAction",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -14492,7 +14492,7 @@
             "content" : {
               "application/x-ndjson" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                  "$ref" : "#/components/schemas/otoroshi.next.models.NgRouteComposition"
                 }
               }
             }
@@ -14504,7 +14504,7 @@
           "content" : {
             "application/x-ndjson" : {
               "schema" : {
-                "$ref" : "#/components/schemas/otoroshi.next.models.NgService"
+                "$ref" : "#/components/schemas/otoroshi.next.models.NgRouteComposition"
               }
             }
           }
@@ -17133,6 +17133,76 @@
           "$ref" : "#/components/schemas/otoroshi.script.Script"
         }
       },
+      "otoroshi.next.models.NgRouteComposition" : {
+        "type" : "object",
+        "description" : "???",
+        "properties" : {
+          "capture" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "id" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "debug_flow" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "routes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.next.models.NgMinimalRoute"
+            },
+            "description" : "???"
+          },
+          "enabled" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "description" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "export_reporting" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "_loc" : {
+            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation",
+            "description" : "???"
+          },
+          "client" : {
+            "$ref" : "#/components/schemas/otoroshi.next.models.NgClientConfig",
+            "description" : "???"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          }
+        }
+      },
       "LetsEncryptCertBody" : {
         "type" : "object",
         "description" : "PEM encoded certificate"
@@ -19744,76 +19814,6 @@
       "HostMetrics" : {
         "type" : "object",
         "description" : "Host metrics"
-      },
-      "otoroshi.next.models.NgService" : {
-        "type" : "object",
-        "description" : "A composition of multiple routes with the same plugins",
-        "properties" : {
-          "metadata" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "description" : "The metadata of the service"
-          },
-          "client" : {
-            "$ref" : "#/components/schemas/otoroshi.next.models.NgClientConfig",
-            "description" : "The client config of the service"
-          },
-          "name" : {
-            "type" : "string",
-            "description" : "The name of the service"
-          },
-          "id" : {
-            "type" : "string",
-            "description" : "The id of the service"
-          },
-          "capture" : {
-            "type" : "boolean",
-            "description" : "Capture http traffic"
-          },
-          "description" : {
-            "type" : "string",
-            "description" : "The description of the service"
-          },
-          "routes" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/otoroshi.next.models.NgMinimalRoute"
-            },
-            "description" : "The routes of the service"
-          },
-          "debug_flow" : {
-            "type" : "boolean",
-            "description" : "Enable report debugging"
-          },
-          "export_reporting" : {
-            "type" : "boolean",
-            "description" : "Export the execution reporting through standard data exporter"
-          },
-          "_loc" : {
-            "$ref" : "#/components/schemas/otoroshi.models.EntityLocation",
-            "description" : "The location of the service"
-          },
-          "enabled" : {
-            "type" : "boolean",
-            "description" : "Is the service enabled"
-          },
-          "tags" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "The tags of the service"
-          },
-          "groups" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "The groups of the service"
-          }
-        }
       },
       "AlertEventList" : {
         "type" : "array",

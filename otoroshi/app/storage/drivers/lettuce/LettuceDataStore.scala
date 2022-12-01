@@ -1,45 +1,34 @@
 package otoroshi.storage.drivers.lettuce
 
-import java.util.concurrent.atomic.AtomicReference
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import otoroshi.auth.AuthConfigsDataStore
-import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
-import otoroshi.env.Env
-import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
-import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaConnection}
 import io.lettuce.core.resource.{ClientResources, DefaultClientResources}
 import io.lettuce.core.{AbstractRedisClient, ReadFrom, RedisClient, RedisURI}
+import otoroshi.auth.AuthConfigsDataStore
+import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
+import otoroshi.env.Env
+import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
+import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import otoroshi.models._
-import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
-import otoroshi.next.models.{
-  KvNgRouteDataStore,
-  KvNgServiceDataStore,
-  KvStoredNgBackendDataStore,
-  KvStoredNgTargetDataStore,
-  NgRouteDataStore,
-  NgServiceDataStore,
-  StoredNgBackendDataStore,
-  StoredNgTargetDataStore
-}
+import otoroshi.next.models._
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
+import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
 import otoroshi.storage._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
+import otoroshi.utils.syntax.implicits._
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
-import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import otoroshi.storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
-import otoroshi.utils.syntax.implicits._
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -227,8 +216,8 @@ class LettuceDataStores(
   private lazy val _routeDataStore              = new KvNgRouteDataStore(redis, env)
   override def routeDataStore: NgRouteDataStore = _routeDataStore
 
-  private lazy val _routesCompositionDataStore       = new KvNgServiceDataStore(redis, env)
-  override def servicesDataStore: NgServiceDataStore = _routesCompositionDataStore
+  private lazy val _routesCompositionDataStore       = new KvNgRouteCompositionDataStore(redis, env)
+  override def routeCompositionDataStore: NgRouteCompositionDataStore = _routesCompositionDataStore
 
   private lazy val _targetsDataStore                     = new KvStoredNgTargetDataStore(redis, env)
   override def targetsDataStore: StoredNgTargetDataStore = _targetsDataStore

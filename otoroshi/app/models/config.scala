@@ -1,33 +1,29 @@
 package otoroshi.models
 
 import akka.http.scaladsl.util.FastFuture
+import org.joda.time.DateTime
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
-import otoroshi.events.Exporters._
 import otoroshi.events._
-import org.joda.time.DateTime
-import otoroshi.events.KafkaConfig
-import otoroshi.next.models.{NgBackend, NgRoute, NgService, NgTarget, StoredNgBackend, StoredNgTarget}
+import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend, StoredNgTarget}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
 import otoroshi.script.plugins.Plugins
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.{Cert, ClientCertificateValidator}
 import otoroshi.storage.BasicStore
 import otoroshi.tcp.TcpService
 import otoroshi.utils.RegexPool
-import otoroshi.utils.letsencrypt.LetsEncryptSettings
 import otoroshi.utils.clevercloud.CleverCloudClient
-import play.api.Logger
-import play.api.libs.json._
-import play.api.libs.ws.WSProxyServer
-import otoroshi.security.IdGenerator
-import otoroshi.ssl.{Cert, ClientCertificateValidator}
 import otoroshi.utils.clevercloud.CleverCloudClient.{CleverSettings, UserTokens}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.letsencrypt.LetsEncryptSettings
 import otoroshi.utils.mailer.MailerSettings
-import otoroshi.utils._
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
+import play.api.libs.json._
+import play.api.libs.ws.WSProxyServer
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -902,33 +898,33 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
 }
 
 case class OtoroshiExport(
-    config: GlobalConfig,
-    descs: Seq[ServiceDescriptor] = Seq.empty,
-    apikeys: Seq[ApiKey] = Seq.empty,
-    groups: Seq[ServiceGroup] = Seq.empty,
-    tmplts: Seq[ErrorTemplate] = Seq.empty,
-    calls: Long = 0,
-    dataIn: Long = 0,
-    dataOut: Long = 0,
-    admins: Seq[WebAuthnOtoroshiAdmin] = Seq.empty,
-    simpleAdmins: Seq[SimpleOtoroshiAdmin] = Seq.empty,
-    jwtVerifiers: Seq[GlobalJwtVerifier] = Seq.empty,
-    authConfigs: Seq[AuthModuleConfig] = Seq.empty,
-    certificates: Seq[Cert] = Seq.empty,
-    clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
-    scripts: Seq[Script] = Seq.empty,
-    tcpServices: Seq[TcpService] = Seq.empty,
-    dataExporters: Seq[DataExporterConfig] = Seq.empty,
-    tenants: Seq[Tenant] = Seq.empty,
-    teams: Seq[Team] = Seq.empty,
-    routes: Seq[NgRoute] = Seq.empty,
-    services: Seq[NgService] = Seq.empty,
-    backends: Seq[StoredNgBackend] = Seq.empty,
-    targets: Seq[StoredNgTarget] = Seq.empty
+  config: GlobalConfig,
+  descs: Seq[ServiceDescriptor] = Seq.empty,
+  apikeys: Seq[ApiKey] = Seq.empty,
+  groups: Seq[ServiceGroup] = Seq.empty,
+  tmplts: Seq[ErrorTemplate] = Seq.empty,
+  calls: Long = 0,
+  dataIn: Long = 0,
+  dataOut: Long = 0,
+  admins: Seq[WebAuthnOtoroshiAdmin] = Seq.empty,
+  simpleAdmins: Seq[SimpleOtoroshiAdmin] = Seq.empty,
+  jwtVerifiers: Seq[GlobalJwtVerifier] = Seq.empty,
+  authConfigs: Seq[AuthModuleConfig] = Seq.empty,
+  certificates: Seq[Cert] = Seq.empty,
+  clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
+  scripts: Seq[Script] = Seq.empty,
+  tcpServices: Seq[TcpService] = Seq.empty,
+  dataExporters: Seq[DataExporterConfig] = Seq.empty,
+  tenants: Seq[Tenant] = Seq.empty,
+  teams: Seq[Team] = Seq.empty,
+  routes: Seq[NgRoute] = Seq.empty,
+  services: Seq[NgRouteComposition] = Seq.empty,
+  backends: Seq[StoredNgBackend] = Seq.empty,
+  targets: Seq[StoredNgTarget] = Seq.empty
 ) {
 
-  import otoroshi.utils.syntax.implicits._
   import otoroshi.utils.json.JsonImplicits._
+  import otoroshi.utils.syntax.implicits._
 
   private def customizeAndMergeArray[A](
       entities: Seq[A],

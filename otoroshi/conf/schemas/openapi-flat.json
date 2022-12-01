@@ -4465,6 +4465,452 @@
       }
     }
   },
+  "otoroshi.next.models.NgRouteComposition" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "capture" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "id" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "debug_flow" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "routes" : {
+        "type" : "array",
+        "items" : {
+          "properties" : {
+            "backend_ref" : {
+              "description" : "null type",
+              "type" : "string",
+              "nullable" : true
+            },
+            "frontend" : {
+              "description" : "The frontend of the route",
+              "properties" : {
+                "headers" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "description" : "the headers that will be matched"
+                },
+                "query" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "description" : "the query params that will be matched"
+                },
+                "domains" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "description" : "The domain and path that will be matched"
+                },
+                "methods" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "description" : "the http methods that will be matched"
+                },
+                "exact" : {
+                  "type" : "boolean",
+                  "description" : "Match on exact path ?"
+                },
+                "strip_path" : {
+                  "type" : "boolean",
+                  "description" : "Is path stripped from backend request"
+                }
+              },
+              "type" : "object"
+            },
+            "override_plugins" : {
+              "type" : "boolean",
+              "description" : "Override global plugin list from route composition"
+            },
+            "backend" : {
+              "description" : "The backend of the route",
+              "properties" : {
+                "root" : {
+                  "type" : "string",
+                  "description" : "The root path of the backend or the full rewrite path"
+                },
+                "targets" : {
+                  "type" : "array",
+                  "items" : {
+                    "properties" : {
+                      "ip_address" : {
+                        "description" : "null type",
+                        "type" : "string",
+                        "nullable" : true
+                      },
+                      "protocol" : {
+                        "type" : "string",
+                        "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0" ],
+                        "description" : "Protocol for the target"
+                      },
+                      "predicate" : {
+                        "description" : "Predicate to choose this target",
+                        "properties" : {
+                          "type" : {
+                            "type" : "string",
+                            "description" : "the kind of predicate",
+                            "enum" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
+                          },
+                          "dc" : {
+                            "type" : "string",
+                            "description" : "???"
+                          },
+                          "positions" : {
+                            "type" : "array",
+                            "items" : {
+                              "properties" : {
+                                "latitude" : {
+                                  "type" : "number",
+                                  "format" : "double",
+                                  "description" : "???"
+                                },
+                                "longitude" : {
+                                  "type" : "number",
+                                  "format" : "double",
+                                  "description" : "???"
+                                },
+                                "radius" : {
+                                  "type" : "number",
+                                  "format" : "double",
+                                  "description" : "???"
+                                }
+                              },
+                              "type" : "object"
+                            },
+                            "description" : "???"
+                          },
+                          "provider" : {
+                            "type" : "string",
+                            "description" : "???"
+                          },
+                          "dataCenter" : {
+                            "type" : "string",
+                            "description" : "???"
+                          },
+                          "rack" : {
+                            "type" : "string",
+                            "description" : "???"
+                          },
+                          "region" : {
+                            "type" : "string",
+                            "description" : "???"
+                          },
+                          "zone" : {
+                            "type" : "string",
+                            "description" : "???"
+                          }
+                        },
+                        "type" : "object"
+                      },
+                      "tls_config" : {
+                        "description" : "TLS settings to contact this target",
+                        "properties" : {
+                          "enabled" : {
+                            "type" : "boolean",
+                            "description" : "Enabled"
+                          },
+                          "certs" : {
+                            "type" : "array",
+                            "items" : {
+                              "type" : "string"
+                            },
+                            "description" : "Trusted cert. ids"
+                          },
+                          "loose" : {
+                            "type" : "boolean",
+                            "description" : "Loose verification"
+                          },
+                          "trust_all" : {
+                            "type" : "boolean",
+                            "description" : "Trust any certificate"
+                          },
+                          "trusted_certs" : {
+                            "type" : "array",
+                            "items" : {
+                              "type" : "string"
+                            },
+                            "description" : "Trusted cert. ids"
+                          }
+                        },
+                        "type" : "object"
+                      },
+                      "tls" : {
+                        "type" : "boolean",
+                        "description" : "Does the target uses TLS"
+                      },
+                      "port" : {
+                        "type" : "integer",
+                        "format" : "int32",
+                        "description" : "port of the target"
+                      },
+                      "id" : {
+                        "type" : "string",
+                        "description" : "id of the target"
+                      },
+                      "weight" : {
+                        "type" : "integer",
+                        "format" : "int32",
+                        "description" : "The weight of the target when choosing"
+                      },
+                      "hostname" : {
+                        "type" : "string",
+                        "description" : "hostname of the target"
+                      }
+                    },
+                    "type" : "object"
+                  },
+                  "description" : "The targets of the backend"
+                },
+                "load_balancing" : {
+                  "description" : "Loadbalancing config og the backend",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                    },
+                    "ratio" : {
+                      "type" : "number",
+                      "format" : "double"
+                    }
+                  },
+                  "type" : "object"
+                },
+                "target_refs" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "description" : "List of NgStoredBackend ids"
+                },
+                "rewrite" : {
+                  "type" : "boolean",
+                  "description" : "Does the backend performs a full url rewrite ?"
+                }
+              },
+              "type" : "object"
+            }
+          },
+          "type" : "object"
+        },
+        "description" : "???"
+      },
+      "enabled" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "description" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "metadata" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "export_reporting" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "tags" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "_loc" : {
+        "description" : "???",
+        "properties" : {
+          "tenant" : {
+            "description" : "Organization of the current entity",
+            "type" : "string"
+          },
+          "teams" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Teams of the current entity"
+          }
+        },
+        "type" : "object"
+      },
+      "client" : {
+        "description" : "???",
+        "properties" : {
+          "idle_timeout" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Timeout on idle connection"
+          },
+          "sample_interval" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted"
+          },
+          "cache_connection_settings" : {
+            "description" : "Cached connection settings",
+            "properties" : {
+              "queue_size" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "How much request can be queue before dropping it"
+              },
+              "enabled" : {
+                "type" : "boolean",
+                "description" : "Is cached connection enabled"
+              }
+            },
+            "type" : "object"
+          },
+          "call_and_stream_timeout" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)"
+          },
+          "custom_timeouts" : {
+            "type" : "array",
+            "items" : {
+              "properties" : {
+                "connection_timeout" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "Timeout at connection"
+                },
+                "call_and_stream_timeout" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)"
+                },
+                "path" : {
+                  "type" : "string",
+                  "description" : "path on which this configuration works"
+                },
+                "call_timeout" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)"
+                },
+                "idle_timeout" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "Timeout on idle connection"
+                },
+                "global_timeout" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "Specify how long the global call (with retries) should last at most in milliseconds"
+                }
+              },
+              "type" : "object"
+            },
+            "description" : "Custom timeouts per path"
+          },
+          "connection_timeout" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Timeout at connection"
+          },
+          "call_timeout" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)"
+          },
+          "global_timeout" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Specify how long the global call (with retries) should last at most in milliseconds"
+          },
+          "retry_initial_delay" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor"
+          },
+          "backoff_factor" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Specify the factor to multiply the delay for each retry"
+          },
+          "proxy" : {
+            "description" : "Web proxy settings for http client",
+            "type" : "object",
+            "properties" : {
+              "host" : {
+                "type" : "string",
+                "description" : "The hostname of the proxy server."
+              },
+              "port" : {
+                "type" : "string",
+                "description" : "The port of the proxy server."
+              },
+              "protocol" : {
+                "type" : "string",
+                "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+              },
+              "principal" : {
+                "type" : "string",
+                "description" : "The principal (aka username) of the credentials for the proxy server."
+              },
+              "password" : {
+                "type" : "string",
+                "description" : "The password for the credentials for the proxy server."
+              },
+              "ntlmDomain" : {
+                "type" : "string",
+                "description" : "The ntlm domain for the proxy server."
+              },
+              "encoding" : {
+                "type" : "string",
+                "description" : "The realm's charset."
+              },
+              "nonProxyHosts" : {
+                "type" : "string",
+                "description" : "The non proxied hosts"
+              }
+            }
+          },
+          "retries" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Specify how many times the client will try to fetch the result of the request after an error before giving up."
+          },
+          "max_errors" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Specify how many errors can pass before opening the circuit breaker"
+          }
+        },
+        "type" : "object"
+      },
+      "groups" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      }
+    }
+  },
   "LetsEncryptCertBody" : {
     "type" : "object",
     "description" : "PEM encoded certificate"
@@ -7538,6 +7984,23 @@
     },
     "type" : "object",
     "description" : "Settings for the mailgun mailer"
+  },
+  "otoroshi.next.models.KvNgRouteCompositionDataStore" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "_env" : {
+        "description" : "???",
+        "properties" : {
+          "circuitBeakersHolder" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      }
+    }
   },
   "otoroshi.models.FileSettings" : {
     "properties" : {
@@ -19620,179 +20083,21 @@
         },
         "description" : "???"
       },
-      "services" : {
+      "routeCompositions" : {
         "type" : "array",
         "items" : {
           "properties" : {
-            "metadata" : {
-              "type" : "object",
-              "additionalProperties" : {
-                "type" : "string"
-              },
-              "description" : "The metadata of the service"
-            },
-            "client" : {
-              "description" : "The client config of the service",
-              "properties" : {
-                "idle_timeout" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Timeout on idle connection"
-                },
-                "sample_interval" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted"
-                },
-                "cache_connection_settings" : {
-                  "description" : "Cached connection settings",
-                  "properties" : {
-                    "queue_size" : {
-                      "type" : "integer",
-                      "format" : "int32",
-                      "description" : "How much request can be queue before dropping it"
-                    },
-                    "enabled" : {
-                      "type" : "boolean",
-                      "description" : "Is cached connection enabled"
-                    }
-                  },
-                  "type" : "object"
-                },
-                "call_and_stream_timeout" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)"
-                },
-                "custom_timeouts" : {
-                  "type" : "array",
-                  "items" : {
-                    "properties" : {
-                      "connection_timeout" : {
-                        "type" : "integer",
-                        "format" : "int64",
-                        "description" : "Timeout at connection"
-                      },
-                      "call_and_stream_timeout" : {
-                        "type" : "integer",
-                        "format" : "int64",
-                        "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)"
-                      },
-                      "path" : {
-                        "type" : "string",
-                        "description" : "path on which this configuration works"
-                      },
-                      "call_timeout" : {
-                        "type" : "integer",
-                        "format" : "int64",
-                        "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)"
-                      },
-                      "idle_timeout" : {
-                        "type" : "integer",
-                        "format" : "int64",
-                        "description" : "Timeout on idle connection"
-                      },
-                      "global_timeout" : {
-                        "type" : "integer",
-                        "format" : "int64",
-                        "description" : "Specify how long the global call (with retries) should last at most in milliseconds"
-                      }
-                    },
-                    "type" : "object"
-                  },
-                  "description" : "Custom timeouts per path"
-                },
-                "connection_timeout" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Timeout at connection"
-                },
-                "call_timeout" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)"
-                },
-                "global_timeout" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Specify how long the global call (with retries) should last at most in milliseconds"
-                },
-                "retry_initial_delay" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor"
-                },
-                "backoff_factor" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Specify the factor to multiply the delay for each retry"
-                },
-                "proxy" : {
-                  "description" : "Web proxy settings for http client",
-                  "type" : "object",
-                  "properties" : {
-                    "host" : {
-                      "type" : "string",
-                      "description" : "The hostname of the proxy server."
-                    },
-                    "port" : {
-                      "type" : "string",
-                      "description" : "The port of the proxy server."
-                    },
-                    "protocol" : {
-                      "type" : "string",
-                      "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
-                    },
-                    "principal" : {
-                      "type" : "string",
-                      "description" : "The principal (aka username) of the credentials for the proxy server."
-                    },
-                    "password" : {
-                      "type" : "string",
-                      "description" : "The password for the credentials for the proxy server."
-                    },
-                    "ntlmDomain" : {
-                      "type" : "string",
-                      "description" : "The ntlm domain for the proxy server."
-                    },
-                    "encoding" : {
-                      "type" : "string",
-                      "description" : "The realm's charset."
-                    },
-                    "nonProxyHosts" : {
-                      "type" : "string",
-                      "description" : "The non proxied hosts"
-                    }
-                  }
-                },
-                "retries" : {
-                  "type" : "integer",
-                  "format" : "int32",
-                  "description" : "Specify how many times the client will try to fetch the result of the request after an error before giving up."
-                },
-                "max_errors" : {
-                  "type" : "integer",
-                  "format" : "int32",
-                  "description" : "Specify how many errors can pass before opening the circuit breaker"
-                }
-              },
-              "type" : "object"
-            },
-            "name" : {
-              "type" : "string",
-              "description" : "The name of the service"
+            "capture" : {
+              "type" : "boolean",
+              "description" : "???"
             },
             "id" : {
               "type" : "string",
-              "description" : "The id of the service"
+              "description" : "???"
             },
-            "capture" : {
+            "debug_flow" : {
               "type" : "boolean",
-              "description" : "Capture http traffic"
-            },
-            "description" : {
-              "type" : "string",
-              "description" : "The description of the service"
+              "description" : "???"
             },
             "routes" : {
               "type" : "array",
@@ -20019,18 +20324,40 @@
                 },
                 "type" : "object"
               },
-              "description" : "The routes of the service"
+              "description" : "???"
             },
-            "debug_flow" : {
+            "enabled" : {
               "type" : "boolean",
-              "description" : "Enable report debugging"
+              "description" : "???"
+            },
+            "description" : {
+              "type" : "string",
+              "description" : "???"
+            },
+            "metadata" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string"
+              },
+              "description" : "???"
             },
             "export_reporting" : {
               "type" : "boolean",
-              "description" : "Export the execution reporting through standard data exporter"
+              "description" : "???"
+            },
+            "tags" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              },
+              "description" : "???"
+            },
+            "name" : {
+              "type" : "string",
+              "description" : "???"
             },
             "_loc" : {
-              "description" : "The location of the service",
+              "description" : "???",
               "properties" : {
                 "tenant" : {
                   "description" : "Organization of the current entity",
@@ -20046,23 +20373,159 @@
               },
               "type" : "object"
             },
-            "enabled" : {
-              "type" : "boolean",
-              "description" : "Is the service enabled"
-            },
-            "tags" : {
-              "type" : "array",
-              "items" : {
-                "type" : "string"
+            "client" : {
+              "description" : "???",
+              "properties" : {
+                "idle_timeout" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "Timeout on idle connection"
+                },
+                "sample_interval" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted"
+                },
+                "cache_connection_settings" : {
+                  "description" : "Cached connection settings",
+                  "properties" : {
+                    "queue_size" : {
+                      "type" : "integer",
+                      "format" : "int32",
+                      "description" : "How much request can be queue before dropping it"
+                    },
+                    "enabled" : {
+                      "type" : "boolean",
+                      "description" : "Is cached connection enabled"
+                    }
+                  },
+                  "type" : "object"
+                },
+                "call_and_stream_timeout" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)"
+                },
+                "custom_timeouts" : {
+                  "type" : "array",
+                  "items" : {
+                    "properties" : {
+                      "connection_timeout" : {
+                        "type" : "integer",
+                        "format" : "int64",
+                        "description" : "Timeout at connection"
+                      },
+                      "call_and_stream_timeout" : {
+                        "type" : "integer",
+                        "format" : "int64",
+                        "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)"
+                      },
+                      "path" : {
+                        "type" : "string",
+                        "description" : "path on which this configuration works"
+                      },
+                      "call_timeout" : {
+                        "type" : "integer",
+                        "format" : "int64",
+                        "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)"
+                      },
+                      "idle_timeout" : {
+                        "type" : "integer",
+                        "format" : "int64",
+                        "description" : "Timeout on idle connection"
+                      },
+                      "global_timeout" : {
+                        "type" : "integer",
+                        "format" : "int64",
+                        "description" : "Specify how long the global call (with retries) should last at most in milliseconds"
+                      }
+                    },
+                    "type" : "object"
+                  },
+                  "description" : "Custom timeouts per path"
+                },
+                "connection_timeout" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "Timeout at connection"
+                },
+                "call_timeout" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)"
+                },
+                "global_timeout" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "Specify how long the global call (with retries) should last at most in milliseconds"
+                },
+                "retry_initial_delay" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor"
+                },
+                "backoff_factor" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "description" : "Specify the factor to multiply the delay for each retry"
+                },
+                "proxy" : {
+                  "description" : "Web proxy settings for http client",
+                  "type" : "object",
+                  "properties" : {
+                    "host" : {
+                      "type" : "string",
+                      "description" : "The hostname of the proxy server."
+                    },
+                    "port" : {
+                      "type" : "string",
+                      "description" : "The port of the proxy server."
+                    },
+                    "protocol" : {
+                      "type" : "string",
+                      "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+                    },
+                    "principal" : {
+                      "type" : "string",
+                      "description" : "The principal (aka username) of the credentials for the proxy server."
+                    },
+                    "password" : {
+                      "type" : "string",
+                      "description" : "The password for the credentials for the proxy server."
+                    },
+                    "ntlmDomain" : {
+                      "type" : "string",
+                      "description" : "The ntlm domain for the proxy server."
+                    },
+                    "encoding" : {
+                      "type" : "string",
+                      "description" : "The realm's charset."
+                    },
+                    "nonProxyHosts" : {
+                      "type" : "string",
+                      "description" : "The non proxied hosts"
+                    }
+                  }
+                },
+                "retries" : {
+                  "type" : "integer",
+                  "format" : "int32",
+                  "description" : "Specify how many times the client will try to fetch the result of the request after an error before giving up."
+                },
+                "max_errors" : {
+                  "type" : "integer",
+                  "format" : "int32",
+                  "description" : "Specify how many errors can pass before opening the circuit breaker"
+                }
               },
-              "description" : "The tags of the service"
+              "type" : "object"
             },
             "groups" : {
               "type" : "array",
               "items" : {
                 "type" : "string"
               },
-              "description" : "The groups of the service"
+              "description" : "???"
             }
           },
           "type" : "object"
@@ -32795,452 +33258,6 @@
     "type" : "object",
     "description" : "Host metrics"
   },
-  "otoroshi.next.models.NgService" : {
-    "type" : "object",
-    "description" : "A composition of multiple routes with the same plugins",
-    "properties" : {
-      "metadata" : {
-        "type" : "object",
-        "additionalProperties" : {
-          "type" : "string"
-        },
-        "description" : "The metadata of the service"
-      },
-      "client" : {
-        "description" : "The client config of the service",
-        "properties" : {
-          "idle_timeout" : {
-            "type" : "integer",
-            "format" : "int64",
-            "description" : "Timeout on idle connection"
-          },
-          "sample_interval" : {
-            "type" : "integer",
-            "format" : "int64",
-            "description" : "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted"
-          },
-          "cache_connection_settings" : {
-            "description" : "Cached connection settings",
-            "properties" : {
-              "queue_size" : {
-                "type" : "integer",
-                "format" : "int32",
-                "description" : "How much request can be queue before dropping it"
-              },
-              "enabled" : {
-                "type" : "boolean",
-                "description" : "Is cached connection enabled"
-              }
-            },
-            "type" : "object"
-          },
-          "call_and_stream_timeout" : {
-            "type" : "integer",
-            "format" : "int64",
-            "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)"
-          },
-          "custom_timeouts" : {
-            "type" : "array",
-            "items" : {
-              "properties" : {
-                "connection_timeout" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Timeout at connection"
-                },
-                "call_and_stream_timeout" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)"
-                },
-                "path" : {
-                  "type" : "string",
-                  "description" : "path on which this configuration works"
-                },
-                "call_timeout" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)"
-                },
-                "idle_timeout" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Timeout on idle connection"
-                },
-                "global_timeout" : {
-                  "type" : "integer",
-                  "format" : "int64",
-                  "description" : "Specify how long the global call (with retries) should last at most in milliseconds"
-                }
-              },
-              "type" : "object"
-            },
-            "description" : "Custom timeouts per path"
-          },
-          "connection_timeout" : {
-            "type" : "integer",
-            "format" : "int64",
-            "description" : "Timeout at connection"
-          },
-          "call_timeout" : {
-            "type" : "integer",
-            "format" : "int64",
-            "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)"
-          },
-          "global_timeout" : {
-            "type" : "integer",
-            "format" : "int64",
-            "description" : "Specify how long the global call (with retries) should last at most in milliseconds"
-          },
-          "retry_initial_delay" : {
-            "type" : "integer",
-            "format" : "int64",
-            "description" : "Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor"
-          },
-          "backoff_factor" : {
-            "type" : "integer",
-            "format" : "int64",
-            "description" : "Specify the factor to multiply the delay for each retry"
-          },
-          "proxy" : {
-            "description" : "Web proxy settings for http client",
-            "type" : "object",
-            "properties" : {
-              "host" : {
-                "type" : "string",
-                "description" : "The hostname of the proxy server."
-              },
-              "port" : {
-                "type" : "string",
-                "description" : "The port of the proxy server."
-              },
-              "protocol" : {
-                "type" : "string",
-                "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
-              },
-              "principal" : {
-                "type" : "string",
-                "description" : "The principal (aka username) of the credentials for the proxy server."
-              },
-              "password" : {
-                "type" : "string",
-                "description" : "The password for the credentials for the proxy server."
-              },
-              "ntlmDomain" : {
-                "type" : "string",
-                "description" : "The ntlm domain for the proxy server."
-              },
-              "encoding" : {
-                "type" : "string",
-                "description" : "The realm's charset."
-              },
-              "nonProxyHosts" : {
-                "type" : "string",
-                "description" : "The non proxied hosts"
-              }
-            }
-          },
-          "retries" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "Specify how many times the client will try to fetch the result of the request after an error before giving up."
-          },
-          "max_errors" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "Specify how many errors can pass before opening the circuit breaker"
-          }
-        },
-        "type" : "object"
-      },
-      "name" : {
-        "type" : "string",
-        "description" : "The name of the service"
-      },
-      "id" : {
-        "type" : "string",
-        "description" : "The id of the service"
-      },
-      "capture" : {
-        "type" : "boolean",
-        "description" : "Capture http traffic"
-      },
-      "description" : {
-        "type" : "string",
-        "description" : "The description of the service"
-      },
-      "routes" : {
-        "type" : "array",
-        "items" : {
-          "properties" : {
-            "backend_ref" : {
-              "description" : "null type",
-              "type" : "string",
-              "nullable" : true
-            },
-            "frontend" : {
-              "description" : "The frontend of the route",
-              "properties" : {
-                "headers" : {
-                  "type" : "object",
-                  "additionalProperties" : {
-                    "type" : "string"
-                  },
-                  "description" : "the headers that will be matched"
-                },
-                "query" : {
-                  "type" : "object",
-                  "additionalProperties" : {
-                    "type" : "string"
-                  },
-                  "description" : "the query params that will be matched"
-                },
-                "domains" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  },
-                  "description" : "The domain and path that will be matched"
-                },
-                "methods" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  },
-                  "description" : "the http methods that will be matched"
-                },
-                "exact" : {
-                  "type" : "boolean",
-                  "description" : "Match on exact path ?"
-                },
-                "strip_path" : {
-                  "type" : "boolean",
-                  "description" : "Is path stripped from backend request"
-                }
-              },
-              "type" : "object"
-            },
-            "override_plugins" : {
-              "type" : "boolean",
-              "description" : "Override global plugin list from route composition"
-            },
-            "backend" : {
-              "description" : "The backend of the route",
-              "properties" : {
-                "root" : {
-                  "type" : "string",
-                  "description" : "The root path of the backend or the full rewrite path"
-                },
-                "targets" : {
-                  "type" : "array",
-                  "items" : {
-                    "properties" : {
-                      "ip_address" : {
-                        "description" : "null type",
-                        "type" : "string",
-                        "nullable" : true
-                      },
-                      "protocol" : {
-                        "type" : "string",
-                        "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0" ],
-                        "description" : "Protocol for the target"
-                      },
-                      "predicate" : {
-                        "description" : "Predicate to choose this target",
-                        "properties" : {
-                          "type" : {
-                            "type" : "string",
-                            "description" : "the kind of predicate",
-                            "enum" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
-                          },
-                          "dc" : {
-                            "type" : "string",
-                            "description" : "???"
-                          },
-                          "positions" : {
-                            "type" : "array",
-                            "items" : {
-                              "properties" : {
-                                "latitude" : {
-                                  "type" : "number",
-                                  "format" : "double",
-                                  "description" : "???"
-                                },
-                                "longitude" : {
-                                  "type" : "number",
-                                  "format" : "double",
-                                  "description" : "???"
-                                },
-                                "radius" : {
-                                  "type" : "number",
-                                  "format" : "double",
-                                  "description" : "???"
-                                }
-                              },
-                              "type" : "object"
-                            },
-                            "description" : "???"
-                          },
-                          "provider" : {
-                            "type" : "string",
-                            "description" : "???"
-                          },
-                          "dataCenter" : {
-                            "type" : "string",
-                            "description" : "???"
-                          },
-                          "rack" : {
-                            "type" : "string",
-                            "description" : "???"
-                          },
-                          "region" : {
-                            "type" : "string",
-                            "description" : "???"
-                          },
-                          "zone" : {
-                            "type" : "string",
-                            "description" : "???"
-                          }
-                        },
-                        "type" : "object"
-                      },
-                      "tls_config" : {
-                        "description" : "TLS settings to contact this target",
-                        "properties" : {
-                          "enabled" : {
-                            "type" : "boolean",
-                            "description" : "Enabled"
-                          },
-                          "certs" : {
-                            "type" : "array",
-                            "items" : {
-                              "type" : "string"
-                            },
-                            "description" : "Trusted cert. ids"
-                          },
-                          "loose" : {
-                            "type" : "boolean",
-                            "description" : "Loose verification"
-                          },
-                          "trust_all" : {
-                            "type" : "boolean",
-                            "description" : "Trust any certificate"
-                          },
-                          "trusted_certs" : {
-                            "type" : "array",
-                            "items" : {
-                              "type" : "string"
-                            },
-                            "description" : "Trusted cert. ids"
-                          }
-                        },
-                        "type" : "object"
-                      },
-                      "tls" : {
-                        "type" : "boolean",
-                        "description" : "Does the target uses TLS"
-                      },
-                      "port" : {
-                        "type" : "integer",
-                        "format" : "int32",
-                        "description" : "port of the target"
-                      },
-                      "id" : {
-                        "type" : "string",
-                        "description" : "id of the target"
-                      },
-                      "weight" : {
-                        "type" : "integer",
-                        "format" : "int32",
-                        "description" : "The weight of the target when choosing"
-                      },
-                      "hostname" : {
-                        "type" : "string",
-                        "description" : "hostname of the target"
-                      }
-                    },
-                    "type" : "object"
-                  },
-                  "description" : "The targets of the backend"
-                },
-                "load_balancing" : {
-                  "description" : "Loadbalancing config og the backend",
-                  "properties" : {
-                    "type" : {
-                      "type" : "string",
-                      "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                    },
-                    "ratio" : {
-                      "type" : "number",
-                      "format" : "double"
-                    }
-                  },
-                  "type" : "object"
-                },
-                "target_refs" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  },
-                  "description" : "List of NgStoredBackend ids"
-                },
-                "rewrite" : {
-                  "type" : "boolean",
-                  "description" : "Does the backend performs a full url rewrite ?"
-                }
-              },
-              "type" : "object"
-            }
-          },
-          "type" : "object"
-        },
-        "description" : "The routes of the service"
-      },
-      "debug_flow" : {
-        "type" : "boolean",
-        "description" : "Enable report debugging"
-      },
-      "export_reporting" : {
-        "type" : "boolean",
-        "description" : "Export the execution reporting through standard data exporter"
-      },
-      "_loc" : {
-        "description" : "The location of the service",
-        "properties" : {
-          "tenant" : {
-            "description" : "Organization of the current entity",
-            "type" : "string"
-          },
-          "teams" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "Teams of the current entity"
-          }
-        },
-        "type" : "object"
-      },
-      "enabled" : {
-        "type" : "boolean",
-        "description" : "Is the service enabled"
-      },
-      "tags" : {
-        "type" : "array",
-        "items" : {
-          "type" : "string"
-        },
-        "description" : "The tags of the service"
-      },
-      "groups" : {
-        "type" : "array",
-        "items" : {
-          "type" : "string"
-        },
-        "description" : "The groups of the service"
-      }
-    }
-  },
   "AlertEventList" : {
     "type" : "array",
     "items" : {
@@ -41369,11 +41386,6 @@
       }
     }
   },
-  "otoroshi.next.models.NgServiceDataStore" : {
-    "type" : "object",
-    "description" : "???",
-    "properties" : { }
-  },
   "otoroshi.next.plugins.NgAuthModuleExpectedUserConfig" : {
     "type" : "object",
     "description" : "???",
@@ -49153,6 +49165,11 @@
         "description" : "???"
       }
     }
+  },
+  "otoroshi.next.models.NgRouteCompositionDataStore" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
   },
   "otoroshi.events.PulsarConfig" : {
     "properties" : {

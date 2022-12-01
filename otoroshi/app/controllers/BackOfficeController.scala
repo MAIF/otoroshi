@@ -20,9 +20,9 @@ import otoroshi.events._
 import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticTemplates, ElasticUtils, ElasticVersion}
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models.RightsChecker.SuperAdminOnly
-import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId, _}
-import otoroshi.next.models.{GraphQLFormats, NgRoute, NgService}
-import otoroshi.next.plugins.{EurekaServerSink, GraphQLBackend}
+import otoroshi.models._
+import otoroshi.next.models.{GraphQLFormats, NgRoute, NgRouteComposition}
+import otoroshi.next.plugins.EurekaServerSink
 import otoroshi.security._
 import otoroshi.ssl._
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
@@ -37,7 +37,6 @@ import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.SourceBody
 import play.api.mvc._
-import sangria.ast.ListValue
 
 import java.util.Base64
 import java.util.concurrent.TimeUnit
@@ -60,7 +59,7 @@ case class ServiceLike(entity: EntityLocationSupport, groups: Seq[String]) exten
 object ServiceLike {
   def fromService(service: ServiceDescriptor): ServiceLike  = ServiceLike(service, service.groups)
   def fromRoute(service: NgRoute): ServiceLike              = ServiceLike(service, service.groups)
-  def fromRouteComposition(service: NgService): ServiceLike = ServiceLike(service, service.groups)
+  def fromRouteComposition(service: NgRouteComposition): ServiceLike = ServiceLike(service, service.groups)
 }
 
 case class BackofficeFlags(
@@ -1661,7 +1660,7 @@ class BackOfficeController(
         env.datastores.routeDataStore.findById(serviceId) flatMap {
           case Some(service) => ServiceLike.fromRoute(service).some.vfuture
           case None          =>
-            env.datastores.servicesDataStore.findById(serviceId) map {
+            env.datastores.routeCompositionDataStore.findById(serviceId) map {
               case Some(service) => ServiceLike.fromRouteComposition(service).some
               case None          => None
             }

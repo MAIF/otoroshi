@@ -11,22 +11,19 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway.RequestsDataStore
 import otoroshi.models._
-import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
-import otoroshi.next.models.{NgRouteDataStore, NgServiceDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
+import otoroshi.next.models.{NgRouteCompositionDataStore, NgRouteDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
 import otoroshi.script.ScriptDataStore
+import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
+import otoroshi.storage.drivers.inmemory.{Memory, SwapStrategy, SwappableRedis}
 import otoroshi.storage.stores._
 import otoroshi.tcp.TcpServiceDataStore
+import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
-import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
-import otoroshi.storage.drivers.inmemory.{Memory, SwapStrategy, SwappableRedis}
-import otoroshi.storage.stores.{DataExporterConfigDataStore, TeamDataStore, TenantDataStore}
-import otoroshi.utils.cache.types.LegitTrieMap
-import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
@@ -69,7 +66,7 @@ trait DataStores {
   def teamDataStore: TeamDataStore
   def dataExporterConfigDataStore: DataExporterConfigDataStore
   def routeDataStore: NgRouteDataStore
-  def servicesDataStore: NgServiceDataStore
+  def routeCompositionDataStore: NgRouteCompositionDataStore
   def targetsDataStore: StoredNgTargetDataStore
   def backendsDataStore: StoredNgBackendDataStore
   ////

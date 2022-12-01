@@ -1,71 +1,51 @@
 package otoroshi.cluster
 
-import java.io.File
-import java.lang.management.ManagementFactory
-import java.net.InetAddress
-import java.security.MessageDigest
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
-import java.util.regex.Pattern
-import otoroshi.actions.ApiAction
-import akka.{Done, NotUsed}
+import akka.NotUsed
 import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Compression, Flow, Framing, Sink, Source}
 import akka.util.ByteString
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
 import com.github.blemale.scaffeine.Scaffeine
-import otoroshi.auth.AuthConfigsDataStore
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
+import org.apache.commons.codec.binary.Hex
+import org.joda.time.DateTime
+import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
-
-import javax.management.{Attribute, ObjectName}
-import otoroshi.models._
-import org.apache.commons.codec.binary.Hex
-import org.joda.time.DateTime
 import otoroshi.jobs.updates.Version
-import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}
-import otoroshi.next.models.{
-  KvNgRouteDataStore,
-  KvNgServiceDataStore,
-  KvStoredNgBackendDataStore,
-  KvStoredNgTargetDataStore,
-  NgRouteDataStore,
-  NgServiceDataStore,
-  StoredNgBackendDataStore,
-  StoredNgTargetDataStore
-}
+import otoroshi.models._
+import otoroshi.next.models._
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
+import otoroshi.security.IdGenerator
+import otoroshi.ssl._
 import otoroshi.storage._
 import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils
-import otoroshi.utils.{future, SchedulerHelper}
-import play.api.http.HttpEntity
-import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
-import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer}
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, RequestHeader, Result}
-import play.api.{Configuration, Environment, Logger}
-import redis.RedisClientMasterSlaves
-import otoroshi.security.IdGenerator
-import otoroshi.ssl._
-import otoroshi.storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
+import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.cache.types.{LegitConcurrentHashMap, LegitTrieMap}
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
+import play.api.inject.ApplicationLifecycle
+import play.api.libs.json._
+import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer}
+import play.api.mvc.RequestHeader
+import play.api.{Configuration, Environment, Logger}
+import redis.RedisClientMasterSlaves
 
+import java.io.File
+import java.lang.management.ManagementFactory
+import java.security.MessageDigest
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
+import javax.management.{Attribute, ObjectName}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.math.BigDecimal.RoundingMode
 import scala.util.control.NoStackTrace
@@ -1990,9 +1970,10 @@ class SwappableInMemoryDataStores(
     env: Env
 ) extends DataStores {
 
+  import akka.stream.Materializer
+
   import scala.concurrent.duration._
   import scala.util.hashing.MurmurHash3
-  import akka.stream.Materializer
 
   lazy val redisStatsItems: Int  = configuration.betterGet[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
   lazy val experimental: Boolean =
@@ -2197,8 +2178,8 @@ class SwappableInMemoryDataStores(
   private lazy val _routeDataStore              = new KvNgRouteDataStore(redis, env)
   override def routeDataStore: NgRouteDataStore = _routeDataStore
 
-  private lazy val _routesCompositionDataStore       = new KvNgServiceDataStore(redis, env)
-  override def servicesDataStore: NgServiceDataStore = _routesCompositionDataStore
+  private lazy val _routesCompositionDataStore       = new KvNgRouteCompositionDataStore(redis, env)
+  override def routeCompositionDataStore: NgRouteCompositionDataStore = _routesCompositionDataStore
 
   private lazy val _targetsDataStore                     = new KvStoredNgTargetDataStore(redis, env)
   override def targetsDataStore: StoredNgTargetDataStore = _targetsDataStore

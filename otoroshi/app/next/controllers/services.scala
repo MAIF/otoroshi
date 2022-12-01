@@ -15,10 +15,10 @@ import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
     extends AbstractController(cc)
-    with BulkControllerHelper[NgService, JsValue]
-    with CrudControllerHelper[NgService, JsValue] {
+    with BulkControllerHelper[NgRouteComposition, JsValue]
+    with CrudControllerHelper[NgRouteComposition, JsValue] {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
@@ -28,27 +28,27 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
   override def buildError(status: Int, message: String): ApiError[JsValue] =
     JsonApiError(status, play.api.libs.json.JsString(message))
 
-  override def extractId(entity: NgService): String = entity.id
+  override def extractId(entity: NgRouteComposition): String = entity.id
 
-  override def readEntity(json: JsValue): Either[String, NgService] =
-    NgService.fmt.reads(json).asEither match {
+  override def readEntity(json: JsValue): Either[String, NgRouteComposition] =
+    NgRouteComposition.fmt.reads(json).asEither match {
       case Left(e)  => Left(e.toString())
       case Right(r) => Right(r)
     }
 
-  override def writeEntity(entity: NgService): JsValue = NgService.fmt.writes(entity)
+  override def writeEntity(entity: NgRouteComposition): JsValue = NgRouteComposition.fmt.writes(entity)
 
   override def findByIdOps(
       id: String
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[NgService]]] = {
-    env.datastores.servicesDataStore.findById(id).map { opt =>
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[NgRouteComposition]]] = {
+    env.datastores.routeCompositionDataStore.findById(id).map { opt =>
       Right(
         OptionalEntityAndContext(
           entity = opt,
-          action = "ACCESS_NG_SERVICE",
-          message = "User accessed a service",
-          metadata = Json.obj("NgServiceId" -> id),
-          alert = "NgServiceAccessed"
+          action = "ACCESS_NG_ROUTE_COMPOSITION",
+          message = "User accessed a route-composition",
+          metadata = Json.obj("NgRouteCompositionId" -> id),
+          alert = "NgRouteCompositionAccessed"
         )
       )
     }
@@ -56,32 +56,32 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[NgService]]] = {
-    env.datastores.servicesDataStore.findAll().map { seq =>
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[NgRouteComposition]]] = {
+    env.datastores.routeCompositionDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
           entity = seq,
-          action = "ACCESS_ALL_NG_SERVICES",
-          message = "User accessed all services",
+          action = "ACCESS_ALL_NG_ROUTE_COMPOSITIONS",
+          message = "User accessed all route-compositions",
           metadata = Json.obj(),
-          alert = "NgServicesAccessed"
+          alert = "NgRouteCompositionsAccessed"
         )
       )
     }
   }
 
   override def createEntityOps(
-      entity: NgService
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgService]]] = {
-    env.datastores.servicesDataStore.set(entity).map {
+      entity: NgRouteComposition
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRouteComposition]]] = {
+    env.datastores.routeCompositionDataStore.set(entity).map {
       case true  => {
         Right(
           EntityAndContext(
             entity = entity,
-            action = "CREATE_NG_SERVICE",
-            message = "User created a service",
+            action = "CREATE_NG_ROUTE_COMPOSITION",
+            message = "User created a route-composition",
             metadata = entity.json.as[JsObject],
-            alert = "NgServiceCreatedAlert"
+            alert = "NgRouteCompoisitionCreatedAlert"
           )
         )
       }
@@ -89,7 +89,7 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
         Left(
           JsonApiError(
             500,
-            Json.obj("error" -> "service not stored ...")
+            Json.obj("error" -> "route-composition not stored ...")
           )
         )
       }
@@ -97,17 +97,17 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   override def updateEntityOps(
-      entity: NgService
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgService]]] = {
-    env.datastores.servicesDataStore.set(entity).map {
+      entity: NgRouteComposition
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRouteComposition]]] = {
+    env.datastores.routeCompositionDataStore.set(entity).map {
       case true  => {
         Right(
           EntityAndContext(
             entity = entity,
-            action = "UPDATE_NG_SERVICE",
-            message = "User updated a service",
+            action = "UPDATE_NG_ROUTE_COMPOSITION",
+            message = "User updated a route-composition",
             metadata = entity.json.as[JsObject],
-            alert = "NgServiceUpdatedAlert"
+            alert = "NgRouteCompositionUpdatedAlert"
           )
         )
       }
@@ -115,7 +115,7 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
         Left(
           JsonApiError(
             500,
-            Json.obj("error" -> "service not stored ...")
+            Json.obj("error" -> "route-composition not stored ...")
           )
         )
       }
@@ -124,15 +124,15 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
 
   override def deleteEntityOps(
       id: String
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[NgService]]] = {
-    env.datastores.servicesDataStore.delete(id).map {
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[NgRouteComposition]]] = {
+    env.datastores.routeCompositionDataStore.delete(id).map {
       case true  => {
         Right(
           NoEntityAndContext(
-            action = "DELETE_NG_SERVICE",
-            message = "User deleted a route",
-            metadata = Json.obj("NgServiceId" -> id),
-            alert = "NgServiceDeletedAlert"
+            action = "DELETE_NG_ROUTE_COMPOSITION",
+            message = "User deleted a route-composition",
+            metadata = Json.obj("NgRouteCompositionId" -> id),
+            alert = "NgRouteCompositionDeletedAlert"
           )
         )
       }
@@ -140,19 +140,19 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
         Left(
           JsonApiError(
             500,
-            Json.obj("error" -> "route not deleted ...")
+            Json.obj("error" -> "route-composition not deleted ...")
           )
         )
       }
     }
   }
 
-  def initiateService() = ApiAction {
-    val defaultService = NgService(
+  def initiateRouteComposition() = ApiAction {
+    val defaultService = NgRouteComposition(
       location = EntityLocation.default,
-      id = s"ng-service_${IdGenerator.uuid}",
-      name = "New service",
-      description = "A new service",
+      id = s"route-composition_${IdGenerator.uuid}",
+      name = "New route-composition",
+      description = "A new route-composition",
       tags = Seq.empty,
       metadata = Map.empty,
       enabled = true,
@@ -210,7 +210,7 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   def form() = ApiAction {
-    env.openApiSchema.asForms.get("otoroshi.next.models.NgService") match {
+    env.openApiSchema.asForms.get("otoroshi.next.models.NgRouteComposition") match {
       case Some(value) =>
         Ok(
           Json.obj(
@@ -225,7 +225,7 @@ class NgServicesController(val ApiAction: ApiAction, val cc: ControllerComponent
   def fromOpenapi() = ApiAction.async(parse.json) { ctx =>
     (ctx.request.body.select("domain").asOpt[String], ctx.request.body.select("openapi").asOpt[String]) match {
       case (Some(domain), Some(openapi)) =>
-        NgService
+        NgRouteComposition
           .fromOpenApi(domain, openapi)
           .map(service => Ok(service.json))
       case _                             => BadRequest(Json.obj("error" -> "missing domain and/or openapi value")).vfuture

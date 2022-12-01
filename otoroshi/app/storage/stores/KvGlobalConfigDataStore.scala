@@ -4,7 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthModuleConfig, GenericOauth2ModuleConfig, SessionCookieValues}
 import otoroshi.env.Env
 import otoroshi.models._
-import otoroshi.next.models.{NgRoute, NgService, StoredNgBackend, StoredNgTarget}
+import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend, StoredNgTarget}
 import otoroshi.script.Script
 import otoroshi.security.Auth0Config
 import otoroshi.ssl.{Cert, ClientCertificateValidator}
@@ -291,7 +291,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- Future.sequence(tenants.value.map(Tenant.fromJsons).map(_.save()))
       _ <- Future.sequence(teams.value.map(Team.fromJsons).map(_.save()))
       _ <- Future.sequence(routes.value.map(NgRoute.fromJsons).map(_.save()))
-      _ <- Future.sequence(services.value.map(NgService.fromJsons).map(_.save()))
+      _ <- Future.sequence(services.value.map(NgRouteComposition.fromJsons).map(_.save()))
       _ <- Future.sequence(backends.value.map(StoredNgBackend.fromJsons).map(_.save()))
       _ <- Future.sequence(targets.value.map(StoredNgTarget.fromJsons).map(_.save()))
     } yield ()
@@ -328,7 +328,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       tenants          <- env.datastores.tenantDataStore.findAll()
       teams            <- env.datastores.teamDataStore.findAll()
       routes           <- env.datastores.routeDataStore.findAll()
-      services         <- env.datastores.servicesDataStore.findAll()
+      services         <- env.datastores.routeCompositionDataStore.findAll()
       backends         <- env.datastores.backendsDataStore.findAll()
       targets          <- env.datastores.targetsDataStore.findAll()
     } yield OtoroshiExport(

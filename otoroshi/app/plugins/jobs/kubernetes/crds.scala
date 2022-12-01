@@ -1,37 +1,33 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import java.util.Base64
-import java.util.concurrent.{Executors, TimeUnit}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-import akka.util.ByteString
 import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.{Sink, Source}
-import otoroshi.auth.AuthModuleConfig
-import otoroshi.cluster.ClusterMode
-import otoroshi.env.Env
 import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
 import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
-import otoroshi.models._
 import org.joda.time.DateTime
-import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant}
-import otoroshi.next.models.{NgBackend, NgRoute, NgService, NgTarget, StoredNgBackend, StoredNgTarget}
+import otoroshi.auth.AuthModuleConfig
+import otoroshi.cluster.ClusterMode
+import otoroshi.env.Env
+import otoroshi.models._
+import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend, StoredNgTarget}
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
+import otoroshi.security.IdGenerator
 import otoroshi.ssl.pki.models.GenCsrQuery
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.tcp.TcpService
-import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.http.DN
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.{Result, Results}
-import otoroshi.security.IdGenerator
-import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -901,12 +897,12 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     customizeIdAndName(spec, res)
   }
 
-  private[kubernetes] def customizeService(
+  private[kubernetes] def customizeRouteComposition(
       _spec: JsValue,
       res: KubernetesOtoroshiResource,
-      entities: Seq[NgService]
+      entities: Seq[NgRouteComposition]
   ): JsValue = {
-    val spec = findAndMerge[NgService](_spec, res, "service", None, entities, _.metadata, _.id, _.json)
+    val spec = findAndMerge[NgRouteComposition](_spec, res, "route-composition", None, entities, _.metadata, _.id, _.json)
     customizeIdAndName(spec, res)
   }
 
@@ -989,8 +985,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     client.fetchOtoroshiResources[Team]("teams", Team.format, (a, b) => customizeTeam(a, b, teams))
   def crdsFetchRoutes(routes: Seq[NgRoute]): Future[Seq[OtoResHolder[NgRoute]]]                                 =
     client.fetchOtoroshiResources[NgRoute]("routes", NgRoute.fmt, (a, b) => customizeRoute(a, b, routes))
-  def crdsFetchServices(services: Seq[NgService]): Future[Seq[OtoResHolder[NgService]]]                         =
-    client.fetchOtoroshiResources[NgService]("services", NgService.fmt, (a, b) => customizeService(a, b, services))
+  def crdsFetchRouteCompositions(compositions: Seq[NgRouteComposition]): Future[Seq[OtoResHolder[NgRouteComposition]]]                         =
+    client.fetchOtoroshiResources[NgRouteComposition]("route-compositions", NgRouteComposition.fmt, (a, b) => customizeRouteComposition(a, b, compositions))
   def crdsFetchBackends(backends: Seq[StoredNgBackend]): Future[Seq[OtoResHolder[StoredNgBackend]]]             =
     client.fetchOtoroshiResources[StoredNgBackend](
       "backends",
@@ -1102,7 +1098,7 @@ case class KubernetesResourcesContext(
     teams: Seq[OtoResHolder[Team]],
     dataExporters: Seq[OtoResHolder[DataExporterConfig]],
     routes: Seq[OtoResHolder[NgRoute]],
-    services: Seq[OtoResHolder[NgService]],
+    routesCompositions: Seq[OtoResHolder[NgRouteComposition]],
     backends: Seq[OtoResHolder[StoredNgBackend]],
     targets: Seq[OtoResHolder[StoredNgTarget]]
 )
@@ -1122,7 +1118,7 @@ case class OtoroshiResourcesContext(
     teams: Seq[Team],
     dataExporters: Seq[DataExporterConfig],
     routes: Seq[NgRoute],
-    services: Seq[NgService],
+    routeCompositions: Seq[NgRouteComposition],
     backends: Seq[StoredNgBackend],
     targets: Seq[StoredNgTarget]
 )
@@ -1201,8 +1197,8 @@ object KubernetesCRDsJob {
       ototeams              <- if (useProxyState) env.proxyState.allTeams().vfuture else env.datastores.teamDataStore.findAll()
       ototenants            <- if (useProxyState) env.proxyState.allTenants().vfuture else env.datastores.tenantDataStore.findAll()
       otoroutes             <- if (useProxyState) env.proxyState.allRoutes().vfuture else env.datastores.routeDataStore.findAll()
-      otoservices           <-
-        if (useProxyState) env.proxyState.allNgServices().vfuture else env.datastores.servicesDataStore.findAll()
+      otoroutecomps           <-
+        if (useProxyState) env.proxyState.allNgServices().vfuture else env.datastores.routeCompositionDataStore.findAll()
       otobackends           <-
         if (useProxyState) env.proxyState.allBackends().vfuture else env.datastores.backendsDataStore.findAll()
       ototargets            <-
@@ -1225,7 +1221,7 @@ object KubernetesCRDsJob {
       teams              <- clientSupport.crdsFetchTeams(ototeams)
       tenants            <- clientSupport.crdsFetchTenants(ototenants)
       routes             <- clientSupport.crdsFetchRoutes(otoroutes)
-      services           <- clientSupport.crdsFetchServices(otoservices)
+      routecomps         <- clientSupport.crdsFetchRouteCompositions(otoroutecomps)
       backends           <- clientSupport.crdsFetchBackends(otobackends)
       targets            <- clientSupport.crdsFetchTargets(ototargets)
 
@@ -1246,7 +1242,7 @@ object KubernetesCRDsJob {
           teams = teams,
           tenants = tenants,
           routes = routes,
-          services = services,
+          routesCompositions = routecomps,
           backends = backends,
           targets = targets
         ),
@@ -1265,7 +1261,7 @@ object KubernetesCRDsJob {
           teams = ototeams,
           tenants = ototenants,
           routes = otoroutes,
-          services = otoservices,
+          routeCompositions = otoroutecomps,
           backends = otobackends,
           targets = ototargets
         )
@@ -1308,7 +1304,7 @@ object KubernetesCRDsJob {
           compareAndSave(ctx.kubernetes.serviceDescriptors)(ctx.otoroshi.serviceDescriptors, _.id, _.save()) ++
           compareAndSave(ctx.kubernetes.apiKeys)(ctx.otoroshi.apiKeys, _.clientId, _.save()) ++
           compareAndSave(ctx.kubernetes.routes)(ctx.otoroshi.routes, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.services)(ctx.otoroshi.services, _.id, _.save()) ++
+          compareAndSave(ctx.kubernetes.routesCompositions)(ctx.otoroshi.routeCompositions, _.id, _.save()) ++
           compareAndSave(ctx.kubernetes.backends)(ctx.otoroshi.backends, _.id, _.save()) ++
           compareAndSave(ctx.kubernetes.targets)(ctx.otoroshi.targets, _.id, _.save())
       ).toList
@@ -1443,12 +1439,12 @@ object KubernetesCRDsJob {
           .applyOn(env.datastores.routeDataStore.deleteByIds)
 
       _ <-
-        ctx.otoroshi.services
+        ctx.otoroshi.routeCompositions
           .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-          .filterNot(sg => ctx.kubernetes.services.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+          .filterNot(sg => ctx.kubernetes.routesCompositions.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
           .map(_.id)
-          .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-services entities"))
-          .applyOn(env.datastores.servicesDataStore.deleteByIds)
+          .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-route-compositions entities"))
+          .applyOn(env.datastores.routeCompositionDataStore.deleteByIds)
 
       _ <-
         ctx.otoroshi.backends
