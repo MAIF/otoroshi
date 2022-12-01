@@ -52,7 +52,7 @@ export function DefaultSidebar(props) {
       </>}
       <>
         <li className="nav-item">
-          <h3 className="">
+          <h3 className="mt-3">
             <i className="fas fa-road" /> Routes
           </h3>
         </li>
@@ -76,7 +76,7 @@ export function DefaultSidebar(props) {
     </>
     <>
         <li className="nav-item">
-          <h3 className="">
+          <h3 className="mt-3">
             <i className="fas fa-microchip" /> Backends
           </h3>
         </li>
