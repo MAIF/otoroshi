@@ -10,9 +10,13 @@ export default {
         path: {
           label: 'path',
           type: 'string',
+          props: {
+            subTitle: "Example: $.apikey.metadata.foo"
+          }
         },
         value: {
           type: 'code',
+          help: 'Example: Contains(bar)',
           props: {
             label: 'Value',
             type: 'json',
