@@ -258,7 +258,7 @@ export function LabelAndInput(_props) {
         {label.replace(/_/g, ' ')}{' '}
         {help && <Help text={help} />}
       </label>
-      <div className={`col-sm-${12-labelColumn}`}>{_props.children}</div>
+      <div className={`col-sm-${12 - labelColumn}`}>{_props.children}</div>
     </div>
   );
 }
@@ -538,42 +538,44 @@ export class NgBoxBooleanRenderer extends Component {
     const description =
       this.props.description || props.description || this.props.rawSchema?.description || '...';
 
-    return (
-      <div
-        className="d-flex"
-        style={{
-          outline: 'rgb(65, 65, 62) solid 1px',
-          padding: '5px',
-          margin: '5px 0px',
-          width: '100%',
-          borderRadius: '4px',
-        }}>
-        <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
-          <div
-            style={{
-              color: 'rgb(249, 176, 0)',
-              fontWeight: 'bold',
-              marginLeft: '5px',
-              marginTop: '7px',
-              marginBottom: '10px',
-            }}>
-            {label}
-          </div>
-          <div className="me-1" style={{ marginLeft: '5px', marginBottom: '10px' }}>
-            <p>{description}</p>
-            {readOnly ? (
-              <ReadOnlyField value={value ? 'true' : 'false'} />
-            ) : (
-              <div className="d-flex align-items-center">
-                {value && <OnSwitch onChange={this.toggleOff} style={{ margin: 0 }} />}
-                {!value && <OffSwitch onChange={this.toggleOn} style={{ margin: 0 }} />}
-                <p className="m-0 ms-2">{value ? 'On' : 'Off'}</p>
-              </div>
-            )}
+    return <div className="row mb-3">
+      <div className="col-sm-10 ms-auto">
+        <div
+          className="d-flex"
+          style={{
+            outline: 'rgb(65, 65, 62) solid 1px',
+            padding: '5px',
+            margin: '5px 0px',
+            width: '100%',
+            borderRadius: '4px',
+          }}>
+          <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
+            <div
+              style={{
+                color: 'rgb(249, 176, 0)',
+                fontWeight: 'bold',
+                marginLeft: '5px',
+                marginTop: '7px',
+                marginBottom: '10px',
+              }}>
+              {label}
+            </div>
+            <div className="me-1" style={{ marginLeft: '5px', marginBottom: '10px' }}>
+              <p>{description}</p>
+              {readOnly ? (
+                <ReadOnlyField value={value ? 'true' : 'false'} />
+              ) : (
+                <div className="d-flex align-items-center">
+                  {value && <OnSwitch onChange={this.toggleOff} style={{ margin: 0 }} />}
+                  {!value && <OffSwitch onChange={this.toggleOn} style={{ margin: 0 }} />}
+                  <p className="m-0 ms-2">{value ? 'On' : 'Off'}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    );
+    </div>
   }
 }
 
@@ -775,7 +777,13 @@ export class NgObjectRenderer extends Component {
             placeholderKey={props.placeholderKey}
             placeholderValue={props.placeholderValue}
             value={this.props.value}
-            onChange={this.props.onChange}
+            onChange={e => {
+              if (Object.keys(e || {}).length === 0) {
+                this.props.onChange(null)
+              } else {
+                this.props.onChange(e)
+              }
+            }}
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
