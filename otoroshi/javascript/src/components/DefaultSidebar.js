@@ -29,7 +29,7 @@ export function DefaultSidebar(props) {
             All services
           </Link>
         </li>
-        {props.lines.map((line) => (
+        {/*props.lines.map((line) => (
           <li className="nav-item" key={line}>
             <Link
               to={`/services?env=${line}`}
@@ -39,7 +39,7 @@ export function DefaultSidebar(props) {
               For line {line}
             </Link>
           </li>
-        ))}
+        ))*/}
         <li className="nav-item">
           <Link
             to="#"
