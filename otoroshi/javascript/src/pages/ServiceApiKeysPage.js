@@ -370,10 +370,16 @@ const ApiKeysConstants = {
         help: 'The groups/services linked to this api key',
         valuesFrom: '/bo/api/groups-and-services',
         optionRenderer: (p) => {
+          const colors = {
+            service: 'bg-success',
+            route: 'bg-info',
+            'route-composition': 'bg-secondary',
+            group: 'bg-warning',
+          }
           return (
             <div style={{ display: 'flex' }}>
               <div style={{ width: 60 }}>
-                <span className={`badge ${p.kind === 'group' ? 'bg-warning' : 'bg-success'}`}>
+                <span className={`badge ${colors[p.kind] || 'bd-dark'}`}>
                   {p.kind}
                 </span>
               </div>

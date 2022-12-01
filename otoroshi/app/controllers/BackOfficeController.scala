@@ -1640,16 +1640,17 @@ class BackOfficeController(
 
   def fetchGroupsAndServices() =
     BackOfficeActionAuth.async { ctx =>
-      env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-        env.datastores.serviceGroupDataStore.findAll().map { groups =>
-          val jsonGroups   = groups
-            .filter(ctx.canUserRead)
-            .map(g => Json.obj("label" -> g.name, "value" -> s"group_${g.id}", "kind" -> "group"))
-          val jsonServices = services
-            .filter(ctx.canUserRead)
-            .map(s => Json.obj("label" -> s.name, "value" -> s"service_${s.id}", "kind" -> "service"))
-          Ok(JsArray(jsonGroups ++ jsonServices))
-        }
+      for {
+        rgroups <- env.proxyState.allServiceGroups().vfuture
+        rservices <- env.proxyState.allServices().vfuture
+        rroutes <- env.proxyState.allRoutes().vfuture
+        rrouteCompositions <- env.proxyState.allNgServices().vfuture
+      } yield {
+        val groups = rgroups.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"group_${g.id}", "kind" -> "group"))
+        val services = rservices.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"service_${g.id}", "kind" -> "service"))
+        val routes = rroutes.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"service_${g.id}", "kind" -> "route"))
+        val routeCompositions = rrouteCompositions.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"service_${g.id}", "kind" -> "route-composition"))
+        Ok(JsArray(groups ++ services ++ routes ++ routeCompositions))
       }
     }
 
