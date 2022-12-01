@@ -20,7 +20,7 @@ Yes, that command is all it took to start it up.
 Create a new route, exposed on `http://myapi.oto.tools:8080`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
 
 ```sh
-curl -X POST http://otoroshi-api.oto.tools:8080/api/experimental/routes \
+curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'
@@ -170,7 +170,7 @@ EOF
 Then create a service secure by the previous authentication module, which proxies `google.fr` on `webapp.oto.tools`.
 
 ```sh
-curl -X POST 'http://otoroshi-api.oto.tools:8080/api/experimental/routes' \
+curl -X POST 'http://otoroshi-api.oto.tools:8080/api/routes' \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'

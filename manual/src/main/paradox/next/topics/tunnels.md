@@ -1,6 +1,6 @@
 # Otoroshi tunnels
 
-@@include[experimental.md](../../includes//experimental.md) { .experimental-feature }
+@@include[experimental.md](../../includes/experimental.md) { .experimental-feature }
 
 Sometimes, exposing apis that lives in our private network can be a nightmare, especially from a networking point of view. 
 With otoroshi tunnels, this is now trivial, as long as your internal otoroshi (that lives inside your private network) is able to contact an external otoroshi (exposed on the internet).

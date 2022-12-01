@@ -36,7 +36,7 @@ EOF
 
 
 # Create a proxy of the mirror.otoroshi.io on http://api.oto.tools:8080
-curl -X POST http://otoroshi-api.oto.tools:8080/api/experimental/routes \
+curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -H 'Content-Type: application/json; charset=utf-8' \
 -d @- <<'EOF'

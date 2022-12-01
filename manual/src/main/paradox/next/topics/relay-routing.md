@@ -1,6 +1,6 @@
 # Relay Routing
 
-@@include[experimental.md](../../includes//experimental.md) { .experimental-feature }
+@@include[experimental.md](../../includes/experimental.md) { .experimental-feature }
 
 Relay routing is the capability to forward traffic between otoroshi leader nodes based on network location of the target. Let say we have an otoroshi cluster split accross 3 network zones. Each zone has 
 

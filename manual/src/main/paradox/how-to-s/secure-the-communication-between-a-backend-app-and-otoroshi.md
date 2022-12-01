@@ -5,7 +5,7 @@
 Let's create a new route with the Otorochi challenge plugin enabled.
 
 ```sh
-curl -X POST http://otoroshi-api.oto.tools:8080/api/experimental/routes \
+curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'

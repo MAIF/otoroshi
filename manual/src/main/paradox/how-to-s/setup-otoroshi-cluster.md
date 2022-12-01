@@ -79,7 +79,7 @@ The last step is to create a route, add a rule to add, in the headers, a specifi
 Create this route, exposed on `http://api.oto.tools:xxxx`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
 
 ```sh
-curl -X POST 'http://otoroshi-api.oto.tools:8091/api/experimental/routes' \
+curl -X POST 'http://otoroshi-api.oto.tools:8091/api/routes' \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'
