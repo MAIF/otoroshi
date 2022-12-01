@@ -564,11 +564,17 @@ const ApiKeysConstants = {
         <button
           type="button"
           className="btn btn-sm btn-success"
-          onClick={(e) =>
-            (window.location = `/bo/dashboard/lines/prod/services/${
-              that.state.service ? that.state.service.id : '-'
-            }/apikeys/edit/${item.clientId}/stats`)
-          }>
+          onClick={(e) => {
+            if (e && e.preventDefault) {
+              e.preventDefault()
+              e.stopPropagation()
+            }
+            if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
+              window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`
+            } else {
+              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'}/apikeys/edit/${item.clientId}/stats`
+            }
+          }}>
           <i className="fas fa-chart-bar" />
         </button>
       ),
