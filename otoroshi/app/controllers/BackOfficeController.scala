@@ -1647,8 +1647,8 @@ class BackOfficeController(
       } yield {
         val groups = rgroups.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"group_${g.id}", "kind" -> "group"))
         val services = rservices.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"service_${g.id}", "kind" -> "service"))
-        val routes = rroutes.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"service_${g.id}", "kind" -> "route"))
-        val routeCompositions = rrouteCompositions.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"service_${g.id}", "kind" -> "route-composition"))
+        val routes = rroutes.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"route_${g.id}", "kind" -> "route"))
+        val routeCompositions = rrouteCompositions.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"route-composition_${g.id}", "kind" -> "route-composition"))
         Ok(JsArray(groups ++ services ++ routes ++ routeCompositions))
       }
     }

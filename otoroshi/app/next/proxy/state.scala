@@ -109,6 +109,7 @@ class NgProxyState(env: Env) {
   def errorTemplate(id: String): Option[ErrorTemplate]              = errorTemplates.get(id)
   def target(id: String): Option[NgTarget]                          = targets.get(id)
   def route(id: String): Option[NgRoute]                            = routes.get(id)
+  def routeComposition(id: String): Option[NgRouteComposition]      = ngroutecompositions.get(id)
   def apikey(id: String): Option[ApiKey]                            = apikeys.get(id)
   def jwtVerifier(id: String): Option[GlobalJwtVerifier]            = jwtVerifiers.get(id)
   def certificate(id: String): Option[Cert]                         = certificates.get(id)
