@@ -1,6 +1,6 @@
-# HTTP3
+# HTTP3 support
 
-@@include[experimental.md](../../includes/experimental.md) { .experimental-feature }
+@@include[experimental.md](../includes/experimental.md) { .experimental-feature }
 
 HTTP3 server and client previews are available in otoroshi since version 1.5.14
 

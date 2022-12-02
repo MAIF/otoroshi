@@ -22,6 +22,15 @@ Any entity has the following properties
 @@@
 
 @@@div { .plugin .entities }
+<img src="../imgs/entities-certificates.png">
+<div>
+<span>Backends</span>
+<span>Reuse route targets</span>
+</div>
+@ref:[View](./backends.md)
+@@@
+
+@@@div { .plugin .entities }
 <img src="../imgs/entities-keys.png">
 <div>
 <span>Apikeys</span>
@@ -124,6 +133,7 @@ Any entity has the following properties
 @@@ index
 
 * [Routes](./routes.md)
+* [Backends](./backends.md)
 * [Organizations](./organizations.md)
 * [Teams](./teams.md)
 * [Global Config](./global-config.md)

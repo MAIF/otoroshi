@@ -106,7 +106,7 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
 
     "find route fast" in {
       import otoroshi.utils.syntax.implicits._
-      NgService
+      NgRouteComposition
         .fromOpenApi(
           "api.oto.tools",
           "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"

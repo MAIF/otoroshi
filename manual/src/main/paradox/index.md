@@ -46,7 +46,6 @@ now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blan
 * @ref:[Admin REST API](./api.md)
 * @ref:[Deploy to production](./deploy/index.md)
 * @ref:[Developing Otoroshi](./dev.md)
-* @ref:[Otoroshi next](./next/index.md)
 
 ## Discussion
 
@@ -86,7 +85,6 @@ Otoroshi is Open Source and available under the @link:[Apache 2 License](https:/
 * [Admin REST API](./api.md)
 * [Deploy to production](./deploy/index.md)
 * [Developing Otoroshi](./dev.md)
-* [Otoroshi next](./next/index.md)
 
 @@@
 

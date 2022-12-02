@@ -1,6 +1,6 @@
 # Relay Routing
 
-@@include[experimental.md](../../includes/experimental.md) { .experimental-feature }
+@@include[experimental.md](../includes/experimental.md) { .experimental-feature }
 
 Relay routing is the capability to forward traffic between otoroshi leader nodes based on network location of the target. Let say we have an otoroshi cluster split accross 3 network zones. Each zone has 
 
@@ -23,7 +23,7 @@ this feature may introduce additional latency as the call passes through relay n
 
 ## Otoroshi instance setup
 
-first of all, for every otoroshi instance deployed, you have to flag where the instance is deployed and, for leaders, how this instance can be contacted from other zones (this is a **MAJOR** requirement, without that, you won't be able to make relay routing work). Also, you'll have to enable the @ref:[new proxy engine](../engine.md).
+first of all, for every otoroshi instance deployed, you have to flag where the instance is deployed and, for leaders, how this instance can be contacted from other zones (this is a **MAJOR** requirement, without that, you won't be able to make relay routing work). Also, you'll have to enable the @ref:[new proxy engine](./engine.md).
 
 In the otoroshi configuration file, for each instance, enable relay routing and configure where the instance is located and how the leader can be contacted
 

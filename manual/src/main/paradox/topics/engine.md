@@ -1,6 +1,4 @@
-# New proxy engine
-
-@@include[experimental.md](../includes/experimental.md) { .experimental-feature }
+# Proxy engine
 
 Starting from the `1.5.3` release, otoroshi offers a new plugin that implements the next generation of the proxy engine. 
 This engine has been designed based on our 5 years experience building, maintaining and running the previous one. 
@@ -12,7 +10,7 @@ It is also designed to be very efficient on path routing where it wasn't the old
 
 ## Enabling the new engine
 
-To enable the new proxy engine on an otoroshi instance, just add the plugin in the `global plugins` section of the danger zone, inject the default configuration, enable it and in `domains` add the values of the desired domains (let say we want to use the new engine on `api.foo.bar`. It is possible to use `*.foo.bar` if that's what you want to do).
+By default, all freshly started Otoroshi instances have the new proxy engine enabled by default, for the other, to enable the new proxy engine on an otoroshi instance, just add the plugin in the `global plugins` section of the danger zone, inject the default configuration, enable it and in `domains` add the values of the desired domains (let say we want to use the new engine on `api.foo.bar`. It is possible to use `*.foo.bar` if that's what you want to do).
 
 The next time a request hits the `api.foo.bar` domain, the new engine will handle it instead of the previous one.
 
@@ -72,8 +70,6 @@ if you need to enable global plugin with the new engine, you can add the followi
 This plugin introduces new entities that will replace (one day maybe) service descriptors:
 
  - `routes`: a unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins
- - `route-compositions`: multiple routing rules based on hostname, path, method and headers that will execute the same list of plugins
- - `targets`: how to contact a backend either by using a domain name or an ip address, supports mtls
  - `backends`: a list of targets to contact a backend
 
 ## Entities sync
@@ -160,7 +156,7 @@ You can also enable debugging only on a plugin instance instead of the whole rou
 }
 ```
 
-you can find the list of built-in plugins @ref:[here](./built-in-plugins.md)
+you can find the list of built-in plugins @ref:[here](../plugins/built-in-plugins.md)
 
 ## Using legacy plugins
 

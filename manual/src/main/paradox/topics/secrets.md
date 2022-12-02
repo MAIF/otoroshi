@@ -1,8 +1,8 @@
 # Secrets management
 
-@@include[experimental.md](../../includes/experimental.md) { .experimental-feature }
+@@include[experimental.md](../includes/experimental.md) { .experimental-feature }
 
-Secrets are generally confidential values that should not appear in plain text in the application. There are several products that help you store, retrieve, and rotate these secrets securely. Otoroshi offers a mechanism to set up references to these secrets in its entities to benefits from the perks of your existing secrets management infrastructure. This feature only work with the @ref:[new proxy engine](../engine.md).
+Secrets are generally confidential values that should not appear in plain text in the application. There are several products that help you store, retrieve, and rotate these secrets securely. Otoroshi offers a mechanism to set up references to these secrets in its entities to benefits from the perks of your existing secrets management infrastructure. This feature only work with the @ref:[new proxy engine](./engine.md).
 
 A secret can be anything you want like an apikey secret, a certificate private key or password, a jwt verifier signing key, a password to a proxy, a value for a header, etc.
 
