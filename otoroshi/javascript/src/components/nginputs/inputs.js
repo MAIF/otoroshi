@@ -243,13 +243,18 @@ export function LabelAndInput(_props) {
   }
 
   const margin =
-    _props.margin ||
-    props.margin ||
-    _props.rawSchema?.props?.margin ||
-    (_props.readOnly ? 'mb-0' : 'mb-3');
+    _props.margin !== undefined ? _props.margin :
+      props.margin !== undefined ? props.margin :
+        _props.rawSchema?.props?.margin !== undefined ? _props.rawSchema?.props?.margin :
+          (_props.readOnly ? 'mb-0' : 'mb-3');
+
+  const style =
+    _props.style ||
+    props.style ||
+    _props.rawSchema?.props?.margin || {};
 
   return (
-    <div className={`row ${margin}`}>
+    <div className={`row ${margin}`} style={style}>
       <label
         className={`col-xs-12 col-sm-${labelColumn} col-form-label`}
         style={{
@@ -307,14 +312,17 @@ export class NgJsonRenderer extends Component {
         <CodeInput
           {...this.props.rawSchema?.props}
           value={JSON.stringify(
-            this.props.value || this.props.rawSchema?.props?.defaultValue,
+            this.props.value,
             null,
             2
           )}
           onChange={(e) => {
             try {
               this.props.onChange(JSON.parse(e));
-            } catch (ex) { }
+            } catch (ex) {
+              if (e.length === 0)
+                this.props.onChange({});
+            }
           }}
           style={{ width: '100%', ...(this.props.style || {}) }}
         />
@@ -1074,7 +1082,7 @@ export class NgSelectRenderer extends Component {
             isMulti={props.isMulti}
             isLoading={this.state.loading}
             disabled={props.disabled}
-            placeholder={props.placeholder}
+            placeholder={props.placeholder || this.props.placeholder}
             optionRenderer={props.optionRenderer}
             options={this.applyTransformer(
               props || this.props,

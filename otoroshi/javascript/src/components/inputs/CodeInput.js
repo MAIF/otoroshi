@@ -119,6 +119,7 @@ export default class CodeInput extends Component {
 
   render() {
     let code = this.state.value || this.props.value;
+
     if (this.props.mode === 'json' && typeof code !== 'string') {
       code = JSON.stringify(code, null, 2);
     }

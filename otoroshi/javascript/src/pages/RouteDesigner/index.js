@@ -250,7 +250,7 @@ function MoreActionsButton({ value, menu, history, globalEnv }) {
       <YAMLExportButton value={value} />
       <DeleteRouteButton globalEnv={globalEnv} />
       {menu}
-      <BackToButton history={history} />
+      {/* <BackToButton history={history} /> */}
     </Dropdown>
   );
 }
