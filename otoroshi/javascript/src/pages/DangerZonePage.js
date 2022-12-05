@@ -1761,10 +1761,18 @@ class GlobalPlugins extends Component {
                 <Button
                   className='btn-sm'
                   onClick={() => {
-                    window.open(`https://maif.github.io/otoroshi/manual/plugins/${script.id
-                      .replace('cp:', '')
-                      .replace(/\./g, '-')
-                      .toLowerCase()}.html`, '_blank').focus();
+                    if (plugin.legacy)
+                      window
+                        .open('https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html', '_blank')
+                        .focus();
+                    else {
+                      window
+                        .open(`https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${plugin.id
+                          .replace('cp:', '')
+                          .replace(/\./g, '-')
+                          .toLowerCase()}`, '_blank')
+                        .focus();
+                    }
                   }}>
                   <i className="fas fa-share" /> documentation
                 </Button>
