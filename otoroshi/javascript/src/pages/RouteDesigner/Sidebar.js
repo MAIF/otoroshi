@@ -46,11 +46,6 @@ export default ({ route, setSidebarContent }) => {
   const isActive = (tab) => (currentTab === tab ? 'active' : '');
 
   return (
-    <div
-      className="d-flex"
-      style={{
-        flexDirection: 'column',
-      }}>
       <ul className="nav flex-column sidebar-bloc">
         <li
           className="nav-item"
@@ -68,6 +63,5 @@ export default ({ route, setSidebarContent }) => {
           </li>
         ))}
       </ul>
-    </div>
   );
 };
