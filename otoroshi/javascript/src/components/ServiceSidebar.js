@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { createTooltip } from '../tooltips';
 
 /*export const ServiceSidebar = ({ env, serviceId, name = 'Service', nolink }) => (
-  <ul className="nav nav-sidebar">
+  <ul className="nav sidebar-bloc">
     <li>
       <h3 style={{ marginTop: 0 }}>
         {nolink && <span><span className="fas fa-cube" /> {name}</span>}
@@ -41,7 +41,7 @@ export class ServiceSidebar extends Component {
     const base = `/bo/dashboard/lines/${env}/services/${serviceId}/`;
     const className = (part) => (`${base}${part}` === pathname ? 'active' : '');
     return (
-      <ul className="nav flex-column nav-sidebar">
+      <ul className="nav flex-column sidebar-bloc">
         <li className="nav-item">
           <h3 {...createTooltip(`Back to the service descriptor of ${name}`)}>
             {nolink && (

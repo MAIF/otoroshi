@@ -154,7 +154,7 @@ class BackOfficeAppContainer extends Component {
               <div className="sidebar-container">
                 <div className="sidebar-content">
                   {this.state.env && <GlobalTenantSelector env={this.state.env} />}
-                  <ul className="nav flex-column nav-sidebar">
+                  <ul className="nav flex-column sidebar-bloc">
                     <li>
                       <h2>
                         <Link

@@ -13,7 +13,7 @@ export function DefaultSidebar(props) {
     base === pathname && search.indexOf(`env=${part}`) > -1 ? 'active' : '';
 
   return (
-    <ul className="nav flex-column nav-sidebar">
+    <ul className="nav flex-column sidebar-bloc">
       <li className="nav-item">
         <h3 className="">
           <i className="fas fa-cubes" /> Services

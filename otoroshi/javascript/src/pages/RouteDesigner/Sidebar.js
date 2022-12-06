@@ -51,7 +51,7 @@ export default ({ route, setSidebarContent }) => {
       style={{
         flexDirection: 'column',
       }}>
-      <ul className="nav flex-column nav-sidebar">
+      <ul className="nav flex-column sidebar-bloc">
         <li
           className="nav-item"
           onClick={() => history.push(`/${entity.link}/${route.id}?tab=flow`)}
