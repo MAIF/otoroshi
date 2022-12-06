@@ -809,12 +809,10 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         .getOrElse(Seq.empty[(String, Boolean)])
       val hasSorted = sorted.nonEmpty
 
-      // println(sorted, hasSorted)
       if (hasSorted) {
         sorted.foldLeft(values) { case (sortedArray, sort) =>
           val out = sortedArray
             .sortBy(r => {
-              // println(r, sort._1.toLowerCase(), getValueAtPath(sort._1.toLowerCase(), r)._2)
               String.valueOf(getValueAtPath(sort._1.toLowerCase(), r)._2)
             })(Ordering[String].reverse)
 
@@ -876,9 +874,22 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                     case JsBoolean(v)    => v == value.toBoolean
                     case JsNumber(v)     => v.toDouble == value.toDouble
                     case JsArray(values) => values.contains(JsString(value))
-                    case _               => false
+                    case JsObject(v) if v.isEmpty =>
+                      getValueAtPath(key, elem)._2.asOpt[JsValue] match {
+                        case Some(v) =>
+                          v match {
+                            case JsString (v) => v.toLowerCase ().indexOf (value) != - 1
+                            case JsBoolean (v) => v == value.toBoolean
+                            case JsNumber (v) => v.toDouble == value.toDouble
+                            case JsArray (values) => values.contains (JsString (value) )
+                            case _ => false
+                          }
+                        case _ => false
+                      }
+                    case _ => false
                   }
-                case _       => false
+                case _       =>
+                  false
               }
             }
           }

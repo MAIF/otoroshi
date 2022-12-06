@@ -513,7 +513,7 @@ const ApiKeysConstants = {
   columns: (that) => [
     {
       title: 'Name',
-      filterId: 'name',
+      filterId: 'clientName',
       content: (item) => item.clientName,
       wrappedCell: (v, item, table) => {
         if (that.state && that.state.env && that.state.env.adminApikeyId === item.clientId) {
@@ -774,7 +774,7 @@ export class ApiKeysPage extends Component {
   fetchAllApiKeys = (paginationState) => {
     return BackOfficeServices.fetchAllApikeys({
       ...paginationState,
-      fields: ['id', 'name', 'enabled', 'clientId', 'clientName', 'clientSecret'],
+      fields: ['id', 'enabled', 'clientId', 'clientName', 'clientSecret'],
     });
   };
 
