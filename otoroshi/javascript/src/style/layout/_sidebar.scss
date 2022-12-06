@@ -42,13 +42,6 @@
   display: none;
 }
 
-.col-sm-0 {
-  width: 0;
-  flex-shrink: 1;
-  transition: all 150ms ease;
-  padding: 0 !important;
-}
-
 .sidebar-container {
   display: flex;
   height: 100%;
