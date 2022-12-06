@@ -672,8 +672,7 @@ export class TopBar extends Component {
 
           <div className="d-flex flex-grow-1 my-1 my-md-0 position-relative position-md-absolute end-0">
             <div
-              className="d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0"
-              style={{ height: 52 }}>
+              className="navbar-right d-flex flex-grow-1 justify-content-end align-items-center mt-1 mt-lg-0">
               {window.__apiReadOnly && (
                 <div className="">
                   <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
