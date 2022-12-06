@@ -27,7 +27,7 @@ export class JsonObjectAsCodeInput extends Component {
         onChange={(e) => {
           try {
             this.props.onChange(JSON.parse(e));
-          } catch (ex) {}
+          } catch (ex) { }
         }}
       />
     );
@@ -65,6 +65,12 @@ export default class CodeInput extends Component {
     observer.observe(document.body, {
       attributes: true,
     });
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.value !== this.props.value) {
+      this.setState({ value: this.props.value })
+    }
   }
 
   componentWillUnmount() {
