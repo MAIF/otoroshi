@@ -50,7 +50,7 @@ function DeleteRouteButton(props) {
           if (ok) {
             nextClient.deleteById(kind, id).then(() => {
               // window.location = '/bo/dashboard/' + what;
-              history.push('/' + what);
+              props.history.push('/' + what);
             });
           }
         });
@@ -248,7 +248,7 @@ function MoreActionsButton({ value, menu, history, globalEnv }) {
       <DuplicateButton value={value} history={history} />
       <JsonExportButton value={value} />
       <YAMLExportButton value={value} />
-      <DeleteRouteButton globalEnv={globalEnv} />
+      <DeleteRouteButton globalEnv={globalEnv} history={history} />
       {menu}
       {/* <BackToButton history={history} /> */}
     </Dropdown>
