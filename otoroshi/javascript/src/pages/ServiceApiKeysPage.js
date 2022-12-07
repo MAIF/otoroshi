@@ -31,11 +31,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
-            rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
-            rawValue.clientSecret
-          }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${rawValue.clientId
+            }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${rawValue.clientSecret
+            }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -705,7 +703,8 @@ export class ServiceApiKeysPage extends Component {
         parentProps={this.props}
         selfUrl={
           this.onRoutes
-            ? `services/${this.props.params.routeId}/apikeys`
+            // ? `services/${this.props.params.routeId}/apikeys`
+            ? `routes/${this.props.params.routeId}/apikeys`
             : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
         }
         defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
@@ -745,16 +744,24 @@ export class ServiceApiKeysPage extends Component {
         kubernetesKind="ApiKey"
         navigateTo={(item) => {
           if (this.onRoutes) {
-            this.props.history.push(`/apikeys/edit/${item.clientId}`);
+            console.log(item)
+            this.props.history.push(
+              `/routes/${this.props.params.routeId}/apikeys/edit/${item.clientId}`
+              // `/apikeys/edit/${item.clientId}`
+            );
           } else {
             this.props.history.push(
               `/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${item.clientId}?group=${item.id}`
             );
           }
         }}
-        itemUrl={(i) =>
-          `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`
-        }
+        itemUrl={(i) => {
+          if (this.onRoutes) {
+            return `/bo/dashboard/routes/${this.props.params.routeId}/apikeys/edit/${i.clientId}`
+          } else {
+            return `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`
+          }
+        }}
         extractKey={(item) => item.clientId}
       />
     );

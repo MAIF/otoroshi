@@ -619,6 +619,7 @@ class RouteDesigner extends React.Component {
         {[
           { path: `${match.url}/:routeId/health`, component: ServiceHealthPage },
           { path: `${match.url}/:routeId/analytics`, component: ServiceAnalyticsPage },
+          { path: `${match.url}/:routeId/apikeys/:taction/:titem`, component: ServiceApiKeysPage },
           { path: `${match.url}/:routeId/apikeys`, component: ServiceApiKeysPage },
           { path: `${match.url}/:routeId/stats`, component: ServiceLiveStatsPage },
           { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
