@@ -1671,6 +1671,42 @@ class GlobalScripts extends Component {
   }
 }
 
+const GlobalPluginInformation = ({ plugin, open }) => {
+  if (!open)
+    return null;
+
+  const legacyPluginDocumentationUrl = 'https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html';
+
+  const getNgPluginDocumentationUrl = () => {
+    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${plugin.id
+      .replace('cp:', '')
+      // .replace(/\./g, '-')
+      // .toLowerCase()
+      }`
+  }
+
+  return <div className='mt-3' style={{
+    background: '#494849',
+    padding: '12px'
+  }}>
+    <h3>{plugin.name}</h3>
+    <div className='d-flex align-items-center justify-content-end mb-3' style={{ paddingRight: '12px' }}>
+      <div>
+        <Button
+          className='btn-sm'
+          onClick={() => {
+            window
+              .open(plugin.legacy ? legacyPluginDocumentationUrl : getNgPluginDocumentationUrl(), '_blank')
+              .focus();
+          }}>
+          <i className="fas fa-share" /> documentation
+        </Button>
+      </div>
+    </div>
+    <Description text={plugin.description} steps={[]} legacy={plugin.legacy} />
+  </div>
+}
+
 class GlobalPlugins extends Component {
 
   state = {
@@ -1678,7 +1714,7 @@ class GlobalPlugins extends Component {
     ngPlugins: []
   }
 
-  getNewConfig = (plugin, isOldEngine) => {
+  extractConfigurationFromPlugin = (plugin, isOldEngine) => {
     if (isOldEngine) {
       return {
         ...(plugin.default_config || plugin.defaultConfig),
@@ -1694,6 +1730,45 @@ class GlobalPlugins extends Component {
         plugin: plugin.legacy ? LEGACY_PLUGINS_WRAPPER[plugin.pluginType] : plugin.id,
       }
     }
+  }
+
+  handleNgPluginsChange = (e, nextAvailablePlugins) => {
+    const currentConfig = this.props.value.config?.ng || []
+
+    const ngConfig = (e.plugins || [])
+      .reduce((acc, plugin) => {
+        const pluginConfig = currentConfig.find(entry => entry.plugin === plugin)
+        if (!pluginConfig) {
+          if (plugin.length === 0) {
+            return [
+              ...acc,
+              this.extractConfigurationFromPlugin(this.state.ngPlugins[nextAvailablePlugins], false)
+            ]
+          } else {
+            return [
+              ...acc,
+              this.extractConfigurationFromPlugin(
+                [
+                  ...this.state.legacyPlugins,
+                  ...this.state.ngPlugins
+                ].find(f => f.id === plugin),
+                false)
+            ]
+          }
+        }
+        return [
+          ...acc,
+          pluginConfig
+        ]
+      }, [])
+
+    this.props.onChange({
+      ...this.props.value,
+      config: {
+        ...this.props.value.config,
+        ng: ngConfig.filter(f => f.plugin) // prevent manual deletion of plugin by deleting the configuration of plugin which doesn't contain id
+      }
+    })
   }
 
   schema = {
@@ -1743,39 +1818,11 @@ class GlobalPlugins extends Component {
               className="btn-sm ms-1"
               type='info'
               icon={() => <i className='fas fa-cog me-1' style={{ fontSize: '14px' }} />}
-              onPress={() => this.changeTheValue('config', this.getNewConfig(plugin, true))}
+              onPress={() => this.changeTheValue('config', this.extractConfigurationFromPlugin(plugin, true))}
               text="Inject default configuration"
             />}
           </div>
-          {open && <div className='mt-3' style={{
-            background: '#494849',
-            padding: '12px'
-          }}>
-            <h3>{plugin.name}</h3>
-            <div className='d-flex align-items-center justify-content-end mb-3' style={{ paddingRight: '12px' }}>
-              <div>
-                <Button
-                  className='btn-sm'
-                  onClick={() => {
-                    if (plugin.legacy)
-                      window
-                        .open('https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html', '_blank')
-                        .focus();
-                    else {
-                      window
-                        .open(`https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${plugin.id
-                          .replace('cp:', '')
-                          .replace(/\./g, '-')
-                          .toLowerCase()}`, '_blank')
-                        .focus();
-                    }
-                  }}>
-                  <i className="fas fa-share" /> documentation
-                </Button>
-              </div>
-            </div>
-            <Description text={plugin.description} steps={[]} legacy={plugin.legacy} />
-          </div>}
+          <GlobalPluginInformation plugin={plugin} open={open} />
         </div>
       }
     },
@@ -1790,6 +1837,69 @@ class GlobalPlugins extends Component {
     }
   }
 
+  ngPluginsSchema = {
+    plugins: {
+      type: 'array',
+      of: 'string',
+      label: 'Plugins',
+      itemRenderer: props => {
+        const [open, setOpen] = useState(false);
+        const index = ~~props.path[props.path.length - 1];
+
+        const value = props.rootValue?.plugins[index];
+
+        const plugin = [...this.state.ngPlugins, ...this.state.legacyPlugins]
+          .find(f => f.id === value) || {};
+
+        return <div style={{ flex: 1 }}>
+          <div className='d-flex'>
+            <Button className='me-1 btn-sm' onClick={() => setOpen(!open)}>
+              <i className={`fas fa-chevron-${open ? 'down' : 'right'}`} />
+            </Button>
+            <div style={{ flex: 1 }}>
+              <NgSelectRenderer
+                value={value}
+                placeholder="Select a plugin"
+                label={' '}
+                ngOptions={{
+                  spread: true
+                }}
+                onChange={props.onChange}
+                margin={0}
+                style={{ flex: 1 }}
+                options={[...this.state.ngPlugins, ...this.state.legacyPlugins]}
+                optionsTransformer={(arr) =>
+                  arr.map((item) => ({ label: item.name, value: item.id }))
+                } />
+            </div>
+            {(plugin.default_config || plugin.defaultConfig) && <FeedbackButton
+              className="btn-sm ms-1"
+              type='info'
+              icon={() => <i className='fas fa-cog me-1' style={{ fontSize: '14px' }} />}
+              onPress={() => {
+                const newConfig = this.extractConfigurationFromPlugin(plugin, false);
+                
+                return Promise.resolve(this.props.onChange({
+                  ...this.props.value,
+                  config: {
+                    ...this.props.value.config,
+                    ng: (this.props.value.config.ng || []).map((v, i) => {
+                      if (i === index)
+                        return newConfig
+                      return v
+                    })
+                  }
+                }))
+              }}
+              text="Inject default configuration"
+            />}
+          </div>
+          <GlobalPluginInformation plugin={plugin} open={open} />
+        </div>
+      }
+    }
+  }
+
   newEngineSchema = {
     enabled: {
       type: 'bool',
@@ -1798,136 +1908,11 @@ class GlobalPlugins extends Component {
     ng_plugins: {
       component: props => {
         const plugins = (props.rootValue?.config?.ng || [])
-          .map(r => r.plugin);
-
-        const nestedSchema = {
-          plugins: {
-            type: 'array',
-            of: 'string',
-            label: 'Plugins',
-            itemRenderer: props => {
-              const [open, setOpen] = useState(false);
-              const index = ~~props.path[props.path.length - 1];
-
-              const value = props.rootValue?.plugins[index];
-
-              const plugin = [...this.state.ngPlugins, ...this.state.legacyPlugins]
-                .find(f => f.id === value) || {};
-
-              return <div style={{ flex: 1 }}>
-                <div className='d-flex'>
-                  <Button className='me-1 btn-sm' onClick={() => setOpen(!open)}>
-                    <i className={`fas fa-chevron-${open ? 'down' : 'right'}`} />
-                  </Button>
-                  <div style={{ flex: 1 }}>
-                    <NgSelectRenderer
-                      value={value}
-                      placeholder="Select a plugin"
-                      label={' '}
-                      ngOptions={{
-                        spread: true
-                      }}
-                      onChange={props.onChange}
-                      margin={0}
-                      style={{ flex: 1 }}
-                      options={[...this.state.ngPlugins, ...this.state.legacyPlugins]}
-                      optionsTransformer={(arr) =>
-                        arr.map((item) => ({ label: item.name, value: item.id }))
-                      } />
-                  </div>
-                  {(plugin.default_config || plugin.defaultConfig) && <FeedbackButton
-                    className="btn-sm ms-1"
-                    type='info'
-                    icon={() => <i className='fas fa-cog me-1' style={{ fontSize: '14px' }} />}
-                    onPress={() => {
-                      const newConfig = this.getNewConfig(plugin, false);
-                      return this.changeTheValue('config', {
-                        ...this.props.value.config,
-                        ng: (this.props.value.config.ng || []).map((v, i) => {
-                          if (i === index)
-                            return newConfig
-                          return v
-                        })
-                      })
-                    }}
-                    text="Inject default configuration"
-                  />}
-                </div>
-                {open && <div className='mt-3' style={{
-                  background: '#494849',
-                  padding: '12px'
-                }}>
-                  <h3>{plugin.name}</h3>
-                  <div className='d-flex align-items-center justify-content-end mb-3' style={{ paddingRight: '12px' }}>
-                    <div>
-                      <Button
-                        className='btn-sm'
-                        onClick={() => {
-                          if (plugin.legacy)
-                            window
-                              .open('https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html', '_blank')
-                              .focus();
-                          else {
-                            window
-                              .open(`https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${plugin.id
-                                .replace('cp:', '')
-                                .replace(/\./g, '-')
-                                .toLowerCase()}`, '_blank')
-                              .focus();
-                          }
-                        }}>
-                        <i className="fas fa-share" /> documentation
-                      </Button>
-                    </div>
-                  </div>
-                  <Description text={plugin.description} steps={[]} legacy={plugin.legacy} />
-                </div>}
-              </div>
-            }
-          }
-        }
-
+          .map(r => r.plugin)
         return <NgForm
           value={{ plugins }}
-          onChange={e => {
-            const currentConfig = this.props.value.config.ng || []
-
-            const ngConfig = (e.plugins || [])
-              .reduce((acc, plugin) => {
-                const pluginConfig = currentConfig.find(entry => entry.plugin === plugin)
-                if (!pluginConfig) {
-                  if (plugin.length === 0) {
-                    return [
-                      ...acc,
-                      this.getNewConfig(this.state.ngPlugins[plugins.length], false)
-                    ]
-                  } else {
-                    return [
-                      ...acc,
-                      this.getNewConfig(
-                        [
-                          ...this.state.legacyPlugins,
-                          ...this.state.ngPlugins
-                        ].find(f => f.id === plugin),
-                        false)
-                    ]
-                  }
-                }
-                return [
-                  ...acc,
-                  pluginConfig
-                ]
-              }, [])
-
-            this.props.onChange({
-              ...this.props.value,
-              config: {
-                ...this.props.value.config,
-                ng: ngConfig.filter(f => f.plugin) // prevent manual deletion of plugin by deleting the configuration of plugin which doesn't contain id
-              }
-            })
-          }}
-          schema={nestedSchema}
+          onChange={e => this.handleNgPluginsChange(e, plugins.length)}
+          schema={this.ngPluginsSchema}
           flow={['plugins']}
         />
       }
@@ -1964,7 +1949,6 @@ class GlobalPlugins extends Component {
   };
 
   render() {
-    console.log(this.props.value)
     return (
       <div className='plugins-danger-zone'>
         <Message message="This is the new place for global plugins in otoroshi. Please use it instead of global scripts as they will be deprecated soon !" />
@@ -1993,12 +1977,9 @@ class GlobalPlugins extends Component {
         <NgForm
           value={this.props.value}
           onChange={config => {
-            // this.props.onChange
-
             if (this.state.legacyPlugins.length > 0) {
-              const { ng, ...rest } = this.props.value.config;
+              const { ng, ...rest } = config.config;
 
-              console.log(config.refs, rest)
               const newConfig = (config.refs || [])
                 .reduce((acc, ref) => {
                   if (ref.length > 0) {
@@ -2017,8 +1998,6 @@ class GlobalPlugins extends Component {
                   }
                   return acc
                 }, { ng })
-
-              console.log(newConfig)
 
               this.props.onChange({
                 ...config,
