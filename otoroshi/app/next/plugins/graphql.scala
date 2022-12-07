@@ -243,9 +243,6 @@ class GraphQLBackend extends NgBackendCall {
      name: String!
      firstname: String!
    }
-   schema {
-    query: Query
-   }
 
    type Query {
     users: [User] @json(data: "[{ \"firstname\": \"Foo\", \"name\": \"Bar\" }, { \"firstname\": \"Bar\", \"name\": \"Foo\" }]")

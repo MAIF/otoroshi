@@ -78,7 +78,7 @@ export function RoutesTable(props) {
 
   const deleteItem = (item, table) => {
     if (props.globalEnv.adminApiId === item.id) {
-      window
+      return window
         .newConfirm(
           `The route you're trying to delete is the Otoroshi Admin API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. Do you really want to do that ?`
         )
@@ -87,15 +87,15 @@ export function RoutesTable(props) {
             window.newConfirm(`Are you sure you really want to do that ?`).then((ok2) => {
               if (ok1 && ok2) {
                 nextClient.remove(nextClient.ENTITIES[entity.fetchName], item).then(() => {
-                  table.update();
+                  // table.update();
                 });
               }
             });
           }
         });
     } else {
-      nextClient.remove(nextClient.ENTITIES[entity.fetchName], item).then(() => {
-        table.update();
+      return nextClient.remove(nextClient.ENTITIES[entity.fetchName], item).then(() => {
+        // table.update();
       });
     }
   }
@@ -113,7 +113,7 @@ export function RoutesTable(props) {
         formFlow={null}
         columns={columns}
         deleteItem={(item) => deleteItem(item)}
-        fetchItems={(paginationState) => 
+        fetchItems={(paginationState) =>
           nextClient.findAllWithPagination(nextClient.ENTITIES[entity.fetchName], {
             ...paginationState,
             fields: ['name', 'enabled', 'frontend.domains.0', 'backend.targets.0.hostname', 'id'],

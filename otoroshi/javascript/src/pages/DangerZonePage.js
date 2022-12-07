@@ -1727,7 +1727,9 @@ class GlobalPlugins extends Component {
         enabled: true,
         exclude: [],
         include: [],
-        plugin: plugin.legacy ? LEGACY_PLUGINS_WRAPPER[plugin.pluginType] : plugin.id,
+        plugin: (plugin.legacy && plugin.id !== "cp:otoroshi.next.proxy.ProxyEngine") ?
+          LEGACY_PLUGINS_WRAPPER[plugin.pluginType] :
+          plugin.id
       }
     }
   }
@@ -1738,6 +1740,7 @@ class GlobalPlugins extends Component {
     const ngConfig = (e.plugins || [])
       .reduce((acc, plugin) => {
         const pluginConfig = currentConfig.find(entry => entry.plugin === plugin)
+        console.log(plugin, pluginConfig)
         if (!pluginConfig) {
           if (plugin.length === 0) {
             return [
@@ -1761,6 +1764,8 @@ class GlobalPlugins extends Component {
           pluginConfig
         ]
       }, [])
+
+    console.log(ngConfig)
 
     this.props.onChange({
       ...this.props.value,
@@ -1878,7 +1883,7 @@ class GlobalPlugins extends Component {
               icon={() => <i className='fas fa-cog me-1' style={{ fontSize: '14px' }} />}
               onPress={() => {
                 const newConfig = this.extractConfigurationFromPlugin(plugin, false);
-                
+
                 return Promise.resolve(this.props.onChange({
                   ...this.props.value,
                   config: {
