@@ -100,6 +100,18 @@ impl Tunnel {
                       Ok(_) => (),
                       Err(e) => debug!("error while sending pong: {}", e)
                   };
+
+                  let json1 = serde_json::json!({
+                      "tunnel_id": tunnel_id.clone(), 
+                      "type": "tunnel_meta",
+                      "name": tunnel_id.clone(),
+                      "routes": serde_json::json!([])
+                  });
+                  let bytes1 = serde_json::to_vec(&json1).unwrap();
+                  match ws_stream.send(Message::Binary(bytes1)).await {
+                      Ok(_) => (),
+                      Err(e) => debug!("error while sending meta: {}", e)
+                  };
               }
           }
       }
