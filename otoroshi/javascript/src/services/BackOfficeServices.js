@@ -774,7 +774,7 @@ export function discardPrivateAppsSession(id) {
   }).then((r) => r.json());
 }
 
-export function fetchPrivateAppsSessions() {
+export function fetchPrivateAppsSessions(paginationState) {
   // return fetch(`/bo/api/papps/sessions`, {
   return findAllWithPagination(`/bo/api/proxy/api/apps-sessions`, paginationState);
 }
