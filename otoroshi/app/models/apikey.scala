@@ -1779,7 +1779,8 @@ object ApiKeyHelper {
       constraints: ApiKeyConstraints,
       attrs: TypedMap,
       service: String,
-      incrementQuotas: Boolean
+      incrementQuotas: Boolean,
+      routingEnabled: Boolean
   )(implicit
       ec: ExecutionContext,
       env: Env
@@ -1855,7 +1856,7 @@ object ApiKeyHelper {
           case Left(Some(apikey))                                                                                  =>
             sendRevokedApiKeyAlert(apikey)
             error(Results.Unauthorized, "bad apikey", "errors.bad.api.key")
-          case Right(apikey) if !apikey.matchRouting(constraints)                                                  =>
+          case Right(apikey) if routingEnabled && !apikey.matchRouting(constraints)                                =>
             error(Results.Unauthorized, "invalid apikey", "errors.invalid.api.key")
           case Right(apikey) if apikey.restrictions.handleRestrictions(service, None, Some(apikey), req, attrs)._1 => {
             apikey.restrictions
