@@ -62,7 +62,7 @@ body.white-mode,
   .ReactTable input {
     @include bright-mode_background--light;
   }
-  .nav > li > a:hover,
+
   .btn-primary:not([disabled]):hover,
   .btn-success:not([disabled]):hover,
   .btn-success:focus,
@@ -141,7 +141,7 @@ body.white-mode,
   .is-open > .Select-control,
   .Select.is-focused > .Select-control,
   .Select.is-focused:not(.is-open) > .Select-control,
-  .ant-calendar-input, .ant-input, .custom-dropdown>li>a,
+  .ant-calendar-input, .ant-input,
   .wizard-h3--small {
     @include bright-mode_color--darker;
   }
@@ -158,7 +158,7 @@ body.white-mode,
   }
   .dropdown .dropdown-toggle:hover,
   .sub-container__bg-color,
-  .jumbotron, nav, .custom-dropdown {
+  .jumbotron, .custom-dropdown {
     @include bright-mode_background-color--darkest;
   }
 
@@ -170,15 +170,15 @@ body.white-mode,
     background-color: $primaryColor;
   }
 
-  .logo-xs img {
-    filter: invert(100%);
-  }
-  .logo-xs:hover img {
-    filter: invert(0%);
-  }
-  .logo-xs:hover {
-    transition: 1s filter linear;
-  }
+  // .logo-xs img {
+  //   filter: invert(100%);
+  // }
+  // .logo-xs:hover img {
+  //   filter: invert(0%);
+  // }
+  // .logo-xs:hover {
+  //   transition: 1s filter linear;
+  // }
 
   input.form-control {
     border-color: rgb(206, 212, 218);

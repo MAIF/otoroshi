@@ -1,5 +1,5 @@
 .navbar {
-  background-color: $fondNavbar;
+  background-color: var(--bg-color_level2);
   padding-top: 0;
   padding-bottom: 0;
 
@@ -9,14 +9,14 @@
   }
   .navbar-header {
     height: 52px;
-    background-color: $primaryColor;
+    background-color: var(--color-primary);
     a {
-      color: #fff;
+      color: var(--color-white);
     }
   }
 
   form#navbar .Select-control {
-    border: 1px solid #ccc;
+    border: 1px solid var(--color_level3);
   }
 
   .navbar-right {
@@ -31,12 +31,69 @@
     .fa-lightbulb,
     .fa-moon,
     .fa-cog {
-      color: #fff;
+      color: var(--color-white);
     }
 
     .monkeyMenu {
       width: 24px;
       margin-left: -4px;
     }
+  }
+}
+
+.custom-dropdown {
+  position: fixed;
+  z-index: 1050;
+  top: 52px;
+  bottom: 0;
+  height: calc(100vh - 52px);
+  right: 0;
+  transition: max-width 0.5s, right 0.5s;
+  max-width: 270px;
+  background-color: var(--bg-color_level1);
+  list-style-type: none;
+  padding-inline-start: 12px;
+  padding-right: 12px;
+
+  > li > a {
+    color: var(--color_level1);
+    .otoroshi_logo .st0 {
+      fill:var(--color_level3);
+    }
+    &:focus,
+    &:hover {
+      background-image: none;
+      background-color: var(--bg-color_level3);
+      color: var(--color_level3);
+      .otoroshi_logo {
+        .st0 {
+          fill:var(--color_level3);
+        }
+      }
+      .monkeyMenu {
+        margin-left: -8px;
+      }
+    }
+  }
+  overflow-y: scroll;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dropdown-toggle:hover {
+    background-color: var(--bg-color_level1) !important;
+  }
+
+  &.closed-dropdown {
+    max-width: 0;
+    right: -200px;
+    transition: max-width 0.5s, right 0.5s;
+  }
+
+  .dropdown-divider {
+    border-color: var(--bg-color_level2);
   }
 }
