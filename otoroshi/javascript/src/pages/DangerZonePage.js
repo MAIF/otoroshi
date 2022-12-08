@@ -1981,35 +1981,7 @@ class GlobalPlugins extends Component {
         </div>
         <NgForm
           value={this.props.value}
-          onChange={config => {
-            if (this.state.legacyPlugins.length > 0) {
-              const { ng, ...rest } = config.config;
-
-              const newConfig = (config.refs || [])
-                .reduce((acc, ref) => {
-                  if (ref.length > 0) {
-                    const pluginIdFromRef = Object.keys(this.state.legacyPlugins.find(p => p.id === ref)?.defaultConfig || {})[0]
-
-                    const overrideConfig = rest[pluginIdFromRef]
-
-                    if (overrideConfig) {
-                      return {
-                        ...acc,
-                        [pluginIdFromRef]: rest[pluginIdFromRef]
-                      }
-                    } else {
-                      return acc
-                    }
-                  }
-                  return acc
-                }, { ng })
-
-              this.props.onChange({
-                ...config,
-                config: newConfig
-              })
-            }
-          }}
+          onChange={this.props.onChange}
           flow={this.flow}
           schema={this.schema}
         />
