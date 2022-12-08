@@ -30,8 +30,8 @@
 
 .btn-info:hover {
   color: #fff;
-  background-color: $colorBleue;
-  border-color: $colorBleue;
+  background-color: var(--color-blue);
+  border-color: var(--color-blue);
 }
 
 .btn-info,
@@ -39,7 +39,7 @@
   color: #fff;
   background-color: transparent;
   background-image: none;
-  border-color: $colorBleue;
+  border-color: var(--color-blue);
 }
 
 .btn-save {
@@ -121,15 +121,15 @@
 .btn-primary, .btn-primary:focus {
   color: #fff;
   border: 1px solid;
-  border-color: $colorBleue;
+  border-color: var(--color-blue);
   background-color:transparent;
   &:hover,
   &.active,
   &.active:hover {
     color: #fff;
     border: 1px solid;
-    border-color: $colorBleue;
-    background-color: $colorBleue;
+    border-color: var(--color-blue);
+    background-color: var(--color-blue);
   }
 }
 

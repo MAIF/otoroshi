@@ -70,13 +70,13 @@ thead > tr > td > span {
 }
 
 .active > .titleTable {
-  background-color: $colorBleue;
+  background-color: var(--color-blue);
   color: #fff;
   border: thin solid $fondGrisclairSurvolMenu;
 }
 
 .titleTable:hover {
-  background-color: lighten($colorBleue,5%);
+  background-color: lighten(var(--color-blue),5%);
   color: #fff;
 }
 
@@ -86,7 +86,7 @@ thead {
 
 .fa-download {
   cursor: pointer;
-  color: $colorBleue;
+  color: var(--color-blue);
 }
 
 .table-liste {
