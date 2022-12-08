@@ -97,3 +97,14 @@
     border-color: var(--bg-color_level2);
   }
 }
+
+
+@media screen and (min-width: 768px) {
+  .position-md-absolute {
+    position: absolute !important;
+  }
+
+  .top-md-0 {
+    top: 0;
+  }
+}

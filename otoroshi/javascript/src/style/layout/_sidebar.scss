@@ -66,6 +66,14 @@
   }
 }
 
+.bottom-sidebar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
 @media screen and (max-width: 767px) {
   .sidebar {
     display: none;
