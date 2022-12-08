@@ -44,8 +44,8 @@
 
 .btn-save {
   color: #fff;
-  border-color: $savecolor;
-  background-color: $savecolor;
+  border-color: var(--color-green);
+  background-color: var(--color-green);
 
   &[disabled] {
     color: $colorGris;
@@ -81,8 +81,8 @@
 
   &-on {
     @extend .content-switch-button;
-    background-color: $savecolor;
-    border: 1px solid $savecolor;
+    background-color: var(--color-green);
+    border: 1px solid var(--color-green);
     justify-content: flex-end;
   }
 
@@ -154,21 +154,21 @@
 .btn-success, .btn-success:focus {
   color: #fff;
   border: 1px solid;
-  border-color: $savecolor;
+  border-color: var(--color-green);
   background-color:transparent;
 
   &:hover {
     color: #fff;
     border: 1px solid;
-    border-color: $savecolor;
-    background-color: $savecolor;
+    border-color: var(--color-green);
+    background-color: var(--color-green);
   }
 
   &[disabled] {
     color: $colorGris;
     text-shadow: none;
     background-color: transparent;
-    border-color: $savecolor;
+    border-color: var(--color-green);
   }
 
   &.disabled {

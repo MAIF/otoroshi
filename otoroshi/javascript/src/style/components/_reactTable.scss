@@ -67,7 +67,7 @@
   .fa-globe-americas,
   .fa-check-circle,
   .fa-lock {
-    color: $savecolor;
+    color: var(--color-green);
   }
 
   .fa-unlock-alt,
