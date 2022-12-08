@@ -1672,8 +1672,8 @@ class BackOfficeController(
     BackOfficeActionAuth.async { ctx =>
       findServiceLike(serviceId) flatMap {
         case None                                       => FastFuture.successful(NotFound(Json.obj("error" -> "service not found")))
-        case Some(service) if !ctx.canUserRead(service) => ApiActionContext.fforbidden
-        case Some(service)                              => {
+        case Some(service) if !ctx.canUserRead(service)     => ApiActionContext.fforbidden
+        case Some(service)                                => {
           env.datastores.apiKeyDataStore.findAll().map { apikeys =>
             val filtered = apikeys
               .filter(ctx.canUserRead)

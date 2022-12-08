@@ -110,6 +110,7 @@ package object modules {
     lazy val apiKeysController            = wire[ApiKeysController]
     lazy val ApiKeysFromGroupController   = wire[ApiKeysFromGroupController]
     lazy val ApiKeysFromServiceController = wire[ApiKeysFromServiceController]
+    lazy val ApiKeysFromRouteController   = wire[ApiKeysFromRouteController]
     lazy val jwtVerifierController        = wire[JwtVerifierController]
     lazy val authModulesController        = wire[AuthModulesController]
     lazy val importExportController       = wire[ImportExportController]

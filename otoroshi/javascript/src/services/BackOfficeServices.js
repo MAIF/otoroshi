@@ -182,8 +182,8 @@ export function allServices(env, group, paginationState) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?filter.groups=${group}`
-    : `/bo/api/proxy/api/services`;
+      ? `/bo/api/proxy/api/services?filter.groups=${group}`
+      : `/bo/api/proxy/api/services`;
   return findAllWithPagination(url, paginationState);
 }
 
@@ -440,8 +440,10 @@ export function fetchApiKeyById(serviceId, apkid) {
   }).then((r) => r.json());
 }
 
-export function deleteApiKey(serviceId, ak) {
-  return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`, {
+export function deleteApiKey(serviceId, routeId, ak) {
+  const url = serviceId ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}` :
+    `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`
+  return fetch(url, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -450,20 +452,24 @@ export function deleteApiKey(serviceId, ak) {
   }).then((r) => r.json());
 }
 
-export function createApiKey(serviceId, ak) {
-  return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys`, {
+export function createApiKey(serviceId, routeId, ak) {
+  const url = serviceId ? `/bo/api/proxy/api/services/${serviceId}/apikeys` :
+    `/bo/api/proxy/api/routes/${routeId}/apikeys`;
+  return fetch(url, {
     method: 'POST',
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     },
-    body: JSON.stringify(ak),
+    body: JSON.stringify(ak)
   }).then((r) => r.json());
 }
 
-export function updateApiKey(serviceId, ak) {
-  return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`, {
+export function updateApiKey(serviceId, routeId, ak) {
+  const url = serviceId ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}` :
+    `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
+  return fetch(url, {
     method: 'PUT',
     credentials: 'include',
     headers: {

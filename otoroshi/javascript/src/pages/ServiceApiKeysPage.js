@@ -678,21 +678,24 @@ export class ServiceApiKeysPage extends Component {
 
   createItem = (ak) => {
     return BackOfficeServices.createApiKey(
-      this.props.params.serviceId || this.props.params.routeId,
+      this.props.params.serviceId,
+      this.props.params.routeId,
       ak
     );
   };
 
   updateItem = (ak) => {
     return BackOfficeServices.updateApiKey(
-      this.props.params.serviceId || this.props.params.routeId,
+      this.props.params.serviceId,
+      this.props.params.routeId,
       ak
     );
   };
 
   deleteItem = (ak) => {
     return BackOfficeServices.deleteApiKey(
-      this.props.params.serviceId || this.props.params.routeId,
+      this.props.params.serviceId,
+      this.props.params.routeId,
       ak
     );
   };
