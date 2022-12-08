@@ -536,8 +536,13 @@ export function updateStandaloneApiKey(ak) {
   }).then((r) => r.json());
 }
 
-export function getGlobalConfig() {
-  return fetch(`/bo/api/proxy/api/globalconfig`, {
+export function getGlobalConfig(fields) {
+  let url = `/bo/api/proxy/api/globalconfig`
+  
+  if (fields)
+    url = `${url}?fields=${fields.join(',')}`
+
+  return fetch(url, {
     method: 'GET',
     credentials: 'include',
     headers: {

@@ -6,6 +6,7 @@ import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit, GlobalConfigModification}
 import otoroshi.models.GlobalConfig
 import otoroshi.models.RightsChecker
+import otoroshi.utils.json.JsonOperationsHelper
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -19,7 +20,9 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
 
   lazy val logger = Logger("otoroshi-global-config-api")
 
-  def globalConfig() =
+  def globalConfig(fields: Option[String]) = {
+    val expectedFields     = fields.map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+    val hasFields          = expectedFields.nonEmpty
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.datastores.globalConfigDataStore.findById("global").map {
@@ -37,11 +40,17 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
                 ctx.ua
               )
             )
-            Ok(ak.toJson)
+
+            if (hasFields) {
+              Ok(JsonOperationsHelper.filterJson(ak.toJson.as[JsObject], expectedFields))
+            } else {
+              Ok(ak.toJson)
+            }
           }
         }
       }
     }
+  }
 
   def updateGlobalConfig() =
     ApiAction.async(parse.json) { ctx =>

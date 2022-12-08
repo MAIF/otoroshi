@@ -62,6 +62,7 @@ import { TeamsPage } from '../pages/TeamsPage';
 import { Toasts } from '../components/Toasts';
 import { NgFormPlayground } from '../components/nginputs';
 import Loader from '../components/Loader';
+import { globalConfig } from 'antd/lib/config-provider';
 
 class BackOfficeAppContainer extends Component {
   constructor(props) {
@@ -96,9 +97,32 @@ class BackOfficeAppContainer extends Component {
       BackOfficeServices.env(),
       BackOfficeServices.fetchLines(),
       BackOfficeServices.findAllGroups(),
-    ]).then(([env, lines, groups]) => {
-      this.setState({ env, lines, groups, loading: false });
+      BackOfficeServices.getGlobalConfig(['plugins'])
+    ]).then(([env, lines, groups, globalConfig]) => {
+      this.setState({
+        env,
+        lines,
+        groups,
+        loading: false,
+        usedNewEngine: this.checkEngineUsage(globalConfig)
+      });
     });
+  }
+
+  checkEngineUsage = globalConfig => {
+    const plugins = globalConfig.plugins
+
+    try {
+      if (plugins.refs && plugins.config) {
+        return plugins.refs.includes('cp:otoroshi.next.proxy.ProxyEngine') &&
+          plugins.config['NextGenProxyEngine'] &&
+          plugins.config['NextGenProxyEngine'].enabled
+      } else {
+        return false;
+      }
+    } catch (_) {
+      return false
+    }
   }
 
   componentDidCatch(e) {
@@ -201,7 +225,7 @@ class BackOfficeAppContainer extends Component {
                           exact
                           path="/"
                           component={(props) =>
-                            this.decorate(HomePage, { ...props, env: this.state.env })
+                            this.decorate(HomePage, { ...props, env: this.state.env, usedNewEngine: this.state.usedNewEngine })
                           }
                         />
                         <Route

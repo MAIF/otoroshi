@@ -230,7 +230,9 @@ class ProxyEngine() extends RequestHandler {
   override def configRoot: Option[String] = ProxyEngine.configRoot.some
 
   override def defaultConfig: Option[JsObject] = {
-    ProxyEngineConfig.default.json.asObject.some
+    Json.obj(
+      ProxyEngine.configRoot -> ProxyEngineConfig.default.json
+    ).some
   }
 
   @inline

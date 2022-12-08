@@ -308,7 +308,7 @@ GET     /api/live/:id                                         otoroshi.controlle
 GET     /api/live                                             otoroshi.controllers.adminapi.StatsController.globalLiveStats()
 
 GET     /api/globalconfig/_template                           otoroshi.controllers.adminapi.TemplatesController.initiateGlobalConfig()
-GET     /api/globalconfig                                     otoroshi.controllers.adminapi.GlobalConfigController.globalConfig()
+GET     /api/globalconfig                                     otoroshi.controllers.adminapi.GlobalConfigController.globalConfig(fields: Option[String])
 PUT     /api/globalconfig                                     otoroshi.controllers.adminapi.GlobalConfigController.updateGlobalConfig()
 PATCH   /api/globalconfig                                     otoroshi.controllers.adminapi.GlobalConfigController.patchGlobalConfig()
 
