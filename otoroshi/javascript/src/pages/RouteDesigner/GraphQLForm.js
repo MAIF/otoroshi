@@ -745,7 +745,7 @@ const Type = ({
                 <button className="btn btn-sm btn-danger me-1" onClick={(e) => removeField(e, i)}>
                   <i className="fas fa-trash" />
                 </button>
-                <button className="btn btn-sm btn-info" onClick={(e) => selectField(e, i)}>
+                <button className="btn btn-sm btn-primary" onClick={(e) => selectField(e, i)}>
                   <i className="fas fa-chevron-right" />
                 </button>
               </div>
@@ -768,7 +768,7 @@ const Header = ({ schemaView, toggleSchema, hide }) => (
   <>
     <div className="d-flex-between">
       <h3>GraphQL Schema Editor</h3>
-      <button className="btn btn-sm btn-info" onClick={hide}>
+      <button className="btn btn-sm btn-primary" onClick={hide}>
         <i className="fas fa-times" />
       </button>
     </div>

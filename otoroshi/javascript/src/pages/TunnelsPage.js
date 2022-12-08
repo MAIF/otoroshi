@@ -44,7 +44,7 @@ export class TunnelsPage extends Component {
       cell: (a, item) => {
         return (
           <div style={{ width: '100%' }}>
-            <Link className="btn btn-info btn-sm" to={`/tunnels/${item.tunnel_id}`}>
+            <Link className="btn btn-primary btn-sm" to={`/tunnels/${item.tunnel_id}`}>
               <i className="fas fa-eye" />
             </Link>
           </div>

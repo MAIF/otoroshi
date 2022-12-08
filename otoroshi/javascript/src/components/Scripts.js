@@ -125,7 +125,7 @@ class PluginsDescription extends Component {
                   <div className="d-flex justify-content-end input-group-btn">
                     {script.id.indexOf('cp:otoroshi.') === 0 && (
                       <a
-                        className="btn btn-sm btn-info"
+                        className="btn btn-sm btn-primary"
                         target="_blank"
                         href={`https://maif.github.io/otoroshi/manual/plugins/${script.id
                           .replace('cp:', '')
@@ -141,7 +141,7 @@ class PluginsDescription extends Component {
                     )}
                     <button
                       type="button"
-                      className="btn btn-sm btn-info"
+                      className="btn btn-sm btn-primary"
                       onClick={(e) => this.toogle(script)}
                       _style={{
                         position: 'absolute',
@@ -163,7 +163,7 @@ class PluginsDescription extends Component {
                       }}>
                       <button
                         type="button"
-                        className="btn btn-sm btn-info"
+                        className="btn btn-sm btn-primary"
                         onClick={(e) => this.toogle(script)}
                         style={{
                           position: 'absolute',
@@ -187,7 +187,7 @@ class PluginsDescription extends Component {
                           {!!script.defaultConfig && (
                             <button
                               type="button"
-                              className="btn btn-sm btn-info"
+                              className="btn btn-sm btn-primary"
                               onClick={(e) => this.inject(script)}
                               _style={{
                                 position: 'absolute',
@@ -200,7 +200,7 @@ class PluginsDescription extends Component {
                         </div>
                         {script.id.indexOf('cp:otoroshi.') === 0 && (
                           <a
-                            className="btn btn-sm btn-info"
+                            className="btn btn-sm btn-primary"
                             target="_blank"
                             href={`https://maif.github.io/otoroshi/manual/plugins/${script.id
                               .replace('cp:', '')
@@ -216,7 +216,7 @@ class PluginsDescription extends Component {
                         )}
                         <button
                           type="button"
-                          className="btn btn-sm btn-info"
+                          className="btn btn-sm btn-primary"
                           onClick={(e) => this.toogle(script)}
                           _style={{
                             position: 'absolute',

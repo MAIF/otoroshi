@@ -98,7 +98,7 @@ export class AuthModuleConfigsPage extends Component {
               <div className="mb-3 btnsService">
                 <div className="displayGroupBtn">
                   <button
-                    className="btn btn-info"
+                    className="btn btn-primary"
                     type="button"
                     style={{ marginRight: 20 }}
                     onClick={(e) => this.duplicate(s, ss, e)}>

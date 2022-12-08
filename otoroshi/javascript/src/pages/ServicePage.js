@@ -1166,7 +1166,7 @@ export class ServicePage extends Component {
               </button>
               {this.state.allCollapsed && (
                 <button
-                  className="btn btn-info"
+                  className="btn btn-primary"
                   type="button"
                   onClick={this.toggleCollapsed}
                   {...createTooltip('Unfold all form groups', 'left', true)}>
@@ -1175,7 +1175,7 @@ export class ServicePage extends Component {
               )}
               {!this.state.allCollapsed && (
                 <button
-                  className="btn btn-info"
+                  className="btn btn-primary"
                   type="button"
                   onClick={this.toggleCollapsed}
                   {...createTooltip('Fold all form groups', 'left', true)}>
@@ -1184,14 +1184,14 @@ export class ServicePage extends Component {
               )}
 
               <button
-                className="btn btn-info"
+                className="btn btn-primary"
                 type="button"
                 {...createTooltip('Export the current service as a JSON file.', 'left', true)}
                 onClick={this.exportService}>
                 <i className="fas fa-file-export" /> JSON
               </button>
               <button
-                className="btn btn-info"
+                className="btn btn-primary"
                 type="button"
                 {...createTooltip(
                   'Export the current service as a kubernetes YAML file.',
@@ -1202,7 +1202,7 @@ export class ServicePage extends Component {
                 <i className="fas fa-file-export" /> YAML
               </button>
               <button
-                className="btn btn-info"
+                className="btn btn-primary"
                 type="button"
                 {...createTooltip(
                   'Duplicate the current service as a new one to avoid refilling the form with same informations',
@@ -1464,7 +1464,7 @@ export class ServicePage extends Component {
                   <label className="col-xs-12 col-sm-2 col-form-label" />
                   <div className="col-sm-10 input-group-btn">
                     <button
-                      className="btn btn-sm btn-info"
+                      className="btn btn-sm btn-primary"
                       type="button"
                       onClick={(e) => {
                         e.preventDefault();
@@ -1478,7 +1478,7 @@ export class ServicePage extends Component {
                       <button
                         type="button"
                         onClick={this.createLetsEncrypt}
-                        className="btn btn-sm btn-info">
+                        className="btn btn-sm btn-primary">
                         <i className="fas fa-plus-circle" /> Create Let's Encrypt cert.
                       </button>
                     )}
@@ -1486,7 +1486,7 @@ export class ServicePage extends Component {
                       <button
                         type="button"
                         onClick={this.createCert}
-                        className="btn btn-sm btn-info">
+                        className="btn btn-sm btn-primary">
                         <i className="fas fa-plus-circle" /> Create certificate
                       </button>
                     )}

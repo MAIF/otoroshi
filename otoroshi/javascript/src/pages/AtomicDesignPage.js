@@ -59,8 +59,6 @@ state = {
           style={{ margin: 10 }}
         />
         <br />
-        <Button type="info" text="info" style={{ margin: 10 }} />
-        <br />
         <Button
           type="danger"
           className="btn-sm"

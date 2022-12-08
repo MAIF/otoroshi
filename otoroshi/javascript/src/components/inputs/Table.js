@@ -741,14 +741,14 @@ export class Table extends Component {
                   <button
                     onClick={this.exportJson}
                     type="button"
-                    className="btn btn-info"
+                    className="btn btn-primary"
                     title="Export as json">
                     <i className="glyphicon glyphicon-export" /> JSON
                   </button>
                   <button
                     onClick={this.exportYaml}
                     type="button"
-                    className="btn btn-info"
+                    className="btn btn-primary"
                     title="Export as yaml">
                     <i className="glyphicon glyphicon-export" /> YAML
                   </button>

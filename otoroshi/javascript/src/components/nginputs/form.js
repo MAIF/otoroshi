@@ -279,7 +279,7 @@ function SubFlow({ fields = [], full_fields = [], render, config }) {
 
       {hasMoreFields && !moreFields && !config.readOnly && match(config.path, config.breadcrumb) && (
         <button
-          className="btn btn-sm btn-info mt-2"
+          className="btn btn-sm btn-primary mt-2"
           onClick={() => showMoreFields(!moreFields)}
           style={{
             marginLeft: 'auto',

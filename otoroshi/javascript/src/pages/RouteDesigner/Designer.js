@@ -2344,7 +2344,7 @@ class EditView extends React.Component {
                 onPress={saveRoute}
               />
               {route.backend_ref && (
-                <Link className="btn btn-info ms-2" to={`/backends/edit/${route.backend_ref}/`}>
+                <Link className="btn btn-primary ms-2" to={`/backends/edit/${route.backend_ref}/`}>
                   <i className="fas fa-microchip me-1" />
                   Edit this backend
                 </Link>

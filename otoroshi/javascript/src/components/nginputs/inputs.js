@@ -127,7 +127,7 @@ export class NgDotsRenderer extends Component {
                   .replace('rgb(', '')}, ${selected ? 1 : 0.45})`;
 
               // if (!optObj || backgroundColorFromOption === 'initial')
-              //   btnBackground = selected ? 'btn-info' : 'btn-dark';
+              //   btnBackground = selected ? 'btn-primary' : 'btn-dark';
 
               let style = {
                 borderRadius: '24px',
@@ -144,7 +144,7 @@ export class NgDotsRenderer extends Component {
               return (
                 <button
                   className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-info' : 'btn-dark'
+                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
                   } me-2 px-3 mb-2`}
                   type="button"
                   key={rawOption}
@@ -727,7 +727,7 @@ export class NgArrayRenderer extends Component {
           {showActions && !readOnly && (
             <button
               type="button"
-              className="btn btn-sm btn-info float-end"
+              className="btn btn-sm btn-primary float-end"
               style={{ width: 42, marginTop: 5 }}
               onClick={() => {
                 let newArr = [...(this.props.value || [])];
@@ -893,7 +893,7 @@ export class NgArraySelectRenderer extends Component {
             })}
           <button
             type="button"
-            className="btn btn-sm btn-info float-end"
+            className="btn btn-sm btn-primary float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={(e) => {
               const newArray = Array.isArray(this.props.value) ? [...this.props.value, ''] : [''];
@@ -1000,7 +1000,7 @@ export class NgObjectSelectRenderer extends Component {
               })}
           <button
             type="button"
-            className="btn btn-sm btn-info float-end"
+            className="btn btn-sm btn-primary float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={(e) => {
               const newObject = { ...this.props.value };

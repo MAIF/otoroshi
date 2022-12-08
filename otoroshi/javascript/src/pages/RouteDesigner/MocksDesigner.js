@@ -151,7 +151,7 @@ function PushView({ endpoints, resources }) {
                         </span>
                       </div>
                     )}
-                    <button className="btn btn-sm btn-info me-1" type="button">
+                    <button className="btn btn-sm btn-primary me-1" type="button">
                       <i className={`fas fa-chevron-${status[idx] ? 'up' : 'down'}`} />
                     </button>
                   </div>
@@ -192,7 +192,7 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
       <div className="mt-3">
         <div className="d-flex">
           <h4 className="mb-0">Models</h4>
-          <button className="btn btn-sm btn-info ms-3" onClick={showResourceForm}>
+          <button className="btn btn-sm btn-primary ms-3" onClick={showResourceForm}>
             <i className="fas fa-plus-circle me-1" />
             New model
           </button>
@@ -251,7 +251,7 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
     <>
       <div className="d-flex">
         <h4 className="mb-0">Endpoints</h4>
-        <button className="btn btn-sm btn-info ms-3" onClick={(e) => showEndpointForm(e, false)}>
+        <button className="btn btn-sm btn-primary ms-3" onClick={(e) => showEndpointForm(e, false)}>
           <i className="fas fa-plus-circle me-1" />
           New endpoint(s)
         </button>
@@ -340,7 +340,7 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                   {!endpoint.model && <span className="btn btn-sm ms-3 me-3"></span>}
                   {endpoint.model && (
                     <span
-                      className="btn btn-sm btn-info ms-3 me-3"
+                      className="btn btn-sm btn-primary ms-3 me-3"
                       onClick={(e) => {
                         e.stopPropagation();
                         openResource(endpoint.model);
@@ -986,7 +986,7 @@ class NewEndpoint extends React.Component {
           <div className="d-flex justify-content-end">
             <button
               type="button"
-              className="btn btn-sm btn-info"
+              className="btn btn-sm btn-primary"
               onClick={() => {
                 props.onChange(true);
               }}>

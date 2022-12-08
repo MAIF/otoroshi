@@ -151,7 +151,7 @@ class CopyFromLineItem extends Component {
     return (
       <button
         type="button"
-        className="btn btn-sm btn-info"
+        className="btn btn-sm btn-primary"
         onClick={(e) => {
           this.clipboard.select();
           document.execCommand('Copy');

@@ -394,7 +394,7 @@ export default class RouteCompositions extends React.Component {
       <div className="h-100 flex-column">
         <div className="d-flex">
           <button
-            className="btn btn-info me-1"
+            className="btn btn-primary me-1"
             onClick={() => {
               const newItem = cloneDeep(templates?.routes[0]);
               this.props.setRoutes([newItem, ...service.routes]);

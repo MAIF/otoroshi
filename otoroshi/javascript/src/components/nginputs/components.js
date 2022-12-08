@@ -253,7 +253,7 @@ export class NgFormRenderer extends Component {
                 {!this.props.setBreadcrumb && !this.props.readOnly && (
                   <button
                     type="button"
-                    className="btn btn-info float-end btn-sm"
+                    className="btn btn-primary float-end btn-sm"
                     onClick={this.setBreadcrumb}>
                     <i className={`fas fa-eye${this.state.folded ? '-slash' : ''}`} />
                   </button>
@@ -261,7 +261,7 @@ export class NgFormRenderer extends Component {
                 {this.props.setBreadcrumb && clickable && !this.props.readOnly && (
                   <button
                     type="button"
-                    className="btn btn-info float-end btn-sm"
+                    className="btn btn-primary float-end btn-sm"
                     onClick={this.setBreadcrumb}>
                     <i className="fas fa-chevron-right"></i>
                   </button>

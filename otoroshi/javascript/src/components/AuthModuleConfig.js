@@ -738,7 +738,7 @@ export class User extends Component {
           {this.props.webauthn && (
             <button
               type="button"
-              className="btn btn-sm btn-info"
+              className="btn btn-sm btn-primary"
               title="Update profile link"
               onClick={(e) => {
                 return fetch(
@@ -778,7 +778,7 @@ export class User extends Component {
           {this.props.webauthn && (
             <button
               type="button"
-              className="btn btn-sm btn-info"
+              className="btn btn-sm btn-primary"
               title="Send update profile link to user"
               onClick={(e) => {
                 return fetch(
@@ -803,7 +803,7 @@ export class User extends Component {
           {this.props.webauthn && (
             <button
               type="button"
-              className="btn btn-sm btn-info"
+              className="btn btn-sm btn-primary"
               onClick={this.registerWebAuthn}
               title="Register webauthn device">
               <i className="fas fa-lock" /> Register webauthn device
@@ -1012,7 +1012,7 @@ export class BasicModuleConfig extends Component {
                 save={this.save}
               />
             ))}
-            <button type="button" className="btn btn-info" onClick={this.addUser}>
+            <button type="button" className="btn btn-primary" onClick={this.addUser}>
               <i className="fas fa-plus-circle" /> Add user
             </button>
           </div>
@@ -1023,7 +1023,7 @@ export class BasicModuleConfig extends Component {
             <div className="col-sm-10">
               <button
                 type="button"
-                className="btn btn-info"
+                className="btn btn-primary"
                 onClick={(e) => this.setState({ showRaw: !this.state.showRaw })}>
                 Show raw users
               </button>
@@ -1036,7 +1036,7 @@ export class BasicModuleConfig extends Component {
             <div className="col-sm-10">
               <button
                 type="button"
-                className="btn btn-info"
+                className="btn btn-primary"
                 onClick={(e) => this.setState({ showRaw: !this.state.showRaw })}>
                 Hide raw users
               </button>
