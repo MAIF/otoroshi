@@ -3,22 +3,22 @@ input[type=search]::-webkit-search-cancel-button {
 }
 
 input.form-control{
-    color:$colorGris;
+    color:var(--color-grey);
     background-color: $fondNavbar;
     border-color: 	$fondBody;
 }
 input.form-control:focus{
     background-color: $fondNavbar;
-    color:$colorGris;
+    color:var(--color-grey);
 }
 textarea.form-control{
-    color:$colorGris;
+    color:var(--color-grey);
     background-color: $fondNavbar;
     border-color: 	$fondBody;
 }
 
 select.form-control{
-    color:$colorGris;
+    color:var(--color-grey);
     background-color: $fondNavbar;
     border-color: 	$fondBody;
 }

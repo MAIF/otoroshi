@@ -2,7 +2,7 @@
   border: none !important;
 
   input {
-    color: $colorGris !important;
+    color: var(--color-grey) !important;
     background-color: $fondNavbar !important;
     border-color: $fondBody !important;
     border-radius: 4px;
@@ -18,14 +18,14 @@
   }
 
   .-next .-btn {
-    color: $colorGris !important;
-    border: 1px solid $colorGris !important;
+    color: var(--color-grey) !important;
+    border: 1px solid var(--color-grey) !important;
     border-radius: 4px !important;
   }
 
   .-previous .-btn {
-    color: $colorGris !important;
-    border: 1px solid $colorGris !important;
+    color: var(--color-grey) !important;
+    border: 1px solid var(--color-grey) !important;
     border-radius: 4px !important;
   }
 

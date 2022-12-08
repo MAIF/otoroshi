@@ -10,7 +10,7 @@
 .nav-tabs > li.active > a,
 .nav-tabs > li.active > a:focus,
 .nav-tabs > li.active > a:hover {
-  color: $colorGris;
+  color: var(--color-grey);
   cursor: default;
   background-color: $primaryColor;
   border: 1px solid $primaryColor;

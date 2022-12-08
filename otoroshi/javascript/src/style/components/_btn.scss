@@ -48,8 +48,8 @@
   background-color: var(--color-green);
 
   &[disabled] {
-    color: $colorGris;
-    border-color: $colorGris;
+    color: var(--color-grey);
+    border-color: var(--color-grey);
     background: none;
   }
 }
@@ -165,23 +165,23 @@
   }
 
   &[disabled] {
-    color: $colorGris;
+    color: var(--color-grey);
     text-shadow: none;
     background-color: transparent;
     border-color: var(--color-green);
   }
 
   &.disabled {
-    color: $colorGris;
+    color: var(--color-grey);
     text-shadow: none;
     background-color: transparent;
-    border-color: $colorGris;
+    border-color: var(--color-grey);
   }
 }
 
 .btn-default.disabled,
 .btn-default.disabled:hover {
-  color: $colorGris;
+  color: var(--color-grey);
   text-shadow: none;
   background-color: transparent;
 }

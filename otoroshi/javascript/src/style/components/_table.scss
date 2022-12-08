@@ -53,13 +53,13 @@ thead > tr > td > span {
 .pagination > .active > span:focus,
 .pagination > .active > span:hover {
   background-color: $fondNavbar;
-  border-color: $colorGris;
+  border-color: var(--color-grey);
 }
 
 .pagination > li > a,
 .pagination > li > span {
   background: none;
-  color: $colorGris;
+  color: var(--color-grey);
 }
 
 .titleTable {
@@ -98,7 +98,7 @@ thead {
 }
 
 .link-service {
-  color: $colorGris;
+  color: var(--color-grey);
   text-decoration: none;
 
   &:hover {
