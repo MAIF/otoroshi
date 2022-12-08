@@ -119,11 +119,11 @@
   }
 }
 
-.btn-primary {
+.btn-primary, .btn-primary:focus {
   color: #fff;
   border: 1px solid;
   border-color: $colorBleue;
-
+  background-color:transparent;
   &:hover,
   &.active,
   &.active:hover {
@@ -134,10 +134,11 @@
   }
 }
 
-.btn-danger {
+.btn-danger,.btn-danger:focus {
   color: #fff;
   border: 1px solid;
   border-color: $colorRouge;
+  background-color:transparent;
 
   &:hover {
     color: #fff;
@@ -151,10 +152,11 @@
   }
 }
 
-.btn-success {
+.btn-success, .btn-success:focus {
   color: #fff;
   border: 1px solid;
   border-color: $savecolor;
+  background-color:transparent;
 
   &:hover {
     color: #fff;
