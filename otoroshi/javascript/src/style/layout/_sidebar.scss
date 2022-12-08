@@ -1,7 +1,7 @@
 .sidebar {
-  background: -moz-linear-gradient(top, $fondBody 1%, $fondNavbar 100%);
-  background: -webkit-linear-gradient(top, $fondBody 1%, $fondNavbar);
-  background: linear-gradient(180deg, $fondBody 1%, $fondNavbar);
+  background: -moz-linear-gradient(top, var(--bg-color_level1) 1%, var(--bg-color_level2) 100%);
+  background: -webkit-linear-gradient(top, var(--bg-color_level1) 1%, var(--bg-color_level2));
+  background: linear-gradient(180deg, var(--bg-color_level1) 1%, var(--bg-color_level2));
   position: fixed;
   top: 51px;
   bottom: 0;
@@ -18,16 +18,16 @@
   scrollbar-width: none;
 
   .active a {
-    color: $primaryColor;
+    color: var(--color-primary);
   }
 
   a {
-    color: $colorGris;
+    color: var(--color_level1);
   }
 
   h2 a,
   h3 {
-    color: $primaryColor;
+    color: var(--color-primary);
     font-size: 15px;
     text-transform: uppercase;
     margin-left: 10px;
@@ -57,7 +57,7 @@
     > li > a {
       padding: 5px 10px 5px 36px;
       &.active {
-        color: $primaryColor;
+        color: var(--color-primary);
       }
     }
   }

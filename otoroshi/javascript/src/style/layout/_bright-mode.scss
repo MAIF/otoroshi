@@ -57,7 +57,6 @@ body.white-mode,
   .designer,
   .dark-background,
   .navbar-inverse,
-  .sidebar,
   //.metric,
   .ReactTable input {
     @include bright-mode_background--light;
@@ -104,7 +103,7 @@ body.white-mode,
     @include bright-mode_background-color--light;
   }
 
-  .sidebar a,
+  
   .fa-cog,
   .fa-moon,
   .fa-lightbulb,
@@ -162,23 +161,12 @@ body.white-mode,
     @include bright-mode_background-color--darkest;
   }
 
-  .sidebar h2 a {
-    color: $primaryColor !important;
-  }
   .jumbotron .btn {
     @include bright-mode_color--light;
     background-color: $primaryColor;
   }
 
-  // .logo-xs img {
-  //   filter: invert(100%);
-  // }
-  // .logo-xs:hover img {
-  //   filter: invert(0%);
-  // }
-  // .logo-xs:hover {
-  //   transition: 1s filter linear;
-  // }
+
 
   input.form-control {
     border-color: rgb(206, 212, 218);
