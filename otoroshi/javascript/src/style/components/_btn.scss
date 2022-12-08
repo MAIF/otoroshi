@@ -17,10 +17,6 @@
   padding-top: 50px;
 }
 
-.btnsOtoroshi {
-  margin-top: 10px;
-}
-
 .displayGroupBtn {
   text-align: right;
 
@@ -194,56 +190,6 @@
   background-color: #e2e6e9;
   color: #000000a6;
   border-color: #000000a6;
-}
-
-.prod,
-.prod:hover {
-  color: #fff;
-  background-color: $savecolor;
-  width: 80px;
-  border-color: $savecolor;
-  margin-bottom: 1px;
-}
-
-.preprod,
-.preprod:hover {
-  color: #fff;
-  background-color: $colorBleue;
-  width: 80px;
-  border-color: $colorBleue;
-  margin-bottom: 1px;
-}
-
-.experiments,
-.experiments:hover {
-  color: #fff;
-  background-color: $primaryColor;
-  width: 80px;
-  border-color: $primaryColor;
-  margin-bottom: 1px;
-}
-
-.refresh {
-  background-color: $fondBody;
-  border-color: $colorGris;
-  color: $colorGris;
-  background-image: none;
-  margin-left: 10px;
-  padding: 3px 5px 0px 5px;
-  text-shadow: none;
-}
-
-.btn-menu {
-  border-color: $fondNavbar;
-
-  &:hover {
-    background-color: $fondNavbar;
-    color: #FFF;
-  }
-
-  &:focus {
-    box-shadow: 0 0 0 0;
-  }
 }
 
 .btn-radius-25 {
