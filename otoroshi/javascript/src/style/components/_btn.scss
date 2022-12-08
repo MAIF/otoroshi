@@ -1,7 +1,6 @@
 .btn {
   background-color: transparent;
   background: none;
-  // margin-right: 5px;
 }
 
 .btnsService {
@@ -25,7 +24,7 @@
   }
 
   .btn-danger:focus {
-    outline-color: $colorRouge;
+    outline-color: var(--color-red);
   }
 }
 
@@ -137,14 +136,14 @@
 .btn-danger,.btn-danger:focus {
   color: #fff;
   border: 1px solid;
-  border-color: $colorRouge;
+  border-color: var(--color-red);
   background-color:transparent;
 
   &:hover {
     color: #fff;
     border: 1px solid;
-    border-color: $colorRouge;
-    background-color: $colorRouge;
+    border-color: var(--color-red);
+    background-color: var(--color-red);
   }
 
   .fa-lock {

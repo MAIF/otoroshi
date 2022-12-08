@@ -27,9 +27,9 @@ label {
 }
 
 .has-error .col-form-label {
-  color: $colorRouge;
+  color: var(--color-red);
 }
 
 .has-error .form-control {
-  border-color: $colorRouge;
+  border-color: var(--color-red);
 }
