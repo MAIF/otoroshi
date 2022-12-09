@@ -1,6 +1,7 @@
 package otoroshi.jobs.newengine
 
 import otoroshi.env.Env
+import otoroshi.models.GlobalConfig
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.next.proxy.{ProxyEngine, ProxyEngineConfig}
 import otoroshi.script._
@@ -12,6 +13,20 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
+
+object NewEngine {
+  def enabledFromConfig(config: GlobalConfig, env: Env): Boolean = {
+    val pluginEnabled = config.plugins.enabled
+    val pluginInRefs = config.plugins.refs.contains(s"cp:${classOf[ProxyEngine].getName}")
+    val configEnabled = config.plugins.config.select(ProxyEngine.configRoot).asOpt[JsValue].map(s => ProxyEngineConfig.parse(s, env)).getOrElse(ProxyEngineConfig.default).enabled
+    pluginEnabled && pluginInRefs && configEnabled
+  }
+  def enabled(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    env.datastores.globalConfigDataStore.singleton().map { config =>
+      enabledFromConfig(config, env)
+    }
+  }
+}
 
 class NewEngineJob extends Job {
 
@@ -42,11 +57,7 @@ class NewEngineJob extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 24.hours.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    env.datastores.globalConfigDataStore.singleton().map { config =>
-      val pluginEnabled = config.plugins.enabled
-      val pluginInRefs = config.plugins.refs.contains(s"cp:${classOf[ProxyEngine].getName}")
-      val configEnabled = config.plugins.config.select(ProxyEngine.configRoot).asOpt[JsValue].map(s => ProxyEngineConfig.parse(s, env)).getOrElse(ProxyEngineConfig.default).enabled
-      val enabled = pluginEnabled && pluginInRefs && configEnabled
+    NewEngine.enabled.map { enabled  =>
       if (!enabled) {
         logger.info(s"You are using the legacy Otoroshi proxy engine !")
         logger.info(s"The new proxy engine is now ready for production :)")

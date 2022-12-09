@@ -97,14 +97,13 @@ class BackOfficeAppContainer extends Component {
       BackOfficeServices.env(),
       BackOfficeServices.fetchLines(),
       BackOfficeServices.findAllGroups(),
-      BackOfficeServices.getGlobalConfig(['plugins'])
-    ]).then(([env, lines, groups, globalConfig]) => {
+    ]).then(([env, lines, groups]) => {
       this.setState({
         env,
         lines,
         groups,
         loading: false,
-        usedNewEngine: this.checkEngineUsage(globalConfig)
+        usedNewEngine: env.newEngineEnabled
       });
     });
   }

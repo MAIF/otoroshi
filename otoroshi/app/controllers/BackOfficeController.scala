@@ -18,6 +18,7 @@ import otoroshi.auth._
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticTemplates, ElasticUtils, ElasticVersion}
+import otoroshi.jobs.newengine.NewEngine
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models.RightsChecker.SuperAdminOnly
 import otoroshi.models._
@@ -397,6 +398,7 @@ class BackOfficeController(
           }.nonEmpty
           Ok(
             Json.obj(
+              "newEngineEnabled"        -> NewEngine.enabledFromConfig(config, env),
               "initWithNewEngine"       -> config.initWithNewEngine,
               "scriptingEnabled"        -> env.scriptingEnabled,
               "otoroshiLogo"            -> env.otoroshiLogo,
