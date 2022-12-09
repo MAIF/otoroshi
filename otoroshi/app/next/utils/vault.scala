@@ -14,6 +14,7 @@ import otoroshi.env.Env
 import otoroshi.plugins.hmac.HMACUtils
 import otoroshi.plugins.jobs.kubernetes.{KubernetesClient, KubernetesConfig}
 import otoroshi.utils.ReplaceAllWith
+import otoroshi.utils.cache.Caches
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits._
@@ -589,7 +590,7 @@ class Vaults(env: Env) {
     .map(_.milliseconds)
     .getOrElse(5.minutes)
   private val readTtl             = env.configuration
-    .getOptionalWithFileSupport[Long]("otoroshi.vaults.read-ttl")
+    .getOptionalWithFileSupport[Long]("otoroshi.vaults.read-timeout")
     .map(_.milliseconds)
     .getOrElse(10.seconds)
   private val parallelFetchs      = env.configuration
@@ -601,8 +602,8 @@ class Vaults(env: Env) {
   val leaderFetchOnly: Boolean =
     env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.vaults.leader-fetch-only").getOrElse(false)
 
-  private val cache                          =
-    Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
+  private val cache                          = Caches.bounded[String, CachedVaultSecret](cachedSecrets.toInt)
+    // Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
   private val expressionReplacer             = ReplaceAllWith("\\$\\{vault://([^}]*)\\}")
   private val vaults: TrieMap[String, Vault] = new LegitTrieMap[String, Vault]()
   private implicit val _env                  = env
@@ -714,7 +715,7 @@ class Vaults(env: Env) {
         .filter { secret =>
           secret.status match {
             case CachedVaultSecretStatus.SecretReadSuccess(_)
-                if System.currentTimeMillis() - secret.at.toDate.getTime < (secretsTtl.toMillis - 20000) =>
+                if (System.currentTimeMillis() - secret.at.toDate.getTime) < (secretsTtl.toMillis - 20000) =>
               false
             case _ => true
           }
