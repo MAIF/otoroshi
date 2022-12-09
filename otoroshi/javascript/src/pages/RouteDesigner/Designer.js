@@ -928,9 +928,9 @@ class Designer extends React.Component {
               config: newNode.legacy
                 ? {
                   plugin: newNode.id,
-                  [newNode.configRoot]: {
+                  // [newNode.configRoot]: {
                     ...newNode.config,
-                  },
+                  // },
                 }
                 : {
                   ...newNode.config,

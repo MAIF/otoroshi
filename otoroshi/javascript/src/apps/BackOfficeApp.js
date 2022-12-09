@@ -108,22 +108,6 @@ class BackOfficeAppContainer extends Component {
     });
   }
 
-  checkEngineUsage = globalConfig => {
-    const plugins = globalConfig.plugins
-
-    try {
-      if (plugins.refs && plugins.config) {
-        return plugins.refs.includes('cp:otoroshi.next.proxy.ProxyEngine') &&
-          plugins.config['NextGenProxyEngine'] &&
-          plugins.config['NextGenProxyEngine'].enabled
-      } else {
-        return false;
-      }
-    } catch (_) {
-      return false
-    }
-  }
-
   componentDidCatch(e) {
     this.setState({ catchedError: e });
   }
