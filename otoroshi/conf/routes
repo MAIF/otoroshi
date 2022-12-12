@@ -536,7 +536,7 @@ GET     /api/events/_template                                 otoroshi.controlle
 POST    /api/status                                           otoroshi.controllers.adminapi.AnalyticsController.servicesStatus(from: Option[String], to: Option[String])
 
 GET     /api/experimental/certificates/_by_domain             otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates()
-GET     /api/experimental/entities/:entity/:id                otoroshi.next.controllers.adminapi.EntitiesController.getEntityGraph(entity: String, id: String)
+GET     /api/entities/:entity/:id                otoroshi.next.controllers.adminapi.EntitiesController.getEntityGraph(entity: String, id: String)
 
 GET     /api/admin-sessions                                   otoroshi.controllers.adminapi.UsersController.sessions()
 DELETE  /api/admin-sessions/:id                               otoroshi.controllers.adminapi.UsersController.discardSession(id)

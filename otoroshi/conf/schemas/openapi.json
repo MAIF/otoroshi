@@ -52,6 +52,9 @@
     "name" : "data-exporters",
     "description" : "All api endpoints about data-exporters"
   }, {
+    "name" : "entities",
+    "description" : "???"
+  }, {
     "name" : "events",
     "description" : "All api endpoints about events"
   }, {
@@ -16518,9 +16521,9 @@
         }
       }
     },
-    "/api/experimental/entities/{entity}/{id}" : {
+    "/api/entities/{entity}/{id}" : {
       "get" : {
-        "tags" : [ "experimental" ],
+        "tags" : [ "entities" ],
         "summary" : "???",
         "operationId" : "otoroshi.next.controllers.adminapi.EntitiesController.getEntityGraph",
         "parameters" : [ {
