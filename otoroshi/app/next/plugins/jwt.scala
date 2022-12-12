@@ -189,26 +189,17 @@ class JwtVerificationOnly extends NgAccessValidator with NgRequestTransformer {
     val config =
       ctx.cachedConfig(internalName)(NgJwtVerificationOnlyConfig.format).getOrElse(NgJwtVerificationOnlyConfig())
 
-    if (config.failIfAbsent) {
-      config.verifier match {
-        case None             => JwtVerifierUtils.onError()
-        case Some(verifierId) =>
-          env.proxyState.jwtVerifier(verifierId) match {
-            case None           => JwtVerifierUtils.onError()
-            case Some(verifier) =>
-              verifier.source.token(ctx.request) match {
-                case Some(_) =>
-                  config.verifier match {
-                    case None             => JwtVerifierUtils.onError()
-                    case Some(verifierId) => JwtVerifierUtils.verify(ctx, Seq(verifierId))
-                  }
-                  NgAccess.NgAllowed.vfuture
-                case _       => JwtVerifierUtils.onError()
-              }
-          }
-      }
-    } else {
-      NgAccess.NgAllowed.vfuture
+    config.verifier match {
+      case None             => JwtVerifierUtils.onError()
+      case Some(verifierId) =>
+        env.proxyState.jwtVerifier(verifierId) match {
+          case None           => JwtVerifierUtils.onError()
+          case Some(verifier) =>
+            verifier.source.token(ctx.request) match {
+              case None if !config.failIfAbsent => NgAccess.NgAllowed.vfuture
+              case _       => JwtVerifierUtils.verify(ctx, Seq(verifierId))
+            }
+        }
     }
   }
 }
