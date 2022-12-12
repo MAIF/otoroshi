@@ -4,12 +4,6 @@ export default {
   group: 'Targets',
   field: 'backend',
   schema: {
-    target_refs: {
-      label: 'target_refs',
-      type: 'array',
-      array: true,
-      format: null,
-    },
     root: {
       label: 'root',
       type: 'string',

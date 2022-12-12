@@ -638,7 +638,6 @@ object NgRoute {
           tls = true
         )
       ),
-      targetRefs = Seq.empty,
       root = "/",
       rewrite = false,
       loadBalancing = RoundRobin,
@@ -700,7 +699,6 @@ object NgRoute {
     backendRef = None,
     backend = NgBackend(
       targets = Seq.empty,
-      targetRefs = Seq.empty,
       root = "/",
       rewrite = false,
       loadBalancing = RoundRobin,
@@ -807,7 +805,6 @@ object NgRoute {
       backendRef = None,
       backend = NgBackend(
         targets = service.targets.map(NgTarget.fromTarget),
-        targetRefs = Seq.empty,
         root = service.root,
         rewrite = false,
         loadBalancing = service.targetsLoadBalancing,

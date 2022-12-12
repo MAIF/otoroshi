@@ -4,7 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthModuleConfig, GenericOauth2ModuleConfig, SessionCookieValues}
 import otoroshi.env.Env
 import otoroshi.models._
-import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend, StoredNgTarget}
+import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.script.Script
 import otoroshi.security.Auth0Config
 import otoroshi.ssl.{Cert, ClientCertificateValidator}
@@ -261,7 +261,6 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val routes             = (exportSource \ "routes").asOpt[JsArray].getOrElse(Json.arr())
     val routeCompositions  = (exportSource \ "routeCompositions").asOpt[JsArray].getOrElse(Json.arr())
     val backends           = (exportSource \ "backends").asOpt[JsArray].getOrElse(Json.arr())
-    val targets            = (exportSource \ "targets").asOpt[JsArray].getOrElse(Json.arr())
 
     for {
       _ <- redisCli
@@ -293,7 +292,6 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- Future.sequence(routes.value.map(NgRoute.fromJsons).map(_.save()))
       _ <- Future.sequence(routeCompositions.value.map(NgRouteComposition.fromJsons).map(_.save()))
       _ <- Future.sequence(backends.value.map(StoredNgBackend.fromJsons).map(_.save()))
-      _ <- Future.sequence(targets.value.map(StoredNgTarget.fromJsons).map(_.save()))
     } yield ()
   }
 
@@ -330,7 +328,6 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       routes           <- env.datastores.routeDataStore.findAll()
       routeCompositions <- env.datastores.routeCompositionDataStore.findAll()
       backends         <- env.datastores.backendsDataStore.findAll()
-      targets          <- env.datastores.targetsDataStore.findAll()
     } yield OtoroshiExport(
       config,
       descs,
@@ -354,7 +351,6 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       routes,
       routeCompositions,
       backends,
-      targets
     ).json
   }
 

@@ -12,7 +12,7 @@ import otoroshi.auth.AuthModuleConfig
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
 import otoroshi.models._
-import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend, StoredNgTarget}
+import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
@@ -915,15 +915,6 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     customizeIdAndName(spec, res)
   }
 
-  private[kubernetes] def customizeTarget(
-      _spec: JsValue,
-      res: KubernetesOtoroshiResource,
-      entities: Seq[StoredNgTarget]
-  ): JsValue = {
-    val spec = findAndMerge[StoredNgTarget](_spec, res, "target", None, entities, _.metadata, _.id, _.json)
-    customizeIdAndName(spec, res)
-  }
-
   private[kubernetes] def customizeTcpService(
       _spec: JsValue,
       res: KubernetesOtoroshiResource,
@@ -992,12 +983,6 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       "backends",
       StoredNgBackend.format,
       (a, b) => customizeBackend(a, b, backends)
-    )
-  def crdsFetchTargets(targets: Seq[StoredNgTarget]): Future[Seq[OtoResHolder[StoredNgTarget]]]                 =
-    client.fetchOtoroshiResources[StoredNgTarget](
-      "targets",
-      StoredNgTarget.format,
-      (a, b) => customizeTarget(a, b, targets)
     )
   def crdsFetchServiceGroups(groups: Seq[ServiceGroup]): Future[Seq[OtoResHolder[ServiceGroup]]]                =
     client.fetchOtoroshiResources[ServiceGroup](
@@ -1100,7 +1085,6 @@ case class KubernetesResourcesContext(
     routes: Seq[OtoResHolder[NgRoute]],
     routesCompositions: Seq[OtoResHolder[NgRouteComposition]],
     backends: Seq[OtoResHolder[StoredNgBackend]],
-    targets: Seq[OtoResHolder[StoredNgTarget]]
 )
 
 case class OtoroshiResourcesContext(
@@ -1120,7 +1104,6 @@ case class OtoroshiResourcesContext(
     routes: Seq[NgRoute],
     routeCompositions: Seq[NgRouteComposition],
     backends: Seq[StoredNgBackend],
-    targets: Seq[StoredNgTarget]
 )
 
 case class CRDContext(
@@ -1201,8 +1184,6 @@ object KubernetesCRDsJob {
         if (useProxyState) env.proxyState.allNgServices().vfuture else env.datastores.routeCompositionDataStore.findAll()
       otobackends           <-
         if (useProxyState) env.proxyState.allBackends().vfuture else env.datastores.backendsDataStore.findAll()
-      ototargets            <-
-        if (useProxyState) env.proxyState.allTargets().vfuture else env.datastores.targetsDataStore.findAll()
 
       services           <- clientSupport.client.fetchServices()
       endpoints          <- clientSupport.client.fetchEndpoints()
@@ -1223,7 +1204,6 @@ object KubernetesCRDsJob {
       routes             <- clientSupport.crdsFetchRoutes(otoroutes)
       routecomps         <- clientSupport.crdsFetchRouteCompositions(otoroutecomps)
       backends           <- clientSupport.crdsFetchBackends(otobackends)
-      targets            <- clientSupport.crdsFetchTargets(ototargets)
 
     } yield {
       CRDContext(
@@ -1244,7 +1224,6 @@ object KubernetesCRDsJob {
           routes = routes,
           routesCompositions = routecomps,
           backends = backends,
-          targets = targets
         ),
         otoroshi = OtoroshiResourcesContext(
           serviceGroups = otoserviceGroups,
@@ -1263,7 +1242,6 @@ object KubernetesCRDsJob {
           routes = otoroutes,
           routeCompositions = otoroutecomps,
           backends = otobackends,
-          targets = ototargets
         )
       )
     }
@@ -1305,8 +1283,7 @@ object KubernetesCRDsJob {
           compareAndSave(ctx.kubernetes.apiKeys)(ctx.otoroshi.apiKeys, _.clientId, _.save()) ++
           compareAndSave(ctx.kubernetes.routes)(ctx.otoroshi.routes, _.id, _.save()) ++
           compareAndSave(ctx.kubernetes.routesCompositions)(ctx.otoroshi.routeCompositions, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.backends)(ctx.otoroshi.backends, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.targets)(ctx.otoroshi.targets, _.id, _.save())
+          compareAndSave(ctx.kubernetes.backends)(ctx.otoroshi.backends, _.id, _.save())
       ).toList
       logger.info(s"Will now sync ${entities.size} entities !")
       Source(entities)
@@ -1453,14 +1430,7 @@ object KubernetesCRDsJob {
           .map(_.id)
           .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-backends entities"))
           .applyOn(env.datastores.backendsDataStore.deleteByIds)
-
-      _ <-
-        ctx.otoroshi.targets
-          .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-          .filterNot(sg => ctx.kubernetes.targets.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
-          .map(_.id)
-          .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-targets entities"))
-          .applyOn(env.datastores.targetsDataStore.deleteByIds)
+      
     } yield ()
   }
 

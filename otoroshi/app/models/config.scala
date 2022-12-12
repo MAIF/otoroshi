@@ -5,7 +5,7 @@ import org.joda.time.DateTime
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.events._
-import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend, StoredNgTarget}
+import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
@@ -920,7 +920,6 @@ case class OtoroshiExport(
   routes: Seq[NgRoute] = Seq.empty,
   routeCompositions: Seq[NgRouteComposition] = Seq.empty,
   backends: Seq[StoredNgBackend] = Seq.empty,
-  targets: Seq[StoredNgTarget] = Seq.empty
 ) {
 
   import otoroshi.utils.json.JsonImplicits._
@@ -1092,7 +1091,6 @@ case class OtoroshiExport(
       "routes"             -> JsArray(routes.map(_.json)),
       "routeCompositions"  -> JsArray(routeCompositions.map(_.json)),
       "backends"           -> JsArray(backends.map(_.json)),
-      "targets"            -> JsArray(targets.map(_.json))
     )
   }
 }

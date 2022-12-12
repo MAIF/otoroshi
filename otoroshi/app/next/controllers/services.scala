@@ -180,7 +180,6 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
                 tls = true
               )
             ),
-            targetRefs = Seq.empty,
             root = "/",
             rewrite = false,
             loadBalancing = RoundRobin

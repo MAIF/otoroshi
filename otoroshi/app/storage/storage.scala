@@ -11,7 +11,7 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway.RequestsDataStore
 import otoroshi.models._
-import otoroshi.next.models.{NgRouteCompositionDataStore, NgRouteDataStore, StoredNgBackendDataStore, StoredNgTargetDataStore}
+import otoroshi.next.models.{NgRouteCompositionDataStore, NgRouteDataStore, StoredNgBackendDataStore}
 import otoroshi.script.ScriptDataStore
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
 import otoroshi.storage.drivers.inmemory.{Memory, SwapStrategy, SwappableRedis}
@@ -67,7 +67,6 @@ trait DataStores {
   def dataExporterConfigDataStore: DataExporterConfigDataStore
   def routeDataStore: NgRouteDataStore
   def routeCompositionDataStore: NgRouteCompositionDataStore
-  def targetsDataStore: StoredNgTargetDataStore
   def backendsDataStore: StoredNgBackendDataStore
   ////
   def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit]

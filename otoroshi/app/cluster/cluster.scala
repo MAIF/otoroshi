@@ -2181,9 +2181,6 @@ class SwappableInMemoryDataStores(
   private lazy val _routesCompositionDataStore       = new KvNgRouteCompositionDataStore(redis, env)
   override def routeCompositionDataStore: NgRouteCompositionDataStore = _routesCompositionDataStore
 
-  private lazy val _targetsDataStore                     = new KvStoredNgTargetDataStore(redis, env)
-  override def targetsDataStore: StoredNgTargetDataStore = _targetsDataStore
-
   private lazy val _backendsDataStore                      = new KvStoredNgBackendDataStore(redis, env)
   override def backendsDataStore: StoredNgBackendDataStore = _backendsDataStore
 

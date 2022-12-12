@@ -207,7 +207,6 @@ object NgRouteComposition {
           ),
           backend = NgMinimalBackend(
             targets = targets,
-            targetRefs = Seq.empty,
             root = "/",
             rewrite = false,
             loadBalancing = RoundRobin

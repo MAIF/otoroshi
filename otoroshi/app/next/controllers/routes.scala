@@ -191,7 +191,6 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
             tls = true
           )
         ),
-        targetRefs = Seq.empty,
         root = "/",
         rewrite = false,
         loadBalancing = RoundRobin,
