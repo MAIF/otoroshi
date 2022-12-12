@@ -135,8 +135,6 @@ possible levels are `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`. Default one is `W
 * [`otoroshi-cassandra-datastores`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-cassandra-datastores%22%29)
 * [`otoroshi-redis-like-store`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-redis-like-store%22%29)
 * [`otoroshi-globalconfig-datastore`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-globalconfig-datastore%22%29)
-* [`otoroshi-mongo-redis`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-mongo-redis%22%29)
-* [`otoroshi-mongo-datastores`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-mongo-datastores%22%29)
 * [`otoroshi-reactive-pg-datastores`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-reactive-pg-datastores%22%29)
 * [`otoroshi-reactive-pg-kv`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-reactive-pg-kv%22%29)
 * [`otoroshi-cassandra-datastores`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-cassandra-datastores%22%29)
