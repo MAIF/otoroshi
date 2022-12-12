@@ -183,10 +183,6 @@ libraryDependencies ++= Seq(
   "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.15.Final",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0" % Test,
-  // do not update because the feature is deprecated and will be removed
-  "org.reactivemongo"               %% "reactivemongo"                             % "0.20.13" excludeAll ExclusionRule(organization =
-    "org.apache.logging.log4j"
-  )
 )
 
 scalacOptions ++= Seq(

@@ -49,8 +49,6 @@ test_server () {
   # rc=$?; if [ $rc != 0 ]; then exit $rc; fi
   # TEST_STORE=cassandra sbt test
   # rc=$?; if [ $rc != 0 ]; then exit $rc; fi
-  # TEST_STORE=mongo sbt test
-  # rc=$?; if [ $rc != 0 ]; then exit $rc; fi
 }
 
 test_mtls () {

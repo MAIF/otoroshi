@@ -32,7 +32,6 @@ import otoroshi.storage.DataStores
 import otoroshi.storage.drivers.cassandra._
 import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.drivers.lettuce._
-import otoroshi.storage.drivers.mongo._
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
 import otoroshi.storage.drivers.rediscala._
 import otoroshi.tcp.TcpService
@@ -810,7 +809,8 @@ class Env(
       case "cassandra" if clusterConfig.mode == ClusterMode.Leader         =>
         new CassandraDataStores(false, configuration, environment, lifecycle, this)
       case "mongo" if clusterConfig.mode == ClusterMode.Leader             =>
-        new MongoDataStores(configuration, environment, lifecycle, this)
+        logger.error("MongoDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database")
+        sys.exit(1)
       case "lettuce" if clusterConfig.mode == ClusterMode.Leader           =>
         new LettuceDataStores(configuration, environment, lifecycle, this)
       case "experimental-pg" if clusterConfig.mode == ClusterMode.Leader   =>
@@ -833,7 +833,9 @@ class Env(
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.S3PersistenceKind, this)
       case "cassandra-naive"                                               => new CassandraDataStores(true, configuration, environment, lifecycle, this)
       case "cassandra"                                                     => new CassandraDataStores(false, configuration, environment, lifecycle, this)
-      case "mongo"                                                         => new MongoDataStores(configuration, environment, lifecycle, this)
+      case "mongo"                                                         =>
+        logger.error("MongoDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database")
+        sys.exit(1)
       case "redis-pool"                                                    => new RedisCPDataStores(configuration, environment, lifecycle, this)
       case "redis-mpool"                                                   => new RedisMCPDataStores(configuration, environment, lifecycle, this)
       case "redis-cluster"                                                 => new RedisClusterDataStores(configuration, environment, lifecycle, this)
