@@ -145,7 +145,7 @@ class LettuceDataStores(
       environment: Environment,
       lifecycle: ApplicationLifecycle
   ): Future[Unit] = {
-    logger.info("Now using Redis Lettuce DataStores")
+    logger.info("Now using Redis (lettuce) DataStores")
     _serviceDescriptorDataStore.startCleanup(env)
     _certificateDataStore.startSync()
     FastFuture.successful(())

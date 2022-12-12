@@ -116,7 +116,7 @@ libraryDependencies ++= Seq(
   "org.shredzone.acme4j"             % "acme4j-client"                             % acme4jVersion excludeAll (excludesJackson: _*),
   "org.shredzone.acme4j"             % "acme4j-utils"                              % acme4jVersion excludeAll (excludesJackson: _*),
   "org.shredzone.acme4j"             % "acme4j"                                    % acme4jVersion excludeAll (excludesJackson: _*),
-  "io.lettuce"                       % "lettuce-core"                              % "6.2.1.RELEASE" excludeAll (excludesJackson: _*),
+  "io.lettuce"                       % "lettuce-core"                              % "6.2.2.RELEASE" excludeAll (excludesJackson: _*),
   "io.vertx"                         % "vertx-pg-client"                           % "4.3.4",
   "com.ongres.scram"                 % "common"                                    % "2.1",
   "com.ongres.scram"                 % "client"                                    % "2.1",

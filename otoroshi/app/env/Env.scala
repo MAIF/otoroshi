@@ -772,7 +772,7 @@ class Env(
   displayDefaultValuesWarning()
 
   lazy val datastores: DataStores = {
-    configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("redis") match {
+    configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("lettuce") match {
       case _ if clusterConfig.mode == ClusterMode.Worker                   =>
         new SwappableInMemoryDataStores(configuration, environment, lifecycle, this)
       case "redis-pool" if clusterConfig.mode == ClusterMode.Leader        =>
@@ -815,6 +815,10 @@ class Env(
         new LettuceDataStores(configuration, environment, lifecycle, this)
       case "experimental-pg" if clusterConfig.mode == ClusterMode.Leader   =>
         new ReactivePgDataStores(configuration, environment, lifecycle, this)
+      case "pg" if clusterConfig.mode == ClusterMode.Leader =>
+        new ReactivePgDataStores(configuration, environment, lifecycle, this)
+      case "postgresql" if clusterConfig.mode == ClusterMode.Leader =>
+        new ReactivePgDataStores(configuration, environment, lifecycle, this)
       case "redis"                                                         => new RedisLFDataStores(configuration, environment, lifecycle, this)
       case "inmemory"                                                      =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
@@ -844,6 +848,8 @@ class Env(
       case "redis-sentinel-lf"                                             => new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
       case "lettuce"                                                       => new LettuceDataStores(configuration, environment, lifecycle, this)
       case "experimental-pg"                                               => new ReactivePgDataStores(configuration, environment, lifecycle, this)
+      case "pg"                                                            => new ReactivePgDataStores(configuration, environment, lifecycle, this)
+      case "postgresql"                                                    => new ReactivePgDataStores(configuration, environment, lifecycle, this)
       case e                                                               => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }

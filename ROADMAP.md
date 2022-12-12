@@ -231,6 +231,6 @@ at some point we will have the opportunity to rewrite otoroshi with major breaki
 
 ## storage
 
-- [ ] switch default redis driver to lettuce and remove rediscala
+- [x] switch default redis driver to lettuce and remove rediscala
 - [x] remove support for mongodb
 - [x] remove support for leveldb
