@@ -75,7 +75,7 @@ case class ProxyEngineConfig(
 object ProxyEngineConfig {
   lazy val default: ProxyEngineConfig = ProxyEngineConfig(
     enabled = true,
-    domains = Seq("*-next-gen.oto.tools"),
+    domains = Seq("*"),
     denyDomains = Seq.empty,
     reporting = true,
     pluginMerge = true,
@@ -90,7 +90,7 @@ object ProxyEngineConfig {
   def parse(config: JsValue, env: Env): ProxyEngineConfig = {
     val enabled                    = config.select("enabled").asOpt[Boolean].getOrElse(true)
     val domains                    =
-      if (enabled) config.select("domains").asOpt[Seq[String]].getOrElse(Seq("*-next-gen.oto.tools"))
+      if (enabled) config.select("domains").asOpt[Seq[String]].getOrElse(Seq("*"))
       else Seq.empty[String]
     val denyDomains                =
       if (enabled) config.select("deny_domains").asOpt[Seq[String]].getOrElse(Seq.empty) else Seq.empty[String]
