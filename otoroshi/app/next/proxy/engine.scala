@@ -3174,7 +3174,7 @@ class ProxyEngine() extends RequestHandler {
         url = rawRequest.theUrl,
         method = rawRequest.method,
         from = rawRequest.theIpAddress,
-        env = "prod",
+        env = route.metadata.get("otoroshi-core-env").getOrElse("prod"),
         data = DataInOut(
           dataIn = counterIn.get(),
           dataOut = counterOut.get()
@@ -3327,7 +3327,7 @@ class ProxyEngine() extends RequestHandler {
         url = rawRequest.theUrl,
         method = rawRequest.method,
         from = rawRequest.theIpAddress,
-        env = "prod",
+        env = route.metadata.get("otoroshi-core-env").getOrElse("prod"),
         data = DataInOut(
           dataIn = counterIn.get(),
           dataOut = counterOut.get()

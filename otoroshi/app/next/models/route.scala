@@ -226,7 +226,7 @@ case class NgRoute(
       metadata = metadata,
       enabled = enabled,
       groups = groups,
-      env = "prod",
+      env = metadata.get("otoroshi-core-env").getOrElse("prod"),
       domain = "--",
       subdomain = "--",
       targets = backend.allTargets.map(_.toTarget),
@@ -761,6 +761,9 @@ object NgRoute {
       description = service.description,
       tags = service.tags ++ Seq(s"env:${service.env}"),
       metadata = service.metadata
+        .applyOn { meta =>
+          meta ++ Map("otoroshi-core-env" -> service.env)
+        }
         .applyOnIf(service.useAkkaHttpClient) { meta =>
           meta ++ Map("otoroshi-core-use-akka-http-client" -> "true")
         }
