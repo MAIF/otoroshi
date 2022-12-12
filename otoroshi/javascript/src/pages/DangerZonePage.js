@@ -1,21 +1,17 @@
 import React, { Component, Suspense, useState } from 'react';
-import { ResetDBButton } from '../components/ResetDBButton';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Form, SelectInput, BooleanInput } from '../components/inputs';
 import { Proxy } from '../components/Proxy';
 import { Scripts } from '../components/Scripts';
 import moment from 'moment';
-import YAML from 'yaml';
 
 import deepSet from 'set-value';
 import cloneDeep from 'lodash/cloneDeep';
 import merge from 'lodash/merge';
-import Select from 'react-select';
-import Creatable from 'react-select/lib/Creatable';
 
 import { CheckElasticsearchConnection } from '../components/elasticsearch';
 import { Link } from 'react-router-dom';
-import { NgArrayRenderer, NgForm, NgSelectRenderer } from '../components/nginputs';
+import { NgForm, NgSelectRenderer } from '../components/nginputs';
 import { Button } from '../components/Button';
 import { Description } from './RouteDesigner/Designer';
 import { FeedbackButton } from './RouteDesigner/FeedbackButton';
@@ -1715,6 +1711,9 @@ class GlobalPlugins extends Component {
   }
 
   extractConfigurationFromPlugin = (plugin, isOldEngine) => {
+    if (!plugin)
+      return
+
     if (isOldEngine) {
       return {
         ...(plugin.default_config || plugin.defaultConfig),
@@ -1722,7 +1721,10 @@ class GlobalPlugins extends Component {
       }
     } else {
       return {
-        config: (plugin.default_config || plugin.defaultConfig),
+        config: {
+          ...(plugin.default_config || plugin.defaultConfig),
+          plugin: plugin.legacy ? plugin.id : undefined
+        },
         debug: false,
         enabled: true,
         exclude: [],
@@ -1739,8 +1741,7 @@ class GlobalPlugins extends Component {
 
     const ngConfig = (e.plugins || [])
       .reduce((acc, plugin) => {
-        const pluginConfig = currentConfig.find(entry => entry.plugin === plugin)
-        console.log(plugin, pluginConfig)
+        const pluginConfig = currentConfig.find(entry => entry.plugin === plugin || entry.config?.plugin === plugin)
         if (!pluginConfig) {
           if (plugin.length === 0) {
             return [
@@ -1765,13 +1766,11 @@ class GlobalPlugins extends Component {
         ]
       }, [])
 
-    console.log(ngConfig)
-
     this.props.onChange({
       ...this.props.value,
       config: {
         ...this.props.value.config,
-        ng: ngConfig.filter(f => f.plugin) // prevent manual deletion of plugin by deleting the configuration of plugin which doesn't contain id
+        ng: ngConfig.filter(f => f && f.plugin) // prevent manual deletion of plugin by deleting the configuration of plugin which doesn't contain id
       }
     })
   }
@@ -1913,7 +1912,10 @@ class GlobalPlugins extends Component {
     ng_plugins: {
       component: props => {
         const plugins = (props.rootValue?.config?.ng || [])
-          .map(r => r.plugin)
+          .flatMap(r => [r.plugin, (r.config || {}).plugin])
+          .filter(p => p && !p.includes('.wrappers.'))
+
+        console.log(plugins)
         return <NgForm
           value={{ plugins }}
           onChange={e => this.handleNgPluginsChange(e, plugins.length)}

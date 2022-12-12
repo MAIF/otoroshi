@@ -518,7 +518,7 @@ export class Oauth2ModuleConfig extends Component {
             changeTheValue(path + '.rightsOverride', e);
           }}
           example={{
-            'jhonny@otoroshi.tools': [
+            'jhon@otoroshi.tools': [
               {
                 tenant: '*:r',
                 teams: ['*:r'],
