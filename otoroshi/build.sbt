@@ -186,8 +186,7 @@ libraryDependencies ++= Seq(
   // do not update because the feature is deprecated and will be removed
   "org.reactivemongo"               %% "reactivemongo"                             % "0.20.13" excludeAll ExclusionRule(organization =
     "org.apache.logging.log4j"
-  ),
-  "org.iq80.leveldb"                 % "leveldb"                                   % "0.12"
+  )
 )
 
 scalacOptions ++= Seq(

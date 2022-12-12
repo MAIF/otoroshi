@@ -131,7 +131,6 @@ possible levels are `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`. Default one is `W
 * [`otoroshi-snowmonkey-config`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-snowmonkey-config%22%29)
 * [`otoroshi-webauthn-admin-datastore`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-webauthn-admin-datastore%22%29)
 * [`otoroshi-webauthn-admin-datastore`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-webauthn-admin-datastore%22%29)
-* [`otoroshi-leveldb-datastores`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-leveldb-datastores%22%29)
 * [`otoroshi-service-datatstore`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-service-datatstore%22%29)
 * [`otoroshi-cassandra-datastores`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-cassandra-datastores%22%29)
 * [`otoroshi-redis-like-store`](https://github.com/MAIF/otoroshi/search?q=Logger%28%22otoroshi-redis-like-store%22%29)

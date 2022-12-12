@@ -32,7 +32,6 @@ import otoroshi.storage.DataStores
 import otoroshi.storage.drivers.cassandra._
 import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.drivers.lettuce._
-import otoroshi.storage.drivers.leveldb._
 import otoroshi.storage.drivers.mongo._
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
 import otoroshi.storage.drivers.rediscala._
@@ -798,7 +797,8 @@ class Env(
       case "mem" if clusterConfig.mode == ClusterMode.Leader               =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb" if clusterConfig.mode == ClusterMode.Leader           =>
-        new LevelDbDataStores(configuration, environment, lifecycle, this)
+        logger.error("LevelDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database")
+        sys.exit(1)
       case "file" if clusterConfig.mode == ClusterMode.Leader              =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.FilePersistenceKind, this)
       case "http" if clusterConfig.mode == ClusterMode.Leader              =>
@@ -822,7 +822,9 @@ class Env(
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "mem"                                                           =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
-      case "leveldb"                                                       => new LevelDbDataStores(configuration, environment, lifecycle, this)
+      case "leveldb"                                                       =>
+        logger.error("LevelDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database")
+        sys.exit(1)
       case "file"                                                          =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.FilePersistenceKind, this)
       case "http"                                                          =>
