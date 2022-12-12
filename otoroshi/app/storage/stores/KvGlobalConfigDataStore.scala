@@ -259,7 +259,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val tenants            = (exportSource \ "tenants").asOpt[JsArray].getOrElse(Json.arr())
     val teams              = (exportSource \ "teams").asOpt[JsArray].getOrElse(Json.arr())
     val routes             = (exportSource \ "routes").asOpt[JsArray].getOrElse(Json.arr())
-    val services           = (exportSource \ "services").asOpt[JsArray].getOrElse(Json.arr())
+    val routeCompositions  = (exportSource \ "routeCompositions").asOpt[JsArray].getOrElse(Json.arr())
     val backends           = (exportSource \ "backends").asOpt[JsArray].getOrElse(Json.arr())
     val targets            = (exportSource \ "targets").asOpt[JsArray].getOrElse(Json.arr())
 
@@ -291,7 +291,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- Future.sequence(tenants.value.map(Tenant.fromJsons).map(_.save()))
       _ <- Future.sequence(teams.value.map(Team.fromJsons).map(_.save()))
       _ <- Future.sequence(routes.value.map(NgRoute.fromJsons).map(_.save()))
-      _ <- Future.sequence(services.value.map(NgRouteComposition.fromJsons).map(_.save()))
+      _ <- Future.sequence(routeCompositions.value.map(NgRouteComposition.fromJsons).map(_.save()))
       _ <- Future.sequence(backends.value.map(StoredNgBackend.fromJsons).map(_.save()))
       _ <- Future.sequence(targets.value.map(StoredNgTarget.fromJsons).map(_.save()))
     } yield ()
@@ -328,7 +328,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       tenants          <- env.datastores.tenantDataStore.findAll()
       teams            <- env.datastores.teamDataStore.findAll()
       routes           <- env.datastores.routeDataStore.findAll()
-      services         <- env.datastores.routeCompositionDataStore.findAll()
+      routeCompositions <- env.datastores.routeCompositionDataStore.findAll()
       backends         <- env.datastores.backendsDataStore.findAll()
       targets          <- env.datastores.targetsDataStore.findAll()
     } yield OtoroshiExport(
@@ -352,7 +352,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       tenants,
       teams,
       routes,
-      services,
+      routeCompositions,
       backends,
       targets
     ).json

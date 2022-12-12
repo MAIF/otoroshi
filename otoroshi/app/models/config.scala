@@ -918,7 +918,7 @@ case class OtoroshiExport(
   tenants: Seq[Tenant] = Seq.empty,
   teams: Seq[Team] = Seq.empty,
   routes: Seq[NgRoute] = Seq.empty,
-  services: Seq[NgRouteComposition] = Seq.empty,
+  routeCompositions: Seq[NgRouteComposition] = Seq.empty,
   backends: Seq[StoredNgBackend] = Seq.empty,
   targets: Seq[StoredNgTarget] = Seq.empty
 ) {
@@ -1090,7 +1090,7 @@ case class OtoroshiExport(
       "tenants"            -> JsArray(tenants.map(_.json)),
       "teams"              -> JsArray(teams.map(_.json)),
       "routes"             -> JsArray(routes.map(_.json)),
-      "services"           -> JsArray(services.map(_.json)),
+      "routeCompositions"  -> JsArray(routeCompositions.map(_.json)),
       "backends"           -> JsArray(backends.map(_.json)),
       "targets"            -> JsArray(targets.map(_.json))
     )

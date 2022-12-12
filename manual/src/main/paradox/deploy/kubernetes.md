@@ -280,7 +280,10 @@ the configuration can have the following values
       "script": {},
       "organization": {},
       "team": {},
-      "data-exporter": {}
+      "data-exporter": {},
+      "routes": {},
+      "route-compositions": {},
+      "backends": {}
     }
   }
 }
