@@ -1,7 +1,7 @@
 # Getting Started
 
-- [Protect the access to your api with the Otoroshi management of api keys](#protect-the-access-to-your-api-with-the-otoroshi-management-of-api-keys)
-- [Secure your web app in 5 minutes with an authentication](#secure-your-web-app-in-5-minutes-with-an-authentication)
+- [Protect your service with Otoroshi ApiKey](#protect-your-service-with-otoroshi-apikey)
+- [Secure your web app in 2 calls with an authentication](#secure-your-web-app-in-2-calls-with-an-authentication)
 
 Download the latest jar of Otoroshi
 ```sh
