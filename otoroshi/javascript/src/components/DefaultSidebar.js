@@ -14,141 +14,56 @@ export function DefaultSidebar(props) {
 
   return (
     <ul className="nav flex-column nav-sidebar">
-      {props.env && !props.env.initWithNewEngine && (
-        <>
-          <li className="nav-item">
-            <h3 className="">
-              <i className="fas fa-cubes" /> Services
+      {props.env && !props.env.initWithNewEngine && <>
+        <li className="nav-item mt-2">
+          <Link
+            to="/services"
+            className={`nav-link ${rootClassName('services')}`}
+            {...createTooltip('List all services declared in Otoroshi')}>
+            <h3 className="p-2 m-0">
+              <i className="fas fa-cubes" /> SERVICES
             </h3>
-          </li>
-          <li className="nav-item" key="all">
-            <Link
-              to="/services"
-              className={`nav-link ${rootClassName('services')}`}
-              {...createTooltip('List all services declared in Otoroshi')}>
-              {' '}
-              All services
-            </Link>
-          </li>
-          {/*props.lines.map((line) => (
-          <li className="nav-item" key={line}>
-            <Link
-              to={`/services?env=${line}`}
-              className={`nav-link ${className(line)}`}
-              {...createTooltip(`List all services declared in Otoroshi for line ${line}`)}>
-              {' '}
-              For line {line}
-            </Link>
-          </li>
-        ))*/}
-          <li className="nav-item">
-            <Link
-              to="#"
-              onClick={props.addService}
-              className="nav-link"
-              {...createTooltip('Create a new service descriptor')}>
-              <i className="fas fa-plus" /> Add service
-            </Link>
-          </li>
-        </>
-      )}
-      <>
-        <li className="nav-item">
-          <h3 className="mt-3">
-            <i className="fas fa-road" /> Routes
+          </Link>
+        </li>
+      </>}
+      <li className="nav-item mt-2">
+        <Link
+          to="/routes"
+          className={`nav-link ${rootClassName('routes')}`}
+          {...createTooltip('List all routes declared in Otoroshi')}>
+          <h3 className="p-2 m-0">
+            <i className="fas fa-road" /> ROUTES
           </h3>
-        </li>
-        <li className="nav-item" key="all">
-          <Link
-            to="/routes"
-            className={`nav-link ${rootClassName('routes')}`}
-            {...createTooltip('List all routes declared in Otoroshi')}>
-            {' '}
-            All routes
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link
-            to="/routes/new?tab=informations"
-            className="nav-link"
-            {...createTooltip('Create a new route')}>
-            <i className="fas fa-plus" /> Add route
-          </Link>
-        </li>
-      </>
-      <>
-        <li className="nav-item">
-          <h3 className="mt-3">
-            <i className="fas fa-microchip" /> Backends
-          </h3>
-        </li>
-        <li className="nav-item" key="all">
-          <Link
-            to="/backends"
-            className={`nav-link ${rootClassName('backends')}`}
-            {...createTooltip('List all backends declared in Otoroshi')}>
-            {' '}
-            All backends
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link to="/backends/add" className="nav-link" {...createTooltip('Create a new backend')}>
-            <i className="fas fa-plus" /> Add backend
-          </Link>
-        </li>
-      </>
-
-      {props.env && props.env.clevercloud && (
-        <li className="nav-item">
-          <Link
-            to="/clever"
-            className={`nav-link ${rootClassName('clever')}`}
-            {...createTooltip(
-              'Create a new service descriptor based on an existing Clever Cloud application'
-            )}>
-            <i className="fas fa-plus" /> Add service from a CleverApp
-          </Link>
-        </li>
-      )}
-      <li className="nav-item">
-        <h3 className="mt-3">
-          <i className="fas fa-key" /> Apikeys
-        </h3>
+        </Link>
       </li>
-      <li className="nav-item" key="all-apikeys">
+      <li className="nav-item mt-2">
+        <Link
+          to="/backends"
+          className={`nav-link ${rootClassName('backends')}`}
+          {...createTooltip('List all backends declared in Otoroshi')}>
+          <h3 className="p-2 m-0">
+            <i className="fas fa-microchip" /> BACKENDS
+          </h3>
+        </Link>
+      </li>
+      <li className="nav-item mt-2">
         <Link
           to="/apikeys"
           className={`nav-link ${rootClassName('apikeys')}`}
           {...createTooltip('List all apikeys declared in Otoroshi')}>
-          {' '}
-          All apikeys
+          <h3 className="p-2 m-0">
+            <i className="fas fa-key" /> APIKEYS
+          </h3>
         </Link>
       </li>
-      <li className="nav-item">
-        <Link to="/apikeys/add" className="nav-link" {...createTooltip('Create a new apikey')}>
-          <i className="fas fa-plus" /> Add apikey
-        </Link>
-      </li>
-      <li className="nav-item">
-        <h3 className="mt-3">
-          <i className="fas fa-cubes" /> Tcp Services
-        </h3>
-      </li>
-      <li className="nav-item" key="all-tcp-services">
+      <li className="nav-item mt-2">
         <Link
           to="/tcp/services"
           className={`nav-link ${rootClassName('tcp-services')}`}
           {...createTooltip('List all Tcp services declared in Otoroshi')}>
-          {' '}
-          All services
-        </Link>
-      </li>
-      <li className="nav-item">
-        <Link
-          to="/tcp/services/add"
-          className="nav-link"
-          {...createTooltip('Create a new Tcp service')}>
-          <i className="fas fa-plus" /> Add Tcp service
+          <h3 className="p-2 m-0">
+            <i className="fas fa-cubes" /> TCP SERVICES
+          </h3>
         </Link>
       </li>
     </ul>
