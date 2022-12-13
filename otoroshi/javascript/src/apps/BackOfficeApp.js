@@ -125,7 +125,7 @@ class BackOfficeAppContainer extends Component {
   };
 
   render() {
-    const classes = ['backoffice-container'];
+    const classes = ['page-container'];
     if (
       this.props.children &&
       this.props.children.type &&

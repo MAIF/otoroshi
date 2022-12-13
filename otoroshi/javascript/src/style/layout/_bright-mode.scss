@@ -23,7 +23,7 @@
 }
 
 body.white-mode,
-.white-mode .fixedH3,
+.white-mode .page-header,
 .white-mode .btnsService {
   @include bright-mode_background-color--darker;
 }

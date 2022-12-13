@@ -30,6 +30,11 @@ a:hover {
   color: var(--color-primary);
 }
 
+h3,
+h4 {
+  color: var(--color-primary);
+}
+
 @media screen and (min-width: 768px) {
   .col-form-label {
     text-align: right;
@@ -40,20 +45,8 @@ a:hover {
   display: none !important;
 }
 
-@mixin h3fixed {
-  position: fixed;
-  background-color: var(--bg-color_level1);
-  width: 100%;
-  z-index: 110;
-  margin-left: -25px;
-}
-.fixedH3 {
-  @include h3fixed;
-}
 
-.fixedH3 + .row {
-  padding-top: 90px;
-}
+
 
 .fa-question-circle {
   font-size: 13px;
