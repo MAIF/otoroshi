@@ -42,7 +42,7 @@ a:hover {
 
 @mixin h3fixed {
   position: fixed;
-  background-color: #373735;
+  background-color: var(--bg-color_level1);
   width: 100%;
   z-index: 110;
   margin-left: -25px;
