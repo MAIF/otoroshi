@@ -1,8 +1,0 @@
-resources:
-  - ../../base
-  # - hpa.yaml
-  - redis-master.yaml
-  - redis-slave.yaml
-patchesStrategicMerge:
-  - deployment.yaml
-namePrefix: prod-
