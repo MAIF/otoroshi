@@ -1,3 +1,21 @@
+.page-container {
+  > h3 + .row {
+    margin-left: 0px;
+    margin-right: -10px;
+  }
+  > .row {
+    margin-left: 0px;
+  }
+  .label {
+    margin-right: 5px;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .page-container {
+    margin-top: 56px;
+  }
+}
+
 .page-header {
   position: fixed;
   background-color: var(--bg-color_level1);
@@ -17,23 +35,6 @@
   color: var(--color-primary);
 }
 
-@media only screen and (max-width: 767px) {
-  .page-container {
-    margin-top: 56px;
-  }
-}
-
-.page-container > h3 + .row {
-  margin-left: 0px;
-  margin-right: -10px;
-}
-.page-container > .row {
-  margin-left: 0px;
-}
-.page-container .label {
-  margin-right: 5px;
-}
-
 .sub-container {
   border-radius: 4px;
   padding: 10px;
@@ -42,7 +43,7 @@
 }
 
 .sub-container__bg-color {
-  background-color: #414141;
+  background-color: var(--bg-color_level2);
 }
 
 .logoOtoroshi {
