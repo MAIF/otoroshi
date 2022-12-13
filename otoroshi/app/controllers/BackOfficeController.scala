@@ -29,7 +29,6 @@ import otoroshi.ssl._
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.misc.LocalCache
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
@@ -710,22 +709,21 @@ class BackOfficeController(
         )
       )
       val fu: Future[Seq[SearchedService]] =
-        Option(LocalCache.allServices.getIfPresent("all")).map(_.asInstanceOf[Seq[SearchedService]]) match {
-          case Some(descriptors) => FastFuture.successful(descriptors)
-          case None              =>
             for {
               services   <- env.datastores.serviceDescriptorDataStore.findAll()
               tcServices <- env.datastores.tcpServiceDataStore.findAll()
+              routes <- env.datastores.routeDataStore.findAll()
             } yield {
               val finalServices =
                 services.map(s =>
                   SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), s.env, "http", s.location)
                 ) ++
+                  routes.map(s =>
+                    SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), "route", "route", s.location)
+                  ) ++
                 tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp", s.location))
-              LocalCache.allServices.put("all", finalServices)
               finalServices
             }
-        }
       fu.map { services =>
         val filtered = services.filter(ctx.canUserRead).filter { service =>
           service.id.toLowerCase() == query || service.name.toLowerCase().contains(query) || service.env
