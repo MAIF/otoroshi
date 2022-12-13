@@ -2,7 +2,7 @@ body {
   font-family: Raleway, Helvetica, sans-serif;
   font-weight: 500;
   background-color: var(--bg-color_level1);
-  color: $grisTexte;
+  color: var(--color_level1);
 }
 #app {
   padding-top: 60px;
@@ -44,9 +44,6 @@ h4 {
 .hide {
   display: none !important;
 }
-
-
-
 
 .fa-question-circle {
   font-size: 13px;
