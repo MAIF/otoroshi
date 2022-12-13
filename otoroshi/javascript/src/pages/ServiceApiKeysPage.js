@@ -31,9 +31,11 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${rawValue.clientId
-            }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${rawValue.clientSecret
-            }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
+            rawValue.clientId
+          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
+            rawValue.clientSecret
+          }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -373,13 +375,11 @@ const ApiKeysConstants = {
             route: 'bg-info',
             'route-composition': 'bg-secondary',
             group: 'bg-warning',
-          }
+          };
           return (
             <div style={{ display: 'flex' }}>
               <div style={{ width: 60 }}>
-                <span className={`badge ${colors[p.kind] || 'bd-dark'}`}>
-                  {p.kind}
-                </span>
+                <span className={`badge ${colors[p.kind] || 'bd-dark'}`}>{p.kind}</span>
               </div>
               <span>{p.label}</span>
             </div>
@@ -570,13 +570,15 @@ const ApiKeysConstants = {
           className="btn btn-sm btn-success"
           onClick={(e) => {
             if (e && e.preventDefault) {
-              e.preventDefault()
-              e.stopPropagation()
+              e.preventDefault();
+              e.stopPropagation();
             }
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
-              window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`
+              window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'}/apikeys/edit/${item.clientId}/stats`
+              window.location = `/bo/dashboard/lines/prod/services/${
+                that.state.service ? that.state.service.id : '-'
+              }/apikeys/edit/${item.clientId}/stats`;
             }
           }}>
           <i className="fas fa-chart-bar" />
@@ -706,8 +708,8 @@ export class ServiceApiKeysPage extends Component {
         parentProps={this.props}
         selfUrl={
           this.onRoutes
-            // ? `services/${this.props.params.routeId}/apikeys`
-            ? `routes/${this.props.params.routeId}/apikeys`
+            ? // ? `services/${this.props.params.routeId}/apikeys`
+              `routes/${this.props.params.routeId}/apikeys`
             : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
         }
         defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
@@ -747,7 +749,7 @@ export class ServiceApiKeysPage extends Component {
         kubernetesKind="ApiKey"
         navigateTo={(item) => {
           if (this.onRoutes) {
-            console.log(item)
+            console.log(item);
             this.props.history.push(
               `/routes/${this.props.params.routeId}/apikeys/edit/${item.clientId}`
               // `/apikeys/edit/${item.clientId}`
@@ -760,9 +762,9 @@ export class ServiceApiKeysPage extends Component {
         }}
         itemUrl={(i) => {
           if (this.onRoutes) {
-            return `/bo/dashboard/routes/${this.props.params.routeId}/apikeys/edit/${i.clientId}`
+            return `/bo/dashboard/routes/${this.props.params.routeId}/apikeys/edit/${i.clientId}`;
           } else {
-            return `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`
+            return `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`;
           }
         }}
         extractKey={(item) => item.clientId}

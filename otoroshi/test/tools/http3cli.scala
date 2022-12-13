@@ -58,4 +58,4 @@ class Http3ClientTests
     extends Suites(
       new Http3ClientSpec()
     )
-    */
+ */

@@ -32,8 +32,8 @@ export default {
       type: 'box-bool',
       label: 'Exact',
       props: {
-        description: 'Match exact request path.'
-      }
+        description: 'Match exact request path.',
+      },
     },
     domains: {
       label: 'domains',
@@ -45,16 +45,10 @@ export default {
       type: 'box-bool',
       label: 'Strip path',
       props: {
-        description: "When matching, strip the matching prefix from the upstream request URL. Defaults to true",
+        description:
+          'When matching, strip the matching prefix from the upstream request URL. Defaults to true',
       },
     },
   },
-  flow: [
-    'domains',
-    'strip_path',
-    'exact',
-    'methods',
-    'headers',
-    'query',
-  ],
+  flow: ['domains', 'strip_path', 'exact', 'methods', 'headers', 'query'],
 };

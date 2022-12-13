@@ -603,7 +603,7 @@ class Vaults(env: Env) {
     env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.vaults.leader-fetch-only").getOrElse(false)
 
   private val cache                          = Caches.bounded[String, CachedVaultSecret](cachedSecrets.toInt)
-    // Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
+  // Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
   private val expressionReplacer             = ReplaceAllWith("\\$\\{vault://([^}]*)\\}")
   private val vaults: TrieMap[String, Vault] = new LegitTrieMap[String, Vault]()
   private implicit val _env                  = env

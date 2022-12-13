@@ -592,7 +592,8 @@ class LocalCredentialRepository(
       .filter(_.username == username)
       .flatMap { user =>
         user.credentials.values.map { credential =>
-          val regResult = jsonMapper.readValue(handleVersion210Upgrade(credential).stringify, classOf[RegistrationResult])
+          val regResult =
+            jsonMapper.readValue(handleVersion210Upgrade(credential).stringify, classOf[RegistrationResult])
           regResult.getKeyId
         }
       }

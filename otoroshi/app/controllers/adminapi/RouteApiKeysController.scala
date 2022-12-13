@@ -101,11 +101,11 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
           val oldGroup   = (body \ "authorizedGroup").asOpt[String].map(g => "group_" + g).toSeq
           val entities   = (Seq("service_" + routeId) ++ oldGroup).distinct
           val apiKeyJson = ((body \ "authorizedEntities").asOpt[Seq[String]] match {
-            case None                                                => body ++ Json.obj("authorizedEntities" -> Json.arr("service_" + routeId))
+            case None                                              => body ++ Json.obj("authorizedEntities" -> Json.arr("service_" + routeId))
             case Some(sid) if !sid.contains(s"service_${routeId}") =>
               body ++ Json.obj("authorizedEntities" -> (entities ++ sid).distinct)
             case Some(sid) if sid.contains(s"service_${routeId}")  => body
-            case Some(_)                                             => body
+            case Some(_)                                           => body
           }) - "authorizedGroup"
           ApiKey.fromJsonSafe(apiKeyJson) match {
             case JsError(e)                                        => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
@@ -137,40 +137,41 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
 
   def updateApiKey(routeId: String, clientId: String) =
     ApiAction.async(parse.json) { ctx =>
-      env.datastores.routeDataStore.findById(routeId)
+      env.datastores.routeDataStore
+        .findById(routeId)
         .flatMap {
-        case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$routeId' not found")).asFuture
-        case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
-        case Some(desc)                            =>
-          env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-            case None                                                                      => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
-            case Some(apiKey) if !ctx.canUserWrite(apiKey)                                 => ctx.fforbidden
-            case Some(apiKey) if !apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups) =>
-              NotFound(
-                Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$routeId'")
-              ).asFuture
-            case Some(apiKey) if apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups)  => {
-              ApiKey.fromJsonSafe(ctx.request.body) match {
-                case JsError(e)                                                => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
-                case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
-                  BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
-                case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
-                  sendAuditAndAlert(
-                    "UPDATE_APIKEY",
-                    s"User updated an ApiKey",
-                    "ApiKeyUpdatedAlert",
-                    Json.obj(
-                      "desc"   -> desc.json,
-                      "apikey" -> apiKey.toJson
-                    ),
-                    ctx
-                  )
-                  newApiKey.save().map(_ => Ok(newApiKey.toJson))
+          case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$routeId' not found")).asFuture
+          case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
+          case Some(desc)                            =>
+            env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+              case None                                                                      => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
+              case Some(apiKey) if !ctx.canUserWrite(apiKey)                                 => ctx.fforbidden
+              case Some(apiKey) if !apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups) =>
+                NotFound(
+                  Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$routeId'")
+                ).asFuture
+              case Some(apiKey) if apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups)  => {
+                ApiKey.fromJsonSafe(ctx.request.body) match {
+                  case JsError(e)                                                => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
+                  case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
+                    BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
+                  case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
+                    sendAuditAndAlert(
+                      "UPDATE_APIKEY",
+                      s"User updated an ApiKey",
+                      "ApiKeyUpdatedAlert",
+                      Json.obj(
+                        "desc"   -> desc.json,
+                        "apikey" -> apiKey.toJson
+                      ),
+                      ctx
+                    )
+                    newApiKey.save().map(_ => Ok(newApiKey.toJson))
+                  }
                 }
               }
             }
-          }
-      }
+        }
     }
 
   def patchApiKey(routeId: String, clientId: String) =

@@ -534,8 +534,8 @@ export class NgForm extends Component {
     const show = isFunction(visible)
       ? visible(config.value)
       : visible !== undefined
-        ? visible
-        : true;
+      ? visible
+      : true;
     if (!show) {
       return null;
     } else {
@@ -558,8 +558,8 @@ export class NgForm extends Component {
             !config.setBreadcrumb
               ? null
               : () => {
-                config.setBreadcrumb(fullPath);
-              }
+                  config.setBreadcrumb(fullPath);
+                }
           }
           useBreadcrumb={config.useBreadcrumb}
           path={fullPath}
@@ -599,8 +599,8 @@ export class NgForm extends Component {
     const show = isFunction(visible)
       ? visible(config.value)
       : visible !== undefined
-        ? visible
-        : true;
+      ? visible
+      : true;
 
     if (!show) return null;
 
@@ -698,8 +698,8 @@ export class NgForm extends Component {
               value
                 ? name.includes('.')
                   ? name
-                    .split('.')
-                    .reduce((acc, path) => acc[path] || (acc.schema || {})[path], value || {})
+                      .split('.')
+                      .reduce((acc, path) => acc[path] || (acc.schema || {})[path], value || {})
                   : value[name]
                 : null
             }
@@ -800,10 +800,10 @@ export class NgForm extends Component {
             toHome={
               root
                 ? () => {
-                  this.setState({
-                    breadcrumb: [],
-                  });
-                }
+                    this.setState({
+                      breadcrumb: [],
+                    });
+                  }
                 : null
             }
             setBreadcrumb={(i) => {

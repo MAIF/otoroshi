@@ -457,7 +457,7 @@ abstract class AbstractRedisDataStores(
   private lazy val _routeDataStore              = new KvNgRouteDataStore(redis, env)
   override def routeDataStore: NgRouteDataStore = _routeDataStore
 
-  private lazy val _routesCompositionDataStore       = new KvNgRouteCompositionDataStore(redis, env)
+  private lazy val _routesCompositionDataStore                        = new KvNgRouteCompositionDataStore(redis, env)
   override def routeCompositionDataStore: NgRouteCompositionDataStore = _routesCompositionDataStore
 
   private lazy val _backendsDataStore                      = new KvStoredNgBackendDataStore(redis, env)

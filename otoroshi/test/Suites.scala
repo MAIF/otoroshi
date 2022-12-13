@@ -116,8 +116,7 @@ object OtoroshiTests {
   }
 }
 
-class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAndAfterAll {
-}
+class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAndAfterAll {}
 
 class OpenapiGeneratorTests
     extends Suites(

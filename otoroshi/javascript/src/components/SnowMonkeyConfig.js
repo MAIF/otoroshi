@@ -12,7 +12,6 @@ import {
   RangeTextInput,
 } from './inputs';
 
-
 // import { Form, type } from '@maif/react-forms';
 // import '@maif/react-forms/lib/index.css'
 

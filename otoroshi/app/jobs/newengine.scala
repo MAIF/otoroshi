@@ -17,8 +17,13 @@ import scala.util.{Failure, Try}
 object NewEngine {
   def enabledFromConfig(config: GlobalConfig, env: Env): Boolean = {
     val pluginEnabled = config.plugins.enabled
-    val pluginInRefs = config.plugins.refs.contains(s"cp:${classOf[ProxyEngine].getName}")
-    val configEnabled = config.plugins.config.select(ProxyEngine.configRoot).asOpt[JsValue].map(s => ProxyEngineConfig.parse(s, env)).getOrElse(ProxyEngineConfig.default).enabled
+    val pluginInRefs  = config.plugins.refs.contains(s"cp:${classOf[ProxyEngine].getName}")
+    val configEnabled = config.plugins.config
+      .select(ProxyEngine.configRoot)
+      .asOpt[JsValue]
+      .map(s => ProxyEngineConfig.parse(s, env))
+      .getOrElse(ProxyEngineConfig.default)
+      .enabled
     pluginEnabled && pluginInRefs && configEnabled
   }
   def enabled(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
@@ -57,7 +62,7 @@ class NewEngineJob extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 24.hours.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    NewEngine.enabled.map { enabled  =>
+    NewEngine.enabled.map { enabled =>
       if (!enabled) {
         logger.info(s"You are using the legacy Otoroshi proxy engine !")
         logger.info(s"The new proxy engine is now ready for production :)")

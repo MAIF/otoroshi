@@ -11,8 +11,8 @@ export default {
           label: 'path',
           type: 'string',
           props: {
-            subTitle: "Example: $.apikey.metadata.foo"
-          }
+            subTitle: 'Example: $.apikey.metadata.foo',
+          },
         },
         value: {
           type: 'code',

@@ -161,7 +161,7 @@ export default class GraphQLForm extends React.Component {
             )}
             <NgCodeRenderer
               ngOptions={{
-                spread: true
+                spread: true,
               }}
               rawSchema={{
                 props: {
@@ -169,8 +169,8 @@ export default class GraphQLForm extends React.Component {
                   height: '100%',
                   mode: 'graphqlschema',
                   ace_config: {
-                    fontSize: 14
-                  }
+                    fontSize: 14,
+                  },
                 },
               }}
               value={this.state.tmpSchema}

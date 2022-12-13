@@ -197,7 +197,7 @@ class JwtVerificationOnly extends NgAccessValidator with NgRequestTransformer {
           case Some(verifier) =>
             verifier.source.token(ctx.request) match {
               case None if !config.failIfAbsent => NgAccess.NgAllowed.vfuture
-              case _       => JwtVerifierUtils.verify(ctx, Seq(verifierId))
+              case _                            => JwtVerifierUtils.verify(ctx, Seq(verifierId))
             }
         }
     }

@@ -40,7 +40,10 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
 
   override def findByIdOps(
       id: String
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[NgRouteComposition]]] = {
+  )(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[NgRouteComposition]]] = {
     env.datastores.routeCompositionDataStore.findById(id).map { opt =>
       Right(
         OptionalEntityAndContext(
@@ -56,7 +59,10 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[NgRouteComposition]]] = {
+  )(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ApiError[JsValue], SeqEntityAndContext[NgRouteComposition]]] = {
     env.datastores.routeCompositionDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
@@ -72,7 +78,10 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
 
   override def createEntityOps(
       entity: NgRouteComposition
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRouteComposition]]] = {
+  )(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ApiError[JsValue], EntityAndContext[NgRouteComposition]]] = {
     env.datastores.routeCompositionDataStore.set(entity).map {
       case true  => {
         Right(
@@ -98,7 +107,10 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
 
   override def updateEntityOps(
       entity: NgRouteComposition
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRouteComposition]]] = {
+  )(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ApiError[JsValue], EntityAndContext[NgRouteComposition]]] = {
     env.datastores.routeCompositionDataStore.set(entity).map {
       case true  => {
         Right(
@@ -124,7 +136,10 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
 
   override def deleteEntityOps(
       id: String
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[NgRouteComposition]]] = {
+  )(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[ApiError[JsValue], NoEntityAndContext[NgRouteComposition]]] = {
     env.datastores.routeCompositionDataStore.delete(id).map {
       case true  => {
         Right(

@@ -103,7 +103,7 @@ class BackOfficeAppContainer extends Component {
         lines,
         groups,
         loading: false,
-        usedNewEngine: env.newEngineEnabled
+        usedNewEngine: env.newEngineEnabled,
       });
     });
   }
@@ -208,7 +208,11 @@ class BackOfficeAppContainer extends Component {
                           exact
                           path="/"
                           component={(props) =>
-                            this.decorate(HomePage, { ...props, env: this.state.env, usedNewEngine: this.state.usedNewEngine })
+                            this.decorate(HomePage, {
+                              ...props,
+                              env: this.state.env,
+                              usedNewEngine: this.state.usedNewEngine,
+                            })
                           }
                         />
                         <Route

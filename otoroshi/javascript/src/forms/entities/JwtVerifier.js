@@ -213,8 +213,9 @@ const StrategyForm = {
                                 padding: '2px 8px 2px 3px',
                               }}>
                               <i
-                                className={`fas fa-${tags.includes(tag.toLocaleLowerCase()) ? 'check' : 'times'
-                                  } me-1`}
+                                className={`fas fa-${
+                                  tags.includes(tag.toLocaleLowerCase()) ? 'check' : 'times'
+                                } me-1`}
                                 style={{
                                   color: tags.includes(tag.toLocaleLowerCase())
                                     ? '#f9b000'
@@ -258,8 +259,8 @@ const JwtLocationExamples = {
           <NgForm
             value={{
               header: {
-                Authorization: 'Bearer XXX.XXX.XXX'
-              }
+                Authorization: 'Bearer XXX.XXX.XXX',
+              },
             }}
             schema={{
               header: {

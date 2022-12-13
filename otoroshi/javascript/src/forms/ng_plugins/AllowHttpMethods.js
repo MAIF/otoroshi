@@ -6,9 +6,9 @@ const METHODS = [
   { value: 'HEAD', label: 'HEAD' },
   { value: 'OPTIONS', label: 'OPTIONS' },
   { value: 'PATCH', label: 'PATCH' },
-  { value: 'CONNECT', label: 'CONNECT'},
-  { value: 'TRACE', label: 'TRACE' }
-]
+  { value: 'CONNECT', label: 'CONNECT' },
+  { value: 'TRACE', label: 'TRACE' },
+];
 
 export default {
   id: 'cp:otoroshi.next.plugins.AllowHttpMethods',
@@ -17,15 +17,15 @@ export default {
       label: 'allowed',
       type: 'dots',
       props: {
-        options: METHODS
-      }
+        options: METHODS,
+      },
     },
     forbidden: {
       label: 'forbidden',
       type: 'dots',
       props: {
-        options: METHODS
-      }
+        options: METHODS,
+      },
     },
   },
   config_flow: ['forbidden', 'allowed'],

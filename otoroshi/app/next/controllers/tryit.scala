@@ -120,19 +120,19 @@ class TryItController(
             else
               NgRoute.fmt.reads(json.parseJson).asOpt.map(e => Right(e))
           })
-      val maybeRoute                                           = routeFromIdOpt.orElse(routeFromJsonOpt)
-      val routeFromId: Option[String]                          = routeFromIdOpt.flatMap {
+      val maybeRoute                                                    = routeFromIdOpt.orElse(routeFromJsonOpt)
+      val routeFromId: Option[String]                                   = routeFromIdOpt.flatMap {
         case Left(ngService: NgRouteComposition) =>
           jsonBody.select("frontend_idx").asOpt[Int] match {
             case Some(idx) => ngService.routes.lift(idx).flatMap(_.frontend.domains.map(_.domain).headOption)
             case _         => ngService.routes.headOption.flatMap(_.frontend.domains.map(_.domain).headOption)
           }
-        case Right(ngRoute: NgRoute)    => ngRoute.frontend.domains.map(_.domain).headOption
+        case Right(ngRoute: NgRoute)             => ngRoute.frontend.domains.map(_.domain).headOption
       }
-      val routeFromJson: Option[String]                        = routeFromJsonOpt.flatMap {
+      val routeFromJson: Option[String]                                 = routeFromJsonOpt.flatMap {
         case Left(ngService: NgRouteComposition) =>
           ngService.routes.headOption.flatMap(_.frontend.domains.map(_.domain).headOption)
-        case Right(ngRoute: NgRoute)    => ngRoute.frontend.domains.map(_.domain).headOption
+        case Right(ngRoute: NgRoute)             => ngRoute.frontend.domains.map(_.domain).headOption
       }
 
       routeFromId.orElse(routeFromJson) match {
@@ -144,7 +144,7 @@ class TryItController(
           )
           val isHttps   = maybeRoute.exists {
             case Left(ngService: NgRouteComposition) => ngService.plugins.hasPlugin[ForceHttpsTraffic]
-            case Right(ngRoute: NgRoute)    => ngRoute.plugins.hasPlugin[ForceHttpsTraffic]
+            case Right(ngRoute: NgRoute)             => ngRoute.plugins.hasPlugin[ForceHttpsTraffic]
           }
           val url       =
             if (isHttps) s"https://${hostname}:${env.httpsPort}${path}" else s"http://${hostname}:${env.port}${path}"

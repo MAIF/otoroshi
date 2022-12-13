@@ -9,7 +9,16 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import otoroshi.env.Env
-import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
+import otoroshi.events.{
+  Alerts,
+  ApiKeyQuotasAlmostExceededAlert,
+  ApiKeyQuotasAlmostExceededReason,
+  ApiKeyQuotasExceededAlert,
+  ApiKeyQuotasExceededReason,
+  ApiKeySecretHasRotated,
+  ApiKeySecretWillRotate,
+  RevokedApiKeyUsageAlert
+}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.next.plugins.api.NgAccess
@@ -94,28 +103,29 @@ object EntityIdentifier       {
   def applyModern(json: JsObject): Option[EntityIdentifier] = {
     val id = json.select("id").asString
     json.select("kind").asOpt[String] match {
-      case Some("group") => ServiceGroupIdentifier(id).some
-      case Some("service") => ServiceDescriptorIdentifier(id).some
+      case Some("group")             => ServiceGroupIdentifier(id).some
+      case Some("service")           => ServiceDescriptorIdentifier(id).some
       case Some("route-composition") => RouteCompositionIdentifier(id).some
-      case Some("route") => RouteIdentifier(id).some
-      case _ => ServiceGroupIdentifier(id).some // should be None but could be useful for backward compatibility
+      case Some("route")             => RouteIdentifier(id).some
+      case _                         => ServiceGroupIdentifier(id).some // should be None but could be useful for backward compatibility
     }
   }
   def apply(prefixedId: String): Option[EntityIdentifier] = {
     prefixedId match {
-      case id if id.startsWith("group_")   => Some(ServiceGroupIdentifier(id.replaceFirst("group_", "")))
-      case id if id.startsWith("service_") => Some(ServiceDescriptorIdentifier(id.replaceFirst("service_", "")))
-      case id if id.startsWith("route-composition_") => Some(RouteCompositionIdentifier(id.replaceFirst("route-composition_", "")))
-      case id if id.startsWith("route") => Some(RouteIdentifier(id.replaceFirst("route_", "")))
-      case id                              => Some(ServiceGroupIdentifier(id)) // should be None but could be useful for backward compatibility
+      case id if id.startsWith("group_")             => Some(ServiceGroupIdentifier(id.replaceFirst("group_", "")))
+      case id if id.startsWith("service_")           => Some(ServiceDescriptorIdentifier(id.replaceFirst("service_", "")))
+      case id if id.startsWith("route-composition_") =>
+        Some(RouteCompositionIdentifier(id.replaceFirst("route-composition_", "")))
+      case id if id.startsWith("route")              => Some(RouteIdentifier(id.replaceFirst("route_", "")))
+      case id                                        => Some(ServiceGroupIdentifier(id)) // should be None but could be useful for backward compatibility
     }
   }
 }
 sealed trait EntityIdentifier {
   def prefix: String
   def id: String
-  def str: String   = s"${prefix}_${id}"
-  def json: JsValue = JsString(str)
+  def str: String         = s"${prefix}_${id}"
+  def json: JsValue       = JsString(str)
   def modernJson: JsValue = Json.obj("kind" -> prefix, "id" -> id)
 }
 case class ServiceGroupIdentifier(id: String) extends EntityIdentifier {
@@ -319,8 +329,8 @@ object ApiKey {
       }
       val authGroup: JsValue = apk.authorizedEntities
         .find {
-          case ServiceGroupIdentifier(_)      => true
-          case _ => false
+          case ServiceGroupIdentifier(_) => true
+          case _                         => false
         }
         .map(_.id)
         .map(JsString.apply)
@@ -362,14 +372,14 @@ object ApiKey {
           clientName = (json \ "clientName").as[String],
           description = (json \ "description").asOpt[String].getOrElse(""),
           authorizedEntities = {
-            val authorizationObjects = json.select("authorizations").asOpt[Seq[JsObject]].map { identifiers =>
-              identifiers.map(EntityIdentifier.applyModern).collect {
-                case Some(id) => id
+            val authorizationObjects                      = json.select("authorizations").asOpt[Seq[JsObject]].map { identifiers =>
+              identifiers.map(EntityIdentifier.applyModern).collect { case Some(id) =>
+                id
               }
             }
-            val authorizationStrings = json.select("authorizations").asOpt[Seq[String]].map { identifiers =>
-              identifiers.map(EntityIdentifier.apply).collect {
-                case Some(id) => id
+            val authorizationStrings                      = json.select("authorizations").asOpt[Seq[String]].map { identifiers =>
+              identifiers.map(EntityIdentifier.apply).collect { case Some(id) =>
+                id
               }
             }
             val authorizedGroup: Seq[EntityIdentifier]    =

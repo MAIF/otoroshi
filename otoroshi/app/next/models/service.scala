@@ -78,7 +78,8 @@ case class NgRouteComposition(
     plugins: NgPlugins
 ) extends EntityLocationSupport {
 
-  def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.routeCompositionDataStore.set(this)
+  def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] =
+    env.datastores.routeCompositionDataStore.set(this)
   override def internalId: String                                      = id
   override def theName: String                                         = name
   override def theDescription: String                                  = description
@@ -139,7 +140,7 @@ object NgRouteComposition {
     } catch {
       case e: Throwable => throw e
     }
-  val fmt                                  = new Format[NgRouteComposition] {
+  val fmt                                           = new Format[NgRouteComposition] {
     override def writes(o: NgRouteComposition): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgRouteComposition] = Try {
       NgRouteComposition(
@@ -168,7 +169,10 @@ object NgRouteComposition {
     }
   }
 
-  def fromOpenApi(domain: String, openapi: String)(implicit ec: ExecutionContext, env: Env): Future[NgRouteComposition] = {
+  def fromOpenApi(domain: String, openapi: String)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[NgRouteComposition] = {
     val codef: Future[String] = if (openapi.startsWith("http://") || openapi.startsWith("https://")) {
       env.Ws.url(openapi).get().map(_.body)
     } else {
@@ -277,9 +281,11 @@ trait NgRouteCompositionDataStore extends BasicStore[NgRouteComposition] {
   }
 }
 
-class KvNgRouteCompositionDataStore(redisCli: RedisLike, _env: Env) extends NgRouteCompositionDataStore with RedisLikeStore[NgRouteComposition] {
-  override def redisLike(implicit env: Env): RedisLike = redisCli
-  override def fmt: Format[NgRouteComposition]                  = NgRouteComposition.fmt
-  override def key(id: String): String                 = s"${_env.storageRoot}:ngroutecomps:${id}"
-  override def extractId(value: NgRouteComposition): String     = value.id
+class KvNgRouteCompositionDataStore(redisCli: RedisLike, _env: Env)
+    extends NgRouteCompositionDataStore
+    with RedisLikeStore[NgRouteComposition] {
+  override def redisLike(implicit env: Env): RedisLike      = redisCli
+  override def fmt: Format[NgRouteComposition]              = NgRouteComposition.fmt
+  override def key(id: String): String                      = s"${_env.storageRoot}:ngroutecomps:${id}"
+  override def extractId(value: NgRouteComposition): String = value.id
 }
