@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Routes · Otoroshi</title>
+<title>HTTP3 support · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -52,7 +52,7 @@
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
-    <li><a href="../entities/routes.html" class="active page">Routes</a></li>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
@@ -84,7 +84,7 @@
     <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
     <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
     <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
-    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/http3.html" class="active page">HTTP3 support</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -176,7 +176,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
-    <li><a href="../entities/routes.html" class="active page">Routes</a></li>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
@@ -208,7 +208,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
     <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
     <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
-    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/http3.html" class="active page">HTTP3 support</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -264,8 +264,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
-  <li><a href="../entities/index.html">Main entities</a></li>
-  <li>Routes</li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>HTTP3 support</li>
 </ul>
 </div>
 </div>
@@ -273,14 +273,39 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#routes" name="routes" class="anchor"><span class="anchor-link"></span></a>Routes</h1>
-<p>A route is an unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins.</p>
-<p>Read more documentation on this topic: <a href="../topics/engine.html">Routes and new engine</a></p>
+<h1><a href="#http3-support" name="http3-support" class="anchor"><span class="anchor-link"></span></a>HTTP3 support</h1><div class="callout warning "><div class="callout-title">Warning</div>
+<p>this feature is <strong>EXPERIMENTAL</strong> and might not work as expected. <br/> If you encounter any bugs, <a href="https://github.com/MAIF/otoroshi/issues/new">please fill an issue</a>, it will help us a lot :)</p></div>
+<p>HTTP3 server and client previews are available in otoroshi since version 1.5.14</p>
+<h2><a href="#server" name="server" class="anchor"><span class="anchor-link"></span></a>Server</h2>
+<p>to enable http3 server preview, you need to enable the following flags</p>
+<pre class="prettyprint"><code class="language-conf">otoroshi.next.experimental.netty-server.enabled = true
+otoroshi.next.experimental.netty-server.http3.enabled = true
+otoroshi.next.experimental.netty-server.http3.port = 10048
+</code></pre>
+<p>then you will be able to send HTTP3 request on port 10048. For instance, using <a href="https://github.com/cloudflare/quiche">quiche-client</a></p>
+<pre class="prettyprint"><code class="language-sh">cargo run --bin quiche-client -- --no-verify &#39;https://my-service.oto.tools:10048&#39;
+</code></pre>
+<h2><a href="#client" name="client" class="anchor"><span class="anchor-link"></span></a>Client</h2>
+<p>to consume services exposed with HTTP3, just select the <code>HTTP/3.0</code> protocol in the backend target.</p>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../entities/backends.html">Backends</a></p>
+<p><strong>Next:</strong> <a href="../how-to-s/index.html">How to&rsquo;s</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/http3.html#http3-support" class="header">HTTP3 support</a>
+  <ul>
+    <li><a href="../topics/http3.html#server" class="header">Server</a></li>
+    <li><a href="../topics/http3.html#client" class="header">Client</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 

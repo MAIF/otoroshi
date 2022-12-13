@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>New proxy engine · Otoroshi</title>
+<title>Proxy engine · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -53,6 +53,7 @@
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
@@ -67,6 +68,7 @@
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
+    <li><a href="../topics/engine.html" class="active page">Proxy engine</a></li>
     <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/tls.html" class="page">TLS</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
@@ -77,6 +79,12 @@
     <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
     <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
     <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -105,7 +113,8 @@
   <ul>
     <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
     <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
-    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
@@ -117,12 +126,6 @@
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
-  <ul>
-    <li><a href="../next/engine.html" class="active page">New proxy engine</a></li>
-    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
-    <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
-  </ul></li>
 </ul>
 </div>
 
@@ -174,6 +177,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
@@ -188,6 +192,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
+    <li><a href="../topics/engine.html" class="active page">Proxy engine</a></li>
     <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/tls.html" class="page">TLS</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
@@ -198,6 +203,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
     <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
     <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -226,7 +237,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
     <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
-    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
@@ -238,12 +250,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
-  <ul>
-    <li><a href="../next/engine.html" class="active page">New proxy engine</a></li>
-    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
-    <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
-  </ul></li>
 </ul>
 </div>
 
@@ -258,8 +264,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
-  <li><a href="../next/index.html">Otoroshi new proxy engine</a></li>
-  <li>New proxy engine</li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>Proxy engine</li>
 </ul>
 </div>
 </div>
@@ -267,11 +273,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#new-proxy-engine" name="new-proxy-engine" class="anchor"><span class="anchor-link"></span></a>New proxy engine</h1><div class="callout warning "><div class="callout-title">Warning</div>
-<p>this feature is <strong>EXPERIMENTAL</strong> and might not work as expected. <br/> If you encounter any bugs, <a href="https://github.com/MAIF/otoroshi/issues/new">please fill an issue</a>, it will help us a lot :)</p></div>
+<h1><a href="#proxy-engine" name="proxy-engine" class="anchor"><span class="anchor-link"></span></a>Proxy engine</h1>
 <p>Starting from the <code>1.5.3</code> release, otoroshi offers a new plugin that implements the next generation of the proxy engine. This engine has been designed based on our 5 years experience building, maintaining and running the previous one. It tries to fix all the drawback we may have encountered during those years and highly improve performances, user experience, reporting and debugging capabilities. The new engine is fully plugin oriented in order to spend CPU cycles only on useful stuff. You can enable this plugin only on some domain names so you can easily A/B test the new engine. The new proxy engine is designed to be more reactive and more efficient generally. It is also designed to be very efficient on path routing where it wasn&rsquo;t the old engines strong suit.</p>
 <h2><a href="#enabling-the-new-engine" name="enabling-the-new-engine" class="anchor"><span class="anchor-link"></span></a>Enabling the new engine</h2>
-<p>To enable the new proxy engine on an otoroshi instance, just add the plugin in the <code>global plugins</code> section of the danger zone, inject the default configuration, enable it and in <code>domains</code> add the values of the desired domains (let say we want to use the new engine on <code>api.foo.bar</code>. It is possible to use <code>*.foo.bar</code> if that&rsquo;s what you want to do).</p>
+<p>By default, all freshly started Otoroshi instances have the new proxy engine enabled by default, for the other, to enable the new proxy engine on an otoroshi instance, just add the plugin in the <code>global plugins</code> section of the danger zone, inject the default configuration, enable it and in <code>domains</code> add the values of the desired domains (let say we want to use the new engine on <code>api.foo.bar</code>. It is possible to use <code>*.foo.bar</code> if that&rsquo;s what you want to do).</p>
 <p>The next time a request hits the <code>api.foo.bar</code> domain, the new engine will handle it instead of the previous one.</p>
 <pre class="prettyprint"><code class="language-json">{
   &quot;NextGenProxyEngine&quot; : {
@@ -323,8 +328,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin introduces new entities that will replace (one day maybe) service descriptors:</p>
 <ul>
   <li><code>routes</code>: a unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins</li>
-  <li><code>services</code>: multiple routing rules based on hostname, path, method and headers that will execute the same list of plugins</li>
-  <li><code>targets</code>: how to contact a backend either by using a domain name or an ip address, supports mtls</li>
   <li><code>backends</code>: a list of targets to contact a backend</li>
 </ul>
 <h2><a href="#entities-sync" name="entities-sync" class="anchor"><span class="anchor-link"></span></a>Entities sync</h2>
@@ -411,7 +414,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   } ]
 }
 </code></pre>
-<p>you can find the list of built-in plugins <a href="built-in-plugins.html">here</a></p>
+<p>you can find the list of built-in plugins <a href="../plugins/built-in-plugins.html">here</a></p>
 <h2><a href="#using-legacy-plugins" name="using-legacy-plugins" class="anchor"><span class="anchor-link"></span></a>Using legacy plugins</h2>
 <p>if you need to use legacy otoroshi plugins with the new engine, you can use several wrappers in order to do so</p>
 <ul>
@@ -946,16 +949,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 }
 </code></pre>
 <h2><a href="#openapi-import" name="openapi-import" class="anchor"><span class="anchor-link"></span></a>openapi import</h2>
-<p>as the new router offers possibility to match exactly on a single path and a single method, and with the help of the <code>service</code> entity, it is now pretty easy to import openapi document as <code>service</code> entities. To do that, a new api has been made available to perform the translation. Be aware that this api <strong>DOES NOT</strong> save the entity and just return the result of the translation. </p>
+<p>as the new router offers possibility to match exactly on a single path and a single method, and with the help of the <code>service</code> entity, it is now pretty easy to import openapi document as <code>route-compositions</code> entities. To do that, a new api has been made available to perform the translation. Be aware that this api <strong>DOES NOT</strong> save the entity and just return the result of the translation. </p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST \
   -H &#39;Content-Type: application/json&#39; \
   -u admin-api-apikey-id:admin-api-apikey-secret \
-  &#39;http://otoroshi-api.oto.tools:8080/api/experimental/services/_openapi&#39; \
+  &#39;http://otoroshi-api.oto.tools:8080/api/route-compositions/_openapi&#39; \
   -d &#39;{&quot;domain&quot;:&quot;oto-api-proxy.oto.tools&quot;,&quot;openapi&quot;:&quot;https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json&quot;}&#39;
 </code></pre><div class="centered-img">
 <img src="../imgs/route_comp_openapi_import.png" /></div>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../next/topics/index.html">Detailed topics</a></p>
+<p><strong>Next:</strong> <a href="../topics/chaos-engineering.html">Chaos engineering with the Snow Monkey</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -964,19 +967,19 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../next/engine.html#new-proxy-engine" class="header">New proxy engine</a>
+  <li><a href="../topics/engine.html#proxy-engine" class="header">Proxy engine</a>
   <ul>
-    <li><a href="../next/engine.html#enabling-the-new-engine" class="header">Enabling the new engine</a></li>
-    <li><a href="../next/engine.html#entities" class="header">Entities</a></li>
-    <li><a href="../next/engine.html#entities-sync" class="header">Entities sync</a></li>
-    <li><a href="../next/engine.html#automatic-conversion" class="header">Automatic conversion</a></li>
-    <li><a href="../next/engine.html#routing" class="header">Routing</a></li>
-    <li><a href="../next/engine.html#plugins" class="header">Plugins</a></li>
-    <li><a href="../next/engine.html#using-legacy-plugins" class="header">Using legacy plugins</a></li>
-    <li><a href="../next/engine.html#reporting" class="header">Reporting</a></li>
-    <li><a href="../next/engine.html#debugging" class="header">Debugging</a></li>
-    <li><a href="../next/engine.html#http-traffic-capture" class="header">HTTP traffic capture</a></li>
-    <li><a href="../next/engine.html#openapi-import" class="header">openapi import</a></li>
+    <li><a href="../topics/engine.html#enabling-the-new-engine" class="header">Enabling the new engine</a></li>
+    <li><a href="../topics/engine.html#entities" class="header">Entities</a></li>
+    <li><a href="../topics/engine.html#entities-sync" class="header">Entities sync</a></li>
+    <li><a href="../topics/engine.html#automatic-conversion" class="header">Automatic conversion</a></li>
+    <li><a href="../topics/engine.html#routing" class="header">Routing</a></li>
+    <li><a href="../topics/engine.html#plugins" class="header">Plugins</a></li>
+    <li><a href="../topics/engine.html#using-legacy-plugins" class="header">Using legacy plugins</a></li>
+    <li><a href="../topics/engine.html#reporting" class="header">Reporting</a></li>
+    <li><a href="../topics/engine.html#debugging" class="header">Debugging</a></li>
+    <li><a href="../topics/engine.html#http-traffic-capture" class="header">HTTP traffic capture</a></li>
+    <li><a href="../topics/engine.html#openapi-import" class="header">openapi import</a></li>
   </ul></li>
 </ul>
 </div>
