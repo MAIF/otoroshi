@@ -23,7 +23,7 @@
   z-index: 110;
   margin-left: -25px;
   & + .row {
-    padding-top: 90px;
+    padding-top: 88px;
   }
 }
 
@@ -61,10 +61,10 @@
   width: 200px;
   margin-top: 50px;
   .st0 {
-    fill: #343736;
+    fill: var(--bg-color_level1);
   }
   .st1 {
-    fill: #ffffff;
+    fill: var(--color_level1);
   }
 }
 
