@@ -12,7 +12,7 @@
   right: 40px;
 }
 
-.btnsService+div {
+.btnsService + div {
   padding-top: 50px;
 }
 
@@ -46,23 +46,14 @@
   color: #fff;
   border-color: var(--color-green);
   background-color: var(--color-green);
-
-  &[disabled] {
-    color: var(--color-grey);
-    border-color: var(--color-grey);
-    background: none;
-  }
 }
 
-
-
-.input-group-btn>.btn,
-.input-group-btn>.btn-group {
+.input-group-btn > .btn,
+.input-group-btn > .btn-group {
   margin-left: 4px;
 }
 
-
-.input-group-btn:last-child>.btn {
+.input-group-btn:last-child > .btn {
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
 
@@ -118,11 +109,12 @@
   }
 }
 
-.btn-primary, .btn-primary:focus {
+.btn-primary,
+.btn-primary:focus {
   color: #fff;
   border: 1px solid;
   border-color: var(--color-blue);
-  background-color:transparent;
+  background-color: transparent;
   &:hover,
   &.active,
   &.active:hover {
@@ -133,11 +125,12 @@
   }
 }
 
-.btn-danger,.btn-danger:focus {
+.btn-danger,
+.btn-danger:focus {
   color: #fff;
   border: 1px solid;
   border-color: var(--color-red);
-  background-color:transparent;
+  background-color: transparent;
 
   &:hover {
     color: #fff;
@@ -151,11 +144,12 @@
   }
 }
 
-.btn-success, .btn-success:focus {
+.btn-success,
+.btn-success:focus {
   color: #fff;
   border: 1px solid;
   border-color: var(--color-green);
-  background-color:transparent;
+  background-color: transparent;
 
   &:hover {
     color: #fff;
@@ -163,34 +157,16 @@
     border-color: var(--color-green);
     background-color: var(--color-green);
   }
-
-  &[disabled] {
-    color: var(--color-grey);
-    text-shadow: none;
-    background-color: transparent;
-    border-color: var(--color-green);
-  }
-
-  &.disabled {
-    color: var(--color-grey);
-    text-shadow: none;
-    background-color: transparent;
-    border-color: var(--color-grey);
-  }
 }
 
-.btn-default.disabled,
-.btn-default.disabled:hover {
+[class*="btn-"].disabled,
+[class*="btn-"].disabled:hover,
+[class*="btn-"][disabled],
+[class*="btn-"][disabled]:hover {
   color: var(--color-grey);
   text-shadow: none;
   background-color: transparent;
-}
-
-.btn-danger[disabled],
-.btn-danger[disabled]:hover {
-  background-color: #e2e6e9;
-  color: #000000a6;
-  border-color: #000000a6;
+  border-color: var(--color-grey);
 }
 
 .btn-radius-25 {
@@ -214,7 +190,7 @@
 }
 
 .pill-cursor {
-  transition: left .25s;
+  transition: left 0.25s;
   position: absolute;
   background-color: var(--color-primary);
   top: 4px;
@@ -225,7 +201,7 @@
   z-index: 20;
 }
 
-.square-button{
+.square-button {
   min-width: 80px;
   min-height: 80px;
   max-width: 80px;
