@@ -27,11 +27,12 @@
 
   h2 a,
   h3 {
-    color: $primaryColor;
+    color: $colorGris;
     font-size: 15px;
     text-transform: uppercase;
     margin-left: 10px;
   }
+
 
   i {
     margin-right: 5px;
@@ -66,11 +67,26 @@
   margin-left: -20px;
   margin-bottom: 20px;
 
+  > li > h3 {
+    color: $primaryColor;
+  }
+
+  > li > a > h3 {
+    text-transform: initial;
+  }
+
+  > li > a > h3,
   > li > a {
-    padding: 5px 10px 5px 36px;
+    // padding: 5px 10px 5px 36px;
     &.active{
       color: $primaryColor;
     }
+  }
+}
+
+.nav-item {
+  a.active > h3 {
+    color: $primaryColor !important;
   }
 }
 

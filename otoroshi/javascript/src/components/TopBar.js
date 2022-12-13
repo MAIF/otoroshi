@@ -9,6 +9,7 @@ import { DefaultAdminPopover } from '../components/inputs';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { JsonObjectAsCodeInput } from './inputs/CodeInput';
 import { Link } from 'react-router-dom';
+import { Button } from './Button';
 
 function extractEnv(value = '') {
   const parts = value.split(' ');
@@ -602,7 +603,7 @@ export class TopBar extends Component {
                 {this.brandName()}
               </Link>
             </div>
-            <form id="navbar" className="navbar-form navbar-left align-self-center">
+            <form id="navbar" className="navbar-form navbar-left align-self-center d-flex">
               {selected && (
                 <div className="mb-3" style={{ marginRight: 10 }}>
                   <span
@@ -677,6 +678,73 @@ export class TopBar extends Component {
                   style={{ width: 400 }}
                 />
               </div>
+              <div className="dropdown">
+                <Button
+                  style={{ backgroundColor: '#f9b000', minWidth: 160, maxWidth: 160, border: 'none' }}
+                  className="d-flex align-items-center justify-content-between dropdown"
+                  id="add-components"
+                  data-bs-toggle="dropdown"
+                  data-bs-auto-close="true"
+                  aria-expanded="false"
+                >
+                  <span>Add New...</span>
+                  <i className='fas fa-chevron-down' />
+                </Button>
+                <ul
+                  className="dropdown-menu add-menu"
+                  aria-labelledby="add-components"
+                  style={{
+                    background: 'rgb(73, 73, 72)',
+                    border: '1px solid #373735',
+                    borderTop: 0,
+                    padding: '12px',
+                    zIndex: 4000,
+                    color: "#E6E6E6",
+                    gap: 5
+                  }}>
+                  <li className='d-flex'>
+                    <Link to="/routes/new?tab=informations">
+                      Route
+                    </Link>
+                  </li>
+                  <li className='d-flex'>
+                    <Link to="/apikeys/add">
+                      Apikey
+                    </Link>
+                  </li>
+                  <li className='d-flex'>
+                    <Link to="/auth-configs/add">
+                      Authentication
+                    </Link>
+                  </li>
+                  <li className='d-flex'>
+                    <Link to="/certificates/add">
+                      Certificates
+                    </Link>
+                  </li>
+                  <li className='d-flex'>
+                    <Link to="/jwt-verifiers/add">
+                      Jwt Verifier
+                    </Link></li>
+                  <li className='d-flex'>
+                    <Link to="/backends/add">
+                      Backend
+                    </Link></li>
+                  <li className='d-flex'>
+                    <Link to="/tcp/services/add">
+                      TCP service
+                    </Link>
+                  </li>
+                  {this.props.env && this.props.env.clevercloud && (
+                    <li className='d-flex'>
+                      <Link to="/clever">
+                        Service from a CleverApp
+                      </Link>
+                    </li>
+                  )}
+                </ul>
+              </div>
+
             </form>
           </div>
 
