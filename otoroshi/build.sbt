@@ -182,7 +182,7 @@ libraryDependencies ++= Seq(
   "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.34.Final" classifier "linux-x86_64" classifier "osx-x86_64",
   "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.15.Final",
   // tests
-  "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0" % Test,
+  "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0" % Test
 )
 
 scalacOptions ++= Seq(

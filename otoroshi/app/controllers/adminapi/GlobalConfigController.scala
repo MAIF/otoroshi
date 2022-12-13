@@ -21,8 +21,8 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
   lazy val logger = Logger("otoroshi-global-config-api")
 
   def globalConfig(fields: Option[String]) = {
-    val expectedFields     = fields.map(_.split(",").toSeq).getOrElse(Seq.empty[String])
-    val hasFields          = expectedFields.nonEmpty
+    val expectedFields = fields.map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+    val hasFields      = expectedFields.nonEmpty
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         env.datastores.globalConfigDataStore.findById("global").map {

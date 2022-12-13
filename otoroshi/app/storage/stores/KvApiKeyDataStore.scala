@@ -223,51 +223,55 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       env: Env
   ): Future[Option[ApiKey]] = {
     findById(clientId).flatMap {
-      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ServiceDescriptorIdentifier(serviceId)) => opt.vfuture
-      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteIdentifier(serviceId)) => opt.vfuture
-      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteCompositionIdentifier(serviceId)) => opt.vfuture
+      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ServiceDescriptorIdentifier(serviceId)) =>
+        opt.vfuture
+      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteIdentifier(serviceId))             => opt.vfuture
+      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteCompositionIdentifier(serviceId))  =>
+        opt.vfuture
       case Some(apiKey)                                                                                     => {
         // unoptimized
         // apiKey.services.fast.map(services => services.find(_.id == serviceId).map(_ => apiKey))
         env.datastores.serviceDescriptorDataStore.findOrRouteById(serviceId).flatMap {
-          case None => env.datastores.routeCompositionDataStore.findById(serviceId) map {
-            case None => None
-            case Some(routeComp) => {
-              val groups = routeComp.groups.map(ServiceGroupIdentifier.apply)
-              groups.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
+          case None          =>
+            env.datastores.routeCompositionDataStore.findById(serviceId) map {
+              case None            => None
+              case Some(routeComp) => {
+                val groups = routeComp.groups.map(ServiceGroupIdentifier.apply)
+                groups.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
+              }
             }
-          }
           case Some(service) => {
             val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
             identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey).vfuture
           }
         }
       }
-      case _ => FastFuture.successful(None)
+      case _                                                                                                => FastFuture.successful(None)
     }
   }
 
   override def findAuthorizeKeyForFromCache(clientId: String, serviceId: String)(implicit env: Env): Option[ApiKey] = {
     env.proxyState.apikey(clientId) match {
       case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ServiceDescriptorIdentifier(serviceId)) => opt
-      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteIdentifier(serviceId)) => opt
-      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteCompositionIdentifier(serviceId)) => opt
-      case Some(apiKey) => {
+      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteIdentifier(serviceId))             => opt
+      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteCompositionIdentifier(serviceId))  => opt
+      case Some(apiKey)                                                                                     => {
         env.proxyState.route(serviceId) match {
-          case None => env.proxyState.routeComposition(serviceId) match {
-            case None => None
-            case Some(routeComp) => {
-              val groups = routeComp.groups.map(ServiceGroupIdentifier.apply)
-              groups.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
+          case None          =>
+            env.proxyState.routeComposition(serviceId) match {
+              case None            => None
+              case Some(routeComp) => {
+                val groups = routeComp.groups.map(ServiceGroupIdentifier.apply)
+                groups.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
+              }
             }
-          }
           case Some(service) => {
             val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
             identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
           }
         }
       }
-      case _ => None
+      case _                                                                                                => None
     }
   }
 }

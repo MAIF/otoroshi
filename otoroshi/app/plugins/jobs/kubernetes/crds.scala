@@ -902,7 +902,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       res: KubernetesOtoroshiResource,
       entities: Seq[NgRouteComposition]
   ): JsValue = {
-    val spec = findAndMerge[NgRouteComposition](_spec, res, "route-composition", None, entities, _.metadata, _.id, _.json)
+    val spec =
+      findAndMerge[NgRouteComposition](_spec, res, "route-composition", None, entities, _.metadata, _.id, _.json)
     customizeIdAndName(spec, res)
   }
 
@@ -970,21 +971,25 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     template.deepMerge(entity.toJson.as[JsObject].deepMerge(_spec.as[JsObject]))
   }
 
-  def crdsFetchTenants(tenants: Seq[Tenant]): Future[Seq[OtoResHolder[Tenant]]]                                 =
+  def crdsFetchTenants(tenants: Seq[Tenant]): Future[Seq[OtoResHolder[Tenant]]]                                        =
     client.fetchOtoroshiResources[Tenant]("organizations", Tenant.format, (a, b) => customizeTenant(a, b, tenants))
-  def crdsFetchTeams(teams: Seq[Team]): Future[Seq[OtoResHolder[Team]]]                                         =
+  def crdsFetchTeams(teams: Seq[Team]): Future[Seq[OtoResHolder[Team]]]                                                =
     client.fetchOtoroshiResources[Team]("teams", Team.format, (a, b) => customizeTeam(a, b, teams))
-  def crdsFetchRoutes(routes: Seq[NgRoute]): Future[Seq[OtoResHolder[NgRoute]]]                                 =
+  def crdsFetchRoutes(routes: Seq[NgRoute]): Future[Seq[OtoResHolder[NgRoute]]]                                        =
     client.fetchOtoroshiResources[NgRoute]("routes", NgRoute.fmt, (a, b) => customizeRoute(a, b, routes))
-  def crdsFetchRouteCompositions(compositions: Seq[NgRouteComposition]): Future[Seq[OtoResHolder[NgRouteComposition]]]                         =
-    client.fetchOtoroshiResources[NgRouteComposition]("route-compositions", NgRouteComposition.fmt, (a, b) => customizeRouteComposition(a, b, compositions))
-  def crdsFetchBackends(backends: Seq[StoredNgBackend]): Future[Seq[OtoResHolder[StoredNgBackend]]]             =
+  def crdsFetchRouteCompositions(compositions: Seq[NgRouteComposition]): Future[Seq[OtoResHolder[NgRouteComposition]]] =
+    client.fetchOtoroshiResources[NgRouteComposition](
+      "route-compositions",
+      NgRouteComposition.fmt,
+      (a, b) => customizeRouteComposition(a, b, compositions)
+    )
+  def crdsFetchBackends(backends: Seq[StoredNgBackend]): Future[Seq[OtoResHolder[StoredNgBackend]]]                    =
     client.fetchOtoroshiResources[StoredNgBackend](
       "backends",
       StoredNgBackend.format,
       (a, b) => customizeBackend(a, b, backends)
     )
-  def crdsFetchServiceGroups(groups: Seq[ServiceGroup]): Future[Seq[OtoResHolder[ServiceGroup]]]                =
+  def crdsFetchServiceGroups(groups: Seq[ServiceGroup]): Future[Seq[OtoResHolder[ServiceGroup]]]                       =
     client.fetchOtoroshiResources[ServiceGroup](
       "service-groups",
       ServiceGroup._fmt,
@@ -1031,36 +1036,36 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       (a, b) => customizeCert(a, b, certs, registerCertToExport)
     )
   }
-  def crdsFetchGlobalConfig(config: GlobalConfig): Future[Seq[OtoResHolder[GlobalConfig]]]                      =
+  def crdsFetchGlobalConfig(config: GlobalConfig): Future[Seq[OtoResHolder[GlobalConfig]]]                             =
     client.fetchOtoroshiResources[GlobalConfig](
       "global-configs",
       GlobalConfig._fmt,
       (a, b) => customizeGlobalConfig(a, b, config)
     )
-  def crdsFetchJwtVerifiers(verifiers: Seq[GlobalJwtVerifier]): Future[Seq[OtoResHolder[GlobalJwtVerifier]]]    =
+  def crdsFetchJwtVerifiers(verifiers: Seq[GlobalJwtVerifier]): Future[Seq[OtoResHolder[GlobalJwtVerifier]]]           =
     client.fetchOtoroshiResources[GlobalJwtVerifier](
       "jwt-verifiers",
       GlobalJwtVerifier._fmt,
       (a, b) => customizeJwtVerifier(a, b, verifiers)
     )
-  def crdsFetchAuthModules(modules: Seq[AuthModuleConfig]): Future[Seq[OtoResHolder[AuthModuleConfig]]]         =
+  def crdsFetchAuthModules(modules: Seq[AuthModuleConfig]): Future[Seq[OtoResHolder[AuthModuleConfig]]]                =
     client.fetchOtoroshiResources[AuthModuleConfig](
       "auth-modules",
       AuthModuleConfig._fmt,
       (a, b) => customizeAuthModule(a, b, modules)
     )
-  def crdsFetchScripts(scripts: Seq[Script]): Future[Seq[OtoResHolder[Script]]]                                 =
+  def crdsFetchScripts(scripts: Seq[Script]): Future[Seq[OtoResHolder[Script]]]                                        =
     client.fetchOtoroshiResources[Script]("scripts", Script._fmt, (a, b) => customizeScripts(a, b, scripts))
-  def crdsFetchTcpServices(services: Seq[TcpService]): Future[Seq[OtoResHolder[TcpService]]]                    =
+  def crdsFetchTcpServices(services: Seq[TcpService]): Future[Seq[OtoResHolder[TcpService]]]                           =
     client
       .fetchOtoroshiResources[TcpService]("tcp-services", TcpService.fmt, (a, b) => customizeTcpService(a, b, services))
-  def crdsFetchDataExporters(exporters: Seq[DataExporterConfig]): Future[Seq[OtoResHolder[DataExporterConfig]]] =
+  def crdsFetchDataExporters(exporters: Seq[DataExporterConfig]): Future[Seq[OtoResHolder[DataExporterConfig]]]        =
     client.fetchOtoroshiResources[DataExporterConfig](
       "data-exporters",
       DataExporterConfig.format,
       (a, b) => customizeDataExporter(a, b, exporters)
     )
-  def crdsFetchSimpleAdmins(admins: Seq[SimpleOtoroshiAdmin]): Future[Seq[OtoResHolder[SimpleOtoroshiAdmin]]]   =
+  def crdsFetchSimpleAdmins(admins: Seq[SimpleOtoroshiAdmin]): Future[Seq[OtoResHolder[SimpleOtoroshiAdmin]]]          =
     client.fetchOtoroshiResources[SimpleOtoroshiAdmin](
       "admins",
       v => SimpleOtoroshiAdmin.reads(v),
@@ -1084,7 +1089,7 @@ case class KubernetesResourcesContext(
     dataExporters: Seq[OtoResHolder[DataExporterConfig]],
     routes: Seq[OtoResHolder[NgRoute]],
     routesCompositions: Seq[OtoResHolder[NgRouteComposition]],
-    backends: Seq[OtoResHolder[StoredNgBackend]],
+    backends: Seq[OtoResHolder[StoredNgBackend]]
 )
 
 case class OtoroshiResourcesContext(
@@ -1103,7 +1108,7 @@ case class OtoroshiResourcesContext(
     dataExporters: Seq[DataExporterConfig],
     routes: Seq[NgRoute],
     routeCompositions: Seq[NgRouteComposition],
-    backends: Seq[StoredNgBackend],
+    backends: Seq[StoredNgBackend]
 )
 
 case class CRDContext(
@@ -1180,8 +1185,9 @@ object KubernetesCRDsJob {
       ototeams              <- if (useProxyState) env.proxyState.allTeams().vfuture else env.datastores.teamDataStore.findAll()
       ototenants            <- if (useProxyState) env.proxyState.allTenants().vfuture else env.datastores.tenantDataStore.findAll()
       otoroutes             <- if (useProxyState) env.proxyState.allRoutes().vfuture else env.datastores.routeDataStore.findAll()
-      otoroutecomps           <-
-        if (useProxyState) env.proxyState.allNgServices().vfuture else env.datastores.routeCompositionDataStore.findAll()
+      otoroutecomps         <-
+        if (useProxyState) env.proxyState.allNgServices().vfuture
+        else env.datastores.routeCompositionDataStore.findAll()
       otobackends           <-
         if (useProxyState) env.proxyState.allBackends().vfuture else env.datastores.backendsDataStore.findAll()
 
@@ -1223,7 +1229,7 @@ object KubernetesCRDsJob {
           tenants = tenants,
           routes = routes,
           routesCompositions = routecomps,
-          backends = backends,
+          backends = backends
         ),
         otoroshi = OtoroshiResourcesContext(
           serviceGroups = otoserviceGroups,
@@ -1241,7 +1247,7 @@ object KubernetesCRDsJob {
           tenants = ototenants,
           routes = otoroutes,
           routeCompositions = otoroutecomps,
-          backends = otobackends,
+          backends = otobackends
         )
       )
     }
@@ -1418,7 +1424,9 @@ object KubernetesCRDsJob {
       _ <-
         ctx.otoroshi.routeCompositions
           .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-          .filterNot(sg => ctx.kubernetes.routesCompositions.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+          .filterNot(sg =>
+            ctx.kubernetes.routesCompositions.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
+          )
           .map(_.id)
           .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-route-compositions entities"))
           .applyOn(env.datastores.routeCompositionDataStore.deleteByIds)
@@ -1430,7 +1438,7 @@ object KubernetesCRDsJob {
           .map(_.id)
           .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-backends entities"))
           .applyOn(env.datastores.backendsDataStore.deleteByIds)
-      
+
     } yield ()
   }
 

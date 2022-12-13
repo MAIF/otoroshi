@@ -14,22 +14,23 @@ export function DefaultSidebar(props) {
 
   return (
     <ul className="nav flex-column nav-sidebar">
-      {props.env && !props.env.initWithNewEngine && <>
-        <li className="nav-item">
-          <h3 className="">
-            <i className="fas fa-cubes" /> Services
-          </h3>
-        </li>
-        <li className="nav-item" key="all">
-          <Link
-            to="/services"
-            className={`nav-link ${rootClassName('services')}`}
-            {...createTooltip('List all services declared in Otoroshi')}>
-            {' '}
-            All services
-          </Link>
-        </li>
-        {/*props.lines.map((line) => (
+      {props.env && !props.env.initWithNewEngine && (
+        <>
+          <li className="nav-item">
+            <h3 className="">
+              <i className="fas fa-cubes" /> Services
+            </h3>
+          </li>
+          <li className="nav-item" key="all">
+            <Link
+              to="/services"
+              className={`nav-link ${rootClassName('services')}`}
+              {...createTooltip('List all services declared in Otoroshi')}>
+              {' '}
+              All services
+            </Link>
+          </li>
+          {/*props.lines.map((line) => (
           <li className="nav-item" key={line}>
             <Link
               to={`/services?env=${line}`}
@@ -40,16 +41,17 @@ export function DefaultSidebar(props) {
             </Link>
           </li>
         ))*/}
-        <li className="nav-item">
-          <Link
-            to="#"
-            onClick={props.addService}
-            className="nav-link"
-            {...createTooltip('Create a new service descriptor')}>
-            <i className="fas fa-plus" /> Add service
-          </Link>
-        </li>
-      </>}
+          <li className="nav-item">
+            <Link
+              to="#"
+              onClick={props.addService}
+              className="nav-link"
+              {...createTooltip('Create a new service descriptor')}>
+              <i className="fas fa-plus" /> Add service
+            </Link>
+          </li>
+        </>
+      )}
       <>
         <li className="nav-item">
           <h3 className="mt-3">
@@ -73,8 +75,8 @@ export function DefaultSidebar(props) {
             <i className="fas fa-plus" /> Add route
           </Link>
         </li>
-    </>
-    <>
+      </>
+      <>
         <li className="nav-item">
           <h3 className="mt-3">
             <i className="fas fa-microchip" /> Backends
@@ -90,10 +92,7 @@ export function DefaultSidebar(props) {
           </Link>
         </li>
         <li className="nav-item">
-          <Link
-            to="/backends/add"
-            className="nav-link"
-            {...createTooltip('Create a new backend')}>
+          <Link to="/backends/add" className="nav-link" {...createTooltip('Create a new backend')}>
             <i className="fas fa-plus" /> Add backend
           </Link>
         </li>

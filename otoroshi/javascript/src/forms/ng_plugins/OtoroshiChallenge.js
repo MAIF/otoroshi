@@ -36,7 +36,7 @@ export default {
         type: {
           type: 'select',
           label: 'Type',
-          help: "What kind of algorithm you want to use to verify/sign your JWT token with",
+          help: 'What kind of algorithm you want to use to verify/sign your JWT token with',
           props: {
             options: [
               'HSAlgoSettings',
@@ -58,24 +58,24 @@ export default {
         base64: {
           type: 'box-bool',
           props: {
-            description: "Is the secret encoded with base64"
-          }
+            description: 'Is the secret encoded with base64',
+          },
         },
         publicKey: {
           type: 'string',
-          help: "The RSA public key"
+          help: 'The RSA public key',
         },
         privateKey: {
           type: 'string',
-          help: "The RSA private key, private key can be empty if not used for JWT token signing"
+          help: 'The RSA private key, private key can be empty if not used for JWT token signing',
         },
         url: {
           type: 'string',
-          help: "The JWK Set url"
+          help: 'The JWK Set url',
         },
         headers: {
           type: 'object',
-          help: "The HTTP headers passed",
+          help: 'The HTTP headers passed',
           props: {
             label: 'Headers',
           },
@@ -85,11 +85,11 @@ export default {
         },
         ttl: {
           type: 'number',
-          help: "Cache TTL for the keyset"
+          help: 'Cache TTL for the keyset',
         },
         kty: {
           type: 'select',
-          help: "Type of key",
+          help: 'Type of key',
           props: {
             options: ['RSA', 'EC'],
           },
@@ -100,7 +100,7 @@ export default {
           schema: {
             certs: {
               type: 'array-select',
-              help: "The certificate used when performing a mTLS call",
+              help: 'The certificate used when performing a mTLS call',
               props: {
                 label: 'Certificates',
                 optionsFrom: '/bo/api/proxy/api/certificates',
@@ -112,7 +112,7 @@ export default {
             },
             trustedCerts: {
               type: 'array-select',
-              help: "The trusted certificate used when performing a mTLS call",
+              help: 'The trusted certificate used when performing a mTLS call',
               props: {
                 label: 'Trusted certificates',
                 optionsFrom: '/bo/api/proxy/api/certificates',
@@ -177,7 +177,7 @@ export default {
         },
         certId: {
           type: 'array-select',
-          help: "The keypair used to sign/verify token",
+          help: 'The keypair used to sign/verify token',
           props: {
             label: 'Certificates',
             optionsFrom: '/bo/api/proxy/api/certificates',
@@ -229,7 +229,7 @@ export default {
         type: {
           type: 'select',
           label: 'Type',
-          help: "What kind of algorithm you want to use to verify/sign your JWT token with",
+          help: 'What kind of algorithm you want to use to verify/sign your JWT token with',
           props: {
             options: [
               'HSAlgoSettings',
@@ -247,29 +247,29 @@ export default {
         },
         secret: {
           type: 'string',
-          help: "The Hmac secret"
+          help: 'The Hmac secret',
         },
         base64: {
           type: 'box-bool',
           props: {
-            description: "Is the secret encoded with base64"
-          }
+            description: 'Is the secret encoded with base64',
+          },
         },
         publicKey: {
           type: 'string',
-          help: "The RSA public key"
+          help: 'The RSA public key',
         },
         privateKey: {
           type: 'string',
-          help: "The RSA private key, private key can be empty if not used for JWT token signing"
+          help: 'The RSA private key, private key can be empty if not used for JWT token signing',
         },
         url: {
           type: 'string',
-          help: "The JWK Set url"
+          help: 'The JWK Set url',
         },
         headers: {
           type: 'object',
-          help: "The HTTP headers passed",
+          help: 'The HTTP headers passed',
           props: {
             label: 'Headers',
           },
@@ -279,11 +279,11 @@ export default {
         },
         ttl: {
           type: 'number',
-          help: "Cache TTL for the keyset"
+          help: 'Cache TTL for the keyset',
         },
         kty: {
           type: 'select',
-          help: "Type of key",
+          help: 'Type of key',
           props: {
             options: ['RSA', 'EC'],
           },
@@ -294,7 +294,7 @@ export default {
           schema: {
             certs: {
               type: 'array-select',
-              help: "The certificate used when performing a mTLS call",
+              help: 'The certificate used when performing a mTLS call',
               props: {
                 label: 'Certificates',
                 optionsFrom: '/bo/api/proxy/api/certificates',
@@ -306,7 +306,7 @@ export default {
             },
             trustedCerts: {
               type: 'array-select',
-              help: "The trusted certificate used when performing a mTLS call",
+              help: 'The trusted certificate used when performing a mTLS call',
               props: {
                 label: 'Trusted certificates',
                 optionsFrom: '/bo/api/proxy/api/certificates',
@@ -371,7 +371,7 @@ export default {
         },
         certId: {
           type: 'array-select',
-          help: "The keypair used to sign/verify token",
+          help: 'The keypair used to sign/verify token',
           props: {
             label: 'Certificates',
             optionsFrom: '/bo/api/proxy/api/certificates',
@@ -379,7 +379,7 @@ export default {
               label: 'name',
               value: 'id',
             },
-          }
+          },
         },
         onlyExposedCerts: {
           type: 'boolean',

@@ -139,8 +139,8 @@ class NgProxyState(env: Env) {
   def allPrivateAppsSessions(): Seq[PrivateAppsUser] = privateAppsSessions.values.toSeq
   def allTcpServices(): Seq[TcpService]              = tcpServices.values.toSeq
 
-  def allNgServices(): Seq[NgRouteComposition]       = ngroutecompositions.values.toSeq
-  def allBackends(): Seq[StoredNgBackend] = ngbackends.values.toSeq
+  def allNgServices(): Seq[NgRouteComposition] = ngroutecompositions.values.toSeq
+  def allBackends(): Seq[StoredNgBackend]      = ngbackends.values.toSeq
 
   def updateRoutes(values: Seq[NgRoute]): Unit = {
     routes.addAll(values.map(v => (v.cacheableId, v))).remAll(routes.keySet.toSeq.diff(values.map(_.cacheableId)))
@@ -234,7 +234,9 @@ class NgProxyState(env: Env) {
   }
 
   def updateNgSRouteCompositions(values: Seq[NgRouteComposition]): Unit = {
-    ngroutecompositions.addAll(values.map(v => (v.id, v))).remAll(ngroutecompositions.keySet.toSeq.diff(values.map(_.id)))
+    ngroutecompositions
+      .addAll(values.map(v => (v.id, v)))
+      .remAll(ngroutecompositions.keySet.toSeq.diff(values.map(_.id)))
   }
 
   private val fakeRoutesCount = 10 //10000 // 300000
@@ -540,7 +542,7 @@ class NgProxyState(env: Env) {
       tcpServices         <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets() // secrets OK
       scripts             <- env.datastores.scriptDataStore.findAll() // no need for secrets
       croutes             <- if (dev) {
-                                NgRouteComposition
+                               NgRouteComposition
                                  .fromOpenApi(
                                    "oto-api-next-gen.oto.tools",
                                    "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"

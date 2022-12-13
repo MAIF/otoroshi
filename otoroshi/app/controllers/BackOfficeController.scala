@@ -57,8 +57,8 @@ case class ServiceLike(entity: EntityLocationSupport, groups: Seq[String]) exten
 }
 
 object ServiceLike {
-  def fromService(service: ServiceDescriptor): ServiceLike  = ServiceLike(service, service.groups)
-  def fromRoute(service: NgRoute): ServiceLike              = ServiceLike(service, service.groups)
+  def fromService(service: ServiceDescriptor): ServiceLike           = ServiceLike(service, service.groups)
+  def fromRoute(service: NgRoute): ServiceLike                       = ServiceLike(service, service.groups)
   def fromRouteComposition(service: NgRouteComposition): ServiceLike = ServiceLike(service, service.groups)
 }
 
@@ -709,21 +709,21 @@ class BackOfficeController(
         )
       )
       val fu: Future[Seq[SearchedService]] =
-            for {
-              services   <- env.datastores.serviceDescriptorDataStore.findAll()
-              tcServices <- env.datastores.tcpServiceDataStore.findAll()
-              routes <- env.datastores.routeDataStore.findAll()
-            } yield {
-              val finalServices =
-                services.map(s =>
-                  SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), s.env, "http", s.location)
-                ) ++
-                  routes.map(s =>
-                    SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), "route", "route", s.location)
-                  ) ++
-                tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp", s.location))
-              finalServices
-            }
+        for {
+          services   <- env.datastores.serviceDescriptorDataStore.findAll()
+          tcServices <- env.datastores.tcpServiceDataStore.findAll()
+          routes     <- env.datastores.routeDataStore.findAll()
+        } yield {
+          val finalServices =
+            services.map(s =>
+              SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), s.env, "http", s.location)
+            ) ++
+            routes.map(s =>
+              SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), "route", "route", s.location)
+            ) ++
+            tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp", s.location))
+          finalServices
+        }
       fu.map { services =>
         val filtered = services.filter(ctx.canUserRead).filter { service =>
           service.id.toLowerCase() == query || service.name.toLowerCase().contains(query) || service.env
@@ -1640,15 +1640,23 @@ class BackOfficeController(
   def fetchGroupsAndServices() =
     BackOfficeActionAuth.async { ctx =>
       for {
-        rgroups <- env.proxyState.allServiceGroups().vfuture
-        rservices <- env.proxyState.allServices().vfuture
-        rroutes <- env.proxyState.allRoutes().vfuture
+        rgroups            <- env.proxyState.allServiceGroups().vfuture
+        rservices          <- env.proxyState.allServices().vfuture
+        rroutes            <- env.proxyState.allRoutes().vfuture
         rrouteCompositions <- env.proxyState.allNgServices().vfuture
       } yield {
-        val groups = rgroups.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"group_${g.id}", "kind" -> "group"))
-        val services = rservices.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"service_${g.id}", "kind" -> "service"))
-        val routes = rroutes.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"route_${g.id}", "kind" -> "route"))
-        val routeCompositions = rrouteCompositions.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"route-composition_${g.id}", "kind" -> "route-composition"))
+        val groups            = rgroups
+          .filter(ctx.canUserRead)
+          .map(g => Json.obj("label" -> g.name, "value" -> s"group_${g.id}", "kind" -> "group"))
+        val services          = rservices
+          .filter(ctx.canUserRead)
+          .map(g => Json.obj("label" -> g.name, "value" -> s"service_${g.id}", "kind" -> "service"))
+        val routes            = rroutes
+          .filter(ctx.canUserRead)
+          .map(g => Json.obj("label" -> g.name, "value" -> s"route_${g.id}", "kind" -> "route"))
+        val routeCompositions = rrouteCompositions
+          .filter(ctx.canUserRead)
+          .map(g => Json.obj("label" -> g.name, "value" -> s"route-composition_${g.id}", "kind" -> "route-composition"))
         Ok(JsArray(groups ++ services ++ routes ++ routeCompositions))
       }
     }
@@ -1672,8 +1680,8 @@ class BackOfficeController(
     BackOfficeActionAuth.async { ctx =>
       findServiceLike(serviceId) flatMap {
         case None                                       => FastFuture.successful(NotFound(Json.obj("error" -> "service not found")))
-        case Some(service) if !ctx.canUserRead(service)     => ApiActionContext.fforbidden
-        case Some(service)                                => {
+        case Some(service) if !ctx.canUserRead(service) => ApiActionContext.fforbidden
+        case Some(service)                              => {
           env.datastores.apiKeyDataStore.findAll().map { apikeys =>
             val filtered = apikeys
               .filter(ctx.canUserRead)

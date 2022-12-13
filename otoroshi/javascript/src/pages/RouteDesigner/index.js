@@ -316,7 +316,9 @@ function ManagerTitle({
     },
     {
       visible: () => !isOnViewPlugins,
-      component: () => <MoreActionsButton value={value} menu={menu} history={history} globalEnv={globalEnv} />,
+      component: () => (
+        <MoreActionsButton value={value} menu={menu} history={history} globalEnv={globalEnv} />
+      ),
     },
   ];
 
@@ -609,7 +611,6 @@ class RouteDesigner extends React.Component {
   };
 
   render() {
-
     const { match, history, location, globalEnv } = this.props;
 
     const entity = entityFromURI(location);
@@ -625,7 +626,9 @@ class RouteDesigner extends React.Component {
           { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
           {
             path: `${match.url}/:routeId`,
-            component: (p) => <Manager {...this.props} {...p} entity={entity} globalEnv={globalEnv} />,
+            component: (p) => (
+              <Manager {...this.props} {...p} entity={entity} globalEnv={globalEnv} />
+            ),
           },
         ].map(({ path, component }) => {
           const Component = component;

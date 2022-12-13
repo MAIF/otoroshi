@@ -188,7 +188,14 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
           // Here are 2 + 12 datastore calls to handle quotas
           val routeId = ctx.route.cacheableId // handling route groups
           ApiKeyHelper
-            .passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId, config.updateQuotas, config.routing.enabled)
+            .passWithApiKeyFromCache(
+              ctx.request,
+              config.legacy,
+              ctx.attrs,
+              routeId,
+              config.updateQuotas,
+              config.routing.enabled
+            )
             .map {
               case Left(result)  => NgAccess.NgDenied(result)
               case Right(apikey) =>
@@ -200,7 +207,14 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
           // Here are 2 + 12 datastore calls to handle quotas
           val routeId = ctx.route.cacheableId // handling route groups
           ApiKeyHelper
-            .passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId, config.updateQuotas, config.routing.enabled)
+            .passWithApiKeyFromCache(
+              ctx.request,
+              config.legacy,
+              ctx.attrs,
+              routeId,
+              config.updateQuotas,
+              config.routing.enabled
+            )
             .map {
               case Left(result)
                   if result.header.status == 400 && result.header.headers
@@ -218,7 +232,14 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
           // Here are 2 + 12 datastore calls to handle quotas
           val routeId = ctx.route.cacheableId // handling route groups
           ApiKeyHelper
-            .passWithApiKeyFromCache(ctx.request, config.legacy, ctx.attrs, routeId, config.updateQuotas, config.routing.enabled)
+            .passWithApiKeyFromCache(
+              ctx.request,
+              config.legacy,
+              ctx.attrs,
+              routeId,
+              config.updateQuotas,
+              config.routing.enabled
+            )
             .map {
               case Left(result)  =>
                 NgAccess.NgAllowed

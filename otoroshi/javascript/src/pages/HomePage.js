@@ -6,17 +6,20 @@ export class HomePage extends Component {
   render() {
     return (
       <div>
-        {!this.props.usedNewEngine && <div className='mt-3 pt-3'>
-          <div class="alert alert-warning m-0 d-flex align-items-center" role="alert">
-            You are using the legacy Otoroshi engine. The new Otoroshi engine is now ready for production.
-
-            <a href="https://maif.github.io/otoroshi/manual/next/engine.html"
-              target="_blank"
-              className='btn btn-sm btn-warning ms-auto'>
-              Documentation
-            </a>
+        {!this.props.usedNewEngine && (
+          <div className="mt-3 pt-3">
+            <div class="alert alert-warning m-0 d-flex align-items-center" role="alert">
+              You are using the legacy Otoroshi engine. The new Otoroshi engine is now ready for
+              production.
+              <a
+                href="https://maif.github.io/otoroshi/manual/next/engine.html"
+                target="_blank"
+                className="btn btn-sm btn-warning ms-auto">
+                Documentation
+              </a>
+            </div>
           </div>
-        </div>}
+        )}
         <div
           style={{
             width: '100%',

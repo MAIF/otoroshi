@@ -306,28 +306,28 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     //       .render(ConfigRenderOptions.concise())
     //   )
     for {
-      config           <- env.datastores.globalConfigDataStore.singleton()
-      descs            <- env.datastores.serviceDescriptorDataStore.findAll()
-      apikeys          <- env.datastores.apiKeyDataStore.findAll()
-      groups           <- env.datastores.serviceGroupDataStore.findAll()
-      tmplts           <- env.datastores.errorTemplateDataStore.findAll()
-      calls            <- env.datastores.serviceDescriptorDataStore.globalCalls()
-      dataIn           <- env.datastores.serviceDescriptorDataStore.globalDataIn()
-      dataOut          <- env.datastores.serviceDescriptorDataStore.globalDataOut()
-      admins           <- env.datastores.webAuthnAdminDataStore.findAll()
-      simpleAdmins     <- env.datastores.simpleAdminDataStore.findAll()
-      jwtVerifiers     <- env.datastores.globalJwtVerifierDataStore.findAll()
-      authConfigs      <- env.datastores.authConfigsDataStore.findAll()
-      certificates     <- env.datastores.certificatesDataStore.findAll()
-      clientValidators <- env.datastores.clientCertificateValidationDataStore.findAll()
-      scripts          <- env.datastores.scriptDataStore.findAll()
-      tcpServices      <- env.datastores.tcpServiceDataStore.findAll()
-      dataExporters    <- env.datastores.dataExporterConfigDataStore.findAll()
-      tenants          <- env.datastores.tenantDataStore.findAll()
-      teams            <- env.datastores.teamDataStore.findAll()
-      routes           <- env.datastores.routeDataStore.findAll()
+      config            <- env.datastores.globalConfigDataStore.singleton()
+      descs             <- env.datastores.serviceDescriptorDataStore.findAll()
+      apikeys           <- env.datastores.apiKeyDataStore.findAll()
+      groups            <- env.datastores.serviceGroupDataStore.findAll()
+      tmplts            <- env.datastores.errorTemplateDataStore.findAll()
+      calls             <- env.datastores.serviceDescriptorDataStore.globalCalls()
+      dataIn            <- env.datastores.serviceDescriptorDataStore.globalDataIn()
+      dataOut           <- env.datastores.serviceDescriptorDataStore.globalDataOut()
+      admins            <- env.datastores.webAuthnAdminDataStore.findAll()
+      simpleAdmins      <- env.datastores.simpleAdminDataStore.findAll()
+      jwtVerifiers      <- env.datastores.globalJwtVerifierDataStore.findAll()
+      authConfigs       <- env.datastores.authConfigsDataStore.findAll()
+      certificates      <- env.datastores.certificatesDataStore.findAll()
+      clientValidators  <- env.datastores.clientCertificateValidationDataStore.findAll()
+      scripts           <- env.datastores.scriptDataStore.findAll()
+      tcpServices       <- env.datastores.tcpServiceDataStore.findAll()
+      dataExporters     <- env.datastores.dataExporterConfigDataStore.findAll()
+      tenants           <- env.datastores.tenantDataStore.findAll()
+      teams             <- env.datastores.teamDataStore.findAll()
+      routes            <- env.datastores.routeDataStore.findAll()
       routeCompositions <- env.datastores.routeCompositionDataStore.findAll()
-      backends         <- env.datastores.backendsDataStore.findAll()
+      backends          <- env.datastores.backendsDataStore.findAll()
     } yield OtoroshiExport(
       config,
       descs,
@@ -350,7 +350,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       teams,
       routes,
       routeCompositions,
-      backends,
+      backends
     ).json
   }
 

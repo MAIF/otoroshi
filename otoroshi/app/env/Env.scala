@@ -796,7 +796,9 @@ class Env(
       case "mem" if clusterConfig.mode == ClusterMode.Leader               =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb" if clusterConfig.mode == ClusterMode.Leader           =>
-        logger.error("LevelDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database")
+        logger.error(
+          "LevelDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+        )
         sys.exit(1)
       case "file" if clusterConfig.mode == ClusterMode.Leader              =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.FilePersistenceKind, this)
@@ -809,15 +811,17 @@ class Env(
       case "cassandra" if clusterConfig.mode == ClusterMode.Leader         =>
         new CassandraDataStores(false, configuration, environment, lifecycle, this)
       case "mongo" if clusterConfig.mode == ClusterMode.Leader             =>
-        logger.error("MongoDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database")
+        logger.error(
+          "MongoDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+        )
         sys.exit(1)
       case "lettuce" if clusterConfig.mode == ClusterMode.Leader           =>
         new LettuceDataStores(configuration, environment, lifecycle, this)
       case "experimental-pg" if clusterConfig.mode == ClusterMode.Leader   =>
         new ReactivePgDataStores(configuration, environment, lifecycle, this)
-      case "pg" if clusterConfig.mode == ClusterMode.Leader =>
+      case "pg" if clusterConfig.mode == ClusterMode.Leader                =>
         new ReactivePgDataStores(configuration, environment, lifecycle, this)
-      case "postgresql" if clusterConfig.mode == ClusterMode.Leader =>
+      case "postgresql" if clusterConfig.mode == ClusterMode.Leader        =>
         new ReactivePgDataStores(configuration, environment, lifecycle, this)
       case "redis"                                                         => new RedisLFDataStores(configuration, environment, lifecycle, this)
       case "inmemory"                                                      =>
@@ -827,7 +831,9 @@ class Env(
       case "mem"                                                           =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb"                                                       =>
-        logger.error("LevelDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database")
+        logger.error(
+          "LevelDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+        )
         sys.exit(1)
       case "file"                                                          =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.FilePersistenceKind, this)
@@ -838,7 +844,9 @@ class Env(
       case "cassandra-naive"                                               => new CassandraDataStores(true, configuration, environment, lifecycle, this)
       case "cassandra"                                                     => new CassandraDataStores(false, configuration, environment, lifecycle, this)
       case "mongo"                                                         =>
-        logger.error("MongoDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database")
+        logger.error(
+          "MongoDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+        )
         sys.exit(1)
       case "redis-pool"                                                    => new RedisCPDataStores(configuration, environment, lifecycle, this)
       case "redis-mpool"                                                   => new RedisMCPDataStores(configuration, environment, lifecycle, this)
@@ -1037,7 +1045,8 @@ class Env(
     useAkkaHttpClient = true
   )
 
-  lazy val backofficeRoute = NgRoute.fromServiceDescriptor(backOfficeServiceDescriptor, false)(otoroshiExecutionContext, this)
+  lazy val backofficeRoute =
+    NgRoute.fromServiceDescriptor(backOfficeServiceDescriptor, false)(otoroshiExecutionContext, this)
 
   lazy val backOfficeDescriptor = RoutingInfo(
     id = backofficeRoute.id,

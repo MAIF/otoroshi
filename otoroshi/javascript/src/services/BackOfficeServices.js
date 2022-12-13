@@ -182,8 +182,8 @@ export function allServices(env, group, paginationState) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-      ? `/bo/api/proxy/api/services?filter.groups=${group}`
-      : `/bo/api/proxy/api/services`;
+    ? `/bo/api/proxy/api/services?filter.groups=${group}`
+    : `/bo/api/proxy/api/services`;
   return findAllWithPagination(url, paginationState);
 }
 
@@ -441,8 +441,9 @@ export function fetchApiKeyById(serviceId, apkid) {
 }
 
 export function deleteApiKey(serviceId, routeId, ak) {
-  const url = serviceId ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}` :
-    `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`
+  const url = serviceId
+    ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`
+    : `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
   return fetch(url, {
     method: 'DELETE',
     credentials: 'include',
@@ -453,22 +454,24 @@ export function deleteApiKey(serviceId, routeId, ak) {
 }
 
 export function createApiKey(serviceId, routeId, ak) {
-  const url = serviceId ? `/bo/api/proxy/api/services/${serviceId}/apikeys` :
-    `/bo/api/proxy/api/routes/${routeId}/apikeys`;
+  const url = serviceId
+    ? `/bo/api/proxy/api/services/${serviceId}/apikeys`
+    : `/bo/api/proxy/api/routes/${routeId}/apikeys`;
   return fetch(url, {
     method: 'POST',
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify(ak)
+    body: JSON.stringify(ak),
   }).then((r) => r.json());
 }
 
 export function updateApiKey(serviceId, routeId, ak) {
-  const url = serviceId ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}` :
-    `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
+  const url = serviceId
+    ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`
+    : `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
   return fetch(url, {
     method: 'PUT',
     credentials: 'include',
@@ -537,10 +540,9 @@ export function updateStandaloneApiKey(ak) {
 }
 
 export function getGlobalConfig(fields) {
-  let url = `/bo/api/proxy/api/globalconfig`
-  
-  if (fields)
-    url = `${url}?fields=${fields.join(',')}`
+  let url = `/bo/api/proxy/api/globalconfig`;
+
+  if (fields) url = `${url}?fields=${fields.join(',')}`;
 
   return fetch(url, {
     method: 'GET',

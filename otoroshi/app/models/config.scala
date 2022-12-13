@@ -898,28 +898,28 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
 }
 
 case class OtoroshiExport(
-  config: GlobalConfig,
-  descs: Seq[ServiceDescriptor] = Seq.empty,
-  apikeys: Seq[ApiKey] = Seq.empty,
-  groups: Seq[ServiceGroup] = Seq.empty,
-  tmplts: Seq[ErrorTemplate] = Seq.empty,
-  calls: Long = 0,
-  dataIn: Long = 0,
-  dataOut: Long = 0,
-  admins: Seq[WebAuthnOtoroshiAdmin] = Seq.empty,
-  simpleAdmins: Seq[SimpleOtoroshiAdmin] = Seq.empty,
-  jwtVerifiers: Seq[GlobalJwtVerifier] = Seq.empty,
-  authConfigs: Seq[AuthModuleConfig] = Seq.empty,
-  certificates: Seq[Cert] = Seq.empty,
-  clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
-  scripts: Seq[Script] = Seq.empty,
-  tcpServices: Seq[TcpService] = Seq.empty,
-  dataExporters: Seq[DataExporterConfig] = Seq.empty,
-  tenants: Seq[Tenant] = Seq.empty,
-  teams: Seq[Team] = Seq.empty,
-  routes: Seq[NgRoute] = Seq.empty,
-  routeCompositions: Seq[NgRouteComposition] = Seq.empty,
-  backends: Seq[StoredNgBackend] = Seq.empty,
+    config: GlobalConfig,
+    descs: Seq[ServiceDescriptor] = Seq.empty,
+    apikeys: Seq[ApiKey] = Seq.empty,
+    groups: Seq[ServiceGroup] = Seq.empty,
+    tmplts: Seq[ErrorTemplate] = Seq.empty,
+    calls: Long = 0,
+    dataIn: Long = 0,
+    dataOut: Long = 0,
+    admins: Seq[WebAuthnOtoroshiAdmin] = Seq.empty,
+    simpleAdmins: Seq[SimpleOtoroshiAdmin] = Seq.empty,
+    jwtVerifiers: Seq[GlobalJwtVerifier] = Seq.empty,
+    authConfigs: Seq[AuthModuleConfig] = Seq.empty,
+    certificates: Seq[Cert] = Seq.empty,
+    clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
+    scripts: Seq[Script] = Seq.empty,
+    tcpServices: Seq[TcpService] = Seq.empty,
+    dataExporters: Seq[DataExporterConfig] = Seq.empty,
+    tenants: Seq[Tenant] = Seq.empty,
+    teams: Seq[Team] = Seq.empty,
+    routes: Seq[NgRoute] = Seq.empty,
+    routeCompositions: Seq[NgRouteComposition] = Seq.empty,
+    backends: Seq[StoredNgBackend] = Seq.empty
 ) {
 
   import otoroshi.utils.json.JsonImplicits._
@@ -1090,7 +1090,7 @@ case class OtoroshiExport(
       "teams"              -> JsArray(teams.map(_.json)),
       "routes"             -> JsArray(routes.map(_.json)),
       "routeCompositions"  -> JsArray(routeCompositions.map(_.json)),
-      "backends"           -> JsArray(backends.map(_.json)),
+      "backends"           -> JsArray(backends.map(_.json))
     )
   }
 }

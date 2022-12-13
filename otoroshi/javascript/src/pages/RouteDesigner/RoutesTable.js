@@ -5,7 +5,6 @@ import { nextClient } from '../../services/BackOfficeServices';
 import { useEntityFromURI } from '../../util';
 
 export function RoutesTable(props) {
-
   const params = useParams();
   const history = useHistory();
   const entity = useEntityFromURI();
@@ -98,7 +97,7 @@ export function RoutesTable(props) {
         // table.update();
       });
     }
-  }
+  };
 
   return (
     <div className="designer">
@@ -137,4 +136,4 @@ export function RoutesTable(props) {
       />
     </div>
   );
-};
+}
