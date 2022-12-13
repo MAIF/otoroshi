@@ -34,8 +34,8 @@
     border-color: var(--color-blue);
     background-image: linear-gradient(
       to bottom,
-      var(--color-blue) 0,
-      darken(var(--color-blue), 5%) 100%
+      var(--color-blue-lighter) 0,
+      var(--color-blue) 100%
     );
   }
 }

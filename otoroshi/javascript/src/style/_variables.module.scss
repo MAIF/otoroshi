@@ -11,6 +11,7 @@ $fondGrisclairSurvolMenu: #9e9e9e;
 
 $savecolor: #5cb85c;
 $colorBleue: #00b4cd;
+$colorBleue-lighter:lighten($colorBleue, 10%);
 $colorRouge: #d5443f;
 
 //new naming
@@ -35,6 +36,7 @@ $color-white-5: #333;
   --color-primary-lighter: #{$primaryColor-lighter};
   --color-green: #5cb85c; 
   --color-blue: #00b4cd;
+  --color-blue-lighter: hsl(from var(--color-green) h s calc(l - 10%));
   --color-red: #d5443f;
   --color-grey:#e6e6e6;
   --color-white: #fff;
