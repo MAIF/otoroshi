@@ -130,6 +130,15 @@ Any entity has the following properties
 @ref:[View](./scripts.md)
 @@@
 
+@@@div { .plugin .entities }
+<img src="../imgs/entities-services.png">
+<div>
+<span>Service descriptors</span>
+<span>Proxy your applications with service descriptors</span>
+</div>
+@ref:[View](./service-descriptors.md)
+@@@
+
 @@@ index
 
 * [Routes](./routes.md)
@@ -145,5 +154,6 @@ Any entity has the following properties
 * [Data exporters](./data-exporters.md)
 * [Scripts](./scripts.md)
 * [TCP services](./tcp-services.md)
+* [Service descriptors](./service-descriptors.md)
 
 @@@
