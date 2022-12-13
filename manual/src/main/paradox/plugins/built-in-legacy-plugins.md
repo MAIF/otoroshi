@@ -3402,18 +3402,20 @@ The next time a request hits the `api.foo.bar` domain, the new engine will handl
 
 ```json
 {
-  "enabled" : true,
-  "domains" : [ "*-next-gen.oto.tools" ],
-  "deny_domains" : [ ],
-  "reporting" : true,
-  "merge_sync_steps" : true,
-  "export_reporting" : false,
-  "apply_legacy_checks" : true,
-  "debug" : false,
-  "capture" : false,
-  "captureMaxEntitySize" : 4194304,
-  "debug_headers" : false,
-  "routing_strategy" : "tree"
+  "NextGenProxyEngine" : {
+    "enabled" : true,
+    "domains" : [ "*" ],
+    "deny_domains" : [ ],
+    "reporting" : true,
+    "merge_sync_steps" : true,
+    "export_reporting" : false,
+    "apply_legacy_checks" : true,
+    "debug" : false,
+    "capture" : false,
+    "captureMaxEntitySize" : 4194304,
+    "debug_headers" : false,
+    "routing_strategy" : "tree"
+  }
 }
 ```
 
