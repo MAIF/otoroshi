@@ -17,7 +17,7 @@
 
 .modal-content {
   position: relative;
-  background-color: $fondBody;
+  background-color: var(--bg-color_level1);
   background-clip: padding-box;
   border: 1px solid rgba(0,0,0,.2);
   border-radius: 6px;

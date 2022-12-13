@@ -21,7 +21,7 @@
 }
 .panel,
 .panel-heading {
-  background-color: $fondBody;
+  background-color: var(--bg-color_level1);
   h4 {
     color: #fff;
   }

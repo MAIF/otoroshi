@@ -5,7 +5,7 @@ input[type=search]::-webkit-search-cancel-button {
 input.form-control{
     color:var(--color-grey);
     background-color: $fondNavbar;
-    border-color: 	$fondBody;
+    border-color: 	var(--bg-color_level1);
 }
 input.form-control:focus{
     background-color: $fondNavbar;
@@ -14,12 +14,12 @@ input.form-control:focus{
 textarea.form-control{
     color:var(--color-grey);
     background-color: $fondNavbar;
-    border-color: 	$fondBody;
+    border-color: 	var(--bg-color_level1);
 }
 
 select.form-control{
     color:var(--color-grey);
     background-color: $fondNavbar;
-    border-color: 	$fondBody;
+    border-color: 	var(--bg-color_level1);
 }
 
