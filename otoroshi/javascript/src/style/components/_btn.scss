@@ -216,7 +216,7 @@
 .pill-cursor {
   transition: left .25s;
   position: absolute;
-  background-color: #f9b000;
+  background-color: var(--color-primary);
   top: 4px;
   bottom: 4px;
   left: 4px;

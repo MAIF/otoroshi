@@ -104,7 +104,7 @@
         min-width: 42px;
         height: 42px;
         border-radius: 6px;
-        background-color: #f9b000;
+        background-color: var(--color-primary);
     }
 
     div[class^='nestedform__border'] {
@@ -118,7 +118,7 @@
         align-items: center;
         font-weight: 500;
         color: #000;
-        border-right: 3px solid #f9b000;
+        border-right: 3px solid var(--color-primary);
         border-top-left-radius: 4px;
         border-bottom-left-radius: 4px;
     }
@@ -130,7 +130,7 @@
     }
 
     .designer-group-header-icon {
-        background-color: #f9b000;
+        background-color: var(--color-primary);
         min-width: 42px;
         height: 42px;
     }
@@ -164,7 +164,7 @@
     }
 
     .tab-selected i {
-        color: #f9b000;
+        color: var(--color-primary);
     }
 
     form {
@@ -265,7 +265,7 @@
     .plugins-background-bar {
         height: calc(100% - 12px);
         width: 3px;
-        background-color: #f9b000;
+        background-color: var(--color-primary);
         position: absolute;
         left: 20px;
         top: 0;
@@ -326,7 +326,7 @@
     }
 
     .editor-view-informations {
-        border-bottom: 1px solid #f9b000;
+        border-bottom: 1px solid var(--color-primary);
         border-right: 0;
     }
 
@@ -380,7 +380,7 @@
 
     .legacy-dot {
         margin-left: 2px;
-        background-color: #f9b000;
+        background-color: var(--color-primary);
     }
 
     .backend-button {
@@ -397,7 +397,7 @@
         right: -12px;
         font-size: 42px;
         color: #fff;
-        background-color: #f9b000;
+        background-color: var(--color-primary);
         border-radius: 50%;
         z-index: 100;
     }
@@ -463,7 +463,7 @@
     }
 
     .plugins-action:hover {
-        background-color: #f9b000;
+        background-color: var(--color-primary);
     }
 
     .plugins-action-container {
@@ -606,7 +606,7 @@
     height: 100vh;
     min-height: 100vh;
     overflow-y: scroll;
-    box-shadow: 0px 0 2px 1px #f9b000c2;
+    box-shadow: 0px 0 2px 1px var(--color-primary)c2;
 }
 
 .wizard-container h3 {
@@ -621,8 +621,8 @@
 }
 
 .wizard-content .btn-save {
-    background-color: #f9b000 !important;
-    border-color: #f9b000 !important;
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
 }
 
 .wizard-route-chooser {
