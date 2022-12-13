@@ -16,8 +16,8 @@ All the features supported by **Otoroshi** are listed below
 * @ref:[Multi backend datastore support](./firstrun/datastore.md)
     * Redis
     * In memory
-    * Cassandra (experimental support)
-    * filedb (not suitable for production usage)	
+    * Cassandra (when using clustering)
+    * PostgreSQL (when using clustering)
 * Pluggable modules system (plugins) 
     * you can create your own modules to change de behavior of Otoroshi per service or globally
     * impacts on access validation, routing, body transformation, apikey extraction

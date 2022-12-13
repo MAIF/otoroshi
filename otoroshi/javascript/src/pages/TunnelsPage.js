@@ -176,7 +176,6 @@ export class TunnelPage extends Component {
             },
           },
         ],
-        target_refs: [],
         root: root,
         rewrite: false,
         load_balancing: {

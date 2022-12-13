@@ -59,7 +59,6 @@
   <logger name="otoroshi-in-memory-apikey-datastore" level="INFO" />
   <logger name="otoroshi-in-memory-datastores" level="INFO" />
   <logger name="otoroshi-in-memory-service-datatstore" level="INFO" />
-  <logger name="otoroshi-leveldb-datastores" level="INFO" />
   <logger name="otoroshi-redis-apikey-datastore" level="INFO" />
   <logger name="otoroshi-redis-datastores" level="INFO" />
   <logger name="otoroshi-redis-service-datastore" level="INFO" />

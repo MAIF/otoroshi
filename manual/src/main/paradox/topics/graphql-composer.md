@@ -1,6 +1,6 @@
 # GraphQL Composer Plugin
 
-@@include[experimental.md](../../includes/experimental.md) { .experimental-feature }
+@@include[experimental.md](../includes/experimental.md) { .experimental-feature }
 
 > GraphQL is a query language for APIs and a runtime for fulfilling those queries with your existing data. GraphQL provides a complete and understandable description of the data in your API, gives clients the power to ask for exactly what they need and nothing more, makes it easier to evolve APIs over time, and enables powerful developer tools.
 [Official GraphQL website](https://graphql.org/)
@@ -87,7 +87,7 @@ First thing to do in any new API is of course creating a `route`. We need 4 info
 
 Let's make a request call through the Otoroshi Admin API (with the default apikey), like the example below
 ```sh
-curl -X POST 'http://otoroshi-api.oto.tools:8080/api/experimental/routes' \
+curl -X POST 'http://otoroshi-api.oto.tools:8080/api/routes' \
   -d '{
   "id": "countries-api",
   "name": "My countries API",
@@ -121,7 +121,7 @@ curl -X POST 'http://otoroshi-api.oto.tools:8080/api/experimental/routes' \
 Let's continue our API by patching the configuration of the GraphQL plugin with the complete schema.
 
 ```sh
-curl -X PUT 'http://otoroshi-api.oto.tools:8080/api/experimental/routes/countries-api' \
+curl -X PUT 'http://otoroshi-api.oto.tools:8080/api/routes/countries-api' \
   -d '{
     "id": "countries-api",
     "name": "My countries API",

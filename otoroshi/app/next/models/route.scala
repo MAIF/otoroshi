@@ -226,7 +226,7 @@ case class NgRoute(
       metadata = metadata,
       enabled = enabled,
       groups = groups,
-      env = "prod",
+      env = metadata.get("otoroshi-core-env").getOrElse("prod"),
       domain = "--",
       subdomain = "--",
       targets = backend.allTargets.map(_.toTarget),
@@ -638,7 +638,6 @@ object NgRoute {
           tls = true
         )
       ),
-      targetRefs = Seq.empty,
       root = "/",
       rewrite = false,
       loadBalancing = RoundRobin,
@@ -700,7 +699,6 @@ object NgRoute {
     backendRef = None,
     backend = NgBackend(
       targets = Seq.empty,
-      targetRefs = Seq.empty,
       root = "/",
       rewrite = false,
       loadBalancing = RoundRobin,
@@ -761,6 +759,9 @@ object NgRoute {
       description = service.description,
       tags = service.tags ++ Seq(s"env:${service.env}"),
       metadata = service.metadata
+        .applyOn { meta =>
+          meta ++ Map("otoroshi-core-env" -> service.env)
+        }
         .applyOnIf(service.useAkkaHttpClient) { meta =>
           meta ++ Map("otoroshi-core-use-akka-http-client" -> "true")
         }
@@ -804,7 +805,6 @@ object NgRoute {
       backendRef = None,
       backend = NgBackend(
         targets = service.targets.map(NgTarget.fromTarget),
-        targetRefs = Seq.empty,
         root = service.root,
         rewrite = false,
         loadBalancing = service.targetsLoadBalancing,

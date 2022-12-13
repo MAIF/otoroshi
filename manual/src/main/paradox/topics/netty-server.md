@@ -1,6 +1,6 @@
 # Alternative HTTP server
 
-@@include[experimental.md](../../includes//experimental.md) { .experimental-feature }
+@@include[experimental.md](../includes/experimental.md) { .experimental-feature }
 
 with the change of licence in Akka, we are experimenting around using Netty as http server for otoroshi (and getting rid of akka http)
 

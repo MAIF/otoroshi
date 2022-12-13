@@ -362,6 +362,7 @@ class OpenApiGenerator(
 
       def handleType(name: String, valueName: String, typ: TypeSignature): Option[JsObject] = {
         valueName match {
+          case "otoroshi.storage.RedisLike"                                => None
           case "java.security.KeyPair"                                     => None
           case "play.api.Logger"                                           => None
           case "byte"                                                      => None

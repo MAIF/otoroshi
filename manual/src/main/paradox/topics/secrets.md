@@ -1,8 +1,8 @@
 # Secrets management
 
-@@include[experimental.md](../../includes//experimental.md) { .experimental-feature }
+@@include[experimental.md](../includes/experimental.md) { .experimental-feature }
 
-Secrets are generally confidential values that should not appear in plain text in the application. There are several products that help you store, retrieve, and rotate these secrets securely. Otoroshi offers a mechanism to set up references to these secrets in its entities to benefits from the perks of your existing secrets management infrastructure. This feature only work with the @ref:[new proxy engine](../engine.md).
+Secrets are generally confidential values that should not appear in plain text in the application. There are several products that help you store, retrieve, and rotate these secrets securely. Otoroshi offers a mechanism to set up references to these secrets in its entities to benefits from the perks of your existing secrets management infrastructure. This feature only work with the @ref:[new proxy engine](./engine.md).
 
 A secret can be anything you want like an apikey secret, a certificate private key or password, a jwt verifier signing key, a password to a proxy, a value for a header, etc.
 
@@ -23,8 +23,8 @@ vaults {
   secrets-ttl = ${?OTOROSHI_VAULTS_SECRETS_TTL}
   cached-secrets = 10000
   cached-secrets = ${?OTOROSHI_VAULTS_CACHED_SECRETS}
-  read-ttl = 10000 # 10 seconds
-  read-ttl = ${?OTOROSHI_VAULTS_READ_TTL}
+  read-timeout = 10000 # 10 seconds
+  read-timeout = ${?OTOROSHI_VAULTS_READ_TIMEOUT}
   # if enabled, only leader nodes fetches the secrets.
   # entities with secret values filled are then sent to workers when they poll the cluster state.
   # only works if `otoroshi.cluster.autoUpdateState=true`
@@ -41,9 +41,9 @@ you can see here the global configuration and a default backend configured that 
 
 The configuration keys can be used for 
 
-- `secrets-ttl`: the amount of milliseconds for a secret to be cached
+- `secrets-ttl`: the amount of milliseconds before the secret value is read again from backend
 - `cached-secrets`: the number of secrets that will be cached on an otoroshi instance
-- `read-ttl`: the timeout (in milliseconds) to read a secret from a backend
+- `read-timeout`: the timeout (in milliseconds) to read a secret from a backend
 
 ## Entities with secrets management
 

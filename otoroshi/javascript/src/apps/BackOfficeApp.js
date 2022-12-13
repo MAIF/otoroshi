@@ -62,6 +62,7 @@ import { TeamsPage } from '../pages/TeamsPage';
 import { Toasts } from '../components/Toasts';
 import { NgFormPlayground } from '../components/nginputs';
 import Loader from '../components/Loader';
+import { globalConfig } from 'antd/lib/config-provider';
 
 class BackOfficeAppContainer extends Component {
   constructor(props) {
@@ -97,7 +98,13 @@ class BackOfficeAppContainer extends Component {
       BackOfficeServices.fetchLines(),
       BackOfficeServices.findAllGroups(),
     ]).then(([env, lines, groups]) => {
-      this.setState({ env, lines, groups, loading: false });
+      this.setState({
+        env,
+        lines,
+        groups,
+        loading: false,
+        usedNewEngine: env.newEngineEnabled
+      });
     });
   }
 
@@ -201,7 +208,7 @@ class BackOfficeAppContainer extends Component {
                           exact
                           path="/"
                           component={(props) =>
-                            this.decorate(HomePage, { ...props, env: this.state.env })
+                            this.decorate(HomePage, { ...props, env: this.state.env, usedNewEngine: this.state.usedNewEngine })
                           }
                         />
                         <Route

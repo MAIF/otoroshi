@@ -116,14 +116,12 @@ docker run -d --name oauth1-server --rm \
 
 Once the authentication module and the new container created, we can define the authentication module on the service.
 
-1. Navigate to any created service
-2. Scroll to `Authentication` section
-3. Enable `Enforce user authentication`
-4. Select your Authentication config inside the list
-5. Enable `Strict mode`
-6.  Don't forget to save your configuration.
+1. Navigate to any created route
+2. Search in the list of plugins the plugin named `Authentication`
+3. Select your Authentication config inside the list
+4. Don't forget to save your configuration.
 
-Now you can try to call your defined service and see the login module appears.
+Now you can try to call your route and see the login module appears.
 
 > <img src="../imgs/hows-to-secure-app-with-oauth1-provider-input.png">
 

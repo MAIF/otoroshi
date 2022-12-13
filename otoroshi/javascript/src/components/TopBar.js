@@ -75,6 +75,8 @@ export class TopBar extends Component {
           action: () => {
             if (v.type === 'http') {
               this.gotoService({ env: v.env, value: v.serviceId });
+            } else if (v.type === 'route') {
+              this.gotoRoute(v.serviceId);
             } else if (v.type === 'tcp') {
               this.gotoTcpService({ env: v.env, value: v.serviceId });
             }
@@ -469,6 +471,14 @@ export class TopBar extends Component {
     }
   };
 
+  gotoRoute = routeId => {
+    if (this.props.history) {
+      this.props.history.push(`/routes/${routeId}`);
+    } else {
+      window.location.href = `/bo/dashboard/routes/${routeId}`;
+    }
+  }
+
   gotoTcpService = (e) => {
     if (e) {
       if (this.props.history) {
@@ -568,7 +578,7 @@ export class TopBar extends Component {
     return (
       <nav
         className="navbar navbar-expand-md fixed-top"
-        // style={{ zIndex: 100 }}
+      // style={{ zIndex: 100 }}
       >
         <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
           <div className="d-flex flex-column flex-md-row top-md-0 w-100">
@@ -722,9 +732,8 @@ export class TopBar extends Component {
                 />
                 <ul
                   id="dropdown"
-                  className={`custom-dropdown ${
-                    this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                  } py-2 pb-4`}
+                  className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                    } py-2 pb-4`}
                   aria-labelledby="dropdownMenuParams"
                   onClick={(e) => {
                     this.setState({ dropdownStatus: 'closed' });
@@ -779,6 +788,17 @@ export class TopBar extends Component {
                   </li>
                   <li className="dropdown-divider" />
                   <li>
+                    {this.props && this.props.env.initWithNewEngine && (
+                      <Link to="/services" className="dropdown-item">
+                        <span className="fas fa-cubes" /> Service descriptors
+                      </Link>
+                    )}
+                    <Link to="/routes" className="dropdown-item">
+                      <span className="fas fa-road" /> Routes
+                    </Link>
+                    <Link to="/backends" className="dropdown-item">
+                      <span className="fas fa-microchip" /> Backends
+                    </Link>
                     <Link to="/jwt-verifiers" className="dropdown-item">
                       <span className="fas fa-key" /> Jwt Verifiers
                     </Link>

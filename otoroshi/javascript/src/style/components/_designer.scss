@@ -535,13 +535,14 @@
     .graphql-form {
         position: absolute;
         top: 56px;
-        right: 0;
+        right: 4px;
         left: 16.66666667%;
         bottom: 0;
         background-color: $fondNavbar;
         z-index: 800;
         border-radius: 4px;
-        .sub-container{            
+
+        .sub-container {
             background: #3c3c3c;
             padding: 12px;
             border-radius: 8px;
@@ -692,6 +693,12 @@
     -webkit-animation-fill-mode: forwards;
 }
 
+.plugins-danger-zone {
+    pre {
+        height: initial !important;
+    }
+}
+
 @keyframes leafanimation {
     0% {
         transform: rotate(678deg) translateX(30px);
@@ -718,10 +725,11 @@
         @include bright-mode_color--darker;
 
     }
-    
-    .designer .graphql-form .sub-container{
+
+    .designer .graphql-form .sub-container {
         @include bright-mode_background-color--darkest;
     }
+
     .frontend-button,
     .dot,
     .endpoint,
@@ -750,7 +758,8 @@
     .group-header,
     .vertical-line,
     .flow-container,
-    .wizard-container,.route-item {
+    .wizard-container,
+    .route-item {
         @include bright-mode_background--light;
     }
 

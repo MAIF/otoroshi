@@ -165,7 +165,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
         env.datastores.routeDataStore.findById(serviceId) flatMap {
           case Some(service) => service.legacy.some.vfuture
           case None          =>
-            env.datastores.servicesDataStore.findById(serviceId) map {
+            env.datastores.routeCompositionDataStore.findById(serviceId) map {
               case Some(service) => service.toRoutes.head.legacy.some
               case None          => None
             }

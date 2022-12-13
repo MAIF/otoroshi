@@ -17,7 +17,7 @@
 **From Admin API**
 
 ```sh
-curl -X POST http://otoroshi-api.oto.tools:8080/api/experimental/routes \
+curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'
@@ -50,7 +50,7 @@ Once done, restrict its range by setting up `/api` in the `Informations>include`
 **From Admin API**
 
 ```sh
-curl -X PUT http://otoroshi-api.oto.tools:8080/api/experimental/routes/myservice \
+curl -X PUT http://otoroshi-api.oto.tools:8080/api/routes/myservice \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'

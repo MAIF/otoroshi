@@ -652,10 +652,26 @@ export class ServicePage extends Component {
             this.props.params.lineId,
             this.props.params.serviceId
           ).then((service) => {
-            this.props.setTitle(`Service descriptor`);
-            this.setState({ service, originalService: service }, () => {
-              this.props.setSidebarContent(this.sidebarContent(service.name));
-            });
+            if (service.error) {
+              BackOfficeServices.createNewService()
+                .then(service => {
+                  this.props.setTitle(`Service descriptor`);
+                  this.setState({
+                    service,
+                    originalService: service,
+                    changed: true,
+                    neverSaved: true
+                  }, () => {
+                    this.props.setSidebarContent(this.sidebarContent(service.name));
+                  }
+                  );
+                });
+            } else {
+              this.props.setTitle(`Service descriptor`);
+              this.setState({ service, originalService: service }, () => {
+                this.props.setSidebarContent(this.sidebarContent(service.name));
+              });
+            }
           });
         }
       }, 50);
@@ -1495,26 +1511,22 @@ export class ServicePage extends Component {
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length === 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                        this.state.service.domain
-                      }${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.domain
+                        }${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env === 'prod' &&
                   this.state.service.subdomain.trim().length > 0 && (
                     <LinkDisplay
-                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                        this.state.service.subdomain
-                      }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
+                        }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
                     />
                   )}
                 {this.state.service.env !== 'prod' && (
                   <LinkDisplay
-                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                      this.state.service.subdomain
-                    }.${this.state.service.env}.${this.state.service.domain}${
-                      this.state.service.matchingRoot || ''
-                    }/`}
+                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
+                      }.${this.state.service.env}.${this.state.service.domain}${this.state.service.matchingRoot || ''
+                      }/`}
                   />
                 )}
               </>
@@ -3464,11 +3476,10 @@ export class TemplateInput extends Component {
             </a>
         </div>
         <div class="jumbotron">
-            ${
-              error
-                ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
-                : `<h2 style="color:white;">${title}</h2>`
-            }
+            ${error
+        ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
+        : `<h2 style="color:white;">${title}</h2>`
+      }
             <p class="lead">
               ${message}
             </p>

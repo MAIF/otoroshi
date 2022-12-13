@@ -29,6 +29,7 @@ export default {
         type: {
           type: 'select',
           label: 'Type.',
+          help: "What kind of algorithm you want to use to verify/sign your JWT token with",
           props: {
             options: [
               'HSAlgoSettings',
@@ -48,19 +49,26 @@ export default {
           type: 'string',
         },
         base64: {
-          type: 'boolean',
+          type: 'box-bool',
+          props: {
+            description: "Is the secret encoded with base64"
+          }
         },
         publicKey: {
-          type: 'text',
+          type: 'string',
+          help: "The RSA public key"
         },
         privateKey: {
-          type: 'text',
+          type: 'string',
+          help: "The RSA private key, private key can be empty if not used for JWT token signing"
         },
         url: {
           type: 'string',
+          help: "The JWK Set url"
         },
         headers: {
           type: 'object',
+          help: "The HTTP headers passed",
           props: {
             label: 'Headers',
           },
@@ -70,9 +78,11 @@ export default {
         },
         ttl: {
           type: 'number',
+          help: "Cache TTL for the keyset"
         },
         kty: {
           type: 'string',
+          help: "Type of key",
         },
         mtlsConfig: {
           type: 'object',
@@ -82,6 +92,7 @@ export default {
           schema: {
             certs: {
               type: 'array-select',
+              help: "The certificate used when performing a mTLS call",
               props: {
                 label: 'Certificates',
                 optionsFrom: '/bo/api/proxy/api/certificates',
@@ -93,6 +104,7 @@ export default {
             },
             trustedCerts: {
               type: 'array-select',
+              help: "The trusted certificate used when performing a mTLS call",
               props: {
                 label: 'Trusted certificates',
                 optionsFrom: '/bo/api/proxy/api/certificates',
@@ -158,6 +170,7 @@ export default {
         },
         certId: {
           type: 'array-select',
+          help: "The keypair used to sign/verify token",
           props: {
             label: 'Certificates',
             optionsFrom: '/bo/api/proxy/api/certificates',

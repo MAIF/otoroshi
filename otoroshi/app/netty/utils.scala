@@ -9,6 +9,7 @@ import io.netty.handler.codec.http._
 import io.netty.incubator.codec.quic.QuicConnectionEvent
 import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits._
+import reactor.netty.resources.LoopResources
 
 sealed trait TlsVersion {
   def name: String
@@ -39,20 +40,22 @@ case class EventLoopGroupCreation(group: EventLoopGroup, native: Option[String])
 
 object EventLoopUtils {
   def create(config: NativeSettings, nThread: Int): EventLoopGroupCreation = {
+    // LoopResources.create("epoll-loop", 1, nThread, true)
     if (config.isEpoll && io.netty.channel.epoll.Epoll.isAvailable) {
+      // java.lang.IllegalStateException: channel not registered to an event loop on linux !!!
       val channelHttp  = new io.netty.channel.epoll.EpollServerSocketChannel()
       val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(nThread)
-      evlGroupHttp.register(channelHttp)
+      evlGroupHttp.register(channelHttp).sync().await()
       EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
     } else if (config.isIOUring && io.netty.incubator.channel.uring.IOUring.isAvailable) {
       val channelHttp  = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
       val evlGroupHttp = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(nThread)
-      evlGroupHttp.register(channelHttp)
+      evlGroupHttp.register(channelHttp).sync().await()
       EventLoopGroupCreation(evlGroupHttp, Some("IO-Uring"))
     } else if (config.isKQueue && io.netty.channel.kqueue.KQueue.isAvailable) {
       val channelHttp  = new io.netty.channel.kqueue.KQueueServerSocketChannel()
       val evlGroupHttp = new io.netty.channel.kqueue.KQueueEventLoopGroup(nThread)
-      evlGroupHttp.register(channelHttp)
+      evlGroupHttp.register(channelHttp).sync().await()
       EventLoopGroupCreation(evlGroupHttp, Some("KQueue"))
     } else {
       val channelHttp  = new NioServerSocketChannel()

@@ -6,36 +6,25 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
+import com.typesafe.config.ConfigFactory
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
-import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import otoroshi.models._
-import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
-import otoroshi.next.models.{
-  KvNgRouteDataStore,
-  KvNgServiceDataStore,
-  KvStoredNgBackendDataStore,
-  KvStoredNgTargetDataStore,
-  NgRouteDataStore,
-  NgServiceDataStore,
-  StoredNgBackendDataStore,
-  StoredNgTargetDataStore
-}
+import otoroshi.next.models._
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
+import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
+import otoroshi.storage._
+import otoroshi.storage.stores._
+import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
+import otoroshi.utils.syntax.implicits._
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import redis._
 import redis.util.CRC16
-import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import otoroshi.storage._
-import otoroshi.storage.stores._
-import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
-import otoroshi.storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
-import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -468,11 +457,8 @@ abstract class AbstractRedisDataStores(
   private lazy val _routeDataStore              = new KvNgRouteDataStore(redis, env)
   override def routeDataStore: NgRouteDataStore = _routeDataStore
 
-  private lazy val _routesCompositionDataStore       = new KvNgServiceDataStore(redis, env)
-  override def servicesDataStore: NgServiceDataStore = _routesCompositionDataStore
-
-  private lazy val _targetsDataStore                     = new KvStoredNgTargetDataStore(redis, env)
-  override def targetsDataStore: StoredNgTargetDataStore = _targetsDataStore
+  private lazy val _routesCompositionDataStore       = new KvNgRouteCompositionDataStore(redis, env)
+  override def routeCompositionDataStore: NgRouteCompositionDataStore = _routesCompositionDataStore
 
   private lazy val _backendsDataStore                      = new KvStoredNgBackendDataStore(redis, env)
   override def backendsDataStore: StoredNgBackendDataStore = _backendsDataStore

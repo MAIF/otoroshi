@@ -127,10 +127,7 @@ class PluginsDescription extends Component {
                       <a
                         className="btn btn-sm btn-info"
                         target="_blank"
-                        href={`https://maif.github.io/otoroshi/manual/plugins/${script.id
-                          .replace('cp:', '')
-                          .replace(/\./g, '-')
-                          .toLowerCase()}.html`}
+                        href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html"
                         _style={{
                           position: 'absolute',
                           right: 20,
@@ -202,10 +199,7 @@ class PluginsDescription extends Component {
                           <a
                             className="btn btn-sm btn-info"
                             target="_blank"
-                            href={`https://maif.github.io/otoroshi/manual/plugins/${script.id
-                              .replace('cp:', '')
-                              .replace(/\./g, '-')
-                              .toLowerCase()}.html`}
+                            href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html"
                             _style={{
                               position: 'absolute',
                               right: 20,

@@ -137,7 +137,8 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
 
   def updateApiKey(serviceId: String, clientId: String) =
     ApiAction.async(parse.json) { ctx =>
-      env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+      env.datastores.serviceDescriptorDataStore.findById(serviceId)
+        .flatMap {
         case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
         case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
         case Some(desc)                            =>

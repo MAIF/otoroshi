@@ -6,7 +6,6 @@ Otoroshi dependencies and licences
 
 * playframework - Apache2 : https://github.com/playframework/playframework
 * org.gnieh.diffson-play-json - Apache2 : https://github.com/gnieh/diffson     
-* org.iq80.leveldb.leveldb - Apache2 : https://github.com/dain/leveldb                 
 * com.softwaremill.macwire.macros - Apache2 : https://github.com/adamw/macwire                  
 * com.typesafe.akka.akka-stream-kafka - Apache2 : https://github.com/akka/alpakka
 * com.github.etaty.rediscala - Apache2 : https://github.com/etaty/rediscala              

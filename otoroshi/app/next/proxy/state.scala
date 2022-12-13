@@ -5,14 +5,13 @@ import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.next.models._
-import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginHelper}
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
-import otoroshi.next.plugins.{AdditionalHeadersIn, AdditionalHeadersOut, OverrideHost, SOAPAction, SOAPActionConfig}
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginHelper}
+import otoroshi.next.plugins._
 import otoroshi.script._
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.TypedMap
-import otoroshi.utils.cache.types
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -35,11 +34,9 @@ class NgProxyState(env: Env) {
     .result()
 
   private val apikeys             = new LegitTrieMap[String, ApiKey]()
-  private val targets             = new LegitTrieMap[String, NgTarget]()
   private val backends            = new LegitTrieMap[String, NgBackend]()
-  private val ngservices          = new LegitTrieMap[String, NgService]()
+  private val ngroutecompositions = new LegitTrieMap[String, NgRouteComposition]()
   private val ngbackends          = new LegitTrieMap[String, StoredNgBackend]()
-  private val ngtargets           = new LegitTrieMap[String, StoredNgTarget]()
   private val jwtVerifiers        = new LegitTrieMap[String, GlobalJwtVerifier]()
   private val certificates        = new LegitTrieMap[String, Cert]()
   private val authModules         = new LegitTrieMap[String, AuthModuleConfig]()
@@ -108,8 +105,8 @@ class NgProxyState(env: Env) {
   def script(id: String): Option[Script]                            = scripts.get(id)
   def backend(id: String): Option[NgBackend]                        = backends.get(id)
   def errorTemplate(id: String): Option[ErrorTemplate]              = errorTemplates.get(id)
-  def target(id: String): Option[NgTarget]                          = targets.get(id)
   def route(id: String): Option[NgRoute]                            = routes.get(id)
+  def routeComposition(id: String): Option[NgRouteComposition]      = ngroutecompositions.get(id)
   def apikey(id: String): Option[ApiKey]                            = apikeys.get(id)
   def jwtVerifier(id: String): Option[GlobalJwtVerifier]            = jwtVerifiers.get(id)
   def certificate(id: String): Option[Cert]                         = certificates.get(id)
@@ -142,9 +139,8 @@ class NgProxyState(env: Env) {
   def allPrivateAppsSessions(): Seq[PrivateAppsUser] = privateAppsSessions.values.toSeq
   def allTcpServices(): Seq[TcpService]              = tcpServices.values.toSeq
 
-  def allNgServices(): Seq[NgService]     = ngservices.values.toSeq
+  def allNgServices(): Seq[NgRouteComposition]       = ngroutecompositions.values.toSeq
   def allBackends(): Seq[StoredNgBackend] = ngbackends.values.toSeq
-  def allTargets(): Seq[StoredNgTarget]   = ngtargets.values.toSeq
 
   def updateRoutes(values: Seq[NgRoute]): Unit = {
     routes.addAll(values.map(v => (v.cacheableId, v))).remAll(routes.keySet.toSeq.diff(values.map(_.cacheableId)))
@@ -203,10 +199,6 @@ class NgProxyState(env: Env) {
     tcpServices.addAll(values.map(v => (v.id, v))).remAll(tcpServices.keySet.toSeq.diff(values.map(_.id)))
   }
 
-  def updateTargets(values: Seq[StoredNgTarget]): Unit = {
-    targets.addAll(values.map(v => (v.id, v.target))).remAll(targets.keySet.toSeq.diff(values.map(_.id)))
-  }
-
   def updateBackends(values: Seq[StoredNgBackend]): Unit = {
     backends.addAll(values.map(v => (v.id, v.backend))).remAll(backends.keySet.toSeq.diff(values.map(_.id)))
   }
@@ -240,11 +232,9 @@ class NgProxyState(env: Env) {
   def updateNgBackends(values: Seq[StoredNgBackend]): Unit = {
     ngbackends.addAll(values.map(v => (v.id, v))).remAll(ngbackends.keySet.toSeq.diff(values.map(_.id)))
   }
-  def updateNgTargets(values: Seq[StoredNgTarget]): Unit = {
-    ngtargets.addAll(values.map(v => (v.id, v))).remAll(ngtargets.keySet.toSeq.diff(values.map(_.id)))
-  }
-  def updateNgServices(values: Seq[NgService]): Unit = {
-    ngservices.addAll(values.map(v => (v.id, v))).remAll(ngservices.keySet.toSeq.diff(values.map(_.id)))
+
+  def updateNgSRouteCompositions(values: Seq[NgRouteComposition]): Unit = {
+    ngroutecompositions.addAll(values.map(v => (v.id, v))).remAll(ngroutecompositions.keySet.toSeq.diff(values.map(_.id)))
   }
 
   private val fakeRoutesCount = 10 //10000 // 300000
@@ -283,7 +273,6 @@ class NgProxyState(env: Env) {
                 tls = true
               )
             ),
-            targetRefs = Seq.empty,
             root = s"/gen-${idx}",
             rewrite = false,
             loadBalancing = RoundRobin,
@@ -352,7 +341,6 @@ class NgProxyState(env: Env) {
                 tls = true
               )
             ),
-            targetRefs = Seq.empty,
             root = s"/path-${idx}",
             rewrite = false,
             loadBalancing = RoundRobin,
@@ -415,7 +403,6 @@ class NgProxyState(env: Env) {
                 tls = true
               )
             ),
-            targetRefs = Seq.empty,
             root = s"/path-${idx}",
             rewrite = false,
             loadBalancing = RoundRobin,
@@ -477,7 +464,6 @@ class NgProxyState(env: Env) {
                 tls = true
               )
             ),
-            targetRefs = Seq.empty,
             root = s"/webservicesserver/numberconversion.wso",
             rewrite = true,
             loadBalancing = RoundRobin,
@@ -528,7 +514,7 @@ class NgProxyState(env: Env) {
     for {
       _                   <- env.vaults.renewSecretsInCache()
       routes              <- env.datastores.routeDataStore.findAllAndFillSecrets() // secrets OK
-      routescomp          <- env.datastores.servicesDataStore.findAllAndFillSecrets() // secrets OK
+      routescomp          <- env.datastores.routeCompositionDataStore.findAllAndFillSecrets() // secrets OK
       genRoutesDomain     <- generateRoutesByDomain(env)
       genRoutesPath       <- generateRoutesByName(env)
       genRandom           <- generateRandomRoutes(env)
@@ -541,7 +527,6 @@ class NgProxyState(env: Env) {
       certs               <- env.datastores.certificatesDataStore.findAllAndFillSecrets() // secrets OK
       verifiers           <- env.datastores.globalJwtVerifierDataStore.findAllAndFillSecrets() // secrets OK
       modules             <- env.datastores.authConfigsDataStore.findAllAndFillSecrets() // secrets OK
-      targets             <- env.datastores.targetsDataStore.findAllAndFillSecrets() // secrets OK
       backends            <- env.datastores.backendsDataStore.findAllAndFillSecrets() // secrets OK
       errorTemplates      <- env.datastores.errorTemplateDataStore.findAll() // no need for secrets
       teams               <- env.datastores.teamDataStore.findAll() // no need for secrets
@@ -555,7 +540,7 @@ class NgProxyState(env: Env) {
       tcpServices         <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets() // secrets OK
       scripts             <- env.datastores.scriptDataStore.findAll() // no need for secrets
       croutes             <- if (dev) {
-                               NgService
+                                NgRouteComposition
                                  .fromOpenApi(
                                    "oto-api-next-gen.oto.tools",
                                    "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"
@@ -590,7 +575,6 @@ class NgProxyState(env: Env) {
                              } else Seq.empty[NgRoute].vfuture
     } yield {
       env.proxyState.updateRoutes(newRoutes ++ croutes)
-      env.proxyState.updateTargets(targets)
       env.proxyState.updateBackends(backends)
       env.proxyState.updateApikeys(apikeys)
       env.proxyState.updateCertificates(certs)
@@ -608,8 +592,7 @@ class NgProxyState(env: Env) {
       env.proxyState.updateTcpServices(tcpServices)
       env.proxyState.updateScripts(scripts)
       env.proxyState.updateNgBackends(backends)
-      env.proxyState.updateNgTargets(targets)
-      env.proxyState.updateNgServices(routescomp)
+      env.proxyState.updateNgSRouteCompositions(routescomp)
       DynamicSSLEngineProvider.setCertificates(env)
       NgProxyStateLoaderJob.firstSync.compareAndSet(false, true)
       env.metrics.timerUpdate("ng-proxy-state-refresh", System.currentTimeMillis() - start, TimeUnit.MILLISECONDS)

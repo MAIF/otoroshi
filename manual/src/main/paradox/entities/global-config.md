@@ -94,8 +94,9 @@ Global scripts will be deprecated soon, please use global plugins instead (see t
 ###  Global plugins
 
 * `Enabled`: enabled all global plugins
-* `Plugins`: list of added plugins to your instance
-* `Plugin configuration`: each added plugin have a configuration that you can override from this field
+* `Plugins on new Otoroshi engine`: list of plugins used by the new Otoroshi engine
+* `Plugins on old Otoroshi engine`: list of plugins bused by the old Otoroshi engine
+* `Plugin configuration`: the overloaded configuration of plugins
 
 ###  Proxies
 

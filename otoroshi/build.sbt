@@ -59,7 +59,7 @@ lazy val metricsVersion          = "4.2.12"
 lazy val acme4jVersion           = "2.14"
 lazy val prometheusVersion       = "0.16.0"
 lazy val playJsonVersion         = "2.9.3"
-lazy val webAuthnVersion         = "2.1.0"
+lazy val webAuthnVersion         = "2.1.0" //"1.7.0" //"2.1.0"
 lazy val kubernetesVersion       = "16.0.1"
 lazy val bouncyCastleVersion     = "1.70"
 lazy val pulsarVersion           = "2.8.1"
@@ -116,7 +116,7 @@ libraryDependencies ++= Seq(
   "org.shredzone.acme4j"             % "acme4j-client"                             % acme4jVersion excludeAll (excludesJackson: _*),
   "org.shredzone.acme4j"             % "acme4j-utils"                              % acme4jVersion excludeAll (excludesJackson: _*),
   "org.shredzone.acme4j"             % "acme4j"                                    % acme4jVersion excludeAll (excludesJackson: _*),
-  "io.lettuce"                       % "lettuce-core"                              % "6.2.1.RELEASE" excludeAll (excludesJackson: _*),
+  "io.lettuce"                       % "lettuce-core"                              % "6.2.2.RELEASE" excludeAll (excludesJackson: _*),
   "io.vertx"                         % "vertx-pg-client"                           % "4.3.4",
   "com.ongres.scram"                 % "common"                                    % "2.1",
   "com.ongres.scram"                 % "client"                                    % "2.1",
@@ -183,11 +183,6 @@ libraryDependencies ++= Seq(
   "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.15.Final",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0" % Test,
-  // do not update because the feature is deprecated and will be removed
-  "org.reactivemongo"               %% "reactivemongo"                             % "0.20.13" excludeAll ExclusionRule(organization =
-    "org.apache.logging.log4j"
-  ),
-  "org.iq80.leveldb"                 % "leveldb"                                   % "0.12"
 )
 
 scalacOptions ++= Seq(

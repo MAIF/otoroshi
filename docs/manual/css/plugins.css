@@ -127,7 +127,7 @@
 }
 
 .filter-selected {
-  background-color: #fb9000;
+  background-color: #f9b000;
   color: #fff;
 }
 
@@ -172,7 +172,7 @@
 
 .platform a:nth-child(n+2):last-child {
   margin-left: 4px;
-  background-color: #fb9000;
+  background-color: #f9b000;
 }
 
 .platform p:last-child {

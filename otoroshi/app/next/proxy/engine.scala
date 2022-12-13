@@ -75,7 +75,7 @@ case class ProxyEngineConfig(
 object ProxyEngineConfig {
   lazy val default: ProxyEngineConfig = ProxyEngineConfig(
     enabled = true,
-    domains = Seq("*-next-gen.oto.tools"),
+    domains = Seq("*"),
     denyDomains = Seq.empty,
     reporting = true,
     pluginMerge = true,
@@ -90,7 +90,7 @@ object ProxyEngineConfig {
   def parse(config: JsValue, env: Env): ProxyEngineConfig = {
     val enabled                    = config.select("enabled").asOpt[Boolean].getOrElse(true)
     val domains                    =
-      if (enabled) config.select("domains").asOpt[Seq[String]].getOrElse(Seq("*-next-gen.oto.tools"))
+      if (enabled) config.select("domains").asOpt[Seq[String]].getOrElse(Seq("*"))
       else Seq.empty[String]
     val denyDomains                =
       if (enabled) config.select("deny_domains").asOpt[Seq[String]].getOrElse(Seq.empty) else Seq.empty[String]
@@ -230,7 +230,9 @@ class ProxyEngine() extends RequestHandler {
   override def configRoot: Option[String] = ProxyEngine.configRoot.some
 
   override def defaultConfig: Option[JsObject] = {
-    ProxyEngineConfig.default.json.asObject.some
+    Json.obj(
+      ProxyEngine.configRoot -> ProxyEngineConfig.default.json
+    ).some
   }
 
   @inline
@@ -3172,7 +3174,7 @@ class ProxyEngine() extends RequestHandler {
         url = rawRequest.theUrl,
         method = rawRequest.method,
         from = rawRequest.theIpAddress,
-        env = "prod",
+        env = route.metadata.get("otoroshi-core-env").getOrElse("prod"),
         data = DataInOut(
           dataIn = counterIn.get(),
           dataOut = counterOut.get()
@@ -3325,7 +3327,7 @@ class ProxyEngine() extends RequestHandler {
         url = rawRequest.theUrl,
         method = rawRequest.method,
         from = rawRequest.theIpAddress,
-        env = "prod",
+        env = route.metadata.get("otoroshi-core-env").getOrElse("prod"),
         data = DataInOut(
           dataIn = counterIn.get(),
           dataOut = counterOut.get()

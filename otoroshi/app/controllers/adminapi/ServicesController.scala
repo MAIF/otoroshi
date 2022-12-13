@@ -559,7 +559,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
           val port = if (ctx.request.theSecured) env.exposedHttpsPortInt else env.exposedHttpPortInt
           Ok(
             route.json.asObject ++ Json.obj(
-              "resource_url"    -> s"${ctx.request.theProtocol}://${env.adminApiExposedHost}:${port}/api/experimental/routes/${route.id}",
+              "resource_url"    -> s"${ctx.request.theProtocol}://${env.adminApiExposedHost}:${port}/api/routes/${route.id}",
               "resource_ui_url" -> s"${ctx.request.theProtocol}://${env.backOfficeHost}:${port}/bo/dashboard/routes/${route.id}"
             )
           )

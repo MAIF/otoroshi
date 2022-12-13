@@ -18,7 +18,7 @@ export default {
       type: 'box-bool',
       label: 'Fail if absent',
       props: {
-        description: 'If a token is present in the incoming request, the call will fail.',
+        description: 'If a token is absent in the incoming request, the call will fail.',
       },
     },
   },
