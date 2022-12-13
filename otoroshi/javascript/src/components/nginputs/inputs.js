@@ -337,7 +337,7 @@ export class NgStringRenderer extends Component {
 
   render() {
     const schema = this.props.schema;
-    const props = schema.props || {};
+    const props = schema?.props || {};
     const readOnly = this.props.readOnly;
 
     // avoid to have both value and defaultValue props

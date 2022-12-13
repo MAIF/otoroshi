@@ -1241,8 +1241,8 @@ class User extends React.Component {
             value={name}
             onChange={(name) =>
               this.props.onChange({
-                ...this.props.user,
-                name,
+                ...this.props,
+                name
               })
             }
           />
@@ -1254,8 +1254,8 @@ class User extends React.Component {
             value={email}
             onChange={(email) =>
               this.props.onChange({
-                ...this.props.user,
-                email,
+                ...this.props,
+                email
               })
             }
           />
