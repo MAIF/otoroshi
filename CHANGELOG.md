@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.0.0-rc.1] - 2022-12-13
+
+https://github.com/MAIF/otoroshi/milestone/53?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.20...v16.0.0-rc.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.0.0-rc.1
+
+- ensure everything is wired for the rollout of the new proxy engine (#1161)
+- Remove leveldb support (#466)
+- Remove mongodb support (#467)
+- introduce new versioning scheme (#1275)
+- Improve externals vault secrets-ttl (#1339)
+- admin login does not work anymore after upgrading webauthn-server-core to 2.1.0 (#1340)
+- switch lettuce as default redis driver (#1363)
+- remove StoredNgTargets (#1365)
+
 ## [1.5.20] - 2022-11-30
 
 https://github.com/MAIF/otoroshi/milestone/51?closed=1
