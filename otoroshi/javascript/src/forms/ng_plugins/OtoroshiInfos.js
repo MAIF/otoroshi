@@ -3,21 +3,24 @@ export default {
   config_schema: {
     header_name: {
       type: 'string',
-      props: {
-        label: 'Header name',
-      },
+      label: 'Header name',
     },
     version: {
-      type: 'string',
+      type: 'select',
+      label: 'Token Version',
       props: {
-        label: 'Version',
+        options: [
+          'Legacy',
+          'Latest',
+        ],
       },
     },
     ttl: {
       type: 'number',
+      label: 'Token TTL',
       props: {
-        label: 'Time to live',
-      },
+        suffix: 'seconds'
+      }
     },
     algo: {
       type: 'form',
