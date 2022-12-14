@@ -1194,6 +1194,7 @@ export class ServicePage extends Component {
                   'left',
                   true
                 )}
+                disabled={!this.state.service.enabled}
                 onClick={this.convertToRoute}>
                 <i className="fas fa-road" /> convert to route
               </button>
@@ -1286,6 +1287,11 @@ export class ServicePage extends Component {
               onChangeTeams={(v) => this.changeTheValue('_loc.teams', v)}
             />
           </Collapse>
+          {this.state.service.enabled && 
+            <div className="alert alert-warning" role="warning" style={{ marginTop: 20 }}>
+              You are using service descriptors. There is a new way to configure otoroshi through <Link to="/routes">routes</Link>. Service descriptors will be eventually deprecated in future otoroshi versions.
+            </div>
+          }
           <TextInput
             label="Id"
             disabled={!this.state.neverSaved}
