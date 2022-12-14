@@ -13,7 +13,7 @@ export function DefaultSidebar(props) {
     base === pathname && search.indexOf(`env=${part}`) > -1 ? 'active' : '';
 
   return (
-    <ul className="nav flex-column nav-sidebar">
+    <ul className="nav flex-column nav-sidebar no-margin-left">
       {props.env && !props.env.initWithNewEngine && <>
         <li className="nav-item mt-2">
           <Link
