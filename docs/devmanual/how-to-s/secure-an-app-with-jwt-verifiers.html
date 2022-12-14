@@ -332,7 +332,7 @@ EOF
     &quot;Otoroshi-Error&quot;: &quot;error.expected.token.not.found&quot;
 }
 </code></pre>
-<p>A simple way to generate a token is to use <a href="http://jwt.io" title="jwt.io" target="_blank" rel="noopener noreferrer">jwt.io</a>. Once navigate, define <code>HS512</code> as <code>alg</code> in header section, add the claim <code>iss</code> with the <code>The Issuer</code> vaue and insert <code>otoroshi</code> as verify signature secret. </p>
+<p>A simple way to generate a token is to use <a href="http://jwt.io" title="jwt.io" target="_blank" rel="noopener noreferrer">jwt.io</a>. Once navigate, define <code>HS512</code> as <code>alg</code> in header section and insert <code>otoroshi</code> as verify signature secret. </p>
 <p>Once created, copy-paste the token from jwt.io to the Authorization header and call our service.</p>
 <pre class="prettyprint"><code class="language-sh"># replace xxxx by the generated token
 curl -X GET \
