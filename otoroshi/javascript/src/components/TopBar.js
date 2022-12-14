@@ -687,7 +687,7 @@ export class TopBar extends Component {
                   data-bs-auto-close="true"
                   aria-expanded="false"
                 >
-                  <span>Add New...</span>
+                  <span>Add new ...</span>
                   <i className='fas fa-chevron-down' />
                 </Button>
                 <ul
