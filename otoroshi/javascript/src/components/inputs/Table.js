@@ -61,6 +61,8 @@ export class Table extends Component {
     page: 0,
   };
 
+  tableRef = React.createRef()
+
   componentDidMount() {
     this.registerSizeChanges();
 
@@ -145,10 +147,10 @@ export class Table extends Component {
     return (this.state.showAddForm || this.state.showEditForm
       ? this.props.fetchItems()
       : this.props.fetchItems({
-          ...paginationState,
-          pageSize: this.state.rowsPerPage,
-          page: page + 1,
-        })
+        ...paginationState,
+        pageSize: this.state.rowsPerPage,
+        page: page + 1,
+      })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         this.setState({
@@ -247,12 +249,21 @@ export class Table extends Component {
 
   deleteItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
+    console.log()
     window.newConfirm('Are you sure you want to delete that item ?').then((ok) => {
       if (ok) {
         this.props
           .deleteItem(item)
           .then(() => {
-            return this.props.fetchItems();
+            const state = this.tableRef?.current?.state || {};
+            const page = state.page || 0;
+
+            return this.props.fetchItems({
+              filtered: state.filtered,
+              sorted: state.sorted,
+              pageSize: this.state.rowsPerPage,
+              page: page + 1
+            });
           })
           .then((res) => {
             const isPaginate =
@@ -549,6 +560,7 @@ export class Table extends Component {
             </div>
             <div className="rrow" style={{ position: 'relative' }}>
               <ReactTable
+                ref={this.tableRef}
                 className="fulltable -striped -highlight"
                 manual
                 pages={this.state.pages}
