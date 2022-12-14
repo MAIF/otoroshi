@@ -221,6 +221,7 @@ const FormContainer = ({
           {...props}
           route={route}
           selectedNode={selectedNode}
+          setSelectedNode={setSelectedNode}
           hidePreview={() =>
             showPreview({
               ...preview,
