@@ -864,7 +864,6 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         val sortedFinalItems = finalItems
           .slice(paginationPosition, paginationPosition + paginationPageSize)
 
-        println(sortedFinalItems)
         if (!ctx.request.accepts("application/json") && ctx.request.accepts("application/x-ndjson")) {
           Ok.sendEntity(
             HttpEntity.Streamed(
