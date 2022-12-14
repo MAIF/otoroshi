@@ -33,7 +33,7 @@ This should output :
 }
 ```
 
-A simple way to generate a token is to use @link:[jwt.io](http://jwt.io) { open=new }. Once navigate, define `HS512` as `alg` in header section, add the claim `iss` with the `The Issuer` vaue and insert `otoroshi` as verify signature secret. 
+A simple way to generate a token is to use @link:[jwt.io](http://jwt.io) { open=new }. Once navigate, define `HS512` as `alg` in header section and insert `otoroshi` as verify signature secret. 
 
 Once created, copy-paste the token from jwt.io to the Authorization header and call our service.
 
