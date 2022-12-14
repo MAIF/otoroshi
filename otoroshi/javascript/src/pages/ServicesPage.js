@@ -186,7 +186,6 @@ export class ServicesPage extends Component {
   };
 
   componentDidMount() {
-    console.log(this.props);
     const env = this.props.location.query.env;
     const group = this.props.location.query.group;
     if (env && group) {

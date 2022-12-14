@@ -102,7 +102,6 @@ class ResetQuotas extends Component {
   };
 
   render() {
-    console.log(this.props);
     return (
       <div className="row mb-3">
         <label className="col-sm-2 col-form-label" />
