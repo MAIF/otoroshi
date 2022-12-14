@@ -803,6 +803,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         )
         val jsonElements: Seq[JsValue] =
           entities.filter(ctx.canUserRead).map(writeEntity)
+
         val reducedItems               = if (hasFilters) {
           val items: Seq[JsValue] = jsonElements.filter { elem =>
             filters.forall { case (key, value) =>
@@ -863,6 +864,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         val sortedFinalItems = finalItems
           .slice(paginationPosition, paginationPosition + paginationPageSize)
 
+        println(sortedFinalItems)
         if (!ctx.request.accepts("application/json") && ctx.request.accepts("application/x-ndjson")) {
           Ok.sendEntity(
             HttpEntity.Streamed(
