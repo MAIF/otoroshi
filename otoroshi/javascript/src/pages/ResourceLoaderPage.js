@@ -61,7 +61,7 @@ export function ResourceLoaderPage({ setTitle }) {
 
   const [loadedResources, setLoadedResources] = useState([]);
 
-  const aceRef = useRef()
+  const aceRef = useRef();
 
   useEffect(() => {
     setTitle('Resources loader');
@@ -107,15 +107,13 @@ export function ResourceLoaderPage({ setTitle }) {
       for (let i = 0; i < ev.dataTransfer.items.length; i++) {
         if (ev.dataTransfer.items[i].kind === 'file') {
           const file = ev.dataTransfer.items[i].getAsFile();
-          file.text()
-            .then(setRawResources);
+          file.text().then(setRawResources);
         }
       }
     } else {
       for (let i = 0; i < ev.dataTransfer.files.length; i++) {
         const file = ev.dataTransfer.files[i];
-        file.text()
-          .then(setRawResources);
+        file.text().then(setRawResources);
       }
     }
   };
@@ -256,9 +254,11 @@ export function ResourceLoaderPage({ setTitle }) {
       </div>
       <div className="mb-3">
         <div className="row">
-          <div className="col-sm-8" style={{ paddingRight: 0 }}
+          <div
+            className="col-sm-8"
+            style={{ paddingRight: 0 }}
             onDrop={onDrop}
-            onDragOver={e => e.preventDefault()}>
+            onDragOver={(e) => e.preventDefault()}>
             <AceEditor
               ref={aceRef}
               name="resources-loader"

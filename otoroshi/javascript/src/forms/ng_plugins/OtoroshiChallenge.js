@@ -3,19 +3,20 @@ export default {
   config_schema: {
     state_resp_leeway: {
       type: 'number',
-      label: "Token leevay",
-      help: "Amount of seconds that can differ between client and server",
+      label: 'Token leevay',
+      help: 'Amount of seconds that can differ between client and server',
       props: {
-        suffix: 'seconds'
-      }
+        suffix: 'seconds',
+      },
     },
     response_header_name: {
       type: 'string',
     },
     version: {
       type: 'select',
-      label: "Challeng version",
-      help: 'The version of the challenge, either a simple value passed in headers or a jwt token signed by both parties',
+      label: 'Challeng version',
+      help:
+        'The version of the challenge, either a simple value passed in headers or a jwt token signed by both parties',
       props: {
         options: [
           { label: 'V1', value: 1 },
@@ -25,7 +26,7 @@ export default {
     },
     ttl: {
       type: 'number',
-      label: 'Token TTL'
+      label: 'Token TTL',
     },
     request_header_name: {
       type: 'string',

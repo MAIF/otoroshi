@@ -255,7 +255,9 @@ export class ServicesPage extends Component {
     return (
       <div>
         <div className="alert alert-warning" role="warning" style={{ marginTop: 20 }}>
-          You are using service descriptors. There is a new way to configure otoroshi through <Link to="/routes">routes</Link>. Service descriptors will be eventually deprecated in future otoroshi versions.
+          You are using service descriptors. There is a new way to configure otoroshi through{' '}
+          <Link to="/routes">routes</Link>. Service descriptors will be eventually deprecated in
+          future otoroshi versions.
         </div>
         <Table
           parentProps={this.props}

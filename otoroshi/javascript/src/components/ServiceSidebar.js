@@ -43,7 +43,10 @@ export class ServiceSidebar extends Component {
     return (
       <ul className="nav flex-column nav-sidebar no-margin-left">
         <li className="nav-item">
-          <Link to={`/lines/${env}/services/${serviceId}`} style={{ color: '#f9b000' }} className="active">
+          <Link
+            to={`/lines/${env}/services/${serviceId}`}
+            style={{ color: '#f9b000' }}
+            className="active">
             <h3 {...createTooltip(`Back to the service descriptor of ${name}`)} className="p-2 m-0">
               <i className="fas fa-cube" /> {name}
             </h3>
@@ -62,7 +65,7 @@ export class ServiceSidebar extends Component {
           </li>
         )}
         {!this.props.noSideMenu && (
-          <li className='nav-item ms-3'>
+          <li className="nav-item ms-3">
             <Link
               to={`/lines/${env}/services/${serviceId}/stats`}
               {...createTooltip(`Show live metrics report for ${name}`)}
@@ -86,7 +89,7 @@ export class ServiceSidebar extends Component {
           </li>
         )}
         {!this.props.noSideMenu && (
-          <li className='nav-item ms-3'>
+          <li className="nav-item ms-3">
             <Link
               to={`/lines/${env}/services/${serviceId}/events`}
               {...createTooltip(`Show raw events report for ${name}`)}

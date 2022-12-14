@@ -14,18 +14,20 @@ export function DefaultSidebar(props) {
 
   return (
     <ul className="nav flex-column nav-sidebar no-margin-left">
-      {props.env && !props.env.initWithNewEngine && <>
-        <li className="nav-item mt-2">
-          <Link
-            to="/services"
-            className={`nav-link ${rootClassName('services')}`}
-            {...createTooltip('List all services declared in Otoroshi')}>
-            <h3 className="p-2 m-0">
-              <i className="fas fa-cubes" /> SERVICES
-            </h3>
-          </Link>
-        </li>
-      </>}
+      {props.env && !props.env.initWithNewEngine && (
+        <>
+          <li className="nav-item mt-2">
+            <Link
+              to="/services"
+              className={`nav-link ${rootClassName('services')}`}
+              {...createTooltip('List all services declared in Otoroshi')}>
+              <h3 className="p-2 m-0">
+                <i className="fas fa-cubes" /> SERVICES
+              </h3>
+            </Link>
+          </li>
+        </>
+      )}
       <li className="nav-item mt-2">
         <Link
           to="/routes"

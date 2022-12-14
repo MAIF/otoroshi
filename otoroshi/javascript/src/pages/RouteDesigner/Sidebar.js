@@ -47,13 +47,12 @@ export default ({ route, setSidebarContent }) => {
   const entity = useEntityFromURI();
   const location = useLocation();
 
-  const currentTab = location.pathname.split('/').slice(-1)[0]
+  const currentTab = location.pathname.split('/').slice(-1)[0];
   const isActive = (tab) => {
-    return (currentTab === tab ? 'active' : '');
-  }
+    return currentTab === tab ? 'active' : '';
+  };
 
-  if (location.pathname.endsWith('/new'))
-    return null
+  if (location.pathname.endsWith('/new')) return null;
 
   return (
     <div

@@ -160,10 +160,13 @@ class BackOfficeAppContainer extends Component {
               <div className="sidebar-container">
                 <div className="sidebar-content">
                   {this.state.env && <GlobalTenantSelector env={this.state.env} />}
-                  <ul className="nav flex-column nav-sidebar no-margin-left" style={{ marginBottom: 30 }}>
+                  <ul
+                    className="nav flex-column nav-sidebar no-margin-left"
+                    style={{ marginBottom: 30 }}>
                     <li>
                       <h2 className="m-0">
-                        <Link to="/"
+                        <Link
+                          to="/"
                           {...createTooltip('Home dashboard of Otoroshi displaying global metrics')}
                           onClick={() => {
                             DynamicTitle.setContent(null);

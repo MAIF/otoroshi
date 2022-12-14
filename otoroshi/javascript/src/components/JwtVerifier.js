@@ -96,11 +96,11 @@ function EntityGraph({ entity, id }) {
                                 to={
                                   name === 'routes'
                                     ? {
-                                      pathname,
-                                      state: {
-                                        plugin: plugin.plugin,
-                                      },
-                                    }
+                                        pathname,
+                                        state: {
+                                          plugin: plugin.plugin,
+                                        },
+                                      }
                                     : pathname
                                 }
                                 key={`${entity[0]}-${pluginName}`}>
@@ -135,19 +135,19 @@ export class JwtVerifier extends Component {
     isConfigView: true,
     verifier: this.props.value ||
       this.props.verifier || {
-      type: 'globale',
-      enabled: false,
-      strict: true,
-      source: { type: 'InHeader', name: 'X-JWT-Token', remove: '' },
-      algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
-      strategy: {
-        type: 'PassThrough',
-        verificationSettings: {
-          fields: {},
-          arrayFields: {},
+        type: 'globale',
+        enabled: false,
+        strict: true,
+        source: { type: 'InHeader', name: 'X-JWT-Token', remove: '' },
+        algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
+        strategy: {
+          type: 'PassThrough',
+          verificationSettings: {
+            fields: {},
+            arrayFields: {},
+          },
         },
       },
-    },
   };
 
   render() {
@@ -188,18 +188,18 @@ export class JwtVerifier extends Component {
                     ...JwtVerifierForm.config_schema,
                     source: restrictedStrategy
                       ? {
-                        ...JwtVerifierForm.config_schema.source,
-                        props: {
-                          ...JwtVerifierForm.config_schema.source.props,
-                          showSummary: false,
-                        },
-                        label: 'Exit Token location',
-                        flow: JwtVerifierForm.config_schema.source.flow.map((step) => {
-                          if (step?.name === 'Header informations')
-                            return { ...step, fields: ['name'] };
-                          return step;
-                        }),
-                      }
+                          ...JwtVerifierForm.config_schema.source,
+                          props: {
+                            ...JwtVerifierForm.config_schema.source.props,
+                            showSummary: false,
+                          },
+                          label: 'Exit Token location',
+                          flow: JwtVerifierForm.config_schema.source.flow.map((step) => {
+                            if (step?.name === 'Header informations')
+                              return { ...step, fields: ['name'] };
+                            return step;
+                          }),
+                        }
                       : JwtVerifierForm.config_schema.source,
                     graph: {
                       renderer: () => <EntityGraph entity="jwt-verifiers" id={verifier.id} />,
@@ -211,10 +211,10 @@ export class JwtVerifier extends Component {
                     ),
                     restrictedStrategy
                       ? {
-                        type: 'group',
-                        name: 'Token payload',
-                        fields: ['token'],
-                      }
+                          type: 'group',
+                          name: 'Token payload',
+                          fields: ['token'],
+                        }
                       : undefined,
                     'graph',
                   ].filter((f) => f)}
@@ -236,13 +236,13 @@ export class JwtVerifier extends Component {
               ...JwtVerifierForm.config_flow,
               restrictedStrategy
                 ? {
-                  type: 'group',
-                  name: 'Token payload',
-                  fields: ['token'],
-                }
+                    type: 'group',
+                    name: 'Token payload',
+                    fields: ['token'],
+                  }
                 : undefined,
             ].filter((f) => f)}
-            onChange={() => { }}
+            onChange={() => {}}
             readOnly={true}
           />
         )}

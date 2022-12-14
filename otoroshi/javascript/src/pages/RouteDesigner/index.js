@@ -365,7 +365,7 @@ class Manager extends React.Component {
     if (!this.props.location?.state?.value) {
       this.loadRoute('componentDidMount');
     } else {
-      this.updateSidebar()
+      this.updateSidebar();
     }
 
     window.history.replaceState({}, document.title);
@@ -454,13 +454,17 @@ class Manager extends React.Component {
   };
 
   updateSidebar = () => {
-    if (location.pathname.endsWith('/routes') || location.pathname.endsWith('/route-compositions')) {
-      this.props.setSidebarContent(null)
+    if (
+      location.pathname.endsWith('/routes') ||
+      location.pathname.endsWith('/route-compositions')
+    ) {
+      this.props.setSidebarContent(null);
     } else {
       this.props.setSidebarContent(
         <DesignerSidebar
           route={this.state.value}
-          setSidebarContent={this.props.setSidebarContent} />
+          setSidebarContent={this.props.setSidebarContent}
+        />
       );
     }
 

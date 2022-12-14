@@ -206,15 +206,21 @@ const FormContainer = ({
 }) => {
   const isOnFrontendBackend = selectedNode && ['Frontend', 'Backend'].includes(selectedNode.id);
 
-  const selectFrontend = () => setSelectedNode(nodes.find(n => n.id === 'Frontend'))
-  const selectBackend = () => setSelectedNode(nodes.find(n => n.id === 'Backend'))
+  const selectFrontend = () => setSelectedNode(nodes.find((n) => n.id === 'Frontend'));
+  const selectBackend = () => setSelectedNode(nodes.find((n) => n.id === 'Backend'));
 
   return (
     <div
       className="col-sm-8 relative-container flex-column flow-container p-3"
       style={{ paddingRight: 0 }}
       id="form-container">
-      <UnselectedNode hideText={selectedNode} route={route} selectFrontend={selectFrontend} selectBackend={selectBackend} {...props} />
+      <UnselectedNode
+        hideText={selectedNode}
+        route={route}
+        selectFrontend={selectFrontend}
+        selectBackend={selectBackend}
+        {...props}
+      />
       {serviceMode && isOnFrontendBackend && <ServiceView />}
       {selectedNode && (!serviceMode || (serviceMode && !isOnFrontendBackend)) && (
         <EditView
@@ -1597,7 +1603,7 @@ class Designer extends React.Component {
                   showAdvancedDesignerView={(pluginName) =>
                     this.setState({ advancedDesignerView: pluginName })
                   }
-                  nodes={[ ...this.state.nodes, this.state.backend, this.state.frontend ]}
+                  nodes={[...this.state.nodes, this.state.backend, this.state.frontend]}
                   serviceMode={serviceMode}
                   clearPlugins={this.clearPlugins}
                   deleteRoute={this.deleteRoute}
@@ -1756,7 +1762,14 @@ const read = (value, path) => {
   return read(value[keys[0]], keys.slice(1).join('.'));
 };
 
-const UnselectedNode = ({ hideText, route, clearPlugins, deleteRoute, selectFrontend, selectBackend }) => {
+const UnselectedNode = ({
+  hideText,
+  route,
+  clearPlugins,
+  deleteRoute,
+  selectFrontend,
+  selectBackend,
+}) => {
   if (route && route.frontend && route.backend && !hideText) {
     const frontend = route.frontend;
     const backend = route.backend;

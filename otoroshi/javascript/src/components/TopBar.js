@@ -680,15 +680,19 @@ export class TopBar extends Component {
               </div>
               <div className="dropdown">
                 <Button
-                  style={{ backgroundColor: '#f9b000', minWidth: 160, maxWidth: 160, border: 'none' }}
+                  style={{
+                    backgroundColor: '#f9b000',
+                    minWidth: 160,
+                    maxWidth: 160,
+                    border: 'none',
+                  }}
                   className="d-flex align-items-center justify-content-between dropdown"
                   id="add-components"
                   data-bs-toggle="dropdown"
                   data-bs-auto-close="true"
-                  aria-expanded="false"
-                >
+                  aria-expanded="false">
                   <span>Add new ...</span>
-                  <i className='fas fa-chevron-down' />
+                  <i className="fas fa-chevron-down" />
                 </Button>
                 <ul
                   className="dropdown-menu add-menu"
@@ -699,52 +703,37 @@ export class TopBar extends Component {
                     borderTop: 0,
                     padding: '12px',
                     zIndex: 4000,
-                    color: "#E6E6E6",
-                    gap: 5
+                    color: '#E6E6E6',
+                    gap: 5,
                   }}>
-                  <li className='d-flex'>
-                    <Link to="/routes/new?tab=informations">
-                      Route
-                    </Link>
+                  <li className="d-flex">
+                    <Link to="/routes/new?tab=informations">Route</Link>
                   </li>
-                  <li className='d-flex'>
-                    <Link to="/apikeys/add">
-                      Apikey
-                    </Link>
+                  <li className="d-flex">
+                    <Link to="/apikeys/add">Apikey</Link>
                   </li>
-                  <li className='d-flex'>
-                    <Link to="/auth-configs/add">
-                      Authentication
-                    </Link>
+                  <li className="d-flex">
+                    <Link to="/auth-configs/add">Authentication</Link>
                   </li>
-                  <li className='d-flex'>
-                    <Link to="/certificates/add">
-                      Certificates
-                    </Link>
+                  <li className="d-flex">
+                    <Link to="/certificates/add">Certificates</Link>
                   </li>
-                  <li className='d-flex'>
-                    <Link to="/jwt-verifiers/add">
-                      Jwt Verifier
-                    </Link></li>
-                  <li className='d-flex'>
-                    <Link to="/backends/add">
-                      Backend
-                    </Link></li>
-                  <li className='d-flex'>
-                    <Link to="/tcp/services/add">
-                      TCP service
-                    </Link>
+                  <li className="d-flex">
+                    <Link to="/jwt-verifiers/add">Jwt Verifier</Link>
+                  </li>
+                  <li className="d-flex">
+                    <Link to="/backends/add">Backend</Link>
+                  </li>
+                  <li className="d-flex">
+                    <Link to="/tcp/services/add">TCP service</Link>
                   </li>
                   {this.props.env && this.props.env.clevercloud && (
-                    <li className='d-flex'>
-                      <Link to="/clever">
-                        Service from a CleverApp
-                      </Link>
+                    <li className="d-flex">
+                      <Link to="/clever">Service from a CleverApp</Link>
                     </li>
                   )}
                 </ul>
               </div>
-
             </form>
           </div>
 

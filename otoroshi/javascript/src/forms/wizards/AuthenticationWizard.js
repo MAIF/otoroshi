@@ -1243,7 +1243,7 @@ class User extends React.Component {
             onChange={(name) =>
               this.props.onChange({
                 ...this.props,
-                name
+                name,
               })
             }
           />
@@ -1256,7 +1256,7 @@ class User extends React.Component {
             onChange={(email) =>
               this.props.onChange({
                 ...this.props,
-                email
+                email,
               })
             }
           />

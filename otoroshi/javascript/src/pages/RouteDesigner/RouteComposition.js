@@ -24,13 +24,13 @@ function Methods({ frontend }) {
   const hasMethods = frontend.methods && frontend.methods.length > 0;
   const methods = hasMethods
     ? frontend.methods.map((m, i) => (
-      <span
-        key={`frontendmethod-${i}`}
-        className={`badge me-1`}
-        style={{ backgroundColor: HTTP_COLORS[m] }}>
-        {m}
-      </span>
-    ))
+        <span
+          key={`frontendmethod-${i}`}
+          className={`badge me-1`}
+          style={{ backgroundColor: HTTP_COLORS[m] }}>
+          {m}
+        </span>
+      ))
     : [<span className="badge bg-dark">ALL</span>];
   return (
     <div className="d-flex-between">

@@ -118,14 +118,14 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
 
   def canUserRead[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
     backOfficeUser match {
-      case Left(_) => false
-      case Right(None) => true
+      case Left(_)           => false
+      case Right(None)       => true
       case Right(Some(user)) =>
         rootOrTenantAdmin(user) {
           item match {
             case _: Tenant =>
               user.rights.canReadTenant(item.location.tenant)
-            case _ =>
+            case _         =>
               (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
                 .canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
           }
@@ -135,15 +135,15 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
 
   def canUserWrite[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
     backOfficeUser match {
-      case Left(_) => false
-      case Right(None) => true
+      case Left(_)           => false
+      case Right(None)       => true
       case Right(Some(user)) =>
         rootOrTenantAdmin(user) {
           item match {
             case _: Tenant =>
               (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
                 .canWriteTenant(item.location.tenant)
-            case _ =>
+            case _         =>
               (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
                 .canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
           }

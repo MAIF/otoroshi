@@ -1156,21 +1156,31 @@ export class ServicePage extends Component {
   };
 
   convertToRoute = () => {
-    window.newConfirm('Are you sure you want to do that ? your current service will be disabled, but you\'ll have to delete it yourself.', (ok) => {
-      if (ok) {
-        BackOfficeServices.convertAsRoute(this.state.service.id).then((res) => {
-          BackOfficeServices.nextClient.forEntity('routes').create(res).then(() => {
-            const newService = { ...this.state.service, name: '[MIGRATED TO ROUTE, PENDING DELETION] ' + this.state.service.name, enabled: false }
-            this.setState({ service: newService }, () => {
-              BackOfficeServices.saveService(newService).then(() => {
-                this.props.history.push(`/routes/${res.id}?tab=informations`)
-              })
-            })
-          })      
-        })
+    window.newConfirm(
+      "Are you sure you want to do that ? your current service will be disabled, but you'll have to delete it yourself.",
+      (ok) => {
+        if (ok) {
+          BackOfficeServices.convertAsRoute(this.state.service.id).then((res) => {
+            BackOfficeServices.nextClient
+              .forEntity('routes')
+              .create(res)
+              .then(() => {
+                const newService = {
+                  ...this.state.service,
+                  name: '[MIGRATED TO ROUTE, PENDING DELETION] ' + this.state.service.name,
+                  enabled: false,
+                };
+                this.setState({ service: newService }, () => {
+                  BackOfficeServices.saveService(newService).then(() => {
+                    this.props.history.push(`/routes/${res.id}?tab=informations`);
+                  });
+                });
+              });
+          });
+        }
       }
-    })
-  }
+    );
+  };
 
   render() {
     if (!this.state.service) return null;
@@ -1189,11 +1199,7 @@ export class ServicePage extends Component {
               <button
                 className="btn btn-info"
                 type="button"
-                {...createTooltip(
-                  '.....',
-                  'left',
-                  true
-                )}
+                {...createTooltip('.....', 'left', true)}
                 disabled={!this.state.service.enabled}
                 onClick={this.convertToRoute}>
                 <i className="fas fa-road" /> convert to route
@@ -1287,11 +1293,13 @@ export class ServicePage extends Component {
               onChangeTeams={(v) => this.changeTheValue('_loc.teams', v)}
             />
           </Collapse>
-          {this.state.service.enabled && 
+          {this.state.service.enabled && (
             <div className="alert alert-warning" role="warning" style={{ marginTop: 20 }}>
-              You are using service descriptors. There is a new way to configure otoroshi through <Link to="/routes">routes</Link>. Service descriptors will be eventually deprecated in future otoroshi versions.
+              You are using service descriptors. There is a new way to configure otoroshi through{' '}
+              <Link to="/routes">routes</Link>. Service descriptors will be eventually deprecated in
+              future otoroshi versions.
             </div>
-          }
+          )}
           <TextInput
             label="Id"
             disabled={!this.state.neverSaved}

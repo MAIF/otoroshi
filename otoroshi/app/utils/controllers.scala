@@ -804,7 +804,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         val jsonElements: Seq[JsValue] =
           entities.filter(ctx.canUserRead).map(writeEntity)
 
-        val reducedItems               = if (hasFilters) {
+        val reducedItems  = if (hasFilters) {
           val items: Seq[JsValue] = jsonElements.filter { elem =>
             filters.forall { case (key, value) =>
               (elem \ key).as[JsValue] match {
@@ -820,7 +820,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         } else {
           jsonElements
         }
-        val filteredItems              = sortFinalItems(if (filtered.nonEmpty) {
+        val filteredItems = sortFinalItems(if (filtered.nonEmpty) {
           val items: Seq[JsValue] = reducedItems.filter { elem =>
             filtered.forall { case (key, value) =>
               JsonOperationsHelper.getValueAtPath(key.toLowerCase(), elem)._2.asOpt[JsValue] match {
@@ -853,7 +853,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
         } else {
           reducedItems
         })
-        val finalItems                 = if (hasFields) {
+        val finalItems    = if (hasFields) {
           filteredItems.map { item =>
             JsonOperationsHelper.filterJson(item.as[JsObject], fields)
           }
