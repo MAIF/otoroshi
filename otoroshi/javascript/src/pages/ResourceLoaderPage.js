@@ -129,7 +129,7 @@ export function ResourceLoaderPage({ setTitle }) {
               <th scope="col">Resource name</th>
               <th scope="col">Resource type</th>
               <th scope="col">To import</th>
-              <th scope="col">Imported</th>
+              <th scope="col">Status</th>
             </tr>
           </thead>
           <tbody>

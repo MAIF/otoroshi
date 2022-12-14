@@ -24,13 +24,13 @@ function Methods({ frontend }) {
   const hasMethods = frontend.methods && frontend.methods.length > 0;
   const methods = hasMethods
     ? frontend.methods.map((m, i) => (
-        <span
-          key={`frontendmethod-${i}`}
-          className={`badge me-1`}
-          style={{ backgroundColor: HTTP_COLORS[m] }}>
-          {m}
-        </span>
-      ))
+      <span
+        key={`frontendmethod-${i}`}
+        className={`badge me-1`}
+        style={{ backgroundColor: HTTP_COLORS[m] }}>
+        {m}
+      </span>
+    ))
     : [<span className="badge bg-dark">ALL</span>];
   return (
     <div className="d-flex-between">
@@ -130,12 +130,13 @@ class RouteForms extends React.Component {
         onClick={(e) => e.stopPropagation()}>
         <div className="d-flex justify-content-end">
           <button
+            type="button"
             className="btn btn-sm btn-success me-1"
             title="Edit this route"
             onClick={(e) => {
               e.stopPropagation();
               this.props.history.replace(
-                `${this.props.url}?tab=route_plugins&view_plugins=${this.props.index}`
+                `${this.props.url.split('?')[0]}?tab=route_plugins&view_plugins=${this.props.index}`
               );
             }}>
             <i className="fas fa-pencil-ruler" />
@@ -371,7 +372,7 @@ export default class RouteCompositions extends React.Component {
 
   importOpenApiModalResponse = (body) => {
     if (body) {
-      fetch('/bo/api/proxy/api/services/_openapi', {
+      fetch('/bo/api/proxy/api/route-compositions/_openapi', {
         method: 'POST',
         credentials: 'include',
         headers: {
