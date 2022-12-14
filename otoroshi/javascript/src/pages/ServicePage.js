@@ -1155,6 +1155,23 @@ export class ServicePage extends Component {
     }
   };
 
+  convertToRoute = () => {
+    window.newConfirm('Are you sure you want to do that ? your current service will be disabled, but you\'ll have to delete it yourself.', (ok) => {
+      if (ok) {
+        BackOfficeServices.convertAsRoute(this.state.service.id).then((res) => {
+          BackOfficeServices.nextClient.forEntity('routes').create(res).then(() => {
+            const newService = { ...this.state.service, name: '[MIGRATED TO ROUTE, PENDING DELETION] ' + this.state.service.name, enabled: false }
+            this.setState({ service: newService }, () => {
+              BackOfficeServices.saveService(newService).then(() => {
+                this.props.history.push(`/routes/${res.id}?tab=informations`)
+              })
+            })
+          })      
+        })
+      }
+    })
+  }
+
   render() {
     if (!this.state.service) return null;
 
@@ -1169,6 +1186,17 @@ export class ServicePage extends Component {
         <form className="form-horizontal">
           <div className="mb-3 btnsService">
             <div className="displayGroupBtn">
+              <button
+                className="btn btn-info"
+                type="button"
+                {...createTooltip(
+                  '.....',
+                  'left',
+                  true
+                )}
+                onClick={this.convertToRoute}>
+                <i className="fas fa-road" /> convert to route
+              </button>
               <button
                 className="btn btn-danger"
                 type="button"
