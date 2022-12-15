@@ -142,9 +142,8 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-info' : 'btn-dark'
-                  } me-1 px-3 mb-1`}
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-info' : 'btn-dark'
+                    } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -247,12 +246,12 @@ export function LabelAndInput(_props) {
     _props.margin !== undefined
       ? _props.margin
       : props.margin !== undefined
-      ? props.margin
-      : _props.rawSchema?.props?.margin !== undefined
-      ? _props.rawSchema?.props?.margin
-      : _props.readOnly
-      ? 'mb-0'
-      : 'mb-3';
+        ? props.margin
+        : _props.rawSchema?.props?.margin !== undefined
+          ? _props.rawSchema?.props?.margin
+          : _props.readOnly
+            ? 'mb-0'
+            : 'mb-3';
 
   const style = _props.style || props.style || _props.rawSchema?.props?.margin || {};
 
@@ -496,7 +495,7 @@ export class NgBooleanRenderer extends Component {
   };
 
   render() {
-    const schema = this.props.schema;
+    const schema = this.props.schema || {};
     const props = schema.props || {};
     const readOnly = this.props.readOnly;
 
@@ -532,7 +531,7 @@ export class NgBoxBooleanRenderer extends Component {
   };
 
   render() {
-    const schema = this.props.schema;
+    const schema = this.props.schema || {};
     const props = schema.props || {};
     const readOnly = this.props.readOnly;
 
@@ -545,45 +544,61 @@ export class NgBoxBooleanRenderer extends Component {
     const description =
       this.props.description || props.description || this.props.rawSchema?.description || '...';
 
+    const margin =
+      this.props.margin !== undefined ? this.props.margin :
+        props.margin !== undefined ? props.margin :
+          this.props.rawSchema?.margin !== undefined ? this.props.rawSchema?.margin : 3;
+
+    const className = this.props.className;
+
+    const Container = this.props.rawDisplay ? ({ children }) => children :
+      ({ children }) => <div className={`row mb-${margin} ${className || ''}`}>
+        <div className="col-sm-10 ms-auto">{children}
+        </div>
+      </div>
+
     return (
-      <div className="row mb-3">
-        <div className="col-sm-10 ms-auto">
-          <div
-            className="d-flex"
-            style={{
-              outline: 'rgb(65, 65, 62) solid 1px',
-              padding: '5px',
-              margin: '5px 0px',
-              width: '100%',
-              borderRadius: '4px',
-            }}>
-            <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
-              <div
-                style={{
-                  color: 'rgb(249, 176, 0)',
-                  fontWeight: 'bold',
-                  marginLeft: '5px',
-                  marginTop: '7px',
-                  marginBottom: '10px',
-                }}>
-                {label}
-              </div>
-              <div className="me-1" style={{ marginLeft: '5px', marginBottom: '10px' }}>
-                <p>{description}</p>
-                {readOnly ? (
-                  <ReadOnlyField value={value ? 'true' : 'false'} />
-                ) : (
-                  <div className="d-flex align-items-center">
-                    {value && <OnSwitch onChange={this.toggleOff} style={{ margin: 0 }} />}
-                    {!value && <OffSwitch onChange={this.toggleOn} style={{ margin: 0 }} />}
-                    <p className="m-0 ms-2">{value ? 'On' : 'Off'}</p>
-                  </div>
-                )}
-              </div>
+      <Container>
+        <div
+          onClick={() => {
+            if (!this.props.disabled)
+              this.props.onChange(!value);
+          }}
+          className="d-flex"
+          style={{
+            outline: 'rgb(65, 65, 62) solid 1px',
+            padding: '5px',
+            margin: '5px 0px',
+            width: '100%',
+            height: '100%',
+            borderRadius: '4px',
+          }}>
+          <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
+            <div
+              style={{
+                color: 'rgb(249, 176, 0)',
+                fontWeight: 'bold',
+                marginLeft: '5px',
+                marginTop: '7px',
+                marginBottom: '10px',
+              }}>
+              {label}
+            </div>
+            <div className="me-1" style={{ marginLeft: '5px', marginBottom: '10px' }}>
+              <p>{description}</p>
+              {readOnly ? (
+                <ReadOnlyField value={value ? 'true' : 'false'} />
+              ) : (
+                <div className="d-flex align-items-center">
+                  {value && <OnSwitch onChange={this.toggleOff} style={{ margin: 0 }} />}
+                  {!value && <OffSwitch onChange={this.toggleOn} style={{ margin: 0 }} />}
+                  <p className="m-0 ms-2">{value ? 'On' : 'Off'}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      </div>
+      </Container>
     );
   }
 }
@@ -615,8 +630,8 @@ export class NgArrayRenderer extends Component {
     form: () => ({
       ...this.generateDefaultValue(current.schema),
     }),
-    object: () => {},
-    json: () => {},
+    object: () => { },
+    json: () => { },
   });
 
   generateDefaultValue = (obj) => {
@@ -796,21 +811,21 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
-                    <ItemRenderer
-                      embedded
-                      flow={this.props.flow}
-                      schema={this.props.schema}
-                      value={value}
-                      key={key}
-                      idx={idx}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        newObject[key] = e;
-                        this.props.onChange(newObject);
-                      }}
-                      {...props}
-                    />
-                  )
+                  <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={key}
+                    idx={idx}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                )
                 : null
             }
           />

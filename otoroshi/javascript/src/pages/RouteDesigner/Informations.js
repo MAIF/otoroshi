@@ -1,5 +1,5 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import { NgForm } from '../../components/nginputs';
+import { LabelAndInput, NgBoxBooleanRenderer, NgForm } from '../../components/nginputs';
 import { nextClient } from '../../services/BackOfficeServices';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useEntityFromURI } from '../../util';
@@ -100,6 +100,116 @@ export const Informations = forwardRef(
           optionsTransformer: (arr) => arr.map((item) => ({ value: item.id, label: item.name })),
         },
       },
+      core_metadata: {
+        label: 'Core metadata',
+        type: 'string',
+        customRenderer: (props) => {
+          const metadata = props.rootValue?.metadata || {};
+
+          const CORE_BOOL_METADATA = [
+            {
+              key: "otoroshi-core-user-facing",
+              label: 'User Facing',
+              description: 'The fact that this service will be seen by users and cannot be impacted by the Snow Monkey'
+            },
+            {
+              key: "otoroshi-core-use-akka-http-client",
+              label: 'Use Akka Http Client',
+              description: 'Use akka http client for this service'
+            },
+            { key: "otoroshi-core-use-netty-http-client", label: 'Use Netty Client' },
+            {
+              key: "otoroshi-core-use-akka-http-ws-client",
+              label: 'Use Akka Http Ws Client',
+              description: 'Use akka http client for this service on websocket calls'
+            },
+            {
+              key: "otoroshi-core-issue-lets-encrypt-certificate",
+              label: 'Issue a Lets Encrypt Certificate',
+              description: 'Flag to automatically issue a lets encrypt cert for this service'
+            },
+            {
+              key: "otoroshi-core-issue-certificate",
+              label: 'Issue a Certificate',
+              description: 'Flag to automatically issue a cert for this service'
+            },
+          ]
+
+          const CORE_STRING_METADATA = [
+            {
+              key: "otoroshi-core-issue-certificate-ca",
+              label: 'Issue Certificate CA',
+              description: 'CA for cert issuance'
+            },
+            {
+              key: "otoroshi-core-openapi-url",
+              label: 'OPENAPI URL',
+              description: 'Represent if a service exposes an API with an optional url to an openapi descriptor'
+            }
+          ]
+
+          return (
+            <LabelAndInput label="Core medatata">
+              <div className='d-flex flex-wrap align-items-stretch' style={{ gap: 6 }}>
+                {CORE_BOOL_METADATA.map(({ key, label, description }) => {
+                  return <div style={{ flex: 1, minWidth: '40%' }}>
+                    <NgBoxBooleanRenderer
+                      rawDisplay
+                      description={description}
+                      label={label}
+                      value={metadata[key]}
+                      onChange={e => {
+                        if (e) {
+                          setValue({
+                            ...value,
+                            metadata: {
+                              ...(metadata || {}),
+                              [key]: "" + e
+                            }
+                          })
+                        } else {
+                          setValue({
+                            ...value,
+                            metadata: Object.fromEntries(
+                              Object.entries({ ...(metadata || {}) }).filter(f => f[0] !== key)
+                            )
+                          })
+                        }
+                      }} />
+                  </div>
+                })}
+                {CORE_STRING_METADATA.map(({ key, label, description }) => {
+                  return <div style={{ flex: 1, minWidth: '40%' }}>
+                    <NgBoxBooleanRenderer
+                      rawDisplay
+                      description={description}
+                      label={label}
+                      value={metadata[key]}
+                      onChange={e => {
+                        if (e) {
+                          setValue({
+                            ...value,
+                            metadata: {
+                              ...(metadata || {}),
+                              [key]: 'ENTER YOUR VALUE'
+                            }
+                          })
+                        } else {
+                          setValue({
+                            ...value,
+                            metadata: Object.fromEntries(
+                              Object.entries({ ...(metadata || {}) }).filter(f => f[0] !== key)
+                            )
+                          })
+                        }
+                      }} />
+                  </div>
+                })}
+              </div>
+            </LabelAndInput>
+          );
+        }
+      },
       metadata: {
         type: 'object',
         label: 'Metadata',
@@ -142,7 +252,7 @@ export const Informations = forwardRef(
         type: 'group',
         name: 'Misc.',
         collapsed: true,
-        fields: ['metadata', 'tags'],
+        fields: ['core_metadata', 'metadata', 'tags'],
       },
     ];
 
