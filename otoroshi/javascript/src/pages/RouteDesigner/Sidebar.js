@@ -71,7 +71,8 @@ export default ({ route, setSidebarContent }) => {
         </li>
         {LINKS(entity.link, route).map(({ to, icon, title, tooltip, tab }) => (
           <li className="nav-item" key={title}>
-            <Link to={to} {...(tooltip || {})} className={`nav-link ${isActive(tab)}`}>
+            <Link to={to} {...(tooltip || {})}
+              className={`nav-link ${isActive(tab)}`}>
               <h3 className={`ms-3 p-2 m-0 ${isActive(tab)}`}>
                 <i className={`fas ${icon}`} /> {title}
               </h3>

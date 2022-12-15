@@ -474,9 +474,9 @@ export class TopBar extends Component {
 
   gotoRoute = (routeId) => {
     if (this.props.history) {
-      this.props.history.push(`/routes/${routeId}`);
+      this.props.history.push(`/routes/${routeId}?tab=flow`);
     } else {
-      window.location.href = `/bo/dashboard/routes/${routeId}`;
+      window.location.href = `/bo/dashboard/routes/${routeId}?tab=flow`;
     }
   };
 

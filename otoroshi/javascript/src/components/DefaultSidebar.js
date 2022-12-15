@@ -12,6 +12,11 @@ export function DefaultSidebar(props) {
   const className = (part) =>
     base === pathname && search.indexOf(`env=${part}`) > -1 ? 'active' : '';
 
+  const clearSidebar = () => {
+    if (props.setSidebarContent)
+      props.setSidebarContent(null)
+  }
+
   return (
     <ul className="nav flex-column nav-sidebar no-margin-left">
       {props.env && !props.env.initWithNewEngine && (
@@ -20,7 +25,8 @@ export function DefaultSidebar(props) {
             <Link
               to="/services"
               className={`nav-link ${rootClassName('services')}`}
-              {...createTooltip('List all services declared in Otoroshi')}>
+              {...createTooltip('List all services declared in Otoroshi')}
+              onClick={clearSidebar}>
               <h3 className="p-2 m-0">
                 <i className="fas fa-cubes" /> SERVICES
               </h3>
@@ -32,7 +38,8 @@ export function DefaultSidebar(props) {
         <Link
           to="/routes"
           className={`nav-link ${rootClassName('routes')}`}
-          {...createTooltip('List all routes declared in Otoroshi')}>
+          {...createTooltip('List all routes declared in Otoroshi')}
+          onClick={clearSidebar}>
           <h3 className="p-2 m-0">
             <i className="fas fa-road" /> ROUTES
           </h3>
@@ -42,7 +49,8 @@ export function DefaultSidebar(props) {
         <Link
           to="/backends"
           className={`nav-link ${rootClassName('backends')}`}
-          {...createTooltip('List all backends declared in Otoroshi')}>
+          {...createTooltip('List all backends declared in Otoroshi')}
+          onClick={clearSidebar}>
           <h3 className="p-2 m-0">
             <i className="fas fa-microchip" /> BACKENDS
           </h3>
@@ -52,7 +60,8 @@ export function DefaultSidebar(props) {
         <Link
           to="/apikeys"
           className={`nav-link ${rootClassName('apikeys')}`}
-          {...createTooltip('List all apikeys declared in Otoroshi')}>
+          {...createTooltip('List all apikeys declared in Otoroshi')}
+          onClick={clearSidebar}>
           <h3 className="p-2 m-0">
             <i className="fas fa-key" /> APIKEYS
           </h3>
@@ -62,7 +71,8 @@ export function DefaultSidebar(props) {
         <Link
           to="/tcp/services"
           className={`nav-link ${rootClassName('tcp-services')}`}
-          {...createTooltip('List all Tcp services declared in Otoroshi')}>
+          {...createTooltip('List all Tcp services declared in Otoroshi')}
+          onClick={clearSidebar}>
           <h3 className="p-2 m-0">
             <i className="fas fa-cubes" /> TCP SERVICES
           </h3>

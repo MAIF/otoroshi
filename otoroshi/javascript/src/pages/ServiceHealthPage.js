@@ -35,7 +35,7 @@ export class ServiceHealthPage extends Component {
     fu.then((service) => {
       this.setState({ service }, () => {
         if (
-          (this.onRoute && service.backend.health_check && service.backend.health_check.enabled) ||
+          (this.onRoutes && service.backend.health_check && service.backend.health_check.enabled) ||
           (service.healthCheck && service.healthCheck.enabled)
         ) {
           this.setState({ health: true });
@@ -46,8 +46,8 @@ export class ServiceHealthPage extends Component {
             BackOfficeServices.fetchServiceResponseTime(service.id),
           ]).then(([evts, status, responsesTime]) => {
             this.setState({ status, responsesTime }, () => {
-              const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
-              this.title = this.onRoute ? (
+              const color = evts.length > 0 && evts[0].health ? this.colors[evts[0].health] : 'grey';
+              this.title = this.onRoutes ? (
                 <span>
                   Route health is <i className="fas fa-heart" style={{ color }} />
                 </span>
