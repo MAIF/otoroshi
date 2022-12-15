@@ -128,6 +128,9 @@ export class JwtVerifiersPage extends Component {
           injectBottomBar={({ closeEditForm, state, setState, buttons }) => {
             return (
               <div className="d-flex align-items-center justify-content-end">
+                <Button type="danger" className="btn-sm me-1" onClick={closeEditForm}>
+                  <i className="fas fa-times" /> Cancel
+                </Button>
                 {buttons || null}
                 {state.showEditForm && (
                   <FormSelector
@@ -135,9 +138,6 @@ export class JwtVerifiersPage extends Component {
                     entity={ENTITIES.JWT_VERIFIERS}
                   />
                 )}
-                <Button type="danger" className="btn-sm ms-1" onClick={closeEditForm}>
-                  <i className="fas fa-times" /> Cancel
-                </Button>
               </div>
             );
           }}
