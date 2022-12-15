@@ -83,6 +83,7 @@ object HealthCheck {
         .get()
         .andThen {
           case Success(res)   => {
+
             val checkDone =
               res.header(env.Headers.OtoroshiHealthCheckLogicTestResult).exists(_.toLong == value.toLong + 42L)
             val health    = (res.status, checkDone) match {
@@ -103,6 +104,7 @@ object HealthCheck {
               error = None,
               health = health
             )
+            println(s"event: ${hce.toJson.prettify}")
             hce.toAnalytics()
             hce.pushToRedis()
             if (env.healtCheckBlockOnRed && health.contains("RED")) {
@@ -123,7 +125,7 @@ object HealthCheck {
             res.ignore()
           }
           case Failure(error) => {
-            // error.printStackTrace()
+            error.printStackTrace()
             logger.error(s"Error while checking health of service '${desc.name}' at '${url}'")
             val hce = HealthCheckEvent(
               `@id` = value,
@@ -260,6 +262,7 @@ class HealthCheckJob extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    println("healthcheck job")
     implicit val mat   = env.otoroshiMaterializer
     val parallelChecks = env.healtCheckWorkers
     val services = env.proxyState.allServices()
@@ -272,6 +275,7 @@ class HealthCheckJob extends Job {
       .toList
     Source(targets)
       .mapAsync(parallelChecks) { case (target, service) =>
+        println(s"checking health of ${service.name} - ${target.asTargetStr}")
         HealthCheck.checkTarget(service, target, logger)
       }
       .runWith(Sink.ignore)

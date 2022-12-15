@@ -91,7 +91,7 @@ export class ServiceHealthPage extends Component {
   };
 
   render() {
-    if (!this.state.service || !this.state.status.length) {
+    if (!this.state.service ) { // || !this.state.status.length
       return (
         <>
           <p>
