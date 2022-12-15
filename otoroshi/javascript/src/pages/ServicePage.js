@@ -1572,7 +1572,7 @@ export class ServicePage extends Component {
                   value: a.id,
                   label: (
                     <span>
-                      <span className="bagde bg-success" style={{ minWidth: 63 }}>
+                      <span className="badge bg-success" style={{ minWidth: 63 }}>
                         {a.certType}
                       </span>{' '}
                       {a.name} - {a.description}
