@@ -11754,13 +11754,6 @@ react-modal@^3.1.11:
     react-lifecycles-compat "^3.0.0"
     warning "^4.0.3"
 
-react-paginate@7.0.0:
-  version "7.0.0"
-  resolved "https://registry.yarnpkg.com/react-paginate/-/react-paginate-7.0.0.tgz#af206ef92a2b6ef87646855eb1612157254ad0c0"
-  integrity sha512-mzPwHGJfSs79JBGX2V0v/FfQp3yWdz0XRrB9JvsUbJdsxqCt4osk1O669+K8VPQ0Lh9v0lJsnLLoJwnsgdJFng==
-  dependencies:
-    prop-types "^15.6.1"
-
 react-rainbow-components@1.26.0:
   version "1.26.0"
   resolved "https://registry.yarnpkg.com/react-rainbow-components/-/react-rainbow-components-1.26.0.tgz#320dccfa09add7cf60a25773bd5118fd9766bc16"
