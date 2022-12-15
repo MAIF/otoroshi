@@ -341,33 +341,45 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
         val toDate   = to.map(f => new DateTime(f.toLong))
 
-        env.datastores.serviceDescriptorDataStore
-          .findAll()
-          .map(
-            _.filter(d => ctx.canUserRead(d))
-              .filter(d => d.healthCheck.enabled)
-              .sortWith(_.name < _.name)
-          )
-          .map {
-            case seq: Seq[ServiceDescriptor] => Some(seq)
-            case Nil                         => None
-          }
-          .flatMap {
-            case Some(desc) =>
-              val seq = desc.slice(paginationPosition, paginationPosition + paginationPageSize)
+        val all_services = env.proxyState.allServices()
+        val all_routes = env.proxyState.allRawRoutes()
+        val all_routeCompositions = env.proxyState.allRouteCompositions()
+        val all_descs = all_services ++ all_routes.map(_.legacy) ++ all_routeCompositions.flatMap(_.toRoutes.map(_.legacy))
+        val filtered_descs = all_descs
+          .filter(d => ctx.canUserRead(d))
+          .filter(d => d.healthCheck.enabled)
+          .sortWith(_.name < _.name)
+        if (filtered_descs.nonEmpty) {
 
-              analyticsService.fetchServicesStatus(seq, fromDate, toDate).map {
-                case Some(value) =>
-                  Ok(value).withHeaders(
-                    "X-Count"     -> desc.size.toString,
-                    "X-Offset"    -> paginationPosition.toString,
-                    "X-Page"      -> paginationPage.toString,
-                    "X-Page-Size" -> paginationPageSize.toString
-                  )
-                case None        => NotFound(Json.obj("error" -> "No entity found"))
-              }
-            case None       => NotFound(Json.obj("error" -> "No entity found")).future
+          //env.datastores.serviceDescriptorDataStore
+          //  .findAll()
+          //  .map(
+          //    _.filter(d => ctx.canUserRead(d))
+          //      .filter(d => d.healthCheck.enabled)
+          //      .sortWith(_.name < _.name)
+          //  )
+          //  .map {
+          //    case seq: Seq[ServiceDescriptor] => Some(seq)
+          //    case Nil                         => None
+          //  }
+          //  .flatMap {
+          //    case Some(desc) =>
+          val seq = filtered_descs.slice(paginationPosition, paginationPosition + paginationPageSize)
+          analyticsService.fetchServicesStatus(seq, fromDate, toDate).map {
+            case Some(value) =>
+              Ok(value).withHeaders(
+                "X-Count" -> filtered_descs.size.toString,
+                "X-Offset" -> paginationPosition.toString,
+                "X-Page" -> paginationPage.toString,
+                "X-Page-Size" -> paginationPageSize.toString
+              )
+            case None => NotFound(Json.obj("error" -> "No entity found"))
           }
+          //  case None       => NotFound(Json.obj("error" -> "No entity found")).future
+          //}
+        } else {
+          NotFound(Json.obj("error" -> "No entity found")).future
+        }
       }
     }
 

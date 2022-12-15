@@ -104,7 +104,6 @@ object HealthCheck {
               error = None,
               health = health
             )
-            println(s"event: ${hce.toJson.prettify}")
             hce.toAnalytics()
             hce.pushToRedis()
             if (env.healtCheckBlockOnRed && health.contains("RED")) {
@@ -262,20 +261,20 @@ class HealthCheckJob extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    println("healthcheck job")
     implicit val mat   = env.otoroshiMaterializer
     val parallelChecks = env.healtCheckWorkers
     val services = env.proxyState.allServices()
-    val routes = env.proxyState.allRoutes()
+    val routes = env.proxyState.allRawRoutes()
     val routeCompositions = env.proxyState.allRouteCompositions()
     val descs = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
     val targets = descs
       .filter(_.healthCheck.enabled)
       .flatMap(s => s.targets.map(t => (t, s)))
+      .distinct
       .toList
     Source(targets)
       .mapAsync(parallelChecks) { case (target, service) =>
-        println(s"checking health of ${service.name} - ${target.asTargetStr}")
+        logger.debug(s"checking health of ${service.name} - ${target.asTargetStr}")
         HealthCheck.checkTarget(service, target, logger)
       }
       .runWith(Sink.ignore)

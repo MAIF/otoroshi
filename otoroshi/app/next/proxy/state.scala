@@ -33,6 +33,7 @@ class NgProxyState(env: Env) {
     .newBuilder[String, NgRoute]
     .result()
 
+  private val raw_routes          = new LegitTrieMap[String, NgRoute]()
   private val apikeys             = new LegitTrieMap[String, ApiKey]()
   private val backends            = new LegitTrieMap[String, NgBackend]()
   private val ngroutecompositions = new LegitTrieMap[String, NgRouteComposition]()
@@ -123,6 +124,7 @@ class NgProxyState(env: Env) {
   def tcpService(id: String): Option[TcpService]                    = tcpServices.get(id)
 
   def allScripts(): Seq[Script]                      = scripts.values.toSeq
+  def allRawRoutes(): Seq[NgRoute]                   = raw_routes.values.toSeq
   def allRoutes(): Seq[NgRoute]                      = routes.values.toSeq
   def allRouteCompositions(): Seq[NgRouteComposition] = ngroutecompositions.values.toSeq
   def allApikeys(): Seq[ApiKey]                      = apikeys.values.toSeq
@@ -142,6 +144,10 @@ class NgProxyState(env: Env) {
 
   def allNgServices(): Seq[NgRouteComposition] = ngroutecompositions.values.toSeq
   def allBackends(): Seq[StoredNgBackend]      = ngbackends.values.toSeq
+
+  def updateRawRoutes(values: Seq[NgRoute]): Unit = {
+    raw_routes.addAll(values.map(v => (v.cacheableId, v))).remAll(raw_routes.keySet.toSeq.diff(values.map(_.cacheableId)))
+  }
 
   def updateRoutes(values: Seq[NgRoute]): Unit = {
     routes.addAll(values.map(v => (v.cacheableId, v))).remAll(routes.keySet.toSeq.diff(values.map(_.cacheableId)))
@@ -577,6 +583,7 @@ class NgProxyState(env: Env) {
                                  })
                              } else Seq.empty[NgRoute].vfuture
     } yield {
+      env.proxyState.updateRawRoutes(routes)
       env.proxyState.updateRoutes(newRoutes ++ croutes)
       env.proxyState.updateBackends(backends)
       env.proxyState.updateApikeys(apikeys)
