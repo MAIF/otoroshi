@@ -262,18 +262,20 @@ class HealthCheckJob extends Job {
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     implicit val mat   = env.otoroshiMaterializer
     val parallelChecks = env.healtCheckWorkers
-    env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-      val targets = services
-        .filter(_.healthCheck.enabled)
-        .flatMap(s => s.targets.map(t => (t, s)))
-        .toList
-      Source(targets)
-        .mapAsync(parallelChecks) { case (target, service) =>
-          HealthCheck.checkTarget(service, target, logger)
-        }
-        .runWith(Sink.ignore)
-        .map(_ => ())
-    }
+    val services = env.proxyState.allServices()
+    val routes = env.proxyState.allRoutes()
+    val routeCompositions = env.proxyState.allRouteCompositions()
+    val descs = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
+    val targets = descs
+      .filter(_.healthCheck.enabled)
+      .flatMap(s => s.targets.map(t => (t, s)))
+      .toList
+    Source(targets)
+      .mapAsync(parallelChecks) { case (target, service) =>
+        HealthCheck.checkTarget(service, target, logger)
+      }
+      .runWith(Sink.ignore)
+      .map(_ => ())
   }
 }
 
