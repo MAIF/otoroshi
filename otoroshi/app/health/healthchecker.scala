@@ -17,7 +17,6 @@ import play.api.Logger
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.cache.types.LegitTrieMap
 
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.{Failure, Success}
@@ -217,19 +216,21 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
       val myself = self
       val date   = DateTime.now()
       if (logger.isTraceEnabled) logger.trace(s"StartHealthCheck at $date")
-      env.datastores.serviceDescriptorDataStore.findAll().andThen {
-        case Success(descs) => myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
-        case Failure(error) => myself ! ReStartHealthCheck()
-      }
+      val services = env.proxyState.allServices()
+      val routes = env.proxyState.allRoutes()
+      val routeCompositions = env.proxyState.allRouteCompositions()
+      val descs = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
+      myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
     }
     case ReStartHealthCheck()                                                              => {
       val myself = self
       val date   = DateTime.now()
       if (logger.isTraceEnabled) logger.trace(s"StartHealthCheck at $date")
-      env.datastores.serviceDescriptorDataStore.findAll().andThen {
-        case Success(descs) => myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
-        case Failure(error) => myself ! ReStartHealthCheck()
-      }
+      val services = env.proxyState.allServices()
+      val routes = env.proxyState.allRoutes()
+      val routeCompositions = env.proxyState.allRouteCompositions()
+      val descs = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
+      myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
     }
     case e                                                                                 => if (logger.isTraceEnabled) logger.trace(s"Received unknown message $e")
   }
