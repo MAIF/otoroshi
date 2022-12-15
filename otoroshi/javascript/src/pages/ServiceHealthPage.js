@@ -48,7 +48,8 @@ export class ServiceHealthPage extends Component {
             BackOfficeServices.fetchServiceResponseTime(service.id),
           ]).then(([evts, status, responsesTime]) => {
             this.setState({ status, responsesTime, loading: false }, () => {
-              const color = evts.length > 0 && evts[0].health ? this.colors[evts[0].health] : 'grey';
+              const color =
+                evts.length > 0 && evts[0].health ? this.colors[evts[0].health] : 'grey';
               this.title = this.onRoutes ? (
                 <span>
                   Route health is <i className="fas fa-heart" style={{ color }} />
@@ -64,7 +65,7 @@ export class ServiceHealthPage extends Component {
         } else {
           this.title = 'No HealthCheck available yet';
           this.props.setTitle(this.title);
-          this.setState({ loading: false })
+          this.setState({ loading: false });
         }
         this.props.setSidebarContent(this.sidebarContent(service.name));
       });
@@ -94,43 +95,47 @@ export class ServiceHealthPage extends Component {
   };
 
   render() {
-    return <Loader loading={this.state.loading}>
-      {(!this.state.service || !this.state.status.length) ?
-        <>
-          <p>
-            Your don't have any service health data available. Maybe you don't have an ElasticSearch
-            instance connected to your Otoroshi
-          </p>
-          <p>
-            To do that, add a <Link to="/exporters">data exporter</Link> sending events to an
-            ElasticSearch and settings to read events from your ElasticSeach in the{' '}
-            <Link to="/dangerzone">Danger Zone</Link>
-          </p>
-        </> :
-        <div className="content-health">
-          <div>
-            <h3>Uptime last 90 days</h3>
-            <Uptime
-              health={this.state.status[0]}
+    return (
+      <Loader loading={this.state.loading}>
+        {!this.state.service || !this.state.status.length ? (
+          <>
+            <p>
+              Your don't have any service health data available. Maybe you don't have an
+              ElasticSearch instance connected to your Otoroshi
+            </p>
+            <p>
+              To do that, add a <Link to="/exporters">data exporter</Link> sending events to an
+              ElasticSearch and settings to read events from your ElasticSeach in the{' '}
+              <Link to="/dangerzone">Danger Zone</Link>
+            </p>
+          </>
+        ) : (
+          <div className="content-health">
+            <div>
+              <h3>Uptime last 90 days</h3>
+              <Uptime
+                health={this.state.status[0]}
+                stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
+              />
+            </div>
+            <OverallUptime
+              health={this.state.status}
               stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
             />
+            <ResponseTime
+              responsesTime={this.state.responsesTime}
+              stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
+            />
+            <BooleanInput
+              label="Don't use unknown status when calculating averages"
+              value={this.state.stopTheCountUnknownStatus}
+              help="Use unknown statuses when calculating averages could modify results and may not be representative"
+              onChange={(stopTheCountUnknownStatus) => this.setState({ stopTheCountUnknownStatus })}
+            />
           </div>
-          <OverallUptime
-            health={this.state.status}
-            stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
-          />
-          <ResponseTime
-            responsesTime={this.state.responsesTime}
-            stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
-          />
-          <BooleanInput
-            label="Don't use unknown status when calculating averages"
-            value={this.state.stopTheCountUnknownStatus}
-            help="Use unknown statuses when calculating averages could modify results and may not be representative"
-            onChange={(stopTheCountUnknownStatus) => this.setState({ stopTheCountUnknownStatus })}
-          />
-        </div>}
-    </Loader>
+        )}
+      </Loader>
+    );
   }
 }
 
@@ -151,7 +156,7 @@ class OverallUptime extends Component {
             value.status
               .filter((s) => s.health === 'GREEN' || s.health === 'YELLOW')
               .reduce((acc, curr) => acc + curr.percentage, 0) /
-            length
+              length
           );
         }, 0);
 

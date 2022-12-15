@@ -412,9 +412,9 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
           env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
             case None       =>
               env.datastores.routeDataStore.findById(serviceId).flatMap {
-                case None => 
+                case None        =>
                   JsonApiError(404, JsString(s"Service with id: '$serviceId' not found")).leftf[Seq[HealthCheckEvent]]
-                case Some(route) => 
+                case Some(route) =>
                   env.datastores.healthCheckDataStore.findAll(route.legacy).fright[JsonApiError]
               }
             case Some(desc) => env.datastores.healthCheckDataStore.findAll(desc).fright[JsonApiError]

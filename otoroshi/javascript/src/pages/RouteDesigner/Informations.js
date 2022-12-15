@@ -108,107 +108,119 @@ export const Informations = forwardRef(
 
           const CORE_BOOL_METADATA = [
             {
-              key: "otoroshi-core-user-facing",
+              key: 'otoroshi-core-user-facing',
               label: 'User Facing',
-              description: 'The fact that this service will be seen by users and cannot be impacted by the Snow Monkey'
+              description:
+                'The fact that this service will be seen by users and cannot be impacted by the Snow Monkey',
             },
             {
-              key: "otoroshi-core-use-akka-http-client",
+              key: 'otoroshi-core-use-akka-http-client',
               label: 'Use Akka Http Client',
-              description: 'Use akka http client for this service'
+              description: 'Use akka http client for this service',
             },
-            { key: "otoroshi-core-use-netty-http-client", label: 'Use Netty Client', description: 'Use netty http client for this service' },
             {
-              key: "otoroshi-core-use-akka-http-ws-client",
+              key: 'otoroshi-core-use-netty-http-client',
+              label: 'Use Netty Client',
+              description: 'Use netty http client for this service',
+            },
+            {
+              key: 'otoroshi-core-use-akka-http-ws-client',
               label: 'Use Akka Http Ws Client',
-              description: 'Use akka http client for this service on websocket calls'
+              description: 'Use akka http client for this service on websocket calls',
             },
             {
-              key: "otoroshi-core-issue-lets-encrypt-certificate",
+              key: 'otoroshi-core-issue-lets-encrypt-certificate',
               label: 'Issue a Lets Encrypt Certificate',
-              description: 'Flag to automatically issue a lets encrypt cert for this service'
+              description: 'Flag to automatically issue a lets encrypt cert for this service',
             },
             {
-              key: "otoroshi-core-issue-certificate",
+              key: 'otoroshi-core-issue-certificate',
               label: 'Issue a Certificate',
-              description: 'Flag to automatically issue a cert for this service'
+              description: 'Flag to automatically issue a cert for this service',
             },
-          ]
+          ];
 
           const CORE_STRING_METADATA = [
             {
-              key: "otoroshi-core-issue-certificate-ca",
+              key: 'otoroshi-core-issue-certificate-ca',
               label: 'Issue Certificate CA',
-              description: 'CA for cert issuance'
+              description: 'CA for cert issuance',
             },
             {
-              key: "otoroshi-core-openapi-url",
+              key: 'otoroshi-core-openapi-url',
               label: 'OPENAPI URL',
-              description: 'Represent if a service exposes an API with an optional url to an openapi descriptor'
-            }
-          ]
+              description:
+                'Represent if a service exposes an API with an optional url to an openapi descriptor',
+            },
+          ];
 
           return (
             <LabelAndInput label="Metadata shortcuts">
-              <div className='d-flex flex-wrap align-items-stretch' style={{ gap: 6 }}>
+              <div className="d-flex flex-wrap align-items-stretch" style={{ gap: 6 }}>
                 {CORE_BOOL_METADATA.map(({ key, label, description }) => {
-                  return <div style={{ flex: 1, minWidth: '40%' }}>
-                    <NgBoxBooleanRenderer
-                      rawDisplay
-                      description={description}
-                      label={label}
-                      value={metadata[key]}
-                      onChange={e => {
-                        if (e) {
-                          setValue({
-                            ...value,
-                            metadata: {
-                              ...(metadata || {}),
-                              [key]: "" + e
-                            }
-                          })
-                        } else {
-                          setValue({
-                            ...value,
-                            metadata: Object.fromEntries(
-                              Object.entries({ ...(metadata || {}) }).filter(f => f[0] !== key)
-                            )
-                          })
-                        }
-                      }} />
-                  </div>
+                  return (
+                    <div style={{ flex: 1, minWidth: '40%' }}>
+                      <NgBoxBooleanRenderer
+                        rawDisplay
+                        description={description}
+                        label={label}
+                        value={metadata[key]}
+                        onChange={(e) => {
+                          if (e) {
+                            setValue({
+                              ...value,
+                              metadata: {
+                                ...(metadata || {}),
+                                [key]: '' + e,
+                              },
+                            });
+                          } else {
+                            setValue({
+                              ...value,
+                              metadata: Object.fromEntries(
+                                Object.entries({ ...(metadata || {}) }).filter((f) => f[0] !== key)
+                              ),
+                            });
+                          }
+                        }}
+                      />
+                    </div>
+                  );
                 })}
                 {CORE_STRING_METADATA.map(({ key, label, description }) => {
-                  return <div style={{ flex: 1, minWidth: '40%' }}>
-                    <NgBoxBooleanRenderer
-                      rawDisplay
-                      description={description}
-                      label={label}
-                      value={metadata[key]}
-                      onChange={e => {
-                        if (e) {
-                          setValue({
-                            ...value,
-                            metadata: {
-                              ...(metadata || {}),
-                              [key]: 'ENTER YOUR VALUE'
-                            }
-                          })
-                        } else {
-                          setValue({
-                            ...value,
-                            metadata: Object.fromEntries(
-                              Object.entries({ ...(metadata || {}) }).filter(f => f[0] !== key)
-                            )
-                          })
-                        }
-                      }} />
-                  </div>
+                  return (
+                    <div style={{ flex: 1, minWidth: '40%' }}>
+                      <NgBoxBooleanRenderer
+                        rawDisplay
+                        description={description}
+                        label={label}
+                        value={metadata[key]}
+                        onChange={(e) => {
+                          if (e) {
+                            setValue({
+                              ...value,
+                              metadata: {
+                                ...(metadata || {}),
+                                [key]: 'ENTER YOUR VALUE',
+                              },
+                            });
+                          } else {
+                            setValue({
+                              ...value,
+                              metadata: Object.fromEntries(
+                                Object.entries({ ...(metadata || {}) }).filter((f) => f[0] !== key)
+                              ),
+                            });
+                          }
+                        }}
+                      />
+                    </div>
+                  );
                 })}
               </div>
             </LabelAndInput>
           );
-        }
+        },
       },
       metadata: {
         type: 'object',

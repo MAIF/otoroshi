@@ -76,7 +76,7 @@ export class ReloadNewVersion extends Component {
     }
     return (
       <div className="topbar-popup">
-        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 20  }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginLeft: 20 }}>
           A new version of Otoroshi has been deployed
           <button
             type="button"
@@ -89,7 +89,7 @@ export class ReloadNewVersion extends Component {
         <button
           type="button"
           className="btn btn-sm"
-          style={{ alignSelf: 'flex-start'}}
+          style={{ alignSelf: 'flex-start' }}
           onClick={(e) => {
             e.preventDefault();
             this.setState({ display: false, versionClosed: true });

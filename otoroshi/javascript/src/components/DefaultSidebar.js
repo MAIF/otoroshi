@@ -13,9 +13,8 @@ export function DefaultSidebar(props) {
     base === pathname && search.indexOf(`env=${part}`) > -1 ? 'active' : '';
 
   const clearSidebar = () => {
-    if (props.setSidebarContent)
-      props.setSidebarContent(null)
-  }
+    if (props.setSidebarContent) props.setSidebarContent(null);
+  };
 
   return (
     <ul className="nav flex-column nav-sidebar no-margin-left">

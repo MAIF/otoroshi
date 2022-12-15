@@ -341,10 +341,11 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
         val toDate   = to.map(f => new DateTime(f.toLong))
 
-        val all_services = env.proxyState.allServices()
-        val all_routes = env.proxyState.allRawRoutes()
+        val all_services          = env.proxyState.allServices()
+        val all_routes            = env.proxyState.allRawRoutes()
         val all_routeCompositions = env.proxyState.allRouteCompositions()
-        val all_descs = all_services.map(service => service.copy(metadata = service.metadata + ("kind" -> "service"))) ++
+        val all_descs             =
+          all_services.map(service => service.copy(metadata = service.metadata + ("kind" -> "service"))) ++
           all_routes.map { route =>
             val legacy = route.legacy
             legacy.copy(metadata = legacy.metadata + ("kind" -> "route"))
@@ -353,7 +354,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             val legacy = route.legacy
             legacy.copy(metadata = legacy.metadata + ("kind" -> "route_compositions"))
           })
-        val filtered_descs = all_descs
+        val filtered_descs        = all_descs
           .filter(d => ctx.canUserRead(d))
           .filter(d => d.healthCheck.enabled)
           .sortWith(_.name < _.name)
@@ -376,12 +377,12 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           analyticsService.fetchServicesStatus(seq, fromDate, toDate).map {
             case Some(value) =>
               Ok(value).withHeaders(
-                "X-Count" -> filtered_descs.size.toString,
-                "X-Offset" -> paginationPosition.toString,
-                "X-Page" -> paginationPage.toString,
+                "X-Count"     -> filtered_descs.size.toString,
+                "X-Offset"    -> paginationPosition.toString,
+                "X-Page"      -> paginationPage.toString,
                 "X-Page-Size" -> paginationPageSize.toString
               )
-            case None => NotFound(Json.obj("error" -> "No entity found"))
+            case None        => NotFound(Json.obj("error" -> "No entity found"))
           }
           //  case None       => NotFound(Json.obj("error" -> "No entity found")).future
           //}

@@ -123,30 +123,32 @@ class NgProxyState(env: Env) {
   def privateAppsSession(id: String): Option[PrivateAppsUser]       = privateAppsSessions.get(id)
   def tcpService(id: String): Option[TcpService]                    = tcpServices.get(id)
 
-  def allScripts(): Seq[Script]                      = scripts.values.toSeq
-  def allRawRoutes(): Seq[NgRoute]                   = raw_routes.values.toSeq
-  def allRoutes(): Seq[NgRoute]                      = routes.values.toSeq
+  def allScripts(): Seq[Script]                       = scripts.values.toSeq
+  def allRawRoutes(): Seq[NgRoute]                    = raw_routes.values.toSeq
+  def allRoutes(): Seq[NgRoute]                       = routes.values.toSeq
   def allRouteCompositions(): Seq[NgRouteComposition] = ngroutecompositions.values.toSeq
-  def allApikeys(): Seq[ApiKey]                      = apikeys.values.toSeq
-  def allJwtVerifiers(): Seq[GlobalJwtVerifier]      = jwtVerifiers.values.toSeq
-  def allCertificates(): Seq[Cert]                   = certificates.values.toSeq
-  def allCertificatesMap(): TrieMap[String, Cert]    = certificates
-  def allAuthModules(): Seq[AuthModuleConfig]        = authModules.values.toSeq
-  def allServices(): Seq[ServiceDescriptor]          = services.values.toSeq
-  def allTeams(): Seq[Team]                          = teams.values.toSeq
-  def allTenants(): Seq[Tenant]                      = tenants.values.toSeq
-  def allServiceGroups(): Seq[ServiceGroup]          = serviceGroups.values.toSeq
-  def allDataExporters(): Seq[DataExporterConfig]    = dataExporters.values.toSeq
-  def allOtoroshiAdmins(): Seq[OtoroshiAdmin]        = otoroshiAdmins.values.toSeq
-  def allBackofficeSessions(): Seq[BackOfficeUser]   = backofficeSessions.values.toSeq
-  def allPrivateAppsSessions(): Seq[PrivateAppsUser] = privateAppsSessions.values.toSeq
-  def allTcpServices(): Seq[TcpService]              = tcpServices.values.toSeq
+  def allApikeys(): Seq[ApiKey]                       = apikeys.values.toSeq
+  def allJwtVerifiers(): Seq[GlobalJwtVerifier]       = jwtVerifiers.values.toSeq
+  def allCertificates(): Seq[Cert]                    = certificates.values.toSeq
+  def allCertificatesMap(): TrieMap[String, Cert]     = certificates
+  def allAuthModules(): Seq[AuthModuleConfig]         = authModules.values.toSeq
+  def allServices(): Seq[ServiceDescriptor]           = services.values.toSeq
+  def allTeams(): Seq[Team]                           = teams.values.toSeq
+  def allTenants(): Seq[Tenant]                       = tenants.values.toSeq
+  def allServiceGroups(): Seq[ServiceGroup]           = serviceGroups.values.toSeq
+  def allDataExporters(): Seq[DataExporterConfig]     = dataExporters.values.toSeq
+  def allOtoroshiAdmins(): Seq[OtoroshiAdmin]         = otoroshiAdmins.values.toSeq
+  def allBackofficeSessions(): Seq[BackOfficeUser]    = backofficeSessions.values.toSeq
+  def allPrivateAppsSessions(): Seq[PrivateAppsUser]  = privateAppsSessions.values.toSeq
+  def allTcpServices(): Seq[TcpService]               = tcpServices.values.toSeq
 
   def allNgServices(): Seq[NgRouteComposition] = ngroutecompositions.values.toSeq
   def allBackends(): Seq[StoredNgBackend]      = ngbackends.values.toSeq
 
   def updateRawRoutes(values: Seq[NgRoute]): Unit = {
-    raw_routes.addAll(values.map(v => (v.cacheableId, v))).remAll(raw_routes.keySet.toSeq.diff(values.map(_.cacheableId)))
+    raw_routes
+      .addAll(values.map(v => (v.cacheableId, v)))
+      .remAll(raw_routes.keySet.toSeq.diff(values.map(_.cacheableId)))
   }
 
   def updateRoutes(values: Seq[NgRoute]): Unit = {

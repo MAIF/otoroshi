@@ -82,7 +82,7 @@ object HealthCheck {
         )
         .get()
         .andThen {
-          case Success(res)   => {
+          case Success(res) => {
 
             val checkDone =
               res.header(env.Headers.OtoroshiHealthCheckLogicTestResult).exists(_.toLong == value.toLong + 42L)
@@ -214,23 +214,23 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
       }
     }
     case StartHealthCheck()                                                                => {
-      val myself = self
-      val date   = DateTime.now()
+      val myself            = self
+      val date              = DateTime.now()
       if (logger.isTraceEnabled) logger.trace(s"StartHealthCheck at $date")
-      val services = env.proxyState.allServices()
-      val routes = env.proxyState.allRoutes()
+      val services          = env.proxyState.allServices()
+      val routes            = env.proxyState.allRoutes()
       val routeCompositions = env.proxyState.allRouteCompositions()
-      val descs = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
+      val descs             = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
       myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
     }
     case ReStartHealthCheck()                                                              => {
-      val myself = self
-      val date   = DateTime.now()
+      val myself            = self
+      val date              = DateTime.now()
       if (logger.isTraceEnabled) logger.trace(s"StartHealthCheck at $date")
-      val services = env.proxyState.allServices()
-      val routes = env.proxyState.allRoutes()
+      val services          = env.proxyState.allServices()
+      val routes            = env.proxyState.allRoutes()
       val routeCompositions = env.proxyState.allRouteCompositions()
-      val descs = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
+      val descs             = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
       myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
     }
     case e                                                                                 => if (logger.isTraceEnabled) logger.trace(s"Received unknown message $e")
@@ -261,13 +261,13 @@ class HealthCheckJob extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    implicit val mat   = env.otoroshiMaterializer
-    val parallelChecks = env.healtCheckWorkers
-    val services = env.proxyState.allServices()
-    val routes = env.proxyState.allRawRoutes()
+    implicit val mat      = env.otoroshiMaterializer
+    val parallelChecks    = env.healtCheckWorkers
+    val services          = env.proxyState.allServices()
+    val routes            = env.proxyState.allRawRoutes()
     val routeCompositions = env.proxyState.allRouteCompositions()
-    val descs = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
-    val targets = descs
+    val descs             = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
+    val targets           = descs
       .filter(_.healthCheck.enabled)
       .flatMap(s => s.targets.map(t => (t, s)))
       .distinct

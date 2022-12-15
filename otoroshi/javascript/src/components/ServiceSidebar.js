@@ -35,7 +35,6 @@ import { createTooltip } from '../tooltips';
 );*/
 
 export class ServiceSidebar extends Component {
-
   render() {
     const { env, serviceId, name = 'Service' } = this.props;
     const pathname = window.location.pathname;

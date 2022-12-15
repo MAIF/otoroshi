@@ -11,9 +11,8 @@ export function ObjectInput(props) {
         idx: i,
         key,
         value,
-      }))
-      if (!isEqual(newData, data))
-        setData(newData)
+      }));
+      if (!isEqual(newData, data)) setData(newData);
     }
   }, [props.value]);
 

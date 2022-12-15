@@ -31,16 +31,24 @@ export class GlobalStatusPage extends Component {
   };
 
   prev = () => {
-    this.setState({
-      page: this.state.page - 1 >= 0 ? this.state.page - 1 : 0
-    }, this.update);
+    this.setState(
+      {
+        page: this.state.page - 1 >= 0 ? this.state.page - 1 : 0,
+      },
+      this.update
+    );
   };
 
   next = () => {
-    this.setState({
-      page: this.state.page + 1 <= Math.ceil(this.state.count / this.state.pageSize) ? this.state.page + 1 : Math.ceil(this.state.count / this.state.pageSize)
-    },
-      this.update);
+    this.setState(
+      {
+        page:
+          this.state.page + 1 <= Math.ceil(this.state.count / this.state.pageSize)
+            ? this.state.page + 1
+            : Math.ceil(this.state.count / this.state.pageSize),
+      },
+      this.update
+    );
   };
 
   render() {
@@ -63,7 +71,7 @@ export class GlobalStatusPage extends Component {
       );
     }
 
-    const totalPageSize = Math.ceil(this.state.count / this.state.pageSize)
+    const totalPageSize = Math.ceil(this.state.count / this.state.pageSize);
 
     return (
       <div className="global-status">
@@ -124,19 +132,22 @@ export class GlobalStatusPage extends Component {
                 .map((health, idx) => {
                   return (
                     <>
-                      {health.kind === 'route' &&
+                      {health.kind === 'route' && (
                         <Link to={`/routes/${health.descriptor}/health`}>
                           <h3>{health.service}</h3>
-                        </Link>}
-                      {health.kind === 'route-compositions' &&
+                        </Link>
+                      )}
+                      {health.kind === 'route-compositions' && (
                         <Link to={`/route-compositions/${health.descriptor}/health`}>
                           <h3>{health.service}</h3>
-                        </Link>}
-                      {health.kind === 'service' &&
+                        </Link>
+                      )}
+                      {health.kind === 'service' && (
                         <Link to={`/lines/${health.line}/services/${health.descriptor}/health`}>
                           <h3>{health.service}</h3>
-                        </Link>}
-                      < Uptime
+                        </Link>
+                      )}
+                      <Uptime
                         key={idx}
                         className="global"
                         health={health}
@@ -146,17 +157,31 @@ export class GlobalStatusPage extends Component {
                   );
                 })}
             </div>
-            <div className='ReactTable'>
+            <div className="ReactTable">
               <div class="pagination-bottom">
                 <div class="-pagination">
                   <div class="-previous">
-                    <button type="button" disabled={this.state.page === 0} class="-btn" onClick={this.prev}>Previous</button>
+                    <button
+                      type="button"
+                      disabled={this.state.page === 0}
+                      class="-btn"
+                      onClick={this.prev}>
+                      Previous
+                    </button>
                   </div>
                   <div class="-center">
-                    <span class="-pageInfo">Page {this.state.page + 1} of {totalPageSize} </span>
+                    <span class="-pageInfo">
+                      Page {this.state.page + 1} of {totalPageSize}{' '}
+                    </span>
                   </div>
                   <div class="-next">
-                    <button type="button" class="-btn" disabled={this.state.page + 1 === totalPageSize} onClick={this.next}>Next</button>
+                    <button
+                      type="button"
+                      class="-btn"
+                      disabled={this.state.page + 1 === totalPageSize}
+                      onClick={this.next}>
+                      Next
+                    </button>
                   </div>
                 </div>
               </div>

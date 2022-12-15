@@ -15,7 +15,7 @@ import otoroshi.events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedE
 import otoroshi.models.GlobalConfig
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils
-import otoroshi.utils.{SchedulerHelper, TypedMap, future}
+import otoroshi.utils.{future, SchedulerHelper, TypedMap}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -662,10 +662,11 @@ class StalledJobsDetector extends Job {
               env.datastores.rawDataStore.del(Seq(key)).map { _ =>
                 logger.info(s"job '${jobId}' has been unlocked and should work as expected now !")
               }
-            case _ => ().vfuture
+            case _  => ().vfuture
           }
         }
-        .runWith(Sink.ignore).map(_ => ())
+        .runWith(Sink.ignore)
+        .map(_ => ())
     }
   }
 }
