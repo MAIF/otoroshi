@@ -1759,8 +1759,14 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
 
             val name = servicesDescriptors.find(_.id == id).map(_.name).getOrElse("UNKNOWN")
             val env  = servicesDescriptors.find(_.id == id).map(_.env).getOrElse("prod")
+            val value = servicesDescriptors.find(_.id == id)
+            val kind: String = value
+              .map(_.metadata.getOrElse("kind", "service"))
+              .getOrElse("service")
+
             Json.obj(
               "descriptor" -> id,
+              "kind"       -> kind,
               "service"    -> name,
               "line"       -> env,
               "total"      -> total_period,

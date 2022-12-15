@@ -9,12 +9,14 @@ import DesignerSidebar from './RouteDesigner/Sidebar';
 
 import 'antd/dist/antd.css';
 import { Link } from 'react-router-dom';
+import Loader from '../components/Loader';
 
 export class ServiceHealthPage extends Component {
   state = {
     service: null,
     health: false,
     status: [],
+    loading: true,
     responsesTime: [],
     stopTheCountUnknownStatus: true,
   };
@@ -45,7 +47,7 @@ export class ServiceHealthPage extends Component {
             BackOfficeServices.fetchServiceStatus(service.id),
             BackOfficeServices.fetchServiceResponseTime(service.id),
           ]).then(([evts, status, responsesTime]) => {
-            this.setState({ status, responsesTime }, () => {
+            this.setState({ status, responsesTime, loading: false }, () => {
               const color = evts.length > 0 && evts[0].health ? this.colors[evts[0].health] : 'grey';
               this.title = this.onRoutes ? (
                 <span>
@@ -62,6 +64,7 @@ export class ServiceHealthPage extends Component {
         } else {
           this.title = 'No HealthCheck available yet';
           this.props.setTitle(this.title);
+          this.setState({ loading: false })
         }
         this.props.setSidebarContent(this.sidebarContent(service.name));
       });
@@ -91,8 +94,8 @@ export class ServiceHealthPage extends Component {
   };
 
   render() {
-    if (!this.state.service || !this.state.status.length) {
-      return (
+    return <Loader loading={this.state.loading}>
+      {(!this.state.service || !this.state.status.length) ?
         <>
           <p>
             Your don't have any service health data available. Maybe you don't have an ElasticSearch
@@ -103,35 +106,31 @@ export class ServiceHealthPage extends Component {
             ElasticSearch and settings to read events from your ElasticSeach in the{' '}
             <Link to="/dangerzone">Danger Zone</Link>
           </p>
-        </>
-      );
-    }
-
-    return (
-      <div className="content-health">
-        <div>
-          <h3>Uptime last 90 days</h3>
-          <Uptime
-            health={this.state.status[0]}
+        </> :
+        <div className="content-health">
+          <div>
+            <h3>Uptime last 90 days</h3>
+            <Uptime
+              health={this.state.status[0]}
+              stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
+            />
+          </div>
+          <OverallUptime
+            health={this.state.status}
             stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
           />
-        </div>
-        <OverallUptime
-          health={this.state.status}
-          stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
-        />
-        <ResponseTime
-          responsesTime={this.state.responsesTime}
-          stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
-        />
-        <BooleanInput
-          label="Don't use unknown status when calculating averages"
-          value={this.state.stopTheCountUnknownStatus}
-          help="Use unknown statuses when calculating averages could modify results and may not be representative"
-          onChange={(stopTheCountUnknownStatus) => this.setState({ stopTheCountUnknownStatus })}
-        />
-      </div>
-    );
+          <ResponseTime
+            responsesTime={this.state.responsesTime}
+            stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
+          />
+          <BooleanInput
+            label="Don't use unknown status when calculating averages"
+            value={this.state.stopTheCountUnknownStatus}
+            help="Use unknown statuses when calculating averages could modify results and may not be representative"
+            onChange={(stopTheCountUnknownStatus) => this.setState({ stopTheCountUnknownStatus })}
+          />
+        </div>}
+    </Loader>
   }
 }
 
@@ -152,7 +151,7 @@ class OverallUptime extends Component {
             value.status
               .filter((s) => s.health === 'GREEN' || s.health === 'YELLOW')
               .reduce((acc, curr) => acc + curr.percentage, 0) /
-              length
+            length
           );
         }, 0);
 

@@ -112,10 +112,19 @@ export class GlobalStatusPage extends Component {
                 .map((health, idx) => {
                   return (
                     <>
-                      <Link to={`/lines/${health.line}/services/${health.descriptor}/health`}>
-                        <h3>{health.service}</h3>
-                      </Link>
-                      <Uptime
+                      {health.kind === 'route' &&
+                        <Link to={`/routes/${health.descriptor}/health`}>
+                          <h3>{health.service}</h3>
+                        </Link>}
+                      {health.kind === 'route-compositions' &&
+                        <Link to={`/route-compositions/${health.descriptor}/health`}>
+                          <h3>{health.service}</h3>
+                        </Link>}
+                      {health.kind === 'service' &&
+                        <Link to={`/lines/${health.line}/services/${health.descriptor}/health`}>
+                          <h3>{health.service}</h3>
+                        </Link>}
+                      < Uptime
                         key={idx}
                         className="global"
                         health={health}
@@ -129,14 +138,20 @@ export class GlobalStatusPage extends Component {
               previousLabel="previous"
               nextLabel="next"
               breakLabel="..."
-              breakClassName={'break'}
               pageCount={Math.ceil(this.state.count / this.state.pageSize)}
               marginPagesDisplayed={1}
               pageRangeDisplayed={5}
               onPageChange={(data) => this.handlePageClick(data)}
-              containerClassName={'pagination'}
-              pageClassName={'page-selector'}
               forcePage={this.state.page}
+              breakClassName={'page-item'}
+              breakLinkClassName={'page-link'}
+              containerClassName={'pagination'}
+              pageClassName={'page-item'}
+              pageLinkClassName={'page-link'}
+              previousClassName={'page-item'}
+              previousLinkClassName={'page-link'}
+              nextClassName={'page-item'}
+              nextLinkClassName={'page-link'}
               activeClassName={'active'}
             />
           </>

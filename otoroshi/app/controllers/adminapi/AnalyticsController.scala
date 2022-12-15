@@ -344,7 +344,15 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
         val all_services = env.proxyState.allServices()
         val all_routes = env.proxyState.allRawRoutes()
         val all_routeCompositions = env.proxyState.allRouteCompositions()
-        val all_descs = all_services ++ all_routes.map(_.legacy) ++ all_routeCompositions.flatMap(_.toRoutes.map(_.legacy))
+        val all_descs = all_services.map(service => service.copy(metadata = service.metadata + ("kind" -> "service"))) ++
+          all_routes.map { route =>
+            val legacy = route.legacy
+            legacy.copy(metadata = legacy.metadata + ("kind" -> "route"))
+          } ++
+          all_routeCompositions.flatMap(_.toRoutes.map { route =>
+            val legacy = route.legacy
+            legacy.copy(metadata = legacy.metadata + ("kind" -> "route_compositions"))
+          })
         val filtered_descs = all_descs
           .filter(d => ctx.canUserRead(d))
           .filter(d => d.healthCheck.enabled)
