@@ -101,7 +101,7 @@ export const Informations = forwardRef(
         },
       },
       core_metadata: {
-        label: 'Core metadata',
+        label: 'Metadata shortcuts',
         type: 'string',
         customRenderer: (props) => {
           const metadata = props.rootValue?.metadata || {};
@@ -117,7 +117,7 @@ export const Informations = forwardRef(
               label: 'Use Akka Http Client',
               description: 'Use akka http client for this service'
             },
-            { key: "otoroshi-core-use-netty-http-client", label: 'Use Netty Client' },
+            { key: "otoroshi-core-use-netty-http-client", label: 'Use Netty Client', description: 'Use netty http client for this service' },
             {
               key: "otoroshi-core-use-akka-http-ws-client",
               label: 'Use Akka Http Ws Client',
@@ -149,7 +149,7 @@ export const Informations = forwardRef(
           ]
 
           return (
-            <LabelAndInput label="Core medatata">
+            <LabelAndInput label="Metadata shortcuts">
               <div className='d-flex flex-wrap align-items-stretch' style={{ gap: 6 }}>
                 {CORE_BOOL_METADATA.map(({ key, label, description }) => {
                   return <div style={{ flex: 1, minWidth: '40%' }}>
@@ -252,7 +252,7 @@ export const Informations = forwardRef(
         type: 'group',
         name: 'Misc.',
         collapsed: true,
-        fields: ['core_metadata', 'metadata', 'tags'],
+        fields: ['tags', 'metadata', 'core_metadata'],
       },
     ];
 
