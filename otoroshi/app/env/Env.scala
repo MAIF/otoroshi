@@ -177,7 +177,7 @@ class Env(
     promise.future
   }
 
-  val healthCheckerActor  = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
+  // val healthCheckerActor  = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
   val otoroshiEventsActor = otoroshiActorSystem.actorOf(OtoroshiEventsActorSupervizer.props(this))
   val analyticsQueue      = otoroshiActorSystem.actorOf(AnalyticsQueue.props(this))
 
@@ -883,7 +883,7 @@ class Env(
     implicit val ec = otoroshiExecutionContext
     // geoloc.stop()
     // ua.stop()
-    healthCheckerActor ! PoisonPill
+    // healthCheckerActor ! PoisonPill
     otoroshiEventsActor ! StopExporters
     otoroshiEventsActor ! PoisonPill
     Option(ahcStats.get()).foreach(_.cancel())

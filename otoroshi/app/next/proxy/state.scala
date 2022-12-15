@@ -124,6 +124,7 @@ class NgProxyState(env: Env) {
 
   def allScripts(): Seq[Script]                      = scripts.values.toSeq
   def allRoutes(): Seq[NgRoute]                      = routes.values.toSeq
+  def allRouteCompositions(): Seq[NgRouteComposition] = ngroutecompositions.values.toSeq
   def allApikeys(): Seq[ApiKey]                      = apikeys.values.toSeq
   def allJwtVerifiers(): Seq[GlobalJwtVerifier]      = jwtVerifiers.values.toSeq
   def allCertificates(): Seq[Cert]                   = certificates.values.toSeq
