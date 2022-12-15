@@ -81,7 +81,7 @@ thead > tr > td > span {
 }
 
 thead {
-  background-color: $primaryColor;
+  background-color: var(--color-primary);
 }
 
 .fa-download {

@@ -14,18 +14,18 @@ $dark-gray: #303131;
     top: 40px;
     left: 0;
     height: 1px;
-    background-color: $primaryColor;
+    background-color: var(--color-primary);
     width: 100%;
     transition: height 0.3s;
   }
   &::after {
-    background-color: $primaryColor;
+    background-color: var(--color-primary);
     transform: scaleX(0);
     transition: transform 0.3s;
   }
   &.is-focused {
     .field-label {
-      color: $primaryColor;
+      color: var(--color-primary);
     }
     &::after {
       transform: scaleX(1);
@@ -50,18 +50,18 @@ $dark-gray: #303131;
     top: 40px;
     left: 0;
     height: 1px;
-    background-color: $primaryColor;
+    background-color: var(--color-primary);
     width: 100%;
     transition: height 0.3s;
   }
   &::after {
-    background-color: $primaryColor;
+    background-color: var(--color-primary);
     transform: scaleX(0);
     transition: transform 0.3s;
   }
   &.is-focused {
     .field-label {
-      color: $primaryColor;
+      color: var(--color-primary);
     }
     &::after {
       transform: scaleX(1);

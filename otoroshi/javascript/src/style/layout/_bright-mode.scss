@@ -163,7 +163,7 @@ body.white-mode,
 
   .jumbotron .btn {
     @include bright-mode_color--light;
-    background-color: $primaryColor;
+    background-color: var(--color-primary);
   }
 
 

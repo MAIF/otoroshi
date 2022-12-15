@@ -15,7 +15,7 @@
 }
 
 .services-map circle {
-  fill: $primaryColor;
+  fill: var(--color-primary);
   stroke: #999;
   pointer-events: all;
 }
@@ -27,7 +27,7 @@
 }
 
 .services-map circle.parent:hover {
-  stroke: $primaryColor;
+  stroke: var(--color-primary);
   stroke-width: .5px;
 }
 

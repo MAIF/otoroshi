@@ -7,7 +7,7 @@ fieldset[disabled] .form-control {
 }
 
 .form-control:focus {
-  border-color: $primaryColor;
+  border-color: var(--color-primary);
   box-shadow: none;
 }
 
