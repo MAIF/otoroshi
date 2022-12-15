@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.0.0-rc.3] - 2022-12-15
+
+https://github.com/MAIF/otoroshi/milestone/53?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.0.0-rc.2...v16.0.0-rc.3
+https://github.com/MAIF/otoroshi/releases/tag/v16.0.0-rc.3
+
+- healthcheck not working with routes (#1373)
+- sometimes job locks does not have ttl and are blocked (#1374)
+- Remove the react-paginate dependency (#1375)
+
 ## [16.0.0-rc.2] - 2022-12-14
 
 https://github.com/MAIF/otoroshi/milestone/53?closed=1
