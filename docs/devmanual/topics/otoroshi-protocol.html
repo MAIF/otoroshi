@@ -276,7 +276,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#the-otoroshi-communication-protocol" name="the-otoroshi-communication-protocol" class="anchor"><span class="anchor-link"></span></a>The Otoroshi communication protocol</h1>
-<p>The exchange protocol secure the communication with an app. When it&rsquo;s enabled, Otoroshi will send for each request a value in pre-selected token header, and will check the same header in the return request.</p>
+<p>The exchange protocol secure the communication with an app. When it&rsquo;s enabled, Otoroshi will send for each request a value in pre-selected token header, and will check the same header in the return request. On routes, you will have to use the <code>Otoroshi challenge token</code> plugin to enable it.</p>
 <h3><a href="#v1-challenge" name="v1-challenge" class="anchor"><span class="anchor-link"></span></a>V1 challenge</h3>
 <p>If you enable secure communication for a given service with <code>V1 - simple values exchange</code> activated, you will have to add a filter on the target application that will take the <code>Otoroshi-State</code> header and return it in a header named <code>Otoroshi-State-Resp</code>. </p><div class="centered-img">
 <img src="../imgs/exchange.png" /></div>
@@ -286,7 +286,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <img src="../imgs/exchange-2.png" /></div>
 <p>you can find an example project that implements V2 challenge <a href="https://github.com/MAIF/otoroshi/tree/master/demos/challenge">here</a></p>
 <h3><a href="#info-token" name="info-token" class="anchor"><span class="anchor-link"></span></a>Info. token</h3>
-<p>Otoroshi is also sending a JWT token in a header named <code>Otoroshi-Claim</code> that the target app can validate too.</p>
+<p>Otoroshi is also sending a JWT token in a header named <code>Otoroshi-Claim</code> that the target app can validate too. On routes, you will have to use the <code>Otoroshi info. token</code> plugin to enable it.</p>
 <p>The <code>Otoroshi-Claim</code> is a JWT token containing some informations about the service that is called and the client if available. You can choose between a legacy version of the token and a new one that is more clear and structured.</p>
 <p>By default, the otoroshi jwt token is signed with the <code>otoroshi.claim.sharedKey</code> config property (or using the <code>$CLAIM_SHAREDKEY</code> env. variable) and uses the <code>HMAC512</code> signing algorythm. But it is possible to customize how the token is signed from the service descriptor page in the <code>Otoroshi exchange protocol</code> section. </p><div class="centered-img">
 <img src="../imgs/sec-com-signing-bis.png" /></div>

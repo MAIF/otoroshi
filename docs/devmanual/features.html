@@ -279,15 +279,25 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li>Can proxy any HTTP(s) service (apis, webapps, websocket, etc)</li>
   <li>Can proxy any TCP service (app, database, etc)</li>
-  <li>Traffic mirroring</li>
-  <li>Canary deployments</li>
-  <li>Multiple load-balancing options: RoundRobin, Random, Sticky, Ip Hash, Best Response Time</li>
+  <li>Multiple load-balancing options:
+    <ul>
+      <li>RoundRobin</li>
+      <li>Random, Sticky</li>
+      <li>Ip address hash</li>
+      <li>Best Response Time</li>
+    </ul>
+  </li>
   <li>Distributed in-flight request limiting</li>
   <li>Distributed rate limiting</li>
+  <li>End-to-end HTTP3 support</li>
+  <li>Traffic mirroring</li>
+  <li>Canary deployments</li>
+  <li>Relay routing</li>
+  <li>Tunnels for easier network exposition</li>
 </ul>
 <p><strong>Services customization</strong></p>
 <ul>
-  <li>Dozens of built-in middlewares (plugins)
+  <li>Dozens of built-in middlewares (policies/plugins)
     <ul>
       <li>circuit breakers</li>
       <li>automatic retries</li>
@@ -295,27 +305,35 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <li>gzip</li>
       <li>headers manipulation</li>
       <li>cors</li>
+      <li>body transformation</li>
+      <li>graphql gateway</li>
       <li>etc</li>
     </ul>
   </li>
-  <li>Custom middleware</li>
-  <li>Higly customizable visibility</li>
+  <li>Write your own custom middlewares</li>
 </ul>
 <p><strong>Services Monitoring</strong></p>
 <ul>
-  <li>Active health checks</li>
-  <li>Calls tracing</li>
+  <li>Active healthchecks</li>
+  <li>Calls tracing using W3C trace context</li>
   <li>Export alerts and events to external database</li>
   <li>Real-time traffic metrics</li>
   <li>Alert mailers</li>
   <li>Real-time traffic metrics (Datadog, Prometheus, StatsD)</li>
+</ul>
+<p><strong>Services discovery</strong></p>
+<ul>
+  <li>through DNS</li>
+  <li>through Eureka 2</li>
+  <li>through Kubernetes API</li>
+  <li>through custom otoroshi protocol</li>
 </ul>
 <p><strong>API security</strong></p>
 <ul>
   <li>Access management with apikeys and quotas</li>
   <li>Automatic apikeys secrets rotation</li>
   <li>HTTPS and TLS</li>
-  <li>mTLS in/out calls</li>
+  <li>End-to-end mTLS calls</li>
   <li>Routing constraints</li>
   <li>Routing restrictions</li>
   <li>JWT tokens validation and manipulation</li>
@@ -326,16 +344,28 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Secured users access with Authentication module</li>
   <li>Traced users actions</li>
   <li>Dynamic changes at runtime without full reload</li>
+  <li>Test your routes without any external tools</li>
 </ul>
 <p><strong>Webapp authentication and security</strong></p>
 <ul>
   <li>OAuth2.0/2.1 authentication</li>
   <li>OpenID Connect (OIDC) authentication</li>
-  <li>Internal users management</li>
   <li>LDAP authentication</li>
   <li>JWT authentication</li>
   <li>OAuth 1.0a authentication</li>
   <li>SAML V2 authentication</li>
+  <li>Internal users management</li>
+  <li>Secret vaults support
+    <ul>
+      <li>Environment variables</li>
+      <li>Hashicorp Vault</li>
+      <li>Azure key vault</li>
+      <li>AWS secret manager</li>
+      <li>Google secret manager</li>
+      <li>Kubernetes secrets</li>
+      <li>Izanami</li>
+    </ul>
+  </li>
 </ul>
 <p><strong>Certificates management</strong></p>
 <ul>
