@@ -230,7 +230,6 @@
     "entity_description.otoroshi.next.plugins.GraphlCallException": "???",
     "entity_description.otoroshi.next.plugins.GzipResponseCompressor": "???",
     "entity_description.otoroshi.next.plugins.HeadersValidation": "???",
-    "entity_description.otoroshi.next.plugins.Http2Caller": "???",
     "entity_description.otoroshi.next.plugins.Http3Switch": "???",
     "entity_description.otoroshi.next.plugins.Http3SwitchConfig": "???",
     "entity_description.otoroshi.next.plugins.IpAddressAllowedList": "???",
