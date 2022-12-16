@@ -283,11 +283,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#global-properties" name="global-properties" class="anchor"><span class="anchor-link"></span></a>Global Properties</h2>
 <ul>
   <li><code>Targets root path</code>: the path to add to each request sent to the downstream service</li>
+  <li><code>Full path rewrite</code>: When enabled, the path of the uri will be totally stripped and replaced by the value of <code>Targets root path</code>. If this value contains expression language expressions, they will be interpolated before forwading the request to the backend. When combined with things like named path parameters, it is possible to perform a ful url rewrite on the target path like</li>
   <li>
-  <p><code>Full path rewrite</code>: When enabled, the incoming uri will be forwarded to the downstream service</p>
-  <pre class="prettyprint"><code class="language-sh">if enabled: $scheme://$host$root$uri
-else: $scheme://$host$root
-</code></pre></li>
+  <p>input: <code>subdomain.domain.tld/api/users/$id&lt;[0-9]+&gt;/bills</code></p></li>
+  <li>output: <code>target.domain.tld/apis/v1/basic_users/${req.pathparams.id}/all_bills</code></li>
 </ul>
 <h2><a href="#targets" name="targets" class="anchor"><span class="anchor-link"></span></a>Targets</h2>
 <p>The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures.</p>
@@ -297,8 +296,8 @@ else: $scheme://$host$root
   <li><code>Port</code>: the port of the target</li>
   <li><code>TLS</code>: call the target via https</li>
   <li><code>Weight</code>: the weight of the target. This valus is used by the load balancing strategy to dispatch the traffic between all targets</li>
-  <li><code>Predicate</code>: ???</li>
-  <li><code>Protocol</code>: protocol used to call the target, can be only equals to HTTP/1.0, HTTP/1.1, HTTP/2.0 or HTTP/3.0</li>
+  <li><code>Predicate</code>: a function to filter targets from the target list based on a pre-defined predicate</li>
+  <li><code>Protocol</code>: protocol used to call the target, can be only equals to <code>HTTP/1.0</code>, <code>HTTP/1.1</code>, <code>HTTP/2.0</code> or <code>HTTP/3.0</code></li>
   <li><code>IP address</code>: the ip address of the target</li>
   <li><code>TLS Settings</code>:
     <ul>
@@ -329,10 +328,10 @@ else: $scheme://$host$root
   <li><code>idle timeout</code>: specify how long each connection can stay in idle state at most in milliseconds (default value 60000)</li>
   <li><code>call timeout</code>: Specify how long each call should last at most in milliseconds. (default value 30000)</li>
   <li><code>call and stream timeout</code>: specify how long each call should last at most in milliseconds for handling the request and streaming the response. (default value 120000)</li>
-  <li><code>initial delay</code>: ??? (default value 50)</li>
+  <li><code>initial delay</code>: delay after which first retry will happens if needed (default value 50)</li>
   <li><code>sample interval</code>: specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor (default value 2000)</li>
-  <li><code>cache connection</code>: ??? (default value false)</li>
-  <li><code>cache connection queue size</code>: ??? (default value 2048)</li>
+  <li><code>cache connection</code>: try to keep tcp connection alive between requests (default value false)</li>
+  <li><code>cache connection queue size</code>: queue size for an open tcp connection (default value 2048)</li>
   <li><code>custom timeouts</code> (list):
     <ul>
       <li><code>Path</code>: the path on which the timeout will be active</li>
@@ -351,9 +350,6 @@ else: $scheme://$host$root
   <li><code>protocol</code>: protocol of proxy behind the identify provider</li>
   <li><code>principal</code>: user of proxy</li>
   <li><code>password</code>: password of proxy</li>
-  <li><code>NTLM domain</code>: ???</li>
-  <li><code>encoding</code>: ???</li>
-  <li><code>non proxy hosts</code>: ???</li>
 </ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../entities/organizations.html">Organizations</a></p>
