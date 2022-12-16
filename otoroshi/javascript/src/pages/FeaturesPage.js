@@ -245,6 +245,9 @@ export class FeaturesPage extends Component {
               />)}
         </Features>
       })}
+      <p>
+        Thanks to <a href="https://undraw.co/" target="_blank">Undraw.co</a> for the illustrations of this page
+      </p>
     </>
   }
 }
