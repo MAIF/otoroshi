@@ -118,7 +118,7 @@ export function DefaultSidebar(props) {
             {...createTooltip('All features')}
             onClick={clearSidebar}>
             <h3 className="p-2 m-0">
-              <i className="fas fa-list" /> FEATURES
+              <i className="fas fa-grip" /> FEATURES
             </h3>
           </Link>
         </li>

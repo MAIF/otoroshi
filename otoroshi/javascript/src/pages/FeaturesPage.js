@@ -9,12 +9,14 @@ const graph = [
       {
         title: 'Resource loader',
         img: 'resource-loader',
-        description: 'Load one or more resources from text or files in one shot'
+        description: 'Load one or more resources from text or files in one shot',
+        link: '/resources-loader'
       },
       {
         title: 'Snow Monkey',
         absoluteImg: '/assets/images/nihonzaru.svg',
-        description: 'Create chaos in your routes and test your resilience'
+        description: 'Create chaos in your routes and test your resilience',
+        link: '/snowmonkey'
       }
     ]
   },
@@ -22,21 +24,21 @@ const graph = [
     title: 'Create',
     description: 'Create otoroshi resources',
     features: [
-      { title: 'Services', description: 'All your service descriptors', img: 'services', display: true },
-      { title: 'Routes', description: 'All your routes', img: 'routes', display: true },
-      { title: 'Backends', description: 'All your route backends', img: 'backend', display: true },
-      { title: 'Apikeys', description: 'All your apikeys', img: 'apikeys', display: true },
-      { title: 'Certificates', description: 'All your certificates', img: 'certificates', display: true },
-      { title: 'JWT verifiers', description: 'All your jwt verifiers', img: 'jwt', display: true },
-      { title: 'Auth. modules', description: 'All your authentication modules', img: 'private-apps', display: true },
-      { title: 'TCP services', description: 'All your TCP services', img: 'tcp', display: true },
-      { title: 'Organizations', description: 'All your organizations', img: 'orga', display: true },
-      { title: 'Teams', description: 'All your temas', img: 'teams', display: true },
-      { title: 'Groups', description: 'All your service/route groups', img: 'groups', display: true },
-      { title: 'Data exporters', description: 'All your data exporters', img: 'exporters', display: true },
-      { title: 'Administrators', description: 'All your otoroshi administrators', img: 'admins', display: true },
-      { title: 'Scripts', description: 'All your live scripts', img: 'scripts', display: false },
-      { title: 'Route compositions', description: 'routescomp', img: 'routescomp', display: false },
+      { title: 'Services', description: 'All your service descriptors', img: 'services', display: true, link: '/services' },
+      { title: 'Routes', description: 'All your routes', img: 'routes', display: true, link: '/routes' },
+      { title: 'Backends', description: 'All your route backends', img: 'backend', display: true, link: '/backends' },
+      { title: 'Apikeys', description: 'All your apikeys', img: 'apikeys', display: true, link: '/apikeys' },
+      { title: 'Certificates', description: 'All your certificates', img: 'certificates', display: true, link: '/certificates' },
+      { title: 'JWT verifiers', description: 'All your jwt verifiers', img: 'jwt', display: true, link: '/jwt-verifiers' },
+      { title: 'Auth. modules', description: 'All your authentication modules', img: 'private-apps', display: true, link: '/auth-configs' },
+      { title: 'TCP services', description: 'All your TCP services', img: 'tcp', display: true, link: '/tcp/services' },
+      { title: 'Organizations', description: 'All your organizations', img: 'orga', display: true, link: '/organizations' },
+      { title: 'Teams', description: 'All your temas', img: 'teams', display: true, link: '/teams' },
+      { title: 'Groups', description: 'All your service/route groups', img: 'groups', display: true, link: '/groups' },
+      { title: 'Data exporters', description: 'All your data exporters', img: 'exporters', display: true, link: '/exporters' },
+      { title: 'Administrators', description: 'All your otoroshi administrators', img: 'admins', display: true, link: '/admins' },
+      { title: 'Scripts', description: 'All your live scripts', img: 'scripts', display: false, link: '/plugins' },
+      { title: 'Route compositions', description: 'routescomp', img: 'routescomp', display: false, link: '/route-compositions' },
     ]
   },
   {
@@ -46,27 +48,32 @@ const graph = [
       {
         title: 'Analytics',
         description: 'All the traffic of your otoroshi cluster visualized in one place',
-        img: 'analytics'
+        img: 'analytics',
+        link: '/stats'
       },
       {
         title: 'Global Status',
         description: 'Availability of your services over time',
-        img: 'global-status'
+        img: 'global-status',
+        link: '/status'
       },
       {
         title: 'Events log',
         description: 'Everything that is happening on your otoroshi cluster',
-        img: 'events'
+        img: 'events',
+        link: '/events'
       },
       {
         title: 'Audit log',
         description: 'List all administrator actions on your otoroshi cluster',
-        img: 'audit'
+        img: 'audit',
+        link: '/audit'
       },
       {
         title: 'Alerts log',
         description: 'List all alerts happening on your otoroshi cluster',
-        img: 'alerts'
+        img: 'alerts',
+        link: '/alerts'
       }
     ]
   },
@@ -77,12 +84,14 @@ const graph = [
       {
         title: 'Admins sessions',
         description: 'List all the connected administrator sessions',
-        img: 'auth-sessions'
+        img: 'auth-sessions',
+        link: '/sessions/admin'
       },
       {
         title: 'Auth. module sessions',
         description: 'List all the connected user sessions from auth. modules',
-        img: 'admin-sessions'
+        img: 'admin-sessions',
+        link: '/sessions/private'
       }
     ]
   },
@@ -93,22 +102,26 @@ const graph = [
       {
         title: 'Authentication modules',
         description: 'Manage the access to Otoroshi UI and protect your routes with authentication modules.',
-        img: 'private-apps'
+        img: 'private-apps',
+        link: '/auth-configs'
       },
       {
         title: 'Jwt verifiers',
         description: 'Manage how you want to verify and forge jwt tokens',
-        img: 'jwt'
+        img: 'jwt',
+        link: '/jwt-verifiers'
       },
       {
         title: 'Certificates',
         description: 'Manage and generate certificates for call and expose your services',
-        img: 'certificates'
+        img: 'certificates',
+        link: '/certificates'
       },
       {
         title: 'Apikeys',
         description: 'Manage all your apikeys to access all your services',
-        img: 'apikeys'
+        img: 'apikeys',
+        link: '/apikeys'
       }
     ]
   },
@@ -120,16 +133,19 @@ const graph = [
         title: 'Tunnels',
         description: 'List all the connected tunnel to the otoroshi cluster',
         img: 'tunnels',
+        link: '/tunnels'
       },
       {
         title: 'Cluster view',
         description: 'List all the nodes of your otoroshi cluster',
         img: 'cluster',
+        link: '/cluster'
       },
       {
         title: 'Eureka servers',
         description: 'List all the nodes registered in the local eureka server',
         img: 'eureka',
+        link: '/eureka-servers'
       }
     ]
   },
@@ -140,13 +156,14 @@ const graph = [
       {
         title: 'Danger zone',
         description: 'Break things ;)',
-        img: 'danger-zone'
+        img: 'danger-zone',
+        link: '/dangerzone'
       }
     ]
   }
 ]
 const Feature = ({ title, description, img, link }) => {
-  return <Link to="#"
+  return <Link to={link}
     className="d-flex"
     style={{
       backgroundColor: '#efefef',
@@ -206,7 +223,7 @@ const Features = ({ title, description, children }) => {
 
 export class FeaturesPage extends Component {
   componentDidMount() {
-    this.props.setTitle(`Features and funtionalities Otoroshi`);
+    this.props.setTitle(`Otoroshi Features`);
   }
 
   render() {
