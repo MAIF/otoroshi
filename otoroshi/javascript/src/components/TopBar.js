@@ -706,23 +706,28 @@ export class TopBar extends Component {
                     color: '#E6E6E6',
                     gap: 5,
                   }}>
+                  {this.props && !this.props.env.initWithNewEngine && (
+                    <li className="d-flex">
+                      <Link to="/services">Service desc.</Link>
+                    </li>
+                  )}
                   <li className="d-flex">
                     <Link to="/routes/new?tab=informations">Route</Link>
+                  </li>
+                  <li className="d-flex">
+                    <Link to="/backends/add">Backend</Link>
                   </li>
                   <li className="d-flex">
                     <Link to="/apikeys/add">Apikey</Link>
                   </li>
                   <li className="d-flex">
-                    <Link to="/auth-configs/add">Authentication</Link>
-                  </li>
-                  <li className="d-flex">
                     <Link to="/certificates/add">Certificates</Link>
                   </li>
                   <li className="d-flex">
-                    <Link to="/jwt-verifiers/add">Jwt Verifier</Link>
+                    <Link to="/auth-configs/add">Auth. module</Link>
                   </li>
                   <li className="d-flex">
-                    <Link to="/backends/add">Backend</Link>
+                    <Link to="/jwt-verifiers/add">Jwt Verifier</Link>
                   </li>
                   <li className="d-flex">
                     <Link to="/tcp/services/add">TCP service</Link>
@@ -846,7 +851,7 @@ export class TopBar extends Component {
                   </li>
                   <li className="dropdown-divider" />
                   <li>
-                    {this.props && this.props.env.initWithNewEngine && (
+                    {this.props && !this.props.env.initWithNewEngine && (
                       <Link to="/services" className="dropdown-item">
                         <span className="fas fa-cubes" /> Service descriptors
                       </Link>
