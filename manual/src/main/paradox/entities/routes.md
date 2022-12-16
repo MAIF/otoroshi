@@ -86,4 +86,53 @@ the liste of plugins used on this route. Each plugin definition has the followin
 
 for more informations about the available plugins, go @ref[here](../plugins/built-in-plugins.md)
 
-Read more documentation on this topic: @ref[Routes and new engine](../topics/engine.md)
+The routes and new engine are the main works of the Otoroshi 16. They have been built with the experience of the service descriptors and have been improved to be simpler and more efficient.
+
+The structure of route is divided into three parts: a `frontend` which is the entry point of the route, a `backend` which represents the downstream service to be protected and joined, and a list of plugins to apply between them.
+
+## UI page
+
+You can find all routes [here](http://otoroshi.oto.tools:8080/bo/dashboard/routes)
+
+## The frontend node
+
+A route supports a list of entry points named `domains`. Each domain have to be set without schema and port (example: foo.oto.tools), but can be suffixed by a path that will be match by Otoroshi (example: foo.oto.toos/bar).
+
+These entry points can be restricted on specific http `methods` and only recheable with a list of `headers` and `query` params. 
+
+Consider the following example. We have exposed an entry point, which matches the `foo.oto.tools` domain only if the incoming request contains the headers and query params listed below. We only allow the GET and POST http methods.
+
+````json
+{
+  "domains": ["foo.oto.tools/"],
+  "strip_path": true,
+  "exact": false,
+  "headers": {
+    "foo": "bar"
+  },
+  "query": {
+    "foo-query": "foo-bar"
+  },
+  "methods": [
+    "GET",
+    "POST"
+  ]
+}
+````
+
+The last field is named `exact`. If enabled, the entry point will be only accessible via the full domain. As example, `foo.oto.tools/` will match while `foo.oto.tools/foo` will not match.
+
+## The backend node
+
+The backend is the node that describe the downstream service to join. If you want more informations about it, you can read the @ref:[dedicated page](./backends.md)
+
+## Plugins: the way to only used the necessary
+
+The main difference between routes and services descriptors are meaning to describe them. By default, a new route is completely lacking of plugins. Thus, the overhead added by the new Otoroshi engine have been drastically reduced. 
+
+The other advantage is to be fully hot-configurable. You can edit any routes from the UI or from the admin API, and after few seconds, the incomning requests on the changed routes will be impacted.
+
+The routes supports the legacy plugins and the new plugins. The legacy plugins can be used to ensure the compatibility with the past and to support migration from services descriptors. We encourage you to use the new plugins as much as possible.
+
+
+
