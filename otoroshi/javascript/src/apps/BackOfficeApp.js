@@ -46,6 +46,7 @@ import { ResourceLoaderPage } from '../pages/ResourceLoaderPage';
 import RouteDesignerPage from '../pages/RouteDesigner';
 import { BackendsPage } from '../pages/BackendsPage';
 import { MetricsPage } from '../pages/MetricsPage';
+import { FeaturesPage } from '../pages/FeaturesPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -414,6 +415,10 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/groups"
                           component={(props) => this.decorate(GroupsPage, props)}
+                        />
+                        <Route
+                          path="/features"
+                          component={(props) => this.decorate(FeaturesPage, props)}
                         />
 
                         <Route

@@ -102,11 +102,22 @@ export function DefaultSidebar(props) {
       <li className="nav-item mt-2">
         <Link
           to="/tcp/services"
-          className={`nav-link ${rootClassName('tcp-services')}`}
+          className={`nav-link ${rootClassName('tcp/services')}`}
           {...createTooltip('List all Tcp services declared in Otoroshi')}
           onClick={clearSidebar}>
           <h3 className="p-2 m-0" title="TCP SERVICES">
             <i className="fas fa-cubes" /> TCP SERVICES
+          </h3>
+        </Link>
+      </li>
+      <li className="nav-item mt-2">
+        <Link
+          to="/features"
+          className={`nav-link ${rootClassName('features')}`}
+          {...createTooltip('All features')}
+          onClick={clearSidebar}>
+          <h3 className="p-2 m-0">
+            <i className="fas fa-list" /> FEATURES
           </h3>
         </Link>
       </li>
