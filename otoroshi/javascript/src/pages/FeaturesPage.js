@@ -22,7 +22,7 @@ const graph = [
     title: 'Create',
     description: 'Create otoroshi resources',
     features: [
-      { title: 'Services', description: 'All your service descriptors', img: 'service', display: true },
+      { title: 'Services', description: 'All your service descriptors', img: 'services', display: true },
       { title: 'Routes', description: 'All your routes', img: 'routes', display: true },
       { title: 'Backends', description: 'All your route backends', img: 'backend', display: true },
       { title: 'Apikeys', description: 'All your apikeys', img: 'apikeys', display: true },
@@ -77,12 +77,12 @@ const graph = [
       {
         title: 'Admins sessions',
         description: 'List all the connected administrator sessions',
-        img: 'admin-sessions'
+        img: 'auth-sessions'
       },
       {
         title: 'Auth. module sessions',
         description: 'List all the connected user sessions from auth. modules',
-        img: 'auth-sessions'
+        img: 'admin-sessions'
       }
     ]
   },
@@ -213,17 +213,19 @@ export class FeaturesPage extends Component {
     return <>
       {graph.map(({ title, description, features = [] }) => {
         return <Features title={title} description={description} key={title}>
-          {features.map(({
-            title = "A module",
-            description = 'A dummy description just to check the view',
-            img,
-            absoluteImg,
-            link = "" }) => <Feature
-              title={title}
-              description={description}
-              img={absoluteImg || `/assets/images/svgs/${img}.svg`}
-              link={link}
-            />)}
+          {features
+            .filter(d => d.display === undefined || d.display)
+            .map(({
+              title = "A module",
+              description = 'A dummy description just to check the view',
+              img,
+              absoluteImg,
+              link = "" }) => <Feature
+                title={title}
+                description={description}
+                img={absoluteImg || `/assets/images/svgs/${img}.svg`}
+                link={link}
+              />)}
         </Features>
       })}
     </>
