@@ -224,7 +224,7 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => this.routeTo('/jwt-verifiers'),
-          env: <span className="fas fa-key" />,
+          env: <span className="fas fa-circle-check" />,
           label: 'Global Jwt Verifiers',
           value: 'Jwt-Verifiers',
         });
@@ -858,7 +858,7 @@ export class TopBar extends Component {
                       <span className="fas fa-microchip" /> Backends
                     </Link>
                     <Link to="/jwt-verifiers" className="dropdown-item">
-                      <span className="fas fa-key" /> Jwt Verifiers
+                      <span className="fas fa-circle-check" /> Jwt Verifiers
                     </Link>
                     <Link to="/auth-configs" className="dropdown-item">
                       <span className="fas fa-lock" /> Authentication configs

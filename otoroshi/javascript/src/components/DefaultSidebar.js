@@ -68,6 +68,39 @@ export function DefaultSidebar(props) {
       </li>
       <li className="nav-item mt-2">
         <Link
+          to="/certificates"
+          className={`nav-link ${rootClassName('certificates')}`}
+          {...createTooltip('List all certificates declared in Otoroshi')}
+          onClick={clearSidebar}>
+          <h3 className="p-2 m-0">
+            <i className="fas fa-certificate" /> CERTIFICATES
+          </h3>
+        </Link>
+      </li>
+      <li className="nav-item mt-2">
+        <Link
+          to="/auth-configs"
+          className={`nav-link ${rootClassName('auth-configs')}`}
+          {...createTooltip('List all auth. modules declared in Otoroshi')}
+          onClick={clearSidebar}>
+          <h3 className="p-2 m-0">
+            <i className="fas fa-lock" /> AUTH. MODULES
+          </h3>
+        </Link>
+      </li>
+      <li className="nav-item mt-2">
+        <Link
+          to="/jwt-verifiers"
+          className={`nav-link ${rootClassName('jwt-verifiers')}`}
+          {...createTooltip('List all jwt verifiers declared in Otoroshi')}
+          onClick={clearSidebar}>
+          <h3 className="p-2 m-0">
+            <i className="fas fa-circle-check" /> JWT VERIFIERS
+          </h3>
+        </Link>
+      </li>
+      <li className="nav-item mt-2">
+        <Link
           to="/tcp/services"
           className={`nav-link ${rootClassName('tcp-services')}`}
           {...createTooltip('List all Tcp services declared in Otoroshi')}
