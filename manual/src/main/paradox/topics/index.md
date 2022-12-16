@@ -18,7 +18,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Otoroshi tunnels](./tunnels.md)
 * @ref:[Relay routing](./relay-routing.md)
 * @ref:[Alternative http backend](./netty-server.md)
-* @ref:[HTTP3](./http3.md)
+* @ref:[HTTP3 support](./http3.md)
 
 @@@ index
 
@@ -38,6 +38,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [Otoroshi tunnels](./tunnels.md)
 * [Relay routing](./relay-routing.md)
 * [Alternative http backend](./netty-server.md)
-* [HTTP3](./http3.md)
+* [HTTP3 support](./http3.md)
   
 @@@
