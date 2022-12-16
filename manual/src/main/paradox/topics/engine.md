@@ -1,12 +1,13 @@
 # Proxy engine
 
 Starting from the `1.5.3` release, otoroshi offers a new plugin that implements the next generation of the proxy engine. 
-This engine has been designed based on our 5 years experience building, maintaining and running the previous one. 
+This engine has been designed based on our 5 years experience building, maintaining and running the previous one.
 It tries to fix all the drawback we may have encountered during those years and highly improve performances, user experience, reporting and debugging capabilities. 
 The new engine is fully plugin oriented in order to spend CPU cycles only on useful stuff.
 You can enable this plugin only on some domain names so you can easily A/B test the new engine.
 The new proxy engine is designed to be more reactive and more efficient generally.
 It is also designed to be very efficient on path routing where it wasn't the old engines strong suit.
+Starting from version `16.0.0`, this engine will be enabled by default on any new otoroshi cluster. In a future version, the engine will be enabled for any new and exisiting otoroshi cluster.
 
 ## Enabling the new engine
 
