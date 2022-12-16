@@ -260,6 +260,12 @@ export class TopBar extends Component {
           label: 'Connected tunnels',
           value: 'tunnels-view',
         });
+        options.push({
+          action: () => this.routeTo('/features'),
+          env: <span className="fab fa-grip" />,
+          label: 'Features',
+          value: 'features',
+        });
         if (this.props.env.scriptingEnabled === true) {
           options.push({
             action: () => this.routeTo('/plugins'),

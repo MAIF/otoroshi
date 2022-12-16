@@ -110,7 +110,7 @@ export function DefaultSidebar(props) {
           </h3>
         </Link>
       </li>
-      {props.env && props.env.env === "dev" && (
+      {props.env && props.env.superAdmin && (
         <li className="nav-item mt-2">
           <Link
             to="/features"
