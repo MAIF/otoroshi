@@ -26,7 +26,7 @@ const graph = [
       { title: 'Apikeys', description: 'All your apikeys', img: 'apikeys', display: true },
       { title: 'Certificates', description: 'All your certificates', img: 'certificates', display: true },
       { title: 'JWT verifiers', description: 'All your jwt verifiers', img: 'jwt', display: true },
-      { title: 'Auth. modules', description: 'All your authentication modules', img: 'private-app', display: true },
+      { title: 'Auth. modules', description: 'All your authentication modules', img: 'private-apps', display: true },
       { title: 'TCP services', description: 'All your TCP services', img: 'tcp', display: true },
       { title: 'Organizations', description: 'All your organizations', img: 'orga', display: true },
       { title: 'Teams', description: 'All your temas', img: 'teams', display: true },
@@ -91,7 +91,7 @@ const graph = [
       {
         title: 'Authentication modules',
         description: 'Manage the access to Otoroshi UI and protect your routes with authentication modules.',
-        img: 'private-app'
+        img: 'private-apps'
       },
       {
         title: 'Jwt verifiers',
