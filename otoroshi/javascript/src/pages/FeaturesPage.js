@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 const graph = [
   {
     title: 'Tooling',
+    description: 'Some tools to help you with otoroshi',
     features: [
       {
         title: 'Resource loader',
@@ -16,7 +17,29 @@ const graph = [
     ]
   },
   {
+    title: 'Create',
+    description: 'Create otoroshi resources',
+    features: [
+      { title: 'Services', description: 'All your service descriptors', img: 'service', display: true },
+      { title: 'Routes', description: 'All your routes', img: 'routes', display: true },
+      { title: 'Backends', description: 'All your route backends', img: 'backend', display: true },
+      { title: 'Apikeys', description: 'All your apikeys', img: 'apikeys', display: true },
+      { title: 'Certificates', description: 'All your certificates', img: 'certificates', display: true },
+      { title: 'JWT verifiers', description: 'All your jwt verifiers', img: 'jwt', display: true },
+      { title: 'Auth. modules', description: 'All your authentication modules', img: 'private-app', display: true },
+      { title: 'TCP services', description: 'All your TCP services', img: 'tcp', display: true },
+      { title: 'Organizations', description: 'All your organizations', img: 'orga', display: true },
+      { title: 'Teams', description: 'All your temas', img: 'teams', display: true },
+      { title: 'Groups', description: 'All your service/route groups', img: 'groups', display: true },
+      { title: 'Data exporters', description: 'All your data exporters', img: 'exporters', display: true },
+      { title: 'Administrators', description: 'All your otoroshi administrators', img: 'admins', display: true },
+      { title: 'Scripts', description: 'All your live scripts', img: 'scripts', display: false },
+      { title: 'Route compositions', description: 'routescomp', img: 'routescomp', display: false },
+    ]
+  },
+  {
     title: 'Analytics',
+    description: 'Everything about everything on your otoroshi cluster',
     features: [
       {
         title: 'Analytics',
@@ -30,7 +53,7 @@ const graph = [
       },
       {
         title: 'Events log',
-        description: 'Everything that happens on your otoroshi cluster',
+        description: 'Everything that is happening on your otoroshi cluster',
         img: 'events'
       },
       {
@@ -47,6 +70,7 @@ const graph = [
   },
   {
     title: 'Sessions',
+    description: 'Manage the sessions of your users here',
     features: [
       {
         title: 'Admins sessions',
@@ -58,27 +82,6 @@ const graph = [
         description: 'List all the connected user sessions from auth. modules',
         img: 'auth-sessions'
       }
-    ]
-  },
-  {
-    title: 'Create',
-    description: 'Create otoroshi resoources',
-    features: [
-      { title: 'services', description: 'All your service descriptors', img: 'service', display: true },
-      { title: 'routes', description: 'All your routes', img: 'routes', display: true },
-      { title: 'backends', description: 'All your route backends', img: 'backend', display: true },
-      { title: 'apikeys', description: '', img: 'apikeys', display: true },
-      { title: 'certificates', description: '', img: 'certificates', display: true },
-      { title: 'jwt verifiers', description: '', img: 'jwt', display: true },
-      { title: 'auth modules', description: '', img: 'auth', display: true },
-      { title: 'tcp services', description: '', img: 'tcp', display: true },
-      { title: 'organizations', description: '', img: 'orga', display: true },
-      { title: 'teams', description: '', img: 'teams', display: true },
-      { title: 'groups', description: '', img: 'groups', display: true },
-      { title: 'exporters', description: '', img: 'exporters', display: true },
-      { title: 'scripts', description: '', img: 'scripts', display: false },
-      { title: 'admins', description: '', img: 'admins', display: true },
-      { title: 'route-compositions', description: 'routescomp', img: '', display: false },
     ]
   },
   {
@@ -109,6 +112,7 @@ const graph = [
   },
   {
     title: 'Networking',
+    description: 'Everything network related',
     features: [
       {
         title: 'Tunnels',
@@ -128,7 +132,8 @@ const graph = [
     ]
   },
   {
-    title: 'Global configuration',
+    title: 'Configuration',
+    description: 'Configure otoroshi',
     features: [
       {
         title: 'Danger zone',

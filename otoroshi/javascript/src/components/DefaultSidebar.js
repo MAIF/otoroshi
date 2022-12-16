@@ -110,17 +110,19 @@ export function DefaultSidebar(props) {
           </h3>
         </Link>
       </li>
-      <li className="nav-item mt-2">
-        <Link
-          to="/features"
-          className={`nav-link ${rootClassName('features')}`}
-          {...createTooltip('All features')}
-          onClick={clearSidebar}>
-          <h3 className="p-2 m-0">
-            <i className="fas fa-list" /> FEATURES
-          </h3>
-        </Link>
-      </li>
+      {props.env && props.env.env === "dev" && (
+        <li className="nav-item mt-2">
+          <Link
+            to="/features"
+            className={`nav-link ${rootClassName('features')}`}
+            {...createTooltip('All features')}
+            onClick={clearSidebar}>
+            <h3 className="p-2 m-0">
+              <i className="fas fa-list" /> FEATURES
+            </h3>
+          </Link>
+        </li>
+      )}
     </ul>
   );
 }
