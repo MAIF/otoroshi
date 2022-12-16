@@ -11,11 +11,10 @@ You can find all backends [here](http://otoroshi.oto.tools:8080/bo/dashboard/bac
 ## Global Properties
 
 * `Targets root path`: the path to add to each request sent to the downstream service 
-* `Full path rewrite`: When enabled, the incoming uri will be forwarded to the downstream service
-````sh
-if enabled: $scheme://$host$root$uri
-else: $scheme://$host$root
-````
+* `Full path rewrite`: When enabled, the path of the uri will be totally stripped and replaced by the value of `Targets root path`. If this value contains expression language expressions, they will be interpolated before forwading the request to the backend. When combined with things like named path parameters, it is possible to perform a ful url rewrite on the target path like
+
+* input: `subdomain.domain.tld/api/users/$id<[0-9]+>/bills`
+* output: `target.domain.tld/apis/v1/basic_users/${req.pathparams.id}/all_bills`
 
 ## Targets
 
@@ -26,8 +25,8 @@ The list of target that Otoroshi will proxy and expose through the subdomain def
 * `Port`:  the port of the target
 * `TLS`: call the target via https
 * `Weight`: the weight of the target. This valus is used by the load balancing strategy to dispatch the traffic between all targets
-* `Predicate`: ???
-* `Protocol`:  protocol used to call the target, can be only equals to HTTP/1.0, HTTP/1.1, HTTP/2.0 or HTTP/3.0
+* `Predicate`: a function to filter targets from the target list based on a pre-defined predicate
+* `Protocol`:  protocol used to call the target, can be only equals to `HTTP/1.0`, `HTTP/1.1`, `HTTP/2.0` or `HTTP/3.0`
 * `IP address`: the ip address of the target
 * `TLS Settings`:
     * `Enabled`: enable this section
@@ -56,10 +55,10 @@ The list of target that Otoroshi will proxy and expose through the subdomain def
 * `idle timeout`: specify how long each connection can stay in idle state at most in milliseconds (default value 60000)
 * `call timeout`: Specify how long each call should last at most in milliseconds. (default value 30000)
 * `call and stream timeout`: specify how long each call should last at most in milliseconds for handling the request and streaming the response. (default value 120000)
-* `initial delay`: ??? (default value 50)
+* `initial delay`: delay after which first retry will happens if needed (default value 50)
 * `sample interval`: specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor (default value 2000)
-* `cache connection`: ??? (default value false)
-* `cache connection queue size`: ??? (default value 2048)
+* `cache connection`: try to keep tcp connection alive between requests (default value false)
+* `cache connection queue size`: queue size for an open tcp connection (default value 2048)
 * `custom timeouts` (list): 
     * `Path`: the path on which the timeout will be active
     * `Client connection timeout`: specify how long each connection should last at most in milliseconds.
@@ -75,6 +74,3 @@ The list of target that Otoroshi will proxy and expose through the subdomain def
 * `protocol`: protocol of proxy behind the identify provider
 * `principal`: user of proxy 
 * `password`: password of proxy
-* `NTLM domain`:  ???
-* `encoding`: ???
-* `non proxy hosts`: ???
