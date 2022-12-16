@@ -277,12 +277,108 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#backends" name="backends" class="anchor"><span class="anchor-link"></span></a>Backends</h1>
 <p>A backend represent a list of server to target in a route and its client settings, load balancing, etc.</p>
-<p>Read more documentation on this topic: <a href="../topics/engine.html">Backends and new engine</a></p>
+<p>The backends can be define directly on the route designer or on their dedicated page in order to be reusable.</p>
+<h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
+<p>You can find all backends <a href="http://otoroshi.oto.tools:8080/bo/dashboard/backend">here</a></p>
+<h2><a href="#global-properties" name="global-properties" class="anchor"><span class="anchor-link"></span></a>Global Properties</h2>
+<ul>
+  <li><code>Targets root path</code>: the path to add to each request sent to the downstream service</li>
+  <li>
+  <p><code>Full path rewrite</code>: When enabled, the incoming uri will be forwarded to the downstream service</p>
+  <pre class="prettyprint"><code class="language-sh">if enabled: $scheme://$host$root$uri
+else: $scheme://$host$root
+</code></pre></li>
+</ul>
+<h2><a href="#targets" name="targets" class="anchor"><span class="anchor-link"></span></a>Targets</h2>
+<p>The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures.</p>
+<ul>
+  <li><code>id</code>: unique id of the target</li>
+  <li><code>Hostname</code>: the hostname of the target without scheme</li>
+  <li><code>Port</code>: the port of the target</li>
+  <li><code>TLS</code>: call the target via https</li>
+  <li><code>Weight</code>: the weight of the target. This valus is used by the load balancing strategy to dispatch the traffic between all targets</li>
+  <li><code>Predicate</code>: ???</li>
+  <li><code>Protocol</code>: protocol used to call the target, can be only equals to HTTP/1.0, HTTP/1.1, HTTP/2.0 or HTTP/3.0</li>
+  <li><code>IP address</code>: the ip address of the target</li>
+  <li><code>TLS Settings</code>:
+    <ul>
+      <li><code>Enabled</code>: enable this section</li>
+      <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
+      <li><code>TrustAll</code>: allows any server certificates even the self-signed ones</li>
+      <li><code>Client certificates</code>: list of client certificates used to communicate with the downstream service</li>
+      <li><code>Trusted certificates</code>: list of trusted certificates received from the downstream service</li>
+    </ul>
+  </li>
+</ul>
+<h2><a href="#heatlh-check" name="heatlh-check" class="anchor"><span class="anchor-link"></span></a>Heatlh check</h2>
+<ul>
+  <li><code>Enabled</code>: if enabled, the health check URL will be called at regular intervals</li>
+  <li><code>URL</code>: the URL to call to run the health check</li>
+</ul>
+<h2><a href="#load-balancing" name="load-balancing" class="anchor"><span class="anchor-link"></span></a>Load balancing</h2>
+<ul>
+  <li><code>Type</code>: the load balancing algorithm used</li>
+</ul>
+<h2><a href="#client-settings" name="client-settings" class="anchor"><span class="anchor-link"></span></a>Client settings</h2>
+<ul>
+  <li><code>backoff factor</code>: specify the factor to multiply the delay for each retry (default value 2)</li>
+  <li><code>retries</code>: specify how many times the client will retry to fetch the result of the request after an error before giving up. (default value 1)</li>
+  <li><code>max errors</code>: specify how many errors can pass before opening the circuit breaker (default value 20)</li>
+  <li><code>global timeout</code>: specify how long the global call (with retries) should last at most in milliseconds. (default value 30000)</li>
+  <li><code>connection timeout</code>: specify how long each connection should last at most in milliseconds. (default value 10000)</li>
+  <li><code>idle timeout</code>: specify how long each connection can stay in idle state at most in milliseconds (default value 60000)</li>
+  <li><code>call timeout</code>: Specify how long each call should last at most in milliseconds. (default value 30000)</li>
+  <li><code>call and stream timeout</code>: specify how long each call should last at most in milliseconds for handling the request and streaming the response. (default value 120000)</li>
+  <li><code>initial delay</code>: ??? (default value 50)</li>
+  <li><code>sample interval</code>: specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor (default value 2000)</li>
+  <li><code>cache connection</code>: ??? (default value false)</li>
+  <li><code>cache connection queue size</code>: ??? (default value 2048)</li>
+  <li><code>custom timeouts</code> (list):
+    <ul>
+      <li><code>Path</code>: the path on which the timeout will be active</li>
+      <li><code>Client connection timeout</code>: specify how long each connection should last at most in milliseconds.</li>
+      <li><code>Client idle timeout</code>: specify how long each connection can stay in idle state at most in milliseconds.</li>
+      <li><code>Client call and stream timeout</code>: specify how long each call should last at most in milliseconds for handling the request and streaming the response.</li>
+      <li><code>Call timeout</code>: Specify how long each call should last at most in milliseconds.</li>
+      <li><code>Client global timeout</code>: specify how long the global call (with retries) should last at most in milliseconds.</li>
+    </ul>
+  </li>
+</ul>
+<h2><a href="#proxy" name="proxy" class="anchor"><span class="anchor-link"></span></a>Proxy</h2>
+<ul>
+  <li><code>host</code>: host of proxy behind the identify provider</li>
+  <li><code>port</code>: port of proxy behind the identify provider</li>
+  <li><code>protocol</code>: protocol of proxy behind the identify provider</li>
+  <li><code>principal</code>: user of proxy</li>
+  <li><code>password</code>: password of proxy</li>
+  <li><code>NTLM domain</code>: ???</li>
+  <li><code>encoding</code>: ???</li>
+  <li><code>non proxy hosts</code>: ???</li>
+</ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../entities/organizations.html">Organizations</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../entities/backends.html#backends" class="header">Backends</a>
+  <ul>
+    <li><a href="../entities/backends.html#ui-page" class="header">UI page</a></li>
+    <li><a href="../entities/backends.html#global-properties" class="header">Global Properties</a></li>
+    <li><a href="../entities/backends.html#targets" class="header">Targets</a></li>
+    <li><a href="../entities/backends.html#heatlh-check" class="header">Heatlh check</a></li>
+    <li><a href="../entities/backends.html#load-balancing" class="header">Load balancing</a></li>
+    <li><a href="../entities/backends.html#client-settings" class="header">Client settings</a></li>
+    <li><a href="../entities/backends.html#proxy" class="header">Proxy</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
