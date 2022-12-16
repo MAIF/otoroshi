@@ -223,6 +223,12 @@ export class TopBar extends Component {
           value: 'Top-10-services',
         });
         options.push({
+          action: () => this.routeTo('/apikeys'),
+          env: <span className="fas fa-key" />,
+          label: 'Apikeys',
+          value: 'Apikeys',
+        });
+        options.push({
           action: () => this.routeTo('/jwt-verifiers'),
           env: <span className="fas fa-circle-check" />,
           label: 'Global Jwt Verifiers',
