@@ -4,7 +4,7 @@ A route is an unique routing rule based on hostname, path, method and headers th
 
 ## UI page
 
-You can find all backends [here](http://otoroshi.oto.tools:8080/bo/dashboard/backend)
+You can find all backends [here](http://otoroshi.oto.tools:8080/bo/dashboard/routes)
 
 ## Global Properties
 
