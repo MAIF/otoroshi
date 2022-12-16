@@ -8,10 +8,12 @@ const graph = [
     features: [
       {
         title: 'Resource loader',
+        img: 'resource-loader',
         description: 'Load one or more resources from text or files in one shot'
       },
       {
         title: 'Snow Monkey',
+        absoluteImg: '/assets/images/nihonzaru.svg',
         description: 'Create chaos in your routes and test your resilience'
       }
     ]
@@ -148,7 +150,7 @@ const Feature = ({ title, description, img, link }) => {
     className="d-flex"
     style={{
       backgroundColor: '#efefef',
-      boxShadow: '0 1px 3px rgba(25,25,25,.75)',
+      boxShadow: '0 1px 3px rgba(225,225,225,.75)',
       margin: '5px 0px',
       height: '100%',
       borderRadius: '12px',
@@ -167,7 +169,8 @@ const Feature = ({ title, description, img, link }) => {
       backgroundSize: 'contain',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
-      minHeight: 150
+      minHeight: 150,
+      margin: 12
     }}>
     </div>
     <div className="d-flex flex-column"
@@ -214,10 +217,11 @@ export class FeaturesPage extends Component {
             title = "A module",
             description = 'A dummy description just to check the view',
             img,
+            absoluteImg,
             link = "" }) => <Feature
               title={title}
               description={description}
-              img={`/assets/images/svgs/${img}.svg`}
+              img={absoluteImg || `/assets/images/svgs/${img}.svg`}
               link={link}
             />)}
         </Features>
