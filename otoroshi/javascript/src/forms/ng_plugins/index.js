@@ -69,6 +69,7 @@ import W3CTracing from './W3CTracing';
 import XForwardedHeaders from './XForwardedHeaders';
 import XmlToJsonRequest from './XmlToJsonRequest';
 import XmlToJsonResponse from './XmlToJsonResponse';
+import WasmQuery from './WasmQuery';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -143,4 +144,5 @@ export const Plugins = [
   XForwardedHeaders,
   XmlToJsonRequest,
   XmlToJsonResponse,
+  WasmQuery
 ];
