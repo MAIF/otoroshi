@@ -609,7 +609,7 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => this.routeTo('/features'),
-          env: <span className="fab fa-grip" />,
+          env: <span className="fas fa-grip" />,
           label: 'Features',
           value: 'features',
         });
