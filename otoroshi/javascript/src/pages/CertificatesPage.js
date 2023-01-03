@@ -902,7 +902,7 @@ export class CertificatesPage extends Component {
               <button
                 type="button"
                 onClick={this.createLetsEncrypt}
-                style={{ marginRight: 0 }}
+                style={{ marginLeft: '5px' }}
                 className="btn btn-primary">
                 <i className="fas fa-plus-circle" /> Let's Encrypt Certificate
               </button>
