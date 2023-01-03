@@ -3,14 +3,17 @@ export default {
   config_schema: {
     source: {
       type: 'string',
-      label: 'Source'
+      label: 'Source',
+      props: {
+        subTitle: `http://xxx.xxx or https://xxx.xxx or file://path or base64://encodedstring`
+      }
     },
     memoryPages: {
       type: 'number',
-      defaultValue: 4,
       label: 'Max number of pages',
       props: {
-        description: 'Configures memory for the Wasm runtime. Memory is described in units of pages (64KB) and represent contiguous chunks of addressable memory'
+        defaultValue: 4,
+        subTitle: 'Configures memory for the Wasm runtime. Memory is described in units of pages (64KB) and represent contiguous chunks of addressable memory'
       }
     },
     functionName: {
@@ -19,7 +22,7 @@ export default {
     },
     config: {
       label: 'Static configuration',
-      type: 'object',
+      type: 'object'
     },
     allowedHosts: {
       label: 'Allowed hosts',

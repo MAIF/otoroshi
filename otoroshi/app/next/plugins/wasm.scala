@@ -50,13 +50,7 @@ object WasmQueryConfig {
       case Success(value) => JsSuccess(value)
     }
 
-    override def writes(o: WasmQueryConfig): JsValue = Json.obj(
-      "source" -> o.source,
-      "memoryPages" -> o.memoryPages,
-      "functionName" -> o.functionName,
-      "config" -> o.config,
-      "allowedHosts" -> o.allowedHosts
-    )
+    override def writes(o: WasmQueryConfig): JsValue = o.json
   }
 }
 
@@ -65,8 +59,8 @@ class WasmQuery extends NgBackendCall {
   override def useDelegates: Boolean                       = false
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = false
-  override def name: String                                = "Wasm call module"
-  override def description: Option[String]                 = "This plugin can be used to launch a wasm file".some
+  override def name: String                                = "WASM Function"
+  override def description: Option[String]                 = "This plugin can be used to launch a WASM file".some
   override def defaultConfigObject: Option[NgPluginConfig] = WasmQueryConfig().some
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
@@ -121,7 +115,7 @@ class WasmQuery extends NgBackendCall {
       .getOrElse(WasmQueryConfig())
 
     getWasm(config)
-      .map { wasm =>
+      .flatMap { wasm =>
         val resolver = new WasmSourceResolver()
         val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
         val manifest = new Manifest(
@@ -134,13 +128,16 @@ class WasmQuery extends NgBackendCall {
         val context = new Context()
         val plugin = context.newPlugin(manifest, true)
 
-        val output = plugin.call(config.functionName, ctx.json.stringify)
+        ctx.wasmJson
+          .map(input => {
+            val output = plugin.call(config.functionName, input.stringify)
 
-        bodyResponse(
-          200,
-          Map("Content-Type" -> "application/json"),
-          output.byteString.chunks(16 * 1024)
-        )
+            bodyResponse(
+              200,
+              Map("Content-Type" -> "application/json"),
+              output.byteString.chunks(16 * 1024)
+            )
+          })
       }
   }
 }
