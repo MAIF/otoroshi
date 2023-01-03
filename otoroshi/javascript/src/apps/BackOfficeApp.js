@@ -163,19 +163,20 @@ class BackOfficeAppContainer extends Component {
                 <div className="sidebar-content">
                   {this.state.env && <GlobalTenantSelector env={this.state.env} />}
                   <ul className="nav flex-column sidebar-bloc">
-                    <li>
-                      <h2 className="m-0">
+                    <li className="nav-item">
                         <Link
+                        className="nav-link"
                           to="/"
                           {...createTooltip('Home dashboard of Otoroshi displaying global metrics')}
                           onClick={() => {
                             DynamicTitle.setContent(null);
                             DynamicSidebar.setContent(null);
                           }}>
+                            <h3 className="p-2 m-0">
                           <i className="fas fa-tachometer-alt" />
                           Dashboard
+                      </h3>
                         </Link>
-                      </h2>
                     </li>
                   </ul>
                   <DynamicSidebar />

@@ -29,23 +29,6 @@
   margin-top: 200px;
 }
 
-.sidebar{
-  .nav > li > a {
-    // transition-duration: 1s;
-    padding: 3px 0;
-    // &:focus,
-    &:hover {
-      background-color: $fondGrisclairSurvolMenu;
-      color: #fff;
-      border-color: var(--color-primary);
-      border-radius: 5px;
-      // margin-left: 5px;
-      // margin-right: 5px;
-      // padding-left: 31px;
-    }
-  }
-}
-
 .nav >li >a:focus {
   background: none;
 }
