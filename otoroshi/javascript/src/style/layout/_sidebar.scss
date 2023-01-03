@@ -13,24 +13,24 @@
   overflow-y: auto;
   border-right: none;
   transition: all 150ms ease;
-
+  
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none;
-
-  .active a {
+  
+  
+  a.active h3{
     color: var(--color-primary);
   }
-
-  a {
-    color: var(--color_level1);
-  }
-
+  
   h2 a,
   h3 {
-    color: var(--color-primary);
+    color: var(--color_level1);
     font-size: 15px;
     text-transform: uppercase;
     margin-left: 10px;
+    &:hover{
+      color: var(--color_level3);
+    }
   }
 
 
@@ -51,8 +51,8 @@
   }
 
   .sidebar-bloc {
-    margin-right: -21px;
-    margin-left: -20px;
+    // margin-right: -21px;
+    margin-left: -5px;
     margin-bottom: 20px;
 
     > li > a {

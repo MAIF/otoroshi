@@ -10,11 +10,10 @@ export class ServiceSidebar extends Component {
     const base = `/bo/dashboard/lines/${env}/services/${serviceId}/`;
     const className = (part) => (`${base}${part}` === pathname ? 'active' : '');
     return (
-      <ul className="nav flex-column sidebar-bloc">
+      <ul className="nav flex-column">
         <li className="nav-item">
           <Link
             to={`/lines/${env}/services/${serviceId}`}
-            style={{ color: '#f9b000' }}
             className="active">
             <h3 {...createTooltip(`Back to the service descriptor of ${name}`)} className="p-2 m-0">
               <i className="fas fa-cube" /> {name}

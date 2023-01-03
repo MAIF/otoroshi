@@ -55,19 +55,20 @@ export default ({ route, setSidebarContent }) => {
   if (location.pathname.endsWith('/new')) return null;
 
   return (
-      <ul className="nav flex-column sidebar-bloc">
+      <ul className="nav flex-column">
         <li
-          className="nav-item mb-1"
-          onClick={() => history.push(`/${entity.link}/${route.id}?tab=flow`)}
-          style={{ cursor: 'pointer' }}>
-          <h3>
-            <span className="fas fa-road" /> {route.name}
-          </h3>
+          className="nav-item"
+          onClick={() => history.push(`/${entity.link}/${route.id}?tab=flow`)}>
+          <a className="active">
+            <h3>
+              <i className="fas fa-road" /> {route.name}
+            </h3>
+          </a>
         </li>
         {LINKS(entity.link, route).map(({ to, icon, title, tooltip, tab }) => (
-          <li className="nav-item" key={title}>
+          <li className="nav-item ms-3" key={title}>
             <Link to={to} {...(tooltip || {})} className={`nav-link ${isActive(tab)}`}>
-              <h3 className={`ms-3 p-2 m-0 ${isActive(tab)}`}>
+              <h3 className={`p-2 m-0 ${isActive(tab)}`}>
                 <i className={`fas ${icon}`} /> {title}
               </h3>
             </Link>
