@@ -115,6 +115,7 @@ export function DefaultSidebar(props) {
           to="/features"
           className={`nav-link ${rootClassName('features')}`}
           {...createTooltip('All features')}
+          style={{ marginTop: 30 }}
           onClick={clearSidebar}>
           <h3 className="p-2 m-0">
             <i className="fas fa-grip" /> FEATURES
