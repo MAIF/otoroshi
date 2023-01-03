@@ -611,11 +611,11 @@ class RouteDesigner extends React.Component {
   patchStyle = (applyPatch) => {
     if (applyPatch) {
       document.getElementsByClassName('main')[0].classList.add('patch-main');
-      [...document.getElementsByClassName('row')].map((r) => r.classList.add('patch-row', 'g-0'));
+      [...document.getElementsByClassName('row')].map((r) => r.classList.add('patch-row'));
     } else {
       document.getElementsByClassName('main')[0].classList.remove('patch-main');
       [...document.getElementsByClassName('row')].map((r) =>
-        r.classList.remove('patch-row', 'g-0')
+        r.classList.remove('patch-row')
       );
     }
   };
