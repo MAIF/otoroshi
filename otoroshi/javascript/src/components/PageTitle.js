@@ -5,9 +5,9 @@ export default function PageTitle({ title, children, style = {} }) {
     <div
       className="page-header_title d-flex align-item-center justify-content-between ms-0 mb-3"
       style={style}>
-      <h4 className="flex" style={{ margin: 0, alignSelf: 'center' }}>
+      <h3 className="flex" style={{ margin: 0, alignSelf: 'center' }}>
         {title}
-      </h4>
+      </h3>
       <div className="d-flex align-item-center justify-content-between flex">{children}</div>
     </div>
   );
