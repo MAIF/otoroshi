@@ -68,14 +68,12 @@ The first step is to apply a little change on the previous configuration.
 
 > Note : an Otoroshi service is called **a private app** when it is protected by an Authentication module.
 
-We can set the Authentication module on the service.
+We can set the Authentication module on your route.
 
-1. Navigate to any created service
-2. Scroll to `Authentication` section
-3. Enable `Enforce user authentication`
-4. Select your Authentication config inside the list
-5. Enable `Strict mode`
-6. Don't forget to save your configuration.
-7. Now you can try to call your defined service and see the Auth0 login page appears.
+1. Navigate to any created route
+2. Search in the list of plugins the plugin named `Authentication`
+3. Select your Authentication config inside the list
+4. Don't forget to save your configuration.
+5. Now you can try to call your route and see the Auth0 login page appears.
 
 

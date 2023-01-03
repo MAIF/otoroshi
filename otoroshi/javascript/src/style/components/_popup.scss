@@ -8,9 +8,9 @@
   z-index: 100000;
   color: white;
   display: flex;
-  flex-direction: column;
   padding-left: 10px;
   border-bottom-left-radius: 4px;
+  justify-content: space-around;
   a,a:hover{
     color : #856404;
   }

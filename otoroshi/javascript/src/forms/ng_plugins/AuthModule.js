@@ -9,7 +9,7 @@ export default {
       type: 'AuthenticationWizard',
       props: {
         componentLauncher: SelectorWizardLauncher,
-        componentLauncherProps: {
+        componentsProps: {
           entityName: 'Authentication configuration',
           entityField: 'authentication',
           findById: findAuthConfigById,

@@ -51,7 +51,7 @@ class NgPluginDocumentationGenerator(docPath: String) {
     } getOrElse Seq.empty[String]
 
   def ensureRootDir(): File = {
-    val root = new File(docPath + "/src/main/paradox/next")
+    val root = new File(docPath + "/src/main/paradox/plugins")
     if (!root.exists()) {
       root.mkdirs()
     }

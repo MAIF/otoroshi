@@ -12,6 +12,9 @@ import {
   RangeTextInput,
 } from './inputs';
 
+// import { Form, type } from '@maif/react-forms';
+// import '@maif/react-forms/lib/index.css'
+
 export class SnowMonkeyConfig extends Component {
   state = {
     config: this.props.config,
@@ -37,6 +40,22 @@ export class SnowMonkeyConfig extends Component {
 
   render() {
     if (!this.state.config) return null;
+    // const flow = ['includeUserFacingDescriptors'];//, 'dryRun', 'timesPerDay', 'outageStrategy', 'stopTime']
+    // const schema = {
+    //   includeUserFacingDescriptors: {
+    //     type: type.bool,
+    //     label: 'includeUserFacingDescriptors',
+    //     help: "includeUserFacingDescriptors",
+    //     className: "input-number"
+    //   },
+    // }
+    // return (
+    //   <Form
+    //     schema={schema}
+    //     flow={flow}
+    //     onSubmit={item => console.log({ item })}
+    //   />
+    // )
     return [
       <form className="form-horizontal" style={{ marginRight: 15 }}>
         <BooleanInput

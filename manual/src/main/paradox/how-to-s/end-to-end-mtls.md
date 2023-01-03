@@ -236,13 +236,13 @@ Download the latest version of the Otoroshi jar and run it like
 
 and log into otoroshi with the tuple `admin@otoroshi.io / password` displayed in the logs. 
 
-Once logged in, navigate to the services pages and create a new item.
+Once logged in, navigate to the routes page and create a new route.
 
-* Jump to the `Service exposition settings` and add `http://api.frontend.oto.tools` as `Exposed domain`. 
-* Navigate to the `Service targets` and add the following url `https://api.backend.oto.tools:8444/` to redirect our call to the previous created backend. 
-* End this step by exposing the service as `Public UI` on the `URL Patterns` section.
+* Set a name then validate the creation
+* On frontend node, add `api.frontend.oto.tools`  in the list of domains
+* On backend node, replace the target with `api.backend.oto.tools` as hostname and `8444` as port. 
 
-and test it
+Save the route and try to call it.
 
 ```sh
 curl 'http://api.frontend.oto.tools:8080/'
@@ -253,13 +253,13 @@ This should output :
 {"Otoroshi-Error": "Something went wrong, you should try later. Thanks for your understanding."}
 ```
 
-you should get an error due to the fact that Otoroshi doesn't know about the server certificate or the client certificate expected by the server.
+you should get an error due to the fact that Otoroshi doesn't know about the server certificate and the client certificate expected by the server.
 
-We have to add the client certificate for `https://api.backend.oto.tools` to Otoroshi. 
+We must declare the client and server certificates for `https://api.backend.oto.tools` to Otoroshi. 
 
-Go to http://otoroshi.oto.tools:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./client/_.backend.oto.tools.cer` and `./client/_.backend.oto.tools.key` respectively in `Certificate full chain` and `Certificate private key`.
+Go to the [certificates page](http://otoroshi.oto.tools:8080/bo/dashboard/certificates) and create a new item. Drag and drop the content of the `./client/_.backend.oto.tools.cer` and `./client/_.backend.oto.tools.key` files, respectively in `Certificate full chain` and `Certificate private key`.
 
-If you don't want to bother with UI copy/paste, you can use the import bundle api endpoint to create an otoroshi certificate automatically from a PEM bundle.
+If you prefer to use the API, you can create an Otoroshi certificate automatically from a PEM bundle.
 
 ```sh
 cat ./server/_.backend.oto.tools.cer ./ca/ca-backend.cer ./server/_.backend.oto.tools.key | curl \
@@ -269,20 +269,9 @@ cat ./server/_.backend.oto.tools.cer ./ca/ca-backend.cer ./server/_.backend.oto.
   http://otoroshi-api.oto.tools:8080/api/certificates/_bundle 
 ```
 
-and retry the following curl command 
-
-```sh
-curl 'http://api.frontend.oto.tools:8080/'
-```
-the output should be
-
-```json
-{"message":"Hello World!"}
-```
-
 now we have to expose `https://api.frontend.oto.tools:8443` using otoroshi. 
 
-Go to http://otoroshi.oto.tools:8080/bo/dashboard/certificates and create a new item. Copy and paste the content of `./server/_.frontend.oto.tools.cer` and `./server/_.frontend.oto.tools.key` respectively in `Certificate full chain` and `Certificate private key`.
+Create a second item. Copy and paste the content of `./server/_.frontend.oto.tools.cer` and `./server/_.frontend.oto.tools.key` respectively in `Certificate full chain` and `Certificate private key`.
 
 If you don't want to bother with UI copy/paste, you can use the import bundle api endpoint to create an otoroshi certificate automatically from a PEM bundle.
 
@@ -294,7 +283,18 @@ cat ./server/_.frontend.oto.tools.cer ./ca/ca-frontend.cer ./server/_.frontend.o
   http://otoroshi-api.oto.tools:8080/api/certificates/_bundle
 ```
 
-and try the following command
+Once created, go back to your route. On the target of the backend node, we have to enable the custom Otoroshi TLS.
+
+* Click on the backend node
+* Click on your target
+* Click on the Show advanced settings button
+* Click on Custom TLS setup
+* Enable the section
+* In the list of certificates, select the backend certificate
+* In the list of trusted certificates, select the frontend certificate
+* Save your route
+ 
+Try the following command
 
 ```sh
 curl --cacert ./ca/ca-frontend.cer 'https://api.frontend.oto.tools:8443/'
@@ -305,7 +305,9 @@ the output should be
 {"message":"Hello World!"}
 ```
 
-now we have to enforce the fact that we want client certificate for `api.frontend.oto.tools`. To do that, we have to add a `Client Validator Only` plugin on the `api.frontend.oto.tools` service. Scroll to the last section called `Plugins` and select the `Client validator only` in the list.
+Now we want to enforce the fact that we want client certificate for `api.frontend.oto.tools`. 
+
+Search in the list of plugins and add the `Client Certificate Only` plugin to your route.
 
 now if you retry 
 
@@ -318,7 +320,7 @@ the output should be
 {"Otoroshi-Error":"bad request"}
 ```
 
-you should get an error because no client cert. is passed with the request. But if you pass the `./client/_.frontend.oto.tools.csr` client cert and the key in your curl call
+you should get an error because no client certificate is passed with the request. But if you pass the `./client/_.frontend.oto.tools.csr` client cert and the key in your curl call
 
 ```sh
 curl 'https://api.frontend.oto.tools:8443' \
@@ -334,11 +336,11 @@ the output should be
 
 ### Client certificate matching plugin
 
-Otoroshi can restrict and check all incoming client certificates on a service.
+Otoroshi can restrict and check all incoming client certificates on a route.
 
-Scroll to the `Plugins` section and select the `Client certificate matching` plugin. Then, click on the `show config. panel` and inject the default configuration of the plugin (by clicking on `Inject default config.`).
+Search in the list of plugins the `Client certificate matching` plugin and add it the the flow.
 
-Save the service and retry your call again.
+Save the route and retry your call again.
 
 ```sh
 curl 'https://api.frontend.oto.tools:8443' \

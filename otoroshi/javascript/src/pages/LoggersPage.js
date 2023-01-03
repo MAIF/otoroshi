@@ -37,7 +37,7 @@ export class LoggersPage extends Component {
     { title: 'Name', filterId: 'name', content: (item) => item.name },
     {
       title: 'Level',
-      filterId: 'level', 
+      filterId: 'level',
       style: { textAlign: 'center', width: 100 },
       content: (item) => item.level,
       cell: (value, original, table) => <LogLevel key={value} logger={original} table={table} />,

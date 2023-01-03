@@ -5,6 +5,7 @@ Now it's time to deploy Otoroshi in production, in this chapter we will see what
 Otoroshi can run wherever you want, even on a raspberry pi (Cluster^^) ;)
 
 @@@div { .plugin .platform }
+
 ## Clever Cloud
 
 Otoroshi provides an integration to create easily services based on application deployed on your Clever Cloud account.

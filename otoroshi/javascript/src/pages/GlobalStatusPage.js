@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 // import _ from 'lodash';
-import Pagination from 'react-paginate';
 import { BooleanInput } from '../components/inputs';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Uptime } from '../components/Status';
+import { NgSelectRenderer } from '../components/nginputs';
 
 export class GlobalStatusPage extends Component {
   state = {
@@ -21,10 +21,6 @@ export class GlobalStatusPage extends Component {
     this.update();
   }
 
-  handlePageClick = (data) => {
-    this.setState({ page: data.selected }, () => this.update());
-  };
-
   update = () => {
     this.setState({ loading: true });
     BackOfficeServices.fetchGlobalStatus(this.state.page, this.state.pageSize).then(
@@ -34,11 +30,32 @@ export class GlobalStatusPage extends Component {
     );
   };
 
+  prev = () => {
+    this.setState(
+      {
+        page: this.state.page - 1 >= 0 ? this.state.page - 1 : 0,
+      },
+      this.update
+    );
+  };
+
+  next = () => {
+    this.setState(
+      {
+        page:
+          this.state.page + 1 <= Math.ceil(this.state.count / this.state.pageSize)
+            ? this.state.page + 1
+            : Math.ceil(this.state.count / this.state.pageSize),
+      },
+      this.update
+    );
+  };
+
   render() {
     if (!window.__user.superAdmin) {
       return null;
     }
-    if (this.state.error || (this.state.status && this.state.status.length === 0)) {
+    if (this.state.error) {
       return (
         <>
           <p>
@@ -53,6 +70,9 @@ export class GlobalStatusPage extends Component {
         </>
       );
     }
+
+    const totalPageSize = Math.ceil(this.state.count / this.state.pageSize);
+
     return (
       <div className="global-status">
         {this.state.loading && (
@@ -112,9 +132,21 @@ export class GlobalStatusPage extends Component {
                 .map((health, idx) => {
                   return (
                     <>
-                      <Link to={`/lines/${health.line}/services/${health.descriptor}/health`}>
-                        <h3>{health.service}</h3>
-                      </Link>
+                      {health.kind === 'route' && (
+                        <Link to={`/routes/${health.descriptor}/health`}>
+                          <h3>{health.service}</h3>
+                        </Link>
+                      )}
+                      {health.kind === 'route-compositions' && (
+                        <Link to={`/route-compositions/${health.descriptor}/health`}>
+                          <h3>{health.service}</h3>
+                        </Link>
+                      )}
+                      {health.kind === 'service' && (
+                        <Link to={`/lines/${health.line}/services/${health.descriptor}/health`}>
+                          <h3>{health.service}</h3>
+                        </Link>
+                      )}
                       <Uptime
                         key={idx}
                         className="global"
@@ -125,20 +157,35 @@ export class GlobalStatusPage extends Component {
                   );
                 })}
             </div>
-            <Pagination
-              previousLabel="previous"
-              nextLabel="next"
-              breakLabel="..."
-              breakClassName={'break'}
-              pageCount={Math.ceil(this.state.count / this.state.pageSize)}
-              marginPagesDisplayed={1}
-              pageRangeDisplayed={5}
-              onPageChange={(data) => this.handlePageClick(data)}
-              containerClassName={'pagination'}
-              pageClassName={'page-selector'}
-              forcePage={this.state.page}
-              activeClassName={'active'}
-            />
+            <div className="ReactTable">
+              <div class="pagination-bottom">
+                <div class="-pagination">
+                  <div class="-previous">
+                    <button
+                      type="button"
+                      disabled={this.state.page === 0}
+                      class="-btn"
+                      onClick={this.prev}>
+                      Previous
+                    </button>
+                  </div>
+                  <div class="-center">
+                    <span class="-pageInfo">
+                      Page {this.state.page + 1} of {totalPageSize}{' '}
+                    </span>
+                  </div>
+                  <div class="-next">
+                    <button
+                      type="button"
+                      class="-btn"
+                      disabled={this.state.page + 1 === totalPageSize}
+                      onClick={this.next}>
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </>
         )}
       </div>

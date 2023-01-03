@@ -70,7 +70,7 @@ export function getPluginsPatterns(plugins, setNodes, addNodes, clearPLugins) {
           },
           {
             enabled: false,
-            ...findPlugin('cp:otoroshi.next.plugins.ApikeyCalls'),
+            ...findPlugin('cp:otoroshi.next.plugins.NgLegacyApikeyCall'),
             plugin_index: { ValidateAccess: 4, MatchRoute: 0, TransformRequest: 7 },
           },
           {
@@ -80,7 +80,7 @@ export function getPluginsPatterns(plugins, setNodes, addNodes, clearPLugins) {
           },
           {
             enabled: false,
-            ...findPlugin('cp:otoroshi.next.plugins.AuthModule'),
+            ...findPlugin('cp:otoroshi.next.plugins.NgLegacyAuthModuleCall'),
             plugin_index: { ValidateAccess: 6 },
           },
           {

@@ -29,10 +29,10 @@ export default {
       type: 'object',
     },
     exact: {
-      type: 'bool',
+      type: 'box-bool',
       label: 'Exact',
       props: {
-        labelColumn: 3,
+        description: 'Match exact request path.',
       },
     },
     domains: {
@@ -42,22 +42,13 @@ export default {
       format: null,
     },
     strip_path: {
-      type: 'bool',
+      type: 'box-bool',
       label: 'Strip path',
       props: {
-        labelColumn: 3,
+        description:
+          'When matching, strip the matching prefix from the upstream request URL. Defaults to true',
       },
     },
   },
-  flow: [
-    'domains',
-    {
-      type: 'grid',
-      name: 'Flags',
-      fields: ['strip_path', 'exact'],
-    },
-    'headers',
-    'methods',
-    'query',
-  ],
+  flow: ['domains', 'strip_path', 'exact', 'methods', 'headers', 'query'],
 };

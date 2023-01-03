@@ -7,3 +7,45 @@
   align-items: center;
   margin-top: 20px;
 }
+
+.page-item.active .page-link {
+  background-color: #f9b000;
+  border-color: #f9b000;
+}
+
+.page-item.disabled .page-link {
+  background: none;
+  color: #fff;
+  opacity: .56;
+}
+
+.page-link:hover {
+  color: #f9b000;
+  background: #fefefe;
+}
+
+.white-mode {
+  .page-item .page-link {
+    border: 1px solid rgba(181, 179, 179, 0.5); 
+  }
+
+  .page-item .page-link {
+    color: #000;
+  }
+
+  .page-link:hover {
+    background: rgba(0, 0, 0, 0.538);
+    color: #fff;
+  }
+  
+  .health-container {
+    background: #f3f3f4;
+  }
+
+  .status.gray {
+    background-color: #d6d6d6;
+  }
+  .uptime * {
+    color: #000;
+  }
+}

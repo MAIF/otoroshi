@@ -158,6 +158,8 @@ export class NgStep extends Component {
   renderer = () => {
     if (this.props.schema.component) {
       return this.props.schema.component;
+    } else if (this.props.schema.customRenderer) {
+      return this.props.schema.customRenderer;
     } else if (this.props.schema.renderer) {
       if (isString(this.props.schema.renderer)) {
         return Helpers.rendererFor(this.props.schema.renderer, this.props.components);
@@ -427,6 +429,7 @@ export class NgForm extends Component {
       schema.style ||
       schema.render ||
       schema.itemRenderer ||
+      schema.customRenderer ||
       schema.conditionalSchema ||
       schema.props
     ) {
@@ -449,7 +452,7 @@ export class NgForm extends Component {
       }
       const config = {
         type: schema.array ? 'array' : schema.format === 'form' ? 'form' : schema.type,
-        of: schema.array ? schema.type : null,
+        of: schema.array ? schema.type : schema.of ? schema.of : null,
         constraints: schema.constraints,
         visible: schema.visible,
         renderer: schema.array ? null : renderer,
@@ -459,6 +462,7 @@ export class NgForm extends Component {
         collapsed: schema.collapsed,
         label: schema.label,
         itemRenderer: itemRenderer || schema.itemRenderer,
+        customRenderer: schema.customRenderer,
         props: {
           ...schema.props,
           label: schema.label,

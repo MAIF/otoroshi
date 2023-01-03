@@ -55,7 +55,7 @@ docker exec -it my-openldap-container "/bin/bash"
 
 The command `ldapadd` needs of a file to run.
 
-Launch this command to create a `bootstrap.ldif` with one organization, one singers group with Johnny user and a last group with Einstein as scientist.
+Launch this command to create a `bootstrap.ldif` with one organization, one singers group with John user and a last group with Baz as scientist.
 
 ```sh
 echo -e "
@@ -69,27 +69,27 @@ objectclass: top
 objectclass: organizationalUnit
 ou: Role
 
-dn: uid=johnny,ou=People,dc=otoroshi,dc=tools
+dn: uid=john,ou=People,dc=otoroshi,dc=tools
 objectclass: top
 objectclass: person
 objectclass: organizationalPerson
 objectclass: inetOrgPerson
-uid: johnny
-cn: Johnny
+uid: john
+cn: John
 sn: Brown
-mail: johnny@otoroshi.tools
+mail: john@otoroshi.tools
 postalCode: 88442
 userPassword: password
 
-dn: uid=einstein,ou=People,dc=otoroshi,dc=tools
+dn: uid=baz,ou=People,dc=otoroshi,dc=tools
 objectclass: top
 objectclass: person
 objectclass: organizationalPerson
 objectclass: inetOrgPerson
-uid: einstein
-cn: Einstein
+uid: baz
+cn: Baz
 sn: Wilson
-mail: einstein@otoroshi.tools
+mail: baz@otoroshi.tools
 postalCode: 88443
 userPassword: password
 
@@ -97,13 +97,13 @@ dn: cn=singers,ou=Role,dc=otoroshi,dc=tools
 objectclass: top
 objectclass: groupOfNames
 cn: singers
-member: uid=johnny,ou=People,dc=otoroshi,dc=tools
+member: uid=john,ou=People,dc=otoroshi,dc=tools
 
 dn: cn=scientists,ou=Role,dc=otoroshi,dc=tools
 objectclass: top
 objectclass: groupOfNames
 cn: scientists
-member: uid=einstein,ou=People,dc=otoroshi,dc=tools
+member: uid=baz,ou=People,dc=otoroshi,dc=tools
 " > bootstrap.ldif
 
 ldapadd -x -w otoroshi -D "cn=admin,dc=otoroshi,dc=tools" -f bootstrap.ldif -v
@@ -142,7 +142,7 @@ ldapadd -x -w otoroshi -D "cn=admin,dc=otoroshi,dc=tools" -f bootstrap.ldif -v
 
 - Test the connection when clicking on `Test admin connection` button. This should display a `It works!` message
 
-- Finally, test the user connection button and set `johnny/password` or `einstein/password` as credentials. This should display a `It works!` message
+- Finally, test the user connection button and set `john/password` or `baz/password` as credentials. This should display a `It works!` message
 
 > Dont' forget to save on the bottom page your configuration before to quit the page.
 
@@ -160,40 +160,28 @@ To secure Otoroshi with your LDAP configuration, we have to register an **Authen
 
 - Disconnect from your instance
 - Then click on the **Login using third-party** button (or navigate to @link:[http://otoroshi.oto.tools:8080/backoffice/auth0/login](http://otoroshi.oto.tools:8080/backoffice/auth0/login) { open=new })
-- Set `johnny/password` or `einstein/password` as credentials
+- Set `john/password` or `baz/password` as credentials
 
 > A fallback solution is always available in the event of a bad authentication configuration. By going to http://otoroshi.oto.tools:8080/bo/simple/login, the administrators will be able to redefine the configuration.
 
 
 #### Secure an app with LDAP authentication
 
-Once the configuration is done, you can secure any of Otoroshi services. 
+Once the configuration is done, you can secure any of Otoroshi routes. 
 
-- Navigate to any created service
-- Jump to the `URL Patterns` section
-- Enable your service as `Public UI`
-- Then scroll to `Authentication` section
-- Enable `Enforce user authentication`
+- Navigate to any created route
+- Add the `Authentication` plugin to your route
 - Select your Authentication config inside the list
-- Enable `Strict mode`
-- Don't forget to save your configuration
+- Save your configuration
 
-<!-- oto-scenario
- - goto /bo/dashboard/lines/prod/services/service_mirror_otoroshi_fr
- - wait 2000
- - click div[data-screenshot="ldap-tutorial-authentication"]>div:nth-child(2)>div
- - screenshot-area generated-hows-to-secure-an-app-with-ldap.png div[data-screenshot="ldap-tutorial-authentication"]
--->
-<img src="../imgs/generated-hows-to-secure-an-app-with-ldap.png">
-
-Now you can try to call your defined service and see the login module appears.
+Now try to call your route. The login module should appear.
 
 #### Manage LDAP users rights on Otoroshi
 
-For each LDAP groups, you can affect a list of rights : 
+For each group filter, you can affect a list of rights:
 
-- on an `Organization` : only resources of an organization
-- on a `Team` : only resources belonging to this team
+- on an `Organization`
+- on a `Team`
 - and a level of rights : `Read`, `Write` or `Read/Write`
 
 
@@ -208,9 +196,9 @@ Then, replace the values of the `Mapping group filter` field to match LDAP group
 -->
 <img src="../imgs/generated-hows-to-ldap-manage-users.png" />
 
-With this configuration, Einstein is an administrator of Otoroshi with full rights (read / write) on all organizations.
+With this configuration, Baz is an administrator of Otoroshi with full rights (read / write) on all organizations.
 
-Conversely, Johnny can't see any configuration pages (like the danger zone) because he has only the read rights on Otoroshi.
+Conversely, John can't see any configuration pages (like the danger zone) because he has only the read rights on Otoroshi.
 
 You can easily test this behaviour by @ref:[testing](#testing-your-configuration) with both credentials.
 
@@ -232,8 +220,8 @@ The next field `Data override` is merged with extra metadata when a user connect
 
 ```json 
 {
-  "johnny@otoroshi.tools": {
-    "stage_name": "Jean-Philippe Smet"
+  "john@otoroshi.tools": {
+    "stage_name": "Will"
   }
 }
 ```
@@ -244,20 +232,20 @@ If you try to connect to an app with this configuration, the user result profile
 {
   ...,
   "metadata": {
-    "lastname": "Hallyday",
-    "stage_name": "Jean-Philippe Smet"
+    "lastname": "Willy",
+    "stage_name": "Will"
   }
 }
 ```
 
-Let's try to increase the Johnny rights with the `Additional rights group`.
+Let's try to increase the John rights with the `Additional rights group`.
 
 This field supports the creation of virtual groups. A virtual group is composed of a list of users and a list of rights for each teams/organizations.
 
 ```json
-// increase_johnny_rights is a virtual group which adds full access rights at johnny 
+// increase_john_rights is a virtual group which adds full access rights at john 
 {
-  "increase_johnny_rights": {
+  "increase_john_rights": {
     "rights": [
       {
         "tenant": "*:rw",
@@ -267,7 +255,7 @@ This field supports the creation of virtual groups. A virtual group is composed 
       }
     ],
     "users": [
-      "johnny@otoroshi.tools"
+      "john@otoroshi.tools"
     ]
   }
 }
@@ -275,11 +263,11 @@ This field supports the creation of virtual groups. A virtual group is composed 
 
 The last field `Rights override` is useful when you want erase the rights of an user with only specific rights. This field is the last to be applied on the user rights. 
 
-To resume, when Johnny connects to Otoroshi, he receives the rights to only read  the default Organization (from **Mapping group filter**), then he is promote to administrator role (from **Additional rights group**) and finally his rights are reset with the last field **Rights override** to the read rights.
+To resume, when John connects to Otoroshi, he receives the rights to only read  the default Organization (from **Mapping group filter**), then he is promote to administrator role (from **Additional rights group**) and finally his rights are reset with the last field **Rights override** to the read rights.
 
 ```json 
 {
-  "johnny@otoroshi.tools": [
+  "john@otoroshi.tools": [
     {
       "tenant": "*:r",
       "teams": [

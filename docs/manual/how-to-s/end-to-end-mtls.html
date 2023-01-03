@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.18
+16.0.0
 </div>
 </div>
 <div class="nav-toc">
@@ -52,21 +52,24 @@
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
     <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
-    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
     <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/tls.html" class="page">TLS</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
@@ -77,6 +80,12 @@
     <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
     <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
     <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -105,7 +114,8 @@
   <ul>
     <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
     <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
-    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
@@ -117,12 +127,6 @@
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
-  <ul>
-    <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
-    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
-    <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
-  </ul></li>
 </ul>
 </div>
 
@@ -156,7 +160,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.18
+16.0.0
 </div>
 </div>
 <div class="nav-toc">
@@ -173,21 +177,24 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
     <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
-    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
     <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/tls.html" class="page">TLS</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
@@ -198,6 +205,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
     <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
     <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -226,7 +239,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
     <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
-    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
@@ -238,12 +252,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
-  <ul>
-    <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
-    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
-    <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
-  </ul></li>
 </ul>
 </div>
 
@@ -458,36 +466,30 @@ console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().po
 [info] otoroshi-env - Generating a self signed SSL certificate for https://*.oto.tools ...
 </code></pre>
 <p>and log into otoroshi with the tuple <code>admin@otoroshi.io / password</code> displayed in the logs. </p>
-<p>Once logged in, navigate to the services pages and create a new item.</p>
+<p>Once logged in, navigate to the routes page and create a new route.</p>
 <ul>
-  <li>Jump to the <code>Service exposition settings</code> and add <code>http://api.frontend.oto.tools</code> as <code>Exposed domain</code>.</li>
-  <li>Navigate to the <code>Service targets</code> and add the following url <code>https://api.backend.oto.tools:8444/</code> to redirect our call to the previous created backend.</li>
-  <li>End this step by exposing the service as <code>Public UI</code> on the <code>URL Patterns</code> section.</li>
+  <li>Set a name then validate the creation</li>
+  <li>On frontend node, add <code>api.frontend.oto.tools</code> in the list of domains</li>
+  <li>On backend node, replace the target with <code>api.backend.oto.tools</code> as hostname and <code>8444</code> as port.</li>
 </ul>
-<p>and test it</p>
+<p>Save the route and try to call it.</p>
 <pre class="prettyprint"><code class="language-sh">curl &#39;http://api.frontend.oto.tools:8080/&#39;
 </code></pre>
 <p>This should output :</p>
 <pre class="prettyprint"><code class="language-json">{&quot;Otoroshi-Error&quot;: &quot;Something went wrong, you should try later. Thanks for your understanding.&quot;}
 </code></pre>
-<p>you should get an error due to the fact that Otoroshi doesn&rsquo;t know about the server certificate or the client certificate expected by the server.</p>
-<p>We have to add the client certificate for <code>https://api.backend.oto.tools</code> to Otoroshi. </p>
-<p>Go to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">http://otoroshi.oto.tools:8080/bo/dashboard/certificates</a> and create a new item. Copy and paste the content of <code>./client/_.backend.oto.tools.cer</code> and <code>./client/_.backend.oto.tools.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
-<p>If you don&rsquo;t want to bother with UI copy/paste, you can use the import bundle api endpoint to create an otoroshi certificate automatically from a PEM bundle.</p>
+<p>you should get an error due to the fact that Otoroshi doesn&rsquo;t know about the server certificate and the client certificate expected by the server.</p>
+<p>We must declare the client and server certificates for <code>https://api.backend.oto.tools</code> to Otoroshi. </p>
+<p>Go to the <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">certificates page</a> and create a new item. Drag and drop the content of the <code>./client/_.backend.oto.tools.cer</code> and <code>./client/_.backend.oto.tools.key</code> files, respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
+<p>If you prefer to use the API, you can create an Otoroshi certificate automatically from a PEM bundle.</p>
 <pre class="prettyprint"><code class="language-sh">cat ./server/_.backend.oto.tools.cer ./ca/ca-backend.cer ./server/_.backend.oto.tools.key | curl \
   -H &#39;Content-Type: text/plain&#39; -X POST \
   --data-binary @- \
   -u admin-api-apikey-id:admin-api-apikey-secret \
   http://otoroshi-api.oto.tools:8080/api/certificates/_bundle 
 </code></pre>
-<p>and retry the following curl command </p>
-<pre class="prettyprint"><code class="language-sh">curl &#39;http://api.frontend.oto.tools:8080/&#39;
-</code></pre>
-<p>the output should be</p>
-<pre class="prettyprint"><code class="language-json">{&quot;message&quot;:&quot;Hello World!&quot;}
-</code></pre>
 <p>now we have to expose <code>https://api.frontend.oto.tools:8443</code> using otoroshi. </p>
-<p>Go to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">http://otoroshi.oto.tools:8080/bo/dashboard/certificates</a> and create a new item. Copy and paste the content of <code>./server/_.frontend.oto.tools.cer</code> and <code>./server/_.frontend.oto.tools.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
+<p>Create a second item. Copy and paste the content of <code>./server/_.frontend.oto.tools.cer</code> and <code>./server/_.frontend.oto.tools.key</code> respectively in <code>Certificate full chain</code> and <code>Certificate private key</code>.</p>
 <p>If you don&rsquo;t want to bother with UI copy/paste, you can use the import bundle api endpoint to create an otoroshi certificate automatically from a PEM bundle.</p>
 <pre class="prettyprint"><code class="language-sh">cat ./server/_.frontend.oto.tools.cer ./ca/ca-frontend.cer ./server/_.frontend.oto.tools.key | curl \
   -H &#39;Content-Type: text/plain&#39; -X POST \
@@ -495,20 +497,32 @@ console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().po
   --data-binary @- \
   http://otoroshi-api.oto.tools:8080/api/certificates/_bundle
 </code></pre>
-<p>and try the following command</p>
+<p>Once created, go back to your route. On the target of the backend node, we have to enable the custom Otoroshi TLS.</p>
+<ul>
+  <li>Click on the backend node</li>
+  <li>Click on your target</li>
+  <li>Click on the Show advanced settings button</li>
+  <li>Click on Custom TLS setup</li>
+  <li>Enable the section</li>
+  <li>In the list of certificates, select the backend certificate</li>
+  <li>In the list of trusted certificates, select the frontend certificate</li>
+  <li>Save your route</li>
+</ul>
+<p>Try the following command</p>
 <pre class="prettyprint"><code class="language-sh">curl --cacert ./ca/ca-frontend.cer &#39;https://api.frontend.oto.tools:8443/&#39;
 </code></pre>
 <p>the output should be</p>
 <pre class="prettyprint"><code class="language-json">{&quot;message&quot;:&quot;Hello World!&quot;}
 </code></pre>
-<p>now we have to enforce the fact that we want client certificate for <code>api.frontend.oto.tools</code>. To do that, we have to add a <code>Client Validator Only</code> plugin on the <code>api.frontend.oto.tools</code> service. Scroll to the last section called <code>Plugins</code> and select the <code>Client validator only</code> in the list.</p>
+<p>Now we want to enforce the fact that we want client certificate for <code>api.frontend.oto.tools</code>. </p>
+<p>Search in the list of plugins and add the <code>Client Certificate Only</code> plugin to your route.</p>
 <p>now if you retry </p>
 <pre class="prettyprint"><code class="language-sh">curl --cacert ./ca/ca-frontend.cer &#39;https://api.frontend.oto.tools:8443/&#39;
 </code></pre>
 <p>the output should be</p>
 <pre class="prettyprint"><code class="language-json">{&quot;Otoroshi-Error&quot;:&quot;bad request&quot;}
 </code></pre>
-<p>you should get an error because no client cert. is passed with the request. But if you pass the <code>./client/_.frontend.oto.tools.csr</code> client cert and the key in your curl call</p>
+<p>you should get an error because no client certificate is passed with the request. But if you pass the <code>./client/_.frontend.oto.tools.csr</code> client cert and the key in your curl call</p>
 <pre class="prettyprint"><code class="language-sh">curl &#39;https://api.frontend.oto.tools:8443&#39; \
   --cacert ./ca/ca-frontend.cer \
   --cert ./client/_.frontend.oto.tools.pem \
@@ -518,9 +532,9 @@ console.log(&#39;Server listening:&#39;, `http://localhost:${server.address().po
 <pre class="prettyprint"><code class="language-json">{&quot;message&quot;:&quot;Hello World!&quot;}
 </code></pre>
 <h3><a href="#client-certificate-matching-plugin" name="client-certificate-matching-plugin" class="anchor"><span class="anchor-link"></span></a>Client certificate matching plugin</h3>
-<p>Otoroshi can restrict and check all incoming client certificates on a service.</p>
-<p>Scroll to the <code>Plugins</code> section and select the <code>Client certificate matching</code> plugin. Then, click on the <code>show config. panel</code> and inject the default configuration of the plugin (by clicking on <code>Inject default config.</code>).</p>
-<p>Save the service and retry your call again.</p>
+<p>Otoroshi can restrict and check all incoming client certificates on a route.</p>
+<p>Search in the list of plugins the <code>Client certificate matching</code> plugin and add it the the flow.</p>
+<p>Save the route and retry your call again.</p>
 <pre class="prettyprint"><code class="language-sh">curl &#39;https://api.frontend.oto.tools:8443&#39; \
   --cacert ./ca/ca-frontend.cer \
   --cert ./client/_.frontend.oto.tools.pem \

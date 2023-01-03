@@ -16,6 +16,7 @@ import 'ace-builds/src-noconflict/ext-searchbox';
 
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/theme-xcode';
+import isEqual from 'lodash/isEqual';
 
 export class JsonObjectAsCodeInput extends Component {
   render() {
@@ -65,6 +66,12 @@ export default class CodeInput extends Component {
     observer.observe(document.body, {
       attributes: true,
     });
+  }
+
+  componentDidUpdate(prevProps) {
+    if (!isEqual(prevProps.value, this.props.value)) {
+      this.setState({ value: this.props.value });
+    }
   }
 
   componentWillUnmount() {
@@ -119,6 +126,7 @@ export default class CodeInput extends Component {
 
   render() {
     let code = this.state.value || this.props.value;
+
     if (this.props.mode === 'json' && typeof code !== 'string') {
       code = JSON.stringify(code, null, 2);
     }

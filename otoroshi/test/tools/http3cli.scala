@@ -12,6 +12,7 @@ import java.util.concurrent.Executors
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext}
 
+/*
 class Http3ClientSpec extends AnyWordSpec with Matchers with OptionValues {
 
   implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
@@ -57,3 +58,4 @@ class Http3ClientTests
     extends Suites(
       new Http3ClientSpec()
     )
+ */

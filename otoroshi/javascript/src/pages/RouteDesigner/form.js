@@ -460,7 +460,7 @@ export const schemas = {
         props: {
           label: 'plugin',
           possibleValues: plugins,
-          _valuesFrom: '/bo/api/proxy/api/experimental/plugins/all',
+          _valuesFrom: '/bo/api/proxy/api/plugins/all',
           _transformer: (a) => ({
             value: a.id, // TODO: preload list here
             label: a.name,
@@ -493,7 +493,7 @@ export class RouteForm extends Component {
   }
 
   loadPlugins = () => {
-    return fetch('/bo/api/proxy/api/experimental/plugins/all', {
+    return fetch('/bo/api/proxy/api/plugins/all', {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -572,7 +572,7 @@ export class RouteForm extends Component {
                 type: 'select',
                 props: {
                   label: 'backend references',
-                  valuesFrom: '/bo/api/proxy/api/experimental/backends',
+                  valuesFrom: '/bo/api/proxy/api/backends',
                   transformer: (a) => ({
                     value: a.id,
                     label: a.name,

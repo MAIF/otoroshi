@@ -1007,6 +1007,7 @@ function InMemoryConfiguration({ value, onChange }) {
         ...(value.users || []),
         {
           name: `${firstName} ${lastName}`,
+          password: bcrypt.hashSync('password', bcrypt.genSaltSync(10)),
           email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@oto.tools`,
           metadata: {},
         },
@@ -1241,7 +1242,7 @@ class User extends React.Component {
             value={name}
             onChange={(name) =>
               this.props.onChange({
-                ...this.props.user,
+                ...this.props,
                 name,
               })
             }
@@ -1254,7 +1255,7 @@ class User extends React.Component {
             value={email}
             onChange={(email) =>
               this.props.onChange({
-                ...this.props.user,
+                ...this.props,
                 email,
               })
             }

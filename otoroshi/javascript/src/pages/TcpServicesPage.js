@@ -239,7 +239,7 @@ export class TcpServicesPage extends Component {
 
   gotoService = (service) => {
     this.props.history.push({
-      pathname: `/lines/${service.env}/tcp/services/${service.id}`,
+      pathname: `/tcp/services/edit/${service.id}`,
     });
   };
 
@@ -363,7 +363,7 @@ export class TcpServicesPage extends Component {
           fetchItems={(paginationState) =>
             BackOfficeServices.findAllTcpServices({
               ...paginationState,
-              fields: ['id', 'name', 'port', 'interface', 'tls', 'sni', 'clientAuth'],
+              fields: ['id', 'name', 'port', 'interface', 'tls', 'sni', 'clientAuth', 'env'],
             })
           }
           updateItem={BackOfficeServices.updateTcpService}

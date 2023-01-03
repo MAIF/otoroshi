@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.18
+16.0.0
 </div>
 </div>
 <div class="nav-toc">
@@ -52,21 +52,24 @@
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
     <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
-    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
     <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/tls.html" class="page">TLS</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
@@ -77,6 +80,12 @@
     <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
     <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
     <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -105,7 +114,8 @@
   <ul>
     <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
     <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
-    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
@@ -117,12 +127,6 @@
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
-  <ul>
-    <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
-    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
-    <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
-  </ul></li>
 </ul>
 </div>
 
@@ -156,7 +160,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.18
+16.0.0
 </div>
 </div>
 <div class="nav-toc">
@@ -173,21 +177,24 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
     <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
-    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
     <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/tls.html" class="page">TLS</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
@@ -198,6 +205,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
     <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
     <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -226,7 +239,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
     <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
-    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
@@ -238,12 +252,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
-  <ul>
-    <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
-    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
-    <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
-  </ul></li>
 </ul>
 </div>
 
@@ -270,27 +278,88 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h1><a href="#secure-an-api-with-api-keys" name="secure-an-api-with-api-keys" class="anchor"><span class="anchor-link"></span></a>Secure an api with api keys</h1>
 <h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p>
 <p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.18/otoroshi.jar&#39;
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.0.0/otoroshi.jar&#39;
 </code></pre>
 <p>then you can run start Otoroshi :</p>
 <pre class="prettyprint"><code class="language-sh">java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
 </code></pre>
 <p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080" title="http://otoroshi.oto.tools:8080" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
-<h3><a href="#create-a-simple-service" name="create-a-simple-service" class="anchor"><span class="anchor-link"></span></a>Create a simple service</h3>
+<h3><a href="#create-a-simple-route" name="create-a-simple-route" class="anchor"><span class="anchor-link"></span></a>Create a simple route</h3>
+<p><strong>From UI</strong></p>
 <ol>
-  <li>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/services" title="http://otoroshi.oto.tools:8080/bo/dashboard/services" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080/bo/dashboard/services</a> and click on the <code>create new service</code> button</li>
-  <li>Jump to <code>Service exposition settings</code> and add <code>http://myservice.oto.tools</code> as <code>Exposed domain</code></li>
-  <li>Jump to <code>Service targets</code> and add <code>https://mirror.otoroshi.io</code> as <code>Target 1</code></li>
-  <li>Jump to the <code>URL Patterns</code> section</li>
-  <li>Enable your service as <code>Public UI</code></li>
-  <li>Open a new tab and navigate to <a href="http://myservice.oto.tools:8080/" title="http://myservice.oto.tools:8080" target="_blank" rel="noopener noreferrer">http://myservice.oto.tools:8080</a></li>
+  <li>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/routes" title="http://otoroshi.oto.tools:8080/bo/dashboard/routes" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080/bo/dashboard/routes</a> and click on the <code>create new route</code> button</li>
+  <li>Give a name to your route</li>
+  <li>Save your route</li>
+  <li>Set <code>myservice.oto.tools</code> as frontend domains</li>
+  <li>Set <code>https://mirror.otoroshi.io</code> as backend target (hostname: <code>mirror.otoroshi.io</code>, port: <code>443</code>, Tls: <code>Enabled</code>)</li>
 </ol>
-<p>With this configuration, all routes are public, wihtout any authentication needed.</p>
+<p><strong>From Admin API</strong></p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
+-H &quot;Content-type: application/json&quot; \
+-u admin-api-apikey-id:admin-api-apikey-secret \
+-d @- &lt;&lt;&#39;EOF&#39;
+{
+  &quot;id&quot;: &quot;myservice&quot;,
+  &quot;name&quot;: &quot;myapi&quot;,
+  &quot;frontend&quot;: {
+    &quot;domains&quot;: [&quot;myservice.oto.tools&quot;]
+  },
+  &quot;backend&quot;: {
+    &quot;targets&quot;: [
+      {
+        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;port&quot;: 443,
+        &quot;tls&quot;: true
+      }
+    ]
+  }
+}
+EOF
+</code></pre>
 <h3><a href="#secure-routes-with-api-key" name="secure-routes-with-api-key" class="anchor"><span class="anchor-link"></span></a>Secure routes with api key</h3>
-<p>With the previous configuration, all routes are public. In our case, we want to secure all routes prefix with <code>/api</code>.</p>
-<p>Let&rsquo;s return to the <code>URL Patterns</code> section. Click on <strong>Make service a private api</strong>. This button automatically add <code>/api</code> as default in <code>Private patterns</code> array. (Note that the field supports regex like. In our case, <code>/api.*</code> covers all routes starting by <code>/api</code>).</p>
-<p>Save your app and navigate to <a href="http://myservice.oto.tools:8080/api/test" title="http://myservice.oto.tools:8080/api/test" target="_blank" rel="noopener noreferrer">http://myservice.oto.tools:8080/api/test</a> again. If the service is configured, you should have a <code>Service Not found error</code>, and a success call, in the case you navigate to any other routes which are not starting by <code>/api/*</code> like <a href="http://myservice.oto.tools:8080/test/bar" title="http://myservice.oto.tools:8080/test/bar" target="_blank" rel="noopener noreferrer">http://myservice.oto.tools:8080/test/bar</a></p>
-<p>The expected error on the <code>/api/test</code>, throws by the URL Patterns, indicate to the client that an api key is required to access to this part of the backend service.</p>
+<p>By default, a route is public. In our case, we want to secure all paths starting with <code>/api</code> and leave all others unauthenticated.</p>
+<p>Let&rsquo;s add a new plugin, called <code>Apikeys</code>, to our route. Search in the list of plugins, then add it to the flow. Once done, restrict its range by setting up <code>/api</code> in the <code>Informations&gt;include</code> section.</p>
+<p><strong>From Admin API</strong></p>
+<pre class="prettyprint"><code class="language-sh">curl -X PUT http://otoroshi-api.oto.tools:8080/api/routes/myservice \
+-H &quot;Content-type: application/json&quot; \
+-u admin-api-apikey-id:admin-api-apikey-secret \
+-d @- &lt;&lt;&#39;EOF&#39;
+{
+  &quot;id&quot;: &quot;myservice&quot;,
+  &quot;name&quot;: &quot;myapi&quot;,
+  &quot;frontend&quot;: {
+    &quot;domains&quot;: [&quot;myservice.oto.tools&quot;]
+  },
+  &quot;backend&quot;: {
+    &quot;targets&quot;: [
+      {
+        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;port&quot;: 443,
+        &quot;tls&quot;: true
+      }
+    ]
+  },
+  &quot;plugins&quot;: [
+    {
+      &quot;enabled&quot;: true,
+      &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.ApikeyCalls&quot;,
+      &quot;include&quot;: [
+          &quot;/api&quot;
+      ],
+      &quot;config&quot;: {
+          &quot;validate&quot;: true,
+          &quot;mandatory&quot;: true,
+          &quot;wipe_backend_request&quot;: true,
+          &quot;update_quotas&quot;: true
+      }
+    }
+  ]
+}
+EOF
+</code></pre>
+<p>Navigate to <a href="http://myservice.oto.tools:8080/api/test" title="http://myservice.oto.tools:8080/api/test" target="_blank" rel="noopener noreferrer">http://myservice.oto.tools:8080/api/test</a> again. If the service is configured, you should have a <code>Service Not found error</code>.</p>
+<p>The expected error on the <code>/api/test</code>, indicate that an api key is required to access to this part of the backend service.</p>
+<p>Navigate to any other routes which are not starting by <code>/api/*</code> like <a href="http://myservice.oto.tools:8080/test/bar" title="http://myservice.oto.tools:8080/test/bar" target="_blank" rel="noopener noreferrer">http://myservice.oto.tools:8080/test/bar</a></p>
 <h3><a href="#generate-an-api-key-to-request-secure-services" name="generate-an-api-key-to-request-secure-services" class="anchor"><span class="anchor-link"></span></a>Generate an api key to request secure services</h3>
 <p>Navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add" title="http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080/bo/dashboard/apikeys/add</a> or when clicking on the <strong>Add apikey</strong> button on the sidebar.</p>
 <p>The only required fields of an Otoroshi api key are : </p>
@@ -322,15 +391,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <blockquote>
   <p>Tips : To easily fill your headers, you can jump to the <code>Call examples</code> section in each api key view. In this section the header names are the default values and the service url is not set. You have to adapt these lines to your case. </p>
 </blockquote>
-<h3><a href="#override-defaults-headers-names-for-a-service" name="override-defaults-headers-names-for-a-service" class="anchor"><span class="anchor-link"></span></a>Override defaults headers names for a service</h3>
+<h3><a href="#override-defaults-headers-names-for-a-route" name="override-defaults-headers-names-for-a-route" class="anchor"><span class="anchor-link"></span></a>Override defaults headers names for a route</h3>
 <p>In some case, we want to change the defaults headers names (and it&rsquo;s a quite good idea).</p>
-<p>Let&rsquo;s start by navigating to the <code>Api keys Constraints</code> section from the edit page of our sercice.</p>
-<p>The first values to change are the headers names used to read the api key from client. Start by set :</p>
+<p>Let&rsquo;s start by navigating to the <code>Apikeys</code> plugin in the Designer of our route.</p>
+<p>The first values to change are the headers names used to read the api key from client. Start by clicking on <code>extractors &gt; CustomHeaders</code> and set the following values :</p>
 <ul>
   <li><code>api-key-header-id</code> as <code>Custom client id header name</code></li>
   <li><code>api-key-header-secret</code> as <code>Custom client secret header name</code></li>
 </ul>
-<p>Save the service, and call the service again.</p>
+<p>Save the route, and call the service again.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X GET \
   -H &#39;Otoroshi-Client-Id: my-first-api-key-id&#39; \
   -H &#39;Otoroshi-Client-Secret: my-first-api-key-secret&#39; \
@@ -347,12 +416,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   -H &#39;api-key-header-secret: my-first-api-key-secret&#39; \
   &#39;http://myservice.oto.tools:8080/api/test&#39; --include
 </code></pre>
-<p>With this configuration, all others default services will accept the api keys with the <code>Otoroshi-Client-Id</code> and <code>Otoroshi-Client-Secret</code> headers, while our service, will accept the <code>api-key-header-id</code> and <code>api-key-header-secret</code> headers.</p>
+<p>All others default services will continue to accept the api keys with the <code>Otoroshi-Client-Id</code> and <code>Otoroshi-Client-Secret</code> headers, whereas our service, will accept the <code>api-key-header-id</code> and <code>api-key-header-secret</code> headers.</p>
 <h3><a href="#accept-only-api-keys-with-expected-values" name="accept-only-api-keys-with-expected-values" class="anchor"><span class="anchor-link"></span></a>Accept only api keys with expected values</h3>
 <p>By default, a secure service only accepts requests with api key. But all generated api keys are eligible to call our service and in some case, we want authorize only a couple of api keys.</p>
-<p>One feature of Otoroshi is to restrict the list of accepted api keys by giving a list of <code>metadata</code> or/and <code>tags</code>. Each api key has a list of <code>tags</code> and <code>metadata</code>, which can be used by Otoroshi to forward or not a call with an api key. All api key metadata/tags can be forward to your service (see <code>Otoroshi exchange protocol</code> section of a service to get more information about <code>Send info. token</code>).</p>
-<p>Let&rsquo;s starting by accept only the api keys which come with the tag of <code>otoroshi</code> as value.</p>
-<p>Jump to the last part of the <code>Api Keys Constraints</code> section, call <code>Routing constraints</code> (these constraints are used to forward a call to a service, only if all constraints are validated).</p>
+<p>You can restrict the list of accepted api keys by giving a list of <code>metadata</code> or/and <code>tags</code>. Each api key has a list of <code>tags</code> and <code>metadata</code>, which can be used by Otoroshi to validate a request with an api key. All api key metadata/tags can be forward to your service (see <code>Otoroshi Challenge</code> section of a service to get more information about <code>Otoroshi info. token</code>).</p>
+<p>Let&rsquo;s starting by only accepting api keys with the <code>otoroshi</code> tag.</p>
+<p>Click on the <code>ApiKeys</code> plugin, and enabled the <code>Routing</code> section. These constraints guarantee that a request will only be transmitted if all the constraints are validated.</p>
 <p>In our first case, set <code>otoroshi</code> in <code>One Tag in</code> array and save the service. Then call our service with :</p>
 <pre class="prettyprint"><code class="language-sh">curl -X GET \
   -H &#39;Otoroshi-Client-Id: my-first-api-key-id&#39; \
@@ -366,8 +435,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 }
 </code></pre>
 <p>Navigate to the edit page of our api key, and jump to the <code>Metadata and tags</code> section. In this section, add <code>otoroshi</code> in <code>Tags</code> array, then save the api key. Call once again your call and you will normally get a successful response of our backend service.</p>
-<p>In this example, we have restricted our service to be callable only with keys that have <code>otoroshi</code> as a tag.</p>
-<p>But Otoroshi provides others behaviours. For each behaviour, <em>Api key used should</em>:</p>
+<p>In this example, we have limited our service to API keys that have <code>otoroshi</code> as a tag.</p>
+<p>Otoroshi provides a few others behaviours. For each behaviour, <em>Api key used should</em>:</p>
 <ul>
   <li><code>All Tags in</code> : have all of the following tags</li>
   <li><code>No Tags in</code> : not have one of the following tags</li>
@@ -398,10 +467,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../how-to-s/secure-with-apikey.html#secure-an-api-with-api-keys" class="header">Secure an api with api keys</a>
   <ul>
     <li><a href="../how-to-s/secure-with-apikey.html#before-you-start" class="header">Before you start</a></li>
-    <li><a href="../how-to-s/secure-with-apikey.html#create-a-simple-service" class="header">Create a simple service</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html#create-a-simple-route" class="header">Create a simple route</a></li>
     <li><a href="../how-to-s/secure-with-apikey.html#secure-routes-with-api-key" class="header">Secure routes with api key</a></li>
     <li><a href="../how-to-s/secure-with-apikey.html#generate-an-api-key-to-request-secure-services" class="header">Generate an api key to request secure services</a></li>
-    <li><a href="../how-to-s/secure-with-apikey.html#override-defaults-headers-names-for-a-service" class="header">Override defaults headers names for a service</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html#override-defaults-headers-names-for-a-route" class="header">Override defaults headers names for a route</a></li>
     <li><a href="../how-to-s/secure-with-apikey.html#accept-only-api-keys-with-expected-values" class="header">Accept only api keys with expected values</a></li>
   </ul></li>
 </ul>

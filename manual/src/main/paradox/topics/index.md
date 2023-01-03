@@ -2,6 +2,7 @@
 
 In this sections, you will find informations about various Otoroshi topics  
 
+* @ref:[Proxy engine](./engine.md)
 * @ref:[Chaos engineering](./chaos-engineering.md)
 * @ref:[TLS](./tls.md)
 * @ref:[Otoroshi's PKI](./pki.md)
@@ -12,9 +13,16 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[The Otoroshi communication protocol](./otoroshi-protocol.md)
 * @ref:[Expression language](./expression-language.md)
 * @ref:[Otoroshi user rights](./user-rights.md)
+* @ref:[GraphQL composer](./graphql-composer.md)
+* @ref:[Secret vaults](./secrets.md)
+* @ref:[Otoroshi tunnels](./tunnels.md)
+* @ref:[Relay routing](./relay-routing.md)
+* @ref:[Alternative http backend](./netty-server.md)
+* @ref:[HTTP3 support](./http3.md)
 
 @@@ index
 
+* [Proxy engine](./engine.md)
 * [Chaos engineering](./chaos-engineering.md)
 * [TLS](./tls.md)
 * [Otoroshi's PKI](./pki.md)
@@ -25,5 +33,11 @@ In this sections, you will find informations about various Otoroshi topics
 * [The Otoroshi communication protocol](./otoroshi-protocol.md)
 * [Expression language](./expression-language.md)
 * [Otoroshi user rights](./user-rights.md)
+* [GraphQL composer](./graphql-composer.md)
+* [Secret vaults](./secrets.md)
+* [Otoroshi tunnels](./tunnels.md)
+* [Relay routing](./relay-routing.md)
+* [Alternative http backend](./netty-server.md)
+* [HTTP3 support](./http3.md)
   
 @@@

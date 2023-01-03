@@ -43,6 +43,7 @@ import NgAuthModuleUserExtractor from './NgAuthModuleUserExtractor';
 import NgBackend from './NgBackend';
 import NgFrontend from './NgFrontend';
 import NgLegacyApikeyCall from './NgLegacyApikeyCall';
+import NgLegacyAuthModuleCall from './NgLegacyAuthModuleCall';
 import OtoroshiChallenge from './OtoroshiChallenge';
 import OtoroshiInfos from './OtoroshiInfos';
 import OverrideHost from './OverrideHost';
@@ -68,6 +69,7 @@ import W3CTracing from './W3CTracing';
 import XForwardedHeaders from './XForwardedHeaders';
 import XmlToJsonRequest from './XmlToJsonRequest';
 import XmlToJsonResponse from './XmlToJsonResponse';
+import WasmQuery from './WasmQuery';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -116,6 +118,7 @@ export const Plugins = [
   NgAuthModuleExpectedUser,
   NgAuthModuleUserExtractor,
   NgLegacyApikeyCall,
+  NgLegacyAuthModuleCall,
   OtoroshiChallenge,
   OtoroshiInfos,
   OverrideHost,
@@ -141,4 +144,5 @@ export const Plugins = [
   XForwardedHeaders,
   XmlToJsonRequest,
   XmlToJsonResponse,
+  WasmQuery
 ];

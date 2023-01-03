@@ -12,7 +12,7 @@ import { useLocation } from 'react-router-dom';
 
 import { Provider } from 'react-redux';
 import { Playground, store, getSettings, setSettingsString } from 'graphql-playground-react';
-import { NgSelectRenderer } from '../../components/nginputs';
+import { NgCodeRenderer, NgSelectRenderer } from '../../components/nginputs';
 import { PillButton } from '../../components/PillButton';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
@@ -292,8 +292,11 @@ export default function ({ route, hide }) {
             },
           }
         : {
-            'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
-            'Otoroshi-Client-Secret': { key: 'Otoroshi-Client-Secret', value: clientSecret },
+            'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: apikey },
+            'Otoroshi-Client-Secret': {
+              key: 'Otoroshi-Client-Secret',
+              value: apikeys.find((c) => c.clientId === apikey)?.clientSecret,
+            },
           }),
     };
   };
@@ -301,7 +304,7 @@ export default function ({ route, hide }) {
   const receivedResponse = rawResponse && response;
 
   return (
-    <div className="graphql-form flex-column">
+    <div className="graphql-form flex-column" style={{ overflowX: 'hidden' }}>
       <div className="d-flex-between m-2 mb-0">
         <h3>Testing</h3>
         {route &&
@@ -352,7 +355,12 @@ export default function ({ route, hide }) {
           </Provider>
         </div>
       ) : (
-        <div className="sub-container">
+        <div
+          className="sub-container"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
           <div className="d-flex">
             <div style={{ minWidth: '200px' }}>
               <NgSelectRenderer
@@ -700,14 +708,31 @@ export default function ({ route, hide }) {
           )}
 
           {receivedResponse && responseBody && selectedResponseTab === 'Body' && (
-            <div className="mt-3">
+            <div className="mt-3" style={{ flex: 1 }}>
               {responseBody.startsWith('<!') ? (
                 <iframe
                   srcDoc={responseBody}
                   style={{ flex: 1, minHeight: '750px', width: '100%' }}
                 />
               ) : (
-                <CodeInput readOnly={true} value={responseBody} width="-1" />
+                <NgCodeRenderer
+                  ngOptions={{
+                    spread: true,
+                  }}
+                  rawSchema={{
+                    props: {
+                      ace_config: {
+                        maxLines: Infinity,
+                        fontSize: 14,
+                      },
+                      editorOnly: true,
+                      height: '100%',
+                      mode: 'json',
+                    },
+                  }}
+                  value={responseBody}
+                  onChange={() => {}}
+                />
               )}
             </div>
           )}
@@ -816,6 +841,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
     }
   };
 
+  console.log(selectedStep, selectedPlugin);
+
   const spaces = range(0, 50)
     .map((i) => '          ')
     .join('');
@@ -860,9 +887,12 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
           </button>
         </div>
         <div
-          onClick={() => setSelectedStep(-1)}
-          className={`d-flex-between mt-1 px-3 py-2 report-step btn btn-${
-            informations.state === 'Successful' ? 'success' : 'danger'
+          onClick={() => {
+            setSelectedStep(-1);
+            setSelectedPlugin(-1);
+          }}
+          className={`d-flex-between mt-1 px-3 py-2 report-step ${
+            selectedStep === -1 && selectedPlugin === -1 ? 'btn-success' : ''
           }`}>
           <span>Report</span>
           <span>
@@ -885,8 +915,8 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                     setSelectedPlugin(-1);
                     setSelectedStep(step.task);
                   }}
-                  className={`d-flex-between mt-1 px-3 py-2 report-step ${
-                    step.task === selectedStep ? 'btn-dark' : ''
+                  className={`d-flex-between mt-1 px-3 py-2 report-step btn-dark ${
+                    step.task === selectedStep && selectedPlugin === -1 ? 'btn-success' : ''
                   }`}>
                   <div className="d-flex align-items-center">
                     {displaySubList && (
@@ -932,10 +962,13 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
                         <div
                           key={plugin.name}
                           style={{ width: 'calc(100% - 12px)', marginLeft: '12px' }}
-                          onClick={() => setSelectedPlugin(plugin.name)}
+                          onClick={() => {
+                            setSelectedStep(step.task);
+                            setSelectedPlugin(plugin.name);
+                          }}
                           className={`d-flex-between mt-1 px-3 py-2 report-step ${
                             step.task === selectedStep && plugin.name === selectedPlugin
-                              ? 'btn-dark'
+                              ? 'btn-success'
                               : ''
                           }`}>
                           <span>{firstLetterUppercase(pluginName)}</span>
@@ -954,13 +987,22 @@ const ReportView = ({ report, search, setSearch, unit, setUnit, sort, setSort, f
             );
           })}
       </div>
-      <CodeInput
-        readOnly={true}
-        width="100%"
-        editorOnly={true}
-        ace_config={{
-          maxLines: Infinity,
+      <NgCodeRenderer
+        ngOptions={{
+          spread: true,
         }}
+        rawSchema={{
+          props: {
+            ace_config: {
+              maxLines: Infinity,
+              fontSize: 14,
+            },
+            editorOnly: true,
+            height: '100%',
+            mode: 'json',
+          },
+        }}
+        onChange={() => {}}
         value={
           JSON.stringify(
             selectedPlugin === -1

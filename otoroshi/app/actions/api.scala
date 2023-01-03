@@ -122,19 +122,31 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       case Right(None)       => true
       case Right(Some(user)) =>
         rootOrTenantAdmin(user) {
-          (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
-            .canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
+          item match {
+            case _: Tenant =>
+              user.rights.canReadTenant(item.location.tenant)
+            case _         =>
+              (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
+                .canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
+          }
         }
     }
   }
+
   def canUserWrite[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
     backOfficeUser match {
       case Left(_)           => false
       case Right(None)       => true
       case Right(Some(user)) =>
         rootOrTenantAdmin(user) {
-          (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
-            .canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
+          item match {
+            case _: Tenant =>
+              (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
+                .canWriteTenant(item.location.tenant)
+            case _         =>
+              (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
+                .canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
+          }
         }
     }
   }
@@ -165,7 +177,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
         env.datastores.routeDataStore.findById(serviceId) flatMap {
           case Some(service) => service.legacy.some.vfuture
           case None          =>
-            env.datastores.servicesDataStore.findById(serviceId) map {
+            env.datastores.routeCompositionDataStore.findById(serviceId) map {
               case Some(service) => service.toRoutes.head.legacy.some
               case None          => None
             }

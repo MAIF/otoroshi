@@ -130,7 +130,7 @@ export class SessionsPage extends Component {
       if (ok) {
         BackOfficeServices.fetchSessions()
           .then((sessions) => {
-            let groups = groupBy(sessions, (i) => i.email);
+            let groups = groupBy(sessions.data, (i) => i.email);
             groups = mapValues(groups, (g) => {
               const values = orderBy(g, (i) => i.expiredAt, 'desc');
               const head = values.shift();
@@ -158,7 +158,12 @@ export class SessionsPage extends Component {
           defaultValue={() => ({})}
           itemName="session"
           columns={this.columns}
-          fetchItems={BackOfficeServices.fetchSessions}
+          fetchItems={(paginateState) =>
+            BackOfficeServices.fetchSessions({
+              ...paginateState,
+              fields: ['name', 'email', 'createdAt', 'expiredAt', 'profile', 'rights', 'randomId'],
+            })
+          }
           showActions={false}
           showLink={false}
           extractKey={(item) => item.randomId}

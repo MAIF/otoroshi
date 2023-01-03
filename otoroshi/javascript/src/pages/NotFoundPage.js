@@ -25,9 +25,9 @@ export class NotFoundPage extends Component {
     //   value: 'compositions',
     // },
     {
-      label: 'Services',
-      icon: 'fa-cubes',
-      action: () => this.routeTo('/services'),
+      label: 'Routes',
+      icon: 'fa-road',
+      action: () => this.routeTo('/routes'),
     },
     {
       action: () => this.routeTo('/exporters'),

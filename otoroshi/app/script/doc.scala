@@ -344,14 +344,14 @@ class PluginDocumentationGenerator(docPath: String) {
       .map { pl =>
         makePluginContent(pl).replace("\n## ", "\n### ").replace("\n# ", "\n## ")
       }
-    val index                 = new File(root, "built-in-plugins.md")
+    val index                 = new File(root, "built-in-legacy-plugins.md")
     if (index.exists()) {
       index.delete()
     }
     index.createNewFile()
     Files.write(
       index.toPath,
-      Seq(s"""# Otoroshi built-in plugins
+      Seq(s"""# Built-in legacy plugins
         |
         |Otoroshi provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration
         |

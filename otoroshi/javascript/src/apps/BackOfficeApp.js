@@ -47,6 +47,7 @@ import RouteDesignerPage from '../pages/RouteDesigner';
 import { BackendsPage } from '../pages/BackendsPage';
 import { MetricsPage } from '../pages/MetricsPage';
 import { AtomicDesignPage } from '../pages/AtomicDesignPage';
+import { FeaturesPage } from '../pages/FeaturesPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -63,6 +64,7 @@ import { TeamsPage } from '../pages/TeamsPage';
 import { Toasts } from '../components/Toasts';
 import { NgFormPlayground } from '../components/nginputs';
 import Loader from '../components/Loader';
+import { globalConfig } from 'antd/lib/config-provider';
 
 class BackOfficeAppContainer extends Component {
   constructor(props) {
@@ -98,7 +100,13 @@ class BackOfficeAppContainer extends Component {
       BackOfficeServices.fetchLines(),
       BackOfficeServices.findAllGroups(),
     ]).then(([env, lines, groups]) => {
-      this.setState({ env, lines, groups, loading: false });
+      this.setState({
+        env,
+        lines,
+        groups,
+        loading: false,
+        usedNewEngine: env.newEngineEnabled,
+      });
     });
   }
 
@@ -156,12 +164,13 @@ class BackOfficeAppContainer extends Component {
                   {this.state.env && <GlobalTenantSelector env={this.state.env} />}
                   <ul className="nav flex-column sidebar-bloc">
                     <li>
-                      <h2>
+                      <h2 className="m-0">
                         <Link
                           to="/"
                           {...createTooltip('Home dashboard of Otoroshi displaying global metrics')}
                           onClick={() => {
                             DynamicTitle.setContent(null);
+                            DynamicSidebar.setContent(null);
                           }}>
                           <i className="fas fa-tachometer-alt" />
                           Dashboard
@@ -202,7 +211,11 @@ class BackOfficeAppContainer extends Component {
                           exact
                           path="/"
                           component={(props) =>
-                            this.decorate(HomePage, { ...props, env: this.state.env })
+                            this.decorate(HomePage, {
+                              ...props,
+                              env: this.state.env,
+                              usedNewEngine: this.state.usedNewEngine,
+                            })
                           }
                         />
                         <Route
@@ -401,6 +414,10 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/groups"
                           component={(props) => this.decorate(GroupsPage, props)}
+                        />
+                        <Route
+                          path="/features"
+                          component={(props) => this.decorate(FeaturesPage, props)}
                         />
 
                         <Route

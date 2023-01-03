@@ -619,7 +619,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
         case "RouteComposition"  =>
           FastFuture.successful(
             NgRoute
-              .fromJsons(env.datastores.servicesDataStore.template(env).json.as[JsObject].deepMerge(resource))
+              .fromJsons(env.datastores.routeCompositionDataStore.template(env).json.as[JsObject].deepMerge(resource))
               .json
           )
         case "ClientValidator"   =>

@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.18
+16.0.0
 </div>
 </div>
 <div class="nav-toc">
@@ -52,21 +52,24 @@
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
     <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
-    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
     <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/tls.html" class="page">TLS</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
@@ -77,6 +80,12 @@
     <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
     <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
     <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -105,7 +114,8 @@
   <ul>
     <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
     <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
-    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
@@ -117,12 +127,6 @@
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
-  <ul>
-    <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
-    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
-    <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
-  </ul></li>
 </ul>
 </div>
 
@@ -156,7 +160,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-1.5.18
+16.0.0
 </div>
 </div>
 <div class="nav-toc">
@@ -173,21 +177,24 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
     <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
-    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
     <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
     <li><a href="../topics/tls.html" class="page">TLS</a></li>
     <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
@@ -198,6 +205,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
     <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
     <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -226,7 +239,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
     <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
-    <li><a href="../plugins/built-in-plugins.html" class="page">Otoroshi built-in plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
@@ -238,12 +252,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
   <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
-  <li><a href="../next/index.html" class="page">Otoroshi new proxy engine</a>
-  <ul>
-    <li><a href="../next/engine.html" class="page">New proxy engine</a></li>
-    <li><a href="../next/topics/index.html" class="page">Detailed topics</a></li>
-    <li><a href="../next/built-in-plugins.html" class="page">Built-in plugins</a></li>
-  </ul></li>
 </ul>
 </div>
 
@@ -268,14 +276,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#setup-an-otoroshi-cluster" name="setup-an-otoroshi-cluster" class="anchor"><span class="anchor-link"></span></a>Setup an Otoroshi cluster</h1>
-<p>In this tutorial, we will deploy an Otoroshi cluster with one leader and 2 workers. We will add a load balancer in front of the workers and validate the installation by adding a header on the requests.</p>
+<p>In this tutorial, you create an cluster of Otoroshi.</p>
+<h3><a href="#summary" name="summary" class="anchor"><span class="anchor-link"></span></a>Summary</h3>
+<ol>
+  <li>Deploy an Otoroshi cluster with one leader and 2 workers</li>
+  <li>Add a load balancer in front of the workers</li>
+  <li>Validate the installation by adding a header on the requests</li>
+</ol>
 <p>Let&rsquo;s start by downloading the latest jar of Otoroshi.</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.18/otoroshi.jar&#39;
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.0.0/otoroshi.jar&#39;
 </code></pre>
 <p>Then create an instance of Otoroshi and indicates with the <code>otoroshi.cluster.mode</code> environment variable that it will be the leader.</p>
 <pre class="prettyprint"><code class="language-sh">java -Dhttp.port=8091 -Dhttps.port=9091 -Dotoroshi.cluster.mode=leader -jar otoroshi.jar
 </code></pre>
-<p>Once created, we have to create the two workers. For both workers, we have to set the ip and the url of their leader in the <code>otoroshi.cluster.leader.urls</code> environment variable.</p>
+<p>Let&rsquo;s create two Otoroshi workers, exposed on <code>:8082/:8092</code> and <code>:8083/:8093</code> ports, and setting the leader URL in the <code>otoroshi.cluster.leader.urls</code> environment variable.</p>
 <p>The first worker will listen on the <code>:8082/:8092</code> ports</p>
 <pre class="prettyprint"><code class="language-sh">java \
   -Dotoroshi.cluster.worker.name=worker-1 \
@@ -292,9 +306,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   -Dotoroshi.cluster.mode=worker \
   -Dotoroshi.cluster.leader.urls.0=&#39;http://127.0.0.1:8091&#39; -jar otoroshi.jar
 </code></pre>
-<p>Once launched, you can navigate to the <a href="http://otoroshi.oto.tools:8091/bo/dashboard/cluster" title="cluster view" target="_blank" rel="noopener noreferrer">cluster view</a>. If all is configured, you will see the leader, the 2 workers and a bunch of informations about each instance.</p>
+<p>Once launched, you can navigate to the <a href="http://otoroshi.oto.tools:8091/bo/dashboard/cluster" title="cluster view" target="_blank" rel="noopener noreferrer">cluster view</a>. The cluster is now configured, you can see the 3 instances and some health informations on each instance.</p>
 <p>To complete our installation, we want to spread the incoming requests accross otoroshi worker instances. </p>
-<p>In this tutorial, we will use haproxy has a TCP loadbalancer. If you don&rsquo;t have haproxy installed, you can use docker to run an haproxy instance as explained below.</p>
+<p>In this tutorial, we will use <code>haproxy</code> has a TCP loadbalancer. If you don&rsquo;t have haproxy installed, you can use docker to run an haproxy instance as explained below.</p>
 <p>But first, we need an haproxy configuration file named <code>haproxy.cfg</code> with the following content :</p>
 <pre class="prettyprint"><code class="language-sh">frontend front_nodes_http
     bind *:8080
@@ -328,66 +342,37 @@ backend back_http_nodes
   <dd>
   <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-sh">docker run -p 8080:8080 -v $(pwd)/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro haproxy</code></pre></dd>
 </dl>
-<p>The last step is to create a service, add a rule to add, in the headers, a specific value to identify the worker used.</p>
-<p>Create this service, exposed on <code>http://myapi.oto.tools:xxxx</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8091/api/services \
+<p>The last step is to create a route, add a rule to add, in the headers, a specific value to identify the worker used.</p>
+<p>Create this route, exposed on <code>http://api.oto.tools:xxxx</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>.</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8091/api/routes&#39; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- &lt;&lt;&#39;EOF&#39;
 {
-    &quot;enforceSecureCommunication&quot;: false,
-    &quot;forceHttps&quot;: false,
-    &quot;_loc&quot;: {
-        &quot;tenant&quot;: &quot;default&quot;,
-        &quot;teams&quot;: [
-            &quot;default&quot;
-        ]
-    },
-    &quot;groupId&quot;: &quot;default&quot;,
-    &quot;groups&quot;: [
-        &quot;default&quot;
-    ],
-    &quot;id&quot;: &quot;myapi&quot;,
-    &quot;name&quot;: &quot;myapi&quot;,
-    &quot;description&quot;: &quot;myapi&quot;,
-    &quot;env&quot;: &quot;prod&quot;,
-    &quot;domain&quot;: &quot;oto.tools&quot;,
-    &quot;subdomain&quot;: &quot;api&quot;,
-    &quot;targetsLoadBalancing&quot;: {
-        &quot;type&quot;: &quot;RoundRobin&quot;
-    },
+  &quot;name&quot;: &quot;myapi&quot;,
+  &quot;frontend&quot;: {
+    &quot;domains&quot;: [&quot;api.oto.tools&quot;]
+  },
+  &quot;backend&quot;: {
     &quot;targets&quot;: [
-        {
-            &quot;host&quot;: &quot;mirror.otoroshi.io&quot;,
-            &quot;scheme&quot;: &quot;https&quot;,
-            &quot;weight&quot;: 1,
-            &quot;mtlsConfig&quot;: {
-                &quot;certs&quot;: [],
-                &quot;trustedCerts&quot;: [],
-                &quot;mtls&quot;: false,
-                &quot;loose&quot;: false,
-                &quot;trustAll&quot;: false
-            },
-            &quot;tags&quot;: [],
-            &quot;metadata&quot;: {},
-            &quot;protocol&quot;: &quot;HTTP\/1.1&quot;,
-            &quot;predicate&quot;: {
-                &quot;type&quot;: &quot;AlwaysMatch&quot;
-            },
-            &quot;ipAddress&quot;: null
+      {
+        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
+        &quot;port&quot;: 443,
+        &quot;tls&quot;: true
+      }
+    ]
+  },
+  &quot;plugins&quot;: [
+    {
+        &quot;enabled&quot;: true,
+        &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.AdditionalHeadersIn&quot;,
+        &quot;config&quot;: {
+            &quot;headers&quot;: {
+                &quot;worker-name&quot;: &quot;${config.otoroshi.cluster.worker.name}&quot;
+            }
         }
-    ],
-    &quot;root&quot;: &quot;\/&quot;,
-    &quot;matchingRoot&quot;: null,
-    &quot;stripPath&quot;: true,
-    &quot;enabled&quot;: true,
-    &quot;publicPatterns&quot;: [
-        &quot;/.*&quot;
-    ],
-    &quot;kind&quot;: &quot;ServiceDescriptor&quot;,
-    &quot;additionalHeaders&quot;: {
-        &quot;worker-name&quot;: &quot;${config.otoroshi.cluster.worker.name}&quot;
     }
+  ]
 }
 EOF
 </code></pre>
@@ -406,6 +391,19 @@ EOF
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../how-to-s/setup-otoroshi-cluster.html#setup-an-otoroshi-cluster" class="header">Setup an Otoroshi cluster</a>
+  <ul>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html#summary" class="header">Summary</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 

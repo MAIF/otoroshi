@@ -411,7 +411,12 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
         fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: HealthCheckEvent) => e.toJson, options) {
           env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
             case None       =>
-              JsonApiError(404, JsString(s"Service with id: '$serviceId' not found")).leftf[Seq[HealthCheckEvent]]
+              env.datastores.routeDataStore.findById(serviceId).flatMap {
+                case None        =>
+                  JsonApiError(404, JsString(s"Service with id: '$serviceId' not found")).leftf[Seq[HealthCheckEvent]]
+                case Some(route) =>
+                  env.datastores.healthCheckDataStore.findAll(route.legacy).fright[JsonApiError]
+              }
             case Some(desc) => env.datastores.healthCheckDataStore.findAll(desc).fright[JsonApiError]
           }
         }
@@ -559,7 +564,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
           val port = if (ctx.request.theSecured) env.exposedHttpsPortInt else env.exposedHttpPortInt
           Ok(
             route.json.asObject ++ Json.obj(
-              "resource_url"    -> s"${ctx.request.theProtocol}://${env.adminApiExposedHost}:${port}/api/experimental/routes/${route.id}",
+              "resource_url"    -> s"${ctx.request.theProtocol}://${env.adminApiExposedHost}:${port}/api/routes/${route.id}",
               "resource_ui_url" -> s"${ctx.request.theProtocol}://${env.backOfficeHost}:${port}/bo/dashboard/routes/${route.id}"
             )
           )

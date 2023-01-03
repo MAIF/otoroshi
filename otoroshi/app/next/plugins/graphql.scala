@@ -6,6 +6,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import com.github.blemale.scaffeine.Scaffeine
+import com.jayway.jsonpath.PathNotFoundException
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.models.NgTreeRouter
@@ -241,9 +242,6 @@ class GraphQLBackend extends NgBackendCall {
    type User {
      name: String!
      firstname: String!
-   }
-   schema {
-    query: Query
    }
 
    type Query {
@@ -521,7 +519,15 @@ class GraphQLBackend extends NgBackendCall {
 
   def permissionResponse(authorized: Boolean, c: AstDirectiveContext[Unit]) = {
     if (!authorized)
-      c.argOpt(unauthorizedValueArg).getOrElse(throw AuthorisationException("You're not authorized"))
+      c.arg(unauthorizedValueArg)
+        .map(value =>
+          if (value.isEmpty) {
+            throw AuthorisationException("You're not authorized")
+          } else {
+            value
+          }
+        )
+        .getOrElse(throw AuthorisationException("You're not authorized"))
     else {
       ResolverBasedAstSchemaBuilder.extractFieldValue(c.ctx)
     }
@@ -534,7 +540,13 @@ class GraphQLBackend extends NgBackendCall {
   )(implicit env: Env, ec: ExecutionContext): Action[Unit, Any] = {
     val context    = buildContext(ctx)
     val authorized =
-      config.permissions.exists(path => JsonPathValidator(path, JsString(c.arg(valueArg))).validate(context))
+      config.permissions.exists(path => {
+        try {
+          JsonPathValidator(path, JsString(c.arg(valueArg))).validate(context)
+        } catch {
+          case _: PathNotFoundException => false
+        }
+      })
     permissionResponse(authorized, c)
   }
 
@@ -546,7 +558,13 @@ class GraphQLBackend extends NgBackendCall {
     val context             = buildContext(ctx)
     val values: Seq[String] = c.arg(valuesArg)
     val authorized          = values.forall(value =>
-      config.permissions.exists(path => JsonPathValidator(path, JsString(value)).validate(context))
+      config.permissions.exists(path => {
+        try {
+          JsonPathValidator(path, JsString(value)).validate(context)
+        } catch {
+          case _: PathNotFoundException => false
+        }
+      })
     )
     permissionResponse(authorized, c)
   }
@@ -559,7 +577,13 @@ class GraphQLBackend extends NgBackendCall {
     val context             = buildContext(ctx)
     val values: Seq[String] = c.arg(valuesArg)
     val authorized          = values.exists(value =>
-      config.permissions.exists(path => JsonPathValidator(path, JsString(value)).validate(context))
+      config.permissions.exists(path => {
+        try {
+          JsonPathValidator(path, JsString(value)).validate(context)
+        } catch {
+          case _: PathNotFoundException => false
+        }
+      })
     )
     permissionResponse(authorized, c)
   }
@@ -572,8 +596,13 @@ class GraphQLBackend extends NgBackendCall {
     val value: String = c.arg(valueArg)
     val path: String  = c.arg(pathArg)
 
-    val authorized = JsonPathValidator(path, JsString(value)).validate(context)
-    permissionResponse(authorized, c)
+    try {
+      val authorized = JsonPathValidator(path, JsString(value)).validate(context)
+      permissionResponse(authorized, c)
+    } catch {
+      case _: PathNotFoundException => permissionResponse(authorized = false, c)
+    }
+
   }
 
   def httpRestDirectiveResolver(
@@ -612,6 +641,7 @@ class GraphQLBackend extends NgBackendCall {
     request
       .execute()
       .map { resp =>
+        println(resp)
         if (resp.status == 200) {
           resp.json.atPath(c.arg(responsePathArg).getOrElse("$")).asOpt[JsValue].getOrElse(JsNull) match {
             case JsArray(value) =>
@@ -738,7 +768,9 @@ class GraphQLBackend extends NgBackendCall {
               .getOrElse {
                 throw MockResponseNotFoundException("Mock response not found for this uri")
               }
-          case JsError(_)          => throw MissingMockResponsesException("Missing mock response plugin")
+          case JsError(err)        =>
+            println(err)
+            throw MissingMockResponsesException("Missing mock response plugin")
         }
     }
   }
@@ -767,16 +799,31 @@ class GraphQLBackend extends NgBackendCall {
       acc + (s"params.$key" -> value)
     }
 
-    val ctx = (ResolverBasedAstSchemaBuilder.extractFieldValue(c.ctx) match {
+    val extractedField = ResolverBasedAstSchemaBuilder.extractFieldValue(c.ctx) match {
       case Some(v: JsObject) =>
         v.value.foldLeft(Map.empty[String, String]) { case (acc, (key, value)) =>
           acc + (s"item.$key" -> (value match {
             case JsObject(_) => ""
+            case JsString(v) => v
             case v           => v.toString()
           }))
         }
       case _                 => Map.empty // TODO - throw exception or whatever
-    }) ++ paramsArgs
+    }
+
+    val fieldsFromValue = c.ctx.value match {
+      case JsObject(fields) =>
+        fields.foldLeft(Map.empty[String, String]) { case (acc, (key, value)) =>
+          acc + (s"item.$key" -> (value match {
+            case JsObject(_) => ""
+            case JsString(v) => v
+            case v           => v.toString()
+          }))
+        }
+      case _                => Map.empty
+    }
+
+    val ctx = extractedField ++ paramsArgs ++ fieldsFromValue
 
     GlobalExpressionLanguage.apply(
       c.arg(urlArg),

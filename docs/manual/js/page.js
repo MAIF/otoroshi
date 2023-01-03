@@ -132,7 +132,7 @@ $(function () {
     if (localStorage.getItem("instructions")) {
       instructionsDone = true
       document.getElementById("instructions-toggle-button").innerText = "Already done"
-      document.getElementById("instructions-toggle-button").style.backgroundColor = "#fb9000"
+      document.getElementById("instructions-toggle-button").style.backgroundColor = "#f9b000"
       document.getElementById("instructions-toggle-button").style.color = "#fff"
       element.parentNode.classList.add("instructions-closed");
       if (document.getElementById("instructions-toggle-confirm"))
@@ -157,7 +157,7 @@ $(function () {
           document.getElementById("instructions-toggle-button").innerText = "Start the installation"
         else {
           document.getElementById("instructions-toggle-button").innerText = "Already done"
-          document.getElementById("instructions-toggle-button").style.backgroundColor = "#fb9000"
+          document.getElementById("instructions-toggle-button").style.backgroundColor = "#f9b000"
           document.getElementById("instructions-toggle-button").style.color = "#fff"
         }
         if (document.getElementById("instructions-toggle-confirm"))
@@ -172,7 +172,7 @@ $(function () {
         localStorage.setItem("instructions", true);
         element.parentNode.classList.add("instructions-closed")
         document.getElementById("instructions-toggle-button").innerText = "Already done"
-        document.getElementById("instructions-toggle-button").style.backgroundColor = "#fb9000"
+        document.getElementById("instructions-toggle-button").style.backgroundColor = "#f9b000"
         document.getElementById("instructions-toggle-button").style.color = "#fff"
         document.getElementById("instructions-toggle-confirm").style.display = "none"
       });

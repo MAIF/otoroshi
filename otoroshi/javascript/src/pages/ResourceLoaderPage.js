@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import AceEditor from 'react-ace';
 
@@ -61,6 +61,8 @@ export function ResourceLoaderPage({ setTitle }) {
 
   const [loadedResources, setLoadedResources] = useState([]);
 
+  const aceRef = useRef();
+
   useEffect(() => {
     setTitle('Resources loader');
   }, []);
@@ -99,6 +101,23 @@ export function ResourceLoaderPage({ setTitle }) {
     setRawResources(resources);
   };
 
+  const onDrop = (ev) => {
+    ev.preventDefault();
+    if (ev.dataTransfer.items) {
+      for (let i = 0; i < ev.dataTransfer.items.length; i++) {
+        if (ev.dataTransfer.items[i].kind === 'file') {
+          const file = ev.dataTransfer.items[i].getAsFile();
+          file.text().then(setRawResources);
+        }
+      }
+    } else {
+      for (let i = 0; i < ev.dataTransfer.files.length; i++) {
+        const file = ev.dataTransfer.files[i];
+        file.text().then(setRawResources);
+      }
+    }
+  };
+
   if (loadedResources.length > 0) {
     return (
       <div style={{ width: '100%' }}>
@@ -108,7 +127,7 @@ export function ResourceLoaderPage({ setTitle }) {
               <th scope="col">Resource name</th>
               <th scope="col">Resource type</th>
               <th scope="col">To import</th>
-              <th scope="col">Imported</th>
+              <th scope="col">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -235,8 +254,13 @@ export function ResourceLoaderPage({ setTitle }) {
       </div>
       <div className="mb-3">
         <div className="row">
-          <div className="col-sm-8" style={{ paddingRight: 0 }}>
+          <div
+            className="col-sm-8"
+            style={{ paddingRight: 0 }}
+            onDrop={onDrop}
+            onDragOver={(e) => e.preventDefault()}>
             <AceEditor
+              ref={aceRef}
               name="resources-loader"
               mode={format}
               theme="monokai"

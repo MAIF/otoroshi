@@ -229,7 +229,7 @@ Nothing to add. The events will be write on the standard output.
 With this kind of exporter, every matching event will be sent to a `.gor` file compatible with [GoReplay](https://goreplay.org/). 
 
 @@@ warning
-this exporter will only be able to catch `TrafficCaptureEvent`. Those events are created when a route (or the global config) of the @ref:[new proxy engine](../next/engine.md) is setup to capture traffic using the `capture` flag.
+this exporter will only be able to catch `TrafficCaptureEvent`. Those events are created when a route (or the global config) of the @ref:[new proxy engine](../topics/engine.md) is setup to capture traffic using the `capture` flag.
 @@@
 
 * `File path`: path where the logs will be write 

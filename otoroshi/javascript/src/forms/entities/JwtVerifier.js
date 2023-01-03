@@ -257,6 +257,11 @@ const JwtLocationExamples = {
             a space for the Remove value entry.
           </p>
           <NgForm
+            value={{
+              header: {
+                Authorization: 'Bearer XXX.XXX.XXX',
+              },
+            }}
             schema={{
               header: {
                 ngOptions: {
