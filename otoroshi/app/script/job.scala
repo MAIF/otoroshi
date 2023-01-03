@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import akka.actor.{ActorSystem, Cancellable, Scheduler}
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.scaladsl._
 import akka.util.ByteString
 import otoroshi.cluster.ClusterMode
 import com.cronutils.model.CronType
@@ -20,6 +21,7 @@ import play.api.libs.json._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.config.ConfigUtils
+import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -623,6 +625,50 @@ object DefaultJob extends Job {
 object CompilingJob extends Job {
   override def uniqueId: JobId                   = JobId("otoroshi.script.default.CompilingJob")
   override def categories: Seq[NgPluginCategory] = Seq.empty
+}
+
+class StalledJobsDetector extends Job {
+
+  private val logger = Logger("otoroshi-healthcheck-stalled-jobs-detector")
+
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+
+  override def uniqueId: JobId = JobId("io.otoroshi.core.jobs.StalledJobsDetector")
+
+  override def name: String = "Detect stalled jobs and relaunch them"
+
+  override def jobVisibility: JobVisibility = JobVisibility.Internal
+
+  override def kind: JobKind = JobKind.ScheduledEvery
+
+  override def starting: JobStarting = JobStarting.Automatically
+
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
+    JobInstantiation.OneInstancePerOtoroshiLeaderInstance
+
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 2.seconds.some
+
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 20.seconds.some
+
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    implicit val mat = env.otoroshiMaterializer
+    env.datastores.rawDataStore.keys(s"${env.storageRoot}:locks:jobs:*").flatMap { keys =>
+      Source(keys.toList)
+        .mapAsync(1) { key =>
+          env.datastores.rawDataStore.pttl(key) map {
+            case -1 =>
+              val jobId = key.replace(s"${env.storageRoot}:locks:jobs:", "")
+              logger.warn(s"job stalled detected: '${jobId}'")
+              env.datastores.rawDataStore.del(Seq(key)).map { _ =>
+                logger.info(s"job '${jobId}' has been unlocked and should work as expected now !")
+              }
+            case _  => ().vfuture
+          }
+        }
+        .runWith(Sink.ignore)
+        .map(_ => ())
+    }
+  }
 }
 
 /*

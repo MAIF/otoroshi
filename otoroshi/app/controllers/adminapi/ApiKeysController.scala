@@ -137,39 +137,41 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
 
   def updateApiKey(serviceId: String, clientId: String) =
     ApiAction.async(parse.json) { ctx =>
-      env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-        case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-        case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
-        case Some(desc)                            =>
-          env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-            case None                                                                      => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
-            case Some(apiKey) if !ctx.canUserWrite(apiKey)                                 => ctx.fforbidden
-            case Some(apiKey) if !apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups) =>
-              NotFound(
-                Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$serviceId'")
-              ).asFuture
-            case Some(apiKey) if apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups)  => {
-              ApiKey.fromJsonSafe(ctx.request.body) match {
-                case JsError(e)                                                => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
-                case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
-                  BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
-                case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
-                  sendAuditAndAlert(
-                    "UPDATE_APIKEY",
-                    s"User updated an ApiKey",
-                    "ApiKeyUpdatedAlert",
-                    Json.obj(
-                      "desc"   -> desc.toJson,
-                      "apikey" -> apiKey.toJson
-                    ),
-                    ctx
-                  )
-                  newApiKey.save().map(_ => Ok(newApiKey.toJson))
+      env.datastores.serviceDescriptorDataStore
+        .findById(serviceId)
+        .flatMap {
+          case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+          case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
+          case Some(desc)                            =>
+            env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+              case None                                                                      => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
+              case Some(apiKey) if !ctx.canUserWrite(apiKey)                                 => ctx.fforbidden
+              case Some(apiKey) if !apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups) =>
+                NotFound(
+                  Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$serviceId'")
+                ).asFuture
+              case Some(apiKey) if apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups)  => {
+                ApiKey.fromJsonSafe(ctx.request.body) match {
+                  case JsError(e)                                                => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
+                  case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
+                    BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
+                  case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
+                    sendAuditAndAlert(
+                      "UPDATE_APIKEY",
+                      s"User updated an ApiKey",
+                      "ApiKeyUpdatedAlert",
+                      Json.obj(
+                        "desc"   -> desc.toJson,
+                        "apikey" -> apiKey.toJson
+                      ),
+                      ctx
+                    )
+                    newApiKey.save().map(_ => Ok(newApiKey.toJson))
+                  }
                 }
               }
             }
-          }
-      }
+        }
     }
 
   def patchApiKey(serviceId: String, clientId: String) =

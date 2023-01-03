@@ -405,7 +405,8 @@ class OtoroshiInfos extends NgRequestTransformer {
   override def isTransformRequestAsync: Boolean            = false
   override def isTransformResponseAsync: Boolean           = true
   override def name: String                                = "Otoroshi info. token"
-  override def description: Option[String]                 = "This plugin adds a jwt info. token to the request to a backend".some
+  override def description: Option[String]                 =
+    "This plugin adds a jwt token with informations about the caller to the backend".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgOtoroshiInfoConfig(Json.obj()).some
 
   override def transformRequestSync(

@@ -72,9 +72,9 @@ the first thing to setup is what kind of datastore you want to use with the `oto
 
 ```conf
 otoroshi {
-  storage = "inmemory" # the storage used by otoroshi. possible values are redis, inmemory, file, http, s3, cassandra, lettuce, experimental-pg             
-  storage = ${?APP_STORAGE} # the storage used by otoroshi. possible values are redis, inmemory, file, http, s3, cassandra, lettuce, experimental-pg  
-  storage = ${?OTOROSHI_STORAGE} # the storage used by otoroshi. possible values are redis, inmemory, file, http, s3, cassandra, lettuce, experimental-pg  
+  storage = "inmemory" # the storage used by otoroshi. possible values are lettuce (for redis), inmemory, file, http, s3, cassandra, postgresql             
+  storage = ${?APP_STORAGE} # the storage used by otoroshi. possible values are lettuce (for redis), inmemory, file, http, s3, cassandra, postgresql  
+  storage = ${?OTOROSHI_STORAGE} # the storage used by otoroshi. possible values are lettuce (for redis), inmemory, file, http, s3, cassandra, postgresql  
 }
 ```
 
@@ -93,9 +93,6 @@ s3
 :   @@snip [s3.conf](../snippets/datastores/s3.conf) 
 
 redis
-:   @@snip [redis.conf](../snippets/datastores/redis.conf) 
-
-redis with lettuce
 :   @@snip [lettuce.conf](../snippets/datastores/lettuce.conf) 
 
 postgresql

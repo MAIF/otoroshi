@@ -16,6 +16,27 @@ export default {
         </button>
       ),
     },
+    permissions: {
+      type: 'string',
+      array: true,
+      label: 'Permissions',
+    },
+    maxDepth: {
+      type: 'number',
+      label: 'Max depth',
+      props: {
+        subTitle:
+          'By analyzing the query document’s abstract syntax tree (AST), Otoroshi is able to reject or accept a request based on its depth.',
+      },
+    },
   }),
-  config_flow: ['designer'],
+  config_flow: [
+    'designer',
+    'permissions',
+    {
+      type: 'group',
+      name: 'Advanced settings',
+      fields: ['maxDepth'],
+    },
+  ],
 };

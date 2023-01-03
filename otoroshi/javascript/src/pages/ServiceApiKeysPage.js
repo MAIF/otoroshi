@@ -102,7 +102,6 @@ class ResetQuotas extends Component {
   };
 
   render() {
-    console.log(this.props);
     return (
       <div className="row mb-3">
         <label className="col-sm-2 col-form-label" />
@@ -370,12 +369,16 @@ const ApiKeysConstants = {
         help: 'The groups/services linked to this api key',
         valuesFrom: '/bo/api/groups-and-services',
         optionRenderer: (p) => {
+          const colors = {
+            service: 'bg-success',
+            route: 'bg-info',
+            'route-composition': 'bg-secondary',
+            group: 'bg-warning',
+          };
           return (
             <div style={{ display: 'flex' }}>
               <div style={{ width: 60 }}>
-                <span className={`badge ${p.kind === 'group' ? 'bg-warning' : 'bg-success'}`}>
-                  {p.kind}
-                </span>
+                <span className={`badge ${colors[p.kind] || 'bd-dark'}`}>{p.kind}</span>
               </div>
               <span>{p.label}</span>
             </div>
@@ -507,7 +510,7 @@ const ApiKeysConstants = {
   columns: (that) => [
     {
       title: 'Name',
-      filterId: 'name',
+      filterId: 'clientName',
       content: (item) => item.clientName,
       wrappedCell: (v, item, table) => {
         if (that.state && that.state.env && that.state.env.adminApikeyId === item.clientId) {
@@ -564,11 +567,19 @@ const ApiKeysConstants = {
         <button
           type="button"
           className="btn btn-sm btn-success"
-          onClick={(e) =>
-            (window.location = `/bo/dashboard/lines/prod/services/${
-              that.state.service ? that.state.service.id : '-'
-            }/apikeys/edit/${item.clientId}/stats`)
-          }>
+          onClick={(e) => {
+            if (e && e.preventDefault) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+            if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
+              window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
+            } else {
+              window.location = `/bo/dashboard/lines/prod/services/${
+                that.state.service ? that.state.service.id : '-'
+              }/apikeys/edit/${item.clientId}/stats`;
+            }
+          }}>
           <i className="fas fa-chart-bar" />
         </button>
       ),
@@ -668,21 +679,24 @@ export class ServiceApiKeysPage extends Component {
 
   createItem = (ak) => {
     return BackOfficeServices.createApiKey(
-      this.props.params.serviceId || this.props.params.routeId,
+      this.props.params.serviceId,
+      this.props.params.routeId,
       ak
     );
   };
 
   updateItem = (ak) => {
     return BackOfficeServices.updateApiKey(
-      this.props.params.serviceId || this.props.params.routeId,
+      this.props.params.serviceId,
+      this.props.params.routeId,
       ak
     );
   };
 
   deleteItem = (ak) => {
     return BackOfficeServices.deleteApiKey(
-      this.props.params.serviceId || this.props.params.routeId,
+      this.props.params.serviceId,
+      this.props.params.routeId,
       ak
     );
   };
@@ -693,7 +707,8 @@ export class ServiceApiKeysPage extends Component {
         parentProps={this.props}
         selfUrl={
           this.onRoutes
-            ? `services/${this.props.params.routeId}/apikeys`
+            ? // ? `services/${this.props.params.routeId}/apikeys`
+              `routes/${this.props.params.routeId}/apikeys`
             : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
         }
         defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
@@ -733,16 +748,24 @@ export class ServiceApiKeysPage extends Component {
         kubernetesKind="ApiKey"
         navigateTo={(item) => {
           if (this.onRoutes) {
-            this.props.history.push(`/apikeys/edit/${item.clientId}`);
+            console.log(item);
+            this.props.history.push(
+              `/routes/${this.props.params.routeId}/apikeys/edit/${item.clientId}`
+              // `/apikeys/edit/${item.clientId}`
+            );
           } else {
             this.props.history.push(
               `/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${item.clientId}?group=${item.id}`
             );
           }
         }}
-        itemUrl={(i) =>
-          `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`
-        }
+        itemUrl={(i) => {
+          if (this.onRoutes) {
+            return `/bo/dashboard/routes/${this.props.params.routeId}/apikeys/edit/${i.clientId}`;
+          } else {
+            return `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`;
+          }
+        }}
         extractKey={(item) => item.clientId}
       />
     );
@@ -762,7 +785,7 @@ export class ApiKeysPage extends Component {
   fetchAllApiKeys = (paginationState) => {
     return BackOfficeServices.fetchAllApikeys({
       ...paginationState,
-      fields: ['id', 'name', 'enabled', 'clientId', 'clientName', 'clientSecret'],
+      fields: ['id', 'enabled', 'clientId', 'clientName', 'clientSecret'],
     });
   };
 

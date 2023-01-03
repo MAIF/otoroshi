@@ -425,8 +425,6 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to, releaseDir));
     await ensureStep('CREATE_GITHUB_TAG', releaseFile, () => githubTag(location, to));
     await ensureStep('PUBLISH_LIBRARIES_TO_CENTRAL', releaseFile, () => publishMavenCentral(location, to));
-    await ensureStep('PUBLISH_DOCKER_OTOROSHI', releaseFile, () => publishDockerOtoroshi(location, to));
-    await ensureStep('PUBLISH_HELM_CHART', releaseFile, () => publishHelmChart(location, to));
     await ensureStep('CHANGE_TO_DEV_VERSION', releaseFile, () => changeVersion(location, to, next, ['./readme.md']));
     await ensureStep('PUSH_TO_GITHUB', releaseFile, async () => {
       await runSystemCommand('git', ['commit', '-am', `Update version to ${next}`], location);
@@ -435,6 +433,8 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
       await runSystemCommand('git', ['push', '--tags'], location);
       console.log("Release done !");
     });
+    await ensureStep('PUBLISH_DOCKER_OTOROSHI', releaseFile, () => publishDockerOtoroshi(location, to));
+    await ensureStep('PUBLISH_HELM_CHART', releaseFile, () => publishHelmChart(location, to));
     process.exit(0);
   }
 }

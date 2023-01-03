@@ -1,6 +1,6 @@
 # The Otoroshi communication protocol
 
-The exchange protocol secure the communication with an app. When it's enabled, Otoroshi will send for each request a value in pre-selected token header, and will check the same header in the return request.
+The exchange protocol secure the communication with an app. When it's enabled, Otoroshi will send for each request a value in pre-selected token header, and will check the same header in the return request. On routes, you will have to use the `Otoroshi challenge token` plugin to enable it.
 
 ### V1 challenge
 
@@ -24,7 +24,7 @@ you can find an example project that implements V2 challenge [here](https://gith
 
 ### Info. token
 
-Otoroshi is also sending a JWT token in a header named `Otoroshi-Claim` that the target app can validate too.
+Otoroshi is also sending a JWT token in a header named `Otoroshi-Claim` that the target app can validate too. On routes, you will have to use the `Otoroshi info. token` plugin to enable it.
 
 The `Otoroshi-Claim` is a JWT token containing some informations about the service that is called and the client if available. You can choose between a legacy version of the token and a new one that is more clear and structured.
 

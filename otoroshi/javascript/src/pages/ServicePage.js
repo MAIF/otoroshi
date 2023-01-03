@@ -652,10 +652,27 @@ export class ServicePage extends Component {
             this.props.params.lineId,
             this.props.params.serviceId
           ).then((service) => {
-            this.props.setTitle(`Service descriptor`);
-            this.setState({ service, originalService: service }, () => {
-              this.props.setSidebarContent(this.sidebarContent(service.name));
-            });
+            if (service.error) {
+              BackOfficeServices.createNewService().then((service) => {
+                this.props.setTitle(`Service descriptor`);
+                this.setState(
+                  {
+                    service,
+                    originalService: service,
+                    changed: true,
+                    neverSaved: true,
+                  },
+                  () => {
+                    this.props.setSidebarContent(this.sidebarContent(service.name));
+                  }
+                );
+              });
+            } else {
+              this.props.setTitle(`Service descriptor`);
+              this.setState({ service, originalService: service }, () => {
+                this.props.setSidebarContent(this.sidebarContent(service.name));
+              });
+            }
           });
         }
       }, 50);
@@ -1138,6 +1155,33 @@ export class ServicePage extends Component {
     }
   };
 
+  convertToRoute = () => {
+    window.newConfirm(
+      "Are you sure you want to do that ? your current service will be disabled, but you'll have to delete it yourself.",
+      (ok) => {
+        if (ok) {
+          BackOfficeServices.convertAsRoute(this.state.service.id).then((res) => {
+            BackOfficeServices.nextClient
+              .forEntity('routes')
+              .create(res)
+              .then(() => {
+                const newService = {
+                  ...this.state.service,
+                  name: '[MIGRATED TO ROUTE, PENDING DELETION] ' + this.state.service.name,
+                  enabled: false,
+                };
+                this.setState({ service: newService }, () => {
+                  BackOfficeServices.saveService(newService).then(() => {
+                    this.props.history.push(`/routes/${res.id}?tab=informations`);
+                  });
+                });
+              });
+          });
+        }
+      }
+    );
+  };
+
   render() {
     if (!this.state.service) return null;
 
@@ -1152,6 +1196,14 @@ export class ServicePage extends Component {
         <form className="form-horizontal">
           <div className="mb-3 btnsService">
             <div className="displayGroupBtn">
+              <button
+                className="btn btn-info"
+                type="button"
+                {...createTooltip('.....', 'left', true)}
+                disabled={!this.state.service.enabled}
+                onClick={this.convertToRoute}>
+                <i className="fas fa-road" /> convert to route
+              </button>
               <button
                 className="btn btn-danger"
                 type="button"
@@ -1241,6 +1293,13 @@ export class ServicePage extends Component {
               onChangeTeams={(v) => this.changeTheValue('_loc.teams', v)}
             />
           </Collapse>
+          {this.state.service.enabled && (
+            <div className="alert alert-warning" role="warning" style={{ marginTop: 20 }}>
+              You are using service descriptors. There is a new way to configure otoroshi through{' '}
+              <Link to="/routes">routes</Link>. Service descriptors will be eventually deprecated in
+              future otoroshi versions.
+            </div>
+          )}
           <TextInput
             label="Id"
             disabled={!this.state.neverSaved}

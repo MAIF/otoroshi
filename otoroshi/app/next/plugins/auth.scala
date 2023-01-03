@@ -118,7 +118,7 @@ class AuthModule extends NgAccessValidator {
   private val configReads: Reads[NgAuthModuleConfig] = NgAuthModuleConfig.format
 
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication, NgPluginCategory.Classic)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true

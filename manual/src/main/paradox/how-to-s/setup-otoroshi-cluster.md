@@ -1,11 +1,17 @@
 # Setup an Otoroshi cluster
 
-In this tutorial, we will deploy an Otoroshi cluster with one leader and 2 workers. We will add a load balancer in front of the workers and validate the installation by adding a header on the requests.
+In this tutorial, you create an cluster of Otoroshi.
+
+### Summary 
+
+1. Deploy an Otoroshi cluster with one leader and 2 workers 
+2. Add a load balancer in front of the workers 
+3. Validate the installation by adding a header on the requests
 
 Let's start by downloading the latest jar of Otoroshi.
 
 ```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.0.0-dev/otoroshi.jar'
 ```
 
 Then create an instance of Otoroshi and indicates with the `otoroshi.cluster.mode` environment variable that it will be the leader.
@@ -14,7 +20,7 @@ Then create an instance of Otoroshi and indicates with the `otoroshi.cluster.mod
 java -Dhttp.port=8091 -Dhttps.port=9091 -Dotoroshi.cluster.mode=leader -jar otoroshi.jar
 ```
 
-Once created, we have to create the two workers. For both workers, we have to set the ip and the url of their leader in the `otoroshi.cluster.leader.urls` environment variable.
+Let's create two Otoroshi workers, exposed on `:8082/:8092` and `:8083/:8093` ports, and setting the leader URL in the `otoroshi.cluster.leader.urls` environment variable.
 
 The first worker will listen on the `:8082/:8092` ports
 ```sh
@@ -36,11 +42,11 @@ java \
   -Dotoroshi.cluster.leader.urls.0='http://127.0.0.1:8091' -jar otoroshi.jar
 ```
 
-Once launched, you can navigate to the @link:[cluster view](http://otoroshi.oto.tools:8091/bo/dashboard/cluster) { open=new }. If all is configured, you will see the leader, the 2 workers and a bunch of informations about each instance.
+Once launched, you can navigate to the @link:[cluster view](http://otoroshi.oto.tools:8091/bo/dashboard/cluster) { open=new }. The cluster is now configured, you can see the 3 instances and some health informations on each instance.
 
 To complete our installation, we want to spread the incoming requests accross otoroshi worker instances. 
 
-In this tutorial, we will use haproxy has a TCP loadbalancer. If you don't have haproxy installed, you can use docker to run an haproxy instance as explained below.
+In this tutorial, we will use `haproxy` has a TCP loadbalancer. If you don't have haproxy installed, you can use docker to run an haproxy instance as explained below.
 
 But first, we need an haproxy configuration file named `haproxy.cfg` with the following content :
 
@@ -74,69 +80,40 @@ docker (on macos)
 docker (on windows)
 :   @@snip [run.sh](../snippets/cluster-run-ha.sh) { #docker_windows }
 
-The last step is to create a service, add a rule to add, in the headers, a specific value to identify the worker used.
+The last step is to create a route, add a rule to add, in the headers, a specific value to identify the worker used.
 
-Create this service, exposed on `http://myapi.oto.tools:xxxx`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
+Create this route, exposed on `http://api.oto.tools:xxxx`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
 
 ```sh
-curl -X POST http://otoroshi-api.oto.tools:8091/api/services \
+curl -X POST 'http://otoroshi-api.oto.tools:8091/api/routes' \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'
 {
-    "enforceSecureCommunication": false,
-    "forceHttps": false,
-    "_loc": {
-        "tenant": "default",
-        "teams": [
-            "default"
-        ]
-    },
-    "groupId": "default",
-    "groups": [
-        "default"
-    ],
-    "id": "myapi",
-    "name": "myapi",
-    "description": "myapi",
-    "env": "prod",
-    "domain": "oto.tools",
-    "subdomain": "api",
-    "targetsLoadBalancing": {
-        "type": "RoundRobin"
-    },
+  "name": "myapi",
+  "frontend": {
+    "domains": ["api.oto.tools"]
+  },
+  "backend": {
     "targets": [
-        {
-            "host": "mirror.otoroshi.io",
-            "scheme": "https",
-            "weight": 1,
-            "mtlsConfig": {
-                "certs": [],
-                "trustedCerts": [],
-                "mtls": false,
-                "loose": false,
-                "trustAll": false
-            },
-            "tags": [],
-            "metadata": {},
-            "protocol": "HTTP\/1.1",
-            "predicate": {
-                "type": "AlwaysMatch"
-            },
-            "ipAddress": null
+      {
+        "hostname": "mirror.otoroshi.io",
+        "port": 443,
+        "tls": true
+      }
+    ]
+  },
+  "plugins": [
+    {
+        "enabled": true,
+        "plugin": "cp:otoroshi.next.plugins.AdditionalHeadersIn",
+        "config": {
+            "headers": {
+                "worker-name": "${config.otoroshi.cluster.worker.name}"
+            }
         }
-    ],
-    "root": "\/",
-    "matchingRoot": null,
-    "stripPath": true,
-    "enabled": true,
-    "publicPatterns": [
-        "/.*"
-    ],
-    "kind": "ServiceDescriptor",
-    "additionalHeaders": {
-        "worker-name": "${config.otoroshi.cluster.worker.name}"
     }
+  ]
 }
 EOF
 ```

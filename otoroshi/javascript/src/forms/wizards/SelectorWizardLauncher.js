@@ -19,9 +19,11 @@ export class SelectorWizardLauncher extends React.Component {
 
   loadEntity = (value) => {
     if (value && typeof value === 'string') {
-      this.props.findById(value).then((entity) => {
-        this.setState({ entity });
-      });
+      if (this.props.findById) {
+        this.props.findById(value).then((entity) => {
+          this.setState({ entity });
+        });
+      }
     } else
       this.setState({
         entity: undefined,

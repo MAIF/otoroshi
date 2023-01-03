@@ -218,7 +218,7 @@ export class NgFormPlaygroundOtoroshi extends Component {
   state = { forms: {} };
 
   componentDidMount() {
-    return fetch(`/bo/api/proxy/api/experimental/forms`, {
+    return fetch(`/bo/api/proxy/api/forms`, {
       method: 'GET',
       credentials: 'include',
       headers: {

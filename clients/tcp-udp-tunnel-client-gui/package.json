@@ -10,15 +10,15 @@
   "dependencies": {
     "colors": "1.4.0",
     "faker": "5.1.0",
-    "fs-extra": "9.0.1",
-    "https-proxy-agent": "5.0.0",
+    "fs-extra": "11.1.0",
+    "https-proxy-agent": "5.0.1",
     "lodash": "4.17.21",
-    "moment": "2.29.2",
+    "moment": "2.29.4",
     "node-fetch": "2.6.1",
-    "ws": "7.4.6"
+    "ws": "8.11.0"
   },
   "devDependencies": {
-    "electron": "17.1.0",
-    "electron-packager": "15.4.0"
+    "electron": "22.0.0",
+    "electron-packager": "17.1.1"
   }
 }

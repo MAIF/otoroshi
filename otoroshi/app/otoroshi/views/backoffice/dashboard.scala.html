@@ -14,6 +14,7 @@
         window.__apiReadOnly = @config.apiReadOnly;
         window.__u2fLoginOnly = @config.u2fLoginOnly;
         window.__currentVersion = '@version';
+        window.__initWithNewEngine = @config.initWithNewEngine;
         window.__user = @Html(Json.stringify(user.toJson));
         window.__user.superAdmin = @(user.rights.superAdmin(_env))
         var tenant = window.localStorage.getItem("Otoroshi-Tenant");

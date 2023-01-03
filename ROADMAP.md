@@ -19,11 +19,11 @@ this issue will try to sum things up about where otoroshi is going, what otorosh
 - [x] Q3 2022  
   - remote tunnels for easier exposition
   - relay routing
-- [ ] Q4 2022  
+- [x] Q4 2022  
   - [x] experimental netty stuff
   - [x] http3 preview
-  - [ ] rollout new proxy engine (version 16)
-  - [ ] introduce wizards to help resources creation
+  - [x] rollout new proxy engine (version 16)
+  - [x] introduce wizards to help resources creation
 - [ ] next (2023 - 202x)
   - [ ] create an official github project
   - [ ] add an anonymous telemetry agent to gather usage statistics
@@ -231,6 +231,6 @@ at some point we will have the opportunity to rewrite otoroshi with major breaki
 
 ## storage
 
-- [ ] switch default redis driver to lettuce and remove rediscala
-- [ ] remove support for mongodb
-- [ ] remove support for leveldb
+- [x] switch default redis driver to lettuce and remove rediscala
+- [x] remove support for mongodb
+- [x] remove support for leveldb

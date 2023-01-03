@@ -1087,6 +1087,8 @@ sealed trait JwtVerifier extends AsJson {
 
     import Implicits._
 
+    println("token", source.token(request))
+
     source.token(request) match {
       case None        =>
         strategy match {

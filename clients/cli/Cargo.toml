@@ -3,7 +3,7 @@ authors = ["Mathieu <mathieu.ancelin@serli.com>"]
 license = "ASL-2.0"
 name = "otoroshi-cli"
 readme = "readme.md"
-version = "1.5.0-dev"
+version = "16.0.0-dev"
 
 [[bin]]
 name = "otoroshicli"
@@ -13,7 +13,7 @@ path = "src/main.rs"
 clap = "2.26.2"
 env_logger = "0.4.3"
 futures = "0.1.14"
-hyper = "0.11.2"
+hyper = "0.14.5"
 json-color = "0.6.1"
 log = "0.3.8"
 rand = "0.3.16"

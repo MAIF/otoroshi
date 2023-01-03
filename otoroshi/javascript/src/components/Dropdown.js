@@ -13,7 +13,7 @@ export function Dropdown({ children, className = '', style = {}, buttonStyle }) 
         }}
         id="menu"
         data-bs-toggle="dropdown"
-        data-bs-auto-close="outside"
+        data-bs-auto-close="true"
         aria-expanded="false">
         <i className="fas fa-ellipsis-h" style={{ fontSize: '1.33333em' }} />
       </button>

@@ -18,6 +18,7 @@ import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
 import otoroshi.health.HealthCheckerActor
 import otoroshi.jobs.updates.Version
 import otoroshi.models._
+import otoroshi.next.models.NgRoute
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.next.tunnel.{TunnelAgent, TunnelManager}
 import otoroshi.next.utils.Vaults
@@ -31,8 +32,6 @@ import otoroshi.storage.DataStores
 import otoroshi.storage.drivers.cassandra._
 import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.drivers.lettuce._
-import otoroshi.storage.drivers.leveldb._
-import otoroshi.storage.drivers.mongo._
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
 import otoroshi.storage.drivers.rediscala._
 import otoroshi.tcp.TcpService
@@ -59,6 +58,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}
+
+case class RoutingInfo(id: String, name: String)
 
 case class SidecarConfig(
     serviceId: String,
@@ -176,7 +177,7 @@ class Env(
     promise.future
   }
 
-  val healthCheckerActor  = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
+  // val healthCheckerActor  = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
   val otoroshiEventsActor = otoroshiActorSystem.actorOf(OtoroshiEventsActorSupervizer.props(this))
   val analyticsQueue      = otoroshiActorSystem.actorOf(AnalyticsQueue.props(this))
 
@@ -771,7 +772,7 @@ class Env(
   displayDefaultValuesWarning()
 
   lazy val datastores: DataStores = {
-    configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("redis") match {
+    configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("lettuce") match {
       case _ if clusterConfig.mode == ClusterMode.Worker                   =>
         new SwappableInMemoryDataStores(configuration, environment, lifecycle, this)
       case "redis-pool" if clusterConfig.mode == ClusterMode.Leader        =>
@@ -795,7 +796,10 @@ class Env(
       case "mem" if clusterConfig.mode == ClusterMode.Leader               =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb" if clusterConfig.mode == ClusterMode.Leader           =>
-        new LevelDbDataStores(configuration, environment, lifecycle, this)
+        logger.error(
+          "LevelDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+        )
+        sys.exit(1)
       case "file" if clusterConfig.mode == ClusterMode.Leader              =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.FilePersistenceKind, this)
       case "http" if clusterConfig.mode == ClusterMode.Leader              =>
@@ -807,10 +811,17 @@ class Env(
       case "cassandra" if clusterConfig.mode == ClusterMode.Leader         =>
         new CassandraDataStores(false, configuration, environment, lifecycle, this)
       case "mongo" if clusterConfig.mode == ClusterMode.Leader             =>
-        new MongoDataStores(configuration, environment, lifecycle, this)
+        logger.error(
+          "MongoDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+        )
+        sys.exit(1)
       case "lettuce" if clusterConfig.mode == ClusterMode.Leader           =>
         new LettuceDataStores(configuration, environment, lifecycle, this)
       case "experimental-pg" if clusterConfig.mode == ClusterMode.Leader   =>
+        new ReactivePgDataStores(configuration, environment, lifecycle, this)
+      case "pg" if clusterConfig.mode == ClusterMode.Leader                =>
+        new ReactivePgDataStores(configuration, environment, lifecycle, this)
+      case "postgresql" if clusterConfig.mode == ClusterMode.Leader        =>
         new ReactivePgDataStores(configuration, environment, lifecycle, this)
       case "redis"                                                         => new RedisLFDataStores(configuration, environment, lifecycle, this)
       case "inmemory"                                                      =>
@@ -819,7 +830,11 @@ class Env(
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "mem"                                                           =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
-      case "leveldb"                                                       => new LevelDbDataStores(configuration, environment, lifecycle, this)
+      case "leveldb"                                                       =>
+        logger.error(
+          "LevelDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+        )
+        sys.exit(1)
       case "file"                                                          =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.FilePersistenceKind, this)
       case "http"                                                          =>
@@ -828,7 +843,11 @@ class Env(
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.S3PersistenceKind, this)
       case "cassandra-naive"                                               => new CassandraDataStores(true, configuration, environment, lifecycle, this)
       case "cassandra"                                                     => new CassandraDataStores(false, configuration, environment, lifecycle, this)
-      case "mongo"                                                         => new MongoDataStores(configuration, environment, lifecycle, this)
+      case "mongo"                                                         =>
+        logger.error(
+          "MongoDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+        )
+        sys.exit(1)
       case "redis-pool"                                                    => new RedisCPDataStores(configuration, environment, lifecycle, this)
       case "redis-mpool"                                                   => new RedisMCPDataStores(configuration, environment, lifecycle, this)
       case "redis-cluster"                                                 => new RedisClusterDataStores(configuration, environment, lifecycle, this)
@@ -837,6 +856,8 @@ class Env(
       case "redis-sentinel-lf"                                             => new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
       case "lettuce"                                                       => new LettuceDataStores(configuration, environment, lifecycle, this)
       case "experimental-pg"                                               => new ReactivePgDataStores(configuration, environment, lifecycle, this)
+      case "pg"                                                            => new ReactivePgDataStores(configuration, environment, lifecycle, this)
+      case "postgresql"                                                    => new ReactivePgDataStores(configuration, environment, lifecycle, this)
       case e                                                               => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }
@@ -862,7 +883,7 @@ class Env(
     implicit val ec = otoroshiExecutionContext
     // geoloc.stop()
     // ua.stop()
-    healthCheckerActor ! PoisonPill
+    // healthCheckerActor ! PoisonPill
     otoroshiEventsActor ! StopExporters
     otoroshiEventsActor ! PoisonPill
     Option(ahcStats.get()).foreach(_.cancel())
@@ -939,6 +960,7 @@ class Env(
     configuration.getOptionalWithFileSupport[Int]("otoroshi.next.experimental.http2-client-proxy.port").getOrElse(8555)
 
   lazy val defaultConfig = GlobalConfig(
+    initWithNewEngine = true,
     trustXForwarded = initialTrustXForwarded,
     perIpThrottlingQuota = 500,
     throttlingQuota = 100000,
@@ -956,7 +978,7 @@ class Env(
           "enabled"          -> true,
           "debug"            -> false,
           "debug_headers"    -> false,
-          "domains"          -> Seq("*-next-gen.oto.tools"),
+          "domains"          -> Seq("*"),
           "routing_strategy" -> "tree"
         ),
         "ClientCredentialService" -> Json.obj(
@@ -989,7 +1011,8 @@ class Env(
 
   lazy val adminHosts: Seq[String] =
     adminApiExposedDomains ++ adminApiAdditionalExposedDomain :+ s"${adminApiExposedSubDomain}.${domain}"
-  lazy val backOfficeDescriptor    = ServiceDescriptor(
+
+  lazy val backOfficeServiceDescriptor = ServiceDescriptor(
     id = backOfficeServiceId,
     groups = Seq(backOfficeGroupId),
     name = "otoroshi-admin-api",
@@ -1022,7 +1045,15 @@ class Env(
     useAkkaHttpClient = true
   )
 
-  lazy val otoroshiVersion    = "1.5.0-dev"
+  lazy val backofficeRoute =
+    NgRoute.fromServiceDescriptor(backOfficeServiceDescriptor, false)(otoroshiExecutionContext, this)
+
+  lazy val backOfficeDescriptor = RoutingInfo(
+    id = backofficeRoute.id,
+    name = backofficeRoute.name
+  )
+
+  lazy val otoroshiVersion    = "16.0.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
@@ -1230,7 +1261,8 @@ class Env(
 
                 val baseExport = OtoroshiExport(
                   config = defaultConfig,
-                  descs = Seq(backOfficeDescriptor),
+                  descs = if (defaultConfig.initWithNewEngine) Seq.empty else Seq(backOfficeServiceDescriptor),
+                  routes = if (defaultConfig.initWithNewEngine) Seq(backofficeRoute) else Seq.empty,
                   apikeys = Seq(backOfficeApiKey, defaultGroupApiKey),
                   groups = Seq(backOfficeGroup, defaultGroup),
                   simpleAdmins = Seq(admin),

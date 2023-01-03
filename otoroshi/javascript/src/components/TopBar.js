@@ -9,6 +9,7 @@ import { DefaultAdminPopover } from '../components/inputs';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { JsonObjectAsCodeInput } from './inputs/CodeInput';
 import { Link } from 'react-router-dom';
+import { Button } from './Button';
 
 function extractEnv(value = '') {
   const parts = value.split(' ');
@@ -422,6 +423,8 @@ export class TopBar extends Component {
           action: () => {
             if (v.type === 'http') {
               this.gotoService({ env: v.env, value: v.serviceId });
+            } else if (v.type === 'route') {
+              this.gotoRoute(v.serviceId);
             } else if (v.type === 'tcp') {
               this.gotoTcpService({ env: v.env, value: v.serviceId });
             }
@@ -567,8 +570,14 @@ export class TopBar extends Component {
           value: 'Top-10-services',
         });
         options.push({
-          action: () => this.routeTo('/jwt-verifiers'),
+          action: () => this.routeTo('/apikeys'),
           env: <span className="fas fa-key" />,
+          label: 'Apikeys',
+          value: 'Apikeys',
+        });
+        options.push({
+          action: () => this.routeTo('/jwt-verifiers'),
+          env: <span className="fas fa-circle-check" />,
           label: 'Global Jwt Verifiers',
           value: 'Jwt-Verifiers',
         });
@@ -597,6 +606,12 @@ export class TopBar extends Component {
           env: <span className="fab fa-pied-piper-alt" />,
           label: 'Connected tunnels',
           value: 'tunnels-view',
+        });
+        options.push({
+          action: () => this.routeTo('/features'),
+          env: <span className="fab fa-grip" />,
+          label: 'Features',
+          value: 'features',
         });
         if (this.props.env.scriptingEnabled === true) {
           options.push({
@@ -816,6 +831,14 @@ export class TopBar extends Component {
     }
   };
 
+  gotoRoute = (routeId) => {
+    if (this.props.history) {
+      this.props.history.push(`/routes/${routeId}?tab=flow`);
+    } else {
+      window.location.href = `/bo/dashboard/routes/${routeId}?tab=flow`;
+    }
+  };
+
   gotoTcpService = (e) => {
     if (e) {
       if (this.props.history) {
@@ -939,7 +962,7 @@ export class TopBar extends Component {
                 {this.brandName()}
               </Link>
             </div>
-            <form id="navbar" className="navbar-form navbar-left align-self-center">
+            <form id="navbar" className="navbar-form navbar-left align-self-center d-flex">
               {selected && (
                 <div className="mb-3" style={{ marginRight: 10 }}>
                   <span
@@ -1013,6 +1036,67 @@ export class TopBar extends Component {
                   }}
                   style={{ width: 400 }}
                 />
+              </div>
+              <div className="dropdown">
+                <Button
+                  style={{
+                    backgroundColor: '#f9b000',
+                    minWidth: 160,
+                    maxWidth: 160,
+                    border: 'none',
+                  }}
+                  className="d-flex align-items-center justify-content-between dropdown"
+                  id="add-components"
+                  data-bs-toggle="dropdown"
+                  data-bs-auto-close="true"
+                  aria-expanded="false">
+                  <span>Add new ...</span>
+                  <i className="fas fa-chevron-down" />
+                </Button>
+                <ul
+                  className="dropdown-menu add-menu"
+                  aria-labelledby="add-components"
+                  style={{
+                    background: 'rgb(73, 73, 72)',
+                    border: '1px solid #373735',
+                    borderTop: 0,
+                    padding: '12px',
+                    zIndex: 4000,
+                    color: '#E6E6E6',
+                    gap: 5,
+                  }}>
+                  {this.props && !this.props.env.initWithNewEngine && (
+                    <li className="d-flex">
+                      <Link to="/services">Service desc.</Link>
+                    </li>
+                  )}
+                  <li className="d-flex">
+                    <Link to="/routes/new?tab=informations">Route</Link>
+                  </li>
+                  <li className="d-flex">
+                    <Link to="/backends/add">Backend</Link>
+                  </li>
+                  <li className="d-flex">
+                    <Link to="/apikeys/add">Apikey</Link>
+                  </li>
+                  <li className="d-flex">
+                    <Link to="/certificates/add">Certificates</Link>
+                  </li>
+                  <li className="d-flex">
+                    <Link to="/auth-configs/add">Auth. module</Link>
+                  </li>
+                  <li className="d-flex">
+                    <Link to="/jwt-verifiers/add">Jwt Verifier</Link>
+                  </li>
+                  <li className="d-flex">
+                    <Link to="/tcp/services/add">TCP service</Link>
+                  </li>
+                  {this.props.env && this.props.env.clevercloud && (
+                    <li className="d-flex">
+                      <Link to="/clever">Service from a CleverApp</Link>
+                    </li>
+                  )}
+                </ul>
               </div>
             </form>
           </div>
@@ -1125,8 +1209,19 @@ export class TopBar extends Component {
                   </li>
                   <li className="dropdown-divider" />
                   <li>
+                    {this.props && !this.props.env.initWithNewEngine && (
+                      <Link to="/services" className="dropdown-item">
+                        <span className="fas fa-cubes" /> Service descriptors
+                      </Link>
+                    )}
+                    <Link to="/routes" className="dropdown-item">
+                      <span className="fas fa-road" /> Routes
+                    </Link>
+                    <Link to="/backends" className="dropdown-item">
+                      <span className="fas fa-microchip" /> Backends
+                    </Link>
                     <Link to="/jwt-verifiers" className="dropdown-item">
-                      <span className="fas fa-key" /> Jwt Verifiers
+                      <span className="fas fa-circle-check" /> Jwt Verifiers
                     </Link>
                     <Link to="/auth-configs" className="dropdown-item">
                       <span className="fas fa-lock" /> Authentication configs

@@ -17,7 +17,6 @@ import play.api.Logger
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.cache.types.LegitTrieMap
 
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.{Failure, Success}
@@ -83,7 +82,8 @@ object HealthCheck {
         )
         .get()
         .andThen {
-          case Success(res)   => {
+          case Success(res) => {
+
             val checkDone =
               res.header(env.Headers.OtoroshiHealthCheckLogicTestResult).exists(_.toLong == value.toLong + 42L)
             val health    = (res.status, checkDone) match {
@@ -124,7 +124,7 @@ object HealthCheck {
             res.ignore()
           }
           case Failure(error) => {
-            // error.printStackTrace()
+            error.printStackTrace()
             logger.error(s"Error while checking health of service '${desc.name}' at '${url}'")
             val hce = HealthCheckEvent(
               `@id` = value,
@@ -214,22 +214,24 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
       }
     }
     case StartHealthCheck()                                                                => {
-      val myself = self
-      val date   = DateTime.now()
+      val myself            = self
+      val date              = DateTime.now()
       if (logger.isTraceEnabled) logger.trace(s"StartHealthCheck at $date")
-      env.datastores.serviceDescriptorDataStore.findAll().andThen {
-        case Success(descs) => myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
-        case Failure(error) => myself ! ReStartHealthCheck()
-      }
+      val services          = env.proxyState.allServices()
+      val routes            = env.proxyState.allRoutes()
+      val routeCompositions = env.proxyState.allRouteCompositions()
+      val descs             = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
+      myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
     }
     case ReStartHealthCheck()                                                              => {
-      val myself = self
-      val date   = DateTime.now()
+      val myself            = self
+      val date              = DateTime.now()
       if (logger.isTraceEnabled) logger.trace(s"StartHealthCheck at $date")
-      env.datastores.serviceDescriptorDataStore.findAll().andThen {
-        case Success(descs) => myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
-        case Failure(error) => myself ! ReStartHealthCheck()
-      }
+      val services          = env.proxyState.allServices()
+      val routes            = env.proxyState.allRoutes()
+      val routeCompositions = env.proxyState.allRouteCompositions()
+      val descs             = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
+      myself ! CheckFirstService(date, descs.filter(_.healthCheck.enabled))
     }
     case e                                                                                 => if (logger.isTraceEnabled) logger.trace(s"Received unknown message $e")
   }
@@ -259,20 +261,24 @@ class HealthCheckJob extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    implicit val mat   = env.otoroshiMaterializer
-    val parallelChecks = env.healtCheckWorkers
-    env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-      val targets = services
-        .filter(_.healthCheck.enabled)
-        .flatMap(s => s.targets.map(t => (t, s)))
-        .toList
-      Source(targets)
-        .mapAsync(parallelChecks) { case (target, service) =>
-          HealthCheck.checkTarget(service, target, logger)
-        }
-        .runWith(Sink.ignore)
-        .map(_ => ())
-    }
+    implicit val mat      = env.otoroshiMaterializer
+    val parallelChecks    = env.healtCheckWorkers
+    val services          = env.proxyState.allServices()
+    val routes            = env.proxyState.allRawRoutes()
+    val routeCompositions = env.proxyState.allRouteCompositions()
+    val descs             = services ++ routes.map(_.legacy) ++ routeCompositions.flatMap(_.toRoutes.map(_.legacy))
+    val targets           = descs
+      .filter(_.healthCheck.enabled)
+      .flatMap(s => s.targets.map(t => (t, s)))
+      .distinct
+      .toList
+    Source(targets)
+      .mapAsync(parallelChecks) { case (target, service) =>
+        logger.debug(s"checking health of ${service.name} - ${target.asTargetStr}")
+        HealthCheck.checkTarget(service, target, logger)
+      }
+      .runWith(Sink.ignore)
+      .map(_ => ())
   }
 }
 

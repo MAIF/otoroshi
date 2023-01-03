@@ -11,9 +11,9 @@ export class AuditPage extends Component {
       content: (item) => item['@timestamp'],
       cell: (v, item) => moment(item['@timestamp']).format('DD/MM/YYYY HH:mm:ss:SSS'),
     },
-    { title: 'User',    filterId: 'user.name', content: (item) => (item.user || {}).name || '--' },
-    { title: 'From',    filterId: 'from', content: (item) => item.from },
-    { title: 'Action',  filterId: 'action', content: (item) => item.action },
+    { title: 'User', filterId: 'user.name', content: (item) => (item.user || {}).name || '--' },
+    { title: 'From', filterId: 'from', content: (item) => item.from },
+    { title: 'Action', filterId: 'action', content: (item) => item.action },
     { title: 'Message', filterId: 'message', content: (item) => item.message },
     {
       title: 'Content',

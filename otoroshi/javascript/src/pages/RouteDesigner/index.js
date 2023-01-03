@@ -3,7 +3,7 @@ import { Route, Switch, useLocation, withRouter } from 'react-router-dom';
 import { nextClient } from '../../services/BackOfficeServices';
 import Designer from './Designer';
 import RouteCompositions from './RouteComposition';
-import Routes from './RoutesTable';
+import { RoutesTable } from './RoutesTable';
 import { Informations } from './Informations';
 import DesignerSidebar from './Sidebar';
 
@@ -37,19 +37,20 @@ function BackToButton({ history }) {
   );
 }
 
-function DeleteRouteButton() {
+function DeleteRouteButton(props) {
+  const what = window.location.pathname.split('/')[3];
+  const id = window.location.pathname.split('/')[4];
+  const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
   return (
     <SquareButton
+      disabled={id === props.globalEnv.adminApiId}
       level="danger"
       onClick={() => {
-        const what = window.location.pathname.split('/')[3];
-        const id = window.location.pathname.split('/')[4];
-        const kind = what === 'routes' ? nextClient.ENTITIES.ROUTES : nextClient.ENTITIES.SERVICES;
         window.newConfirm('are you sure you want to delete this entity ?').then((ok) => {
           if (ok) {
             nextClient.deleteById(kind, id).then(() => {
               // window.location = '/bo/dashboard/' + what;
-              history.push('/' + what);
+              props.history.push('/' + what);
             });
           }
         });
@@ -241,15 +242,15 @@ function TesterButton({
   );
 }
 
-function MoreActionsButton({ value, menu, history }) {
+function MoreActionsButton({ value, menu, history, globalEnv }) {
   return (
     <Dropdown className="ms-2" style={{ height: '100%' }}>
       <DuplicateButton value={value} history={history} />
       <JsonExportButton value={value} />
       <YAMLExportButton value={value} />
-      <DeleteRouteButton />
+      <DeleteRouteButton globalEnv={globalEnv} history={history} />
       {menu}
-      <BackToButton history={history} />
+      {/* <BackToButton history={history} /> */}
     </Dropdown>
   );
 }
@@ -271,6 +272,7 @@ function ManagerTitle({
   setForceTester,
   forceHideTester,
   routeId,
+  globalEnv,
 }) {
   const commonsProps = {
     entity,
@@ -314,7 +316,9 @@ function ManagerTitle({
     },
     {
       visible: () => !isOnViewPlugins,
-      component: () => <MoreActionsButton value={value} menu={menu} history={history} />,
+      component: () => (
+        <MoreActionsButton value={value} menu={menu} history={history} globalEnv={globalEnv} />
+      ),
     },
   ];
 
@@ -361,7 +365,7 @@ class Manager extends React.Component {
     if (!this.props.location?.state?.value) {
       this.loadRoute('componentDidMount');
     } else {
-      this.setTitle();
+      this.updateSidebar();
     }
 
     window.history.replaceState({}, document.title);
@@ -421,6 +425,7 @@ class Manager extends React.Component {
         location={location}
         history={history}
         saveButton={this.state.saveButton}
+        globalEnv={this.props.globalEnv}
       />
     ));
   };
@@ -449,9 +454,19 @@ class Manager extends React.Component {
   };
 
   updateSidebar = () => {
-    this.props.setSidebarContent(
-      <DesignerSidebar route={this.state.value} setSidebarContent={this.props.setSidebarContent} />
-    );
+    if (
+      location.pathname.endsWith('/routes') ||
+      location.pathname.endsWith('/route-compositions')
+    ) {
+      this.props.setSidebarContent(null);
+    } else {
+      this.props.setSidebarContent(
+        <DesignerSidebar
+          route={this.state.value}
+          setSidebarContent={this.props.setSidebarContent}
+        />
+      );
+    }
 
     this.setTitle();
   };
@@ -547,7 +562,7 @@ class Manager extends React.Component {
   }
 }
 
-const RoutesView = ({ history }) => {
+const RoutesView = ({ history, globalEnv }) => {
   const [creation, setCreation] = useState(false);
   const [importServiceDescriptor, setImportServiceDescriptor] = useState(false);
   const { pathname } = useLocation();
@@ -558,7 +573,8 @@ const RoutesView = ({ history }) => {
       {importServiceDescriptor && (
         <ImportServiceDescriptor hide={() => setImportServiceDescriptor(false)} history={history} />
       )}
-      <Routes
+      <RoutesTable
+        globalEnv={globalEnv}
         injectTopBar={
           pathname.includes('route-compositions') ? null : (
             <>
@@ -605,7 +621,7 @@ class RouteDesigner extends React.Component {
   };
 
   render() {
-    const { match, history, location } = this.props;
+    const { match, history, location, globalEnv } = this.props;
 
     const entity = entityFromURI(location);
 
@@ -614,12 +630,15 @@ class RouteDesigner extends React.Component {
         {[
           { path: `${match.url}/:routeId/health`, component: ServiceHealthPage },
           { path: `${match.url}/:routeId/analytics`, component: ServiceAnalyticsPage },
+          { path: `${match.url}/:routeId/apikeys/:taction/:titem`, component: ServiceApiKeysPage },
           { path: `${match.url}/:routeId/apikeys`, component: ServiceApiKeysPage },
           { path: `${match.url}/:routeId/stats`, component: ServiceLiveStatsPage },
           { path: `${match.url}/:routeId/events`, component: ServiceEventsPage },
           {
             path: `${match.url}/:routeId`,
-            component: (p) => <Manager {...this.props} {...p} entity={entity} />,
+            component: (p) => (
+              <Manager {...this.props} {...p} entity={entity} globalEnv={globalEnv} />
+            ),
           },
         ].map(({ path, component }) => {
           const Component = component;
@@ -642,7 +661,7 @@ class RouteDesigner extends React.Component {
             />
           );
         })}
-        <Route component={() => <RoutesView history={history} />} />
+        <Route component={() => <RoutesView history={history} globalEnv={globalEnv} />} />
       </Switch>
     );
   }

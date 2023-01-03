@@ -61,7 +61,7 @@ object NgMinimalRoute {
   }
 }
 
-case class NgService(
+case class NgRouteComposition(
     location: EntityLocation,
     id: String,
     name: String,
@@ -78,7 +78,8 @@ case class NgService(
     plugins: NgPlugins
 ) extends EntityLocationSupport {
 
-  def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.servicesDataStore.set(this)
+  def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] =
+    env.datastores.routeCompositionDataStore.set(this)
   override def internalId: String                                      = id
   override def theName: String                                         = name
   override def theDescription: String                                  = description
@@ -132,17 +133,17 @@ case class NgService(
   }
 }
 
-object NgService {
-  def fromJsons(value: JsValue): NgService =
+object NgRouteComposition {
+  def fromJsons(value: JsValue): NgRouteComposition =
     try {
       fmt.reads(value).get
     } catch {
       case e: Throwable => throw e
     }
-  val fmt                                  = new Format[NgService] {
-    override def writes(o: NgService): JsValue             = o.json
-    override def reads(json: JsValue): JsResult[NgService] = Try {
-      NgService(
+  val fmt                                           = new Format[NgRouteComposition] {
+    override def writes(o: NgRouteComposition): JsValue             = o.json
+    override def reads(json: JsValue): JsResult[NgRouteComposition] = Try {
+      NgRouteComposition(
         location = otoroshi.models.EntityLocation.readFromKey(json),
         id = json.select("id").as[String],
         name = json.select("name").as[String],
@@ -168,7 +169,10 @@ object NgService {
     }
   }
 
-  def fromOpenApi(domain: String, openapi: String)(implicit ec: ExecutionContext, env: Env): Future[NgService] = {
+  def fromOpenApi(domain: String, openapi: String)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[NgRouteComposition] = {
     val codef: Future[String] = if (openapi.startsWith("http://") || openapi.startsWith("https://")) {
       env.Ws.url(openapi).get().map(_.body)
     } else {
@@ -207,7 +211,6 @@ object NgService {
           ),
           backend = NgMinimalBackend(
             targets = targets,
-            targetRefs = Seq.empty,
             root = "/",
             rewrite = false,
             loadBalancing = RoundRobin
@@ -216,7 +219,7 @@ object NgService {
           plugins = NgPlugins.empty
         )
       }
-      NgService(
+      NgRouteComposition(
         location = EntityLocation.default,
         id = "ng-service_" + IdGenerator.uuid,
         name = name,
@@ -244,7 +247,7 @@ object NgService {
     }
   }
 
-  def empty = NgService(
+  def empty = NgRouteComposition(
     location = EntityLocation.default,
     id = s"route_${IdGenerator.uuid}",
     name = "empty route-composition",
@@ -262,15 +265,15 @@ object NgService {
   )
 }
 
-trait NgServiceDataStore extends BasicStore[NgService] {
-  def template(env: Env): NgService = {
-    val default: NgService = NgService.empty
+trait NgRouteCompositionDataStore extends BasicStore[NgRouteComposition] {
+  def template(env: Env): NgRouteComposition = {
+    val default: NgRouteComposition = NgRouteComposition.empty
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates
       .service
       .map { template =>
-        NgService.fmt.reads(default.json.asObject.deepMerge(template)).get
+        NgRouteComposition.fmt.reads(default.json.asObject.deepMerge(template)).get
       }
       .getOrElse {
         default
@@ -278,9 +281,11 @@ trait NgServiceDataStore extends BasicStore[NgService] {
   }
 }
 
-class KvNgServiceDataStore(redisCli: RedisLike, _env: Env) extends NgServiceDataStore with RedisLikeStore[NgService] {
-  override def redisLike(implicit env: Env): RedisLike = redisCli
-  override def fmt: Format[NgService]                  = NgService.fmt
-  override def key(id: String): String                 = s"${_env.storageRoot}:ngservices:${id}"
-  override def extractId(value: NgService): String     = value.id
+class KvNgRouteCompositionDataStore(redisCli: RedisLike, _env: Env)
+    extends NgRouteCompositionDataStore
+    with RedisLikeStore[NgRouteComposition] {
+  override def redisLike(implicit env: Env): RedisLike      = redisCli
+  override def fmt: Format[NgRouteComposition]              = NgRouteComposition.fmt
+  override def key(id: String): String                      = s"${_env.storageRoot}:ngroutecomps:${id}"
+  override def extractId(value: NgRouteComposition): String = value.id
 }

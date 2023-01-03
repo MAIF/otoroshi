@@ -20,7 +20,7 @@ export class JwtVerifiersPage extends Component {
   columns = [
     { title: 'Name', filterId: 'name', content: (item) => item.name },
     { title: 'Description', filterId: 'desc', content: (item) => item.desc },
-    { title: 'Strategy', filterId: 'strategy.type',  content: (item) => item.strategy?.type },
+    { title: 'Strategy', filterId: 'strategy.type', content: (item) => item.strategy?.type },
   ];
 
   componentDidMount() {
@@ -109,12 +109,12 @@ export class JwtVerifiersPage extends Component {
           formComponent={JwtVerifier}
           navigateTo={this.gotoVerifier}
           defaultValue={BackOfficeServices.createNewJwtVerifier}
-          fetchItems={(paginationState) =>
-            BackOfficeServices.findAllJwtVerifiers({
+          fetchItems={(paginationState) => {
+            return BackOfficeServices.findAllJwtVerifiers({
               ...paginationState,
               fields: ['id', 'name', 'desc', 'strategy.type'],
-            })
-          }
+            });
+          }}
           updateItem={BackOfficeServices.updateJwtVerifier}
           deleteItem={BackOfficeServices.deleteJwtVerifier}
           createItem={BackOfficeServices.createJwtVerifier}
@@ -128,14 +128,16 @@ export class JwtVerifiersPage extends Component {
           injectBottomBar={({ closeEditForm, state, setState, buttons }) => {
             return (
               <div className="d-flex align-items-center justify-content-end">
-                {buttons || null}
-                <FormSelector
-                  onChange={(showAdvancedForm) => setState({ showAdvancedForm })}
-                  entity={ENTITIES.JWT_VERIFIERS}
-                />
-                <Button type="danger" className="btn-sm ms-1" onClick={closeEditForm}>
+                <Button type="danger" className="btn-sm me-1" onClick={closeEditForm}>
                   <i className="fas fa-times" /> Cancel
                 </Button>
+                {buttons || null}
+                {state.showEditForm && (
+                  <FormSelector
+                    onChange={(showAdvancedForm) => setState({ showAdvancedForm })}
+                    entity={ENTITIES.JWT_VERIFIERS}
+                  />
+                )}
               </div>
             );
           }}

@@ -4,7 +4,90 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.18] - 2022-11-14
+## [16.0.0] - 2022-12-16
+
+https://github.com/MAIF/otoroshi/milestone/53?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.0.0-rc3...v16.0.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.0.0
+
+- remove leveldb support (#466)
+- remove mongodb support (#467)
+- ensure everything is wired for the rollout of the new proxy engine (#1161)
+- introduce new versioning scheme (#1275)
+- improve externals vault secrets-ttl (#1339)
+- admin login does not work anymore after upgrading webauthn-server-core to 2.1.0 (#1340)
+- switch lettuce as default redis driver (#1363)
+- remove StoredNgTargets (#1365)
+- creating an apikey from a route fails miserably (#1366)
+- creating an auth. module from a route fails miserably (#1367)
+- otoroshi challenge plugin ui is not completely setup with version selectors (#1368)
+- add deprecation message on service descriptor pages (#1369)
+- add conversion button on service descriptor (#1370)
+- upgrade sbt-paradox (#1371)
+- healthcheck not working with routes (#1373)
+- sometimes job locks does not have ttl and are blocked (#1374)
+- remove the react-paginate dependency (#1375)
+- force advanced form view on jwt verifier creation (#1377)
+- documentation updates (#1379)
+- add missing entities in the sidebar (#1380)
+- add features page (#1381)
+
+## [16.0.0-rc.3] - 2022-12-15
+
+https://github.com/MAIF/otoroshi/milestone/53?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.0.0-rc.2...v16.0.0-rc.3
+https://github.com/MAIF/otoroshi/releases/tag/v16.0.0-rc.3
+
+- healthcheck not working with routes (#1373)
+- sometimes job locks does not have ttl and are blocked (#1374)
+- Remove the react-paginate dependency (#1375)
+
+## [16.0.0-rc.2] - 2022-12-14
+
+https://github.com/MAIF/otoroshi/milestone/53?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.0.0-rc.1...v16.0.0-rc.2
+https://github.com/MAIF/otoroshi/releases/tag/v16.0.0-rc.2
+
+- creating an apikey from a route fails miserably (#1366)
+- creating an auth. module from a route fails miserably (#1367)
+- otoroshi challenge plugin ui is not completely setup with version selectors (#1368)
+- add deprecation message on service descriptor pages (#1369)
+- add conversion button on service descriptor (#1370)
+- upgrade sbt-paradox (#1371)
+
+## [16.0.0-rc.1] - 2022-12-13
+
+https://github.com/MAIF/otoroshi/milestone/53?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.20...v16.0.0-rc.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.0.0-rc.1
+
+- ensure everything is wired for the rollout of the new proxy engine (#1161)
+- Remove leveldb support (#466)
+- Remove mongodb support (#467)
+- introduce new versioning scheme (#1275)
+- Improve externals vault secrets-ttl (#1339)
+- admin login does not work anymore after upgrading webauthn-server-core to 2.1.0 (#1340)
+- switch lettuce as default redis driver (#1363)
+- remove StoredNgTargets (#1365)
+
+## [1.5.20] - 2022-11-30
+
+https://github.com/MAIF/otoroshi/milestone/51?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.19...v1.5.20
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.20
+
+- missing `clientSideSessionEnabled` flag in auth. modules ui (#1331)
+- doc rewrite with routes (#1332)
+
+## [1.5.19] - 2022-11-24
+
+https://github.com/MAIF/otoroshi/milestone/52?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.5.18...v1.5.19
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.19
+
+- finalize server side tables (#1329)
+
+## [1.5.18] - 2022-11-23
 
 https://github.com/MAIF/otoroshi/milestone/50?closed=1
 https://github.com/MAIF/otoroshi/compare/v1.5.17...v1.5.18

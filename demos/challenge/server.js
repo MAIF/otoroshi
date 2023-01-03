@@ -9,31 +9,44 @@ function OtoroshiMiddleware(opts = {}) {
     const v2 = state.indexOf("eyJ") === 0 && state.indexOf(".") > -1;
     if (v2) {
       jwt.verify(req.get("Otoroshi-State") || 'none', tokenKey, { issuer: 'Otoroshi' }, (err, decodedState) => {
+
+        if (req.get("Otoroshi-Claim")) {
+          jwt.verify(req.get("Otoroshi-Claim") || 'none', tokenKey, { issuer: 'Otoroshi' }, (err, decoded) => {
+            if (err) {
+              res.status(500).send({ error: 'error decoding jwt', nerror_description: err.message });
+            } else {
+              req.challengeVersion = "V2";
+              req.token = decoded;
+              const ttl = 10 // by default its 30 seconds in the UI
+              const now = Math.floor(Date.now() / 1000)
+              const token = { 'state-resp': decodedState.state, iat: now, nbf: now, exp: now + ttl, aud: 'Otoroshi' }
+              res.set("Otoroshi-State-Resp", jwt.sign(token, tokenKey, { algorithm: 'HS512' }))
+              next();
+            }
+          });
+        } else {
+          req.challengeVersion = "V2";
+          const ttl = 10 // by default its 30 seconds in the UI
+          const now = Math.floor(Date.now() / 1000)
+          const token = { 'state-resp': decodedState.state, iat: now, nbf: now, exp: now + ttl, aud: 'Otoroshi' }
+          res.set("Otoroshi-State-Resp", jwt.sign(token, tokenKey, { algorithm: 'HS512' }))
+          next();
+        }
+      });
+    } else {
+      res.set("Otoroshi-State-Resp", req.get("Otoroshi-State") || 'none');
+      if (req.get("Otoroshi-Claim"))
         jwt.verify(req.get("Otoroshi-Claim") || 'none', tokenKey, { issuer: 'Otoroshi' }, (err, decoded) => {
           if (err) {
             res.status(500).send({ error: 'error decoding jwt', nerror_description: err.message });
           } else {
-            req.challengeVersion = "V2";
+            req.challengeVersion = "V1";
             req.token = decoded;
-            const ttl = 10 // by default its 30 seconds in the UI
-            const now = Math.floor(Date.now() / 1000)
-            const token = { 'state-resp': decodedState.state, iat: now, nbf: now, exp: now + ttl, aud: 'Otoroshi' }
-            res.set("Otoroshi-State-Resp", jwt.sign(token, tokenKey, { algorithm: 'HS512'}))
             next();
           }
         });
-      });
-    } else {
-      res.set("Otoroshi-State-Resp", req.get("Otoroshi-State") || 'none');
-      jwt.verify(req.get("Otoroshi-Claim") || 'none', tokenKey, { issuer: 'Otoroshi' }, (err, decoded) => {
-        if (err) {
-          res.status(500).send({ error: 'error decoding jwt', nerror_description: err.message });
-        } else {
-          req.challengeVersion = "V1";
-          req.token = decoded;
-          next();
-        }
-      });
+      else
+        next()
     }
   }
 }

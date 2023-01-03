@@ -61,6 +61,8 @@ export class Table extends Component {
     page: 0,
   };
 
+  tableRef = React.createRef();
+
   componentDidMount() {
     this.registerSizeChanges();
 
@@ -106,6 +108,7 @@ export class Table extends Component {
         this.props.fetchItems().then((res) => {
           //console.log(this.props.parentProps.params);
           // console.log(res)
+          // console.log('here')
 
           let row = [];
           if (typeof res === 'object' && res !== null && !Array.isArray(res) && res.data)
@@ -141,29 +144,29 @@ export class Table extends Component {
     this.setState({ loading: true });
 
     const page = paginationState.page !== undefined ? paginationState.page : this.state.page;
-    return this.props
-      .fetchItems({
-        ...paginationState,
-        pageSize: this.state.rowsPerPage,
-        page: page + 1,
-      })
-      .then((rawItems) => {
-        console.log(rawItems)
-        if (Array.isArray(rawItems)) {
-          this.setState({
-            items: rawItems,
-            loading: false,
-            page,
-          });
-        } else {
-          this.setState({
-            items: rawItems.data,
-            pages: rawItems.pages,
-            loading: false,
-            page,
-          });
-        }
-      });
+    return (this.state.showAddForm || this.state.showEditForm
+      ? this.props.fetchItems()
+      : this.props.fetchItems({
+          ...paginationState,
+          pageSize: this.state.rowsPerPage,
+          page: page + 1,
+        })
+    ).then((rawItems) => {
+      if (Array.isArray(rawItems)) {
+        this.setState({
+          items: rawItems,
+          loading: false,
+          page,
+        });
+      } else {
+        this.setState({
+          items: rawItems.data,
+          pages: rawItems.pages,
+          loading: false,
+          page,
+        });
+      }
+    });
   }, 200);
 
   gotoItem = (e, item) => {
@@ -222,28 +225,45 @@ export class Table extends Component {
   showEditForm = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
     this.mountShortcuts();
-    if (this.props.rawEditUrl)
-      urlTo(`/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`);
-    else urlTo(`/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`);
 
-    if (this.props.parentProps.setTitle) {
-      this.props.parentProps.setTitle(
-        `Update a ${this.props.itemName}`,
-        this.updateItemAndStay,
-        item
-      );
+    let routeTo = `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(item)}`;
+
+    if (this.props.rawEditUrl) {
+      routeTo = `/bo/dashboard/${this.props.selfUrl}/${this.props.extractKey(item)}`;
     }
-    this.setState({ currentItem: item, showEditForm: true });
+
+    console.log(window.location.pathname, routeTo);
+    if (window.location.pathname !== routeTo) {
+      window.location.href = routeTo;
+    } else {
+      if (this.props.parentProps.setTitle) {
+        this.props.parentProps.setTitle(
+          `Update a ${this.props.itemName}`,
+          this.updateItemAndStay,
+          item
+        );
+      }
+      this.setState({ currentItem: item, showEditForm: true });
+    }
   };
 
   deleteItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
+    console.log();
     window.newConfirm('Are you sure you want to delete that item ?').then((ok) => {
       if (ok) {
         this.props
           .deleteItem(item)
           .then(() => {
-            return this.props.fetchItems();
+            const state = this.tableRef?.current?.state || {};
+            const page = state.page || 0;
+
+            return this.props.fetchItems({
+              filtered: state.filtered,
+              sorted: state.sorted,
+              pageSize: this.state.rowsPerPage,
+              page: page + 1,
+            });
           })
           .then((res) => {
             const isPaginate =
@@ -540,6 +560,7 @@ export class Table extends Component {
             </div>
             <div className="rrow" style={{ position: 'relative' }}>
               <ReactTable
+                ref={this.tableRef}
                 className="fulltable -striped -highlight"
                 manual
                 pages={this.state.pages}
@@ -614,7 +635,8 @@ export class Table extends Component {
                   className="form-horizontal"
                   style={{ paddingTop: '30px', ...this.props.style }}>
                   {React.createElement(this.props.formComponent, {
-                    showAdvancedForm: this.state.showAdvancedForm,
+                    showAdvancedForm: true,
+                    //this.state.showAdvancedForm, // advanced view in creation mode
                     onChange: (currentItem) => {
                       this.setState({ currentItem });
 

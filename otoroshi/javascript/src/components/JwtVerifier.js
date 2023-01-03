@@ -143,7 +143,7 @@ export class JwtVerifier extends Component {
         strategy: {
           type: 'PassThrough',
           verificationSettings: {
-            fields: { iss: 'The Issuer' },
+            fields: {},
             arrayFields: {},
           },
         },
@@ -691,7 +691,7 @@ export class LegacyJwtVerifier extends Component {
     algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
     strategy: {
       type: 'PassThrough',
-      verificationSettings: { fields: { iss: 'The Issuer' }, arrayFields: {} },
+      verificationSettings: { fields: {}, arrayFields: {} },
     },
   };
 

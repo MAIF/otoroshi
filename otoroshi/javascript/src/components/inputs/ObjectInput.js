@@ -1,20 +1,20 @@
 import React, { Component, useEffect, useState } from 'react';
 import { Help } from './Help';
+import isEqual from 'lodash/isEqual';
 
 export function ObjectInput(props) {
   const [data, setData] = useState([]);
 
   useEffect(() => {
     if (props.value) {
-      setData(
-        Object.entries(props.value).map(([key, value], i) => ({
-          idx: i,
-          key,
-          value,
-        }))
-      );
+      const newData = Object.entries(props.value).map(([key, value], i) => ({
+        idx: i,
+        key,
+        value,
+      }));
+      if (!isEqual(newData, data)) setData(newData);
     }
-  }, []);
+  }, [props.value]);
 
   useEffect(() => {
     onChange(data);

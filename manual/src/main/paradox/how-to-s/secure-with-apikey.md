@@ -4,27 +4,96 @@
 
 @@include[fetch-and-start.md](../includes/fetch-and-start.md) { #init }
 
-### Create a simple service 
+### Create a simple route
 
-1. Navigate to @link:[http://otoroshi.oto.tools:8080/bo/dashboard/services](http://otoroshi.oto.tools:8080/bo/dashboard/services) { open=new } and click on the `create new service` button
-2. Jump to `Service exposition settings` and add `http://myservice.oto.tools` as `Exposed domain`
-3. Jump to `Service targets` and add `https://mirror.otoroshi.io` as `Target 1`
-4. Jump to the `URL Patterns` section
-5. Enable your service as `Public UI`
-6. Open a new tab and navigate to @link:[http://myservice.oto.tools:8080](http://myservice.oto.tools:8080/) { open=new }
+**From UI**
 
-With this configuration, all routes are public, wihtout any authentication needed.
+1. Navigate to @link:[http://otoroshi.oto.tools:8080/bo/dashboard/routes](http://otoroshi.oto.tools:8080/bo/dashboard/routes) { open=new } and click on the `create new route` button
+2. Give a name to your route
+3. Save your route
+4. Set `myservice.oto.tools` as frontend domains
+5. Set `https://mirror.otoroshi.io` as backend target (hostname: `mirror.otoroshi.io`, port: `443`, Tls: `Enabled`)
+
+**From Admin API**
+
+```sh
+curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
+-H "Content-type: application/json" \
+-u admin-api-apikey-id:admin-api-apikey-secret \
+-d @- <<'EOF'
+{
+  "id": "myservice",
+  "name": "myapi",
+  "frontend": {
+    "domains": ["myservice.oto.tools"]
+  },
+  "backend": {
+    "targets": [
+      {
+        "hostname": "mirror.otoroshi.io",
+        "port": 443,
+        "tls": true
+      }
+    ]
+  }
+}
+EOF
+```
 
 ### Secure routes with api key
 
-With the previous configuration, all routes are public. In our case, we want to secure all routes prefix with `/api`.
+By default, a route is public. In our case, we want to secure all paths starting with `/api` and leave all others unauthenticated.
 
-Let's return to the `URL Patterns` section. 
-Click on **Make service a private api**. This button automatically add `/api` as default in `Private patterns` array. (Note that the field supports regex like. In our case, `/api.*` covers all routes starting by `/api`).
+Let's add a new plugin, called `Apikeys`, to our route. Search in the list of plugins, then add it to the flow.
+Once done, restrict its range by setting up `/api` in the `Informations>include` section.
 
-Save your app and navigate to @link:[http://myservice.oto.tools:8080/api/test](http://myservice.oto.tools:8080/api/test) { open=new } again. If the service is configured, you should have a `Service Not found error`, and a success call, in the case you navigate to any other routes which are not starting by `/api/*` like @link:[http://myservice.oto.tools:8080/test/bar](http://myservice.oto.tools:8080/test/bar) { open=new }
+**From Admin API**
 
-The expected error on the `/api/test`, throws by the URL Patterns, indicate to the client that an api key is required to access to this part of the backend service.
+```sh
+curl -X PUT http://otoroshi-api.oto.tools:8080/api/routes/myservice \
+-H "Content-type: application/json" \
+-u admin-api-apikey-id:admin-api-apikey-secret \
+-d @- <<'EOF'
+{
+  "id": "myservice",
+  "name": "myapi",
+  "frontend": {
+    "domains": ["myservice.oto.tools"]
+  },
+  "backend": {
+    "targets": [
+      {
+        "hostname": "mirror.otoroshi.io",
+        "port": 443,
+        "tls": true
+      }
+    ]
+  },
+  "plugins": [
+    {
+      "enabled": true,
+      "plugin": "cp:otoroshi.next.plugins.ApikeyCalls",
+      "include": [
+          "/api"
+      ],
+      "config": {
+          "validate": true,
+          "mandatory": true,
+          "wipe_backend_request": true,
+          "update_quotas": true
+      }
+    }
+  ]
+}
+EOF
+```
+
+Navigate to @link:[http://myservice.oto.tools:8080/api/test](http://myservice.oto.tools:8080/api/test) { open=new } again. If the service is configured, you should have a `Service Not found error`.
+
+The expected error on the `/api/test`, indicate that an api key is required to access to this part of the backend service.
+
+Navigate to any other routes which are not starting by `/api/*` like @link:[http://myservice.oto.tools:8080/test/bar](http://myservice.oto.tools:8080/test/bar) { open=new }
+
 
 ### Generate an api key to request secure services
 
@@ -70,18 +139,18 @@ curl -X GET \
 
 > Tips : To easily fill your headers, you can jump to the `Call examples` section in each api key view. In this section the header names are the default values and the service url is not set. You have to adapt these lines to your case. 
 
-### Override defaults headers names for a service
+### Override defaults headers names for a route
 
 In some case, we want to change the defaults headers names (and it's a quite good idea).
 
-Let's start by navigating to the `Api keys Constraints` section from the edit page of our sercice.
+Let's start by navigating to the `Apikeys` plugin in the Designer of our route.
 
-The first values to change are the headers names used to read the api key from client. Start by set :
+The first values to change are the headers names used to read the api key from client. Start by clicking on  `extractors > CustomHeaders` and set the following values :
 
 * `api-key-header-id` as `Custom client id header name`
 * `api-key-header-secret` as `Custom client secret header name`
 
-Save the service, and call the service again.
+Save the route, and call the service again.
 
 ```sh
 curl -X GET \
@@ -107,17 +176,17 @@ curl -X GET \
   'http://myservice.oto.tools:8080/api/test' --include
 ```
 
-With this configuration, all others default services will accept the api keys with the `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` headers, while our service, will accept the `api-key-header-id` and `api-key-header-secret` headers.
+All others default services will continue to accept the api keys with the `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` headers, whereas our service, will accept the `api-key-header-id` and `api-key-header-secret` headers.
 
 ### Accept only api keys with expected values
 
 By default, a secure service only accepts requests with api key. But all generated api keys are eligible to call our service and in some case, we want authorize only a couple of api keys.
 
-One feature of Otoroshi is to restrict the list of accepted api keys by giving a list of `metadata` or/and `tags`. Each api key has a list of `tags` and `metadata`, which can be used by Otoroshi to forward or not a call with an api key. All api key metadata/tags can be forward to your service (see `Otoroshi exchange protocol` section of a service to get more information about `Send info. token`).
+You can restrict the list of accepted api keys by giving a list of `metadata` or/and `tags`. Each api key has a list of `tags` and `metadata`, which can be used by Otoroshi to validate a request with an api key. All api key metadata/tags can be forward to your service (see `Otoroshi Challenge` section of a service to get more information about `Otoroshi info. token`).
 
-Let's starting by accept only the api keys which come with the tag of `otoroshi` as value.
+Let's starting by only accepting api keys with the `otoroshi` tag.
 
-Jump to the last part of the `Api Keys Constraints` section, call `Routing constraints` (these constraints are used to forward a call to a service, only if all constraints are validated).
+Click on the `ApiKeys` plugin, and enabled the `Routing` section. These constraints guarantee that a request will only be transmitted if all the constraints are validated.
 
 In our first case, set `otoroshi` in `One Tag in` array and save the service.
 Then call our service with :
@@ -139,9 +208,9 @@ This should output :
 Navigate to the edit page of our api key, and jump to the `Metadata and tags` section.
 In this section, add `otoroshi` in `Tags` array, then save the api key. Call once again your call and you will normally get a successful response of our backend service.
 
-In this example, we have restricted our service to be callable only with keys that have `otoroshi` as a tag.
+In this example, we have limited our service to API keys that have `otoroshi` as a tag.
 
-But Otoroshi provides others behaviours. For each behaviour, *Api key used should*:
+Otoroshi provides a few others behaviours. For each behaviour, *Api key used should*:
 
 * `All Tags in` : have all of the following tags
 * `No Tags in` : not have one of the following tags

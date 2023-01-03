@@ -32,7 +32,7 @@ export class GroupsPage extends Component {
   columns = [
     {
       title: 'Name',
-      filterId: 'name', 
+      filterId: 'name',
       content: (item) => item.name,
       wrappedCell: (v, item, table) => {
         if (this.props && this.props.env && this.props.env.adminGroupId === item.id) {

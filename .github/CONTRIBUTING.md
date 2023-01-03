@@ -90,7 +90,6 @@ you can also run the tests using other datastores
 
 ```sh
 TEST_STORE=inmemory sbt test
-TEST_STORE=leveldb sbt test
 TEST_STORE=redis sbt test
 TEST_STORE=cassandra sbt test
 ```

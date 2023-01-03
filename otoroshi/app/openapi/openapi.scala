@@ -362,6 +362,7 @@ class OpenApiGenerator(
 
       def handleType(name: String, valueName: String, typ: TypeSignature): Option[JsObject] = {
         valueName match {
+          case "otoroshi.storage.RedisLike"                                => None
           case "java.security.KeyPair"                                     => None
           case "play.api.Logger"                                           => None
           case "byte"                                                      => None
@@ -1209,7 +1210,7 @@ class OpenApiGenerator(
       "info"         -> Json.obj(
         "title"       -> "Otoroshi Admin API",
         "description" -> "Admin API of the Otoroshi reverse proxy",
-        "version"     -> "1.5.0-dev",
+        "version"     -> "16.0.0-dev",
         "contact"     -> Json.obj(
           "name"  -> "Otoroshi Team",
           "email" -> "oss@maif.fr"

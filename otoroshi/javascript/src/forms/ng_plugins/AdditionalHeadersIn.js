@@ -4,6 +4,7 @@ export default {
     headers: {
       label: 'headers',
       type: 'object',
+      help: 'Specify headers that will be added to each client request (from Otoroshi to target).',
     },
   },
   config_flow: ['headers'],

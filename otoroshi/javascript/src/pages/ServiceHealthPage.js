@@ -9,12 +9,14 @@ import DesignerSidebar from './RouteDesigner/Sidebar';
 
 import 'antd/dist/antd.css';
 import { Link } from 'react-router-dom';
+import Loader from '../components/Loader';
 
 export class ServiceHealthPage extends Component {
   state = {
     service: null,
     health: false,
     status: [],
+    loading: true,
     responsesTime: [],
     stopTheCountUnknownStatus: true,
   };
@@ -35,7 +37,7 @@ export class ServiceHealthPage extends Component {
     fu.then((service) => {
       this.setState({ service }, () => {
         if (
-          (this.onRoute && service.backend.health_check && service.backend.health_check.enabled) ||
+          (this.onRoutes && service.backend.health_check && service.backend.health_check.enabled) ||
           (service.healthCheck && service.healthCheck.enabled)
         ) {
           this.setState({ health: true });
@@ -45,9 +47,10 @@ export class ServiceHealthPage extends Component {
             BackOfficeServices.fetchServiceStatus(service.id),
             BackOfficeServices.fetchServiceResponseTime(service.id),
           ]).then(([evts, status, responsesTime]) => {
-            this.setState({ status, responsesTime }, () => {
-              const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
-              this.title = this.onRoute ? (
+            this.setState({ status, responsesTime, loading: false }, () => {
+              const color =
+                evts.length > 0 && evts[0].health ? this.colors[evts[0].health] : 'grey';
+              this.title = this.onRoutes ? (
                 <span>
                   Route health is <i className="fas fa-heart" style={{ color }} />
                 </span>
@@ -62,6 +65,7 @@ export class ServiceHealthPage extends Component {
         } else {
           this.title = 'No HealthCheck available yet';
           this.props.setTitle(this.title);
+          this.setState({ loading: false });
         }
         this.props.setSidebarContent(this.sidebarContent(service.name));
       });
@@ -91,46 +95,46 @@ export class ServiceHealthPage extends Component {
   };
 
   render() {
-    if (!this.state.service || !this.state.status.length) {
-      return (
-        <>
-          <p>
-            Your don't have any service health data available. Maybe you don't have an ElasticSearch
-            instance connected to your Otoroshi
-          </p>
-          <p>
-            To do that, add a <Link to="/exporters">data exporter</Link> sending events to an
-            ElasticSearch and settings to read events from your ElasticSeach in the{' '}
-            <Link to="/dangerzone">Danger Zone</Link>
-          </p>
-        </>
-      );
-    }
-
     return (
-      <div className="content-health">
-        <div>
-          <h3>Uptime last 90 days</h3>
-          <Uptime
-            health={this.state.status[0]}
-            stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
-          />
-        </div>
-        <OverallUptime
-          health={this.state.status}
-          stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
-        />
-        <ResponseTime
-          responsesTime={this.state.responsesTime}
-          stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
-        />
-        <BooleanInput
-          label="Don't use unknown status when calculating averages"
-          value={this.state.stopTheCountUnknownStatus}
-          help="Use unknown statuses when calculating averages could modify results and may not be representative"
-          onChange={(stopTheCountUnknownStatus) => this.setState({ stopTheCountUnknownStatus })}
-        />
-      </div>
+      <Loader loading={this.state.loading}>
+        {!this.state.service || !this.state.status.length ? (
+          <>
+            <p>
+              Your don't have any service health data available. Maybe you don't have an
+              ElasticSearch instance connected to your Otoroshi
+            </p>
+            <p>
+              To do that, add a <Link to="/exporters">data exporter</Link> sending events to an
+              ElasticSearch and settings to read events from your ElasticSeach in the{' '}
+              <Link to="/dangerzone">Danger Zone</Link>
+            </p>
+          </>
+        ) : (
+          <div className="content-health">
+            <div>
+              <h3>Uptime last 90 days</h3>
+              <Uptime
+                health={this.state.status[0]}
+                stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
+              />
+            </div>
+            <OverallUptime
+              health={this.state.status}
+              stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
+            />
+            <ResponseTime
+              responsesTime={this.state.responsesTime}
+              stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
+            />
+            <BooleanInput
+              label="Don't use unknown status when calculating averages"
+              value={this.state.stopTheCountUnknownStatus}
+              help="Use unknown statuses when calculating averages could modify results and may not be representative"
+              onChange={(stopTheCountUnknownStatus) => this.setState({ stopTheCountUnknownStatus })}
+            />
+          </div>
+        )}
+      </Loader>
     );
   }
 }

@@ -18,17 +18,17 @@ import otoroshi.auth._
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticTemplates, ElasticUtils, ElasticVersion}
+import otoroshi.jobs.newengine.NewEngine
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models.RightsChecker.SuperAdminOnly
-import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId, _}
-import otoroshi.next.models.{GraphQLFormats, NgRoute, NgService}
-import otoroshi.next.plugins.{EurekaServerSink, GraphQLBackend}
+import otoroshi.models._
+import otoroshi.next.models.{GraphQLFormats, NgRoute, NgRouteComposition}
+import otoroshi.next.plugins.EurekaServerSink
 import otoroshi.security._
 import otoroshi.ssl._
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.misc.LocalCache
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
@@ -37,7 +37,6 @@ import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.SourceBody
 import play.api.mvc._
-import sangria.ast.ListValue
 
 import java.util.Base64
 import java.util.concurrent.TimeUnit
@@ -58,9 +57,9 @@ case class ServiceLike(entity: EntityLocationSupport, groups: Seq[String]) exten
 }
 
 object ServiceLike {
-  def fromService(service: ServiceDescriptor): ServiceLike  = ServiceLike(service, service.groups)
-  def fromRoute(service: NgRoute): ServiceLike              = ServiceLike(service, service.groups)
-  def fromRouteComposition(service: NgService): ServiceLike = ServiceLike(service, service.groups)
+  def fromService(service: ServiceDescriptor): ServiceLike           = ServiceLike(service, service.groups)
+  def fromRoute(service: NgRoute): ServiceLike                       = ServiceLike(service, service.groups)
+  def fromRouteComposition(service: NgRouteComposition): ServiceLike = ServiceLike(service, service.groups)
 }
 
 case class BackofficeFlags(
@@ -398,6 +397,8 @@ class BackOfficeController(
           }.nonEmpty
           Ok(
             Json.obj(
+              "newEngineEnabled"        -> NewEngine.enabledFromConfig(config, env),
+              "initWithNewEngine"       -> config.initWithNewEngine,
               "scriptingEnabled"        -> env.scriptingEnabled,
               "otoroshiLogo"            -> env.otoroshiLogo,
               "clusterRole"             -> env.clusterConfig.mode.name,
@@ -708,21 +709,20 @@ class BackOfficeController(
         )
       )
       val fu: Future[Seq[SearchedService]] =
-        Option(LocalCache.allServices.getIfPresent("all")).map(_.asInstanceOf[Seq[SearchedService]]) match {
-          case Some(descriptors) => FastFuture.successful(descriptors)
-          case None              =>
-            for {
-              services   <- env.datastores.serviceDescriptorDataStore.findAll()
-              tcServices <- env.datastores.tcpServiceDataStore.findAll()
-            } yield {
-              val finalServices =
-                services.map(s =>
-                  SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), s.env, "http", s.location)
-                ) ++
-                tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp", s.location))
-              LocalCache.allServices.put("all", finalServices)
-              finalServices
-            }
+        for {
+          services   <- env.datastores.serviceDescriptorDataStore.findAll()
+          tcServices <- env.datastores.tcpServiceDataStore.findAll()
+          routes     <- env.datastores.routeDataStore.findAll()
+        } yield {
+          val finalServices =
+            services.map(s =>
+              SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), s.env, "http", s.location)
+            ) ++
+            routes.map(s =>
+              SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), "route", "route", s.location)
+            ) ++
+            tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp", s.location))
+          finalServices
         }
       fu.map { services =>
         val filtered = services.filter(ctx.canUserRead).filter { service =>
@@ -1639,16 +1639,25 @@ class BackOfficeController(
 
   def fetchGroupsAndServices() =
     BackOfficeActionAuth.async { ctx =>
-      env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-        env.datastores.serviceGroupDataStore.findAll().map { groups =>
-          val jsonGroups   = groups
-            .filter(ctx.canUserRead)
-            .map(g => Json.obj("label" -> g.name, "value" -> s"group_${g.id}", "kind" -> "group"))
-          val jsonServices = services
-            .filter(ctx.canUserRead)
-            .map(s => Json.obj("label" -> s.name, "value" -> s"service_${s.id}", "kind" -> "service"))
-          Ok(JsArray(jsonGroups ++ jsonServices))
-        }
+      for {
+        rgroups            <- env.proxyState.allServiceGroups().vfuture
+        rservices          <- env.proxyState.allServices().vfuture
+        rroutes            <- env.proxyState.allRoutes().vfuture
+        rrouteCompositions <- env.proxyState.allNgServices().vfuture
+      } yield {
+        val groups            = rgroups
+          .filter(ctx.canUserRead)
+          .map(g => Json.obj("label" -> g.name, "value" -> s"group_${g.id}", "kind" -> "group"))
+        val services          = rservices
+          .filter(ctx.canUserRead)
+          .map(g => Json.obj("label" -> g.name, "value" -> s"service_${g.id}", "kind" -> "service"))
+        val routes            = rroutes
+          .filter(ctx.canUserRead)
+          .map(g => Json.obj("label" -> g.name, "value" -> s"route_${g.id}", "kind" -> "route"))
+        val routeCompositions = rrouteCompositions
+          .filter(ctx.canUserRead)
+          .map(g => Json.obj("label" -> g.name, "value" -> s"route-composition_${g.id}", "kind" -> "route-composition"))
+        Ok(JsArray(groups ++ services ++ routes ++ routeCompositions))
       }
     }
 
@@ -1659,7 +1668,7 @@ class BackOfficeController(
         env.datastores.routeDataStore.findById(serviceId) flatMap {
           case Some(service) => ServiceLike.fromRoute(service).some.vfuture
           case None          =>
-            env.datastores.servicesDataStore.findById(serviceId) map {
+            env.datastores.routeCompositionDataStore.findById(serviceId) map {
               case Some(service) => ServiceLike.fromRouteComposition(service).some
               case None          => None
             }

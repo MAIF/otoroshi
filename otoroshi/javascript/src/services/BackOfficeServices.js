@@ -182,8 +182,8 @@ export function allServices(env, group, paginationState) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-      ? `/bo/api/proxy/api/services?filter.groups=${group}`
-      : `/bo/api/proxy/api/services`;
+    ? `/bo/api/proxy/api/services?filter.groups=${group}`
+    : `/bo/api/proxy/api/services`;
   return findAllWithPagination(url, paginationState);
 }
 
@@ -440,8 +440,11 @@ export function fetchApiKeyById(serviceId, apkid) {
   }).then((r) => r.json());
 }
 
-export function deleteApiKey(serviceId, ak) {
-  return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`, {
+export function deleteApiKey(serviceId, routeId, ak) {
+  const url = serviceId
+    ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`
+    : `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
+  return fetch(url, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -450,8 +453,11 @@ export function deleteApiKey(serviceId, ak) {
   }).then((r) => r.json());
 }
 
-export function createApiKey(serviceId, ak) {
-  return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys`, {
+export function createApiKey(serviceId, routeId, ak) {
+  const url = serviceId
+    ? `/bo/api/proxy/api/services/${serviceId}/apikeys`
+    : `/bo/api/proxy/api/routes/${routeId}/apikeys`;
+  return fetch(url, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -462,8 +468,11 @@ export function createApiKey(serviceId, ak) {
   }).then((r) => r.json());
 }
 
-export function updateApiKey(serviceId, ak) {
-  return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`, {
+export function updateApiKey(serviceId, routeId, ak) {
+  const url = serviceId
+    ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`
+    : `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
+  return fetch(url, {
     method: 'PUT',
     credentials: 'include',
     headers: {
@@ -530,8 +539,12 @@ export function updateStandaloneApiKey(ak) {
   }).then((r) => r.json());
 }
 
-export function getGlobalConfig() {
-  return fetch(`/bo/api/proxy/api/globalconfig`, {
+export function getGlobalConfig(fields) {
+  let url = `/bo/api/proxy/api/globalconfig`;
+
+  if (fields) url = `${url}?fields=${fields.join(',')}`;
+
+  return fetch(url, {
     method: 'GET',
     credentials: 'include',
     headers: {
@@ -573,7 +586,7 @@ export function findServicesForGroup(group) {
 }
 
 export function findAllGroups(paginationState) {
-  return findAllWithPagination('/bo/api/proxy/api/groups', paginationState)
+  return findAllWithPagination('/bo/api/proxy/api/groups', paginationState);
   // return fetch('/bo/api/proxy/api/groups', {
   //   method: 'GET',
   //   credentials: 'include',
@@ -747,15 +760,9 @@ export function discardSession(id) {
   }).then((r) => r.json());
 }
 
-export function fetchSessions() {
+export function fetchSessions(paginateState) {
   // return fetch(`/bo/api/sessions`, {
-  return fetch(`/bo/api/proxy/api/admin-sessions`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+  return findAllWithPagination(`/bo/api/proxy/api/admin-sessions`, paginateState);
 }
 
 export function discardAllPrivateAppsSessions() {
@@ -780,15 +787,9 @@ export function discardPrivateAppsSession(id) {
   }).then((r) => r.json());
 }
 
-export function fetchPrivateAppsSessions() {
+export function fetchPrivateAppsSessions(paginationState) {
   // return fetch(`/bo/api/papps/sessions`, {
-  return fetch(`/bo/api/proxy/api/apps-sessions`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+  return findAllWithPagination(`/bo/api/proxy/api/apps-sessions`, paginationState);
 }
 
 export function panicMode() {
@@ -802,17 +803,10 @@ export function panicMode() {
   }).then((r) => r.json());
 }
 
-export function fetchAdmins() {
+export function fetchAdmins(paginationState) {
   // return fetch(`/bo/simple/admins`, {
-  return fetch(`/bo/api/proxy/api/admins/simple`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  })
-    .then((r) => r.json())
-    .then((_admins) => {
+  return findAllWithPagination(`/bo/api/proxy/api/admins/simple`, paginationState).then(
+    (_admins) => {
       // return fetch(`/bo/webauthn/admins`, {
       return fetch(`/bo/api/proxy/api/admins/webauthn`, {
         method: 'GET',
@@ -823,11 +817,12 @@ export function fetchAdmins() {
       })
         .then((r) => r.json())
         .then((_webauthnadmins) => {
-          const admins = _admins.map((admin) => ({ ...admin, type: 'SIMPLE' }));
+          const admins = _admins.data.map((admin) => ({ ...admin, type: 'SIMPLE' }));
           const webauthnadmins = _webauthnadmins.map((admin) => ({ ...admin, type: 'WEBAUTHN' }));
           return [...webauthnadmins, ...admins];
         });
-    });
+    }
+  );
 }
 
 export function discardAdmin(username, id, type) {
@@ -1436,14 +1431,8 @@ export function fetchStats(by, id, from, to, limit = 500) {
   ).then((r) => r.json());
 }
 
-export function findAllTcpServices() {
-  return fetch('/bo/api/proxy/api/tcp/services', {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  }).then((r) => r.json());
+export function findAllTcpServices(paginationState) {
+  return findAllWithPagination('/bo/api/proxy/api/tcp/services', paginationState);
 }
 
 export function findTcpServiceById(id) {
@@ -1860,7 +1849,7 @@ export function jsonToGraphqlSchema(schema, types) {
 // NgRoutes
 
 const fetchWrapper = (url, method = 'GET', body) =>
-  fetch(`/bo/api/proxy/api/experimental${url}`, {
+  fetch(`/bo/api/proxy/api${url}`, {
     method,
     credentials: 'include',
     headers: {
@@ -1870,16 +1859,21 @@ const fetchWrapper = (url, method = 'GET', body) =>
     body: body ? JSON.stringify(body) : undefined,
   }).then((r) => r.json());
 
-const findAllWithPagination = (route, { page, pageSize, fields, filtered, sorted } = { page: 1 }, prefix = '') => {
+const findAllWithPagination = (
+  route,
+  { page, pageSize, fields, filtered, sorted, ...props } = { page: 1 },
+  prefix = ''
+) => {
   let url = route;
+
+  // console.log(props)
 
   if (page) {
     url = `${url}?page=${page}`;
 
     if (pageSize) url = `${url}&pageSize=${pageSize}`;
 
-    if (fields && fields.length > 0)
-      url = `${url}&fields=${fields.join(',')}`;
+    if (fields && fields.length > 0) url = `${url}&fields=${fields.join(',')}`;
 
     if (filtered && filtered.length > 0)
       url = `${url}&filtered=${filtered.map((field) => `${field.id}:${field.value}`).join(',')}`;
@@ -1911,7 +1905,7 @@ export const nextClient = {
     ROUTES: 'routes',
     BACKENDS: 'backends',
     FRONTENDS: 'frontends',
-    SERVICES: 'services',
+    SERVICES: 'route-compositions',
   },
   find: (entity) => fetchWrapper(`/${entity}`),
   findAll: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {
@@ -1920,7 +1914,8 @@ export const nextClient = {
 
     return fetchWrapper(url);
   },
-  findAllWithPagination: (entity, props) => findAllWithPagination(`/${entity}`, props, '/bo/api/proxy/api/experimental'),
+  findAllWithPagination: (entity, props) =>
+    findAllWithPagination(`/${entity}`, props, '/bo/api/proxy/api/'),
   create: (entity, content) => fetchWrapper(`/${entity}`, 'POST', content),
   update: (entity, content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
   fetch: (entity, entityId) => fetchWrapper(`/${entity}/${entityId}`),
@@ -1933,7 +1928,7 @@ export const nextClient = {
     return {
       findAll: () => fetchWrapper(`/${entity}`),
       findAllWithPagination: (paginationState) =>
-        findAllWithPaginationAndEntity(entity, paginationState),
+        findAllWithPagination(entity, paginationState, '/bo/api/proxy/api/'),
       create: (content) => fetchWrapper(`/${entity}`, 'POST', content),
       update: (content) => fetchWrapper(`/${entity}/${content.id}`, 'PUT', content),
       findById: (entityId) => fetchWrapper(`/${entity}/${entityId}`),

@@ -1,33 +1,29 @@
 package otoroshi.models
 
 import akka.http.scaladsl.util.FastFuture
+import org.joda.time.DateTime
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
-import otoroshi.events.Exporters._
 import otoroshi.events._
-import org.joda.time.DateTime
-import otoroshi.events.KafkaConfig
-import otoroshi.next.models.{NgBackend, NgRoute, NgService, NgTarget, StoredNgBackend, StoredNgTarget}
+import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
 import otoroshi.script.plugins.Plugins
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.{Cert, ClientCertificateValidator}
 import otoroshi.storage.BasicStore
 import otoroshi.tcp.TcpService
 import otoroshi.utils.RegexPool
-import otoroshi.utils.letsencrypt.LetsEncryptSettings
 import otoroshi.utils.clevercloud.CleverCloudClient
-import play.api.Logger
-import play.api.libs.json._
-import play.api.libs.ws.WSProxyServer
-import otoroshi.security.IdGenerator
-import otoroshi.ssl.{Cert, ClientCertificateValidator}
 import otoroshi.utils.clevercloud.CleverCloudClient.{CleverSettings, UserTokens}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.letsencrypt.LetsEncryptSettings
 import otoroshi.utils.mailer.MailerSettings
-import otoroshi.utils._
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
+import play.api.libs.json._
+import play.api.libs.ws.WSProxyServer
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -545,6 +541,7 @@ object DefaultTemplates {
 case class GlobalConfig(
     letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
     lines: Seq[String] = Seq("prod"),
+    initWithNewEngine: Boolean = true,
     enableEmbeddedMetrics: Boolean = true,
     streamEntityOnly: Boolean = true,
     autoLinkToDefaultGroup: Boolean = true,
@@ -682,6 +679,7 @@ object GlobalConfig {
         "tags" -> JsArray(o.tags.map(JsString.apply)),
         "letsEncryptSettings"     -> o.letsEncryptSettings.json,
         "lines"                   -> JsArray(o.lines.map(JsString.apply)),
+        "initWithNewEngine"       -> o.initWithNewEngine,
         "maintenanceMode"         -> o.maintenanceMode,
         "enableEmbeddedMetrics"   -> o.enableEmbeddedMetrics,
         "streamEntityOnly"        -> o.streamEntityOnly,
@@ -729,6 +727,7 @@ object GlobalConfig {
       Try {
         GlobalConfig(
           lines = (json \ "lines").asOpt[Seq[String]].getOrElse(Seq("prod")),
+          initWithNewEngine = (json \ "initWithNewEngine").asOpt[Boolean].getOrElse(false),
           enableEmbeddedMetrics = (json \ "enableEmbeddedMetrics").asOpt[Boolean].getOrElse(true),
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
@@ -919,13 +918,12 @@ case class OtoroshiExport(
     tenants: Seq[Tenant] = Seq.empty,
     teams: Seq[Team] = Seq.empty,
     routes: Seq[NgRoute] = Seq.empty,
-    services: Seq[NgService] = Seq.empty,
-    backends: Seq[StoredNgBackend] = Seq.empty,
-    targets: Seq[StoredNgTarget] = Seq.empty
+    routeCompositions: Seq[NgRouteComposition] = Seq.empty,
+    backends: Seq[StoredNgBackend] = Seq.empty
 ) {
 
-  import otoroshi.utils.syntax.implicits._
   import otoroshi.utils.json.JsonImplicits._
+  import otoroshi.utils.syntax.implicits._
 
   private def customizeAndMergeArray[A](
       entities: Seq[A],
@@ -1091,9 +1089,8 @@ case class OtoroshiExport(
       "tenants"            -> JsArray(tenants.map(_.json)),
       "teams"              -> JsArray(teams.map(_.json)),
       "routes"             -> JsArray(routes.map(_.json)),
-      "services"           -> JsArray(services.map(_.json)),
-      "backends"           -> JsArray(backends.map(_.json)),
-      "targets"            -> JsArray(targets.map(_.json))
+      "routeCompositions"  -> JsArray(routeCompositions.map(_.json)),
+      "backends"           -> JsArray(backends.map(_.json))
     )
   }
 }

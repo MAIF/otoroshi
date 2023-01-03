@@ -1,11 +1,11 @@
 # Getting Started
 
-- [Protect the access to your api with the Otoroshi management of api keys](#protect-the-access-to-your-api-with-the-otoroshi-management-of-api-keys)
-- [Secure your web app in 5 minutes with an authentication](#secure-your-web-app-in-5-minutes-with-an-authentication)
+- [Protect your service with Otoroshi ApiKey](#protect-your-service-with-otoroshi-apikey)
+- [Secure your web app in 2 calls with an authentication](#secure-your-web-app-in-2-calls-with-an-authentication)
 
 Download the latest jar of Otoroshi
 ```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-dev/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v16.0.0-dev/otoroshi.jar'
 ```
 
 Once downloading, run Otoroshi.
@@ -13,24 +13,54 @@ Once downloading, run Otoroshi.
 java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
 ```
 
-## Protect the access to your api with the Otoroshi management of api keys
+Yes, that command is all it took to start it up.
 
-Create a service, exposed on `http://myapi.oto.tools:8080`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
+## Protect your service with Otoroshi ApiKey
+
+Create a new route, exposed on `http://myapi.oto.tools:8080`, which will forward all requests to the mirror `https://mirror.otoroshi.io`.
 
 ```sh
-curl -X POST 'http://otoroshi-api.oto.tools:8080/api/services' \
--d '{"enforceSecureCommunication": false, "forceHttps": false, "_loc":{"tenant":"default","teams":["default"]},"groupId":"default","groups":["default"],"name":"myapi","description":"a service","env":"prod","domain":"oto.tools","subdomain":"myapi","targetsLoadBalancing":{"type":"RoundRobin"},"targets":[{"host":"mirror.otoroshi.io","scheme":"https","weight":1,"mtlsConfig":{"certs":[],"trustedCerts":[],"mtls":false,"loose":false,"trustAll":false},"tags":[],"metadata":{},"protocol":"HTTP\/1.1","predicate":{"type":"AlwaysMatch"},"ipAddress":null}],"root":"\/","matchingRoot":null,"stripPath":true,"enabled":true,"secComHeaders":{"claimRequestName":null,"stateRequestName":null,"stateResponseName":null},"publicPatterns":[""],"privatePatterns":["\/.*"],"kind":"ServiceDescriptor"}' \
+curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
 -H "Content-type: application/json" \
--u admin-api-apikey-id:admin-api-apikey-secret
+-u admin-api-apikey-id:admin-api-apikey-secret \
+-d @- <<'EOF'
+{
+  "name": "myapi",
+  "frontend": {
+    "domains": ["myapi.oto.tools"]
+  },
+  "backend": {
+    "targets": [
+      {
+        "hostname": "mirror.otoroshi.io",
+        "port": 443,
+        "tls": true
+      }
+    ]
+  },
+  "plugins": [
+    {
+        "plugin": "cp:otoroshi.next.plugins.ApikeyCalls",
+        "enabled": true,
+        "config": {
+            "validate": true,
+            "mandatory": true,
+            "update_quotas": true
+        }
+    }
+  ]
+}
+EOF
 ```
 
-Try to call this service. You should receive an error from Otoroshi about a missing api key in our request.
+Now that we have created our route, let’s see if our request reaches our upstream service. 
+You should receive an error from Otoroshi about a missing api key in our request.
 
 ```sh
 curl 'http://myapi.oto.tools:8080'
 ```
 
-Create your first api key with a quota of 10 calls by day and month.
+It looks like we don’t have access to it. Create your first api key with a quota of 10 calls by day and month.
 
 ```sh
 curl -X POST 'http://otoroshi-api.oto.tools:8080/api/apikeys' \
@@ -98,7 +128,7 @@ Keep calling the api and confirm that Otoroshi is sending you an apikey exceedin
 
 Well done, you have secured your first api with the apikeys system with limited call quotas.
 
-## Secure your web app in 5 minutes with an authentication
+## Secure your web app in 2 calls with an authentication
 
 Create an in-memory authentication module, with one registered user, to protect your service.
 
@@ -140,10 +170,37 @@ EOF
 Then create a service secure by the previous authentication module, which proxies `google.fr` on `webapp.oto.tools`.
 
 ```sh
-curl -X POST 'http://otoroshi-api.oto.tools:8080/api/services' \
--d '{"enforceSecureCommunication": false, "forceHttps": false, "_loc":{"tenant":"default","teams":["default"]},"groupId":"default","groups":["default"],"name":"webapp","description":"a service","env":"prod","domain":"oto.tools","subdomain":"webapp","targetsLoadBalancing":{"type":"RoundRobin"},"targets":[{"host":"google.fr","scheme":"https","weight":1,"mtlsConfig":{"certs":[],"trustedCerts":[],"mtls":false,"loose":false,"trustAll":false},"tags":[],"metadata":{},"protocol":"HTTP\/1.1","predicate":{"type":"AlwaysMatch"},"ipAddress":null}],"root":"\/","matchingRoot":null,"stripPath":true,"enabled":true,"secComHeaders":{"claimRequestName":null,"stateRequestName":null,"stateResponseName":null},"publicPatterns":["\/.*"],"privatePatterns":[""],"kind":"ServiceDescriptor","authConfigRef":"auth_mod_in_memory_auth","privateApp":true}' \
+curl -X POST 'http://otoroshi-api.oto.tools:8080/api/routes' \
 -H "Content-type: application/json" \
--u admin-api-apikey-id:admin-api-apikey-secret
+-u admin-api-apikey-id:admin-api-apikey-secret \
+-d @- <<'EOF'
+{
+  "name": "myapi",
+  "frontend": {
+    "domains": ["myapi.oto.tools"]
+  },
+  "backend": {
+    "targets": [
+      {
+        "hostname": "google.fr",
+        "port": 443,
+        "tls": true
+      }
+    ]
+  },
+  "plugins": [
+    {
+        "plugin": "cp:otoroshi.next.plugins.AuthModule",
+        "enabled": true,
+        "config": {
+            "pass_with_apikey": false,
+            "auth_module": null,
+            "module": "auth_mod_in_memory_auth"
+        }
+    }
+  ]
+}
+EOF
 ```
 
 Navigate to http://webapp.oto.tools:8080, login with `user@foo.bar/password` and check that you're redirect to `google` page.

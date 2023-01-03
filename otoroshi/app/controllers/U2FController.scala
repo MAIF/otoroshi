@@ -561,12 +561,39 @@ class LocalCredentialRepository(
 
   import collection.JavaConverters._
 
+  // changes in webauthn-server-core 2.1.0 from 1.7.0 forces us to do some shenanigans
+  def handleVersion210Upgrade(json: JsValue): JsValue = {
+    json
+      .applyOnIf(json.select("keyId").select("transports").asOpt[JsValue].isEmpty) { js =>
+        js.asObject ++ Json.obj("keyId" -> (json.select("keyId").asObject ++ Json.obj("transports" -> JsArray())))
+      }
+      .applyOnIf(json.select("aaguid").asOpt[JsValue].isEmpty) { js =>
+        js.asObject ++ Json.obj("aaguid" -> "AAAAAAAAAAAAAAAAAAAAAA")
+      }
+      .applyOnIf(json.select("signatureCount").asOpt[JsValue].isEmpty) { js =>
+        js.asObject ++ Json.obj("signatureCount" -> 1)
+      }
+      .applyOnIf(json.select("clientExtensionOutputs").asOpt[JsValue].isEmpty) { js =>
+        js.asObject ++ Json.obj("clientExtensionOutputs" -> Json.obj("credProps" -> Json.obj()))
+      }
+      .applyOnIf(json.select("authenticatorExtensionOutputs").asOpt[JsValue].isEmpty) { js =>
+        js.asObject ++ Json.obj("authenticatorExtensionOutputs" -> Json.obj())
+      }
+      .applyOnIf(json.select("attestationTrustPath").asOpt[JsValue].isEmpty) { js =>
+        js.asObject ++ Json.obj("attestationTrustPath" -> Json.arr())
+      }
+      .applyOnIf(json.select("warnings").asOpt[JsValue].isDefined) { js =>
+        js.asObject - "warnings"
+      }
+  }
+
   override def getCredentialIdsForUsername(username: String): util.Set[PublicKeyCredentialDescriptor] = {
     users
       .filter(_.username == username)
       .flatMap { user =>
         user.credentials.values.map { credential =>
-          val regResult = jsonMapper.readValue(credential.stringify, classOf[RegistrationResult])
+          val regResult =
+            jsonMapper.readValue(handleVersion210Upgrade(credential).stringify, classOf[RegistrationResult])
           regResult.getKeyId
         }
       }
@@ -602,7 +629,7 @@ class LocalCredentialRepository(
       .flatMap { user =>
         user.credentials.map { case (id, reg) =>
           val handle    = new ByteArray(base64Decoder.decode(user.handle))
-          val regResult = jsonMapper.readValue(reg.stringify, classOf[RegistrationResult])
+          val regResult = jsonMapper.readValue(handleVersion210Upgrade(reg).stringify, classOf[RegistrationResult])
           (handle, regResult.getKeyId.getId, regResult)
         }.toSeq
       }
@@ -628,7 +655,7 @@ class LocalCredentialRepository(
       .flatMap { user =>
         user.credentials.map { case (id, reg) =>
           val handle    = new ByteArray(base64Decoder.decode(user.handle))
-          val regResult = jsonMapper.readValue(reg.stringify, classOf[RegistrationResult])
+          val regResult = jsonMapper.readValue(handleVersion210Upgrade(reg).stringify, classOf[RegistrationResult])
           (handle, regResult.getKeyId.getId, regResult)
         }.toSeq
       }

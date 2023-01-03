@@ -3,8 +3,8 @@ export default {
   config_schema: {
     tunnel_id: {
       type: 'select',
+      label: 'Tunnel ID',
       props: {
-        label: 'Tunnel ID',
         optionsFrom: '/bo/api/proxy/api/tunnels',
         optionsTransformer: {
           label: 'name',

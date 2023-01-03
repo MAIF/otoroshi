@@ -167,7 +167,7 @@ export class JwtVerifierWizard extends React.Component {
           strict: false,
           strategy: {
             type: 'PassThrough',
-            verificationSettings: { fields: { iss: 'The Issuer' }, arrayFields: {} },
+            verificationSettings: { fields: {}, arrayFields: {} },
           },
           ...this.props.jwtVerifier,
         };
@@ -180,7 +180,7 @@ export class JwtVerifierWizard extends React.Component {
         algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
         strategy: {
           type: 'PassThrough',
-          verificationSettings: { fields: { iss: 'The Issuer' }, arrayFields: {} },
+          verificationSettings: { fields: {}, arrayFields: {} },
         },
       };
     }

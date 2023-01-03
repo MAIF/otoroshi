@@ -73,7 +73,7 @@ impl Otoroshi {
             "http"
         };
         let host = opts.host;
-        let uri: String = format!("{}://{}/api/experimental/routes/route_{}", scheme, host, tunnel_id);
+        let uri: String = format!("{}://{}/api/routes/route_{}", scheme, host, tunnel_id);
         let req: Request<hyper::Body> = Request::builder()
             .method(Method::GET)
             .uri(uri)
@@ -121,7 +121,7 @@ impl Otoroshi {
             "http"
         };
         let host = opts.host;
-        let uri: String = format!("{}://{}/api/experimental/routes", scheme, host);
+        let uri: String = format!("{}://{}/api/routes", scheme, host);
         let json = r###"{
             "id": "route_$tunnel_id",
             "name": "exposed-cli-tunnel-$tunnel_id",
