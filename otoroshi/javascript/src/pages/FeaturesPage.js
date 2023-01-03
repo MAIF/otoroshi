@@ -89,7 +89,7 @@ const graph = [
       },
       {
         title: 'Teams',
-        description: 'All your temas',
+        description: 'All your teams',
         img: 'teams',
         display: true,
         link: '/teams',
