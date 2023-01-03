@@ -308,7 +308,7 @@ const Feature = ({ title, description, img, link }) => {
 
 const Features = ({ title, description, children }) => {
   return (
-    <div className="mb-3">
+    <div className="my-3">
       <h3 className="mb-0">{title}</h3>
       <p style={{ margin: 0, marginBottom: 12 }}>{description}</p>
       <div className="d-flex flex-wrap" style={{ gap: 12, marginBottom: 30, marginTop: 20 }}>
