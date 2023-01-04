@@ -339,7 +339,7 @@ const graph = (env) => {
   ];
 }
 
-const ZeLink = (props) => {
+const AutoLink = (props) => {
   if (props.to.indexOf('http') === 0) {
     return <a {...props} href={props.to} target="_blank">{props.children}</a>
   } else {
@@ -352,7 +352,7 @@ const Feature = ({ title, description, img, link, icon }) => {
   const className = _.isString(iconValue) ? (iconValue.indexOf(' ') > -1 ? iconValue : `fa ${iconValue}`) : null;
   const zeIcon = iconValue ? (_.isString(iconValue) ? <i className={className} /> : iconValue): null;
   return (
-    <ZeLink
+    <AutoLink
       to={link}
       className="d-flex"
       style={{
@@ -399,7 +399,7 @@ const Feature = ({ title, description, img, link, icon }) => {
           <p>{description}</p>
         </div>
       </div>
-    </ZeLink>
+    </AutoLink>
   );
 };
 
@@ -441,7 +441,12 @@ export class FeaturesPage extends Component {
     return (
       <>
         <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'flex-end' }}>
-          <button type="button" className={`btn ${this.props.shortMenu ? 'btn-success' : 'btn-danger'}`} onClick={this.props.toggleShortMenu}>{this.props.shortMenu ? 'Display all features in the settings menu' : 'Do not display all features in the settings menu'}</button>
+          <button 
+              type="button" 
+              className={`btn btn-sm ${this.props.shortMenu ? 'btn-success' : 'btn-danger'}`} 
+              onClick={this.props.toggleShortMenu}>
+            <i className="fa fa-cog" style={{ fontSize: 'small' }} /> {this.props.shortMenu ? 'Display all features in the settings menu' : 'Do not display all features in the settings menu'}
+          </button>
         </div>
         {graph(env).map(({ title, description, features = [] }) => {
           return (
