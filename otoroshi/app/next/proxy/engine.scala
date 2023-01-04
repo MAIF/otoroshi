@@ -38,7 +38,7 @@ import play.api.mvc.request.RequestAttrKey
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 case class ProxyEngineConfig(
@@ -851,6 +851,39 @@ class ProxyEngine() extends RequestHandler {
       )
     }
     val all_plugins = global_plugins.requestSinkPlugins(request)
+
+    // TODO - async version
+//    if (all_plugins.nonEmpty) {
+//      val wrappers = all_plugins
+//        .map { wrapper =>
+//          val ctx = NgRequestSinkContext(
+//            snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,
+//            request = request,
+//            config = wrapper.instance.config.raw,
+//            attrs = attrs,
+//            origin = NgRequestOrigin.NgReverseProxy,
+//            status = 404,
+//            message = s"route not found",
+//            body = body
+//          )
+//          (wrapper, ctx)
+//        }
+//      FEither.apply[NgProxyEngineError, NgRoute] (
+//        Future.sequence(wrappers.map { case (wrapper, ctx) =>  wrapper.plugin.matches(ctx)})
+//          .flatMap(results => {
+//             results.indexWhere(matched => matched) match {
+//               case -1 => failure().value
+//               case n =>
+//                 val (wrapper, ctx) = wrappers(n)
+//                 FEither.apply[NgProxyEngineError, NgRoute] (
+//                  wrapper.plugin.handle (ctx).map (r => Left (NgResultProxyEngineError (r) ) )
+//                 ).value
+//             }
+//          })
+//      )
+//    } else {
+//      failure()
+//    }
     if (all_plugins.nonEmpty) {
       all_plugins
         .map { wrapper =>
@@ -2729,6 +2762,7 @@ class ProxyEngine() extends RequestHandler {
     )*/
 
     val all_plugins = plugins.transformerPluginsThatTransformsResponse
+
     if (all_plugins.nonEmpty) {
       var sequence = NgReportPluginSequence(
         size = all_plugins.size,
@@ -3011,6 +3045,7 @@ class ProxyEngine() extends RequestHandler {
       }
       .applyOnIf(!isHttp10)(_.filterNot(h => h._1.toLowerCase() == "content-length"))
       .toSeq // ++ Seq(("Connection" -> "keep-alive"), ("X-Connection" -> "keep-alive"))
+
     val theBody                        = response.body.applyOnIf(engineConfig.capture) { source =>
       var responseChunks = ByteString("")
       source
