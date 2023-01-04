@@ -347,13 +347,7 @@ class ProxyEngine() extends RequestHandler {
                      case _             => _config
                    }).applyOnIf(route.capture)(_.copy(capture = true))
       _          = report.markDoneAndStart("compute-plugins")
-      gplugs     = global_plugins__.applyOnIf(
-                     env.http2ClientProxyEnabled && route.backend.targets.forall(
-                       _.protocol == otoroshi.models.HttpProtocols.HTTP_2_0
-                     )
-                   ) { o =>
-                     o.add(NgPluginInstance("cp:otoroshi.next.plugins.Http2Caller"))
-                   }
+      gplugs     = global_plugins__
       ctxPlugins = route.contextualPlugins(gplugs, pluginMerge, request).seffectOn(_.allPlugins)
       _          = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
       _          = report.markDoneAndStart(
