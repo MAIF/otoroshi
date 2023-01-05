@@ -718,7 +718,7 @@ export class DangerZonePage extends Component {
     backOfficeAuthRef: {
       type: SelectInput,
       props: {
-        label: 'Backoffice auth. config',
+        label: 'Backoffice auth. module',
         valuesFrom: '/bo/api/proxy/api/auths',
         transformer: (a) => ({ value: a.id, label: a.name }),
         help: '...',
@@ -1453,18 +1453,18 @@ class BackOfficeAuthButtons extends Component {
         <div className="col-sm-10 input-group-btn">
           {!this.props.rawValue.backOfficeAuthRef && (
             <Link to="/auth-configs/add" className="btn btn-sm btn-primary">
-              <i className="fas fa-plus" /> Create a new auth. config.
+              <i className="fas fa-plus" /> Create a new auth. module
             </Link>
           )}
           {this.props.rawValue.backOfficeAuthRef && (
             <Link
               to={`/auth-configs/edit/${this.props.rawValue.backOfficeAuthRef}`}
               className="btn btn-sm btn-success">
-              <i className="fas fa-edit" /> Edit the auth. config.
+              <i className="fas fa-edit" /> Edit the auth. module
             </Link>
           )}
           <Link to="/auth-configs" className="btn btn-sm btn-primary">
-            <i className="fas fa-link" /> all auth. config.
+            <i className="fas fa-link" /> all auth. module
           </Link>
         </div>
       </div>

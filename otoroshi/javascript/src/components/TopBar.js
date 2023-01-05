@@ -584,7 +584,7 @@ export class TopBar extends Component {
         options.push({
           action: () => this.routeTo('/auth-configs'),
           env: <span className="fas fa-lock" />,
-          label: 'Global auth. configs',
+          label: 'Global auth. modules',
           value: 'auth-configs',
         });
         options.push({

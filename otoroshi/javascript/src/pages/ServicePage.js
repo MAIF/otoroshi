@@ -2041,7 +2041,7 @@ export class ServicePage extends Component {
               onChange={(v) => this.changeTheValue('privateApp', v)}
             />
             <SelectInput
-              label="Auth. config"
+              label="Auth. module"
               value={this.state.service.authConfigRef}
               onChange={(e) => this.changeTheValue('authConfigRef', e)}
               valuesFrom="/bo/api/proxy/api/auths"
@@ -2053,18 +2053,18 @@ export class ServicePage extends Component {
               <div className="col-sm-10 input-group-btn">
                 {!this.state.service.authConfigRef && (
                   <Link to="/auth-configs/add" className="btn btn-sm btn-primary">
-                    <i className="fas fa-plus" /> Create a new auth. config.
+                    <i className="fas fa-plus" /> Create a new auth. module
                   </Link>
                 )}
                 {this.state.service.authConfigRef && (
                   <Link
                     to={`/auth-configs/edit/${this.state.service.authConfigRef}`}
                     className="btn btn-sm btn-success">
-                    <i className="fas fa-edit" /> Edit the auth. config.
+                    <i className="fas fa-edit" /> Edit the auth. module
                   </Link>
                 )}
                 <Link to="/auth-configs" className="btn btn-sm btn-primary">
-                  <i className="fas fa-link" /> all auth. config.
+                  <i className="fas fa-link" /> all auth. module
                 </Link>
               </div>
             </div>
@@ -2337,18 +2337,18 @@ export class ServicePage extends Component {
                   <div className="col-sm-10">
                     {!this.state.service.thirdPartyApiKey.oidcConfigRef && (
                       <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
-                        <i className="fas fa-plus" /> Create a new auth. config.
+                        <i className="fas fa-plus" /> Create a new auth. module
                       </a>
                     )}
                     {this.state.service.thirdPartyApiKey.oidcConfigRef && (
                       <a
                         href={`/bo/dashboard/auth-configs/edit/${this.state.service.thirdPartyApiKey.oidcConfigRef}`}
                         className="btn btn-sm btn-success">
-                        <i className="fas fa-edit" /> Edit the auth. config.
+                        <i className="fas fa-edit" /> Edit the auth. module
                       </a>
                     )}
                     <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
-                      <i className="fas fa-link" /> all auth. config.
+                      <i className="fas fa-link" /> all auth. module
                     </a>
                   </div>
                 </div>

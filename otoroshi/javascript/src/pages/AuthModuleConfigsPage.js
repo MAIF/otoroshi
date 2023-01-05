@@ -17,7 +17,7 @@ export class AuthModuleConfigsPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Global auth. configs`);
+    this.props.setTitle(`Global auth. modules`);
   }
 
   gotoConfig = (config) => {
@@ -57,19 +57,19 @@ export class AuthModuleConfigsPage extends Component {
         <Table
           parentProps={this.props}
           selfUrl="auth-configs"
-          defaultTitle="All Global auth. configs"
+          defaultTitle="All Global auth. modules"
           defaultValue={BackOfficeServices.createNewAuthConfig}
           _defaultValue={() => {
             const defv = {
               ...Oauth2ModuleConfig.defaultConfig,
               id: faker.random.alphaNumeric(64),
-              name: 'New auth. config',
-              desc: 'A auth. config',
+              name: 'New auth. module',
+              desc: 'A auth. module',
               type: 'oauth2',
             };
             return defv;
           }}
-          itemName="Auth. config"
+          itemName="Auth. module"
           formSchema={this.formSchema}
           formFlow={this.formFlow}
           columns={this.columns}

@@ -42,7 +42,7 @@ export class NotFoundPage extends Component {
     {
       action: () => this.routeTo('/auth-configs'),
       icon: 'fa-lock',
-      label: 'Global auth. configs',
+      label: 'Global auth. modules',
     },
     {
       action: () => this.routeTo('/certificates'),
