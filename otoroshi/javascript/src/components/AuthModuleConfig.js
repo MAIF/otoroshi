@@ -285,7 +285,7 @@ export class Oauth2ModuleConfig extends Component {
             className="col-xs-12 col-sm-2 col-form-label"
           />
           <div className="col-sm-10">
-            <button type="button" className="btn btn-success" onClick={this.fetchConfig}>
+            <button type="button" className="btn btn-success me-2" onClick={this.fetchConfig}>
               Get from OIDC config
             </button>
             <button type="button" className="btn btn-success" onClick={this.fetchKeycloakConfig}>
