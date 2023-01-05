@@ -28,22 +28,8 @@
   }
 }
 
-.btn-info:hover {
-  color: #fff;
-  background-color: var(--color-blue);
-  border-color: var(--color-blue);
-}
-
-.btn-info,
-.btn_info:focus {
-  color: #fff;
-  background-color: transparent;
-  background-image: none;
-  border-color: var(--color-blue);
-}
-
 .btn-save {
-  color: #fff;
+  color: var(--color_level1);
   border-color: var(--color-green);
   background-color: var(--color-green);
 }
@@ -79,14 +65,14 @@
 
   &-off {
     @extend .content-switch-button;
-    background-color: #fff;
+    background-color: var(--color_level1);
     border: 1px solid #dfdfdf;
     justify-content: flex-start;
   }
 }
 
 .switch-button {
-  background-color: #fff;
+  background-color: var(--color_level1);
   border-radius: 20px;
   cursor: pointer;
 
@@ -94,7 +80,7 @@
     @extend .switch-button;
     width: 20px;
     height: 20px;
-    background-color: #fff;
+    background-color: var(--color_level1);
     border-radius: 20px;
   }
 
@@ -111,14 +97,14 @@
 
 .btn-primary,
 .btn-primary:focus {
-  color: #fff;
+  color: var(--color_level1);
   border: 1px solid;
   border-color: var(--color-blue);
   background-color: transparent;
   &:hover,
   &.active,
   &.active:hover {
-    color: #fff;
+    color: var(--color-white);
     border: 1px solid;
     border-color: var(--color-blue);
     background-color: var(--color-blue);
@@ -127,32 +113,32 @@
 
 .btn-danger,
 .btn-danger:focus {
-  color: #fff;
+  color: var(--color_level1);
   border: 1px solid;
   border-color: var(--color-red);
   background-color: transparent;
 
   &:hover {
-    color: #fff;
+    color: var(--color-white);
     border: 1px solid;
     border-color: var(--color-red);
     background-color: var(--color-red);
   }
 
   .fa-lock {
-    color: #fff;
+    color: var(--color_level1);
   }
 }
 
 .btn-success,
 .btn-success:focus {
-  color: #fff;
+  color: var(--color_level1);
   border: 1px solid;
   border-color: var(--color-green);
   background-color: transparent;
 
   &:hover {
-    color: #fff;
+    color: var(--color-white);
     border: 1px solid;
     border-color: var(--color-green);
     background-color: var(--color-green);
@@ -176,7 +162,6 @@
 .pill-mode {
   border: none;
   padding: 2px 0;
-  // color: #fff;
   text-align: center;
   background: none;
   z-index: 21;

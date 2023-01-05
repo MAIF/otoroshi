@@ -1197,7 +1197,7 @@ export class ServicePage extends Component {
           <div className="mb-3 btnsService">
             <div className="displayGroupBtn">
               <button
-                className="btn btn-info"
+                className="btn btn-primary"
                 type="button"
                 {...createTooltip('.....', 'left', true)}
                 disabled={!this.state.service.enabled}
