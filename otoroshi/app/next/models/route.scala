@@ -851,6 +851,11 @@ object NgRoute {
               plugin = pluginId[ReadOnlyCalls]
             )
           }
+          .applyOnIf(true) { seq =>
+            seq :+ NgPluginInstance(
+              plugin = pluginId[OtoroshiHeadersIn]
+            )
+          }
           .applyOnIf(service.ipFiltering.blacklist.nonEmpty) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[IpAddressBlockList],

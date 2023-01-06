@@ -133,6 +133,35 @@ class HeadersValidation extends NgAccessValidator {
   }
 }
 
+class OtoroshiHeadersIn extends NgRequestTransformer {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean = true
+  override def core: Boolean = true
+  override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = false
+  override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = false
+  override def isTransformResponseAsync: Boolean = true
+  override def name: String = "Otoroshi headers in"
+  override def description: Option[String] = "This plugin adds Otoroshi specific headers to the request".some
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+
+  override def transformRequestSync(
+    ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+    val additionalHeaders = Map(
+      env.Headers.OtoroshiProxiedHost -> ctx.request.theHost,
+      env.Headers.OtoroshiRequestId -> ctx.attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,
+      env.Headers.OtoroshiRequestTimestamp -> ctx.attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).get.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ"),
+    )
+    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders))
+  }
+}
+
 class AdditionalHeadersOut extends NgRequestTransformer {
 
   private val configReads: Reads[NgHeaderValuesConfig] = NgHeaderValuesConfig.format
