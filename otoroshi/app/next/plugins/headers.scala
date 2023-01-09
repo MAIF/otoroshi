@@ -158,7 +158,15 @@ class OtoroshiHeadersIn extends NgRequestTransformer {
       env.Headers.OtoroshiRequestId -> ctx.attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).get,
       env.Headers.OtoroshiRequestTimestamp -> ctx.attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).get.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ"),
     )
-    Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders))
+    val newHeaders = ctx.otoroshiRequest.headers
+      .removeAllArgs(
+        env.Headers.OtoroshiProxiedHost,
+        env.Headers.OtoroshiRequestId,
+        env.Headers.OtoroshiRequestTimestamp,
+        env.Headers.OtoroshiGatewayParentRequest,
+      )
+      .appendAll(additionalHeaders)
+    Right(ctx.otoroshiRequest.copy(headers = newHeaders))
   }
 }
 
@@ -398,8 +406,6 @@ class RemoveHeadersIn extends NgRequestTransformer {
 }
 
 class SendOtoroshiHeadersBack extends NgRequestTransformer {
-
-  import otoroshi.utils.http.HeadersHelperImplicits._
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
