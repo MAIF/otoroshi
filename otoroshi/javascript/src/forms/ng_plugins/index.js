@@ -69,7 +69,7 @@ import W3CTracing from './W3CTracing';
 import XForwardedHeaders from './XForwardedHeaders';
 import XmlToJsonRequest from './XmlToJsonRequest';
 import XmlToJsonResponse from './XmlToJsonResponse';
-import WasmQuery from './WasmQuery';
+import WasmBackend from './WasmBackend';
 import WasmAccessValidator from './WasmAccessValidator';
 import WasmRequestTransformer from './WasmRequestTransformer';
 import WasmResponseTransformer from './WasmResponseTransformer';
@@ -147,7 +147,7 @@ export const Plugins = [
   XForwardedHeaders,
   XmlToJsonRequest,
   XmlToJsonResponse,
-  WasmQuery,
+  WasmBackend,
   WasmAccessValidator,
   WasmRequestTransformer,
   WasmResponseTransformer

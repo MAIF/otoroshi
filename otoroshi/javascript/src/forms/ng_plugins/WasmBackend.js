@@ -1,5 +1,5 @@
 export default {
-  id: 'cp:otoroshi.next.plugins.WasmQuery',
+  id: 'cp:otoroshi.next.plugins.WasmBackend',
   config_schema: {
     source: {
       type: 'string',

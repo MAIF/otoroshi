@@ -133,12 +133,12 @@ object WasmUtils {
       .map(wasm => WasmUtils.callWasm(wasm, config, input))
 }
 
-class WasmQuery extends NgBackendCall {
+class WasmBackend extends NgBackendCall {
 
   override def useDelegates: Boolean                       = false
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = false
-  override def name: String                                = "WASM Function"
+  override def name: String                                = "WASM Backend"
   override def description: Option[String]                 = "This plugin can be used to launch a WASM file".some
   override def defaultConfigObject: Option[NgPluginConfig] = WasmQueryConfig().some
 
@@ -160,12 +160,22 @@ class WasmQuery extends NgBackendCall {
 
     ctx.wasmJson
       .flatMap(input => WasmUtils.execute(config, input))
-      .map(output =>
+      .map(output => {
+        val response = Json.parse(output)
         bodyResponse(
-          200,
-          Map("Content-Type" -> "application/json"),
-          output.byteString.chunks(16 * 1024)
-        ))
+          status = response.select("status").asOpt[Int].getOrElse(200),
+          headers = response.select("headers").asOpt[Map[String, String]].getOrElse(Map("Content-Type" -> "application/json")),
+          body = (response.select("body") match {
+            case JsDefined(value) =>
+              value match {
+                case JsString(value) => value
+                case o: JsObject => Json.stringify(o)
+                case _ => "{}"
+              }
+            case _: JsUndefined => "{}"
+          }).byteString.chunks(16 * 1024)
+        )
+      })
   }
 }
 
@@ -321,7 +331,7 @@ class WasmSink extends NgRequestSink {
     }
 
     Await.result(WasmUtils.getWasm(config)
-      .map(wasm => WasmUtils.callWasm(wasm, config.copy(functionName = "matches"), config.json))
+      .map(wasm => WasmUtils.callWasm(wasm, config.copy(functionName = "matches"), ctx.json))
       .map(res => {
         val response = Json.parse(res)
         (response \ "result").asOpt[Boolean].getOrElse(false)
@@ -338,11 +348,9 @@ class WasmSink extends NgRequestSink {
     }
 
     WasmUtils.getWasm(config)
-      .map(wasm => WasmUtils.callWasm(wasm, config, config.json))
+      .map(wasm => WasmUtils.callWasm(wasm, config, ctx.json))
       .map(res => {
         val response = Json.parse(res)
-
-        println(response)
 
         val status = response
           .select("status")

@@ -469,8 +469,6 @@ case class NgTransformerRequestContext(
       .map(body => {
         json.asObject ++ Json.obj(
           "route" -> route.json,
-          "apikey" -> apikey.map(_.json).getOrElse(JsNull).as[JsValue],
-          "user" -> user.map(_.json).getOrElse(JsNull).as[JsValue],
           "body" -> body
         )
       })
@@ -513,8 +511,6 @@ case class NgTransformerResponseContext(
       .map(body => {
         json.asObject ++ Json.obj(
           "route" -> route.json,
-          "apikey" -> apikey.map(_.json).getOrElse(JsNull).as[JsValue],
-          "user" -> user.map(_.json).getOrElse(JsNull).as[JsValue],
           "body" -> body
         )
       })
@@ -626,9 +622,7 @@ case class NgAccessContext(
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): JsObject = {
     (json.asObject ++ Json.obj(
-      "route" -> route.json,
-      "apikey" -> apikey.map(_.json).getOrElse(JsNull).as[JsValue],
-      "user" -> user.map(_.json).getOrElse(JsNull).as[JsValue]
+      "route" -> route.json
     ))
   }
 }
@@ -763,8 +757,6 @@ case class NgbBackendCallContext(
     }).map { body =>
       (json.asObject ++ Json.obj(
         "route" -> route.json,
-        "apikey" -> apikey.map(_.json).getOrElse(JsNull).as[JsValue],
-        "user" -> user.map(_.json).getOrElse(JsNull).as[JsValue],
         "raw_request_body" -> body,
         "request" -> request.json
       ))
