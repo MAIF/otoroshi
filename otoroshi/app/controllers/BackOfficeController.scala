@@ -174,8 +174,22 @@ class BackOfficeController(
     }
   }
 
+  def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
+    env.datastores.apiKeyDataStore.findById(env.backOfficeApiKey.clientId).flatMap {
+      case None => FastFuture.successful(
+        NotFound(
+          Json.obj(
+            "error" -> "admin apikey not found !"
+          )
+        )
+      )
+      case Some(apikey) if env.backofficeUseNewEngine => passWithNewEngine(ctx, apikey)
+      case Some(apikey) if !env.backofficeUseNewEngine => passWithOldEngine(ctx, apikey, path)
+    }
+  }
+
   private def passWithNewEngine(ctx: BackOfficeActionContextAuth[Source[ByteString, _]], apikey: ApiKey): Future[Result] = {
-    logger.info("using new engine !")
+    logger.debug(s"using new engine for ${ctx.request.method} ${ctx.request.theUrl}")
     env.scriptManager.getAnyScript[RequestHandler](NgPluginHelper.pluginId[ProxyEngine]) match {
       case Left(err) => Results.InternalServerError(Json.obj("error" -> "admin_api_error", "error_description" -> err)).vfuture
       case Right(raw_engine) => {
@@ -190,7 +204,7 @@ class BackOfficeController(
   }
 
   private def passWithOldEngine(ctx: BackOfficeActionContextAuth[Source[ByteString, _]], apikey: ApiKey, path: String): Future[Result] = {
-    logger.info("using old engine !")
+    logger.debug(s"using old engine ! ${ctx.request.method} ${ctx.request.theUrl}")
     val host = env.adminApiExposedHost
     val localUrl =
       if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.httpsPort}" else s"http://127.0.0.1:${env.port}"
@@ -383,20 +397,6 @@ class BackOfficeController(
             )
             .as(ctype)
         }
-    }
-  }
-
-  def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
-    env.datastores.apiKeyDataStore.findById(env.backOfficeApiKey.clientId).flatMap {
-      case None => FastFuture.successful(
-        NotFound(
-          Json.obj(
-            "error" -> "admin apikey not found !"
-          )
-        )
-      )
-      case Some(apikey) if env.backofficeUseNewEngine => passWithNewEngine(ctx, apikey)
-      case Some(apikey) if !env.backofficeUseNewEngine => passWithOldEngine(ctx, apikey, path)
     }
   }
 

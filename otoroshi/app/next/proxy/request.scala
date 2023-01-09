@@ -95,7 +95,7 @@ class RelayRoutingRequestTarget(_remoteUriStr: String) extends RequestTarget {
 
 class BackOfficeRequest(request: Request[Source[ByteString, _]], host: String, apikey: ApiKey, user: BackOfficeUser, env: Env) extends Request[Source[ByteString, _]] {
 
-  private val newUri = request.uri.replaceFirst("/bo/api/proxy/", "/").replace("//", "/").debugPrintln
+  private val newUri = request.uri.replaceFirst("/bo/api/proxy/", "/").replace("//", "/")
   private val addHeaders = Seq(
     "Host"                           -> host,
     "X-Forwarded-For"                -> request.theIpAddress(env),
