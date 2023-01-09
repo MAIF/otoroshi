@@ -237,7 +237,7 @@ class ProxyEngine() extends RequestHandler {
   }
 
   @inline
-  private def getConfig()(implicit ec: ExecutionContext, env: Env): ProxyEngineConfig = {
+  def getConfig()(implicit ec: ExecutionContext, env: Env): ProxyEngineConfig = {
     configCache.get(
       "config",
       _ => {
