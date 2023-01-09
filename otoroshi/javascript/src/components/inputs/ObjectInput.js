@@ -1,153 +1,173 @@
-import React, { Component, useEffect, useState } from 'react';
+import React from 'react';
 import { Help } from './Help';
-import isEqual from 'lodash/isEqual';
 
-export function ObjectInput(props) {
-  const [data, setData] = useState([]);
+export class ObjectInput extends React.Component {
+  state = {
+    data: Object.entries(this.props.value || {}).map(([key, value], i) => ({
+      idx: i,
+      key,
+      value,
+    }))
+  }
 
-  useEffect(() => {
-    if (props.value) {
-      const newData = Object.entries(props.value).map(([key, value], i) => ({
+  componentDidUpdate(prevProps) {
+    if (prevProps.value !== this.props.value) {
+      const newData = Object.entries(this.props.value).map(([key, value], i) => ({
         idx: i,
         key,
         value,
       }));
-      if (!isEqual(newData, data)) setData(newData);
+      this.setState({
+        data: newData
+      })
     }
-  }, [props.value]);
+  }
 
-  useEffect(() => {
-    onChange(data);
-  }, [data]);
-
-  const changeValue = (idx, key, e) => {
+  changeValue = (idx, key, e) => {
     if (e && e.preventDefault) e.preventDefault();
-    setData(
-      data.map((item) => {
+    this.setState({
+      data: this.state.data.map((item) => {
         if (item.idx === idx) return { ...item, value: e.target.value };
         return item;
       })
-    );
+    }, () => this.onChange(this.state.data));
   };
 
-  const changeKey = (idx, key, e) => {
+  changeKey = (idx, key, e) => {
     if (e && e.preventDefault) e.preventDefault();
-    setData(
-      data.map((item) => {
+    this.setState({
+      data: this.state.data.map((item) => {
         if (item.idx === idx) return { ...item, key: e.target.value };
         return item;
       })
-    );
+    }, () => this.onChange(this.state.data));
   };
 
-  const addFirst = (e) => {
+  addFirst = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    setData([{ key: '', value: '', idx: 0 }, ...data].map((item, i) => ({ ...item, idx: i })));
+
+    this.setState({
+      data: [{ key: '', value: '', idx: 0 }, ...this.state.data]
+        .map((item, i) => ({ ...item, idx: i }))
+    }, () => this.onChange(this.state.data));
   };
 
-  const addNext = (e) => {
+  addNext = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const out = [...data, { key: '', value: '', idx: data.length }];
-    setData(out.map((item, i) => ({ ...item, idx: i })));
+    const out = [...this.state.data, { key: '', value: '', idx: this.state.data.length }];
+    this.setState({
+      data: out.map((item, i) => ({ ...item, idx: i }))
+    }, () => this.onChange(this.state.data));
   };
 
-  const remove = (idx, key, e) => {
+  remove = (idx, key, e) => {
     if (e && e.preventDefault) e.preventDefault();
-    setData(data.filter((item) => item.idx !== idx).map((item, i) => ({ ...item, idx: i })));
+
+    this.setState({
+      data: this.state.data.filter((item) => item.idx !== idx).map((item, i) => ({ ...item, idx: i }))
+    }, () => this.onChange(this.state.data));
   };
 
-  const onChange = (out) => {
-    props.onChange(
-      out.reduce(
-        (acc, curr) => ({
-          ...acc,
-          [curr.key]: curr.value,
-        }),
-        {}
-      )
-    );
+  onChange = (out) => {
+    if ([...new Set(out.map(o => o.key))].length === out.length) {
+      this.props.onChange(
+        out.reduce(
+          (acc, curr) => ({
+            ...acc,
+            [curr.key]: curr.value,
+          }),
+          {}
+        )
+      );
+    } else {
+      console.log('baised')
+    }
   };
 
-  return (
-    <div>
-      {data.length === 0 && (
-        <div className="row mb-3">
-          {!props.ngOptions?.spread && (
-            <label htmlFor={`input-${props.label}`} className="col-xs-12 col-sm-2 col-form-label">
-              {props.label} <Help text={props.help} />
-            </label>
-          )}
-          <div className={`${props.ngOptions?.spread ? 'col-sm-12' : 'col-sm-10'}`}>
-            <button
-              disabled={props.disabled}
-              type="button"
-              className="btn btn-primary"
-              onClick={addFirst}>
-              <i className="fas fa-plus-circle" />{' '}
-            </button>
+  render() {
+    const { data } = this.state
+    const props = this.props
+    return (
+      <div>
+        {data.length === 0 && (
+          <div className="row mb-3">
+            {!props.ngOptions?.spread && (
+              <label htmlFor={`input-${props.label}`} className="col-xs-12 col-sm-2 col-form-label">
+                {props.label} <Help text={props.help} />
+              </label>
+            )}
+            <div className={`${props.ngOptions?.spread ? 'col-sm-12' : 'col-sm-10'}`}>
+              <button
+                disabled={props.disabled}
+                type="button"
+                className="btn btn-primary"
+                onClick={this.addFirst}>
+                <i className="fas fa-plus-circle" />{' '}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-      {data.map(({ key, value, idx }, i) => (
-        <div className="row mb-3" key={`keys-${idx}`}>
-          {i === 0 && !props.ngOptions?.spread && (
-            <label className="col-xs-12 col-sm-2 col-form-label">
-              {props.label} <Help text={props.help} />
-            </label>
-          )}
-          {i > 0 && !props.ngOptions?.spread && (
-            <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>
-          )}
-          <div className={`${props.ngOptions?.spread ? 'col-sm-12' : 'col-sm-10'}`}>
-            <div className="input-group justify-content-between">
-              {props.itemRenderer && props.itemRenderer(key, value, idx)}
-              {!props.itemRenderer && (
-                <>
-                  <input
-                    disabled={props.disabled}
-                    type="text"
-                    className="form-control"
-                    placeholder={props.placeholderKey}
-                    value={key}
-                    onChange={(e) => changeKey(idx, key, e)}
-                  />
-                  <input
-                    disabled={props.disabled}
-                    type="text"
-                    className="form-control"
-                    placeholder={props.placeholderValue}
-                    value={value}
-                    onChange={(e) => changeValue(idx, key, e)}
-                  />
-                </>
-              )}
-              <span className="input-group-btn">
-                <button
-                  disabled={props.disabled}
-                  type="button"
-                  className="btn btn-danger"
-                  onClick={(e) => remove(idx, key, e)}>
-                  <i className="fas fa-trash" />
-                </button>
-                {i === data.length - 1 && (
+        )}
+        {data.map(({ key, value, idx }, i) => (
+          <div className="row mb-3" key={`keys-${idx}`}>
+            {i === 0 && !props.ngOptions?.spread && (
+              <label className="col-xs-12 col-sm-2 col-form-label">
+                {props.label} <Help text={props.help} />
+              </label>
+            )}
+            {i > 0 && !props.ngOptions?.spread && (
+              <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>
+            )}
+            <div className={`${props.ngOptions?.spread ? 'col-sm-12' : 'col-sm-10'}`}>
+              <div className="input-group justify-content-between">
+                {props.itemRenderer && props.itemRenderer(key, value, idx)}
+                {!props.itemRenderer && (
+                  <>
+                    <input
+                      disabled={props.disabled}
+                      type="text"
+                      className="form-control"
+                      placeholder={props.placeholderKey}
+                      value={key}
+                      onChange={(e) => this.changeKey(idx, key, e)}
+                    />
+                    <input
+                      disabled={props.disabled}
+                      type="text"
+                      className="form-control"
+                      placeholder={props.placeholderValue}
+                      value={value}
+                      onChange={(e) => this.changeValue(idx, key, e)}
+                    />
+                  </>
+                )}
+                <span className="input-group-btn">
                   <button
                     disabled={props.disabled}
                     type="button"
-                    className="btn btn-primary"
-                    onClick={addNext}>
-                    <i className="fas fa-plus-circle" />{' '}
+                    className="btn btn-danger"
+                    onClick={(e) => this.remove(idx, key, e)}>
+                    <i className="fas fa-trash" />
                   </button>
-                )}
-              </span>
+                  {i === data.length - 1 && (
+                    <button
+                      disabled={props.disabled}
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={this.addNext}>
+                      <i className="fas fa-plus-circle" />{' '}
+                    </button>
+                  )}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
-  );
+        ))}
+      </div>
+    );
+  }
 }
 
-export class VerticalObjectInput extends Component {
+export class VerticalObjectInput extends React.Component {
   changeValue = (e, name) => {
     if (e && e.preventDefault) e.preventDefault();
     const newValues = { ...this.props.value, [name]: e.target.value };
