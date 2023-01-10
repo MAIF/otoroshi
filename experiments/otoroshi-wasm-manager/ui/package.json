@@ -12,6 +12,8 @@
     "@uiw/react-codemirror": "^4.19.5",
     "aws-sdk": "^2.1290.0",
     "bootstrap": "^5.2.3",
+    "jszip": "^3.10.1",
+    "pako": "^2.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",

@@ -1,41 +1,18 @@
 import React from 'react';
-import { createPlugin, getPlugins } from './services';
+import * as Service from './services'
 import TabsManager from './TabsManager';
+import JsZip from 'jszip';
+import Pako from 'pako'
 
 class App extends React.Component {
   state = {
     editorState: undefined,
-    files: [
-      //   {
-      //   filename: 'Cargo.toml',
-      //   content: `
-      //   [package]
-      //   name = "http-plugin"
-      //   version = "0.1.0"
-      //   edition = "2021"
-
-      //   # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-      //   [dependencies]
-      //   extism-pdk = "0.1.1"
-      //   serde = "1.0.152"
-      //   serde_json = "1.0.91"
-
-      //   [lib]
-      //   crate_type = ["cdylib"]
-      //   `.split('\n').map(r => r.trimStart()).join('\n'),
-      //   ext: '.toml'
-      // },
-      // {
-      //   filename: 'lib.rs',
-      //   ext: '.rs'
-      // }
-    ],
-    plugins: []
+    plugins: [],
+    selectedPlugin: undefined
   }
 
   componentDidMount() {
-    getPlugins()
+    Service.getPlugins()
       .then(plugins => this.setState({ plugins }))
   }
 
@@ -60,7 +37,7 @@ class App extends React.Component {
     } else if (editorState === 'onNewPlugin') {
       const newPlugin = plugins.find(plugin => plugin.new && plugin.newFilename && plugin.newFilename.length > 0)
       if (newPlugin) {
-        createPlugin(newPlugin.newFilename)
+        Service.createPlugin(newPlugin.newFilename)
           .then(res => {
             if (!res.error) {
               this.setState({
@@ -143,21 +120,96 @@ class App extends React.Component {
     })
   }
 
+  downloadPluginTemplate = async (res, selectedPlugin) => {
+    const jsZip = new JsZip()
+    const data = await jsZip.loadAsync(res);
+    console.log(data)
+    this.setState({
+      selectedPlugin: {
+        filename: selectedPlugin,
+        files: Object.values(data.files)
+          .filter(f => !f.dir)
+          .map(r => {
+            const parts = r.name.split('/')
+            const name = parts.length > 1 ? parts[1] : parts[0];
+            console.log(r)
+            try {
+              return {
+                filename: name,
+                content: Pako.inflateRaw(r._data.compressedContent, { to: 'string' }),
+                ext: name.split('.')[1]
+              }
+            } catch (err) {
+              console.log(err)
+            }
+          })
+      }
+    })
+  }
+
+  onPluginClick = newSelectedPlugin => {
+    Service.getPlugin(newSelectedPlugin)
+      .then(res => {
+        if (res.status === 404)
+          return res.json()
+        else
+          return res.blob()
+      })
+      .then(res => {
+        console.log(res)
+        if (res.error && res.status === 404) {
+          Service.getPluginTemplate('rust') // TODO - handle Assembly script case
+            .then(r => this.downloadPluginTemplate(r, newSelectedPlugin))
+        } else {
+          this.downloadPluginTemplate(res, newSelectedPlugin)
+        }
+
+      })
+  }
+
+  handleContent = (filename, newContent) => {
+    const { selectedPlugin } = this.state;
+    this.setState({
+      selectedPlugin: {
+        ...selectedPlugin,
+        files: selectedPlugin.files.map(file => {
+          if (file.filename === filename) {
+            return {
+              ...file,
+              content: newContent
+            }
+          } else {
+            return file
+          }
+        })
+      }
+    })
+  }
+
+  onSave = () => {
+    Service.savePlugin(this.state.selectedPlugin)
+      .then(res => {
+        console.log('saved')
+      })
+  }
+
   render() {
-    const { files, plugins } = this.state;
+    const { selectedPlugin, plugins } = this.state;
 
     return <div className='d-flex flex-column'
       style={{ flex: 1 }}
       onKeyDown={this.onKeyDown}
       onClick={this.onClick}>
       <TabsManager
-        files={files}
         plugins={plugins}
         onFileChange={this.onFileChange}
-        onPluginClick={e => console.log(e)}
         onPluginNameChange={this.onPluginNameChange}
         onNewFile={this.onNewFile}
         onNewPlugin={this.onNewPlugin}
+        onPluginClick={this.onPluginClick}
+        selectedPlugin={selectedPlugin}
+        handleContent={this.handleContent}
+        onSave={this.onSave}
       />
     </div>
   }

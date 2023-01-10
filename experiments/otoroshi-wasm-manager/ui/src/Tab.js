@@ -1,31 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { rust } from '@codemirror/lang-rust';
-import default_rust_plugin from './data/default_rust_plugin.rs'
 
-function Tab({ content, filename, ext, closeTab, setCurrentTab, selected }) {
-  const [state, setState] = useState()
-
-  useEffect(() => {
-    if (!content)
-      fetch(default_rust_plugin)
-        .then(r => r.text())
-        .then(setState)
-    else
-      setState(content)
-  }, []);
+function Tab({ content, handleContent, selected }) {
 
   const onChange = React.useCallback((value, viewUpdate) => {
-    console.log('value:', value);
+    handleContent(value)
   }, []);
 
 
-  if (!state)
-    return null;
+  if (!content)
+    return null
 
   return selected && <CodeMirror
     height='100%'
-    value={state}
+    maxWidth='calc(100vw - 250px)'
+    value={content}
     extensions={[rust()]}
     onChange={onChange}
   />

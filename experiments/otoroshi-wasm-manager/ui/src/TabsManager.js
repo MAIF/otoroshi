@@ -4,7 +4,7 @@ import Tab from './Tab'
 import PluginManager from './PluginManager'
 import Terminal from './Terminal';
 
-function TabsManager({ files, plugins, ...props }) {
+function TabsManager({ plugins, ...props }) {
   const [tabs, setTabs] = useState([])
   const [currentTab, setCurrentTab] = useState()
   const [showTerminal, toggleTerminalVisibility] = useState(true)
@@ -19,27 +19,31 @@ function TabsManager({ files, plugins, ...props }) {
         onNewPlugin={props.onNewPlugin}
         setFilename={props.onPluginNameChange}
       />
-      <FileManager
-        files={files}
+      {props.selectedPlugin && <FileManager
+        files={props.selectedPlugin.files}
         onNewFile={props.onNewFile}
         onFileChange={props.onFileChange}
         onFileClick={file => {
-          if (!tabs.find(f => f.filename === file.filename))
-            setTabs([...tabs, file]);
+          if (!tabs.find(f => f === file.filename))
+            setTabs([...tabs, file.filename]);
 
           setCurrentTab(file.filename)
-        }} />
+        }} />}
     </div>
 
     <div style={{ flex: 1, height: '100vh' }} className="d-flex flex-column">
       <div className='d-flex flex-column' style={{ flex: showTerminal ? .7 : 1, overflow: 'scroll' }}>
-        <Tabs
-          tabs={tabs}
-          setCurrentTab={setCurrentTab}
-          setTabs={setTabs}
-          currentTab={currentTab} />
+        <Header onSave={props.onSave} showActions={!!props.selectedPlugin}>
+          <Tabs
+            tabs={tabs}
+            setCurrentTab={setCurrentTab}
+            setTabs={setTabs}
+            currentTab={currentTab} />
+        </Header>
         <Contents
           tabs={tabs}
+          selectedPlugin={props.selectedPlugin}
+          handleContent={newContent => props.handleContent(currentTab, newContent)}
           setCurrentTab={setCurrentTab}
           currentTab={currentTab} />
       </div>
@@ -53,24 +57,27 @@ function TabsManager({ files, plugins, ...props }) {
 function Tabs({ tabs, setCurrentTab, setTabs, currentTab }) {
   return <div style={{ height: 42 }}>
     {tabs.map(tab => {
-      return <TabButton filename={tab.filename}
-        onClick={() => setCurrentTab(tab.filename)}
+      return <TabButton
+        filename={tab}
+        onClick={() => setCurrentTab(tab)}
         closeTab={filename => {
-          setTabs(tabs.filter(t => t.filename !== filename))
-          if (currentTab === filename && tabs.find(f => f.filename === filename))
-            setCurrentTab(tabs[0].filename)
+          setTabs(tabs.filter(t => t !== filename))
+          if (currentTab === filename && tabs.find(f => f === filename))
+            setCurrentTab(tabs[0])
         }}
-        selected={currentTab ? tab.filename === currentTab : false} />
+        selected={currentTab ? tab === currentTab : false} />
     })}
   </div>
 }
 
-function Contents({ tabs, setCurrentTab, currentTab }) {
+function Contents({ tabs, setCurrentTab, currentTab, handleContent, selectedPlugin }) {
   return <div style={{ flex: 1 }}>
     {tabs.map(tab => {
-      return <Tab {...tab}
-        key={tab.filename}
-        selected={currentTab ? tab.filename === currentTab : false}
+      return <Tab
+        content={selectedPlugin.files.find(f => f.filename === tab).content}
+        handleContent={handleContent}
+        key={tab}
+        selected={currentTab ? tab === currentTab : false}
         setCurrentTab={filename => {
           setCurrentTab(filename)
         }}
@@ -94,5 +101,27 @@ function TabButton({ filename, onClick, selected, closeTab }) {
     }} />
   </button>
 }
+
+function Header({ children, onSave, showActions }) {
+
+  return <div className='d-flex align-items-center justify-content-between'>
+    {children}
+
+    {showActions && <div className='d-flex align-items-center'>
+      <Save onSave={onSave} />
+      {/* <Build /> */}
+    </div>}
+  </div>
+}
+
+function Save({ onSave }) {
+  return <button type="button"
+    style={{ border: 'none', background: 'none' }}
+    className="p-3"
+    onClick={onSave}>
+    <i className='fas fa-save' />
+  </button>
+}
+
 
 export default TabsManager
