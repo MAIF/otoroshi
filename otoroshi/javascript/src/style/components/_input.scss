@@ -2,24 +2,12 @@ input[type=search]::-webkit-search-cancel-button {
     -webkit-appearance: searchfield-cancel-button;
 }
 
-input.form-control{
-    color:var(--color-grey);
-    background-color: $fondNavbar;
+input.form-control, textarea.form-control, select.form-control{
+    color:var(--color_level2);
+    background-color: var(--bg-color_level2);
     border-color: 	var(--bg-color_level1);
 }
 input.form-control:focus{
-    background-color: $fondNavbar;
-    color:var(--color-grey);
+    background-color: var(--bg-color_level3);
+    color:var(--color_level3);
 }
-textarea.form-control{
-    color:var(--color-grey);
-    background-color: $fondNavbar;
-    border-color: 	var(--bg-color_level1);
-}
-
-select.form-control{
-    color:var(--color-grey);
-    background-color: $fondNavbar;
-    border-color: 	var(--bg-color_level1);
-}
-
