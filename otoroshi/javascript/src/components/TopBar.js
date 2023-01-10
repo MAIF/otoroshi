@@ -1039,12 +1039,7 @@ export class TopBar extends Component {
               </div>
               <div className="dropdown">
                 <Button
-                  style={{
-                    backgroundColor: '#f9b000',
-                    minWidth: 160,
-                    maxWidth: 160,
-                    border: 'none',
-                  }}
+                  type="primaryColor"
                   className="d-flex align-items-center justify-content-between dropdown"
                   id="add-components"
                   data-bs-toggle="dropdown"

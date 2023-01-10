@@ -102,6 +102,20 @@ state = {
         />
         <br />
         <Button
+          type="primaryColor"
+          className="btn-sm"
+          text="primaryColor sm"
+          style={{ margin: 10 }}
+        />
+        <Button type="primaryColor" text="primaryColor" style={{ margin: 10 }} />
+        <Button
+          type="primaryColor"
+          text="primaryColor & disabled"
+          disabled={true}
+          style={{ margin: 10 }}
+        />
+        <br />
+        <Button
           type="default"
           className="btn-sm"
           text="default sm"
@@ -118,7 +132,7 @@ state = {
         <p style={{ color: "var(--color-primary)" }}>
           Button + icon (personalization : button type, text, icon)
         </p>
-        <Button type="info" className="btn-sm">
+        <Button type="primary" className="btn-sm">
           <i className="fas fa-key me-1" />
           Button type - icon - text
         </Button>
@@ -129,10 +143,10 @@ state = {
         </p>
         <div className="d-flex">
           <SquareButton
-            level="info"
+            level="primary"
             className="me-3"
             onClick={() => {}}
-            text="info - cog"
+            text="primary - cog"
             icon="fa-cog"
           />
           <SquareButton

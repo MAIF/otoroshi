@@ -29,7 +29,7 @@
 }
 
 .btn-save {
-  color: var(--color_level1);
+  color: var(--color-white);
   border-color: var(--color-green);
   background-color: var(--color-green);
 }
@@ -65,14 +65,14 @@
 
   &-off {
     @extend .content-switch-button;
-    background-color: var(--color_level1);
+    background-color: var(--color-white);
     border: 1px solid #dfdfdf;
     justify-content: flex-start;
   }
 }
 
 .switch-button {
-  background-color: var(--color_level1);
+  background-color: var(--color-white);
   border-radius: 20px;
   cursor: pointer;
 
@@ -80,7 +80,7 @@
     @extend .switch-button;
     width: 20px;
     height: 20px;
-    background-color: var(--color_level1);
+    background-color: var(--color-white);
     border-radius: 20px;
   }
 
@@ -96,7 +96,7 @@
 }
 
 .btn-primary,
-.btn-primary:focus {
+.btn-primary:focus, .btn-info, .btn-info:focus {
   color: var(--color_level1);
   border: 1px solid;
   border-color: var(--color-blue);
@@ -109,6 +109,27 @@
     border-color: var(--color-blue);
     background-color: var(--color-blue);
   }
+}
+
+.btn-primaryColor,
+.btn-primaryColor:focus {
+  color: var(--color-white);
+  border: 1px solid;
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  &:hover,
+  &.active,
+  &.active:hover {
+    color: var(--color-white);
+    border: 1px solid;
+    border-color: var(--color-primary-lighter);
+    background-color: var(--color-primary-lighter);
+  }
+}
+
+.btn-secondary,
+.btn-secondary:focus {
+  color: var(--color_level1);
 }
 
 .btn-danger,
@@ -149,9 +170,9 @@
 [class*="btn-"].disabled:hover,
 [class*="btn-"][disabled],
 [class*="btn-"][disabled]:hover {
-  color: var(--color-grey);
+  color: var(--color-dark);
   text-shadow: none;
-  background-color: transparent;
+  background-color:var(--color-grey);
   border-color: var(--color-grey);
 }
 
