@@ -94,15 +94,14 @@ function DuplicateButton({ value, history }) {
 
 function BackToRouteTab({ history, routeId, viewPlugins }) {
   return (
-    <div className="ms-2" style={{ height: '100%' }}>
+    <div className="ms-2">
       <button
         type="button"
-        className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center h-100"
         onClick={() => history.replace(`${routeId}?tab=routes&view_plugins=${viewPlugins}`)}
         style={{
-          backgroundColor: '#494948',
-          color: '#fff',
-          height: '100%',
+          backgroundColor: "var(--bg-color_level2)",
+          color: "var(--color_level2)",
         }}>
         <i className="fas fa-arrow-left me-2" style={{ fontSize: '1.33333em' }} />
         Back to route
@@ -115,10 +114,10 @@ function InformationsTab({ isActive, entity, value, history }) {
   const isWhiteMode = document.body.classList.contains('white-mode');
 
   return (
-    <div className="ms-2" style={{ height: '100%' }}>
+    <div className="ms-2">
       <button
         type="button"
-        className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center h-100"
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=informations`;
           if (!window.location.href.includes(to))
@@ -130,9 +129,8 @@ function InformationsTab({ isActive, entity, value, history }) {
             });
         }}
         style={{
-          backgroundColor: isActive ? '#f9b000' : isWhiteMode ? '#fff' : '#494948',
-          height: '100%',
-          color: isWhiteMode && !isActive ? '#000' : '#fff',
+          backgroundColor: isActive ? "var(--color-primary)" : "var(--bg-color_level2)",
+          color: isActive ? "var(--color-white)" : "var(--color_level2)",
         }}>
         <i className="fas fa-file-alt me-2" style={{ fontSize: '1.33333em' }} />
         Informations
@@ -143,10 +141,10 @@ function InformationsTab({ isActive, entity, value, history }) {
 
 function RoutesTab({ isActive, entity, value, history }) {
   return (
-    <div className="ms-2" style={{ height: '100%' }}>
+    <div className="ms-2">
       <button
         type="button"
-        className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center h-100"
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=routes`;
           if (!window.location.href.includes(to))
@@ -158,9 +156,8 @@ function RoutesTab({ isActive, entity, value, history }) {
             });
         }}
         style={{
-          backgroundColor: isActive ? '#f9b000' : '#494948',
-          color: '#fff',
-          height: '100%',
+          backgroundColor: isActive ? "var(--color-primary)" : "var(--bg-color_level2)",
+          color: isActive ? "var(--color-white)" : "var(--color_level2)",
         }}>
         <i className="fas fa-road me-2" style={{ fontSize: '1.33333em' }} />
         Routes
@@ -173,10 +170,10 @@ function DesignerTab({ isActive, entity, value, history }) {
   const isWhiteMode = document.body.classList.contains('white-mode');
 
   return (
-    <div className="ms-2" style={{ height: '100%' }}>
+    <div className="ms-2">
       <button
         type="button"
-        className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center h-100"
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=flow`;
           if (!window.location.href.includes(to))
@@ -188,9 +185,8 @@ function DesignerTab({ isActive, entity, value, history }) {
             });
         }}
         style={{
-          backgroundColor: isActive ? '#f9b000' : isWhiteMode ? '#fff' : '#494948',
-          height: '100%',
-          color: isWhiteMode && !isActive ? '#000' : '#fff',
+          backgroundColor: isActive ? "var(--color-primary)" : "var(--bg-color_level2)",
+          color: isActive ? "var(--color-white)" : "var(--color_level2)",
         }}>
         <i className="fas fa-pencil-ruler me-2" style={{ fontSize: '1.33333em' }} />
         Designer
@@ -224,15 +220,16 @@ function TesterButton({
         }}>
         <button
           type="button"
-          className="btn btn-sm btn-dark d-flex align-items-center dark-background"
+          className="btn btn-sm d-flex align-items-center dark-background h-100"
           onClick={() => {
             setForceTester(true);
             viewRef?.current?.onTestingButtonClick(history, value);
           }}
           style={{
             marginLeft: 20,
-            height: '100%',
             borderRadius: '.2rem !important',
+            backgroundColor: "var(--bg-color_level2)",
+            color:  "var(--color_level2)",
           }}>
           <i className="fas fa-vials" style={{ fontSize: '1.33333em' }} />
           Tester

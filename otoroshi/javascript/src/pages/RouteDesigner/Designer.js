@@ -47,9 +47,9 @@ const TryItComponent = React.lazy(() => import('./TryIt'));
 
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
-    <div className="flex-column p-1">
-      <i className={`fas fa-arrow-${icon}`} style={{ color: '#fff' }} />
-      <span style={{ color: '#fff' }}>{text}</span>
+    <div className="flex-column p-1"  style={{ color: "var(--color_level2)" }}>
+      <i className={`fas fa-arrow-${icon}`} />
+      <span>{text}</span>
     </div>
   </Dot>
 );
@@ -90,7 +90,8 @@ const Dot = ({
     style={{
       cursor: clickable ? 'pointer' : 'initial',
       opacity: !selectedNode || highlighted ? 1 : 0.25,
-      backgroundColor: highlighted ? '#f9b000' : '#494948',
+      backgroundColor: highlighted ? "var(--color-primary)"  : "var(--bg-color_level2)",
+      color: highlighted ? "var(--color-white)"  : "var(--color_level2)",
       ...style,
     }}
     onClick={(e) => {
@@ -317,8 +318,8 @@ const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) =
         opacity: !selectedNode || (selectedNode && selectedNode.id === 'Frontend') ? 1 : 0.25,
         background:
           selectedNode && selectedNode.id === 'Frontend'
-            ? 'linear-gradient(to right, rgb(249, 176, 0) 55%, transparent 1%)'
-            : 'linear-gradient(to right, rgb(73, 73, 72) 55%, transparent 1%)',
+            ? 'linear-gradient(to right, var(--color-primary) 55%, transparent 1%)'
+            : 'linear-gradient(to right, var(--bg-color_level2) 55%, transparent 1%)',
       }}>
       <i className="fas fa-user frontend-button-icon" />
     </div>
@@ -1699,13 +1700,12 @@ const Group = ({ group, elements, addNode, ...props }) => {
         <i
           className={`fas fa-chevron-${open ? 'down' : 'right'} ms-3`}
           size={16}
-          style={{ color: '#fff' }}
           onClick={(e) => {
             e.stopPropagation();
             setOpen(!open);
           }}
         />
-        <span style={{ color: '#fff', padding: '10px' }}>
+        <span style={{ padding: '10px' }}>
           {group.charAt(0).toUpperCase() + group.slice(1)}
         </span>
       </div>
@@ -1734,20 +1734,13 @@ const SearchBar = ({ handleSearch }) => (
       <i className="fas fa-search group-icon designer-group-header-icon" />
       <div
         style={{
-          paddingLeft: '6px',
           width: '100%',
           display: 'flex',
           alignItems: 'center',
         }}>
         <input
           type="text"
-          style={{
-            borderWidth: 0,
-            padding: '6px 0px 6px 6px',
-            width: '100%',
-            outline: 'none',
-            borderRadius: '4px',
-          }}
+          className="form-control"
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search the plugin"
         />
@@ -1795,7 +1788,7 @@ const UnselectedNode = ({
           <span style={{ fontStyle: 'italic' }}> Start by selecting a</span>
           <Dot style={{ width: 'initial' }} className="mx-1">
             <div className="flex-column p-1">
-              <span style={{ color: '#fff' }}>plugin</span>
+              <span style={{ color: "var(--color_level2)" }}>plugin</span>
             </div>
           </Dot>
           <span>to configure it</span>
@@ -1814,7 +1807,6 @@ const UnselectedNode = ({
               marginTop: 10,
               paddingTop: 10,
               paddingBottom: 10,
-              backgroundColor: '#555',
               borderRadius: 3,
             }}>
             {frontend.domains.map((domain) => {
@@ -1896,7 +1888,6 @@ const UnselectedNode = ({
               marginTop: 10,
               paddingTop: 10,
               paddingBottom: 10,
-              backgroundColor: '#555',
               borderRadius: 3,
             }}>
             {backend.targets
