@@ -11,7 +11,6 @@ export function PillButton({
   className = '',
   pillButtonStyle = {},
 }) {
-  // const isWhiteMode = document.body.classList.contains('white-mode');
   return (
     <div className={`d-flex justify-content-center ${className}`}>
       <div
@@ -28,14 +27,14 @@ export function PillButton({
         <button
           className="pill-mode"
           type="button"
-          style={pillButtonStyle}
+          style={rightEnabled ? { ...pillButtonStyle,color:"#FFF"}:{...pillButtonStyle}}
           onClick={() => (onLeftClick ? onLeftClick() : onChange(true))}>
           {leftText}
         </button>
         <button
           className="pill-mode"
           type="button"
-          style={pillButtonStyle}
+          style={!rightEnabled ? { ...pillButtonStyle,color:"#FFF"}:{...pillButtonStyle}}
           onClick={() => (onRightClick ? onRightClick() : onChange(false))}>
           {rightText}
         </button>

@@ -665,7 +665,7 @@ class FieldForm extends React.Component {
     }
 
     return (
-      <div className="p-3" style={{ background: '#373735', borderRadius: '4px' }}>
+      <div className="p-3" style={{ backgroundColor: "var(--bg-color_level1)", borderRadius: '4px' }}>
         <h4>Field: {field.name}</h4>
         <NgForm
           useBreadcrumb={true}
@@ -714,7 +714,7 @@ const Type = ({
           <i
             className={`fas fa-chevron-${open ? 'down' : 'right'}`}
             style={{ minWidth: '32px' }}></i>
-          <span style={{ color: '#fff' }}>{name}</span>
+          <span>{name}</span>
           <span className="badge bg-warning ms-2">{kind}</span>
         </div>
         <button className="btn btn-sm btn-danger ms-1" onClick={removeType}>
@@ -723,8 +723,8 @@ const Type = ({
       </div>
       <div
         style={{
-          backgroundColor: 'rgba(55, 55, 53, .5)',
-          border: open ? '1px solid rgb(55, 55, 53)' : 'none',
+          backgroundColor: "var(--bg-color_level1)",
+          border: open ? '1px solid var(--bg-color_level1)' : 'none',
           paddingTop: open ? '4px' : 0,
         }}>
         {open &&
@@ -739,7 +739,7 @@ const Type = ({
                   flex: 0.75,
                   opacity: isSelected(i) !== false ? 1 : 0.5,
                 }}>
-                <span className="me-2 flex" style={{ color: '#fff' }}>
+                <span className="me-2 flex">
                   {field.name}
                 </span>
                 <span className="badge bg-light ms-2" style={{ color: '#000' }}>
