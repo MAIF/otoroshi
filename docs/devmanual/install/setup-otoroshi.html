@@ -1031,6 +1031,8 @@ play.http {
     domains = []  # the backoffice domains
     domainsStr = ${?APP_BACKOFFICE_DOMAINS} # the backoffice domains
     domainsStr = ${?OTOROSHI_BACKOFFICE_DOMAINS} # the backoffice domains
+    useNewEngine = true # avoid backoffice admin api proxy
+    useNewEngine = ${?OTOROSHI_BACKOFFICE_USE_NEW_ENGINE} # avoid backoffice admin api proxy
     session {
       exp = 86400000 # the backoffice cookie expiration
       exp = ${?APP_BACKOFFICE_SESSION_EXP} # the backoffice cookie expiration
@@ -2537,6 +2539,7 @@ akka { # akka specific configuration
     subdomain = ${?OTOROSHI_BACKOFFICE_SUBDOMAIN} # the backoffice subdomain
     domainsStr = ${?APP_BACKOFFICE_DOMAINS} # the backoffice domains
     domainsStr = ${?OTOROSHI_BACKOFFICE_DOMAINS} # the backoffice domains
+    useNewEngine = ${?OTOROSHI_BACKOFFICE_USE_NEW_ENGINE} # avoid backoffice admin api proxy
     session {
       exp = ${?APP_BACKOFFICE_SESSION_EXP} # the backoffice cookie expiration
       exp = ${?OTOROSHI_BACKOFFICE_SESSION_EXP} # the backoffice cookie expiration
@@ -3440,7 +3443,7 @@ akka { # akka specific configuration
 
 <!--
 <div class="copyright">
-<span class="text">&copy; 2022</span>
+<span class="text">&copy; 2023</span>
 <a href="https://www.example.com" class="logo">logo</a>
 </div>
 -->
