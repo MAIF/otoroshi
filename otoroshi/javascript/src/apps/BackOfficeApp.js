@@ -108,7 +108,7 @@ class BackOfficeAppContainer extends Component {
         usedNewEngine: env.newEngineEnabled,
       });
     });
-    this.readShortMenu()
+    this.readShortMenu();
   }
 
   componentDidCatch(e) {
@@ -137,13 +137,13 @@ class BackOfficeAppContainer extends Component {
     const shortMenuStr = window.localStorage.getItem('otoroshi-short-menu') || 'true';
     const shortMenu = shortMenuStr === 'true';
     this.setState({ shortMenu });
-  }
+  };
 
   toggleShortMenu = () => {
     const newShortMenu = !this.state.shortMenu;
     window.localStorage.setItem('otoroshi-short-menu', String(newShortMenu));
     this.setState({ shortMenu: newShortMenu });
-  }
+  };
 
   render() {
     const classes = ['backoffice-container'];
@@ -433,7 +433,13 @@ class BackOfficeAppContainer extends Component {
                         />
                         <Route
                           path="/features"
-                          component={(props) => this.decorate(FeaturesPage, { ...props, shortMenu: this.state.shortMenu, toggleShortMenu: this.toggleShortMenu })}
+                          component={(props) =>
+                            this.decorate(FeaturesPage, {
+                              ...props,
+                              shortMenu: this.state.shortMenu,
+                              toggleShortMenu: this.toggleShortMenu,
+                            })
+                          }
                         />
 
                         <Route

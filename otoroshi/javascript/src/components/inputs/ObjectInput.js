@@ -7,8 +7,8 @@ export class ObjectInput extends React.Component {
       idx: i,
       key,
       value,
-    }))
-  }
+    })),
+  };
 
   componentDidUpdate(prevProps) {
     if (prevProps.value !== this.props.value) {
@@ -18,58 +18,77 @@ export class ObjectInput extends React.Component {
         value,
       }));
       this.setState({
-        data: newData
-      })
+        data: newData,
+      });
     }
   }
 
   changeValue = (idx, key, e) => {
     if (e && e.preventDefault) e.preventDefault();
-    this.setState({
-      data: this.state.data.map((item) => {
-        if (item.idx === idx) return { ...item, value: e.target.value };
-        return item;
-      })
-    }, () => this.onChange(this.state.data));
+    this.setState(
+      {
+        data: this.state.data.map((item) => {
+          if (item.idx === idx) return { ...item, value: e.target.value };
+          return item;
+        }),
+      },
+      () => this.onChange(this.state.data)
+    );
   };
 
   changeKey = (idx, key, e) => {
     if (e && e.preventDefault) e.preventDefault();
-    this.setState({
-      data: this.state.data.map((item) => {
-        if (item.idx === idx) return { ...item, key: e.target.value };
-        return item;
-      })
-    }, () => this.onChange(this.state.data));
+    this.setState(
+      {
+        data: this.state.data.map((item) => {
+          if (item.idx === idx) return { ...item, key: e.target.value };
+          return item;
+        }),
+      },
+      () => this.onChange(this.state.data)
+    );
   };
 
   addFirst = (e) => {
     if (e && e.preventDefault) e.preventDefault();
 
-    this.setState({
-      data: [{ key: '', value: '', idx: 0 }, ...this.state.data]
-        .map((item, i) => ({ ...item, idx: i }))
-    }, () => this.onChange(this.state.data));
+    this.setState(
+      {
+        data: [{ key: '', value: '', idx: 0 }, ...this.state.data].map((item, i) => ({
+          ...item,
+          idx: i,
+        })),
+      },
+      () => this.onChange(this.state.data)
+    );
   };
 
   addNext = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const out = [...this.state.data, { key: '', value: '', idx: this.state.data.length }];
-    this.setState({
-      data: out.map((item, i) => ({ ...item, idx: i }))
-    }, () => this.onChange(this.state.data));
+    this.setState(
+      {
+        data: out.map((item, i) => ({ ...item, idx: i })),
+      },
+      () => this.onChange(this.state.data)
+    );
   };
 
   remove = (idx, key, e) => {
     if (e && e.preventDefault) e.preventDefault();
 
-    this.setState({
-      data: this.state.data.filter((item) => item.idx !== idx).map((item, i) => ({ ...item, idx: i }))
-    }, () => this.onChange(this.state.data));
+    this.setState(
+      {
+        data: this.state.data
+          .filter((item) => item.idx !== idx)
+          .map((item, i) => ({ ...item, idx: i })),
+      },
+      () => this.onChange(this.state.data)
+    );
   };
 
   onChange = (out) => {
-    if ([...new Set(out.map(o => o.key))].length === out.length) {
+    if ([...new Set(out.map((o) => o.key))].length === out.length) {
       this.props.onChange(
         out.reduce(
           (acc, curr) => ({
@@ -80,13 +99,13 @@ export class ObjectInput extends React.Component {
         )
       );
     } else {
-      console.log('baised')
+      console.log('baised');
     }
   };
 
   render() {
-    const { data } = this.state
-    const props = this.props
+    const { data } = this.state;
+    const props = this.props;
     return (
       <div>
         {data.length === 0 && (

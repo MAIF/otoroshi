@@ -325,7 +325,8 @@ case class NgRoute(
         .map(p => NgOtoroshiInfoConfig(p.config.raw).algo)
         .getOrElse(HSAlgoSettings(512, "secret", false)),
       // ///////////////////////////////////////////////////////////
-      privateApp = plugins.getPluginByClass[AuthModule]
+      privateApp = plugins
+        .getPluginByClass[AuthModule]
         .orElse(plugins.getPluginByClass[NgLegacyAuthModuleCall])
         .isDefined,
       authConfigRef = plugins
@@ -336,7 +337,9 @@ case class NgRoute(
             .getPluginByClass[NgLegacyAuthModuleCall]
             .flatMap(p => NgLegacyAuthModuleCallConfig.format.reads(p.config.raw).asOpt.flatMap(_.config.module))
         ),
-      securityExcludedPatterns = plugins.getPluginByClass[AuthModule].map(_.exclude)
+      securityExcludedPatterns = plugins
+        .getPluginByClass[AuthModule]
+        .map(_.exclude)
         .orElse(plugins.getPluginByClass[NgLegacyAuthModuleCall].map(_.exclude))
         .getOrElse(Seq.empty),
       // ///////////////////////////////////////////////////////////
@@ -346,15 +349,17 @@ case class NgRoute(
           plugins
             .getPluginByClass[PublicPrivatePaths]
             .flatMap(p => NgPublicPrivatePathsConfig.format.reads(p.config.raw).asOpt.map(_.publicPatterns)) match {
-              case Some(patterns) => patterns
-              case None => plugins.getPluginByClass[ApikeyCalls] match {
-                case None => Seq("/.*")
-                case Some(apkc) if apkc.exclude.isEmpty => Seq.empty
+            case Some(patterns) => patterns
+            case None           =>
+              plugins.getPluginByClass[ApikeyCalls] match {
+                case None                                => Seq("/.*")
+                case Some(apkc) if apkc.exclude.isEmpty  => Seq.empty
                 case Some(apkc) if apkc.exclude.nonEmpty => apkc.exclude
               }
-            }
+          }
         } else {
-          plugins.getPluginByClass[NgLegacyApikeyCall]
+          plugins
+            .getPluginByClass[NgLegacyApikeyCall]
             .flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(_.publicPatterns))
             .getOrElse(Seq.empty)
         }
@@ -364,7 +369,11 @@ case class NgRoute(
           .getPluginByClass[PublicPrivatePaths]
           .flatMap(p => NgPublicPrivatePathsConfig.format.reads(p.config.raw).asOpt.map(_.privatePatterns))
           .orElse(plugins.getPluginByClass[ApikeyCalls].map(p => p.include))
-          .orElse(plugins.getPluginByClass[NgLegacyApikeyCall].flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(_.privatePatterns)))
+          .orElse(
+            plugins
+              .getPluginByClass[NgLegacyApikeyCall]
+              .flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(_.privatePatterns))
+          )
           .getOrElse(Seq.empty)
       },
       additionalHeaders = plugins
@@ -444,7 +453,11 @@ case class NgRoute(
       detectApiKeySooner = plugins
         .getPluginByClass[ApikeyCalls]
         .flatMap(p => NgApikeyCallsConfig.format.reads(p.config.raw).asOpt.map(!_.validate))
-        .orElse(plugins.getPluginByClass[NgLegacyApikeyCall].flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(!_.config.validate)))
+        .orElse(
+          plugins
+            .getPluginByClass[NgLegacyApikeyCall]
+            .flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(!_.config.validate))
+        )
         .getOrElse(false),
       canary = plugins
         .getPluginByClass[CanaryMode]
@@ -464,7 +477,11 @@ case class NgRoute(
           .flatMap { plugin =>
             NgApikeyCallsConfig.format.reads(plugin.config.raw).asOpt.map(_.legacy)
           }
-          .orElse(plugins.getPluginByClass[NgLegacyApikeyCall].flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(_.config.legacy)))
+          .orElse(
+            plugins
+              .getPluginByClass[NgLegacyApikeyCall]
+              .flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(_.config.legacy))
+          )
           .getOrElse(ApiKeyConstraints())
       },
       plugins = {

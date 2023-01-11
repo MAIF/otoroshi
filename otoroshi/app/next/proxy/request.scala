@@ -93,9 +93,15 @@ class RelayRoutingRequestTarget(_remoteUriStr: String) extends RequestTarget {
   override def queryMap: Map[String, Seq[String]] = _remoteUri.query().toMultiMap
 }
 
-class BackOfficeRequest(request: Request[Source[ByteString, _]], host: String, apikey: ApiKey, user: BackOfficeUser, env: Env) extends Request[Source[ByteString, _]] {
+class BackOfficeRequest(
+    request: Request[Source[ByteString, _]],
+    host: String,
+    apikey: ApiKey,
+    user: BackOfficeUser,
+    env: Env
+) extends Request[Source[ByteString, _]] {
 
-  private val newUri = request.uri.replaceFirst("/bo/api/proxy/", "/").replace("//", "/")
+  private val newUri     = request.uri.replaceFirst("/bo/api/proxy/", "/").replace("//", "/")
   private val addHeaders = Seq(
     "Host"                           -> host,
     "X-Forwarded-For"                -> request.theIpAddress(env),
@@ -114,25 +120,25 @@ class BackOfficeRequest(request: Request[Source[ByteString, _]], host: String, a
   )
 
   override def connection: RemoteConnection = new BackOfficeRemoteConnection(request)
-  override def target: RequestTarget = new BackOfficeRequestTarget(newUri)
-  override def headers: Headers = Headers.apply(((request.headers.headers.toMap ++ addHeaders.toMap).toSeq): _*)
+  override def target: RequestTarget        = new BackOfficeRequestTarget(newUri)
+  override def headers: Headers             = Headers.apply(((request.headers.headers.toMap ++ addHeaders.toMap).toSeq): _*)
 
-  override def version: String = request.version
-  override def attrs: TypedMap = request.attrs
-  override def method: String = request.method
+  override def version: String             = request.version
+  override def attrs: TypedMap             = request.attrs
+  override def method: String              = request.method
   override def body: Source[ByteString, _] = request.body
 }
 
 class BackOfficeRequestTarget(newUri: String) extends RequestTarget {
-  private val _uri = Uri(newUri)
-  override def uri: URI = URI.create(newUri)
-  override def uriString: String = _uri.toString()
-  override def path: String = _uri.path.toString()
+  private val _uri                                = Uri(newUri)
+  override def uri: URI                           = URI.create(newUri)
+  override def uriString: String                  = _uri.toString()
+  override def path: String                       = _uri.path.toString()
   override def queryMap: Map[String, Seq[String]] = _uri.query().toMultiMap
 }
 
 class BackOfficeRemoteConnection(request: Request[Source[ByteString, _]]) extends RemoteConnection {
-  override def remoteAddress: InetAddress = InetAddress.getLocalHost
+  override def remoteAddress: InetAddress                           = InetAddress.getLocalHost
   override def clientCertificateChain: Option[Seq[X509Certificate]] = request.clientCertificateChain
-  override def secure: Boolean = request.secure
+  override def secure: Boolean                                      = request.secure
 }

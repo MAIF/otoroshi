@@ -176,58 +176,67 @@ class BackOfficeController(
 
   def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     env.datastores.apiKeyDataStore.findById(env.backOfficeApiKey.clientId).flatMap {
-      case None => FastFuture.successful(
-        NotFound(
-          Json.obj(
-            "error" -> "admin apikey not found !"
+      case None                                        =>
+        FastFuture.successful(
+          NotFound(
+            Json.obj(
+              "error" -> "admin apikey not found !"
+            )
           )
         )
-      )
-      case Some(apikey) if env.backofficeUseNewEngine => passWithNewEngine(ctx, apikey)
+      case Some(apikey) if env.backofficeUseNewEngine  => passWithNewEngine(ctx, apikey)
       case Some(apikey) if !env.backofficeUseNewEngine => passWithOldEngine(ctx, apikey, path)
     }
   }
 
-  private def passWithNewEngine(ctx: BackOfficeActionContextAuth[Source[ByteString, _]], apikey: ApiKey): Future[Result] = {
+  private def passWithNewEngine(
+      ctx: BackOfficeActionContextAuth[Source[ByteString, _]],
+      apikey: ApiKey
+  ): Future[Result] = {
     logger.debug(s"using new engine for ${ctx.request.method} ${ctx.request.theUrl}")
     env.scriptManager.getAnyScript[RequestHandler](NgPluginHelper.pluginId[ProxyEngine]) match {
-      case Left(err) => Results.InternalServerError(Json.obj("error" -> "admin_api_error", "error_description" -> err)).vfuture
+      case Left(err)         =>
+        Results.InternalServerError(Json.obj("error" -> "admin_api_error", "error_description" -> err)).vfuture
       case Right(raw_engine) => {
-        val engine = raw_engine.asInstanceOf[ProxyEngine]
+        val engine          = raw_engine.asInstanceOf[ProxyEngine]
         implicit val global = env.datastores.globalConfigDataStore.latest()
-        val raw_request = ctx.request
-        val host = env.adminApiExposedHost
-        val request = new BackOfficeRequest(raw_request, host, apikey, ctx.user, env)
+        val raw_request     = ctx.request
+        val host            = env.adminApiExposedHost
+        val request         = new BackOfficeRequest(raw_request, host, apikey, ctx.user, env)
         engine.handleRequest(request, engine.getConfig())
       }
     }
   }
 
-  private def passWithOldEngine(ctx: BackOfficeActionContextAuth[Source[ByteString, _]], apikey: ApiKey, path: String): Future[Result] = {
+  private def passWithOldEngine(
+      ctx: BackOfficeActionContextAuth[Source[ByteString, _]],
+      apikey: ApiKey,
+      path: String
+  ): Future[Result] = {
     logger.debug(s"using old engine ! ${ctx.request.method} ${ctx.request.theUrl}")
-    val host = env.adminApiExposedHost
-    val localUrl =
+    val host                   = env.adminApiExposedHost
+    val localUrl               =
       if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.httpsPort}" else s"http://127.0.0.1:${env.port}"
-    val url =
+    val url                    =
       if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}${env.exposedHttpsPort}"
     lazy val currentReqHasBody = ctx.request.theHasBody
-    val flags = BackofficeFlags.latest
+    val flags                  = BackofficeFlags.latest
     if (flags.logUrl) {
       logger.info(s"[${ctx.request.id}] calling ${ctx.request.method} $url/$path with Host = $host")
     }
     if (logger.isDebugEnabled) logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
-    val headers = Seq(
-      "Host" -> host,
-      "X-Forwarded-For" -> ctx.request.theIpAddress,
+    val headers                = Seq(
+      "Host"                           -> host,
+      "X-Forwarded-For"                -> ctx.request.theIpAddress,
       env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
-      env.Headers.OtoroshiVizFrom -> "otoroshi-admin-ui",
-      env.Headers.OtoroshiClientId -> apikey.clientId,
+      env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
+      env.Headers.OtoroshiClientId     -> apikey.clientId,
       env.Headers.OtoroshiClientSecret -> apikey.clientSecret,
       env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
         Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
       ),
-      "Otoroshi-Tenant" -> ctx.request.headers.get("Otoroshi-Tenant").getOrElse("default"),
-      "Otoroshi-BackOffice-User" -> JWT
+      "Otoroshi-Tenant"                -> ctx.request.headers.get("Otoroshi-Tenant").getOrElse("default"),
+      "Otoroshi-BackOffice-User"       -> JWT
         .create()
         .withClaim("user", Json.stringify(ctx.user.toJson))
         .sign(Algorithm.HMAC512(apikey.clientSecret))
@@ -268,17 +277,13 @@ class BackOfficeController(
         .map { res =>
           if (flags.logStats)
             logger.info(
-              s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${
-                System
-                  .currentTimeMillis() - start
-              }ms : ${res.status} - ${res.headers}"
+              s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
+                .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
             )
           if (logger.isDebugEnabled)
             logger.debug(
-              s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${
-                System
-                  .currentTimeMillis() - start
-              }ms : ${res.status} - ${res.headers}"
+              s"[${ctx.request.id}] akka - got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
+                .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
             )
           val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
           Status(res.status)
@@ -292,17 +297,13 @@ class BackOfficeController(
                   .alsoTo(Sink.onComplete { case e =>
                     if (flags.logStats)
                       logger.info(
-                        s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${
-                          System
-                            .currentTimeMillis() - start
-                        }ms"
+                        s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
+                          .currentTimeMillis() - start}ms"
                       )
                     if (logger.isDebugEnabled)
                       logger.debug(
-                        s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${
-                          System
-                            .currentTimeMillis() - start
-                        }ms"
+                        s"[${ctx.request.id}] akka - for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
+                          .currentTimeMillis() - start}ms"
                       )
                   }),
                 res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
@@ -345,17 +346,13 @@ class BackOfficeController(
         .map { res =>
           if (flags.logStats)
             logger.info(
-              s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${
-                System
-                  .currentTimeMillis() - start
-              }ms : ${res.status} - ${res.headers}"
+              s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
+                .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
             )
           if (logger.isDebugEnabled)
             logger.debug(
-              s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${
-                System
-                  .currentTimeMillis() - start
-              }ms : ${res.status} - ${res.headers}"
+              s"[${ctx.request.id}] got result for admin-api call: ${ctx.request.method} ${ctx.request.thePath} in ${System
+                .currentTimeMillis() - start}ms : ${res.status} - ${res.headers}"
             )
           val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
           Status(res.status)
@@ -370,17 +367,13 @@ class BackOfficeController(
                   .alsoTo(Sink.onComplete { case e =>
                     if (flags.logStats)
                       logger.info(
-                        s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${
-                          System
-                            .currentTimeMillis() - start
-                        }ms"
+                        s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
+                          .currentTimeMillis() - start}ms"
                       )
                     if (logger.isDebugEnabled)
                       logger.debug(
-                        s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${
-                          System
-                            .currentTimeMillis() - start
-                        }ms"
+                        s"[${ctx.request.id}] for admin-api call: ${ctx.request.method} ${ctx.request.thePath} body has been consumed in ${System
+                          .currentTimeMillis() - start}ms"
                       )
                   }),
                 res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),

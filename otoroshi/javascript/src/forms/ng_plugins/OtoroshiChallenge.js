@@ -56,14 +56,14 @@ export default {
         },
         size: {
           type: 'select',
-          label: "size",
+          label: 'size',
           props: {
             options: [
-              { label: "512", value: 512 },
-              { label: "384", value: 384 },
-              { label: "256", value: 256 },
-            ]
-          }
+              { label: '512', value: 512 },
+              { label: '384', value: 384 },
+              { label: '256', value: 256 },
+            ],
+          },
         },
         secret: {
           type: 'string',
@@ -271,14 +271,14 @@ export default {
         },
         size: {
           type: 'select',
-          label: "size",
+          label: 'size',
           props: {
             options: [
-              { label: "512", value: 512 },
-              { label: "384", value: 384 },
-              { label: "256", value: 256 },
-            ]
-          }
+              { label: '512', value: 512 },
+              { label: '384', value: 384 },
+              { label: '256', value: 256 },
+            ],
+          },
         },
         secret: {
           type: 'string',
