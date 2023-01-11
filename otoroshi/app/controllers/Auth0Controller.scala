@@ -408,19 +408,20 @@ class AuthController(
                   }
                 }
                 case auth                                                                                => {
-                  auth.authModule(ctx.globalConfig).paCallback(ctx.request, ctx.globalConfig, descriptor).flatMap {
-                    case Left(error) => {
-                      BadRequest(
-                        otoroshi.views.html.oto
-                          .error(
-                            message = s"You're not authorized here: ${error}",
-                            _env = env,
-                            title = "Authorization error"
-                          )
-                      ).vfuture
+                  auth.authModule(ctx.globalConfig).paCallback(ctx.request, ctx.globalConfig, descriptor)
+                    .flatMap {
+                      case Left(error) => {
+                        BadRequest(
+                          otoroshi.views.html.oto
+                            .error(
+                              message = s"You're not authorized here: ${error}",
+                              _env = env,
+                              title = "Authorization error"
+                            )
+                        ).vfuture
+                      }
+                      case Right(user) => saveUser(user, auth, descriptor, false)(ctx.request)
                     }
-                    case Right(user) => saveUser(user, auth, descriptor, false)(ctx.request)
-                  }
                 }
               }
             }
@@ -429,7 +430,7 @@ class AuthController(
         }
       }
 
-      (desc, ctx.request.getQueryString("state")) match {
+      ((desc, ctx.request.getQueryString("state")) match {
         case (Some(serviceId), _) => process(serviceId)
         case (_, Some(state))     =>
           if (logger.isDebugEnabled) logger.debug(s"Received state : $state")
@@ -439,6 +440,20 @@ class AuthController(
             case _                => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
           }
         case (_, _)               => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
+      })
+      .recover {
+        case t: Throwable => {
+          val errorId = IdGenerator.uuid
+          logger.error(s"An error occurred during the authentication callback with error id: '${errorId}'", t)
+          InternalServerError(
+            otoroshi.views.html.oto
+              .error(
+                message = s"An error occurred during the authentication callback. Please contact your administrator with error id: ${errorId}",
+                _env = env,
+                title = "Authorization error"
+              )
+          )
+        }
       }
     }
 
