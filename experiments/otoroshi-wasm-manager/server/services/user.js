@@ -30,6 +30,34 @@ const getUser = req => {
   })
 }
 
+const updateUser = (req, content) => {
+  const state = S3.state()
+
+  const jsonProfile = hash(req.user ? req.user.email : 'admin@otoroshi.io');
+
+  log.info(`updateUser ${jsonProfile}`)
+
+  return new Promise(resolve => {
+    state.s3.putObject({
+      Bucket: state.Bucket,
+      Key: `${jsonProfile}.json`,
+      Body: JSON.stringify(content)
+    }, (err, data) => {
+      if (err) {
+        log.info('updateUser', err)
+        resolve({
+          error: err.code,
+          status: err.statusCode
+        })
+      }
+      resolve({
+        status: 200
+      })
+    })
+  })
+}
+
 module.exports = {
-  getUser
+  getUser,
+  updateUser
 }

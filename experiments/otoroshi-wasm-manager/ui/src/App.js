@@ -1,7 +1,7 @@
 import React from 'react';
 import * as Service from './services'
 import TabsManager from './TabsManager';
-import JsZip from 'jszip';
+import JsZip, { file } from 'jszip';
 import Pako from 'pako'
 
 class App extends React.Component {
@@ -77,7 +77,7 @@ class App extends React.Component {
     this.setState({
       editorState: 'onNewFile',
       files: [
-        ...this.state.files,
+        ...this.state.selectedPlugin.files,
         {
           new: true,
           filename: '',
@@ -102,7 +102,7 @@ class App extends React.Component {
 
   onFileChange = (file, newFilename) => {
     this.setState({
-      files: this.state.files.map(f => {
+      files: this.state.selectedPlugin.files.map(f => {
         if (f.filename === file.filename)
           return { ...f, newFilename: newFilename }
         return f
@@ -193,6 +193,26 @@ class App extends React.Component {
       })
   }
 
+  onBuild = () => {
+    Service.buildPlugin(this.state.selectedPlugin)
+      .then(res => {
+        console.log('build')
+      })
+  }
+
+  removePlugin = filename => {
+    if (window.confirm(`Delete the ${filename} plugin ?`)) {
+      Service.removePlugin(filename)
+        .then(res => {
+          if (res.status === 200)
+            this.setState({
+              plugins: this.state.plugins.filter(f => f.filename !== filename),
+              selectedPlugin: undefined
+            })
+        })
+    }
+  }
+
   render() {
     const { selectedPlugin, plugins } = this.state;
 
@@ -210,6 +230,8 @@ class App extends React.Component {
         selectedPlugin={selectedPlugin}
         handleContent={this.handleContent}
         onSave={this.onSave}
+        onBuild={this.onBuild}
+        removePlugin={this.removePlugin}
       />
     </div>
   }

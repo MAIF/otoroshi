@@ -19,3 +19,7 @@ code {
   overflow-y: hidden;
   display: flex;
 }
+
+.cm-focused {
+  outline: none !important;
+}

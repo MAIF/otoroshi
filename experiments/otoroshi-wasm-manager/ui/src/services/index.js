@@ -41,15 +41,18 @@ export const getPlugin = plugin => rawFetch(`/plugins/${plugin}`)
 export const getPluginTemplate = type => f(`/templates?type=${type}`)
   .then(r => r.blob())
 
-export const savePlugin = async plugin => {
-
+const buildZip = plugin => {
   const jsZip = new JSZip()
 
   plugin.files.map(file => {
     jsZip.file(`${file.filename}`, Pako.deflateRaw(file.content, { to: 'string' }));
   })
 
-  const bytes = await jsZip.generateAsync({ type: "uint8array" });
+  return jsZip.generateAsync({ type: "uint8array" });
+}
+
+export const savePlugin = async plugin => {
+  const bytes = await buildZip(plugin)
 
   return rawFetch(`/plugins/${plugin.filename}`, {
     method: 'PUT',
@@ -59,3 +62,19 @@ export const savePlugin = async plugin => {
     }
   })
 }
+
+export const buildPlugin = async plugin => {
+  const bytes = await buildZip(plugin)
+
+  return rawFetch(`/plugins/${plugin.filename}/build`, {
+    method: 'POST',
+    body: bytes,
+    headers: {
+      'Content-Type': 'application/octet-stream'
+    }
+  })
+}
+
+export const removePlugin = plugin => rawFetch(`/plugins/${plugin}`, {
+  method: 'DELETE'
+})

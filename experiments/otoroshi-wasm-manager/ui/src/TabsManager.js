@@ -18,6 +18,7 @@ function TabsManager({ plugins, ...props }) {
         onPluginClick={props.onPluginClick}
         onNewPlugin={props.onNewPlugin}
         setFilename={props.onPluginNameChange}
+        removePlugin={props.removePlugin}
       />
       {props.selectedPlugin && <FileManager
         files={props.selectedPlugin.files}
@@ -33,7 +34,7 @@ function TabsManager({ plugins, ...props }) {
 
     <div style={{ flex: 1, height: '100vh' }} className="d-flex flex-column">
       <div className='d-flex flex-column' style={{ flex: showTerminal ? .7 : 1, overflow: 'scroll' }}>
-        <Header onSave={props.onSave} showActions={!!props.selectedPlugin}>
+        <Header onSave={props.onSave} onBuild={props.onBuild} showActions={!!props.selectedPlugin}>
           <Tabs
             tabs={tabs}
             setCurrentTab={setCurrentTab}
@@ -102,14 +103,14 @@ function TabButton({ filename, onClick, selected, closeTab }) {
   </button>
 }
 
-function Header({ children, onSave, showActions }) {
+function Header({ children, onSave, onBuild, showActions }) {
 
   return <div className='d-flex align-items-center justify-content-between'>
     {children}
 
     {showActions && <div className='d-flex align-items-center'>
       <Save onSave={onSave} />
-      {/* <Build /> */}
+      <Build onBuild={onBuild} />
     </div>}
   </div>
 }
@@ -117,9 +118,18 @@ function Header({ children, onSave, showActions }) {
 function Save({ onSave }) {
   return <button type="button"
     style={{ border: 'none', background: 'none' }}
-    className="p-3"
+    className="pe-2"
     onClick={onSave}>
     <i className='fas fa-save' />
+  </button>
+}
+
+function Build({ onBuild }) {
+  return <button type="button"
+    style={{ border: 'none', background: 'none' }}
+    className="pe-3"
+    onClick={onBuild}>
+    <i className='fas fa-hammer' />
   </button>
 }
 

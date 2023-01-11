@@ -1,11 +1,16 @@
 const express = require('express');
-const manager = require('../logger');
+const { getUser, updateUser } = require('../services/user');
+const { hash, unzip } = require('../utils');
+
 const { S3 } = require('../s3');
-const { getUser } = require('../services/user');
-const { hash } = require('../utils');
+const { BuildQueue } = require('../services/BuildQueue');
+const { createBuildFolder, buildPlugin } = require('../services/build');
+
+const manager = require('../logger');
+const log = manager.createLogger('plugins');
+
 const router = express.Router()
 
-const log = manager.createLogger('plugins');
 
 router.get('/', (req, res) => {
   getUser(req)
@@ -108,6 +113,73 @@ router.put('/:id', (req, res) => {
       })
     }
   })
+})
+
+router.delete('/:id', async (req, res) => {
+  const state = S3.state()
+
+  const data = await getUser(req);
+
+  if (Object.keys(data).length > 0) {
+    updateUser(req, {
+      ...data,
+      plugins: data.plugins.filter(f => f.filename !== req.params.id)
+    })
+      .then(() => {
+        const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
+        const pluginHash = hash(`${user}-${req.params.id}`)
+
+        const params = {
+          Bucket: state.Bucket,
+          Key: `${pluginHash}.zip`
+        }
+
+        state.s3.deleteObject(params, (err, data) => {
+          if (err) {
+            res
+              .status(err.statusCode)
+              .json({
+                error: err.code,
+                status: err.statusCode
+              })
+          } else {
+            res.json({
+              deleted: true
+            })
+          }
+        })
+      })
+  } else {
+    res
+      .status(401)
+      .json({
+        error: 'invalid credentials'
+      })
+  }
+})
+
+router.post('/:id/build', (req, res) => {
+  const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
+  const pluginHash = hash(`${user}-${req.params.id}`)
+
+  // BuildQueue.buildIsAlreadyRunning(pluginHash)
+  //   .then(exists => {
+  //     if (exists) {
+  //       res.json({ queue_id: folder });
+  //     } else {
+        createBuildFolder(pluginHash)
+          .then(folder => {
+            unzip(req.body, folder)
+              .then(() => {
+                BuildQueue.addBuildToQueue(folder, req.params.id)
+
+                res.json({
+                  queue_id: folder
+                })
+              })
+          })
+    //   }
+    // })
 })
 
 module.exports = router

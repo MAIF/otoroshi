@@ -4,6 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "adm-zip": "^0.5.10",
     "aws-sdk": "^2.1290.0",
     "body-parser": "^1.20.1",
     "compression": "^1.7.4",

@@ -17,12 +17,19 @@ const Plugin = ({ onPluginClick, filename, newFilename, ...props }) => {
           props.setFilename(e.target.value)
         }} />
     </div> : <>
-      <span style={{
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        maxWidth: '85%'
-      }}>{filename}</span>
+      <div className='d-flex align-items-center'>
+        <i className='fas fa-times me-2'
+          onClick={e => {
+            e.stopPropagation()
+            props.removePlugin(filename)
+          }} />
+        <span style={{
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          maxWidth: '90%'
+        }}>{filename}</span>
+      </div>
       <i className='fas fa-chevron-right' />
     </>
     }
@@ -30,7 +37,7 @@ const Plugin = ({ onPluginClick, filename, newFilename, ...props }) => {
   </button>
 }
 
-function PluginManager({ plugins, onNewPlugin, onPluginClick, setFilename }) {
+function PluginManager({ plugins, onNewPlugin, onPluginClick, setFilename, removePlugin }) {
   return (
     <div className='d-flex flex-column' style={{ minWidth: 250, background: '#eee' }}>
       <Header onNewPlugin={onNewPlugin} />
@@ -38,7 +45,8 @@ function PluginManager({ plugins, onNewPlugin, onPluginClick, setFilename }) {
         return <Plugin {...plugin}
           key={plugin.filename}
           onPluginClick={onPluginClick}
-          setFilename={setFilename} />
+          setFilename={setFilename}
+          removePlugin={removePlugin} />
       })}
     </div >
   );

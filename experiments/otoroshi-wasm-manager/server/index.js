@@ -11,8 +11,10 @@ const pluginsRouter = require('./routers/plugins');
 const templatesRouter = require('./routers/templates');
 
 const { extractUserFromQuery } = require('./security/ExtractUserInformation');
+const { BuildQueue } = require('./services/BuildQueue');
 
 S3.initializeS3Connection()
+BuildQueue.startQueue()
 
 // S3.state().s3.listObjects({
 //   Bucket: S3.state().Bucket
@@ -22,16 +24,6 @@ S3.initializeS3Connection()
 //   else
 //     console.log(data)
 // })
-
-S3.state().s3.deleteBucket({
-  Bucket: S3.state().Bucket,
-}, function (err, data) {
-  if (err) {
-    console.log("error deleting bucket " + err);
-  } else {
-    console.log("delete the bucket " + data);
-  }
-});
 
 const app = express();
 app.use(compression())
