@@ -3,7 +3,7 @@ export default {
   config_schema: {
     state_resp_leeway: {
       type: 'number',
-      label: 'Token leevay',
+      label: 'Token leeway',
       help: 'Amount of seconds that can differ between client and server',
       props: {
         suffix: 'seconds',
@@ -11,6 +11,7 @@ export default {
     },
     response_header_name: {
       type: 'string',
+      placeholder: 'Otoroshi-State-Resp by default',
     },
     version: {
       type: 'select',
@@ -30,11 +31,12 @@ export default {
     },
     request_header_name: {
       type: 'string',
+      placeholder: 'Otoroshi-State by default',
     },
     algo_to_backend: {
       type: 'form',
       collapsable: true,
-      label: 'Algo. to backend',
+      label: 'Signature alg. to backend',
       schema: {
         type: {
           type: 'select',
@@ -53,7 +55,15 @@ export default {
           },
         },
         size: {
-          type: 'number',
+          type: 'select',
+          label: "size",
+          props: {
+            options: [
+              { label: "512", value: 512 },
+              { label: "384", value: 384 },
+              { label: "256", value: 256 },
+            ]
+          }
         },
         secret: {
           type: 'string',
@@ -218,7 +228,7 @@ export default {
       },
     },
     algo_from_backend: {
-      label: 'Algo. from backend',
+      label: 'Signature alg. from backend',
       type: 'form',
       collapsable: true,
       flow: {
@@ -260,7 +270,15 @@ export default {
           },
         },
         size: {
-          type: 'number',
+          type: 'select',
+          label: "size",
+          props: {
+            options: [
+              { label: "512", value: 512 },
+              { label: "384", value: 384 },
+              { label: "256", value: 256 },
+            ]
+          }
         },
         secret: {
           type: 'string',
