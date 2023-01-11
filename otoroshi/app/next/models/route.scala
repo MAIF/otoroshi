@@ -3,6 +3,7 @@ package otoroshi.next.models
 import akka.stream.Materializer
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
+import otoroshi.gateway.Errors
 import otoroshi.models._
 import otoroshi.next.plugins.{NgLegacyApikeyCall, _}
 import otoroshi.next.plugins.api._
@@ -505,6 +506,17 @@ case class NgRoute(
     )
   }
 
+  private def otoroshiJsonError(error: JsObject, status: Results.Status, __ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext): Result = {
+    Errors.craftResponseResultSync(
+      message = error.select("error_description").asOpt[String].getOrElse("an error occurred !"),
+      status = status,
+      req = __ctx.request,
+      maybeCauseId = error.select("error").asOpt[String],
+      attrs = __ctx.attrs,
+      maybeRoute = __ctx.route.some,
+    )
+  }
+
   def transformError(
       __ctx: NgTransformerErrorContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
@@ -569,12 +581,13 @@ case class NgRoute(
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
             report.setContext(sequence.stopSequence().json)
             Success(
-              Results.InternalServerError(
+              otoroshiJsonError(
                 Json.obj(
-                  "error"             -> "internal_server_error",
+                  "error" -> "internal_server_error",
                   "error_description" -> "an error happened during response-transformation plugins phase",
-                  "error"             -> JsonHelpers.errToJson(exception)
-                )
+                ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                Results.InternalServerError,
+                __ctx
               )
             )
           case Success(resp_next) =>
@@ -616,12 +629,13 @@ case class NgRoute(
                   promise.trySuccess(
                     Left(
                       NgResultProxyEngineError(
-                        Results.InternalServerError(
+                        otoroshiJsonError(
                           Json.obj(
-                            "error"             -> "internal_server_error",
+                            "error" -> "internal_server_error",
                             "error_description" -> "an error happened during response-transformation plugins phase",
-                            "error"             -> JsonHelpers.errToJson(exception)
-                          )
+                          ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                          Results.InternalServerError,
+                          __ctx
                         )
                       )
                     )

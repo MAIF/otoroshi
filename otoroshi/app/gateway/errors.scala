@@ -293,7 +293,8 @@ object Errors {
       status: Status,
       message: String,
       maybeCauseId: Option[String],
-      emptyBody: Boolean
+      emptyBody: Boolean,
+      modern: Boolean,
   )(implicit env: Env): Result = {
     val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
     if (accept.contains("text/html")) { // in a browser
@@ -331,13 +332,25 @@ object Errors {
           )
       }
     } else {
-      status
-        .apply(Json.obj(env.Headers.OtoroshiGatewayError -> message))
-        .withHeaders(
-          env.Headers.OtoroshiGatewayError -> "true",
-          env.Headers.OtoroshiErrorMsg     -> message,
-          env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
-        )
+      if (modern) {
+        val cause: String = maybeCauseId.getOrElse("unknown_error")
+        status
+          .apply(Json.obj("error" -> cause, "error_description" -> message))
+          .withHeaders(
+            env.Headers.OtoroshiGatewayError -> "true",
+            env.Headers.OtoroshiErrorMsg -> message,
+            env.Headers.OtoroshiErrorCause -> cause,
+            env.Headers.OtoroshiStateResp -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+          )
+      } else {
+        status
+          .apply(Json.obj(env.Headers.OtoroshiGatewayError -> message))
+          .withHeaders(
+            env.Headers.OtoroshiGatewayError -> "true",
+            env.Headers.OtoroshiErrorMsg -> message,
+            env.Headers.OtoroshiStateResp -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+          )
+      }
     }
   }
 
@@ -351,7 +364,7 @@ object Errors {
       errorId: String
   )(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     env.datastores.errorTemplateDataStore.findById(descriptorId).map {
-      case None                => standardResult(req, status, message, maybeCauseId, emptyBody)
+      case None                => standardResult(req, status, message, maybeCauseId, emptyBody, false)
       case Some(errorTemplate) => {
         val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
         if (accept.contains("text/html")) { // in a browser
@@ -403,10 +416,11 @@ object Errors {
       message: String,
       maybeCauseId: Option[String],
       emptyBody: Boolean,
-      errorId: String
+      errorId: String,
+      modern: Boolean,
   )(implicit env: Env, ec: ExecutionContext): Result = {
     errorTemplate(descriptorId) match {
-      case None                => standardResult(req, status, message, maybeCauseId, emptyBody)
+      case None                => standardResult(req, status, message, maybeCauseId, emptyBody, modern)
       case Some(errorTemplate) => {
         val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
         if (accept.contains("text/html")) { // in a browser
@@ -418,7 +432,8 @@ object Errors {
             .as("text/html")
             .withHeaders(
               env.Headers.OtoroshiGatewayError -> "true",
-              env.Headers.OtoroshiErrorMsg     -> message,
+              //env.Headers.OtoroshiErrorMsg     -> message,
+              //env.Headers.OtoroshiErrorCause   -> maybeCauseId.getOrElse("unknown_error"),
               env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
             )
         } else {
@@ -522,7 +537,7 @@ object Errors {
           route.transformError(ctx)(env, ec, env.otoroshiMaterializer)
         }
       }
-      case _                => standardResult(req, status, message, maybeCauseId, emptyBody).vfuture
+      case _                => standardResult(req, status, message, maybeCauseId, emptyBody, false).vfuture
     }) andThen {
       case scala.util.Success(resp) if sendEvent =>
         sendAnalytics(
@@ -559,12 +574,13 @@ object Errors {
       emptyBody: Boolean = false,
       sendEvent: Boolean = true,
       attrs: TypedMap,
-      maybeRoute: Option[NgRoute] = None
+      maybeRoute: Option[NgRoute] = None,
+      modern: Boolean = false,
   )(implicit ec: ExecutionContext, env: Env): Result = {
     val errorId = env.snowflakeGenerator.nextIdStr()
     (maybeDescriptor, maybeRoute) match {
       case (Some(desc), _)  => {
-        val res      = customResultSync(desc.id, req, status, message, maybeCauseId, emptyBody, errorId)
+        val res      = customResultSync(desc.id, req, status, message, maybeCauseId, emptyBody, errorId, modern)
         // val ctx      = TransformerErrorContext(
         //   index = -1,
         //   snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse(env.snowflakeGenerator.nextIdStr()),
@@ -618,7 +634,7 @@ object Errors {
         finalRes
       }
       case (_, Some(route)) => {
-        val res      = customResultSync(route.id, req, status, message, maybeCauseId, emptyBody, errorId)
+        val res      = customResultSync(route.id, req, status, message, maybeCauseId, emptyBody, errorId, modern)
         // val ctx      = NgTransformerErrorContext(
         //   snowflake = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse(env.snowflakeGenerator.nextIdStr()),
         //   message = message,
@@ -671,7 +687,7 @@ object Errors {
         finalRes
       }
       case _                => {
-        val resp = standardResult(req, status, message, maybeCauseId, emptyBody)
+        val resp = standardResult(req, status, message, maybeCauseId, emptyBody, modern)
         if (sendEvent)
           sendAnalytics(
             resp.header.headers.toSeq.map(Header.apply),

@@ -683,6 +683,8 @@ class Env(
       configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.error").get
     lazy val OtoroshiErrorMsg                   =
       configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.errormsg").get
+    lazy val OtoroshiErrorCause =
+      configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.errorcause").get
     lazy val OtoroshiProxyLatency               =
       configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.proxylatency").get
     lazy val OtoroshiUpstreamLatency            =
