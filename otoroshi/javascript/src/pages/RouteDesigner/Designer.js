@@ -1975,7 +1975,7 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
 );
 
 const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonClick }) => (
-  <div className="d-flex justify-content-end mb-2 dark-background">
+  <div className="d-flex justify-content-end mb-2 me-2 dark-background">
     <PillButton
       className="mt-3"
       rightEnabled={!asJsonFormat}
