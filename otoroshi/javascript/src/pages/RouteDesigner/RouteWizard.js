@@ -17,7 +17,6 @@ const RouteNameStep = ({ state, onChange }) => (
         className="my-3"
         style={{
           fontSize: '2em',
-          color: '#f9b000',
         }}
         label="Route name"
         value={state.route.name}
@@ -67,19 +66,19 @@ const RouteChooser = ({ state, onChange }) => (
         <button
           type="button"
           className={`btn ${
-            state.route.kind === kind ? 'btn-save' : 'btn-dark'
+            state.route.kind === kind ? 'btn-primaryColor' : 'btn-dark'
           } py-3 wizard-route-chooser`}
           onClick={() => onChange(kind)}
           key={kind}>
           <h3 className="wizard-h3--small">{title}</h3>
-          <label
+          <span
             style={{
               flex: 1,
               display: 'flex',
               alignItems: 'center',
             }}>
             {text}
-          </label>
+          </span>
         </button>
       ))}
     </div>
@@ -276,7 +275,7 @@ const ProcessStep = ({ state, history }) => {
         }>
         {pluginsLength === 0 && (
           <button
-            className="btn btn-save mx-auto"
+            className="btn btn-primaryColor mx-auto"
             style={{ borderRadius: '50%', width: '42px', height: '42px' }}>
             <i className="fas fa-check" />
           </button>
@@ -292,7 +291,7 @@ const ProcessStep = ({ state, history }) => {
           <h3>Your route is now available!</h3>
 
           <button
-            className="btn btn-save"
+            className="btn btn-primaryColor"
             onClick={() => {
               if (['mock', 'graphql'].includes(state.route.kind))
                 history.push(`/routes/${createdRoute.id}?tab=flow`, {
@@ -334,7 +333,7 @@ const LoaderItem = ({ text, timeout }) => {
       }}>
       <Loader loading={loading} minLoaderTime={timeout}>
         <button
-          className="btn btn-save mx-auto"
+          className="btn btn-primaryColor mx-auto"
           style={{
             borderRadius: '50%',
             width: '32px',
@@ -350,7 +349,6 @@ const LoaderItem = ({ text, timeout }) => {
         style={{
           flex: 1,
           marginLeft: '12px',
-          color: loading ? '#eee' : '#ccc',
           fontWeight: loading ? 'normal' : 'bold',
         }}>
         {text}
@@ -453,9 +451,9 @@ export class RouteWizard extends React.Component {
                 <div
                   style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                   className="mt-auto">
-                  {step !== 1 && <Button type="save" text="Previous" onClick={this.prevStep} />}
+                  {step !== 1 && <Button type="primaryColor" text="Previous" onClick={this.prevStep} />}
                   <button
-                    className="btn btn-save"
+                    className="btn btn-primaryColor"
                     style={{
                       backgroundColor: '#f9b000',
                       borderColor: '#f9b000',
