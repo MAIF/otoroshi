@@ -17,7 +17,7 @@
 
 .table-hover tbody tr:hover td,
 .table-hover tbody tr:hover th {
-  background-color: $fondNavbar;
+  background-color: var(--bg-color_level2);
   color: #fff;
 }
 
@@ -52,7 +52,7 @@ thead > tr > td > span {
 .pagination > .active > span,
 .pagination > .active > span:focus,
 .pagination > .active > span:hover {
-  background-color: $fondNavbar;
+  background-color: var(--bg-color_level2);
   border-color: var(--color-grey);
 }
 

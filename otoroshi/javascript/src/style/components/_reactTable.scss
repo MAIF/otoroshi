@@ -47,7 +47,7 @@
   }
 
   .-pagination .-btn:not([disabled]):hover {
-    background: $fondNavbar;
+    background: var(--bg-color_level2);
   }
 
   span.label.table-env {

@@ -43,7 +43,7 @@
 }
 
 .health-container {
-  background: $fondNavbar;
+  background: var(--bg-color_level2);
   padding: 60px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.1);
   border-radius: 6px;

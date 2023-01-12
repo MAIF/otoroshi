@@ -108,7 +108,7 @@
     }
 
     div[class^='nestedform__border'] {
-        background-color: $fondNavbar;
+        background-color: var(--bg-color_level2);
     }
 
     .search-group-header,
@@ -154,7 +154,7 @@
         background: none;
         color: #fff;
         border: none;
-        background-color: $fondNavbar;
+        background-color: var(--bg-color_level2);
         border-radius: 8px;
         height: 42px;
         width: 42px;
@@ -241,7 +241,7 @@
     .report-step {
         width: 100%;
         cursor: pointer;
-        background-color: $fondNavbar;
+        background-color: var(--bg-color_level2);
         color: $grisTexte;
         border-radius: 4px;
     }
@@ -413,7 +413,7 @@
     // input[type="time"] {
     //     color: #E6E6E6;
     //     background-color: #595959;
-    //     border-color: $fondNavbar;
+    //     border-color: var(--bg-color_level2);
     // }
 
     // .react-form-select__control,
@@ -421,7 +421,7 @@
     // .react-form-select__single-value {
     //     color: #E6E6E6;
     //     background-color: #595959 !important;
-    //     border-color: $fondNavbar;
+    //     border-color: var(--bg-color_level2);
     // }
 
     .node-cursor {
