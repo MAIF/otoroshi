@@ -116,6 +116,20 @@ state = {
         />
         <br />
         <Button
+          type="dark"
+          className="btn-sm"
+          text="dark sm"
+          style={{ margin: 10 }}
+        />
+        <Button type="dark" text="dark" style={{ margin: 10 }} />
+        <Button
+          type="dark"
+          text="dark & disabled"
+          disabled={true}
+          style={{ margin: 10 }}
+        />
+        <br />
+        <Button
           type="default"
           className="btn-sm"
           text="default sm"
