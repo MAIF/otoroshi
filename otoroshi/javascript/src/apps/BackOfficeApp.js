@@ -47,6 +47,7 @@ import RouteDesignerPage from '../pages/RouteDesigner';
 import { BackendsPage } from '../pages/BackendsPage';
 import { MetricsPage } from '../pages/MetricsPage';
 import { FeaturesPage } from '../pages/FeaturesPage';
+import { ErrorTemplatesPage } from '../pages/ErrorTemplatePage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -382,6 +383,24 @@ class BackOfficeAppContainer extends Component {
                           path="/teams"
                           component={(props) =>
                             this.decorate(TeamsPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
+                          path="/error-templates/:taction/:titem"
+                          component={(props) =>
+                            this.decorate(ErrorTemplatesPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
+                          path="/error-templates/:taction"
+                          component={(props) =>
+                            this.decorate(ErrorTemplatesPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
+                          path="/error-templates"
+                          component={(props) =>
+                            this.decorate(ErrorTemplatesPage, { ...props, env: this.state.env })
                           }
                         />
                         <Route

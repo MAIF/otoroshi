@@ -152,6 +152,13 @@ const graph = (env) => {
           link: '/admins',
         },
         {
+          title: 'Error Templates',
+          description: 'All your route error templates',
+          img: 'error',
+          icon: () => 'fa-bomb',
+          link: '/error-templates',
+        },
+        {
           title: 'Scripts',
           description: 'All your live scripts',
           img: 'scripts',

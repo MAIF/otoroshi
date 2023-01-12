@@ -129,6 +129,7 @@ package object modules {
     lazy val tryItController               = wire[TryItController]
     lazy val tunnelController              = wire[TunnelController]
     lazy val entitiesController            = wire[EntitiesController]
+    lazy val errorTemplatesController      = wire[ErrorTemplatesController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

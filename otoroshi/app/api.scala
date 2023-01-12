@@ -469,6 +469,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val tryItController               = wire[TryItController]
   lazy val tunnelController              = wire[TunnelController]
   lazy val entitiesController            = wire[EntitiesController]
+  lazy val errorTemplatesController      = wire[ErrorTemplatesController]
 
   override lazy val assets: Assets = wire[Assets]
 
