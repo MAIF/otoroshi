@@ -372,16 +372,15 @@ object ApiKey {
           clientName = (json \ "clientName").as[String],
           description = (json \ "description").asOpt[String].getOrElse(""),
           authorizedEntities = {
-            val authorizationObjects                      = json.select("authorizations").asOpt[Seq[JsObject]].map { identifiers =>
-              identifiers.map(EntityIdentifier.applyModern).collect { case Some(id) =>
-                id
+            val authorizations: Seq[EntityIdentifier] = json.select("authorizations").asOpt[Seq[JsValue]].map { values =>
+              values.collect {
+                case JsString(value) => EntityIdentifier.apply(value)
+                case value@JsObject(_) => EntityIdentifier.applyModern(value)
               }
-            }
-            val authorizationStrings                      = json.select("authorizations").asOpt[Seq[String]].map { identifiers =>
-              identifiers.map(EntityIdentifier.apply).collect { case Some(id) =>
-                id
+              .collect {
+                case Some(id) => id
               }
-            }
+            }.getOrElse(Seq.empty[EntityIdentifier])
             val authorizedGroup: Seq[EntityIdentifier]    =
               (json \ "authorizedGroup").asOpt[String].map(ServiceGroupIdentifier.apply).toSeq
             val authorizedEntities: Seq[EntityIdentifier] =
@@ -393,7 +392,7 @@ object ApiKey {
                   }
                 }
                 .getOrElse(Seq.empty[EntityIdentifier])
-            (authorizedGroup ++ authorizedEntities).distinct
+            (authorizations ++ authorizedEntities ++ authorizedGroup).distinct
           },
           enabled = enabled,
           readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
