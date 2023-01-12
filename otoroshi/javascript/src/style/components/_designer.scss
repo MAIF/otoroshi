@@ -60,14 +60,14 @@
     .element {
         margin: 6px;
         margin-right: 0;
-        background-color: #ecf0f1;
+        background-color: var(--bg-color_level3);
+        color: var(--color_level3);
         display: flex;
         align-items: center;
         border-bottom-left-radius: 6px;
         border-top-left-radius: 6px;
         overflow: hidden;
         box-shadow: 0 1px 2px rgba(.25, .25, .25, .6);
-        color: #000;
         cursor: pointer;
     }
 
@@ -79,8 +79,8 @@
         width: 100%;
     }
 
-    .element-arrow {
-        color: $fondNavbar;
+    .element-arrow {        
+        color: var(--color_level3);
     }
 
     .group {
@@ -113,11 +113,11 @@
 
     .search-group-header,
     .group-header {
-        background-color: $fondNavbar;
+        background-color: var(--bg-color_level2);
         display: flex;
         align-items: center;
         font-weight: 500;
-        color: #000;
+        color: var(--color_level2);
         border-right: 3px solid var(--color-primary);
         border-top-left-radius: 4px;
         border-bottom-left-radius: 4px;
@@ -189,15 +189,15 @@
     }
 
     .dot-icon {
-        color: #fff;
+        color: var(--color_level2);
         font-size: 20;
     }
 
     .dot-text {
         padding: 4px 12px;
         border-radius: 4px;
-        color: #fff;
-        white-space: wrap;
+        // color: var(--color_level2);
+        // white-space: wrap;
         width: fit-content;
     }
 
@@ -214,8 +214,8 @@
     }
 
     .form-description {
-        background-color: $fondNavbar;
-        color: $grisTexte;
+        background-color: var(--bg-color_level2);
+        color: var(--color_level2);
         padding: 12px;
         padding-bottom: 0;
     }
@@ -247,8 +247,8 @@
     }
 
     .dark-background {
-        background-color: $fondNavbar;
-        color: $grisTexte;
+        background-color: var(--bg-color_level3);
+        color: var(--color_level3);
         border-radius: 4px;
     }
 
@@ -296,7 +296,6 @@
 
     .frontend-button-icon {
         font-size: 20px;
-        color: #fff;
     }
 
     .editor-view-form {
@@ -331,22 +330,22 @@
     }
 
     .editor-view-icon {
-        color: #fff;
+        color: var(--color-white);
         border-bottom-left-radius: 0;
     }
 
     .editor-view-text {
-        color: #fff;
+        color: var(--color_level2);
         padding-left: 12px;
     }
 
     .flow-container {
-        background: rgb(60, 60, 60);
+        background: var(--bg-color_level2)
     }
 
     .backend-selector {
         padding: 12px;
-        background-color: #404040;
+        // background-color: #404040;
     }
 
     .toggle-form-buttons,
@@ -406,24 +405,24 @@
         z-index: 1002;
     }
 
-    input[type="text"],
-    input[type="number"],
-    input[type="password"],
-    input[type="date"],
-    input[type="datetime"],
-    input[type="time"] {
-        color: #E6E6E6;
-        background-color: #595959;
-        border-color: $fondNavbar;
-    }
+    // input[type="text"],
+    // input[type="number"],
+    // input[type="password"],
+    // input[type="date"],
+    // input[type="datetime"],
+    // input[type="time"] {
+    //     color: #E6E6E6;
+    //     background-color: #595959;
+    //     border-color: $fondNavbar;
+    // }
 
-    .react-form-select__control,
-    .react-form-select__menu,
-    .react-form-select__single-value {
-        color: #E6E6E6;
-        background-color: #595959 !important;
-        border-color: $fondNavbar;
-    }
+    // .react-form-select__control,
+    // .react-form-select__menu,
+    // .react-form-select__single-value {
+    //     color: #E6E6E6;
+    //     background-color: #595959 !important;
+    //     border-color: $fondNavbar;
+    // }
 
     .node-cursor {
         position: absolute;
@@ -538,12 +537,12 @@
         right: 4px;
         left: 16.66666667%;
         bottom: 0;
-        background-color: $fondNavbar;
+        background-color: var(--bg-color_level1);
         z-index: 800;
         border-radius: 4px;
 
         .sub-container {
-            background: #3c3c3c;
+            background: var(--bg-color_level2);
             padding: 12px;
             border-radius: 8px;
             margin: 10px;
@@ -552,12 +551,13 @@
     }
 
     .graphql-form-type {
-        background-color: rgba(55, 55, 53, .5);
-        border: 1px solid rgb(55, 55, 53);
+        background-color:  var(--bg-color_level2);
+        border: 1px solid  var(--bg-color_level1);
     }
 
     .graphql-form-element {
-        background-color: #595959;
+        background-color: var(--bg-color_level3);
+        color:var(--color_level3);
         margin: 6px;
         display: flex;
         align-items: center;
@@ -568,7 +568,7 @@
 
     .endpoint {
         // cursor: pointer;
-        background-color: #595959;
+        background-color:var(--bg-color_level2);
         border-radius: 4px;
         padding: 4px 8px;
     }
@@ -621,10 +621,10 @@
     flex-direction: column;
 }
 
-.wizard-content .btn-save {
-    background-color: var(--color-primary) !important;
-    border-color: var(--color-primary) !important;
-}
+// .wizard-content .btn-save {
+//     background-color: var(--color-primary) !important;
+//     border-color: var(--color-primary) !important;
+// }
 
 .wizard-route-chooser {
     flex: 1;
@@ -673,8 +673,8 @@
         }
 
         .ms-2:not(.dropdown)>button {
-            border-bottom-left-radius: 0px;
-            border-bottom-right-radius: 0px;
+            // border-bottom-left-radius: 0px;
+            // border-bottom-right-radius: 0px;
 
         }
     }
@@ -701,75 +701,75 @@
     }
 }
 
-@import '../layout/bright-mode';
+// @import '../layout/bright-mode';
 
-.white-mode {
+// .white-mode {
 
-    * {
-        outline-color: #fff !important;
-    }
+//     * {
+//         outline-color: #fff !important;
+//     }
 
-    .plugins-action,
-    .designer input[type=text],
-    .delete-node-button,
-    .editor-view-form,
-    .form-description,
-    .steps,
-    .backend-selector {
-        @include bright-mode_background-color--darker;
-        @include bright-mode_color--darker;
+//     .plugins-action,
+//     .designer input[type=text],
+//     .delete-node-button,
+//     .editor-view-form,
+//     .form-description,
+//     .steps,
+//     .backend-selector {
+//         @include bright-mode_background-color--darker;
+//         @include bright-mode_color--darker;
 
-    }
+//     }
 
-    .designer .graphql-form .sub-container {
-        @include bright-mode_background-color--darkest;
-    }
+//     .designer .graphql-form .sub-container {
+//         @include bright-mode_background-color--darkest;
+//     }
 
-    .frontend-button,
-    .dot,
-    .endpoint,
-    .designer-modal,
-    .report-step,
-    .backend-selector>div {
-        background: #fff !important;
-        // background-color: #fff !important;
-    }
+//     .frontend-button,
+//     .dot,
+//     .endpoint,
+//     .designer-modal,
+//     .report-step,
+//     .backend-selector>div {
+//         background: #fff !important;
+//         // background-color: #fff !important;
+//     }
 
-    .dark-background,
-    .element,
-    .graphql-form {
-        background-color: #f3f3f4 !important;
-    }
+//     .dark-background,
+//     .element,
+//     .graphql-form {
+//         background-color: #f3f3f4 !important;
+//     }
 
-    .delete-node-button {
-        border: 1px solid #333;
-    }
+//     .delete-node-button {
+//         border: 1px solid #333;
+//     }
 
-    .designer {
-        background: none !important;
-    }
+//     .designer {
+//         background: none !important;
+//     }
 
-    .search-group-header,
-    .group-header,
-    .vertical-line,
-    .flow-container,
-    .wizard-container,
-    .route-item {
-        @include bright-mode_background--light;
-    }
+//     .search-group-header,
+//     .group-header,
+//     .vertical-line,
+//     .flow-container,
+//     .wizard-container,
+//     .route-item {
+//         @include bright-mode_background--light;
+//     }
 
-    .search-group-header span,
-    .search-group-header i,
-    .plugins-action,
-    .dot span,
-    .dot i,
-    .frontend-button i,
-    .form-description p,
-    .editor-view-informations i,
-    .editor-view-informations span,
-    .backend-selector>div button {
-        @include bright-mode_color--darker;
-    }
+//     .search-group-header span,
+//     .search-group-header i,
+//     .plugins-action,
+//     .dot span,
+//     .dot i,
+//     .frontend-button i,
+//     .form-description p,
+//     .editor-view-informations i,
+//     .editor-view-informations span,
+//     .backend-selector>div button {
+//         @include bright-mode_color--darker;
+//     }
 
 
-}
+// }
