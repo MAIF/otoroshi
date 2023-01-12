@@ -320,6 +320,10 @@ const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) =
           selectedNode && selectedNode.id === 'Frontend'
             ? 'linear-gradient(to right, var(--color-primary) 55%, transparent 1%)'
             : 'linear-gradient(to right, var(--bg-color_level2) 55%, transparent 1%)',
+        color:
+          selectedNode && selectedNode.id === 'Frontend'
+          ? 'var(--color-white)'
+          : 'var(--color_level2)',
       }}>
       <i className="fas fa-user frontend-button-icon" />
     </div>
