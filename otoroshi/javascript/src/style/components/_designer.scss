@@ -482,13 +482,14 @@
         left: 0;
         right: 0;
         border-radius: 4px;
-        background: rgb(73, 73, 72, .98);
+        // background: rgb(73, 73, 72, .98);
+        background-color: var(--bg-color_level2);
     }
 
     .target_information {
         color: #E6E6E6;
-        background-color: #595959;
-        border-color: $fondNavbar;
+        background-color: var(--bg-color_level3);
+        border-color: var(--color_level3);
         padding: 4px 8px;
         border-radius: 4px;
         margin-right: 4px;
@@ -503,7 +504,7 @@
     .route-item {
         flex: 1;
         border-radius: 4px;
-        background-color: $fondNavbar;
+        background-color: var(--bg-color_level2);
     }
 
     .route-forms-title {
@@ -511,7 +512,7 @@
     }
 
     .route-forms-header {
-        border-bottom: 1px solid #373735;
+        border-bottom: 1px solid var(--bg-color_level3);
     }
 
     div[role*="button"] svg {
