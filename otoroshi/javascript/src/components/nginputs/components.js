@@ -199,7 +199,6 @@ export class NgFormRenderer extends Component {
         ) : (
           <div
             style={{
-              // color: 'rgb(249, 176, 0)',
               fontWeight: 'bold',
               marginLeft: 5,
               marginTop: 7,
