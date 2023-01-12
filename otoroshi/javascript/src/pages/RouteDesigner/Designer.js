@@ -1838,6 +1838,7 @@ const UnselectedNode = ({
             <div className="">
               <span>this route will match only if the following query params are present</span>
               <pre
+              className="dark-background"
                 onDoubleClick={selectFrontend}
                 style={{
                   padding: 10,
@@ -2396,10 +2397,10 @@ const BackendSelector = ({
 }) => {
   return (
     enabled && (
-      <div className="backend-selector">
+      <div className="dark-background backend-selector">
         <PillButton
           pillButtonStyle={{ width: 'auto', flex: 1 }}
-          style={{ backgroundColor: '#494949', display: 'flex', width: '100%' }}
+          style={{  display: 'flex', width: '100%' }}
           rightEnabled={usingExistingBackend}
           leftText="Select an existing backend"
           rightText="Create a new backend"
