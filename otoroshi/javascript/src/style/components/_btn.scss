@@ -166,6 +166,13 @@
   }
 }
 
+.btn-dark{
+  color: var(--color-white);
+  border: 1px solid;
+  border-color: var(--color-dark);
+  background-color: var(--color-dark);
+}
+
 [class*="btn-"].disabled,
 [class*="btn-"].disabled:hover,
 [class*="btn-"][disabled],
