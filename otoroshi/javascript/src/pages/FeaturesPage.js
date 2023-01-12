@@ -153,7 +153,7 @@ const graph = (env) => {
         },
         {
           title: 'Error Templates',
-          description: 'All your route error templates',
+          description: 'All your route and services error templates',
           img: 'error',
           icon: () => 'fa-bomb',
           link: '/error-templates',
