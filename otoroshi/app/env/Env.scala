@@ -1047,7 +1047,7 @@ class Env(
     missingOnlyHeadersIn = Map.empty,
     missingOnlyHeadersOut = Map.empty,
     stripPath = true,
-    useAkkaHttpClient = true
+    useAkkaHttpClient = false
   )
 
   lazy val backofficeRoute =
