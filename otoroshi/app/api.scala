@@ -418,6 +418,8 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]
   override lazy val serverConfig                           = _serverConfig
 
+  lazy val handlerRef = new AtomicReference[HttpRequestHandler](httpRequestHandler)
+
   lazy val metrics              = wire[Metrics]
   lazy val snowMonkey           = wire[SnowMonkey]
   lazy val unAuthApiAction      = wire[UnAuthApiAction]
@@ -495,6 +497,7 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
   }
 
   def startAndStopOnShutdown(): Otoroshi = {
+    components.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()

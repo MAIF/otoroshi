@@ -454,6 +454,8 @@ class Env(
 
   lazy val backofficeUseNewEngine: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("app.backoffice.useNewEngine").getOrElse(true)
+  lazy val backofficeUsePlay: Boolean =
+    configuration.getOptionalWithFileSupport[Boolean]("app.backoffice.usePlay").getOrElse(true)
   lazy val backOfficeSubDomain: String     =
     configuration.getOptionalWithFileSupport[String]("app.backoffice.subdomain").getOrElse("otoroshi")
   lazy val privateAppsSubDomain: String    =
