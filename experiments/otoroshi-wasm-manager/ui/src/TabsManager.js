@@ -7,21 +7,45 @@ import Terminal from './Terminal';
 function TabsManager({ plugins, ...props }) {
   const [tabs, setTabs] = useState([])
   const [currentTab, setCurrentTab] = useState()
-  const [showTerminal, toggleTerminalVisibility] = useState(true)
+  const [sizeTerminal, changeTerminalSize] = useState(.3)
+  const [resizingTerminal, toggleResizingTerminal] = useState(false)
 
-  return <div className='d-flex' style={{ flex: 1 }}>
-
+  return <div className='d-flex' style={{ flex: 1 }}
+    onMouseLeave={e => {
+      if (resizingTerminal) {
+        e.stopPropagation()
+        toggleResizingTerminal(false)
+      }
+    }}
+    onMouseUp={e => {
+      if (resizingTerminal) {
+        e.stopPropagation()
+        toggleResizingTerminal(false)
+      }
+    }}
+    onMouseMove={e => {
+      if (resizingTerminal) {
+        e.stopPropagation()
+        const r = 1 - (e.clientY / window.innerHeight)
+        changeTerminalSize(r < .2 ? .2 : r > .75 ? .75 : r)
+      }
+    }}
+  >
     <div className='d-flex flex-column' style={{ background: 'rgb(228,229,230)' }}>
       <h1 style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: 18 }} className="p-2 m-0">Wasm Manager</h1>
-      <PluginManager
-        plugins={plugins}
-        onPluginClick={props.onPluginClick}
-        onNewPlugin={props.onNewPlugin}
-        setFilename={props.onPluginNameChange}
-        removePlugin={props.removePlugin}
-      />
+      <Explorer>
+        <PluginManager
+          plugins={plugins}
+          onPluginClick={props.onPluginClick}
+          onNewPlugin={props.onNewPlugin}
+          setFilename={props.onPluginNameChange}
+          removePlugin={props.removePlugin}
+        />
+      </Explorer>
       {props.selectedPlugin && <FileManager
+        selectedPlugin={props.selectedPlugin}
         files={props.selectedPlugin.files}
+        configFiles={props.configFiles}
         onNewFile={props.onNewFile}
         onFileChange={props.onFileChange}
         onFileClick={file => {
@@ -33,7 +57,7 @@ function TabsManager({ plugins, ...props }) {
     </div>
 
     <div style={{ flex: 1, height: '100vh' }} className="d-flex flex-column">
-      <div className='d-flex flex-column' style={{ flex: showTerminal ? .7 : 1, overflow: 'scroll' }}>
+      <div className='d-flex flex-column' style={{ flex: 1 - sizeTerminal, overflow: 'scroll' }}>
         <Header onSave={props.onSave} onBuild={props.onBuild} showActions={!!props.selectedPlugin}>
           <Tabs
             tabs={tabs}
@@ -41,18 +65,37 @@ function TabsManager({ plugins, ...props }) {
             setTabs={setTabs}
             currentTab={currentTab} />
         </Header>
-        <Contents
+        {props.selectedPlugin && <Contents
           tabs={tabs}
+          configFiles={props.configFiles}
           selectedPlugin={props.selectedPlugin}
           handleContent={newContent => props.handleContent(currentTab, newContent)}
           setCurrentTab={setCurrentTab}
-          currentTab={currentTab} />
+          currentTab={currentTab} />}
       </div>
       <Terminal
-        showTerminal={showTerminal}
-        toggleTerminalVisibility={toggleTerminalVisibility} />
+        selectedPlugin={props.selectedPlugin}
+        sizeTerminal={sizeTerminal}
+        changeTerminalSize={changeTerminalSize}
+        toggleResizingTerminal={toggleResizingTerminal} />
     </div>
   </div>
+}
+
+function Explorer({ children }) {
+  const [show, setShow] = useState(true)
+  return <>
+    <div className='px-2 py-1 d-flex justify-content-between align-items-center'
+      style={{
+        background: 'rgb(228, 229, 230)'
+      }} onClick={() => setShow(!show)}>
+      <div className='d-flex align-items-center'>
+        <i className={`fas fa-chevron-${show ? 'down' : 'right'} fa-sm me-1`} />
+        <span className='fw-bold'>Explorer</span>
+      </div>
+    </div>
+    {show && children}
+  </>
 }
 
 function Tabs({ tabs, setCurrentTab, setTabs, currentTab }) {
@@ -71,11 +114,12 @@ function Tabs({ tabs, setCurrentTab, setTabs, currentTab }) {
   </div>
 }
 
-function Contents({ tabs, setCurrentTab, currentTab, handleContent, selectedPlugin }) {
-  return <div style={{ flex: 1 }}>
+function Contents({ tabs, setCurrentTab, currentTab, handleContent, selectedPlugin, configFiles }) {
+  return <div style={{ flex: 1, marginTop: 42 }}>
     {tabs.map(tab => {
+      const plugin = [...selectedPlugin.files, ...configFiles].find(f => f.filename === tab)
       return <Tab
-        content={selectedPlugin.files.find(f => f.filename === tab).content}
+        {...plugin}
         handleContent={handleContent}
         key={tab}
         selected={currentTab ? tab === currentTab : false}
@@ -105,7 +149,8 @@ function TabButton({ filename, onClick, selected, closeTab }) {
 
 function Header({ children, onSave, onBuild, showActions }) {
 
-  return <div className='d-flex align-items-center justify-content-between'>
+  return <div className='d-flex align-items-center justify-content-between bg-light'
+    style={{ position: 'fixed', height: 42, zIndex: 10, width: 'calc(100vw - 250px)' }}>
     {children}
 
     {showActions && <div className='d-flex align-items-center'>

@@ -19,9 +19,46 @@ const initializeS3Connection = () => {
   }
 }
 
+const cleanBucket = () => {
+  return new Promise((resolve, reject) => {
+    state
+      .s3
+      .listObjects({
+        Bucket: state.Bucket
+      }, (err, data) => {
+        if (err)
+          reject(err)
+        else
+          Promise.all(data.Contents.map(({ Key }) => {
+            return state.s3.deleteObject({
+              Bucket: state.Bucket,
+              Key
+            }, (err, d) => {
+              reject(err)
+            })
+          }))
+            .then(resolve)
+      })
+  })
+}
+
+const listObjects = () => {
+  state.s3
+    .listObjects({
+      Bucket: state.Bucket
+    }, (err, data) => {
+      if (err)
+        console.log(err)
+      else
+        console.log(data)
+    })
+}
+
 module.exports = {
   S3: {
     initializeS3Connection,
+    cleanBucket,
+    listObjects,
     'state': () => state
   }
 }

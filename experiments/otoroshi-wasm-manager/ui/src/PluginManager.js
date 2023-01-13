@@ -1,11 +1,11 @@
 import React from 'react';
 
-const Plugin = ({ onPluginClick, filename, newFilename, ...props }) => {
+const Plugin = ({ onPluginClick, filename, pluginId, newFilename, ...props }) => {
   return <button type="button" style={{ border: 'none' }}
     className="d-flex align-items-center justify-content-between"
     onClick={() => {
       if (!props.new)
-        onPluginClick(filename)
+        onPluginClick(pluginId)
     }}>
     {props.new ? <div>
       <i className='fas fa-file' />
@@ -21,7 +21,7 @@ const Plugin = ({ onPluginClick, filename, newFilename, ...props }) => {
         <i className='fas fa-times me-2'
           onClick={e => {
             e.stopPropagation()
-            props.removePlugin(filename)
+            props.removePlugin(pluginId)
           }} />
         <span style={{
           whiteSpace: 'nowrap',
@@ -30,7 +30,7 @@ const Plugin = ({ onPluginClick, filename, newFilename, ...props }) => {
           maxWidth: '90%'
         }}>{filename}</span>
       </div>
-      <i className='fas fa-chevron-right' />
+      {/* <i className='fas fa-chevron-right' /> */}
     </>
     }
 

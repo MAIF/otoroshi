@@ -1,9 +1,15 @@
+const path = require('path');
+const toml = require('toml')
+const fs = require('fs-extra')
+const crypto = require('crypto')
+
 const express = require('express');
+
 const { getUser, updateUser } = require('../services/user');
 const { hash, unzip } = require('../utils');
 
 const { S3 } = require('../s3');
-const { BuildQueue } = require('../services/BuildQueue');
+const { Queue } = require('../services/Queue');
 const { createBuildFolder, buildPlugin } = require('../services/build');
 
 const manager = require('../logger');
@@ -11,10 +17,10 @@ const log = manager.createLogger('plugins');
 
 const router = express.Router()
 
-
 router.get('/', (req, res) => {
   getUser(req)
     .then(data => {
+      console.log(data)
       res.json(data.plugins || [])
     })
 });
@@ -47,24 +53,41 @@ router.get('/:id', (req, res) => {
     })
 })
 
+router.get('/:id/configurations', (req, res) => {
+  getUser(req)
+    .then(data => {
+      const plugin = data.plugins.find(f => f.pluginId === req.params.id)
+      res.json([{
+        ext: 'json',
+        filename: 'config',
+        readOnly: true,
+        content: JSON.stringify({
+          ...plugin
+        }, null, 4)
+      }])
+    })
+})
+
 router.post('/', (req, res) => {
   const state = S3.state()
 
   getUser(req)
     .then(data => {
       const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
+      const pluginId = crypto.randomUUID()
+      const plugins = [
+        ...(data.plugins || []),
+        {
+          filename: req.body.plugin,
+          pluginId: pluginId
+        }
+      ]
       const params = {
         Bucket: state.Bucket,
         Key: `${user}.json`,
         Body: JSON.stringify({
           ...data,
-          plugins: [
-            ...(data.plugins || []),
-            {
-              filename: req.body.plugin,
-              hash: `${hash(`${user}-${req.body.plugin}`)}.zip`
-            }
-          ]
+          plugins
         })
       }
 
@@ -80,7 +103,7 @@ router.post('/', (req, res) => {
         }
         else {
           res.json({
-            location: data.Location
+            plugins
           })
         }
       })
@@ -123,11 +146,13 @@ router.delete('/:id', async (req, res) => {
   if (Object.keys(data).length > 0) {
     updateUser(req, {
       ...data,
-      plugins: data.plugins.filter(f => f.filename !== req.params.id)
+      plugins: data.plugins.filter(f => f.pluginId !== req.params.id)
     })
       .then(() => {
-        const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
-        const pluginHash = hash(`${user}-${req.params.id}`)
+        console.log(data)
+        const pluginHash = data.plugins
+          .find(f => f.pluginId !== req.params.id) || {}
+            .last_hash
 
         const params = {
           Bucket: state.Bucket,
@@ -158,28 +183,63 @@ router.delete('/:id', async (req, res) => {
   }
 })
 
-router.post('/:id/build', (req, res) => {
+router.post('/:id/build', async (req, res) => {
   const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
   const pluginHash = hash(`${user}-${req.params.id}`)
 
-  // BuildQueue.buildIsAlreadyRunning(pluginHash)
-  //   .then(exists => {
-  //     if (exists) {
-  //       res.json({ queue_id: folder });
-  //     } else {
-        createBuildFolder(pluginHash)
-          .then(folder => {
-            unzip(req.body, folder)
-              .then(() => {
-                BuildQueue.addBuildToQueue(folder, req.params.id)
+  const data = await getUser(req)
+  const plugin = (data.plugins || []).find(p => p.pluginId === req.params.id);
 
+  Queue.buildIsAlreadyRunning(pluginHash)
+    .then(async exists => {
+      if (exists) {
+        res.json({ queue_id: pluginHash });
+      } else {
+        const folder = await createBuildFolder(pluginHash)
+        await unzip(req.body, folder)
+        try {
+          const zipHash = crypto
+            .createHash('md5')
+            .update(req.body.toString())
+            .digest('hex')
+
+          const data = await fs.readFile(path.join(process.cwd(), 'build', folder, 'Cargo.toml'))
+          const file = toml.parse(data)
+
+          if (plugin['last_hash'] !== zipHash) {
+            console.log(`different: ${zipHash} - ${plugin['last_hash']}`)
+            Queue.addBuildToQueue({
+              folder,
+              plugin: req.params.id,
+              wasmName: file.package.name.replace('-', '_'),
+              user: req.user ? req.user.email : 'admin@otoroshi.io',
+              zipHash
+            })
+
+            res.json({
+              queue_id: folder
+            })
+          } else {
+            fs.remove(path.join(process.cwd(), 'build', folder))
+              .then(() => {
                 res.json({
-                  queue_id: folder
+                  message: 'no changes found'
                 })
               })
-          })
-    //   }
-    // })
+          }
+        } catch (err) {
+          fs.remove(path.join(process.cwd(), 'build', folder))
+            .then(() => {
+              res
+                .status(400)
+                .json({
+                  error: 'Error reading toml file',
+                  message: err.message
+                })
+            })
+        }
+      }
+    })
 })
 
 module.exports = router

@@ -5,13 +5,16 @@
   "license": "MIT",
   "dependencies": {
     "adm-zip": "^0.5.10",
-    "aws-sdk": "^2.1290.0",
+    "aws-sdk": "^2.1294.0",
     "body-parser": "^1.20.1",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "fs-extra": "^11.1.0",
-    "simple-node-logger": "^21.8.12"
+    "pako": "^2.1.0",
+    "simple-node-logger": "^21.8.12",
+    "socket.io": "^4.5.4",
+    "toml": "^3.0.0"
   }
 }

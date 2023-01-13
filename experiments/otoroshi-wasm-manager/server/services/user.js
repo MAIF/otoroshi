@@ -57,7 +57,33 @@ const updateUser = (req, content) => {
   })
 }
 
+const updateHashOfPlugin = (user, plugin, newHash, wasm) => {
+  const userReq = {
+    user: {
+      email: user
+    }
+  }
+  return getUser(userReq)
+    .then(data => {
+      updateUser(userReq, {
+        ...data,
+        plugins: data.plugins.map(d => {
+          if (d.pluginId === plugin) {
+            return {
+              ...d,
+              last_hash: newHash,
+              wasm
+            }
+          } else {
+            return d
+          }
+        })
+      })
+    })
+}
+
 module.exports = {
   getUser,
-  updateUser
+  updateUser,
+  updateHashOfPlugin
 }

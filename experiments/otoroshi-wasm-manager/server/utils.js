@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const AdmZip = require("adm-zip");
 const fs = require("fs-extra");
 const path = require("path");
+const pako = require('pako');
 
 const hash = value => {
   const salt = process.env.SALT || crypto
@@ -18,15 +19,19 @@ const unzip = (zipString, outputFolder) => {
   const entries = zip.getEntries()
 
   return Promise.all(entries.map(entry => {
-    const content = entry.getData().toString("utf8");
+    try {
+      const content = pako.inflateRaw(entry.getCompressedData(), { to: 'string' });
 
-    const filePath = entry.entryName === 'Cargo.toml' ? '' : 'src';
+      const filePath = entry.entryName === 'Cargo.toml' ? '' : 'src';
 
-    console.log(`write ${entry.entryName}`)
-    return fs.writeFile(
-      path.join(process.cwd(), 'build', outputFolder, filePath, entry.entryName),
-      content
-    )
+      return fs.writeFile(
+        path.join(process.cwd(), 'build', outputFolder, filePath, entry.entryName),
+        content
+      )
+    } catch (err) {
+      console.log(err)
+      return Promise.reject(err)
+    }
   }))
 }
 

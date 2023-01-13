@@ -2,7 +2,7 @@ import JSZip from "jszip"
 import Pako from "pako"
 
 const f = (url, init = {}) => {
-  return fetch(`${url}`, {
+  return fetch(`/api${url}`, {
     ...init,
     credentials: 'include',
     headers: {
@@ -14,7 +14,7 @@ const f = (url, init = {}) => {
 }
 
 const rawFetch = (url, init = {}) => {
-  return fetch(`${url}`, {
+  return fetch(`/api${url}`, {
     ...init,
     credentials: 'include',
     headers: {
@@ -38,6 +38,8 @@ export const getPlugins = () => jsonFetch('/plugins')
 
 export const getPlugin = plugin => rawFetch(`/plugins/${plugin}`)
 
+export const getPluginConfig = plugin => jsonFetch(`/plugins/${plugin}/configurations`)
+
 export const getPluginTemplate = type => f(`/templates?type=${type}`)
   .then(r => r.blob())
 
@@ -54,7 +56,7 @@ const buildZip = plugin => {
 export const savePlugin = async plugin => {
   const bytes = await buildZip(plugin)
 
-  return rawFetch(`/plugins/${plugin.filename}`, {
+  return rawFetch(`/plugins/${plugin.pluginId}`, {
     method: 'PUT',
     body: bytes,
     headers: {
@@ -66,7 +68,7 @@ export const savePlugin = async plugin => {
 export const buildPlugin = async plugin => {
   const bytes = await buildZip(plugin)
 
-  return rawFetch(`/plugins/${plugin.filename}/build`, {
+  return rawFetch(`/plugins/${plugin.pluginId}/build`, {
     method: 'POST',
     body: bytes,
     headers: {

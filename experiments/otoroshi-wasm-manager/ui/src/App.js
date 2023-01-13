@@ -1,14 +1,16 @@
 import React from 'react';
+import JsZip from 'jszip';
+import Pako from 'pako'
+
 import * as Service from './services'
 import TabsManager from './TabsManager';
-import JsZip, { file } from 'jszip';
-import Pako from 'pako'
 
 class App extends React.Component {
   state = {
     editorState: undefined,
     plugins: [],
-    selectedPlugin: undefined
+    selectedPlugin: undefined,
+    configFiles: []
   }
 
   componentDidMount() {
@@ -41,16 +43,7 @@ class App extends React.Component {
           .then(res => {
             if (!res.error) {
               this.setState({
-                plugins: plugins
-                  .map(f => {
-                    if (f.new)
-                      return {
-                        ...f,
-                        filename: f.newFilename,
-                        new: false
-                      }
-                    return f
-                  })
+                plugins: res.plugins
               })
             }
           })
@@ -120,19 +113,17 @@ class App extends React.Component {
     })
   }
 
-  downloadPluginTemplate = async (res, selectedPlugin) => {
+  downloadPluginTemplate = async (res, plugin) => {
     const jsZip = new JsZip()
     const data = await jsZip.loadAsync(res);
-    console.log(data)
     this.setState({
       selectedPlugin: {
-        filename: selectedPlugin,
+        ...plugin,
         files: Object.values(data.files)
           .filter(f => !f.dir)
           .map(r => {
             const parts = r.name.split('/')
             const name = parts.length > 1 ? parts[1] : parts[0];
-            console.log(r)
             try {
               return {
                 filename: name,
@@ -148,6 +139,7 @@ class App extends React.Component {
   }
 
   onPluginClick = newSelectedPlugin => {
+    const plugin = this.state.plugins.find(f => f.pluginId === newSelectedPlugin)
     Service.getPlugin(newSelectedPlugin)
       .then(res => {
         if (res.status === 404)
@@ -156,12 +148,19 @@ class App extends React.Component {
           return res.blob()
       })
       .then(res => {
-        console.log(res)
         if (res.error && res.status === 404) {
           Service.getPluginTemplate('rust') // TODO - handle Assembly script case
-            .then(r => this.downloadPluginTemplate(r, newSelectedPlugin))
+            .then(r => this.downloadPluginTemplate(r, plugin))
         } else {
-          this.downloadPluginTemplate(res, newSelectedPlugin)
+          this.downloadPluginTemplate(res, plugin)
+            .then(() => {
+              Service.getPluginConfig(newSelectedPlugin)
+                .then(configFiles => {
+                  this.setState({
+                    configFiles
+                  })
+                })
+            })
         }
 
       })
@@ -194,19 +193,23 @@ class App extends React.Component {
   }
 
   onBuild = () => {
-    Service.buildPlugin(this.state.selectedPlugin)
-      .then(res => {
-        console.log('build')
+    Service.savePlugin(this.state.selectedPlugin)
+      .then(() => {
+        Service.buildPlugin(this.state.selectedPlugin)
+          .then(res => {
+            console.log('build')
+          })
       })
   }
 
-  removePlugin = filename => {
-    if (window.confirm(`Delete the ${filename} plugin ?`)) {
-      Service.removePlugin(filename)
+  removePlugin = pluginId => {
+    const plugin = this.state.plugins.filter(f => f.pluginId !== pluginId)
+    if (window.confirm(`Delete the ${plugin.filename} plugin ?`)) {
+      Service.removePlugin(pluginId)
         .then(res => {
           if (res.status === 200)
             this.setState({
-              plugins: this.state.plugins.filter(f => f.filename !== filename),
+              plugins: this.state.plugins.filter(f => f.pluginId !== pluginId),
               selectedPlugin: undefined
             })
         })
@@ -214,7 +217,9 @@ class App extends React.Component {
   }
 
   render() {
-    const { selectedPlugin, plugins } = this.state;
+    const { selectedPlugin, plugins, configFiles } = this.state;
+
+    console.log(selectedPlugin)
 
     return <div className='d-flex flex-column'
       style={{ flex: 1 }}
@@ -232,6 +237,7 @@ class App extends React.Component {
         onSave={this.onSave}
         onBuild={this.onBuild}
         removePlugin={this.removePlugin}
+        configFiles={configFiles}
       />
     </div>
   }
