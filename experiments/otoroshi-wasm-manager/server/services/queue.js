@@ -24,6 +24,9 @@ const addBuildToQueue = props => {
 
   if (running === 0)
     execute()
+  else {
+    IO.emit(props.plugin, "QUEUE", `waiting - ${queue.length - 1} before the build start\n`)
+  }
 }
 const startQueue = () => {
   setInterval(() => {
@@ -46,37 +49,43 @@ const build = ({ folder, plugin, wasmName, user, zipHash }) => {
         const stdoutStream = fs.createWriteStream(path.join(logsFolder, 'stdout.log'), { flags: 'w+' })
         const stderrStream = fs.createWriteStream(path.join(logsFolder, 'stderr.log'), { flags: 'w+' })
 
+        IO.emit(plugin, "BUILD", 'Starting build ...\n')
+
         const child = spawn(CARGO_BUILD, CARGO_ARGS, { cwd: buildFolder });
 
         child.stdout.on('data', data => {
-          IO.emit(plugin, data)
+          IO.emit(plugin, "BUILD", data)
           stdoutStream.write(data)
         });
         child.stderr.on('data', data => {
-          IO.emit(plugin, data)
+          IO.emit(plugin, "BUILD", data)
           stderrStream.write(data)
         });
         child.on('error', (error) => {
-          IO.emit(plugin, data)
+          IO.emitError(plugin, "BUILD", data)
           stderrStream.write(`${error.stack}\n`)
         });
 
         child.on('close', (code) => {
           if (code === 0) {
-            IO.emit(plugin, `build endded`)
+            IO.emit(plugin, "BUILD", "Build done.\n")
             try {
               const newFilename = `${hash(`${user}-${plugin}`)}.wasm`
+              IO.emit(plugin, "PACKAGE", "Starting package ...\n")
               Promise.all([
                 saveWasmFile(
+                  plugin,
                   newFilename,
                   path.join(buildFolder, 'target', 'wasm32-unknown-unknown', 'release', `${wasmName}.wasm`)
                 ),
                 saveLogsFile(
+                  plugin,
                   `${hash(`${user}-${plugin}-logs`)}.zip`,
                   logsFolder
                 ),
                 updateHashOfPlugin(user, plugin, zipHash, newFilename)])
                 .then(() => {
+                  IO.emit(plugin, "PACKAGE", "Informations has been updated\n")
                   cleanBuild(buildFolder, logsFolder)
                     .then(resolve)
                 })
@@ -94,7 +103,7 @@ const build = ({ folder, plugin, wasmName, user, zipHash }) => {
     })
 }
 
-const saveWasmFile = (filename, srcFile) => {
+const saveWasmFile = (plugin, filename, srcFile) => {
   const state = S3.state()
 
   return new Promise((resolve, reject) => {
@@ -113,6 +122,7 @@ const saveWasmFile = (filename, srcFile) => {
             reject(err)
           }
           else {
+            IO.emit(plugin, "PACKAGE", "WASM has been saved ...\n")
             resolve()
           }
         })
@@ -121,7 +131,7 @@ const saveWasmFile = (filename, srcFile) => {
   })
 }
 
-const saveLogsFile = (filename, logsFolder) => {
+const saveLogsFile = (plugin, filename, logsFolder) => {
   const state = S3.state()
 
   const zip = new AdmZip()
@@ -134,7 +144,15 @@ const saveLogsFile = (filename, logsFolder) => {
   }
 
   return new Promise((resolve, reject) => {
-    state.s3.upload(params, err => err ? reject(err) : resolve())
+    state.s3.upload(params, err => {
+      if (err) {
+        reject(err)
+      }
+      else {
+        IO.emit(plugin, "PACKAGE", "Logs has been saved ...\n")
+        resolve()
+      }
+    })
   })
 }
 
@@ -150,8 +168,10 @@ const execute = () => {
   if (running < MAX_JOBS && queue.length > 0) {
     running += 1;
 
-    build(queue.shift())
+    const nextBuild = queue.shift()
+    build(nextBuild)
       .then(() => {
+        IO.emit(nextBuild.plugin, "JOB", "You can now! use the generated wasm\n")
         running -= 1;
         execute()
       })

@@ -54,17 +54,43 @@ router.get('/:id', (req, res) => {
 })
 
 router.get('/:id/configurations', (req, res) => {
+  const { s3, Bucket } = S3.state()
   getUser(req)
     .then(data => {
+      const user = req.user ? req.user.email : 'admin@otoroshi.io'
       const plugin = data.plugins.find(f => f.pluginId === req.params.id)
-      res.json([{
+
+      const files = [{
         ext: 'json',
         filename: 'config',
         readOnly: true,
         content: JSON.stringify({
           ...plugin
         }, null, 4)
-      }])
+      }]
+
+      s3.getObject({
+        Bucket,
+        Key: `${hash(`${user}-${plugin.pluginId}-logs`)}.zip`
+      })
+        .promise()
+        .then(data => {
+          res.json([
+            ...files,
+            {
+              ext: 'zip',
+              filename: 'logs',
+              readOnly: true,
+              content: data.Body
+            }
+          ])
+        })
+        .catch(err => {
+          console.log(err)
+          res.json(files)
+        })
+
+
     })
 })
 

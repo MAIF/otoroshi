@@ -6,28 +6,18 @@ import io from 'socket.io-client';
 const socket = io();
 
 function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, selectedPlugin }) {
-  const [isConnected, setIsConnected] = useState(socket.connected);
   const [content, setContent] = useState('')
 
   useEffect(() => {
     if (selectedPlugin) {
-      socket.on('connect', () => {
-        setIsConnected(true);
-      });
-
-      socket.on('disconnect', () => {
-        setIsConnected(false);
-      });
-
-      socket.on(selectedPlugin.pluginId, data => {
-        const text = new TextDecoder("utf-8").decode(data)
-
-        console.log(`received: ${text}`)
+      socket.on(selectedPlugin.pluginId, text => {
+        // console.log(data)
+        // const text = new TextDecoder("utf-8").decode(data)
         setContent(content => content + text)
       })
 
       return () => {
-        socket.off(selectedPlugin.pluginId)
+        socket.removeAllListeners()
         socket.off('disconnect')
       };
     }
@@ -44,13 +34,18 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
         e.stopPropagation();
         toggleResizingTerminal(true)
       }}
+      onMouseMove={e => e.stopPropagation()}
       onMouseuUp={e => {
         e.stopPropagation();
         toggleResizingTerminal(false)
       }}>
     </div>
     <div className='d-flex justify-content-between align-items-center mx-2 me-3'>
-      <div style={{ borderBottom: '2px solid #f9b000', textTransform: 'uppercase', width: 'fit-content' }} className='p-1'>
+      <div style={{
+        borderBottom: '2px solid #f9b000', textTransform: 'uppercase',
+        userSelect: 'none',
+        width: 'fit-content'
+      }} className='p-1'>
         <span>Terminal</span>
       </div>
       <div className='d-flex align-items-center'>
@@ -63,7 +58,6 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
 
     <CodeMirror
       maxWidth='calc(100vw - 250px)'
-      // maxHeight={`calc(${(sizeTerminal) * 100}vh)`}
       height={`calc(${(sizeTerminal) * 100}vh)`}
       value={content}
       extensions={[]}

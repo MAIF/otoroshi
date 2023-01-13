@@ -17,7 +17,7 @@ const getUser = req => {
       Key: `${jsonProfile}.json`
     }, (err, data) => {
       if (err) {
-        log.info('getUser', err)
+        // log.info('getUser', err)
         resolve({})
       }
       try {
@@ -64,22 +64,20 @@ const updateHashOfPlugin = (user, plugin, newHash, wasm) => {
     }
   }
   return getUser(userReq)
-    .then(data => {
-      updateUser(userReq, {
-        ...data,
-        plugins: data.plugins.map(d => {
-          if (d.pluginId === plugin) {
-            return {
-              ...d,
-              last_hash: newHash,
-              wasm
-            }
-          } else {
-            return d
+    .then(data => updateUser(userReq, {
+      ...data,
+      plugins: data.plugins.map(d => {
+        if (d.pluginId === plugin) {
+          return {
+            ...d,
+            last_hash: newHash,
+            wasm
           }
-        })
+        } else {
+          return d
+        }
       })
-    })
+    }))
 }
 
 module.exports = {

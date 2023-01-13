@@ -18,13 +18,18 @@ const createLogsWebSocket = server => {
   });
 }
 
-const emit = (channel, message) => {
-  io.emit(channel, message)
+const emit = (channel, group, message) => {
+  io.emit(channel, `[${group}] ${message}`)
+}
+
+const emitError = (channel, message) => {
+  io.emit(channel, `ERROR - [${group}] ${message}`)
 }
 
 module.exports = {
   IO: {
     createLogsWebSocket,
-    emit
+    emit,
+    emitError,
   }
 }

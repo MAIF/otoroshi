@@ -152,18 +152,45 @@ class App extends React.Component {
           Service.getPluginTemplate('rust') // TODO - handle Assembly script case
             .then(r => this.downloadPluginTemplate(r, plugin))
         } else {
-          this.downloadPluginTemplate(res, plugin)
+          return this.downloadPluginTemplate(res, plugin)
             .then(() => {
               Service.getPluginConfig(newSelectedPlugin)
-                .then(configFiles => {
+                .then(async configFiles => {
                   this.setState({
-                    configFiles
+                    configFiles: (await Promise.all(configFiles.flatMap(this.unzip)))
+                      .filter(f => f)
+                      .flat()
                   })
                 })
             })
         }
 
       })
+  }
+
+  unzip = async file => {
+    if (file.ext === 'zip') {
+      const jsZip = new JsZip()
+      const data = await jsZip.loadAsync(file.content.data);
+      return Object.values(data.files)
+        .filter(f => !f.dir)
+        .map(r => {
+          const parts = r.name.split('/') || []
+          const name = parts.length > 1 ? parts[1] : parts[0];
+          try {
+            console.log(r)
+            return {
+              filename: name,
+              content: r._data.compressedSize > 0 ? Pako.inflateRaw(r._data.compressedContent, { to: 'string' }) : '',
+              ext: name.split('.')[1]
+            }
+          } catch (err) {
+            return undefined
+          }
+        })
+    } else {
+      return file
+    }
   }
 
   handleContent = (filename, newContent) => {
@@ -219,7 +246,7 @@ class App extends React.Component {
   render() {
     const { selectedPlugin, plugins, configFiles } = this.state;
 
-    console.log(selectedPlugin)
+    console.log(configFiles)
 
     return <div className='d-flex flex-column'
       style={{ flex: 1 }}
