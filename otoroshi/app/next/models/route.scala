@@ -506,14 +506,17 @@ case class NgRoute(
     )
   }
 
-  private def otoroshiJsonError(error: JsObject, status: Results.Status, __ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext): Result = {
+  private def otoroshiJsonError(error: JsObject, status: Results.Status, __ctx: NgTransformerErrorContext)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Result = {
     Errors.craftResponseResultSync(
       message = error.select("error_description").asOpt[String].getOrElse("an error occurred !"),
       status = status,
       req = __ctx.request,
       maybeCauseId = error.select("error").asOpt[String],
       attrs = __ctx.attrs,
-      maybeRoute = __ctx.route.some,
+      maybeRoute = __ctx.route.some
     )
   }
 
@@ -582,10 +585,12 @@ case class NgRoute(
             report.setContext(sequence.stopSequence().json)
             Success(
               otoroshiJsonError(
-                Json.obj(
-                  "error" -> "internal_server_error",
-                  "error_description" -> "an error happened during response-transformation plugins phase",
-                ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                Json
+                  .obj(
+                    "error"             -> "internal_server_error",
+                    "error_description" -> "an error happened during response-transformation plugins phase"
+                  )
+                  .applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
                 Results.InternalServerError,
                 __ctx
               )
@@ -630,10 +635,14 @@ case class NgRoute(
                     Left(
                       NgResultProxyEngineError(
                         otoroshiJsonError(
-                          Json.obj(
-                            "error" -> "internal_server_error",
-                            "error_description" -> "an error happened during response-transformation plugins phase",
-                          ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                          Json
+                            .obj(
+                              "error"             -> "internal_server_error",
+                              "error_description" -> "an error happened during response-transformation plugins phase"
+                            )
+                            .applyOnIf(env.isDev) { obj =>
+                              obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))
+                            },
                           Results.InternalServerError,
                           __ctx
                         )

@@ -294,7 +294,7 @@ object Errors {
       message: String,
       maybeCauseId: Option[String],
       emptyBody: Boolean,
-      modern: Boolean,
+      modern: Boolean
   )(implicit env: Env): Result = {
     val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
     if (accept.contains("text/html")) { // in a browser
@@ -338,17 +338,17 @@ object Errors {
           .apply(Json.obj("error" -> cause, "error_description" -> message))
           .withHeaders(
             env.Headers.OtoroshiGatewayError -> "true",
-            env.Headers.OtoroshiErrorMsg -> message,
+            env.Headers.OtoroshiErrorMsg   -> message,
             env.Headers.OtoroshiErrorCause -> cause,
-            env.Headers.OtoroshiStateResp -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+            env.Headers.OtoroshiStateResp  -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
           )
       } else {
         status
           .apply(Json.obj(env.Headers.OtoroshiGatewayError -> message))
           .withHeaders(
             env.Headers.OtoroshiGatewayError -> "true",
-            env.Headers.OtoroshiErrorMsg -> message,
-            env.Headers.OtoroshiStateResp -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+            env.Headers.OtoroshiErrorMsg     -> message,
+            env.Headers.OtoroshiStateResp    -> req.headers.get(env.Headers.OtoroshiState).getOrElse("--")
           )
       }
     }
@@ -417,7 +417,7 @@ object Errors {
       maybeCauseId: Option[String],
       emptyBody: Boolean,
       errorId: String,
-      modern: Boolean,
+      modern: Boolean
   )(implicit env: Env, ec: ExecutionContext): Result = {
     errorTemplate(descriptorId) match {
       case None                => standardResult(req, status, message, maybeCauseId, emptyBody, modern)
@@ -575,7 +575,7 @@ object Errors {
       sendEvent: Boolean = true,
       attrs: TypedMap,
       maybeRoute: Option[NgRoute] = None,
-      modern: Boolean = false,
+      modern: Boolean = false
   )(implicit ec: ExecutionContext, env: Env): Result = {
     val errorId = env.snowflakeGenerator.nextIdStr()
     (maybeDescriptor, maybeRoute) match {

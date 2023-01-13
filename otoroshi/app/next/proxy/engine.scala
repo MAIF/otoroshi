@@ -257,14 +257,20 @@ class ProxyEngine() extends RequestHandler {
     )
   }
 
-  private def otoroshiJsonError(error: JsObject, status: Results.Status, route: Option[NgRoute], attrs: TypedMap, req: RequestHeader)(implicit env: Env, ec: ExecutionContext): Result = {
+  private def otoroshiJsonError(
+      error: JsObject,
+      status: Results.Status,
+      route: Option[NgRoute],
+      attrs: TypedMap,
+      req: RequestHeader
+  )(implicit env: Env, ec: ExecutionContext): Result = {
     Errors.craftResponseResultSync(
       message = error.select("error_description").asOpt[String].getOrElse("an error occurred !"),
       status = status,
       req = req,
       maybeCauseId = error.select("error").asOpt[String],
       attrs = attrs,
-      maybeRoute = route,
+      maybeRoute = route
     )
   }
 
@@ -434,12 +440,13 @@ class ProxyEngine() extends RequestHandler {
         logger.error("last-recover", t)
         report.markFailure("last-recover", t)
         otoroshiJsonError(
-          Json.obj("error" -> "internal_server_error", "error_description" -> t.getMessage)
+          Json
+            .obj("error" -> "internal_server_error", "error_description" -> t.getMessage)
             .applyOnIf(env.isDev) { obj => obj ++ Json.obj("report" -> report.json) },
           Results.InternalServerError,
           attrs.get(otoroshi.next.plugins.Keys.RouteKey),
           attrs,
-          request,
+          request
         )
       }
       .applyOnWithOpt(attrs.get(Keys.ResultTransformerKey)) { case (future, transformer) =>
@@ -611,12 +618,13 @@ class ProxyEngine() extends RequestHandler {
         logger.error("last-recover", t)
         report.markFailure("last-recover", t)
         otoroshiJsonError(
-          Json.obj("error" -> "internal_server_error", "error_description" -> t.getMessage)
+          Json
+            .obj("error" -> "internal_server_error", "error_description" -> t.getMessage)
             .applyOnIf(env.isDev) { obj => obj ++ Json.obj("report" -> report.json) },
           Results.InternalServerError,
           attrs.get(otoroshi.next.plugins.Keys.RouteKey),
           attrs,
-          request,
+          request
         ).left
       }
       .applyOnWithOpt(attrs.get(Keys.ResultTransformerKey)) { case (future, transformer) =>
@@ -785,7 +793,7 @@ class ProxyEngine() extends RequestHandler {
             Results.NotFound,
             attrs.get(otoroshi.next.plugins.Keys.RouteKey),
             attrs,
-            request,
+            request
           )
         )
       )
@@ -870,7 +878,7 @@ class ProxyEngine() extends RequestHandler {
             Results.NotFound,
             attrs.get(otoroshi.next.plugins.Keys.RouteKey),
             attrs,
-            request,
+            request
           )
         )
       )
@@ -925,7 +933,7 @@ class ProxyEngine() extends RequestHandler {
               Results.ServiceUnavailable,
               attrs.get(otoroshi.next.plugins.Keys.RouteKey),
               attrs,
-              request,
+              request
             )
           )
         )
@@ -1025,14 +1033,16 @@ class ProxyEngine() extends RequestHandler {
               Left(
                 NgResultProxyEngineError(
                   otoroshiJsonError(
-                    Json.obj(
-                      "error" -> "internal_server_error",
-                      "error_description" -> "an error happened during before-request plugins phase",
-                    ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                    Json
+                      .obj(
+                        "error"             -> "internal_server_error",
+                        "error_description" -> "an error happened during before-request plugins phase"
+                      )
+                      .applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
                     Results.InternalServerError,
                     attrs.get(otoroshi.next.plugins.Keys.RouteKey),
                     attrs,
-                    request,
+                    request
                   )
                 )
               )
@@ -1073,14 +1083,18 @@ class ProxyEngine() extends RequestHandler {
                     Left(
                       NgResultProxyEngineError(
                         otoroshiJsonError(
-                          Json.obj(
-                            "error" -> "internal_server_error",
-                            "error_description" -> "an error happened during before-request plugins phase",
-                          ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                          Json
+                            .obj(
+                              "error"             -> "internal_server_error",
+                              "error_description" -> "an error happened during before-request plugins phase"
+                            )
+                            .applyOnIf(env.isDev) { obj =>
+                              obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))
+                            },
                           Results.InternalServerError,
                           attrs.get(otoroshi.next.plugins.Keys.RouteKey),
                           attrs,
-                          request,
+                          request
                         )
                       )
                     )
@@ -1192,14 +1206,16 @@ class ProxyEngine() extends RequestHandler {
               Left(
                 NgResultProxyEngineError(
                   otoroshiJsonError(
-                    Json.obj(
-                      "error" -> "internal_server_error",
-                      "error_description" -> "an error happened during after-request plugins phase",
-                    ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                    Json
+                      .obj(
+                        "error"             -> "internal_server_error",
+                        "error_description" -> "an error happened during after-request plugins phase"
+                      )
+                      .applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
                     Results.InternalServerError,
                     attrs.get(otoroshi.next.plugins.Keys.RouteKey),
                     attrs,
-                    request,
+                    request
                   )
                 )
               )
@@ -1240,14 +1256,18 @@ class ProxyEngine() extends RequestHandler {
                     Left(
                       NgResultProxyEngineError(
                         otoroshiJsonError(
-                          Json.obj(
-                            "error" -> "internal_server_error",
-                            "error_description" -> "an error happened during before-request plugins phase",
-                          ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                          Json
+                            .obj(
+                              "error"             -> "internal_server_error",
+                              "error_description" -> "an error happened during before-request plugins phase"
+                            )
+                            .applyOnIf(env.isDev) { obj =>
+                              obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))
+                            },
                           Results.InternalServerError,
                           attrs.get(otoroshi.next.plugins.Keys.RouteKey),
                           attrs,
-                          request,
+                          request
                         )
                       )
                     )
@@ -1354,14 +1374,18 @@ class ProxyEngine() extends RequestHandler {
                   Left(
                     NgResultProxyEngineError(
                       otoroshiJsonError(
-                        Json.obj(
-                          "error" -> "internal_server_error",
-                          "error_description" -> "an error happened during pre-routing plugins phase",
-                        ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                        Json
+                          .obj(
+                            "error"             -> "internal_server_error",
+                            "error_description" -> "an error happened during pre-routing plugins phase"
+                          )
+                          .applyOnIf(env.isDev) { obj =>
+                            obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))
+                          },
                         Results.InternalServerError,
                         attrs.get(otoroshi.next.plugins.Keys.RouteKey),
                         attrs,
-                        request,
+                        request
                       )
                     )
                   )
@@ -1421,14 +1445,18 @@ class ProxyEngine() extends RequestHandler {
                     Left(
                       NgResultProxyEngineError(
                         otoroshiJsonError(
-                          Json.obj(
-                            "error" -> "internal_server_error",
-                            "error_description" -> "an error happened during pre-routing plugins phase",
-                          ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                          Json
+                            .obj(
+                              "error"             -> "internal_server_error",
+                              "error_description" -> "an error happened during pre-routing plugins phase"
+                            )
+                            .applyOnIf(env.isDev) { obj =>
+                              obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))
+                            },
                           Results.InternalServerError,
                           attrs.get(otoroshi.next.plugins.Keys.RouteKey),
                           attrs,
-                          request,
+                          request
                         )
                       )
                     )
@@ -1547,14 +1575,16 @@ class ProxyEngine() extends RequestHandler {
               Left(
                 NgResultProxyEngineError(
                   otoroshiJsonError(
-                    Json.obj(
-                      "error" -> "internal_server_error",
-                      "error_description" -> "an error happened during pre-routing plugins phase",
-                    ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                    Json
+                      .obj(
+                        "error"             -> "internal_server_error",
+                        "error_description" -> "an error happened during pre-routing plugins phase"
+                      )
+                      .applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
                     Results.InternalServerError,
                     attrs.get(otoroshi.next.plugins.Keys.RouteKey),
                     attrs,
-                    request,
+                    request
                   )
                 )
               )
@@ -1607,14 +1637,18 @@ class ProxyEngine() extends RequestHandler {
                     Left(
                       NgResultProxyEngineError(
                         otoroshiJsonError(
-                          Json.obj(
-                            "error" -> "internal_server_error",
-                            "error_description" -> "an error happened during pre-routing plugins phase",
-                          ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                          Json
+                            .obj(
+                              "error"             -> "internal_server_error",
+                              "error_description" -> "an error happened during pre-routing plugins phase"
+                            )
+                            .applyOnIf(env.isDev) { obj =>
+                              obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))
+                            },
                           Results.InternalServerError,
                           attrs.get(otoroshi.next.plugins.Keys.RouteKey),
                           attrs,
-                          request,
+                          request
                         )
                       )
                     )
@@ -2405,14 +2439,16 @@ class ProxyEngine() extends RequestHandler {
               Left(
                 NgResultProxyEngineError(
                   otoroshiJsonError(
-                    Json.obj(
-                      "error" -> "internal_server_error",
-                      "error_description" -> "an error happened during request-transformation plugins phase",
-                    ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                    Json
+                      .obj(
+                        "error"             -> "internal_server_error",
+                        "error_description" -> "an error happened during request-transformation plugins phase"
+                      )
+                      .applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
                     Results.InternalServerError,
                     attrs.get(otoroshi.next.plugins.Keys.RouteKey),
                     attrs,
-                    request,
+                    request
                   )
                 )
               )
@@ -2470,14 +2506,18 @@ class ProxyEngine() extends RequestHandler {
                     Left(
                       NgResultProxyEngineError(
                         otoroshiJsonError(
-                          Json.obj(
-                            "error" -> "internal_server_error",
-                            "error_description" -> "an error happened during request-transformation plugins phase",
-                          ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                          Json
+                            .obj(
+                              "error"             -> "internal_server_error",
+                              "error_description" -> "an error happened during request-transformation plugins phase"
+                            )
+                            .applyOnIf(env.isDev) { obj =>
+                              obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))
+                            },
                           Results.InternalServerError,
                           attrs.get(otoroshi.next.plugins.Keys.RouteKey),
                           attrs,
-                          request,
+                          request
                         )
                       )
                     )
@@ -2859,14 +2899,16 @@ class ProxyEngine() extends RequestHandler {
               Left(
                 NgResultProxyEngineError(
                   otoroshiJsonError(
-                    Json.obj(
-                      "error" -> "internal_server_error",
-                      "error_description" -> "an error happened during response-transformation plugins phase",
-                    ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                    Json
+                      .obj(
+                        "error"             -> "internal_server_error",
+                        "error_description" -> "an error happened during response-transformation plugins phase"
+                      )
+                      .applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
                     Results.InternalServerError,
                     attrs.get(otoroshi.next.plugins.Keys.RouteKey),
                     attrs,
-                    rawRequest,
+                    rawRequest
                   )
                 )
               )
@@ -2924,14 +2966,18 @@ class ProxyEngine() extends RequestHandler {
                     Left(
                       NgResultProxyEngineError(
                         otoroshiJsonError(
-                          Json.obj(
-                            "error" -> "internal_server_error",
-                            "error_description" -> "an error happened during response-transformation plugins phase",
-                          ).applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                          Json
+                            .obj(
+                              "error"             -> "internal_server_error",
+                              "error_description" -> "an error happened during response-transformation plugins phase"
+                            )
+                            .applyOnIf(env.isDev) { obj =>
+                              obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))
+                            },
                           Results.InternalServerError,
                           attrs.get(otoroshi.next.plugins.Keys.RouteKey),
                           attrs,
-                          rawRequest,
+                          rawRequest
                         )
                       )
                     )

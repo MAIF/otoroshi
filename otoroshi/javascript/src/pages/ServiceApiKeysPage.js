@@ -688,13 +688,10 @@ export class ServiceApiKeysPage extends Component {
   };
 
   updateItem = (ak) => {
-    return BackOfficeService
+    return BackOfficeService;
     delete ak.authorizations;
-    delete ak.authorizedGroup;s.updateApiKey(
-      this.props.params.serviceId,
-      this.props.params.routeId,
-      ak
-    );
+    delete ak.authorizedGroup;
+    s.updateApiKey(this.props.params.serviceId, this.props.params.routeId, ak);
   };
 
   deleteItem = (ak) => {

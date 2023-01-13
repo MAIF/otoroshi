@@ -372,15 +372,20 @@ object ApiKey {
           clientName = (json \ "clientName").as[String],
           description = (json \ "description").asOpt[String].getOrElse(""),
           authorizedEntities = {
-            val authorizations: Seq[EntityIdentifier] = json.select("authorizations").asOpt[Seq[JsValue]].map { values =>
-              values.collect {
-                case JsString(value) => EntityIdentifier.apply(value)
-                case value@JsObject(_) => EntityIdentifier.applyModern(value)
+            val authorizations: Seq[EntityIdentifier]     = json
+              .select("authorizations")
+              .asOpt[Seq[JsValue]]
+              .map { values =>
+                values
+                  .collect {
+                    case JsString(value)     => EntityIdentifier.apply(value)
+                    case value @ JsObject(_) => EntityIdentifier.applyModern(value)
+                  }
+                  .collect { case Some(id) =>
+                    id
+                  }
               }
-              .collect {
-                case Some(id) => id
-              }
-            }.getOrElse(Seq.empty[EntityIdentifier])
+              .getOrElse(Seq.empty[EntityIdentifier])
             val authorizedGroup: Seq[EntityIdentifier]    =
               (json \ "authorizedGroup").asOpt[String].map(ServiceGroupIdentifier.apply).toSeq
             val authorizedEntities: Seq[EntityIdentifier] =

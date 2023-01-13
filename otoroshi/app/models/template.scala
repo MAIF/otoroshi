@@ -53,32 +53,31 @@ case class ErrorTemplate(
     )
   }
 
-
   def toJson: JsValue                                 = ErrorTemplate.format.writes(this)
   def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.errorTemplateDataStore.set(this)
 
-  override def json: JsValue = ErrorTemplate.format.writes(this)
-  override def internalId: String = serviceId
-  override def theName: String = name
-  override def theDescription: String = description
-  override def theTags: Seq[String] = tags
+  override def json: JsValue                    = ErrorTemplate.format.writes(this)
+  override def internalId: String               = serviceId
+  override def theName: String                  = name
+  override def theDescription: String           = description
+  override def theTags: Seq[String]             = tags
   override def theMetadata: Map[String, String] = metadata
 }
 
 object ErrorTemplate {
   lazy val logger                                           = Logger("otoroshi-error-template")
   val format                                                = new Format[ErrorTemplate] {
-    override def writes(o: ErrorTemplate): JsValue = o.location.jsonWithKey ++ Json.obj(
-      "serviceId" -> o.serviceId,
-      "name" -> o.name,
-      "description" -> o.description,
-      "metadata" -> o.metadata,
-      "tags" -> o.tags,
-      "template40x" -> o.template40x,
-      "template50x" -> o.template50x,
-      "templateBuild" -> o.templateBuild,
+    override def writes(o: ErrorTemplate): JsValue             = o.location.jsonWithKey ++ Json.obj(
+      "serviceId"           -> o.serviceId,
+      "name"                -> o.name,
+      "description"         -> o.description,
+      "metadata"            -> o.metadata,
+      "tags"                -> o.tags,
+      "template40x"         -> o.template40x,
+      "template50x"         -> o.template50x,
+      "templateBuild"       -> o.templateBuild,
       "templateMaintenance" -> o.templateMaintenance,
-      "messages" -> o.messages,
+      "messages"            -> o.messages
     )
     override def reads(json: JsValue): JsResult[ErrorTemplate] = Try {
       val serviceId = json.select("serviceId").asString
@@ -94,7 +93,7 @@ object ErrorTemplate {
           template50x = json.select("template50x").asString,
           templateBuild = json.select("templateBuild").asString,
           templateMaintenance = json.select("templateMaintenance").asString,
-          messages = json.select("messages").asOpt[Map[String, String]].getOrElse(Map.empty),
+          messages = json.select("messages").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       )
     } recover { case e =>
@@ -116,5 +115,4 @@ object ErrorTemplate {
   def fromJsonSafe(value: JsValue): JsResult[ErrorTemplate] = format.reads(value)
 }
 
-trait ErrorTemplateDataStore extends BasicStore[ErrorTemplate] {
-}
+trait ErrorTemplateDataStore extends BasicStore[ErrorTemplate] {}

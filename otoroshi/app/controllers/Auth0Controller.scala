@@ -408,7 +408,9 @@ class AuthController(
                   }
                 }
                 case auth                                                                                => {
-                  auth.authModule(ctx.globalConfig).paCallback(ctx.request, ctx.globalConfig, descriptor)
+                  auth
+                    .authModule(ctx.globalConfig)
+                    .paCallback(ctx.request, ctx.globalConfig, descriptor)
                     .flatMap {
                       case Left(error) => {
                         BadRequest(
@@ -441,20 +443,21 @@ class AuthController(
           }
         case (_, _)               => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
       })
-      .recover {
-        case t: Throwable => {
-          val errorId = IdGenerator.uuid
-          logger.error(s"An error occurred during the authentication callback with error id: '${errorId}'", t)
-          InternalServerError(
-            otoroshi.views.html.oto
-              .error(
-                message = s"An error occurred during the authentication callback. Please contact your administrator with error id: ${errorId}",
-                _env = env,
-                title = "Authorization error"
-              )
-          )
+        .recover {
+          case t: Throwable => {
+            val errorId = IdGenerator.uuid
+            logger.error(s"An error occurred during the authentication callback with error id: '${errorId}'", t)
+            InternalServerError(
+              otoroshi.views.html.oto
+                .error(
+                  message =
+                    s"An error occurred during the authentication callback. Please contact your administrator with error id: ${errorId}",
+                  _env = env,
+                  title = "Authorization error"
+                )
+            )
+          }
         }
-      }
     }
 
   def auth0error(error: Option[String], error_description: Option[String]) =

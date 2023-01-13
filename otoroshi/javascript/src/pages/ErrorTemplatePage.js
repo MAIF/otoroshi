@@ -4,9 +4,8 @@ import { Table, Form } from '../components/inputs';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 
 export class ErrorTemplatesPage extends Component {
+  state = { list: [], fetched: false };
 
-  state = { list: [], fetched: false }
-  
   columns = [
     {
       title: 'Name',
@@ -64,8 +63,8 @@ export class ErrorTemplatesPage extends Component {
   createTemplate = () => {
     return {
       serviceId: null,
-      name: "New error template",
-      description: "Error template for the xxx route",
+      name: 'New error template',
+      description: 'Error template for the xxx route',
       tags: [],
       metadata: {},
       templateBuild: this.template(
@@ -121,7 +120,7 @@ export class ErrorTemplatesPage extends Component {
         'errors.not.found': 'Page not found',
         'errors.bad.origin': 'Bad origin',
       },
-    }
+    };
   };
 
   deleteErrorTemplate = (errorTemplate, table) => {
@@ -138,18 +137,51 @@ export class ErrorTemplatesPage extends Component {
 
   componentDidMount() {
     this.props.setTitle('All Error Templates');
-    BackOfficeServices.findAllServicesWithPagination({ page: 1, pageSize: 999, fields: ['id', 'name'] }).then(services => {
-      BackOfficeServices.findAllRoutesWithPagination({ page: 1, pageSize: 999, fields: ['id', 'name'] }).then(routes => {
-        BackOfficeServices.findAllRouteCompositionsWithPagination({ page: 1, pageSize: 999, fields: ['id', 'name'] }).then(routeCompositions => {
+    BackOfficeServices.findAllServicesWithPagination({
+      page: 1,
+      pageSize: 999,
+      fields: ['id', 'name'],
+    }).then((services) => {
+      BackOfficeServices.findAllRoutesWithPagination({
+        page: 1,
+        pageSize: 999,
+        fields: ['id', 'name'],
+      }).then((routes) => {
+        BackOfficeServices.findAllRouteCompositionsWithPagination({
+          page: 1,
+          pageSize: 999,
+          fields: ['id', 'name'],
+        }).then((routeCompositions) => {
           const list = [
-            ...services.data.map(s => ({ label: <div><span className="badge bg-warning">service</span>  {s.name}</div>, value: s.id })),
-            ...routes.data.map(s => ({ label:<div><span className="badge bg-info">route</span>  {s.name}</div>, value: s.id })),
-            ...routeCompositions.data.map(s => ({ label: <div><span className="badge bg-secondary">route-comp.</span>  {s.name}</div>, value: s.id })),
+            ...services.data.map((s) => ({
+              label: (
+                <div>
+                  <span className="badge bg-warning">service</span> {s.name}
+                </div>
+              ),
+              value: s.id,
+            })),
+            ...routes.data.map((s) => ({
+              label: (
+                <div>
+                  <span className="badge bg-info">route</span> {s.name}
+                </div>
+              ),
+              value: s.id,
+            })),
+            ...routeCompositions.data.map((s) => ({
+              label: (
+                <div>
+                  <span className="badge bg-secondary">route-comp.</span> {s.name}
+                </div>
+              ),
+              value: s.id,
+            })),
           ];
-          this.setState({ list, fetched: true })
-        })
-      })
-    })
+          this.setState({ list, fetched: true });
+        });
+      });
+    });
   }
 
   gotoErrorTemplate = (errorTemplate) => {
@@ -173,13 +205,13 @@ export class ErrorTemplatesPage extends Component {
   ];
 
   formSchema = () => ({
-    serviceId: { 
-      type: 'select', 
-      props: { 
-        label: 'Id', 
-        placeholder: 'route or service id', 
-        possibleValues: this.state.list 
-      } 
+    serviceId: {
+      type: 'select',
+      props: {
+        label: 'Id',
+        placeholder: 'route or service id',
+        possibleValues: this.state.list,
+      },
     },
     _loc: {
       type: 'location',
@@ -201,18 +233,34 @@ export class ErrorTemplatesPage extends Component {
       type: 'array',
       props: { label: 'Tags' },
     },
-    template40x: { type: 'code', props: { mode: 'html', label: '40x template', placeholder: 'template for 40x errors' } },
-    template50x: { type: 'code', props: { mode: 'html', label: '50x template', placeholder: 'template for 50x errors' } },
-    templateBuild: { type: 'code', props: { mode: 'html', label: 'build template', placeholder: 'template for build errors' } },
-    templateMaintenance: { type: 'code', props: { mode: 'html', label: 'maintenance template', placeholder: 'template for maintenance errors' } },
-    messages: { type: 'object', props: { label: 'messages' } }
+    template40x: {
+      type: 'code',
+      props: { mode: 'html', label: '40x template', placeholder: 'template for 40x errors' },
+    },
+    template50x: {
+      type: 'code',
+      props: { mode: 'html', label: '50x template', placeholder: 'template for 50x errors' },
+    },
+    templateBuild: {
+      type: 'code',
+      props: { mode: 'html', label: 'build template', placeholder: 'template for build errors' },
+    },
+    templateMaintenance: {
+      type: 'code',
+      props: {
+        mode: 'html',
+        label: 'maintenance template',
+        placeholder: 'template for maintenance errors',
+      },
+    },
+    messages: { type: 'object', props: { label: 'messages' } },
   });
 
   render() {
     // if (!this.state.fetched) {
     //   return null;
     // }
-    console.log(this.state.list)
+    console.log(this.state.list);
     return (
       <div>
         <Table

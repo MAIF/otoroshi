@@ -178,7 +178,7 @@ class BackOfficeController(
 
   def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     env.datastores.apiKeyDataStore.findById(env.backOfficeApiKey.clientId).flatMap {
-      case None                                        =>
+      case None                                                                  =>
         FastFuture.successful(
           NotFound(
             Json.obj(
@@ -186,23 +186,23 @@ class BackOfficeController(
             )
           )
         )
-      case Some(apikey) if  env.backofficeUsePlay                                => passWithPlay(ctx, apikey)
+      case Some(apikey) if env.backofficeUsePlay                                 => passWithPlay(ctx, apikey)
       case Some(apikey) if !env.backofficeUsePlay && env.backofficeUseNewEngine  => passWithNewEngine(ctx, apikey)
       case Some(apikey) if !env.backofficeUsePlay && !env.backofficeUseNewEngine => passWithOldEngine(ctx, apikey, path)
     }
   }
 
   private def passWithPlay(
-    ctx: BackOfficeActionContextAuth[Source[ByteString, _]],
-    apikey: ApiKey
+      ctx: BackOfficeActionContextAuth[Source[ByteString, _]],
+      apikey: ApiKey
   ): Future[Result] = {
     logger.debug(s"using play for ${ctx.request.method} ${ctx.request.theUrl}")
-    val host = env.adminApiExposedHost
-    val request = new BackOfficeRequest(ctx.request, host, apikey, ctx.user, env)
+    val host               = env.adminApiExposedHost
+    val request            = new BackOfficeRequest(ctx.request, host, apikey, ctx.user, env)
     val (nreq, reqHandler) = handler.handlerForRequest(request)
     reqHandler match {
       case a: EssentialAction => a.apply(nreq).run(request.body)
-      case _ => Future.failed(new RuntimeException("websocket not supported here !"))
+      case _                  => Future.failed(new RuntimeException("websocket not supported here !"))
     }
   }
 
