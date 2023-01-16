@@ -9,7 +9,7 @@ const { getUser, updateUser } = require('../services/user');
 const { hash, unzip } = require('../utils');
 
 const { S3 } = require('../s3');
-const { Queue } = require('../services/Queue');
+const { Queue } = require('../services/queue');
 const { createBuildFolder, buildPlugin } = require('../services/build');
 
 const manager = require('../logger');
