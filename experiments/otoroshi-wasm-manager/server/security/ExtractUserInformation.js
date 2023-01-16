@@ -8,7 +8,7 @@ const missingCredentials = res => {
 }
 
 const extractUserFromQuery = (req, res, next) => {
-  const jwtUser = req.headers[process.env.OTOROSHI_USER_HEADER] || req.headers['Otoroshi-User']
+  const jwtUser = req.headers[process.env.OTOROSHI_USER_HEADER] || req.headers['otoroshi-user']
   if (jwtUser) {
     try {
       const decodedToken = JSON.parse(Buffer.from(jwtUser.split('.')[1], 'base64').toString())

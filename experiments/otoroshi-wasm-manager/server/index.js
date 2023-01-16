@@ -33,10 +33,10 @@ app.use(bodyParser.raw({
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded());
 app.use(bodyParser.text())
-// app.use(extractUserFromQuery)
+app.use(extractUserFromQuery)
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '/index.html'));
+  res.sendFile(path.join(__dirname, '..', 'ui/build', '/index.html'));
 })
 
 app.use('/otoroshi', otoroshiRouter)
