@@ -43,7 +43,7 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def writeEntity(entity: Tenant): JsValue = Tenant.format.writes(entity)
 
   override def findByIdOps(
-      id: String
+      id: String, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Tenant]]] = {
     env.datastores.tenantDataStore.findById(id).map { opt =>
       Right(
@@ -75,7 +75,7 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   }
 
   override def createEntityOps(
-      entity: Tenant
+      entity: Tenant, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Tenant]]] = {
     env.datastores.tenantDataStore.set(entity).map {
       case true  => {
@@ -101,7 +101,7 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   }
 
   override def updateEntityOps(
-      entity: Tenant
+      entity: Tenant, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Tenant]]] = {
     env.datastores.tenantDataStore.set(entity).map {
       case true  => {
@@ -127,7 +127,7 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   }
 
   override def deleteEntityOps(
-      id: String
+      id: String, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Tenant]]] = {
     env.datastores.tenantDataStore.delete(id).map {
       case true  => {
