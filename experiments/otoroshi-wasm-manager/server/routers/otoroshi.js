@@ -9,7 +9,11 @@ const DOMAINS = (process.env.ALLOWED_DOMAINS || [])
   .split(',')
 
 router.use((req, res, next) => {
-  if (DOMAINS.includes(req.headers.host)) {
+  if (
+    DOMAINS.includes(req.headers.host) &&
+    req.headers["otoroshi_client_id"] === process.env.OTOROSHI_CLIENT_ID,
+    req.headers["otoroshi_client_secret"] === process.env.OTOROSHI_CLIENT_SECRET
+  ) {
     res.header('Access-Control-Allow-Origin', req.headers.origin)
     res.header('Access-Control-Allow-Credentials', true)
     next()

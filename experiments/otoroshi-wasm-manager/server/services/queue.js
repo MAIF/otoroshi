@@ -62,7 +62,7 @@ const build = ({ folder, plugin, wasmName, user, zipHash }) => {
           stderrStream.write(data)
         });
         child.on('error', (error) => {
-          IO.emitError(plugin, "BUILD", data)
+          IO.emitError(plugin, "BUILD", error)
           stderrStream.write(`${error.stack}\n`)
         });
 

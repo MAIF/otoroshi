@@ -1,7 +1,6 @@
 require('dotenv').config()
 
 const express = require('express');
-const cors = require('cors');
 const http = require('http');
 const compression = require('compression')
 const bodyParser = require('body-parser');
@@ -10,8 +9,11 @@ const { S3 } = require('./s3');
 
 const pluginsRouter = require('./routers/plugins');
 const templatesRouter = require('./routers/templates');
-const uiRouter = require('./routers/ui');
+const otoroshiRouter = require('./routers/otoroshi');
 const { IO } = require('./routers/logs');
+
+const manager = require('./logger');
+const log = manager.createLogger('wasm-manager');
 
 const { extractUserFromQuery } = require('./security/ExtractUserInformation');
 const { Queue } = require('./services/Queue');
@@ -20,7 +22,7 @@ S3.initializeS3Connection()
 Queue.startQueue()
 
 // S3.cleanBucket()
-S3.listObjects()
+// S3.listObjects()
 
 const app = express();
 app.use(compression())
@@ -34,16 +36,10 @@ app.use(bodyParser.text())
 // app.use(extractUserFromQuery)
 
 app.get('/', (req, res) => {
-  console.log(req.headers)
   res.sendFile(path.join(__dirname, '/index.html'));
 })
 
-app.use(cors({
-  origin: [process.env.OTOROSHI_UI],
-  credentials: true
-}))
-app.use('/ui', uiRouter)
-
+app.use('/otoroshi', otoroshiRouter)
 app.use('/api/plugins', pluginsRouter)
 app.use('/api/templates', templatesRouter)
 
@@ -51,4 +47,12 @@ const server = http.createServer(app);
 
 IO.createLogsWebSocket(server)
 
-server.listen(5001, () => console.log('Listening ...'))
+if (process.env.SALT === 'af73c9fd45199974ff2ba6a789027b89') {
+  log.warn(`###################################`)
+  log.warn('DEFAULT VALUES USAGE DETECTED !!!')
+  log.warn('Your instance is running with the default salt.')
+  log.warn('This salt is not secret because Otoroshi is an open source project.')
+  log.warn('###################################')
+}
+
+server.listen(process.env.PORT || 5001, () => log.info(`listening on ${process.env.PORT || 5001}`))

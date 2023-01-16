@@ -10,11 +10,7 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
 
   useEffect(() => {
     if (selectedPlugin) {
-      socket.on(selectedPlugin.pluginId, text => {
-        // console.log(data)
-        // const text = new TextDecoder("utf-8").decode(data)
-        setContent(content => content + text)
-      })
+      socket.on(selectedPlugin.pluginId, text => setContent(content => content + text))
 
       return () => {
         socket.removeAllListeners()

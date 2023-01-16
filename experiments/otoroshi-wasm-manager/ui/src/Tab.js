@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { rust } from '@codemirror/lang-rust';
 import { json } from '@codemirror/lang-json';
@@ -13,6 +13,13 @@ function Tab({ content, ext, handleContent, selected, readOnly }) {
     return null
 
   return selected && <CodeMirror
+    onKeyDown={e => {
+      const charCode = String.fromCharCode(e.which).toLowerCase();
+
+      if (!((e.ctrlKey || e.metaKey) && charCode === 's')) {
+        e.stopPropagation()
+      }
+    }}
     height='100%'
     readOnly={readOnly}
     maxWidth='calc(100vw - 250px)'

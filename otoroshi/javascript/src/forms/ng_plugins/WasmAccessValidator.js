@@ -1,51 +1,20 @@
-import React, { useEffect, useState } from 'react'
-import { NgSelectRenderer } from '../../components/nginputs';
-
 export default {
   id: 'cp:otoroshi.next.plugins.WasmAccessValidator',
   config_schema: {
-    source: {
+    compiler_source: {
       type: 'select',
-      label: 'Source',
+      label: 'Compiler source',
       props: {
-        optionsFrom: 'http://localhost:5001/ui/plugins',
+        optionsFrom: '/bo/api/plugins/wasm',
         optionsTransformer: {
           label: 'filename',
           value: 'pluginId',
         },
       }
-      // type: 'string',
-      // label: 'Source',
-      // renderer: props => {
-      //   const [plugins, setPlugins] = useState([])
-
-      //   useEffect(() => {
-      //     fetch('http://localhost:5001/ui/plugins', {
-
-      //     })
-      //       .then(res => res.json())
-      //       .then(res => setPlugins(res))
-      //   }, [])
-
-      //   return (
-      //     <div className="mt-3">
-      //       <NgSelectRenderer
-      //         placeholder="Select a wasm plugin to execute"
-      //         ngOptions={{
-      //           spread: true,
-      //         }}
-      //         onChange={(id) => {
-
-      //         }}
-      //         options={plugins}
-      //         optionsTransformer={(arr) => arr.map((item) => ({ value: item.pluginId, label: item.filename }))}
-      //       />
-      //     </div>
-      //   );
-
-      // props: {
-      //   subTitle: `http://xxx.xxx or https://xxx.xxx or file://path or base64://encodedstring`
-      // }
+    },
+    raw_source: {
+      type: 'string',
+      label: 'Raw source'
     },
     memoryPages: {
       type: 'number',
@@ -71,7 +40,8 @@ export default {
     }
   },
   config_flow: [
-    'source',
+    'compiler_source',
+    'raw_source',
     'memoryPages',
     'functionName',
     'config',

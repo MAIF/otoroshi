@@ -3,6 +3,16 @@ import { ReactComponent as Js } from './assets/js.svg';
 import { ReactComponent as Rust } from './assets/rust.svg';
 import { ReactComponent as Json } from './assets/json.svg';
 
+const LOGOS = {
+  js: <Js style={{ height: 24, width: 24 }} />,
+  json: <div className='d-flex justify-content-center'>
+    <Json style={{ height: 24, width: 32 }} />
+  </div>,
+  log: <i className='fas fa-file' />,
+  rs: <Rust style={{ height: 30, width: 32, marginLeft: -4 }} />,
+  toml: <i className='fas fa-file' />,
+}
+
 function File({ newFilename, filename, content, ext, onClick, ...props }) {
   return <button className='d-flex align-items-center bg-light'
     onClick={onClick}
@@ -16,15 +26,12 @@ function File({ newFilename, filename, content, ext, onClick, ...props }) {
           e.stopPropagation()
           props.setFilename(e.target.value)
         }} />
-    </div> : <>
-      {ext === 'js' ?
-        <Js style={{ height: 24, width: 24 }} /> :
-        ext === 'json' ? <div className='d-flex justify-content-center'>
-          <Json style={{ height: 24, width: 32 }} />
-        </div> :
-          <Rust style={{ height: 32, width: 32 }} />}
+    </div> : <div className='d-flex align-items-center justify-content-center'>
+      <div style={{ minWidth: 32 }}>
+        {LOGOS[ext]}
+      </div>
       <span className='ms-2'>{filename}</span>
-    </>}
+    </div>}
   </button>
 }
 
@@ -34,11 +41,11 @@ function FileManager({
   return (
     <div className='d-flex flex-column mt-1' style={{ minWidth: 250, background: '#eee' }}>
       <Header onNewFile={onNewFile} selectedPlugin={selectedPlugin} />
-      {[...files, ...configFiles].map(file => {
+      {[...files, ...configFiles].map((file, i) => {
         return <File {...file}
           key={file.filename}
           onClick={() => onFileClick(file)}
-          setFilename={newFilename => onFileChange(file, newFilename)} />
+          setFilename={newFilename => onFileChange(i, newFilename)} />
       })}
     </div>
   );
@@ -50,7 +57,7 @@ function Header({ onNewFile, selectedPlugin }) {
       background: 'rgb(228, 229, 230)'
     }}>
     <div className='d-flex align-items-center'>
-      <i className='fas fa-chess-rook fa-sm me-1' />
+      <i className='fas fa-chess-rook me-1' />
       <span className='fw-bold'>{selectedPlugin?.filename}</span>
     </div>
 

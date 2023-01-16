@@ -1,8 +1,34 @@
 import React from 'react';
 
-const Plugin = ({ onPluginClick, filename, pluginId, newFilename, ...props }) => {
+function PluginManager({ plugins, onNewPlugin, onPluginClick, setFilename, removePlugin }) {
+  return (
+    <div className='d-flex flex-column' style={{ minWidth: 250, background: '#eee' }}>
+      <Header onNewPlugin={onNewPlugin} />
+      {plugins.map(plugin => {
+        return <Plugin {...plugin}
+          key={plugin.filename}
+          onPluginClick={onPluginClick}
+          setFilename={setFilename}
+          removePlugin={removePlugin} />
+      })}
+    </div >
+  );
+}
+
+function Header({ onNewPlugin }) {
+  return <div className='bg-light bg-gradient px-2 py-1 d-flex justify-content-between align-items-center'>
+    <div className='d-flex align-items-center'>
+      <i className='fas fa-rocket fa-sm me-1' />
+      <span className='fw-bold'>Plugins</span>
+    </div>
+
+    <i className='fas fa-plus' onClick={onNewPlugin} />
+  </div>
+}
+
+function Plugin({ onPluginClick, filename, pluginId, newFilename, ...props }) {
   return <button type="button" style={{ border: 'none' }}
-    className="d-flex align-items-center justify-content-between"
+    className="d-flex align-items-center justify-content-between py-1"
     onClick={() => {
       if (!props.new)
         onPluginClick(pluginId)
@@ -35,32 +61,6 @@ const Plugin = ({ onPluginClick, filename, pluginId, newFilename, ...props }) =>
     }
 
   </button>
-}
-
-function PluginManager({ plugins, onNewPlugin, onPluginClick, setFilename, removePlugin }) {
-  return (
-    <div className='d-flex flex-column' style={{ minWidth: 250, background: '#eee' }}>
-      <Header onNewPlugin={onNewPlugin} />
-      {plugins.map(plugin => {
-        return <Plugin {...plugin}
-          key={plugin.filename}
-          onPluginClick={onPluginClick}
-          setFilename={setFilename}
-          removePlugin={removePlugin} />
-      })}
-    </div >
-  );
-}
-
-function Header({ onNewPlugin }) {
-  return <div className='bg-light bg-gradient px-2 py-1 d-flex justify-content-between align-items-center'>
-    <div className='d-flex align-items-center'>
-      <i className='fas fa-rocket fa-sm me-1' />
-      <span className='fw-bold'>Plugins</span>
-    </div>
-
-    <i className='fas fa-plus' onClick={onNewPlugin} />
-  </div>
 }
 
 export default PluginManager;

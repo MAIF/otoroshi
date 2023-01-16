@@ -101,6 +101,7 @@ GET     /bo/api/routes/:routeId/entries                       otoroshi.controlle
 POST    /bo/api/graphql_to_json                               otoroshi.controllers.BackOfficeController.graphQLToJson()
 POST    /bo/api/json_to_graphql_schema                        otoroshi.controllers.BackOfficeController.jsonToGraphqlSchema()
 POST    /bo/api/json_to_yaml                                  otoroshi.controllers.BackOfficeController.toYaml()
+GET     /bo/api/plugins/wasm                                  otoroshi.controllers.BackOfficeController.wasmFiles()
 
 # Admin API proxy
 GET     /bo/api/proxy/*path                                   otoroshi.controllers.BackOfficeController.proxyAdminApi(path)

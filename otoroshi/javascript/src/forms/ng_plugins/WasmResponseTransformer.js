@@ -1,12 +1,20 @@
 export default {
   id: 'cp:otoroshi.next.plugins.WasmResponseTransformer',
   config_schema: {
-    source: {
-      type: 'string',
-      label: 'Source',
+    compiler_source: {
+      type: 'select',
+      label: 'Compiler source',
       props: {
-        subTitle: `http://xxx.xxx or https://xxx.xxx or file://path or base64://encodedstring`
+        optionsFrom: '/bo/api/plugins/wasm',
+        optionsTransformer: {
+          label: 'filename',
+          value: 'pluginId',
+        },
       }
+    },
+    raw_source: {
+      type: 'string',
+      label: 'Raw source'
     },
     memoryPages: {
       type: 'number',
@@ -32,8 +40,9 @@ export default {
     }
   },
   config_flow: [
-    'source',
-    'memoryPages',  
+    'compiler_source',
+    'raw_source',
+    'memoryPages',
     'functionName',
     'config',
     'allowedHosts'

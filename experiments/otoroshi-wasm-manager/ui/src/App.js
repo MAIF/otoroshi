@@ -4,6 +4,7 @@ import Pako from 'pako'
 
 import * as Service from './services'
 import TabsManager from './TabsManager';
+import { toast } from 'react-toastify';
 
 class App extends React.Component {
   state = {
@@ -19,22 +20,27 @@ class App extends React.Component {
   }
 
   confirmNewEntity = () => {
-    const { editorState, files, plugins } = this.state;
+    const { editorState, selectedPlugin, plugins } = this.state;
 
     if (editorState === 'onNewFile') {
       this.setState({
-        files: files
-          .filter(f => f.new ? f.newFilename?.length > 0 : true)
-          .map(f => {
-            if (f.new)
-              return {
-                ...f,
-                filename: f.newFilename,
-                ext: f.newFilename.split('.')[1],
-                new: false
-              }
-            return f
-          })
+        selectedPlugin: {
+          ...selectedPlugin,
+          files: selectedPlugin
+            .files
+            .filter(f => f.new ? (f.newFilename && f.newFilename.length > 0) : true)
+            .map(f => {
+              if (f.new)
+                return {
+                  ...f,
+                  filename: f.newFilename,
+                  ext: f.newFilename.split('.')[1],
+                  content: " ",
+                  new: false
+                }
+              return f
+            })
+        }
       })
     } else if (editorState === 'onNewPlugin') {
       const newPlugin = plugins.find(plugin => plugin.new && plugin.newFilename && plugin.newFilename.length > 0)
@@ -47,6 +53,10 @@ class App extends React.Component {
               })
             }
           })
+      } else {
+        this.setState({
+          plugins: this.state.plugins.filter(f => f.filename.length > 0)
+        })
       }
     }
     this.setState({
@@ -55,7 +65,16 @@ class App extends React.Component {
   }
 
   onKeyDown = e => {
-    if (e.key === 'Enter') {
+    const charCode = String.fromCharCode(e.which).toLowerCase();
+
+    if ((e.ctrlKey || e.metaKey) && charCode === 's') {
+      if (this.state.selectedPlugin) {
+        e.preventDefault();
+        this.onSave()
+      }
+    }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
       this.confirmNewEntity()
     }
   }
@@ -69,14 +88,17 @@ class App extends React.Component {
   onNewFile = () => {
     this.setState({
       editorState: 'onNewFile',
-      files: [
-        ...this.state.selectedPlugin.files,
-        {
-          new: true,
-          filename: '',
-          ext: '.rs'
-        }
-      ]
+      selectedPlugin: {
+        ...this.state.selectedPlugin,
+        files: [
+          ...this.state.selectedPlugin.files,
+          {
+            new: true,
+            filename: '',
+            ext: '.rs'
+          }
+        ]
+      }
     })
   }
 
@@ -93,13 +115,16 @@ class App extends React.Component {
     })
   }
 
-  onFileChange = (file, newFilename) => {
+  onFileChange = (idx, newFilename) => {
     this.setState({
-      files: this.state.selectedPlugin.files.map(f => {
-        if (f.filename === file.filename)
-          return { ...f, newFilename: newFilename }
-        return f
-      })
+      selectedPlugin: {
+        ...this.state.selectedPlugin,
+        files: this.state.selectedPlugin.files.map((f, i) => {
+          if (i === idx)
+            return { ...f, newFilename: newFilename }
+          return f
+        })
+      }
     })
   }
 
@@ -131,7 +156,7 @@ class App extends React.Component {
                 ext: name.split('.')[1]
               }
             } catch (err) {
-              console.log(err)
+              alert(err)
             }
           })
       }
@@ -178,7 +203,6 @@ class App extends React.Component {
           const parts = r.name.split('/') || []
           const name = parts.length > 1 ? parts[1] : parts[0];
           try {
-            console.log(r)
             return {
               filename: name,
               content: r._data.compressedSize > 0 ? Pako.inflateRaw(r._data.compressedContent, { to: 'string' }) : '',
@@ -215,7 +239,7 @@ class App extends React.Component {
   onSave = () => {
     Service.savePlugin(this.state.selectedPlugin)
       .then(res => {
-        console.log('saved')
+        toast.success("Saved!");
       })
   }
 
@@ -224,7 +248,7 @@ class App extends React.Component {
       .then(() => {
         Service.buildPlugin(this.state.selectedPlugin)
           .then(res => {
-            console.log('build')
+            toast.info("Added build to queue.");
           })
       })
   }
@@ -246,12 +270,11 @@ class App extends React.Component {
   render() {
     const { selectedPlugin, plugins, configFiles } = this.state;
 
-    console.log(configFiles)
-
     return <div className='d-flex flex-column'
-      style={{ flex: 1 }}
+      style={{ flex: 1, outline: 'none' }}
       onKeyDown={this.onKeyDown}
-      onClick={this.onClick}>
+      onClick={this.onClick}
+      tabIndex="0">
       <TabsManager
         plugins={plugins}
         onFileChange={this.onFileChange}

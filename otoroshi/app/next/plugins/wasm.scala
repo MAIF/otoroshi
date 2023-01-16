@@ -24,14 +24,16 @@ import scala.util.{Failure, Success, Try}
 
 
 case class WasmQueryConfig(
-                            source: Option[String] = None,
+                            compilerSource: Option[String] = None,
+                            rawSource: Option[String] = None,
                             memoryPages: Int = 4,
                             functionName: String = "execute",
                             config: Map[String, String] = Map.empty,
                             allowedHosts: Seq[String] = Seq.empty
                           ) extends NgPluginConfig {
   def json: JsValue = Json.obj(
-    "source" -> source,
+    "raw_source" -> rawSource,
+    "compiler_source" -> compilerSource,
     "memoryPages" -> memoryPages,
     "functionName"-> functionName,
     "config" -> config,
@@ -43,7 +45,8 @@ object WasmQueryConfig {
   val format = new Format[WasmQueryConfig] {
     override def reads(json: JsValue): JsResult[WasmQueryConfig] = Try {
       WasmQueryConfig(
-        source = (json \ "source").asOpt[String],
+        compilerSource = (json \ "compiler_source").asOpt[String],
+        rawSource = (json \ "raw_source").asOpt[String],
         memoryPages = (json \ "memoryPages").asOpt[Int].getOrElse(4),
         functionName = (json \ "functionName").asOpt[String].getOrElse("execute"),
         config = (json \ "config").asOpt[Map[String, String]].getOrElse(Map.empty),
@@ -135,36 +138,48 @@ object WasmUtils {
   }
 
   def execute(config: WasmQueryConfig, input: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
-    config.source match {
-      case Some(pluginId) =>
+    (config.compilerSource, config.rawSource) match {
+      case (Some(pluginId), _) =>
         wasmUrlCache.getIfPresent(pluginId) match {
           case Some(url) =>
             WasmUtils.getWasm(url)
               .map(wasm => WasmUtils.callWasm(wasm, config, input).left)
           case None =>
             env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-              globalConfig.metadata.get("WASM_MANAGER_URL") match {
-                case Some(url) =>
+              val url = globalConfig.metadata.get("WASM_MANAGER_URL")
+              val clientId = globalConfig.metadata.get("WASM_MANAGER_CLIENT_ID")
+              val clientSecret = globalConfig.metadata.get("WASM_MANAGER_CLIENT_SECRET")
+
+              (url, clientId, clientSecret) match {
+                case (Some(url), Some(clientId), Some(clientSecret)) =>
                   env.Ws
-                    .url(s"$url/ui/plugins/${pluginId}/signed-url")
+                    .url(s"$url/otoroshi/plugins/${pluginId}/signed-url")
                     .withRequestTimeout(FiniteDuration(5 * 1000, MILLISECONDS))
-                    .withHttpHeaders(Seq("Accept" -> "application/json"): _*)
+                    .withHttpHeaders(
+                      "Accept" -> "application/json",
+                      "OTOROSHI_CLIENT_ID" -> clientId,
+                      "OTOROSHI_CLIENT_SECRET" -> clientSecret
+                    )
                     .execute()
                     .flatMap { resp =>
                       resp.json.asOpt[String] match {
                         case Some(url) =>
+                          wasmUrlCache.put(pluginId, url)
                           WasmUtils.getWasm(url)
                           .map(wasm => WasmUtils.callWasm(wasm, config, input).left)
                         case None =>
                           Right(Json.obj("error"-> "missing signed plugin url")).future
                       }
                     }
-                case None =>
+                case _ =>
                   Right(Json.obj("error"-> "missing wasm manager url")).future
               }
             }
         }
-      case None => Right(Json.obj("error"-> "missing source")).future
+      case (_, Some(rawSource)) =>
+        WasmUtils.getWasm(rawSource)
+          .map(wasm => WasmUtils.callWasm(wasm, config, input).left)
+      case _ => Right(Json.obj("error"-> "missing source")).future
     }
 
   }
@@ -394,8 +409,8 @@ class WasmSink extends NgRequestSink {
       case JsError(_) => WasmQueryConfig()
     }
 
-    config.source match {
-      case Some(source) =>
+    config.compilerSource.getOrElse(config.rawSource) match {
+      case Some(source: String) =>
         Await.result(WasmUtils.getWasm(source)
           .map(wasm => WasmUtils.callWasm(wasm, config.copy(functionName = "matches"), ctx.json))
           .map(res => {
@@ -404,7 +419,6 @@ class WasmSink extends NgRequestSink {
           }), 10.seconds)
       case None => false
     }
-
   }
 
   override def handleSync(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Result =
@@ -416,8 +430,8 @@ class WasmSink extends NgRequestSink {
       case JsError(_) => WasmQueryConfig()
     }
 
-    config.source match {
-      case Some(source) =>
+    config.compilerSource.getOrElse(config.rawSource) match {
+      case Some(source: String) =>
         WasmUtils.getWasm(source)
           .map(wasm => WasmUtils.callWasm(wasm, config, ctx.json))
           .map(res => {
