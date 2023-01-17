@@ -1939,6 +1939,13 @@ otoroshi {
       all = false
       all = ${?OTOROSHI_SSL_TRUST_ALL}
     }
+    rootCa {
+    	ca = ${?OTOROSHI_SSL_ROOTCA_CA}
+    	cert = ${?OTOROSHI_SSL_ROOTCA_CERT}
+    	key = ${?OTOROSHI_SSL_ROOTCA_KEY}
+    	importCa = false
+			importCa = ${?OTOROSHI_SSL_ROOTCA_IMPORTCA}
+    }
     # some initial cacert access, useful to include non standard CA when starting
     initialCacert = ${?CLUSTER_WORKER_INITIAL_CACERT}
     initialCacert = ${?OTOROSHI_CLUSTER_WORKER_INITIAL_CACERT}
@@ -1952,6 +1959,7 @@ otoroshi {
     initialCertKey = ${?OTOROSHI_CLUSTER_WORKER_INITIAL_CERT_KEY}
     initialCertKey = ${?INITIAL_CERT_KEY}
     initialCertKey = ${?OTOROSHI_INITIAL_CERT_KEY}
+    initialCertImportCa = ${?OTOROSHI_INITIAL_CERT_IMPORTCA}
     # initialCerts = []
   }
   cluster {
@@ -3087,6 +3095,12 @@ otoroshi {
     trust {
       all = ${?OTOROSHI_SSL_TRUST_ALL}
     }
+    rootCa {
+    	ca = ${?OTOROSHI_SSL_ROOTCA_CA}
+    	cert = ${?OTOROSHI_SSL_ROOTCA_CERT}
+    	key = ${?OTOROSHI_SSL_ROOTCA_KEY}
+			importCa = ${?OTOROSHI_SSL_ROOTCA_IMPORTCA}
+    }
     initialCacert = ${?CLUSTER_WORKER_INITIAL_CACERT}
     initialCacert = ${?OTOROSHI_CLUSTER_WORKER_INITIAL_CACERT}
     initialCacert = ${?INITIAL_CACERT}
@@ -3099,6 +3113,7 @@ otoroshi {
     initialCertKey = ${?OTOROSHI_CLUSTER_WORKER_INITIAL_CERT_KEY}
     initialCertKey = ${?INITIAL_CERT_KEY}
     initialCertKey = ${?OTOROSHI_INITIAL_CERT_KEY}
+    initialCertImportCa = ${?OTOROSHI_INITIAL_CERT_IMPORTCA}
   }
   cluster {
     mode = ${?CLUSTER_MODE} # can be &quot;off&quot;, &quot;leader&quot;, &quot;worker&quot;
