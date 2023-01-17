@@ -18,7 +18,7 @@
 .table-hover tbody tr:hover td,
 .table-hover tbody tr:hover th {
   background-color: var(--bg-color_level2);
-  color: #fff;
+  color: var(--color_level2);;
 }
 
 .table > tbody > tr > td,
