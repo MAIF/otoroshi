@@ -5,7 +5,7 @@ const { hash } = require('../utils');
 
 const router = express.Router()
 
-const DOMAINS = (process.env.ALLOWED_DOMAINS || [])
+const DOMAINS = (process.env.ALLOWED_DOMAINS || "")
   .split(',')
 
 router.use((req, res, next) => {
