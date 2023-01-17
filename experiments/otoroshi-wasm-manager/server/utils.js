@@ -5,7 +5,7 @@ const path = require("path");
 const pako = require('pako');
 
 const hash = value => {
-  const salt = process.env.SALT || crypto
+  const salt = process.env.SECURITY_SALT || crypto
     .randomBytes(16)
     .toString('hex');
 

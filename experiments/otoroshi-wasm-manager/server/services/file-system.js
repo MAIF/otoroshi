@@ -17,7 +17,22 @@ const createBuildFolder = name => {
   })
 }
 
+const cleanFolders = (...folders) => {
+  return Promise.all(folders.map(folder => {
+    try {
+      return fs.remove(folder)
+    } catch (err) {
+      return Promise.resolve(err)
+    }
+  }))
+}
+
+const folderAlreadyExits = (...paths) => fs.pathExists(path.join(process.cwd(), ...paths))
 
 module.exports = {
-  createBuildFolder
+  FileSystem: {
+    createBuildFolder,
+    cleanFolders,
+    folderAlreadyExits
+  }
 }

@@ -4,24 +4,97 @@ const { hash } = require("../utils");
 
 const log = manager.createLogger('[user SERVICE]')
 
-const getUser = req => {
-  const state = S3.state()
-
-  const jsonProfile = hash(req.user ? req.user.email : 'admin@otoroshi.io');
-
-  log.info(`getUser ${jsonProfile}`)
+const getUsers = () => {
+  const { s3, Bucket } = S3.state()
 
   return new Promise(resolve => {
-    state.s3.getObject({
-      Bucket: state.Bucket,
-      Key: `${jsonProfile}.json`
+    s3.getObject({
+      Bucket,
+      Key: 'users.json'
     }, (err, data) => {
       if (err) {
-        // log.info('getUser', err)
+        resolve([])
+      } else {
+        try {
+          resolve(JSON.parse(data.Body.toString('utf-8')))
+        } catch (err) {
+          console.log(err)
+          resolve([])
+        }
+      }
+    })
+  })
+}
+
+const addUser = user => {
+  const { s3, Bucket } = S3.state()
+
+  return new Promise(resolve => {
+    s3.getObject({
+      Bucket,
+      Key: 'users.json'
+    }, (err, data) => {
+      let users = []
+      if (!err) {
+        try {
+          users = JSON.parse(data.Body.toString('utf-8'))
+        } catch (err) { }
+      }
+
+      s3.putObject({
+        Bucket,
+        Key: 'users.json',
+        Body: JSON.stringify([
+          ...users,
+          user
+        ])
+      }, resolve)
+    })
+  })
+}
+
+const createUserIfNotExists = req => {
+  const { s3, Bucket } = S3.state()
+
+  const user = hash(req.user ? req.user.email : 'admin@otoroshi.io');
+
+  return new Promise((resolve, reject) => {
+    s3.getObject({
+      Bucket,
+      Key: `${user}.json`
+    }, (err, data) => {
+      if (err) {
+        if (err.code === 'NoSuchKey') {
+          addUser(user)
+            .then(resolve)
+        } else {
+          reject(err)
+        }
+      } else {
+        resolve(true)
+      }
+    })
+  })
+}
+
+const _getUser = key => {
+  const { s3, Bucket } = S3.state()
+
+  log.info(`search user: ${key}`)
+
+  return new Promise(resolve => {
+    s3.getObject({
+      Bucket,
+      Key: `${key}.json`
+    }, (err, data) => {
+      if (err) {
         resolve({})
       }
       try {
-        resolve(JSON.parse(data.Body.toString('utf-8')))
+        if (data && data.Body)
+          resolve(JSON.parse(data.Body.toString('utf-8')))
+        else
+          resolve({})
       } catch (err) {
         console.log(err)
         resolve({})
@@ -30,16 +103,23 @@ const getUser = req => {
   })
 }
 
+const getUserFromString = _getUser
+
+const getUser = req => {
+  const user = hash(req.user ? req.user.email : 'admin@otoroshi.io');
+  return _getUser(user)
+}
+
 const updateUser = (req, content) => {
-  const state = S3.state()
+  const { s3, Bucket } = S3.state()
 
   const jsonProfile = hash(req.user ? req.user.email : 'admin@otoroshi.io');
 
   log.info(`updateUser ${jsonProfile}`)
 
   return new Promise(resolve => {
-    state.s3.putObject({
-      Bucket: state.Bucket,
+    s3.putObject({
+      Bucket,
       Key: `${jsonProfile}.json`,
       Body: JSON.stringify(content)
     }, (err, data) => {
@@ -57,31 +137,12 @@ const updateUser = (req, content) => {
   })
 }
 
-const updateHashOfPlugin = (user, plugin, newHash, wasm) => {
-  const userReq = {
-    user: {
-      email: user
-    }
-  }
-  return getUser(userReq)
-    .then(data => updateUser(userReq, {
-      ...data,
-      plugins: data.plugins.map(d => {
-        if (d.pluginId === plugin) {
-          return {
-            ...d,
-            last_hash: newHash,
-            wasm
-          }
-        } else {
-          return d
-        }
-      })
-    }))
-}
-
 module.exports = {
-  getUser,
-  updateUser,
-  updateHashOfPlugin
+  UserManager: {
+    getUser,
+    getUserFromString,
+    createUserIfNotExists,
+    getUsers,
+    updateUser
+  }
 }

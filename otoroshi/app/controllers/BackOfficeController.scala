@@ -1898,6 +1898,7 @@ class BackOfficeController(
         val url = globalConfig.metadata.get("WASM_MANAGER_URL")
         val clientId = globalConfig.metadata.get("WASM_MANAGER_CLIENT_ID")
         val clientSecret = globalConfig.metadata.get("WASM_MANAGER_CLIENT_SECRET")
+        val filterPlugins = globalConfig.metadata.get("WASM_MANAGER_PLUGINS")
 
         (url, clientId, clientSecret) match {
           case (Some(url), Some(clientId), Some(clientSecret)) =>
@@ -1905,7 +1906,8 @@ class BackOfficeController(
               .url(s"$url/otoroshi/plugins")
               .withHttpHeaders(
                 "OTOROSHI_CLIENT_ID" -> clientId,
-                "OTOROSHI_CLIENT_SECRET" -> clientSecret
+                "OTOROSHI_CLIENT_SECRET" -> clientSecret,
+                "kind" -> filterPlugins.getOrElse("*")
               )
               .execute()
               .map(res => {

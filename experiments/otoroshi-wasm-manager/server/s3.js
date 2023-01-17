@@ -7,15 +7,15 @@ let state = {
 
 const initializeS3Connection = () => {
   AWS.config.update({
-    accessKeyId: process.env.ACCESS_KEY_ID,
-    secretAccessKey: process.env.SECRET_ACCESS_KEY
+    accessKeyId: process.env.S3_ACCESS_KEY_ID,
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY
   });
 
   state = {
     s3: new AWS.S3({
-      endpoint: process.env.ENDPOINT
+      endpoint: process.env.S3_ENDPOINT
     }),
-    Bucket: process.env.BUCKET
+    Bucket: process.env.S3_BUCKET
   }
 }
 

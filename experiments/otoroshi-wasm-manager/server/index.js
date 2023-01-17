@@ -34,7 +34,7 @@ app.use(bodyParser.raw({
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded());
 app.use(bodyParser.text())
-app.use(extractUserFromQuery)
+// app.use(extractUserFromQuery)
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'ui/build', '/index.html'));
@@ -48,7 +48,7 @@ const server = http.createServer(app);
 
 IO.createLogsWebSocket(server)
 
-if (process.env.SALT === 'af73c9fd45199974ff2ba6a789027b89') {
+if (process.env.SECURITY_SALT === 'af73c9fd45199974ff2ba6a789027b89') {
   log.warn(`###################################`)
   log.warn('DEFAULT VALUES USAGE DETECTED !!!')
   log.warn('Your instance is running with the default salt.')
@@ -56,4 +56,6 @@ if (process.env.SALT === 'af73c9fd45199974ff2ba6a789027b89') {
   log.warn('###################################')
 }
 
-server.listen(process.env.PORT || 5001, () => log.info(`listening on ${process.env.PORT || 5001}`))
+const PORT = process.env.MANAGER_PORT || 5001
+
+server.listen(PORT, () => log.info(`listening on ${PORT}`))

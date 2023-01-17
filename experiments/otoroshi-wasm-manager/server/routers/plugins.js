@@ -5,12 +5,12 @@ const crypto = require('crypto')
 
 const express = require('express');
 
-const { getUser, updateUser } = require('../services/user');
+const { UserManager } = require('../services/user');
 const { hash, unzip } = require('../utils');
 
 const { S3 } = require('../s3');
 const { Queue } = require('../services/queue');
-const { createBuildFolder, buildPlugin } = require('../services/build');
+const { FileSystem } = require('../services/file-system');
 
 const manager = require('../logger');
 const log = manager.createLogger('plugins');
@@ -18,25 +18,24 @@ const log = manager.createLogger('plugins');
 const router = express.Router()
 
 router.get('/', (req, res) => {
-  getUser(req)
+  UserManager.getUser(req)
     .then(data => {
-      console.log(data)
       res.json(data.plugins || [])
     })
 });
 
 router.get('/:id', (req, res) => {
-  const state = S3.state()
+  const { s3, Bucket } = S3.state()
 
   const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
   const filename = hash(`${user}-${req.params.id}`)
 
   const params = {
-    Bucket: state.Bucket,
+    Bucket,
     Key: `${filename}.zip`
   }
 
-  state.s3
+  s3
     .getObject(params)
     .promise()
     .then(data => {
@@ -55,7 +54,7 @@ router.get('/:id', (req, res) => {
 
 router.get('/:id/configurations', (req, res) => {
   const { s3, Bucket } = S3.state()
-  getUser(req)
+  UserManager.getUser(req)
     .then(data => {
       const user = req.user ? req.user.email : 'admin@otoroshi.io'
       const plugin = data.plugins.find(f => f.pluginId === req.params.id)
@@ -95,60 +94,71 @@ router.get('/:id/configurations', (req, res) => {
 })
 
 router.post('/', (req, res) => {
-  const state = S3.state()
+  const { s3, Bucket } = S3.state()
 
-  getUser(req)
-    .then(data => {
-      const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
-      const pluginId = crypto.randomUUID()
-      const plugins = [
-        ...(data.plugins || []),
-        {
-          filename: req.body.plugin,
-          pluginId: pluginId
-        }
-      ]
-      const params = {
-        Bucket: state.Bucket,
-        Key: `${user}.json`,
-        Body: JSON.stringify({
-          ...data,
-          plugins
-        })
-      }
+  const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
 
-      state.s3.upload(params, (err, data) => {
-        if (err) {
-          console.log(err)
-          res
-            .status(err.statusCode)
-            .json({
-              error: err.code,
-              status: err.statusCode
+  UserManager.createUserIfNotExists(user)
+    .then(() => {
+      UserManager.getUser(req)
+        .then(data => {
+          const pluginId = crypto.randomUUID()
+          const plugins = [
+            ...(data.plugins || []),
+            {
+              filename: req.body.plugin,
+              pluginId: pluginId
+            }
+          ]
+          const params = {
+            Bucket,
+            Key: `${user}.json`,
+            Body: JSON.stringify({
+              ...data,
+              plugins
             })
-        }
-        else {
-          res.json({
-            plugins
+          }
+
+          s3.upload(params, (err, data) => {
+            if (err) {
+              console.log(err)
+              res
+                .status(err.statusCode)
+                .json({
+                  error: err.code,
+                  status: err.statusCode
+                })
+            }
+            else {
+              res.json({
+                plugins
+              })
+            }
           })
-        }
-      })
+        })
+    })
+    .catch(err => {
+      res
+        .status(400)
+        .json({
+          error: err.message
+        })
     })
 })
 
 router.put('/:id', (req, res) => {
-  const state = S3.state()
+  const { s3, Bucket } = S3.state()
 
   const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
   const pluginHash = hash(`${user}-${req.params.id}`)
 
   const params = {
-    Bucket: state.Bucket,
+    Bucket,
     Key: `${pluginHash}.zip`,
     Body: req.body
   }
 
-  state.s3.putObject(params, (err, data) => {
+  s3.putObject(params, (err, data) => {
     if (err) {
       res
         .status(err.statusCode)
@@ -165,12 +175,12 @@ router.put('/:id', (req, res) => {
 })
 
 router.delete('/:id', async (req, res) => {
-  const state = S3.state()
+  const { s3, Bucket } = S3.state()
 
-  const data = await getUser(req);
+  const data = await UserManager.getUser(req);
 
   if (Object.keys(data).length > 0) {
-    updateUser(req, {
+    UserManager.updateUser(req, {
       ...data,
       plugins: data.plugins.filter(f => f.pluginId !== req.params.id)
     })
@@ -181,11 +191,11 @@ router.delete('/:id', async (req, res) => {
             .last_hash
 
         const params = {
-          Bucket: state.Bucket,
+          Bucket,
           Key: `${pluginHash}.zip`
         }
 
-        state.s3.deleteObject(params, (err, data) => {
+        s3.deleteObject(params, (err, data) => {
           if (err) {
             res
               .status(err.statusCode)
@@ -213,7 +223,7 @@ router.post('/:id/build', async (req, res) => {
   const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
   const pluginHash = hash(`${user}-${req.params.id}`)
 
-  const data = await getUser(req)
+  const data = await UserManager.getUser(req)
   const plugin = (data.plugins || []).find(p => p.pluginId === req.params.id);
 
   Queue.buildIsAlreadyRunning(pluginHash)
@@ -221,7 +231,7 @@ router.post('/:id/build', async (req, res) => {
       if (exists) {
         res.json({ queue_id: pluginHash });
       } else {
-        const folder = await createBuildFolder(pluginHash)
+        const folder = await FileSystem.createBuildFolder(pluginHash)
         await unzip(req.body, folder)
         try {
           const zipHash = crypto
