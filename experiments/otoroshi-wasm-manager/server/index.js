@@ -25,6 +25,7 @@ Queue.startQueue()
 // S3.listObjects()
 
 const app = express();
+app.use(express.static(path.join(__dirname, '..', 'ui/build')))
 app.use(compression())
 app.use(bodyParser.raw({
   type: 'application/octet-stream',
