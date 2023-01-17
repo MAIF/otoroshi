@@ -771,30 +771,45 @@ trait CertificateDataStore extends BasicStore[Cert] {
     }
 
     def markExpiredCertsAsExpired(certificates: Seq[Cert]): Future[Unit] = {
+      val expiredWithFlagCertificates = certificates
+        .map(_.enrich())
+        .filter(_.entityMetadata.get("expired").contains("true"))
       val expiredCertificates = certificates
+        .map(_.enrich())
         .filter(_.notRevoked)
         .filterNot { cert =>
           cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
         }
-      Source(expiredCertificates.toList)
-        .mapAsync(1) {
-          case c if c.entityMetadata.get("expired").contains("true") || c.name.startsWith("[EXPIRED] ")    =>
-            c.applyOn(d => d.save().map(_ => d))
-          case c if !(c.entityMetadata.get("expired").contains("true") || c.name.startsWith("[EXPIRED] ")) =>
-            c.copy(name = "[EXPIRED] " + c.name, entityMetadata = c.entityMetadata ++ Map("expired" -> "true"))
-              .applyOn(d => d.save().map(_ => d))
-        }
-        .map { c =>
-          Alerts.send(
-            CertExpiredAlert(
-              env.snowflakeGenerator.nextIdStr(),
-              env.env,
-              c
-            )
-          )
-        }
-        .runWith(Sink.ignore)
-        .map(_ => ())
+      for {
+        _ <- Source(expiredCertificates.toList)
+            .mapAsync(1) {
+              case c if c.entityMetadata.get("expired").contains("true") || c.name.startsWith("[EXPIRED] ")    =>
+                c.applyOn(d => d.save().map(_ => d))
+              case c if !(c.entityMetadata.get("expired").contains("true") || c.name.startsWith("[EXPIRED] ")) =>
+                c.copy(name = "[EXPIRED] " + c.name, entityMetadata = c.entityMetadata ++ Map("expired" -> "true"))
+                  .applyOn(d => d.save().map(_ => d))
+            }
+            .map { c =>
+              Alerts.send(
+                CertExpiredAlert(
+                  env.snowflakeGenerator.nextIdStr(),
+                  env.env,
+                  c
+                )
+              )
+            }
+            .runWith(Sink.ignore)
+            .map(_ => ())
+          _ <- Source(expiredWithFlagCertificates.toList)
+            .filter { cert =>
+              cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
+            }
+            .mapAsync(1) { cert =>
+              cert.copy(name = cert.name.replace("[EXPIRED] ", ""), entityMetadata = cert.entityMetadata - "expired").save()
+            }
+            .runWith(Sink.ignore)
+            .map(_ => ())
+        } yield ()
     }
 
     for {
