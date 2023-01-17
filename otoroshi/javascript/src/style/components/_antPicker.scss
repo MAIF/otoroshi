@@ -1,0 +1,9 @@
+.ant-picker, .ant-picker-panel-container, .ant-picker-content th, .ant-picker-content td, .ant-picker-input > input, .ant-picker-time-panel-column > li.ant-picker-time-panel-cell .ant-picker-time-panel-cell-inner, .ant-picker-header, .ant-picker-header button, .ant-picker-suffix{
+    background-color:var(--bg-color_level2) ;
+    color: var(--color_level2) ;
+  }
+  
+  .ant-picker-time-panel-column > li.ant-picker-time-panel-cell-selected .ant-picker-time-panel-cell-inner{
+    background-color:var(--bg-color_level3) ;
+    color: var(--color_level3) ;
+  }
