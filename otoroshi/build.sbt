@@ -320,15 +320,6 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.next.experimental.netty-server.accesslog=true",
   "-Dotoroshi.next.experimental.netty-server.wiretap=false",
   "-Dotoroshi.next.experimental.netty-server.http3.enabled=true",
-
-  "-Dotoroshi.ssl.initialCacert=/Users/mathieuancelin/projects/lets-encrypt-certs-auto-renew/certs/clever-otoroshi.tech/*.clever-otoroshi.tech/ca.cer",
-  "-Dotoroshi.ssl.initialCert=/Users/mathieuancelin/projects/lets-encrypt-certs-auto-renew/certs/clever-otoroshi.tech/*.clever-otoroshi.tech/*.clever-otoroshi.tech.cer",
-  "-Dotoroshi.ssl.initialCertKey=/Users/mathieuancelin/projects/lets-encrypt-certs-auto-renew/certs/clever-otoroshi.tech/*.clever-otoroshi.tech/*.clever-otoroshi.tech.key",
-
-  "-Dotoroshi.ssl.initialCerts.0.ca=/Users/mathieuancelin/projects/lets-encrypt-certs-auto-renew/certs/ossbymaif.ovh/*.ossbymaif.ovh/ca.cer",
-  "-Dotoroshi.ssl.initialCerts.0.cert=/Users/mathieuancelin/projects/lets-encrypt-certs-auto-renew/certs/ossbymaif.ovh/*.ossbymaif.ovh/*.ossbymaif.ovh.cer",
-  "-Dotoroshi.ssl.initialCerts.0.key=/Users/mathieuancelin/projects/lets-encrypt-certs-auto-renew/certs/ossbymaif.ovh/*.ossbymaif.ovh/*.ossbymaif.ovh.key",
-  
   // "-Dotoroshi.storage=experimental-pg",
   // "-Dotoroshi.storage=redis",
   // "-Dotoroshi.storage=lettuce",

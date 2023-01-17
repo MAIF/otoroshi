@@ -22,3 +22,4 @@ oto-events*
 *.gor
 /project
 otoroshi/javascript/stats.json
+.bloop

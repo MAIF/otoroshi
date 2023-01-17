@@ -838,53 +838,61 @@ trait CertificateDataStore extends BasicStore[Cert] {
   }
 
   def importOneCert(
+      name: String,
       conf: Configuration,
       caPath: String,
       certPath: String,
       keyPath: String,
       logger: Logger,
-      id: Option[String] = None
+      id: Option[String] = None,
+      importCa: Boolean
   )(implicit
       env: Env,
       ec: ExecutionContext
   ): Unit = {
-    readCertOrKey(conf, caPath, env).foreach { cacert =>
-      val _cert = Cert(
-        id = IdGenerator.uuid,
-        name = "none",
-        description = "none",
-        chain = cacert,
-        privateKey = "",
-        caRef = None,
-        ca = true,
-        client = false,
-        exposed = false,
-        revoked = false
-      ).enrich()
-      val cert  = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
-      findAll().map { certs =>
-        val found = certs
-          .map(_.enrich())
-          .exists(c =>
-            (c.signature.isDefined && c.signature == cert.signature) && (c.serialNumber.isDefined && c.serialNumber == cert.serialNumber)
-          )
-        if (!found) {
-          cert.save()(ec, env).andThen {
-            case Success(e) => logger.info("Successful import of initial cacert !")
-            case Failure(e) => logger.error("Error while storing initial cacert ...", e)
+    if (importCa) {
+      readCertOrKey(conf, caPath, env).foreach { cacert =>
+        val _cert = Cert(
+          id = IdGenerator.uuid,
+          name = "none",
+          description = "none",
+          chain = cacert,
+          privateKey = "",
+          caRef = None,
+          ca = true,
+          client = false,
+          exposed = false,
+          revoked = false
+        ).enrich()
+        val cert = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
+        findAll().map { certs =>
+          val found = certs
+            .map(_.enrich())
+            .exists(c =>
+              (c.signature.isDefined && c.signature == cert.signature) && (c.serialNumber.isDefined && c.serialNumber == cert.serialNumber)
+            )
+          if (!found) {
+            cert.save()(ec, env).andThen {
+              case Success(e) => logger.info(s"successful import of ${name} !")
+              case Failure(e) => logger.error(s"error while storing ${name} ...", e)
+            }
+          } else {
+            logger.info(s"${name} already exists, canceling import")
           }
         }
       }
     }
     for {
+      caContent <- readCertOrKey(conf, caPath, env).orElse(Some(""))
       certContent <- readCertOrKey(conf, certPath, env)
       keyContent  <- readCertOrKey(conf, keyPath, env)
     } yield {
+      logger.info(s"importing ${name} ...")
       val _cert = Cert(
         id = IdGenerator.uuid,
         name = "none",
         description = "none",
-        chain = certContent,
+        chain = certContent + s"\n${caContent}",
         privateKey = keyContent,
         caRef = None,
         client = false,
@@ -900,9 +908,11 @@ trait CertificateDataStore extends BasicStore[Cert] {
           )
         if (!found) {
           cert.save()(ec, env).andThen {
-            case Success(e) => logger.info("Successful import of initial cert !")
-            case Failure(e) => logger.error("Error while storing initial cert ...", e)
+            case Success(e) => logger.info(s"successful import of ${name} !")
+            case Failure(e) => logger.error(s"error while storing ${name} ...", e)
           }
+        } else {
+          logger.info(s"${name} already exists, canceling import")
         }
       }
     }
@@ -910,31 +920,46 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
   def importInitialCerts(logger: Logger)(implicit env: Env, ec: ExecutionContext) = {
     importOneCert(
+      "root CA certificate",
       env.configuration,
       "otoroshi.ssl.rootCa.ca",
       "otoroshi.ssl.rootCa.cert",
       "otoroshi.ssl.rootCa.key",
       logger,
-      Some(Cert.OtoroshiCA)
+      Some(Cert.OtoroshiCA),
+      env.configuration.getOptional[Boolean]("otoroshi.ssl.rootCa.importCa").getOrElse(false),
     )(env, ec)
     importOneCert(
+      "initial certificate",
       env.configuration,
       "otoroshi.ssl.initialCacert",
       "otoroshi.ssl.initialCert",
       "otoroshi.ssl.initialCertKey",
-      logger
+      logger,
+      None,
+      env.configuration.getOptional[Boolean]("otoroshi.ssl.initialCertImportCa").getOrElse(false),
     )(env, ec)
     env.configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("otoroshi.ssl.initialCerts")
       .getOrElse(Seq.empty[Configuration])
-      .foreach { conf =>
-        importOneCert(conf, "ca", "cert", "key", logger)(env, ec)
+      .zipWithIndex
+      .foreach {
+        case (conf, idx) =>
+          importOneCert(
+            s"initial certificate ${idx}",
+            conf,
+            "ca",
+            "cert",
+            "key",
+            logger,
+            None,
+            conf.getOptional[Boolean]("importCa").getOrElse(false)
+          )(env, ec)
       }
   }
 
   def hasInitialCerts()(implicit env: Env, ec: ExecutionContext): Boolean = {
     val hasInitialCert  =
-      env.configuration.betterHas("otoroshi.ssl.initialCacert") &&
       env.configuration.betterHas("otoroshi.ssl.initialCert") &&
       env.configuration.betterHas("otoroshi.ssl.initialCertKey")
     val hasInitialCerts = env.configuration.betterHas("otoroshi.ssl.initialCerts")
