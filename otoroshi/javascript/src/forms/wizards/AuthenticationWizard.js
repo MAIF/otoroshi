@@ -580,8 +580,8 @@ function InformationsStep({ name, onChange }) {
   return (
     <>
       <h3>Let's start with a name for your Authentication</h3>
-
       <div>
+        <label className="mb-2">Authentication name</label>
         <TextInput
           autoFocus={true}
           placeholder="Your authentication configuration name..."
@@ -589,7 +589,6 @@ function InformationsStep({ name, onChange }) {
           className="my-3"
           style={{
             fontSize: '2em',
-            color: '#f9b000',
           }}
           label="Route name"
           value={name}
@@ -1321,7 +1320,7 @@ class User extends React.Component {
 function SelectableButton({ value, expected, title, desc, onChange }) {
   return (
     <Button
-      type={value === expected ? 'save' : 'dark'}
+      type={value === expected ? 'primaryColor' : 'dark'}
       className="py-3 d-flex align-items-center flex-column col-3"
       style={{
         gap: '12px',
@@ -1336,9 +1335,9 @@ function SelectableButton({ value, expected, title, desc, onChange }) {
         </h3>
       </div>
       <div className="d-flex flex-column align-items-center" style={{ flex: 1 }}>
-        <label className="d-flex align-items-center" style={{ textAlign: 'left' }}>
+        <span className="d-flex align-items-center" style={{ textAlign: 'left' }}>
           {desc}
-        </label>
+        </span>
       </div>
     </Button>
   );
