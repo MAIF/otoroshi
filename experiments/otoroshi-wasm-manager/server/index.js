@@ -16,7 +16,7 @@ const manager = require('./logger');
 const log = manager.createLogger('wasm-manager');
 
 const { extractUserFromQuery } = require('./security/ExtractUserInformation');
-const { Queue } = require('./services/Queue');
+const { Queue } = require('./services/queue');
 
 S3.initializeS3Connection()
 Queue.startQueue()
