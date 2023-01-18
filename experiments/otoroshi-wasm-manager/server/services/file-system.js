@@ -2,7 +2,6 @@ const fs = require('fs-extra');
 const path = require('path');
 
 const createBuildFolder = (type, name) => {
-  console.log('createBuildFolder', process.cwd())
   if (type === 'rust') {
     return new Promise(resolve => {
       fs.copy(
