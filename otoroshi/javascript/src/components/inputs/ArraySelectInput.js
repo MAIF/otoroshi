@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import Select from 'react-select';
+import Select, { Creatable } from 'react-select';
 import { Scripts } from '../Scripts';
 import { Separator } from '../Separator';
 import { Help } from './Help';
@@ -118,6 +118,7 @@ export class ArraySelectInput extends Component {
 
   render() {
     const values = Object.keys(this.props.value || {}).map((k) => [k, this.props.value[k]]);
+    const Component = this.props.creatable ? Creatable : Select;
 
     return (
       <div>
@@ -136,7 +137,7 @@ export class ArraySelectInput extends Component {
             <div className="col-sm-10">
               <div style={{ display: 'flex' }}>
                 <div style={{ flex: 1 }}>
-                  <Select
+                  <Component
                     name={`selector-${idx}`}
                     value={value[0]}
                     isLoading={this.state.loading}

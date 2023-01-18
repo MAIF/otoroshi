@@ -268,10 +268,12 @@ export class DataExportersPage extends Component {
           <SimpleBooleanInput
             value={item.enabled}
             onChange={(value) => {
-              BackOfficeServices.updateDataExporterConfig({
-                ...item,
-                enabled: value,
-              }).then(() => table.update());
+              BackOfficeServices.findDataExporterConfigById(item.id).then(exporter => {
+                BackOfficeServices.updateDataExporterConfig({
+                  ...exporter,
+                  enabled: value,
+                }).then(() => table.update());
+              });
             }}
           />
         );
@@ -414,7 +416,7 @@ export class NewExporterForm extends Component {
             placeholder="The type of exporter"
             value={this.data().type}
             onChange={(e) => this.updateType(e)}
-            possibleValues={Object.keys(possibleExporterConfigFormValues)}
+            possibleValues={Object.keys(possibleExporterConfigFormValues).map(key => possibleExporterConfigFormValues[key].label ? ({ label: possibleExporterConfigFormValues[key].label, value: key }) : { label: key, value: key })}
             help="The type of event exporter"
           />
           <BooleanInput
@@ -1399,11 +1401,13 @@ const possibleExporterConfigFormValues = {
     },
   },
   metrics: {
+    label: 'request routing metrics',
     flow: ['labels'],
     schema: {
       labels: {
         type: 'array_select',
         props: {
+          creatable: true,
           label: 'Labels',
           placeholderKey: 'Choose a entry metric label',
           placeholderValue: 'Choose your destination label',
