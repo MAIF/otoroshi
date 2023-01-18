@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { Help } from './Help';
 
 export class ObjectInput extends React.Component {
@@ -167,7 +167,7 @@ export class ObjectInput extends React.Component {
   }
 }
 
-export class VerticalObjectInput extends Component {
+export class VerticalObjectInput extends React.Component {
   changeValue = (e, name) => {
     if (e && e.preventDefault) e.preventDefault();
     const newValues = { ...this.props.value, [name]: e.target.value };

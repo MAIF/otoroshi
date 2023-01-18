@@ -32,6 +32,133 @@ import scala.util.control.{NoStackTrace, NonFatal}
 import scala.util.{Failure, Success, Try}
 
 object implicits {
+
+  implicit class BetterSeq(val seq: Seq[(String, String)]) extends AnyVal {
+    @inline
+    def appendOpt[A](opt: Option[A], f: A => (String, String)): Seq[(String, String)] = {
+      opt match {
+        case None => seq
+        case Some(k) => seq :+ f(k)
+      }
+    }
+
+    @inline
+    def appendIf(f: => Boolean, header: => (String, String)): Seq[(String, String)] =
+      if (f) {
+        seq :+ header
+      } else {
+        seq
+      }
+
+    @inline
+    def appendIfElse(f: => Boolean, name: String, ten: => String, els: => String): Seq[(String, String)] =
+      if (f) {
+        seq :+ (name, ten)
+      } else {
+        seq :+ (name, els)
+      }
+
+    @inline
+    def removeIf(name: String, f: => Boolean): Seq[(String, String)] =
+      if (f) seq.filterNot(_._1.toLowerCase() == name.toLowerCase()) else seq
+
+    @inline
+    def remove(name: String): Seq[(String, String)] = seq.filterNot(_._1.toLowerCase() == name.toLowerCase())
+
+    @inline
+    def removeAll(names: Seq[String]): Seq[(String, String)] = {
+      val lowerNames = names.map(_.toLowerCase)
+      seq.filterNot(h => lowerNames.contains(h._1.toLowerCase()))
+    }
+
+    @inline
+    def removeAllArgs(names: String*): Seq[(String, String)] = {
+      val lowerNames = names.map(_.toLowerCase)
+      seq.filterNot(h => lowerNames.contains(h._1.toLowerCase()))
+    }
+
+    @inline
+    def appendAll(other: Seq[(String, String)]): Seq[(String, String)] = seq ++ other
+
+    @inline
+    def appendAllArgs(other: (String, String)*): Seq[(String, String)] = seq ++ other
+
+    @inline
+    def appendAllArgsIf(f: => Boolean)(other: (String, String)*): Seq[(String, String)] = if (f) seq ++ other else seq
+
+    @inline
+    def lazyAppendAllArgsIf(f: => Boolean)(other: => Seq[(String, String)]): Seq[(String, String)] =
+      if (f) seq ++ other else seq
+
+    def debug(name: String): Seq[(String, String)] = {
+      // println(name, seq.mkString("\n"))
+      seq
+    }
+  }
+
+  implicit class BetterMapOfStringString(val seq: Map[String, String]) extends AnyVal {
+    @inline
+    def appendOpt[A](opt: Option[A], f: A => (String, String)): Map[String, String] = {
+      opt match {
+        case None => seq
+        case Some(k) => seq + f(k)
+      }
+    }
+
+    @inline
+    def appendIf(f: => Boolean, header: => (String, String)): Map[String, String] = {
+      if (f) {
+        seq + header
+      } else {
+        seq
+      }
+    }
+
+    @inline
+    def appendIfElse(f: => Boolean, name: String, ten: => String, els: => String): Map[String, String] = {
+      if (f) {
+        seq + ((name, ten))
+      } else {
+        seq + ((name, els))
+      }
+    }
+
+    @inline
+    def removeIf(name: String, f: => Boolean): Map[String, String] =
+      if (f) seq.filterNot(_._1.toLowerCase() == name.toLowerCase()) else seq
+
+    @inline
+    def remove(name: String): Map[String, String] = seq.filterNot(_._1.toLowerCase() == name.toLowerCase())
+
+    @inline
+    def removeAll(names: Seq[String]): Map[String, String] = {
+      val lowerNames = names.map(_.toLowerCase)
+      seq.filterNot(h => lowerNames.contains(h._1.toLowerCase()))
+    }
+
+    @inline
+    def removeAllArgs(names: String*): Map[String, String] = {
+      val lowerNames = names.map(_.toLowerCase)
+      seq.filterNot(h => lowerNames.contains(h._1.toLowerCase()))
+    }
+
+    @inline
+    def appendAll(other: Seq[(String, String)]): Map[String, String] = seq ++ other
+
+    @inline
+    def appendAll(other: Map[String, String]): Map[String, String] = seq ++ other
+
+    @inline
+    def appendAllArgs(other: (String, String)*): Map[String, String] = seq ++ other
+
+    @inline
+    def appendAllArgsIf(f: => Boolean)(other: (String, String)*): Map[String, String] = if (f) seq ++ other else seq
+
+    @inline
+    def lazyAppendAllArgsIf(f: => Boolean)(other: => Seq[(String, String)]): Map[String, String] =
+      if (f) seq ++ other else seq
+  }
+
   implicit class BetterSyntax[A](private val obj: A)                   extends AnyVal {
     def seq: Seq[A]                                                 = Seq(obj)
     def set: Set[A]                                                 = Set(obj)

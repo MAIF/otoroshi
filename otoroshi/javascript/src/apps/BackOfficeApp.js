@@ -69,6 +69,7 @@ class BackOfficeAppContainer extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      shortMenu: true,
       groups: [],
       lines: [],
       catchedError: null,
@@ -107,6 +108,7 @@ class BackOfficeAppContainer extends Component {
         usedNewEngine: env.newEngineEnabled,
       });
     });
+    this.readShortMenu()
   }
 
   componentDidCatch(e) {
@@ -131,6 +133,18 @@ class BackOfficeAppContainer extends Component {
     );
   };
 
+  readShortMenu = () => {
+    const shortMenuStr = window.localStorage.getItem('otoroshi-short-menu') || 'true';
+    const shortMenu = shortMenuStr === 'true';
+    this.setState({ shortMenu });
+  }
+
+  toggleShortMenu = () => {
+    const newShortMenu = !this.state.shortMenu;
+    window.localStorage.setItem('otoroshi-short-menu', String(newShortMenu));
+    this.setState({ shortMenu: newShortMenu });
+  }
+
   render() {
     const classes = ['backoffice-container'];
     if (
@@ -148,6 +162,7 @@ class BackOfficeAppContainer extends Component {
           <>
             <UpdateOtoroshiVersion env={this.state.env} />
             <TopBar
+              shortMenu={this.state.shortMenu}
               setTitle={(t) => DynamicTitle.setContent(t)}
               {...this.props}
               changePassword={this.state.env.changePassword}
@@ -418,7 +433,7 @@ class BackOfficeAppContainer extends Component {
                         />
                         <Route
                           path="/features"
-                          component={(props) => this.decorate(FeaturesPage, props)}
+                          component={(props) => this.decorate(FeaturesPage, { ...props, shortMenu: this.state.shortMenu, toggleShortMenu: this.toggleShortMenu })}
                         />
 
                         <Route
