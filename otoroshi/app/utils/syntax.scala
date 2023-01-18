@@ -37,7 +37,7 @@ object implicits {
     @inline
     def appendOpt[A](opt: Option[A], f: A => (String, String)): Seq[(String, String)] = {
       opt match {
-        case None => seq
+        case None    => seq
         case Some(k) => seq :+ f(k)
       }
     }
@@ -100,7 +100,7 @@ object implicits {
     @inline
     def appendOpt[A](opt: Option[A], f: A => (String, String)): Map[String, String] = {
       opt match {
-        case None => seq
+        case None    => seq
         case Some(k) => seq + f(k)
       }
     }

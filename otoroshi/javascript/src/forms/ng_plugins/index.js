@@ -45,6 +45,7 @@ import NgFrontend from './NgFrontend';
 import NgLegacyApikeyCall from './NgLegacyApikeyCall';
 import NgLegacyAuthModuleCall from './NgLegacyAuthModuleCall';
 import OtoroshiChallenge from './OtoroshiChallenge';
+import OtoroshiHeadersIn from './OtoroshiHeadersIn';
 import OtoroshiInfos from './OtoroshiInfos';
 import OverrideHost from './OverrideHost';
 import PublicPrivatePaths from './PublicPrivatePaths';
@@ -123,6 +124,7 @@ export const Plugins = [
   NgLegacyApikeyCall,
   NgLegacyAuthModuleCall,
   OtoroshiChallenge,
+  OtoroshiHeadersIn,
   OtoroshiInfos,
   OverrideHost,
   PublicPrivatePaths,

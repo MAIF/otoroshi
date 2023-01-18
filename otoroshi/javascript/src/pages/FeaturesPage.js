@@ -23,7 +23,7 @@ const graph = (env) => {
           description: 'Create chaos in your routes and test your resilience',
           display: () => env.userAdmin,
           link: '/snowmonkey',
-          icon: () => snowmonkeyIcon
+          icon: () => snowmonkeyIcon,
         },
         {
           title: 'Clever apps',
@@ -40,7 +40,7 @@ const graph = (env) => {
           display: () => true,
           link: 'https://maif.github.io/otoroshi/manual/index.html',
           icon: () => 'fa-book',
-        }
+        },
       ],
     },
     {
@@ -51,7 +51,7 @@ const graph = (env) => {
           title: 'Services',
           description: 'All your service descriptors',
           img: 'services',
-          display: () => env.initWithNewEngine, 
+          display: () => env.initWithNewEngine,
           icon: () => 'fa-cubes',
           link: '/services',
         },
@@ -59,7 +59,7 @@ const graph = (env) => {
           title: 'Routes',
           description: 'All your routes',
           img: 'routes',
-          display: () => true, 
+          display: () => true,
           icon: () => 'fa-road',
           link: '/routes',
         },
@@ -67,7 +67,7 @@ const graph = (env) => {
           title: 'Backends',
           description: 'All your route backends',
           img: 'backend',
-          display: () => true, 
+          display: () => true,
           icon: () => 'fa-microchip',
           link: '/backends',
         },
@@ -75,7 +75,7 @@ const graph = (env) => {
           title: 'Apikeys',
           description: 'All your apikeys',
           img: 'apikeys',
-          display: () => true, 
+          display: () => true,
           icon: () => 'fa-key',
           link: '/apikeys',
         },
@@ -83,7 +83,7 @@ const graph = (env) => {
           title: 'Certificates',
           description: 'All your certificates',
           img: 'certificates',
-          display: () => true, 
+          display: () => true,
           icon: () => 'fa-certificate',
           link: '/certificates',
         },
@@ -91,7 +91,7 @@ const graph = (env) => {
           title: 'JWT verifiers',
           description: 'All your jwt verifiers',
           img: 'jwt',
-          display: () => true, 
+          display: () => true,
           icon: () => 'fa-circle-check',
           link: '/jwt-verifiers',
         },
@@ -99,7 +99,7 @@ const graph = (env) => {
           title: 'Auth. modules',
           description: 'All your authentication modules',
           img: 'private-apps',
-          display: () => true, 
+          display: () => true,
           icon: () => 'fa-lock',
           link: '/auth-configs',
         },
@@ -107,7 +107,7 @@ const graph = (env) => {
           title: 'TCP services',
           description: 'All your TCP services',
           img: 'tcp',
-          display: () => true, 
+          display: () => true,
           icon: () => 'fa-cubes',
           link: '/tcp/services',
         },
@@ -115,7 +115,7 @@ const graph = (env) => {
           title: 'Organizations',
           description: 'All your organizations',
           img: 'orga',
-          display: () => env.userAdmin, 
+          display: () => env.userAdmin,
           icon: () => 'fa-folder-open',
           link: '/organizations',
         },
@@ -123,7 +123,7 @@ const graph = (env) => {
           title: 'Teams',
           description: 'All your temas',
           img: 'teams',
-          display: () => env.tenantAdmin, 
+          display: () => env.tenantAdmin,
           icon: () => 'fa-folder-open',
           link: '/teams',
         },
@@ -131,7 +131,7 @@ const graph = (env) => {
           title: 'Service groups',
           description: 'All your service/route groups',
           img: 'groups',
-          display: () => true, 
+          display: () => true,
           icon: () => 'fa-folder-open',
           link: '/groups',
         },
@@ -139,7 +139,7 @@ const graph = (env) => {
           title: 'Data exporters',
           description: 'All your data exporters',
           img: 'exporters',
-          display: () => true, 
+          display: () => true,
           icon: () => 'fa-paper-plane',
           link: '/exporters',
         },
@@ -147,15 +147,22 @@ const graph = (env) => {
           title: 'Administrators',
           description: 'All your otoroshi administrators',
           img: 'admins',
-          display: () => env.tenantAdmin, 
+          display: () => env.tenantAdmin,
           icon: () => 'fa-user',
           link: '/admins',
+        },
+        {
+          title: 'Error Templates',
+          description: 'All your route and services error templates',
+          img: 'error',
+          icon: () => 'fa-bomb',
+          link: '/error-templates',
         },
         {
           title: 'Scripts',
           description: 'All your live scripts',
           img: 'scripts',
-          display: () => false, // () => env.scriptingEnabled, 
+          display: () => false, // () => env.scriptingEnabled,
           icon: () => 'fa-book-dead',
           link: '/plugins',
         },
@@ -163,7 +170,7 @@ const graph = (env) => {
           title: 'Route compositions',
           description: 'routescomp',
           img: 'routescomp',
-          display: () => false, 
+          display: () => false,
           icon: () => 'fa-cubes',
           link: '/route-compositions',
         },
@@ -246,7 +253,7 @@ const graph = (env) => {
           description:
             'Manage the access to Otoroshi UI and protect your routes with authentication modules.',
           img: 'private-apps',
-          link: '/auth-configs', 
+          link: '/auth-configs',
           icon: () => 'fa-lock',
           display: () => true,
         },
@@ -254,7 +261,7 @@ const graph = (env) => {
           title: 'Jwt verifiers',
           description: 'Manage how you want to verify and forge jwt tokens',
           img: 'jwt',
-          link: '/jwt-verifiers', 
+          link: '/jwt-verifiers',
           icon: () => 'fa-circle-check',
           display: () => true,
         },
@@ -262,7 +269,7 @@ const graph = (env) => {
           title: 'Certificates',
           description: 'Manage and generate certificates for call and expose your services',
           img: 'certificates',
-          link: '/certificates', 
+          link: '/certificates',
           icon: () => 'fa-certificate',
           display: () => true,
         },
@@ -270,7 +277,7 @@ const graph = (env) => {
           title: 'Apikeys',
           description: 'Manage all your apikeys to access all your services',
           img: 'apikeys',
-          link: '/apikeys', 
+          link: '/apikeys',
           icon: () => 'fa-key',
           display: () => true,
         },
@@ -281,7 +288,7 @@ const graph = (env) => {
           display: () => env.tenantAdmin,
           icon: () => 'fa-user',
           link: '/admins',
-        }
+        },
       ],
     },
     {
@@ -324,33 +331,41 @@ const graph = (env) => {
           absoluteImg: '/assets/images/otoroshi-logo-inverse.png',
           link: '/provider',
           display: () => env.userAdmin && env.providerDashboardUrl,
-          icon: () => <img src="/assets/images/otoroshi-logo-inverse.png" width="16" />
+          icon: () => <img src="/assets/images/otoroshi-logo-inverse.png" width="16" />,
         },
         {
           title: 'Danger zone',
           description: 'Break things ;)',
           img: 'danger-zone',
           link: '/dangerzone',
-          display: () => env.userAdmin, 
+          display: () => env.userAdmin,
           icon: () => 'fa-exclamation-triangle',
         },
       ],
     },
   ];
-}
+};
 
 const AutoLink = (props) => {
   if (props.to.indexOf('http') === 0) {
-    return <a {...props} href={props.to} target="_blank">{props.children}</a>
+    return (
+      <a {...props} href={props.to} target="_blank">
+        {props.children}
+      </a>
+    );
   } else {
-    return <Link {...props}>{props.children}</Link>
+    return <Link {...props}>{props.children}</Link>;
   }
-}
+};
 
 const Feature = ({ title, description, img, link, icon }) => {
   const iconValue = icon ? icon() : null;
-  const className = _.isString(iconValue) ? (iconValue.indexOf(' ') > -1 ? iconValue : `fa ${iconValue}`) : null;
-  const zeIcon = iconValue ? (_.isString(iconValue) ? <i className={className} /> : iconValue): null;
+  const className = _.isString(iconValue)
+    ? iconValue.indexOf(' ') > -1
+      ? iconValue
+      : `fa ${iconValue}`
+    : null;
+  const zeIcon = iconValue ? _.isString(iconValue) ? <i className={className} /> : iconValue : null;
   return (
     <AutoLink
       to={link}
@@ -393,7 +408,7 @@ const Feature = ({ title, description, img, link, icon }) => {
             color: '#000',
             textTransform: 'capitalize',
           }}>
-          {zeIcon} {title} 
+          {zeIcon} {title}
         </div>
         <div className="me-1" style={{ marginLeft: '5px', marginBottom: '10px', color: '#000' }}>
           <p>{description}</p>
@@ -419,10 +434,9 @@ const Features = ({ title, description, children }) => {
 };
 
 export class FeaturesPage extends Component {
-
   state = {
     shortMenu: false,
-  }
+  };
 
   componentDidMount() {
     this.props.setTitle(`Otoroshi features`);
@@ -440,12 +454,21 @@ export class FeaturesPage extends Component {
     };
     return (
       <>
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'flex-end' }}>
-          <button 
-              type="button" 
-              className={`btn btn-sm ${this.props.shortMenu ? 'btn-success' : 'btn-danger'}`} 
-              onClick={this.props.toggleShortMenu}>
-            <i className="fa fa-cog" style={{ fontSize: 'small' }} /> {this.props.shortMenu ? 'Display all features in the settings menu' : 'Do not display all features in the settings menu'}
+        <div
+          style={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+          }}>
+          <button
+            type="button"
+            className={`btn btn-sm ${this.props.shortMenu ? 'btn-success' : 'btn-danger'}`}
+            onClick={this.props.toggleShortMenu}>
+            <i className="fa fa-cog" style={{ fontSize: 'small' }} />{' '}
+            {this.props.shortMenu
+              ? 'Display all features in the settings menu'
+              : 'Do not display all features in the settings menu'}
           </button>
         </div>
         {graph(env).map(({ title, description, features = [] }) => {
@@ -464,7 +487,7 @@ export class FeaturesPage extends Component {
                   }) => (
                     <Feature
                       title={title}
-                      icon={icon} 
+                      icon={icon}
                       description={description}
                       img={absoluteImg || `/assets/images/svgs/${img}.svg`}
                       link={link}

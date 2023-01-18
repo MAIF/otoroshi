@@ -437,6 +437,18 @@ PATCH   /api/tcp/services/:id                                    otoroshi.contro
 GET     /api/tcp/services                                        otoroshi.controllers.adminapi.TcpServiceApiController.findAllEntitiesAction()
 POST    /api/tcp/services                                        otoroshi.controllers.adminapi.TcpServiceApiController.createAction()
 
+# error templates API
+POST    /api/error-templates/_bulk                                    otoroshi.controllers.adminapi.ErrorTemplatesController.bulkCreateAction()
+PUT     /api/error-templates/_bulk                                    otoroshi.controllers.adminapi.ErrorTemplatesController.bulkUpdateAction()
+PATCH   /api/error-templates/_bulk                                    otoroshi.controllers.adminapi.ErrorTemplatesController.bulkPatchAction()
+DELETE  /api/error-templates/_bulk                                    otoroshi.controllers.adminapi.ErrorTemplatesController.bulkDeleteAction()
+GET     /api/error-templates/:id                                      otoroshi.controllers.adminapi.ErrorTemplatesController.findEntityByIdAction(id)
+DELETE  /api/error-templates/:id                                      otoroshi.controllers.adminapi.ErrorTemplatesController.deleteEntityAction(id)
+PUT     /api/error-templates/:id                                      otoroshi.controllers.adminapi.ErrorTemplatesController.updateEntityAction(id)
+PATCH   /api/error-templates/:id                                      otoroshi.controllers.adminapi.ErrorTemplatesController.patchEntityAction(id)
+GET     /api/error-templates                                          otoroshi.controllers.adminapi.ErrorTemplatesController.findAllEntitiesAction()
+POST    /api/error-templates                                          otoroshi.controllers.adminapi.ErrorTemplatesController.createAction()
+
 # tenant API
 GET     /api/tenants/_template                                otoroshi.controllers.adminapi.TemplatesController.initiateTenant()
 POST    /api/tenants/_bulk                                    otoroshi.controllers.adminapi.TenantsController.bulkCreateAction()

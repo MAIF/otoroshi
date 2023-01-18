@@ -47,7 +47,7 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
   override def writeEntity(entity: Team): JsValue = Team.format.writes(entity)
 
   override def findByIdOps(
-      id: String
+      id: String, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Team]]] = {
     env.datastores.teamDataStore.findById(id).map { opt =>
       Right(
@@ -79,7 +79,7 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
   }
 
   override def createEntityOps(
-      entity: Team
+      entity: Team, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Team]]] = {
     env.datastores.teamDataStore.set(entity).map {
       case true  => {
@@ -105,7 +105,7 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
   }
 
   override def updateEntityOps(
-      entity: Team
+      entity: Team, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Team]]] = {
     env.datastores.teamDataStore.set(entity).map {
       case true  => {
@@ -131,7 +131,7 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
   }
 
   override def deleteEntityOps(
-      id: String
+      id: String, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Team]]] = {
     env.datastores.teamDataStore.delete(id).map {
       case true  => {

@@ -43,7 +43,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
 
   override def writeEntity(entity: DataExporterConfig): JsValue = DataExporterConfig.format.writes(entity)
 
-  override def findByIdOps(id: String)(implicit
+  override def findByIdOps(id: String, req: RequestHeader)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[DataExporterConfig]]] = {
@@ -77,7 +77,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
     }
   }
 
-  override def createEntityOps(entity: DataExporterConfig)(implicit
+  override def createEntityOps(entity: DataExporterConfig, req: RequestHeader)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], EntityAndContext[DataExporterConfig]]] = {
@@ -105,7 +105,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
     }
   }
 
-  override def updateEntityOps(entity: DataExporterConfig)(implicit
+  override def updateEntityOps(entity: DataExporterConfig, req: RequestHeader)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], EntityAndContext[DataExporterConfig]]] = {
@@ -133,7 +133,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
     }
   }
 
-  override def deleteEntityOps(id: String)(implicit
+  override def deleteEntityOps(id: String, req: RequestHeader)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], NoEntityAndContext[DataExporterConfig]]] = {

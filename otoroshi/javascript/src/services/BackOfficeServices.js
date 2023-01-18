@@ -1489,6 +1489,80 @@ export function updateTcpService(ak) {
   }).then((r) => r.json());
 }
 
+export function findAllRoutesWithPagination(ps) {
+  return findAllWithPagination('/bo/api/proxy/api/routes', ps);
+}
+
+export function findAllRouteCompositionsWithPagination(ps) {
+  return findAllWithPagination('/bo/api/proxy/api/route-compositions', ps);
+}
+
+export function findAllServicesWithPagination(ps) {
+  return findAllWithPagination('/bo/api/proxy/api/services', ps);
+}
+
+///////////////////////////////
+// Error Teampltes
+///////////////////////////////
+
+export function findAllErrorTemplatesWithPagination(ps) {
+  return findAllWithPagination('/bo/api/proxy/api/error-templates', ps);
+}
+
+export function findAllErrorTemplates() {
+  return fetch('/bo/api/proxy/api/error-templates', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}
+
+export function findErrorTemplateById(id) {
+  return fetch(`/bo/api/proxy/api/error-templates/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}
+
+export function deleteErrorTemplate(ak) {
+  return fetch(`/bo/api/proxy/api/error-templates/${ak.serviceId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}
+
+export function createErrorTemplate(ak) {
+  return fetch(`/bo/api/proxy/api/error-templates`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then((r) => r.json());
+}
+
+export function updateErrorTemplate(ak) {
+  return fetch(`/bo/api/proxy/api/error-templates/${ak.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then((r) => r.json());
+}
+
 ///////////////////////////////
 // Teams
 ///////////////////////////////

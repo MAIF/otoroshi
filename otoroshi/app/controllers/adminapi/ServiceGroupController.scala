@@ -41,7 +41,7 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
 
   override def writeEntity(entity: ServiceGroup): JsValue = ServiceGroup._fmt.writes(entity)
 
-  override def findByIdOps(id: String)(implicit
+  override def findByIdOps(id: String, req: RequestHeader)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ServiceGroup]]] = {
@@ -75,7 +75,7 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   }
 
   override def createEntityOps(
-      entity: ServiceGroup
+      entity: ServiceGroup, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceGroup]]] = {
     entity.save().map {
       case true  => {
@@ -101,7 +101,7 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   }
 
   override def updateEntityOps(
-      entity: ServiceGroup
+      entity: ServiceGroup, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceGroup]]] = {
     entity.save().map {
       case true  => {
@@ -127,7 +127,7 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   }
 
   override def deleteEntityOps(
-      id: String
+      id: String, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ServiceGroup]]] = {
     env.datastores.serviceGroupDataStore.delete(id).map {
       case true  => {

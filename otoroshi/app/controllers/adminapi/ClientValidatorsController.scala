@@ -39,7 +39,7 @@ class ClientValidatorsController(val ApiAction: ApiAction, val cc: ControllerCom
 
   override def writeEntity(entity: ClientCertificateValidator): JsValue = ClientCertificateValidator.fmt.writes(entity)
 
-  override def findByIdOps(id: String)(implicit
+  override def findByIdOps(id: String, req: RequestHeader)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ClientCertificateValidator]]] = {
@@ -73,7 +73,7 @@ class ClientValidatorsController(val ApiAction: ApiAction, val cc: ControllerCom
     }
   }
 
-  override def createEntityOps(entity: ClientCertificateValidator)(implicit
+  override def createEntityOps(entity: ClientCertificateValidator, req: RequestHeader)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], EntityAndContext[ClientCertificateValidator]]] = {
@@ -100,7 +100,7 @@ class ClientValidatorsController(val ApiAction: ApiAction, val cc: ControllerCom
     }
   }
 
-  override def updateEntityOps(entity: ClientCertificateValidator)(implicit
+  override def updateEntityOps(entity: ClientCertificateValidator, req: RequestHeader)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], EntityAndContext[ClientCertificateValidator]]] = {
@@ -127,7 +127,7 @@ class ClientValidatorsController(val ApiAction: ApiAction, val cc: ControllerCom
     }
   }
 
-  override def deleteEntityOps(id: String)(implicit
+  override def deleteEntityOps(id: String, req: RequestHeader)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], NoEntityAndContext[ClientCertificateValidator]]] = {

@@ -23,6 +23,8 @@ import play.api.{Application, ApplicationLoader, BuiltInComponentsFromContext, L
 import play.filters.HttpFiltersComponents
 import router.Routes
 
+import java.util.concurrent.atomic.AtomicReference
+
 class OtoroshiLoader extends ApplicationLoader {
 
   def load(context: Context): Application = {
@@ -30,6 +32,7 @@ class OtoroshiLoader extends ApplicationLoader {
       _.configure(context.environment, context.initialConfiguration, Map.empty)
     }
     val components = new OtoroshiComponentsInstances(context, None, None, false)
+    components.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
     components.env.afterListening()
@@ -78,6 +81,8 @@ package object modules {
 
     override lazy val httpRequestHandler: HttpRequestHandler = wire[GatewayRequestHandler]
     override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]
+
+    lazy val handlerRef = new AtomicReference[HttpRequestHandler]()
 
     lazy val snowMonkey           = wire[SnowMonkey]
     lazy val unAuthApiAction      = wire[UnAuthApiAction]
@@ -129,6 +134,7 @@ package object modules {
     lazy val tryItController               = wire[TryItController]
     lazy val tunnelController              = wire[TunnelController]
     lazy val entitiesController            = wire[EntitiesController]
+    lazy val errorTemplatesController      = wire[ErrorTemplatesController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

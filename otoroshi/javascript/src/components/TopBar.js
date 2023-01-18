@@ -666,14 +666,13 @@ export class TopBar extends Component {
           )}
         </li>
         <li className="dropdown-divider" />
-        {window.__otoroshi__env__latest.userAdmin &&
-          this.props.env.clusterRole === 'Leader' && (
-            <li>
-              <Link to="/cluster" className="dropdown-item">
-                <span className="fas fa-network-wired" /> Cluster view
-              </Link>
-            </li>
-          )}
+        {window.__otoroshi__env__latest.userAdmin && this.props.env.clusterRole === 'Leader' && (
+          <li>
+            <Link to="/cluster" className="dropdown-item">
+              <span className="fas fa-network-wired" /> Cluster view
+            </Link>
+          </li>
+        )}
         {window.__otoroshi__env__latest.userAdmin && (
           <li>
             <Link to="/tunnels" className="dropdown-item">
@@ -681,8 +680,9 @@ export class TopBar extends Component {
             </Link>
           </li>
         )}
-        {window.__otoroshi__env__latest.userAdmin &&
-          this.props.env.clusterRole === 'Leader' && <li className="dropdown-divider" />}
+        {window.__otoroshi__env__latest.userAdmin && this.props.env.clusterRole === 'Leader' && (
+          <li className="dropdown-divider" />
+        )}
         {(window.__otoroshi__env__latest.userAdmin || window.__user.tenantAdmin) && (
           <>
             {window.__otoroshi__env__latest.userAdmin && (
@@ -959,8 +959,8 @@ export class TopBar extends Component {
           </a>
         </li>
       </>
-    )
-  }
+    );
+  };
 
   renderShortMenu = () => {
     return (
@@ -981,9 +981,7 @@ export class TopBar extends Component {
         </li>
         <li className="dropdown-divider" />
         <li>
-          <Link
-            to="/features"
-            className="dropdown-item">
+          <Link to="/features" className="dropdown-item">
             <span className="fas fa-grip" /> All features
           </Link>
         </li>
@@ -1016,8 +1014,8 @@ export class TopBar extends Component {
           </a>
         </li>
       </>
-    )
-  }
+    );
+  };
 
   render() {
     const selected = (this.props.params || {}).lineId;

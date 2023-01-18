@@ -753,7 +753,7 @@ case class NgbBackendCallContext(
     implicit val mat = env.otoroshiMaterializer
     (request.hasBody match {
       case false => JsNull.vfuture
-      case true => request.body.runFold(ByteString.empty)(_ ++ _).map(b => b.encodeBase64.utf8String.json)
+      case true  => request.body.runFold(ByteString.empty)(_ ++ _).map(b => b.encodeBase64.utf8String.json)
     }).map { body =>
       (json.asObject ++ Json.obj(
         "route" -> route.json,
