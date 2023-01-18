@@ -1,20 +1,26 @@
 const fs = require('fs-extra');
 const path = require('path');
 
-const createBuildFolder = name => {
-  return new Promise(resolve => {
-    fs.copy(
-      path.join(process.cwd(), 'templates', 'build'),
-      path.join(process.cwd(), 'build', name),
-      err => {
-        if (err) {
-          console.log('An error occured while copying the folder.')
-          throw err
+const createBuildFolder = (type, name) => {
+  if (type === 'rust') {
+    return new Promise(resolve => {
+      fs.copy(
+        path.join(process.cwd(), 'templates', 'builds', 'rust'),
+        path.join(process.cwd(), 'build', name),
+        err => {
+          if (err) {
+            console.log('An error occured while copying the folder.')
+            throw err
+          }
+          resolve(name)
         }
-        resolve(name)
-      }
-    )
-  })
+      )
+    })
+  } else {
+    return fs
+      .mkdir(path.join(process.cwd(), 'build', name))
+      .then(() => name)
+  }
 }
 
 const cleanFolders = (...folders) => {
@@ -27,11 +33,14 @@ const cleanFolders = (...folders) => {
   }))
 }
 
+const createFolderAtPath = (path) => fs.createWriteStream(path, { flags: 'w+' })
+
 const folderAlreadyExits = (...paths) => fs.pathExists(path.join(process.cwd(), ...paths))
 
 module.exports = {
   FileSystem: {
     createBuildFolder,
+    createFolderAtPath,
     cleanFolders,
     folderAlreadyExits
   }

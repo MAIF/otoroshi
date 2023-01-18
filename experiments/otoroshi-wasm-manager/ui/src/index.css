@@ -23,3 +23,13 @@ code {
 .cm-focused {
   outline: none !important;
 }
+
+.project-confirm-box:before {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-top: 24px solid #fff;
+  border-bottom: 24px solid #fff;
+  border-right: 16px solid #ddd;
+}

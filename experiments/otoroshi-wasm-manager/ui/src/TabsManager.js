@@ -40,6 +40,7 @@ function TabsManager({ plugins, ...props }) {
           onNewPlugin={props.onNewPlugin}
           setFilename={props.onPluginNameChange}
           removePlugin={props.removePlugin}
+          enablePluginRenaming={props.enablePluginRenaming}
         />
       </Explorer>
       {props.selectedPlugin && <FileManager

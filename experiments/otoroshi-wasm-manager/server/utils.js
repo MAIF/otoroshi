@@ -5,16 +5,18 @@ const path = require("path");
 const pako = require('pako');
 
 const hash = value => {
-  const salt = process.env.SECURITY_SALT || crypto
-    .randomBytes(16)
-    .toString('hex');
+  // const salt = process.env.SECURITY_SALT || crypto
+  //   .randomBytes(16)
+  //   .toString('hex');
 
-  return crypto
-    .pbkdf2Sync(value, salt, 50, 64, `sha256`)
-    .toString(`hex`);
+  // return crypto
+  //   .pbkdf2Sync(value, salt, 50, 64, `sha256`)
+  //   .toString(`hex`);
+
+  return value.replace(/[^a-zA-Z ]/g, "")
 }
 
-const unzip = (zipString, outputFolder) => {
+const unzip = (isRustBuild, zipString, outputFolder) => {
   const zip = new AdmZip(zipString);
   const entries = zip.getEntries()
 
@@ -22,7 +24,11 @@ const unzip = (zipString, outputFolder) => {
     try {
       const content = pako.inflateRaw(entry.getCompressedData(), { to: 'string' });
 
-      const filePath = entry.entryName === 'Cargo.toml' ? '' : 'src';
+      let filePath = '';
+
+      if (isRustBuild) {
+        filePath = entry.entryName === 'Cargo.toml' ? '' : 'src';
+      }
 
       return fs.writeFile(
         path.join(process.cwd(), 'build', outputFolder, filePath, entry.entryName),

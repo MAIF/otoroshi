@@ -9,7 +9,7 @@ const { UserManager } = require('../services/user');
 const { hash, unzip } = require('../utils');
 
 const { S3 } = require('../s3');
-const { Queue } = require('../services/queue');
+const { BuildingJob } = require('../services/building-job');
 const { FileSystem } = require('../services/file-system');
 
 const manager = require('../logger');
@@ -107,6 +107,7 @@ router.post('/', (req, res) => {
             ...(data.plugins || []),
             {
               filename: req.body.plugin,
+              type: req.body.type,
               pluginId: pluginId
             }
           ]
@@ -130,9 +131,11 @@ router.post('/', (req, res) => {
                 })
             }
             else {
-              res.json({
-                plugins
-              })
+              res
+                .status(201)
+                .json({
+                  plugins
+                })
             }
           })
         })
@@ -167,9 +170,9 @@ router.put('/:id', (req, res) => {
           status: err.statusCode
         })
     } else {
-      res.json({
-        done: true
-      })
+      res
+        .status(204)
+        .json(null)
     }
   })
 })
@@ -204,9 +207,9 @@ router.delete('/:id', async (req, res) => {
                 status: err.statusCode
               })
           } else {
-            res.json({
-              deleted: true
-            })
+            res
+              .status(204)
+              .json(null)
           }
         })
       })
@@ -225,31 +228,34 @@ router.post('/:id/build', async (req, res) => {
 
   const data = await UserManager.getUser(req)
   const plugin = (data.plugins || []).find(p => p.pluginId === req.params.id);
+  const isRustBuild = plugin.type == 'rust'
 
-  Queue.buildIsAlreadyRunning(pluginHash)
+  BuildingJob.buildIsAlreadyRunning(pluginHash)
     .then(async exists => {
       if (exists) {
-        res.json({ queue_id: pluginHash });
+        res.json({ queue_id: pluginHash, alreadyExists: true });
       } else {
-        const folder = await FileSystem.createBuildFolder(pluginHash)
-        await unzip(req.body, folder)
+        const folder = await FileSystem.createBuildFolder(plugin.type, pluginHash)
+        await unzip(isRustBuild, req.body, folder)
         try {
           const zipHash = crypto
             .createHash('md5')
             .update(req.body.toString())
             .digest('hex')
 
-          const data = await fs.readFile(path.join(process.cwd(), 'build', folder, 'Cargo.toml'))
-          const file = toml.parse(data)
-
           if (plugin['last_hash'] !== zipHash) {
-            console.log(`different: ${zipHash} - ${plugin['last_hash']}`)
-            Queue.addBuildToQueue({
+            log.info(`different: ${zipHash} - ${plugin['last_hash']}`)
+
+            const data = await fs.readFile(path.join(process.cwd(), 'build', folder, isRustBuild ? 'Cargo.toml' : 'package.json'))
+            const file = isRustBuild ? toml.parse(data) : JSON.parse(data)
+
+            BuildingJob.addBuildToQueue({
               folder,
               plugin: req.params.id,
-              wasmName: file.package.name.replace('-', '_'),
+              wasmName: isRustBuild ? file.package.name.replace('-', '_') : file.name.replace(' ', '_'),
               user: req.user ? req.user.email : 'admin@otoroshi.io',
-              zipHash
+              zipHash,
+              isRustBuild
             })
 
             res.json({
@@ -275,6 +281,29 @@ router.post('/:id/build', async (req, res) => {
             })
         }
       }
+    })
+})
+
+router.patch('/:id/filename', (req, res) => {
+
+  UserManager.getUser(req)
+    .then(data => UserManager.updateUser(req, {
+      ...data,
+      plugins: (data.plugins || []).map(plugin => {
+        if (plugin.pluginId === req.params.id) {
+          return {
+            ...plugin,
+            filename: req.body.filename
+          }
+        } else {
+          return plugin
+        }
+      })
+    }))
+    .then(() => {
+      res
+        .status(204)
+        .json(null)
     })
 })
 

@@ -11,8 +11,8 @@ const DOMAINS = (process.env.MANAGER_ALLOWED_DOMAINS || "")
 // router.use((req, res, next) => {
 //   if (
 //     DOMAINS.includes(req.headers.host) &&
-//     req.headers["otoroshi_client_id"] === process.env.OTOROSHI_CLIENT_ID,
-//     req.headers["otoroshi_client_secret"] === process.env.OTOROSHI_CLIENT_SECRET
+//     req.headers["Otoroshi-Client-Id"] === process.env.OTOROSHI_CLIENT_ID,
+//     req.headers["Otoroshi-Client-Secret"] === process.env.OTOROSHI_CLIENT_SECRET
 //   ) {
 //     res.header('Access-Control-Allow-Origin', req.headers.origin)
 //     res.header('Access-Control-Allow-Credentials', true)
@@ -27,12 +27,26 @@ const DOMAINS = (process.env.MANAGER_ALLOWED_DOMAINS || "")
 // })
 
 router.get('/plugins/:id', (req, res) => {
-  console.log(req.params, req.user)
+  const { s3, Bucket } = S3.state()
 
-  const user = req.user ? req.user.email : 'admin@otoroshi.io'
-  const wasmFile = `${hash(`${user}-${req.params.id}`)}.wasm`
-
-  res.json(wasmFile);
+  s3.getObject({
+    Bucket,
+    Key: req.params.id
+  })
+    .promise()
+    .then(data => {
+      res.attachment(req.params.id);
+      res.send(data.Body);
+    })
+    .catch(err => {
+      console.log(err)
+      res
+        .status(err.statusCode)
+        .json({
+          error: err.code,
+          status: err.statusCode
+        })
+    })
 })
 
 router.get('/plugins', (req, res) => {
@@ -44,8 +58,10 @@ router.get('/plugins', (req, res) => {
         .then(users => {
           if (users.length > 0) {
             Promise.all(users.map(UserManager.getUserFromString))
-              .then(users => {
-                res.json(users.map(user => user.plugins).flat())
+              .then(pluginsByUser => {
+                res.json(pluginsByUser
+                  .map(user => user.plugins)
+                  .flat())
               })
           } else {
             res.json([])

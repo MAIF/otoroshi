@@ -68,12 +68,6 @@ object WasmUtils {
     .maximumSize(100)
     .build()
 
-  private val wasmUrlCache: Cache[String, String] = Scaffeine()
-    .recordStats()
-    .expireAfterWrite(15.seconds)
-    .maximumSize(100)
-    .build()
-
   def convertJsonCookies(wasmResponse: JsValue): Option[Seq[WSCookie]] =
     wasmResponse
           .select("cookies")
@@ -140,10 +134,11 @@ object WasmUtils {
   def execute(config: WasmQueryConfig, input: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
     (config.compilerSource, config.rawSource) match {
       case (Some(pluginId), _) =>
-        wasmUrlCache.getIfPresent(pluginId) match {
-          case Some(url) =>
-            WasmUtils.getWasm(url)
-              .map(wasm => WasmUtils.callWasm(wasm, config, input).left)
+        scriptCache.getIfPresent(pluginId) match {
+          case Some(wasm) =>
+            WasmUtils.callWasm(wasm, config, input)
+              .left
+              .future
           case None =>
             env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
               val url = globalConfig.metadata.get("WASM_MANAGER_URL")
@@ -153,7 +148,7 @@ object WasmUtils {
               (url, clientId, clientSecret) match {
                 case (Some(url), Some(clientId), Some(clientSecret)) =>
                   env.Ws
-                    .url(s"$url/otoroshi/plugins/${pluginId}/signed-url")
+                    .url(s"$url/otoroshi/plugins/$pluginId")
                     .withRequestTimeout(FiniteDuration(5 * 1000, MILLISECONDS))
                     .withHttpHeaders(
                       "Accept" -> "application/json",
@@ -162,13 +157,14 @@ object WasmUtils {
                     )
                     .execute()
                     .flatMap { resp =>
-                      resp.json.asOpt[String] match {
-                        case Some(url) =>
-                          wasmUrlCache.put(pluginId, url)
-                          WasmUtils.getWasm(url)
-                          .map(wasm => WasmUtils.callWasm(wasm, config, input).left)
-                        case None =>
-                          Right(Json.obj("error"-> "missing signed plugin url")).future
+                      if (resp.status == 400) {
+                        Right(Json.obj("error"-> "missing signed plugin url")).future
+                      } else {
+                        val wasm = resp.bodyAsBytes
+                        scriptCache.put(pluginId, resp.bodyAsBytes)
+                        WasmUtils.callWasm(wasm, config, input)
+                          .left
+                          .future
                       }
                     }
                 case _ =>

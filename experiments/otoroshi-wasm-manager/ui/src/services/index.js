@@ -25,11 +25,21 @@ const rawFetch = (url, init = {}) => {
 
 const jsonFetch = (url, init) => f(url, init).then(r => r.json())
 
-export const createPlugin = plugin => {
+export const createPlugin = (plugin, type) => {
   return jsonFetch('/plugins', {
     method: 'POST',
     body: JSON.stringify({
-      plugin
+      plugin,
+      type
+    })
+  })
+}
+
+export const updatePlugin = (pluginId, newFilename) => {
+  return f(`/plugins/${pluginId}/filename`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      filename: newFilename
     })
   })
 }
@@ -72,9 +82,11 @@ export const buildPlugin = async plugin => {
     method: 'POST',
     body: bytes,
     headers: {
-      'Content-Type': 'application/octet-stream'
+      'Content-Type': 'application/octet-stream',
+      Accept: 'application/json'
     }
   })
+    .then(res => res.json())
 }
 
 export const removePlugin = plugin => rawFetch(`/plugins/${plugin}`, {

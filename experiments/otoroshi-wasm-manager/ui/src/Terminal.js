@@ -10,7 +10,13 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
 
   useEffect(() => {
     if (selectedPlugin) {
-      socket.on(selectedPlugin.pluginId, text => setContent(content => content + text))
+      socket.on(selectedPlugin.pluginId, text => {
+        if (text.includes('Starting build')) {
+          setContent(text)
+        } else {
+          setContent(content => content + text)
+        }
+      })
 
       return () => {
         socket.removeAllListeners()

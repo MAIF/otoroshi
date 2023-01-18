@@ -16,7 +16,15 @@ class App extends React.Component {
 
   componentDidMount() {
     Service.getPlugins()
-      .then(plugins => this.setState({ plugins }))
+      .then(res => {
+        if (Array.isArray(res)) {
+          this.setState({ plugins: res })
+        } else if (res && res.error) {
+          toast.error("Not authorized to access to manager", {
+            autoClose: false
+          })
+        }
+      })
   }
 
   confirmNewEntity = () => {
@@ -45,7 +53,7 @@ class App extends React.Component {
     } else if (editorState === 'onNewPlugin') {
       const newPlugin = plugins.find(plugin => plugin.new && plugin.newFilename && plugin.newFilename.length > 0)
       if (newPlugin) {
-        Service.createPlugin(newPlugin.newFilename)
+        Service.createPlugin(newPlugin.newFilename, newPlugin.type)
           .then(res => {
             if (!res.error) {
               this.setState({
@@ -55,7 +63,43 @@ class App extends React.Component {
           })
       } else {
         this.setState({
-          plugins: this.state.plugins.filter(f => f.filename.length > 0)
+          plugins: plugins.filter(f => f.filename.length > 0)
+        })
+      }
+    } else if (editorState === 'onRenamingPlugin') {
+      const newPlugin = plugins.find(plugin => plugin.new && plugin.newFilename && plugin.newFilename !== plugin.filename)
+      if (newPlugin) {
+        Service.updatePlugin(newPlugin.pluginId, newPlugin.newFilename)
+          .then(res => {
+            if (!res.error) {
+              this.setState({
+                editorState: undefined,
+                plugins: plugins.map(p => {
+                  if (p.pluginId === newPlugin.pluginId) {
+                    return {
+                      ...p,
+                      new: false,
+                      filename: newPlugin.newFilename
+                    }
+                  } else {
+                    return p
+                  }
+                })
+              }, () => {
+                if (selectedPlugin) {
+                  this.setState({
+                    selectedPlugin: {
+                      ...selectedPlugin,
+                      filename: newPlugin.newFilename
+                    }
+                  })
+                }
+              })
+            }
+          })
+      } else {
+        this.setState({
+          editorState: undefined
         })
       }
     }
@@ -80,7 +124,7 @@ class App extends React.Component {
   }
 
   onClick = e => {
-    if ((['onNewFile', 'onNewPlugin'].includes(this.state.editorState)) && e.target.tagName.toUpperCase() !== 'INPUT') {
+    if ((['onNewFile', 'onNewPlugin', 'onRenamingPlugin'].includes(this.state.editorState)) && e.target.tagName.toUpperCase() !== 'INPUT') {
       this.confirmNewEntity()
     }
   }
@@ -102,14 +146,15 @@ class App extends React.Component {
     })
   }
 
-  onNewPlugin = () => {
+  onNewPlugin = type => {
     this.setState({
       editorState: 'onNewPlugin',
       plugins: [
         ...this.state.plugins,
         {
           new: true,
-          filename: ''
+          filename: '',
+          type
         }
       ]
     })
@@ -135,6 +180,34 @@ class App extends React.Component {
           return { ...f, newFilename: newFilename }
         return f
       })
+    })
+  }
+
+  enablePluginRenaming = pluginId => {
+    this.setState({
+      editorState: 'onRenamingPlugin',
+      plugins: this.state.plugins.map(p => {
+        if (p.pluginId === pluginId) {
+          return {
+            ...p,
+            new: true,
+            newFilename: p.filename
+          }
+        } else {
+          return p
+        }
+      })
+    }, () => {
+      const { selectedPlugin } = this.state;
+      if (selectedPlugin && selectedPlugin.pluginId === pluginId) {
+        this.setState({
+          selectedPlugin: {
+            ...selectedPlugin,
+            new: true,
+            newFilename: selectedPlugin.filename
+          }
+        })
+      }
     })
   }
 
@@ -174,7 +247,7 @@ class App extends React.Component {
       })
       .then(res => {
         if (res.error && res.status === 404) {
-          Service.getPluginTemplate('rust') // TODO - handle Assembly script case
+          Service.getPluginTemplate(plugin.type)
             .then(r => this.downloadPluginTemplate(r, plugin))
         } else {
           return this.downloadPluginTemplate(res, plugin)
@@ -238,9 +311,7 @@ class App extends React.Component {
 
   onSave = () => {
     Service.savePlugin(this.state.selectedPlugin)
-      .then(res => {
-        toast.success("Saved!");
-      })
+      .then(() => toast.success("Saved!"))
   }
 
   onBuild = () => {
@@ -248,7 +319,13 @@ class App extends React.Component {
       .then(() => {
         Service.buildPlugin(this.state.selectedPlugin)
           .then(res => {
-            toast.info("Added build to queue.");
+            if (res.message) {
+              toast.info(res.message)
+            } else if (res.alreadyExists) {
+              toast.warn("Your plugin is already building or already in the queue.");
+            } else {
+              toast.info("Added build to queue.");
+            }
           })
       })
   }
@@ -258,7 +335,7 @@ class App extends React.Component {
     if (window.confirm(`Delete the ${plugin.filename} plugin ?`)) {
       Service.removePlugin(pluginId)
         .then(res => {
-          if (res.status === 200)
+          if (res.status === 204)
             this.setState({
               plugins: this.state.plugins.filter(f => f.pluginId !== pluginId),
               selectedPlugin: undefined
@@ -277,17 +354,18 @@ class App extends React.Component {
       tabIndex="0">
       <TabsManager
         plugins={plugins}
-        onFileChange={this.onFileChange}
-        onPluginNameChange={this.onPluginNameChange}
-        onNewFile={this.onNewFile}
-        onNewPlugin={this.onNewPlugin}
-        onPluginClick={this.onPluginClick}
+        configFiles={configFiles}
         selectedPlugin={selectedPlugin}
+        onFileChange={this.onFileChange}
+        onNewFile={this.onNewFile}
+        onPluginNameChange={this.onPluginNameChange}
+        enablePluginRenaming={this.enablePluginRenaming}
+        onNewPlugin={this.onNewPlugin}
+        removePlugin={this.removePlugin}
+        onPluginClick={this.onPluginClick}
         handleContent={this.handleContent}
         onSave={this.onSave}
         onBuild={this.onBuild}
-        removePlugin={this.removePlugin}
-        configFiles={configFiles}
       />
     </div>
   }

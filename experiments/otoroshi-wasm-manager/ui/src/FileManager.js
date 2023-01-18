@@ -2,6 +2,7 @@ import React from 'react';
 import { ReactComponent as Js } from './assets/js.svg';
 import { ReactComponent as Rust } from './assets/rust.svg';
 import { ReactComponent as Json } from './assets/json.svg';
+import { ReactComponent as Ts } from './assets/ts.svg';
 
 const LOGOS = {
   js: <Js style={{ height: 24, width: 24 }} />,
@@ -11,6 +12,7 @@ const LOGOS = {
   log: <i className='fas fa-file' />,
   rs: <Rust style={{ height: 30, width: 32, marginLeft: -4 }} />,
   toml: <i className='fas fa-file' />,
+  ts: <Ts style={{ height: 22, width: 22, marginBottom: 2 }} />,
 }
 
 function File({ newFilename, filename, content, ext, onClick, ...props }) {
@@ -40,7 +42,7 @@ function FileManager({
   configFiles }) {
   return (
     <div className='d-flex flex-column mt-1' style={{ minWidth: 250, background: '#eee' }}>
-      <Header onNewFile={onNewFile} selectedPlugin={selectedPlugin} />
+      <Header onNewFile={onNewFile} selectedPlugin={selectedPlugin}/>
       {[...files, ...configFiles].map((file, i) => {
         return <File {...file}
           key={file.filename}

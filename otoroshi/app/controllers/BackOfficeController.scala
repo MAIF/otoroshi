@@ -1905,8 +1905,8 @@ class BackOfficeController(
             env.Ws
               .url(s"$url/otoroshi/plugins")
               .withHttpHeaders(
-                "OTOROSHI_CLIENT_ID" -> clientId,
-                "OTOROSHI_CLIENT_SECRET" -> clientSecret,
+                "Otoroshi-Client-Id" -> clientId,
+                "Otoroshi-Client-Secret" -> clientSecret,
                 "kind" -> filterPlugins.getOrElse("*")
               )
               .execute()

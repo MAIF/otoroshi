@@ -23,5 +23,7 @@ const extractUserFromQuery = (req, res, next) => {
 }
 
 module.exports = {
-  extractUserFromQuery
+  Security: {
+    extractUserFromQuery
+  }
 }

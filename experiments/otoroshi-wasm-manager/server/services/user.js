@@ -96,7 +96,6 @@ const _getUser = key => {
         else
           resolve({})
       } catch (err) {
-        console.log(err)
         resolve({})
       }
     })
