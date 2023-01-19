@@ -259,8 +259,7 @@ const Feature = ({ title, description, img, link }) => {
       to={link}
       className="d-flex"
       style={{
-        backgroundColor: '#efefef',
-        boxShadow: '0 1px 3px rgba(225,225,225,.75)',
+        backgroundColor: 'var(--bg-color_level2)',   
         margin: '5px 0px',
         height: '100%',
         borderRadius: '12px',
@@ -285,7 +284,7 @@ const Feature = ({ title, description, img, link }) => {
         }}></div>
       <div
         className="d-flex flex-column"
-        style={{ flex: 1, backgroundColor: '#fff', padding: '12px' }}>
+        style={{ flex: 1, backgroundColor: 'var(--bg-color_level3)', padding: '12px' }}>
         <div
           style={{
             fontWeight: 'bold',
@@ -293,12 +292,12 @@ const Feature = ({ title, description, img, link }) => {
             marginTop: '7px',
             marginBottom: '10px',
             fontSize: 20,
-            color: '#000',
+            color: 'var(--color_level3)',
             textTransform: 'capitalize',
           }}>
           {title}
         </div>
-        <div className="me-1" style={{ marginLeft: '5px', marginBottom: '10px', color: '#000' }}>
+        <div className="me-1" style={{ marginLeft: '5px', marginBottom: '10px', color: 'var(--color_level3)' }}>
           <p>{description}</p>
         </div>
       </div>
