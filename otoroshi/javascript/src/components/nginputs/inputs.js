@@ -14,13 +14,13 @@ const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput'
 const ReadOnlyField = ({ value, pre }) => {
   if (pre) {
     return (
-      <pre className="d-flex align-items-center" style={{ height: '100%', color: '#fff' }}>
+      <pre className="d-flex align-items-center" style={{ height: '100%'}}>
         {value}
       </pre>
     );
   } else {
     return (
-      <span className="d-flex align-items-center" style={{ height: '100%', color: '#fff' }}>
+      <span className="d-flex align-items-center" style={{ height: '100%' }}>
         {value}
       </span>
     );
@@ -137,7 +137,7 @@ export class NgDotsRenderer extends Component {
               if (backgroundColorFromOption) {
                 style = {
                   ...style,
-                  color: '#fff',
+                  color: 'yellow',
                 };
               }
 

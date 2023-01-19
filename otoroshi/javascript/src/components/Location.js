@@ -63,12 +63,12 @@ export class Location extends Component {
       return (
         <>
           <LabelAndInput label="Organization">
-            <span className="d-flex align-items-center" style={{ height: '100%', color: '#fff' }}>
+            <span className="d-flex align-items-center" style={{ height: '100%'}}>
               {this.props.tenant || window.localStorage.getItem('Otoroshi-Tenant') || 'default'}
             </span>
           </LabelAndInput>
           <LabelAndInput label="Teams">
-            <span className="d-flex align-items-center" style={{ height: '100%', color: '#fff' }}>
+            <span className="d-flex align-items-center" style={{ height: '100%'}}>
               {this.props.teams.join(' | ')}
             </span>
           </LabelAndInput>

@@ -254,9 +254,6 @@ export class JwtVerifier extends Component {
 function Header({ isConfigView, onChange }) {
   return (
     <PillButton
-      style={{
-        backgroundColor: '#494949',
-      }}
       rightEnabled={isConfigView}
       leftText="Edition"
       rightText="Visualization"
