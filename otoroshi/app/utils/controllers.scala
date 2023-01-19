@@ -220,19 +220,19 @@ trait EntityHelper[Entity <: EntityLocationSupport, Error] {
   def readEntity(json: JsValue): Either[String, Entity]
   def writeEntity(entity: Entity): JsValue
   def findByIdOps(
-      id: String
+      id: String, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], OptionalEntityAndContext[Entity]]]
   def findAllOps(
       req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], SeqEntityAndContext[Entity]]]
   def createEntityOps(
-      entity: Entity
+      entity: Entity, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
   def updateEntityOps(
-      entity: Entity
+      entity: Entity, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
   def deleteEntityOps(
-      id: String
+      id: String, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], NoEntityAndContext[Entity]]]
   // def canRead[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserRead(entity)
   // def canWrite[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserWrite(entity)
@@ -279,7 +279,7 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                 .byteString
                 .future
             case Right((_, entity))  => {
-              createEntityOps(entity).map {
+              createEntityOps(entity, ctx.request).map {
                 case Left(error)                                              =>
                   Json
                     .obj(
@@ -362,7 +362,7 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                 .byteString
                 .future
             case Right((_, entity))  => {
-              updateEntityOps(entity).map {
+              updateEntityOps(entity, ctx.request).map {
                 case Left(error)                                              =>
                   Json
                     .obj(
@@ -442,7 +442,7 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                 .future
             case Right((_id, patch)) => {
               val id = processId(_id, ctx)
-              findByIdOps(id).flatMap {
+              findByIdOps(id, ctx.request).flatMap {
                 case Left(error)                                         =>
                   Json
                     .obj("status" -> 404, "error" -> "not_found", "error_description" -> "Entity not found", "id" -> id)
@@ -479,7 +479,7 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                             .byteString
                             .future
                         case Right(newEntity) => {
-                          updateEntityOps(newEntity).map {
+                          updateEntityOps(newEntity, ctx.request).map {
                             case Left(error)                                              =>
                               Json
                                 .obj(
@@ -566,7 +566,7 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
               .future
           case Right((_, _id))     => {
             val id = processId(_id, ctx)
-            findByIdOps(id).flatMap {
+            findByIdOps(id, ctx.request).flatMap {
               case Left(err)                                                                        =>
                 Json
                   .obj("status" -> err.status, "error" -> "not_found", "error_description" -> err.bodyAsJson)
@@ -582,7 +582,7 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
               case Right(optent) if optent.entity.isDefined && !ctx.canUserWrite(optent.entity.get) =>
                 ByteString.empty.future
               case Right(optent) if optent.entity.isDefined && ctx.canUserWrite(optent.entity.get)  =>
-                deleteEntityOps(id).map {
+                deleteEntityOps(id, ctx.request).map {
                   case Left(error)                                             =>
                     Json
                       .obj(
@@ -674,7 +674,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
       case Right(entity) if !ctx.canUserWrite(entity) =>
         Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
       case Right(entity)                              =>
-        createEntityOps(entity).map {
+        createEntityOps(entity, ctx.request).map {
           case Left(error)                                                   =>
             Status(error.status)(Json.obj("error" -> "creation_error", "error_description" -> error.bodyAsJson))
           case Right(EntityAndContext(entity, action, message, meta, alert)) =>
@@ -895,7 +895,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     implicit val implEc  = env.otoroshiExecutionContext
     implicit val implMat = env.otoroshiMaterializer
 
-    findByIdOps(processId(id, ctx)).map {
+    findByIdOps(processId(id, ctx), ctx.request).map {
       case Left(error)                                                               =>
         Status(error.status)(Json.obj("error" -> "find_error", "error_description" -> error.bodyAsJson))
       case Right(OptionalEntityAndContext(entity, action, message, metadata, alert)) =>
@@ -942,7 +942,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
       case Right(entity) if !ctx.canUserWrite(entity) =>
         Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
       case Right(entity)                              => {
-        updateEntityOps(entity).map {
+        updateEntityOps(entity, ctx.request).map {
           case Left(error)                                              =>
             Status(error.status)(Json.obj("error" -> "update_error", "error_description" -> error.bodyAsJson))
           case Right(EntityAndContext(_, action, message, meta, alert)) =>
@@ -981,7 +981,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     implicit val implEc  = env.otoroshiExecutionContext
     implicit val implMat = env.otoroshiMaterializer
 
-    findByIdOps(processId(id, ctx)).flatMap {
+    findByIdOps(processId(id, ctx), ctx.request).flatMap {
       case Left(error)                                         => NotFound(Json.obj("error" -> "not_found", "error_description" -> "Entity not found")).future
       case Right(OptionalEntityAndContext(option, _, _, _, _)) =>
         option match {
@@ -994,7 +994,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
             readEntity(newJson) match {
               case Left(e)          => BadRequest(Json.obj("error" -> "bad_entity", "error_description" -> e)).future
               case Right(newEntity) => {
-                updateEntityOps(newEntity).map {
+                updateEntityOps(newEntity, ctx.request).map {
                   case Left(error)                                              =>
                     Status(error.status)(Json.obj("error" -> "update_error", "error_description" -> error.bodyAsJson))
                   case Right(EntityAndContext(_, action, message, meta, alert)) =>
@@ -1039,13 +1039,13 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     Source(ids.toList)
       .mapAsync(1) { _id =>
         val id = processId(_id, ctx)
-        findByIdOps(id).flatMap {
+        findByIdOps(id, ctx.request).flatMap {
           case Left(err)                                                                        => (id, Some(err)).future
           case Right(optent) if optent.entity.isEmpty                                           => (id, buildError(404, "Entity not found").some).future
           case Right(optent) if optent.entity.isDefined && !ctx.canUserWrite(optent.entity.get) =>
             (id, buildError(401, "You're not allowed").some).future
           case Right(optent) if optent.entity.isDefined && ctx.canUserWrite(optent.entity.get)  =>
-            deleteEntityOps(id).map {
+            deleteEntityOps(id, ctx.request).map {
               case Left(error)                                             =>
                 (id, Some(error))
               case Right(NoEntityAndContext(action, message, meta, alert)) =>

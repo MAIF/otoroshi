@@ -1031,6 +1031,10 @@ play.http {
     domains = []  # the backoffice domains
     domainsStr = ${?APP_BACKOFFICE_DOMAINS} # the backoffice domains
     domainsStr = ${?OTOROSHI_BACKOFFICE_DOMAINS} # the backoffice domains
+    useNewEngine = true # avoid backoffice admin api proxy
+    useNewEngine = ${?OTOROSHI_BACKOFFICE_USE_NEW_ENGINE} # avoid backoffice admin api proxy
+    usePlay = true # avoid backoffice http call for admin api
+    usePlay = ${?OTOROSHI_BACKOFFICE_USE_PLAY} # avoid backoffice http call for admin api
     session {
       exp = 86400000 # the backoffice cookie expiration
       exp = ${?APP_BACKOFFICE_SESSION_EXP} # the backoffice cookie expiration
@@ -1935,6 +1939,13 @@ otoroshi {
       all = false
       all = ${?OTOROSHI_SSL_TRUST_ALL}
     }
+    rootCa {
+    	ca = ${?OTOROSHI_SSL_ROOTCA_CA}
+    	cert = ${?OTOROSHI_SSL_ROOTCA_CERT}
+    	key = ${?OTOROSHI_SSL_ROOTCA_KEY}
+    	importCa = false
+			importCa = ${?OTOROSHI_SSL_ROOTCA_IMPORTCA}
+    }
     # some initial cacert access, useful to include non standard CA when starting
     initialCacert = ${?CLUSTER_WORKER_INITIAL_CACERT}
     initialCacert = ${?OTOROSHI_CLUSTER_WORKER_INITIAL_CACERT}
@@ -1948,6 +1959,7 @@ otoroshi {
     initialCertKey = ${?OTOROSHI_CLUSTER_WORKER_INITIAL_CERT_KEY}
     initialCertKey = ${?INITIAL_CERT_KEY}
     initialCertKey = ${?OTOROSHI_INITIAL_CERT_KEY}
+    initialCertImportCa = ${?OTOROSHI_INITIAL_CERT_IMPORTCA}
     # initialCerts = []
   }
   cluster {
@@ -2139,6 +2151,7 @@ otoroshi {
     response.proxyhost = &quot;Otoroshi-Proxied-Host&quot;
     response.error = &quot;Otoroshi-Error&quot;
     response.errormsg = &quot;Otoroshi-Error-Msg&quot;
+    response.errorcause = &quot;Otoroshi-Error-Cause&quot;
     response.proxylatency = &quot;Otoroshi-Proxy-Latency&quot;
     response.upstreamlatency = &quot;Otoroshi-Upstream-Latency&quot;
     response.dailyquota = &quot;Otoroshi-Daily-Calls-Remaining&quot;
@@ -2537,6 +2550,8 @@ akka { # akka specific configuration
     subdomain = ${?OTOROSHI_BACKOFFICE_SUBDOMAIN} # the backoffice subdomain
     domainsStr = ${?APP_BACKOFFICE_DOMAINS} # the backoffice domains
     domainsStr = ${?OTOROSHI_BACKOFFICE_DOMAINS} # the backoffice domains
+    useNewEngine = ${?OTOROSHI_BACKOFFICE_USE_NEW_ENGINE} # avoid backoffice admin api proxy
+    usePlay = ${?OTOROSHI_BACKOFFICE_USE_PLAY} # avoid backoffice http call for admin api
     session {
       exp = ${?APP_BACKOFFICE_SESSION_EXP} # the backoffice cookie expiration
       exp = ${?OTOROSHI_BACKOFFICE_SESSION_EXP} # the backoffice cookie expiration
@@ -3080,6 +3095,12 @@ otoroshi {
     trust {
       all = ${?OTOROSHI_SSL_TRUST_ALL}
     }
+    rootCa {
+    	ca = ${?OTOROSHI_SSL_ROOTCA_CA}
+    	cert = ${?OTOROSHI_SSL_ROOTCA_CERT}
+    	key = ${?OTOROSHI_SSL_ROOTCA_KEY}
+			importCa = ${?OTOROSHI_SSL_ROOTCA_IMPORTCA}
+    }
     initialCacert = ${?CLUSTER_WORKER_INITIAL_CACERT}
     initialCacert = ${?OTOROSHI_CLUSTER_WORKER_INITIAL_CACERT}
     initialCacert = ${?INITIAL_CACERT}
@@ -3092,6 +3113,7 @@ otoroshi {
     initialCertKey = ${?OTOROSHI_CLUSTER_WORKER_INITIAL_CERT_KEY}
     initialCertKey = ${?INITIAL_CERT_KEY}
     initialCertKey = ${?OTOROSHI_INITIAL_CERT_KEY}
+    initialCertImportCa = ${?OTOROSHI_INITIAL_CERT_IMPORTCA}
   }
   cluster {
     mode = ${?CLUSTER_MODE} # can be &quot;off&quot;, &quot;leader&quot;, &quot;worker&quot;
@@ -3440,7 +3462,7 @@ akka { # akka specific configuration
 
 <!--
 <div class="copyright">
-<span class="text">&copy; 2022</span>
+<span class="text">&copy; 2023</span>
 <a href="https://www.example.com" class="logo">logo</a>
 </div>
 -->

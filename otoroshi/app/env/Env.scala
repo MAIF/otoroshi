@@ -451,11 +451,16 @@ class Env(
     configuration.getOptionalWithFileSupport[String]("app.adminapi.exposedSubdomain").getOrElse("otoroshi-api")
   lazy val adminApiAdditionalExposedDomain: Option[String] =
     configuration.getOptionalWithFileSupport[String]("app.adminapi.additionalExposedDomain")
-  lazy val backOfficeSubDomain: String                     =
+
+  lazy val backofficeUseNewEngine: Boolean =
+    configuration.getOptionalWithFileSupport[Boolean]("app.backoffice.useNewEngine").getOrElse(true)
+  lazy val backofficeUsePlay: Boolean      =
+    configuration.getOptionalWithFileSupport[Boolean]("app.backoffice.usePlay").getOrElse(true)
+  lazy val backOfficeSubDomain: String     =
     configuration.getOptionalWithFileSupport[String]("app.backoffice.subdomain").getOrElse("otoroshi")
-  lazy val privateAppsSubDomain: String                    =
+  lazy val privateAppsSubDomain: String    =
     configuration.getOptionalWithFileSupport[String]("app.privateapps.subdomain").getOrElse("privateapps")
-  lazy val retries: Int                                    = configuration.getOptionalWithFileSupport[Int]("app.retries").getOrElse(5)
+  lazy val retries: Int                    = configuration.getOptionalWithFileSupport[Int]("app.retries").getOrElse(5)
 
   lazy val backOfficeServiceId          =
     configuration.getOptionalWithFileSupport[String]("app.adminapi.defaultValues.backOfficeServiceId").get
@@ -680,6 +685,8 @@ class Env(
       configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.error").get
     lazy val OtoroshiErrorMsg                   =
       configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.errormsg").get
+    lazy val OtoroshiErrorCause                 =
+      configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.errorcause").get
     lazy val OtoroshiProxyLatency               =
       configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.proxylatency").get
     lazy val OtoroshiUpstreamLatency            =
@@ -1042,7 +1049,7 @@ class Env(
     missingOnlyHeadersIn = Map.empty,
     missingOnlyHeadersOut = Map.empty,
     stripPath = true,
-    useAkkaHttpClient = true
+    useAkkaHttpClient = false
   )
 
   lazy val backofficeRoute =

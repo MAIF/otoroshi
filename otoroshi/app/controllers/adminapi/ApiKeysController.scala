@@ -663,7 +663,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def writeEntity(entity: ApiKey): JsValue = ApiKey._fmt.writes(entity)
 
   override def findByIdOps(
-      id: String
+      id: String, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.findById(id).map { opt =>
       Right(
@@ -695,7 +695,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   }
 
   override def createEntityOps(
-      entity: ApiKey
+      entity: ApiKey, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.set(entity).map {
       case true  => {
@@ -721,7 +721,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   }
 
   override def updateEntityOps(
-      entity: ApiKey
+      entity: ApiKey, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.set(entity).map {
       case true  => {
@@ -747,7 +747,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   }
 
   override def deleteEntityOps(
-      id: String
+      id: String, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.delete(id).map {
       case true  => {

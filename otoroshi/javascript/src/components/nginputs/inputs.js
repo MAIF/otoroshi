@@ -1,5 +1,5 @@
 import React, { Component, Suspense } from 'react';
-import Select from 'react-select';
+import Select, { Creatable }  from 'react-select';
 import isFunction from 'lodash/isFunction';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 import { Location } from '../Location';
@@ -889,8 +889,11 @@ export class NgArraySelectRenderer extends Component {
   };
 
   render() {
+    console.log('render')
     const schema = this.props.schema || {};
     const props = schema.props || {};
+    const Component = props.creatable ? Select : Creatable;
+    console.log(props);
 
     return (
       <LabelAndInput {...this.props}>
@@ -902,7 +905,7 @@ export class NgArraySelectRenderer extends Component {
                   className="d-flex justify-content-between align-items-center mb-1"
                   key={`${value}-${idx}`}>
                   <div style={{ width: '100%', flex: 1 }}>
-                    <Select
+                    <Component
                       name={`selector-${this.props.name}`}
                       value={value}
                       isLoading={this.state.loading}

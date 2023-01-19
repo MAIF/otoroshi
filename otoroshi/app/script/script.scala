@@ -459,7 +459,7 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     transformRequestBody(
       context.snowflake,
-      context.body,
+      context.otoroshiRequest.body.apply(),
       context.rawRequest,
       context.otoroshiRequest,
       context.descriptor,
@@ -473,7 +473,7 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     transformResponseBody(
       context.snowflake,
-      context.body,
+      context.otoroshiResponse.body.apply(),
       context.rawResponse,
       context.otoroshiResponse,
       context.descriptor,

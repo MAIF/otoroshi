@@ -4,6 +4,7 @@ export default {
     header_name: {
       type: 'string',
       label: 'Header name',
+      placeholder: 'Otoroshi-Claim by default',
     },
     version: {
       type: 'select',
@@ -24,7 +25,7 @@ export default {
       collapsable: true,
       collapsed: false,
       flow: ['type'],
-      label: 'Algo.',
+      label: 'Signature alg.',
       schema: {
         type: {
           type: 'select',
@@ -43,7 +44,15 @@ export default {
           },
         },
         size: {
-          type: 'number',
+          type: 'select',
+          label: 'size',
+          props: {
+            options: [
+              { label: '512', value: 512 },
+              { label: '384', value: 384 },
+              { label: '256', value: 256 },
+            ],
+          },
         },
         secret: {
           type: 'string',

@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.0.2] - 2023-01-13
+
+https://github.com/MAIF/otoroshi/milestone/55?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.0.1...v16.0.2
+https://github.com/MAIF/otoroshi/releases/tag/v16.0.2
+
+- weird behavior of the \"authorized on\" select in apikeys (#1399)
+- weird behavior of the \"groups\" select in routes / services (#1400)
+- handle errors correctly in the new engine (#1403)
+- handle oauth server communication errors (#1404)
+- missing ui descriptor for `cp:otoroshi.next.plugins.OtoroshiHeadersIn` (#1405)
+- avoid one more http call when backoffice call admin api (#1406)
+
+## [16.0.1] - 2023-01-11
+
+https://github.com/MAIF/otoroshi/milestone/54?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.0.0...v16.0.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.0.1
+
+- Change the way requests from the admin backoffice are forwarded to the admin api (#1390)
+- Rollout the features dashboard with rights management (#1391)
+- fix bad request/response body forward through request transformer wrapper (#1392)
+- fix possible rights escalation on the teams/organizations apis (#1393)
+- weird behavior of the ObjectInput component that leads to reload loop (#1394)
+- Add a new plugin to mimic behavior of old service on otoroshi specific headers in (#1395)
+- /.well-known/otoroshi/me does not work with routes (#1401)
+- /.well-known/otoroshi/logout does not work on routes (#1402)
+
 ## [16.0.0] - 2022-12-16
 
 https://github.com/MAIF/otoroshi/milestone/53?closed=1

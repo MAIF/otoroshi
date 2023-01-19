@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import Select from 'react-select';
+import Select, { Creatable } from 'react-select';
 import { Scripts } from '../Scripts';
 import { Separator } from '../Separator';
 import { Help } from './Help';
@@ -118,50 +118,64 @@ export class ArraySelectInput extends Component {
 
   render() {
     const values = Object.keys(this.props.value || {}).map((k) => [k, this.props.value[k]]);
+    const Component = this.props.creatable ? Creatable : Select;
+    
+    const additional = this.props.creatable ? (values.map(arr => {
+      const value = arr[0];
+      const found = this.state.possibleValues.find(v => v.value === value);
+      if (!found) {
+        return { value: value, label: value };
+      } else {
+        return null;
+      }
+    }).filter(v => !!v)) : [];
+
+    const possibleValues = [ ...this.state.possibleValues, ...additional ];
 
     return (
       <div>
         <Separator title={this.props.title} />
         {values.length === 0 && this.renderOnEmptyValues()}
-
-        {values.map((value, idx) => (
-          <div className="mb-3" key={idx}>
-            {idx === 0 ? (
-              <label className="col-xs-12 col-sm-2 col-form-label">
-                {this.props.label} <Help text={this.props.help} />
-              </label>
-            ) : (
-              <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>
-            )}
-            <div className="col-sm-10">
-              <div style={{ display: 'flex' }}>
-                <div style={{ flex: 1 }}>
-                  <Select
-                    name={`selector-${idx}`}
-                    value={value[0]}
-                    isLoading={this.state.loading}
+        {values.map((value, idx) => {
+          return (
+            <div className="mb-3" key={idx}>
+              {idx === 0 ? (
+                <label className="col-xs-12 col-sm-2 col-form-label">
+                  {this.props.label} <Help text={this.props.help} />
+                </label>
+              ) : (
+                <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>
+              )}
+              <div className="col-sm-10">
+                <div style={{ display: 'flex' }}>
+                  <div style={{ flex: 1 }}>
+                    <Component
+                      name={`selector-${idx}`}
+                      value={value[0]}
+                      isLoading={this.state.loading}
+                      disabled={this.props.disabled}
+                      placeholder={this.props.placeholderKey}
+                      optionRenderer={this.props.optionRenderer}
+                      options={possibleValues}
+                      onChange={(e) => this.changeKey(e, value[0])}
+                    />
+                  </div>
+                  <input
                     disabled={this.props.disabled}
-                    placeholder={this.props.placeholderKey}
-                    optionRenderer={this.props.optionRenderer}
-                    options={this.state.possibleValues}
-                    onChange={(e) => this.changeKey(e, value[0])}
+                    type={this.props.inputType || 'text'}
+                    className="form-control"
+                    id={`input-${this.props.label}`}
+                    placeholder={this.props.placeholderValue}
+                    value={value[1]}
+                    onChange={(e) => this.changeValue(e, value[0])}
+                    style={{ flex: 1 }}
                   />
+                  {this.renderActions(values, idx, value)}
                 </div>
-                <input
-                  disabled={this.props.disabled}
-                  type={this.props.inputType || 'text'}
-                  className="form-control"
-                  id={`input-${this.props.label}`}
-                  placeholder={this.props.placeholderValue}
-                  value={value[1]}
-                  onChange={(e) => this.changeValue(e, value[0])}
-                  style={{ flex: 1 }}
-                />
-                {this.renderActions(values, idx, value)}
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     );
   }
