@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.0.0
+16.0.2
 </div>
 </div>
 <div class="nav-toc">
@@ -160,7 +160,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.0.0
+16.0.2
 </div>
 </div>
 <div class="nav-toc">
@@ -2406,8 +2406,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>The idea is to only rely on plugins to work and avoid losing time with features that are not used in service descriptors. An automated conversion happens for every service descriptor. If the exposed domain is handled by this plugin, it will be served by this plugin. This plugin introduces new entities that will replace (one day maybe) service descriptors:</p>
 <ul>
   <li><code>routes</code>: a unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins</li>
-  <li><code>services</code>: multiple routing rules based on hostname, path, method and headers that will execute the same list of plugins</li>
-  <li><code>targets</code>: how to contact a backend either by using a domain name or an ip address, supports mtls</li>
+  <li><code>route-compositions</code>: multiple routing rules based on hostname, path, method and headers that will execute the same list of plugins</li>
   <li><code>backends</code>: a list of targets to contact a backend</li>
 </ul>
 <p>as an example, let say you want to use the new engine on your service exposed on <code>api.foo.bar/api</code>. To do that, just add the plugin in the <code>global plugins</code> section of the danger zone, inject the default configuration, enabled it and in <code>domains</code> add the value <code>api.foo.bar</code> (it is possible to use <code>*.foo.bar</code> if that&rsquo;s what you want to do). The next time a request hits the <code>api.foo.bar</code> domain, the new engine will handle it instead of the old one.</p>
@@ -2570,7 +2569,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <!--
 <div class="copyright">
-<span class="text">&copy; 2022</span>
+<span class="text">&copy; 2023</span>
 <a href="https://www.example.com" class="logo">logo</a>
 </div>
 -->

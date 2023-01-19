@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.0.0
+16.0.2
 </div>
 </div>
 <div class="nav-toc">
@@ -160,7 +160,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.0.0
+16.0.2
 </div>
 </div>
 <div class="nav-toc">
@@ -1031,6 +1031,10 @@ play.http {
     domains = []  # the backoffice domains
     domainsStr = ${?APP_BACKOFFICE_DOMAINS} # the backoffice domains
     domainsStr = ${?OTOROSHI_BACKOFFICE_DOMAINS} # the backoffice domains
+    useNewEngine = true # avoid backoffice admin api proxy
+    useNewEngine = ${?OTOROSHI_BACKOFFICE_USE_NEW_ENGINE} # avoid backoffice admin api proxy
+    usePlay = true # avoid backoffice http call for admin api
+    usePlay = ${?OTOROSHI_BACKOFFICE_USE_PLAY} # avoid backoffice http call for admin api
     session {
       exp = 86400000 # the backoffice cookie expiration
       exp = ${?APP_BACKOFFICE_SESSION_EXP} # the backoffice cookie expiration
@@ -2139,6 +2143,7 @@ otoroshi {
     response.proxyhost = &quot;Otoroshi-Proxied-Host&quot;
     response.error = &quot;Otoroshi-Error&quot;
     response.errormsg = &quot;Otoroshi-Error-Msg&quot;
+    response.errorcause = &quot;Otoroshi-Error-Cause&quot;
     response.proxylatency = &quot;Otoroshi-Proxy-Latency&quot;
     response.upstreamlatency = &quot;Otoroshi-Upstream-Latency&quot;
     response.dailyquota = &quot;Otoroshi-Daily-Calls-Remaining&quot;
@@ -2537,6 +2542,8 @@ akka { # akka specific configuration
     subdomain = ${?OTOROSHI_BACKOFFICE_SUBDOMAIN} # the backoffice subdomain
     domainsStr = ${?APP_BACKOFFICE_DOMAINS} # the backoffice domains
     domainsStr = ${?OTOROSHI_BACKOFFICE_DOMAINS} # the backoffice domains
+    useNewEngine = ${?OTOROSHI_BACKOFFICE_USE_NEW_ENGINE} # avoid backoffice admin api proxy
+    usePlay = ${?OTOROSHI_BACKOFFICE_USE_PLAY} # avoid backoffice http call for admin api
     session {
       exp = ${?APP_BACKOFFICE_SESSION_EXP} # the backoffice cookie expiration
       exp = ${?OTOROSHI_BACKOFFICE_SESSION_EXP} # the backoffice cookie expiration
@@ -3440,7 +3447,7 @@ akka { # akka specific configuration
 
 <!--
 <div class="copyright">
-<span class="text">&copy; 2022</span>
+<span class="text">&copy; 2023</span>
 <a href="https://www.example.com" class="logo">logo</a>
 </div>
 -->

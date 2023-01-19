@@ -48,6 +48,7 @@ import { BackendsPage } from '../pages/BackendsPage';
 import { MetricsPage } from '../pages/MetricsPage';
 import { AtomicDesignPage } from '../pages/AtomicDesignPage';
 import { FeaturesPage } from '../pages/FeaturesPage';
+import { ErrorTemplatesPage } from '../pages/ErrorTemplatePage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -70,6 +71,7 @@ class BackOfficeAppContainer extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      shortMenu: true,
       groups: [],
       lines: [],
       catchedError: null,
@@ -108,6 +110,7 @@ class BackOfficeAppContainer extends Component {
         usedNewEngine: env.newEngineEnabled,
       });
     });
+    this.readShortMenu();
   }
 
   componentDidCatch(e) {
@@ -132,6 +135,18 @@ class BackOfficeAppContainer extends Component {
     );
   };
 
+  readShortMenu = () => {
+    const shortMenuStr = window.localStorage.getItem('otoroshi-short-menu') || 'true';
+    const shortMenu = shortMenuStr === 'true';
+    this.setState({ shortMenu });
+  };
+
+  toggleShortMenu = () => {
+    const newShortMenu = !this.state.shortMenu;
+    window.localStorage.setItem('otoroshi-short-menu', String(newShortMenu));
+    this.setState({ shortMenu: newShortMenu });
+  };
+
   render() {
     const classes = ['page-container'];
     if (
@@ -149,6 +164,7 @@ class BackOfficeAppContainer extends Component {
           <>
             <UpdateOtoroshiVersion env={this.state.env} />
             <TopBar
+              shortMenu={this.state.shortMenu}
               setTitle={(t) => DynamicTitle.setContent(t)}
               {...this.props}
               changePassword={this.state.env.changePassword}
@@ -370,6 +386,24 @@ class BackOfficeAppContainer extends Component {
                           }
                         />
                         <Route
+                          path="/error-templates/:taction/:titem"
+                          component={(props) =>
+                            this.decorate(ErrorTemplatesPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
+                          path="/error-templates/:taction"
+                          component={(props) =>
+                            this.decorate(ErrorTemplatesPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
+                          path="/error-templates"
+                          component={(props) =>
+                            this.decorate(ErrorTemplatesPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
                           path="/lines/:lineId/services/:serviceId"
                           component={(props) =>
                             this.decorate(ServicePage, { ...props, env: this.state.env })
@@ -418,7 +452,13 @@ class BackOfficeAppContainer extends Component {
                         />
                         <Route
                           path="/features"
-                          component={(props) => this.decorate(FeaturesPage, props)}
+                          component={(props) =>
+                            this.decorate(FeaturesPage, {
+                              ...props,
+                              shortMenu: this.state.shortMenu,
+                              toggleShortMenu: this.toggleShortMenu,
+                            })
+                          }
                         />
 
                         <Route

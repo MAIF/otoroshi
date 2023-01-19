@@ -3,21 +3,14 @@ package otoroshi.controllers.adminapi
 import otoroshi.actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Sink, Source}
-import otoroshi.auth.{
-  AuthModuleConfig,
-  BasicAuthModuleConfig,
-  GenericOauth2ModuleConfig,
-  LdapAuthModuleConfig,
-  Oauth1ModuleConfig,
-  SamlAuthModuleConfig
-}
+import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig, GenericOauth2ModuleConfig, LdapAuthModuleConfig, Oauth1ModuleConfig, SamlAuthModuleConfig}
 import otoroshi.env.Env
 import otoroshi.events.GatewayEvent
 import otoroshi.models._
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models.RightsChecker
 import otoroshi.models.ServiceDescriptor.toJson
-import otoroshi.next.models.{NgBackend, NgRoute}
+import otoroshi.next.models.{NgBackend, NgRoute, StoredNgBackend}
 import otoroshi.script.Script
 import otoroshi.tcp._
 import otoroshi.utils.syntax.implicits._
@@ -604,9 +597,10 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
               .json
           )
         case "Backend"           =>
+          val tmpl = env.datastores.backendsDataStore.template(env).json.as[JsObject]
           FastFuture.successful(
-            NgBackend.fmt
-              .reads(env.datastores.backendsDataStore.template(env).json.as[JsObject].deepMerge(resource))
+            StoredNgBackend.format
+              .reads(tmpl.deepMerge(resource))
               .get
               .json
           )

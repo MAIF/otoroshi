@@ -6,70 +6,14 @@ import otoroshi.models._
 import otoroshi.el.HeadersExpressionLanguage
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.syntax.implicits._
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{RequestHeader, Result}
 import otoroshi.security.OtoroshiClaim
 
 import scala.concurrent.ExecutionContext
 
-object HeadersHelperImplicits {
-  implicit class BetterSeq(val seq: Seq[(String, String)]) extends AnyVal {
-    @inline
-    def appendOpt[A](opt: Option[A], f: A => (String, String)): Seq[(String, String)] = {
-      opt match {
-        case None    => seq
-        case Some(k) => seq :+ f(k)
-      }
-    }
-    @inline
-    def appendIf(f: => Boolean, header: => (String, String)): Seq[(String, String)]                      =
-      if (f) {
-        seq :+ header
-      } else {
-        seq
-      }
-    @inline
-    def appendIfElse(f: => Boolean, name: String, ten: => String, els: => String): Seq[(String, String)] =
-      if (f) {
-        seq :+ (name, ten)
-      } else {
-        seq :+ (name, els)
-      }
-    @inline
-    def removeIf(name: String, f: => Boolean): Seq[(String, String)]                                     =
-      if (f) seq.filterNot(_._1.toLowerCase() == name.toLowerCase()) else seq
-    @inline
-    def remove(name: String): Seq[(String, String)]                                                      = seq.filterNot(_._1.toLowerCase() == name.toLowerCase())
-    @inline
-    def removeAll(names: Seq[String]): Seq[(String, String)] = {
-      val lowerNames = names.map(_.toLowerCase)
-      seq.filterNot(h => lowerNames.contains(h._1.toLowerCase()))
-    }
-    @inline
-    def removeAllArgs(names: String*): Seq[(String, String)] = {
-      val lowerNames = names.map(_.toLowerCase)
-      seq.filterNot(h => lowerNames.contains(h._1.toLowerCase()))
-    }
-    @inline
-    def appendAll(other: Seq[(String, String)]): Seq[(String, String)]                                   = seq ++ other
-    @inline
-    def appendAllArgs(other: (String, String)*): Seq[(String, String)]                                   = seq ++ other
-    @inline
-    def appendAllArgsIf(f: => Boolean)(other: (String, String)*): Seq[(String, String)]                  = if (f) seq ++ other else seq
-    @inline
-    def lazyAppendAllArgsIf(f: => Boolean)(other: => Seq[(String, String)]): Seq[(String, String)]       =
-      if (f) seq ++ other else seq
-
-    def debug(name: String): Seq[(String, String)] = {
-      // println(name, seq.mkString("\n"))
-      seq
-    }
-  }
-}
-
 object HeadersHelper {
-
-  import HeadersHelperImplicits._
 
   @inline
   def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader)(implicit env: Env): Seq[(String, String)] = {

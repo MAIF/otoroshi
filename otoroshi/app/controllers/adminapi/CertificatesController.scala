@@ -52,7 +52,7 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   override def writeEntity(entity: Cert): JsValue = Cert._fmt.writes(entity)
 
   override def findByIdOps(
-      id: String
+      id: String, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Cert]]] = {
     env.datastores.certificatesDataStore.findById(id).map { opt =>
       Right(
@@ -84,9 +84,11 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   }
 
   override def createEntityOps(
-      entity: Cert
+      entity: Cert, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Cert]]] = {
-    env.datastores.certificatesDataStore.set(entity).map {
+    val noEnrich = req.getQueryString("enrich").contains("false")
+    val enriched = if (noEnrich) entity else entity.enrich()
+    env.datastores.certificatesDataStore.set(enriched).map {
       case true  => {
         Right(
           EntityAndContext(
@@ -110,9 +112,11 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   }
 
   override def updateEntityOps(
-      entity: Cert
+      entity: Cert, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Cert]]] = {
-    env.datastores.certificatesDataStore.set(entity).map {
+    val noEnrich = req.getQueryString("enrich").contains("false")
+    val enriched = if (noEnrich) entity else entity.enrich()
+    env.datastores.certificatesDataStore.set(enriched).map {
       case true  => {
         Right(
           EntityAndContext(
@@ -136,7 +140,7 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   }
 
   override def deleteEntityOps(
-      id: String
+      id: String, req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Cert]]] = {
     env.datastores.certificatesDataStore.delete(id).map {
       case true  => {

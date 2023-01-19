@@ -3,8 +3,9 @@ package otoroshi.next.models
 import akka.stream.Materializer
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
+import otoroshi.gateway.Errors
 import otoroshi.models._
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.{NgLegacyApikeyCall, _}
 import otoroshi.next.plugins.api._
 import otoroshi.next.plugins.wrappers._
 import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
@@ -257,8 +258,18 @@ case class NgRoute(
         )
         .orElse(
           plugins
+            .getPluginByClass[NgLegacyAuthModuleCall]
+            .flatMap(p => NgLegacyAuthModuleCallConfig.format.reads(p.config.raw).asOpt.map(!_.config.passWithApikey))
+        )
+        .orElse(
+          plugins
             .getPluginByClass[ApikeyCalls]
             .flatMap(p => NgApikeyCallsConfig.format.reads(p.config.raw).asOpt.map(!_.passWithUser))
+        )
+        .orElse(
+          plugins
+            .getPluginByClass[NgLegacyApikeyCall]
+            .flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(!_.config.passWithUser))
         )
         .getOrElse(false),
       sendOtoroshiHeadersBack = plugins.getPluginByClass[SendOtoroshiHeadersBack].isDefined,
@@ -315,7 +326,10 @@ case class NgRoute(
         .map(p => NgOtoroshiInfoConfig(p.config.raw).algo)
         .getOrElse(HSAlgoSettings(512, "secret", false)),
       // ///////////////////////////////////////////////////////////
-      privateApp = plugins.getPluginByClass[AuthModule].isDefined,
+      privateApp = plugins
+        .getPluginByClass[AuthModule]
+        .orElse(plugins.getPluginByClass[NgLegacyAuthModuleCall])
+        .isDefined,
       authConfigRef = plugins
         .getPluginByClass[AuthModule]
         .flatMap(p => NgAuthModuleConfig.format.reads(p.config.raw).asOpt.flatMap(_.module))
@@ -324,18 +338,45 @@ case class NgRoute(
             .getPluginByClass[NgLegacyAuthModuleCall]
             .flatMap(p => NgLegacyAuthModuleCallConfig.format.reads(p.config.raw).asOpt.flatMap(_.config.module))
         ),
-      securityExcludedPatterns = plugins.getPluginByClass[AuthModule].map(_.exclude).getOrElse(Seq.empty),
+      securityExcludedPatterns = plugins
+        .getPluginByClass[AuthModule]
+        .map(_.exclude)
+        .orElse(plugins.getPluginByClass[NgLegacyAuthModuleCall].map(_.exclude))
+        .getOrElse(Seq.empty),
       // ///////////////////////////////////////////////////////////
-      publicPatterns = plugins
-        .getPluginByClass[PublicPrivatePaths]
-        .flatMap(p => NgPublicPrivatePathsConfig.format.reads(p.config.raw).asOpt.map(_.publicPatterns))
-        .orElse(plugins.getPluginByClass[ApikeyCalls].map(p => p.exclude))
-        .getOrElse(Seq.empty),
-      privatePatterns = plugins
-        .getPluginByClass[PublicPrivatePaths]
-        .flatMap(p => NgPublicPrivatePathsConfig.format.reads(p.config.raw).asOpt.map(_.privatePatterns))
-        .orElse(plugins.getPluginByClass[ApikeyCalls].map(p => p.include))
-        .getOrElse(Seq.empty),
+      publicPatterns = {
+        val notLegacy = !metadata.get("otoroshi-core-legacy").contains("true")
+        if (notLegacy) {
+          plugins
+            .getPluginByClass[PublicPrivatePaths]
+            .flatMap(p => NgPublicPrivatePathsConfig.format.reads(p.config.raw).asOpt.map(_.publicPatterns)) match {
+            case Some(patterns) => patterns
+            case None           =>
+              plugins.getPluginByClass[ApikeyCalls] match {
+                case None                                => Seq("/.*")
+                case Some(apkc) if apkc.exclude.isEmpty  => Seq.empty
+                case Some(apkc) if apkc.exclude.nonEmpty => apkc.exclude
+              }
+          }
+        } else {
+          plugins
+            .getPluginByClass[NgLegacyApikeyCall]
+            .flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(_.publicPatterns))
+            .getOrElse(Seq.empty)
+        }
+      },
+      privatePatterns = {
+        plugins
+          .getPluginByClass[PublicPrivatePaths]
+          .flatMap(p => NgPublicPrivatePathsConfig.format.reads(p.config.raw).asOpt.map(_.privatePatterns))
+          .orElse(plugins.getPluginByClass[ApikeyCalls].map(p => p.include))
+          .orElse(
+            plugins
+              .getPluginByClass[NgLegacyApikeyCall]
+              .flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(_.privatePatterns))
+          )
+          .getOrElse(Seq.empty)
+      },
       additionalHeaders = plugins
         .getPluginByClass[AdditionalHeadersIn]
         .flatMap(p => NgHeaderValuesConfig.format.reads(p.config.raw).asOpt.map(_.headers))
@@ -413,6 +454,11 @@ case class NgRoute(
       detectApiKeySooner = plugins
         .getPluginByClass[ApikeyCalls]
         .flatMap(p => NgApikeyCallsConfig.format.reads(p.config.raw).asOpt.map(!_.validate))
+        .orElse(
+          plugins
+            .getPluginByClass[NgLegacyApikeyCall]
+            .flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(!_.config.validate))
+        )
         .getOrElse(false),
       canary = plugins
         .getPluginByClass[CanaryMode]
@@ -432,6 +478,11 @@ case class NgRoute(
           .flatMap { plugin =>
             NgApikeyCallsConfig.format.reads(plugin.config.raw).asOpt.map(_.legacy)
           }
+          .orElse(
+            plugins
+              .getPluginByClass[NgLegacyApikeyCall]
+              .flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(_.config.legacy))
+          )
           .getOrElse(ApiKeyConstraints())
       },
       plugins = {
@@ -452,6 +503,20 @@ case class NgRoute(
           config = config
         )
       }
+    )
+  }
+
+  private def otoroshiJsonError(error: JsObject, status: Results.Status, __ctx: NgTransformerErrorContext)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Result = {
+    Errors.craftResponseResultSync(
+      message = error.select("error_description").asOpt[String].getOrElse("an error occurred !"),
+      status = status,
+      req = __ctx.request,
+      maybeCauseId = error.select("error").asOpt[String],
+      attrs = __ctx.attrs,
+      maybeRoute = __ctx.route.some
     )
   }
 
@@ -519,12 +584,15 @@ case class NgRoute(
             markPluginItem(item, ctx, debug, Json.obj("kind" -> "failure", "error" -> JsonHelpers.errToJson(exception)))
             report.setContext(sequence.stopSequence().json)
             Success(
-              Results.InternalServerError(
-                Json.obj(
-                  "error"             -> "internal_server_error",
-                  "error_description" -> "an error happened during response-transformation plugins phase",
-                  "error"             -> JsonHelpers.errToJson(exception)
-                )
+              otoroshiJsonError(
+                Json
+                  .obj(
+                    "error"             -> "internal_server_error",
+                    "error_description" -> "an error happened during response-transformation plugins phase"
+                  )
+                  .applyOnIf(env.isDev) { obj => obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception)) },
+                Results.InternalServerError,
+                __ctx
               )
             )
           case Success(resp_next) =>
@@ -566,12 +634,17 @@ case class NgRoute(
                   promise.trySuccess(
                     Left(
                       NgResultProxyEngineError(
-                        Results.InternalServerError(
-                          Json.obj(
-                            "error"             -> "internal_server_error",
-                            "error_description" -> "an error happened during response-transformation plugins phase",
-                            "error"             -> JsonHelpers.errToJson(exception)
-                          )
+                        otoroshiJsonError(
+                          Json
+                            .obj(
+                              "error"             -> "internal_server_error",
+                              "error_description" -> "an error happened during response-transformation plugins phase"
+                            )
+                            .applyOnIf(env.isDev) { obj =>
+                              obj ++ Json.obj("jvm_error" -> JsonHelpers.errToJson(exception))
+                            },
+                          Results.InternalServerError,
+                          __ctx
                         )
                       )
                     )
@@ -760,6 +833,9 @@ object NgRoute {
       tags = service.tags ++ Seq(s"env:${service.env}"),
       metadata = service.metadata
         .applyOn { meta =>
+          meta ++ Map("otoroshi-core-legacy" -> "true")
+        }
+        .applyOn { meta =>
           meta ++ Map("otoroshi-core-env" -> service.env)
         }
         .applyOnIf(service.useAkkaHttpClient) { meta =>
@@ -849,6 +925,11 @@ object NgRoute {
           .applyOnIf(service.readOnly) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[ReadOnlyCalls]
+            )
+          }
+          .applyOnIf(true) { seq =>
+            seq :+ NgPluginInstance(
+              plugin = pluginId[OtoroshiHeadersIn]
             )
           }
           .applyOnIf(service.ipFiltering.blacklist.nonEmpty) { seq =>
