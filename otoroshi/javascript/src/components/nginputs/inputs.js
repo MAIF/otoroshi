@@ -144,7 +144,7 @@ export class NgDotsRenderer extends Component {
               return (
                 <button
                   className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-info' : 'btn-dark'
+                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
                   } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
@@ -581,7 +581,7 @@ export class NgBoxBooleanRenderer extends Component {
           }}
           className="d-flex"
           style={{
-            outline: 'rgb(65, 65, 62) solid 1px',
+            outline: 'var(--bg-color_level2) solid 1px',
             padding: '5px',
             margin: '5px 0px',
             width: '100%',
@@ -591,7 +591,7 @@ export class NgBoxBooleanRenderer extends Component {
           <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
             <div
               style={{
-                color: 'rgb(249, 176, 0)',
+                // color: 'rgb(249, 176, 0)',
                 fontWeight: 'bold',
                 marginLeft: '5px',
                 marginTop: '7px',
@@ -689,7 +689,7 @@ export class NgArrayRenderer extends Component {
                     display: 'flex',
                     alignItems: 'center',
                     width: '100%',
-                    outline: showItem ? 'rgb(65, 65, 62) solid 1px' : 'none',
+                    outline: showItem ? 'var(--bg-color_level2) solid 1px' : 'none',
                     padding: showItem ? '6px' : 0,
                     marginBottom: showItem ? '6px' : 0,
                   }}
