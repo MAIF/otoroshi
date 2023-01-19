@@ -101,12 +101,12 @@ function Selector({ setMode, disableSelectMode }) {
                 }}>
                 {title}
               </h3>
-              <label
+              <span
                 className="d-flex align-items-center justify-content-between"
                 style={{ flex: 1 }}>
                 {text}
                 <i className="fas fa-chevron-right ms-3" />
-              </label>
+              </span>
             </Button>
           )
         )}
@@ -595,7 +595,6 @@ function InformationsStep({ name, onChange }) {
           className="my-3"
           style={{
             fontSize: '2em',
-            color: '#f9b000',
           }}
           label="Route name"
           value={name}
@@ -642,7 +641,7 @@ function StrategyStep({ value, onChange }) {
             ].map(({ strategy, desc, title, tags }) => {
               return (
                 <Button
-                  type={value === strategy ? 'save' : 'dark'}
+                  type={value === strategy ? 'primaryColor' : 'dark'}
                   className="py-3 d-flex align-items-center flex-column col-3"
                   style={{
                     gap: '12px',
@@ -665,9 +664,9 @@ function StrategyStep({ value, onChange }) {
                     ))}
                   </div>
                   <div className="d-flex flex-column align-items-center" style={{ flex: 1 }}>
-                    <label className="d-flex align-items-center" style={{ textAlign: 'left' }}>
+                    <span className="d-flex align-items-center" style={{ textAlign: 'left' }}>
                       {desc}
-                    </label>
+                    </span>
                     <div
                       className="mt-auto dark-background"
                       style={{
@@ -1019,7 +1018,6 @@ function LoaderItem({ text, timeout, started }) {
         style={{
           flex: 1,
           marginLeft: '12px',
-          color: loading ? '#eee' : '#fff',
           fontWeight: loading ? 'normal' : 'bold',
         }}>
         <div>{text}</div>

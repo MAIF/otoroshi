@@ -135,7 +135,7 @@ const StrategyForm = {
       if (props.readOnly) {
         return (
           <LabelAndInput label="Type">
-            <span className="d-flex align-items-center" style={{ height: '100%', color: '#fff' }}>
+            <span className="d-flex align-items-center" style={{ height: '100%', color: 'var(--color-red)' }}>
               {props.value}
             </span>
           </LabelAndInput>
@@ -166,7 +166,7 @@ const StrategyForm = {
               {VERIFIER_STRATEGIES.map(({ strategy, desc, title, tags }) => {
                 return (
                   <Button
-                    type={props.value === strategy ? 'save' : 'dark'}
+                    type={props.value === strategy ? 'primaryColor' : 'dark'}
                     className="py-3 d-flex align-items-center flex-column col-3"
                     style={{
                       gap: '12px',
@@ -192,9 +192,9 @@ const StrategyForm = {
                       ))}
                     </div>
                     <div className="d-flex flex-column align-items-center" style={{ flex: 1 }}>
-                      <label className="d-flex align-items-center" style={{ textAlign: 'left' }}>
+                      <span className="d-flex align-items-center" style={{ textAlign: 'left' }}>
                         {desc}
-                      </label>
+                      </span>
                       <div
                         className="mt-auto"
                         style={{
@@ -247,7 +247,7 @@ const JwtLocationExamples = {
       return (
         <div className="mt-3 p-3">
           <h4>Examples</h4>
-          <p style={{ color: '#fff' }}>
+          <p>
             A common use case is a request containing a JSON Web token prefixed with Bearer to
             indicate that the user accessing the resources is authenticated.
             <br />
