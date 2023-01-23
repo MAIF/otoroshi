@@ -188,7 +188,7 @@ case class Cert(
     allDomains.exists(d => sanMatchesDomain(dom, d)) // allDomains.exists(d => RegexPool.apply(d).matches(dom))
   def sanMatchesDomain(dom: String, san: String): Boolean = {
     if (san.startsWith("*.")) {
-      domain.endsWith(san.substring(1)) && domain.split("\\.").tail.mkString(".") == san.substring(2)
+      dom.endsWith(san.substring(1)) && dom.split("\\.").tail.mkString(".") == san.substring(2)
       // RegexPool.apply(san).matches(dom)
     } else {
       dom == san
