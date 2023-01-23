@@ -13,7 +13,7 @@ const extractUserFromQuery = (req, res, next) => {
     if (jwtUser) {
       try {
         const decodedToken = JSON.parse(Buffer.from(jwtUser.split('.')[1], 'base64').toString())
-        req.user = decodedToken
+        req.user = decodedToken.user
         next()
       } catch (_) {
         missingCredentials(res)
