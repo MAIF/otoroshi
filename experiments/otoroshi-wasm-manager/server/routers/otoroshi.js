@@ -8,23 +8,25 @@ const router = express.Router()
 const DOMAINS = (process.env.MANAGER_ALLOWED_DOMAINS || "")
   .split(',')
 
-// router.use((req, res, next) => {
-//   if (
-//     DOMAINS.includes(req.headers.host) &&
-//     req.headers["Otoroshi-Client-Id"] === process.env.OTOROSHI_CLIENT_ID,
-//     req.headers["Otoroshi-Client-Secret"] === process.env.OTOROSHI_CLIENT_SECRET
-//   ) {
-//     res.header('Access-Control-Allow-Origin', req.headers.origin)
-//     res.header('Access-Control-Allow-Credentials', true)
-//     next()
-//   } else {
-//     res
-//       .status(403)
-//       .json({
-//         error: 'forbidden access'
-//       })
-//   }
-// })
+router.use((req, res, next) => {
+  if (process.env.MODE !== 'PROD') {
+    next()
+  } else if (
+    DOMAINS.includes(req.headers.host) &&
+    req.headers["Otoroshi-Client-Id"] === process.env.OTOROSHI_CLIENT_ID,
+    req.headers["Otoroshi-Client-Secret"] === process.env.OTOROSHI_CLIENT_SECRET
+  ) {
+    res.header('Access-Control-Allow-Origin', req.headers.origin)
+    res.header('Access-Control-Allow-Credentials', true)
+    next()
+  } else {
+    res
+      .status(403)
+      .json({
+        error: 'forbidden access'
+      })
+  }
+})
 
 router.get('/plugins/:id', (req, res) => {
   const { s3, Bucket } = S3.state()

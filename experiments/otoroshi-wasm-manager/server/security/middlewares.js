@@ -8,17 +8,22 @@ const missingCredentials = res => {
 }
 
 const extractUserFromQuery = (req, res, next) => {
-  const jwtUser = req.headers[process.env.OTOROSHI_USER_HEADER] || req.headers['otoroshi-user']
-  if (jwtUser) {
-    try {
-      const decodedToken = JSON.parse(Buffer.from(jwtUser.split('.')[1], 'base64').toString())
-      res.append('user', decodedToken)
-      next()
-    } catch (_) {
+  if (process.env.MODE === 'PROD') {
+    const jwtUser = req.headers[process.env.OTOROSHI_USER_HEADER] || req.headers['otoroshi-user']
+    if (jwtUser) {
+      try {
+        const decodedToken = JSON.parse(Buffer.from(jwtUser.split('.')[1], 'base64').toString())
+        req.user = decodedToken
+        next()
+      } catch (_) {
+        missingCredentials(res)
+      }
+    } else {
       missingCredentials(res)
     }
   } else {
-    missingCredentials(res)
+    req.user = { email: 'admin@otoroshi.io' }
+    next()
   }
 }
 

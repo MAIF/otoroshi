@@ -56,7 +56,7 @@ const addUser = user => {
 const createUserIfNotExists = req => {
   const { s3, Bucket } = S3.state()
 
-  const user = hash(req.user ? req.user.email : 'admin@otoroshi.io');
+  const user = hash(req.user.email)
 
   return new Promise((resolve, reject) => {
     s3.getObject({
@@ -105,14 +105,14 @@ const _getUser = key => {
 const getUserFromString = _getUser
 
 const getUser = req => {
-  const user = hash(req.user ? req.user.email : 'admin@otoroshi.io');
+  const user = hash(req.user.email)
   return _getUser(user)
 }
 
 const updateUser = (req, content) => {
   const { s3, Bucket } = S3.state()
 
-  const jsonProfile = hash(req.user ? req.user.email : 'admin@otoroshi.io');
+  const jsonProfile = hash(req.user.email);
 
   log.info(`updateUser ${jsonProfile}`)
 

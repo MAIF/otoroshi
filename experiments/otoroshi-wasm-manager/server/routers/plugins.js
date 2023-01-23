@@ -27,7 +27,7 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
   const { s3, Bucket } = S3.state()
 
-  const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
+  const user = hash(req.user.email)
   const filename = hash(`${user}-${req.params.id}`)
 
   const params = {
@@ -96,7 +96,7 @@ router.get('/:id/configurations', (req, res) => {
 router.post('/', (req, res) => {
   const { s3, Bucket } = S3.state()
 
-  const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
+  const user = hash(req.user.email)
 
   UserManager.createUserIfNotExists(user)
     .then(() => {
@@ -152,7 +152,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   const { s3, Bucket } = S3.state()
 
-  const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
+  const user = hash(req.user.email)
   const pluginHash = hash(`${user}-${req.params.id}`)
 
   const params = {
@@ -223,7 +223,7 @@ router.delete('/:id', async (req, res) => {
 })
 
 router.post('/:id/build', async (req, res) => {
-  const user = hash(req.user ? req.user.email : 'admin@otoroshi.io')
+  const user = hash(req.user.email)
   const pluginHash = hash(`${user}-${req.params.id}`)
 
   const data = await UserManager.getUser(req)

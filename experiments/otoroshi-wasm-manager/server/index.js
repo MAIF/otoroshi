@@ -35,8 +35,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.text());
 
-if (process.env.MODE === 'PROD')
-  app.use(Security.extractUserFromQuery);
+app.use(Security.extractUserFromQuery);
 
 app.get('/', (_, res) => res.sendFile(path.join(__dirname, '..', 'ui/build', '/index.html')));
 
