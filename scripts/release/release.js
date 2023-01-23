@@ -161,7 +161,7 @@ async function changeVersion(where, from, to, exclude = []) {
 async function formatCode(version, where, releaseDir) {
   // format code
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/fmt.sh')], where);
-  await runSystemCommand('git', ['commit', '-am', `Format code before release`], location);
+  await runSystemCommand('git', ['commit', '-am', `[release ${version}] Format code before release`], location);
 }
 
 async function cleanup(version, where, releaseDir) {
@@ -190,7 +190,7 @@ async function buildOpenApi(version, where, releaseDir) {
   // await runSystemCommand('cp', [`${releaseDir}/openapi.json`, `${where}/manual/src/main/paradox/code/`], location);
   await runSystemCommand('git', ['add', `${releaseDir}/openapi.json`], location);
   await runSystemCommand('git', ['add', `${where}/manual/src/main/paradox/code/openapi.json`], location);
-  await runSystemCommand('git', ['commit', '-am', `Update openapi file before release`], location);
+  await runSystemCommand('git', ['commit', '-am', `[release ${version}] Update openapi file before release`], location);
 }
 
 async function buildPluginDoc(version, where, releaseDir) {
@@ -201,7 +201,7 @@ async function buildPluginDoc(version, where, releaseDir) {
     sbt ";clean;compile;testOnly PluginDocTests"
   `, where);
   await runSystemCommand('git', ['add', `${where}/manual/src/main/paradox/plugins`], location);
-  await runSystemCommand('git', ['commit', '-am', `Update plugin documentation`], location);
+  await runSystemCommand('git', ['commit', '-am', `[release ${version}] Update plugin documentation`], location); 
 }
 
 async function buildDocumentation(version, where, releaseDir, releaseFile) {
@@ -209,7 +209,7 @@ async function buildDocumentation(version, where, releaseDir, releaseFile) {
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/doc.sh'), 'all'], where);
   await runSystemCommand('zip', ['-r', path.resolve(releaseDir, `otoroshi-manual-${version}.zip`), path.resolve(where, 'docs/manual'), '-x', '*.DS_Store'], where);
   await runSystemCommand('git', ['add', '--all'], location);
-  await runSystemCommand('git', ['commit', '-am', `Update site documentation before release`], location);
+  await runSystemCommand('git', ['commit', '-am', `[release ${version}] Update site documentation before release`], location);
 }
 
 async function buildDistribution(version, where, releaseDir, releaseFile) {
@@ -302,7 +302,7 @@ async function buildTlsTermination(location, version) {
 }
 
 async function githubTag(location, version) {
-  await runSystemCommand('git', ['commit', '-am', `Prepare the release of Otoroshi version ${version}`], location);
+  await runSystemCommand('git', ['commit', '-am', `[release ${version}] Prepare the release of Otoroshi version ${version}`], location);
   await runSystemCommand('git', ['tag', '-am', `Release Otoroshi version ${version}`, 'v' + version], location);
 }
 
@@ -414,7 +414,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     }
     await changeVersion(location, from, to);
     await changeVersion(location, last, to);
-    await runSystemCommand('git', ['commit', '-am', `Update version to ${to}`], location);
+    await runSystemCommand('git', ['commit', '-am', `[release ${to}] Update version to ${to}`], location);
   });
   // await ensureStep('BUILD_OTOROSHI', releaseFile, () => buildVersion(to, location, releaseDir, releaseFile));
   await buildVersion(to, location, releaseDir, releaseFile);
@@ -427,7 +427,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     await ensureStep('PUBLISH_LIBRARIES_TO_CENTRAL', releaseFile, () => publishMavenCentral(location, to));
     await ensureStep('CHANGE_TO_DEV_VERSION', releaseFile, () => changeVersion(location, to, next, ['./readme.md']));
     await ensureStep('PUSH_TO_GITHUB', releaseFile, async () => {
-      await runSystemCommand('git', ['commit', '-am', `Update version to ${next}`], location);
+      await runSystemCommand('git', ['commit', '-am', `[release ${to}] Update version to ${next}`], location);
       await runSystemCommand('git', ['pull', '--rebase', 'origin', 'master'], location);
       await runSystemCommand('git', ['push', 'origin', 'master'], location);
       await runSystemCommand('git', ['push', '--tags'], location);
