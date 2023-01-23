@@ -75,7 +75,8 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   }
 
   override def createEntityOps(
-      entity: ServiceGroup, req: RequestHeader
+      entity: ServiceGroup,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceGroup]]] = {
     entity.save().map {
       case true  => {
@@ -101,7 +102,8 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   }
 
   override def updateEntityOps(
-      entity: ServiceGroup, req: RequestHeader
+      entity: ServiceGroup,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceGroup]]] = {
     entity.save().map {
       case true  => {
@@ -127,7 +129,8 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   }
 
   override def deleteEntityOps(
-      id: String, req: RequestHeader
+      id: String,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ServiceGroup]]] = {
     env.datastores.serviceGroupDataStore.delete(id).map {
       case true  => {

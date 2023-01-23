@@ -39,7 +39,8 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   override def writeEntity(entity: NgRouteComposition): JsValue = NgRouteComposition.fmt.writes(entity)
 
   override def findByIdOps(
-      id: String, req: RequestHeader
+      id: String,
+      req: RequestHeader
   )(implicit
       env: Env,
       ec: ExecutionContext
@@ -77,7 +78,8 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   }
 
   override def createEntityOps(
-      entity: NgRouteComposition, req: RequestHeader
+      entity: NgRouteComposition,
+      req: RequestHeader
   )(implicit
       env: Env,
       ec: ExecutionContext
@@ -106,7 +108,8 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   }
 
   override def updateEntityOps(
-      entity: NgRouteComposition, req: RequestHeader
+      entity: NgRouteComposition,
+      req: RequestHeader
   )(implicit
       env: Env,
       ec: ExecutionContext
@@ -135,7 +138,8 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   }
 
   override def deleteEntityOps(
-      id: String, req: RequestHeader
+      id: String,
+      req: RequestHeader
   )(implicit
       env: Env,
       ec: ExecutionContext

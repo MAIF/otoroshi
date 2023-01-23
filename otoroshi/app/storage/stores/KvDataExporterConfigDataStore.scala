@@ -221,7 +221,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           filtering = DataExporterConfigFiltering(),
           config = MetricsSettings()
         )
-      case Some("custommetrics")   =>
+      case Some("custommetrics")  =>
         DataExporterConfig(
           typ = DataExporterConfigType.CustomMetrics,
           id = IdGenerator.namedId("data_exporter", env),

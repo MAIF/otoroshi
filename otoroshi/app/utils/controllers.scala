@@ -220,19 +220,23 @@ trait EntityHelper[Entity <: EntityLocationSupport, Error] {
   def readEntity(json: JsValue): Either[String, Entity]
   def writeEntity(entity: Entity): JsValue
   def findByIdOps(
-      id: String, req: RequestHeader
+      id: String,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], OptionalEntityAndContext[Entity]]]
   def findAllOps(
       req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], SeqEntityAndContext[Entity]]]
   def createEntityOps(
-      entity: Entity, req: RequestHeader
+      entity: Entity,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
   def updateEntityOps(
-      entity: Entity, req: RequestHeader
+      entity: Entity,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
   def deleteEntityOps(
-      id: String, req: RequestHeader
+      id: String,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], NoEntityAndContext[Entity]]]
   // def canRead[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserRead(entity)
   // def canWrite[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserWrite(entity)

@@ -15,7 +15,14 @@ import { Collapse } from '../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 import { CheckElasticsearchConnection } from '../components/elasticsearch';
 import { FeedbackButton } from './RouteDesigner/FeedbackButton';
-import { LabelAndInput, NgArrayRenderer, NgForm, NgObjectRenderer, NgSelectRenderer, NgStringRenderer } from '../components/nginputs';
+import {
+  LabelAndInput,
+  NgArrayRenderer,
+  NgForm,
+  NgObjectRenderer,
+  NgSelectRenderer,
+  NgStringRenderer,
+} from '../components/nginputs';
 
 function tryOrTrue(f) {
   try {
@@ -55,79 +62,83 @@ class CustomMetrics extends Component {
           label: 'Event',
           props: {
             options: [
-              "GatewayEvent",
-              "MaxConcurrentRequestReachedAlert",
-              "CircuitBreakerOpenedAlert",
-              "CircuitBreakerClosedAlert",
-              "SessionDiscardedAlert",
-              "SessionsDiscardedAlert",
-              "PanicModeAlert",
-              "OtoroshiExportAlert",
-              "U2FAdminDeletedAlert",
-              "BlackListedBackOfficeUserAlert",
-              "AdminLoggedInAlert",
-              "AdminFirstLogin",
-              "AdminLoggedOutAlert",
-              "GlobalConfigModification",
-              "RevokedApiKeyUsageAlert",
-              "ServiceGroupCreatedAlert",
-              "ServiceGroupUpdatedAlert",
-              "ServiceGroupDeletedAlert",
-              "ServiceCreatedAlert",
-              "ServiceUpdatedAlert",
-              "ServiceDeletedAlert",
-              "ApiKeyCreatedAlert",
-              "ApiKeyUpdatedAlert",
-              "ApiKeyDeletedAlert",
-              "TrafficCaptureEvent",
-              "TcpEvent",
-              "HealthCheckEvent",
-              "RequestBodyEvent",
-              "ResponseBodyEvent",
-              "MirroringEvent",
-              "BackOfficeEvent",
-              "AdminApiEvent",
-              "SnowMonkeyOutageRegisteredEvent",
-              "CircuitBreakerOpenedEvent",
-              "CircuitBreakerClosedEvent",
-              "MaxConcurrentRequestReachedEvent",
-              "JobRunEvent",
-              "JobErrorEvent",
-              "JobStoppedEvent",
-              "JobStartedEvent"
-            ]
-          }
+              'GatewayEvent',
+              'MaxConcurrentRequestReachedAlert',
+              'CircuitBreakerOpenedAlert',
+              'CircuitBreakerClosedAlert',
+              'SessionDiscardedAlert',
+              'SessionsDiscardedAlert',
+              'PanicModeAlert',
+              'OtoroshiExportAlert',
+              'U2FAdminDeletedAlert',
+              'BlackListedBackOfficeUserAlert',
+              'AdminLoggedInAlert',
+              'AdminFirstLogin',
+              'AdminLoggedOutAlert',
+              'GlobalConfigModification',
+              'RevokedApiKeyUsageAlert',
+              'ServiceGroupCreatedAlert',
+              'ServiceGroupUpdatedAlert',
+              'ServiceGroupDeletedAlert',
+              'ServiceCreatedAlert',
+              'ServiceUpdatedAlert',
+              'ServiceDeletedAlert',
+              'ApiKeyCreatedAlert',
+              'ApiKeyUpdatedAlert',
+              'ApiKeyDeletedAlert',
+              'TrafficCaptureEvent',
+              'TcpEvent',
+              'HealthCheckEvent',
+              'RequestBodyEvent',
+              'ResponseBodyEvent',
+              'MirroringEvent',
+              'BackOfficeEvent',
+              'AdminApiEvent',
+              'SnowMonkeyOutageRegisteredEvent',
+              'CircuitBreakerOpenedEvent',
+              'CircuitBreakerClosedEvent',
+              'MaxConcurrentRequestReachedEvent',
+              'JobRunEvent',
+              'JobErrorEvent',
+              'JobStoppedEvent',
+              'JobStartedEvent',
+            ],
+          },
         },
         selector: {
-          renderer: props => {
-            return <LabelAndInput label="Increment value">
-              <NgSelectRenderer
-                ngOptions={{
-                  spread: true
-                }}
-                name="Selector"
-                creatable={true}
-                value={props?.value}
-                optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${props?.rootValue?.eventType || 'GatewayEvent'}`}
-                optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
-                onChange={props.onChange}
-              />
-            </LabelAndInput>
-          }
+          renderer: (props) => {
+            return (
+              <LabelAndInput label="Increment value">
+                <NgSelectRenderer
+                  ngOptions={{
+                    spread: true,
+                  }}
+                  name="Selector"
+                  creatable={true}
+                  value={props?.value}
+                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${
+                    props?.rootValue?.eventType || 'GatewayEvent'
+                  }`}
+                  optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
+                  onChange={props.onChange}
+                />
+              </LabelAndInput>
+            );
+          },
         },
         kind: {
           type: 'select',
           label: 'Type of metric',
           props: {
-            options: ['Counter', 'Timer', 'Histogram']
+            options: ['Counter', 'Timer', 'Histogram'],
           },
         },
         labels: {
           type: 'object',
-          label: 'Labels'
-        }
-      }
-    }
+          label: 'Labels',
+        },
+      },
+    },
   };
 
   render() {
@@ -135,12 +146,14 @@ class CustomMetrics extends Component {
 
     // console.log("IN SUB FORM", value)
 
-    return <NgForm
-      schema={this.schema}
-      value={value}
-      flow={['metrics', 'tags']}
-      onChange={e => this.props.onChange(e)}
-    />
+    return (
+      <NgForm
+        schema={this.schema}
+        value={value}
+        flow={['metrics', 'tags']}
+        onChange={(e) => this.props.onChange(e)}
+      />
+    );
   }
 }
 
@@ -380,7 +393,7 @@ export class DataExportersPage extends Component {
           <SimpleBooleanInput
             value={item.enabled}
             onChange={(value) => {
-              BackOfficeServices.findDataExporterConfigById(item.id).then(exporter => {
+              BackOfficeServices.findDataExporterConfigById(item.id).then((exporter) => {
                 BackOfficeServices.updateDataExporterConfig({
                   ...exporter,
                   enabled: value,
@@ -458,8 +471,8 @@ const ExporterTryIt = ({ exporter }) => {
                   status === 'Successful'
                     ? '#5cb85c'
                     : status === 'Not tested'
-                      ? '#f39c12'
-                      : '#D5443F',
+                    ? '#f39c12'
+                    : '#D5443F',
                 display: 'flex',
                 alignItems: 'center',
                 width: 'fit-content',
@@ -528,7 +541,11 @@ export class NewExporterForm extends Component {
             placeholder="The type of exporter"
             value={this.data().type}
             onChange={(e) => this.updateType(e)}
-            possibleValues={Object.keys(possibleExporterConfigFormValues).map(key => possibleExporterConfigFormValues[key].label ? ({ label: possibleExporterConfigFormValues[key].label, value: key }) : { label: key, value: key })}
+            possibleValues={Object.keys(possibleExporterConfigFormValues).map((key) =>
+              possibleExporterConfigFormValues[key].label
+                ? { label: possibleExporterConfigFormValues[key].label, value: key }
+                : { label: key, value: key }
+            )}
             help="The type of event exporter"
           />
           <BooleanInput
@@ -618,11 +635,9 @@ export class NewExporterForm extends Component {
                 onChange={(config) => {
                   if (this.data().type === 'mailer') {
                     return this.dataChange({ config: config.mailerSettings });
-                  }
-                  else if (this.data().type === 'custommetrics') {
+                  } else if (this.data().type === 'custommetrics') {
                     return this.dataChange({ config: config.custommetrics });
-                  }
-                  else {
+                  } else {
                     return this.dataChange({ config });
                   }
                 }}

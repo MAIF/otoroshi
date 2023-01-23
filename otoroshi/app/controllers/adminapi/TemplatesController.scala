@@ -428,59 +428,59 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
         }
 
         val map = Map(
-          "GatewayEvent" -> typeOf[GatewayEvent],
+          "GatewayEvent"                     -> typeOf[GatewayEvent],
           "MaxConcurrentRequestReachedAlert" -> typeOf[MaxConcurrentRequestReachedAlert],
-          "CircuitBreakerOpenedAlert" -> typeOf[CircuitBreakerOpenedAlert],
-          "CircuitBreakerClosedAlert" -> typeOf[CircuitBreakerClosedAlert],
-          "SessionDiscardedAlert" -> typeOf[SessionDiscardedAlert],
-          "SessionsDiscardedAlert" -> typeOf[SessionsDiscardedAlert],
-          "PanicModeAlert" -> typeOf[PanicModeAlert],
-          "OtoroshiExportAlert" -> typeOf[OtoroshiExportAlert],
-          "U2FAdminDeletedAlert" -> typeOf[U2FAdminDeletedAlert],
-          "BlackListedBackOfficeUserAlert" -> typeOf[BlackListedBackOfficeUserAlert],
-          "AdminLoggedInAlert" -> typeOf[AdminLoggedInAlert],
-          "AdminFirstLogin" -> typeOf[AdminFirstLogin],
-          "AdminLoggedOutAlert" -> typeOf[AdminLoggedOutAlert],
-          "GlobalConfigModification" -> typeOf[GlobalConfigModification],
-          "RevokedApiKeyUsageAlert" -> typeOf[RevokedApiKeyUsageAlert],
-          "ServiceGroupCreatedAlert" -> typeOf[ServiceGroupCreatedAlert],
-          "ServiceGroupUpdatedAlert" -> typeOf[ServiceGroupUpdatedAlert],
-          "ServiceGroupDeletedAlert" -> typeOf[ServiceGroupDeletedAlert],
-          "ServiceCreatedAlert" -> typeOf[ServiceCreatedAlert],
-          "ServiceUpdatedAlert" -> typeOf[ServiceUpdatedAlert],
-          "ServiceDeletedAlert" -> typeOf[ServiceDeletedAlert],
-          "ApiKeyCreatedAlert" -> typeOf[ApiKeyCreatedAlert],
-          "ApiKeyUpdatedAlert" -> typeOf[ApiKeyUpdatedAlert],
-          "ApiKeyDeletedAlert" -> typeOf[ApiKeyDeletedAlert],
-          "TrafficCaptureEvent" -> typeOf[TrafficCaptureEvent],
-          "TcpEvent" -> typeOf[TcpEvent],
-          "HealthCheckEvent" -> typeOf[HealthCheckEvent],
-          "RequestBodyEvent" -> typeOf[RequestBodyEvent],
-          "ResponseBodyEvent" -> typeOf[ResponseBodyEvent],
-          "MirroringEvent" -> typeOf[MirroringEvent],
-          "BackOfficeEvent" -> typeOf[BackOfficeEvent],
-          "AdminApiEvent" -> typeOf[AdminApiEvent],
-          "SnowMonkeyOutageRegisteredEvent" -> typeOf[SnowMonkeyOutageRegisteredEvent],
-          "CircuitBreakerOpenedEvent" -> typeOf[CircuitBreakerOpenedEvent],
-          "CircuitBreakerClosedEvent" -> typeOf[CircuitBreakerClosedEvent],
+          "CircuitBreakerOpenedAlert"        -> typeOf[CircuitBreakerOpenedAlert],
+          "CircuitBreakerClosedAlert"        -> typeOf[CircuitBreakerClosedAlert],
+          "SessionDiscardedAlert"            -> typeOf[SessionDiscardedAlert],
+          "SessionsDiscardedAlert"           -> typeOf[SessionsDiscardedAlert],
+          "PanicModeAlert"                   -> typeOf[PanicModeAlert],
+          "OtoroshiExportAlert"              -> typeOf[OtoroshiExportAlert],
+          "U2FAdminDeletedAlert"             -> typeOf[U2FAdminDeletedAlert],
+          "BlackListedBackOfficeUserAlert"   -> typeOf[BlackListedBackOfficeUserAlert],
+          "AdminLoggedInAlert"               -> typeOf[AdminLoggedInAlert],
+          "AdminFirstLogin"                  -> typeOf[AdminFirstLogin],
+          "AdminLoggedOutAlert"              -> typeOf[AdminLoggedOutAlert],
+          "GlobalConfigModification"         -> typeOf[GlobalConfigModification],
+          "RevokedApiKeyUsageAlert"          -> typeOf[RevokedApiKeyUsageAlert],
+          "ServiceGroupCreatedAlert"         -> typeOf[ServiceGroupCreatedAlert],
+          "ServiceGroupUpdatedAlert"         -> typeOf[ServiceGroupUpdatedAlert],
+          "ServiceGroupDeletedAlert"         -> typeOf[ServiceGroupDeletedAlert],
+          "ServiceCreatedAlert"              -> typeOf[ServiceCreatedAlert],
+          "ServiceUpdatedAlert"              -> typeOf[ServiceUpdatedAlert],
+          "ServiceDeletedAlert"              -> typeOf[ServiceDeletedAlert],
+          "ApiKeyCreatedAlert"               -> typeOf[ApiKeyCreatedAlert],
+          "ApiKeyUpdatedAlert"               -> typeOf[ApiKeyUpdatedAlert],
+          "ApiKeyDeletedAlert"               -> typeOf[ApiKeyDeletedAlert],
+          "TrafficCaptureEvent"              -> typeOf[TrafficCaptureEvent],
+          "TcpEvent"                         -> typeOf[TcpEvent],
+          "HealthCheckEvent"                 -> typeOf[HealthCheckEvent],
+          "RequestBodyEvent"                 -> typeOf[RequestBodyEvent],
+          "ResponseBodyEvent"                -> typeOf[ResponseBodyEvent],
+          "MirroringEvent"                   -> typeOf[MirroringEvent],
+          "BackOfficeEvent"                  -> typeOf[BackOfficeEvent],
+          "AdminApiEvent"                    -> typeOf[AdminApiEvent],
+          "SnowMonkeyOutageRegisteredEvent"  -> typeOf[SnowMonkeyOutageRegisteredEvent],
+          "CircuitBreakerOpenedEvent"        -> typeOf[CircuitBreakerOpenedEvent],
+          "CircuitBreakerClosedEvent"        -> typeOf[CircuitBreakerClosedEvent],
           "MaxConcurrentRequestReachedEvent" -> typeOf[MaxConcurrentRequestReachedEvent],
-          "JobRunEvent" -> typeOf[JobRunEvent],
-          "JobErrorEvent" -> typeOf[JobErrorEvent],
-          "JobStoppedEvent" -> typeOf[JobStoppedEvent],
-          "JobStartedEvent" -> typeOf[JobStartedEvent]
+          "JobRunEvent"                      -> typeOf[JobRunEvent],
+          "JobErrorEvent"                    -> typeOf[JobErrorEvent],
+          "JobStoppedEvent"                  -> typeOf[JobStoppedEvent],
+          "JobStartedEvent"                  -> typeOf[JobStartedEvent]
         )
 
         map.get(eventType) match {
           case Some(value) =>
             val fields: Seq[String] = rec(value)
               .map(term => term.map(_.name).mkString(".").trim)
-            Ok(JsArray(
-              fields
-              .distinct
-              .sorted
-              .map(JsString)
-            )).future
-          case None => BadRequest("Event type unkown").future
+            Ok(
+              JsArray(
+                fields.distinct.sorted
+                  .map(JsString)
+              )
+            ).future
+          case None        => BadRequest("Event type unkown").future
         }
       }
     }

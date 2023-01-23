@@ -28,7 +28,20 @@ import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json.{
+  Format,
+  JsArray,
+  JsBoolean,
+  JsError,
+  JsNull,
+  JsNumber,
+  JsObject,
+  JsResult,
+  JsString,
+  JsSuccess,
+  JsValue,
+  Json
+}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -983,7 +996,6 @@ object Exporters {
     }
   }
 
-
   sealed trait MetricSettingsKind
 
   object MetricSettingsKind {
@@ -994,21 +1006,23 @@ object Exporters {
     case object Timer extends MetricSettingsKind
   }
 
-  case class MetricSettings(id: String,
-                            selector: Option[String] = None,
-                            kind: MetricSettingsKind = MetricSettingsKind.Counter,
-                            eventType: Option[String] = None,
-                            labels: Map[String, String] = Map.empty) extends Exporter {
+  case class MetricSettings(
+      id: String,
+      selector: Option[String] = None,
+      kind: MetricSettingsKind = MetricSettingsKind.Counter,
+      eventType: Option[String] = None,
+      labels: Map[String, String] = Map.empty
+  ) extends Exporter {
     override def toJson: JsValue = Json.obj(
-      "id" -> id,
-      "selector" -> selector,
-      "kind" -> (kind match {
-        case MetricSettingsKind.Counter => "Counter"
-        case MetricSettingsKind.Timer => "Histogram"
+      "id"        -> id,
+      "selector"  -> selector,
+      "kind"      -> (kind match {
+        case MetricSettingsKind.Counter   => "Counter"
+        case MetricSettingsKind.Timer     => "Histogram"
         case MetricSettingsKind.Histogram => "Timer"
       }),
       "eventType" -> eventType,
-      "labels" -> labels
+      "labels"    -> labels
     )
   }
 
@@ -1018,11 +1032,12 @@ object Exporters {
         MetricSettings(
           id = (json \ "id").as[String],
           selector = (json \ "selector").asOpt[String],
-          kind = (json \ "kind").asOpt[String]
+          kind = (json \ "kind")
+            .asOpt[String]
             .map {
-              case "Counter" => MetricSettingsKind.Counter
+              case "Counter"   => MetricSettingsKind.Counter
               case "Histogram" => MetricSettingsKind.Histogram
-              case "Timer" => MetricSettingsKind.Timer
+              case "Timer"     => MetricSettingsKind.Timer
             }
             .getOrElse(MetricSettingsKind.Counter),
           eventType = (json \ "eventType").asOpt[String].getOrElse("AlertEvent").some,
@@ -1037,8 +1052,9 @@ object Exporters {
     }
   }
 
-  case class CustomMetricsSettings(tags: Map[String, String] = Map.empty, metrics: Seq[MetricSettings] = Seq.empty) extends Exporter {
-    def json: JsValue = CustomMetricsSettings.format.writes(this)
+  case class CustomMetricsSettings(tags: Map[String, String] = Map.empty, metrics: Seq[MetricSettings] = Seq.empty)
+      extends Exporter {
+    def json: JsValue   = CustomMetricsSettings.format.writes(this)
     def toJson: JsValue = CustomMetricsSettings.format.writes(this)
   }
 
@@ -1047,41 +1063,48 @@ object Exporters {
       override def reads(json: JsValue): JsResult[CustomMetricsSettings] = Try {
         CustomMetricsSettings(
           tags = (json \ "tags").asOpt[Map[String, String]].getOrElse(Map.empty),
-          metrics = (json \ "metrics").asOpt[Seq[JsValue]]
-            .map(metrics => metrics.map(metric => MetricSettings.format.reads(metric).get)).getOrElse(Seq.empty)
+          metrics = (json \ "metrics")
+            .asOpt[Seq[JsValue]]
+            .map(metrics => metrics.map(metric => MetricSettings.format.reads(metric).get))
+            .getOrElse(Seq.empty)
         )
-        } match {
-          case Failure(e) => JsError(e.getMessage)
-          case Success(e) => JsSuccess(e)
-        }
+      } match {
+        case Failure(e) => JsError(e.getMessage)
+        case Success(e) => JsSuccess(e)
+      }
 
       override def writes(o: CustomMetricsSettings): JsValue = Json.obj(
-        "tags" -> o.tags,
+        "tags"    -> o.tags,
         "metrics" -> JsArray(o.metrics.map(_.toJson))
       )
     }
   }
 
   class CustomMetricsExporter(_config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-    extends DefaultDataExporter(_config)(ec, env) {
+      extends DefaultDataExporter(_config)(ec, env) {
 
     def withEventLongValue(event: JsValue, selector: Option[String])(f: Long => Unit): Unit = {
 
       selector match {
-        case None => ()
+        case None       => ()
         case Some(path) =>
           println(selector, JsonOperationsHelper.getValueAtPath(path, event)._2)
           JsonOperationsHelper.getValueAtPath(path, event)._2.asOpt[Long] match {
-            case None => f(1)
+            case None        => f(1)
             case Some(value) => f(value)
           }
       }
     }
 
     def extractLabels(labels: Map[String, String], event: JsValue): Map[String, String] = {
-      labels.foldLeft(Map.empty[String, String]) {
-        case (acc, label) => acc + (label._2 -> JsonOperationsHelper.getValueAtPath(label._1, event)._2.asOpt[String]
-          .getOrElse(JsonOperationsHelper.getValueAtPath(label._1.replace("$at", "@"), event)._2.asOpt[String].getOrElse("")))
+      labels.foldLeft(Map.empty[String, String]) { case (acc, label) =>
+        acc + (label._2 -> JsonOperationsHelper
+          .getValueAtPath(label._1, event)
+          ._2
+          .asOpt[String]
+          .getOrElse(
+            JsonOperationsHelper.getValueAtPath(label._1.replace("$at", "@"), event)._2.asOpt[String].getOrElse("")
+          ))
       }
     }
 
@@ -1089,22 +1112,28 @@ object Exporters {
       exporter[CustomMetricsSettings].foreach { exporterConfig =>
         events.foreach { event =>
           exporterConfig.metrics.map { metric =>
-            val id = MetricId.build(metric.id).tagged((exporterConfig.tags ++ extractLabels(metric.labels, event)).asJava)
-            if ((event \ "@type").asOpt[String] == metric.eventType ||
-              (event \ "alert").asOpt[String] == metric.eventType) {
+            val id =
+              MetricId.build(metric.id).tagged((exporterConfig.tags ++ extractLabels(metric.labels, event)).asJava)
+            if (
+              (event \ "@type").asOpt[String] == metric.eventType ||
+              (event \ "alert").asOpt[String] == metric.eventType
+            ) {
               println(event)
               metric.kind match {
-                case MetricSettingsKind.Counter if metric.selector.isEmpty =>
+                case MetricSettingsKind.Counter if metric.selector.isEmpty   =>
                   env.metrics.counterInc(id)
-                case MetricSettingsKind.Counter if metric.selector.isDefined => withEventLongValue(event, metric.selector) { v =>
-                  env.metrics.counterIncOf(id, v)
-                }
-                case MetricSettingsKind.Histogram => withEventLongValue(event, metric.selector) { v =>
-                  env.metrics.histogramUpdate(id, v)
-                }
-                case MetricSettingsKind.Timer => withEventLongValue(event, metric.selector) { v =>
-                  env.metrics.timerUpdate(id, v, TimeUnit.MILLISECONDS)
-                }
+                case MetricSettingsKind.Counter if metric.selector.isDefined =>
+                  withEventLongValue(event, metric.selector) { v =>
+                    env.metrics.counterIncOf(id, v)
+                  }
+                case MetricSettingsKind.Histogram                            =>
+                  withEventLongValue(event, metric.selector) { v =>
+                    env.metrics.histogramUpdate(id, v)
+                  }
+                case MetricSettingsKind.Timer                                =>
+                  withEventLongValue(event, metric.selector) { v =>
+                    env.metrics.timerUpdate(id, v, TimeUnit.MILLISECONDS)
+                  }
               }
             }
           }
@@ -1115,8 +1144,6 @@ object Exporters {
   }
 
 }
-
-
 
 class DataExporterUpdateJob extends Job {
 

@@ -79,7 +79,8 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
   }
 
   override def createEntityOps(
-      entity: AuthModuleConfig, req: RequestHeader
+      entity: AuthModuleConfig,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[AuthModuleConfig]]] = {
     env.datastores.authConfigsDataStore.set(entity).map {
       case true  => {
@@ -105,7 +106,8 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
   }
 
   override def updateEntityOps(
-      entity: AuthModuleConfig, req: RequestHeader
+      entity: AuthModuleConfig,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[AuthModuleConfig]]] = {
     env.datastores.authConfigsDataStore.set(entity).map {
       case true  => {

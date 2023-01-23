@@ -52,7 +52,8 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   override def writeEntity(entity: Cert): JsValue = Cert._fmt.writes(entity)
 
   override def findByIdOps(
-      id: String, req: RequestHeader
+      id: String,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Cert]]] = {
     env.datastores.certificatesDataStore.findById(id).map { opt =>
       Right(
@@ -84,7 +85,8 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   }
 
   override def createEntityOps(
-      entity: Cert, req: RequestHeader
+      entity: Cert,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Cert]]] = {
     val noEnrich = req.getQueryString("enrich").contains("false")
     val enriched = if (noEnrich) entity else entity.enrich()
@@ -112,7 +114,8 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   }
 
   override def updateEntityOps(
-      entity: Cert, req: RequestHeader
+      entity: Cert,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Cert]]] = {
     val noEnrich = req.getQueryString("enrich").contains("false")
     val enriched = if (noEnrich) entity else entity.enrich()
@@ -140,7 +143,8 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   }
 
   override def deleteEntityOps(
-      id: String, req: RequestHeader
+      id: String,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Cert]]] = {
     env.datastores.certificatesDataStore.delete(id).map {
       case true  => {

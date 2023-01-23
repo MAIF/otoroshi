@@ -67,7 +67,8 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
   }
 
   override def createEntityOps(
-      entity: ErrorTemplate, req: RequestHeader
+      entity: ErrorTemplate,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ErrorTemplate]]] = {
     env.datastores.errorTemplateDataStore.set(entity).map {
       case true  => {
@@ -93,7 +94,8 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
   }
 
   override def updateEntityOps(
-      entity: ErrorTemplate, req: RequestHeader
+      entity: ErrorTemplate,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ErrorTemplate]]] = {
     env.datastores.errorTemplateDataStore.set(entity).map {
       case true  => {
@@ -119,7 +121,8 @@ class ErrorTemplatesController(val ApiAction: ApiAction, val cc: ControllerCompo
   }
 
   override def deleteEntityOps(
-      id: String, req: RequestHeader
+      id: String,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ErrorTemplate]]] = {
     env.datastores.errorTemplateDataStore.delete(id).map {
       case true  => {

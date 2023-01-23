@@ -119,18 +119,22 @@ export class ArraySelectInput extends Component {
   render() {
     const values = Object.keys(this.props.value || {}).map((k) => [k, this.props.value[k]]);
     const Component = this.props.creatable ? Creatable : Select;
-    
-    const additional = this.props.creatable ? (values.map(arr => {
-      const value = arr[0];
-      const found = this.state.possibleValues.find(v => v.value === value);
-      if (!found) {
-        return { value: value, label: value };
-      } else {
-        return null;
-      }
-    }).filter(v => !!v)) : [];
 
-    const possibleValues = [ ...this.state.possibleValues, ...additional ];
+    const additional = this.props.creatable
+      ? values
+          .map((arr) => {
+            const value = arr[0];
+            const found = this.state.possibleValues.find((v) => v.value === value);
+            if (!found) {
+              return { value: value, label: value };
+            } else {
+              return null;
+            }
+          })
+          .filter((v) => !!v)
+      : [];
+
+    const possibleValues = [...this.state.possibleValues, ...additional];
 
     return (
       <div>
@@ -174,7 +178,7 @@ export class ArraySelectInput extends Component {
                 </div>
               </div>
             </div>
-          )
+          );
         })}
       </div>
     );

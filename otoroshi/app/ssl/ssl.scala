@@ -774,7 +774,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
       val expiredWithFlagCertificates = certificates
         .map(_.enrich())
         .filter(_.entityMetadata.get("expired").contains("true"))
-      val expiredCertificates = certificates
+      val expiredCertificates         = certificates
         .map(_.enrich())
         .filter(_.notRevoked)
         .filterNot { cert =>
@@ -782,34 +782,36 @@ trait CertificateDataStore extends BasicStore[Cert] {
         }
       for {
         _ <- Source(expiredCertificates.toList)
-            .mapAsync(1) {
-              case c if c.entityMetadata.get("expired").contains("true") || c.name.startsWith("[EXPIRED] ")    =>
-                c.applyOn(d => d.save().map(_ => d))
-              case c if !(c.entityMetadata.get("expired").contains("true") || c.name.startsWith("[EXPIRED] ")) =>
-                c.copy(name = "[EXPIRED] " + c.name, entityMetadata = c.entityMetadata ++ Map("expired" -> "true"))
-                  .applyOn(d => d.save().map(_ => d))
-            }
-            .map { c =>
-              Alerts.send(
-                CertExpiredAlert(
-                  env.snowflakeGenerator.nextIdStr(),
-                  env.env,
-                  c
-                )
-              )
-            }
-            .runWith(Sink.ignore)
-            .map(_ => ())
-          _ <- Source(expiredWithFlagCertificates.toList)
-            .filter { cert =>
-              cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
-            }
-            .mapAsync(1) { cert =>
-              cert.copy(name = cert.name.replace("[EXPIRED] ", ""), entityMetadata = cert.entityMetadata - "expired").save()
-            }
-            .runWith(Sink.ignore)
-            .map(_ => ())
-        } yield ()
+               .mapAsync(1) {
+                 case c if c.entityMetadata.get("expired").contains("true") || c.name.startsWith("[EXPIRED] ")    =>
+                   c.applyOn(d => d.save().map(_ => d))
+                 case c if !(c.entityMetadata.get("expired").contains("true") || c.name.startsWith("[EXPIRED] ")) =>
+                   c.copy(name = "[EXPIRED] " + c.name, entityMetadata = c.entityMetadata ++ Map("expired" -> "true"))
+                     .applyOn(d => d.save().map(_ => d))
+               }
+               .map { c =>
+                 Alerts.send(
+                   CertExpiredAlert(
+                     env.snowflakeGenerator.nextIdStr(),
+                     env.env,
+                     c
+                   )
+                 )
+               }
+               .runWith(Sink.ignore)
+               .map(_ => ())
+        _ <- Source(expiredWithFlagCertificates.toList)
+               .filter { cert =>
+                 cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
+               }
+               .mapAsync(1) { cert =>
+                 cert
+                   .copy(name = cert.name.replace("[EXPIRED] ", ""), entityMetadata = cert.entityMetadata - "expired")
+                   .save()
+               }
+               .runWith(Sink.ignore)
+               .map(_ => ())
+      } yield ()
     }
 
     for {
@@ -879,7 +881,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
           exposed = false,
           revoked = false
         ).enrich()
-        val cert = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
+        val cert  = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
         findAll().map { certs =>
           val found = certs
             .map(_.enrich())
@@ -898,7 +900,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
       }
     }
     for {
-      caContent <- readCertOrKey(conf, caPath, env).orElse(Some(""))
+      caContent   <- readCertOrKey(conf, caPath, env).orElse(Some(""))
       certContent <- readCertOrKey(conf, certPath, env)
       keyContent  <- readCertOrKey(conf, keyPath, env)
     } yield {
@@ -942,7 +944,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
       "otoroshi.ssl.rootCa.key",
       logger,
       Some(Cert.OtoroshiCA),
-      env.configuration.getOptional[Boolean]("otoroshi.ssl.rootCa.importCa").getOrElse(false),
+      env.configuration.getOptional[Boolean]("otoroshi.ssl.rootCa.importCa").getOrElse(false)
     )(env, ec)
     importOneCert(
       "initial certificate",
@@ -952,24 +954,23 @@ trait CertificateDataStore extends BasicStore[Cert] {
       "otoroshi.ssl.initialCertKey",
       logger,
       None,
-      env.configuration.getOptional[Boolean]("otoroshi.ssl.initialCertImportCa").getOrElse(false),
+      env.configuration.getOptional[Boolean]("otoroshi.ssl.initialCertImportCa").getOrElse(false)
     )(env, ec)
     env.configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("otoroshi.ssl.initialCerts")
       .getOrElse(Seq.empty[Configuration])
       .zipWithIndex
-      .foreach {
-        case (conf, idx) =>
-          importOneCert(
-            s"initial certificate ${idx}",
-            conf,
-            "ca",
-            "cert",
-            "key",
-            logger,
-            None,
-            conf.getOptional[Boolean]("importCa").getOrElse(false)
-          )(env, ec)
+      .foreach { case (conf, idx) =>
+        importOneCert(
+          s"initial certificate ${idx}",
+          conf,
+          "ca",
+          "cert",
+          "key",
+          logger,
+          None,
+          conf.getOptional[Boolean]("importCa").getOrElse(false)
+        )(env, ec)
       }
   }
 

@@ -37,7 +37,8 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   override def writeEntity(entity: StoredNgBackend): JsValue = StoredNgBackend.format.writes(entity)
 
   override def findByIdOps(
-      id: String, req: RequestHeader
+      id: String,
+      req: RequestHeader
   )(implicit
       env: Env,
       ec: ExecutionContext
@@ -75,7 +76,8 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   override def createEntityOps(
-      entity: StoredNgBackend, req: RequestHeader
+      entity: StoredNgBackend,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.set(entity).map {
       case true  => {
@@ -101,7 +103,8 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   override def updateEntityOps(
-      entity: StoredNgBackend, req: RequestHeader
+      entity: StoredNgBackend,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.set(entity).map {
       case true  => {
@@ -127,7 +130,8 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
   }
 
   override def deleteEntityOps(
-      id: String, req: RequestHeader
+      id: String,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[StoredNgBackend]]] = {
     env.datastores.backendsDataStore.delete(id).map {
       case true  => {

@@ -751,7 +751,7 @@ class Designer extends React.Component {
     return null;
   };
 
-  generateInternalNodeId = (nodes) => 
+  generateInternalNodeId = (nodes) =>
     nodes.reduce(
       (acc, node) => [
         ...acc,
