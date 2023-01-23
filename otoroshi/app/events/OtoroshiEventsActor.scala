@@ -197,11 +197,6 @@ object DataExporter {
     override def `@timestamp`: DateTime              =
       raw.select("@timestamp").asOpt[String].map(DateTime.parse).getOrElse(DateTime.now())
     override def toJson(implicit _env: Env): JsValue = raw
-
-    override def keys: Seq[String] = super.keys ++ Seq(
-      "@id",
-      "@timestamp"
-    )
   }
 
   abstract class DefaultDataExporter(originalConfig: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
@@ -1003,7 +998,7 @@ object Exporters {
                             selector: Option[String] = None,
                             kind: MetricSettingsKind = MetricSettingsKind.Counter,
                             eventType: Option[String] = None,
-                            labels: Seq[String] = Seq.empty) extends Exporter {
+                            labels: Map[String, String] = Map.empty) extends Exporter {
     override def toJson: JsValue = Json.obj(
       "id" -> id,
       "selector" -> selector,
@@ -1031,7 +1026,7 @@ object Exporters {
             }
             .getOrElse(MetricSettingsKind.Counter),
           eventType = (json \ "eventType").asOpt[String].getOrElse("AlertEvent").some,
-          labels = (json \ "labels").asOpt[Seq[String]].getOrElse(Seq.empty)
+          labels = (json \ "labels").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -1083,10 +1078,10 @@ object Exporters {
       }
     }
 
-    def extractLabels(labels: Seq[String], event: JsValue): Map[String, String] = {
+    def extractLabels(labels: Map[String, String], event: JsValue): Map[String, String] = {
       labels.foldLeft(Map.empty[String, String]) {
-        case (acc, label) => acc + (label -> JsonOperationsHelper.getValueAtPath(label, event)._2.asOpt[String]
-          .getOrElse(JsonOperationsHelper.getValueAtPath(label.replace("$at", "@"), event)._2.asOpt[String].getOrElse("")))
+        case (acc, label) => acc + (label._2 -> JsonOperationsHelper.getValueAtPath(label._1, event)._2.asOpt[String]
+          .getOrElse(JsonOperationsHelper.getValueAtPath(label._1.replace("$at", "@"), event)._2.asOpt[String].getOrElse("")))
       }
     }
 
@@ -1097,6 +1092,7 @@ object Exporters {
             val id = MetricId.build(metric.id).tagged((exporterConfig.tags ++ extractLabels(metric.labels, event)).asJava)
             if ((event \ "@type").asOpt[String] == metric.eventType ||
               (event \ "alert").asOpt[String] == metric.eventType) {
+              println(event)
               metric.kind match {
                 case MetricSettingsKind.Counter if metric.selector.isEmpty =>
                   env.metrics.counterInc(id)

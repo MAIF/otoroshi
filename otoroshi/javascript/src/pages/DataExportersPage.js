@@ -15,7 +15,7 @@ import { Collapse } from '../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 import { CheckElasticsearchConnection } from '../components/elasticsearch';
 import { FeedbackButton } from './RouteDesigner/FeedbackButton';
-import { LabelAndInput, NgArrayRenderer, NgForm, NgSelectRenderer } from '../components/nginputs';
+import { LabelAndInput, NgArrayRenderer, NgForm, NgObjectRenderer, NgSelectRenderer, NgStringRenderer } from '../components/nginputs';
 
 function tryOrTrue(f) {
   try {
@@ -48,10 +48,7 @@ class CustomMetrics extends Component {
       schema: {
         id: {
           type: 'string',
-          props: {
-            label: 'Public api key',
-            placeholder: 'Public api key',
-          },
+          label: 'Metric name',
         },
         eventType: {
           type: 'select',
@@ -103,7 +100,7 @@ class CustomMetrics extends Component {
         },
         selector: {
           renderer: props => {
-            return <LabelAndInput label="Field">
+            return <LabelAndInput label="Increment value">
               <NgSelectRenderer
                 ngOptions={{
                   spread: true
@@ -126,34 +123,8 @@ class CustomMetrics extends Component {
           },
         },
         labels: {
-          renderer: props => {
-            // console.log(props)
-            return <LabelAndInput label="Labels">
-              <NgArrayRenderer
-                onChange={props.onChange}
-                path=''
-                ngOptions={{
-                  spread: true
-                }}
-                value={props ? (props.value || []) : []}
-                schema={{
-                  type: 'string',
-                  itemRenderer: ({ onChange, value }) => <div style={{ width: '100%' }}>
-                    <NgSelectRenderer
-                      ngOptions={{
-                        spread: true
-                      }}
-                      creatable={true}
-                      value={value}
-                      optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${props?.rootValue?.eventType || 'GatewayEvent'}`}
-                      optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
-                      onChange={onChange}
-                    />
-                  </div>
-                }}
-              />
-            </LabelAndInput>
-          }
+          type: 'object',
+          label: 'Labels'
         }
       }
     }
@@ -649,7 +620,6 @@ export class NewExporterForm extends Component {
                     return this.dataChange({ config: config.mailerSettings });
                   }
                   else if (this.data().type === 'custommetrics') {
-                    console.log(config)
                     return this.dataChange({ config: config.custommetrics });
                   }
                   else {

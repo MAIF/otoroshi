@@ -155,7 +155,6 @@ trait OtoroshiEvent {
   def dispatch()(implicit env: Env): Unit = {
     env.scriptManager.dispatchEvent(this)(env.analyticsExecutionContext)
   }
-  def keys: Seq[String] = Seq.empty
 }
 
 trait AnalyticEvent extends OtoroshiEvent {
@@ -235,16 +234,6 @@ trait AnalyticEvent extends OtoroshiEvent {
   def log()(implicit _env: Env, ec: ExecutionContext): Unit = {
     toEnrichedJson.map(e => AnalyticEvent.logger.info(Json.stringify(e)))
   }
-
-  override def keys: Seq[String] = super.keys ++ Seq(
-    "@type",
-    "@id",
-    "@timestamp",
-    "@service",
-    "@serviceId",
-    "fromOrigin",
-    "fromUserAgent"
-  )
 }
 
 case class Identity(identityType: String, identity: String, label: String)
@@ -325,51 +314,6 @@ case class GatewayEvent(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = headers.find(h => h.key.toLowerCase() == "user-agent").map(_.value)
   def toJson(implicit _env: Env): JsValue    = GatewayEvent.writes(this, _env)
-
-  override def keys: Seq[String] = {
-    super.keys ++ Seq(
-      "@type"              ,
-      "@id"                ,
-      "@timestamp"         ,
-      "@callAt"            ,
-      "reqId"              ,
-      "parentReqId"        ,
-      "protocol"           ,
-      "to"                 ,
-      "target"             ,
-      "url"                ,
-      "method"             ,
-      "from"               ,
-      "@env"               ,
-      "duration"           ,
-      "overhead"           ,
-      "data"               ,
-      "status"             ,
-      "responseChunked"    ,
-      "headers"            ,
-      "headersOut"         ,
-      "identity"           ,
-      "gwError"            ,
-      "err"                ,
-      "@serviceId"         ,
-      "@service"           ,
-      "descriptor"         ,
-      "route"              ,
-      "@product"           ,
-      "remainingQuotas"    ,
-      "viz"                ,
-      "cbDuration"         ,
-      "overheadWoCb"       ,
-      "callAttempts"       ,
-      "clientCertChain"    ,
-      "userAgentInfo"      ,
-      "geolocationInfo"    ,
-      "extrasData"         ,
-      "otoroshiHeadersIn"  ,
-      "otoroshiHeadersOut" ,
-      "extraInfos"         ,
-    )
-  }
 }
 
 object GatewayEvent {
@@ -494,23 +438,6 @@ case class HealthCheckEvent(
         true
       }
     }
-
-  override def keys: Seq[String] = {
-    super.keys ++ Seq(
-      "@type",
-      "@id",
-      "@timestamp",
-      "@service",
-      "@serviceId",
-      "@product",
-      "url",
-      "duration",
-      "status",
-      "logicCheck",
-      "error",
-      "health"
-    )
-  }
 }
 
 object HealthCheckEvent {

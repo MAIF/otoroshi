@@ -787,7 +787,7 @@ export class NgObjectRenderer extends Component {
     const schema = this.props.schema;
     const props = schema.props || {};
     const readOnly = this.props.readOnly;
-    const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;
+    const ItemRenderer = schema.itemRenderer || (this.props.rawSchema ? this.props.rawSchema.itemRenderer : undefined);
 
     if (readOnly && Object.entries(this.props.value || {}).length === 0) return null;
 
@@ -886,11 +886,9 @@ export class NgArraySelectRenderer extends Component {
   };
 
   render() {
-    console.log('render')
     const schema = this.props.schema || {};
     const props = schema.props || {};
     const Component = props.creatable ? Select : Creatable;
-    console.log(props);
 
     return (
       <LabelAndInput {...this.props}>
@@ -1117,8 +1115,6 @@ export class NgSelectRenderer extends Component {
     const readOnly = this.props.readOnly;
     const creatable = (this.state.creatable || props.creatable || this.props.creatable)
     const Component = creatable ? Creatable : Select;
-
-    console.log(this.state.options || props.options || this.props.options)
 
     return (
       <LabelAndInput {...this.props}>
