@@ -98,7 +98,7 @@ router.post('/', (req, res) => {
 
   const user = hash(req.user.email)
 
-  UserManager.createUserIfNotExists(user)
+  UserManager.createUserIfNotExists(req)
     .then(() => {
       UserManager.getUser(req)
         .then(data => {
