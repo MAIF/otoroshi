@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.0.3] - 2023-01-23
+
+https://github.com/MAIF/otoroshi/milestone/56?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.0.2...v16.0.3
+https://github.com/MAIF/otoroshi/releases/tag/v16.0.3
+
+- certificate with bad from/to does not update until next expiration job (#1407)
+- create a prometheus exporter with custom metrics (#1409)
+- resources loader - Backend (#1411)
+- enabling exporters from list does not work anymore (#1412)
+- can create missing labels in metrics exporters (#1413)
+- sometimes cert resolver choose the wrong wildcard certificate (#1418)
+
 ## [16.0.2] - 2023-01-13
 
 https://github.com/MAIF/otoroshi/milestone/55?closed=1
