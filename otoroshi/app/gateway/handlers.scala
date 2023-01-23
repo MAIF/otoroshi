@@ -58,10 +58,10 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
   def onClientError(request: RequestHeader, statusCode: Int, mess: String): Future[Result] = {
     val message       = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occurred")
     val remoteAddress = request.theIpAddress
-    logger.error(
-      s"Client Error: $message from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.theHost}${request.relativeUri} ($statusCode) - ${request.headers.toSimpleMap
-        .mkString(";")}"
-    )
+    // logger.error(
+    //   s"Client Error: $message from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.theHost}${request.relativeUri} ($statusCode) - ${request.headers.toSimpleMap
+    //     .mkString(";")}"
+    // )
     env.metrics.counterInc("errors.client")
     env.datastores.globalConfigDataStore.singleton().map { config =>
       env.datastores.serviceDescriptorDataStore.updateMetricsOnError(config)
