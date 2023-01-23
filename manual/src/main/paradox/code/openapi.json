@@ -21508,81 +21508,81 @@
       },
       "otoroshi.models.DataExporterConfig" : {
         "type" : "object",
-        "description" : "???",
+        "description" : "Data exporter settings",
         "properties" : {
           "desc" : {
             "type" : "string",
-            "description" : "???"
+            "description" : "Description"
           },
           "_loc" : {
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation",
-            "description" : "???"
+            "description" : "Entity location"
           },
           "bufferSize" : {
             "type" : "integer",
             "format" : "int32",
-            "description" : "???"
+            "description" : "Number of events in buffer"
           },
           "jsonWorkers" : {
             "type" : "integer",
             "format" : "int32",
-            "description" : "???"
+            "description" : "Number of workers that transform events"
           },
           "groupDuration" : {
             "type" : "number",
-            "description" : "???"
+            "description" : "The max duration before sending group"
           },
           "groupSize" : {
             "type" : "integer",
             "format" : "int32",
-            "description" : "???"
+            "description" : "The max size of events group before sending"
           },
           "type" : {
             "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType",
-            "description" : "???"
+            "description" : "Entity type"
           },
           "tags" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "sendWorkers" : {
             "type" : "integer",
             "format" : "int32",
-            "description" : "???"
+            "description" : "Number of workers that sends events"
           },
           "id" : {
             "type" : "string",
-            "description" : "???"
+            "description" : "Id of the exporter"
           },
           "name" : {
             "type" : "string",
-            "description" : "???"
+            "description" : "Entity name"
           },
           "metadata" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity metadata"
           },
           "config" : {
             "$ref" : "#/components/schemas/otoroshi.models.Exporter",
-            "description" : "???"
+            "description" : "Exporter config"
           },
           "projection" : {
             "type" : "object",
-            "description" : "???"
+            "description" : "Event projection"
           },
           "enabled" : {
             "type" : "boolean",
-            "description" : "???"
+            "description" : "Is the exporter enabled"
           },
           "filtering" : {
             "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigFiltering",
-            "description" : "???"
+            "description" : "Filtering options"
           }
         }
       },
