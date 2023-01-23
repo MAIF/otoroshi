@@ -330,6 +330,18 @@ class App extends React.Component {
       })
   }
 
+  onDocs = () => {
+    this.setState({
+      editorState: 'docs'
+    })
+  }
+
+  onCloseDocumentation = () => {
+    this.setState({
+      editorState: undefined
+    })
+  }
+
   removePlugin = pluginId => {
     const plugin = this.state.plugins.filter(f => f.pluginId !== pluginId)
     if (window.confirm(`Delete the ${plugin.filename} plugin ?`)) {
@@ -345,7 +357,7 @@ class App extends React.Component {
   }
 
   render() {
-    const { selectedPlugin, plugins, configFiles } = this.state;
+    const { selectedPlugin, plugins, configFiles, editorState } = this.state;
 
     return <div className='d-flex flex-column'
       style={{ flex: 1, outline: 'none' }}
@@ -353,6 +365,7 @@ class App extends React.Component {
       onClick={this.onClick}
       tabIndex="0">
       <TabsManager
+        editorState={editorState}
         plugins={plugins}
         configFiles={configFiles}
         selectedPlugin={selectedPlugin}
@@ -366,6 +379,8 @@ class App extends React.Component {
         handleContent={this.handleContent}
         onSave={this.onSave}
         onBuild={this.onBuild}
+        onDocs={this.onDocs}
+        onCloseDocumentation={this.onCloseDocumentation}
       />
     </div>
   }

@@ -28,7 +28,7 @@ router.use((req, res, next) => {
   }
 })
 
-router.get('/plugins/:id', (req, res) => {
+router.get('/wasm/:id', (req, res) => {
   const { s3, Bucket } = S3.state()
 
   s3.getObject({

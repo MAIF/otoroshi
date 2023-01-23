@@ -6,10 +6,14 @@ const compression = require('compression');
 const bodyParser = require('body-parser');
 const path = require('path');
 const { S3 } = require('./s3');
+const swaggerUi = require('swagger-ui-express');
+
+const swaggerDocument = require('./swagger.json');
+swaggerDocument.servers = process.env.MANAGER_EXPOSED_DOMAINS.split(',').map(url => ({ url }))
 
 const pluginsRouter = require('./routers/plugins');
 const templatesRouter = require('./routers/templates');
-const otoroshiRouter = require('./routers/otoroshi');
+const publicRouter = require('./routers/public');
 const { WebSocket } = require('./services/websocket');
 
 const manager = require('./logger');
@@ -39,7 +43,9 @@ app.use(Security.extractUserFromQuery);
 
 app.get('/', (_, res) => res.sendFile(path.join(__dirname, '..', 'ui/build', '/index.html')));
 
-app.use('/otoroshi', otoroshiRouter);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+app.use('/', publicRouter);
 app.use('/api/plugins', pluginsRouter);
 app.use('/api/templates', templatesRouter);
 

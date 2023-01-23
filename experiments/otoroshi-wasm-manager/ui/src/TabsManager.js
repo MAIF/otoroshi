@@ -57,15 +57,16 @@ function TabsManager({ plugins, ...props }) {
         }} />}
     </div>
 
-    <div style={{ flex: 1, height: '100vh' }} className="d-flex flex-column">
+    <div style={{ flex: 1, height: '100vh', position: 'relative' }} className="d-flex flex-column">
       <div className='d-flex flex-column' style={{ flex: 1 - sizeTerminal, overflow: 'scroll' }}>
-        <Header onSave={props.onSave} onBuild={props.onBuild} showActions={!!props.selectedPlugin}>
+        <Header onSave={props.onSave} onBuild={props.onBuild} showActions={!!props.selectedPlugin} onDocs={props.onDocs}>
           <Tabs
             tabs={tabs}
             setCurrentTab={setCurrentTab}
             setTabs={setTabs}
             currentTab={currentTab} />
         </Header>
+        {props.editorState === 'docs' && <DocsPreview onClose={props.onCloseDocumentation} />}
         {props.selectedPlugin && <Contents
           tabs={tabs}
           configFiles={props.configFiles}
@@ -148,16 +149,19 @@ function TabButton({ filename, onClick, selected, closeTab }) {
   </button>
 }
 
-function Header({ children, onSave, onBuild, showActions }) {
+function Header({ children, onSave, onBuild, showActions, onDocs }) {
 
   return <div className='d-flex align-items-center justify-content-between bg-light'
     style={{ position: 'fixed', height: 42, zIndex: 10, width: 'calc(100vw - 250px)' }}>
     {children}
 
-    {showActions && <div className='d-flex align-items-center'>
-      <Save onSave={onSave} />
-      <Build onBuild={onBuild} />
-    </div>}
+    <div className='d-flex align-items-center'>
+      {showActions && <>
+        <Save onSave={onSave} />
+        <Build onBuild={onBuild} />
+      </>}
+      <Docs onDocs={onDocs} />
+    </div>
   </div>
 }
 
@@ -173,11 +177,52 @@ function Save({ onSave }) {
 function Build({ onBuild }) {
   return <button type="button"
     style={{ border: 'none', background: 'none' }}
-    className="pe-3"
+    className="pe-2"
     onClick={onBuild}>
     <i className='fas fa-hammer' />
   </button>
 }
 
+function Docs({ onDocs }) {
+  return <button type="button"
+    style={{ border: 'none', background: 'none' }}
+    className="pe-3"
+    onClick={onDocs}
+  >
+    <i className='fas fa-book' />
+  </button>
+}
+
+function DocsPreview({ onClose }) {
+  return <div style={{
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: "25%",
+    right: 0,
+    background: '#eee',
+    zIndex: 100,
+    borderLeft: '3px solid #eee'
+  }}>
+    <div style={{
+      height: '100%',
+      width: '100%',
+      position: 'relative'
+    }}>
+      <button type="button" className='btn btn-light btn-sm' onClick={onClose} style={{
+        position: 'absolute',
+        top: 12,
+        right: 12
+      }}>
+        <i className='fas fa-times me-1' />
+        Close
+      </button>
+      <iframe src='/api-docs' style={{
+        height: '100%',
+        width: '100%'
+      }}></iframe>
+    </div>
+  </div>
+}
 
 export default TabsManager
