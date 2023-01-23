@@ -1,5 +1,5 @@
 import React, { Component, Suspense } from 'react';
-import Select, { Creatable }  from 'react-select';
+import Select, { Creatable } from 'react-select';
 import isFunction from 'lodash/isFunction';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 import { Location } from '../Location';
@@ -142,9 +142,8 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-info' : 'btn-dark'
-                  } me-1 px-3 mb-1`}
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-info' : 'btn-dark'
+                    } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -247,12 +246,12 @@ export function LabelAndInput(_props) {
     _props.margin !== undefined
       ? _props.margin
       : props.margin !== undefined
-      ? props.margin
-      : _props.rawSchema?.props?.margin !== undefined
-      ? _props.rawSchema?.props?.margin
-      : _props.readOnly
-      ? 'mb-0'
-      : 'mb-3';
+        ? props.margin
+        : _props.rawSchema?.props?.margin !== undefined
+          ? _props.rawSchema?.props?.margin
+          : _props.readOnly
+            ? 'mb-0'
+            : 'mb-3';
 
   const style = _props.style || props.style || _props.rawSchema?.props?.margin || {};
 
@@ -549,20 +548,20 @@ export class NgBoxBooleanRenderer extends Component {
       this.props.margin !== undefined
         ? this.props.margin
         : props.margin !== undefined
-        ? props.margin
-        : this.props.rawSchema?.margin !== undefined
-        ? this.props.rawSchema?.margin
-        : 3;
+          ? props.margin
+          : this.props.rawSchema?.margin !== undefined
+            ? this.props.rawSchema?.margin
+            : 3;
 
     const className = this.props.className;
 
     const Container = this.props.rawDisplay
       ? ({ children }) => children
       : ({ children }) => (
-          <div className={`row mb-${margin} ${className || ''}`}>
-            <div className="col-sm-10 ms-auto">{children}</div>
-          </div>
-        );
+        <div className={`row mb-${margin} ${className || ''}`}>
+          <div className="col-sm-10 ms-auto">{children}</div>
+        </div>
+      );
 
     return (
       <Container>
@@ -632,12 +631,13 @@ export class NgArrayRenderer extends Component {
     boolean: () => false,
     bool: () => false,
     array: () => [],
-    select: () => current?.props?.options[0] || '',
+    string: () => "",
+    select: () => current && current.props && current.props.options ? current && current.props && current.props.options[0] : '',
     form: () => ({
       ...this.generateDefaultValue(current.schema),
     }),
-    object: () => {},
-    json: () => {},
+    object: () => { },
+    json: () => { },
   });
 
   generateDefaultValue = (obj) => {
@@ -762,6 +762,12 @@ export class NgArrayRenderer extends Component {
                 let newArr = [...(this.props.value || [])];
 
                 if (schema.of) return this.props.onChange([...newArr, '']);
+                else if (schema.itemRenderer) {
+                  this.props.onChange([
+                    ...newArr,
+                    this.defaultValues({})[schema.type]()
+                  ])
+                }
                 else {
                   const newArray = [...newArr, this.generateDefaultValue(schema)];
                   this.props.onChange(newArray);
@@ -817,21 +823,21 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx) => (
-                    <ItemRenderer
-                      embedded
-                      flow={this.props.flow}
-                      schema={this.props.schema}
-                      value={value}
-                      key={key}
-                      idx={idx}
-                      onChange={(e) => {
-                        const newObject = this.props.value ? { ...this.props.value } : {};
-                        newObject[key] = e;
-                        this.props.onChange(newObject);
-                      }}
-                      {...props}
-                    />
-                  )
+                  <ItemRenderer
+                    embedded
+                    flow={this.props.flow}
+                    schema={this.props.schema}
+                    value={value}
+                    key={key}
+                    idx={idx}
+                    onChange={(e) => {
+                      const newObject = this.props.value ? { ...this.props.value } : {};
+                      newObject[key] = e;
+                      this.props.onChange(newObject);
+                    }}
+                    {...props}
+                  />
+                )
                 : null
             }
           />
@@ -1056,6 +1062,16 @@ export class NgObjectSelectRenderer extends Component {
 export class NgSelectRenderer extends Component {
   state = {};
   componentDidMount() {
+    this.fetchValues();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.optionsFrom !== this.props.optionsFrom) {
+      this.fetchValues()
+    }
+  }
+
+  fetchValues = () => {
     const schema = this.props.schema || {};
     const props = schema.props || {};
     if (props.optionsFrom || this.props.optionsFrom) {
@@ -1068,7 +1084,10 @@ export class NgSelectRenderer extends Component {
           .then((r) => {
             this.setState({
               loading: false,
-              options: r,
+              options: [
+                ...r,
+                this.props.value
+              ].filter(f => f),
             });
           })
           .catch((e) => {
@@ -1096,12 +1115,16 @@ export class NgSelectRenderer extends Component {
     const schema = this.props.schema || {};
     const props = schema.props || this.props || {};
     const readOnly = this.props.readOnly;
+    const creatable = (this.state.creatable || props.creatable || this.props.creatable)
+    const Component = creatable ? Creatable : Select;
+
+    console.log(this.state.options || props.options || this.props.options)
 
     return (
       <LabelAndInput {...this.props}>
         {readOnly && <ReadOnlyField value={this.props.value} />}
         {!readOnly && (
-          <Select
+          <Component
             name={`selector-${this.props.name}`}
             value={this.props.value}
             isMulti={props.isMulti}
@@ -1113,7 +1136,17 @@ export class NgSelectRenderer extends Component {
               props || this.props,
               this.state.options || props.options || this.props.options
             )}
-            onChange={(e) => this.props.onChange(e?.value)}
+            onChange={(e) => {
+              if (creatable && !this.state.options.find(o => o.value === e?.value)) {
+                this.setState({
+                  options: [
+                    ...this.state.options,
+                    e.value
+                  ]
+                })
+              }
+              this.props.onChange(e?.value)
+            }}
           />
         )}
       </LabelAndInput>

@@ -1225,6 +1225,8 @@ case class ApiKeyCreatedAlert(
       "user"          -> user,
       "audit"         -> audit.toJson
     )
+
+  override def keys: Seq[String] = Seq.empty
 }
 case class ApiKeyUpdatedAlert(
     `@id`: String,

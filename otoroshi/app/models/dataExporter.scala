@@ -208,10 +208,11 @@ object DataExporterConfig {
                 (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
               )
-            case "mailer"       => MailerSettings.format.reads((json \ "config").as[JsObject]).get
-            case "custom"       => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
-            case "console"      => ConsoleSettings()
-            case "metrics"      => MetricsSettings((json \ "config" \ "labels").as[Map[String, String]])
+            case "mailer"         => MailerSettings.format.reads((json \ "config").as[JsObject]).get
+            case "custom"         => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
+            case "console"        => ConsoleSettings()
+            case "metrics"        => MetricsSettings((json \ "config" \ "labels").as[Map[String, String]])
+            case "custommetrics" => CustomMetricsSettings.format.reads((json \ "config").as[JsObject]).get
             case _              => throw new RuntimeException("Bad config type")
           }
         )
@@ -280,23 +281,29 @@ object DataExporterConfigType {
     def name: String = "metrics"
   }
 
-  def parse(str: String): DataExporterConfigType =
+  case object CustomMetrics extends DataExporterConfigType {
+    def name: String = "custommetrics"
+  }
+
+  def parse(str: String): DataExporterConfigType = {
     str.toLowerCase() match {
-      case "kafka"        => Kafka
-      case "pulsar"       => Pulsar
-      case "elastic"      => Elastic
-      case "webhook"      => Webhook
-      case "file"         => File
-      case "goreplayfile" => GoReplayFile
-      case "goreplays3"   => GoReplayS3
-      case "s3"           => S3File
-      case "mailer"       => Mailer
-      case "none"         => None
-      case "custom"       => Custom
-      case "console"      => Console
-      case "metrics"      => Metrics
-      case _              => None
+      case "kafka"          => Kafka
+      case "pulsar"         => Pulsar
+      case "elastic"        => Elastic
+      case "webhook"        => Webhook
+      case "file"           => File
+      case "goreplayfile"   => GoReplayFile
+      case "goreplays3"     => GoReplayS3
+      case "s3"             => S3File
+      case "mailer"         => Mailer
+      case "none"           => None
+      case "custom"         => Custom
+      case "console"        => Console
+      case "metrics"        => Metrics
+      case "custommetrics"  => CustomMetrics
+      case _                => None
     }
+  }
 }
 
 case class DataExporterConfig(
@@ -349,6 +356,7 @@ case class DataExporterConfig(
       case c: ExporterRef            => new CustomExporter(this)
       case c: ConsoleSettings        => new ConsoleExporter(this)
       case c: MetricsSettings        => new MetricsExporter(this)
+      case c: CustomMetricsSettings  => new CustomMetricsExporter(this)
       case _                         => throw new RuntimeException("unsupported exporter type")
     }
   }

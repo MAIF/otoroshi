@@ -182,8 +182,8 @@ export function allServices(env, group, paginationState) {
   const url = env
     ? `/bo/api/proxy/api/services?filter.env=${env}`
     : group
-    ? `/bo/api/proxy/api/services?filter.groups=${group}`
-    : `/bo/api/proxy/api/services`;
+      ? `/bo/api/proxy/api/services?filter.groups=${group}`
+      : `/bo/api/proxy/api/services`;
   return findAllWithPagination(url, paginationState);
 }
 
@@ -1919,7 +1919,6 @@ export function jsonToGraphqlSchema(schema, types) {
     }),
   }).then((r) => r.json());
 }
-
 // NgRoutes
 
 const fetchWrapper = (url, method = 'GET', body) =>

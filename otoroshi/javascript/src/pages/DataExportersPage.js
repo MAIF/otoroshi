@@ -15,6 +15,7 @@ import { Collapse } from '../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 import { CheckElasticsearchConnection } from '../components/elasticsearch';
 import { FeedbackButton } from './RouteDesigner/FeedbackButton';
+import { LabelAndInput, NgArrayRenderer, NgForm, NgSelectRenderer } from '../components/nginputs';
 
 function tryOrTrue(f) {
   try {
@@ -29,6 +30,146 @@ function tryOrFalse(f) {
     return f();
   } catch (e) {
     return false;
+  }
+}
+
+class CustomMetrics extends Component {
+  schema = {
+    tags: {
+      type: 'object',
+      label: 'Tags',
+    },
+    metrics: {
+      type: 'array',
+      array: true,
+      format: 'form',
+      label: 'Metrics',
+      flow: ['id', 'eventType', 'selector', 'kind', 'labels'],
+      schema: {
+        id: {
+          type: 'string',
+          props: {
+            label: 'Public api key',
+            placeholder: 'Public api key',
+          },
+        },
+        eventType: {
+          type: 'select',
+          label: 'Event',
+          props: {
+            options: [
+              "GatewayEvent",
+              "MaxConcurrentRequestReachedAlert",
+              "CircuitBreakerOpenedAlert",
+              "CircuitBreakerClosedAlert",
+              "SessionDiscardedAlert",
+              "SessionsDiscardedAlert",
+              "PanicModeAlert",
+              "OtoroshiExportAlert",
+              "U2FAdminDeletedAlert",
+              "BlackListedBackOfficeUserAlert",
+              "AdminLoggedInAlert",
+              "AdminFirstLogin",
+              "AdminLoggedOutAlert",
+              "GlobalConfigModification",
+              "RevokedApiKeyUsageAlert",
+              "ServiceGroupCreatedAlert",
+              "ServiceGroupUpdatedAlert",
+              "ServiceGroupDeletedAlert",
+              "ServiceCreatedAlert",
+              "ServiceUpdatedAlert",
+              "ServiceDeletedAlert",
+              "ApiKeyCreatedAlert",
+              "ApiKeyUpdatedAlert",
+              "ApiKeyDeletedAlert",
+              "TrafficCaptureEvent",
+              "TcpEvent",
+              "HealthCheckEvent",
+              "RequestBodyEvent",
+              "ResponseBodyEvent",
+              "MirroringEvent",
+              "BackOfficeEvent",
+              "AdminApiEvent",
+              "SnowMonkeyOutageRegisteredEvent",
+              "CircuitBreakerOpenedEvent",
+              "CircuitBreakerClosedEvent",
+              "MaxConcurrentRequestReachedEvent",
+              "JobRunEvent",
+              "JobErrorEvent",
+              "JobStoppedEvent",
+              "JobStartedEvent"
+            ]
+          }
+        },
+        selector: {
+          renderer: props => {
+            return <LabelAndInput label="Field">
+              <NgSelectRenderer
+                ngOptions={{
+                  spread: true
+                }}
+                name="Selector"
+                creatable={true}
+                value={props?.value}
+                optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${props?.rootValue?.eventType || 'GatewayEvent'}`}
+                optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
+                onChange={props.onChange}
+              />
+            </LabelAndInput>
+          }
+        },
+        kind: {
+          type: 'select',
+          label: 'Type of metric',
+          props: {
+            options: ['Counter', 'Timer', 'Histogram']
+          },
+        },
+        labels: {
+          renderer: props => {
+            // console.log(props)
+            return <LabelAndInput label="Labels">
+              <NgArrayRenderer
+                onChange={props.onChange}
+                path=''
+                ngOptions={{
+                  spread: true
+                }}
+                value={props ? (props.value || []) : []}
+                schema={{
+                  type: 'string',
+                  itemRenderer: ({ onChange, value }) => <div style={{ width: '100%' }}>
+                    <NgSelectRenderer
+                      ngOptions={{
+                        spread: true
+                      }}
+                      creatable={true}
+                      value={value}
+                      optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${props?.rootValue?.eventType || 'GatewayEvent'}`}
+                      optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
+                      onChange={onChange}
+                    />
+                  </div>
+                }}
+              />
+            </LabelAndInput>
+          }
+        }
+      }
+    }
+  };
+
+  render() {
+    const value = this.props.rawValue;
+
+    // console.log("IN SUB FORM", value)
+
+    return <NgForm
+      schema={this.schema}
+      value={value}
+      flow={['metrics', 'tags']}
+      onChange={e => this.props.onChange(e)}
+    />
   }
 }
 
@@ -346,8 +487,8 @@ const ExporterTryIt = ({ exporter }) => {
                   status === 'Successful'
                     ? '#5cb85c'
                     : status === 'Not tested'
-                    ? '#f39c12'
-                    : '#D5443F',
+                      ? '#f39c12'
+                      : '#D5443F',
                 display: 'flex',
                 alignItems: 'center',
                 width: 'fit-content',
@@ -506,7 +647,12 @@ export class NewExporterForm extends Component {
                 onChange={(config) => {
                   if (this.data().type === 'mailer') {
                     return this.dataChange({ config: config.mailerSettings });
-                  } else {
+                  }
+                  else if (this.data().type === 'custommetrics') {
+                    console.log(config)
+                    return this.dataChange({ config: config.custommetrics });
+                  }
+                  else {
                     return this.dataChange({ config });
                   }
                 }}
@@ -1415,17 +1561,18 @@ const possibleExporterConfigFormValues = {
           help: 'The selected properties from events and their projection',
           title: 'Properties of an event to retrieve and transform into metric labels',
           transformer: (a) => ({
-            value: a.id,
-            label: (
-              <span>
-                <span className="badge bg-success" style={{ minWidth: 63 }}>
-                  {a.certType}
-                </span>{' '}
-                {a.name}
-              </span>
-            ),
+            value: a,
+            label: a,
           }),
         },
+      },
+    },
+  },
+  custommetrics: {
+    flow: ['custommetrics'],
+    schema: {
+      custommetrics: {
+        type: CustomMetrics,
       },
     },
   },

@@ -1,6 +1,7 @@
 package otoroshi.storage.stores
 
 import otoroshi.env.Env
+import otoroshi.events.Exporters.CustomMetricsSettings
 import otoroshi.events.{KafkaConfig, PulsarConfig}
 import otoroshi.models._
 import otoroshi.security.IdGenerator
@@ -219,6 +220,19 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = MetricsSettings()
+        )
+      case Some("custommetrics")   =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.CustomMetrics,
+          id = IdGenerator.namedId("data_exporter", env),
+          name = "New custom metrics exporter config",
+          desc = "New custom metrics exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation(),
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = CustomMetricsSettings()
         )
       case _                      =>
         DataExporterConfig(

@@ -165,9 +165,18 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     metricRegistry.counter(name).inc()
     jmxRegistry.counter(name.getKey).inc()
   }
+  def counterIncOf(name: MetricId, n: Long): Unit = {
+    metricRegistry.counter(name).inc(n)
+    jmxRegistry.counter(name.getKey).inc(n)
+  }
+
   def counterInc(name: String): Unit = {
     metricRegistry.counter(MetricId.build(name)).inc()
     jmxRegistry.counter(name).inc()
+  }
+  def counterIncOf(name: String, n: Long): Unit = {
+    metricRegistry.counter(MetricId.build(name)).inc(n)
+    jmxRegistry.counter(name).inc(n)
   }
 
   def histogramUpdate(name: MetricId, value: Long): Unit = {
