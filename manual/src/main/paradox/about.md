@@ -12,7 +12,7 @@ At some point, we tried to write a small prototype to explore what could be our 
 
 ## Philosophy 
 
-Every OSS product build at @link:[MAIF](https://www.maif.fr) { open=new } like the develoer portal @link:[Daikoku](https://maif.github.io/daikoku) { open=new } or @link:[Izanami](https://maif.github.io/izanami) { open=new } follow a common philosophy. 
+Every OSS product build at @link:[MAIF](https://www.maif.fr) { open=new } like the developer portal @link:[Daikoku](https://maif.github.io/daikoku) { open=new } or @link:[Izanami](https://maif.github.io/izanami) { open=new } follow a common philosophy. 
 
 * the services or API provided should be **technology agnostic**.
 * **http first**: http is the right answer to the previous quote   
