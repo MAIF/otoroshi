@@ -460,13 +460,17 @@ export class CertificatesPage extends Component {
           'If true, the public key will be exposed on http://otoroshi-api.your-domain/.well-known/jwks.json',
       },
     },
-    revoked: {
+    'metadata.revocationReason': {
       type: 'select',
       props: {
-        label: 'Certificate status',
+        label: 'Certificate revocation status',
         defaultValue: RevocationReason.VALID.value,
         possibleValues: Object.values(RevocationReason),
       },
+    },
+    revoked: {
+      type: 'bool',
+      props: { label: 'Certificate revoked' },
     },
     client: {
       type: 'bool',
@@ -544,12 +548,12 @@ export class CertificatesPage extends Component {
     {
       title: 'revoked',
       cell: (v, item) =>
-        item.revoked !== RevocationReason.VALID.value ? (
+        item.revoked ? (
           <span className="badge bg-danger">yes</span>
         ) : (
           ''
         ),
-      content: (item) => (item.revoked !== RevocationReason.VALID.value ? 'yes' : 'no'),
+      content: (item) => (item.revoked ? 'yes' : 'no'),
       style: { textAlign: 'center', width: 70 },
     },
     // {
@@ -598,6 +602,7 @@ export class CertificatesPage extends Component {
     'keypair',
     'exposed',
     'revoked',
+    'metadata.revocationReason',
     'commands',
     'valid',
     'chain',
@@ -791,13 +796,13 @@ export class CertificatesPage extends Component {
   };
 
   updateCertificate = (cert) => {
-    if (cert.revoked === RevocationReason.VALID.value || cert.revoked === false) {
-      cert.revoked = false;
-      delete cert.metadata.revocationReason;
-    } else {
-      cert.metadata.revocationReason = cert.revoked;
-      cert.revoked = true;
-    }
+    // if (cert.revoked === RevocationReason.VALID.value || cert.revoked === false) {
+    //   cert.revoked = false;
+    //   delete cert.metadata.revocationReason;
+    // } else {
+    //   cert.metadata.revocationReason = cert.revoked;
+    //   cert.revoked = true;
+    // }
 
     BackOfficeServices.updateCertificate(cert);
   };
@@ -824,14 +829,14 @@ export class CertificatesPage extends Component {
       return {
         ...res,
         data: res.data.map((cert) => {
-          if (cert.metadata.revocationReason)
-            cert.revoked = RevocationReason[cert.metadata.revocationReason]
-              ? RevocationReason[cert.metadata.revocationReason].value
-              : RevocationReason.UNSPECIFIED;
-          else if (cert.revoked)
-            // cert was revoked before revocation reason list implementation so set unspecified as reason
-            cert.revoked = RevocationReason.UNSPECIFIED.value;
-          else cert.revoked = RevocationReason.VALID.value;
+          // if (cert.metadata.revocationReason)
+          //   cert.revoked = RevocationReason[cert.metadata.revocationReason]
+          //     ? RevocationReason[cert.metadata.revocationReason].value
+          //     : RevocationReason.UNSPECIFIED;
+          // else if (cert.revoked)
+          //   // cert was revoked before revocation reason list implementation so set unspecified as reason
+          //   cert.revoked = RevocationReason.UNSPECIFIED.value;
+          // else cert.revoked = RevocationReason.VALID.value;
           return cert;
         }),
       };
