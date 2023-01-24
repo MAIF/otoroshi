@@ -1734,11 +1734,12 @@ object KubernetesCRDsJob {
       }
     }
 
-  def patchCoreDnsConfig(conf: KubernetesConfig, ctx: JobContext)(implicit
+  def patchCoreDnsConfig(_conf: KubernetesConfig, ctx: JobContext)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
     if (logger.isDebugEnabled) logger.debug("patchCoreDnsConfig")
+    val conf = if (_conf.coreDnsAzure) _conf.copy(coreDnsConfigMapName = "coredns-custom") else _conf
     val client = new KubernetesClient(conf, env)
     val hash   = Seq(
       conf.kubeSystemNamespace,
