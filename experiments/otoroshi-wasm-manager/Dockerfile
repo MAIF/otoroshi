@@ -4,6 +4,7 @@ RUN apk --no-cache add bash
 RUN apk --no-cache add curl
 RUN apk --no-cache add --update nodejs npm
 RUN apk --no-cache add build-base
+RUN apk --no-cache add python3 py3-pip
 
 # Get rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
