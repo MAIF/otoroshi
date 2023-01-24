@@ -52,6 +52,7 @@ case class KubernetesConfig(
     corednsPort: Int,
     coreDnsIntegration: Boolean,
     coreDnsIntegrationDryRun: Boolean,
+    coreDnsAzure: Boolean,
     openshiftDnsOperatorIntegration: Boolean,
     openshiftDnsOperatorCleanup: Boolean,
     openshiftDnsOperatorCleanupNames: Seq[String],
@@ -147,6 +148,7 @@ object KubernetesConfig {
           ingressEndpointPublishedService = (conf \ "ingressEndpointPublishedServices").asOpt[String],
           coreDnsIntegration = (conf \ "coreDnsIntegration").asOpt[Boolean].getOrElse(false),
           coreDnsIntegrationDryRun = (conf \ "coreDnsIntegrationDryRun").asOpt[Boolean].getOrElse(false),
+          coreDnsAzure = (conf \ "coreDnsAzure").asOpt[Boolean].getOrElse(false),
           ingresses = (conf \ "ingresses").asOpt[Boolean].getOrElse(true),
           crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
@@ -237,6 +239,7 @@ object KubernetesConfig {
           ingresses = (conf \ "ingresses").asOpt[Boolean].getOrElse(true),
           coreDnsIntegration = (conf \ "coreDnsIntegration").asOpt[Boolean].getOrElse(false),
           coreDnsIntegrationDryRun = (conf \ "coreDnsIntegrationDryRun").asOpt[Boolean].getOrElse(false),
+          coreDnsAzure = (conf \ "coreDnsAzure").asOpt[Boolean].getOrElse(false),
           crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
           restartDependantDeployments = (conf \ "restartDependantDeployments").asOpt[Boolean].getOrElse(false),
@@ -301,6 +304,7 @@ object KubernetesConfig {
         "crds"                                 -> true,
         "coreDnsIntegration"                   -> false,
         "coreDnsIntegrationDryRun"             -> false,
+        "coreDnsAzure"                         -> false,
         "kubeLeader"                           -> false,
         "restartDependantDeployments"          -> true,
         "useProxyState"                        -> false,
@@ -389,6 +393,7 @@ object KubernetesConfig {
       ">>>coredns integration",
       "coreDnsIntegration",
       "coreDnsIntegrationDryRun",
+      "coreDnsAzure",
       "coreDnsConfigMapName",
       "coreDnsDeploymentName",
       "corednsPort",
@@ -598,6 +603,7 @@ object KubernetesConfig {
 
     ++ makeFormField("coreDnsIntegration", "bool", "Coredns integration", "Auto register service mesh in coredns".some)
     ++ makeFormField("coreDnsIntegrationDryRun", "bool", "Dry run", "Just simulate integration".some)
+    ++ makeFormField("coreDnsAzure", "bool", "AKS", "Use when running on AKS".some)
     ++ makeFormField(
       "coreDnsConfigMapName",
       "string",
