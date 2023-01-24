@@ -148,7 +148,7 @@ object WasmUtils {
               (url, clientId, clientSecret) match {
                 case (Some(url), Some(clientId), Some(clientSecret)) =>
                   env.Ws
-                    .url(s"$url/otoroshi/plugins/$pluginId")
+                    .url(s"$url/wasm/$pluginId")
                     .withRequestTimeout(FiniteDuration(5 * 1000, MILLISECONDS))
                     .withHttpHeaders(
                       "Accept" -> "application/json",

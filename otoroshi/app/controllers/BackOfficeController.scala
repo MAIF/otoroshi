@@ -1949,7 +1949,7 @@ class BackOfficeController(
         (url, clientId, clientSecret) match {
           case (Some(url), Some(clientId), Some(clientSecret)) =>
             env.Ws
-              .url(s"$url/otoroshi/plugins")
+              .url(s"$url/plugins")
               .withHttpHeaders(
                 "Otoroshi-Client-Id" -> clientId,
                 "Otoroshi-Client-Secret" -> clientSecret,
