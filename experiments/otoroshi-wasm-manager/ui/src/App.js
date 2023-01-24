@@ -336,9 +336,15 @@ class App extends React.Component {
     })
   }
 
-  onCloseDocumentation = () => {
+  onEditorStateReset = () => {
     this.setState({
       editorState: undefined
+    })
+  }
+
+  showPlaySettings = () => {
+    this.setState({
+      editorState: 'play',
     })
   }
 
@@ -380,7 +386,8 @@ class App extends React.Component {
         onSave={this.onSave}
         onBuild={this.onBuild}
         onDocs={this.onDocs}
-        onCloseDocumentation={this.onCloseDocumentation}
+        onEditorStateReset={this.onEditorStateReset}
+        showPlaySettings={this.showPlaySettings}
       />
     </div>
   }

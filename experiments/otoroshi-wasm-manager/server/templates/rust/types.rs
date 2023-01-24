@@ -1,6 +1,6 @@
-use std::{collections::HashMap};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Backend {
@@ -12,18 +12,18 @@ pub struct Backend {
     pub protocol: String,
     pub ip_address: Option<String>,
     pub predicate: Value,
-    pub tls_config: Value
+    pub tls_config: Value,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Apikey {
     #[serde(alias = "clientId")]
-    pub client_id: String,    
+    pub client_id: String,
     #[serde(alias = "clientName")]
-    pub client_name: String,    
-    pub metadata: HashMap<String, String>,    
-    pub tags: Vec<String>    
-} 
+    pub client_name: String,
+    pub metadata: HashMap<String, String>,
+    pub tags: Vec<String>,
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct User {
@@ -32,7 +32,7 @@ pub struct User {
     pub profile: Value,
     pub metadata: HashMap<String, String>,
     pub tags: Vec<String>,
-} 
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RawRequest {
@@ -46,7 +46,7 @@ pub struct RawRequest {
     pub version: String,
     pub has_body: bool,
     pub remote: String,
-    pub client_cert_chain: Value
+    pub client_cert_chain: Value,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -56,13 +56,13 @@ pub struct Frontend {
     pub exact: bool,
     pub headers: HashMap<String, String>,
     pub query: HashMap<String, String>,
-    pub methods: Vec<String>
+    pub methods: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct HealthCheck {
     pub enabled: bool,
-    pub url: String
+    pub url: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -72,7 +72,7 @@ pub struct RouteBackend {
     pub rewrite: bool,
     pub load_balancing: Value,
     pub client: Value,
-    pub health_check: HealthCheck
+    pub health_check: HealthCheck,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -84,20 +84,20 @@ pub struct Route {
     pub metadata: HashMap<String, String>,
     pub enabled: bool,
     pub debug_flow: bool,
-    pub export_reporting: bool, 
+    pub export_reporting: bool,
     pub capture: bool,
     pub groups: Vec<String>,
     pub frontend: Frontend,
     pub backend: RouteBackend,
     pub backend_ref: Option<String>,
-    pub plugins: Value
+    pub plugins: Value,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct OtoroshiResponse {
     pub status: u32,
     pub headers: HashMap<String, String>,
-    pub cookies: Value
+    pub cookies: Value,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -108,7 +108,7 @@ pub struct OtoroshiRequest {
     pub version: String,
     pub client_cert_chain: Value,
     pub backend: Option<Backend>,
-    pub cookies: Value
+    pub cookies: Value,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -123,11 +123,11 @@ pub struct WasmQueryContext {
     pub attrs: Value,
     pub route: Route,
     pub raw_request_body: Option<String>,
-    pub request: OtoroshiRequest
+    pub request: OtoroshiRequest,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct WasmAccessValidatorContext { 
+pub struct WasmAccessValidatorContext {
     pub snowflake: Option<String>,
     pub apikey: Option<Apikey>,
     pub user: Option<User>,
@@ -177,38 +177,38 @@ pub struct WasmSinkContext {
     pub attrs: Value,
     pub origin: String,
     pub status: u32,
-    pub message: String
+    pub message: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct OtoroshiPluginResponse {
-    pub content: String
+    pub content: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct WasmQueryResponse {
-   pub headers: Option<HashMap<String, String>>,
-   pub nody: String,
-   pub status: u32
+    pub headers: Option<HashMap<String, String>>,
+    pub body: String,
+    pub status: u32,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct WasmAccessValidatorError {
     pub message: String,
-    pub status: u32
+    pub status: u32,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct WasmAccessValidatorResponse {
     pub result: bool,
-    pub error: Option<WasmAccessValidatorError>
+    pub error: Option<WasmAccessValidatorError>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct WasmTransformerResponse {
     pub headers: HashMap<String, String>,
     pub cookies: Value,
-    pub body: Option<String>
+    pub body: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -221,5 +221,5 @@ pub struct WasmSinkHandleResponse {
     pub status: u32,
     pub headers: HashMap<String, String>,
     pub body: Option<String>,
-    pub bodyase64: Option<String>,
+    pub bodyBase64: Option<String>,
 }

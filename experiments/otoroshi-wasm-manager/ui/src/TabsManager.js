@@ -3,6 +3,7 @@ import FileManager from './FileManager';
 import Tab from './Tab'
 import PluginManager from './PluginManager'
 import Terminal from './Terminal';
+import { Run } from './Run';
 
 function TabsManager({ plugins, ...props }) {
   const [tabs, setTabs] = useState([])
@@ -27,7 +28,7 @@ function TabsManager({ plugins, ...props }) {
       if (resizingTerminal) {
         e.stopPropagation()
         const r = 1 - (e.clientY / window.innerHeight)
-        changeTerminalSize(r < .2 ? .2 : r > .75 ? .75 : r)
+        changeTerminalSize(r > .75 ? .75 : r)
       }
     }}
   >
@@ -59,21 +60,34 @@ function TabsManager({ plugins, ...props }) {
 
     <div style={{ flex: 1, height: '100vh', position: 'relative' }} className="d-flex flex-column">
       <div className='d-flex flex-column' style={{ flex: 1 - sizeTerminal, overflow: 'scroll' }}>
-        <Header onSave={props.onSave} onBuild={props.onBuild} showActions={!!props.selectedPlugin} onDocs={props.onDocs}>
+        <Header
+          onSave={props.onSave}
+          onBuild={props.onBuild}
+          showActions={!!props.selectedPlugin}
+          onDocs={props.onDocs}
+          showPlaySettings={() => {
+            if (!tabs.includes('Runner')) {
+              setTabs([...tabs, 'Runner'])
+              setCurrentTab('Runner')
+            }
+            props.showPlaySettings()
+          }}>
           <Tabs
             tabs={tabs}
             setCurrentTab={setCurrentTab}
             setTabs={setTabs}
             currentTab={currentTab} />
         </Header>
-        {props.editorState === 'docs' && <DocsPreview onClose={props.onCloseDocumentation} />}
-        {props.selectedPlugin && <Contents
+        {props.editorState === 'docs' && <DocsPreview onClose={props.onEditorStateReset} />}
+        {props.editorState === 'play' && currentTab === 'Runner' &&
+          <Run onClose={props.onEditorStateReset} plugins={plugins} selectedPlugin={props.selectedPlugin} />}
+        {props.selectedPlugin ? <Contents
           tabs={tabs}
           configFiles={props.configFiles}
           selectedPlugin={props.selectedPlugin}
           handleContent={newContent => props.handleContent(currentTab, newContent)}
           setCurrentTab={setCurrentTab}
-          currentTab={currentTab} />}
+          currentTab={currentTab} /> : null}
       </div>
       <Terminal
         selectedPlugin={props.selectedPlugin}
@@ -149,7 +163,7 @@ function TabButton({ filename, onClick, selected, closeTab }) {
   </button>
 }
 
-function Header({ children, onSave, onBuild, showActions, onDocs }) {
+function Header({ children, onSave, onBuild, showActions, onDocs, showPlaySettings }) {
 
   return <div className='d-flex align-items-center justify-content-between bg-light'
     style={{ position: 'fixed', height: 42, zIndex: 10, width: 'calc(100vw - 250px)' }}>
@@ -159,6 +173,7 @@ function Header({ children, onSave, onBuild, showActions, onDocs }) {
       {showActions && <>
         <Save onSave={onSave} />
         <Build onBuild={onBuild} />
+        <Play showPlaySettings={showPlaySettings} />
       </>}
       <Docs onDocs={onDocs} />
     </div>
@@ -223,6 +238,16 @@ function DocsPreview({ onClose }) {
       }}></iframe>
     </div>
   </div>
+}
+
+function Play({ showPlaySettings }) {
+  return <button type="button"
+    style={{ border: 'none', background: 'none' }}
+    className="pe-2"
+    onClick={showPlaySettings}
+  >
+    <i className='fas fa-play' />
+  </button>
 }
 
 export default TabsManager

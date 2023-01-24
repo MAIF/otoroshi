@@ -14,6 +14,7 @@ swaggerDocument.servers = process.env.MANAGER_EXPOSED_DOMAINS.split(',').map(url
 const pluginsRouter = require('./routers/plugins');
 const templatesRouter = require('./routers/templates');
 const publicRouter = require('./routers/public');
+const wasmRouter = require('./routers/wasm');
 const { WebSocket } = require('./services/websocket');
 
 const manager = require('./logger');
@@ -48,6 +49,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/', publicRouter);
 app.use('/api/plugins', pluginsRouter);
 app.use('/api/templates', templatesRouter);
+app.use('/api/wasm', wasmRouter);
 
 const server = http.createServer(app);
 

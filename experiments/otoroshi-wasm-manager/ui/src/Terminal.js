@@ -28,10 +28,8 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
   return <div style={{
     flex: sizeTerminal
   }} className="bg-light">
-    <div style={{
-      height: 12,
-      background: '#eee'
-    }}
+    <div style={{ height: 12, background: '#eee' }}
+      className="d-flex align-items-center justify-content-center"
       onMouseDown={e => {
         e.stopPropagation();
         toggleResizingTerminal(true)
@@ -41,6 +39,13 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
         e.stopPropagation();
         toggleResizingTerminal(false)
       }}>
+      <div style={{
+        cursor: 'pointer',
+        background: '#fff',
+        width: 36,
+        height: 6,
+        borderRadius: 12
+      }}></div>
     </div>
     <div className='d-flex justify-content-between align-items-center mx-2 me-3'>
       <div style={{
@@ -54,7 +59,7 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
         <i className='fas fa-ban fa-sm me-3' style={{ cursor: 'pointer' }}
           onClick={() => setContent('')} />
         <i className='fas fa-times fa-sm' style={{ cursor: 'pointer' }}
-          onClick={() => changeTerminalSize(.1)} />
+          onClick={() => changeTerminalSize(0)} />
       </div>
     </div>
 
@@ -71,7 +76,7 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
         dropCursor: false
       }}
     />
-  </div >
+  </div>
 }
 
 export default Terminal;

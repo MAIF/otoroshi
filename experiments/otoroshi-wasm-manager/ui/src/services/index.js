@@ -87,8 +87,15 @@ export const buildPlugin = async plugin => {
     }
   })
     .then(res => res.json())
-}
+};
 
 export const removePlugin = plugin => rawFetch(`/plugins/${plugin}`, {
   method: 'DELETE'
-})
+});
+
+export const launchPlugin = (pluginId, input, functionName) => jsonFetch(`/wasm/${pluginId}`, {
+  method: 'POST',
+  body: JSON.stringify({
+    input, functionName
+  })
+});
