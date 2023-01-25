@@ -5,11 +5,7 @@
     "description": "Write and build your own plugin in Rust or WebAssembly",
     "version": "0.1.0"
   },
-  "servers": [
-    {
-      "url": "http://localhost:5001"
-    }
-  ],
+  "url": "/",
   "paths": {
     "/plugins": {
       "get": {
