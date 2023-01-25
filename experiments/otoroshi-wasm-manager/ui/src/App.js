@@ -20,7 +20,7 @@ class App extends React.Component {
         if (Array.isArray(res)) {
           this.setState({ plugins: res })
         } else if (res && res.error) {
-          toast.error("Not authorized to access to manager", {
+          toast.error("You're not authorized to access to manager", {
             autoClose: false
           })
         }

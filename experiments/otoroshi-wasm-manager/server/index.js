@@ -42,14 +42,13 @@ app.use(bodyParser.text());
 
 app.use(Security.extractUserFromQuery);
 
-app.get('/', (_, res) => res.sendFile(path.join(__dirname, '..', 'ui/build', '/index.html')));
-
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.use('/', publicRouter);
 app.use('/api/plugins', pluginsRouter);
 app.use('/api/templates', templatesRouter);
 app.use('/api/wasm', wasmRouter);
+app.use('/', publicRouter);
+app.get('/', (_, res) => res.sendFile(path.join(__dirname, '..', 'ui/build', '/index.html')));
 
 const server = http.createServer(app);
 
