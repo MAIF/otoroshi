@@ -547,12 +547,7 @@ export class CertificatesPage extends Component {
     },
     {
       title: 'revoked',
-      cell: (v, item) =>
-        item.revoked ? (
-          <span className="badge bg-danger">yes</span>
-        ) : (
-          ''
-        ),
+      cell: (v, item) => (item.revoked ? <span className="badge bg-danger">yes</span> : ''),
       content: (item) => (item.revoked ? 'yes' : 'no'),
       style: { textAlign: 'center', width: 70 },
     },

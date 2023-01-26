@@ -1739,7 +1739,7 @@ object KubernetesCRDsJob {
       ec: ExecutionContext
   ): Future[Unit] = {
     if (logger.isDebugEnabled) logger.debug("patchCoreDnsConfig")
-    val conf = if (_conf.coreDnsAzure) _conf.copy(coreDnsConfigMapName = "coredns-custom") else _conf
+    val conf   = if (_conf.coreDnsAzure) _conf.copy(coreDnsConfigMapName = "coredns-custom") else _conf
     val client = new KubernetesClient(conf, env)
     val hash   = Seq(
       conf.kubeSystemNamespace,
@@ -1757,11 +1757,11 @@ object KubernetesCRDsJob {
         coredns: Option[KubernetesDeployment],
         configMap: KubernetesConfigMap,
         append: Boolean,
-        azure: Boolean,
+        azure: Boolean
     ): Future[Unit] =
       Try {
         if (logger.isDebugEnabled) logger.debug("patching coredns config. with otoroshi mesh")
-        val dnsConfigFile = if (azure) "otoroshi.server" else "Corefile"
+        val dnsConfigFile         = if (azure) "otoroshi.server" else "Corefile"
         val coredns17: Boolean = {
           coredns
             .flatMap { cdns =>
@@ -1856,7 +1856,8 @@ object KubernetesCRDsJob {
           ().future
         case Some(configMap) if configMap.hasOtoroshiMesh(conf) => {
           if (logger.isDebugEnabled) logger.debug(s"configMap 1 ${configMap.corefile(conf.coreDnsAzure)}")
-          val hashFromConfigMap = configMap.corefile(conf.coreDnsAzure)
+          val hashFromConfigMap = configMap
+            .corefile(conf.coreDnsAzure)
             .split("\\n")
             .find(_.trim.startsWith("### config-hash: "))
             .map(_.replace("### config-hash: ", "").replace("\n", ""))
