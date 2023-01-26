@@ -4,10 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.0.5] - 2023-01-26
+
+https://github.com/MAIF/otoroshi/milestone/58?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.0.4...v16.0.5
+https://github.com/MAIF/otoroshi/releases/tag/v16.0.5
+
+- resources loader - Certificate (#1420)
+- handle coredns integration on AKS (#1421)
+- bad query string forward (#1422)
+
 ## [16.0.4] - 2023-01-23
 
 https://github.com/MAIF/otoroshi/milestone/57?closed=1
-https://github.com/MAIF/otoroshi/compare/v16.0.4...v16.0.4
+https://github.com/MAIF/otoroshi/compare/v16.0.3...v16.0.4
 https://github.com/MAIF/otoroshi/releases/tag/v16.0.4
 
 - bad url path when using tls (#1419)
