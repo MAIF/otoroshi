@@ -40,13 +40,15 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.text());
 
-app.use(Security.extractUserFromQuery);
-
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+
+app.use('/api', Security.extractUserFromQuery);
 app.use('/api/plugins', pluginsRouter);
 app.use('/api/templates', templatesRouter);
 app.use('/api/wasm', wasmRouter);
+
+
 app.use('/', publicRouter);
 app.get('/', (_, res) => res.sendFile(path.join(__dirname, '..', 'ui/build', '/index.html')));
 

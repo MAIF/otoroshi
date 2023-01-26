@@ -16,9 +16,12 @@ const LOGOS = {
 }
 
 function File({ newFilename, filename, content, ext, onClick, ...props }) {
-  return <button className='d-flex align-items-center bg-light'
+  return <button className='d-flex align-items-center py-1' style={{
+    background: props.currentTab === filename ? '#ddd' : 'initial',
+    border: 'none'
+  }}
     onClick={onClick}
-    type="button" style={{ border: 'none' }}>
+    type="button" >
     {props.new ? <div>
       <i className='fas fa-file' />
       <input type='text'
@@ -28,24 +31,36 @@ function File({ newFilename, filename, content, ext, onClick, ...props }) {
           e.stopPropagation()
           props.setFilename(e.target.value)
         }} />
-    </div> : <div className='d-flex align-items-center justify-content-center'>
-      <div style={{ minWidth: 32 }}>
-        {LOGOS[ext]}
+    </div> : <div className='d-flex align-items-center justify-content-between w-100'>
+      <div className='d-flex align-items-center'>
+        <div style={{ minWidth: 32 }}>
+          {LOGOS[ext]}
+        </div>
+        <span className='ms-2'>{filename}</span>
       </div>
-      <span className='ms-2'>{filename}</span>
+      {(['rs', 'ts'].includes(ext) && ![
+        'plugin.ts',
+        'lib.rs'
+      ].includes(filename)) && < i className='fas fa-times me-2'
+        onClick={e => {
+          e.stopPropagation()
+          props.removeFile(filename)
+        }} />}
     </div>}
   </button>
 }
 
 function FileManager({
   files, onNewFile, onFileClick, onFileChange, selectedPlugin,
-  configFiles }) {
+  configFiles, currentTab, removeFile }) {
   return (
-    <div className='d-flex flex-column mt-1' style={{ minWidth: 250, background: '#eee' }}>
-      <Header onNewFile={onNewFile} selectedPlugin={selectedPlugin}/>
+    <div className='d-flex flex-column' style={{ minWidth: 250, background: '#eee' }}>
+      <Header onNewFile={onNewFile} selectedPlugin={selectedPlugin} />
       {[...files, ...configFiles].map((file, i) => {
         return <File {...file}
           key={file.filename}
+          currentTab={currentTab}
+          removeFile={removeFile}
           onClick={() => onFileClick(file)}
           setFilename={newFilename => onFileChange(i, newFilename)} />
       })}
@@ -54,16 +69,15 @@ function FileManager({
 }
 
 function Header({ onNewFile, selectedPlugin }) {
-  return <div className='px-2 py-1 d-flex justify-content-between align-items-center'
-    style={{
-      background: 'rgb(228, 229, 230)'
-    }}>
+  return <div className='px-2 py-1 d-flex justify-content-between align-items-center' style={{
+    backgroundColor: '#a1a1a1'
+  }}>
     <div className='d-flex align-items-center'>
-      <i className='fas fa-chess-rook me-1' />
-      <span className='fw-bold'>{selectedPlugin?.filename}</span>
+      <i className='fas fa-chess-rook me-1 text-white' />
+      <span className='fw-bold text-white'>{selectedPlugin?.filename}</span>
     </div>
 
-    <i className='fas fa-file-circle-plus' onClick={onNewFile} />
+    <i className='fas fa-file-circle-plus text-white' onClick={onNewFile} />
   </div>
 }
 

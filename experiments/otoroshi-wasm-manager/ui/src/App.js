@@ -1,5 +1,5 @@
 import React from 'react';
-import JsZip from 'jszip';
+import JsZip, { file } from 'jszip';
 import Pako from 'pako'
 
 import * as Service from './services'
@@ -362,6 +362,17 @@ class App extends React.Component {
     }
   }
 
+  removeFile = filename => {
+    if (window.confirm(`Delete the ${filename} file ?`)) {
+      this.setState({
+        selectedPlugin: {
+          ...this.state.selectedPlugin,
+          files: this.state.selectedPlugin.files.filter(file => file.filename !== filename)
+        }
+      }, this.onSave)
+    }
+  }
+
   render() {
     const { selectedPlugin, plugins, configFiles, editorState } = this.state;
 
@@ -388,6 +399,7 @@ class App extends React.Component {
         onDocs={this.onDocs}
         onEditorStateReset={this.onEditorStateReset}
         showPlaySettings={this.showPlaySettings}
+        removeFile={this.removeFile}
       />
     </div>
   }

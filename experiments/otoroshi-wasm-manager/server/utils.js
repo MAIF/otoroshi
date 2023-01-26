@@ -1,18 +1,9 @@
-const crypto = require('crypto');
 const AdmZip = require("adm-zip");
 const fs = require("fs-extra");
 const path = require("path");
 const pako = require('pako');
 
 const hash = value => {
-  // const salt = process.env.SECURITY_SALT || crypto
-  //   .randomBytes(16)
-  //   .toString('hex');
-
-  // return crypto
-  //   .pbkdf2Sync(value, salt, 50, 64, `sha256`)
-  //   .toString(`hex`);
-
   return value.replace(/[^a-zA-Z ]/g, "")
 }
 
@@ -35,7 +26,6 @@ const unzip = (isRustBuild, zipString, outputFolder) => {
         content
       )
     } catch (err) {
-      console.log(err)
       return Promise.reject(err)
     }
   }))

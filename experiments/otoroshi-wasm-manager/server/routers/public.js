@@ -41,7 +41,6 @@ router.get('/wasm/:id', (req, res) => {
       res.send(data.Body);
     })
     .catch(err => {
-      console.log(err)
       res
         .status(err.statusCode)
         .json({

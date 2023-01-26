@@ -4,7 +4,7 @@ import { ReactComponent as Rust } from './assets/rust.svg';
 
 function PluginManager({ plugins, onNewPlugin, ...props }) {
   return (
-    <div className='d-flex flex-column' style={{ minWidth: 250, background: '#eee' }}>
+    <div className='d-flex flex-column' style={{ minWidth: 250, background: '#ddd' }}>
       <Header onNewPlugin={onNewPlugin} />
       {plugins.map(plugin => {
         return <Plugin {...plugin}
@@ -47,17 +47,18 @@ function NewPluginModal({ onNewPlugin, setProjectSelector }) {
 function Header({ onNewPlugin }) {
   const [showProjectSelector, setProjectSelector] = useState(false)
 
-  return <div className='bg-light bg-gradient px-2 py-1 d-flex justify-content-between align-items-center'
+  return <div className='px-2 py-1 d-flex justify-content-between align-items-center'
     onClick={() => setProjectSelector(false)}
     style={{
+      backgroundColor: '#a1a1a1',
       position: 'relative'
     }}>
-    <div className='d-flex align-items-center'>
-      <i className='fas fa-rocket fa-sm me-1' />
-      <span className='fw-bold'>Plugins</span>
+    <div className='d-flex align-items-center text-white'>
+      <i className='fas fa-rocket fa-sm me-1 text-white' />
+      <span className='fw-bold text-white'>Plugins</span>
     </div>
 
-    <i className='fas fa-plus' onClick={e => {
+    <i className='fas fa-plus text-white' onClick={e => {
       e.stopPropagation();
       setProjectSelector(!showProjectSelector)
     }} />

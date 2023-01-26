@@ -33,7 +33,11 @@ function TabsManager({ plugins, ...props }) {
     }}
   >
     <div className='d-flex flex-column' style={{ background: 'rgb(228,229,230)' }}>
-      <h1 style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: 18 }} className="p-2 m-0">Wasm Manager</h1>
+      <h1 style={{
+        fontWeight: 'bold', textTransform: 'uppercase', fontSize: 18, background: '#f9b000',
+        color: 'white',
+        height: 42
+      }} className="p-2 m-0 d-flex align-items-center">Wasm Manager</h1>
       <Explorer>
         <PluginManager
           plugins={plugins}
@@ -45,6 +49,8 @@ function TabsManager({ plugins, ...props }) {
         />
       </Explorer>
       {props.selectedPlugin && <FileManager
+        removeFile={props.removeFile}
+        currentTab={currentTab}
         selectedPlugin={props.selectedPlugin}
         files={props.selectedPlugin.files}
         configFiles={props.configFiles}
@@ -121,9 +127,13 @@ function Tabs({ tabs, setCurrentTab, setTabs, currentTab }) {
         filename={tab}
         onClick={() => setCurrentTab(tab)}
         closeTab={filename => {
-          setTabs(tabs.filter(t => t !== filename))
-          if (currentTab === filename && tabs.find(f => f === filename))
+          const newTabs = tabs.filter(t => t !== filename)
+          setTabs(newTabs)
+          if (currentTab === filename && newTabs.length > 0) {
             setCurrentTab(tabs[0])
+          } else if (newTabs.length === 0) {
+            setCurrentTab(undefined)
+          }
         }}
         selected={currentTab ? tab === currentTab : false} />
     })}

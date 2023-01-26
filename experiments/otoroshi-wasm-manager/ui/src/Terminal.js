@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { solarizedDark } from '@uiw/codemirror-theme-solarized';
 
@@ -7,6 +7,7 @@ const socket = io();
 
 function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, selectedPlugin }) {
   const [content, setContent] = useState('')
+  const ref = useRef()
 
   useEffect(() => {
     if (selectedPlugin) {
@@ -15,6 +16,8 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
           setContent(text)
         } else {
           setContent(content => content + text)
+          if (ref && ref.current)
+            ref.current.view.scrollDOM.scrollTop = ref.current.view.scrollDOM.scrollHeight
         }
       })
 
@@ -24,6 +27,7 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
       };
     }
   }, [selectedPlugin]);
+
 
   return <div style={{
     flex: sizeTerminal
@@ -64,6 +68,7 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
     </div>
 
     <CodeMirror
+      ref={ref}
       maxWidth='calc(100vw - 250px)'
       height={`calc(${(sizeTerminal) * 100}vh)`}
       value={content}
