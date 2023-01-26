@@ -128,7 +128,11 @@ object WasmUtils {
     val context = new Context()
     val plugin = context.newPlugin(manifest, true)
 
-    plugin.call(config.functionName, input.stringify)
+    val output = plugin.call(config.functionName, input.stringify)
+
+    plugin.free()
+    
+    output
   }
 
   def execute(config: WasmQueryConfig, input: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
@@ -152,8 +156,8 @@ object WasmUtils {
                     .withRequestTimeout(FiniteDuration(5 * 1000, MILLISECONDS))
                     .withHttpHeaders(
                       "Accept" -> "application/json",
-                      "OTOROSHI_CLIENT_ID" -> clientId,
-                      "OTOROSHI_CLIENT_SECRET" -> clientSecret
+                      "Otoroshi-Client-Id" -> clientId,
+                      "Otoroshi-Client-Secret" -> clientSecret
                     )
                     .execute()
                     .flatMap { resp =>
