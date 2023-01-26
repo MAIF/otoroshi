@@ -13,8 +13,8 @@ router.use((req, res, next) => {
     next()
   } else if (
     DOMAINS.includes(req.headers.host) &&
-    req.headers["Otoroshi-Client-Id"] === process.env.OTOROSHI_CLIENT_ID,
-    req.headers["Otoroshi-Client-Secret"] === process.env.OTOROSHI_CLIENT_SECRET
+    req.headers["otoroshi-client-id"] === process.env.OTOROSHI_CLIENT_ID &&
+    req.headers["otoroshi-client-secret"] === process.env.OTOROSHI_CLIENT_SECRET
   ) {
     res.header('Access-Control-Allow-Origin', req.headers.origin)
     res.header('Access-Control-Allow-Credentials', true)
