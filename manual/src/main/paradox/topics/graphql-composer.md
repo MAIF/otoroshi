@@ -10,7 +10,7 @@ APIs RESTful and GraphQL development has become one of the most popular activiti
 Otoroshi comes with a solution to create and meet your customers' needs without constantly creating and recreating APIs: the `GraphQL composer plugin`. The GraphQL Composer is an useful plugin to build an GraphQL API from multiples differents sources. These sources can be REST apis, GraphQL api or anything that supports the HTTP protocol. In fact, the plugin can define and expose for each of your client a specific GraphQL schema, which only corresponds to the needs of the customers.
 
 @@@ div { .centered-img }
-<img src="../../imgs/graphql-composer.png" width="620px" />
+<img src="../imgs/graphql-composer.png" width="620px" />
 @@@
 
 
@@ -54,7 +54,7 @@ Now you know the GraphQL Composer basics and how it works, let's configure it on
 * try to call it
 
 @@@ div { .centered-img }
-<img src="../../imgs/countries-api.png" width="620px" />
+<img src="../imgs/countries-api.png" width="620px" />
 @@@
 
 ### Setup environment
