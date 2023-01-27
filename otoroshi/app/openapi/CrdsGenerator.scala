@@ -186,6 +186,12 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
         .foldLeft("")((acc, curr) => s"$acc${write(curr)}")
         .getBytes(StandardCharsets.UTF_8)
     )
+    Files.write(
+      new File("../kubernetes/kustomize/base/crds.yaml").toPath,
+      crds(entitiesWithSchema, data, withoutSchema = true)
+        .foldLeft("")((acc, curr) => s"$acc${write(curr)}")
+        .getBytes(StandardCharsets.UTF_8)
+    )
   }
 
   def patchSchema(data: TrieMap[String, JsValue], kind: String, schema: JsValue): JsValue = {
