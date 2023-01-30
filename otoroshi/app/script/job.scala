@@ -15,7 +15,7 @@ import otoroshi.events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedE
 import otoroshi.models.GlobalConfig
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils
-import otoroshi.utils.{future, SchedulerHelper, TypedMap}
+import otoroshi.utils.{SchedulerHelper, TypedMap, future}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -26,7 +26,7 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.{Failure, Random}
+import scala.util.{Failure, Random, Success, Try}
 
 sealed trait JobKind
 object JobKind {
@@ -446,21 +446,26 @@ case class RegisteredJobContext(
       actorSystem = actorSystem,
       scheduler = actorSystem.scheduler
     )
-    job.instantiation(ctx, env) match {
-      case JobInstantiation.OneInstancePerOtoroshiInstance                                             => f
-      case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isOff       => f
-      case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isOff       => f
-      case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isWorker    => f
-      case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isLeader    => f
-      case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode == ClusterMode.Off =>
-        acquireClusterWideLock(f)
-      case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode.isLeader           =>
-        acquireClusterWideLock(f)
-      case _                                                                                           => ()
+    Try(job.instantiation(ctx, env)) match {
+      case Failure(e) => JobManager.logger.error("failure during job instantiation fetch", e)
+      case Success(instantiation) => {
+        instantiation match {
+          case JobInstantiation.OneInstancePerOtoroshiInstance => f
+          case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isOff => f
+          case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isOff => f
+          case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isWorker => f
+          case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isLeader => f
+          case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode == ClusterMode.Off =>
+            acquireClusterWideLock(f)
+          case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode.isLeader =>
+            acquireClusterWideLock(f)
+          case _ => ()
+        }
+      }
     }
   }
 
-  def startNext(): Unit =
+  def startNext(): Unit = {
     tryToRunOnCurrentInstance {
       job.kind match {
         case JobKind.Autonomous if !ranOnce.get()    => run()
@@ -470,6 +475,7 @@ case class RegisteredJobContext(
         case _                                       => () // nothing to do here
       }
     }
+  }
 
   def startIfPossible(config: GlobalConfig, env: Env): Unit = {
     Option(ref.get()).flatten match {
