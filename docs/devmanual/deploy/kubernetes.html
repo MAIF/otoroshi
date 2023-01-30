@@ -1265,7 +1265,7 @@ spec:
     name: &quot;https&quot;
     targetPort: &quot;https&quot;
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate
@@ -1503,7 +1503,7 @@ spec:
     targetPort: &quot;https&quot;
     nodePort: 31443
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate
@@ -1799,7 +1799,7 @@ spec:
     name: &quot;https&quot;
     targetPort: &quot;https&quot;
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate
@@ -2253,7 +2253,7 @@ spec:
     name: &quot;https&quot;
     targetPort: &quot;https&quot;
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate
@@ -2614,7 +2614,7 @@ spec:
     name: &quot;https&quot;
     targetPort: &quot;https&quot;
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate
@@ -3068,7 +3068,7 @@ spec:
     name: &quot;https&quot;
     targetPort: &quot;https&quot;
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate
@@ -3507,7 +3507,7 @@ sudo kubectl get service-descriptors --all-namespaces
 curl -X GET \
   -H &#39;Authorization: Bearer eyJhbGciOiJSUzI....F463SrpOehQRaQ&#39; \
   -H &#39;Accept: application/json&#39; -k \
-  https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1alpha1/apikeys | jq
+  https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1/apikeys | jq
 </code></pre>
 <p>You can see this as better <code>Ingress</code> resources. Like any <code>Ingress</code> resource can define which controller it uses (using the <code>kubernetes.io/ingress.class</code> annotation), you can chose another kind of resource instead of <code>Ingress</code>. With Otoroshi CRDs you can even define resources like <code>Certificate</code>, <code>Apikey</code>, <code>AuthModules</code>, <code>JwtVerifier</code>, etc. It will help you to use all the power of Otoroshi while using the deployment model of kubernetes.</p><div class="callout warning "><div class="callout-title">Warning</div>
 <p>when using Otoroshi CRDs, Kubernetes becomes the single source of truth for the synced entities. It means that any value in the descriptors deployed will overrides the one in Otoroshi datastore each time it&rsquo;s synced. So be careful if you use the Otoroshi UI or the API, some changes in configuration may be overriden by CRDs sync job.</p></div>
@@ -3516,7 +3516,7 @@ curl -X GET \
   <dt>group.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: ServiceGroup
 metadata:
   name: http-app-group
@@ -3527,7 +3527,7 @@ spec:
   <dt>apikey.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: http-app-2-apikey-1
@@ -3547,7 +3547,7 @@ spec:
   <dt>service-descriptor.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: ServiceDescriptor
 metadata:
   name: http-app-service-descriptor
@@ -3584,7 +3584,7 @@ spec:
   <dt>certificate.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: http-app-certificate-client
@@ -3605,7 +3605,7 @@ spec:
   <dt>jwt.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: JwtVerifier
 metadata:
   name: http-app-verifier
@@ -3631,7 +3631,7 @@ spec:
   <dt>auth.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: AuthModule
 metadata:
   name: http-app-auth
@@ -3690,7 +3690,7 @@ spec:
   <dt>organization.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: Tenant
 metadata:
   name: default-organization
@@ -3702,7 +3702,7 @@ spec:
   <dt>team.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: Team
 metadata:
   name: default-team
@@ -3942,7 +3942,7 @@ spec:
   selector:
     run: http-app-deployment
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ServiceGroup
 metadata:
   name: http-app-group
@@ -3951,7 +3951,7 @@ metadata:
 spec:
   description: a group to hold services about the http-app
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: http-app-apikey-1
@@ -3963,7 +3963,7 @@ spec:
   authorizedEntities: 
   - group_http-app-group
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: http-app-2-apikey-1
@@ -3975,7 +3975,7 @@ spec:
   authorizedEntities: 
   - group_http-app-2-group
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: http-app-certificate-frontend
@@ -3996,7 +3996,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: http-app-certificate-backend
@@ -4020,7 +4020,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: http-app-certificate-client
@@ -4040,7 +4040,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ServiceDescriptor
 metadata:
   name: http-app-service-descriptor
@@ -4665,7 +4665,7 @@ spec:
     name: &quot;https&quot;
     targetPort: &quot;https&quot;
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: backend-cert
@@ -4686,7 +4686,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: client-cert
@@ -4709,7 +4709,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: oto-client-cert
@@ -4732,7 +4732,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: frontend-cert
@@ -4751,7 +4751,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: mesh-cert
@@ -4770,7 +4770,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: backend-apikey
@@ -4780,7 +4780,7 @@ spec:
   authorizedEntities:
     - group_default
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ServiceDescriptor
 metadata:
   name: backend
@@ -4833,7 +4833,7 @@ spec:
 <p>then when a user subscribe for an apikey, he will only see an integration token</p><div class="centered-img">
 <img src="../imgs/kubernetes-daikoku-integration-token.png" /></div>
 <p>then just create an ApiKey manifest with this token and your good to go </p>
-<pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+<pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: http-app-2-apikey-3

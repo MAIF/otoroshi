@@ -1804,6 +1804,23 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;includeMetrics&quot; : false
   }
 }
+</code></pre></div><div id="otoroshi.jobs.StateExporter" class="plugin plugin-hidden plugin-kind-job">
+<h2><a href="#otoroshi-state-exporter-job" name="otoroshi-state-exporter-job" class="anchor"><span class="anchor-link"></span></a>Otoroshi state exporter job</h2>
+<img class="plugin-logo plugin-hidden" src=""></img>
+<h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
+<ul>
+  <li>plugin type: <code>job</code></li>
+  <li>configuration root: <code>StateExporter</code></li>
+</ul>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This job send an event containing the full otoroshi export every n seconds</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;StateExporter&quot; : {
+    &quot;every_sec&quot; : 3600,
+    &quot;format&quot; : &quot;json&quot;
+  }
+}
 </code></pre></div><div id="otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob" class="plugin plugin-hidden plugin-kind-job">
 <h2><a href="#kubernetes-ingress-controller" name="kubernetes-ingress-controller" class="anchor"><span class="anchor-link"></span></a>Kubernetes Ingress Controller</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
@@ -2528,6 +2545,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-legacy-plugins.html#kubernetes-admission-validator-webhook" class="header">Kubernetes admission validator webhook</a></li>
     <li><a href="../plugins/built-in-legacy-plugins.html#kubernetes-sidecar-injector-webhook" class="header">Kubernetes sidecar injector webhook</a></li>
     <li><a href="../plugins/built-in-legacy-plugins.html#prometheus-endpoint" class="header">Prometheus Endpoint</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html#otoroshi-state-exporter-job" class="header">Otoroshi state exporter job</a></li>
     <li><a href="../plugins/built-in-legacy-plugins.html#kubernetes-ingress-controller" class="header">Kubernetes Ingress Controller</a></li>
     <li><a href="../plugins/built-in-legacy-plugins.html#kubernetes-otoroshi-crds-controller" class="header">Kubernetes Otoroshi CRDs Controller</a></li>
     <li><a href="../plugins/built-in-legacy-plugins.html#kubernetes-to-otoroshi-certs-synchronizer" class="header">Kubernetes to Otoroshi certs. synchronizer</a></li>

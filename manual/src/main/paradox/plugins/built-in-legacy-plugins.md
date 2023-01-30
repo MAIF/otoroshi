@@ -2677,6 +2677,41 @@ This plugin can accept the following configuration
 @@@
 
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.jobs.StateExporter }
+
+## Otoroshi state exporter job
+
+<img class="plugin-logo plugin-hidden" src=""></img>
+
+### Infos
+
+* plugin type: `job`
+* configuration root: `StateExporter`
+
+### Description
+
+This job send an event containing the full otoroshi export every n seconds
+
+
+
+### Default configuration
+
+```json
+{
+  "StateExporter" : {
+    "every_sec" : 3600,
+    "format" : "json"
+  }
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob }
 
 ## Kubernetes Ingress Controller
