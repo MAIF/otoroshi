@@ -58,7 +58,7 @@ const Status = ({ value }) => (
   <div
     className="status-dot"
     title={value ? 'plugin enabled' : 'plugin disabled'}
-    style={{ backgroundColor: value ? '#198754' : "var(--color-red)" }}
+    style={{ backgroundColor: value ? "var(--color-green)" : "var(--color-red)" }}
   />
 );
 

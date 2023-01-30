@@ -436,7 +436,7 @@ export class SelfUpdatePage extends Component {
           <div className="row mb-3">
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
-              <p style={{ color: 'green', width: '100%', textAlign: 'left' }}>
+              <p style={{ color: "var(--color-green)", width: '100%', textAlign: 'left' }}>
                 {!this.state.error && this.state.message}
               </p>
               <p style={{ color: "var(--color-red)", width: '100%', textAlign: 'left' }}>
