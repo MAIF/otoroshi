@@ -137,7 +137,7 @@ export class NgDotsRenderer extends Component {
               if (backgroundColorFromOption) {
                 style = {
                   ...style,
-                  color: 'yellow',
+                  color: '#fff',
                 };
               }
 
