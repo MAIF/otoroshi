@@ -41,6 +41,7 @@ import MockResponses from './MockResponses';
 import NgAuthModuleExpectedUser from './NgAuthModuleExpectedUser';
 import NgAuthModuleUserExtractor from './NgAuthModuleUserExtractor';
 import NgBackend from './NgBackend';
+import NgDefaultRequestBody from './NgDefaultRequestBody';
 import NgFrontend from './NgFrontend';
 import NgLegacyApikeyCall from './NgLegacyApikeyCall';
 import NgLegacyAuthModuleCall from './NgLegacyAuthModuleCall';
@@ -117,6 +118,7 @@ export const Plugins = [
   MockResponses,
   NgAuthModuleExpectedUser,
   NgAuthModuleUserExtractor,
+  NgDefaultRequestBody,
   NgLegacyApikeyCall,
   NgLegacyAuthModuleCall,
   OtoroshiChallenge,

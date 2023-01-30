@@ -588,6 +588,7 @@ object implicits {
     )
   }
   implicit class BetterMapOfStringAndB[B](val theMap: Map[String, B])         extends AnyVal {
+    def addAll(other: Map[String, B]): Map[String, B]              = theMap.++(other)
     def put(key: String, value: B): Map[String, B]                 = theMap.+((key, value))
     def put(tuple: (String, B)): Map[String, B]                    = theMap.+(tuple)
     def remove(key: String): Map[String, B]                        = theMap.-(key)
