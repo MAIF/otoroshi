@@ -1228,7 +1228,7 @@ const possibleExporterConfigFormValues = {
     },
   },
   file: {
-    flow: ['path', 'maxFileSize'],
+    flow: ['path', 'maxFileSize', 'maxNumberOfFile'],
     schema: {
       path: {
         type: 'string',
@@ -1242,11 +1242,22 @@ const possibleExporterConfigFormValues = {
           suffix: 'bytes',
         },
       },
+      maxNumberOfFile: {
+        type: 'number',
+        props: {
+          label: 'Max number of files',
+          placeholder: 'Max number of existing files',
+          suffix: 'files',
+        },
+      }
     },
   },
   s3: {
     flow: [
+      'writeEvery',
       'maxFileSize',
+      'maxNumberOfFile',
+      '>>> S3 config.',
       'bucket',
       'endpoint',
       'region',
@@ -1255,7 +1266,6 @@ const possibleExporterConfigFormValues = {
       'key',
       'chunkSize',
       'v4auth',
-      'writeEvery',
       'acl',
     ],
     schema: {
@@ -1265,6 +1275,14 @@ const possibleExporterConfigFormValues = {
           label: 'Max file size',
           placeholder: 'Max size in bytes for a file',
           suffix: 'bytes',
+        },
+      },
+      maxNumberOfFile: {
+        type: 'number',
+        props: {
+          label: 'Max number of files',
+          placeholder: 'Max number of existing files',
+          suffix: 'files',
         },
       },
       bucket: {

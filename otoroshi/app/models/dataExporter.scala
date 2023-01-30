@@ -32,16 +32,20 @@ object Exporter {
 
 case class DataExporterConfigFiltering(include: Seq[JsObject] = Seq.empty, exclude: Seq[JsObject] = Seq.empty)
 
-case class FileSettings(path: String, maxFileSize: Long = 10L * 1024L * 1024L) extends Exporter {
+case class FileSettings(path: String, maxNumberOfFile: Option[Int], maxFileSize: Long = 10L * 1024L * 1024L) extends Exporter {
   override def toJson: JsValue =
     Json.obj(
       "path"        -> path,
-      "maxFileSize" -> maxFileSize
+      "maxFileSize" -> maxFileSize,
+      "maxNumberOfFile" -> maxNumberOfFile.map(n => JsNumber(n)).getOrElse(JsNull).asValue
     )
 }
 
-case class S3ExporterSettings(maxFileSize: Long = 10L * 1024L * 1024L, config: S3Configuration) extends Exporter {
-  override def toJson: JsValue = config.json.asObject ++ Json.obj("maxFileSize" -> maxFileSize)
+case class S3ExporterSettings(maxFileSize: Long = 10L * 1024L * 1024L, maxNumberOfFile: Option[Int], config: S3Configuration) extends Exporter {
+  override def toJson: JsValue = config.json.asObject ++ Json.obj(
+    "maxFileSize" -> maxFileSize,
+    "maxNumberOfFile" -> maxNumberOfFile.map(n => JsNumber(n)).getOrElse(JsNull).asValue
+  )
 }
 
 object S3ExporterSettings {
@@ -49,6 +53,7 @@ object S3ExporterSettings {
     override def reads(json: JsValue): JsResult[S3ExporterSettings] = Try {
       S3ExporterSettings(
         maxFileSize = json.select("maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
+        maxNumberOfFile = json.select("maxNumberOfFile").asOpt[Int].filter(_ > 0),
         config = S3Configuration.format.reads(json).get
       )
     } match {
@@ -184,8 +189,11 @@ object DataExporterConfig {
             case "webhook"       => Webhook.format.reads((json \ "config").as[JsObject]).get
             case "kafka"         => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
             case "pulsar"        => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
-            case "file"          =>
-              FileSettings((json \ "config" \ "path").as[String], (json \ "config" \ "maxFileSize").as[Long])
+            case "file"          => FileSettings(
+              path = (json \ "config" \ "path").as[String],
+              maxNumberOfFile = (json \ "config" \ "maxNumberOfFile").asOpt[Int].filter(_ > 0),
+              maxFileSize = (json \ "config" \ "maxFileSize").as[Long],
+            )
             case "s3"            =>
               (json \ "config").as(S3ExporterSettings.format)
             case "goreplays3"    =>

@@ -206,7 +206,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           location = EntityLocation(),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
-          config = FileSettings(path = "/tmp/otoroshi-events.log")
+          config = FileSettings(path = "/tmp/otoroshi-events.log", None)
         )
       case Some("metrics")        =>
         DataExporterConfig(

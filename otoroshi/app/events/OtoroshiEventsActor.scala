@@ -1,6 +1,6 @@
 package otoroshi.events
 
-import java.io.File
+import java.io.{File, FilenameFilter}
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import akka.Done
@@ -8,7 +8,7 @@ import akka.actor.{Actor, Props}
 import akka.http.scaladsl.model.{ContentType, ContentTypes}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3.{ApiVersion, MemoryBufferType, MetaHeaders, S3Attributes, S3Settings}
+import akka.stream.alpakka.s3.{ApiVersion, ListBucketResultContents, MemoryBufferType, MetaHeaders, S3Attributes, S3Settings}
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Attributes, OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
@@ -28,20 +28,7 @@ import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
-import play.api.libs.json.{
-  Format,
-  JsArray,
-  JsBoolean,
-  JsError,
-  JsNull,
-  JsNumber,
-  JsObject,
-  JsResult,
-  JsString,
-  JsSuccess,
-  JsValue,
-  Json
-}
+import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -712,7 +699,15 @@ object Exporters {
 
     override def sendWithSource(__events: Seq[JsValue], rawEvents: Seq[OtoroshiEvent]): Future[ExportResult] = {
       exporter[GoReplayFileSettings].map { exporterConfig =>
-        val path = Paths.get(exporterConfig.path.replace("{day}", DateTime.now().toString("yyyy-MM-dd")))
+        val path = Paths.get(
+          exporterConfig.path
+            .replace("{date}", DateTime.now().toString("yyyy-MM-dd"))
+            .replace("{year}", DateTime.now().toString("yyyy"))
+            .replace("{month}", DateTime.now().toString("MM"))
+            .replace("{day}", DateTime.now().toString("dd"))
+            .replace("{hour}", DateTime.now().toString("HH"))
+            .replace("{time}", DateTime.now().toString("hh:mm:ss.SSS"))
+        )
         val file = path.toFile
         if (!file.exists()) {
           file.getParentFile.mkdirs()
@@ -755,7 +750,15 @@ object Exporters {
       extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       exporter[FileSettings].map { exporterConfig =>
-        val path = Paths.get(exporterConfig.path.replace("{day}", DateTime.now().toString("yyyy-MM-dd")))
+        val path = Paths.get(
+          exporterConfig.path
+            .replace("{date}", DateTime.now().toString("yyyy-MM-dd"))
+            .replace("{year}", DateTime.now().toString("yyyy"))
+            .replace("{month}", DateTime.now().toString("MM"))
+            .replace("{day}", DateTime.now().toString("dd"))
+            .replace("{hour}", DateTime.now().toString("HH"))
+            .replace("{time}", DateTime.now().toString("hh:mm:ss.SSS"))
+        )
         val file = path.toFile
         if (!file.exists()) {
           file.getParentFile.mkdirs()
@@ -781,6 +784,13 @@ object Exporters {
             FileWriting.blockingEc
           )
           .map { _ =>
+            if (exporterConfig.maxNumberOfFile.nonEmpty) {
+              val start = file.getName.split("\\.").toSeq.init.mkString(".")
+              val files = file.getParentFile.listFiles(new FilenameFilter() {
+                override def accept(dir: File, name: String): Boolean = name.startsWith(start)
+              }).toSeq.sortWith((f1, f2) => f1.lastModified().compareTo(f2.lastModified()) > 0)
+              files.splitAt(exporterConfig.maxNumberOfFile.get)._2.map(_.delete())
+            }
             ExportResult.ExportResultSuccess
           }
       } getOrElse {
@@ -814,6 +824,7 @@ object Exporters {
         .replace("{month}", DateTime.now().toString("MM"))
         .replace("{day}", DateTime.now().toString("dd"))
         .replace("{hour}", DateTime.now().toString("HH"))
+        .replace("{time}", DateTime.now().toString("hh:mm:ss.SSS"))
       val path = Paths.get(System.getProperty("java.io.tmpdir") + "/" + key)
       (key, path)
     }
@@ -833,27 +844,29 @@ object Exporters {
       S3Attributes.settings(settings)
     }
 
-    def writeToS3(conf: S3Configuration): Future[Unit] = {
+    def writeToS3(conf: S3Configuration, maxNumberOfFile: Option[Int]): Future[Unit] = {
       val (key, path) = computeKeyAndPath(conf)
-      writeToS3WithKeyAndPath(key, path, conf)
+      writeToS3WithKeyAndPath(key, path, maxNumberOfFile, conf)
     }
 
-    def writeToS3AndDelete(conf: S3Configuration): Future[Unit] = {
+    def writeToS3AndDelete(conf: S3Configuration, maxNumberOfFile: Option[Int]): Future[Unit] = {
       implicit val ec = FileWriting.blockingEc
       val (key, path) = computeKeyAndPath(conf)
-      writeToS3WithKeyAndPath(key, path, conf).map { _ =>
+      writeToS3WithKeyAndPath(key, path, maxNumberOfFile, conf).map { _ =>
         path.toFile.delete()
         path.toFile.deleteOnExit()
         debug(s"deleting file '${path}' after S3 upload !")
       }
     }
 
-    def writeToS3WithKeyAndPath(key: String, path: java.nio.file.Path, conf: S3Configuration): Future[Unit] = {
+    def writeToS3WithKeyAndPath(key: String, path: java.nio.file.Path, maxNumberOfFile: Option[Int], conf: S3Configuration): Future[Unit] = {
+      implicit val ec = env.otoroshiExecutionContext
+      implicit val mat = env.otoroshiMaterializer
       val url          =
         s"${conf.endpoint}/${key}?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
       val wholeContent = Files.readString(path).byteString
       val ctype        = ContentType.parse(contentType).getOrElse(ContentTypes.`application/json`)
-      val meta         = MetaHeaders(Map("content-type" -> contentType))
+      val meta         = MetaHeaders(Map("content-type" -> contentType, "lastUpdated" -> DateTime.now().toString()))
       val sink         = S3
         .multipartUpload(
           bucket = conf.bucket,
@@ -868,14 +881,30 @@ object Exporters {
       lastS3Write.set(System.currentTimeMillis())
       Source(wholeContent.grouped(16 * 1024).toList)
         .toMat(sink)(Keep.right)
-        .run()(env.analyticsMaterializer)
-        .map(_ => ())(env.otoroshiExecutionContext)
+        .run()
+        .map { _ =>
+          if (maxNumberOfFile.isDefined) {
+            S3
+              .listBucket(conf.bucket, (conf.key.split("/").init.mkString("/") + "/").some)
+              .withAttributes(s3ClientSettingsAttrs(conf))
+              .runWith(Sink.seq[ListBucketResultContents])
+              .map { contents =>
+                contents.sortWith((c1, c2) => c1.lastModified.compareTo(c2.lastModified) > 0).splitAt(maxNumberOfFile.get)._2.map { content =>
+                  debug(s"deleting ${content.key} - ${content.size} - ${content.lastModified}")
+                  S3.deleteObject(conf.bucket, content.key)
+                    .withAttributes(s3ClientSettingsAttrs(conf))
+                    .runWith(Sink.ignore)
+                }
+              }
+          }
+          ()
+        }
     }
 
     def shouldWriteToS3(conf: S3Configuration) =
       (lastS3Write.get() + conf.writeEvery.toMillis) < System.currentTimeMillis()
 
-    def ensureFileCreationAndRolling(conf: S3Configuration, maxFileSize: Long): File = {
+    def ensureFileCreationAndRolling(conf: S3Configuration, maxFileSize: Long, maxNumberOfFile: Option[Int]): File = {
       implicit val ec = FileWriting.blockingEc
       val (key, path) = computeKeyAndPath(conf)
       val file        = path.toFile
@@ -892,7 +921,7 @@ object Exporters {
           val newfile      = newpath.toFile
           newfile.getParentFile.mkdirs()
           newfile.createNewFile()
-          writeToS3WithKeyAndPath(key, path, conf).map { _ =>
+          writeToS3WithKeyAndPath(key, path, maxNumberOfFile, conf).map { _ =>
             path.toFile.delete()
             path.toFile.deleteOnExit()
             debug(s"deleting file '${path}' after S3 upload !")
@@ -904,7 +933,7 @@ object Exporters {
       }
     }
 
-    def appendToCurrentFile(content: String, conf: S3Configuration): Future[Unit] = {
+    def appendToCurrentFile(content: String, conf: S3Configuration, maxNumberOfFile: Option[Int]): Future[Unit] = {
       implicit val ec = FileWriting.blockingEc
       val (_, path)   = computeKeyAndPath(conf)
       debug(s"appending events to file '${path}'")
@@ -912,7 +941,7 @@ object Exporters {
         Future
           .apply(Files.write(path, content.getBytes, StandardOpenOption.APPEND))
           .andThen { case _ =>
-            writeToS3(conf)
+            writeToS3(conf, maxNumberOfFile)
           }
           .map(_ => ())
       } else {
@@ -932,11 +961,11 @@ object Exporters {
     override def send(evts: Seq[JsValue]): Future[ExportResult] = {
       exporter[S3ExporterSettings].map { exporterConfig =>
         val conf            = exporterConfig.config
-        val file            = ensureFileCreationAndRolling(conf, exporterConfig.maxFileSize)
+        val file            = ensureFileCreationAndRolling(conf, exporterConfig.maxFileSize, exporterConfig.maxNumberOfFile)
         val fileIsNotEmpty  = file.length() > 0 && evts.nonEmpty
         val prefix          = if (fileIsNotEmpty) "\r\n" else ""
         val contentToAppend = evts.map(Json.stringify).mkString("\r\n")
-        appendToCurrentFile(prefix + contentToAppend, conf).map { _ =>
+        appendToCurrentFile(prefix + contentToAppend, conf, exporterConfig.maxNumberOfFile).map { _ =>
           ExportResult.ExportResultSuccess
         }
       } getOrElse {
@@ -947,7 +976,7 @@ object Exporters {
     override def stop(): Future[Unit] = {
       exporter[S3ExporterSettings].map { exporterConfig =>
         val conf = exporterConfig.config
-        writeToS3AndDelete(conf)
+        writeToS3AndDelete(conf, exporterConfig.maxNumberOfFile)
       } getOrElse ().vfuture
     }
   }
@@ -967,7 +996,7 @@ object Exporters {
     override def sendWithSource(__events: Seq[JsValue], rawEvents: Seq[OtoroshiEvent]): Future[ExportResult] = {
       exporter[GoReplayS3Settings].map { exporterConfig =>
         val conf            = exporterConfig.s3
-        ensureFileCreationAndRolling(conf, exporterConfig.maxFileSize)
+        ensureFileCreationAndRolling(conf, exporterConfig.maxFileSize, None)
         val contentToAppend = rawEvents
           .collect {
             case evt: TrafficCaptureEvent
@@ -980,7 +1009,7 @@ object Exporters {
               )
           }
           .mkString("")
-        appendToCurrentFile(contentToAppend, conf).map { _ =>
+        appendToCurrentFile(contentToAppend, conf, None).map { _ =>
           ExportResult.ExportResultSuccess
         }
       } getOrElse {
@@ -991,7 +1020,7 @@ object Exporters {
     override def stop(): Future[Unit] = {
       exporter[GoReplayS3Settings].map { exporterConfig =>
         val conf = exporterConfig.s3
-        writeToS3AndDelete(conf)
+        writeToS3AndDelete(conf, None)
       } getOrElse ().vfuture
     }
   }
