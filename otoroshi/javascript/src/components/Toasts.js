@@ -10,7 +10,7 @@ class Toast extends Component {
       color = 'rgb(213, 68, 63)';
     }
     if (this.props.toast.kind === 'warn') {
-      color = 'rgb(249, 176, 0)';
+      color = "var(--color-primary)";
     }
     return (
       <div

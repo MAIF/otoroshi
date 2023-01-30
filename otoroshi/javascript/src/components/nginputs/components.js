@@ -191,7 +191,7 @@ export class NgFormRenderer extends Component {
       const titleComponent =
         !showChildren && showSummary ? (
           <div style={{ marginLeft: 5, marginTop: 7, marginBottom: 10 }}>
-            <span style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold' }}>{title}</span>
+            <span style={{ color: "var(--color-primary)", fontWeight: 'bold' }}>{title}</span>
             {summary.length > 0 && this.displaySummary(summary, summaryFields)}
           </div>
         ) : isFunction(titleVar) && React.isValidElement(title) && !showChildren ? (

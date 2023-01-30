@@ -591,7 +591,7 @@ export class NgBoxBooleanRenderer extends Component {
           <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
             <div
               style={{
-                // color: 'rgb(249, 176, 0)',
+                // color: "var(--color-primary)",
                 fontWeight: 'bold',
                 marginLeft: '5px',
                 marginTop: '7px',

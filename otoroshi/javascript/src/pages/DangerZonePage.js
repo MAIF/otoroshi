@@ -1976,7 +1976,7 @@ class GlobalPlugins extends Component {
         <div className="row mb-3">
           <label className="col-xs-12 col-sm-2 col-form-label"></label>
           <div className="col-sm-10">
-            <span style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold', marginTop: '7px' }}>
+            <span style={{ color: "var(--color-primary)", fontWeight: 'bold', marginTop: '7px' }}>
               Plugins on new Otoroshi engine
             </span>
           </div>
@@ -1990,7 +1990,7 @@ class GlobalPlugins extends Component {
         <div className="row mb-3">
           <label className="col-xs-12 col-sm-2 col-form-label"></label>
           <div className="col-sm-10">
-            <span style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold', marginTop: '7px' }}>
+            <span style={{ color: "var(--color-primary)", fontWeight: 'bold', marginTop: '7px' }}>
               Plugins on old Otoroshi engine
             </span>
           </div>

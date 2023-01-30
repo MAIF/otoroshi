@@ -57,7 +57,7 @@ class Metric extends Component {
         <div className="metric-box">
           <Sparklines data={this.state.values} limit={this.state.values.length} height={65}>
             <SparklinesLine
-              color={mode === 'dark' ? 'rgb(249, 176, 0)' : 'black'}
+              color={mode === 'dark' ? "var(--color-primary)" : 'black'}
               _color="rgb(249, 176, 0)"
             />
             <SparklinesSpots />
