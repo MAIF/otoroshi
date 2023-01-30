@@ -42,7 +42,7 @@ export class CleverPage extends Component {
         item === 'exists' ? (
           <span className="fas fa-check-circle" />
         ) : (
-          <span style={{ color: 'red' }} className="fas fa-exclamation-circle" />
+          <span style={{ color: "var(--color-red)" }} className="fas fa-exclamation-circle" />
         ),
     },
     {

@@ -41,7 +41,7 @@ export class ClusterPage extends Component {
         } else if (value < 3 * (item.timeout / 3)) {
           return <i className="fa fa-heartbeat" style={{ color: 'orange' }} />;
         } else {
-          return <i className="fa fa-heartbeat" style={{ color: 'red' }} />;
+          return <i className="fa fa-heartbeat" style={{ color: "var(--color-red)" }} />;
         }
       },
     },

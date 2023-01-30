@@ -405,7 +405,7 @@ export class SelfUpdatePage extends Component {
                   </p>
                 )}
                 {!this.state.hasWebauthnDeviceReg && (
-                  <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>
+                  <p style={{ color: "var(--color-red)", width: '100%', textAlign: 'left' }}>
                     The auth. module requires strong authentication with Webauthn compatible device.
                     You have to register a Webauthn compatible device or you won't be able to log
                     in.
@@ -439,7 +439,7 @@ export class SelfUpdatePage extends Component {
               <p style={{ color: 'green', width: '100%', textAlign: 'left' }}>
                 {!this.state.error && this.state.message}
               </p>
-              <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>
+              <p style={{ color: "var(--color-red)", width: '100%', textAlign: 'left' }}>
                 {!!this.state.error && this.state.error}
               </p>
             </div>

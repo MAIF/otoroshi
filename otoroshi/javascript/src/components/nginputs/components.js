@@ -30,7 +30,7 @@ export class NgValidationRenderer extends Component {
           {this.props.children}
           <>
             {this.props.validation.__errors.map((err, idx) => (
-              <p key={idx} style={{ color: 'red', marginBottom: 0 }}>
+              <p key={idx} style={{ color: "var(--color-red)", marginBottom: 0 }}>
                 {err.message || err}
               </p>
             ))}

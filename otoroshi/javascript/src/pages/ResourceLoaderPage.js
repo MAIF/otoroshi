@@ -166,7 +166,7 @@ export function ResourceLoaderPage({ setTitle }) {
                     className="badge"
                     style={{
                       padding: '0 12 0 12',
-                      backgroundColor: resource.error ? 'red' : '#eee',
+                      backgroundColor: resource.error ? "var(--color-red)" : '#eee',
                       color: '#000',
                     }}>
                     {resource.error || resource.kind}
