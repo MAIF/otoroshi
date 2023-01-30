@@ -46,7 +46,7 @@ export function RoutesTable(props) {
     notFilterable: true,
     cell: (_, item) =>
       item.enabled ? (
-        <span className="fas fa-check-circle" style={{ color: '#5cb85c' }} />
+        <span className="fas fa-check-circle" style={{ color: "var(--color-green)" }} />
       ) : (
         <span className="fas fa-times" style={{ color: "var(--color-red)" }} />
       ),

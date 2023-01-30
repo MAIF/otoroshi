@@ -344,7 +344,7 @@ const ExporterTryIt = ({ exporter }) => {
               style={{
                 color:
                   status === 'Successful'
-                    ? '#5cb85c'
+                    ? "var(--color-green)"
                     : status === 'Not tested'
                     ? '#f39c12'
                     : "var(--color-red)",
