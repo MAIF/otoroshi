@@ -119,19 +119,17 @@ export class NgDotsRenderer extends Component {
               const selected = isValueArray ? value.includes(rawOption) : value === rawOption;
 
               let backgroundColorFromOption = null;
+              let opacityFromOption = 1;
               // let btnBackground = '';
 
               if (option.color)
-                backgroundColorFromOption = `rgba(${option.color
-                  .replace(')', '')
-                  .replace('rgb(', '')}, ${selected ? 1 : 0.45})`;
-
-              // if (!optObj || backgroundColorFromOption === 'initial')
-              //   btnBackground = selected ? 'btn-primary' : 'btn-dark';
+                backgroundColorFromOption = `${option.color}`;
+                opacityFromOption= `${selected ? 1 : 0.45}`;
 
               let style = {
                 borderRadius: '24px',
                 backgroundColor: backgroundColorFromOption,
+                opacity:opacityFromOption
               };
 
               if (backgroundColorFromOption) {

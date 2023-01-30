@@ -575,8 +575,8 @@ class FieldForm extends React.Component {
               label: 'HTTP Method',
               props: {
                 options: [
-                  { value: 'GET', label: 'GET', color: 'rgb(89, 179, 255)' },
-                  { value: 'POST', label: 'POST', color: 'rgb(74, 203, 145)' },
+                  { value: 'GET', label: 'GET', color: "var(--http_color-get)" },
+                  { value: 'POST', label: 'POST', color: "var(--http_color-post)" },
                 ],
               },
             },

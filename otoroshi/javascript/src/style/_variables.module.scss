@@ -15,6 +15,7 @@ $colorBleue-lighter:lighten($colorBleue, 10%);
 $colorRouge: #d5443f;
 
 //new naming
+// dark mode var
 $color-dark-1: #e6e6e6;
 $color-dark-2: #b5b3b3;
 $color-dark-3: #9e9e9e;
@@ -23,12 +24,12 @@ $color-dark-5: #494948;
 $color-dark-6: #373735;
 
 //light mode var
-
 $color-white-1: #fff;
 $color-white-2: #f3f3f4;
 $color-white-3: #e8e8e8;
 $color-white-4: #e1dfdf;
 $color-white-5: #333;
+
 
 :root {
   // globals
@@ -41,8 +42,13 @@ $color-white-5: #333;
   --color-grey:#e6e6e6;
   --color-white: #fff;
   --color-dark:#000;
-
-  // dark mode
+  --http_color-get: rgb(89, 179, 255);
+  --http_color-post: rgb(74, 203, 145);
+  --http_color-delete: rgb(249, 63, 62);
+  --http_color-put: rgb(251, 161, 47);
+  --http_color-others: rgb(155, 89, 182);
+  
+  // dark mode (default)
   --bg-color_level1: #{$color-dark-6};
   --color_level1: #{$color-dark-2};
   --bg-color_level2: #{$color-dark-5};
