@@ -48,7 +48,7 @@ export function RoutesTable(props) {
       item.enabled ? (
         <span className="fas fa-check-circle" style={{ color: '#5cb85c' }} />
       ) : (
-        <span className="fas fa-times" style={{ color: '#D5443F' }} />
+        <span className="fas fa-times" style={{ color: "var(--color-red)" }} />
       ),
   };
 

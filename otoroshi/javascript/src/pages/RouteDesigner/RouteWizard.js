@@ -137,7 +137,7 @@ const BackendStep = ({ state, onChange, onError, error }) => {
           value={state.route.url}
           onChange={checkChange}
         />
-        <label style={{ color: '#D5443F' }}>{error}</label>
+        <label style={{ color: "var(--color-red)" }}>{error}</label>
       </div>
     </>
   );

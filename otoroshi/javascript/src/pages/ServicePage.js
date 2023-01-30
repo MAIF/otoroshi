@@ -2289,7 +2289,7 @@ export class ServicePage extends Component {
             initCollapsed={true}
             label="Third party Api Keys">
             <p style={{ textAlign: 'justify' }}>
-              <b style={{ color: '#D5443F' }}>WARNING: </b> Third party Api Keys are
+              <b style={{ color: "var(--color-red)" }}>WARNING: </b> Third party Api Keys are
               deprecated and will be removed in a near future.
               <br />
               Please use dedicated <b>Access validator</b> or <b>pre-route</b>instead (see above).
@@ -2720,7 +2720,7 @@ export class ServicePage extends Component {
                     width: '100%',
                   }}>
                   <p style={{ textAlign: 'justify' }}>
-                    <b style={{ color: '#D5443F' }}>WARNING: </b> Validation authorities are
+                    <b style={{ color: "var(--color-red)" }}>WARNING: </b> Validation authorities are
                     deprecated and will be removed in a near future.
                     <br />
                     Please use <b>Access validator</b> instead (see above).

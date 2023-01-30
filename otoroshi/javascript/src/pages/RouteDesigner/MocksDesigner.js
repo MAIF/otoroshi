@@ -143,7 +143,7 @@ function PushView({ endpoints, resources }) {
                     {!endpoint.body && !endpoint.model && (
                       <div className="mx-1 d-flex-between endpoint-helper">
                         <span
-                          style={{ color: '#D5443F' }}
+                          style={{ color: "var(--color-red)" }}
                           {...createTooltip('Missing raw body or model')}>
                           <i className="fas fa-exclamation-triangle" />
                         </span>
@@ -213,7 +213,7 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
                   !resources.find((e) =>
                     e.schema?.find((f) => f.field_type === 'Model' && f.value === resource.name)
                   ) && (
-                    <span style={{ color: '#D5443F' }} {...createTooltip('Model not used')}>
+                    <span style={{ color: "var(--color-red)" }} {...createTooltip('Model not used')}>
                       <i className="fas fa-exclamation-triangle" />
                     </span>
                   )}
@@ -328,7 +328,7 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                   {!endpoint.body && !endpoint.model && (
                     <div className="mx-1 d-flex-between endpoint-helper">
                       <span
-                        style={{ color: '#D5443F' }}
+                        style={{ color: "var(--color-red)" }}
                         {...createTooltip('Missing raw body or model')}>
                         <i className="fas fa-exclamation-triangle" />
                       </span>

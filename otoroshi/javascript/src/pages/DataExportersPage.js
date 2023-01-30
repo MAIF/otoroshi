@@ -347,7 +347,7 @@ const ExporterTryIt = ({ exporter }) => {
                     ? '#5cb85c'
                     : status === 'Not tested'
                     ? '#f39c12'
-                    : '#D5443F',
+                    : "var(--color-red)",
                 display: 'flex',
                 alignItems: 'center',
                 width: 'fit-content',

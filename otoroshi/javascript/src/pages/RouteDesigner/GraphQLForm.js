@@ -155,7 +155,7 @@ export default class GraphQLForm extends React.Component {
         {this.state.schemaView ? (
           <>
             {this.state.error && (
-              <span className="my-3" style={{ color: '#D5443F', fontWeight: 'bold' }}>
+              <span className="my-3" style={{ color: "var(--color-red)", fontWeight: 'bold' }}>
                 {this.state.error}
               </span>
             )}
@@ -346,7 +346,7 @@ class SideView extends React.Component {
               <span
                 className="my-3"
                 style={{
-                  color: '#D5443F',
+                  color: "var(--color-red)",
                   fontWeight: 'bold',
                 }}>
                 {error}
