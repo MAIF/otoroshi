@@ -1977,7 +1977,7 @@ class GlobalPlugins extends Component {
           <label className="col-xs-12 col-sm-2 col-form-label"></label>
           <div className="col-sm-10">
             <span style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold', marginTop: '7px' }}>
-              Plugins on new Otoroshi engine
+              Plugins on new Otoroshi engine and global jobs
             </span>
           </div>
         </div>

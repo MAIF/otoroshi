@@ -479,7 +479,7 @@ case class RegisteredJobContext(
           case JobStarting.Never             => ()
           case JobStarting.Automatically     => startNext()
           case JobStarting.FromConfiguration => {
-            if (config.scripts.enabled) {
+            if (config.scripts.enabled || config.plugins.enabled) {
               if (config.scripts.jobRefs.contains(job.underlyingId)) {
                 startNext()
               }
