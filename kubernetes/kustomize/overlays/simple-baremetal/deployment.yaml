@@ -195,7 +195,7 @@ spec:
     targetPort: "https"
     nodePort: 31443
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate

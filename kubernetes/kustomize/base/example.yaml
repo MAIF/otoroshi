@@ -48,7 +48,7 @@ spec:
     targetPort: "main-port"
     nodePort: 31081
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: backend-cert
@@ -69,7 +69,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: client-cert
@@ -91,7 +91,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: oto-client-cert
@@ -113,7 +113,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: frontend-cert
@@ -132,7 +132,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: backend-apikey
@@ -142,7 +142,7 @@ spec:
   authorizedEntities:
     - group_default
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ServiceDescriptor
 metadata:
   name: backend

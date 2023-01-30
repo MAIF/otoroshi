@@ -283,7 +283,7 @@ class ClientSupportTest extends Job {
       )), env), Logger("test"))
       val resource = Json.parse(
         """{
-          |  "apiVersion": "proxy.otoroshi.io/v1alpha1",
+          |  "apiVersion": "proxy.otoroshi.io/v1",
           |  "kind": "ApiKey",
           |  "metadata": {
           |    "name": "apikey-test",

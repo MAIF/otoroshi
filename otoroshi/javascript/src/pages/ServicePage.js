@@ -786,7 +786,7 @@ export class ServicePage extends Component {
       .replace(/\)/g, '')
       .toLowerCase();
     // const json = YAML.stringify({
-    //   apiVersion: 'proxy.otoroshi.io/v1alpha1',
+    //   apiVersion: 'proxy.otoroshi.io/v1',
     //   kind: 'ServiceDescriptor',
     //   metadata: {
     //     name,
@@ -799,7 +799,7 @@ export class ServicePage extends Component {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        apiVersion: 'proxy.otoroshi.io/v1alpha1',
+        apiVersion: 'proxy.otoroshi.io/v1',
         kind: 'ServiceDescriptor',
         metadata: {
           name,

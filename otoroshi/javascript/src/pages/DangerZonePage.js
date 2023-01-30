@@ -1254,7 +1254,7 @@ export class DangerZonePage extends Component {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        apiVersion: 'proxy.otoroshi.io/v1alpha1',
+        apiVersion: 'proxy.otoroshi.io/v1',
         kind: 'GlobalConfig',
         metadata: {
           name: 'global-config',
@@ -1278,7 +1278,7 @@ export class DangerZonePage extends Component {
 
     /*
     // const json = YAML.stringify({
-      apiVersion: 'proxy.otoroshi.io/v1alpha1',
+      apiVersion: 'proxy.otoroshi.io/v1',
       kind: 'GlobalConfig',
       metadata: {
         name: 'global-config',

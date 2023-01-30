@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.Pattern
 import akka.{Done, NotUsed}
 import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.{Framing, Sink, Source}
+import akka.stream.scaladsl.{Concat, Framing, Sink, Source}
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models._
@@ -433,67 +433,81 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       reader: Reads[T],
       customize: (JsValue, KubernetesOtoroshiResource) => JsValue = (a, b) => a
   ): Future[Seq[OtoResHolder[T]]] = {
-    asyncSequence(config.namespaces.map { namespace =>
-      val cli: WSRequest = client(s"/apis/proxy.otoroshi.io/v1alpha1/namespaces/$namespace/$pluralName")
-      () =>
-        cli
-          .addHttpHeaders(
-            "Accept" -> "application/json"
-          )
-          .get()
-          .map { resp =>
-            Try {
-              if (resp.status == 200) {
-                filterLabels((resp.json \ "items").as[JsArray].value.map(v => KubernetesOtoroshiResource(v)))
-                  .map { item =>
-                    val spec                      = (item.raw \ "spec").as[JsValue]
-                    val (failed, err, customSpec) = Try(customize(spec, item)) match {
-                      case Success(value) => (false, None, value)
-                      case Failure(e)     => (true, e.some, spec)
-                    }
-                    Try {
-                      (reader.reads(customSpec), item.raw)
-                    }.debug {
-                      case Success(_) if failed => {
-                        logger.error(s"error while customizing spec entity of type $pluralName", err.get)
-                        FailedCrdParsing(
-                          `@id` = env.snowflakeGenerator.nextIdStr(),
-                          `@env` = env.env,
-                          namespace = namespace,
-                          pluralName = pluralName,
-                          crd = item.raw,
-                          customizedSpec = customSpec,
-                          error = err.map(_.getMessage).getOrElse("--")
-                        ).toAnalytics()(env)
-                      }
-                      case Success(_)           => ()
-                      case Failure(e)           =>
-                        logger.error(s"error while reading entity of type $pluralName", e)
-                        FailedCrdParsing(
-                          `@id` = env.snowflakeGenerator.nextIdStr(),
-                          `@env` = env.env,
-                          namespace = namespace,
-                          pluralName = pluralName,
-                          crd = item.raw,
-                          customizedSpec = customSpec,
-                          error = e.getMessage
-                        ).toAnalytics()(env)
-                    }
-                  }
-                  .collect { case Success((JsSuccess(item, _), raw)) =>
-                    OtoResHolder(raw, item)
-                  }
-              } else {
-                if (logger.isDebugEnabled)
-                  logger.debug(s"fetchOtoroshiResources ${pluralName}: bad status ${resp.status}")
-                Seq.empty
-              }
-            } match {
-              case Success(r) => r
-              case Failure(e) => Seq.empty
-            }
-          }
+    asyncSequence(config.namespaces.flatMap { namespace =>
+      Seq(
+        fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1", reader, customize),
+        fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1alpha1", reader, customize),
+      )
     }).map(_.flatten)
+  }
+
+  def fetchOtoroshiResourcesForNamespaceAndVersion[T](
+      pluralName: String,
+      namespace: String,
+      version: String,
+      reader: Reads[T],
+      customize: (JsValue, KubernetesOtoroshiResource) => JsValue = (a, b) => a
+  ): () => Future[Seq[OtoResHolder[T]]] = {
+    val cli: WSRequest = client(s"/apis/proxy.otoroshi.io/$version/namespaces/$namespace/$pluralName")
+    () => {
+      cli
+        .addHttpHeaders(
+          "Accept" -> "application/json"
+        )
+        .get()
+        .map { resp =>
+          Try {
+            if (resp.status == 200) {
+              filterLabels((resp.json \ "items").as[JsArray].value.map(v => KubernetesOtoroshiResource(v)))
+                .map { item =>
+                  val spec = (item.raw \ "spec").as[JsValue]
+                  val (failed, err, customSpec) = Try(customize(spec, item)) match {
+                    case Success(value) => (false, None, value)
+                    case Failure(e) => (true, e.some, spec)
+                  }
+                  Try {
+                    (reader.reads(customSpec), item.raw)
+                  }.debug {
+                    case Success(_) if failed => {
+                      logger.error(s"error while customizing spec entity of type $pluralName", err.get)
+                      FailedCrdParsing(
+                        `@id` = env.snowflakeGenerator.nextIdStr(),
+                        `@env` = env.env,
+                        namespace = namespace,
+                        pluralName = pluralName,
+                        crd = item.raw,
+                        customizedSpec = customSpec,
+                        error = err.map(_.getMessage).getOrElse("--")
+                      ).toAnalytics()(env)
+                    }
+                    case Success(_) => ()
+                    case Failure(e) =>
+                      logger.error(s"error while reading entity of type $pluralName", e)
+                      FailedCrdParsing(
+                        `@id` = env.snowflakeGenerator.nextIdStr(),
+                        `@env` = env.env,
+                        namespace = namespace,
+                        pluralName = pluralName,
+                        crd = item.raw,
+                        customizedSpec = customSpec,
+                        error = e.getMessage
+                      ).toAnalytics()(env)
+                  }
+                }
+                .collect { case Success((JsSuccess(item, _), raw)) =>
+                  OtoResHolder(raw, item)
+                }
+            } else {
+              if (logger.isDebugEnabled)
+                logger.debug(s"fetchOtoroshiResources ${pluralName}: bad status ${resp.status}")
+              Seq.empty
+            }
+          } match {
+            case Success(r) => r
+            case Failure(e) => Seq.empty
+          }
+        }
+    }
   }
 
   def createSecret(
@@ -766,7 +780,10 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       stop: => Boolean,
       labelSelector: Option[String] = None
   ): Source[Seq[ByteString], _] = {
-    watchResources(namespaces, resources, "proxy.otoroshi.io/v1alpha1", timeout, stop, labelSelector)
+    Source.combine(
+      watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector),
+      watchResources(namespaces, resources, "proxy.otoroshi.io/v1alpha1", timeout, stop, labelSelector),
+    )(Concat(_))
   }
 
   def watchNetResources(

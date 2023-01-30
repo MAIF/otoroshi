@@ -345,7 +345,7 @@ spec:
     name: "https"
     targetPort: "https"
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate
