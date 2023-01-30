@@ -218,7 +218,7 @@ const StrategyForm = {
                                 } me-1`}
                                 style={{
                                   color: tags.includes(tag.toLocaleLowerCase())
-                                    ? '#f9b000'
+                                    ? "var(--color-primary)"
                                     : '#fff',
                                   padding: '4px',
                                   minWidth: '20px',

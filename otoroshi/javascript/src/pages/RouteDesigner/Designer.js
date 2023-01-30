@@ -1994,14 +1994,14 @@ const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonCli
       className="btn-sm mt-3"
       disabled={errors && errors.length > 0}
       onClick={onFormClick}
-      style={{ backgroundColor: asJsonFormat ? '#373735' : '#f9b000' }}>
+      style={{ backgroundColor: asJsonFormat ? '#373735' : "var(--color-primary)" }}>
       FORM
     </Button>
     <Button
       type='dark'
       className="btn-sm mx-1 mt-3"
       onClick={onRawJsonClick}
-      style={{ backgroundColor: asJsonFormat ? '#f9b000' : '#373735' }}>
+      style={{ backgroundColor: asJsonFormat ? "var(--color-primary)" : '#373735' }}>
       RAW JSON
     </Button> */}
   </div>

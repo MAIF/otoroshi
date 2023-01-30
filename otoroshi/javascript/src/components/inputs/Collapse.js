@@ -30,7 +30,7 @@ export class Collapse extends Component {
               className={this.props.noLeftColumn ? 'col-sm-12' : 'col-sm-10'}
               onClick={this.toggle}
               role="button">
-              <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>
+              <span style={{ color: "var(--color-primary)", fontWeight: 'bold', marginTop: 7 }}>
                 {this.props.label}
               </span>
               <button type="button" className="btn btn-primary float-end btn-sm" onClick={this.toggle}>
@@ -51,7 +51,7 @@ export class Collapse extends Component {
               className={this.props.noLeftColumn ? 'col-sm-12' : 'col-sm-10'}
               onClick={this.toggle}
               role="button">
-              <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>
+              <span style={{ color: "var(--color-primary)", fontWeight: 'bold', marginTop: 7 }}>
                 {this.props.label}
               </span>
               <button type="button" className="btn btn-primary float-end btn-sm" onClick={this.toggle}>

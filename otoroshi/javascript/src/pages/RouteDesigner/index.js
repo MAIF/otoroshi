@@ -578,13 +578,13 @@ const RoutesView = ({ history, globalEnv }) => {
               <button
                 onClick={() => setCreation(true)}
                 className="btn btn-primary"
-                style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+                style={{ _backgroundColor: "var(--color-primary)", _borderColor: "var(--color-primary)", marginLeft: 5 }}>
                 <i className="fas fa-hat-wizard" /> Create with wizard
               </button>
               <button
                 onClick={() => setImportServiceDescriptor(true)}
                 className="btn btn-primary"
-                style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+                style={{ _backgroundColor: "var(--color-primary)", _borderColor: "var(--color-primary)", marginLeft: 5 }}>
                 <i className="fas fas fa-exchange-alt" /> Convert a service descriptor
               </button>
             </>

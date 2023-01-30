@@ -154,7 +154,7 @@ class RouteForms extends React.Component {
           </button>
           <button
             className="btn btn-sm me-3"
-            style={{ backgroundColor: '#f9b000', color: '#fff' }}
+            style={{ backgroundColor: "var(--color-primary)", color: '#fff' }}
             title="Switch Form view / Json view"
             onClick={(e) => {
               e.stopPropagation();
@@ -254,7 +254,7 @@ const Route = (props) => {
           {plugins?.length > 0 && <span className="badge bg-dark me-2">custom plugins</span>}
           <button
             className="btn btn-sm"
-            style={{ background: '#f9b000', borderColor: '#f9b000' }}
+            style={{ background: "var(--color-primary)", borderColor: "var(--color-primary)" }}
             onClick={onClick}>
             <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} />
           </button>
