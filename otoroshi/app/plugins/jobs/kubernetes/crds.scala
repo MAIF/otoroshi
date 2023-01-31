@@ -1738,8 +1738,8 @@ object KubernetesCRDsJob {
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
-    if (logger.isDebugEnabled) logger.debug("patchCoreDnsConfig")
     val conf   = if (_conf.coreDnsAzure) _conf.copy(coreDnsConfigMapName = "coredns-custom") else _conf
+    if (logger.isDebugEnabled) logger.debug(s"patchCoreDnsConfig in ${conf.coreDnsConfigMapName}")
     val client = new KubernetesClient(conf, env)
     val hash   = Seq(
       conf.kubeSystemNamespace,
@@ -1808,12 +1808,13 @@ object KubernetesCRDsJob {
         val coreFile = configMap.corefile(conf.coreDnsAzure)
         lastDnsConfigRef.set(hash)
         if (append) {
-          val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj(dnsConfigFile -> (otoMesh + coreFile))
+          val newData = (configMap.raw \ "data").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(dnsConfigFile -> (otoMesh + coreFile))
           val newRaw  = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
           if (conf.coreDnsIntegrationDryRun) {
             if (logger.isDebugEnabled) logger.debug(s"new coredns config append: ${Json.prettyPrint(newRaw)}")
             ().future
           } else {
+            if (logger.isDebugEnabled) logger.debug(s"writing dns config. to ${configMap.namespace}/${configMap.name} in file ${dnsConfigFile}")
             client
               .updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw))
               .andThen {
@@ -1826,12 +1827,13 @@ object KubernetesCRDsJob {
         } else {
           val head    = coreFile.split(s"\n### otoroshi-${coreDnsNameEnv}mesh-begin ###").toSeq.head
           val tail    = coreFile.split(s"### otoroshi-${coreDnsNameEnv}mesh-end ###\n").toSeq.last
-          val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj(dnsConfigFile -> (head + otoMesh + tail))
+          val newData = (configMap.raw \ "data").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(dnsConfigFile -> (head + otoMesh + tail))
           val newRaw  = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
           if (conf.coreDnsIntegrationDryRun) {
             if (logger.isDebugEnabled) logger.debug(s"new coredns config: ${Json.prettyPrint(newRaw)}")
             ().future
           } else {
+            if (logger.isDebugEnabled) logger.debug(s"writing dns config. to ${configMap.namespace}/${configMap.name} in file ${dnsConfigFile}")
             client
               .updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw))
               .andThen {
@@ -1850,6 +1852,7 @@ object KubernetesCRDsJob {
       }
 
     def fetchCorednsConfig(coredns: Option[KubernetesDeployment]): Future[Unit] = {
+      if (logger.isDebugEnabled) logger.debug(s"fetchCorednsConfig of ${conf.kubeSystemNamespace}/${conf.coreDnsConfigMapName}")
       client.fetchConfigMap(conf.kubeSystemNamespace, conf.coreDnsConfigMapName).flatMap {
         case None                                               =>
           logger.error("no coredns config.")
@@ -1868,22 +1871,27 @@ object KubernetesCRDsJob {
               s"current hash: $hash, hash from coredns configmap: $hashFromConfigMap, config has changed: $configHasChanged"
             )
           if (configHasChanged) {
+            logger.info(s"updating coredns configmap '${conf.coreDnsConfigMapName}''")
             patchConfig(coredns, configMap, false, conf.coreDnsAzure)
             ().future
           } else {
-            logger.info("coredns has latest otoroshi config. ")
+            if (logger.isDebugEnabled) logger.debug(s"coredns configmap '${conf.coreDnsConfigMapName}' has latest otoroshi config. ")
             ().future
           }
         }
         case Some(configMap)                                    => {
           if (logger.isDebugEnabled) logger.debug(s"configMap 2 ${configMap.corefile(conf.coreDnsAzure)}")
+          logger.info(s"patching coredns configmap '${conf.coreDnsConfigMapName}' for the first time")
           patchConfig(coredns, configMap, true, conf.coreDnsAzure)
           ().future
         }
+      }.andThen {
+        case Failure(e) => logger.error(s"error while fetching coredns config of ${conf.kubeSystemNamespace}/${conf.coreDnsConfigMapName}", e)
       }
     }
 
     def deleteOtoroshiMeshFromCoreDnsConfig(azure: Boolean) = {
+      if (logger.isDebugEnabled) logger.debug(s"deleteOtoroshiMeshFromCoreDnsConfig of ${conf.kubeSystemNamespace}/${conf.coreDnsConfigMapName}")
       val dnsConfigFile = if (azure) "otoroshi.server" else "Corefile"
       client.fetchConfigMap(conf.kubeSystemNamespace, conf.coreDnsConfigMapName).flatMap {
         case Some(configMap) if configMap.hasOtoroshiMesh(conf) => {
@@ -1891,7 +1899,7 @@ object KubernetesCRDsJob {
           val coreDnsNameEnv = conf.coreDnsEnv.map(e => s"$e-").getOrElse("")
           val head           = coreFile.split(s"\n### otoroshi-${coreDnsNameEnv}mesh-begin ###").toSeq.head
           val tail           = coreFile.split(s"### otoroshi-${coreDnsNameEnv}mesh-end ###\n").toSeq.last
-          val newData        = (configMap.raw \ "data").as[JsObject] ++ Json.obj(dnsConfigFile -> (head + tail))
+          val newData        = (configMap.raw \ "data").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(dnsConfigFile -> (head + tail))
           val newRaw         = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
           if (conf.coreDnsIntegrationDryRun) {
             if (logger.isDebugEnabled) logger.debug(s"new coredns config: ${Json.prettyPrint(newRaw)}")
@@ -1908,17 +1916,22 @@ object KubernetesCRDsJob {
           }
         }
         case _                                                  => ().future
+      }.andThen {
+        case Failure(e) => logger.error(s"error while deleting mesh from coredns config of ${conf.kubeSystemNamespace}/${conf.coreDnsConfigMapName}", e)
       }
     }
 
     if (conf.coreDnsIntegration) {
+      if (logger.isDebugEnabled) logger.debug(s"if (conf.coreDnsIntegration) ${conf.kubeSystemNamespace}/${conf.coreDnsDeploymentName}")
       client.fetchDeployment(conf.kubeSystemNamespace, conf.coreDnsDeploymentName).flatMap {
         case None          =>
-          logger.info("no coredns deployment.")
+          logger.info("no coredns deployment. moving to coredns configmap matching")
           fetchCorednsConfig(None)
         case Some(coredns) => {
           fetchCorednsConfig(coredns.some)
         }
+      }.andThen {
+        case Failure(e) => logger.error(s"error while fetching deployment of ${conf.kubeSystemNamespace}/${conf.coreDnsDeploymentName}", e)
       }
     } else {
       deleteOtoroshiMeshFromCoreDnsConfig(conf.coreDnsAzure)
