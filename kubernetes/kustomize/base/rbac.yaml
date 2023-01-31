@@ -88,7 +88,6 @@ rules:
       - routes
       - services
       - backends
-      - target
     verbs:
       - get
       - list

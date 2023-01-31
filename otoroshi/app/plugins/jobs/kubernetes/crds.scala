@@ -72,7 +72,6 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   override def starting: JobStarting = JobStarting.FromConfiguration
 
   override def instantiation(ctx: JobContext, env: Env): JobInstantiation = {
-    println("inst instantiation")
     Option(env)
       .flatMap(env => env.datastores.globalConfigDataStore.latestSafe.map(c => (env, c)))
       .map { case (env, c) =>
@@ -90,7 +89,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         }
       }
       .getOrElse(JobInstantiation.OneInstancePerOtoroshiCluster)
-  }.debugPrintln
+  }
 
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
 
