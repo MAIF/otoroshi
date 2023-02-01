@@ -1877,7 +1877,7 @@ object KubernetesCRDsJob {
               s"current hash: $hash, hash from coredns configmap: $hashFromConfigMap, config has changed: $configHasChanged"
             )
           if (configHasChanged) {
-            logger.info(s"updating coredns configmap '${conf.coreDnsConfigMapName}''")
+            logger.info(s"updating coredns configmap '${conf.coreDnsConfigMapName}'")
             patchConfig(coredns, configMap, false, conf.coreDnsAzure)
             ().future
           } else {
