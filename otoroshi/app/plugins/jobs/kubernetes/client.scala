@@ -22,6 +22,7 @@ import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
+import otoroshi.utils.http.Implicits._
 
 // TODO: watch res to trigger sync
 class KubernetesClient(val config: KubernetesConfig, env: Env) {
@@ -90,6 +91,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         }
       )
   }
+
   private def filterLabels[A <: KubernetesEntity](items: Seq[A]): Seq[A] = {
     // TODO: handle kubernetes label expressions
     if (config.labels.isEmpty) {
@@ -98,6 +100,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       items.filter(i => config.labels.forall(t => i.labels.get(t._1) == t._2.some))
     }
   }
+
   private def filterNamespaceLabels[A <: KubernetesEntity](items: Seq[A]): Seq[A] = {
     // TODO: handle kubernetes label expressions
     if (config.namespacesLabels.isEmpty) {
@@ -106,6 +109,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       items.filter(i => config.namespacesLabels.forall(t => i.labels.get(t._1) == t._2.some))
     }
   }
+
   def fetchNamespacesAndFilterLabels(): Future[Seq[KubernetesNamespace]] = {
     val cli: WSRequest = client(s"/api/v1/namespaces")
     cli
@@ -119,6 +123,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             KubernetesNamespace(item)
           })
         } else {
+          resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchNamespacesAndFilterLabels: bad status ${resp.status}")
           Seq.empty
         }
@@ -139,6 +144,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesService(item)
               }
             } else {
+              resp.ignore()
               if (logger.isDebugEnabled) logger.debug(s"fetchServices: bad status ${resp.status}")
               Seq.empty
             }
@@ -156,6 +162,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesService(resp.json).some
         } else {
+          resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchService: bad status ${resp.status}")
           None
         }
@@ -172,6 +179,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesSecret(resp.json).some
         } else {
+          resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchSecret: bad status ${resp.status}")
           None
         }
@@ -192,6 +200,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesEndpoint(item)
               }
             } else {
+              resp.ignore()
               if (logger.isDebugEnabled) logger.debug(s"fetchEndpoints: bad status ${resp.status}")
               Seq.empty
             }
@@ -209,6 +218,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesEndpoint(resp.json).some
         } else {
+          resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchEndpoint: bad status ${resp.status}")
           None
         }
@@ -229,6 +239,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesIngress(item)
               })
             } else {
+              resp.ignore()
               logger.error(s"bad http status while fetching ingresses: ${resp.status}")
               Seq.empty
             }
@@ -250,6 +261,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesIngress(item)
               }
             } else {
+              resp.ignore()
               logger.error(s"bad http status while fetching ingresses: ${resp.status}")
               Seq.empty
             }
@@ -271,6 +283,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesIngressClass(item)
               }
             } else {
+              resp.ignore()
               logger.error(s"bad http status while fetching ingresses-classes: ${resp.status}")
               Seq.empty
             }
@@ -292,6 +305,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesDeployment(item)
               }
             } else {
+              resp.ignore()
               if (logger.isDebugEnabled) logger.debug(s"fetchDeployments: bad status ${resp.status}")
               Seq.empty
             }
@@ -313,6 +327,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesPod(item)
               }
             } else {
+              resp.ignore()
               if (logger.isDebugEnabled) logger.debug(s"fetchPods: bad status ${resp.status}")
               Seq.empty
             }
@@ -340,6 +355,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesSecret(item)
               }
             } else {
+              resp.ignore()
               if (logger.isDebugEnabled) logger.debug(s"fetchSecrets: bad status ${resp.status}")
               Seq.empty
             }
@@ -361,6 +377,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 KubernetesSecret(item)
               })
             } else {
+              resp.ignore()
               if (logger.isDebugEnabled) logger.debug(s"fetchSecretsAndFilterLabels: bad status ${resp.status}")
               Seq.empty
             }
@@ -379,6 +396,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesDeployment(resp.json).some
         } else {
+          resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchDeployment: bad status ${resp.status}")
           None
         }
@@ -396,6 +414,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesConfigMap(resp.json).some
         } else {
+          resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchConfigMap: bad status ${resp.status}")
           None
         }
@@ -408,12 +427,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       newValue: KubernetesConfigMap
   ): Future[Either[(Int, String), KubernetesConfigMap]] = {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/configmaps/$name", false)
-    cli
+    val req = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
         "Content-Type" -> "application/json"
       )
-      .put(newValue.raw)
+    req.put(newValue.raw)
       .map { resp =>
         Try {
           if (resp.status == 200 || resp.status == 201) {
@@ -423,8 +442,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           }
         } match {
           case Success(r) => r
-          case Failure(e) => Left((0, e.getMessage))
+          case Failure(e) =>
+            resp.ignore()
+            Left((0, e.getMessage))
         }
+      }
+      .andThen {
+        case Failure(exception) => req.ignore()
       }
   }
 
@@ -498,6 +522,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                   OtoResHolder(raw, item)
                 }
             } else {
+              resp.ignore()
               if (logger.isDebugEnabled)
                 logger.debug(s"fetchOtoroshiResources ${pluralName}: bad status ${resp.status}")
               Seq.empty
@@ -519,12 +544,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       id: String
   ): Future[Option[KubernetesSecret]] = {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets", false)
-    cli
+    val req = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
         "Content-Type" -> "application/json"
       )
-      .post(
+    req.post(
         Json.obj(
           "apiVersion" -> "v1",
           "kind"       -> "Secret",
@@ -544,6 +569,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           if (resp.status == 200 || resp.status == 201) {
             KubernetesSecret(resp.json).some
           } else {
+            resp.ignore()
             // logger.error(s"error create cert: ${resp.status} - ${resp.body}")
             None
           }
@@ -551,8 +577,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           case Success(r) => r
           case Failure(e) =>
             // logger.error(s"error create cert", e)
+            resp.ignore()
             None
         }
+      }
+      .andThen {
+        case Failure(_) => req.ignore()
       }
   }
 
@@ -565,12 +595,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       id: String
   ): Future[Option[KubernetesSecret]] = {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
-    cli
+    val req = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
         "Content-Type" -> "application/json"
       )
-      .put(
+    req.put(
         Json.obj(
           "apiVersion" -> "v1",
           "kind"       -> "Secret",
@@ -590,59 +620,73 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           if (resp.status == 200 || resp.status == 201) {
             KubernetesSecret(resp.json).some
           } else {
+            resp.ignore()
             // logger.error(s"error update cert: ${resp.status} - ${resp.body}")
             None
           }
         } match {
           case Success(r) => r
           case Failure(e) =>
+            resp.ignore()
             // logger.error(s"error update cert", e)
             None
         }
+      }
+      .andThen {
+        case Failure(_) => req.ignore()
       }
   }
 
   def deleteSecret(namespace: String, name: String): Future[Either[String, Unit]] = {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
-    cli
+    val req = cli
       .addHttpHeaders(
         "Accept" -> "application/json"
       )
-      .delete()
+    req.delete()
       .map { resp =>
         Try {
           if (resp.status == 200) {
+            resp.ignore()
             ().right
           } else {
             resp.body.left
           }
         } match {
           case Success(r) => r
-          case Failure(e) => e.getMessage.left
+          case Failure(e) =>
+            resp.ignore()
+            e.getMessage.left
         }
       }
   }
 
   def patchDeployment(namespace: String, name: String, body: JsValue): Future[Option[KubernetesDeployment]] = {
     val cli: WSRequest = client(s"/apis/apps/v1/namespaces/$namespace/deployments/$name", false)
-    cli
+    val req = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
         "Content-Type" -> "application/json-patch+json"
       )
-      .patch(body)
+    req.patch(body)
       .map { resp =>
         Try {
           if (resp.status == 200 || resp.status == 201) {
             KubernetesDeployment(resp.json).some
           } else {
+            resp.ignore()
             if (logger.isDebugEnabled) logger.debug(s"patchDeployment: bad status ${resp.status}")
             None
           }
         } match {
           case Success(r) => r
-          case Failure(e) => None
+          case Failure(e) =>
+            resp.ignore()
+            None
         }
+      }
+      .andThen {
+        case Failure(_) => req.ignore()
       }
   }
 
@@ -657,6 +701,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesOpenshiftDnsOperator(resp.json).some
         } else {
+          resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchOpenshiftDnsOperator: bad status ${resp.status}")
           None
         }
@@ -670,18 +715,22 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       case None      => None.future
       case Some(dns) => {
         val cli: WSRequest = client(s"/apis/operator.openshift.io/v1/dnses/default", false)
-        cli
+        val req = cli
           .addHttpHeaders(
             "Accept" -> "application/json"
           )
-          .put(dns.raw.as[JsObject] ++ Json.obj("spec" -> source.spec))
+        req.put(dns.raw.as[JsObject] ++ Json.obj("spec" -> source.spec))
           .map { resp =>
             if (resp.status == 200) {
               KubernetesOpenshiftDnsOperator(resp.json).some
             } else {
+              resp.ignore()
               if (logger.isDebugEnabled) logger.debug(s"updateOpenshiftDnsOperator: bad status ${resp.status}")
               None
             }
+          }
+          .andThen {
+            case Failure(_) => req.ignore()
           }
       }
     }
@@ -698,6 +747,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesMutatingWebhookConfiguration(resp.json).some
         } else {
+          resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchMutatingWebhookConfiguration: bad status ${resp.status}")
           None
         }
@@ -709,24 +759,30 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       body: JsValue
   ): Future[Option[KubernetesMutatingWebhookConfiguration]] = {
     val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/$name", false)
-    cli
+    val req = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
         "Content-Type" -> "application/json-patch+json"
       )
-      .patch(body)
+    req.patch(body)
       .map { resp =>
         Try {
           if (resp.status == 200 || resp.status == 201) {
             KubernetesMutatingWebhookConfiguration(resp.json).some
           } else {
+            resp.ignore()
             if (logger.isDebugEnabled) logger.debug(s"patchMutatingWebhookConfiguration: bad status ${resp.status}")
             None
           }
         } match {
           case Success(r) => r
-          case Failure(e) => None
+          case Failure(e) =>
+            resp.ignore()
+            None
         }
+      }
+      .andThen {
+        case Failure(_) => req.ignore()
       }
   }
 
@@ -741,6 +797,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200) {
           KubernetesValidatingWebhookConfiguration(resp.json).some
         } else {
+          resp.ignore()
           if (logger.isDebugEnabled) logger.debug(s"fetchValidatingWebhookConfiguration: bad status ${resp.status}")
           None
         }
@@ -752,24 +809,30 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       body: JsValue
   ): Future[Option[KubernetesValidatingWebhookConfiguration]] = {
     val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations/$name", false)
-    cli
+    val req = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
         "Content-Type" -> "application/json-patch+json"
       )
-      .patch(body)
+    req.patch(body)
       .map { resp =>
         Try {
           if (resp.status == 200 || resp.status == 201) {
             KubernetesValidatingWebhookConfiguration(resp.json).some
           } else {
+            resp.ignore()
             if (logger.isDebugEnabled) logger.debug(s"patchValidatingWebhookConfiguration: bad status ${resp.status}")
             None
           }
         } match {
           case Success(r) => r
-          case Failure(e) => None
+          case Failure(e) =>
+            resp.ignore()
+            None
         }
+      }
+      .andThen {
+        case Failure(_) => req.ignore()
       }
   }
 

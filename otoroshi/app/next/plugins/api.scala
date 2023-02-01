@@ -31,6 +31,21 @@ object NgPluginHelper {
   def pluginId[A](implicit ct: ClassTag[A]): String = s"cp:${ct.runtimeClass.getName}"
 }
 
+object NgPluginHttpRequest {
+  def fromRequest(req: RequestHeader): NgPluginHttpRequest = {
+    NgPluginHttpRequest(
+      url = req.uri,
+      method = req.method,
+      headers = req.headers.toSimpleMap,
+      cookies = Seq.empty,
+      version = req.version,
+      clientCertificateChain = () => req.clientCertificateChain,
+      body = Source.empty,
+      backend = None
+    )
+  }
+}
+
 case class NgPluginHttpRequest(
     url: String,
     method: String,

@@ -42,6 +42,7 @@ import NgAuthModuleExpectedUser from './NgAuthModuleExpectedUser';
 import NgAuthModuleUserExtractor from './NgAuthModuleUserExtractor';
 import NgBackend from './NgBackend';
 import NgDefaultRequestBody from './NgDefaultRequestBody';
+import NgErrorRewriter from './NgErrorRewriter';
 import NgFrontend from './NgFrontend';
 import NgLegacyApikeyCall from './NgLegacyApikeyCall';
 import NgLegacyAuthModuleCall from './NgLegacyAuthModuleCall';
@@ -119,6 +120,7 @@ export const Plugins = [
   NgAuthModuleExpectedUser,
   NgAuthModuleUserExtractor,
   NgDefaultRequestBody,
+  NgErrorRewriter,
   NgLegacyApikeyCall,
   NgLegacyAuthModuleCall,
   OtoroshiChallenge,
