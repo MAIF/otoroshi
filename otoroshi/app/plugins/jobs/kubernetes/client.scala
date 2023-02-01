@@ -66,9 +66,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           )
         ),
         ClientConfig(
-          connectionTimeout = 5000,
-          idleTimeout = 30000,
-          callAndStreamTimeout = 30000
+          connectionTimeout = config.connectionTimeout,
+          idleTimeout = config.idleTimeout,
+          callAndStreamTimeout = config.callAndStreamTimeout
         )
       )
       .applyOn(req =>
@@ -279,7 +279,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
   def fetchDeployments(): Future[Seq[KubernetesDeployment]] = {
     asyncSequence(config.namespaces.map { namespace =>
-      val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/deployments")
+      val cli: WSRequest = client(s"/apis/apps/v1/namespaces/$namespace/deployments")
       () =>
         cli
           .addHttpHeaders(
@@ -369,7 +369,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
 
   def fetchDeployment(namespace: String, name: String): Future[Option[KubernetesDeployment]] = {
-    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/deployments/$name", false)
+    val cli: WSRequest = client(s"/apis/apps/v1/namespaces/$namespace/deployments/$name", false)
     cli
       .addHttpHeaders(
         "Accept" -> "application/json"
@@ -624,7 +624,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
 
   def patchDeployment(namespace: String, name: String, body: JsValue): Future[Option[KubernetesDeployment]] = {
-    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/deployments/$name", false)
+    val cli: WSRequest = client(s"/apis/apps/v1/namespaces/$namespace/deployments/$name", false)
     cli
       .addHttpHeaders(
         "Accept"       -> "application/json",

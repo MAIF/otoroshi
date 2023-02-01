@@ -97,7 +97,6 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext).syncIntervalSeconds.seconds.some
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    println("kube crds jobStart")
     logger.info("start")
     stopCommand.set(false)
     lastWatchStopped.set(true)
@@ -1762,14 +1761,16 @@ object KubernetesCRDsJob {
       Try {
         if (logger.isDebugEnabled) logger.debug("patching coredns config. with otoroshi mesh")
         val dnsConfigFile         = if (azure) "otoroshi.server" else "Corefile"
-        val coredns17: Boolean = {
+        val coredns17: Boolean = Try {
           coredns
             .flatMap { cdns =>
-              val container = (cdns.raw \ "spec" \ "containers")
-                .as[JsArray]
+              val containers = cdns.raw.select("spec").select("containers").asOpt[JsArray]
+                .orElse(cdns.raw.select("spec").select("template").select("spec").select("containers").asOpt[JsArray])
+                .getOrElse(JsArray.empty)
+              val coreDnsContainer = containers
                 .value
                 .find(_.select("name").asOpt[String].contains("coredns"))
-              container.flatMap(_.select("image").asOpt[String].map(_.split(":").last.replace(".", "")).map {
+              coreDnsContainer.flatMap(_.select("image").asOpt[String].map(_.split(":").last.replace(".", "").applyOnWithPredicate(_.startsWith("v"))(_.substring(1))).map {
                 case version if version.length == 2 => Try(version.toInt > 16).getOrElse(false)
                 case version if version.length == 3 => Try(version.toInt > 169).getOrElse(false)
                 case version if version.length == 4 => Try(version.toInt > 1699).getOrElse(false)
@@ -1777,7 +1778,12 @@ object KubernetesCRDsJob {
                 case _                              => false
               })
             }
-            .getOrElse(false)
+            .getOrElse(true)
+        } match {
+          case Failure(e) =>
+            logger.error("error while extracting coredns version", e)
+            true
+          case Success(r) => r
         }
         val upstream              = if (coredns17) "" else "upstream"
         val coreDnsNameEnv        = conf.coreDnsEnv.map(e => s"$e-").getOrElse("")
@@ -1796,7 +1802,7 @@ object KubernetesCRDsJob {
            |        fallthrough in-addr.arpa ip6.arpa
            |    }
            |    rewrite name regex (.*)\\.${coreDnsDomainRegexEnv}${conf.meshDomain
-            .replaceAll("\\.", """\\\\.""")} ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+            .replaceAll("\\.", "\\\\.")} ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
            |    forward . /etc/resolv.conf
            |    cache 30
            |    loop
@@ -1928,6 +1934,7 @@ object KubernetesCRDsJob {
           logger.info("no coredns deployment. moving to coredns configmap matching")
           fetchCorednsConfig(None)
         case Some(coredns) => {
+          logger.info("coredns deployment found. now fetching configmap")
           fetchCorednsConfig(coredns.some)
         }
       }.andThen {
