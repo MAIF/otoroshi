@@ -11,6 +11,7 @@ import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.util.Failure
 
 case class TailscaleStatusPeer(raw: JsValue) {
   lazy val id: String = raw.select("ID").asString
@@ -34,6 +35,7 @@ class TailscaleLocalApiClientLinux(env: Env) {
 
   def status(): Future[TailscaleStatus] = {
     val mono = client
+      .responseTimeout(java.time.Duration.ofMillis(2000))
       .headers(h => h
         .add("Tailscale-Cap", "57")
         .add("Authentication", s"Basic ${":no token on linux".byteString.encodeBase64.utf8String}")
@@ -43,7 +45,9 @@ class TailscaleLocalApiClientLinux(env: Env) {
       .responseContent()
       .aggregate()
       .asString()
-    ReactiveStreamUtils.MonoUtils.toFuture(mono).map(_.parseJson).map(TailscaleStatus.apply)
+    ReactiveStreamUtils.MonoUtils.toFuture(mono).map(_.parseJson).map(TailscaleStatus.apply).andThen {
+      case Failure(exception) => exception.printStackTrace()
+    }
   }
 
   def fetchCert(domain: String): Future[TailscaleCert] = {
