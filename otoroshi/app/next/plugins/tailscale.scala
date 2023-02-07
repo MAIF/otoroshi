@@ -9,6 +9,7 @@ import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import reactor.netty.http.client.HttpClient
+import reactor.netty.resources.DefaultLoopResourcesHelper
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,7 +34,7 @@ class TailscaleLocalApiClientLinux(env: Env) {
 
   private val client = HttpClient
       .create()
-      .runOn(EventLoopUtils.tailscaleResources())
+      .runOn(DefaultLoopResourcesHelper.createEpollLoop("tailscale-group", 2, true))
       .remoteAddress(() => new DomainSocketAddress("/run/tailscale/tailscaled.sock"))
 
   def status(): Future[TailscaleStatus] = {
