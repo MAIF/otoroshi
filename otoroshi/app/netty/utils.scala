@@ -12,8 +12,10 @@ import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits._
 import reactor.netty.resources.LoopResources
 import play.core.NamedThreadFactory
+import sangria.schema.InstanceCheck.field
 
-import java.lang.reflect.Constructor
+import java.lang.reflect.{Constructor, Field, Modifier}
+import scala.util.Try
 
 sealed trait TlsVersion {
   def name: String
@@ -51,18 +53,16 @@ object EventLoopUtils {
   def setupEpoll(): AnyRef = {
     val c1 = Class.forName("reactor.netty.resources.DefaultLoopNativeDetector")
     val c2 = Class.forName("reactor.netty.resources.DefaultLoopEpoll")
-    val field = Option(c1.getField("INSTANCE")).getOrElse(c1.getDeclaredField("INSTANCE"))
+    val field = Try(c1.getField("INSTANCE")).toOption.flatMap(Option.apply).orElse(Try(c1.getDeclaredField("INSTANCE")).toOption.flatMap(Option.apply)).get
     field.setAccessible(true)
+    val modifiers = classOf[Field].getDeclaredField("modifiers")
+    modifiers.setAccessible(true)
+    modifiers.setInt(field, field.getModifiers & ~Modifier.FINAL)
     val old = field.get(null)
-    field.set(null, c2.newInstance())
+    val const = c2.getDeclaredConstructor()
+    const.setAccessible(true)
+    field.set(null, const.newInstance())
     old
-  }
-
-  def setupActualNative(old: AnyRef): Unit = {
-    val c1 = Class.forName("reactor.netty.resources.DefaultLoopNativeDetector")
-    val field = Option(c1.getField("INSTANCE")).getOrElse(c1.getDeclaredField("INSTANCE"))
-    field.setAccessible(true)
-    field.set(null, old)
   }
 
   def createWithoutNative(nThread: Int): EventLoopGroupCreation = {
