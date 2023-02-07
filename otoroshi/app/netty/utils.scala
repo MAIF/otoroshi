@@ -13,6 +13,8 @@ import otoroshi.utils.syntax.implicits._
 import reactor.netty.resources.LoopResources
 import play.core.NamedThreadFactory
 
+import java.lang.reflect.Constructor
+
 sealed trait TlsVersion {
   def name: String
 }
@@ -44,6 +46,26 @@ object EventLoopUtils {
 
   private val threadFactory = NamedThreadFactory("otoroshi-netty-event-loop")
 
+  def setupEpoll(): AnyRef = {
+    val c1 = Class.forName("reactor.netty.resources.DefaultLoopNativeDetector")
+    val c2 = Class.forName("reactor.netty.resources.DefaultLoopEpoll")
+    println(c1)
+    println(c2)
+    val field = Option(c1.getField("INSTANCE")).getOrElse(c1.getDeclaredField("INSTANCE"))
+    println(field)
+    field.setAccessible(true)
+    val old = field.get(null)
+    field.set(null, c2.newInstance())
+    old
+  }
+
+  def setupActualNative(old: AnyRef): Unit = {
+    val c1 = Class.forName("reactor.netty.resources.DefaultLoopNativeDetector")
+    val field = Option(c1.getField("INSTANCE")).getOrElse(c1.getDeclaredField("INSTANCE"))
+    field.setAccessible(true)
+    field.set(null, old)
+  }
+
   def createWithoutNative(nThread: Int): EventLoopGroupCreation = {
     val channelHttp = new NioServerSocketChannel()
     val evlGroupHttp = new NioEventLoopGroup(nThread, threadFactory)
@@ -74,11 +96,11 @@ object EventLoopUtils {
       val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(nThread, threadFactory)
       evlGroupHttp.register(channelHttp).sync().await()
       EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
-    /*} else if (config.isIOUring && io.netty.incubator.channel.uring.IOUring.isAvailable) {
+    } else if (config.isIOUring && io.netty.incubator.channel.uring.IOUring.isAvailable) {
       val channelHttp  = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
       val evlGroupHttp = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(nThread, threadFactory)
       evlGroupHttp.register(channelHttp).sync().await()
-      EventLoopGroupCreation(evlGroupHttp, Some("IO-Uring"))*/
+      EventLoopGroupCreation(evlGroupHttp, Some("IO-Uring"))
     } else if (config.isKQueue && io.netty.channel.kqueue.KQueue.isAvailable) {
       val channelHttp  = new io.netty.channel.kqueue.KQueueServerSocketChannel()
       val evlGroupHttp = new io.netty.channel.kqueue.KQueueEventLoopGroup(nThread, threadFactory)

@@ -4,15 +4,14 @@ import io.netty.channel.unix.DomainSocketAddress
 import otoroshi.env.Env
 import otoroshi.netty.EventLoopUtils
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
+import otoroshi.script._
 import otoroshi.utils.reactive.ReactiveStreamUtils
+import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import reactor.netty.http.client.HttpClient
-import otoroshi.utils.syntax.implicits._
-import reactor.netty.resources.LoopResources
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
 case class TailscaleStatusPeer(raw: JsValue) {
@@ -32,10 +31,14 @@ class TailscaleLocalApiClientLinux(env: Env) {
 
   private implicit val ec = env.otoroshiExecutionContext
 
-  private val client = HttpClient
-    .create()
-    //.runOn(EventLoopUtils.createEpollDomainSocket(2).group)
-    .remoteAddress(() => new DomainSocketAddress("/run/tailscale/tailscaled.sock"))
+  private val client = {
+    val old = EventLoopUtils.setupEpoll()
+    val cli = HttpClient
+      .create()
+      .remoteAddress(() => new DomainSocketAddress("/run/tailscale/tailscaled.sock"))
+    EventLoopUtils.setupActualNative(old)
+    cli
+  }
 
   def status(): Future[TailscaleStatus] = {
     val mono = client
