@@ -40,6 +40,13 @@ object TlsVersion       {
 case class EventLoopGroupCreation(group: EventLoopGroup, native: Option[String])
 
 object EventLoopUtils {
+  def createWithoutNative(nThread: Int): EventLoopGroupCreation = {
+    val threadFactory = NamedThreadFactory("otoroshi-netty-event-loop")
+    val channelHttp = new NioServerSocketChannel()
+    val evlGroupHttp = new NioEventLoopGroup(nThread, threadFactory)
+    evlGroupHttp.register(channelHttp)
+    EventLoopGroupCreation(evlGroupHttp, None)
+  }
   def create(config: NativeSettings, nThread: Int): EventLoopGroupCreation = {
     // LoopResources.create("epoll-loop", 1, nThread, true)
     val threadFactory = NamedThreadFactory("otoroshi-netty-event-loop")

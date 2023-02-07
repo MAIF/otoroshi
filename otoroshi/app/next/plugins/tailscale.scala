@@ -2,6 +2,7 @@ package otoroshi.next.plugins
 
 import io.netty.channel.unix.DomainSocketAddress
 import otoroshi.env.Env
+import otoroshi.netty.EventLoopUtils
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import otoroshi.utils.reactive.ReactiveStreamUtils
@@ -30,8 +31,10 @@ class TailscaleLocalApiClientLinux(env: Env) {
 
   private implicit val ec = env.otoroshiExecutionContext
 
-  private val client = HttpClient.create()
+  private val client = HttpClient
+    .create()
     .remoteAddress(() => new DomainSocketAddress("/run/tailscale/tailscaled.sock"))
+    .runOn(EventLoopUtils.createWithoutNative(2).group)
 
   def status(): Future[TailscaleStatus] = {
     val mono = client
@@ -92,7 +95,7 @@ class TailscaleTargetsJob extends Job {
 
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
 
-  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.hours.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     println("\n\nfetching tailscale peers")
