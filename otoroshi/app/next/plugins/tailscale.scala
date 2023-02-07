@@ -113,8 +113,12 @@ class TailscaleTargetsJob extends Job {
       }
       if (!already) {
         already = true
+        println("fetch cert")
         client.fetchCert(s"test-1.${sys.env.get("TAILSCALE_DOMAIN").getOrElse("foo.ts.net")}").map { cert =>
           cert.raw.prettify.debugPrintln
+          ()
+        }.andThen {
+          case Failure(e) => e.printStackTrace()
         }
       } else {
         ().vfuture
