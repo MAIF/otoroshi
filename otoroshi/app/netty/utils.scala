@@ -69,6 +69,7 @@ object EventLoopUtils {
       field.set(null, const.newInstance())
       println(old)
       val group = LoopResources.create("tailscale-group", 2, true)
+      group.onClient(true)
       tailscaleGroupRef.set(group)
       field.set(null, old)
     } else {
