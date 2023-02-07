@@ -37,11 +37,12 @@ class TailscaleLocalApiClientLinux(env: Env) {
     val mono = client
       .responseTimeout(java.time.Duration.ofMillis(2000))
       .headers(h => h
+        .add("Host", "local-tailscaled.sock")
         .add("Tailscale-Cap", "57")
         .add("Authentication", s"Basic ${":no token on linux".byteString.encodeBase64.utf8String}")
       )
       .get()
-      .uri("http://local-tailscaled.sock/localapi/v0/status")
+      .uri("/localapi/v0/status")
       .responseContent()
       .aggregate()
       .asString()
@@ -53,11 +54,12 @@ class TailscaleLocalApiClientLinux(env: Env) {
   def fetchCert(domain: String): Future[TailscaleCert] = {
     val mono = client
       .headers(h => h
+        .add("Host", "local-tailscaled.sock")
         .add("Tailscale-Cap", "57")
         .add("Authentication", s"Basic ${":no token on linux".byteString.encodeBase64.utf8String}")
       )
       .get()
-      .uri(s"http://local-tailscaled.sock/localapi/v0/cert/${domain}?type=pair")
+      .uri(s"/localapi/v0/cert/${domain}?type=pair")
       .responseContent()
       .aggregate()
       .asString()
