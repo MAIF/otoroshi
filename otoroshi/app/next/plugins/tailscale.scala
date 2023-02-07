@@ -36,7 +36,7 @@ class TailscaleLocalApiClientLinux(env: Env) {
     val cli = HttpClient
       .create()
       .remoteAddress(() => new DomainSocketAddress("/run/tailscale/tailscaled.sock"))
-    EventLoopUtils.setupActualNative(old)
+    // EventLoopUtils.setupActualNative(old)
     cli
   }
 
