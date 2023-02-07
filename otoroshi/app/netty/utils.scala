@@ -49,10 +49,7 @@ object EventLoopUtils {
   def setupEpoll(): AnyRef = {
     val c1 = Class.forName("reactor.netty.resources.DefaultLoopNativeDetector")
     val c2 = Class.forName("reactor.netty.resources.DefaultLoopEpoll")
-    println(c1)
-    println(c2)
     val field = Option(c1.getField("INSTANCE")).getOrElse(c1.getDeclaredField("INSTANCE"))
-    println(field)
     field.setAccessible(true)
     val old = field.get(null)
     field.set(null, c2.newInstance())

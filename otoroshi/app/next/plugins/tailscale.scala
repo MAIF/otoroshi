@@ -32,7 +32,7 @@ class TailscaleLocalApiClientLinux(env: Env) {
   private implicit val ec = env.otoroshiExecutionContext
 
   private val client = {
-    val old = EventLoopUtils.setupEpoll()
+    // val old = EventLoopUtils.setupEpoll()
     val cli = HttpClient
       .create()
       .remoteAddress(() => new DomainSocketAddress("/run/tailscale/tailscaled.sock"))
