@@ -74,11 +74,11 @@ object EventLoopUtils {
       val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(nThread, threadFactory)
       evlGroupHttp.register(channelHttp).sync().await()
       EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
-    } else if (config.isIOUring && io.netty.incubator.channel.uring.IOUring.isAvailable) {
+    /*} else if (config.isIOUring && io.netty.incubator.channel.uring.IOUring.isAvailable) {
       val channelHttp  = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
       val evlGroupHttp = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(nThread, threadFactory)
       evlGroupHttp.register(channelHttp).sync().await()
-      EventLoopGroupCreation(evlGroupHttp, Some("IO-Uring"))
+      EventLoopGroupCreation(evlGroupHttp, Some("IO-Uring"))*/
     } else if (config.isKQueue && io.netty.channel.kqueue.KQueue.isAvailable) {
       val channelHttp  = new io.netty.channel.kqueue.KQueueServerSocketChannel()
       val evlGroupHttp = new io.netty.channel.kqueue.KQueueEventLoopGroup(nThread, threadFactory)
