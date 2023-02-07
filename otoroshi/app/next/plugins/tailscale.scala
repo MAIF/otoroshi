@@ -27,7 +27,7 @@ case class TailscaleStatus(raw: JsValue) {
   lazy val peers: Seq[TailscaleStatusPeer] = raw.select("Peer").asOpt[JsObject].getOrElse(Json.obj()).value.values.toSeq.map(v => TailscaleStatusPeer(v))
   lazy val onlinePeers: Seq[TailscaleStatusPeer] = peers.filter(_.online)
 }
-case class TailscaleCert(raw: JsValue)
+case class TailscaleCert(raw: String)
 
 class TailscaleLocalApiClientLinux(env: Env) {
 
@@ -68,7 +68,7 @@ class TailscaleLocalApiClientLinux(env: Env) {
       .responseContent()
       .aggregate()
       .asString()
-    ReactiveStreamUtils.MonoUtils.toFuture(mono).map(_.parseJson).map(TailscaleCert.apply)
+    ReactiveStreamUtils.MonoUtils.toFuture(mono).map(TailscaleCert.apply)
   }
 }
 
@@ -113,9 +113,10 @@ class TailscaleTargetsJob extends Job {
       }
       if (!already) {
         already = true
-        println("fetch cert")
-        client.fetchCert(s"test-1.${sys.env.get("TAILSCALE_DOMAIN").getOrElse("foo.ts.net")}").map { cert =>
-          cert.raw.prettify.debugPrintln
+        val domain = s"test-1.${sys.env.get("TAILSCALE_DOMAIN").getOrElse("foo.ts.net")}"
+        println("fetch cert", domain)
+        client.fetchCert(domain).map { cert =>
+          cert.raw.debugPrintln
           ()
         }.andThen {
           case Failure(e) => e.printStackTrace()
