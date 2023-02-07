@@ -57,6 +57,13 @@ object EventLoopUtils {
     EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
   }
 
+  def createEpollDomainSocket(nThread: Int): EventLoopGroupCreation = {
+    val channelHttp = new io.netty.channel.epoll.EpollServerSocketChannel()
+    val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(nThread, threadFactory)
+    evlGroupHttp.register(channelHttp).sync().await()
+    EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
+  }
+
   def create(config: NativeSettings, nThread: Int): EventLoopGroupCreation = {
     // LoopResources.create("epoll-loop", 1, nThread, true)
     if (config.isEpoll && io.netty.channel.epoll.Epoll.isAvailable) {
