@@ -52,6 +52,8 @@ object EventLoopUtils {
 
   setupTailscaleEpollResources()
 
+  def tailscaleResources(): LoopResources = tailscaleGroupRef.get()
+
   def setupTailscaleEpollResources(): Unit = Try {
     if (Epoll.isAvailable) {
       val c1 = Class.forName("reactor.netty.resources.DefaultLoopNativeDetector")
