@@ -18,13 +18,14 @@ object DefaultLoopResourcesHelper {
     println("hasNative", LoopResources.hasNativeSupport())
     res.onClient(true)
     res.onServer(true)
+    res.onServerSelect(true)
     println("server", res.cacheNativeServerLoops.get())
     println("client", res.cacheNativeClientLoops.get())
     println("select", res.cacheNativeSelectLoops.get())
     res.serverLoops.set(res.cacheNativeServerLoops.get())
     res.clientLoops.set(res.cacheNativeClientLoops.get())
     res.serverSelectLoops.set(res.cacheNativeSelectLoops.get())
-    // field.set(null, old)
+    field.set(null, old)
     res
   }
 }
