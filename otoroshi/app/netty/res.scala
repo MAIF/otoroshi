@@ -15,6 +15,7 @@ object DefaultLoopResourcesHelper {
     field.set(null, new DefaultLoopEpoll())
     println("old", old)
     val res = new DefaultLoopResources(name, -1, workers, daemon)
+    println("hasNative", LoopResources.hasNativeSupport())
     res.onClient(true)
     res.onServer(true)
     println("server", res.cacheNativeServerLoops.get())
