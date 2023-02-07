@@ -40,16 +40,25 @@ object TlsVersion       {
 case class EventLoopGroupCreation(group: EventLoopGroup, native: Option[String])
 
 object EventLoopUtils {
+
+  private val threadFactory = NamedThreadFactory("otoroshi-netty-event-loop")
+
   def createWithoutNative(nThread: Int): EventLoopGroupCreation = {
-    val threadFactory = NamedThreadFactory("otoroshi-netty-event-loop")
     val channelHttp = new NioServerSocketChannel()
     val evlGroupHttp = new NioEventLoopGroup(nThread, threadFactory)
     evlGroupHttp.register(channelHttp)
     EventLoopGroupCreation(evlGroupHttp, None)
   }
+
+  def createEpoll(nThread: Int): EventLoopGroupCreation = {
+    val channelHttp = new io.netty.channel.epoll.EpollServerSocketChannel()
+    val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(nThread, threadFactory)
+    evlGroupHttp.register(channelHttp).sync().await()
+    EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
+  }
+
   def create(config: NativeSettings, nThread: Int): EventLoopGroupCreation = {
     // LoopResources.create("epoll-loop", 1, nThread, true)
-    val threadFactory = NamedThreadFactory("otoroshi-netty-event-loop")
     if (config.isEpoll && io.netty.channel.epoll.Epoll.isAvailable) {
       // java.lang.IllegalStateException: channel not registered to an event loop on linux !!!
       val channelHttp  = new io.netty.channel.epoll.EpollServerSocketChannel()
