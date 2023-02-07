@@ -18,6 +18,8 @@ object DefaultLoopResourcesHelper {
     res.onClient(true)
     res.onServer(true)
     println(res.cacheNativeServerLoops.get())
+    println(res.cacheNativeClientLoops.get())
+    println(res.cacheNativeSelectLoops.get())
     field.set(null, old)
     res
   }
