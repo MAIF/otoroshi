@@ -2,6 +2,7 @@ package otoroshi.netty
 
 import akka.util.ByteString
 import io.netty.buffer.{ByteBuf, ByteBufHolder}
+import io.netty.channel.epoll.EpollDomainSocketChannel
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.channel.{ChannelDuplexHandler, ChannelHandlerContext, ChannelPromise, EventLoopGroup}
@@ -59,7 +60,7 @@ object EventLoopUtils {
 
   def createEpollDomainSocket(nThread: Int): EventLoopGroupCreation = {
     println(s"available: ${io.netty.channel.epoll.Epoll.isAvailable}")
-    val channelHttp = new io.netty.channel.epoll.EpollServerSocketChannel()
+    val channelHttp = new EpollDomainSocketChannel()
     val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(nThread, threadFactory)
     evlGroupHttp.register(channelHttp).sync().await()
     EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
