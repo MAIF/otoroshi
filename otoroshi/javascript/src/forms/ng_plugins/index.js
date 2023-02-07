@@ -65,6 +65,7 @@ import SendOtoroshiHeadersBack from './SendOtoroshiHeadersBack';
 import SnowMonkeyChaos from './SnowMonkeyChaos';
 import StaticBackend from './StaticBackend';
 import StaticResponse from './StaticResponse';
+import TailscaleSelectTargetByName from './TailscaleSelectTargetByName';
 import TcpTunnel from './TcpTunnel';
 import TunnelPlugin from './TunnelPlugin';
 import UdpTunnel from './UdpTunnel';
@@ -142,6 +143,7 @@ export const Plugins = [
   SnowMonkeyChaos,
   StaticBackend,
   StaticResponse,
+  TailscaleSelectTargetByName,
   TcpTunnel,
   TunnelPlugin,
   UdpTunnel,
