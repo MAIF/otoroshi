@@ -34,8 +34,8 @@ class TailscaleLocalApiClientLinux(env: Env) {
 
   private val client = HttpClient
     .create()
-    .remoteAddress(() => new DomainSocketAddress("/run/tailscale/tailscaled.sock"))
     .runOn(EventLoopUtils.createEpollDomainSocket(2).group)
+    .remoteAddress(() => new DomainSocketAddress("/run/tailscale/tailscaled.sock"))
 
   def status(): Future[TailscaleStatus] = {
     val mono = client
