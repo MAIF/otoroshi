@@ -47,36 +47,6 @@ case class EventLoopGroupCreation(group: EventLoopGroup, native: Option[String])
 object EventLoopUtils {
 
   private val threadFactory = NamedThreadFactory("otoroshi-netty-event-loop")
-  //private val tailscaleGroupRef = new AtomicReference[LoopResources]()
-//
-  //setupTailscaleEpollResources()
-//
-  //def tailscaleResources(): LoopResources = tailscaleGroupRef.get()
-//
-  //def setupTailscaleEpollResources(): Unit = Try {
-  //  if (Epoll.isAvailable) {
-  //    val c1 = Class.forName("reactor.netty.resources.DefaultLoopNativeDetector")
-  //    val c2 = Class.forName("reactor.netty.resources.DefaultLoopEpoll")
-  //    val field = Try(c1.getField("INSTANCE")).toOption.flatMap(Option.apply).orElse(Try(c1.getDeclaredField("INSTANCE")).toOption.flatMap(Option.apply)).get
-  //    field.setAccessible(true)
-  //    val modifiers = classOf[Field].getDeclaredField("modifiers")
-  //    modifiers.setAccessible(true)
-  //    modifiers.setInt(field, field.getModifiers & ~Modifier.FINAL)
-  //    val old = field.get(null)
-  //    val const = c2.getDeclaredConstructor()
-  //    const.setAccessible(true)
-  //    field.set(null, const.newInstance())
-  //    println(old)
-  //    val group = LoopResources.create("tailscale-group", 2, true)
-  //    group.onClient(true)
-  //    group.onServer(true)
-  //    tailscaleGroupRef.set(group)
-  //    field.set(null, old)
-  //  } else {
-  //    val group = LoopResources.create("tailscale-group", 2, true)
-  //    tailscaleGroupRef.set(group)
-  //  }
-  //}
 
   def createWithoutNative(nThread: Int): EventLoopGroupCreation = {
     val channelHttp = new NioServerSocketChannel()

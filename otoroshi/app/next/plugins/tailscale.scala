@@ -1,5 +1,6 @@
 package otoroshi.next.plugins
 
+import io.netty.channel.epoll.Epoll
 import io.netty.channel.unix.DomainSocketAddress
 import otoroshi.env.Env
 import otoroshi.netty.EventLoopUtils
@@ -34,7 +35,7 @@ class TailscaleLocalApiClientLinux(env: Env) {
 
   private val client = HttpClient
       .create()
-      .runOn(DefaultLoopResourcesHelper.createEpollLoop("tailscale-group", 2, true))
+      .runOn(DefaultLoopResourcesHelper.getEpollLoop("tailscale-group", 2, true))
       .remoteAddress(() => new DomainSocketAddress("/run/tailscale/tailscaled.sock"))
 
   def status(): Future[TailscaleStatus] = {
@@ -99,14 +100,18 @@ class TailscaleTargetsJob extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    println("\n\nfetching tailscale peers")
-    val client = new TailscaleLocalApiClientLinux(env)
-    client.status().map { status =>
-      status.onlinePeers.map { peer =>
-        s"  - ${peer.id} - ${peer.dnsname} - ${peer.hostname}"
+    if (Epoll.isAvailable) {
+      println("\n\nfetching tailscale peers")
+      val client = new TailscaleLocalApiClientLinux(env)
+      client.status().map { status =>
+        status.onlinePeers.map { peer =>
+          s"  - ${peer.id} - ${peer.dnsname} - ${peer.hostname}"
+        }
+          .mkString("\n")
+          .debugPrintln
       }
-      .mkString("\n")
-      .debugPrintln
+    } else {
+      ().vfuture
     }
   }
 }
