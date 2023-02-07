@@ -23,7 +23,7 @@ object DefaultLoopResourcesHelper {
     res.serverLoops.set(res.cacheNativeServerLoops.get())
     res.clientLoops.set(res.cacheNativeClientLoops.get())
     res.serverSelectLoops.set(res.cacheNativeSelectLoops.get())
-    field.set(null, old)
+    // field.set(null, old)
     res
   }
 }
