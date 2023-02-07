@@ -74,6 +74,7 @@ class TailscaleLocalApiClientLinux(env: Env) {
 
 class TailscaleTargetsJob extends Job {
 
+  var already = false
 
   override def categories: Seq[NgPluginCategory] = Seq.empty
 
@@ -109,6 +110,14 @@ class TailscaleTargetsJob extends Job {
         }
           .mkString("\n")
           .debugPrintln
+      }
+      if (!already) {
+        already = true
+        client.fetchCert(s"test-1.${sys.env.get("TAILSCALE_DOMAIN").getOrElse("foo.ts.net")}").map { cert =>
+          cert.raw.prettify.debugPrintln
+        }
+      } else {
+        ().vfuture
       }
     } else {
       ().vfuture
