@@ -46,6 +46,8 @@ object EventLoopUtils {
 
   private val threadFactory = NamedThreadFactory("otoroshi-netty-event-loop")
 
+  setupEpoll()
+
   def setupEpoll(): AnyRef = {
     val c1 = Class.forName("reactor.netty.resources.DefaultLoopNativeDetector")
     val c2 = Class.forName("reactor.netty.resources.DefaultLoopEpoll")
