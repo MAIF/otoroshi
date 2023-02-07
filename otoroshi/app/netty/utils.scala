@@ -2,7 +2,7 @@ package otoroshi.netty
 
 import akka.util.ByteString
 import io.netty.buffer.{ByteBuf, ByteBufHolder}
-import io.netty.channel.epoll.EpollDomainSocketChannel
+import io.netty.channel.epoll.{Epoll, EpollDomainSocketChannel}
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.channel.{ChannelDuplexHandler, ChannelHandlerContext, ChannelPromise, EventLoopGroup}
@@ -15,6 +15,7 @@ import play.core.NamedThreadFactory
 import sangria.schema.InstanceCheck.field
 
 import java.lang.reflect.{Constructor, Field, Modifier}
+import java.util.concurrent.atomic.AtomicReference
 import scala.util.Try
 
 sealed trait TlsVersion {
@@ -47,22 +48,31 @@ case class EventLoopGroupCreation(group: EventLoopGroup, native: Option[String])
 object EventLoopUtils {
 
   private val threadFactory = NamedThreadFactory("otoroshi-netty-event-loop")
+  private val tailscaleGroupRef = new AtomicReference[LoopResources]()
 
-  setupEpoll()
+  setupTailscaleEpollResources()
 
-  def setupEpoll(): AnyRef = {
-    val c1 = Class.forName("reactor.netty.resources.DefaultLoopNativeDetector")
-    val c2 = Class.forName("reactor.netty.resources.DefaultLoopEpoll")
-    val field = Try(c1.getField("INSTANCE")).toOption.flatMap(Option.apply).orElse(Try(c1.getDeclaredField("INSTANCE")).toOption.flatMap(Option.apply)).get
-    field.setAccessible(true)
-    val modifiers = classOf[Field].getDeclaredField("modifiers")
-    modifiers.setAccessible(true)
-    modifiers.setInt(field, field.getModifiers & ~Modifier.FINAL)
-    val old = field.get(null)
-    val const = c2.getDeclaredConstructor()
-    const.setAccessible(true)
-    field.set(null, const.newInstance())
-    old
+  def setupTailscaleEpollResources(): Unit = Try {
+    if (Epoll.isAvailable) {
+      val c1 = Class.forName("reactor.netty.resources.DefaultLoopNativeDetector")
+      val c2 = Class.forName("reactor.netty.resources.DefaultLoopEpoll")
+      val field = Try(c1.getField("INSTANCE")).toOption.flatMap(Option.apply).orElse(Try(c1.getDeclaredField("INSTANCE")).toOption.flatMap(Option.apply)).get
+      field.setAccessible(true)
+      val modifiers = classOf[Field].getDeclaredField("modifiers")
+      modifiers.setAccessible(true)
+      modifiers.setInt(field, field.getModifiers & ~Modifier.FINAL)
+      val old = field.get(null)
+      val const = c2.getDeclaredConstructor()
+      const.setAccessible(true)
+      field.set(null, const.newInstance())
+      println(old)
+      val group = LoopResources.create("tailscale-group", 2, true)
+      tailscaleGroupRef.set(group)
+      field.set(null, old)
+    } else {
+      val group = LoopResources.create("tailscale-group", 2, true)
+      tailscaleGroupRef.set(group)
+    }
   }
 
   def createWithoutNative(nThread: Int): EventLoopGroupCreation = {
