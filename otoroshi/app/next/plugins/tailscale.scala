@@ -94,7 +94,7 @@ class TailscaleLocalApiClient(env: Env) {
       .headers(h => h
         .add("Host", "local-tailscaled.sock")
         .add("Tailscale-Cap", "57")
-        .add("Authentication", s"Basic ${token()}")
+        .add("Authorization", s"Basic ${token()}")
       )
       .get()
       .uri(uri)
@@ -113,6 +113,10 @@ class TailscaleLocalApiClient(env: Env) {
 
   def status(): Future[TailscaleStatus] = {
     callGet("/localapi/v0/status").map(_.json).map(TailscaleStatus.apply)
+  }
+
+  def fetchCertRaw(domain: String): Future[ReactorResponse] = {
+    callGet(s"/localapi/v0/cert/${domain}?type=pair")
   }
 
   def fetchCert(domain: String): Future[TailscaleCert] = {
@@ -263,6 +267,58 @@ class TailscaleSelectTargetByName extends NgRequestTransformer {
               ).toString
             ).right
           }
+        }
+      }
+    }
+  }
+}
+
+
+
+class TailscaleFetchCertificate extends NgRequestTransformer {
+
+  import scala.jdk.CollectionConverters._
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
+
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean = true
+
+  override def core: Boolean = true
+
+  override def usesCallbacks: Boolean = false
+
+  override def transformsRequest: Boolean = true
+
+  override def transformsResponse: Boolean = false
+
+  override def transformsError: Boolean = false
+
+  override def isTransformRequestAsync: Boolean = true
+
+  override def isTransformResponseAsync: Boolean = false
+
+  override def name: String = "Tailscale fetch certificate"
+
+  override def description: Option[String] = "This plugine".some
+
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+
+  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+    ctx.otoroshiRequest.queryParam("domain") match {
+      case None => Left(Results.BadRequest(Json.obj("error" -> "bad_request"))).vfuture
+      case Some(domain) => {
+        val client = new TailscaleLocalApiClient(env)
+        client.fetchCertRaw(domain).map { resp =>
+          val headers: Map[String, String] = resp.response.responseHeaders().asScala.toSeq.map(t => (t.getKey, t.getValue)).toMap
+          Left(Results.Ok(Json.obj(
+            "status" -> resp.response.status.code,
+            "headers" -> headers,
+            "body" -> resp.body
+          )))
         }
       }
     }

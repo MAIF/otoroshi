@@ -94,6 +94,8 @@ case class NgPluginHttpRequest(
   // }
   // }
 
+  def queryParam(name: String): Option[String] = uri.query().get(name).orElse(uri.query().get(name.toLowerCase()))
+
   def header(name: String): Option[String] = headers.get(name).orElse(headers.get(name.toLowerCase()))
 
   def json: JsValue = {
