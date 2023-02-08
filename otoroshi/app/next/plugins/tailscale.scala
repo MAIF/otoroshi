@@ -2,6 +2,7 @@ package otoroshi.next.plugins
 
 import akka.stream.Materializer
 import io.netty.channel.unix.DomainSocketAddress
+import io.netty.handler.logging.LogLevel
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.script._
@@ -14,8 +15,10 @@ import play.api.mvc.{Result, Results}
 import reactor.netty.http.client.{HttpClient, HttpClientResponse}
 import reactor.netty.resources.DefaultLoopResourcesHelper
 
-import java.io.{File, FileNotFoundException}
+import java.io.{BufferedReader, File, FileNotFoundException, InputStreamReader}
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
+import java.util.stream.Collectors
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -47,7 +50,28 @@ class TailscaleLocalApiClient(env: Env) {
 
   private implicit val ec = env.otoroshiExecutionContext
 
-  private val client = HttpClient
+  private lazy val doesMacOSDomainSocketExists = new File(socketAddress()).exists()
+
+  private lazy val (macOSPort, macOSToken) = {
+    // see https://github.com/tailscale/tscert/blob/main/internal/safesocket/safesocket_darwin.go
+    val process = sys.runtime.exec(Array("/usr/sbin/lsof", "-n", "-a", "-c", "IPNExtension"))
+    val out = process.getInputStream
+    val res = process.waitFor()
+    val outStr = new BufferedReader(new InputStreamReader(out, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"))
+    outStr.split("\n").find(_.contains("sameuserproof-")).map { line =>
+      val parts = line.split("sameuserproof-").apply(1).split("-")
+      (parts.head, parts.last)
+    }.getOrElse {
+      ("60000", "token-not-found")
+    }
+  }
+
+  private val client: HttpClient = if (!doesMacOSDomainSocketExists) {
+    HttpClient
+      .create()
+      .baseUrl(s"http://localhost:${macOSPort}")
+  } else {
+    HttpClient
       .create()
       .runOn {
         if (OS.isMac) {
@@ -59,6 +83,7 @@ class TailscaleLocalApiClient(env: Env) {
         }
       }
       .remoteAddress(() => new DomainSocketAddress(socketAddress()))
+  }
 
   private def socketAddress(): String = {
     if (OS.isMac) {
@@ -81,8 +106,7 @@ class TailscaleLocalApiClient(env: Env) {
     if (OS.isLinux) {
       ":no token on linux".byteString.encodeBase64.utf8String
     } else if (OS.isMac) {
-      // TODO: see https://github.com/tailscale/tscert/blob/main/internal/safesocket/safesocket_darwin.go
-      ":xxx"
+      s":${macOSToken}".byteString.encodeBase64.utf8String
     } else {
       ":no token on windows".byteString.encodeBase64.utf8String // ???
     }
@@ -171,8 +195,10 @@ class TailscaleTargetsJob extends Job {
           value = peer.raw.stringify.byteString,
           ttl = 60.seconds.toMillis.some
         )
-      }).map(_ => ())
-    }
+      })
+    } andThen {
+      case Failure(e) => logger.error("error while fetching tailscale status", e)
+    } map(_ => ())
   }
 }
 
@@ -307,7 +333,7 @@ class TailscaleFetchCertificate extends NgRequestTransformer {
 
   override def name: String = "Tailscale fetch certificate"
 
-  override def description: Option[String] = "This plugine".some
+  override def description: Option[String] = "This plugin ...".some
 
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
