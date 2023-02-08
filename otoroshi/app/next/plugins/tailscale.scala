@@ -126,6 +126,8 @@ class TailscaleLocalApiClient(env: Env) {
 
 class TailscaleTargetsJob extends Job {
 
+  private val logger = Logger("otoroshi-job-tailscale-targets")
+
   private val clientRef = new AtomicReference[TailscaleLocalApiClient]()
 
   private def client(env: Env): TailscaleLocalApiClient = {
@@ -163,7 +165,7 @@ class TailscaleTargetsJob extends Job {
     val cli = client(env)
     cli.status().map { status =>
       Future.sequence(status.onlinePeers.map { peer =>
-        // println(s" - peer: ${peer.id} - ${peer.dnsname} - ${peer.hostname}")
+        logger.debug(s"found peer: ${peer.id} - ${peer.dnsname} - ${peer.hostname}")
         env.datastores.rawDataStore.set(
           key = s"${env.storageRoot}:plugins:tailscale:targets:${peer.id}",
           value = peer.raw.stringify.byteString,
@@ -202,6 +204,8 @@ object TailscaleSelectTargetByNameConfig {
 class TailscaleSelectTargetByName extends NgRequestTransformer {
 
   private val counter = new AtomicLong(0L)
+
+  private val logger = Logger("otoroshi-plugin-tailscale-select-target-by-name")
 
   override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
@@ -247,13 +251,13 @@ class TailscaleSelectTargetByName extends NgRequestTransformer {
           } else {
             allPeers.filter(p => hostname == p.hostname)
           }
-          println(s"peers: ${possiblePeers.size}")
+          logger.debug(s"possible peers for '${hostname}': ${possiblePeers.size}")
           if (possiblePeers.isEmpty) {
             Left(Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> "no matching resource found !")))
           } else {
             val index = counter.incrementAndGet() % (if (possiblePeers.nonEmpty) possiblePeers.size else 1)
             val peer = possiblePeers.apply(index.toInt)
-            println(s"choose ${peer.id} - ${peer.hostname} - ${peer.dnsname}")
+            logger.debug(s"selected peer for '$hostname': ${peer.id} - ${peer.hostname} - ${peer.dnsname}")
             val target = targetTemplate.copy(
               id = peer.id,
               hostname = peer.dnsname,
