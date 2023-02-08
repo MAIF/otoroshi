@@ -1,19 +1,20 @@
 package otoroshi.next.plugins
 
 import akka.stream.Materializer
-import io.netty.channel.epoll.Epoll
 import io.netty.channel.unix.DomainSocketAddress
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.script._
-import otoroshi.utils.RegexPool
+import otoroshi.utils.{OS, RegexPool}
 import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
-import reactor.netty.http.client.HttpClient
+import reactor.netty.http.client.{HttpClient, HttpClientResponse}
 import reactor.netty.resources.DefaultLoopResourcesHelper
 
+import java.io.{File, FileNotFoundException}
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,56 +35,98 @@ case class TailscaleStatus(raw: JsValue) {
 
 case class TailscaleCert(raw: String)
 
-class TailscaleLocalApiClientLinux(env: Env) {
+case class ReactorResponse(response: HttpClientResponse, body: String) {
+  def json: JsValue = Json.parse(body)
+}
+
+object TailscaleLocalApiClient {
+  val logger = Logger("otoroshi-tailscale-local-api-client")
+}
+
+class TailscaleLocalApiClient(env: Env) {
 
   private implicit val ec = env.otoroshiExecutionContext
 
   private val client = HttpClient
       .create()
-      .runOn(DefaultLoopResourcesHelper.getEpollLoop("tailscale-group", 2, true))
-      .remoteAddress(() => new DomainSocketAddress("/run/tailscale/tailscaled.sock"))
+      .runOn {
+        if (OS.isMac) {
+          DefaultLoopResourcesHelper.getKQueueLoop("tailscale-group", 2, true)
+        } else if (OS.isLinux) {
+          DefaultLoopResourcesHelper.getEpollLoop("tailscale-group", 2, true)
+        } else {
+          DefaultLoopResourcesHelper.getDefaultLoop("tailscale-group", 2, true)
+        }
+      }
+      .remoteAddress(() => new DomainSocketAddress(socketAddress()))
 
-  def status(): Future[TailscaleStatus] = {
-    val mono = client
+  private def socketAddress(): String = {
+    if (OS.isMac) {
+      "/var/run/tailscaled.socket"
+    } else if (OS.isLinux) {
+      val run = new File("/var/run")
+      if (run.exists() && run.isDirectory) {
+        "/var/run/tailscale/tailscaled.sock"
+      } else {
+        "/run/tailscale/tailscaled.sock"
+      }
+    } else if (OS.isWindows) {
+      "\\\\.\\pipe\\ProtectedPrefix\\Administrators\\Tailscale\\tailscaled"
+    } else {
+      "tailscaled.sock"
+    }
+  }
+
+  private def token(): String = {
+    if (OS.isLinux) {
+      ":no token on linux".byteString.encodeBase64.utf8String
+    } else if (OS.isMac) {
+      // TODO: see https://github.com/tailscale/tscert/blob/main/internal/safesocket/safesocket_darwin.go
+      ":xxx"
+    } else {
+      ":no token on windows".byteString.encodeBase64.utf8String // ???
+    }
+  }
+
+  private def callGet(uri: String): Future[ReactorResponse] = {
+    val rec = client
       .responseTimeout(java.time.Duration.ofMillis(2000))
       .headers(h => h
         .add("Host", "local-tailscaled.sock")
         .add("Tailscale-Cap", "57")
-        .add("Authentication", s"Basic ${":no token on linux".byteString.encodeBase64.utf8String}")
+        .add("Authentication", s"Basic ${token()}")
       )
       .get()
-      .uri("/localapi/v0/status")
-      .responseContent()
-      .aggregate()
-      .asString()
-    ReactiveStreamUtils.MonoUtils.toFuture(mono).map(_.parseJson).map(TailscaleStatus.apply).andThen {
-      case Failure(exception) => exception.printStackTrace()
+      .uri(uri)
+    (for {
+      resp <- ReactiveStreamUtils.MonoUtils.toFuture(rec.response())
+      content <- ReactiveStreamUtils.MonoUtils.toFuture(rec.responseContent().aggregate().asString())
+    } yield {
+      ReactorResponse(resp, content)
+    }).andThen {
+      case Failure(_: FileNotFoundException) =>
+        TailscaleLocalApiClient.logger.error(s"Tailscale socket does not exist at '${socketAddress}'. Maybe tailscaled does not run on your machine ...")
+      case Failure(exception) =>
+        TailscaleLocalApiClient.logger.error("Tailscale call failed", exception)
     }
   }
 
+  def status(): Future[TailscaleStatus] = {
+    callGet("/localapi/v0/status").map(_.json).map(TailscaleStatus.apply)
+  }
+
   def fetchCert(domain: String): Future[TailscaleCert] = {
-    val mono = client
-      .headers(h => h
-        .add("Host", "local-tailscaled.sock")
-        .add("Tailscale-Cap", "57")
-        .add("Authentication", s"Basic ${":no token on linux".byteString.encodeBase64.utf8String}")
-      )
-      .get()
-      .uri(s"/localapi/v0/cert/${domain}?type=pair")
-      .responseContent()
-      .aggregate()
-      .asString()
-    ReactiveStreamUtils.MonoUtils.toFuture(mono).map(TailscaleCert.apply)
+    callGet(s"/localapi/v0/cert/${domain}?type=pair").map(_.body).map(TailscaleCert.apply)
   }
 }
 
 class TailscaleTargetsJob extends Job {
 
-  private val clientRef = new AtomicReference[TailscaleLocalApiClientLinux]()
+  private val clientRef = new AtomicReference[TailscaleLocalApiClient]()
 
-  private def client(env: Env): TailscaleLocalApiClientLinux = {
+  private def client(env: Env): TailscaleLocalApiClient = {
     Option(clientRef.get()).getOrElse {
-      clientRef.compareAndSet(null, new TailscaleLocalApiClientLinux(env))
+      clientRef.compareAndSet(null, new TailscaleLocalApiClient(env))
       clientRef.get()
     }
   }
@@ -113,19 +156,16 @@ class TailscaleTargetsJob extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 30.seconds.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    if (Epoll.isAvailable) {
-      val cli = client(env)
-      cli.status().map { status =>
-        Future.sequence(status.onlinePeers.map { peer =>
-          env.datastores.rawDataStore.set(
-            key = s"${env.storageRoot}:plugins:tailscale:targets:${peer.id}",
-            value = peer.raw.stringify.byteString,
-            ttl = 40.seconds.toMillis.some
-          )
-        }).map(_ => ())
-      }
-    } else {
-      ().vfuture
+    val cli = client(env)
+    cli.status().map { status =>
+      Future.sequence(status.onlinePeers.map { peer =>
+        println(s" - peer: ${peer.id} - ${peer.dnsname} - ${peer.hostname}")
+        env.datastores.rawDataStore.set(
+          key = s"${env.storageRoot}:plugins:tailscale:targets:${peer.id}",
+          value = peer.raw.stringify.byteString,
+          ttl = 40.seconds.toMillis.some
+        )
+      }).map(_ => ())
     }
   }
 }

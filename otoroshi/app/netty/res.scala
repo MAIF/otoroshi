@@ -8,8 +8,26 @@ object DefaultLoopResourcesHelper {
 
   private val cache = new TrieMap[String, LoopResources]()
 
+  def getDefaultLoop(name: String, workers: Int, daemon: Boolean): LoopResources = {
+    val key = s"default-$name-$workers-$daemon"
+    cache.getOrElse(key, {
+      val res = LoopResources.create(name, workers, daemon)
+      cache.put(key, res)
+      res
+    })
+  }
+
+  def getKQueueLoop(name: String, workers: Int, daemon: Boolean): LoopResources = {
+    val key = s"kqueue-specific-$name-$workers-$daemon"
+    cache.getOrElse(key, {
+      val res = LoopResources.create(name, workers, daemon)
+      cache.put(key, res)
+      res
+    })
+  }
+
   def getEpollLoop(name: String, workers: Int, daemon: Boolean): LoopResources = {
-    val key = s"$name-$workers-$daemon"
+    val key = s"epoll-specific-$name-$workers-$daemon"
     cache.getOrElse(key, {
       val c1 = classOf[reactor.netty.resources.DefaultLoopNativeDetector]
       val field = Try(c1.getField("INSTANCE")).toOption.flatMap(Option.apply).orElse(Try(c1.getDeclaredField("INSTANCE")).toOption.flatMap(Option.apply)).get
