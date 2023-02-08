@@ -163,7 +163,7 @@ class TailscaleTargetsJob extends Job {
         env.datastores.rawDataStore.set(
           key = s"${env.storageRoot}:plugins:tailscale:targets:${peer.id}",
           value = peer.raw.stringify.byteString,
-          ttl = 40.seconds.toMillis.some
+          ttl = 60.seconds.toMillis.some
         )
       }).map(_ => ())
     }
@@ -243,11 +243,13 @@ class TailscaleSelectTargetByName extends NgRequestTransformer {
           } else {
             allPeers.filter(p => hostname == p.hostname)
           }
+          println(s"peers: ${possiblePeers.size}")
           if (possiblePeers.isEmpty) {
             Left(Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> "no matching resource found !")))
           } else {
-            val index = counter.get() % (if (possiblePeers.nonEmpty) possiblePeers.size else 1)
+            val index = counter.incrementAndGet() % (if (possiblePeers.nonEmpty) possiblePeers.size else 1)
             val peer = possiblePeers.apply(index.toInt)
+            println(s"choose ${peer.id} - ${peer.hostname} - ${peer.dnsname}")
             val target = targetTemplate.copy(
               id = peer.id,
               hostname = peer.dnsname,
