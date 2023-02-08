@@ -23,7 +23,7 @@ import scala.util.{Failure, Success, Try}
 case class TailscaleStatusPeer(raw: JsValue) {
   lazy val id: String = raw.select("ID").asString
   lazy val hostname: String = raw.select("HostName").asString
-  lazy val dnsname: String = raw.select("DNSName").asString
+  lazy val dnsname: String = raw.select("DNSName").asString.applyOnWithPredicate(_.endsWith("."))(_.init)
   lazy val ipAddress: String = raw.select("TailscaleIPs").asOpt[Seq[String]].flatMap(_.headOption).get
   lazy val online: Boolean = raw.select("Online").asOpt[Boolean].getOrElse(false)
 }
@@ -159,7 +159,7 @@ class TailscaleTargetsJob extends Job {
     val cli = client(env)
     cli.status().map { status =>
       Future.sequence(status.onlinePeers.map { peer =>
-        println(s" - peer: ${peer.id} - ${peer.dnsname} - ${peer.hostname}")
+        // println(s" - peer: ${peer.id} - ${peer.dnsname} - ${peer.hostname}")
         env.datastores.rawDataStore.set(
           key = s"${env.storageRoot}:plugins:tailscale:targets:${peer.id}",
           value = peer.raw.stringify.byteString,
@@ -237,6 +237,9 @@ class TailscaleSelectTargetByName extends NgRequestTransformer {
           val allPeers = items.map(_.utf8String.parseJson).map(TailscaleStatusPeer.apply)
           val possiblePeers = if (hostname.contains("*")) {
             allPeers.filter(p => RegexPool.apply(hostname).matches(p.hostname))
+          } else if (hostname.startsWith("Regex(")) {
+            val regex = hostname.substring(6).init
+            allPeers.filter(p => RegexPool.regex(regex).matches(p.hostname))
           } else {
             allPeers.filter(p => hostname == p.hostname)
           }
@@ -249,7 +252,14 @@ class TailscaleSelectTargetByName extends NgRequestTransformer {
               id = peer.id,
               hostname = peer.dnsname,
             ).applyOnIf(useIpAddress)(_.copy(ipAddress = peer.ipAddress.some))
-            ctx.otoroshiRequest.copy(backend = target.some).right
+            ctx.otoroshiRequest.copy(
+              backend = target.some, 
+              url = ctx.otoroshiRequest.uri.copy(
+                authority = ctx.otoroshiRequest.authority.copy(
+                  host = akka.http.scaladsl.model.Uri.Host.apply(peer.dnsname)
+                )
+              ).toString
+            ).right
           }
         }
       }
