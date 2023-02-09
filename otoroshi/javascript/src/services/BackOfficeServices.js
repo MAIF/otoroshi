@@ -1202,8 +1202,8 @@ export function selfSignedClientCert(dn) {
   }).then((r) => r.json());
 }
 
-export function importP12(password, content) {
-  return fetch(`/bo/api/certificates/_importP12?password=${password}`, {
+export function importP12(password, content, client) {
+  return fetch(`/bo/api/certificates/_importP12?password=${password}&client=${client}&many=false`, {
     method: 'POST',
     credentials: 'include',
     headers: {

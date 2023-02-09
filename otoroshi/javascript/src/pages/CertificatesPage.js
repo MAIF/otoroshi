@@ -657,12 +657,14 @@ export class CertificatesPage extends Component {
     const data = new FormData();
     data.append('file', input.files[0]);
     return window.newPrompt('Certificate password ?').then((password) => {
-      if (password) {
-        return BackOfficeServices.importP12(password, input.files[0]).then((cert) => {
-          // this.table.update();
-          this.props.setTitle(`Create a new certificate`);
-          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-          this.table.setState({ currentItem: cert, showAddForm: true });
+      if (password !== null) {
+        return window.newConfirm('Is it a client certificate ?', { yesText: 'Yes', noText: 'No' }).then((client) => {
+          return BackOfficeServices.importP12(password, input.files[0], client).then((cert) => {
+            // this.table.update();
+            this.props.setTitle(`Create a new certificate`);
+            window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+            this.table.setState({ currentItem: cert, showAddForm: true });
+          });
         });
       }
     });
@@ -926,7 +928,7 @@ export class CertificatesPage extends Component {
                 htmlFor="export"
                 style={{ marginRight: 0 }}
                 className="fake-inputfile btn btn-primary ">
-                <i className="fas fa-file" /> Import .p12 file
+                <i className="fas fa-file" /> Import .p12/.pfx file
               </label>
             </div>
           </>

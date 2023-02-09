@@ -9,7 +9,7 @@ import otoroshi.ssl.SSLImplicits._
 
 object P12Helper {
 
-  def extractCertificate(file: ByteString, password: String = ""): Seq[Cert] = {
+  def extractCertificate(file: ByteString, password: String = "", client: Boolean = true): Seq[Cert] = {
     var certs    = Seq.empty[Cert]
     val kspkcs12 = KeyStore.getInstance("pkcs12")
     kspkcs12.load(new ByteArrayInputStream(file.toArray), password.toCharArray)
@@ -21,12 +21,12 @@ object P12Helper {
         val chain = kspkcs12.getCertificateChain(strAlias)
         val cert  = Cert(
           id = IdGenerator.token,
-          name = "Client Certificate",
-          description = "Client Certificate",
+          name = "Imported Certificate",
+          description = "Imported Certificate",
           chain = chain.map(_.asPem).mkString("\n\n"),
           privateKey = key.asPrivateKeyPem,
           caRef = None,
-          client = true,
+          client = client,
           exposed = false,
           revoked = false
         ).enrich()

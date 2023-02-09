@@ -82,14 +82,14 @@ class Confirm extends Component {
                 type="button"
                 className="btn btn-danger"
                 onClick={this.props.cancel}>
-                Cancel
+                {this.props.noText || 'Cancel'}
               </button>
               <button
                 ref={(r) => (this.okRef = r)}
                 type="button"
                 className="btn btn-success"
                 onClick={this.props.ok}>
-                Ok
+                {this.props.yesText || 'Ok'}
               </button>
             </div>
           </div>
@@ -227,11 +227,12 @@ export function registerConfirm() {
     div.setAttribute('id', 'otoroshi-alerts-container');
     document.body.appendChild(div);
   }
-  window.newConfirm = (message) => {
+  window.newConfirm = (message, props) => {
     return new Promise((success, failure) => {
       ReactDOM.render(
         <Confirm
           message={message}
+          {...props}
           ok={() => {
             success(true);
             ReactDOM.unmountComponentAtNode(document.getElementById('otoroshi-alerts-container'));
