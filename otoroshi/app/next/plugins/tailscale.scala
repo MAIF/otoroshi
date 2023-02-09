@@ -1,14 +1,15 @@
 package otoroshi.next.plugins
 
 import akka.stream.Materializer
+import akka.stream.scaladsl.{Sink, Source}
 import io.netty.channel.unix.DomainSocketAddress
-import io.netty.handler.logging.LogLevel
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.script._
-import otoroshi.utils.{OS, RegexPool}
+import otoroshi.ssl.{Cert, PemHeaders}
 import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.{OS, RegexPool}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
@@ -32,11 +33,26 @@ case class TailscaleStatusPeer(raw: JsValue) {
 }
 
 case class TailscaleStatus(raw: JsValue) {
+  lazy val self: Option[TailscaleStatusPeer] = raw.select("Self").asOpt[JsObject].map(v => TailscaleStatusPeer(v))
   lazy val peers: Seq[TailscaleStatusPeer] = raw.select("Peer").asOpt[JsObject].getOrElse(Json.obj()).value.values.toSeq.map(v => TailscaleStatusPeer(v))
   lazy val onlinePeers: Seq[TailscaleStatusPeer] = peers.filter(_.online)
+  lazy val magicDNSSuffix: Option[String] = raw.select("MagicDNSSuffix").asOpt[String]
 }
 
-case class TailscaleCert(raw: String)
+case class TailscaleCert(raw: String) {
+  lazy val key: String = if (raw.contains(PemHeaders.BeginPrivateKey)) {
+    PemHeaders.BeginPrivateKey + raw.split(PemHeaders.BeginPrivateKey).apply(1).split(PemHeaders.EndPrivateKey).apply(0) + PemHeaders.EndPrivateKey
+  } else if (raw.contains(PemHeaders.BeginPrivateECKey)) {
+    PemHeaders.BeginPrivateECKey + raw.split(PemHeaders.BeginPrivateECKey).apply(1).split(PemHeaders.EndPrivateECKey).apply(0) + PemHeaders.EndPrivateECKey
+  } else if (raw.contains(PemHeaders.BeginPrivateRSAKey)) {
+    PemHeaders.BeginPrivateRSAKey + raw.split(PemHeaders.BeginPrivateRSAKey).apply(1).split(PemHeaders.EndPrivateRSAKey).apply(0) + PemHeaders.EndPrivateRSAKey
+  } else {
+    ""
+  }
+  lazy val chain: String = PemHeaders.BeginCertificate + raw.split(PemHeaders.BeginCertificate).tail.mkString(PemHeaders.BeginCertificate)
+}
+
+case class TailscaleCertError(status: Int, body: String)
 
 case class ReactorResponse(response: HttpClientResponse, body: String) {
   def json: JsValue = Json.parse(body)
@@ -139,12 +155,14 @@ class TailscaleLocalApiClient(env: Env) {
     callGet("/localapi/v0/status").map(_.json).map(TailscaleStatus.apply)
   }
 
-  def fetchCertRaw(domain: String): Future[ReactorResponse] = {
-    callGet(s"/localapi/v0/cert/${domain}?type=pair")
-  }
-
-  def fetchCert(domain: String): Future[TailscaleCert] = {
-    callGet(s"/localapi/v0/cert/${domain}?type=pair").map(_.body).map(TailscaleCert.apply)
+  def fetchCert(domain: String): Future[Either[TailscaleCertError, TailscaleCert]] = {
+    callGet(s"/localapi/v0/cert/${domain}?type=pair").map { resp =>
+      if (resp.response.status().code() == 200 || resp.response.status().code() == 201) {
+        Right(TailscaleCert(resp.body))
+      } else {
+        Left(TailscaleCertError(resp.response.status().code(), resp.body))
+      }
+    }
   }
 }
 
@@ -230,35 +248,22 @@ object TailscaleSelectTargetByNameConfig {
 class TailscaleSelectTargetByName extends NgRequestTransformer {
 
   private val counter = new AtomicLong(0L)
-
   private val logger = Logger("otoroshi-plugin-tailscale-select-target-by-name")
 
   override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
-
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
-
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-
   override def multiInstance: Boolean = true
-
   override def core: Boolean = true
-
   override def usesCallbacks: Boolean = false
-
   override def transformsRequest: Boolean = true
-
   override def transformsResponse: Boolean = false
-
   override def transformsError: Boolean = false
-
   override def isTransformRequestAsync: Boolean = true
-
   override def isTransformResponseAsync: Boolean = false
 
   override def name: String = "Tailscale select target by name"
-
   override def description: Option[String] = "This plugin selects a machine instance on Tailscale network based on its name".some
-
   override def defaultConfigObject: Option[NgPluginConfig] = TailscaleSelectTargetByNameConfig("my-machine", false).some
 
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
@@ -303,54 +308,118 @@ class TailscaleSelectTargetByName extends NgRequestTransformer {
   }
 }
 
+class TailscaleCertificatesFetcherJob extends Job {
 
+  private val logger = Logger("otoroshi-job-tailscale-certificates-fetcher")
 
-class TailscaleFetchCertificate extends NgRequestTransformer {
+  private val clientRef = new AtomicReference[TailscaleLocalApiClient]()
 
-  import scala.jdk.CollectionConverters._
+  private def client(env: Env): TailscaleLocalApiClient = {
+    Option(clientRef.get()).getOrElse {
+      clientRef.compareAndSet(null, new TailscaleLocalApiClient(env))
+      clientRef.get()
+    }
+  }
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq.empty
 
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
+  override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.TailscaleCertificatesFetcherJob")
 
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def name: String = "Tailscale certificate fetcher job"
 
-  override def multiInstance: Boolean = true
+  override def defaultConfig: Option[JsObject] = None
 
-  override def core: Boolean = true
+  override def description: Option[String] =
+    s"""This job will fetch certificates from Tailscale ACME provider""".stripMargin.some
 
-  override def usesCallbacks: Boolean = false
+  override def jobVisibility: JobVisibility = JobVisibility.UserLand
 
-  override def transformsRequest: Boolean = true
+  override def kind: JobKind = JobKind.ScheduledEvery
 
-  override def transformsResponse: Boolean = false
+  override def starting: JobStarting = JobStarting.FromConfiguration
 
-  override def transformsError: Boolean = false
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
+    JobInstantiation.OneInstancePerOtoroshiCluster
 
-  override def isTransformRequestAsync: Boolean = true
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
 
-  override def isTransformResponseAsync: Boolean = false
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 30.seconds.some // TODO: 1 hour ?
 
-  override def name: String = "Tailscale fetch certificate"
+  def certAlreadyExistsFor(domain: String)(implicit env: Env, ec: ExecutionContext): Boolean = {
+    env.proxyState.allCertificates()
+      .filter(_.notExpired)
+      .filter(_.notExpiredSoon)
+      .exists(_.allDomains.contains(domain))
+  }
 
-  override def description: Option[String] = "This plugin ...".some
+  def syncTailscaleCerts(ctx: JobContext, magicDNSSuffix: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    implicit val mat = env.otoroshiMaterializer
+    val domains = env.proxyState.allRoutes()
+      .filter(_.frontend.domains.exists(_.domain.endsWith(s".$magicDNSSuffix")))
+      .flatMap(_.frontend.domains.map(_.domain))
+      .distinct
+    Source(domains.toList)
+      .filterNot(certAlreadyExistsFor)
+      .mapAsync(1) { domain =>
+        client(env)
+          .fetchCert(domain)
+          .map(resp => (domain, resp))
+          .andThen {
+            case Failure(e) => logger.error(s"error while fetching tailscale cert for '$domain'", e)
+            case Success((_, Left(err))) => logger.error(s"error while fetching tailscale cert for '$domain': ${err.status} - ${err.body}")
+          }
+      }
+      .collect {
+        case (domain, Right(cert)) => (domain, cert)
+      }
+      .mapAsync(1) {
+        case (domain, cert) => Cert(s"tailscale cert for '$domain'", cert.chain, cert.key)
+          .copy(entityMetadata = Map("otoroshi-provider" -> "tailscale-cert-job"))
+          .save()
+      }
+      .runWith(Sink.ignore)
+      .map(_ => ())
+  }
 
-  override def defaultConfigObject: Option[NgPluginConfig] = None
+  def syncSelf(ctx: JobContext, self: TailscaleStatusPeer)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    if (!certAlreadyExistsFor(self.dnsname)) {
+      client(env)
+        .fetchCert(self.dnsname)
+        .andThen {
+          case Failure(e) => logger.error(s"error while fetching tailscale self cert for '${self.dnsname}'", e)
+          case Success(Left(err)) => logger.error(s"error while fetching tailscale self cert for '${self.dnsname}': ${err.status} - ${err.body}")
+        }
+        .collect {
+          case Right(value) => value
+        }
+        .flatMap { cert =>
+          Cert(s"tailscale cert for '${self.dnsname}'", cert.chain, cert.key)
+            .copy(entityMetadata = Map("otoroshi-provider" -> "tailscale-cert-job"))
+            .save()
+        }
+        .map(_ => ())
+    } else {
+      ().vfuture
+    }
+  }
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
-    ctx.otoroshiRequest.queryParam("domain") match {
-      case None => Left(Results.BadRequest(Json.obj("error" -> "bad_request"))).vfuture
-      case Some(domain) => {
-        val client = new TailscaleLocalApiClient(env)
-        client.fetchCertRaw(domain).map { resp =>
-          val headers: Map[String, String] = resp.response.responseHeaders().asScala.toSeq.map(t => (t.getKey, t.getValue)).toMap
-          Left(Results.Ok(Json.obj(
-            "status" -> resp.response.status.code,
-            "headers" -> headers,
-            "body" -> resp.body
-          )))
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    val cli = client(env)
+    cli.status().flatMap { status =>
+      status.magicDNSSuffix match {
+        case None => ().vfuture
+        case Some(magicDNSSuffix) => {
+          for {
+            _ <- syncTailscaleCerts(ctx, magicDNSSuffix)
+            _ <- status.self match {
+              case None => ().vfuture
+              case Some(self) => syncSelf(ctx, self)
+            }
+          } yield ()
         }
       }
-    }
+    } andThen {
+      case Failure(e) => logger.error("error while fetching tailscale status", e)
+    } map(_ => ())
   }
 }

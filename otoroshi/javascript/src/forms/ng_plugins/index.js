@@ -151,9 +151,4 @@ export const Plugins = [
   XForwardedHeaders,
   XmlToJsonRequest,
   XmlToJsonResponse,
-  {
-    id: 'cp:otoroshi.next.plugins.TailscaleFetchCertificate',
-    config_schema: {},
-    config_flow: [],
-  }
 ];
