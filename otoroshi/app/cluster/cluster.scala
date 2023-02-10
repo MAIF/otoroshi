@@ -361,10 +361,10 @@ object ClusterConfig {
         trustAll = configuration.getOptionalWithFileSupport[Boolean]("mtls.trustAll").getOrElse(false),
         mtls = configuration.getOptionalWithFileSupport[Boolean]("mtls.enabled").getOrElse(false)
       ),
-      proxy = configuration.getOptionalWithFileSupport[String]("proxy.host").map { host =>
+      proxy = configuration.getOptionalWithFileSupport[Boolean]("proxy.enabled").filter(identity).map { _ =>
         DefaultWSProxyServer(
-          host = host,
-          port = configuration.getOptionalWithFileSupport[Int]("proxy.port").getOrElse(3129),
+          host = configuration.getOptionalWithFileSupport[String]("proxy.host").getOrElse("localhost"),
+          port = configuration.getOptionalWithFileSupport[Int]("proxy.port").getOrElse(1055),
           principal = configuration.getOptionalWithFileSupport[String]("proxy.principal"),
           password = configuration.getOptionalWithFileSupport[String]("proxy.password"),
           ntlmDomain = configuration.getOptionalWithFileSupport[String]("proxy.ntlmDomain"),
@@ -380,6 +380,11 @@ object ClusterConfig {
         urls = configuration
           .getOptionalWithFileSupport[String]("leader.url")
           .map(s => Seq(s))
+          .orElse(
+            configuration
+              .getOptionalWithFileSupport[String]("leader.urlsStr")
+              .map(_.split(",").toSeq.map(_.trim))
+          )
           .orElse(
             configuration
               .getOptionalWithFileSupport[Seq[String]]("leader.urls")
