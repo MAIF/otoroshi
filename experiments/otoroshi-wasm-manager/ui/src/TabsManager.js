@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import FileManager from './FileManager';
 import Tab from './Tab'
 import PluginManager from './PluginManager'
@@ -80,6 +80,8 @@ function TabsManager({ plugins, ...props }) {
           }}>
           <Tabs
             tabs={tabs}
+            configFiles={props.configFiles}
+            selectedPlugin={props.selectedPlugin}
             setCurrentTab={setCurrentTab}
             setTabs={setTabs}
             currentTab={currentTab} />
@@ -120,40 +122,45 @@ function Explorer({ children }) {
   </>
 }
 
-function Tabs({ tabs, setCurrentTab, setTabs, currentTab }) {
+function Tabs({ tabs, setCurrentTab, setTabs, currentTab, selectedPlugin, configFiles }) {
   return <div style={{ height: 42 }}>
-    {tabs.map(tab => {
-      return <TabButton
-        filename={tab}
-        onClick={() => setCurrentTab(tab)}
-        closeTab={filename => {
-          const newTabs = tabs.filter(t => t !== filename)
-          setTabs(newTabs)
-          if (currentTab === filename && newTabs.length > 0) {
-            setCurrentTab(tabs[0])
-          } else if (newTabs.length === 0) {
-            setCurrentTab(undefined)
-          }
-        }}
-        selected={currentTab ? tab === currentTab : false} />
-    })}
+    {tabs
+      .filter(tab => tab === 'Runner' || [...selectedPlugin.files, ...configFiles].find(f => f.filename === tab))
+      .map(tab => {
+        return <TabButton
+          filename={tab}
+          onClick={() => setCurrentTab(tab)}
+          closeTab={filename => {
+            const newTabs = tabs.filter(t => t !== filename)
+            setTabs(newTabs)
+            if (currentTab === filename && newTabs.length > 0) {
+              setCurrentTab(tabs[0])
+            } else if (newTabs.length === 0) {
+              setCurrentTab(undefined)
+            }
+          }}
+          selected={currentTab ? tab === currentTab : false} />
+      })}
   </div>
 }
 
 function Contents({ tabs, setCurrentTab, currentTab, handleContent, selectedPlugin, configFiles }) {
   return <div style={{ flex: 1, marginTop: 42 }}>
-    {tabs.map(tab => {
-      const plugin = [...selectedPlugin.files, ...configFiles].find(f => f.filename === tab)
-      return <Tab
-        {...plugin}
-        handleContent={handleContent}
-        key={tab}
-        selected={currentTab ? tab === currentTab : false}
-        setCurrentTab={filename => {
-          setCurrentTab(filename)
-        }}
-      />
-    })}
+    {tabs
+      .filter(tab => [...selectedPlugin.files, ...configFiles].find(f => f.filename === tab))
+      .map(tab => {
+        const plugin = [...selectedPlugin.files, ...configFiles].find(f => f.filename === tab)
+        if (plugin)
+          return <Tab
+            {...plugin}
+            handleContent={handleContent}
+            key={tab}
+            selected={currentTab ? tab === currentTab : false}
+            setCurrentTab={filename => {
+              setCurrentTab(filename)
+            }}
+          />
+      })}
   </div>
 }
 

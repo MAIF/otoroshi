@@ -1079,6 +1079,7 @@ export class NgSelectRenderer extends Component {
   }
 
   applyTransformer = (props, r) => {
+    console.log(r)
     if (props.optionsTransformer) {
       if (isFunction(props.optionsTransformer)) {
         return props.optionsTransformer(r || []);

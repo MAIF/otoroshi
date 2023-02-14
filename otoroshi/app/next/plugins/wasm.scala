@@ -131,7 +131,7 @@ object WasmUtils {
     val output = plugin.call(config.functionName, input.stringify)
 
     plugin.free()
-    
+
     output
   }
 

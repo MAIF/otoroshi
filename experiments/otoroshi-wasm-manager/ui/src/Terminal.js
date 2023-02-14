@@ -12,6 +12,8 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
   useEffect(() => {
     if (selectedPlugin) {
       socket.on(selectedPlugin.pluginId, text => {
+        if (sizeTerminal === 0)
+        changeTerminalSize(0.5)
         if (text.includes('Starting build')) {
           setContent(text)
         } else {

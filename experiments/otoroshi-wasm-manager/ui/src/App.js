@@ -376,6 +376,8 @@ class App extends React.Component {
   render() {
     const { selectedPlugin, plugins, configFiles, editorState } = this.state;
 
+    console.log(selectedPlugin)
+
     return <div className='d-flex flex-column'
       style={{ flex: 1, outline: 'none' }}
       onKeyDown={this.onKeyDown}

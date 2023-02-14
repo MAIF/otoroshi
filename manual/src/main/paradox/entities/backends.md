@@ -25,7 +25,7 @@ The list of target that Otoroshi will proxy and expose through the subdomain def
 * `Port`:  the port of the target
 * `TLS`: call the target via https
 * `Weight`: the weight of the target. This valus is used by the load balancing strategy to dispatch the traffic between all targets
-* `Predicate`: a function to filter targets from the target list based on a pre-defined predicate
+* `Predicate`: a function to filter targets from the target list based on a predefined predicate
 * `Protocol`:  protocol used to call the target, can be only equals to `HTTP/1.0`, `HTTP/1.1`, `HTTP/2.0` or `HTTP/3.0`
 * `IP address`: the ip address of the target
 * `TLS Settings`:

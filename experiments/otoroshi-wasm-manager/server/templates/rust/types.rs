@@ -72,7 +72,7 @@ pub struct RouteBackend {
     pub rewrite: bool,
     pub load_balancing: Value,
     pub client: Value,
-    pub health_check: HealthCheck,
+    pub health_check: Option<HealthCheck>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
