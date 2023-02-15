@@ -18,7 +18,7 @@ import otoroshi.utils.cache.Caches
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits._
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import play.api.libs.json._
 import play.api.libs.ws.WSAuthScheme
 
@@ -59,11 +59,11 @@ trait Vault {
   ): Future[CachedVaultSecretStatus]
 }
 
-class EnvVault(vaultName: String, env: Env) extends Vault {
+class EnvVault(vaultName: String, configuration: Configuration, _env: Env) extends Vault {
 
   private val logger        = Logger("otoroshi-env-vault")
-  private val defaultPrefix =
-    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${vaultName}.prefix")
+  private val defaultPrefix = configuration.getOptionalWithFileSupport[String](s"prefix")
+    //env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${vaultName}.prefix")
 
   override def get(path: String, options: Map[String, String])(implicit
       env: Env,
@@ -109,18 +109,18 @@ class EnvVault(vaultName: String, env: Env) extends Vault {
   }
 }
 
-class HashicorpVault(name: String, env: Env) extends Vault {
+class HashicorpVault(name: String, configuration: Configuration, _env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-hashicorp-vault")
 
-  private val url   = env.configuration
-    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
-    .getOrElse("http://127.0.0.1:8200")
-  private val mount =
-    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.mount").getOrElse("secret")
-  private val kv    = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.kv").getOrElse("v2")
-  private val token =
-    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.token").getOrElse("root")
+  private val url   = configuration.getOptionalWithFileSupport[String]("url").getOrElse("http://127.0.0.1:8200")
+    //env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url").getOrElse("http://127.0.0.1:8200")
+  private val mount = configuration.getOptionalWithFileSupport[String]("mount").getOrElse("secret")
+    //env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.mount").getOrElse("secret")
+  private val kv    = configuration.getOptionalWithFileSupport[String](s"kv").getOrElse("v2")
+    //env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.kv").getOrElse("v2")
+  private val token = configuration.getOptionalWithFileSupport[String](s"token").getOrElse("root")
+    //env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.token").getOrElse("root")
 
   private val baseUrl = s"${url}/v1/${mount}"
 
@@ -185,17 +185,22 @@ class HashicorpVault(name: String, env: Env) extends Vault {
   }
 }
 
-class AzureVault(name: String, env: Env) extends Vault {
+class AzureVault(_name: String, configuration: Configuration, _env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-azure-vault")
 
-  private val baseUrl                    = env.configuration
-    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
+  private val baseUrl                    = configuration
+    .getOptionalWithFileSupport[String]("url")
     .getOrElse("https://myvault.vault.azure.net")
-  private val apiVersion                 =
-    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.api-version").getOrElse("7.2")
-  private val maybetoken: Option[String] = env.configuration
-    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.token")
+    // env.configuration
+    //   .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
+    //   .getOrElse("https://myvault.vault.azure.net")
+  private val apiVersion = configuration.getOptionalWithFileSupport[String]("api-version").getOrElse("7.2")
+    // env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.api-version").getOrElse("7.2")
+  private val maybetoken: Option[String] = configuration
+    .getOptionalWithFileSupport[String]("token")
+    //env.configuration
+    //  .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.token")
   private val tokenKey                   = "token"
 
   private val tokenCache = Scaffeine().maximumSize(2).expireAfterWrite(1.hour).build[String, String]()
@@ -214,15 +219,18 @@ class AzureVault(name: String, env: Env) extends Vault {
         tokenCache.getIfPresent(tokenKey) match {
           case Some(token) => token.right[String].future
           case None        => {
-            implicit val ec  = env.otoroshiExecutionContext
-            val tenant       = env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.tenant").get
+            implicit val ec  = _env.otoroshiExecutionContext
+            val tenant       = configuration.getOptionalWithFileSupport[String](s"tenant").get
+              //env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.tenant").get
             val clientId     =
-              env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client_id").get
+              configuration.getOptionalWithFileSupport[String](s"client_id").get
+              // env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client_id").get
             val clientSecret =
-              env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client_secret").get
+              configuration.getOptionalWithFileSupport[String](s"client_secret").get
+              // env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client_secret").get
             val url          = s"https://login.microsoftonline.com/${tenant}/oauth2/token"
             if (logger.isDebugEnabled) logger.debug(s"fetching azure access_token from '${url}' ...")
-            env.Ws
+            _env.Ws
               .url(url)
               .post(
                 Map(
@@ -320,14 +328,18 @@ class AzureVault(name: String, env: Env) extends Vault {
   }
 }
 
-class GoogleSecretManagerVault(name: String, env: Env) extends Vault {
+class GoogleSecretManagerVault(name: String, configuration: Configuration, _env: Env) extends Vault {
 
   private val logger  = Logger("otoroshi-gcloud-vault")
-  private val baseUrl = env.configuration
-    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
+  private val baseUrl = configuration
+    .getOptionalWithFileSupport[String](s"url")
     .getOrElse("https://secretmanager.googleapis.com")
+    // env.configuration
+    // .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
+    // .getOrElse("https://secretmanager.googleapis.com")
   private val apikey  =
-    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.apikey").getOrElse("secret")
+    configuration.getOptionalWithFileSupport[String](s"apikey").getOrElse("secret")
+    // env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.apikey").getOrElse("secret")
 
   private def dataUrl(path: String, options: Map[String, String]) = {
     val opts =
@@ -366,18 +378,27 @@ class GoogleSecretManagerVault(name: String, env: Env) extends Vault {
   }
 }
 
-class AlibabaCloudSecretManagerVault(name: String, env: Env) extends Vault {
+class AlibabaCloudSecretManagerVault(name: String, configuration: Configuration, _env: Env) extends Vault {
 
   private val logger          = Logger("otoroshi-alibaba-cloud-vault")
-  private val baseUrl         = env.configuration
-    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
+  private val baseUrl         = configuration
+    .getOptionalWithFileSupport[String](s"url")
     .getOrElse("https://kms.eu-central-1.aliyuncs.com")
-  private val accessKeyId     = env.configuration
-    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-id")
-    .getOrElse("access-key")
-  private val accessKeySecret = env.configuration
-    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-secret")
-    .getOrElse("secret")
+    // env.configuration
+    // .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
+    // .getOrElse("https://kms.eu-central-1.aliyuncs.com")
+  private val accessKeyId     = configuration
+      .getOptionalWithFileSupport[String](s"access-key-id")
+      .getOrElse("access-key")
+    // env.configuration
+    // .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-id")
+    // .getOrElse("access-key")
+  private val accessKeySecret = configuration
+      .getOptionalWithFileSupport[String](s"access-key-secret")
+      .getOrElse("secret")
+    // env.configuration
+    // .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-secret")
+    // .getOrElse("secret")
 
   def makeStringToSign(opts: String): String = {
     "GET%2F&" + URLEncoder.encode(opts, Charsets.UTF_8)
@@ -427,14 +448,15 @@ class AlibabaCloudSecretManagerVault(name: String, env: Env) extends Vault {
   }
 }
 
-class KubernetesVault(name: String, env: Env) extends Vault {
+class KubernetesVault(name: String, configuration: Configuration, env: Env) extends Vault {
 
   private val logger        = Logger("otoroshi-kubernetes-vault")
   private implicit val _env = env
   private implicit val ec   = env.otoroshiExecutionContext
 
-  private val kubeConfig =
-    env.configurationJson.select(s"otoroshi").select("vaults").select(name).asOpt[JsValue] match {
+  private val kubeConfig = {
+    //env.configurationJson
+    configuration.json.select(s"otoroshi").select("vaults").select(name).asOpt[JsValue] match {
       case Some(JsString("global")) => {
         val global = env.datastores.globalConfigDataStore.latest()
         val c1     = global.scripts.jobConfig.select("KubernetesConfig").asOpt[JsObject]
@@ -445,6 +467,7 @@ class KubernetesVault(name: String, env: Env) extends Vault {
       case Some(obj @ JsObject(_))  => KubernetesConfig.theConfig(obj)
       case _                        => KubernetesConfig.theConfig(KubernetesConfig.defaultConfig)
     }
+  }
   private val client     = new KubernetesClient(kubeConfig, env)
 
   override def get(path: String, options: Map[String, String])(implicit
@@ -478,17 +501,22 @@ class KubernetesVault(name: String, env: Env) extends Vault {
   }
 }
 
-class AwsVault(name: String, env: Env) extends Vault {
+class AwsVault(name: String, configuration: Configuration, _env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-aws-vault")
 
   private val accessKey       =
-    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key").getOrElse("key")
-  private val accessKeySecret = env.configuration
-    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-secret")
+    configuration.getOptionalWithFileSupport[String](s"access-key").getOrElse("key")
+    //env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key").getOrElse("key")
+  private val accessKeySecret = configuration
+    .getOptionalWithFileSupport[String](s"access-key-secret")
     .getOrElse("secret")
+    //env.configuration
+    //.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.access-key-secret")
+    //.getOrElse("secret")
   private val region          =
-    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.region").getOrElse("eu-west-3")
+    configuration.getOptionalWithFileSupport[String](s"region").getOrElse("eu-west-3")
+    //env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.region").getOrElse("eu-west-3")
 
   private val secretsManager = AWSSecretsManagerAsyncClientBuilder
     .standard()
@@ -526,17 +554,22 @@ class AwsVault(name: String, env: Env) extends Vault {
   }
 }
 
-class IzanamiVault(name: String, env: Env) extends Vault {
+class IzanamiVault(name: String, configuration: Configuration, _env: Env) extends Vault {
 
   private val logger = Logger("otoroshi-azure-vault")
 
-  private val baseUrl      = env.configuration
-    .getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
+  private val baseUrl      = configuration
+    .getOptionalWithFileSupport[String](s"url")
     .getOrElse("https://127.0.0.1:9000")
+    //env.configuration
+    //.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.url")
+    //.getOrElse("https://127.0.0.1:9000")
   private val clientId     =
-    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client-id").getOrElse("client")
+    configuration.getOptionalWithFileSupport[String](s"client-id").getOrElse("client")
+    //env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client-id").getOrElse("client")
   private val clientSecret =
-    env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client-secret").getOrElse("secret")
+    configuration.getOptionalWithFileSupport[String](s"client-secret").getOrElse("secret")
+    //env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.client-secret").getOrElse("secret")
 
   private def dataUrl(id: String, options: Map[String, String]) = {
     val opts = if (options.nonEmpty) s"?" + options.toSeq.map(v => s"${v._1}=${v._2}").mkString("&") else ""
@@ -585,22 +618,23 @@ class IzanamiVault(name: String, env: Env) extends Vault {
 class Vaults(env: Env) {
 
   private val logger              = Logger("otoroshi-vaults")
-  private val secretsTtl          = env.configuration
-    .getOptionalWithFileSupport[Long]("otoroshi.vaults.secrets-ttl")
+  private val vaultConfig         = env._configuration.getOptionalWithFileSupport[Configuration]("otoroshi.vaults").getOrElse(Configuration.empty)
+  private val secretsTtl          = vaultConfig
+    .getOptionalWithFileSupport[Long]("secrets-ttl")
     .map(_.milliseconds)
     .getOrElse(5.minutes)
-  private val readTtl             = env.configuration
-    .getOptionalWithFileSupport[Long]("otoroshi.vaults.read-timeout")
+  private val readTtl             = vaultConfig
+    .getOptionalWithFileSupport[Long]("read-timeout")
     .map(_.milliseconds)
     .getOrElse(10.seconds)
-  private val parallelFetchs      = env.configuration
-    .getOptionalWithFileSupport[Int]("otoroshi.vaults.parallel-fetchs")
+  private val parallelFetchs      = vaultConfig
+    .getOptionalWithFileSupport[Int]("parallel-fetchs")
     .getOrElse(4)
   private val cachedSecrets: Long =
-    env.configuration.getOptionalWithFileSupport[Long]("otoroshi.vaults.cached-secrets").getOrElse(10000L)
+    vaultConfig.getOptionalWithFileSupport[Long]("cached-secrets").getOrElse(10000L)
 
   val leaderFetchOnly: Boolean =
-    env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.vaults.leader-fetch-only").getOrElse(false)
+    vaultConfig.getOptionalWithFileSupport[Boolean]("leader-fetch-only").getOrElse(false)
 
   private val cache                          = Caches.bounded[String, CachedVaultSecret](cachedSecrets.toInt)
   // Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
@@ -610,44 +644,43 @@ class Vaults(env: Env) {
   private implicit val ec                    = env.otoroshiExecutionContext
 
   val enabled: Boolean =
-    env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.vaults.enabled").getOrElse(false)
+    vaultConfig.getOptionalWithFileSupport[Boolean]("enabled").getOrElse(false)
 
   if (enabled) {
     logger.warn("the vaults feature is enabled !")
     logger.warn("be aware that this feature is EXPERIMENTAL and might not work as expected.")
-    env.configurationJson.select("otoroshi").select("vaults").asOpt[JsObject].map { vaultsConfig =>
-      vaultsConfig.keys.map { key =>
-        vaultsConfig.select(key).asOpt[JsObject].map { vault =>
-          val typ = vault.select("type").asOpt[String].getOrElse("env")
-          if (typ == "env") {
-            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
-            vaults.put(key, new EnvVault(key, env))
-          } else if (typ == "hashicorp-vault") {
-            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
-            vaults.put(key, new HashicorpVault(key, env))
-          } else if (typ == "azure") {
-            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
-            vaults.put(key, new AzureVault(key, env))
-          } else if (typ == "aws") {
-            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
-            vaults.put(key, new AwsVault(key, env))
-          } else if (typ == "kubernetes") {
-            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
-            vaults.put(key, new KubernetesVault(key, env))
-          } else if (typ == "izanami") {
-            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
-            vaults.put(key, new IzanamiVault(key, env))
-          } else if (typ == "gcloud") {
-            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
-            vaults.put(key, new GoogleSecretManagerVault(key, env))
-          } else if (typ == "alibaba-cloud") {
-            logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
-            vaults.put(key, new AlibabaCloudSecretManagerVault(key, env))
-          } else {
-            // TODO: support square https://github.com/square/keywhiz ?
-            // TODO: support pinterest https://github.com/pinterest/knox ?
-            logger.error(s"unknown vault type '${typ}'")
-          }
+    val vaultsConfig = vaultConfig.json
+    vaultsConfig.keys.map { key =>
+      vaultsConfig.select(key).asOpt[JsObject].map { vault =>
+        val typ = vault.select("type").asOpt[String].getOrElse("env")
+        if (typ == "env") {
+          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          vaults.put(key, new EnvVault(key, vaultConfig.get[Configuration](key), env))
+        } else if (typ == "hashicorp-vault") {
+          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          vaults.put(key, new HashicorpVault(key, vaultConfig.get[Configuration](key), env))
+        } else if (typ == "azure") {
+          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          vaults.put(key, new AzureVault(key, vaultConfig.get[Configuration](key), env))
+        } else if (typ == "aws") {
+          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          vaults.put(key, new AwsVault(key, vaultConfig.get[Configuration](key), env))
+        } else if (typ == "kubernetes") {
+          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          vaults.put(key, new KubernetesVault(key, vaultConfig.get[Configuration](key), env))
+        } else if (typ == "izanami") {
+          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          vaults.put(key, new IzanamiVault(key, vaultConfig.get[Configuration](key), env))
+        } else if (typ == "gcloud") {
+          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          vaults.put(key, new GoogleSecretManagerVault(key, vaultConfig.get[Configuration](key), env))
+        } else if (typ == "alibaba-cloud") {
+          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          vaults.put(key, new AlibabaCloudSecretManagerVault(key, vaultConfig.get[Configuration](key), env))
+        } else {
+          // TODO: support square https://github.com/square/keywhiz ?
+          // TODO: support pinterest https://github.com/pinterest/knox ?
+          logger.error(s"unknown vault type '${typ}'")
         }
       }
     }

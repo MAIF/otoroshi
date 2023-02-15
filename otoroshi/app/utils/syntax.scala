@@ -6,7 +6,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import org.apache.commons.codec.binary.{Base64, Hex}
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
@@ -489,6 +489,10 @@ object implicits {
           }
       }
     }
+
+    def json: JsObject = Json
+      .parse(configuration.underlying.root().render(ConfigRenderOptions.concise()))
+      .asObject
   }
 
   implicit class BetterDecodedJWT(val jwt: DecodedJWT)                        extends AnyVal {

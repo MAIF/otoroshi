@@ -47,15 +47,17 @@ import play.api.libs.ws.ahc._
 import play.shaded.ahc.org.asynchttpclient.DefaultAsyncHttpClient
 import play.twirl.api.Html
 
+import java.io.File
 import java.lang.management.ManagementFactory
+import java.nio.file.Files
 import java.rmi.registry.LocateRegistry
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}
 
@@ -83,6 +85,19 @@ class Env(
 
   val logger = Logger("otoroshi-env")
 
+  val otoroshiActorSystem: ActorSystem = ActorSystem(
+    "otoroshi-actor-system",
+    _configuration
+      .getOptionalWithFileSupport[Configuration]("app.actorsystems.otoroshi")
+      .orElse(_configuration.getOptionalWithFileSupport[Configuration]("otoroshi.analytics.actorsystem"))
+      .map(_.underlying)
+      .getOrElse(ConfigFactory.empty)
+  )
+  val otoroshiExecutionContext: ExecutionContext = otoroshiActorSystem.dispatcher
+  val otoroshiScheduler: Scheduler = otoroshiActorSystem.scheduler
+  val otoroshiMaterializer: Materializer = Materializer(otoroshiActorSystem)
+  val vaults = new Vaults(this)
+
   private val (merged_configuration: Configuration, merged_configuration_json: JsObject) = (for {
     appConfig <- _configuration.getOptionalWithFileSupport[Configuration]("app")
     otoConfig <- _configuration.getOptionalWithFileSupport[Configuration]("otoroshi")
@@ -101,8 +116,11 @@ class Env(
     // val otoKeys = otoConfigJson.value.keySet
     // appKeys.filter(key => otoKeys.contains(key)).debugPrintln
     val mergeConfig: JsObject      = appConfigJson.deepMerge(otoConfigJson)
-    val finalConfigJson1: JsObject =
+    val _finalConfigJson1: JsObject =
       wholeConfigJson.deepMerge(Json.obj("otoroshi" -> mergeConfig, "app" -> mergeConfig))
+    val _finalConfigJson1Str = _finalConfigJson1.stringify
+    val _finalConfigJson1StrWithVault = Await.result(vaults.fillSecretsAsync("otoroshi-config", _finalConfigJson1Str)(ExecutionContext.fromExecutor(Executors.newFixedThreadPool(3))), 30.seconds)
+    val finalConfigJson1: JsObject = Json.parse(_finalConfigJson1StrWithVault).asObject
     (Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1))), finalConfigJson1)
   }) getOrElse (_configuration, Json
     .parse(_configuration.underlying.root().render(ConfigRenderOptions.concise()))
@@ -136,18 +154,6 @@ class Env(
       "/__otoroshi_assets/images/otoroshi-logo-color.png"
     }
   }
-
-  val otoroshiActorSystem: ActorSystem           = ActorSystem(
-    "otoroshi-actor-system",
-    configuration
-      .getOptionalWithFileSupport[Configuration]("app.actorsystems.otoroshi")
-      .orElse(configuration.getOptionalWithFileSupport[Configuration]("otoroshi.analytics.actorsystem"))
-      .map(_.underlying)
-      .getOrElse(ConfigFactory.empty)
-  )
-  val otoroshiExecutionContext: ExecutionContext = otoroshiActorSystem.dispatcher
-  val otoroshiScheduler: Scheduler               = otoroshiActorSystem.scheduler
-  val otoroshiMaterializer: Materializer         = Materializer(otoroshiActorSystem)
 
   val analyticsPressureEnabled: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.analytics.pressure.enabled").getOrElse(false)
@@ -958,7 +964,6 @@ class Env(
     .getOrElse(httpsPort)
 
   lazy val proxyState = new NgProxyState(this)
-  lazy val vaults     = new Vaults(this)
 
   lazy val http2ClientProxyEnabled = configuration
     .getOptionalWithFileSupport[Boolean]("otoroshi.next.experimental.http2-client-proxy.enabled")
