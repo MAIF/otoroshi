@@ -1941,19 +1941,14 @@ class BackOfficeController(
     env.datastores.globalConfigDataStore.singleton()
       .flatMap { globalConfig =>
 
-        val url = globalConfig.metadata.get("WASM_MANAGER_URL")
-        val clientId = globalConfig.metadata.get("WASM_MANAGER_CLIENT_ID")
-        val clientSecret = globalConfig.metadata.get("WASM_MANAGER_CLIENT_SECRET")
-        val filterPlugins = globalConfig.metadata.get("WASM_MANAGER_PLUGINS")
-
-        (url, clientId, clientSecret) match {
-          case (Some(url), Some(clientId), Some(clientSecret)) =>
+        globalConfig.wasmManagerSettings match {
+          case Some(WasmManagerSettings(url, clientId, clientSecret, pluginsFilter)) =>
             env.Ws
               .url(s"$url/plugins")
               .withHttpHeaders(
                 "Otoroshi-Client-Id" -> clientId,
                 "Otoroshi-Client-Secret" -> clientSecret,
-                "kind" -> filterPlugins.getOrElse("*")
+                "kind" -> pluginsFilter.getOrElse("*")
               )
               .execute()
               .map(res => {

@@ -9,6 +9,7 @@ import org.extism.sdk.manifest.{Manifest, MemoryOptions}
 import org.extism.sdk.wasm.WasmSourceResolver
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
+import otoroshi.models.WasmManagerSettings
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.syntax.implicits._
@@ -64,7 +65,7 @@ object WasmQueryConfig {
 object WasmUtils {
   private val scriptCache: Cache[String, ByteString] = Scaffeine()
     .recordStats()
-    .expireAfterWrite(3.seconds)
+    .expireAfterWrite(30.seconds)
     .maximumSize(100)
     .build()
 
@@ -145,12 +146,8 @@ object WasmUtils {
               .future
           case None =>
             env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-              val url = globalConfig.metadata.get("WASM_MANAGER_URL")
-              val clientId = globalConfig.metadata.get("WASM_MANAGER_CLIENT_ID")
-              val clientSecret = globalConfig.metadata.get("WASM_MANAGER_CLIENT_SECRET")
-
-              (url, clientId, clientSecret) match {
-                case (Some(url), Some(clientId), Some(clientSecret)) =>
+              globalConfig.wasmManagerSettings match {
+                case Some(WasmManagerSettings(url, clientId, clientSecret, _)) =>
                   env.Ws
                     .url(s"$url/wasm/$pluginId")
                     .withRequestTimeout(FiniteDuration(5 * 1000, MILLISECONDS))

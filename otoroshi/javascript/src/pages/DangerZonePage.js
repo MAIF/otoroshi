@@ -985,6 +985,30 @@ export class DangerZonePage extends Component {
           'When the SNI domain cannot be found, this one will be used to find the matching certificate',
       },
     },
+    'wasmManagerSettings.url': {
+      type: 'string',
+      props: {
+        label: 'URL'
+      }
+    },
+    'wasmManagerSettings.clientId': {
+      type: 'string',
+      props: {
+        label: 'Apikey id'
+      }
+    },
+    'wasmManagerSettings.clientSecret': {
+      type: 'string',
+      props: {
+        label: 'Apikey secret'
+      }
+    },
+    'wasmManagerSettings.pluginsFilter': {
+      type: 'string',
+      props: {
+        label: 'User(s)'
+      }
+    },
     'quotasSettings.enabled': {
       type: 'bool',
       props: {
@@ -1118,6 +1142,11 @@ export class DangerZonePage extends Component {
     'autoCert.notAllowed',
     '>>>Default templates',
     'templates',
+    '>>>WASM Manager',
+    'wasmManagerSettings.url',
+    'wasmManagerSettings.clientId',
+    'wasmManagerSettings.clientSecret',
+    'wasmManagerSettings.pluginsFilter',
     '>>>Global metadata',
     'tags',
     'metadata',
