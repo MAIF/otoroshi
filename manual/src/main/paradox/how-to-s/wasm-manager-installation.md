@@ -48,11 +48,11 @@ The following variables are useful to bind the manager with Otoroshi and to run 
 In this tutorial, we will deployed an Otoroshi, our owm WASM manager, configure them to communicate and build your first plugin.
 
 1. [Before you start](#before-you-start)
-2. [Deploy the manager using Docker](#deploys-the-manager-using-docker)
-3. [Create a route to expose and protect the manager with authentication](#creates-a-route-to-expose-and-protect-the-manager-with-authentication)
-4. [Create a first validator plugin using the manager](#creates-a-first-validator-plugin-using-the-manager)
-5. [Configure the danger zone of Otoroshi to bind Otoroshi and the manager](#configures-the-danger-zone-of-otoroshi-to-bind-otoroshi-and-the-manager)
-6. [Create a route using the generated wasm file](#creates-a-route-using-the-generated-wasm-file)
+2. [Deploy the manager using Docker](#deploy-the-manager-using-docker)
+3. [Create a route to expose and protect the manager with authentication](#create-a-route-to-expose-and-protect-the-manager-with-authentication)
+4. [Create a first validator plugin using the manager](#create-a-first-validator-plugin-using-the-manager)
+5. [Configure the danger zone of Otoroshi to bind Otoroshi and the manager](#configure-the-danger-zone-of-otoroshi-to-bind-otoroshi-and-the-manager)
+6. [Create a route using the generated wasm file](#create-a-route-using-the-generated-wasm-file)
 7. [Test your route](#test-your-route)
 
 ### Before your start
