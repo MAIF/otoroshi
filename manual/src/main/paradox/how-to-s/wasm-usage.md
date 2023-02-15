@@ -66,7 +66,7 @@ The plugin receives from Otoroshi the context of the request (the matching route
 Let's create the route using the previous wasm file.
 
 ````sh
-curl -X POST http://otoroshi-api.oto.tools:9999/api/routes \
+curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'
@@ -113,12 +113,12 @@ This request will apply the following process:
 * balance requests on one target, the service reachable on *mirror.otoroshi.io*
 * add the *WasmAccessValidator* plugin to validate access based on the foo header to our route
 
-You can check that the route is created by navigating to the [dashboard](http://otoroshi.oto.tools:9999/bo/dashboard/routes/demo-otoroshi-2?tab=flow)
+You can check that the route is created by navigating to the [dashboard](http://otoroshi.oto.tools:8080/bo/dashboard/routes/demo-otoroshi-2?tab=flow)
 
 ## Test your validator
 
 ````shell
-curl http://demo-otoroshi.oto.tools:9999 -I
+curl http://demo-otoroshi.oto.tools:8080 -I
 ````
 
 If the setup is working, this should output the expected error:
@@ -130,7 +130,7 @@ HTTP/1.1 401 Unauthorized
 Let's call again the route by adding the header foo with the bar value.
 
 ````shell
-curl http://demo-otoroshi.oto.tools:9999 -H "foo:bar" -I
+curl http://demo-otoroshi.oto.tools:8080 -H "foo:bar" -I
 ````
 
 This should output the successfull message:
@@ -176,7 +176,7 @@ The file is downloadable at the following [URL](#https://raw.githubusercontent.c
 Let's update the route using the previous wasm file.
 
 ````sh
-curl -X PUT http://otoroshi-api.oto.tools:9999/api/routes/demo-otoroshi \
+curl -X PUT http://otoroshi-api.oto.tools:8080/api/routes/demo-otoroshi \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'
@@ -231,16 +231,16 @@ This should display the updated route content.
 Let's call our route.
 
 ````sh
-curl http://demo-otoroshi.oto.tools:9999 -H "foo:bar" -H "fifi: foo" -v
+curl http://demo-otoroshi.oto.tools:8080 -H "foo:bar" -H "fifi: foo" -v
 ````
 
 This should output:
 
 ````
-*   Trying 127.0.0.1:9999...
-* Connected to demo-otoroshi.oto.tools (127.0.0.1) port 9999 (#0)
+*   Trying 127.0.0.1:8080...
+* Connected to demo-otoroshi.oto.tools (127.0.0.1) port 8080 (#0)
 > GET / HTTP/1.1
-> Host: demo-otoroshi.oto.tools:9999
+> Host: demo-otoroshi.oto.tools:8080
 > User-Agent: curl/7.79.1
 > Accept: */*
 > foo:bar
@@ -249,7 +249,7 @@ This should output:
 * Mark bundle as not supporting multiuse
 < HTTP/1.1 200 OK
 < foo: bar
-< Host: demo-otoroshi.oto.tools:9999
+< Host: demo-otoroshi.oto.tools:8080
 <
 * Closing connection 0
 {"foo": "bar"}
