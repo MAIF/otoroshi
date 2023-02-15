@@ -23,47 +23,42 @@ const log = manager.createLogger('wasm-manager');
 const { Security } = require('./security/middlewares');
 const { BuildingJob } = require('./services/building-job');
 
-S3.initializeS3Connection();
-BuildingJob.start();
+S3.initializeS3Connection()
+  .then(() => {
+    BuildingJob.start();
 
-// S3.cleanBucket()
-// S3.listObjects()
+    S3.createBucketIfMissing();
+    // S3.cleanBucket()
+    // S3.listObjects()
 
-const app = express();
-app.use(express.static(path.join(__dirname, '..', 'ui/build')));
-app.use(compression());
-app.use(bodyParser.raw({
-  type: 'application/octet-stream',
-  limit: '10mb'
-}));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.text());
+    const app = express();
+    app.use(express.static(path.join(__dirname, '..', 'ui/build')));
+    app.use(compression());
+    app.use(bodyParser.raw({
+      type: 'application/octet-stream',
+      limit: '10mb'
+    }));
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(bodyParser.text());
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-
-app.use('/api', Security.extractUserFromQuery);
-app.use('/api/plugins', pluginsRouter);
-app.use('/api/templates', templatesRouter);
-app.use('/api/wasm', wasmRouter);
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 
-app.use('/', publicRouter);
-app.get('/', (_, res) => res.sendFile(path.join(__dirname, '..', 'ui/build', '/index.html')));
+    app.use('/api', Security.extractUserFromQuery);
+    app.use('/api/plugins', pluginsRouter);
+    app.use('/api/templates', templatesRouter);
+    app.use('/api/wasm', wasmRouter);
 
-const server = http.createServer(app);
 
-WebSocket.createLogsWebSocket(server);
+    app.use('/', publicRouter);
+    app.get('/', (_, res) => res.sendFile(path.join(__dirname, '..', 'ui/build', '/index.html')));
 
-if (process.env.SECURITY_SALT === 'af73c9fd45199974ff2ba6a789027b89') {
-  log.warn(`###################################`);
-  log.warn('DEFAULT VALUES USAGE DETECTED !!!');
-  log.warn('Your instance is running with the default salt.');
-  log.warn('This salt is not secret because Otoroshi is an open source project.');
-  log.warn('###################################');
-}
+    const server = http.createServer(app);
 
-const PORT = process.env.MANAGER_PORT || 5001;
+    WebSocket.createLogsWebSocket(server);
 
-server.listen(PORT, () => log.info(`listening on ${PORT}`));
+    const PORT = process.env.MANAGER_PORT || 5001;
+
+    server.listen(PORT, () => log.info(`listening on ${PORT}`));
+  })
