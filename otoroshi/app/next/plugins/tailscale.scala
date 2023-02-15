@@ -357,6 +357,7 @@ class TailscaleCertificatesFetcherJob extends Job {
     val domains = env.proxyState.allRoutes()
       .filter(_.frontend.domains.exists(_.domain.endsWith(s".$magicDNSSuffix")))
       .flatMap(_.frontend.domains.map(_.domain))
+      .filter(_.endsWith(s".$magicDNSSuffix"))
       .distinct
     Source(domains.toList)
       .filterNot(certAlreadyExistsFor)
