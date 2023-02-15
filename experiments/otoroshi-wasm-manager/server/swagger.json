@@ -20,7 +20,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Plugin"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Plugin"
+                  }
                 }
               }
             }
@@ -110,13 +113,6 @@
             "type": "string"
           }
         }
-      }
-    },
-    "securitySchemes": {
-      "api_key": {
-        "type": "apiKey",
-        "name": "api_key",
-        "in": "header"
       }
     }
   }
