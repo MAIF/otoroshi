@@ -109,7 +109,7 @@ We are going to use the admin API of Otoroshi to create the route. The configura
 We need to add two more plugins to require the authentication from users and to pass the logged in user to the manager. 
 These plugins are named `Authentication` and `Otoroshi Info. token`. 
 The Authentication plugin will use an in-memory authentication with one default user (wasm@otoroshi.io/password). 
-The second plugin will be configured with the value of the OTOROSHI_USER_HEADER environment variable. 
+The second plugin will be configured with the value of the `OTOROSHI_USER_HEADER` environment variable. 
 
 Let's create the authentication module (if you are interested in how authentication module works, 
 you should read the other tutorials about How to secure an app). 
