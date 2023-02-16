@@ -1,6 +1,6 @@
 # Otoroshi and WASM
 
-WebAssembly (WASM) is a simple machine model and executable format with an extensive specification. It is designed to be portable, compact, and execute at or near native speeds. Otoroshi already supports the execution of WASM files by providing different plugins that can be applied on routes. The plugins are:
+WebAssembly (WASM) is a simple machine model and executable format with an extensive specification. It is designed to be portable, compact, and execute at or near native speeds. Otoroshi already supports the execution of WASM files by providing different plugins that can be applied on routes. These plugins are:
 
 - `WasmAccessValidator`: useful to control access to a route (jump to the next section to learn more about it)
 - `WasmRequestTransformer`: transform the content of an incoming request (body, headers, etc ...)
@@ -15,13 +15,13 @@ To simplify the process of WASM creation and usage, Otoroshi provides:
 
 ## Tutorial
 
-At the end of this tutorial, you have deployed your first route using only WASM content.
-
 1. [Before your start](#before-your-start)
 2. [Create the route with the plugin validator](#create-the-route-with-the-plugin-validator)
 3. [Test your validator](#test-your-validator)
 4. [Update the target of the route by replacing the target with a WASM file](#update-the-target-of-the-route-by-replacing-the-target-with-a-wasm-file)
 5. [Final test](#final-test)
+
+After completing these steps you will have a route using WASM content.
 
 ## Before your start
 
@@ -29,7 +29,7 @@ At the end of this tutorial, you have deployed your first route using only WASM 
 
 ## Create the route with the plugin validator
 
-For this tutorial, we will use a existing wasm file, specially wrote to only let pass requests with a fii header with bar at value. The file is downloadable at the following [URL](#https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm).
+For this tutorial, we will use a existing wasm file, specially wrote to only let pass requests with a foo header with bar at value. The file is downloadable at the following [https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm](#https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm)
 
 The core of the validator, written in rust, should seem like:
 
@@ -108,12 +108,12 @@ EOF
 
 This request will apply the following process:
 
-* name the route *demo-otoroshi*
-* create a frontend exposed on the *demo-otoroshi.oto.tools* domain
-* balance requests on one target, the service reachable on *mirror.otoroshi.io*
-* add the *WasmAccessValidator* plugin to validate access based on the foo header to our route
+* names the route *demo-otoroshi*
+* creates a frontend exposed on the *demo-otoroshi.oto.tools* domain
+* balances requests on one target, the service reachable on *mirror.otoroshi.io*
+* adds the *WasmAccessValidator* plugin to validate access based on the foo header to our route
 
-You can check that the route is created by navigating to the [dashboard](http://otoroshi.oto.tools:8080/bo/dashboard/routes/demo-otoroshi-2?tab=flow)
+You can validation the route creation by navigating to the [dashboard](http://otoroshi.oto.tools:8080/bo/dashboard/routes/demo-otoroshi-2?tab=flow)
 
 ## Test your validator
 
@@ -121,7 +121,7 @@ You can check that the route is created by navigating to the [dashboard](http://
 curl http://demo-otoroshi.oto.tools:8080 -I
 ````
 
-If the setup is working, this should output the expected error:
+This should output the following error:
 
 ````
 HTTP/1.1 401 Unauthorized
@@ -141,7 +141,7 @@ HTTP/1.1 200 OK
 
 ## Update the target of the route by replacing the target with a WASM file
 
-The next step in this tutorial is to configure a WASM file as the target of our route. We will use an existing WASM file, available in our wasm demos repository on github. The content of this plugin, called `wasm-target.wasm`, looks like:
+The next step in this tutorial is to use a WASM file as the target of our route. We will use an existing WASM file, available in our wasm demos repository on github. The content of this plugin, called `wasm-target.wasm`, looks like:
 
 ````rust
 mod types;
@@ -164,7 +164,7 @@ pub fn execute(Json(context): Json<types::WasmQueryContext>) -> FnResult<Json<ty
 }
 ````
 
-Let's explain the previous plugin. The purpose of this type of plugin is to respond an HTTP response with http status, body and headers map.
+Let's explain this snippet. The purpose of this type of plugin is to respond an HTTP response with http status, body and headers map.
 
 1. Includes all public structures from `types.rs` file. This file contains predefined Otoroshi objects that plugins should manipulate.
 2. Necessary imports. [Extism](https://extism.org/docs/overview)'s goal is to make all software programmable by providing a plug-in system. 
@@ -224,7 +224,7 @@ curl -X PUT http://otoroshi-api.oto.tools:8080/api/routes/demo-otoroshi \
 EOF
 ````
 
-This should display the updated route content.
+This should show the updated route content.
 
 ## Final test
 
