@@ -89,6 +89,8 @@
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -214,6 +216,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -1821,7 +1825,25 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;format&quot; : &quot;json&quot;
   }
 }
-</code></pre></div><div id="otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob" class="plugin plugin-hidden plugin-kind-job">
+</code></pre></div><div id="otoroshi.next.plugins.TailscaleCertificatesFetcherJob" class="plugin plugin-hidden plugin-kind-job">
+<h2><a href="#tailscale-certificate-fetcher-job" name="tailscale-certificate-fetcher-job" class="anchor"><span class="anchor-link"></span></a>Tailscale certificate fetcher job</h2>
+<img class="plugin-logo plugin-hidden" src=""></img>
+<h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
+<ul>
+  <li>plugin type: <code>job</code></li>
+  <li>configuration root: <code>none</code></li>
+</ul>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This job will fetch certificates from Tailscale ACME provider</p></div><div id="otoroshi.next.plugins.TailscaleTargetsJob" class="plugin plugin-hidden plugin-kind-job">
+<h2><a href="#tailscale-targets-job" name="tailscale-targets-job" class="anchor"><span class="anchor-link"></span></a>Tailscale targets job</h2>
+<img class="plugin-logo plugin-hidden" src=""></img>
+<h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
+<ul>
+  <li>plugin type: <code>job</code></li>
+  <li>configuration root: <code>none</code></li>
+</ul>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This job will aggregates Tailscale possible online targets</p></div><div id="otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob" class="plugin plugin-hidden plugin-kind-job">
 <h2><a href="#kubernetes-ingress-controller" name="kubernetes-ingress-controller" class="anchor"><span class="anchor-link"></span></a>Kubernetes Ingress Controller</h2>
 <img class="plugin-logo plugin-hidden" src=""></img>
 <h3><a href="#infos" name="infos" class="anchor"><span class="anchor-link"></span></a>Infos</h3>
@@ -1875,6 +1897,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;kubeDnsOperatorCoreDnsNamespace&quot; : &quot;otoroshi&quot;,
     &quot;kubeDnsOperatorCoreDnsName&quot; : &quot;otoroshi-dns&quot;,
     &quot;kubeDnsOperatorCoreDnsPort&quot; : 5353,
+    &quot;connectionTimeout&quot; : 5000,
+    &quot;idleTimeout&quot; : 30000,
+    &quot;callAndStreamTimeout&quot; : 30000,
     &quot;templates&quot; : {
       &quot;service-group&quot; : { },
       &quot;service-descriptor&quot; : { },
@@ -1939,6 +1964,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;kubeDnsOperatorCoreDnsNamespace&quot; : &quot;otoroshi&quot;,
     &quot;kubeDnsOperatorCoreDnsName&quot; : &quot;otoroshi-dns&quot;,
     &quot;kubeDnsOperatorCoreDnsPort&quot; : 5353,
+    &quot;connectionTimeout&quot; : 5000,
+    &quot;idleTimeout&quot; : 30000,
+    &quot;callAndStreamTimeout&quot; : 30000,
     &quot;templates&quot; : {
       &quot;service-group&quot; : { },
       &quot;service-descriptor&quot; : { },
@@ -2011,6 +2039,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;kubeDnsOperatorCoreDnsNamespace&quot; : &quot;otoroshi&quot;,
     &quot;kubeDnsOperatorCoreDnsName&quot; : &quot;otoroshi-dns&quot;,
     &quot;kubeDnsOperatorCoreDnsPort&quot; : 5353,
+    &quot;connectionTimeout&quot; : 5000,
+    &quot;idleTimeout&quot; : 30000,
+    &quot;callAndStreamTimeout&quot; : 30000,
     &quot;templates&quot; : {
       &quot;service-group&quot; : { },
       &quot;service-descriptor&quot; : { },
@@ -2075,6 +2106,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;kubeDnsOperatorCoreDnsNamespace&quot; : &quot;otoroshi&quot;,
     &quot;kubeDnsOperatorCoreDnsName&quot; : &quot;otoroshi-dns&quot;,
     &quot;kubeDnsOperatorCoreDnsPort&quot; : 5353,
+    &quot;connectionTimeout&quot; : 5000,
+    &quot;idleTimeout&quot; : 30000,
+    &quot;callAndStreamTimeout&quot; : 30000,
     &quot;templates&quot; : {
       &quot;service-group&quot; : { },
       &quot;service-descriptor&quot; : { },
@@ -2147,6 +2181,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;kubeDnsOperatorCoreDnsNamespace&quot; : &quot;otoroshi&quot;,
     &quot;kubeDnsOperatorCoreDnsName&quot; : &quot;otoroshi-dns&quot;,
     &quot;kubeDnsOperatorCoreDnsPort&quot; : 5353,
+    &quot;connectionTimeout&quot; : 5000,
+    &quot;idleTimeout&quot; : 30000,
+    &quot;callAndStreamTimeout&quot; : 30000,
     &quot;templates&quot; : {
       &quot;service-group&quot; : { },
       &quot;service-descriptor&quot; : { },
@@ -2211,6 +2248,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;kubeDnsOperatorCoreDnsNamespace&quot; : &quot;otoroshi&quot;,
     &quot;kubeDnsOperatorCoreDnsName&quot; : &quot;otoroshi-dns&quot;,
     &quot;kubeDnsOperatorCoreDnsPort&quot; : 5353,
+    &quot;connectionTimeout&quot; : 5000,
+    &quot;idleTimeout&quot; : 30000,
+    &quot;callAndStreamTimeout&quot; : 30000,
     &quot;templates&quot; : {
       &quot;service-group&quot; : { },
       &quot;service-descriptor&quot; : { },
@@ -2283,6 +2323,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;kubeDnsOperatorCoreDnsNamespace&quot; : &quot;otoroshi&quot;,
     &quot;kubeDnsOperatorCoreDnsName&quot; : &quot;otoroshi-dns&quot;,
     &quot;kubeDnsOperatorCoreDnsPort&quot; : 5353,
+    &quot;connectionTimeout&quot; : 5000,
+    &quot;idleTimeout&quot; : 30000,
+    &quot;callAndStreamTimeout&quot; : 30000,
     &quot;templates&quot; : {
       &quot;service-group&quot; : { },
       &quot;service-descriptor&quot; : { },
@@ -2347,6 +2390,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;kubeDnsOperatorCoreDnsNamespace&quot; : &quot;otoroshi&quot;,
     &quot;kubeDnsOperatorCoreDnsName&quot; : &quot;otoroshi-dns&quot;,
     &quot;kubeDnsOperatorCoreDnsPort&quot; : 5353,
+    &quot;connectionTimeout&quot; : 5000,
+    &quot;idleTimeout&quot; : 30000,
+    &quot;callAndStreamTimeout&quot; : 30000,
     &quot;templates&quot; : {
       &quot;service-group&quot; : { },
       &quot;service-descriptor&quot; : { },
@@ -2546,6 +2592,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-legacy-plugins.html#kubernetes-sidecar-injector-webhook" class="header">Kubernetes sidecar injector webhook</a></li>
     <li><a href="../plugins/built-in-legacy-plugins.html#prometheus-endpoint" class="header">Prometheus Endpoint</a></li>
     <li><a href="../plugins/built-in-legacy-plugins.html#otoroshi-state-exporter-job" class="header">Otoroshi state exporter job</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html#tailscale-certificate-fetcher-job" class="header">Tailscale certificate fetcher job</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html#tailscale-targets-job" class="header">Tailscale targets job</a></li>
     <li><a href="../plugins/built-in-legacy-plugins.html#kubernetes-ingress-controller" class="header">Kubernetes Ingress Controller</a></li>
     <li><a href="../plugins/built-in-legacy-plugins.html#kubernetes-otoroshi-crds-controller" class="header">Kubernetes Otoroshi CRDs Controller</a></li>
     <li><a href="../plugins/built-in-legacy-plugins.html#kubernetes-to-otoroshi-certs-synchronizer" class="header">Kubernetes to Otoroshi certs. synchronizer</a></li>

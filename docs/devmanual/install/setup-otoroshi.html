@@ -89,6 +89,8 @@
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -214,6 +216,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -2021,10 +2025,22 @@ otoroshi {
       trustAll = ${?CLUSTER_MTLS_TRUST_ALL} # trust any CA
       trustAll = ${?OTOROSHI_CLUSTER_MTLS_TRUST_ALL} # trust any CA
     }
+    proxy {
+     	enabled = false # enable proxy
+			enabled = ${?CLUSTER_PROXY_ENABLED}  # enable proxy
+			host = ${?CLUSTER_PROXY_HOST},
+			port = ${?CLUSTER_PROXY_PORT},
+			principal = ${?CLUSTER_PROXY_PRINCIPAL},
+			password = ${?CLUSTER_PROXY_PASSWORD},
+			ntlmDomain = ${?CLUSTER_PROXY_NTLM_DOMAIN},
+			encoding = ${?CLUSTER_PROXY_ENCODING},
+    }
     leader {
       name = ${?CLUSTER_LEADER_NAME} # the leader name
       name = ${?OTOROSHI_CLUSTER_LEADER_NAME} # the leader name
       urls = [&quot;http://127.0.0.1:8080&quot;] # the leader urls
+      urlsStr = ${?CLUSTER_LEADER_URLS} # the leader urls
+      urlsStr = ${?OTOROSHI_CLUSTER_LEADER_URLS} # the leader urls
       url = ${?CLUSTER_LEADER_URL} # the leader url
       url = ${?OTOROSHI_CLUSTER_LEADER_URL} # the leader url
       host = &quot;otoroshi-api.oto.tools&quot; # the leaders api hostname
@@ -3160,9 +3176,20 @@ otoroshi {
       trustAll = ${?CLUSTER_MTLS_TRUST_ALL} # trust any CA
       trustAll = ${?OTOROSHI_CLUSTER_MTLS_TRUST_ALL} # trust any CA
     }
+    proxy {
+			enabled = ${?CLUSTER_PROXY_ENABLED}  # enable proxy
+			host = ${?CLUSTER_PROXY_HOST},
+			port = ${?CLUSTER_PROXY_PORT},
+			principal = ${?CLUSTER_PROXY_PRINCIPAL},
+			password = ${?CLUSTER_PROXY_PASSWORD},
+			ntlmDomain = ${?CLUSTER_PROXY_NTLM_DOMAIN},
+			encoding = ${?CLUSTER_PROXY_ENCODING},
+    }
     leader {
       name = ${?CLUSTER_LEADER_NAME} # the leader name
       name = ${?OTOROSHI_CLUSTER_LEADER_NAME} # the leader name
+      urlsStr = ${?CLUSTER_LEADER_URLS} # the leader urls
+      urlsStr = ${?OTOROSHI_CLUSTER_LEADER_URLS} # the leader urls
       url = ${?CLUSTER_LEADER_URL} # the leader url
       url = ${?OTOROSHI_CLUSTER_LEADER_URL} # the leader url
       host = ${?CLUSTER_LEADER_HOST} # the leaders api hostname

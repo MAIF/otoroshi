@@ -20276,6 +20276,16 @@
             "$ref" : "#/components/schemas/otoroshi.models.AutoCert",
             "description" : "Auto certs settings"
           },
+          "wasmManagerSettings" : {
+            "oneOf" : [ {
+              "type" : "string",
+              "nullable" : true,
+              "description" : "null type"
+            }, {
+              "$ref" : "#/components/schemas/otoroshi.models.WasmManagerSettings"
+            } ],
+            "description" : "???"
+          },
           "maintenanceMode" : {
             "type" : "boolean",
             "description" : "Global maintenant mode"
@@ -21810,6 +21820,34 @@
         },
         "type" : "object",
         "description" : "Settings to use keypair from JWKS for verification"
+      },
+      "otoroshi.models.WasmManagerSettings" : {
+        "type" : "object",
+        "description" : "???",
+        "properties" : {
+          "url" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "clientId" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "clientSecret" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "pluginsFilter" : {
+            "oneOf" : [ {
+              "type" : "string",
+              "nullable" : true,
+              "description" : "null type"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
+          }
+        }
       },
       "otoroshi.ssl.pki.models.GenCsrResponse" : {
         "type" : "object",
