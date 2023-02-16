@@ -33,7 +33,7 @@ For this tutorial, we will use a existing wasm file, specially wrote to only let
 
 The core of the validator, written in rust, should seem like:
 
-````rust
+```rust
 pub fn execute(Json(context): Json<types::WasmAccessValidatorContext>) -> FnResult<Json<types::WasmAccessValidatorResponse>> {
   match context.request.headers.get("foo") {
       Some(foo) => if foo == "bar" {
@@ -59,13 +59,13 @@ pub fn execute(Json(context): Json<types::WasmAccessValidatorContext>) -> FnResu
         }))
   }
 }
-````
+```
 
 The plugin receives from Otoroshi the context of the request (the matching route, the api key is present, the headers, etc) as `WasmAccessValidatorContext` object. Then it applies a checklist on the headers, and responds an error or success depending on the content of the foo header. Obviously, the previous snippet is an example and the editor allows you to write anything different as a check.
 
 Let's create the route using the previous wasm file.
 
-````sh
+```sh
 curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
@@ -104,7 +104,7 @@ curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
   ]
 }
 EOF
-````
+```
 
 This request will apply the following process:
 
@@ -117,33 +117,33 @@ You can validation the route creation by navigating to the [dashboard](http://ot
 
 ## Test your validator
 
-````shell
+```shell
 curl "http://demo-otoroshi.oto.tools:8080" -I
-````
+```
 
 This should output the following error:
 
-````
+```
 HTTP/1.1 401 Unauthorized
-````
+```
 
 Let's call again the route by adding the header foo with the bar value.
 
-````shell
+```shell
 curl "http://demo-otoroshi.oto.tools:8080" -H "foo:bar" -I
-````
+```
 
 This should output the successfull message:
 
-````
+```
 HTTP/1.1 200 OK
-````
+```
 
 ## Update the target of the route by replacing the target with a WASM file
 
 The next step in this tutorial is to use a WASM file as the target of our route. We will use an existing WASM file, available in our wasm demos repository on github. The content of this plugin, called `wasm-target.wasm`, looks like:
 
-````rust
+```rust
 mod types;
 
 use extism_pdk::*;
@@ -162,7 +162,7 @@ pub fn execute(Json(context): Json<types::WasmQueryContext>) -> FnResult<Json<ty
   
     Ok(Json(response))
 }
-````
+```
 
 Let's explain this snippet. The purpose of this type of plugin is to respond an HTTP response with http status, body and headers map.
 
@@ -175,7 +175,7 @@ The file is downloadable at the following [URL](#https://raw.githubusercontent.c
 
 Let's update the route using the previous wasm file.
 
-````sh
+```sh
 curl -X PUT "http://otoroshi-api.oto.tools:8080/api/routes/demo-otoroshi" \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
@@ -222,7 +222,7 @@ curl -X PUT "http://otoroshi-api.oto.tools:8080/api/routes/demo-otoroshi" \
   ]
 }
 EOF
-````
+```
 
 This should show the updated route content.
 
@@ -230,13 +230,13 @@ This should show the updated route content.
 
 Let's call our route.
 
-````sh
+```sh
 curl "http://demo-otoroshi.oto.tools:8080" -H "foo:bar" -H "fifi: foo" -v
-````
+```
 
 This should output:
 
-````
+```
 *   Trying 127.0.0.1:8080...
 * Connected to demo-otoroshi.oto.tools (127.0.0.1) port 8080 (#0)
 > GET / HTTP/1.1
@@ -253,7 +253,7 @@ This should output:
 <
 * Closing connection 0
 {"foo": "bar"}
-````
+```
 
 In this response, we can find our headers send in the curl command and those added by the wasm plugin.
 

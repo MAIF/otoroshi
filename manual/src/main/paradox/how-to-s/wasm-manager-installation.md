@@ -6,9 +6,9 @@ In the @ref:[WASM tutorial](./wasm-usage.md) we used existing WASM files. These 
 
 This manager, a browser code editor to write your plugin in Rust or Assembly Script, can be install using a docker image.
 
-````sh
+```sh
 docker run maif/wasm-otoroshi-manager@latest -p 5001:5001 -it wasm-manager
-````sh
+```
 
 This should download and run the latest version of the manager. Once launched, you can navigate to the http://localhost:5001 (or any other binding port). 
 
@@ -54,13 +54,13 @@ After completing these steps you will have a running Otoroshi instance and our o
 
 Let's start by deploying an instance of S3. If you already have an instance you can skip the next section.
 
-````sh
+```sh
 docker run --name s3Server -p 8000:8000 -e SCALITY_ACCESS_KEY_ID=access_key -e SCALITY_SECRET_ACCESS_KEY=secret scality/s3server
-````
+```
 
 Once launched, we can deploy an instance of the manager.
 
-````sh
+```sh
 docker run -d \
   --name wasm-manager \
   -p 5001:5001 \
@@ -79,13 +79,13 @@ docker run -d \
   -e "S3_BUCKET=wasm-manager" \
   -e "DOCKER_USAGE=true" \
   maif/wasm-otoroshi-manager
-````
+```
 
 Once launched, navigate to the localhost:5001. If all is working, you should see, at the bottom right of your screen the following error
 
-````
+```
 You're not authorized to access to manager
-````
+```
 
 This error indicates that the manager could not authorize the request. Actually, the manager expects to be only reachable with an apikey (this is the definition of the mode `production`). If that's why we can start creating a route in Otoroshi to properly expose our manager behind Otoroshi.
 
@@ -101,7 +101,7 @@ We need to add two more plugins to require the authentication from users and to 
 
 Let's create the authentication module (if you are interested in how authentication module works, you should read the other tutorials about How to secure an app). The following command creates an in-memory authentication module with an user.
 
-````sh
+```sh
 curl -X POST "http://otoroshi-api.oto.tools:8080/api/auths" \
 -H "Otoroshi-Client-Id: admin-api-apikey-id" \
 -H "Otoroshi-Client-Secret: admin-api-apikey-secret" \
@@ -125,11 +125,11 @@ curl -X POST "http://otoroshi-api.oto.tools:8080/api/auths" \
   }
 }
 EOF
-````
+```
 
 Once created, you can create our route to expose the manager.
 
-````sh
+```sh
 curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
@@ -179,7 +179,7 @@ curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
   ]
 }
 EOF
-````
+```
 
 Try to access to the manager with the new domain: http://wasm-manager.oto.tools:8080. This should redirect you to the login page of Otoroshi. Enter the credentials of the user: wasm@otoroshi.io/password
 Congratulations, you now have a secure manager.
@@ -205,17 +205,17 @@ you need to change your plugin's context and reponse types accordingly.
 Let's take the example of creating a validator plugin. If we search in the types.rs file, we can found the corresponding types named: `WasmAccessValidatorContext` and `WasmAccessValidatorResponse`.
 These types must be use in the declaration of the main **function** (named execute in our case).
 
-````rust
+```rust
 ... 
 pub fn execute(Json(context): Json<types::WasmAccessValidatorContext>) -> FnResult<Json<types::WasmAccessValidatorResponse>> {
   
 }
-````
+```
 
 With this code, we declare a function named `execute`, which takes a context of type WasmAccessValidatorContext as parameter, 
 and which returns an object of type WasmAccessValidatorResponse. Now, let's add the check of the foo header.
 
-````rust
+```rust
 ... 
 pub fn execute(Json(context): Json<types::WasmAccessValidatorContext>) -> FnResult<Json<types::WasmAccessValidatorResponse>> {
   match context.request.headers.get("foo") {
@@ -242,7 +242,7 @@ pub fn execute(Json(context): Json<types::WasmAccessValidatorContext>) -> FnResu
           }))
     }
 }
-````
+```
 
 First, we checked if the foo header is present, otherwise we return an object of type WasmAccessValidatorError.
 In the other case, we continue by checking its value. In this example, we have used three types, already declared for you in the types.rs file:
@@ -250,7 +250,7 @@ In the other case, we continue by checking its value. In this example, we have u
 
 At this time, the content of your lib.rs file should be:
 
-````rust
+```rust
 mod types;
 
 use extism_pdk::*;
@@ -281,13 +281,13 @@ pub fn execute(Json(context): Json<types::WasmAccessValidatorContext>) -> FnResu
           }))
     }
 }
-````
+```
 
 Let's compile this plugin by clicking on the hammer icon at the right top of your screen. Once done, you can try your built plugin directly in the UI.
 Click on the play button at the right top of your screen, select your plugin and the correct type of the incoming fake context. 
 Once done, click on the run button at the bottom of your screen. This should output an error.
 
-````json
+```json
 {
     "result": false,
     "error": {
@@ -295,11 +295,11 @@ Once done, click on the run button at the bottom of your screen. This should out
         "status": 401
     }
 }
-````
+```
 
 Let's edit the fake input context by adding the exepected foo Header.
 
-````json
+```json
 {
     "request": {
         "id": 0,
@@ -309,7 +309,7 @@ Let's edit the fake input context by adding the exepected foo Header.
         },
         "cookies"
         ...
-````
+```
 
 Resubmit the command. It should pass.
 
@@ -330,7 +330,7 @@ Don't forget to save the configuration.
 
 The last step of our tutorial is to create the route using the validator. Let's create the route with the following parameters:
 
-````sh
+```sh
 curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
@@ -365,7 +365,7 @@ curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
   ]
 }
 EOF
-````
+```
 
 You can validate the creation by navigating to the [dashboard](http://otoroshi.oto.tools:9999/bo/dashboard/routes/wasm-route?tab=flow)
 
@@ -373,14 +373,14 @@ You can validate the creation by navigating to the [dashboard](http://otoroshi.o
 
 Run the two following commands. The first should show an unauthorized error and the second should conclude this tutorial.
 
-````sh
+```sh
 curl "http://wasm-route.oto.tools:8080"
-````
+```
 
 and 
 
-````sh
+```sh
 curl "http://wasm-route.oto.tools:8080" -H "foo:bar"
-````
+```
 
 Congratulations, you have successfully written your first validator using your own manager.
