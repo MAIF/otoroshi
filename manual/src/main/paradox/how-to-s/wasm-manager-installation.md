@@ -102,7 +102,7 @@ We need to add two more plugins to require the authentication from users and to 
 Let's create the authentication module (if you are interested in how authentication module works, you should read the other tutorials about How to secure an app). The following command creates an in-memory authentication module with an user.
 
 ````sh
-curl -X POST http://otoroshi-api.oto.tools:8080/api/auths \
+curl -X POST "http://otoroshi-api.oto.tools:8080/api/auths" \
 -H "Otoroshi-Client-Id: admin-api-apikey-id" \
 -H "Otoroshi-Client-Secret: admin-api-apikey-secret" \
 -H 'Content-Type: application/json; charset=utf-8' \
@@ -130,7 +130,7 @@ EOF
 Once created, you can create our route to expose the manager.
 
 ````sh
-curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
+curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'
@@ -331,7 +331,7 @@ Don't forget to save the configuration.
 The last step of our tutorial is to create the route using the validator. Let's create the route with the following parameters:
 
 ````sh
-curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
+curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'
@@ -374,13 +374,13 @@ You can validate the creation by navigating to the [dashboard](http://otoroshi.o
 Run the two following commands. The first should show an unauthorized error and the second should conclude this tutorial.
 
 ````sh
-curl http://wasm-route.oto.tools:8080
+curl "http://wasm-route.oto.tools:8080"
 ````
 
 and 
 
 ````sh
-curl http://wasm-route.oto.tools:8080 -H "foo:bar"
+curl "http://wasm-route.oto.tools:8080" -H "foo:bar"
 ````
 
 Congratulations, you have successfully written your first validator using your own manager.

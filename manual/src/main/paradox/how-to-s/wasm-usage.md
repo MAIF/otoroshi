@@ -66,7 +66,7 @@ The plugin receives from Otoroshi the context of the request (the matching route
 Let's create the route using the previous wasm file.
 
 ````sh
-curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
+curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'
@@ -118,7 +118,7 @@ You can validation the route creation by navigating to the [dashboard](http://ot
 ## Test your validator
 
 ````shell
-curl http://demo-otoroshi.oto.tools:8080 -I
+curl "http://demo-otoroshi.oto.tools:8080" -I
 ````
 
 This should output the following error:
@@ -130,7 +130,7 @@ HTTP/1.1 401 Unauthorized
 Let's call again the route by adding the header foo with the bar value.
 
 ````shell
-curl http://demo-otoroshi.oto.tools:8080 -H "foo:bar" -I
+curl "http://demo-otoroshi.oto.tools:8080" -H "foo:bar" -I
 ````
 
 This should output the successfull message:
@@ -176,7 +176,7 @@ The file is downloadable at the following [URL](#https://raw.githubusercontent.c
 Let's update the route using the previous wasm file.
 
 ````sh
-curl -X PUT http://otoroshi-api.oto.tools:8080/api/routes/demo-otoroshi \
+curl -X PUT "http://otoroshi-api.oto.tools:8080/api/routes/demo-otoroshi" \
 -H "Content-type: application/json" \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- <<'EOF'
@@ -231,7 +231,7 @@ This should show the updated route content.
 Let's call our route.
 
 ````sh
-curl http://demo-otoroshi.oto.tools:8080 -H "foo:bar" -H "fifi: foo" -v
+curl "http://demo-otoroshi.oto.tools:8080" -H "foo:bar" -H "fifi: foo" -v
 ````
 
 This should output:

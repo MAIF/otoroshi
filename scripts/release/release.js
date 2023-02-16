@@ -240,6 +240,7 @@ async function publishDockerOtoroshi(location, version) {
   await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/scala-2.12/otoroshi.jar`), path.resolve(location, `./docker/build/otoroshi.jar`)], location);
   await runSystemCommand('sh', [path.resolve(location, `./docker/build/build.sh`), 'build-all', version], path.resolve(location, `./docker/build`));
   await runSystemCommand('sh', [path.resolve(location, `./clients/sidecar/build.sh`), 'push-all', version], path.resolve(location, `./clients/sidecar`));
+  await runSystemCommand('sh', [path.resolve(location, `./experiments/otoroshi-wasm-manager/build.sh`), 'push-all', version], path.resolve(location, `./experiments/otoroshi-wasm-manager`));
 }
 
 async function publishHelmChart(location, version) {
