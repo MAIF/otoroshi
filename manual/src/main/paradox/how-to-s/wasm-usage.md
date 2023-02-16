@@ -13,6 +13,10 @@ To simplify the process of WASM creation and usage, Otoroshi provides:
 - `WASM Manager`: a browser code editor to write your plugin in Rust or Assembly Script without having to think about compiling (you can find a complete tutorial of @ref:[How to install and use your own manager](./wasm-manager-installation.md))
 - `UI Otoroshi Integration`: a full editor to allow you to select the WASM files generated at each stage of a route creation
 
+@@@ div { .centered-img }
+<img src="../imgs/otoroshi-wasm-manager-1.png" />
+@@@
+
 ## Tutorial
 
 1. [Before your start](#before-your-start)

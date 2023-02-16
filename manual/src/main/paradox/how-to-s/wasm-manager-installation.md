@@ -4,6 +4,10 @@
 
 In the @ref:[WASM tutorial](./wasm-usage.md) we used existing WASM files. These files has been generated with the WASM Manager solution provided by the Otoroshi.
 
+@@@ div { .centered-img }
+<img src="../imgs/otoroshi-wasm-manager-1.png" />
+@@@
+
 This manager, a browser code editor to write your plugin in Rust or Assembly Script, can be install using a docker image.
 
 ```sh
