@@ -430,7 +430,7 @@ EOF
 </ul>
 <p>We need to add two more plugins to require the authentication from users and to pass the logged in user to the manager. These plugins are named <code>Authentication</code> and <code>Otoroshi Info. token</code>. The Authentication plugin will use an in-memory authentication with one default user (<a href="mailto:&#119;a&#115;&#x6d;&#x40;&#x6f;&#x74;&#111;&#x72;&#x6f;s&#104;&#x69;&#46;i&#111;&#47;&#112;a&#115;s&#x77;&#111;&#x72;&#x64;&#41;">&#119;a&#115;&#x6d;&#x40;&#x6f;&#x74;&#111;&#x72;&#x6f;s&#104;&#x69;&#46;i&#111;&#47;&#112;a&#115;s&#x77;&#111;&#x72;&#x64;&#41;</a>. The second plugin will be configured with the value of the OTOROSHI_USER_HEADER environment variable. </p>
 <p>Let&rsquo;s create the authentication module (if you are interested in how authentication module works, you should read the other tutorials about How to secure an app). The following command creates an in-memory authentication module with an user.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/auths \
+<pre class="prettyprint"><code class="language-sh">curl -X POST &quot;http://otoroshi-api.oto.tools:8080/api/auths&quot; \
 -H &quot;Otoroshi-Client-Id: admin-api-apikey-id&quot; \
 -H &quot;Otoroshi-Client-Secret: admin-api-apikey-secret&quot; \
 -H &#39;Content-Type: application/json; charset=utf-8&#39; \
@@ -455,7 +455,7 @@ EOF
 EOF
 </code></pre>
 <p>Once created, you can create our route to expose the manager.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
+<pre class="prettyprint"><code class="language-sh">curl -X POST &quot;http://otoroshi-api.oto.tools:8080/api/routes&quot; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- &lt;&lt;&#39;EOF&#39;
@@ -621,7 +621,7 @@ pub fn execute(Json(context): Json&lt;types::WasmAccessValidatorContext&gt;) -&g
 <p>Don&rsquo;t forget to save the configuration.</p>
 <h3><a href="#create-a-route-using-the-generated-wasm-file" name="create-a-route-using-the-generated-wasm-file" class="anchor"><span class="anchor-link"></span></a>Create a route using the generated wasm file</h3>
 <p>The last step of our tutorial is to create the route using the validator. Let&rsquo;s create the route with the following parameters:</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
+<pre class="prettyprint"><code class="language-sh">curl -X POST &quot;http://otoroshi-api.oto.tools:8080/api/routes&quot; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- &lt;&lt;&#39;EOF&#39;
@@ -659,10 +659,10 @@ EOF
 <p>You can validate the creation by navigating to the <a href="http://otoroshi.oto.tools:9999/bo/dashboard/routes/wasm-route?tab=flow">dashboard</a></p>
 <h3><a href="#test-your-route" name="test-your-route" class="anchor"><span class="anchor-link"></span></a>Test your route</h3>
 <p>Run the two following commands. The first should show an unauthorized error and the second should conclude this tutorial.</p>
-<pre class="prettyprint"><code class="language-sh">curl http://wasm-route.oto.tools:8080
+<pre class="prettyprint"><code class="language-sh">curl &quot;http://wasm-route.oto.tools:8080&quot;
 </code></pre>
 <p>and </p>
-<pre class="prettyprint"><code class="language-sh">curl http://wasm-route.oto.tools:8080 -H &quot;foo:bar&quot;
+<pre class="prettyprint"><code class="language-sh">curl &quot;http://wasm-route.oto.tools:8080&quot; -H &quot;foo:bar&quot;
 </code></pre>
 <p>Congratulations, you have successfully written your first validator using your own manager.</p>
 <div class="nav-next">

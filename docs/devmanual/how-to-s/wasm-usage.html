@@ -368,7 +368,7 @@ EOF
 </code></pre>
 <p>The plugin receives from Otoroshi the context of the request (the matching route, the api key is present, the headers, etc) as <code>WasmAccessValidatorContext</code> object. Then it applies a checklist on the headers, and responds an error or success depending on the content of the foo header. Obviously, the previous snippet is an example and the editor allows you to write anything different as a check.</p>
 <p>Let&rsquo;s create the route using the previous wasm file.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
+<pre class="prettyprint"><code class="language-sh">curl -X POST &quot;http://otoroshi-api.oto.tools:8080/api/routes&quot; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- &lt;&lt;&#39;EOF&#39;
@@ -416,13 +416,13 @@ EOF
 </ul>
 <p>You can validation the route creation by navigating to the <a href="http://otoroshi.oto.tools:8080/bo/dashboard/routes/demo-otoroshi-2?tab=flow">dashboard</a></p>
 <h2><a href="#test-your-validator" name="test-your-validator" class="anchor"><span class="anchor-link"></span></a>Test your validator</h2>
-<pre class="prettyprint"><code class="language-shell">curl http://demo-otoroshi.oto.tools:8080 -I
+<pre class="prettyprint"><code class="language-shell">curl &quot;http://demo-otoroshi.oto.tools:8080&quot; -I
 </code></pre>
 <p>This should output the following error:</p>
 <pre><code>HTTP/1.1 401 Unauthorized
 </code></pre>
 <p>Let&rsquo;s call again the route by adding the header foo with the bar value.</p>
-<pre class="prettyprint"><code class="language-shell">curl http://demo-otoroshi.oto.tools:8080 -H &quot;foo:bar&quot; -I
+<pre class="prettyprint"><code class="language-shell">curl &quot;http://demo-otoroshi.oto.tools:8080&quot; -H &quot;foo:bar&quot; -I
 </code></pre>
 <p>This should output the successfull message:</p>
 <pre><code>HTTP/1.1 200 OK
@@ -457,7 +457,7 @@ pub fn execute(Json(context): Json&lt;types::WasmQueryContext&gt;) -&gt; FnResul
 </ol>
 <p>The file is downloadable at the following <a href="#https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/wasm-target.wasm">URL</a>.</p>
 <p>Let&rsquo;s update the route using the previous wasm file.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X PUT http://otoroshi-api.oto.tools:8080/api/routes/demo-otoroshi \
+<pre class="prettyprint"><code class="language-sh">curl -X PUT &quot;http://otoroshi-api.oto.tools:8080/api/routes/demo-otoroshi&quot; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
 -d @- &lt;&lt;&#39;EOF&#39;
@@ -507,7 +507,7 @@ EOF
 <p>This should show the updated route content.</p>
 <h2><a href="#final-test" name="final-test" class="anchor"><span class="anchor-link"></span></a>Final test</h2>
 <p>Let&rsquo;s call our route.</p>
-<pre class="prettyprint"><code class="language-sh">curl http://demo-otoroshi.oto.tools:8080 -H &quot;foo:bar&quot; -H &quot;fifi: foo&quot; -v
+<pre class="prettyprint"><code class="language-sh">curl &quot;http://demo-otoroshi.oto.tools:8080&quot; -H &quot;foo:bar&quot; -H &quot;fifi: foo&quot; -v
 </code></pre>
 <p>This should output:</p>
 <pre><code>*   Trying 127.0.0.1:8080...
