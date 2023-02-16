@@ -424,7 +424,7 @@ java \
   -jar otoroshi.jar 
 ```
 
-This should display
+This should show
 
 ```sh
 ...

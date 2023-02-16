@@ -1942,4 +1942,33 @@ class BackOfficeController(
   def toYaml = BackOfficeActionAuth(parse.json) { ctx =>
     Ok(Yaml.write(ctx.request.body)).as("application/yaml")
   }
+
+  def wasmFiles() = BackOfficeActionAuth.async { ctx =>
+    env.datastores.globalConfigDataStore.singleton()
+      .flatMap { globalConfig =>
+
+        globalConfig.wasmManagerSettings match {
+          case Some(WasmManagerSettings(url, clientId, clientSecret, pluginsFilter)) =>
+            env.Ws
+              .url(s"$url/plugins")
+              .withHttpHeaders(
+                "Otoroshi-Client-Id" -> clientId,
+                "Otoroshi-Client-Secret" -> clientSecret,
+                "kind" -> pluginsFilter.getOrElse("*")
+              )
+              .execute()
+              .map(res => {
+                if (res.status == 200) {
+                  Ok(res.json)
+                } else {
+                  Ok(Json.arr())
+                }
+              })
+          case _ =>
+            BadRequest(Json.obj(
+              "error" -> "Missing config in global configuration"
+            )).future
+        }
+      }
+  }
 }

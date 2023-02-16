@@ -162,6 +162,7 @@ libraryDependencies ++= Seq(
   "com.amazonaws"                    % "aws-java-sdk-secretsmanager"               % "1.12.326" excludeAll (excludesJackson: _*),
   "org.apache.logging.log4j"         % "log4j-api"                                 % "2.19.0",
   "org.sangria-graphql"             %% "sangria"                                   % "3.4.0",
+  "org.extism.sdk"                   % "extism"                                    % "0.2.0",
   if (scalaLangVersion.startsWith("2.12")) {
     "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
   } else {
@@ -260,6 +261,7 @@ assemblyMergeStrategy in assembly := {
   case PathList(ps @ _*) if ps.contains("source_context.proto")       => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("native-image.properties")    => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("public-suffix-list.txt")     => MergeStrategy.first
+  case PathList(ps @ _*) if ps.contains("jna")                        => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("findbugsExclude.xml")        => MergeStrategy.first
   case path if path.contains("org/bouncycastle")                      => MergeStrategy.first
   case PathList("javax", xs @ _*)                                     => MergeStrategy.first

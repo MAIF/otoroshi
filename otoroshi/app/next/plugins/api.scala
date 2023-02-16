@@ -478,6 +478,18 @@ case class NgTransformerRequestContext(
     "global_config"    -> globalConfig,
     "attrs"            -> attrs.json
   )
+
+  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+    implicit val mat = env.otoroshiMaterializer
+    otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _)
+      .map(b => b.encodeBase64.utf8String.json)
+      .map(body => {
+        json.asObject ++ Json.obj(
+          "route" -> route.json,
+          "body" -> body
+        )
+      })
+  }
 }
 
 case class NgTransformerResponseContext(
@@ -508,6 +520,18 @@ case class NgTransformerResponseContext(
     "global_config"     -> globalConfig,
     "attrs"             -> attrs.json
   )
+
+  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+    implicit val mat = env.otoroshiMaterializer
+    otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _)
+      .map(b => b.encodeBase64.utf8String.json)
+      .map(body => {
+        json.asObject ++ Json.obj(
+          "route" -> route.json,
+          "body" -> body
+        )
+      })
+    }
 }
 
 case class NgTransformerErrorContext(
@@ -612,6 +636,12 @@ case class NgAccessContext(
     "global_config" -> globalConfig,
     "attrs"         -> attrs.json
   )
+
+  def wasmJson(implicit env: Env, ec: ExecutionContext): JsObject = {
+    (json.asObject ++ Json.obj(
+      "route" -> route.json
+    ))
+  }
 }
 
 sealed trait NgAccess
@@ -743,10 +773,9 @@ case class NgbBackendCallContext(
       case true  => request.body.runFold(ByteString.empty)(_ ++ _).map(b => b.encodeBase64.utf8String.json)
     }).map { body =>
       (json.asObject ++ Json.obj(
-        "route"            -> route.json,
-        "apikey"           -> apikey.map(_.json).getOrElse(JsNull).as[JsValue],
-        "user"             -> user.map(_.json).getOrElse(JsNull).as[JsValue],
-        "raw_request_body" -> body
+        "route" -> route.json,
+        "raw_request_body" -> body,
+        "request" -> request.json
       ))
     }
   }
