@@ -12,7 +12,7 @@ build () {
   docker tag otoroshi-wasm-manager "maif/otoroshi-wasm-manager:latest"
 }
 
-echo "Docker images for otoroshi-wasm-manager version $2"
+echo "Docker images for otoroshi-wasm-manager version $1"
 
 case "${1}" in
   cleanup)
@@ -25,7 +25,7 @@ case "${1}" in
   push-all)
     cleanup
     build $2
-    docker push "maif/otoroshi-wasm-manager:$2"
+    docker push "maif/otoroshi-wasm-manager:$1"
     docker push "maif/otoroshi-wasm-manager:latest"
     ;;
   *)
