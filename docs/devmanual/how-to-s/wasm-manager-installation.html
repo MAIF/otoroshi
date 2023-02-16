@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Your own WASM Manager · Otoroshi</title>
+<title>Deploy your own WASM Manager · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -90,7 +90,7 @@
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
     <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
-    <li><a href="../how-to-s/wasm-manager-installation.html" class="active page">Your own WASM Manager</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="active page">Deploy your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -217,7 +217,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
     <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
-    <li><a href="../how-to-s/wasm-manager-installation.html" class="active page">Your own WASM Manager</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="active page">Deploy your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -271,7 +271,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
-  <li>Your own WASM Manager</li>
+  <li>Deploy your own WASM Manager</li>
 </ul>
 </div>
 </div>
@@ -279,16 +279,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#your-own-wasm-manager" name="your-own-wasm-manager" class="anchor"><span class="anchor-link"></span></a>Your own WASM Manager</h1>
-<h2><a href="#managers-configuration" name="managers-configuration" class="anchor"><span class="anchor-link"></span></a>Manager&rsquo;s configuration</h2>
-<p>In the <a href="wasm-usage.html">WASM tutorial</a> we used existing WASM files. These files has been generated with the WASM Manager solution provided by the Otoroshi.</p><div class="centered-img">
+<h1><a href="#deploy-your-own-wasm-manager" name="deploy-your-own-wasm-manager" class="anchor"><span class="anchor-link"></span></a>Deploy your own WASM Manager</h1><div class="centered-img">
 <img src="../imgs/otoroshi-wasm-manager-1.png" /></div>
-<p>This manager, a browser code editor to write your plugin in Rust or Assembly Script, can be install using a docker image.</p>
-<pre class="prettyprint"><code class="language-sh">docker run maif/wasm-otoroshi-manager@latest -p 5001:5001 -it wasm-manager
+<h2><a href="#managers-configuration" name="managers-configuration" class="anchor"><span class="anchor-link"></span></a>Manager&rsquo;s configuration</h2>
+<p>In the <a href="wasm-usage.html">WASM tutorial</a> we used existing WASM files. These files has been generated with the WASM Manager solution provided by the Otoroshi team. </p>
+<p>The wasm manager is a code editor in the browser that will help you to write and compile your plugin to WASM using Rust or Assembly Script. You can install your own man ager instance using a docker image.</p>
+<pre class="prettyprint"><code class="language-sh">docker run -p 5001:5001 maif/otoroshi-wasm-manager
 </code></pre>
-<p>This should download and run the latest version of the manager. Once launched, you can navigate to the <a href="http://localhost:5001">http://localhost:5001</a> (or any other binding port). </p>
-<p>This should show an error of authentication. The manager can run with or without authentication configurable with the MODE environment variable (DEV or PROD values).</p>
-<p>The manager is configurable by environment variables. It should work with an S3 bucket as storage solution. S3 solution is a cloud storage container for objects or files stored in S3 (Simple Storage Service). You can configure your S3 with the four variables <code>S3_ACCESS_KEY_ID</code>, <code>S3_SECRET_ACCESS_KEY</code>, <code>S3_ENDPOINT</code> and <code>S3_BUCKET</code>.</p>
+<p>This should download and run the latest version of the manager. Once launched, you can navigate <a href="[http://localhost:5001">http://localhost:5001</a> (or any other binding port). </p>
+<p>This should show an authentication error. The manager can run with or without authentication, and you can confige it using the MODE environment variable (DEV or PROD values).</p>
+<p>The manager is configurable by environment variables. The manager uses an object storage (S3 compatible) as storage solution. You can configure your S3 with the four variables <code>S3_ACCESS_KEY_ID</code>, <code>S3_SECRET_ACCESS_KEY</code>, <code>S3_ENDPOINT</code> and <code>S3_BUCKET</code>.</p>
 <p>Feel free to change the following variables:</p>
 <table>
   <thead>
@@ -398,7 +398,7 @@ EOF
 <p>Let&rsquo;s start by deploying an instance of S3. If you already have an instance you can skip the next section.</p>
 <pre class="prettyprint"><code class="language-sh">docker run --name s3Server -p 8000:8000 -e SCALITY_ACCESS_KEY_ID=access_key -e SCALITY_SECRET_ACCESS_KEY=secret scality/s3server
 </code></pre>
-<p>Once launched, we can deploy an instance of the manager.</p>
+<p>Once launched, we can run a manager instance.</p>
 <pre class="prettyprint"><code class="language-sh">docker run -d \
   --name wasm-manager \
   -p 5001:5001 \
@@ -416,14 +416,14 @@ EOF
   -e &quot;S3_ENDPOINT=http://host.docker.internal:8000&quot; \
   -e &quot;S3_BUCKET=wasm-manager&quot; \
   -e &quot;DOCKER_USAGE=true&quot; \
-  maif/wasm-otoroshi-manager
+  maif/otoroshi-wasm-manager
 </code></pre>
-<p>Once launched, navigate to the localhost:5001. If all is working, you should see, at the bottom right of your screen the following error</p>
+<p>Once launched, go to <a href="http://localhost:5001">http://localhost:5001</a>. If everything is working as intended, you should see, at the bottom right of your screen the following error</p>
 <pre><code>You&#39;re not authorized to access to manager
 </code></pre>
-<p>This error indicates that the manager could not authorize the request. Actually, the manager expects to be only reachable with an apikey (this is the definition of the mode <code>production</code>). If that&rsquo;s why we can start creating a route in Otoroshi to properly expose our manager behind Otoroshi.</p>
+<p>This error indicates that the manager could not authorize the request. Actually, the manager expects to be only reachable with an apikey (this is the definition of the mode <code>production</code>). So we need to create a route in Otoroshi to properly expose our manager to the rest of the world.</p>
 <h3><a href="#create-a-route-to-expose-and-protect-the-manager-with-authentication" name="create-a-route-to-expose-and-protect-the-manager-with-authentication" class="anchor"><span class="anchor-link"></span></a>Create a route to expose and protect the manager with authentication</h3>
-<p>We are going to use the admin API of Otoroshi to create our route. The configuration of our route is:</p>
+<p>We are going to use the admin API of Otoroshi to create the route. The configuration of the route is:</p>
 <ul>
   <li><code>wasm-manager</code> as name</li>
   <li><code>wasm-manager.oto.tools</code> as exposed domain</li>
@@ -676,7 +676,7 @@ EOF
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../how-to-s/wasm-manager-installation.html#your-own-wasm-manager" class="header">Your own WASM Manager</a>
+  <li><a href="../how-to-s/wasm-manager-installation.html#deploy-your-own-wasm-manager" class="header">Deploy your own WASM Manager</a>
   <ul>
     <li><a href="../how-to-s/wasm-manager-installation.html#managers-configuration" class="header">Manager&rsquo;s configuration</a></li>
     <li><a href="../how-to-s/wasm-manager-installation.html#tutorial" class="header">Tutorial</a></li>

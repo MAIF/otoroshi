@@ -90,7 +90,7 @@
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
     <li><a href="../how-to-s/wasm-usage.html" class="active page">Otoroshi and WASM</a></li>
-    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Your own WASM Manager</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -217,7 +217,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
     <li><a href="../how-to-s/wasm-usage.html" class="active page">Otoroshi and WASM</a></li>
-    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Your own WASM Manager</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -290,8 +290,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </ul>
 <p>To simplify the process of WASM creation and usage, Otoroshi provides:</p>
 <ul>
-  <li><code>WASM Manager</code>: a browser code editor to write your plugin in Rust or Assembly Script without having to think about compiling (you can find a complete tutorial of <a href="wasm-manager-installation.html">How to install and use your own manager</a>)</li>
-  <li><code>UI Otoroshi Integration</code>: a full editor to allow you to select the WASM files generated at each stage of a route creation</li>
+  <li>otoroshi ui integration: a full set of plugins that let you pick which WASM function to runtime at any point in a route</li>
+  <li>otoroshi <code>wasm-manager</code>: a code editor in the browser that let you write your plugin in <code>Rust</code> or <code>Assembly Script</code> without having to think about compiling it to WASM (you can find a complete tutorial about it <a href="wasm-manager-installation.html">here</a>)</li>
 </ul><div class="centered-img">
 <img src="../imgs/otoroshi-wasm-manager-1.png" /></div>
 <h2><a href="#tutorial" name="tutorial" class="anchor"><span class="anchor-link"></span></a>Tutorial</h2>
@@ -299,10 +299,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="#before-your-start">Before your start</a></li>
   <li><a href="#create-the-route-with-the-plugin-validator">Create the route with the plugin validator</a></li>
   <li><a href="#test-your-validator">Test your validator</a></li>
-  <li><a href="#update-the-target-of-the-route-by-replacing-the-target-with-a-wasm-file">Update the target of the route by replacing the target with a WASM file</a></li>
-  <li><a href="#final-test">Final test</a></li>
+  <li><a href="#update-the-route-by-replacing-the-backend-with-a-wasm-file">Update the route by replacing the backend with a WASM file</a></li>
+  <li><a href="#wasm-backend-test">WASM backend test</a></li>
 </ol>
-<p>After completing these steps you will have a route using WASM content.</p>
+<p>After completing these steps you will have a route that uses WASM plugins written in Rust.</p>
 <h2><a href="#before-your-start" name="before-your-start" class="anchor"><span class="anchor-link"></span></a>Before your start</h2><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
 <div id="instructions-toggle">
 <span class="instructions-title">Set up an Otoroshi</span>
@@ -339,8 +339,8 @@ EOF
 </code></pre>
 <button id="instructions-toggle-confirm">Confirm the installation</button></div>
 <h2><a href="#create-the-route-with-the-plugin-validator" name="create-the-route-with-the-plugin-validator" class="anchor"><span class="anchor-link"></span></a>Create the route with the plugin validator</h2>
-<p>For this tutorial, we will use a existing wasm file, specially wrote to only let pass requests with a foo header with bar at value. The file is downloadable at the following <a href="#https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm">https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm</a></p>
-<p>The core of the validator, written in rust, should seem like:</p>
+<p>For this tutorial, we will start with an existing wasm file. The main function of this file will check the value of an http header to allow access or not. The can find this file at <a href="#https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm">https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm</a></p>
+<p>The main function of this validator, written in rust, should look like:</p>
 <pre class="prettyprint"><code class="language-rust">pub fn execute(Json(context): Json&lt;types::WasmAccessValidatorContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmAccessValidatorResponse&gt;&gt; {
   match context.request.headers.get(&quot;foo&quot;) {
       Some(foo) =&gt; if foo == &quot;bar&quot; {
@@ -367,8 +367,8 @@ EOF
   }
 }
 </code></pre>
-<p>The plugin receives from Otoroshi the context of the request (the matching route, the api key is present, the headers, etc) as <code>WasmAccessValidatorContext</code> object. Then it applies a checklist on the headers, and responds an error or success depending on the content of the foo header. Obviously, the previous snippet is an example and the editor allows you to write anything different as a check.</p>
-<p>Let&rsquo;s create the route using the previous wasm file.</p>
+<p>The plugin receives the request context from Otoroshi (the matching route, the api key if present, the headers, etc) as <code>WasmAccessValidatorContext</code> object. Then it applies a check on the headers, and responds with an error or success depending on the content of the foo header. Obviously, the previous snippet is an example and the editor allows you to write whatever you want as a check.</p>
+<p>Let&rsquo;s create a route that uses the previous wasm file as an access validator plugin :</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST &quot;http://otoroshi-api.oto.tools:8080/api/routes&quot; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
@@ -411,11 +411,11 @@ EOF
 <p>This request will apply the following process:</p>
 <ul>
   <li>names the route <em>demo-otoroshi</em></li>
-  <li>creates a frontend exposed on the <em>demo-otoroshi.oto.tools</em> domain</li>
-  <li>balances requests on one target, the service reachable on <em>mirror.otoroshi.io</em></li>
-  <li>adds the <em>WasmAccessValidator</em> plugin to validate access based on the foo header to our route</li>
+  <li>creates a frontend exposed on the <code>demo-otoroshi.oto.tools</code></li>
+  <li>forward requests on one target, reachable at <code>mirror.otoroshi.io</code> using TLS on port 443</li>
+  <li>adds the <em>WasmAccessValidator</em> plugin to validate access based on the foo header to the route</li>
 </ul>
-<p>You can validation the route creation by navigating to the <a href="http://otoroshi.oto.tools:8080/bo/dashboard/routes/demo-otoroshi-2?tab=flow">dashboard</a></p>
+<p>You can validate the route creation by navigating to the <a href="http://otoroshi.oto.tools:8080/bo/dashboard/routes/demo-otoroshi?tab=flow">dashboard</a></p>
 <h2><a href="#test-your-validator" name="test-your-validator" class="anchor"><span class="anchor-link"></span></a>Test your validator</h2>
 <pre class="prettyprint"><code class="language-shell">curl &quot;http://demo-otoroshi.oto.tools:8080&quot; -I
 </code></pre>
@@ -428,18 +428,22 @@ EOF
 <p>This should output the successfull message:</p>
 <pre><code>HTTP/1.1 200 OK
 </code></pre>
-<h2><a href="#update-the-target-of-the-route-by-replacing-the-target-with-a-wasm-file" name="update-the-target-of-the-route-by-replacing-the-target-with-a-wasm-file" class="anchor"><span class="anchor-link"></span></a>Update the target of the route by replacing the target with a WASM file</h2>
-<p>The next step in this tutorial is to use a WASM file as the target of our route. We will use an existing WASM file, available in our wasm demos repository on github. The content of this plugin, called <code>wasm-target.wasm</code>, looks like:</p>
-<pre class="prettyprint"><code class="language-rust">mod types;
+<h2><a href="#update-the-route-by-replacing-the-backend-with-a-wasm-file" name="update-the-route-by-replacing-the-backend-with-a-wasm-file" class="anchor"><span class="anchor-link"></span></a>Update the route by replacing the backend with a WASM file</h2>
+<p>The next step in this tutorial is to use a WASM file as backend of the route. We will use an existing WASM file, available in our wasm demos repository on github. The content of this plugin, called <code>wasm-target.wasm</code>, looks like:</p>
+<pre class="prettyprint"><code class="language-rust">// (1)
+mod types;
 
+// (2)
 use extism_pdk::*;
 use std::collections::HashMap;
 
 #[plugin_fn]
 pub fn execute(Json(context): Json&lt;types::WasmQueryContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmQueryResponse&gt;&gt; {
+    // (3)
     let mut headers = HashMap::new();
     headers.insert(&quot;foo&quot;.to_string(), &quot;bar&quot;.to_string());
 
+    // (4)
     let response = types::WasmQueryResponse { 
       headers: Some(headers.into_iter().chain(context.raw_request.headers).collect()), 
       body: &quot;{\&quot;foo\&quot;: \&quot;bar\&quot;}&quot;.to_owned(),
@@ -451,13 +455,13 @@ pub fn execute(Json(context): Json&lt;types::WasmQueryContext&gt;) -&gt; FnResul
 </code></pre>
 <p>Let&rsquo;s explain this snippet. The purpose of this type of plugin is to respond an HTTP response with http status, body and headers map.</p>
 <ol>
-  <li>Includes all public structures from <code>types.rs</code> file. This file contains predefined Otoroshi objects that plugins should manipulate.</li>
+  <li>Includes all public structures from <code>types.rs</code> file. This file contains predefined Otoroshi structures that plugins can manipulate.</li>
   <li>Necessary imports. <a href="https://extism.org/docs/overview">Extism</a>&rsquo;s goal is to make all software programmable by providing a plug-in system.</li>
   <li>Creates a map of new headers that will be merged with incoming request headers.</li>
   <li>Creates the response object with the map of merged headers, a simple JSON body and a successfull status code.</li>
 </ol>
-<p>The file is downloadable at the following <a href="#https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/wasm-target.wasm">URL</a>.</p>
-<p>Let&rsquo;s update the route using the previous wasm file.</p>
+<p>The file is downloadable <a href="#https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/wasm-target.wasm">here</a>.</p>
+<p>Let&rsquo;s update the route using the this wasm file.</p>
 <pre class="prettyprint"><code class="language-sh">curl -X PUT &quot;http://otoroshi-api.oto.tools:8080/api/routes/demo-otoroshi&quot; \
 -H &quot;Content-type: application/json&quot; \
 -u admin-api-apikey-id:admin-api-apikey-secret \
@@ -505,8 +509,8 @@ pub fn execute(Json(context): Json&lt;types::WasmQueryContext&gt;) -&gt; FnResul
 }
 EOF
 </code></pre>
-<p>This should show the updated route content.</p>
-<h2><a href="#final-test" name="final-test" class="anchor"><span class="anchor-link"></span></a>Final test</h2>
+<p>The response should contains the updated route content.</p>
+<h2><a href="#wasm-backend-test" name="wasm-backend-test" class="anchor"><span class="anchor-link"></span></a>WASM backend test</h2>
 <p>Let&rsquo;s call our route.</p>
 <pre class="prettyprint"><code class="language-sh">curl &quot;http://demo-otoroshi.oto.tools:8080&quot; -H &quot;foo:bar&quot; -H &quot;fifi: foo&quot; -v
 </code></pre>
@@ -530,7 +534,7 @@ EOF
 </code></pre>
 <p>In this response, we can find our headers send in the curl command and those added by the wasm plugin.</p>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../how-to-s/wasm-manager-installation.html">Your own WASM Manager</a></p>
+<p><strong>Next:</strong> <a href="../how-to-s/wasm-manager-installation.html">Deploy your own WASM Manager</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -545,8 +549,8 @@ EOF
     <li><a href="../how-to-s/wasm-usage.html#before-your-start" class="header">Before your start</a></li>
     <li><a href="../how-to-s/wasm-usage.html#create-the-route-with-the-plugin-validator" class="header">Create the route with the plugin validator</a></li>
     <li><a href="../how-to-s/wasm-usage.html#test-your-validator" class="header">Test your validator</a></li>
-    <li><a href="../how-to-s/wasm-usage.html#update-the-target-of-the-route-by-replacing-the-target-with-a-wasm-file" class="header">Update the target of the route by replacing the target with a WASM file</a></li>
-    <li><a href="../how-to-s/wasm-usage.html#final-test" class="header">Final test</a></li>
+    <li><a href="../how-to-s/wasm-usage.html#update-the-route-by-replacing-the-backend-with-a-wasm-file" class="header">Update the route by replacing the backend with a WASM file</a></li>
+    <li><a href="../how-to-s/wasm-usage.html#wasm-backend-test" class="header">WASM backend test</a></li>
   </ul></li>
 </ul>
 </div>
