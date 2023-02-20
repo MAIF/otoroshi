@@ -217,6 +217,8 @@ async function buildDistribution(version, where, releaseDir, releaseFile) {
   await runScript(`
   export JAVA_HOME=$JDK8_HOME
   export PATH=\${JAVA_HOME}/bin:\${PATH}
+  cd ${where}
+  sh ./scripts/update-extism.sh
   cd ${where}/otoroshi
   sbt ";dist;assembly"
   `, where);
