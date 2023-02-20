@@ -72,11 +72,10 @@ class KubernetesIngressControllerJob extends Job {
     Option(env)
       .flatMap(env => env.datastores.globalConfigDataStore.latestSafe.map(c => (env, c)))
       .map { case (env, c) =>
-        (
-          env,
-          KubernetesConfig
-            .theConfig((c.scripts.jobConfig \ "KubernetesConfig").as[JsValue])(env, env.otoroshiExecutionContext)
-        )
+        val cfg = c.scripts.jobConfig.select("KubernetesConfig").asOpt[JsValue]
+          .orElse(c.plugins.config.select("KubernetesConfig").asOpt[JsValue])
+          .getOrElse(Json.obj())
+        (env, KubernetesConfig.theConfig(cfg)(env, env.otoroshiExecutionContext))
       }
       .map { case (env, cfg) =>
         env.clusterConfig.mode match {

@@ -1,4 +1,4 @@
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: AuthModule
 metadata:
   name: http-app-auth

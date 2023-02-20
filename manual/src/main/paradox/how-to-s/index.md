@@ -2,6 +2,8 @@
 
 in this section, we will explain some mainstream Otoroshi usage scenario's 
 
+* @ref:[Otoroshi and WASM](./wasm-usage.md)
+* @ref:[WASM Manager](./wasm-manager-installation.md)
 * @ref:[End-to-end mTLS](./end-to-end-mtls.md)
 * @ref:[Send alerts by emails](./export-alerts-using-mailgun.md)
 * @ref:[Export events to Elasticsearch](./export-events-to-elastic.md)
@@ -25,6 +27,9 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 
 @@@ index
 
+
+* [WASM usage](./wasm-usage.md)
+* [WASM Manager](./wasm-manager-installation.md)
 * [End-to-end mTLS](./end-to-end-mtls.md)
 * [Send alerts by emails](./export-alerts-using-mailgun.md)
 * [Export events to Elasticsearch](./export-events-to-elastic.md)

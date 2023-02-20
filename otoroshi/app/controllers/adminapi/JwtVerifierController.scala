@@ -74,7 +74,8 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
   }
 
   override def createEntityOps(
-      entity: GlobalJwtVerifier, req: RequestHeader
+      entity: GlobalJwtVerifier,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[GlobalJwtVerifier]]] = {
     env.datastores.globalJwtVerifierDataStore.set(entity).map {
       case true  => {
@@ -100,7 +101,8 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
   }
 
   override def updateEntityOps(
-      entity: GlobalJwtVerifier, req: RequestHeader
+      entity: GlobalJwtVerifier,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[GlobalJwtVerifier]]] = {
     env.datastores.globalJwtVerifierDataStore.set(entity).map {
       case true  => {

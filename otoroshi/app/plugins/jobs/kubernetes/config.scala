@@ -52,6 +52,7 @@ case class KubernetesConfig(
     corednsPort: Int,
     coreDnsIntegration: Boolean,
     coreDnsIntegrationDryRun: Boolean,
+    coreDnsAzure: Boolean,
     openshiftDnsOperatorIntegration: Boolean,
     openshiftDnsOperatorCleanup: Boolean,
     openshiftDnsOperatorCleanupNames: Seq[String],
@@ -63,6 +64,9 @@ case class KubernetesConfig(
     kubeDnsOperatorCoreDnsNamespace: String,
     kubeDnsOperatorCoreDnsName: String,
     kubeDnsOperatorCoreDnsPort: Int,
+    connectionTimeout: Long,
+    idleTimeout: Long,
+    callAndStreamTimeout: Long,
     triggerKey: Option[String],
     triggerHost: Option[String],
     triggerPath: Option[String],
@@ -147,6 +151,7 @@ object KubernetesConfig {
           ingressEndpointPublishedService = (conf \ "ingressEndpointPublishedServices").asOpt[String],
           coreDnsIntegration = (conf \ "coreDnsIntegration").asOpt[Boolean].getOrElse(false),
           coreDnsIntegrationDryRun = (conf \ "coreDnsIntegrationDryRun").asOpt[Boolean].getOrElse(false),
+          coreDnsAzure = (conf \ "coreDnsAzure").asOpt[Boolean].getOrElse(false),
           ingresses = (conf \ "ingresses").asOpt[Boolean].getOrElse(true),
           crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
@@ -190,7 +195,10 @@ object KubernetesConfig {
           kubeDnsOperatorCoreDnsNamespace =
             (conf \ "kubetDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
           kubeDnsOperatorCoreDnsName = (conf \ "kubetDnsOperatorCoreDnsName").asOpt[String].getOrElse("otoroshi-dns"),
-          kubeDnsOperatorCoreDnsPort = (conf \ "kubetDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353)
+          kubeDnsOperatorCoreDnsPort = (conf \ "kubetDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
+          connectionTimeout = conf.select("connectionTimeout").asOpt[Long].getOrElse(5000L),
+          idleTimeout = conf.select("idleTimeout").asOpt[Long].getOrElse(30000L),
+          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L),
         )
       }
       case None             => {
@@ -237,6 +245,7 @@ object KubernetesConfig {
           ingresses = (conf \ "ingresses").asOpt[Boolean].getOrElse(true),
           coreDnsIntegration = (conf \ "coreDnsIntegration").asOpt[Boolean].getOrElse(false),
           coreDnsIntegrationDryRun = (conf \ "coreDnsIntegrationDryRun").asOpt[Boolean].getOrElse(false),
+          coreDnsAzure = (conf \ "coreDnsAzure").asOpt[Boolean].getOrElse(false),
           crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
           restartDependantDeployments = (conf \ "restartDependantDeployments").asOpt[Boolean].getOrElse(false),
@@ -279,7 +288,10 @@ object KubernetesConfig {
           kubeDnsOperatorCoreDnsNamespace =
             (conf \ "kubetDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
           kubeDnsOperatorCoreDnsName = (conf \ "kubetDnsOperatorCoreDnsName").asOpt[String].getOrElse("otoroshi-dns"),
-          kubeDnsOperatorCoreDnsPort = (conf \ "kubetDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353)
+          kubeDnsOperatorCoreDnsPort = (conf \ "kubetDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
+          connectionTimeout = conf.select("connectionTimeout").asOpt[Long].getOrElse(5000L),
+          idleTimeout = conf.select("idleTimeout").asOpt[Long].getOrElse(30000L),
+          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L),
         )
       }
     }
@@ -301,6 +313,7 @@ object KubernetesConfig {
         "crds"                                 -> true,
         "coreDnsIntegration"                   -> false,
         "coreDnsIntegrationDryRun"             -> false,
+        "coreDnsAzure"                         -> false,
         "kubeLeader"                           -> false,
         "restartDependantDeployments"          -> true,
         "useProxyState"                        -> false,
@@ -328,6 +341,9 @@ object KubernetesConfig {
         "kubeDnsOperatorCoreDnsNamespace"      -> "otoroshi",
         "kubeDnsOperatorCoreDnsName"           -> "otoroshi-dns",
         "kubeDnsOperatorCoreDnsPort"           -> 5353,
+        "connectionTimeout" -> 5000,
+        "idleTimeout" -> 30000,
+        "callAndStreamTimeout" -> 30000,
         "templates"                            -> Json.obj(
           "service-group"      -> Json.obj(),
           "service-descriptor" -> Json.obj(),
@@ -389,6 +405,7 @@ object KubernetesConfig {
       ">>>coredns integration",
       "coreDnsIntegration",
       "coreDnsIntegrationDryRun",
+      "coreDnsAzure",
       "coreDnsConfigMapName",
       "coreDnsDeploymentName",
       "corednsPort",
@@ -405,7 +422,11 @@ object KubernetesConfig {
       "kubeDnsOperatorIntegration",
       "kubeDnsOperatorCoreDnsNamespace",
       "kubeDnsOperatorCoreDnsName",
-      "kubeDnsOperatorCoreDnsPort"
+      "kubeDnsOperatorCoreDnsPort",
+      ">>>client settings",
+      "connectionTimeout",
+      "idleTimeout",
+      "callAndStreamTimeout",
     )
   }
 
@@ -598,6 +619,7 @@ object KubernetesConfig {
 
     ++ makeFormField("coreDnsIntegration", "bool", "Coredns integration", "Auto register service mesh in coredns".some)
     ++ makeFormField("coreDnsIntegrationDryRun", "bool", "Dry run", "Just simulate integration".some)
+    ++ makeFormField("coreDnsAzure", "bool", "AKS", "Use when running on AKS".some)
     ++ makeFormField(
       "coreDnsConfigMapName",
       "string",

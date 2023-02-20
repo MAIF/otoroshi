@@ -76,7 +76,8 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
   }
 
   override def createEntityOps(
-      entity: TcpService, req: RequestHeader
+      entity: TcpService,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[TcpService]]] = {
     env.datastores.tcpServiceDataStore.set(entity).map {
       case true  => {
@@ -102,7 +103,8 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
   }
 
   override def updateEntityOps(
-      entity: TcpService, req: RequestHeader
+      entity: TcpService,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[TcpService]]] = {
     env.datastores.tcpServiceDataStore.set(entity).map {
       case true  => {
@@ -128,7 +130,8 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
   }
 
   override def deleteEntityOps(
-      id: String, req: RequestHeader
+      id: String,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[TcpService]]] = {
     env.datastores.tcpServiceDataStore.delete(id).map {
       case true  => {

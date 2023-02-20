@@ -41,7 +41,10 @@ import MockResponses from './MockResponses';
 import NgAuthModuleExpectedUser from './NgAuthModuleExpectedUser';
 import NgAuthModuleUserExtractor from './NgAuthModuleUserExtractor';
 import NgBackend from './NgBackend';
+import NgDefaultRequestBody from './NgDefaultRequestBody';
+import NgErrorRewriter from './NgErrorRewriter';
 import NgFrontend from './NgFrontend';
+import NgHttpClientCache from './NgHttpClientCache';
 import NgLegacyApikeyCall from './NgLegacyApikeyCall';
 import NgLegacyAuthModuleCall from './NgLegacyAuthModuleCall';
 import OtoroshiChallenge from './OtoroshiChallenge';
@@ -63,6 +66,7 @@ import SendOtoroshiHeadersBack from './SendOtoroshiHeadersBack';
 import SnowMonkeyChaos from './SnowMonkeyChaos';
 import StaticBackend from './StaticBackend';
 import StaticResponse from './StaticResponse';
+import TailscaleSelectTargetByName from './TailscaleSelectTargetByName';
 import TcpTunnel from './TcpTunnel';
 import TunnelPlugin from './TunnelPlugin';
 import UdpTunnel from './UdpTunnel';
@@ -70,7 +74,10 @@ import W3CTracing from './W3CTracing';
 import XForwardedHeaders from './XForwardedHeaders';
 import XmlToJsonRequest from './XmlToJsonRequest';
 import XmlToJsonResponse from './XmlToJsonResponse';
-import WasmQuery from './WasmQuery';
+import WasmBackend from './WasmBackend';
+import WasmAccessValidator from './WasmAccessValidator';
+import WasmRequestTransformer from './WasmRequestTransformer';
+import WasmResponseTransformer from './WasmResponseTransformer';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -118,6 +125,9 @@ export const Plugins = [
   MockResponses,
   NgAuthModuleExpectedUser,
   NgAuthModuleUserExtractor,
+  NgDefaultRequestBody,
+  NgErrorRewriter,
+  NgHttpClientCache,
   NgLegacyApikeyCall,
   NgLegacyAuthModuleCall,
   OtoroshiChallenge,
@@ -139,6 +149,7 @@ export const Plugins = [
   SnowMonkeyChaos,
   StaticBackend,
   StaticResponse,
+  TailscaleSelectTargetByName,
   TcpTunnel,
   TunnelPlugin,
   UdpTunnel,
@@ -146,5 +157,8 @@ export const Plugins = [
   XForwardedHeaders,
   XmlToJsonRequest,
   XmlToJsonResponse,
-  WasmQuery
+  WasmBackend,
+  WasmAccessValidator,
+  WasmRequestTransformer,
+  WasmResponseTransformer
 ];

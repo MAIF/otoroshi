@@ -6,7 +6,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import org.apache.commons.codec.binary.{Base64, Hex}
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
@@ -489,6 +489,10 @@ object implicits {
           }
       }
     }
+
+    def json: JsObject = Json
+      .parse(configuration.underlying.root().render(ConfigRenderOptions.concise()))
+      .asObject
   }
 
   implicit class BetterDecodedJWT(val jwt: DecodedJWT)                        extends AnyVal {
@@ -588,6 +592,7 @@ object implicits {
     )
   }
   implicit class BetterMapOfStringAndB[B](val theMap: Map[String, B])         extends AnyVal {
+    def addAll(other: Map[String, B]): Map[String, B]              = theMap.++(other)
     def put(key: String, value: B): Map[String, B]                 = theMap.+((key, value))
     def put(tuple: (String, B)): Map[String, B]                    = theMap.+(tuple)
     def remove(key: String): Map[String, B]                        = theMap.-(key)

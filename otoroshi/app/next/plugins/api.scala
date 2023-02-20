@@ -31,6 +31,21 @@ object NgPluginHelper {
   def pluginId[A](implicit ct: ClassTag[A]): String = s"cp:${ct.runtimeClass.getName}"
 }
 
+object NgPluginHttpRequest {
+  def fromRequest(req: RequestHeader): NgPluginHttpRequest = {
+    NgPluginHttpRequest(
+      url = req.uri,
+      method = req.method,
+      headers = req.headers.toSimpleMap,
+      cookies = Seq.empty,
+      version = req.version,
+      clientCertificateChain = () => req.clientCertificateChain,
+      body = Source.empty,
+      backend = None
+    )
+  }
+}
+
 case class NgPluginHttpRequest(
     url: String,
     method: String,
@@ -78,6 +93,8 @@ case class NgPluginHttpRequest(
   //   case _                   => true
   // }
   // }
+
+  def queryParam(name: String): Option[String] = uri.query().get(name).orElse(uri.query().get(name.toLowerCase()))
 
   def header(name: String): Option[String] = headers.get(name).orElse(headers.get(name.toLowerCase()))
 
@@ -461,6 +478,18 @@ case class NgTransformerRequestContext(
     "global_config"    -> globalConfig,
     "attrs"            -> attrs.json
   )
+
+  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+    implicit val mat = env.otoroshiMaterializer
+    otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _)
+      .map(b => b.encodeBase64.utf8String.json)
+      .map(body => {
+        json.asObject ++ Json.obj(
+          "route" -> route.json,
+          "body" -> body
+        )
+      })
+  }
 }
 
 case class NgTransformerResponseContext(
@@ -491,6 +520,18 @@ case class NgTransformerResponseContext(
     "global_config"     -> globalConfig,
     "attrs"             -> attrs.json
   )
+
+  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+    implicit val mat = env.otoroshiMaterializer
+    otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _)
+      .map(b => b.encodeBase64.utf8String.json)
+      .map(body => {
+        json.asObject ++ Json.obj(
+          "route" -> route.json,
+          "body" -> body
+        )
+      })
+    }
 }
 
 case class NgTransformerErrorContext(
@@ -595,6 +636,12 @@ case class NgAccessContext(
     "global_config" -> globalConfig,
     "attrs"         -> attrs.json
   )
+
+  def wasmJson(implicit env: Env, ec: ExecutionContext): JsObject = {
+    (json.asObject ++ Json.obj(
+      "route" -> route.json
+    ))
+  }
 }
 
 sealed trait NgAccess
@@ -726,10 +773,9 @@ case class NgbBackendCallContext(
       case true  => request.body.runFold(ByteString.empty)(_ ++ _).map(b => b.encodeBase64.utf8String.json)
     }).map { body =>
       (json.asObject ++ Json.obj(
-        "route"            -> route.json,
-        "apikey"           -> apikey.map(_.json).getOrElse(JsNull).as[JsValue],
-        "user"             -> user.map(_.json).getOrElse(JsNull).as[JsValue],
-        "raw_request_body" -> body
+        "route" -> route.json,
+        "raw_request_body" -> body,
+        "request" -> request.json
       ))
     }
   }

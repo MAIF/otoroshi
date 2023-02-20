@@ -37,6 +37,14 @@ rules:
       - list
       - watch
   - apiGroups:
+      - "apps"
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - ""
     resources:
       - secrets
@@ -88,7 +96,6 @@ rules:
       - routes
       - services
       - backends
-      - target
     verbs:
       - get
       - list

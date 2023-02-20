@@ -81,6 +81,10 @@ spec:
             value: Want
           - name: HTTPS_WANT_CLIENT_AUTH
             value: "true"
+          - name: OTOROSHI_EXPOSED_PORTS_HTTP
+            value: "{{ .Values.loadbalancer.nodePort.http }}"
+          - name: OTOROSHI_EXPOSED_PORTS_HTTPS
+            value: "{{ .Values.loadbalancer.nodePort.https }}"
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: >
               {

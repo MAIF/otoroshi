@@ -14,14 +14,14 @@ You have to enable cluster mode (Leader or Worker) to make this feature work. As
 the main idea behind otoroshi tunnels is that the connection between your private network et the public network is initiated by the private network side. You don't have to expose a part of your private network, create a DMZ or whatever, you just have to authorize your private network otoroshi instance to contact your public network otoroshi instance.
 
 @@@ div { .centered-img }
-<img src="../../imgs/tunnel-creation.jpeg" />
+<img src="../imgs/tunnel-creation.jpeg" />
 @@@
 
 once the persistent tunnel has been created, you can create routes on the public otoroshi instance that uses the otoroshi `Remote tunnel calls` to target your remote routes through the designated tunnel instance 
 
 
 @@@ div { .centered-img }
-<img src="../../imgs/tunnel-requests.jpeg" style="margin-bottom: 20px;" />
+<img src="../imgs/tunnel-requests.jpeg" style="margin-bottom: 20px;" />
 @@@
 
 @@@ warning { .margin-top-20 }
@@ -75,13 +75,13 @@ Now let say you have a private api exposed on `api-a.company.local` on your priv
 First create a new route exposed on `api-a.company.com` that targets `https://api-a.company.local:443`
 
 @@@ div { .centered-img }
-<img src="../../imgs/tunnel-exposition.png" />
+<img src="../imgs/tunnel-exposition.png" />
 @@@
 
 then add the `Remote tunnel calls` plugin to your route and set the tunnel id to `public-apis` to match the id you set in the otoroshi config file
 
 @@@ div { .centered-img }
-<img src="../../imgs/tunnel-plugin.png" />
+<img src="../imgs/tunnel-plugin.png" />
 @@@
 
 add all the plugin you need to secure this brand new public api and call it
@@ -95,5 +95,5 @@ curl "https://api-a.company.com/users" | jq
 you can see all the connected tunnel instances on an otoroshi instance on the `Connected tunnels` (`Cog icon` / `Connected tunnels`). For each tunnel instance you will be able to check the tunnel health and also to easily expose all the routes available on the other end of the tunnel. Just clic on the `expose` button of the route you want to expose, and a new route will be created with the `Remote tunnel calls` plugin already setup.
 
 @@@ div { .centered-img }
-<img src="../../imgs/tunnel-expose.png" />
+<img src="../imgs/tunnel-expose.png" />
 @@@

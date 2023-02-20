@@ -32,14 +32,17 @@ case class KubernetesService(raw: JsValue)   extends KubernetesEntity {
   lazy val clusterIP: String = (raw \ "spec" \ "clusterIP").as[String]
 }
 case class KubernetesConfigMap(raw: JsValue) extends KubernetesEntity {
-  lazy val rawObj                = raw.as[JsObject]
-  lazy val corefile: String      = (raw \ "data" \ "Corefile").as[String]
-  lazy val data: JsObject        = (raw \ "data").asOpt[JsObject].getOrElse(Json.obj())
-  lazy val stubDomains: JsObject =
+  lazy val rawObj                      = raw.as[JsObject]
+  //lazy val corefile: String      = (raw \ "data" \ "Corefile").as[String]
+  def corefile(azure: Boolean): String =
+    (if (azure) (raw \ "data" \ "otoroshi.server").asOpt[String] else (raw \ "data" \ "Corefile").asOpt[String]).getOrElse("")
+  lazy val data: JsObject              = (raw \ "data").asOpt[JsObject].getOrElse(Json.obj())
+  lazy val stubDomains: JsObject       =
     (data \ "stubDomains").asOpt[String].flatMap(str => Json.parse(str).asOpt[JsObject]).getOrElse(Json.obj())
   def hasOtoroshiMesh(conf: KubernetesConfig): Boolean = {
+    val dnsConfigFile  = if (conf.coreDnsAzure) "otoroshi.server" else "Corefile"
     val coreDnsNameEnv = conf.coreDnsEnv.map(e => s"$e-").getOrElse("")
-    (raw \ "data" \ "Corefile").asOpt[String] match {
+    (raw \ "data" \ dnsConfigFile).asOpt[String] match {
       case None    => true // because Corefile should be there, so avoid to do something wrong
       case Some(coreFile)
           if coreFile.contains(s"### otoroshi-${coreDnsNameEnv}mesh-begin ###") && coreFile.contains(

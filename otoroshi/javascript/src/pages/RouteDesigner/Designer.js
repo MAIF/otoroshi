@@ -682,24 +682,28 @@ class Designer extends React.Component {
           config: plugin.default_config || plugin.defaultConfig,
         }));
 
-      const routePlugins = route.plugins.map((ref) => ({
-        ...ref,
-        plugin_index: Object.fromEntries(
-          Object.entries(ref.plugin_index || {}).map(([key, v]) => [
-            firstLetterUppercase(camelCase(key)),
-            v,
-          ])
-        ),
-        ...formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin),
-      }));
+      const routePlugins = route.plugins
+        .filter(ref => formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin))
+        .map((ref) => ({
+          ...ref,
+          plugin_index: Object.fromEntries(
+            Object.entries(ref.plugin_index || {}).map(([key, v]) => [
+              firstLetterUppercase(camelCase(key)),
+              v,
+            ])
+          ),
+          ...formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin),
+        }));
       const pluginsWithNodeId = this.generateInternalNodeId(routePlugins);
 
       const routeWithNodeId = {
         ...route,
-        plugins: route.plugins.map((plugin, i) => ({
-          ...plugin,
-          nodeId: pluginsWithNodeId[i].nodeId,
-        })),
+        plugins: route.plugins
+          .filter(ref => formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin))
+          .map((plugin, i) => ({
+            ...plugin,
+            nodeId: pluginsWithNodeId[i].nodeId,
+          })),
       };
 
       this.loadHiddenStepsFromLocalStorage(routeWithNodeId);
@@ -771,7 +775,7 @@ class Designer extends React.Component {
     );
 
   generateNewInternalNodeId = (nodeId) =>
-    `${nodeId}-${this.state.nodes.reduce((a, c) => a + (c.id.startsWith(nodeId) ? 1 : 0), 0)}`;
+    `${nodeId}-${this.state.nodes.reduce((a, c) => a + (c.id?.startsWith(nodeId) ? 1 : 0), 0)}`;
 
   generatedPluginIndex = (plugins) => {
     const getStep = (step, elements, element, pluginSteps) =>
@@ -859,7 +863,7 @@ class Designer extends React.Component {
   };
 
   filterSpecificPlugin = (plugin) =>
-    plugin.plugin_steps &&
+    // plugin.plugin_steps &&
     !plugin.plugin_steps.includes('Sink') &&
     !plugin.plugin_steps.includes('HandlesTunnel') &&
     !['job', 'sink'].includes(plugin.pluginType) &&

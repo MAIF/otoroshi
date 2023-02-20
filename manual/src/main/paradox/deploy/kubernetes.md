@@ -608,7 +608,7 @@ sudo kubectl get service-descriptors --all-namespaces
 curl -X GET \
   -H 'Authorization: Bearer eyJhbGciOiJSUzI....F463SrpOehQRaQ' \
   -H 'Accept: application/json' -k \
-  https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1alpha1/apikeys | jq
+  https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1/apikeys | jq
 ```
 
 You can see this as better `Ingress` resources. Like any `Ingress` resource can define which controller it uses (using the `kubernetes.io/ingress.class` annotation), you can chose another kind of resource instead of `Ingress`. With Otoroshi CRDs you can even define resources like `Certificate`, `Apikey`, `AuthModules`, `JwtVerifier`, etc. It will help you to use all the power of Otoroshi while using the deployment model of kubernetes.
@@ -906,7 +906,7 @@ spec:
   selector:
     run: http-app-deployment
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ServiceGroup
 metadata:
   name: http-app-group
@@ -915,7 +915,7 @@ metadata:
 spec:
   description: a group to hold services about the http-app
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: http-app-apikey-1
@@ -927,7 +927,7 @@ spec:
   authorizedEntities: 
   - group_http-app-group
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: http-app-2-apikey-1
@@ -939,7 +939,7 @@ spec:
   authorizedEntities: 
   - group_http-app-2-group
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: http-app-certificate-frontend
@@ -960,7 +960,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: http-app-certificate-backend
@@ -984,7 +984,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: http-app-certificate-client
@@ -1004,7 +1004,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ServiceDescriptor
 metadata:
   name: http-app-service-descriptor
@@ -1293,7 +1293,7 @@ then when a user subscribe for an apikey, he will only see an integration token
 then just create an ApiKey manifest with this token and your good to go 
 
 ```yaml
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: http-app-2-apikey-3

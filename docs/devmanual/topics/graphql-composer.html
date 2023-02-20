@@ -89,6 +89,8 @@
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -214,6 +216,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -282,7 +286,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </blockquote>
 <p>APIs RESTful and GraphQL development has become one of the most popular activities for companies as well as users in recent times. In fast scaling companies, the multiplication of clients can cause the number of API needs to grow at scale.</p>
 <p>Otoroshi comes with a solution to create and meet your customers&rsquo; needs without constantly creating and recreating APIs: the <code>GraphQL composer plugin</code>. The GraphQL Composer is an useful plugin to build an GraphQL API from multiples differents sources. These sources can be REST apis, GraphQL api or anything that supports the HTTP protocol. In fact, the plugin can define and expose for each of your client a specific GraphQL schema, which only corresponds to the needs of the customers.</p><div class="centered-img">
-<img src="../../imgs/graphql-composer.png" width="620px" /></div>
+<img src="../imgs/graphql-composer.png" width="620px" /></div>
 <h2><a href="#tutorial" name="tutorial" class="anchor"><span class="anchor-link"></span></a>Tutorial</h2>
 <p>Let&rsquo;s take an example to get a better view of this plugin. We want to build a schema with two types: </p>
 <ul>
@@ -319,7 +323,7 @@ type Query {
   <li>configure the plugin with the schema</li>
   <li>try to call it</li>
 </ul><div class="centered-img">
-<img src="../../imgs/countries-api.png" width="620px" /></div>
+<img src="../imgs/countries-api.png" width="620px" /></div>
 <h3><a href="#setup-environment" name="setup-environment" class="anchor"><span class="anchor-link"></span></a>Setup environment</h3>
 <p>First of all, we need to download the latest Otoroshi.</p>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.5.15/otoroshi.jar&#39;

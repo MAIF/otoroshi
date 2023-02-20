@@ -718,7 +718,7 @@ export class DangerZonePage extends Component {
     backOfficeAuthRef: {
       type: SelectInput,
       props: {
-        label: 'Backoffice auth. module',
+        label: 'Backoffice auth. config',
         valuesFrom: '/bo/api/proxy/api/auths',
         transformer: (a) => ({ value: a.id, label: a.name }),
         help: '...',
@@ -985,6 +985,30 @@ export class DangerZonePage extends Component {
           'When the SNI domain cannot be found, this one will be used to find the matching certificate',
       },
     },
+    'wasmManagerSettings.url': {
+      type: 'string',
+      props: {
+        label: 'URL'
+      }
+    },
+    'wasmManagerSettings.clientId': {
+      type: 'string',
+      props: {
+        label: 'Apikey id'
+      }
+    },
+    'wasmManagerSettings.clientSecret': {
+      type: 'string',
+      props: {
+        label: 'Apikey secret'
+      }
+    },
+    'wasmManagerSettings.pluginsFilter': {
+      type: 'string',
+      props: {
+        label: 'User(s)'
+      }
+    },
     'quotasSettings.enabled': {
       type: 'bool',
       props: {
@@ -1118,6 +1142,11 @@ export class DangerZonePage extends Component {
     'autoCert.notAllowed',
     '>>>Default templates',
     'templates',
+    '>>>WASM Manager',
+    'wasmManagerSettings.url',
+    'wasmManagerSettings.clientId',
+    'wasmManagerSettings.clientSecret',
+    'wasmManagerSettings.pluginsFilter',
     '>>>Global metadata',
     'tags',
     'metadata',
@@ -1254,7 +1283,7 @@ export class DangerZonePage extends Component {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        apiVersion: 'proxy.otoroshi.io/v1alpha1',
+        apiVersion: 'proxy.otoroshi.io/v1',
         kind: 'GlobalConfig',
         metadata: {
           name: 'global-config',
@@ -1278,7 +1307,7 @@ export class DangerZonePage extends Component {
 
     /*
     // const json = YAML.stringify({
-      apiVersion: 'proxy.otoroshi.io/v1alpha1',
+      apiVersion: 'proxy.otoroshi.io/v1',
       kind: 'GlobalConfig',
       metadata: {
         name: 'global-config',
@@ -1423,10 +1452,10 @@ export class DangerZonePage extends Component {
               <button type="button" className="btn btn-success" onClick={this.fullExportNdJson}>
                 <i className="fas fa-file-export" /> Full export (ndjson)
               </button>
-              <button type="button" className="btn btn-primary" onClick={this.exportJson}>
+              <button type="button" className="btn btn-info" onClick={this.exportJson}>
                 <i className="glyphicon glyphicon-export" /> JSON
               </button>
-              <button type="button" className="btn btn-primary" onClick={this.exportYaml}>
+              <button type="button" className="btn btn-info" onClick={this.exportYaml}>
                 <i className="glyphicon glyphicon-export" /> YAML
               </button>
               <button
@@ -1453,18 +1482,18 @@ class BackOfficeAuthButtons extends Component {
         <div className="col-sm-10 input-group-btn">
           {!this.props.rawValue.backOfficeAuthRef && (
             <Link to="/auth-configs/add" className="btn btn-sm btn-primary">
-              <i className="fas fa-plus" /> Create a new auth. module
+              <i className="fas fa-plus" /> Create a new auth. config.
             </Link>
           )}
           {this.props.rawValue.backOfficeAuthRef && (
             <Link
               to={`/auth-configs/edit/${this.props.rawValue.backOfficeAuthRef}`}
               className="btn btn-sm btn-success">
-              <i className="fas fa-edit" /> Edit the auth. module
+              <i className="fas fa-edit" /> Edit the auth. config.
             </Link>
           )}
           <Link to="/auth-configs" className="btn btn-sm btn-primary">
-            <i className="fas fa-link" /> all auth. module
+            <i className="fas fa-link" /> all auth. config.
           </Link>
         </div>
       </div>
@@ -1976,7 +2005,7 @@ class GlobalPlugins extends Component {
         <div className="row mb-3">
           <label className="col-xs-12 col-sm-2 col-form-label"></label>
           <div className="col-sm-10">
-            <span style={{ color: "var(--color-primary)", fontWeight: 'bold', marginTop: '7px' }}>
+            <span style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold', marginTop: '7px' }}>
               Plugins on new Otoroshi engine
             </span>
           </div>
@@ -1990,8 +2019,8 @@ class GlobalPlugins extends Component {
         <div className="row mb-3">
           <label className="col-xs-12 col-sm-2 col-form-label"></label>
           <div className="col-sm-10">
-            <span style={{ color: "var(--color-primary)", fontWeight: 'bold', marginTop: '7px' }}>
-              Plugins on old Otoroshi engine
+            <span style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold', marginTop: '7px' }}>
+              Plugins on old Otoroshi engine and global jobs
             </span>
           </div>
         </div>

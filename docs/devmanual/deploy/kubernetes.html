@@ -89,6 +89,8 @@
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -214,6 +216,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -417,6 +421,14 @@ rules:
       - list
       - watch
   - apiGroups:
+      - &quot;apps&quot;
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - &quot;&quot;
     resources:
       - secrets
@@ -468,7 +480,6 @@ rules:
       - routes
       - services
       - backends
-      - target
     verbs:
       - get
       - list
@@ -477,392 +488,455 @@ rules:
   </dt>
   <dd>
   <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: service-groups.proxy.otoroshi.io
+  name: &quot;service-groups.proxy.otoroshi.io&quot;
+  creationTimestamp: null
 spec:
-  group: proxy.otoroshi.io
-  version: v1alpha1
-  preserveUnknownFields: true
-  #validation:
-  #  openAPIV3Schema:
-  #    type: object
-  #    properties:
-  #      spec:
-  #        type: object
-  #        properties:
-  #          name:
-  #            type: string
-  #          description:
-  #            type: string
-  #          metadata:
-  #            type: object
+  group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: ServiceGroup
-    plural: service-groups
-    singular: service-group
-  scope: Namespaced
+    kind: &quot;ServiceGroup&quot;
+    plural: &quot;service-groups&quot;
+    singular: &quot;service-group&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: organizations.proxy.otoroshi.io
+  name: &quot;certificates.proxy.otoroshi.io&quot;
+  creationTimestamp: null
 spec:
-  group: proxy.otoroshi.io
-  version: v1alpha1
-  preserveUnknownFields: true
+  group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: Organization
-    plural: organizations
-    singular: organization
-  scope: Namespaced
+    kind: &quot;Certificate&quot;
+    plural: &quot;certificates&quot;
+    singular: &quot;certificate&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: teams.proxy.otoroshi.io
+  name: &quot;service-descriptors.proxy.otoroshi.io&quot;
+  creationTimestamp: null
 spec:
-  group: proxy.otoroshi.io
-  version: v1alpha1
-  preserveUnknownFields: true
+  group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: Team
-    plural: teams
-    singular: team
-  scope: Namespaced
+    kind: &quot;ServiceDescriptor&quot;
+    plural: &quot;service-descriptors&quot;
+    singular: &quot;service-descriptor&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: service-descriptors.proxy.otoroshi.io
+  name: &quot;organizations.proxy.otoroshi.io&quot;
+  creationTimestamp: null
 spec:
-  group: proxy.otoroshi.io
-  version: v1alpha1
-  preserveUnknownFields: true
-  #validation:
-  #  openAPIV3Schema:
-  #    type: object
-  #    properties:
-  #      spec:
-  #        type: object
-  #        properties:
-  #          group:
-  #            type: string
-  #          name:
-  #            type: string
-  #          env:
-  #            type: string
-  #          domain:
-  #            type: string
-  #          subdomain:
-  #            type: string
-  #          root:
-  #            type: string
-  #          matchingRoot:
-  #            type: string
-  #          stripPath:
-  #            type: boolean
-  #          enabled:
-  #            type: boolean
-  #          userFacing:
-  #            type: boolean
-  #          privateApp:
-  #            type: boolean
-  #          forceHttps:
-  #            type: boolean
-  #          maintenanceMode:
-  #            type: boolean
-  #          buildMode:
-  #            type: boolean
-  #          strictlyPrivate:
-  #            type: boolean
-  #          sendOtoroshiHeadersBack:
-  #            type: boolean
-  #          readOnly:
-  #            type: boolean
-  #          xForwardedHeaders:
-  #            type: boolean
-  #          overrideHost:
-  #            type: boolean
-  #          allowHttp10:
-  #            type: boolean
-  #          logAnalyticsOnServer:
-  #            type: boolean
-  #          useAkkaHttpClient:
-  #            type: boolean
-  #          useNewWSClient:
-  #            type: boolean
-  #          tcpUdpTunneling:
-  #            type: boolean
-  #          detectApiKeySooner:
-  #            type: boolean
-  #          letsEncrypt:
-  #            type: boolean
-  #          enforceSecureCommunication:
-  #            type: boolean
-  #          sendInfoToken:
-  #            type: boolean
-  #          sendStateChallenge:
-  #            type: boolean
-  #          securityExcludedPatterns:
-  #            type: array
-  #          publicPatterns:
-  #            type: array
-  #          privatePatterns:
-  #            type: array
-  #          additionalHeaders:
-  #            type: object
-  #          additionalHeadersOut:
-  #            type: object
-  #          missingOnlyHeadersIn:
-  #            type: object
-  #          missingOnlyHeadersOut:
-  #            type: object
-  #          removeHeadersIn:
-  #            type: array
-  #          removeHeadersOut:
-  #            type: array
-  #          headersVerification:
-  #            type: object
-  #          matchingHeaders:
-  #            type: object
-  #          metadata:
-  #            type: object
-  #          hosts:
-  #            type: array
-  #          paths:
-  #            type: array
-  #          issueCert:
-  #            type: boolean
-  #          issueCertCA:
-  #            type: string
+  group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: ServiceDescriptor
-    plural: service-descriptors
-    singular: service-descriptor
-  scope: Namespaced
+    kind: &quot;Organization&quot;
+    plural: &quot;organizations&quot;
+    singular: &quot;organization&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: apikeys.proxy.otoroshi.io
+  name: &quot;global-configs.proxy.otoroshi.io&quot;
+  creationTimestamp: null
 spec:
-  group: proxy.otoroshi.io
-  version: v1alpha1
-  preserveUnknownFields: true
-  #validation:
-  #  openAPIV3Schema:
-  #    type: object
-  #    properties:
-  #      spec:
-  #        type: object
-  #        properties:
-  #          daikokuToken:
-  #            type: string
-  #          secretName: 
-  #            type: string
-  #          exportSecret:
-  #            type: boolean
-  #          clientId:
-  #            type: string
-  #          clientSecret:
-  #            type: string
-  #          clientName:
-  #            type: string
-  #          authorizedEntities:
-  #            type: array
-  #          group:
-  #            type: string
-  #          enabled:
-  #            type: boolean
-  #          readOnly:
-  #            type: boolean
-  #          allowClientIdOnly:
-  #            type: boolean
-  #          throttlingQuota:
-  #            type: integer
-  #            format: int64
-  #          dailyQuota:
-  #            type: integer
-  #            format: int64
-  #          monthlyQuota:
-  #            type: integer
-  #            format: int64
-  #          constrainedServicesOnly:
-  #            type: boolean
-  #          validUntil:
-  #            type: integer
-  #            format: int64
-  #          tags:
-  #            type: array
-  #          metadata:
-  #            type: object
+  group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: ApiKey
-    plural: apikeys
-    singular: apikey
-  scope: Namespaced
+    kind: &quot;GlobalConfig&quot;
+    plural: &quot;global-configs&quot;
+    singular: &quot;global-config&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: certificates.proxy.otoroshi.io
+  name: &quot;apikeys.proxy.otoroshi.io&quot;
+  creationTimestamp: null
 spec:
-  group: proxy.otoroshi.io
-  version: v1alpha1
-  preserveUnknownFields: true
-  #validation:
-  #  openAPIV3Schema:
-  #    type: object
-  #    properties:
-  #      spec:
-  #        type: object
-  #        required: [&quot;csr&quot;]
-  #        properties:
-  #          name:
-  #            type: string
-  #          description:
-  #            type: string
-  #          secretName: 
-  #            type: string
-  #          exportSecret:
-  #            type: boolean
-  #          selfSigned:
-  #            type: boolean
-  #          ca:
-  #            type: boolean
-  #          autoRenew:
-  #            type: boolean
-  #          letsEncrypt:
-  #            type: boolean
-  #          client:
-  #            type: boolean
-  #          entityMetadata:
-  #            type: object
-  #          csr:
-  #            type: object
+  group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: Certificate
-    plural: certificates
-    singular: certificate
-  scope: Namespaced
+    kind: &quot;ApiKey&quot;
+    plural: &quot;apikeys&quot;
+    singular: &quot;apikey&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: global-configs.proxy.otoroshi.io
+  name: &quot;teams.proxy.otoroshi.io&quot;
+  creationTimestamp: null
 spec:
-  group: proxy.otoroshi.io
-  version: v1alpha1
-  preserveUnknownFields: true
+  group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: GlobalConfig
-    plural: global-configs
-    singular: global-config
-  scope: Namespaced
+    kind: &quot;Team&quot;
+    plural: &quot;teams&quot;
+    singular: &quot;team&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: jwt-verifiers.proxy.otoroshi.io
+  name: &quot;tcp-services.proxy.otoroshi.io&quot;
+  creationTimestamp: null
 spec:
-  group: proxy.otoroshi.io
-  version: v1alpha1
-  preserveUnknownFields: true
+  group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: JwtVerifier
-    plural: jwt-verifiers
-    singular: jwt-verifier
-  scope: Namespaced
+    kind: &quot;TcpService&quot;
+    plural: &quot;tcp-services&quot;
+    singular: &quot;tcp-service&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: auth-modules.proxy.otoroshi.io
+  name: &quot;backends.proxy.otoroshi.io&quot;
+  creationTimestamp: null
 spec:
-  group: proxy.otoroshi.io
-  version: v1alpha1
-  preserveUnknownFields: true
+  group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: AuthModule
-    plural: auth-modules
-    singular: auth-module
-  scope: Namespaced
+    kind: &quot;Backend&quot;
+    plural: &quot;backends&quot;
+    singular: &quot;backend&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: scripts.proxy.otoroshi.io
+  name: &quot;auth-modules.proxy.otoroshi.io&quot;
+  creationTimestamp: null
 spec:
-  group: proxy.otoroshi.io
-  version: v1alpha1
-  preserveUnknownFields: true
-  #validation:
-  #  openAPIV3Schema:
-  #    type: object
-  #    properties:
-  #      spec:
-  #        type: object
-  #        required: [&quot;code&quot;, &quot;type&quot;]
-  #        properties:
-  #          name:
-  #            type: string
-  #          desc:
-  #            type: string
-  #          code:
-  #            type: string
-  #          type:
-  #            type: string
-  #          metadata:
-  #            type: object
+  group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: Script
-    plural: scripts
-    singular: script
-  scope: Namespaced
+    kind: &quot;AuthModule&quot;
+    plural: &quot;auth-modules&quot;
+    singular: &quot;auth-module&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: tcp-services.proxy.otoroshi.io
+  name: &quot;jwt-verifiers.proxy.otoroshi.io&quot;
+  creationTimestamp: null
 spec:
-  group: proxy.otoroshi.io
-  version: v1alpha1
-  preserveUnknownFields: true
+  group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: TcpService
-    plural: tcp-services
-    singular: tcp-service
-  scope: Namespaced
+    kind: &quot;JwtVerifier&quot;
+    plural: &quot;jwt-verifiers&quot;
+    singular: &quot;jwt-verifier&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: data-exporters.proxy.otoroshi.io
+  name: &quot;data-exporters.proxy.otoroshi.io&quot;
+  creationTimestamp: null
 spec:
-  group: proxy.otoroshi.io
-  version: v1alpha1
-  preserveUnknownFields: true
+  group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: DataExporter
-    plural: data-exporters
-    singular: data-exporter
-  scope: Namespaced
+    kind: &quot;DataExporter&quot;
+    plural: &quot;data-exporters&quot;
+    singular: &quot;data-exporter&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
 metadata:
-  name: admins.proxy.otoroshi.io
+  name: &quot;routes.proxy.otoroshi.io&quot;
+  creationTimestamp: null
 spec:
-  group: proxy.otoroshi.io
-  version: v1alpha1
-  preserveUnknownFields: true
+  group: &quot;proxy.otoroshi.io&quot;
   names:
-    kind: Admin
-    plural: admins
-    singular: admin
-  scope: Namespaced</code></pre></dd>
+    kind: &quot;Route&quot;
+    plural: &quot;routes&quot;
+    singular: &quot;route&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;admins.proxy.otoroshi.io&quot;
+  creationTimestamp: null
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;Admin&quot;
+    plural: &quot;admins&quot;
+    singular: &quot;admin&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+---
+apiVersion: &quot;apiextensions.k8s.io/v1&quot;
+kind: &quot;CustomResourceDefinition&quot;
+metadata:
+  name: &quot;scripts.proxy.otoroshi.io&quot;
+  creationTimestamp: null
+spec:
+  group: &quot;proxy.otoroshi.io&quot;
+  names:
+    kind: &quot;Script&quot;
+    plural: &quot;scripts&quot;
+    singular: &quot;script&quot;
+  scope: &quot;Namespaced&quot;
+  versions:
+  - name: &quot;v1alpha1&quot;
+    served: true
+    storage: false
+    deprecated: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;
+  - name: &quot;v1&quot;
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: &quot;object&quot;</code></pre></dd>
   <dt>redis.yaml
   </dt>
   <dd>
@@ -1065,6 +1139,10 @@ spec:
             value: Want
           - name: HTTPS_WANT_CLIENT_AUTH
             value: &quot;true&quot;
+          - name: OTOROSHI_EXPOSED_PORTS_HTTP
+            value: &quot;80&quot;
+          - name: OTOROSHI_EXPOSED_PORTS_HTTPS
+            value: &quot;443&quot;
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {
@@ -1202,7 +1280,7 @@ spec:
     name: &quot;https&quot;
     targetPort: &quot;https&quot;
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate
@@ -1302,6 +1380,10 @@ spec:
             value: Want
           - name: HTTPS_WANT_CLIENT_AUTH
             value: &quot;true&quot;
+          - name: OTOROSHI_EXPOSED_PORTS_HTTP
+            value: &quot;80&quot;
+          - name: OTOROSHI_EXPOSED_PORTS_HTTPS
+            value: &quot;443&quot;
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {
@@ -1440,7 +1522,7 @@ spec:
     targetPort: &quot;https&quot;
     nodePort: 31443
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate
@@ -1615,6 +1697,10 @@ spec:
             value: Want
           - name: HTTPS_WANT_CLIENT_AUTH
             value: &quot;true&quot;
+          - name: OTOROSHI_EXPOSED_PORTS_HTTP
+            value: &quot;80&quot;
+          - name: OTOROSHI_EXPOSED_PORTS_HTTPS
+            value: &quot;443&quot;
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {
@@ -1736,7 +1822,7 @@ spec:
     name: &quot;https&quot;
     targetPort: &quot;https&quot;
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate
@@ -2045,7 +2131,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.0.2-rc.1-dev
+      - image: maif/otoroshi:16.0.5-rc.1-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -2190,7 +2276,7 @@ spec:
     name: &quot;https&quot;
     targetPort: &quot;https&quot;
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate
@@ -2434,7 +2520,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.0.2-rc.1-dev
+      - image: maif/otoroshi:16.0.5-rc.1-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -2551,7 +2637,7 @@ spec:
     name: &quot;https&quot;
     targetPort: &quot;https&quot;
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate
@@ -2890,7 +2976,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.0.2-rc.1-dev
+      - image: maif/otoroshi:16.0.5-rc.1-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -3005,7 +3091,7 @@ spec:
     name: &quot;https&quot;
     targetPort: &quot;https&quot;
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate
@@ -3444,7 +3530,7 @@ sudo kubectl get service-descriptors --all-namespaces
 curl -X GET \
   -H &#39;Authorization: Bearer eyJhbGciOiJSUzI....F463SrpOehQRaQ&#39; \
   -H &#39;Accept: application/json&#39; -k \
-  https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1alpha1/apikeys | jq
+  https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1/apikeys | jq
 </code></pre>
 <p>You can see this as better <code>Ingress</code> resources. Like any <code>Ingress</code> resource can define which controller it uses (using the <code>kubernetes.io/ingress.class</code> annotation), you can chose another kind of resource instead of <code>Ingress</code>. With Otoroshi CRDs you can even define resources like <code>Certificate</code>, <code>Apikey</code>, <code>AuthModules</code>, <code>JwtVerifier</code>, etc. It will help you to use all the power of Otoroshi while using the deployment model of kubernetes.</p><div class="callout warning "><div class="callout-title">Warning</div>
 <p>when using Otoroshi CRDs, Kubernetes becomes the single source of truth for the synced entities. It means that any value in the descriptors deployed will overrides the one in Otoroshi datastore each time it&rsquo;s synced. So be careful if you use the Otoroshi UI or the API, some changes in configuration may be overriden by CRDs sync job.</p></div>
@@ -3453,7 +3539,7 @@ curl -X GET \
   <dt>group.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: ServiceGroup
 metadata:
   name: http-app-group
@@ -3464,7 +3550,7 @@ spec:
   <dt>apikey.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: http-app-2-apikey-1
@@ -3484,7 +3570,7 @@ spec:
   <dt>service-descriptor.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: ServiceDescriptor
 metadata:
   name: http-app-service-descriptor
@@ -3521,7 +3607,7 @@ spec:
   <dt>certificate.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: http-app-certificate-client
@@ -3542,7 +3628,7 @@ spec:
   <dt>jwt.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: JwtVerifier
 metadata:
   name: http-app-verifier
@@ -3568,7 +3654,7 @@ spec:
   <dt>auth.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: AuthModule
 metadata:
   name: http-app-auth
@@ -3627,7 +3713,7 @@ spec:
   <dt>organization.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: Tenant
 metadata:
   name: default-organization
@@ -3639,7 +3725,7 @@ spec:
   <dt>team.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: Team
 metadata:
   name: default-team
@@ -3879,7 +3965,7 @@ spec:
   selector:
     run: http-app-deployment
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ServiceGroup
 metadata:
   name: http-app-group
@@ -3888,7 +3974,7 @@ metadata:
 spec:
   description: a group to hold services about the http-app
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: http-app-apikey-1
@@ -3900,7 +3986,7 @@ spec:
   authorizedEntities: 
   - group_http-app-group
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: http-app-2-apikey-1
@@ -3912,7 +3998,7 @@ spec:
   authorizedEntities: 
   - group_http-app-2-group
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: http-app-certificate-frontend
@@ -3933,7 +4019,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: http-app-certificate-backend
@@ -3957,7 +4043,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: http-app-certificate-client
@@ -3977,7 +4063,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ServiceDescriptor
 metadata:
   name: http-app-service-descriptor
@@ -4602,7 +4688,7 @@ spec:
     name: &quot;https&quot;
     targetPort: &quot;https&quot;
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: backend-cert
@@ -4623,7 +4709,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: client-cert
@@ -4646,7 +4732,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: oto-client-cert
@@ -4669,7 +4755,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: frontend-cert
@@ -4688,7 +4774,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: mesh-cert
@@ -4707,7 +4793,7 @@ spec:
     signatureAlg: SHA256WithRSAEncryption
     digestAlg: SHA-256
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: backend-apikey
@@ -4717,7 +4803,7 @@ spec:
   authorizedEntities:
     - group_default
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: ServiceDescriptor
 metadata:
   name: backend
@@ -4770,7 +4856,7 @@ spec:
 <p>then when a user subscribe for an apikey, he will only see an integration token</p><div class="centered-img">
 <img src="../imgs/kubernetes-daikoku-integration-token.png" /></div>
 <p>then just create an ApiKey manifest with this token and your good to go </p>
-<pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+<pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: ApiKey
 metadata:
   name: http-app-2-apikey-3

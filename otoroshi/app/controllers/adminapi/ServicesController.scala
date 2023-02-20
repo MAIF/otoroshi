@@ -93,7 +93,8 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   override def createEntityOps(
-      entity: ServiceDescriptor, req: RequestHeader
+      entity: ServiceDescriptor,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
     env.datastores.serviceDescriptorDataStore.set(entity).map {
       case true  => {
@@ -119,7 +120,8 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   override def updateEntityOps(
-      entity: ServiceDescriptor, req: RequestHeader
+      entity: ServiceDescriptor,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
     env.datastores.serviceDescriptorDataStore.set(entity).map {
       case true  => {

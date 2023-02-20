@@ -32,16 +32,20 @@ object Exporter {
 
 case class DataExporterConfigFiltering(include: Seq[JsObject] = Seq.empty, exclude: Seq[JsObject] = Seq.empty)
 
-case class FileSettings(path: String, maxFileSize: Long = 10L * 1024L * 1024L) extends Exporter {
+case class FileSettings(path: String, maxNumberOfFile: Option[Int], maxFileSize: Long = 10L * 1024L * 1024L) extends Exporter {
   override def toJson: JsValue =
     Json.obj(
       "path"        -> path,
-      "maxFileSize" -> maxFileSize
+      "maxFileSize" -> maxFileSize,
+      "maxNumberOfFile" -> maxNumberOfFile.map(n => JsNumber(n)).getOrElse(JsNull).asValue
     )
 }
 
-case class S3ExporterSettings(maxFileSize: Long = 10L * 1024L * 1024L, config: S3Configuration) extends Exporter {
-  override def toJson: JsValue = config.json.asObject ++ Json.obj("maxFileSize" -> maxFileSize)
+case class S3ExporterSettings(maxFileSize: Long = 10L * 1024L * 1024L, maxNumberOfFile: Option[Int], config: S3Configuration) extends Exporter {
+  override def toJson: JsValue = config.json.asObject ++ Json.obj(
+    "maxFileSize" -> maxFileSize,
+    "maxNumberOfFile" -> maxNumberOfFile.map(n => JsNumber(n)).getOrElse(JsNull).asValue
+  )
 }
 
 object S3ExporterSettings {
@@ -49,6 +53,7 @@ object S3ExporterSettings {
     override def reads(json: JsValue): JsResult[S3ExporterSettings] = Try {
       S3ExporterSettings(
         maxFileSize = json.select("maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
+        maxNumberOfFile = json.select("maxNumberOfFile").asOpt[Int].filter(_ > 0),
         config = S3Configuration.format.reads(json).get
       )
     } match {
@@ -180,15 +185,18 @@ object DataExporterConfig {
             exclude = (json \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
           ),
           config = (json \ "type").as[String] match {
-            case "elastic"      => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
-            case "webhook"      => Webhook.format.reads((json \ "config").as[JsObject]).get
-            case "kafka"        => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
-            case "pulsar"       => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
-            case "file"         =>
-              FileSettings((json \ "config" \ "path").as[String], (json \ "config" \ "maxFileSize").as[Long])
-            case "s3"           =>
+            case "elastic"       => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
+            case "webhook"       => Webhook.format.reads((json \ "config").as[JsObject]).get
+            case "kafka"         => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
+            case "pulsar"        => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
+            case "file"          => FileSettings(
+              path = (json \ "config" \ "path").as[String],
+              maxNumberOfFile = (json \ "config" \ "maxNumberOfFile").asOpt[Int].filter(_ > 0),
+              maxFileSize = (json \ "config" \ "maxFileSize").as[Long],
+            )
+            case "s3"            =>
               (json \ "config").as(S3ExporterSettings.format)
-            case "goreplays3"   =>
+            case "goreplays3"    =>
               GoReplayS3Settings(
                 (json \ "config" \ "s3").as(S3Configuration.format),
                 (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
@@ -198,7 +206,7 @@ object DataExporterConfig {
                 (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
               )
-            case "goreplayfile" =>
+            case "goreplayfile"  =>
               GoReplayFileSettings(
                 (json \ "config" \ "path").as[String],
                 (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
@@ -208,11 +216,12 @@ object DataExporterConfig {
                 (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
               )
-            case "mailer"       => MailerSettings.format.reads((json \ "config").as[JsObject]).get
-            case "custom"       => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
-            case "console"      => ConsoleSettings()
-            case "metrics"      => MetricsSettings((json \ "config" \ "labels").as[Map[String, String]])
-            case _              => throw new RuntimeException("Bad config type")
+            case "mailer"        => MailerSettings.format.reads((json \ "config").as[JsObject]).get
+            case "custom"        => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
+            case "console"       => ConsoleSettings()
+            case "metrics"       => MetricsSettings((json \ "config" \ "labels").as[Map[String, String]])
+            case "custommetrics" => CustomMetricsSettings.format.reads((json \ "config").as[JsObject]).get
+            case _               => throw new RuntimeException("Bad config type")
           }
         )
       } match {
@@ -280,23 +289,29 @@ object DataExporterConfigType {
     def name: String = "metrics"
   }
 
-  def parse(str: String): DataExporterConfigType =
+  case object CustomMetrics extends DataExporterConfigType {
+    def name: String = "custommetrics"
+  }
+
+  def parse(str: String): DataExporterConfigType = {
     str.toLowerCase() match {
-      case "kafka"        => Kafka
-      case "pulsar"       => Pulsar
-      case "elastic"      => Elastic
-      case "webhook"      => Webhook
-      case "file"         => File
-      case "goreplayfile" => GoReplayFile
-      case "goreplays3"   => GoReplayS3
-      case "s3"           => S3File
-      case "mailer"       => Mailer
-      case "none"         => None
-      case "custom"       => Custom
-      case "console"      => Console
-      case "metrics"      => Metrics
-      case _              => None
+      case "kafka"         => Kafka
+      case "pulsar"        => Pulsar
+      case "elastic"       => Elastic
+      case "webhook"       => Webhook
+      case "file"          => File
+      case "goreplayfile"  => GoReplayFile
+      case "goreplays3"    => GoReplayS3
+      case "s3"            => S3File
+      case "mailer"        => Mailer
+      case "none"          => None
+      case "custom"        => Custom
+      case "console"       => Console
+      case "metrics"       => Metrics
+      case "custommetrics" => CustomMetrics
+      case _               => None
     }
+  }
 }
 
 case class DataExporterConfig(
@@ -349,6 +364,7 @@ case class DataExporterConfig(
       case c: ExporterRef            => new CustomExporter(this)
       case c: ConsoleSettings        => new ConsoleExporter(this)
       case c: MetricsSettings        => new MetricsExporter(this)
+      case c: CustomMetricsSettings  => new CustomMetricsExporter(this)
       case _                         => throw new RuntimeException("unsupported exporter type")
     }
   }

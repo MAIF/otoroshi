@@ -65,9 +65,10 @@ lazy val bouncyCastleVersion     = "1.70"
 lazy val pulsarVersion           = "2.8.1"
 lazy val openTelemetryVersion    = "1.19.0"
 lazy val jacksonVersion          = "2.13.4"
-lazy val akkaHttpVersion         = "10.2.7"
-lazy val reactorNettyVersion     = "1.1.0"
-lazy val nettyVersion            = "4.1.85.Final"
+lazy val akkaHttpVersion         = "10.2.15"
+lazy val akkaHttp2Version        = "10.2.10" // WHAT ???
+lazy val reactorNettyVersion     = "1.1.2"
+lazy val nettyVersion            = "4.1.87.Final"
 lazy val excludesJackson         = Seq(
   ExclusionRule(organization = "com.fasterxml.jackson.core"),
   ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -87,8 +88,8 @@ libraryDependencies ++= Seq(
   "com.github.gphat"                %% "censorinus"                                % "2.1.16",
   "com.typesafe.akka"               %% "akka-stream-kafka"                         % "2.0.7",
   "com.lightbend.akka"              %% "akka-stream-alpakka-s3"                    % "2.0.2",
-  "com.typesafe.akka"               %% "akka-http2-support"                        % akkaHttpVersion,
-  "com.typesafe.akka"               %% "akka-http-xml"                             % akkaHttpVersion,
+  "com.typesafe.akka"               %% "akka-http2-support"                        % akkaHttp2Version,
+  "com.typesafe.akka"               %% "akka-http-xml"                             % akkaHttp2Version,
   "com.spotify.metrics"              % "semantic-metrics-core"                     % "1.1.11",
   "io.dropwizard.metrics"            % "metrics-jmx"                               % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "io.dropwizard.metrics"            % "metrics-json"                              % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
@@ -161,7 +162,7 @@ libraryDependencies ++= Seq(
   "com.amazonaws"                    % "aws-java-sdk-secretsmanager"               % "1.12.326" excludeAll (excludesJackson: _*),
   "org.apache.logging.log4j"         % "log4j-api"                                 % "2.19.0",
   "org.sangria-graphql"             %% "sangria"                                   % "3.4.0",
-  "org.extism.sdk"                   % "extism"                                    % "0.1.0",
+  "org.extism.sdk"                   % "extism"                                    % "0.2.0",
   if (scalaLangVersion.startsWith("2.12")) {
     "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
   } else {
@@ -179,8 +180,8 @@ libraryDependencies ++= Seq(
   "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
   "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.16.Final",
   "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.16.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.34.Final",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.34.Final" classifier "linux-x86_64" classifier "osx-x86_64",
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.35.Final",
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.35.Final" classifier "linux-x86_64" classifier "osx-x86_64",
   "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.15.Final",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0" % Test
@@ -260,6 +261,7 @@ assemblyMergeStrategy in assembly := {
   case PathList(ps @ _*) if ps.contains("source_context.proto")       => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("native-image.properties")    => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("public-suffix-list.txt")     => MergeStrategy.first
+  case PathList(ps @ _*) if ps.contains("jna")                        => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("findbugsExclude.xml")        => MergeStrategy.first
   case path if path.contains("org/bouncycastle")                      => MergeStrategy.first
   case PathList("javax", xs @ _*)                                     => MergeStrategy.first
@@ -321,6 +323,7 @@ reStart / javaOptions ++= Seq(
   "-Dotoroshi.next.experimental.netty-server.accesslog=true",
   "-Dotoroshi.next.experimental.netty-server.wiretap=false",
   "-Dotoroshi.next.experimental.netty-server.http3.enabled=true",
+  // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   // "-Dotoroshi.storage=experimental-pg",
   // "-Dotoroshi.storage=redis",
   // "-Dotoroshi.storage=lettuce",

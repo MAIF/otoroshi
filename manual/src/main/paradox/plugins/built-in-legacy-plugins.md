@@ -2677,6 +2677,89 @@ This plugin can accept the following configuration
 @@@
 
 
+@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.jobs.StateExporter }
+
+## Otoroshi state exporter job
+
+<img class="plugin-logo plugin-hidden" src=""></img>
+
+### Infos
+
+* plugin type: `job`
+* configuration root: `StateExporter`
+
+### Description
+
+This job send an event containing the full otoroshi export every n seconds
+
+
+
+### Default configuration
+
+```json
+{
+  "StateExporter" : {
+    "every_sec" : 3600,
+    "format" : "json"
+  }
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.next.plugins.TailscaleCertificatesFetcherJob }
+
+## Tailscale certificate fetcher job
+
+<img class="plugin-logo plugin-hidden" src=""></img>
+
+### Infos
+
+* plugin type: `job`
+* configuration root: ``none``
+
+### Description
+
+This job will fetch certificates from Tailscale ACME provider
+
+
+
+
+
+
+
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.next.plugins.TailscaleTargetsJob }
+
+## Tailscale targets job
+
+<img class="plugin-logo plugin-hidden" src=""></img>
+
+### Infos
+
+* plugin type: `job`
+* configuration root: ``none``
+
+### Description
+
+This job will aggregates Tailscale possible online targets
+
+
+
+
+
+
+
+@@@
+
+
 @@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob }
 
 ## Kubernetes Ingress Controller
@@ -2709,6 +2792,7 @@ This plugin enables Otoroshi as an Ingress Controller
     "crds" : true,
     "coreDnsIntegration" : false,
     "coreDnsIntegrationDryRun" : false,
+    "coreDnsAzure" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
     "useProxyState" : false,
@@ -2736,6 +2820,9 @@ This plugin enables Otoroshi as an Ingress Controller
     "kubeDnsOperatorCoreDnsNamespace" : "otoroshi",
     "kubeDnsOperatorCoreDnsName" : "otoroshi-dns",
     "kubeDnsOperatorCoreDnsPort" : 5353,
+    "connectionTimeout" : 5000,
+    "idleTimeout" : 30000,
+    "callAndStreamTimeout" : 30000,
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -2777,6 +2864,7 @@ This plugin enables Otoroshi as an Ingress Controller
     "crds" : true,
     "coreDnsIntegration" : false,
     "coreDnsIntegrationDryRun" : false,
+    "coreDnsAzure" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
     "useProxyState" : false,
@@ -2804,6 +2892,9 @@ This plugin enables Otoroshi as an Ingress Controller
     "kubeDnsOperatorCoreDnsNamespace" : "otoroshi",
     "kubeDnsOperatorCoreDnsName" : "otoroshi-dns",
     "kubeDnsOperatorCoreDnsPort" : 5353,
+    "connectionTimeout" : 5000,
+    "idleTimeout" : 30000,
+    "callAndStreamTimeout" : 30000,
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -2863,6 +2954,7 @@ This plugin enables Otoroshi CRDs Controller
     "crds" : true,
     "coreDnsIntegration" : false,
     "coreDnsIntegrationDryRun" : false,
+    "coreDnsAzure" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
     "useProxyState" : false,
@@ -2890,6 +2982,9 @@ This plugin enables Otoroshi CRDs Controller
     "kubeDnsOperatorCoreDnsNamespace" : "otoroshi",
     "kubeDnsOperatorCoreDnsName" : "otoroshi-dns",
     "kubeDnsOperatorCoreDnsPort" : 5353,
+    "connectionTimeout" : 5000,
+    "idleTimeout" : 30000,
+    "callAndStreamTimeout" : 30000,
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -2931,6 +3026,7 @@ This plugin enables Otoroshi CRDs Controller
     "crds" : true,
     "coreDnsIntegration" : false,
     "coreDnsIntegrationDryRun" : false,
+    "coreDnsAzure" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
     "useProxyState" : false,
@@ -2958,6 +3054,9 @@ This plugin enables Otoroshi CRDs Controller
     "kubeDnsOperatorCoreDnsNamespace" : "otoroshi",
     "kubeDnsOperatorCoreDnsName" : "otoroshi-dns",
     "kubeDnsOperatorCoreDnsPort" : 5353,
+    "connectionTimeout" : 5000,
+    "idleTimeout" : 30000,
+    "callAndStreamTimeout" : 30000,
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -3017,6 +3116,7 @@ This plugin syncs. TLS secrets from Kubernetes to Otoroshi
     "crds" : true,
     "coreDnsIntegration" : false,
     "coreDnsIntegrationDryRun" : false,
+    "coreDnsAzure" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
     "useProxyState" : false,
@@ -3044,6 +3144,9 @@ This plugin syncs. TLS secrets from Kubernetes to Otoroshi
     "kubeDnsOperatorCoreDnsNamespace" : "otoroshi",
     "kubeDnsOperatorCoreDnsName" : "otoroshi-dns",
     "kubeDnsOperatorCoreDnsPort" : 5353,
+    "connectionTimeout" : 5000,
+    "idleTimeout" : 30000,
+    "callAndStreamTimeout" : 30000,
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -3085,6 +3188,7 @@ This plugin syncs. TLS secrets from Kubernetes to Otoroshi
     "crds" : true,
     "coreDnsIntegration" : false,
     "coreDnsIntegrationDryRun" : false,
+    "coreDnsAzure" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
     "useProxyState" : false,
@@ -3112,6 +3216,9 @@ This plugin syncs. TLS secrets from Kubernetes to Otoroshi
     "kubeDnsOperatorCoreDnsNamespace" : "otoroshi",
     "kubeDnsOperatorCoreDnsName" : "otoroshi-dns",
     "kubeDnsOperatorCoreDnsPort" : 5353,
+    "connectionTimeout" : 5000,
+    "idleTimeout" : 30000,
+    "callAndStreamTimeout" : 30000,
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -3171,6 +3278,7 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
     "crds" : true,
     "coreDnsIntegration" : false,
     "coreDnsIntegrationDryRun" : false,
+    "coreDnsAzure" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
     "useProxyState" : false,
@@ -3198,6 +3306,9 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
     "kubeDnsOperatorCoreDnsNamespace" : "otoroshi",
     "kubeDnsOperatorCoreDnsName" : "otoroshi-dns",
     "kubeDnsOperatorCoreDnsPort" : 5353,
+    "connectionTimeout" : 5000,
+    "idleTimeout" : 30000,
+    "callAndStreamTimeout" : 30000,
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -3239,6 +3350,7 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
     "crds" : true,
     "coreDnsIntegration" : false,
     "coreDnsIntegrationDryRun" : false,
+    "coreDnsAzure" : false,
     "kubeLeader" : false,
     "restartDependantDeployments" : true,
     "useProxyState" : false,
@@ -3266,6 +3378,9 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
     "kubeDnsOperatorCoreDnsNamespace" : "otoroshi",
     "kubeDnsOperatorCoreDnsName" : "otoroshi-dns",
     "kubeDnsOperatorCoreDnsPort" : 5353,
+    "connectionTimeout" : 5000,
+    "idleTimeout" : 30000,
+    "callAndStreamTimeout" : 30000,
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },

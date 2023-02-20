@@ -15,6 +15,14 @@ import { Collapse } from '../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 import { CheckElasticsearchConnection } from '../components/elasticsearch';
 import { FeedbackButton } from './RouteDesigner/FeedbackButton';
+import {
+  LabelAndInput,
+  NgArrayRenderer,
+  NgForm,
+  NgObjectRenderer,
+  NgSelectRenderer,
+  NgStringRenderer,
+} from '../components/nginputs';
 
 function tryOrTrue(f) {
   try {
@@ -29,6 +37,123 @@ function tryOrFalse(f) {
     return f();
   } catch (e) {
     return false;
+  }
+}
+
+class CustomMetrics extends Component {
+  schema = {
+    tags: {
+      type: 'object',
+      label: 'Tags',
+    },
+    metrics: {
+      type: 'array',
+      array: true,
+      format: 'form',
+      label: 'Metrics',
+      flow: ['id', 'eventType', 'selector', 'kind', 'labels'],
+      schema: {
+        id: {
+          type: 'string',
+          label: 'Metric name',
+        },
+        eventType: {
+          type: 'select',
+          label: 'Event',
+          props: {
+            options: [
+              'GatewayEvent',
+              'MaxConcurrentRequestReachedAlert',
+              'CircuitBreakerOpenedAlert',
+              'CircuitBreakerClosedAlert',
+              'SessionDiscardedAlert',
+              'SessionsDiscardedAlert',
+              'PanicModeAlert',
+              'OtoroshiExportAlert',
+              'U2FAdminDeletedAlert',
+              'BlackListedBackOfficeUserAlert',
+              'AdminLoggedInAlert',
+              'AdminFirstLogin',
+              'AdminLoggedOutAlert',
+              'GlobalConfigModification',
+              'RevokedApiKeyUsageAlert',
+              'ServiceGroupCreatedAlert',
+              'ServiceGroupUpdatedAlert',
+              'ServiceGroupDeletedAlert',
+              'ServiceCreatedAlert',
+              'ServiceUpdatedAlert',
+              'ServiceDeletedAlert',
+              'ApiKeyCreatedAlert',
+              'ApiKeyUpdatedAlert',
+              'ApiKeyDeletedAlert',
+              'TrafficCaptureEvent',
+              'TcpEvent',
+              'HealthCheckEvent',
+              'RequestBodyEvent',
+              'ResponseBodyEvent',
+              'MirroringEvent',
+              'BackOfficeEvent',
+              'AdminApiEvent',
+              'SnowMonkeyOutageRegisteredEvent',
+              'CircuitBreakerOpenedEvent',
+              'CircuitBreakerClosedEvent',
+              'MaxConcurrentRequestReachedEvent',
+              'JobRunEvent',
+              'JobErrorEvent',
+              'JobStoppedEvent',
+              'JobStartedEvent',
+            ],
+          },
+        },
+        selector: {
+          renderer: (props) => {
+            return (
+              <LabelAndInput label="Increment value">
+                <NgSelectRenderer
+                  ngOptions={{
+                    spread: true,
+                  }}
+                  name="Selector"
+                  creatable={true}
+                  value={props?.value}
+                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${
+                    props?.rootValue?.eventType || 'GatewayEvent'
+                  }`}
+                  optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
+                  onChange={props.onChange}
+                />
+              </LabelAndInput>
+            );
+          },
+        },
+        kind: {
+          type: 'select',
+          label: 'Type of metric',
+          props: {
+            options: ['Counter', 'Timer', 'Histogram'],
+          },
+        },
+        labels: {
+          type: 'object',
+          label: 'Labels',
+        },
+      },
+    },
+  };
+
+  render() {
+    const value = this.props.rawValue;
+
+    // console.log("IN SUB FORM", value)
+
+    return (
+      <NgForm
+        schema={this.schema}
+        value={value}
+        flow={['metrics', 'tags']}
+        onChange={(e) => this.props.onChange(e)}
+      />
+    );
   }
 }
 
@@ -268,7 +393,7 @@ export class DataExportersPage extends Component {
           <SimpleBooleanInput
             value={item.enabled}
             onChange={(value) => {
-              BackOfficeServices.findDataExporterConfigById(item.id).then(exporter => {
+              BackOfficeServices.findDataExporterConfigById(item.id).then((exporter) => {
                 BackOfficeServices.updateDataExporterConfig({
                   ...exporter,
                   enabled: value,
@@ -416,7 +541,11 @@ export class NewExporterForm extends Component {
             placeholder="The type of exporter"
             value={this.data().type}
             onChange={(e) => this.updateType(e)}
-            possibleValues={Object.keys(possibleExporterConfigFormValues).map(key => possibleExporterConfigFormValues[key].label ? ({ label: possibleExporterConfigFormValues[key].label, value: key }) : { label: key, value: key })}
+            possibleValues={Object.keys(possibleExporterConfigFormValues).map((key) =>
+              possibleExporterConfigFormValues[key].label
+                ? { label: possibleExporterConfigFormValues[key].label, value: key }
+                : { label: key, value: key }
+            )}
             help="The type of event exporter"
           />
           <BooleanInput
@@ -506,6 +635,8 @@ export class NewExporterForm extends Component {
                 onChange={(config) => {
                   if (this.data().type === 'mailer') {
                     return this.dataChange({ config: config.mailerSettings });
+                  } else if (this.data().type === 'custommetrics') {
+                    return this.dataChange({ config: config.custommetrics });
                   } else {
                     return this.dataChange({ config });
                   }
@@ -1097,7 +1228,7 @@ const possibleExporterConfigFormValues = {
     },
   },
   file: {
-    flow: ['path', 'maxFileSize'],
+    flow: ['path', 'maxFileSize', 'maxNumberOfFile'],
     schema: {
       path: {
         type: 'string',
@@ -1111,11 +1242,22 @@ const possibleExporterConfigFormValues = {
           suffix: 'bytes',
         },
       },
+      maxNumberOfFile: {
+        type: 'number',
+        props: {
+          label: 'Max number of files',
+          placeholder: 'Max number of existing files',
+          suffix: 'files',
+        },
+      }
     },
   },
   s3: {
     flow: [
+      'writeEvery',
       'maxFileSize',
+      'maxNumberOfFile',
+      '>>> S3 config.',
       'bucket',
       'endpoint',
       'region',
@@ -1124,7 +1266,6 @@ const possibleExporterConfigFormValues = {
       'key',
       'chunkSize',
       'v4auth',
-      'writeEvery',
       'acl',
     ],
     schema: {
@@ -1134,6 +1275,14 @@ const possibleExporterConfigFormValues = {
           label: 'Max file size',
           placeholder: 'Max size in bytes for a file',
           suffix: 'bytes',
+        },
+      },
+      maxNumberOfFile: {
+        type: 'number',
+        props: {
+          label: 'Max number of files',
+          placeholder: 'Max number of existing files',
+          suffix: 'files',
         },
       },
       bucket: {
@@ -1415,17 +1564,18 @@ const possibleExporterConfigFormValues = {
           help: 'The selected properties from events and their projection',
           title: 'Properties of an event to retrieve and transform into metric labels',
           transformer: (a) => ({
-            value: a.id,
-            label: (
-              <span>
-                <span className="badge bg-success" style={{ minWidth: 63 }}>
-                  {a.certType}
-                </span>{' '}
-                {a.name}
-              </span>
-            ),
+            value: a,
+            label: a,
           }),
         },
+      },
+    },
+  },
+  custommetrics: {
+    flow: ['custommetrics'],
+    schema: {
+      custommetrics: {
+        type: CustomMetrics,
       },
     },
   },

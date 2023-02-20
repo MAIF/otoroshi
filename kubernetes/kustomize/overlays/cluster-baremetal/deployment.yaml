@@ -200,7 +200,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:16.0.2-rc.1-dev
+      - image: maif/otoroshi:16.0.5-rc.1-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -317,7 +317,7 @@ spec:
     name: "https"
     targetPort: "https"
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate

@@ -1,5 +1,5 @@
 import React, { Component, Suspense } from 'react';
-import Select, { Creatable }  from 'react-select';
+import Select, { Creatable } from 'react-select';
 import isFunction from 'lodash/isFunction';
 import { OffSwitch, OnSwitch } from '../inputs/BooleanInput';
 import { Location } from '../Location';
@@ -639,7 +639,11 @@ export class NgArrayRenderer extends Component {
     boolean: () => false,
     bool: () => false,
     array: () => [],
-    select: () => current?.props?.options[0] || '',
+    string: () => '',
+    select: () =>
+      current && current.props && current.props.options
+        ? current && current.props && current.props.options[0]
+        : '',
     form: () => ({
       ...this.generateDefaultValue(current.schema),
     }),
@@ -769,7 +773,9 @@ export class NgArrayRenderer extends Component {
                 let newArr = [...(this.props.value || [])];
 
                 if (schema.of) return this.props.onChange([...newArr, '']);
-                else {
+                else if (schema.itemRenderer) {
+                  this.props.onChange([...newArr, this.defaultValues({})[schema.type]()]);
+                } else {
                   const newArray = [...newArr, this.generateDefaultValue(schema)];
                   this.props.onChange(newArray);
                 }
@@ -788,7 +794,8 @@ export class NgObjectRenderer extends Component {
     const schema = this.props.schema;
     const props = schema.props || {};
     const readOnly = this.props.readOnly;
-    const ItemRenderer = schema.itemRenderer || this.props.rawSchema.itemRenderer;
+    const ItemRenderer =
+      schema.itemRenderer || (this.props.rawSchema ? this.props.rawSchema.itemRenderer : undefined);
 
     if (readOnly && Object.entries(this.props.value || {}).length === 0) return null;
 
@@ -887,11 +894,9 @@ export class NgArraySelectRenderer extends Component {
   };
 
   render() {
-    console.log('render')
     const schema = this.props.schema || {};
     const props = schema.props || {};
     const Component = props.creatable ? Select : Creatable;
-    console.log(props);
 
     return (
       <LabelAndInput {...this.props}>
@@ -1063,6 +1068,16 @@ export class NgObjectSelectRenderer extends Component {
 export class NgSelectRenderer extends Component {
   state = {};
   componentDidMount() {
+    this.fetchValues();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.optionsFrom !== this.props.optionsFrom) {
+      this.fetchValues();
+    }
+  }
+
+  fetchValues = () => {
     const schema = this.props.schema || {};
     const props = schema.props || {};
     if (props.optionsFrom || this.props.optionsFrom) {
@@ -1075,7 +1090,7 @@ export class NgSelectRenderer extends Component {
           .then((r) => {
             this.setState({
               loading: false,
-              options: r,
+              options: [...r, this.props.value].filter((f) => f),
             });
           })
           .catch((e) => {
@@ -1083,7 +1098,7 @@ export class NgSelectRenderer extends Component {
           });
       });
     }
-  }
+  };
 
   applyTransformer = (props, r) => {
     if (props.optionsTransformer) {
@@ -1103,12 +1118,14 @@ export class NgSelectRenderer extends Component {
     const schema = this.props.schema || {};
     const props = schema.props || this.props || {};
     const readOnly = this.props.readOnly;
+    const creatable = this.state.creatable || props.creatable || this.props.creatable;
+    const Component = creatable ? Creatable : Select;
 
     return (
       <LabelAndInput {...this.props}>
         {readOnly && <ReadOnlyField value={this.props.value} />}
         {!readOnly && (
-          <Select
+          <Component
             name={`selector-${this.props.name}`}
             value={this.props.value}
             isMulti={props.isMulti}
@@ -1120,7 +1137,14 @@ export class NgSelectRenderer extends Component {
               props || this.props,
               this.state.options || props.options || this.props.options
             )}
-            onChange={(e) => this.props.onChange(e?.value)}
+            onChange={(e) => {
+              if (creatable && !this.state.options.find((o) => o.value === e?.value)) {
+                this.setState({
+                  options: [...this.state.options, e.value],
+                });
+              }
+              this.props.onChange(e?.value);
+            }}
           />
         )}
       </LabelAndInput>

@@ -140,9 +140,9 @@ ldapadd -x -w otoroshi -D "cn=admin,dc=otoroshi,dc=tools" -f bootstrap.ldif -v
 
 > Dont' forget to save on the bottom page your configuration before to quit the page.
 
-- Test the connection when clicking on `Test admin connection` button. This should display a `It works!` message
+- Test the connection when clicking on `Test admin connection` button. This should show a `It works!` message
 
-- Finally, test the user connection button and set `john/password` or `baz/password` as credentials. This should display a `It works!` message
+- Finally, test the user connection button and set `john/password` or `baz/password` as credentials. This should show a `It works!` message
 
 > Dont' forget to save on the bottom page your configuration before to quit the page.
 

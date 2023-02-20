@@ -40,7 +40,8 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   override def writeEntity(entity: NgRoute): JsValue = NgRoute.fmt.writes(entity)
 
   override def findByIdOps(
-      id: String, req: RequestHeader
+      id: String,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.findById(id).map { opt =>
       Right(
@@ -72,7 +73,8 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   override def createEntityOps(
-      entity: NgRoute, req: RequestHeader
+      entity: NgRoute,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.set(entity).map {
       case true  => {
@@ -98,7 +100,8 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   override def updateEntityOps(
-      entity: NgRoute, req: RequestHeader
+      entity: NgRoute,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.set(entity).map {
       case true  => {
@@ -124,7 +127,8 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   override def deleteEntityOps(
-      id: String, req: RequestHeader
+      id: String,
+      req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[NgRoute]]] = {
     env.datastores.routeDataStore.delete(id).map {
       case true  => {

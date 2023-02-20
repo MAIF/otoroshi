@@ -460,13 +460,17 @@ export class CertificatesPage extends Component {
           'If true, the public key will be exposed on http://otoroshi-api.your-domain/.well-known/jwks.json',
       },
     },
-    revoked: {
+    'metadata.revocationReason': {
       type: 'select',
       props: {
-        label: 'Certificate status',
+        label: 'Certificate revocation status',
         defaultValue: RevocationReason.VALID.value,
         possibleValues: Object.values(RevocationReason),
       },
+    },
+    revoked: {
+      type: 'bool',
+      props: { label: 'Certificate revoked' },
     },
     client: {
       type: 'bool',
@@ -543,13 +547,8 @@ export class CertificatesPage extends Component {
     },
     {
       title: 'revoked',
-      cell: (v, item) =>
-        item.revoked !== RevocationReason.VALID.value ? (
-          <span className="badge bg-danger">yes</span>
-        ) : (
-          ''
-        ),
-      content: (item) => (item.revoked !== RevocationReason.VALID.value ? 'yes' : 'no'),
+      cell: (v, item) => (item.revoked ? <span className="badge bg-danger">yes</span> : ''),
+      content: (item) => (item.revoked ? 'yes' : 'no'),
       style: { textAlign: 'center', width: 70 },
     },
     // {
@@ -598,6 +597,7 @@ export class CertificatesPage extends Component {
     'keypair',
     'exposed',
     'revoked',
+    'metadata.revocationReason',
     'commands',
     'valid',
     'chain',
@@ -657,12 +657,14 @@ export class CertificatesPage extends Component {
     const data = new FormData();
     data.append('file', input.files[0]);
     return window.newPrompt('Certificate password ?').then((password) => {
-      if (password) {
-        return BackOfficeServices.importP12(password, input.files[0]).then((cert) => {
-          // this.table.update();
-          this.props.setTitle(`Create a new certificate`);
-          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-          this.table.setState({ currentItem: cert, showAddForm: true });
+      if (password !== null) {
+        return window.newConfirm('Is it a client certificate ?', { yesText: 'Yes', noText: 'No' }).then((client) => {
+          return BackOfficeServices.importP12(password, input.files[0], client).then((cert) => {
+            // this.table.update();
+            this.props.setTitle(`Create a new certificate`);
+            window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+            this.table.setState({ currentItem: cert, showAddForm: true });
+          });
         });
       }
     });
@@ -791,13 +793,13 @@ export class CertificatesPage extends Component {
   };
 
   updateCertificate = (cert) => {
-    if (cert.revoked === RevocationReason.VALID.value || cert.revoked === false) {
-      cert.revoked = false;
-      delete cert.metadata.revocationReason;
-    } else {
-      cert.metadata.revocationReason = cert.revoked;
-      cert.revoked = true;
-    }
+    // if (cert.revoked === RevocationReason.VALID.value || cert.revoked === false) {
+    //   cert.revoked = false;
+    //   delete cert.metadata.revocationReason;
+    // } else {
+    //   cert.metadata.revocationReason = cert.revoked;
+    //   cert.revoked = true;
+    // }
 
     BackOfficeServices.updateCertificate(cert);
   };
@@ -824,14 +826,14 @@ export class CertificatesPage extends Component {
       return {
         ...res,
         data: res.data.map((cert) => {
-          if (cert.metadata.revocationReason)
-            cert.revoked = RevocationReason[cert.metadata.revocationReason]
-              ? RevocationReason[cert.metadata.revocationReason].value
-              : RevocationReason.UNSPECIFIED;
-          else if (cert.revoked)
-            // cert was revoked before revocation reason list implementation so set unspecified as reason
-            cert.revoked = RevocationReason.UNSPECIFIED.value;
-          else cert.revoked = RevocationReason.VALID.value;
+          // if (cert.metadata.revocationReason)
+          //   cert.revoked = RevocationReason[cert.metadata.revocationReason]
+          //     ? RevocationReason[cert.metadata.revocationReason].value
+          //     : RevocationReason.UNSPECIFIED;
+          // else if (cert.revoked)
+          //   // cert was revoked before revocation reason list implementation so set unspecified as reason
+          //   cert.revoked = RevocationReason.UNSPECIFIED.value;
+          // else cert.revoked = RevocationReason.VALID.value;
           return cert;
         }),
       };
@@ -926,7 +928,7 @@ export class CertificatesPage extends Component {
                 htmlFor="export"
                 style={{ marginRight: 0 }}
                 className="fake-inputfile btn btn-primary ">
-                <i className="fas fa-file" /> Import .p12 file
+                <i className="fas fa-file" /> Import .p12/.pfx file
               </label>
             </div>
           </>

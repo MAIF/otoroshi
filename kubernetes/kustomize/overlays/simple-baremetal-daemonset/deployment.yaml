@@ -66,6 +66,10 @@ spec:
             value: Want
           - name: HTTPS_WANT_CLIENT_AUTH
             value: "true"
+          - name: OTOROSHI_EXPOSED_PORTS_HTTP
+            value: "80"
+          - name: OTOROSHI_EXPOSED_PORTS_HTTPS
+            value: "443"
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: >
               {
@@ -187,7 +191,7 @@ spec:
     name: "https"
     targetPort: "https"
 ---
-apiVersion: proxy.otoroshi.io/v1alpha1
+apiVersion: proxy.otoroshi.io/v1
 kind: Certificate
 metadata:
   name: otoroshi-service-certificate

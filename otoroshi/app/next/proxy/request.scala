@@ -101,7 +101,15 @@ class BackOfficeRequest(
     env: Env
 ) extends Request[Source[ByteString, _]] {
 
-  private val newUri     = request.uri.replaceFirst("/bo/api/proxy/", "/").replace("//", "/")
+  private val newUri = {
+    val path = request.path.replaceFirst("/bo/api/proxy/", "/").replace("//", "/")
+    request.queryString match {
+      case map if map.nonEmpty =>
+        val queryString = map.flatMap(t => t._2.map(v => s"${t._1}=${v}")).mkString("&")
+        s"${path}?${queryString}"
+      case map                 => path
+    }
+  }
   private val addHeaders = Seq(
     "Host"                           -> host,
     "X-Forwarded-For"                -> request.theIpAddress(env),

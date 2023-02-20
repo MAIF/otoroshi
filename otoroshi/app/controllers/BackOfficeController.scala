@@ -1365,19 +1365,25 @@ class BackOfficeController(
   def importP12File(): Action[Source[ByteString, _]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       val password = ctx.request.getQueryString("password").getOrElse("")
+      val client = ctx.request.getQueryString("client").contains("true")
+      val many = ctx.request.getQueryString("many").contains("true")
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
         Try {
-          val certs = P12Helper.extractCertificate(body, password)
-          val cert  = certs.head
-          Ok(cert.enrich().toJson).future
-          // Source(certs.toList)
-          //   .mapAsync(1) { cert =>
-          //     cert.enrich().save()
-          //   }
-          //   .runWith(Sink.ignore)
-          //   .map { _ =>
-          //     Ok(Json.obj("done" -> true))
-          //   }
+          val certs = P12Helper.extractCertificate(body, password, client)
+          if (!many) {
+            val cert  = certs.head
+            Ok(cert.enrich().copy(client = client).toJson).future
+          } else {
+            Source(certs.toList)
+              .mapAsync(1) { cert =>
+                val c = cert.enrich().copy(client = client)
+                c.save().map(_ => c)
+              }
+              .runWith(Sink.seq)
+              .map { seq =>
+                Ok(JsArray(seq.map(_.json)))
+              }
+          }
         } recover { case e =>
           e.printStackTrace()
           FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad p12 : $e")))
@@ -1935,5 +1941,39 @@ class BackOfficeController(
 
   def toYaml = BackOfficeActionAuth(parse.json) { ctx =>
     Ok(Yaml.write(ctx.request.body)).as("application/yaml")
+  }
+
+  def wasmFiles() = BackOfficeActionAuth.async { ctx =>
+    env.datastores.globalConfigDataStore.singleton()
+      .flatMap { globalConfig =>
+
+        globalConfig.wasmManagerSettings match {
+          case Some(WasmManagerSettings(url, clientId, clientSecret, pluginsFilter)) =>
+            env.Ws
+              .url(s"$url/plugins")
+              .withHttpHeaders(
+                "Otoroshi-Client-Id" -> clientId,
+                "Otoroshi-Client-Secret" -> clientSecret,
+                "kind" -> pluginsFilter.getOrElse("*")
+              )
+              .execute()
+              .map(res => {
+                if (res.status == 200) {
+                  Ok(res.json)
+                } else {
+                  Ok(Json.arr())
+                }
+              })
+              .recover {
+                 case e: Throwable =>
+                    logger.error(e.getMessage)
+                    Ok(Json.arr())
+              }
+          case _ =>
+            BadRequest(Json.obj(
+              "error" -> "Missing config in global configuration"
+            )).future
+        }
+      }
   }
 }

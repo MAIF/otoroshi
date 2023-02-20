@@ -145,7 +145,7 @@ export default {
             },
             port: {
               label: 'port',
-              type: 'string',
+              type: 'number',
             },
             protocol: {
               type: 'dots',

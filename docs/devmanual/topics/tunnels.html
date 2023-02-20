@@ -89,6 +89,8 @@
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -214,6 +216,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -281,9 +285,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>You have to enable cluster mode (Leader or Worker) to make this feature work. As this feature is experimental, we only support simple http request right now. Server Sent Event and Websocket request are not supported at the moment.</p></div>
 <h2><a href="#how-otoroshi-tunnels-works" name="how-otoroshi-tunnels-works" class="anchor"><span class="anchor-link"></span></a>How Otoroshi tunnels works</h2>
 <p>the main idea behind otoroshi tunnels is that the connection between your private network et the public network is initiated by the private network side. You don&rsquo;t have to expose a part of your private network, create a DMZ or whatever, you just have to authorize your private network otoroshi instance to contact your public network otoroshi instance.</p><div class="centered-img">
-<img src="../../imgs/tunnel-creation.jpeg" /></div>
+<img src="../imgs/tunnel-creation.jpeg" /></div>
 <p>once the persistent tunnel has been created, you can create routes on the public otoroshi instance that uses the otoroshi <code>Remote tunnel calls</code> to target your remote routes through the designated tunnel instance </p><div class="centered-img">
-<img src="../../imgs/tunnel-requests.jpeg" style="margin-bottom: 20px;" /></div><div class="callout warning margin-top-20"><div class="callout-title">Warning</div>
+<img src="../imgs/tunnel-requests.jpeg" style="margin-bottom: 20px;" /></div><div class="callout warning margin-top-20"><div class="callout-title">Warning</div>
 <p>this feature may introduce additional latency as the call passes through otoroshi tunnels</p></div>
 <h2><a href="#otoroshi-tunnel-example" name="otoroshi-tunnel-example" class="anchor"><span class="anchor-link"></span></a>Otoroshi tunnel example</h2>
 <p>first you have to enable the tunnels feature in your otoroshi configuration (on both public and private instances)</p>
@@ -321,15 +325,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <p>Now when your private otoroshi instance will boot, a persistent tunnel will be made between private and public instance. Now let say you have a private api exposed on <code>api-a.company.local</code> on your private otoroshi instance and you want to expose it on your public otoroshi instance. </p>
 <p>First create a new route exposed on <code>api-a.company.com</code> that targets <code>https://api-a.company.local:443</code></p><div class="centered-img">
-<img src="../../imgs/tunnel-exposition.png" /></div>
+<img src="../imgs/tunnel-exposition.png" /></div>
 <p>then add the <code>Remote tunnel calls</code> plugin to your route and set the tunnel id to <code>public-apis</code> to match the id you set in the otoroshi config file</p><div class="centered-img">
-<img src="../../imgs/tunnel-plugin.png" /></div>
+<img src="../imgs/tunnel-plugin.png" /></div>
 <p>add all the plugin you need to secure this brand new public api and call it</p>
 <pre class="prettyprint"><code class="language-sh">curl &quot;https://api-a.company.com/users&quot; | jq
 </code></pre>
 <h2><a href="#easily-expose-your-remote-services" name="easily-expose-your-remote-services" class="anchor"><span class="anchor-link"></span></a>Easily expose your remote services</h2>
 <p>you can see all the connected tunnel instances on an otoroshi instance on the <code>Connected tunnels</code> (<code>Cog icon</code> / <code>Connected tunnels</code>). For each tunnel instance you will be able to check the tunnel health and also to easily expose all the routes available on the other end of the tunnel. Just clic on the <code>expose</code> button of the route you want to expose, and a new route will be created with the <code>Remote tunnel calls</code> plugin already setup.</p><div class="centered-img">
-<img src="../../imgs/tunnel-expose.png" /></div>
+<img src="../imgs/tunnel-expose.png" /></div>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/relay-routing.html">Relay Routing</a></p>
 </div>
