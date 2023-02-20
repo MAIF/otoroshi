@@ -17,7 +17,7 @@ docker run -p 5001:5001 maif/otoroshi-wasm-manager
 
 This should download and run the latest version of the manager. Once launched, you can navigate  [http://localhost:5001]([http://localhost:5001) (or any other binding port). 
 
-This should show an authentication error. The manager can run with or without authentication, and you can confige it using the MODE environment variable (DEV or PROD values).
+This should show an authentication error. The manager can run with or without authentication, and you can confige it using the `AUTH_MODE` environment variable (`AUTH` or `NO_AUTH` values).
 
 The manager is configurable by environment variables. The manager uses an object storage (S3 compatible) as storage solution. 
 You can configure your S3 with the four variables `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT` and `S3_BUCKET`.
@@ -37,8 +37,7 @@ The following variables are useful to bind the manager with Otoroshi and to run 
 | NAME                   | DEFAULT VALUE           | DESCRIPTION                                            |
 | ---------------------- | ----------------------- | ------------------------------------------------------ |
 | OTOROSHI_USER_HEADER   | Otoroshi-User           | Header used to extract the user from Otoroshi request  |
-| OTOROSHI_CLIENT_ID     | admin-api-apikey-id     | Apikey id allows to call the public API of the manager |
-| OTOROSHI_CLIENT_SECRET | admin-api-apikey-secret | Apikey secret expected by the manager                  |
+| OTOROSHI_TOKEN_SECRET  | veryverysecret          | the secret used to sign the user token                 |
 
 ## Tutorial
 
@@ -71,13 +70,12 @@ docker run -d \
   --name wasm-manager \
   -p 5001:5001 \
   -e "MANAGER_PORT=5001" \
-  -e "MODE=PROD" \
+  -e "AUTH_MODE=AUTH" \
   -e "MANAGER_MAX_PARALLEL_JOBS=2" \
   -e "MANAGER_ALLOWED_DOMAINS=otoroshi.oto.tools,wasm-manager.oto.tools,localhost:5001" \
   -e "MANAGER_EXPOSED DOMAINS=/" \
   -e "OTOROSHI_USER_HEADER=Otoroshi-User" \
-  -e "OTOROSHI_CLIENT_ID=admin-api-apikey-id" \
-  -e "OTOROSHI_CLIENT_SECRET=admin-api-apikey-secret" \
+  -e "OTOROSHI_TOKEN_SECRET=veryverysecret" \
   -e "S3_ACCESS_KEY_ID=access_key" \
   -e "S3_SECRET_ACCESS_KEY=secret" \
   -e "S3_FORCE_PATH_STYLE=true" \
@@ -95,7 +93,7 @@ You're not authorized to access to manager
 ```
 
 This error indicates that the manager could not authorize the request. 
-Actually, the manager expects to be only reachable with an apikey (this is the definition of the mode `production`). 
+Actually, the manager expects to be only reachable through Otoroshi (this is the definition of the `AUTH_MODE=AUTH`). 
 So we need to create a route in Otoroshi to properly expose our manager to the rest of the world.
 
 ### Create a route to expose and protect the manager with authentication
@@ -117,8 +115,7 @@ The following command creates an in-memory authentication module with an user.
 
 ```sh
 curl -X POST "http://otoroshi-api.oto.tools:8080/api/auths" \
--H "Otoroshi-Client-Id: admin-api-apikey-id" \
--H "Otoroshi-Client-Secret: admin-api-apikey-secret" \
+-u "admin-api-apikey-id:admin-api-apikey-secret" \
 -H 'Content-Type: application/json; charset=utf-8' \
 -d @- <<'EOF'
 {
@@ -146,7 +143,7 @@ Once created, you can create our route to expose the manager.
 ```sh
 curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
 -H "Content-type: application/json" \
--u admin-api-apikey-id:admin-api-apikey-secret \
+-u "admin-api-apikey-id:admin-api-apikey-secret" \
 -d @- <<'EOF'
 {
   "id": "wasm-manager",
@@ -186,7 +183,7 @@ curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
         "algo": {
           "type": "HSAlgoSettings",
           "size": 512,
-          "secret": "secret"
+          "secret": "veryverysecret"
         }
       }
     }
@@ -237,28 +234,28 @@ and which returns an object of type WasmAccessValidatorResponse. Now, let's add 
 ```rust
 ... 
 pub fn execute(Json(context): Json<types::WasmAccessValidatorContext>) -> FnResult<Json<types::WasmAccessValidatorResponse>> {
-  match context.request.headers.get("foo") {
+    match context.request.headers.get("foo") {
         Some(foo) => if foo == "bar" {
-          Ok(Json(types::WasmAccessValidatorResponse { 
-            result: true,
-            error: None
-          }))
+            Ok(Json(types::WasmAccessValidatorResponse { 
+                result: true,
+                error: None
+            }))
         } else {
-          Ok(Json(types::WasmAccessValidatorResponse { 
-            result: false, 
-            error: Some(types::WasmAccessValidatorError { 
-                message: format!("{} is not authorized", foo).to_owned(),  
-                status: 401
-              })  
+            Ok(Json(types::WasmAccessValidatorResponse { 
+                result: false, 
+                error: Some(types::WasmAccessValidatorError { 
+                    message: format!("{} is not authorized", foo).to_owned(),  
+                    status: 401
+                })  
             }))
         },
         None => Ok(Json(types::WasmAccessValidatorResponse { 
-          result: false, 
-          error: Some(types::WasmAccessValidatorError { 
-              message: "you're not authorized".to_owned(),  
-              status: 401
+            result: false, 
+            error: Some(types::WasmAccessValidatorError { 
+                message: "you're not authorized".to_owned(),  
+                status: 401
             })  
-          }))
+        }))
     }
 }
 ```
@@ -276,28 +273,28 @@ use extism_pdk::*;
 
 #[plugin_fn]
 pub fn execute(Json(context): Json<types::WasmAccessValidatorContext>) -> FnResult<Json<types::WasmAccessValidatorResponse>> {
-  match context.request.headers.get("foo") {
+    match context.request.headers.get("foo") {
         Some(foo) => if foo == "bar" {
-          Ok(Json(types::WasmAccessValidatorResponse { 
-            result: true,
-            error: None
-          }))
+            Ok(Json(types::WasmAccessValidatorResponse { 
+                result: true,
+                error: None
+            }))
         } else {
-          Ok(Json(types::WasmAccessValidatorResponse { 
-            result: false, 
-            error: Some(types::WasmAccessValidatorError { 
-                message: format!("{} is not authorized", foo).to_owned(),  
-                status: 401
-              })  
+            Ok(Json(types::WasmAccessValidatorResponse { 
+                result: false, 
+                error: Some(types::WasmAccessValidatorError { 
+                    message: format!("{} is not authorized", foo).to_owned(),  
+                    status: 401
+                })  
             }))
         },
         None => Ok(Json(types::WasmAccessValidatorResponse { 
-          result: false, 
-          error: Some(types::WasmAccessValidatorError { 
-              message: "you're not authorized".to_owned(),  
-              status: 401
+            result: false, 
+            error: Some(types::WasmAccessValidatorError { 
+                message: "you're not authorized".to_owned(),  
+                status: 401
             })  
-          }))
+        }))
     }
 }
 ```

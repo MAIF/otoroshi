@@ -37,33 +37,14 @@ For this tutorial, we will start with an existing wasm file. The main function o
 
 The main function of this validator, written in rust, should look like:
 
-```rust
-pub fn execute(Json(context): Json<types::WasmAccessValidatorContext>) -> FnResult<Json<types::WasmAccessValidatorResponse>> {
-  match context.request.headers.get("foo") {
-      Some(foo) => if foo == "bar" {
-        Ok(Json(types::WasmAccessValidatorResponse { 
-          result: true,
-          error: None
-        }))
-      } else {
-        Ok(Json(types::WasmAccessValidatorResponse { 
-          result: false, 
-          error: Some(types::WasmAccessValidatorError { 
-              message: format!("{} is not authorized", foo).to_owned(),  
-              status: 401
-            })  
-          }))
-      },
-      None => Ok(Json(types::WasmAccessValidatorResponse { 
-        result: false, 
-        error: Some(types::WasmAccessValidatorError { 
-            message: "you're not authorized".to_owned(),  
-            status: 401
-          })  
-        }))
-  }
-}
-```
+validator.rs
+:   @@snip [validator.rs](../snippets/wasm-manager/validator.rs) 
+
+validator.ts
+:   @@snip [validator.ts](../snippets/wasm-manager/validator.ts) 
+
+validator.js
+:   @@snip [validator.js](../snippets/wasm-manager/validator.js) 
 
 The plugin receives the request context from Otoroshi (the matching route, the api key if present, the headers, etc) as `WasmAccessValidatorContext` object. 
 Then it applies a check on the headers, and responds with an error or success depending on the content of the foo header. 
@@ -150,30 +131,14 @@ HTTP/1.1 200 OK
 The next step in this tutorial is to use a WASM file as backend  of the route. We will use an existing WASM file, available in our wasm demos repository on github. 
 The content of this plugin, called `wasm-target.wasm`, looks like:
 
-```rust
-// (1)
-mod types;
+target.rs
+:   @@snip [target.rs](../snippets/wasm-manager/target.rs) 
 
-// (2)
-use extism_pdk::*;
-use std::collections::HashMap;
+target.ts
+:   @@snip [target.ts](../snippets/wasm-manager/target.ts) 
 
-#[plugin_fn]
-pub fn execute(Json(context): Json<types::WasmQueryContext>) -> FnResult<Json<types::WasmQueryResponse>> {
-    // (3)
-    let mut headers = HashMap::new();
-    headers.insert("foo".to_string(), "bar".to_string());
-
-    // (4)
-    let response = types::WasmQueryResponse { 
-      headers: Some(headers.into_iter().chain(context.raw_request.headers).collect()), 
-      body: "{\"foo\": \"bar\"}".to_owned(),
-      status: 200
-    };
-  
-    Ok(Json(response))
-}
-```
+target.js
+:   @@snip [target.js](../snippets/wasm-manager/target.js) 
 
 Let's explain this snippet. The purpose of this type of plugin is to respond an HTTP response with http status, body and headers map.
 

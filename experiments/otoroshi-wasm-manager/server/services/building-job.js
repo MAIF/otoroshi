@@ -19,7 +19,7 @@ const CARGO_ARGS = _ => ['build --release --target wasm32-unknown-unknown']
   .map(command => command.split(' '))
 
 const ASSEMBLY_SCRIPT_BUILD = ["npm", "npx"]
-const ASSEMBLY_SCRIPT_ARGS = wasmName => ["install", `asc plugin.ts --outFile ${wasmName}.wasm --use abort=plugin/myAbort --transform json-as/transform`]
+const ASSEMBLY_SCRIPT_ARGS = wasmName => ["install", `asc plugin.ts --outFile ${wasmName}.wasm --use abort=plugin/assemblyScriptAbort --transform json-as/transform`]
   .map(command => command.split(' '))
 
 const queue = []

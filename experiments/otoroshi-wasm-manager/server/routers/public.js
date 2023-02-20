@@ -9,12 +9,11 @@ const DOMAINS = (process.env.MANAGER_ALLOWED_DOMAINS || "")
   .split(',')
 
 router.use((req, res, next) => {
-  if (process.env.MODE !== 'PROD') {
+  if (process.env.AUTH_MODE === 'NO_AUTH') {
     next()
   } else if (
-    DOMAINS.includes(req.headers.host) &&
-    req.headers["otoroshi-client-id"] === process.env.OTOROSHI_CLIENT_ID &&
-    req.headers["otoroshi-client-secret"] === process.env.OTOROSHI_CLIENT_SECRET
+    process.env.AUTH_MODE === 'AUTH' &&
+    DOMAINS.includes(req.headers.host)
   ) {
     res.header('Access-Control-Allow-Origin', req.headers.origin)
     res.header('Access-Control-Allow-Credentials', true)
