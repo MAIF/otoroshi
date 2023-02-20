@@ -341,32 +341,102 @@ EOF
 <h2><a href="#create-the-route-with-the-plugin-validator" name="create-the-route-with-the-plugin-validator" class="anchor"><span class="anchor-link"></span></a>Create the route with the plugin validator</h2>
 <p>For this tutorial, we will start with an existing wasm file. The main function of this file will check the value of an http header to allow access or not. The can find this file at <a href="#https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm">https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm</a></p>
 <p>The main function of this validator, written in rust, should look like:</p>
-<pre class="prettyprint"><code class="language-rust">pub fn execute(Json(context): Json&lt;types::WasmAccessValidatorContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmAccessValidatorResponse&gt;&gt; {
-  match context.request.headers.get(&quot;foo&quot;) {
-      Some(foo) =&gt; if foo == &quot;bar&quot; {
-        Ok(Json(types::WasmAccessValidatorResponse { 
-          result: true,
-          error: None
-        }))
-      } else {
-        Ok(Json(types::WasmAccessValidatorResponse { 
-          result: false, 
-          error: Some(types::WasmAccessValidatorError { 
-              message: format!(&quot;{} is not authorized&quot;, foo).to_owned(),  
-              status: 401
+<dl>
+  <dt>validator.rs
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-rs">mod types;
+
+use extism_pdk::*;
+
+pub fn execute(Json(context): Json&lt;types::WasmAccessValidatorContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmAccessValidatorResponse&gt;&gt; {
+    match context.request.headers.get(&quot;foo&quot;) {
+        Some(foo) =&gt; if foo == &quot;bar&quot; {
+            Ok(Json(types::WasmAccessValidatorResponse { 
+                result: true,
+                error: None
+            }))
+        } else {
+            Ok(Json(types::WasmAccessValidatorResponse { 
+                result: false, 
+                error: Some(types::WasmAccessValidatorError { 
+                    message: format!(&quot;{} is not authorized&quot;, foo).to_owned(),  
+                    status: 401
+                })  
+            }))
+        },
+        None =&gt; Ok(Json(types::WasmAccessValidatorResponse { 
+            result: false, 
+            error: Some(types::WasmAccessValidatorError { 
+                message: &quot;you&#39;re not authorized&quot;.to_owned(),  
+                status: 401
             })  
-          }))
-      },
-      None =&gt; Ok(Json(types::WasmAccessValidatorResponse { 
-        result: false, 
-        error: Some(types::WasmAccessValidatorError { 
-            message: &quot;you&#39;re not authorized&quot;.to_owned(),  
-            status: 401
-          })  
         }))
+    }
+}</code></pre></dd>
+  <dt>validator.ts
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-ts">import { Host, Config, } from &#39;@extism/as-pdk&#39;;
+import { JSON } from &quot;json-as/assembly&quot;;
+import { 
+  WasmAccessValidatorResponse, 
+  WasmAccessValidatorError, 
+  WasmAccessValidatorContext 
+} from &quot;./types&quot;;
+
+// do not forget this one, and don&#39;t change the name, it&#39;s mandatory
+function assemblyScriptAbort(
+  message: string | null,
+  fileName: string | null,
+  lineNumber: u32,
+  columnNumber: u32
+): void { }
+
+export function execute(): i32 {
+  let str = Host.inputString();
+  let context = JSON.parse&lt;WasmAccessValidatorContext&gt;(str);
+  let fooHeader = context.request.headers.foo
+  if (fooHeader) {
+    if (fooHeader === &quot;bar&quot;) {
+      Host.outputString(JSON.stringify&lt;WasmAccessValidatorResponse&gt;(
+        new WasmAccessValidatorResponse(true, null))
+      )
+    } else {
+      Host.outputString(JSON.stringify&lt;WasmAccessValidatorResponse&gt;(
+        new WasmAccessValidatorResponse(false, new WasmAccessValidatorError(
+          `${fooHeader} is not authorized`, 401
+        )))
+      )
+    }
+  } else {
+    Host.outputString(JSON.stringify&lt;WasmAccessValidatorResponse&gt;(
+      new WasmAccessValidatorResponse(false, new WasmAccessValidatorError(
+        `you&#39;re not authorized`, 401
+      )))
+    )
   }
-}
-</code></pre>
+  return 0;
+}</code></pre></dd>
+  <dt>validator.js
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-js">export function execute() {
+  let str = Host.inputString();
+  let context = JSON.parse(str);
+  let fooHeader = context.request.headers[&#39;foo&#39;];
+  if (fooHeader) {
+    if (fooHeader === &quot;bar&quot;) {
+      Host.outputString(JSON.stringify({ result: true, error: null }));
+    } else {
+      Host.outputString(JSON.stringify({ result: false, error: { status: 401, message: `${fooHeader} is not authorized` }}));
+    }
+  } else {
+    Host.outputString(JSON.stringify({ result: false, error: { status: 401, message: `you&#39;re not authorized` }}));
+  }
+  return 0;
+}</code></pre></dd>
+</dl>
 <p>The plugin receives the request context from Otoroshi (the matching route, the api key if present, the headers, etc) as <code>WasmAccessValidatorContext</code> object. Then it applies a check on the headers, and responds with an error or success depending on the content of the foo header. Obviously, the previous snippet is an example and the editor allows you to write whatever you want as a check.</p>
 <p>Let&rsquo;s create a route that uses the previous wasm file as an access validator plugin :</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST &quot;http://otoroshi-api.oto.tools:8080/api/routes&quot; \
@@ -430,7 +500,11 @@ EOF
 </code></pre>
 <h2><a href="#update-the-route-by-replacing-the-backend-with-a-wasm-file" name="update-the-route-by-replacing-the-backend-with-a-wasm-file" class="anchor"><span class="anchor-link"></span></a>Update the route by replacing the backend with a WASM file</h2>
 <p>The next step in this tutorial is to use a WASM file as backend of the route. We will use an existing WASM file, available in our wasm demos repository on github. The content of this plugin, called <code>wasm-target.wasm</code>, looks like:</p>
-<pre class="prettyprint"><code class="language-rust">// (1)
+<dl>
+  <dt>target.rs
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-rs">// (1)
 mod types;
 
 // (2)
@@ -445,14 +519,68 @@ pub fn execute(Json(context): Json&lt;types::WasmQueryContext&gt;) -&gt; FnResul
 
     // (4)
     let response = types::WasmQueryResponse { 
-      headers: Some(headers.into_iter().chain(context.raw_request.headers).collect()), 
-      body: &quot;{\&quot;foo\&quot;: \&quot;bar\&quot;}&quot;.to_owned(),
-      status: 200
+        headers: Some(headers.into_iter().chain(context.raw_request.headers).collect()), 
+        body: &quot;{\&quot;foo\&quot;: \&quot;bar\&quot;}&quot;.to_owned(),
+        status: 200
     };
   
     Ok(Json(response))
-}
-</code></pre>
+}</code></pre></dd>
+  <dt>target.ts
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-ts">import { Host, Config, } from &#39;@extism/as-pdk&#39;;
+import { JSON } from &quot;json-as/assembly&quot;;
+// (1)
+import { 
+  WasmQueryResponse, 
+  WasmQueryContext, 
+} from &quot;./types&quot;;
+
+// do not forget this one, and don&#39;t change the name, it&#39;s mandatory
+function assemblyScriptAbort(
+  message: string | null,
+  fileName: string | null,
+  lineNumber: u32,
+  columnNumber: u32
+): void { }
+
+// (2)
+export function execute(): i32 {
+  let str = Host.inputString();
+  let context = JSON.parse&lt;WasmQueryContext&gt;(str);
+  // (3)
+  let headers = new Map&lt;string, string&gt;();
+  headers.put(&quot;foo&quot;, &quot;bar&quot;);
+  // (4)
+  let response = new WasmQueryResponse(
+    headers,
+    &quot;{\&quot;foo\&quot;: \&quot;bar\&quot;}&quot;,
+    200
+  );
+  Host.outputString(JSON.stringify&lt;WasmQueryResponse&gt;(response));
+  return 0;
+}</code></pre></dd>
+  <dt>target.js
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-js">// (2)
+export function execute() {
+  let str = Host.inputString();
+  let context = JSON.parse(str);
+  // (3)
+  let headers = {};
+  headers[&quot;foo&quot;] = &quot;bar&quot;;
+  // (4)
+  let response = {
+    headers,
+    body: &quot;{\&quot;foo\&quot;: \&quot;bar\&quot;}&quot;,
+    status: 200
+  };
+  Host.outputString(JSON.stringify(response));
+  return 0;
+}</code></pre></dd>
+</dl>
 <p>Let&rsquo;s explain this snippet. The purpose of this type of plugin is to respond an HTTP response with http status, body and headers map.</p>
 <ol>
   <li>Includes all public structures from <code>types.rs</code> file. This file contains predefined Otoroshi structures that plugins can manipulate.</li>
