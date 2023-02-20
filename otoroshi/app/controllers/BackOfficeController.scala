@@ -1964,6 +1964,11 @@ class BackOfficeController(
                   Ok(Json.arr())
                 }
               })
+              .recover {
+                 case e: Throwable =>
+                    logger.error(e.getMessage)
+                    Ok(Json.arr())
+              }
           case _ =>
             BadRequest(Json.obj(
               "error" -> "Missing config in global configuration"
