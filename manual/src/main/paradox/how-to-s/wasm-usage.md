@@ -4,7 +4,7 @@ WebAssembly (WASM) is a simple machine model and executable format with an exten
 
 - `WasmAccessValidator`: useful to control access to a route (jump to the next section to learn more about it)
 - `WasmRequestTransformer`: transform the content of an incoming request (body, headers, etc ...)
-- `WasmBackend`: execute a WASM file as Otoroshi target 
+- `WasmBackend`: execute a WASM file as Otoroshi target. Useful to implement user defined logic and function at the edge
 - `WasmResponseTransformer`: transform the content of the response produced by the target
 - `WasmSink`: create a sink plugin to handle unmatched requests
 
