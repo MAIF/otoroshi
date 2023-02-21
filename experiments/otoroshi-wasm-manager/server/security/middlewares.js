@@ -10,6 +10,22 @@ const missingCredentials = res => {
     })
 }
 
+function extractedUserOrApikey(req) {
+  const jwtUser = req.headers[process.env.OTOROSHI_USER_HEADER] || req.headers['otoroshi-user']
+  if (jwtUser) {
+    try {
+      const decodedToken = jwt.verify(jwtUser, secret, { algorithms: ['HS512'] });
+      req.user = decodedToken.user
+      req.apikey = decodedToken.apikey
+      return decodedToken.user || decodedToken.apikey;
+    } catch (_) {
+      return null;
+    }
+  } else {
+    return null;
+  }
+}
+
 const extractUserFromQuery = (req, res, next) => {
   if (process.env.AUTH_MODE === 'AUTH') {
     const jwtUser = req.headers[process.env.OTOROSHI_USER_HEADER] || req.headers['otoroshi-user']
@@ -34,6 +50,7 @@ const extractUserFromQuery = (req, res, next) => {
 
 module.exports = {
   Security: {
+    extractedUserOrApikey,
     extractUserFromQuery
   }
 }

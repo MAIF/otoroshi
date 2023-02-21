@@ -3,3 +3,5 @@ yarn.lock
 server/node_modules
 ui/node_modules
 server/.env
+/dev.env
+/lib

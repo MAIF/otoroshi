@@ -150,13 +150,14 @@ object WasmUtils {
                 case Some(WasmManagerSettings(url, clientId, clientSecret, _)) =>
                   env.Ws
                     .url(s"$url/wasm/$pluginId")
+                    .withFollowRedirects(false)
                     .withRequestTimeout(FiniteDuration(5 * 1000, MILLISECONDS))
                     .withHttpHeaders(
                       "Accept" -> "application/json",
                       "Otoroshi-Client-Id" -> clientId,
                       "Otoroshi-Client-Secret" -> clientSecret
                     )
-                    .execute()
+                    .get()
                     .flatMap { resp =>
                       if (resp.status == 400) {
                         Right(Json.obj("error"-> "missing signed plugin url")).future

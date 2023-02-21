@@ -1951,12 +1951,13 @@ class BackOfficeController(
           case Some(WasmManagerSettings(url, clientId, clientSecret, pluginsFilter)) =>
             env.Ws
               .url(s"$url/plugins")
+              .withFollowRedirects(false)
               .withHttpHeaders(
                 "Otoroshi-Client-Id" -> clientId,
                 "Otoroshi-Client-Secret" -> clientSecret,
                 "kind" -> pluginsFilter.getOrElse("*")
               )
-              .execute()
+              .get()
               .map(res => {
                 if (res.status == 200) {
                   Ok(res.json)

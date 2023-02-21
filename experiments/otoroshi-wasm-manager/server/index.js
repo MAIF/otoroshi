@@ -9,7 +9,7 @@ const { S3 } = require('./s3');
 const swaggerUi = require('swagger-ui-express');
 
 const swaggerDocument = require('./swagger.json');
-swaggerDocument.servers = (process.env.MANAGER_EXPOSED_DOMAINS || []).split(',').map(url => ({ url }))
+swaggerDocument.servers = (process.env.MANAGER_EXPOSED_DOMAINS || "").split(',').map(url => ({ url }))
 
 const pluginsRouter = require('./routers/plugins');
 const templatesRouter = require('./routers/templates');

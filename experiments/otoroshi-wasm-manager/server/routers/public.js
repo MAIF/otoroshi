@@ -2,6 +2,7 @@ const express = require('express');
 const { S3 } = require('../s3');
 const { UserManager } = require("../services/user");
 const { hash } = require('../utils');
+const { Security } = require('../security/middlewares');
 
 const router = express.Router()
 
@@ -13,7 +14,8 @@ router.use((req, res, next) => {
     next()
   } else if (
     process.env.AUTH_MODE === 'AUTH' &&
-    DOMAINS.includes(req.headers.host)
+    DOMAINS.includes(req.headers.host) &&
+    Security.extractedUserOrApikey(req)
   ) {
     res.header('Access-Control-Allow-Origin', req.headers.origin)
     res.header('Access-Control-Allow-Credentials', true)

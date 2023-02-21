@@ -167,11 +167,24 @@ curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
      {
       "enabled": true,
       "plugin": "cp:otoroshi.next.plugins.AuthModule",
+      "exclude": [
+        "/plugins",
+        "/wasm/.*"
+      ],
       "config": {
         "pass_with_apikey": false,
         "auth_module": null,
         "module": "wasm_manager_in_memory"
       }
+    },
+    {
+      "enabled": true,
+      "plugin": "cp:otoroshi.next.plugins.ApikeyCalls",
+      "include": [
+        "/plugins",
+        "/wasm/.*"
+      ],
+      "config": {}
     },
     {
       "enabled": true,
