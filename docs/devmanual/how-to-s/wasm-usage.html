@@ -378,6 +378,30 @@ pub fn execute(Json(context): Json&lt;types::WasmAccessValidatorContext&gt;) -&g
   }
 
 }</code></pre></dd>
+  <dt>validator.js
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-js">export function execute() {
+  let context = JSON.parse(Host.inputString());
+
+    if (context.request.headers[&quot;foo&quot;] === &quot;bar&quot;) {
+        const out = {
+            result: true
+        };
+        Host.outputString(JSON.stringify(out));
+    } else {
+        const error = {
+            result: false,
+            error: {
+                message: &quot;you&#39;re not authorized&quot;,
+                status: 401
+            }
+        };
+        Host.outputString(JSON.stringify(error));
+    }
+
+    return 0;
+}</code></pre></dd>
   <dt>validator.ts
   </dt>
   <dd>
@@ -395,6 +419,30 @@ export function execute() {
         Host.outputString(JSON.stringify(out));
     } else {
         const error: WasmAccessValidatorResponse = {
+            result: false,
+            error: {
+                message: &quot;you&#39;re not authorized&quot;,
+                status: 401
+            }
+        };
+        Host.outputString(JSON.stringify(error));
+    }
+
+    return 0;
+}</code></pre></dd>
+  <dt>validator.js
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-js">export function execute() {
+  let context = JSON.parse(Host.inputString());
+
+    if (context.request.headers[&quot;foo&quot;] === &quot;bar&quot;) {
+        const out = {
+            result: true
+        };
+        Host.outputString(JSON.stringify(out));
+    } else {
+        const error = {
             result: false,
             error: {
                 message: &quot;you&#39;re not authorized&quot;,
@@ -537,6 +585,29 @@ pub fn execute(Json(context): Json&lt;types::WasmQueryContext&gt;) -&gt; FnResul
   
     Ok(Json(response))
 }</code></pre></dd>
+  <dt>target.js
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-js">// (2)
+export function execute() {
+  let str = Host.inputString();
+  let context = JSON.parse(str);
+  
+  // (3)
+  let headers = { ...context.request.headers };
+  headers[&quot;foo&quot;] = &quot;bar&quot;;
+
+  // (4)
+  let response = {
+    headers,
+    body: &quot;{\&quot;foo\&quot;: \&quot;bar\&quot;}&quot;,
+    status: 200
+  };
+  
+  Host.outputString(JSON.stringify(response));
+
+  return 0;
+}</code></pre></dd>
   <dt>target.ts
   </dt>
   <dd>
@@ -564,6 +635,29 @@ export function execute() {
     Host.outputString(JSON.stringify(response));
 
     return 0;
+}</code></pre></dd>
+  <dt>target.js
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-js">// (2)
+export function execute() {
+  let str = Host.inputString();
+  let context = JSON.parse(str);
+  
+  // (3)
+  let headers = { ...context.request.headers };
+  headers[&quot;foo&quot;] = &quot;bar&quot;;
+
+  // (4)
+  let response = {
+    headers,
+    body: &quot;{\&quot;foo\&quot;: \&quot;bar\&quot;}&quot;,
+    status: 200
+  };
+  
+  Host.outputString(JSON.stringify(response));
+
+  return 0;
 }</code></pre></dd>
   <dt>target.go
   </dt>
