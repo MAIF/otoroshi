@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { ReactComponent as As } from './assets/as.svg';
 import { ReactComponent as Rust } from './assets/rust.svg';
 import { ReactComponent as Js } from './assets/js.svg';
 import { ReactComponent as Go } from './assets/go.svg';
@@ -28,7 +27,6 @@ function NewPluginModal({ onNewPlugin, setProjectSelector }) {
       { icon: <Rust style={{ height: 30, width: 32, marginLeft: -4, transform: 'scale(1.5)' }} />, onClick: () => onNewPlugin('rust') },
       { icon: <Js style={{ height: 32, width: 32 }} />, onClick: () => onNewPlugin('js') },
       { icon: <Go style={{ height: 32, width: 32 }} />, onClick: () => onNewPlugin('go') },
-      { icon: <As style={{ height: 32, width: 32 }} />, onClick: () => onNewPlugin('assembly-script') },
       {
         icon: <i className='fas fa-times fa-lg' style={{
           width: 22

@@ -10,7 +10,7 @@ const emit = (channel, group, message) => {
   io.emit(channel, `[${group}] ${message}`)
 }
 
-const emitError = (channel, message) => {
+const emitError = (channel, group, message) => {
   io.emit(channel, `ERROR - [${group}] ${message}`)
 }
 

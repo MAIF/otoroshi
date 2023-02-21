@@ -62,13 +62,16 @@ const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild, pluginTyp
 
         const { commands, args } = (pluginType === 'rust' ? {
           commands: CARGO_BUILD,
-          args: CARGO_ARGS
+          args: CARGO_ARGS()
         } : pluginType === 'js' ? {
           commands: JS_BUILD,
           args: JS_ARGS(wasmName)
         } : pluginType === 'go' ? {
           commands: GO_BUILD,
           args: GO_ARGS(wasmName)
+        } : {
+          commands: [],
+          args: []
         });
 
         commands

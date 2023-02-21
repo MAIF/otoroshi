@@ -21,6 +21,11 @@ router.use((req, res, next) => {
     res.header('Access-Control-Allow-Credentials', true)
     next()
   } else {
+    console.log(process.env.AUTH_MODE === 'AUTH')
+    console.log(DOMAINS.includes(req.headers.host))
+    console.log(Security.extractedUserOrApikey(req))
+    console.log(req.headers.host)
+    console.log(DOMAINS)
     res
       .status(403)
       .json({
