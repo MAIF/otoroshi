@@ -475,11 +475,24 @@ EOF
      {
       &quot;enabled&quot;: true,
       &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.AuthModule&quot;,
+      &quot;exclude&quot;: [
+        &quot;/plugins&quot;,
+        &quot;/wasm/.*&quot;
+      ],
       &quot;config&quot;: {
         &quot;pass_with_apikey&quot;: false,
         &quot;auth_module&quot;: null,
         &quot;module&quot;: &quot;wasm_manager_in_memory&quot;
       }
+    },
+    {
+      &quot;enabled&quot;: true,
+      &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.ApikeyCalls&quot;,
+      &quot;include&quot;: [
+        &quot;/plugins&quot;,
+        &quot;/wasm/.*&quot;
+      ],
+      &quot;config&quot;: {}
     },
     {
       &quot;enabled&quot;: true,
