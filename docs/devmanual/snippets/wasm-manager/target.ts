@@ -1,32 +1,25 @@
-import { Host, Config, } from '@extism/as-pdk';
-import { JSON } from "json-as/assembly";
 // (1)
-import { 
-  WasmQueryResponse, 
-  WasmQueryContext, 
-} from "./types";
+import { WasmQueryContext, WasmQueryResponse } from './types';
 
-// do not forget this one, and don't change the name, it's mandatory
-function assemblyScriptAbort(
-  message: string | null,
-  fileName: string | null,
-  lineNumber: u32,
-  columnNumber: u32
-): void { }
+export declare var Host: any;
 
 // (2)
-export function execute(): i32 {
-  let str = Host.inputString();
-  let context = JSON.parse<WasmQueryContext>(str);
-  // (3)
-  let headers = new Map<string, string>();
-  headers.put("foo", "bar");
-  // (4)
-  let response = new WasmQueryResponse(
-    headers,
-    "{\"foo\": \"bar\"}",
-    200
-  );
-  Host.outputString(JSON.stringify<WasmQueryResponse>(response));
-  return 0;
+export function execute() {
+    const context = JSON.parse(Host.inputString()) as WasmQueryContext;
+
+    // (3)
+    const headers = {
+      "foo": "bar",
+      ...(context.request.headers || {})
+    }
+
+    // (4)
+    const response: WasmQueryResponse = {
+        headers,
+        status: 200,
+        body: "{\"foo\": \"bar\"}"
+    };
+    Host.outputString(JSON.stringify(response));
+
+    return 0;
 }
