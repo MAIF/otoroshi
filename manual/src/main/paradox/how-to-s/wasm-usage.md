@@ -43,7 +43,7 @@ validator.rs
 validator.ts
 :   @@snip [validator.ts](../snippets/wasm-manager/validator.ts) 
 
-validator.js
+validator.go
 :   @@snip [validator.js](../snippets/wasm-manager/validator.go) 
 
 The plugin receives the request context from Otoroshi (the matching route, the api key if present, the headers, etc) as `WasmAccessValidatorContext` object. 
@@ -137,7 +137,7 @@ target.rs
 target.ts
 :   @@snip [target.ts](../snippets/wasm-manager/target.ts) 
 
-target.js
+target.go
 :   @@snip [target.js](../snippets/wasm-manager/target.go) 
 
 Let's explain this snippet. The purpose of this type of plugin is to respond an HTTP response with http status, body and headers map.
