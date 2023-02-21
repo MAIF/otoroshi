@@ -32,7 +32,7 @@ router.post('/:pluginId', (req, res) => {
   }
 });
 
-function run(wasm, { input, functionName }, res) {
+function run(wasm, { input, functionName, wasi }, res) {
   const { s3, Bucket } = S3.state()
 
   s3.getObject({
@@ -42,7 +42,7 @@ function run(wasm, { input, functionName }, res) {
     .promise()
     .then(async data => {
       const ctx = new Context();
-      const plugin = ctx.plugin(data.Body);
+      const plugin = ctx.plugin(data.Body, wasi);
 
       const buf = await plugin.call(functionName, input)
       const output = buf.toString()

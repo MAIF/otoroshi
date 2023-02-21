@@ -38,9 +38,11 @@ function File({ newFilename, filename, content, ext, onClick, ...props }) {
         </div>
         <span className='ms-2'>{filename}</span>
       </div>
-      {(['rs', 'ts'].includes(ext) && ![
+      {(['rs', 'ts', 'js'].includes(ext) && ![
         'plugin.ts',
-        'lib.rs'
+        'lib.rs',
+        'esbuild.js',
+        'config.js'
       ].includes(filename)) && < i className='fas fa-times me-2'
         onClick={e => {
           e.stopPropagation()

@@ -16,11 +16,15 @@ const MAX_JOBS = process.env.MANAGER_MAX_PARALLEL_JOBS || 2;
 
 const CARGO_BUILD = ["cargo"]
 const CARGO_ARGS = _ => ['build --release --target wasm32-unknown-unknown']
-  .map(command => command.split(' '))
+  .map(command => command.split(' '));
 
-const ASSEMBLY_SCRIPT_BUILD = ["npm", "npx"]
-const ASSEMBLY_SCRIPT_ARGS = wasmName => ["install", `asc plugin.ts --outFile ${wasmName}.wasm --use abort=plugin/assemblyScriptAbort --transform json-as/transform`]
-  .map(command => command.split(' '))
+const JS_BUILD = ["npm", "node", "extism-js"]
+const JS_ARGS = wasmName => ["install", "esbuild.js", `dist/index.js -o ${wasmName}.wasm`]
+  .map(command => command.split(' '));
+
+const GO_BUILD = ["go", "go", "tinygo"]
+const GO_ARGS = wasmName => ["get github.com/extism/go-pdk", "mod download", `build -o ${wasmName}.wasm -target wasi main.go`]
+  .map(command => command.split(' '));
 
 const queue = []
 let running = 0
@@ -40,7 +44,7 @@ const start = () => {
   }, 5 * 60 * 1000)
 }
 
-const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild }) => {
+const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild, pluginType }) => {
   log.info(`[buildQueue SERVICE] Starting build ${folder}`)
 
   const root = process.cwd()
@@ -56,8 +60,16 @@ const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild }) => {
 
         WebSocket.emit(plugin, "BUILD", 'Starting build ...\n')
 
-        const commands = isRustBuild ? CARGO_BUILD : ASSEMBLY_SCRIPT_BUILD;
-        const args = (isRustBuild ? CARGO_ARGS : ASSEMBLY_SCRIPT_ARGS)(wasmName);
+        const { commands, args } = (pluginType === 'rust' ? {
+          commands: CARGO_BUILD,
+          args: CARGO_ARGS
+        } : pluginType === 'js' ? {
+          commands: JS_BUILD,
+          args: JS_ARGS(wasmName)
+        } : pluginType === 'go' ? {
+          commands: GO_BUILD,
+          args: GO_ARGS(wasmName)
+        });
 
         commands
           .reduce((promise, fn, index) => promise.then(() => {

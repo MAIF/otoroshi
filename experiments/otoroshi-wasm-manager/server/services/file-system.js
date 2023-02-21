@@ -2,10 +2,10 @@ const fs = require('fs-extra');
 const path = require('path');
 
 const createBuildFolder = (type, name) => {
-  if (type === 'rust') {
+  if (['rust', 'js'].includes(type)) {
     return new Promise(resolve => {
       fs.copy(
-        path.join(process.cwd(), 'templates', 'builds', 'rust'),
+        path.join(process.cwd(), 'templates', 'builds', type),
         path.join(process.cwd(), 'build', name),
         err => {
           if (err) {

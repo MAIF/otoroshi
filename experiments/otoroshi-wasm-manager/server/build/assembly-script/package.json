@@ -12,6 +12,7 @@
   "dependencies": {
     "@extism/as-pdk": "^0.1.0",
     "as-bignum": "^0.2.23",
+    "assemblyscript-json": "^1.1.0",
     "json-as": "^0.5.16",
     "visitor-as": "^0.11.4"
   }

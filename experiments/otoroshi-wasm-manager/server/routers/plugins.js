@@ -188,7 +188,6 @@ router.delete('/:id', async (req, res) => {
       plugins: data.plugins.filter(f => f.pluginId !== req.params.id)
     })
       .then(() => {
-        console.log(data)
         const pluginHash = data.plugins
           .find(f => f.pluginId !== req.params.id) || {}
             .last_hash
@@ -228,7 +227,8 @@ router.post('/:id/build', async (req, res) => {
 
   const data = await UserManager.getUser(req)
   const plugin = (data.plugins || []).find(p => p.pluginId === req.params.id);
-  const isRustBuild = plugin.type == 'rust'
+  const isRustBuild = plugin.type == 'rust';
+  const isGoBuild = plugin.type === 'go';
 
   BuildingJob.buildIsAlreadyRunning(pluginHash)
     .then(async exists => {
@@ -246,16 +246,26 @@ router.post('/:id/build', async (req, res) => {
           if (plugin['last_hash'] !== zipHash) {
             log.info(`different: ${zipHash} - ${plugin['last_hash']}`)
 
-            const data = await fs.readFile(path.join(process.cwd(), 'build', folder, isRustBuild ? 'Cargo.toml' : 'package.json'))
-            const file = isRustBuild ? toml.parse(data) : JSON.parse(data)
+            const data = await fs.readFile(path.join(process.cwd(),
+              'build',
+              folder,
+              isGoBuild ? 'go.mod' : isRustBuild ? 'Cargo.toml' : 'package.json'));
+
+            const file = isGoBuild ? data
+              .toString()
+              .split('\n')[0]
+              .replace('module ', '')
+              .trim() :
+              isRustBuild ? toml.parse(data) : JSON.parse(data)
 
             BuildingJob.addBuildToQueue({
               folder,
               plugin: req.params.id,
-              wasmName: isRustBuild ? file.package.name.replace('-', '_') : file.name.replace(' ', '_'),
+              wasmName: isGoBuild ? file : isRustBuild ? file.package.name.replace('-', '_') : file.name.replace(' ', '_'),
               user: req.user ? req.user.email : 'admin@otoroshi.io',
               zipHash,
-              isRustBuild
+              isRustBuild,
+              pluginType: plugin.type
             })
 
             res.json({

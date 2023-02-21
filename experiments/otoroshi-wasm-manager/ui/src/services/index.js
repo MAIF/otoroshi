@@ -93,9 +93,9 @@ export const removePlugin = plugin => rawFetch(`/plugins/${plugin}`, {
   method: 'DELETE'
 });
 
-export const launchPlugin = (pluginId, input, functionName) => jsonFetch(`/wasm/${pluginId}`, {
+export const launchPlugin = (pluginId, input, functionName, pluginType) => jsonFetch(`/wasm/${pluginId}`, {
   method: 'POST',
   body: JSON.stringify({
-    input, functionName
+    input, functionName, wasi: ['js', 'go'].includes(pluginType)
   })
 });

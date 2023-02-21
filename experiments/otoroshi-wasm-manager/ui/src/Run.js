@@ -43,7 +43,8 @@ export class Run extends React.Component {
   run = () => {
     const { selectedPlugin, input, functionName } = this.state;
     toast.info("Starting run ...")
-    launchPlugin(selectedPlugin.value, input, functionName)
+    const plugin = this.props.plugins.find(p => p.pluginId === selectedPlugin.value);
+    launchPlugin(selectedPlugin.value, input, functionName, plugin?.type)
       .then(res => {
         if (res.error) {
           toast.error(res.error);
@@ -51,10 +52,17 @@ export class Run extends React.Component {
             output: res.error
           })
         } else {
+          console.log(res)
           toast.success('Run done.')
-          this.setState({
-            output: JSON.stringify(JSON.parse(res.data), null, 4)
-          })
+          try {
+            this.setState({
+              output: JSON.stringify(JSON.parse(res.data), null, 4)
+            })
+          } catch (err) {
+            this.setState({
+              output: res.data
+            })
+          }
         }
       })
   }
@@ -67,7 +75,7 @@ export class Run extends React.Component {
       <div style={{ flex: 1, marginTop: 75, borderRadius: 12 }} className="p-3 bg-light mx-auto w-75"
         onKeyDown={e => e.stopPropagation()}>
         <div className='mb-3'>
-          <label for="selectedPlugin" className='form-label'>Selet a plugin</label>
+          <label for="selectedPlugin" className='form-label'>Select a plugin</label>
           <Select
             id="selectedPlugin"
             value={selectedPlugin}

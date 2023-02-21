@@ -11,6 +11,8 @@ function TabsManager({ plugins, ...props }) {
   const [sizeTerminal, changeTerminalSize] = useState(.3)
   const [resizingTerminal, toggleResizingTerminal] = useState(false)
 
+  console.log(props.selectedPlugin)
+
   return <div className='d-flex' style={{ flex: 1 }}
     onMouseLeave={e => {
       if (resizingTerminal) {
@@ -125,7 +127,7 @@ function Explorer({ children }) {
 function Tabs({ tabs, setCurrentTab, setTabs, currentTab, selectedPlugin, configFiles }) {
   return <div style={{ height: 42 }}>
     {tabs
-      .filter(tab => tab === 'Runner' || [...selectedPlugin.files, ...configFiles].find(f => f.filename === tab))
+      .filter(tab => tab === 'Runner' || [...(selectedPlugin ? selectedPlugin.files : []), ...configFiles].find(f => f.filename === tab))
       .map(tab => {
         return <TabButton
           filename={tab}
