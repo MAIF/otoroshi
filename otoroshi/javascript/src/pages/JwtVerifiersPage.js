@@ -30,7 +30,7 @@ export class JwtVerifiersPage extends Component {
   setTitle = (title, onPress, verifier) => {
     this.props.setTitle(() => {
       const pathname = window.location.href;
-      const isEditPage = pathname.includes('edit');
+      const isEditPage = pathname.includes('/edit');
 
       const SaveButton = isEditPage ? (
         <FeedbackButton

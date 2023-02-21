@@ -136,7 +136,6 @@ export class JwtVerifier extends Component {
     verifier: this.props.value ||
       this.props.verifier || {
         type: 'globale',
-        enabled: false,
         strict: true,
         source: { type: 'InHeader', name: 'X-JWT-Token', remove: '' },
         algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
@@ -685,7 +684,6 @@ export class AlgoSettings extends Component {
 export class LegacyJwtVerifier extends Component {
   static defaultVerifier = {
     type: 'local',
-    enabled: false,
     strict: true,
     source: { type: 'InHeader', name: 'X-JWT-Token', remove: '' },
     algoSettings: { type: 'HSAlgoSettings', size: 512, secret: 'secret' },
@@ -754,14 +752,14 @@ export class LegacyJwtVerifier extends Component {
             onChange={(e) => changeTheValue(path + '.desc', e)}
           />
         )}
-        {!this.props.global && (
+        {/*!this.props.global && (
           <BooleanInput
             label="Enabled"
             value={verifier.enabled}
             help="Is JWT verification enabled for this service"
             onChange={(v) => changeTheValue(path + '.enabled', v)}
           />
-        )}
+        )*/}
         <BooleanInput
           label="Strict"
           value={verifier.strict}
