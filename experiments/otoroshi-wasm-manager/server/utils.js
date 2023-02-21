@@ -3,9 +3,7 @@ const fs = require("fs-extra");
 const path = require("path");
 const pako = require('pako');
 
-const hash = value => {
-  return value.replace(/[^a-zA-Z ]/g, "")
-}
+const format = value => value.replace(/[^a-zA-Z ]/g, "");
 
 const unzip = (isRustBuild, zipString, outputFolder) => {
   const zip = new AdmZip(zipString);
@@ -32,6 +30,6 @@ const unzip = (isRustBuild, zipString, outputFolder) => {
 }
 
 module.exports = {
-  hash,
+  format,
   unzip
 }

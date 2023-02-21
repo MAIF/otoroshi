@@ -43,6 +43,9 @@ validator.rs
 validator.ts
 :   @@snip [validator.ts](../snippets/wasm-manager/validator.ts) 
 
+validator.js
+:   @@snip [validator.js](../snippets/wasm-manager/validator.js) 
+
 validator.go
 :   @@snip [validator.js](../snippets/wasm-manager/validator.go) 
 
@@ -136,6 +139,9 @@ target.rs
 
 target.ts
 :   @@snip [target.ts](../snippets/wasm-manager/target.ts) 
+
+target.js
+:   @@snip [target.js](../snippets/wasm-manager/target.js) 
 
 target.go
 :   @@snip [target.js](../snippets/wasm-manager/target.go) 

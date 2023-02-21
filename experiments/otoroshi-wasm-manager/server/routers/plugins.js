@@ -6,7 +6,7 @@ const crypto = require('crypto')
 const express = require('express');
 
 const { UserManager } = require('../services/user');
-const { hash, unzip } = require('../utils');
+const { format, unzip } = require('../utils');
 
 const { S3 } = require('../s3');
 const { BuildingJob } = require('../services/building-job');
@@ -27,8 +27,8 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
   const { s3, Bucket } = S3.state()
 
-  const user = hash(req.user.email)
-  const filename = hash(`${user}-${req.params.id}`)
+  const user = format(req.user.email)
+  const filename = format(`${user}-${req.params.id}`)
 
   const params = {
     Bucket,
@@ -70,7 +70,7 @@ router.get('/:id/configurations', (req, res) => {
 
       s3.getObject({
         Bucket,
-        Key: `${hash(`${user}-${plugin.pluginId}-logs`)}.zip`
+        Key: `${format(`${user}-${plugin.pluginId}-logs`)}.zip`
       })
         .promise()
         .then(data => {
@@ -96,7 +96,7 @@ router.get('/:id/configurations', (req, res) => {
 router.post('/', (req, res) => {
   const { s3, Bucket } = S3.state()
 
-  const user = hash(req.user.email)
+  const user = format(req.user.email)
 
   UserManager.createUserIfNotExists(req)
     .then(() => {
@@ -152,8 +152,8 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   const { s3, Bucket } = S3.state()
 
-  const user = hash(req.user.email)
-  const pluginHash = hash(`${user}-${req.params.id}`)
+  const user = format(req.user.email)
+  const pluginHash = format(`${user}-${req.params.id}`)
 
   const params = {
     Bucket,
@@ -222,8 +222,8 @@ router.delete('/:id', async (req, res) => {
 })
 
 router.post('/:id/build', async (req, res) => {
-  const user = hash(req.user.email)
-  const pluginHash = hash(`${user}-${req.params.id}`)
+  const user = format(req.user.email)
+  const pluginHash = format(`${user}-${req.params.id}`)
 
   const data = await UserManager.getUser(req)
   const plugin = (data.plugins || []).find(p => p.pluginId === req.params.id);

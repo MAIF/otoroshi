@@ -1,6 +1,6 @@
 const manager = require("../logger");
 const { S3 } = require("../s3");
-const { hash } = require("../utils");
+const { format } = require("../utils");
 
 const log = manager.createLogger('[user SERVICE]')
 
@@ -56,7 +56,7 @@ const addUser = user => {
 const createUserIfNotExists = req => {
   const { s3, Bucket } = S3.state()
 
-  const user = hash(req.user.email)
+  const user = format(req.user.email)
 
   return new Promise((resolve, reject) => {
     s3.getObject({
@@ -105,14 +105,14 @@ const _getUser = key => {
 const getUserFromString = _getUser
 
 const getUser = req => {
-  const user = hash(req.user.email)
+  const user = format(req.user.email)
   return _getUser(user)
 }
 
 const updateUser = (req, content) => {
   const { s3, Bucket } = S3.state()
 
-  const jsonProfile = hash(req.user.email);
+  const jsonProfile = format(req.user.email);
 
   log.info(`updateUser ${jsonProfile}`)
 
