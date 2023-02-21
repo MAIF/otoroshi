@@ -10,14 +10,14 @@ export function RoutesTable(props) {
   const entity = useEntityFromURI();
 
   const domainColumn = {
-    title: 'Domain',
+    title: 'Frontend',
     filterId: 'frontend.domains.0',
-    cell: (item) => {
+    cell: (item, a) => {
       return (
         <>
           {item.frontend.domains[0] || '-'}{' '}
           {item.frontend.domains.length > 1 && (
-            <span className="badge bg-secondary">{item.frontend.domains.length - 1} more</span>
+            <span className="badge bg-secondary" style={{ cursor: 'pointer' }} title={item.frontend.domains.map(v => ` - ${v}`).join('\n')}>{item.frontend.domains.length - 1} more</span>
           )}
         </>
       );
@@ -25,14 +25,14 @@ export function RoutesTable(props) {
   };
 
   const targetColumn = {
-    title: 'Domain',
+    title: 'Backend',
     filterId: 'backend.targets.0.hostname',
     cell: (item) => {
       return (
         <>
           {item.backend.targets[0]?.hostname || '-'}{' '}
           {item.backend.targets.length > 1 && (
-            <span className="badge bg-secondary">{item.backend.targets.length - 1} more</span>
+            <span className="badge bg-secondary" style={{ cursor: 'pointer' }} title={item.backend.targets.map(v => ` - ${v.tls ? 'https' : 'http'}://${v.hostname}:${v.port}`).join('\n')}>{item.backend.targets.length - 1} more</span>
           )}
         </>
       );
@@ -115,7 +115,7 @@ export function RoutesTable(props) {
         fetchItems={(paginationState) =>
           nextClient.findAllWithPagination(nextClient.ENTITIES[entity.fetchName], {
             ...paginationState,
-            fields: ['name', 'enabled', 'frontend.domains.0', 'backend.targets.0.hostname', 'id'],
+            fields: ['name', 'enabled', 'frontend.domains', 'backend.targets', 'id'],
           })
         }
         showActions={true}
