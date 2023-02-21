@@ -1,20 +1,20 @@
 // (2)
 export function execute() {
-    const context = JSON.parse(Host.inputString());
+  let str = Host.inputString();
+  let context = JSON.parse(str);
+  
+  // (3)
+  let headers = { ...context.request.headers };
+  headers["foo"] = "bar";
 
-    // (3)
-    const headers = {
-      "foo": "bar",
-      ...(context.request.headers || {})
-    }
+  // (4)
+  let response = {
+    headers,
+    body: "{\"foo\": \"bar\"}",
+    status: 200
+  };
+  
+  Host.outputString(JSON.stringify(response));
 
-    // (4)
-    const response = {
-        headers,
-        status: 200,
-        body: "{\"foo\": \"bar\"}"
-    };
-    Host.outputString(JSON.stringify(response));
-
-    return 0;
+  return 0;
 }

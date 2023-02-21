@@ -40,6 +40,9 @@ The main function of this validator, written in rust, should look like:
 validator.rs
 :   @@snip [validator.rs](../snippets/wasm-manager/validator.rs) 
 
+validator.js
+:   @@snip [validator.js](../snippets/wasm-manager/validator.js) 
+
 validator.ts
 :   @@snip [validator.ts](../snippets/wasm-manager/validator.ts) 
 
@@ -136,6 +139,9 @@ The content of this plugin, called `wasm-target.wasm`, looks like:
 
 target.rs
 :   @@snip [target.rs](../snippets/wasm-manager/target.rs) 
+
+target.js
+:   @@snip [target.js](../snippets/wasm-manager/target.js) 
 
 target.ts
 :   @@snip [target.ts](../snippets/wasm-manager/target.ts) 

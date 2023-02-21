@@ -1,5 +1,5 @@
 export function execute() {
-    let context = JSON.parse(Host.inputString());
+  let context = JSON.parse(Host.inputString());
 
     if (context.request.headers["foo"] === "bar") {
         const out = {
