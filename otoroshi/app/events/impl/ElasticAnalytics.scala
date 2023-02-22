@@ -43,7 +43,8 @@ object ElasticTemplates {
     """{
       |  "template": "$$$INDEX$$$-*",
       |  "settings": {
-      |    "number_of_shards": 1,
+      |    "number_of_shards": $$$SHARDS$$$,
+      |    "number_of_replicas": $$$REPLICAS$$$,
       |    "index": {
       |    }
       |  },
@@ -120,7 +121,8 @@ object ElasticTemplates {
     """{
       |  "index_patterns" : ["$$$INDEX$$$-*"],
       |  "settings": {
-      |    "number_of_shards": 1,
+      |    "number_of_shards": $$$SHARDS$$$,
+      |    "number_of_replicas": $$$REPLICAS$$$,
       |    "index": {}
       |  },
       |  "mappings": {
@@ -208,7 +210,8 @@ object ElasticTemplates {
       |  "index_patterns" : ["$$$INDEX$$$-*"],
       |  "template": {
       |  "settings": {
-      |    "number_of_shards": 1,
+      |    "number_of_shards": $$$SHARDS$$$,
+      |    "number_of_replicas": $$$REPLICAS$$$,
       |    "index.mapping.ignore_malformed": true,
       |    "index": {}
       |  },
@@ -443,6 +446,8 @@ object ElasticUtils {
       mat: Materializer
   ): Future[Unit] = {
     val index: String = config.index.getOrElse("otoroshi-events")
+    val numberOfShards: String = config.numberOfShards.getOrElse(1).toString
+    val numberOfReplicas: String = config.numberOfReplicas.getOrElse(1).toString
     getElasticVersion(config, env).flatMap { version =>
       // from elastic 7.8, we should use /_index_template/otoroshi-tpl and wrap almost everything expect index_patterns in a "template" object
       val (strTpl, indexTemplatePath) = version match {
@@ -453,9 +458,17 @@ object ElasticUtils {
       }
       if (logger.isDebugEnabled) logger.debug(s"$version, $indexTemplatePath")
       val tpl: JsValue                = if (config.indexSettings.clientSide) {
-        Json.parse(strTpl.replace("$$$INDEX$$$", index))
+        Json.parse(strTpl
+          .replace("$$$INDEX$$$", index)
+          .replace("$$$SHARDS$$$", numberOfShards)
+          .replace("$$$REPLICAS$$$", numberOfReplicas)
+        )
       } else {
-        Json.parse(strTpl.replace("$$$INDEX$$$-*", index))
+        Json.parse(strTpl
+          .replace("$$$INDEX$$$-*", index)
+          .replace("$$$SHARDS$$$", numberOfShards)
+          .replace("$$$REPLICAS$$$", numberOfReplicas)
+        )
       }
       if (logger.isDebugEnabled) logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
       url(urlFromPath(indexTemplatePath, config), config, env)

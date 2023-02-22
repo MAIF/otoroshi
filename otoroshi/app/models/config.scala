@@ -92,6 +92,8 @@ case class ElasticAnalyticsConfig(
     version: Option[String] = None,
     maxBulkSize: Option[Int] = None,
     sendWorkers: Option[Int] = None,
+    numberOfShards: Option[Int] = None,
+    numberOfReplicas: Option[Int] = None,
 ) extends Exporter {
   def toJson: JsValue = ElasticAnalyticsConfig.format.writes(this)
 }
@@ -114,6 +116,8 @@ object ElasticAnalyticsConfig {
         "version"       -> o.version.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "maxBulkSize"   -> o.maxBulkSize.map(i => JsNumber(BigDecimal(i))).getOrElse(JsNull).asValue,
         "sendWorkers"   -> o.sendWorkers.map(i => JsNumber(BigDecimal(i))).getOrElse(JsNull).asValue,
+        "numberOfShards"   -> o.numberOfShards.map(i => JsNumber(BigDecimal(i))).getOrElse(JsNull).asValue,
+        "numberOfReplicas"   -> o.numberOfReplicas.map(i => JsNumber(BigDecimal(i))).getOrElse(JsNull).asValue,
       )
     override def reads(json: JsValue)              =
       Try {
@@ -137,6 +141,8 @@ object ElasticAnalyticsConfig {
               version = (json \ "version").asOpt[String].filter(_.trim.nonEmpty),
               maxBulkSize = json.select("maxBulkSize").asOpt[Int],
               sendWorkers = json.select("sendWorkers").asOpt[Int],
+              numberOfShards = json.select("numberOfShards").asOpt[Int],
+              numberOfReplicas = json.select("numberOfReplicas").asOpt[Int],
             )
           )
         }
