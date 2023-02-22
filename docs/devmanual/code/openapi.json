@@ -18179,6 +18179,13 @@
             "type" : "boolean",
             "description" : "Enable template creation/update"
           },
+          "uris" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "mtlsConfig" : {
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig",
             "description" : "TLS settings for the http client"
@@ -18192,10 +18199,6 @@
               "type" : "string"
             } ],
             "description" : "Version of Elasticsearch"
-          },
-          "clusterUri" : {
-            "type" : "string",
-            "description" : "Cluster URL"
           },
           "headers" : {
             "type" : "object",
