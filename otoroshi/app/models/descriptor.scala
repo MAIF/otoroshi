@@ -1238,12 +1238,12 @@ object SecComVersion       {
   object V1 extends SecComVersion {
     def str: String   = "V1"
     def version: Int  = 1
-    def json: JsValue = JsNumber(1)
+    def json: JsValue = JsString(str)
   }
   object V2 extends SecComVersion {
     def str: String   = "V2"
     def version: Int  = 2
-    def json: JsValue = JsNumber(2)
+    def json: JsValue = JsString(str)
   }
   def apply(version: Int): Option[SecComVersion] =
     version match {
