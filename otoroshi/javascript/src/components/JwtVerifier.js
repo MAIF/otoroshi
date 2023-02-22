@@ -168,6 +168,7 @@ export class JwtVerifier extends Component {
           <>
             {isLegacyView && (
               <LegacyJwtVerifier
+                global
                 verifier={verifier}
                 changeTheValue={(name, value) => {
                   const path = name.startsWith('.') ? name.substr(1) : name;

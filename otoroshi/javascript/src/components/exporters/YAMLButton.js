@@ -1,13 +1,13 @@
 import React from 'react';
 import { SquareButton } from '../SquareButton';
 
-export function YAMLExportButton({ value }) {
+export function YAMLExportButton({ value, entityKind }) {
   return (
     <SquareButton
       onClick={() => {
         const what = window.location.pathname.split('/')[3];
-        const itemName = what === 'routes' ? 'route' : 'route-composition';
-        const kind = what === 'routes' ? 'Route' : 'RouteComposition';
+        const itemName = entityKind ? entityKind.toLowerCase() : (what === 'routes' ? 'route' : 'route-composition');
+        const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
         const name = value.id
           .replace(/ /g, '-')
           .replace(/\(/g, '')

@@ -45,8 +45,8 @@ export class JwtVerifiersPage extends Component {
         <PageTitle title={title}>
           {isEditPage && (
             <Dropdown>
-              <YAMLExportButton value={verifier} />
-              <JsonExportButton value={verifier} />
+              <YAMLExportButton value={verifier} entityKind="JwtVerifier" />
+              <JsonExportButton value={verifier} entityKind="JwtVerifier" />
               <SquareButton
                 level="danger"
                 onClick={() => {

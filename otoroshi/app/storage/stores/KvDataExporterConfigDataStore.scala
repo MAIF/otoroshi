@@ -53,7 +53,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = ElasticAnalyticsConfig(
-            clusterUri = "http://localhost:9200"
+            uris = Seq("http://localhost:9200")
           )
         )
       case Some("pulsar")         =>

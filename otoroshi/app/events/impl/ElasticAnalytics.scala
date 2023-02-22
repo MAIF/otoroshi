@@ -18,6 +18,7 @@ import play.api.libs.ws.{WSClient, WSRequest}
 import play.api.{Environment, Logger}
 import otoroshi.utils.syntax.implicits._
 
+import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.duration.DurationLong
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -36,7 +37,7 @@ case class QueryResponse(resp: JsValue) {
   lazy val nonEmpty: Boolean       = !isEmpty
   lazy val hits: Seq[JsValue]      = (resp \ "hits" \ "hits").as[Seq[JsValue]]
 }
-
+// TODO: handle issue: "mapper [route.plugins.config.version] cannot be changed from type [text] to [long]
 object ElasticTemplates {
   val indexTemplate_v6 =
     """{
@@ -208,6 +209,7 @@ object ElasticTemplates {
       |  "template": {
       |  "settings": {
       |    "number_of_shards": 1,
+      |    "index.mapping.ignore_malformed": true,
       |    "index": {}
       |  },
       |  "mappings": {
@@ -219,6 +221,42 @@ object ElasticTemplates {
       |          "mapping": {
       |            "type": "text",
       |            "fielddata": true
+      |          },
+      |          "match_mapping_type": "string"
+      |        }
+      |      },
+      |      {
+      |        "version_text_template": {
+      |          "match": "route.plugins.config.version",
+      |          "mapping": {
+      |            "type": "text"
+      |          },
+      |          "match_mapping_type": "string"
+      |        }
+      |      },
+      |      {
+      |        "version_float_template": {
+      |          "match": "route.plugins.config.version",
+      |          "mapping": {
+      |            "type": "float"
+      |          },
+      |          "match_mapping_type": "string"
+      |        }
+      |      },
+      |      {
+      |        "version_long_template": {
+      |          "match": "route.plugins.config.version",
+      |          "mapping": {
+      |            "type": "long"
+      |          },
+      |          "match_mapping_type": "string"
+      |        }
+      |      },
+      |      {
+      |        "version_integer_template": {
+      |          "match": "route.plugins.config.version",
+      |          "mapping": {
+      |            "type": "integer"
       |          },
       |          "match_mapping_type": "string"
       |        }
@@ -299,7 +337,7 @@ object ElasticWritesAnalytics {
   def toKey(config: ElasticAnalyticsConfig): String = {
     val index: String  = config.index.getOrElse("otoroshi-events")
     val `type`: String = config.`type`.getOrElse("event")
-    s"${config.clusterUri}/$index/${`type`}"
+    s"${config.uris.mkString("-")}/$index/${`type`}"
   }
 
   def initialized(config: ElasticAnalyticsConfig, version: ElasticVersion): Unit = {
@@ -327,7 +365,17 @@ object ElasticUtils {
   //   urlFromPath(s"/$index-$df/${`type`}")
   // }
 
-  def urlFromPath(path: String, config: ElasticAnalyticsConfig): String = s"${config.clusterUri}$path"
+  private val counter = new AtomicLong(1L)
+
+  def urlFromPath(path: String, config: ElasticAnalyticsConfig): String = {
+    if (config.uris.size == 1) {
+      s"${config.uris.head}$path"
+    } else {
+      val index = counter.incrementAndGet() % (if (config.uris.nonEmpty) config.uris.size else 1)
+      val uri = config.uris.apply(index.toInt)
+      s"${uri}$path"
+    }
+  }
 
   def authHeader(config: ElasticAnalyticsConfig): Option[String] = {
     for {
@@ -530,7 +578,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
     } else {
       implicit val ec: ExecutionContext = executionContext
       logger.info(
-        s"Creating Otoroshi template for $index on es cluster at ${config.clusterUri}/$index/${`type`}"
+        s"Creating Otoroshi template for $index on es cluster at ${config.uris.map(uri => s"$uri/$index/${`type`}").mkString(", ")}"
       )
       // AWAIT: valid
       Await.result(
@@ -585,11 +633,13 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       }
       .addHttpHeaders(config.headers.toSeq: _*)
     Source(event.toList)
-      .grouped(500)
+      .grouped(config.maxBulkSize.getOrElse(100))
       .map(_.map(bulkRequest))
-      .mapAsync(10) { bulk =>
-        val req  = bulk.mkString("", "\n", "\n\n")
-        val post = clientInstance.withMethod("POST").post(req)
+      .mapAsync(config.sendWorkers.getOrElse(4)) { bulk =>
+        val body  = bulk.mkString("", "\n", "\n\n").byteString
+        if (logger.isDebugEnabled) logger.debug(s"preparing bulk of ${bulk.size} items of size ${body.size} bytes")
+        val req = clientInstance.withMethod("POST").withBody(body)
+        val post = req.execute()
         post.onComplete {
           case Success(resp) =>
             if (resp.status >= 400) {

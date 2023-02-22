@@ -80,7 +80,7 @@ object IndexSettings {
 }
 
 case class ElasticAnalyticsConfig(
-    clusterUri: String,
+    uris: Seq[String],
     index: Option[String] = None,
     `type`: Option[String] = None,
     user: Option[String] = None,
@@ -89,7 +89,9 @@ case class ElasticAnalyticsConfig(
     indexSettings: IndexSettings = IndexSettings(),
     mtlsConfig: MtlsConfig = MtlsConfig.default,
     applyTemplate: Boolean = true,
-    version: Option[String] = None
+    version: Option[String] = None,
+    maxBulkSize: Option[Int] = None,
+    sendWorkers: Option[Int] = None,
 ) extends Exporter {
   def toJson: JsValue = ElasticAnalyticsConfig.format.writes(this)
 }
@@ -99,7 +101,8 @@ object ElasticAnalyticsConfig {
   val format                                              = new Format[ElasticAnalyticsConfig] {
     override def writes(o: ElasticAnalyticsConfig) =
       Json.obj(
-        "clusterUri"    -> o.clusterUri,
+        "clusterUri"    -> o.uris.headOption.map(JsString.apply).getOrElse(JsNull).asValue,
+        "uris"    -> o.uris,
         "index"         -> o.index.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "type"          -> o.`type`.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "user"          -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -108,24 +111,35 @@ object ElasticAnalyticsConfig {
         "indexSettings" -> o.indexSettings.json,
         "mtlsConfig"    -> o.mtlsConfig.json,
         "applyTemplate" -> o.applyTemplate,
-        "version"       -> o.version.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+        "version"       -> o.version.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "maxBulkSize"   -> o.maxBulkSize.map(i => JsNumber(BigDecimal(i))).getOrElse(JsNull).asValue,
+        "sendWorkers"   -> o.sendWorkers.map(i => JsNumber(BigDecimal(i))).getOrElse(JsNull).asValue,
       )
     override def reads(json: JsValue)              =
       Try {
-        JsSuccess(
-          ElasticAnalyticsConfig(
-            clusterUri = (json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).get,
-            index = (json \ "index").asOpt[String].map(_.trim).filter(_.nonEmpty),
-            `type` = (json \ "type").asOpt[String].map(_.trim).filter(_.nonEmpty),
-            user = (json \ "user").asOpt[String].map(_.trim).filter(_.nonEmpty),
-            password = (json \ "password").asOpt[String].map(_.trim).filter(_.nonEmpty),
-            headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
-            indexSettings = IndexSettings.read((json \ "indexSettings").asOpt[JsValue]),
-            mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
-            applyTemplate = (json \ "applyTemplate").asOpt[Boolean].getOrElse(true),
-            version = (json \ "version").asOpt[String].filter(_.trim.nonEmpty)
+        val uris: Seq[String] = json.select("uris").asOpt[Seq[String]]
+          .orElse((json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).map(s => Seq(s)))
+          .getOrElse(Seq.empty[String])
+        if (uris.isEmpty) {
+          JsError("no cluster uri found at all")
+        } else {
+          JsSuccess(
+            ElasticAnalyticsConfig(
+              uris = uris,
+              index = (json \ "index").asOpt[String].map(_.trim).filter(_.nonEmpty),
+              `type` = (json \ "type").asOpt[String].map(_.trim).filter(_.nonEmpty),
+              user = (json \ "user").asOpt[String].map(_.trim).filter(_.nonEmpty),
+              password = (json \ "password").asOpt[String].map(_.trim).filter(_.nonEmpty),
+              headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+              indexSettings = IndexSettings.read((json \ "indexSettings").asOpt[JsValue]),
+              mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
+              applyTemplate = (json \ "applyTemplate").asOpt[Boolean].getOrElse(true),
+              version = (json \ "version").asOpt[String].filter(_.trim.nonEmpty),
+              maxBulkSize = json.select("maxBulkSize").asOpt[Int],
+              sendWorkers = json.select("sendWorkers").asOpt[Int],
+            )
           )
-        )
+        }
       } recover { case e =>
         JsError(e.getMessage)
       } get
