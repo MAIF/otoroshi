@@ -1,5 +1,5 @@
 const crypto = require('crypto')
-
+const fetch = require('node-fetch');
 const express = require('express');
 
 const { UserManager } = require('../services/user');
@@ -14,6 +14,33 @@ const { InformationsReader } = require('../services/informationsReader');
 const log = manager.createLogger('plugins');
 
 const router = express.Router()
+
+router.post('/github', (req, res) => {
+  const { owner, repo, ref } = req.body;
+
+  fetch(`https://api.github.com/repos/${owner}/${repo}/zipball/${ref || "main"}`, {
+    redirect: 'follow'
+  })
+    .then(r => {
+      const contentType = r.headers.get('Content-Type');
+      const contentLength = r.headers.get('Content-Length');
+      if (contentLength > process.env.GIBHUT_MAX_REPO_SIZE) {
+        return {
+          status: 400,
+          result: 'this repo exceed the limit of the manager'
+        }
+      } else if (contentType === 'application/zip') {
+        r.headers.forEach((v, n) => res.setHeader(n, v));
+        r.body.pipe(res);
+      } else if (contentType === "application/json") {
+        return r.json()
+          .then(result => res.status(r.status).json(result));
+      } else {
+        return r.text()
+          .then(result => res.status(r.status).json({ message: result }));
+      }
+    })
+});
 
 router.get('/', (req, res) => {
   UserManager.getUser(req)
@@ -88,6 +115,83 @@ router.get('/:id/configurations', (req, res) => {
 
     })
 })
+
+router.post('/github/repo', (req, res) => {
+  fetch(`https://api.github.com/repos/${req.body.owner}/${req.body.repo}/branches/${req.body.ref || "main"}`, {
+    redirect: 'follow'
+  })
+    .then(r => {
+      if (r.status === 200) {
+        return createPluginFromGithub(req);
+      } else {
+        if ((r.headers.get('Content-Type') === "application/json")) {
+          return r.json()
+            .then(result => ({ result, status: r.status }))
+        } else {
+          return r.text()
+            .then(result => ({ result, status: r.status }))
+        }
+      }
+    })
+    .then(({ status, result }) => {
+      res
+        .status(status)
+        .json({
+          result, status
+        })
+    })
+})
+
+function createPluginFromGithub(req) {
+  const { s3, Bucket } = S3.state()
+
+  const user = format(req.user.email)
+
+  return new Promise(resolve => {
+    UserManager.createUserIfNotExists(req)
+      .then(() => UserManager.getUser(req))
+      .then(data => {
+        const pluginId = crypto.randomUUID()
+        const plugins = [
+          ...(data.plugins || []),
+          {
+            filename: req.body.repo,
+            owner: req.body.owner,
+            ref: req.body.ref,
+            type: 'github',
+            pluginId: pluginId,
+          }
+        ]
+        const params = {
+          Bucket,
+          Key: `${user}.json`,
+          Body: JSON.stringify({
+            ...data,
+            plugins
+          })
+        }
+
+        // create and add new plugin to the user
+        s3.upload(params, err => {
+          if (err) {
+            resolve({
+              status: err.statusCode,
+              result: err.code
+            });
+          }
+          else {
+            resolve({ status: 201 })
+          }
+        });
+      });
+  })
+    .catch(err => {
+      resolve({
+        status: 404,
+        result: err.message
+      })
+    });
+}
 
 router.post('/', (req, res) => {
   const { s3, Bucket } = S3.state()
@@ -218,7 +322,11 @@ router.post('/:id/build', async (req, res) => {
   const pluginId = req.params.id;
 
   const data = await UserManager.getUser(req)
-  const plugin = (data.plugins || []).find(p => p.pluginId === pluginId);
+  let plugin = (data.plugins || []).find(p => p.pluginId === pluginId);
+  if (plugin.type === 'github') {
+    plugin.type = req.query.plugin_type;
+  }
+
   const isRustBuild = plugin.type == 'rust';
 
   BuildingJob.buildIsAlreadyRunning(pluginId)
@@ -226,6 +334,7 @@ router.post('/:id/build', async (req, res) => {
       if (exists) {
         res.json({ queue_id: pluginId, alreadyExists: true });
       } else {
+
         const folder = await FileSystem.createBuildFolder(plugin.type, pluginId);
         await unzip(isRustBuild, req.body, folder);
         try {

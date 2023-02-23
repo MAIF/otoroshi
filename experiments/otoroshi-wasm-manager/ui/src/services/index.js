@@ -75,10 +75,10 @@ export const savePlugin = async plugin => {
   })
 }
 
-export const buildPlugin = async plugin => {
+export const buildPlugin = async (plugin, pluginType) => {
   const bytes = await buildZip(plugin)
 
-  return rawFetch(`/plugins/${plugin.pluginId}/build`, {
+  return rawFetch(`/plugins/${plugin.pluginId}/build?plugin_type=${pluginType}`, {
     method: 'POST',
     body: bytes,
     headers: {
@@ -99,3 +99,20 @@ export const launchPlugin = (pluginId, input, functionName, pluginType) => jsonF
     input, functionName, wasi: ['ts', 'js', 'go'].includes(pluginType)
   })
 });
+
+export const createGithubRepo = (owner, repo, ref) => jsonFetch(`/plugins/github/repo`, {
+  method: 'POST',
+  body: JSON.stringify({
+    owner, repo, ref
+  })
+})
+
+export const getGithubSources = (repo, owner, ref) => rawFetch('/plugins/github', {
+  method: "POST",
+  headers: {
+    "Content-Type": 'application/json'
+  },
+  body: JSON.stringify({
+    repo, owner, ref
+  })
+})

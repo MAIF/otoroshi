@@ -15,6 +15,10 @@ class App extends React.Component {
   }
 
   componentDidMount() {
+    this.reloadPlugins()
+  }
+
+  reloadPlugins = () => {
     Service.getPlugins()
       .then(res => {
         if (Array.isArray(res)) {
@@ -242,31 +246,49 @@ class App extends React.Component {
       selectedPlugin: undefined
     }, () => {
       const plugin = this.state.plugins.find(f => f.pluginId === newSelectedPlugin)
-      Service.getPlugin(newSelectedPlugin)
-        .then(res => {
-          if (res.status === 404)
-            return res.json()
-          else
-            return res.blob()
-        })
-        .then(res => {
-          if (res.error && res.status === 404) {
-            Service.getPluginTemplate(plugin.type)
-              .then(r => this.downloadPluginTemplate(r, plugin))
-          } else {
-            return this.downloadPluginTemplate(res, plugin)
-              .then(() => {
-                Service.getPluginConfig(newSelectedPlugin)
-                  .then(async configFiles => {
-                    this.setState({
-                      configFiles: (await Promise.all(configFiles.flatMap(this.unzip)))
-                        .filter(f => f)
-                        .flat()
-                    })
-                  });
+
+      if (plugin.type === "github") {
+        const { filename, owner, ref } = plugin;
+        Service.getGithubSources(filename, owner, ref)
+          .then(res => res.blob())
+          .then(r => this.downloadPluginTemplate(r, plugin))
+          .then(() => {
+            Service.getPluginConfig(newSelectedPlugin)
+              .then(async configFiles => {
+                this.setState({
+                  configFiles: (await Promise.all(configFiles.flatMap(this.unzip)))
+                    .filter(f => f)
+                    .flat()
+                })
               });
-          }
-        });
+          })
+      } else {
+        Service.getPlugin(newSelectedPlugin)
+          .then(res => {
+            if (res.status === 404)
+              return res.json()
+            else
+              return res.blob()
+          })
+          .then(res => {
+            if (res.error && res.status === 404) {
+              Service.getPluginTemplate(plugin.type)
+                .then(r => this.downloadPluginTemplate(r, plugin))
+            } else {
+              return this.downloadPluginTemplate(res, plugin)
+                .then(() => {
+                  Service.getPluginConfig(newSelectedPlugin)
+                    .then(async configFiles => {
+                      this.setState({
+                        configFiles: (await Promise.all(configFiles.flatMap(this.unzip)))
+                          .filter(f => f)
+                          .flat()
+                      })
+                    });
+                });
+            }
+          });
+      }
     });
   }
 
@@ -329,10 +351,26 @@ class App extends React.Component {
       .then(() => toast.success("Saved!"))
   }
 
+  getPluginType = () => {
+    if (this.state.selectedPlugin.type === 'github') {
+      const isRustPlugin = this.state.selectedPlugin.files
+        .find(f => f.filename === "Cargo.toml");
+      const isGoPlugin = this.state.selectedPlugin.files
+        .find(f => f.filename === "go.mod");
+      const isJsPlugin = this.state.selectedPlugin.files
+        .find(f => f.filename === "package.json");
+      const isTsPlugin = this.state.selectedPlugin.files
+        .find(f => f.filename.endsWith('.ts'));
+
+      return isRustPlugin ? 'rust' : isGoPlugin ? 'go' : isTsPlugin ? 'ts' : 'js';
+    } else
+      return this.state.selectedPlugin.type;
+  }
+
   onBuild = () => {
     Service.savePlugin(this.state.selectedPlugin)
       .then(() => {
-        Service.buildPlugin(this.state.selectedPlugin)
+        Service.buildPlugin(this.state.selectedPlugin, this.getPluginType())
           .then(res => {
             if (res.message) {
               toast.info(res.message)
@@ -399,6 +437,7 @@ class App extends React.Component {
       <TabsManager
         editorState={editorState}
         plugins={plugins}
+        reloadPlugins={this.reloadPlugins}
         configFiles={configFiles}
         selectedPlugin={selectedPlugin}
         onFileChange={this.onFileChange}

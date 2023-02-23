@@ -50,6 +50,7 @@ function TabsManager({ plugins, ...props }) {
       <Explorer>
         <PluginManager
           plugins={plugins}
+          reloadPlugins={props.reloadPlugins}
           onPluginClick={props.onPluginClick}
           onNewPlugin={props.onNewPlugin}
           setFilename={props.onPluginNameChange}

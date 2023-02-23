@@ -38,7 +38,7 @@ function File({ newFilename, filename, content, ext, onClick, ...props }) {
         </div>
         <span className='ms-2'>{filename}</span>
       </div>
-      {(['rs', 'ts', 'js'].includes(ext) && ![
+      {!props.readOnly && (['rs', 'ts', 'js'].includes(ext) && ![
         'plugin.ts',
         'lib.rs',
         'esbuild.js',
@@ -61,6 +61,7 @@ function FileManager({
       {[...files, ...configFiles].map((file, i) => {
         return <File {...file}
           key={file.filename}
+          readOnly={selectedPlugin.type === "github"}
           currentTab={currentTab}
           removeFile={removeFile}
           onClick={() => onFileClick(file)}

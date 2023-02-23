@@ -80,7 +80,7 @@ const createUserIfNotExists = req => {
 const _getUser = key => {
   const { s3, Bucket } = S3.state()
 
-  log.info(`search user: ${key}`)
+  log.debug(`search user: ${key}`)
 
   return new Promise(resolve => {
     s3.getObject({
