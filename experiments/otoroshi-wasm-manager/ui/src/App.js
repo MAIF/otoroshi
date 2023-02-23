@@ -237,33 +237,37 @@ class App extends React.Component {
   }
 
   onPluginClick = newSelectedPlugin => {
-    const plugin = this.state.plugins.find(f => f.pluginId === newSelectedPlugin)
-    Service.getPlugin(newSelectedPlugin)
-      .then(res => {
-        if (res.status === 404)
-          return res.json()
-        else
-          return res.blob()
-      })
-      .then(res => {
-        if (res.error && res.status === 404) {
-          Service.getPluginTemplate(plugin.type)
-            .then(r => this.downloadPluginTemplate(r, plugin))
-        } else {
-          return this.downloadPluginTemplate(res, plugin)
-            .then(() => {
-              Service.getPluginConfig(newSelectedPlugin)
-                .then(async configFiles => {
-                  this.setState({
-                    configFiles: (await Promise.all(configFiles.flatMap(this.unzip)))
-                      .filter(f => f)
-                      .flat()
-                  })
-                })
-            })
-        }
-
-      })
+    this.setState({
+      configFiles: [],
+      selectedPlugin: undefined
+    }, () => {
+      const plugin = this.state.plugins.find(f => f.pluginId === newSelectedPlugin)
+      Service.getPlugin(newSelectedPlugin)
+        .then(res => {
+          if (res.status === 404)
+            return res.json()
+          else
+            return res.blob()
+        })
+        .then(res => {
+          if (res.error && res.status === 404) {
+            Service.getPluginTemplate(plugin.type)
+              .then(r => this.downloadPluginTemplate(r, plugin))
+          } else {
+            return this.downloadPluginTemplate(res, plugin)
+              .then(() => {
+                Service.getPluginConfig(newSelectedPlugin)
+                  .then(async configFiles => {
+                    this.setState({
+                      configFiles: (await Promise.all(configFiles.flatMap(this.unzip)))
+                        .filter(f => f)
+                        .flat()
+                    })
+                  });
+              });
+          }
+        });
+    });
   }
 
   unzip = async file => {
@@ -375,8 +379,6 @@ class App extends React.Component {
 
   render() {
     const { selectedPlugin, plugins, configFiles, editorState } = this.state;
-
-    console.log(selectedPlugin)
 
     return <div className='d-flex flex-column'
       style={{ flex: 1, outline: 'none' }}

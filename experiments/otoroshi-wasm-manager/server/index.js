@@ -15,19 +15,25 @@ const pluginsRouter = require('./routers/plugins');
 const templatesRouter = require('./routers/templates');
 const publicRouter = require('./routers/public');
 const wasmRouter = require('./routers/wasm');
+
 const { WebSocket } = require('./services/websocket');
+const { BuildingJob } = require('./services/building-job');
+const { FileSystem } = require('./services/file-system');
+
+
+const { Security } = require('./security/middlewares');
+
 
 const manager = require('./logger');
 const log = manager.createLogger('wasm-manager');
 
-const { Security } = require('./security/middlewares');
-const { BuildingJob } = require('./services/building-job');
 
 S3.initializeS3Connection()
   .then(() => {
     BuildingJob.start();
 
     S3.createBucketIfMissing();
+    FileSystem.cleanBuildsAndLogsFolders();
     // S3.cleanBucket()
     // S3.listObjects()
 

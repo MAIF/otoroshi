@@ -1,7 +1,7 @@
 const express = require('express');
 const { S3 } = require('../s3');
 const { UserManager } = require("../services/user");
-const { hash } = require('../utils');
+const { format } = require('../utils');
 const { Security } = require('../security/middlewares');
 
 const router = express.Router()
@@ -75,7 +75,7 @@ router.get('/plugins', (req, res) => {
           }
         })
     } else {
-      UserManager.getUserFromString(hash(reg))
+      UserManager.getUserFromString(format(reg))
         .then(data => res.json(data.plugins))
     }
   } else {

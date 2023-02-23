@@ -1,6 +1,3 @@
-const path = require('path');
-const toml = require('toml')
-const fs = require('fs-extra')
 const crypto = require('crypto')
 
 const express = require('express');
@@ -13,6 +10,7 @@ const { BuildingJob } = require('../services/building-job');
 const { FileSystem } = require('../services/file-system');
 
 const manager = require('../logger');
+const { InformationsReader } = require('../services/informationsReader');
 const log = manager.createLogger('plugins');
 
 const router = express.Router()
@@ -27,8 +25,7 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
   const { s3, Bucket } = S3.state()
 
-  const user = format(req.user.email)
-  const filename = format(`${user}-${req.params.id}`)
+  const filename = req.params.id;
 
   const params = {
     Bucket,
@@ -56,7 +53,6 @@ router.get('/:id/configurations', (req, res) => {
   const { s3, Bucket } = S3.state()
   UserManager.getUser(req)
     .then(data => {
-      const user = req.user ? req.user.email : 'admin@otoroshi.io'
       const plugin = data.plugins.find(f => f.pluginId === req.params.id)
 
       const files = [{
@@ -70,7 +66,7 @@ router.get('/:id/configurations', (req, res) => {
 
       s3.getObject({
         Bucket,
-        Key: `${format(`${user}-${plugin.pluginId}-logs`)}.zip`
+        Key: `${plugin.pluginId}-logs.zip`
       })
         .promise()
         .then(data => {
@@ -150,14 +146,11 @@ router.post('/', (req, res) => {
 })
 
 router.put('/:id', (req, res) => {
-  const { s3, Bucket } = S3.state()
-
-  const user = format(req.user.email)
-  const pluginHash = format(`${user}-${req.params.id}`)
+  const { s3, Bucket } = S3.state();
 
   const params = {
     Bucket,
-    Key: `${pluginHash}.zip`,
+    Key: `${req.params.id}.zip`,
     Body: req.body
   }
 
@@ -222,57 +215,45 @@ router.delete('/:id', async (req, res) => {
 })
 
 router.post('/:id/build', async (req, res) => {
-  const user = format(req.user.email)
-  const pluginHash = format(`${user}-${req.params.id}`)
+  const pluginId = req.params.id;
 
   const data = await UserManager.getUser(req)
-  const plugin = (data.plugins || []).find(p => p.pluginId === req.params.id);
+  const plugin = (data.plugins || []).find(p => p.pluginId === pluginId);
   const isRustBuild = plugin.type == 'rust';
-  const isGoBuild = plugin.type === 'go';
 
-  BuildingJob.buildIsAlreadyRunning(pluginHash)
+  BuildingJob.buildIsAlreadyRunning(pluginId)
     .then(async exists => {
       if (exists) {
-        res.json({ queue_id: pluginHash, alreadyExists: true });
+        res.json({ queue_id: pluginId, alreadyExists: true });
       } else {
-        const folder = await FileSystem.createBuildFolder(plugin.type, pluginHash)
-        await unzip(isRustBuild, req.body, folder)
+        const folder = await FileSystem.createBuildFolder(plugin.type, pluginId);
+        await unzip(isRustBuild, req.body, folder);
         try {
           const zipHash = crypto
             .createHash('md5')
             .update(req.body.toString())
-            .digest('hex')
+            .digest('hex');
 
           if (plugin['last_hash'] !== zipHash) {
-            log.info(`different: ${zipHash} - ${plugin['last_hash']}`)
+            log.info(`different: ${zipHash} - ${plugin['last_hash']}`);
 
-            const data = await fs.readFile(path.join(process.cwd(),
-              'build',
-              folder,
-              isGoBuild ? 'go.mod' : isRustBuild ? 'Cargo.toml' : 'package.json'));
-
-            const file = isGoBuild ? data
-              .toString()
-              .split('\n')[0]
-              .replace('module ', '')
-              .trim() :
-              isRustBuild ? toml.parse(data) : JSON.parse(data)
+            const { pluginName, pluginVersion } = InformationsReader.extractInformations(folder, plugin.type);
 
             BuildingJob.addBuildToQueue({
               folder,
-              plugin: req.params.id,
-              wasmName: isGoBuild ? file : isRustBuild ? file.package.name.replace('-', '_') : file.name.replace(' ', '_'),
+              plugin: pluginId,
+              wasmName: `${pluginName}-${pluginVersion}`,
               user: req.user ? req.user.email : 'admin@otoroshi.io',
               zipHash,
               isRustBuild,
               pluginType: plugin.type
-            })
+            });
 
             res.json({
               queue_id: folder
-            })
+            });
           } else {
-            fs.remove(path.join(process.cwd(), 'build', folder))
+            FileSystem.removeFolder('build', folder)
               .then(() => {
                 res.json({
                   message: 'no changes found'
@@ -280,7 +261,7 @@ router.post('/:id/build', async (req, res) => {
               })
           }
         } catch (err) {
-          fs.remove(path.join(process.cwd(), 'build', folder))
+          FileSystem.removeFolder('build', folder)
             .then(() => {
               res
                 .status(400)

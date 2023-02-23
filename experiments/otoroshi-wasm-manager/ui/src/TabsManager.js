@@ -11,7 +11,14 @@ function TabsManager({ plugins, ...props }) {
   const [sizeTerminal, changeTerminalSize] = useState(.3)
   const [resizingTerminal, toggleResizingTerminal] = useState(false)
 
-  console.log(props.selectedPlugin)
+  const [currentPlugin, setCurrentPlugin] = useState()
+
+  useEffect(() => {
+    if (props.selectedPlugin && props.selectedPlugin.filename !== currentPlugin) {
+      setCurrentPlugin(props.selectedPlugin.filename)
+      setTabs([])
+    }
+  }, [props.selectedPlugin])
 
   return <div className='d-flex' style={{ flex: 1 }}
     onMouseLeave={e => {
@@ -39,7 +46,7 @@ function TabsManager({ plugins, ...props }) {
         fontWeight: 'bold', textTransform: 'uppercase', fontSize: 18, background: '#f9b000',
         color: 'white',
         height: 42
-      }} className="p-2 m-0 d-flex align-items-center">Wasm Manager</h1>
+      }} className="p-2 m-0 d-flex align-items-center">OTO WA</h1>
       <Explorer>
         <PluginManager
           plugins={plugins}

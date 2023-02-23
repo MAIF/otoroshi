@@ -41,7 +41,7 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
         toggleResizingTerminal(true)
       }}
       onMouseMove={e => e.stopPropagation()}
-      onMouseuUp={e => {
+      onMouseUp={e => {
         e.stopPropagation();
         toggleResizingTerminal(false)
       }}>

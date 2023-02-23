@@ -63,7 +63,7 @@ const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild, pluginTyp
         const { commands, args } = (pluginType === 'rust' ? {
           commands: CARGO_BUILD,
           args: CARGO_ARGS()
-        } : pluginType === 'js' ? {
+        } : (pluginType === 'js' || pluginType === 'ts') ? {
           commands: JS_BUILD,
           args: JS_ARGS(wasmName)
         } : pluginType === 'go' ? {
@@ -119,7 +119,7 @@ const addChildListener = (plugin, child, stdoutStream, stderrStream) => {
 const onSuccessProcess = (plugin, user, buildFolder, logsFolder, wasmName, zipHash, resolve, reject, code, isRustBuild) => {
   WebSocket.emit(plugin, "BUILD", "Build done.\n")
   try {
-    const newFilename = `${format(`${user}-${plugin}`)}.wasm`
+    const newFilename = `${plugin}.wasm`
     WebSocket.emit(plugin, "PACKAGE", "Starting package ...\n")
     Promise.all([
       saveWasmFile(
@@ -131,7 +131,7 @@ const onSuccessProcess = (plugin, user, buildFolder, logsFolder, wasmName, zipHa
       ),
       saveLogsFile(
         plugin,
-        `${format(`${user}-${plugin}-logs`)}.zip`,
+        `${plugin}-logs.zip`,
         logsFolder
       ),
       updateHashOfPlugin(user, plugin, zipHash, newFilename)
