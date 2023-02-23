@@ -7,9 +7,21 @@
         "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ],
         "nullable" : true
       },
+      "sendWorkers" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
       "applyTemplate" : {
         "type" : "boolean",
         "description" : "Enable template creation/update"
+      },
+      "uris" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
       },
       "mtlsConfig" : {
         "description" : "TLS settings for the http client",
@@ -48,9 +60,10 @@
         "type" : "string",
         "nullable" : true
       },
-      "clusterUri" : {
-        "type" : "string",
-        "description" : "Cluster URL"
+      "maxBulkSize" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
       },
       "headers" : {
         "type" : "object",
@@ -65,6 +78,16 @@
           "clientSide" : {
             "type" : "boolean",
             "description" : "Enable index splitting on client side"
+          },
+          "numberOfShards" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "numberOfReplicas" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
           },
           "interval" : {
             "description" : "Index splitting interval",
@@ -550,13 +573,6 @@
             },
             "type" : "object"
           },
-          "target_refs" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "List of NgStoredBackend ids"
-          },
           "rewrite" : {
             "type" : "boolean",
             "description" : "Does the backend performs a full url rewrite ?"
@@ -665,6 +681,11 @@
     "description" : "Configuration for W3CTracing",
     "type" : "string",
     "enum" : [ "jaeger", "zipkin", "logger", "noop" ]
+  },
+  "otoroshi.next.plugins.TailscaleLocalApiClient" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
   },
   "otoroshi.next.plugins.JQConfig" : {
     "type" : "object",
@@ -834,6 +855,45 @@
       "type" : "object"
     }
   },
+  "otoroshi.next.plugins.WasmSink" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "raw_source" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "function_name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "compiler_source" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "config" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "memory_pages" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "allowed_hosts" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.models.RegionMatch" : {
     "properties" : {
       "type" : {
@@ -916,6 +976,30 @@
           "type" : "string",
           "description" : "Service id for this template"
         },
+        "_loc" : {
+          "description" : "???",
+          "properties" : {
+            "tenant" : {
+              "description" : "Organization of the current entity",
+              "type" : "string"
+            },
+            "teams" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              },
+              "description" : "Teams of the current entity"
+            }
+          },
+          "type" : "object"
+        },
+        "metadata" : {
+          "type" : "object",
+          "additionalProperties" : {
+            "type" : "string"
+          },
+          "description" : "???"
+        },
         "messages" : {
           "type" : "object",
           "additionalProperties" : {
@@ -923,9 +1007,24 @@
           },
           "description" : "Map of messages"
         },
+        "name" : {
+          "type" : "string",
+          "description" : "???"
+        },
         "template40x" : {
           "type" : "string",
           "description" : "The 40x error html template"
+        },
+        "tags" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          },
+          "description" : "???"
+        },
+        "description" : {
+          "type" : "string",
+          "description" : "???"
         }
       },
       "type" : "object"
@@ -4073,6 +4172,11 @@
             "format" : "int32",
             "description" : "???"
           },
+          "connectionTimeout" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "???"
+          },
           "crds" : {
             "type" : "boolean",
             "description" : "???"
@@ -4163,6 +4267,11 @@
           },
           "clusterDomain" : {
             "type" : "string",
+            "description" : "???"
+          },
+          "idleTimeout" : {
+            "type" : "integer",
+            "format" : "int64",
             "description" : "???"
           },
           "caCert" : {
@@ -4264,6 +4373,10 @@
             "type" : "string",
             "nullable" : true
           },
+          "coreDnsAzure" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
           "corednsPort" : {
             "type" : "integer",
             "format" : "int32",
@@ -4292,6 +4405,11 @@
           },
           "openshiftDnsOperatorCoreDnsNamespace" : {
             "type" : "string",
+            "description" : "???"
+          },
+          "callAndStreamTimeout" : {
+            "type" : "integer",
+            "format" : "int64",
             "description" : "???"
           }
         },
@@ -4448,6 +4566,16 @@
       "ratio" : {
         "type" : "number",
         "format" : "double",
+        "description" : "???"
+      }
+    }
+  },
+  "otoroshi.next.plugins.TailscaleStatusPeer" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "raw" : {
+        "type" : "object",
         "description" : "???"
       }
     }
@@ -4688,13 +4816,6 @@
                     }
                   },
                   "type" : "object"
-                },
-                "target_refs" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  },
-                  "description" : "List of NgStoredBackend ids"
                 },
                 "rewrite" : {
                   "type" : "boolean",
@@ -8051,7 +8172,7 @@
     }, {
       "required" : [ "type" ]
     }, {
-      "required" : [ "type", "applyTemplate", "mtlsConfig", "version", "clusterUri", "headers", "indexSettings", "user", "index", "password" ]
+      "required" : [ "type", "sendWorkers", "applyTemplate", "uris", "mtlsConfig", "version", "maxBulkSize", "headers", "indexSettings", "user", "index", "password" ]
     }, {
       "required" : [ "type", "ref", "config" ]
     }, {
@@ -8196,18 +8317,31 @@
         "type" : "string",
         "description" : "Pulsar namespace"
       },
+      "sendWorkers" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
       "applyTemplate" : {
         "type" : "boolean",
         "description" : "Enable template creation/update"
+      },
+      "uris" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
       },
       "version" : {
         "description" : "null type",
         "type" : "string",
         "nullable" : true
       },
-      "clusterUri" : {
-        "type" : "string",
-        "description" : "Cluster URL"
+      "maxBulkSize" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
       },
       "headers" : {
         "type" : "object",
@@ -8222,6 +8356,16 @@
           "clientSide" : {
             "type" : "boolean",
             "description" : "Enable index splitting on client side"
+          },
+          "numberOfShards" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "numberOfReplicas" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
           },
           "interval" : {
             "description" : "Index splitting interval",
@@ -8641,13 +8785,6 @@
                   "type" : "boolean",
                   "description" : "Does the backend performs a full url rewrite ?"
                 },
-                "target_refs" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  },
-                  "description" : "List of NgStoredBackend ids"
-                },
                 "targets" : {
                   "type" : "array",
                   "items" : {
@@ -8806,6 +8943,16 @@
         "description" : "null type",
         "type" : "string",
         "nullable" : true
+      }
+    }
+  },
+  "otoroshi.models.RouteCompositionIdentifier" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "id" : {
+        "type" : "string",
+        "description" : "???"
       }
     }
   },
@@ -12160,6 +12307,11 @@
       }
     }
   },
+  "otoroshi.next.plugins.TailscaleTargetsJob" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
+  },
   "otoroshi.auth.GenericOauth2ModuleConfig" : {
     "properties" : {
       "type" : {
@@ -13517,6 +13669,11 @@
                 "format" : "int32",
                 "description" : "???"
               },
+              "connectionTimeout" : {
+                "type" : "integer",
+                "format" : "int64",
+                "description" : "???"
+              },
               "crds" : {
                 "type" : "boolean",
                 "description" : "???"
@@ -13607,6 +13764,11 @@
               },
               "clusterDomain" : {
                 "type" : "string",
+                "description" : "???"
+              },
+              "idleTimeout" : {
+                "type" : "integer",
+                "format" : "int64",
                 "description" : "???"
               },
               "caCert" : {
@@ -13708,6 +13870,10 @@
                 "type" : "string",
                 "nullable" : true
               },
+              "coreDnsAzure" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
               "corednsPort" : {
                 "type" : "integer",
                 "format" : "int32",
@@ -13736,6 +13902,11 @@
               },
               "openshiftDnsOperatorCoreDnsNamespace" : {
                 "type" : "string",
+                "description" : "???"
+              },
+              "callAndStreamTimeout" : {
+                "type" : "integer",
+                "format" : "int64",
                 "description" : "???"
               }
             },
@@ -13856,10 +14027,60 @@
       }
     }
   },
+  "otoroshi.models.RouteIdentifier" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "id" : {
+        "type" : "string",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.plugins.static.StaticResponse" : {
     "type" : "object",
     "description" : "???",
     "properties" : { }
+  },
+  "otoroshi.next.plugins.NgErrorRewriterConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "ranges" : {
+        "type" : "array",
+        "items" : {
+          "properties" : {
+            "from" : {
+              "type" : "integer",
+              "format" : "int32",
+              "description" : "???"
+            },
+            "to" : {
+              "type" : "integer",
+              "format" : "int32",
+              "description" : "???"
+            }
+          },
+          "type" : "object"
+        },
+        "description" : "???"
+      },
+      "templates" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "log" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "export" : {
+        "type" : "boolean",
+        "description" : "???"
+      }
+    }
   },
   "otoroshi.plugins.apikeys.CertificateAsApikey" : {
     "type" : "object",
@@ -13903,6 +14124,21 @@
       "method" : {
         "type" : "string",
         "description" : "???"
+      }
+    }
+  },
+  "otoroshi.next.plugins.NgDefaultRequestBodyConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "content_type" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "content_encoding" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
       }
     }
   },
@@ -14709,184 +14945,6 @@
       "encryptedAssertions" : {
         "type" : "boolean",
         "description" : "???"
-      }
-    }
-  },
-  "otoroshi.next.models.StoredNgTarget" : {
-    "type" : "object",
-    "description" : "A target that can be stored in the otoroshi datastore",
-    "properties" : {
-      "name" : {
-        "type" : "string",
-        "description" : "The name of the target"
-      },
-      "_loc" : {
-        "description" : "The location of the target",
-        "properties" : {
-          "tenant" : {
-            "description" : "Organization of the current entity",
-            "type" : "string"
-          },
-          "teams" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "Teams of the current entity"
-          }
-        },
-        "type" : "object"
-      },
-      "metadata" : {
-        "type" : "object",
-        "additionalProperties" : {
-          "type" : "string"
-        },
-        "description" : "The metadata of the target"
-      },
-      "description" : {
-        "type" : "string",
-        "description" : "The description of the target"
-      },
-      "tags" : {
-        "type" : "array",
-        "items" : {
-          "type" : "string"
-        },
-        "description" : "The tags of the target"
-      },
-      "id" : {
-        "type" : "string",
-        "description" : "The id of the target"
-      },
-      "target" : {
-        "description" : "The actual target",
-        "properties" : {
-          "ip_address" : {
-            "description" : "null type",
-            "type" : "string",
-            "nullable" : true
-          },
-          "protocol" : {
-            "type" : "string",
-            "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0" ],
-            "description" : "Protocol for the target"
-          },
-          "predicate" : {
-            "description" : "Predicate to choose this target",
-            "properties" : {
-              "type" : {
-                "type" : "string",
-                "description" : "the kind of predicate",
-                "enum" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
-              },
-              "dc" : {
-                "type" : "string",
-                "description" : "???"
-              },
-              "positions" : {
-                "type" : "array",
-                "items" : {
-                  "properties" : {
-                    "latitude" : {
-                      "type" : "number",
-                      "format" : "double",
-                      "description" : "???"
-                    },
-                    "longitude" : {
-                      "type" : "number",
-                      "format" : "double",
-                      "description" : "???"
-                    },
-                    "radius" : {
-                      "type" : "number",
-                      "format" : "double",
-                      "description" : "???"
-                    }
-                  },
-                  "type" : "object"
-                },
-                "description" : "???"
-              },
-              "provider" : {
-                "type" : "string",
-                "description" : "???"
-              },
-              "dataCenter" : {
-                "type" : "string",
-                "description" : "???"
-              },
-              "rack" : {
-                "type" : "string",
-                "description" : "???"
-              },
-              "region" : {
-                "type" : "string",
-                "description" : "???"
-              },
-              "zone" : {
-                "type" : "string",
-                "description" : "???"
-              }
-            },
-            "type" : "object"
-          },
-          "tls_config" : {
-            "description" : "TLS settings to contact this target",
-            "properties" : {
-              "enabled" : {
-                "type" : "boolean",
-                "description" : "Enabled"
-              },
-              "certs" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                },
-                "description" : "Trusted cert. ids"
-              },
-              "loose" : {
-                "type" : "boolean",
-                "description" : "Loose verification"
-              },
-              "trust_all" : {
-                "type" : "boolean",
-                "description" : "Trust any certificate"
-              },
-              "trusted_certs" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                },
-                "description" : "Trusted cert. ids"
-              }
-            },
-            "type" : "object"
-          },
-          "tls" : {
-            "type" : "boolean",
-            "description" : "Does the target uses TLS"
-          },
-          "port" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "port of the target"
-          },
-          "id" : {
-            "type" : "string",
-            "description" : "id of the target"
-          },
-          "weight" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "The weight of the target when choosing"
-          },
-          "hostname" : {
-            "type" : "string",
-            "description" : "hostname of the target"
-          }
-        },
-        "type" : "object"
       }
     }
   },
@@ -17645,6 +17703,45 @@
       }
     }
   },
+  "otoroshi.next.plugins.WasmQueryConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "raw_source" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "function_name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "compiler_source" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "config" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "memory_pages" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "allowed_hosts" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.plugins.jobs.kubernetes.KubernetesSupport" : {
     "type" : "object",
     "description" : "???",
@@ -18019,6 +18116,11 @@
     "description" : "???",
     "properties" : { }
   },
+  "otoroshi.next.plugins.WasmUtils" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
+  },
   "otoroshi.next.plugins.Http3SwitchConfig" : {
     "type" : "object",
     "description" : "???",
@@ -18072,6 +18174,45 @@
     "type" : "object",
     "description" : "???",
     "properties" : { }
+  },
+  "otoroshi.next.plugins.WasmRequestTransformer" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "raw_source" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "function_name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "compiler_source" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "config" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "memory_pages" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "allowed_hosts" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      }
+    }
   },
   "otoroshi.next.plugins.AllowHttpMethods" : {
     "type" : "object",
@@ -18409,13 +18550,6 @@
                 "rewrite" : {
                   "type" : "boolean",
                   "description" : "Does the backend performs a full url rewrite ?"
-                },
-                "target_refs" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  },
-                  "description" : "List of NgStoredBackend ids"
                 },
                 "targets" : {
                   "type" : "array",
@@ -18953,13 +19087,6 @@
                 "rewrite" : {
                   "type" : "boolean",
                   "description" : "Does the backend performs a full url rewrite ?"
-                },
-                "target_refs" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  },
-                  "description" : "List of NgStoredBackend ids"
                 },
                 "targets" : {
                   "type" : "array",
@@ -19893,18 +20020,31 @@
                   "type" : "string",
                   "description" : "Pulsar namespace"
                 },
+                "sendWorkers" : {
+                  "type" : "integer",
+                  "format" : "int32",
+                  "description" : "???"
+                },
                 "applyTemplate" : {
                   "type" : "boolean",
                   "description" : "Enable template creation/update"
+                },
+                "uris" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "description" : "???"
                 },
                 "version" : {
                   "description" : "null type",
                   "type" : "string",
                   "nullable" : true
                 },
-                "clusterUri" : {
-                  "type" : "string",
-                  "description" : "Cluster URL"
+                "maxBulkSize" : {
+                  "type" : "integer",
+                  "format" : "int32",
+                  "description" : "???"
                 },
                 "headers" : {
                   "type" : "object",
@@ -19919,6 +20059,16 @@
                     "clientSide" : {
                       "type" : "boolean",
                       "description" : "Enable index splitting on client side"
+                    },
+                    "numberOfShards" : {
+                      "type" : "integer",
+                      "format" : "int32",
+                      "description" : "???"
+                    },
+                    "numberOfReplicas" : {
+                      "type" : "integer",
+                      "format" : "int32",
+                      "description" : "???"
                     },
                     "interval" : {
                       "description" : "Index splitting interval",
@@ -20306,13 +20456,6 @@
                           }
                         },
                         "type" : "object"
-                      },
-                      "target_refs" : {
-                        "type" : "array",
-                        "items" : {
-                          "type" : "string"
-                        },
-                        "description" : "List of NgStoredBackend ids"
                       },
                       "rewrite" : {
                         "type" : "boolean",
@@ -23642,9 +23785,21 @@
                   "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ],
                   "nullable" : true
                 },
+                "sendWorkers" : {
+                  "type" : "integer",
+                  "format" : "int32",
+                  "description" : "???"
+                },
                 "applyTemplate" : {
                   "type" : "boolean",
                   "description" : "Enable template creation/update"
+                },
+                "uris" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "description" : "???"
                 },
                 "mtlsConfig" : {
                   "description" : "TLS settings for the http client",
@@ -23683,9 +23838,10 @@
                   "type" : "string",
                   "nullable" : true
                 },
-                "clusterUri" : {
-                  "type" : "string",
-                  "description" : "Cluster URL"
+                "maxBulkSize" : {
+                  "type" : "integer",
+                  "format" : "int32",
+                  "description" : "???"
                 },
                 "headers" : {
                   "type" : "object",
@@ -23700,6 +23856,16 @@
                     "clientSide" : {
                       "type" : "boolean",
                       "description" : "Enable index splitting on client side"
+                    },
+                    "numberOfShards" : {
+                      "type" : "integer",
+                      "format" : "int32",
+                      "description" : "???"
+                    },
+                    "numberOfReplicas" : {
+                      "type" : "integer",
+                      "format" : "int32",
+                      "description" : "???"
                     },
                     "interval" : {
                       "description" : "Index splitting interval",
@@ -23775,9 +23941,21 @@
                     "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ],
                     "nullable" : true
                   },
+                  "sendWorkers" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
+                  },
                   "applyTemplate" : {
                     "type" : "boolean",
                     "description" : "Enable template creation/update"
+                  },
+                  "uris" : {
+                    "type" : "array",
+                    "items" : {
+                      "type" : "string"
+                    },
+                    "description" : "???"
                   },
                   "mtlsConfig" : {
                     "description" : "TLS settings for the http client",
@@ -23816,9 +23994,10 @@
                     "type" : "string",
                     "nullable" : true
                   },
-                  "clusterUri" : {
-                    "type" : "string",
-                    "description" : "Cluster URL"
+                  "maxBulkSize" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
                   },
                   "headers" : {
                     "type" : "object",
@@ -23833,6 +24012,16 @@
                       "clientSide" : {
                         "type" : "boolean",
                         "description" : "Enable index splitting on client side"
+                      },
+                      "numberOfShards" : {
+                        "type" : "integer",
+                        "format" : "int32",
+                        "description" : "???"
+                      },
+                      "numberOfReplicas" : {
+                        "type" : "integer",
+                        "format" : "int32",
+                        "description" : "???"
                       },
                       "interval" : {
                         "description" : "Index splitting interval",
@@ -24049,6 +24238,29 @@
                 }
               },
               "type" : "object"
+            },
+            "wasmManagerSettings" : {
+              "description" : "???",
+              "type" : "object",
+              "properties" : {
+                "url" : {
+                  "type" : "string",
+                  "description" : "???"
+                },
+                "clientId" : {
+                  "type" : "string",
+                  "description" : "???"
+                },
+                "clientSecret" : {
+                  "type" : "string",
+                  "description" : "???"
+                },
+                "pluginsFilter" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                }
+              }
             },
             "maintenanceMode" : {
               "type" : "boolean",
@@ -25824,187 +26036,6 @@
         },
         "description" : "???"
       },
-      "targets" : {
-        "type" : "array",
-        "items" : {
-          "properties" : {
-            "name" : {
-              "type" : "string",
-              "description" : "The name of the target"
-            },
-            "_loc" : {
-              "description" : "The location of the target",
-              "properties" : {
-                "tenant" : {
-                  "description" : "Organization of the current entity",
-                  "type" : "string"
-                },
-                "teams" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  },
-                  "description" : "Teams of the current entity"
-                }
-              },
-              "type" : "object"
-            },
-            "metadata" : {
-              "type" : "object",
-              "additionalProperties" : {
-                "type" : "string"
-              },
-              "description" : "The metadata of the target"
-            },
-            "description" : {
-              "type" : "string",
-              "description" : "The description of the target"
-            },
-            "tags" : {
-              "type" : "array",
-              "items" : {
-                "type" : "string"
-              },
-              "description" : "The tags of the target"
-            },
-            "id" : {
-              "type" : "string",
-              "description" : "The id of the target"
-            },
-            "target" : {
-              "description" : "The actual target",
-              "properties" : {
-                "ip_address" : {
-                  "description" : "null type",
-                  "type" : "string",
-                  "nullable" : true
-                },
-                "protocol" : {
-                  "type" : "string",
-                  "enum" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0" ],
-                  "description" : "Protocol for the target"
-                },
-                "predicate" : {
-                  "description" : "Predicate to choose this target",
-                  "properties" : {
-                    "type" : {
-                      "type" : "string",
-                      "description" : "the kind of predicate",
-                      "enum" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
-                    },
-                    "dc" : {
-                      "type" : "string",
-                      "description" : "???"
-                    },
-                    "positions" : {
-                      "type" : "array",
-                      "items" : {
-                        "properties" : {
-                          "latitude" : {
-                            "type" : "number",
-                            "format" : "double",
-                            "description" : "???"
-                          },
-                          "longitude" : {
-                            "type" : "number",
-                            "format" : "double",
-                            "description" : "???"
-                          },
-                          "radius" : {
-                            "type" : "number",
-                            "format" : "double",
-                            "description" : "???"
-                          }
-                        },
-                        "type" : "object"
-                      },
-                      "description" : "???"
-                    },
-                    "provider" : {
-                      "type" : "string",
-                      "description" : "???"
-                    },
-                    "dataCenter" : {
-                      "type" : "string",
-                      "description" : "???"
-                    },
-                    "rack" : {
-                      "type" : "string",
-                      "description" : "???"
-                    },
-                    "region" : {
-                      "type" : "string",
-                      "description" : "???"
-                    },
-                    "zone" : {
-                      "type" : "string",
-                      "description" : "???"
-                    }
-                  },
-                  "type" : "object"
-                },
-                "tls_config" : {
-                  "description" : "TLS settings to contact this target",
-                  "properties" : {
-                    "enabled" : {
-                      "type" : "boolean",
-                      "description" : "Enabled"
-                    },
-                    "certs" : {
-                      "type" : "array",
-                      "items" : {
-                        "type" : "string"
-                      },
-                      "description" : "Trusted cert. ids"
-                    },
-                    "loose" : {
-                      "type" : "boolean",
-                      "description" : "Loose verification"
-                    },
-                    "trust_all" : {
-                      "type" : "boolean",
-                      "description" : "Trust any certificate"
-                    },
-                    "trusted_certs" : {
-                      "type" : "array",
-                      "items" : {
-                        "type" : "string"
-                      },
-                      "description" : "Trusted cert. ids"
-                    }
-                  },
-                  "type" : "object"
-                },
-                "tls" : {
-                  "type" : "boolean",
-                  "description" : "Does the target uses TLS"
-                },
-                "port" : {
-                  "type" : "integer",
-                  "format" : "int32",
-                  "description" : "port of the target"
-                },
-                "id" : {
-                  "type" : "string",
-                  "description" : "id of the target"
-                },
-                "weight" : {
-                  "type" : "integer",
-                  "format" : "int32",
-                  "description" : "The weight of the target when choosing"
-                },
-                "hostname" : {
-                  "type" : "string",
-                  "description" : "hostname of the target"
-                }
-              },
-              "type" : "object"
-            }
-          },
-          "type" : "object"
-        },
-        "description" : "???"
-      },
       "serviceGroups" : {
         "type" : "array",
         "items" : {
@@ -26521,13 +26552,6 @@
                 "type" : "boolean",
                 "description" : "Does the backend performs a full url rewrite ?"
               },
-              "target_refs" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                },
-                "description" : "List of NgStoredBackend ids"
-              },
               "targets" : {
                 "type" : "array",
                 "items" : {
@@ -26917,6 +26941,16 @@
       }
     }
   },
+  "otoroshi.next.plugins.TailscaleCert" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "raw" : {
+        "type" : "string",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.plugins.jwt.JwtUserExtractor" : {
     "type" : "object",
     "description" : "???",
@@ -27224,13 +27258,6 @@
           "rewrite" : {
             "type" : "boolean",
             "description" : "Does the backend performs a full url rewrite ?"
-          },
-          "target_refs" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "List of NgStoredBackend ids"
           },
           "targets" : {
             "type" : "array",
@@ -28014,9 +28041,21 @@
             "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ],
             "nullable" : true
           },
+          "sendWorkers" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
           "applyTemplate" : {
             "type" : "boolean",
             "description" : "Enable template creation/update"
+          },
+          "uris" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           },
           "mtlsConfig" : {
             "description" : "TLS settings for the http client",
@@ -28055,9 +28094,10 @@
             "type" : "string",
             "nullable" : true
           },
-          "clusterUri" : {
-            "type" : "string",
-            "description" : "Cluster URL"
+          "maxBulkSize" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
           },
           "headers" : {
             "type" : "object",
@@ -28072,6 +28112,16 @@
               "clientSide" : {
                 "type" : "boolean",
                 "description" : "Enable index splitting on client side"
+              },
+              "numberOfShards" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "numberOfReplicas" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
               },
               "interval" : {
                 "description" : "Index splitting interval",
@@ -28147,9 +28197,21 @@
               "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ],
               "nullable" : true
             },
+            "sendWorkers" : {
+              "type" : "integer",
+              "format" : "int32",
+              "description" : "???"
+            },
             "applyTemplate" : {
               "type" : "boolean",
               "description" : "Enable template creation/update"
+            },
+            "uris" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              },
+              "description" : "???"
             },
             "mtlsConfig" : {
               "description" : "TLS settings for the http client",
@@ -28188,9 +28250,10 @@
               "type" : "string",
               "nullable" : true
             },
-            "clusterUri" : {
-              "type" : "string",
-              "description" : "Cluster URL"
+            "maxBulkSize" : {
+              "type" : "integer",
+              "format" : "int32",
+              "description" : "???"
             },
             "headers" : {
               "type" : "object",
@@ -28205,6 +28268,16 @@
                 "clientSide" : {
                   "type" : "boolean",
                   "description" : "Enable index splitting on client side"
+                },
+                "numberOfShards" : {
+                  "type" : "integer",
+                  "format" : "int32",
+                  "description" : "???"
+                },
+                "numberOfReplicas" : {
+                  "type" : "integer",
+                  "format" : "int32",
+                  "description" : "???"
                 },
                 "interval" : {
                   "description" : "Index splitting interval",
@@ -28434,6 +28507,29 @@
           }
         },
         "type" : "object"
+      },
+      "wasmManagerSettings" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "url" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "clientId" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "clientSecret" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "pluginsFilter" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          }
+        }
       },
       "maintenanceMode" : {
         "type" : "boolean",
@@ -29069,11 +29165,6 @@
       }
     }
   },
-  "otoroshi.next.models.StoredNgTargetDataStore" : {
-    "type" : "object",
-    "description" : "???",
-    "properties" : { }
-  },
   "otoroshi.models.OutageStrategy" : {
     "type" : "string",
     "enum" : [ "AllServicesPerGroup", "OneServicePerGroup" ]
@@ -29496,6 +29587,46 @@
       },
       "body" : {
         "type" : "string",
+        "description" : "???"
+      }
+    }
+  },
+  "otoroshi.next.plugins.NgErrorRewriter" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "ranges" : {
+        "type" : "array",
+        "items" : {
+          "properties" : {
+            "from" : {
+              "type" : "integer",
+              "format" : "int32",
+              "description" : "???"
+            },
+            "to" : {
+              "type" : "integer",
+              "format" : "int32",
+              "description" : "???"
+            }
+          },
+          "type" : "object"
+        },
+        "description" : "???"
+      },
+      "templates" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "log" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "export" : {
+        "type" : "boolean",
         "description" : "???"
       }
     }
@@ -30318,6 +30449,27 @@
       }
     }
   },
+  "otoroshi.next.plugins.TailscaleCertificatesFetcherJob" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
+  },
+  "otoroshi.next.plugins.ResponseStatusRange" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "from" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "to" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.next.plugins.EurekaTargetConfig" : {
     "type" : "object",
     "description" : "???",
@@ -30774,6 +30926,11 @@
         "format" : "int32",
         "description" : "???"
       },
+      "connectionTimeout" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "???"
+      },
       "crds" : {
         "type" : "boolean",
         "description" : "???"
@@ -30864,6 +31021,11 @@
       },
       "clusterDomain" : {
         "type" : "string",
+        "description" : "???"
+      },
+      "idleTimeout" : {
+        "type" : "integer",
+        "format" : "int64",
         "description" : "???"
       },
       "caCert" : {
@@ -30965,6 +31127,10 @@
         "type" : "string",
         "nullable" : true
       },
+      "coreDnsAzure" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
       "corednsPort" : {
         "type" : "integer",
         "format" : "int32",
@@ -30993,6 +31159,11 @@
       },
       "openshiftDnsOperatorCoreDnsNamespace" : {
         "type" : "string",
+        "description" : "???"
+      },
+      "callAndStreamTimeout" : {
+        "type" : "integer",
+        "format" : "int64",
         "description" : "???"
       }
     }
@@ -31189,18 +31360,16 @@
         },
         "type" : "object"
       },
-      "target_refs" : {
-        "type" : "array",
-        "items" : {
-          "type" : "string"
-        },
-        "description" : "List of NgStoredBackend ids"
-      },
       "rewrite" : {
         "type" : "boolean",
         "description" : "Does the backend performs a full url rewrite ?"
       }
     }
+  },
+  "otoroshi.next.plugins.OtoroshiHeadersIn" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
   },
   "otoroshi.plugins.workflow.WorkflowJob" : {
     "type" : "object",
@@ -31333,6 +31502,45 @@
       }
     }
   },
+  "otoroshi.next.plugins.WasmResponseTransformer" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "raw_source" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "function_name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "compiler_source" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "config" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "memory_pages" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "allowed_hosts" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.models.GeoPositionRadius" : {
     "type" : "object",
     "description" : "???",
@@ -31351,6 +31559,21 @@
         "type" : "number",
         "format" : "double",
         "description" : "???"
+      }
+    }
+  },
+  "otoroshi.next.plugins.NgDefaultRequestBody" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "content_type" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "content_encoding" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
       }
     }
   },
@@ -32829,13 +33052,6 @@
             "type" : "boolean",
             "description" : "Does the backend performs a full url rewrite ?"
           },
-          "target_refs" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            },
-            "description" : "List of NgStoredBackend ids"
-          },
           "targets" : {
             "type" : "array",
             "items" : {
@@ -33138,6 +33354,31 @@
       }
     }
   },
+  "otoroshi.next.plugins.NgHttpClientCacheConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "max_age_seconds" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "???"
+      },
+      "methods" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "mime_types" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.next.models.NgPluginInstanceConfig" : {
     "description" : "The current configuration for a plugin",
     "type" : "object"
@@ -33250,6 +33491,20 @@
         "additionalProperties" : {
           "type" : "string"
         },
+        "description" : "???"
+      }
+    }
+  },
+  "otoroshi.next.plugins.TailscaleSelectTargetByName" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "machine_name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "use_ip_address" : {
+        "type" : "boolean",
         "description" : "???"
       }
     }
@@ -33483,6 +33738,16 @@
         "type" : "boolean",
         "description" : "Enable index splitting on client side"
       },
+      "numberOfShards" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "numberOfReplicas" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
       "interval" : {
         "description" : "Index splitting interval",
         "properties" : { },
@@ -33600,11 +33865,6 @@
         "description" : "???"
       }
     }
-  },
-  "otoroshi.next.plugins.Http2Caller" : {
-    "type" : "object",
-    "description" : "???",
-    "properties" : { }
   },
   "otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob" : {
     "type" : "object",
@@ -40098,6 +40358,16 @@
     "description" : "???",
     "properties" : { }
   },
+  "otoroshi.next.plugins.TailscaleStatus" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "raw" : {
+        "type" : "object",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.models.OtoroshiAdmin" : {
     "type" : "object",
     "oneOfConstraints" : [ {
@@ -41128,6 +41398,31 @@
       }
     }
   },
+  "otoroshi.next.plugins.NgHttpClientCache" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "max_age_seconds" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "???"
+      },
+      "methods" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "mime_types" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.next.plugins.NgBadResponsesFaultConfig" : {
     "type" : "object",
     "description" : "???",
@@ -41437,6 +41732,16 @@
       },
       "enabled" : {
         "type" : "boolean",
+        "description" : "???"
+      }
+    }
+  },
+  "otoroshi.next.plugins.ReactorResponse" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "body" : {
+        "type" : "string",
         "description" : "???"
       }
     }
@@ -45498,13 +45803,6 @@
         "type" : "boolean",
         "description" : "Does the backend performs a full url rewrite ?"
       },
-      "target_refs" : {
-        "type" : "array",
-        "items" : {
-          "type" : "string"
-        },
-        "description" : "List of NgStoredBackend ids"
-      },
       "targets" : {
         "type" : "array",
         "items" : {
@@ -45831,6 +46129,39 @@
       }
     }
   },
+  "otoroshi.next.plugins.ErrorRewriteReport" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "raw_response" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      },
+      "response" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      },
+      "response_body" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "id" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "raw_response_body" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "request" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      }
+    }
+  },
   "otoroshi.next.plugins.AuthorisationException" : {
     "type" : "object",
     "description" : "???",
@@ -46050,18 +46381,31 @@
             "type" : "string",
             "description" : "Pulsar namespace"
           },
+          "sendWorkers" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
           "applyTemplate" : {
             "type" : "boolean",
             "description" : "Enable template creation/update"
+          },
+          "uris" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           },
           "version" : {
             "description" : "null type",
             "type" : "string",
             "nullable" : true
           },
-          "clusterUri" : {
-            "type" : "string",
-            "description" : "Cluster URL"
+          "maxBulkSize" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
           },
           "headers" : {
             "type" : "object",
@@ -46076,6 +46420,16 @@
               "clientSide" : {
                 "type" : "boolean",
                 "description" : "Enable index splitting on client side"
+              },
+              "numberOfShards" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "numberOfReplicas" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
               },
               "interval" : {
                 "description" : "Index splitting interval",
@@ -49932,6 +50286,20 @@
     "description" : "???",
     "properties" : { }
   },
+  "otoroshi.next.plugins.TailscaleSelectTargetByNameConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "machine_name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "use_ip_address" : {
+        "type" : "boolean",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.next.plugins.IpAddressBlockList" : {
     "type" : "object",
     "description" : "???",
@@ -49942,6 +50310,29 @@
           "type" : "string"
         },
         "description" : "???"
+      }
+    }
+  },
+  "otoroshi.models.WasmManagerSettings" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "url" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "clientId" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "clientSecret" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "pluginsFilter" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
       }
     }
   },
@@ -50309,13 +50700,6 @@
                 "type" : "boolean",
                 "description" : "Does the backend performs a full url rewrite ?"
               },
-              "target_refs" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                },
-                "description" : "List of NgStoredBackend ids"
-              },
               "targets" : {
                 "type" : "array",
                 "items" : {
@@ -50579,6 +50963,45 @@
     },
     "type" : "object",
     "description" : "Settings to use RSA signing algorithm from a certificate keypair"
+  },
+  "otoroshi.next.plugins.WasmBackend" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "raw_source" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "function_name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "compiler_source" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "config" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "memory_pages" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "allowed_hosts" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      }
+    }
   },
   "otoroshi.utils.mailer.MailerSettings" : {
     "type" : "object",
@@ -51064,6 +51487,30 @@
         "type" : "string",
         "description" : "Service id for this template"
       },
+      "_loc" : {
+        "description" : "???",
+        "properties" : {
+          "tenant" : {
+            "description" : "Organization of the current entity",
+            "type" : "string"
+          },
+          "teams" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Teams of the current entity"
+          }
+        },
+        "type" : "object"
+      },
+      "metadata" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
       "messages" : {
         "type" : "object",
         "additionalProperties" : {
@@ -51071,9 +51518,24 @@
         },
         "description" : "Map of messages"
       },
+      "name" : {
+        "type" : "string",
+        "description" : "???"
+      },
       "template40x" : {
         "type" : "string",
         "description" : "The 40x error html template"
+      },
+      "tags" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "description" : {
+        "type" : "string",
+        "description" : "???"
       }
     }
   },
@@ -53083,6 +53545,21 @@
     "type" : "object",
     "description" : "An otoroshi admin user that uses webauthn at login"
   },
+  "otoroshi.next.plugins.TailscaleCertError" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "status" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "body" : {
+        "type" : "string",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.plugins.jobs.kubernetes.OtoroshiToKubernetesCertSyncJob" : {
     "type" : "object",
     "description" : "???",
@@ -53187,6 +53664,45 @@
       "remove" : {
         "type" : "string",
         "description" : "Remove from value"
+      }
+    }
+  },
+  "otoroshi.next.plugins.WasmAccessValidator" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "raw_source" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "function_name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "compiler_source" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "config" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "memory_pages" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "allowed_hosts" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
       }
     }
   },

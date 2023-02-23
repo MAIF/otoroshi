@@ -581,6 +581,20 @@ DELETE  /api/admins/webauthn/:username/:id                    otoroshi.controlle
 GET     /api/openapi.json                                     otoroshi.controllers.SwaggerController.openapi()
 GET     /api/openapi/ui                                       otoroshi.controllers.SwaggerController.openapiUi()
 
+# generic apis
+POST    /apis/:group/:version/namespaces/:namespace/:entity/_bulk    otoroshi.api.GenericApiController.bulkCreate(group, version, namespace, entity)
+PUT     /apis/:group/:version/namespaces/:namespace/:entity/_bulk    otoroshi.api.GenericApiController.bulkUpdate(group, version, namespace, entity)
+PATCH   /apis/:group/:version/namespaces/:namespace/:entity/_bulk    otoroshi.api.GenericApiController.bulkPatch(group, version, namespace, entity)
+DELETE  /apis/:group/:version/namespaces/:namespace/:entity/_bulk    otoroshi.api.GenericApiController.bulkDelete(group, version, namespace, entity)
+GET     /apis/:group/:version/namespaces/:namespace/:entity/_count   otoroshi.api.GenericApiController.countAll(group, version, namespace, entity)
+GET     /apis/:group/:version/namespaces/:namespace/:entity/:id      otoroshi.api.GenericApiController.findOne(group, version, namespace, entity, id)
+POST    /apis/:group/:version/namespaces/:namespace/:entity/:id      otoroshi.api.GenericApiController.upsert(group, version, namespace, entity, id)
+PUT     /apis/:group/:version/namespaces/:namespace/:entity/:id      otoroshi.api.GenericApiController.update(group, version, namespace, entity, id)
+DELETE  /apis/:group/:version/namespaces/:namespace/:entity/:id      otoroshi.api.GenericApiController.delete(group, version, namespace, entity, id)
+GET     /apis/:group/:version/namespaces/:namespace/:entity          otoroshi.api.GenericApiController.findAll(group, version, namespace, entity)
+POST    /apis/:group/:version/namespaces/:namespace/:entity          otoroshi.api.GenericApiController.create(group, version, namespace, entity)
+DELETE  /apis/:group/:version/namespaces/:namespace/:entity          otoroshi.api.GenericApiController.deleteAll(group, version, namespace, entity)
+
 ########################################################################################################################
 
 GET     /assets/*file                                         controllers.Assets.versioned(path="/public", file: Asset)

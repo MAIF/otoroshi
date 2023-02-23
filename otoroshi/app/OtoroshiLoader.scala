@@ -5,7 +5,7 @@ import controllers.{Assets, AssetsComponents}
 import otoroshi.netty.ReactorNettyServer
 import otoroshi.actions._
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
-import otoroshi.api.{OtoroshiEnvHolder, OtoroshiLoaderHelper}
+import otoroshi.api.{GenericApiController, OtoroshiEnvHolder, OtoroshiLoaderHelper}
 import otoroshi.controllers._
 import otoroshi.controllers.adminapi._
 import otoroshi.env.Env
@@ -135,6 +135,7 @@ package object modules {
     lazy val tunnelController              = wire[TunnelController]
     lazy val entitiesController            = wire[EntitiesController]
     lazy val errorTemplatesController      = wire[ErrorTemplatesController]
+    lazy val genericApiController          = wire[GenericApiController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {
