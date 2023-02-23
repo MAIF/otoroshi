@@ -90,10 +90,10 @@ case class ElasticAnalyticsConfig(
     mtlsConfig: MtlsConfig = MtlsConfig.default,
     applyTemplate: Boolean = true,
     version: Option[String] = None,
-    maxBulkSize: Option[Int] = None,
-    sendWorkers: Option[Int] = None,
-    numberOfShards: Option[Int] = None,
-    numberOfReplicas: Option[Int] = None,
+    maxBulkSize: Option[Int] = Some(100),
+    sendWorkers: Option[Int] = Some(4),
+    numberOfShards: Option[Int] = Some(1),
+    numberOfReplicas: Option[Int] = Some(1),
 ) extends Exporter {
   def toJson: JsValue = ElasticAnalyticsConfig.format.writes(this)
 }
@@ -124,6 +124,13 @@ object ElasticAnalyticsConfig {
         val uris: Seq[String] = json.select("uris").asOpt[Seq[String]]
           .orElse((json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).map(s => Seq(s)))
           .getOrElse(Seq.empty[String])
+          .flatMap { uri =>
+            if (uri.contains(",")) {
+              uri.split(",").map(_.trim)
+            } else {
+              Seq(uri)
+            }
+          }
         if (uris.isEmpty) {
           JsError("no cluster uri found at all")
         } else {

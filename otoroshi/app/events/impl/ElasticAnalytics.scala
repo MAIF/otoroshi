@@ -230,7 +230,7 @@ object ElasticTemplates {
       |      },
       |      {
       |        "version_text_template": {
-      |          "match": "route.plugins.config.version",
+      |          "path_match": "route.plugins.config.version",
       |          "mapping": {
       |            "type": "text"
       |          },
@@ -239,7 +239,7 @@ object ElasticTemplates {
       |      },
       |      {
       |        "version_float_template": {
-      |          "match": "route.plugins.config.version",
+      |          "path_match": "route.plugins.config.version",
       |          "mapping": {
       |            "type": "float"
       |          },
@@ -248,7 +248,7 @@ object ElasticTemplates {
       |      },
       |      {
       |        "version_long_template": {
-      |          "match": "route.plugins.config.version",
+      |          "path_match": "route.plugins.config.version",
       |          "mapping": {
       |            "type": "long"
       |          },
@@ -257,7 +257,7 @@ object ElasticTemplates {
       |      },
       |      {
       |        "version_integer_template": {
-      |          "match": "route.plugins.config.version",
+      |          "path_match": "route.plugins.config.version",
       |          "mapping": {
       |            "type": "integer"
       |          },

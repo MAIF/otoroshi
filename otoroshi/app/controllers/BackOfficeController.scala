@@ -1805,9 +1805,15 @@ class BackOfficeController(
             case ElasticVersion.AboveSevenEight => ElasticTemplates.indexTemplate_v7_8
           }
           val template: String = if (config.indexSettings.clientSide) {
-            strTpl.replace("$$$INDEX$$$", index)
+            strTpl
+              .replace("$$$INDEX$$$", index)
+              .replace("$$$SHARDS$$$", config.numberOfShards.getOrElse(1).toString)
+              .replace("$$$REPLICAS$$$", config.numberOfReplicas.getOrElse(1).toString)
           } else {
-            strTpl.replace("$$$INDEX$$$-*", index)
+            strTpl
+              .replace("$$$INDEX$$$-*", index)
+              .replace("$$$SHARDS$$$", config.numberOfShards.getOrElse(1).toString)
+              .replace("$$$REPLICAS$$$", config.numberOfReplicas.getOrElse(1).toString)
           }
           Ok(Json.obj("template" -> template))
         }
