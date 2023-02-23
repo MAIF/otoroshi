@@ -49,10 +49,17 @@ object IndexSettingsInterval {
   }
 }
 
-case class IndexSettings(clientSide: Boolean = true, interval: IndexSettingsInterval = IndexSettingsInterval.Day) {
+case class IndexSettings(
+  clientSide: Boolean = true,
+  numberOfShards: Int = 1,
+  numberOfReplicas: Int = 1,
+  interval: IndexSettingsInterval = IndexSettingsInterval.Day
+) {
   def json: JsValue = Json.obj(
     "clientSide" -> clientSide,
-    "interval"   -> interval.json
+    "interval"   -> interval.json,
+    "numberOfShards" -> numberOfShards,
+    "numberOfReplicas" -> numberOfReplicas,
   )
 }
 
@@ -67,6 +74,8 @@ object IndexSettings {
     override def reads(json: JsValue): JsResult[IndexSettings] = Try {
       IndexSettings(
         clientSide = json.select("clientSide").asOpt[Boolean].getOrElse(true),
+        numberOfShards = json.select("numberOfShards").asOpt[Int].getOrElse(1),
+        numberOfReplicas = json.select("numberOfReplicas").asOpt[Int].getOrElse(1),
         interval = IndexSettingsInterval
           .parse(json.select("interval").asOpt[String].getOrElse("Day"))
           .getOrElse(IndexSettingsInterval.Day)
@@ -90,10 +99,8 @@ case class ElasticAnalyticsConfig(
     mtlsConfig: MtlsConfig = MtlsConfig.default,
     applyTemplate: Boolean = true,
     version: Option[String] = None,
-    maxBulkSize: Option[Int] = Some(100),
-    sendWorkers: Option[Int] = Some(4),
-    numberOfShards: Option[Int] = Some(1),
-    numberOfReplicas: Option[Int] = Some(1),
+    maxBulkSize: Int = 100,
+    sendWorkers: Int = 4,
 ) extends Exporter {
   def toJson: JsValue = ElasticAnalyticsConfig.format.writes(this)
 }
@@ -114,10 +121,8 @@ object ElasticAnalyticsConfig {
         "mtlsConfig"    -> o.mtlsConfig.json,
         "applyTemplate" -> o.applyTemplate,
         "version"       -> o.version.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "maxBulkSize"   -> o.maxBulkSize.map(i => JsNumber(BigDecimal(i))).getOrElse(JsNull).asValue,
-        "sendWorkers"   -> o.sendWorkers.map(i => JsNumber(BigDecimal(i))).getOrElse(JsNull).asValue,
-        "numberOfShards"   -> o.numberOfShards.map(i => JsNumber(BigDecimal(i))).getOrElse(JsNull).asValue,
-        "numberOfReplicas"   -> o.numberOfReplicas.map(i => JsNumber(BigDecimal(i))).getOrElse(JsNull).asValue,
+        "maxBulkSize"   -> o.maxBulkSize,
+        "sendWorkers"   -> o.sendWorkers,
       )
     override def reads(json: JsValue)              =
       Try {
@@ -146,10 +151,8 @@ object ElasticAnalyticsConfig {
               mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
               applyTemplate = (json \ "applyTemplate").asOpt[Boolean].getOrElse(true),
               version = (json \ "version").asOpt[String].filter(_.trim.nonEmpty),
-              maxBulkSize = json.select("maxBulkSize").asOpt[Int],
-              sendWorkers = json.select("sendWorkers").asOpt[Int],
-              numberOfShards = json.select("numberOfShards").asOpt[Int],
-              numberOfReplicas = json.select("numberOfReplicas").asOpt[Int],
+              maxBulkSize = json.select("maxBulkSize").asOpt[Int].getOrElse(100),
+              sendWorkers = json.select("sendWorkers").asOpt[Int].getOrElse(4),
             )
           )
         }

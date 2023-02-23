@@ -18175,6 +18175,11 @@
               "type" : "string"
             } ]
           },
+          "sendWorkers" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
           "applyTemplate" : {
             "type" : "boolean",
             "description" : "Enable template creation/update"
@@ -18199,6 +18204,11 @@
               "type" : "string"
             } ],
             "description" : "Version of Elasticsearch"
+          },
+          "maxBulkSize" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
           },
           "headers" : {
             "type" : "object",

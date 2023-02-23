@@ -446,8 +446,8 @@ object ElasticUtils {
       mat: Materializer
   ): Future[Unit] = {
     val index: String = config.index.getOrElse("otoroshi-events")
-    val numberOfShards: String = config.numberOfShards.getOrElse(1).toString
-    val numberOfReplicas: String = config.numberOfReplicas.getOrElse(1).toString
+    val numberOfShards: String = config.indexSettings.numberOfShards.toString
+    val numberOfReplicas: String = config.indexSettings.numberOfReplicas.toString
     getElasticVersion(config, env).flatMap { version =>
       // from elastic 7.8, we should use /_index_template/otoroshi-tpl and wrap almost everything expect index_patterns in a "template" object
       val (strTpl, indexTemplatePath) = version match {
@@ -646,9 +646,9 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       }
       .addHttpHeaders(config.headers.toSeq: _*)
     Source(event.toList)
-      .grouped(config.maxBulkSize.getOrElse(100))
+      .grouped(config.maxBulkSize)
       .map(_.map(bulkRequest))
-      .mapAsync(config.sendWorkers.getOrElse(4)) { bulk =>
+      .mapAsync(config.sendWorkers) { bulk =>
         val body  = bulk.mkString("", "\n", "\n\n").byteString
         if (logger.isDebugEnabled) logger.debug(s"preparing bulk of ${bulk.size} items of size ${body.size} bytes")
         val req = clientInstance.withMethod("POST").withBody(body)

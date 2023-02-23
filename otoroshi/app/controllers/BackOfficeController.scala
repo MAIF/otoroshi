@@ -1807,13 +1807,13 @@ class BackOfficeController(
           val template: String = if (config.indexSettings.clientSide) {
             strTpl
               .replace("$$$INDEX$$$", index)
-              .replace("$$$SHARDS$$$", config.numberOfShards.getOrElse(1).toString)
-              .replace("$$$REPLICAS$$$", config.numberOfReplicas.getOrElse(1).toString)
+              .replace("$$$SHARDS$$$", config.indexSettings.numberOfShards.toString)
+              .replace("$$$REPLICAS$$$", config.indexSettings.numberOfReplicas.toString)
           } else {
             strTpl
               .replace("$$$INDEX$$$-*", index)
-              .replace("$$$SHARDS$$$", config.numberOfShards.getOrElse(1).toString)
-              .replace("$$$REPLICAS$$$", config.numberOfReplicas.getOrElse(1).toString)
+              .replace("$$$SHARDS$$$", config.indexSettings.numberOfShards.toString)
+              .replace("$$$REPLICAS$$$", config.indexSettings.numberOfReplicas.toString)
           }
           Ok(Json.obj("template" -> template))
         }

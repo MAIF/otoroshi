@@ -325,17 +325,21 @@ export class DangerZonePage extends Component {
   };
 
   elasticConfigFormFlow = [
-    'clusterUri',
+    'uris',
     'index',
     'type',
     'user',
     'password',
     'version',
+    'maxBulkSize',
+    'sendWorkers',
     'applyTemplate',
     'checkConnection',
     //'>>>Index settings',
     'indexSettings.clientSide',
     'indexSettings.interval',
+    'indexSettings.numberOfShards',
+    'indexSettings.numberOfReplicas',
     //'>>>TLS settings',
     'mtlsConfig.mtls',
     'mtlsConfig.loose',
@@ -348,6 +352,10 @@ export class DangerZonePage extends Component {
     clusterUri: {
       type: 'string',
       props: { label: 'Cluster URI', placeholder: 'Elastic cluster URI' },
+    },
+    uris: {
+      type: 'array',
+      props: { label: 'Cluster URIs', placeholder: 'Elastic cluster URI' },
     },
     index: {
       type: 'string',
@@ -379,6 +387,30 @@ export class DangerZonePage extends Component {
     checkConnection: {
       type: CheckElasticsearchConnection,
       props: { label: 'Check Connection' },
+    },
+    'maxBulkSize': {
+      type: 'number',
+      props: {
+        label: 'Max Bulk Size'
+      }
+    },
+    'sendWorkers': {
+      type: 'number',
+      props: {
+        label: 'Sending threads'
+      }
+    },
+    'indexSettings.numberOfShards': {
+      type: 'number',
+      props: {
+        label: 'Number of shards'
+      }
+    },
+    'indexSettings.numberOfReplicas': {
+      type: 'number',
+      props: {
+        label: 'Number of replicas'
+      }
     },
     'indexSettings.clientSide': {
       type: 'bool',
