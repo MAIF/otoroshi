@@ -60,7 +60,8 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           case JsSuccess(value, _) => value
         }
         .filter { entity =>
-          if (namespace == "all") true
+          if (namespace == "any") true
+          else if (namespace == "all") true
           else if (namespace == "*") true
           else entity.location.tenant.value == namespace
         }
@@ -82,7 +83,8 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           case JsSuccess(value, _) => value
         }
         .filter { entity =>
-          if (namespace == "all") true
+          if (namespace == "any") true
+          else if (namespace == "all") true
           else if (namespace == "*") true
           else entity.location.tenant.value == namespace
         }
@@ -100,7 +102,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
         case Some(rawItem) =>
           val json = rawItem.utf8String.parseJson
           format.reads(json) match {
-            case JsSuccess(entity, _) if namespace == "all" || namespace == "*" || entity.location.tenant.value == namespace => {
+            case JsSuccess(entity, _) if namespace == "any" || namespace == "all" || namespace == "*" || entity.location.tenant.value == namespace => {
               val k = key(entity.theId)
               env.datastores.rawDataStore.del(Seq(k)).map(_ => ())
             }
@@ -117,7 +119,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
         case Some(item) =>
           val json = item.utf8String.parseJson
           format.reads(json) match {
-            case JsSuccess(entity, _) if namespace == "all" || namespace == "*" || entity.location.tenant.value == namespace => entity.json.some
+            case JsSuccess(entity, _) if namespace == "any" || namespace == "all" || namespace == "*" || entity.location.tenant.value == namespace => entity.json.some
             case _ => None
           }
       }
@@ -194,7 +196,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   private def withResource(group: String, version: String, entity: String, request: RequestHeader)(f: Resource => Future[Result]): Future[Result] = {
     resources
       .filter(_.version.served)
-      .find(r => r.group == group && r.version.name == version && r.pluralName == entity) match {
+      .find(r => (group == "any" || r.group == group) && (version == "any" || r.version.name == version) && r.pluralName == entity) match {
         case None => result(Results.NotFound, notFoundBody, request).vfuture
         case Some(resource) => f(resource)
       }
