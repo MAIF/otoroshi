@@ -270,6 +270,17 @@ class App extends React.Component {
     });
   }
 
+  onLoadConfigurationFile = () => {
+    Service.getPluginConfig(this.state.selectedPlugin.pluginId)
+      .then(async configFiles => {
+        this.setState({
+          configFiles: (await Promise.all(configFiles.flatMap(this.unzip)))
+            .filter(f => f)
+            .flat()
+        })
+      });
+  }
+
   unzip = async file => {
     if (file.ext === 'zip') {
       const jsZip = new JsZip()
@@ -404,6 +415,7 @@ class App extends React.Component {
         onEditorStateReset={this.onEditorStateReset}
         showPlaySettings={this.showPlaySettings}
         removeFile={this.removeFile}
+        onLoadConfigurationFile={this.onLoadConfigurationFile}
       />
     </div>
   }

@@ -110,7 +110,10 @@ function TabsManager({ plugins, ...props }) {
         selectedPlugin={props.selectedPlugin}
         sizeTerminal={sizeTerminal}
         changeTerminalSize={changeTerminalSize}
-        toggleResizingTerminal={toggleResizingTerminal} />
+        toggleResizingTerminal={toggleResizingTerminal}
+        onLoadConfigurationFile={props.onLoadConfigurationFile}
+        configFiles={props.configFiles}
+      />
     </div>
   </div>
 }

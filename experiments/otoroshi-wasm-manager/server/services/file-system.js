@@ -33,7 +33,7 @@ const cleanFolders = (...folders) => {
   }))
 }
 
-const removeFolder = (...paths) => fs.remove(path.join([process.cwd(), ...paths]));
+const removeFolder = (...paths) => fs.remove(path.join(process.cwd(), ...paths));
 
 const createFolderAtPath = (path) => fs.createWriteStream(path, { flags: 'w+' });
 

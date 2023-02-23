@@ -5,21 +5,37 @@ import { solarizedDark } from '@uiw/codemirror-theme-solarized';
 import io from 'socket.io-client';
 const socket = io();
 
-function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, selectedPlugin }) {
-  const [content, setContent] = useState('')
-  const ref = useRef()
+function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, selectedPlugin, onLoadConfigurationFile, configFiles }) {
+  const [content, setContent] = useState('');
+  const [hasConfigurationFile, setConfigurationFile] = useState(configFiles.find(f => f.filename === 'config'));
+  const [loadConfigurationFile, setLoadConfigurationFile] = useState(false);
+  const ref = useRef();
+
+  useEffect(() => {
+    if (loadConfigurationFile) {
+      onLoadConfigurationFile()
+      setConfigurationFile(true);
+      setLoadConfigurationFile(false);
+    }
+  }, [loadConfigurationFile]);
 
   useEffect(() => {
     if (selectedPlugin) {
       socket.on(selectedPlugin.pluginId, text => {
-        if (sizeTerminal === 0)
-        changeTerminalSize(0.5)
+        if (sizeTerminal === 0) {
+          changeTerminalSize(0.5);
+        }
+
+        if (hasConfigurationFile === undefined && text.includes("Build done")) {
+          setLoadConfigurationFile(true)
+        }
+
         if (text.includes('Starting build')) {
           setContent(text)
         } else {
           setContent(content => content + text)
           if (ref && ref.current)
-            ref.current.view.scrollDOM.scrollTop = ref.current.view.scrollDOM.scrollHeight
+            ref.current.view.scrollDOM.scrollTop = ref.current.view.scrollDOM.scrollHeight;
         }
       })
 

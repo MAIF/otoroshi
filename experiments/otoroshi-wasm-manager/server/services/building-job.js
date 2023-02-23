@@ -217,7 +217,7 @@ const loop = () => {
     const nextBuild = queue.shift()
     build(nextBuild)
       .then(() => {
-        WebSocket.emit(nextBuild.plugin, "JOB", "You can now! use the generated wasm\n")
+        WebSocket.emit(nextBuild.plugin, "JOB", "You can now use the generated wasm\n")
         running -= 1;
         loop()
       })
