@@ -2,16 +2,14 @@ package otoroshi.actions
 
 import java.util.Base64
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models.{ApiKey, BackOfficeUser}
+import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocationSupport, _}
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
-import otoroshi.models._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json}
@@ -116,6 +114,10 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
     }
   }
 
+  def canUserReadJson(item: JsValue)(implicit env: Env): Boolean = {
+    canUserRead(FakeEntityLocationSupport(EntityLocation.readFromKey(item)))
+  }
+
   def canUserRead[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
     backOfficeUser match {
       case Left(_)           => false
@@ -131,6 +133,10 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
           }
         }
     }
+  }
+
+  def canUserWriteJson(item: JsValue)(implicit env: Env): Boolean = {
+    canUserWrite(FakeEntityLocationSupport(EntityLocation.readFromKey(item)))
   }
 
   def canUserWrite[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {

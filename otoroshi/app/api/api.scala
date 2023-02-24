@@ -1,6 +1,7 @@
 package otoroshi.api
 
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Framing, Source}
+import akka.util.ByteString
 import otoroshi.actions.ApiAction
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
@@ -13,9 +14,11 @@ import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.http.HttpEntity
 import play.api.libs.json._
+import play.api.libs.streams.Accumulator
 import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Success, Try}
 
 case class ResourceVersion(name: String, served: Boolean, deprecated: Boolean, storage: Boolean, schema: Option[JsValue] = None)
 case class Resource(kind: String, pluralName: String, singularName: String, group: String, version: ResourceVersion, access: ResourceAccessApi[_])
@@ -71,7 +74,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       }
   }
 
-  def deleteAll(namespace: String, version: String)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  def deleteAll(namespace: String, version: String, canWrite: JsValue => Boolean)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
     env.datastores.rawDataStore
       .allMatching(key("*"))
       .flatMap { rawItems =>
@@ -88,6 +91,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           else if (namespace == "*") true
           else entity.location.tenant.value == namespace
         }
+        .filter(e => canWrite(e.json))
         .map { entity =>
           key(entity.theId)
         }
@@ -131,14 +135,17 @@ case class GenericResourceAccessApi[T <: EntityLocationSupport](format: Format[T
   override def extractId(value: T): String = value.theId
 }
 
-// TODO: handle user rights
 // TODO: handle AdminApiEvent
-// TODO: handle content negociation in
 class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
   extends AbstractController(cc) {
 
-  implicit val ec = env.otoroshiExecutionContext
-  implicit val mat = env.otoroshiMaterializer
+  private val sourceBodyParser = BodyParser("GenericApiController BodyParser") { _ =>
+    Accumulator.source[ByteString].map(Right.apply)(env.otoroshiExecutionContext)
+  }
+
+  private implicit val ec = env.otoroshiExecutionContext
+
+  private implicit val mat = env.otoroshiMaterializer
 
   private val resources = Seq(
     Resource("Route", "routes", "route", "proxy.otoroshi.io", ResourceVersion("v1", true, false, true), GenericResourceAccessApi[NgRoute](NgRoute.fmt, env.datastores.routeDataStore.key, env.datastores.routeDataStore.extractId)),
@@ -164,6 +171,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
 
   private def notFoundBody: JsValue = Json.obj("error" -> "not_found", "error_description" -> "resource not found")
 
+  private def extractId(entity: JsValue): String = entity.select("id").asOpt[String].getOrElse(entity.select("clientId").asString)
+
   private def bodyIn(request: Request[AnyContent]): Either[JsValue, JsValue] = {
     request.body.asText match {
       case Some(body) if request.contentType.contains("application/yaml") => Yaml.parse(body) match {
@@ -175,7 +184,12 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
   }
 
-  private def result(res: Results.Status, entity: JsValue, request: RequestHeader): Result = {
+  private def result(res: Results.Status, _entity: JsValue, request: RequestHeader): Result = {
+    // TODO: handle field extraction
+    // TODO: handle sort
+    // TODO: handle pagination
+    // TODO: handle filtering
+    val entity = _entity
     entity match {
       case JsArray(seq) if !request.accepts("application/json") && request.accepts("application/x-ndjson") => {
         res.sendEntity(
@@ -203,43 +217,208 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // PATCH /apis/:group/:version/namespaces/:namespace/:entity/_bulk
-  def bulkPatch(group: String, version: String, namespace: String, entity: String) = ApiAction.async { ctx =>
-    ???
+  def bulkPatch(group: String, version: String, namespace: String, entity: String) = ApiAction.async(sourceBodyParser) { ctx =>
+    import otoroshi.utils.json.JsonPatchHelpers.patchJson
+    ctx.request.headers.get("Content-Type") match {
+      case Some("application/x-ndjson") => withResource(group, version, entity, ctx.request) { resource =>
+        val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
+        val src = ctx.request.body
+          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+          .map(bs => Try(Json.parse(bs.utf8String)))
+          .collect { case Success(e) => e }
+          .mapAsync(1) { e =>
+            resource.access.findOne(namespace, version, extractId(e)).map(ee => (e.select("patch").asValue, ee))
+          }
+          .map {
+            case (e, None) => Left((Json.obj("error" -> "entity not found"), e))
+            case (_, Some(e)) => Right(("--", e))
+          }
+          .filter {
+            case Left(_) => true
+            case Right((_, entity)) => ctx.canUserWriteJson(entity)
+          }
+          .mapAsync(grouping) {
+            case Left((error, json)) =>
+              Json
+                .obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json)
+                .stringify
+                .byteString
+                .future
+            case Right((patchBody, entity)) => {
+              val patchedEntity =  patchJson(Json.parse(patchBody), entity)
+              resource.access.create(namespace, version, resource.singularName, extractId(patchedEntity).some, patchedEntity).map {
+                case Left(error) =>
+                  error.stringify.byteString
+                case Right(createdEntity) =>
+                  Json.obj("status" -> 201, "created" -> true, "id" -> extractId(createdEntity)).stringify.byteString
+              }
+            }
+          }
+        Ok.sendEntity(
+          HttpEntity.Streamed.apply(
+            data = src.filterNot(_.isEmpty).intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
+            contentLength = None,
+            contentType = Some("application/x-ndjson")
+          )
+        ).future
+      }
+      case _ => result(Results.BadRequest, Json.obj("error" -> "bad_content_type", "error_description" -> "Unsupported content type"), ctx.request).vfuture
+    }
   }
 
   // POST /apis/:group/:version/namespaces/:namespace/:entity/_bulk
-  def bulkCreate(group: String, version: String, namespace: String, entity: String) = ApiAction.async { ctx =>
-    ???
+  def bulkCreate(group: String, version: String, namespace: String, entity: String) = ApiAction.async(sourceBodyParser) { ctx =>
+    ctx.request.headers.get("Content-Type") match {
+      case Some("application/x-ndjson") => withResource(group, version, entity, ctx.request) { resource =>
+        val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
+        val src = ctx.request.body
+          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+          .map(bs => Try(Json.parse(bs.utf8String)))
+          .collect { case Success(e) => e }
+          .map(e =>
+            resource.access.format.reads(e) match {
+              case JsError(err) => Left((JsError.toJson(err), e))
+              case JsSuccess(_, _) => Right(("--", e))
+            }
+          )
+          .filter {
+            case Left(_) => true
+            case Right((_, entity)) => ctx.canUserWriteJson(entity)
+          }
+          .mapAsync(grouping) {
+            case Left((error, json)) =>
+              Json
+                .obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json)
+                .stringify
+                .byteString
+                .future
+            case Right((_, entity)) => {
+              resource.access.create(namespace, version, resource.singularName, None, entity).map {
+                case Left(error) =>
+                  error.stringify.byteString
+                case Right(createdEntity) =>
+                  Json.obj("status" -> 201, "created" -> true, "id" -> extractId(createdEntity)).stringify.byteString
+              }
+            }
+          }
+        Ok.sendEntity(
+          HttpEntity.Streamed.apply(
+            data = src.filterNot(_.isEmpty).intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
+            contentLength = None,
+            contentType = Some("application/x-ndjson")
+          )
+        ).future
+      }
+      case _ => result(Results.BadRequest, Json.obj("error" -> "bad_content_type", "error_description" -> "Unsupported content type"), ctx.request).vfuture
+    }
   }
 
   // PUT /apis/:group/:version/namespaces/:namespace/:entity/_bulk
-  def bulkUpdate(group: String, version: String, namespace: String, entity: String) = ApiAction.async { ctx =>
-    ???
+  def bulkUpdate(group: String, version: String, namespace: String, entity: String) = ApiAction.async(sourceBodyParser) { ctx =>
+    ctx.request.headers.get("Content-Type") match {
+      case Some("application/x-ndjson") => withResource(group, version, entity, ctx.request) { resource =>
+        val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
+        val src = ctx.request.body
+          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+          .map(bs => Try(Json.parse(bs.utf8String)))
+          .collect { case Success(e) => e }
+          .map(e =>
+            resource.access.format.reads(e) match {
+              case JsError(err) => Left((JsError.toJson(err), e))
+              case JsSuccess(_, _) => Right(("--", e))
+            }
+          )
+          .filter {
+            case Left(_) => true
+            case Right((_, entity)) => ctx.canUserWriteJson(entity)
+          }
+          .mapAsync(grouping) {
+            case Left((error, json)) =>
+              Json
+                .obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json)
+                .stringify
+                .byteString
+                .future
+            case Right((_, entity)) => {
+              resource.access.create(namespace, version, resource.singularName, extractId(entity).some, entity).map {
+                case Left(error) =>
+                  error.stringify.byteString
+                case Right(createdEntity) =>
+                  Json.obj("status" -> 201, "created" -> true, "id" -> extractId(createdEntity)).stringify.byteString
+              }
+            }
+          }
+        Ok.sendEntity(
+          HttpEntity.Streamed.apply(
+            data = src.filterNot(_.isEmpty).intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
+            contentLength = None,
+            contentType = Some("application/x-ndjson")
+          )
+        ).future
+      }
+      case _ => result(Results.BadRequest, Json.obj("error" -> "bad_content_type", "error_description" -> "Unsupported content type"), ctx.request).vfuture
+    }
   }
 
   // DELETE /apis/:group/:version/namespaces/:namespace/:entity/_bulk
-  def bulkDelete(group: String, version: String, namespace: String, entity: String) = ApiAction.async { ctx =>
-    ???
+  def bulkDelete(group: String, version: String, namespace: String, entity: String) = ApiAction.async(sourceBodyParser) { ctx =>
+    ctx.request.headers.get("Content-Type") match {
+      case Some("application/x-ndjson") => withResource(group, version, entity, ctx.request) { resource =>
+        val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
+        val src = ctx.request.body
+          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+          .map(bs => Try(Json.parse(bs.utf8String)))
+          .collect { case Success(e) => e }
+          .mapAsync(1) { e =>
+            resource.access.findOne(namespace, version, extractId(e)).map(ee => (e, ee))
+          }
+          .map {
+            case (e, None) => Left((Json.obj("error" -> "entity not found"), e))
+            case (_, Some(e)) => Right(("--", e))
+          }
+          .filter {
+            case Left(_) => true
+            case Right((_, entity)) => ctx.canUserWriteJson(entity)
+          }
+          .mapAsync(grouping) {
+            case Left((error, json)) =>
+              Json
+                .obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json)
+                .stringify
+                .byteString
+                .future
+            case Right((_, entity)) => {
+              resource.access.deleteOne(namespace, version, extractId(entity)).map { _ =>
+                  Json.obj("status" -> 201, "created" -> true, "id" -> extractId(entity)).stringify.byteString
+              }
+            }
+          }
+        Ok.sendEntity(
+          HttpEntity.Streamed.apply(
+            data = src.filterNot(_.isEmpty).intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
+            contentLength = None,
+            contentType = Some("application/x-ndjson")
+          )
+        ).future
+      }
+      case _ => result(Results.BadRequest, Json.obj("error" -> "bad_content_type", "error_description" -> "Unsupported content type"), ctx.request).vfuture
+    }
   }
 
   // GET /apis/:group/:version/namespaces/:namespace/:entity/_count
   def countAll(group: String, version: String, namespace: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       resource.access.findAll(namespace, version).map { entities =>
-        result(Results.Ok, Json.obj("count" -> entities.size), ctx.request)
+        result(Results.Ok, Json.obj("count" -> entities.count(e => ctx.canUserReadJson(e))), ctx.request)
       }
     }
   }
 
   // GET /apis/:group/:version/namespaces/:namespace/:entity
-  // TODO: handle field extraction
-  // TODO: handle sort
-  // TODO: handle pagination
-  // TODO: handle filtering
   def findAll(group: String, version: String, namespace: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       resource.access.findAll(namespace, version).map { entities =>
-        result(Results.Ok, JsArray(entities), ctx.request)
+        result(Results.Ok, JsArray(entities.filter(e => ctx.canUserReadJson(e))), ctx.request)
       }
     }
   }
@@ -249,6 +428,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     withResource(group, version, entity, ctx.request) { resource =>
       bodyIn(ctx.request) match {
         case Left(err) => result(Results.BadRequest, err, ctx.request).vfuture
+        case Right(body) if !ctx.canUserWriteJson(body) => result(Results.Unauthorized, Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"), ctx.request).vfuture
         case Right(body) => {
           resource.access.create(namespace, version, resource.singularName, None, body).map {
             case Left(err) => result(Results.InternalServerError, err, ctx.request)
@@ -262,18 +442,18 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   // DELETE /apis/:group/:version/namespaces/:namespace/:entity
   def deleteAll(group: String, version: String, namespace: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
-      resource.access.deleteAll(namespace, version).map { _ =>
+      resource.access.deleteAll(namespace, version, e => ctx.canUserWriteJson(e)).map { _ =>
         NoContent
       }
     }
   }
 
   // GET /apis/:group/:version/namespaces/:namespace/:entity/:id
-  // TODO: handle field extraction
   def findOne(group: String, version: String, namespace: String, entity: String, id: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       resource.access.findOne(namespace, version, id).map {
         case None => result(Results.NotFound, notFoundBody, ctx.request)
+        case Some(entity) if !ctx.canUserReadJson(entity) => result(Results.Unauthorized, Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"), ctx.request)
         case Some(entity) => result(Results.Ok, entity, ctx.request)
       }
     }
@@ -284,6 +464,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     withResource(group, version, entity, ctx.request) { resource =>
       resource.access.findOne(namespace, version, id).flatMap {
         case None => result(Results.NotFound, notFoundBody, ctx.request).vfuture
+        case Some(entity) if !ctx.canUserWriteJson(entity) => result(Results.Unauthorized, Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"), ctx.request).vfuture
         case Some(entity) => resource.access.deleteOne(namespace, version, id).map { _ =>
           result(Results.Ok, entity, ctx.request)
         }
@@ -299,6 +480,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         case Right(_body) => {
           resource.access.validateToJson(_body) match {
             case err @ JsError(_) => result(Results.BadRequest, JsError.toJson(err), ctx.request).vfuture
+            case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) => result(Results.Unauthorized, Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"), ctx.request).vfuture
             case JsSuccess(body, _) => {
               resource.access.findOne(namespace, version, id).flatMap {
                 case None => resource.access.create(namespace, version, resource.singularName, None, body).map {
@@ -325,6 +507,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         case Right(_body) => {
           resource.access.validateToJson(_body) match {
             case err@JsError(_) => result(Results.BadRequest, JsError.toJson(err), ctx.request).vfuture
+            case JsSuccess(_, _) if !ctx.canUserWriteJson(_body) => result(Results.Unauthorized, Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"), ctx.request).vfuture
             case JsSuccess(body, _) => {
               resource.access.findOne(namespace, version, id).flatMap {
                 case None => result(Results.NotFound, notFoundBody, ctx.request).vfuture
@@ -349,6 +532,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         case Right(body) => {
           resource.access.findOne(namespace, version, id).flatMap {
             case None => result(Results.NotFound, notFoundBody, ctx.request).vfuture
+            case Some(current) if !ctx.canUserWriteJson(current) => result(Results.Unauthorized, Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"), ctx.request).vfuture
             case Some(current) => {
               val patchedBody = patchJson(body, current)
               resource.access.create(namespace, version, resource.singularName, id.some, patchedBody).map {

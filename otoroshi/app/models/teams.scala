@@ -171,6 +171,15 @@ trait EntityLocationSupport extends Entity {
   def location: EntityLocation
 }
 
+case class FakeEntityLocationSupport(location: EntityLocation) extends EntityLocationSupport {
+  override def internalId: String = ""
+  override def json: JsValue = Json.obj("_loc" -> location.json)
+  override def theName: String = ""
+  override def theDescription: String = ""
+  override def theTags: Seq[String] = Seq.empty
+  override def theMetadata: Map[String, String] = Map.empty
+}
+
 case class TeamId(rawValue: String) {
   lazy val value: String = rawValue.toLowerCase.trim
 }
