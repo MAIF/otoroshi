@@ -12,6 +12,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
 import otoroshi.tcp.TcpService
 import otoroshi.utils.controllers.GenericAlert
+import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.http.HttpEntity
@@ -43,7 +44,11 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       case err @ JsError(_) => Left[JsValue, JsValue](JsError.toJson(err)).vfuture
       case JsSuccess(value, _) => {
         val idKey = "id"
-        val finalBody = format.writes(value).asObject.deepMerge(Json.obj(idKey -> resId, "_version" -> version, "_loc" -> Json.obj("tenant" -> namespace)))
+        val finalBody = format.writes(value).asObject.deepMerge(Json.obj(
+          idKey -> resId,
+          "_version" -> version,
+          "_loc" -> Json.obj("tenant" -> namespace)
+        ))
         env.datastores.rawDataStore
           .set(key(resId), finalBody.stringify.byteString, None)
           .map { _ =>
@@ -119,7 +124,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
   }
 
   def findOne(namespace: String, version: String, id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[JsValue]] = {
-    env.datastores.rawDataStore.get(id)
+    env.datastores.rawDataStore.get(key(id))
       .map {
         case None => None
         case Some(item) =>
@@ -226,10 +231,69 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
             case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
           }
           .filterNot(a => a._1 == "page" || a._1 == "pageSize" || a._1 == "fields")
+        val filtered = request
+          .getQueryString("filtered")
+          .map(
+            _.split(",")
+              .map(r => {
+                val field = r.split(":")
+                (field.head, field.last)
+              })
+              .toSeq
+          )
+          .getOrElse(Seq.empty[(String, String)])
         val hasFilters = filters.nonEmpty
         if (hasFilters) {
-          // TODO: perform filtering
-          arr.some
+          val reducedItems = if (hasFilters) {
+            val items: Seq[JsValue] = arr.value.filter { elem =>
+              filters.forall { case (key, value) =>
+                (elem \ key).as[JsValue] match {
+                  case JsString(v) => v == value
+                  case JsBoolean(v) => v == value.toBoolean
+                  case JsNumber(v) => v.toDouble == value.toDouble
+                  case JsArray(values) => values.contains(JsString(value))
+                  case _ => false
+                }
+              }
+            }
+            items
+          } else {
+            arr.value
+          }
+          val filteredItems = if (filtered.nonEmpty) {
+            val items: Seq[JsValue] = reducedItems.filter { elem =>
+              filtered.forall { case (key, value) =>
+                JsonOperationsHelper.getValueAtPath(key.toLowerCase(), elem)._2.asOpt[JsValue] match {
+                  case Some(v) =>
+                    v match {
+                      case JsString(v) => v.toLowerCase().indexOf(value) != -1
+                      case JsBoolean(v) => v == value.toBoolean
+                      case JsNumber(v) => v.toDouble == value.toDouble
+                      case JsArray(values) => values.contains(JsString(value))
+                      case JsObject(v) if v.isEmpty =>
+                        JsonOperationsHelper.getValueAtPath(key, elem)._2.asOpt[JsValue] match {
+                          case Some(v) =>
+                            v match {
+                              case JsString(v) => v.toLowerCase().indexOf(value) != -1
+                              case JsBoolean(v) => v == value.toBoolean
+                              case JsNumber(v) => v.toDouble == value.toDouble
+                              case JsArray(values) => values.contains(JsString(value))
+                              case _ => false
+                            }
+                          case _ => false
+                        }
+                      case _ => false
+                    }
+                  case _ =>
+                    false
+                }
+              }
+            }
+            items
+          } else {
+            reducedItems
+          }
+          JsArray(filteredItems).some
         } else {
           arr.some
         }
@@ -254,8 +318,19 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
           .getOrElse(Seq.empty[(String, Boolean)])
         val hasSorted = sorted.nonEmpty
         if (hasSorted) {
-          // TODO: perform sorting
-          arr.some
+          JsArray(sorted.foldLeft(arr.value) {
+            case (sortedArray, sort) => {
+              val out = sortedArray
+                .sortBy { r =>
+                  String.valueOf(JsonOperationsHelper.getValueAtPath(sort._1.toLowerCase(), r)._2)
+                }(Ordering[String].reverse)
+              if (sort._2) {
+                out.reverse
+              } else {
+                out
+              }
+            }
+          }).some
         } else {
           arr.some
         }
@@ -290,19 +365,29 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     val fields = request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
     val hasFields = fields.nonEmpty
     if (hasFields) {
-      _entity.some // TODO: perform projection
+      _entity match {
+        case arr @ JsArray(_) => JsArray(arr.value.map { item =>
+          JsonOperationsHelper.filterJson(item.asObject, fields)
+        }).some
+        case obj @ JsObject(_) => JsonOperationsHelper.filterJson(obj, fields).some
+        case _ => _entity.some
+      }
     } else {
       _entity.some
     }
   }
 
   private def result(res: Results.Status, _entity: JsValue, request: RequestHeader): Result = {
-    val entity = (for {
-      filtered <- filterEntity(_entity, request)
-      sorted <- sortEntity(filtered, request)
-      paginated <- paginateEntity(sorted, request)
-      projected <- projectedEntity(paginated, request)
-    } yield projected).get
+    val entity = if (request.method == "GET") {
+      (for {
+        filtered <- filterEntity(_entity, request)
+        sorted <- sortEntity(filtered, request)
+        paginated <- paginateEntity(sorted, request)
+        projected <- projectedEntity(paginated, request)
+      } yield projected).get
+    } else {
+      _entity
+    }
     entity match {
       case JsArray(seq) if !request.accepts("application/json") && request.accepts("application/x-ndjson") => {
         res.sendEntity(

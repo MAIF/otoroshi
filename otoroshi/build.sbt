@@ -67,8 +67,8 @@ lazy val openTelemetryVersion    = "1.19.0"
 lazy val jacksonVersion          = "2.13.4"
 lazy val akkaHttpVersion         = "10.2.15"
 lazy val akkaHttp2Version        = "10.2.10" // WHAT ???
-lazy val reactorNettyVersion     = "1.1.2"
-lazy val nettyVersion            = "4.1.87.Final"
+lazy val reactorNettyVersion     = "1.1.3"
+lazy val nettyVersion            = "4.1.89.Final"
 lazy val excludesJackson         = Seq(
   ExclusionRule(organization = "com.fasterxml.jackson.core"),
   ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -178,11 +178,11 @@ libraryDependencies ++= Seq(
   "io.netty"                         % "netty-transport-native-kqueue"             % nettyVersion classifier "osx-aarch_64" classifier "osx-x86_64",
   "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion,
   "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
-  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.16.Final",
-  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.16.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.35.Final",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.35.Final" classifier "linux-x86_64" classifier "osx-x86_64",
-  "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.15.Final",
+  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.18.Final",
+  "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.18.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.36.Final",
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.36.Final" classifier "linux-x86_64" classifier "osx-x86_64",
+  "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.16.Final",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                        % "5.1.0" % Test
 )
