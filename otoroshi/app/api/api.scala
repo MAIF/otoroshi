@@ -2,14 +2,16 @@ package otoroshi.api
 
 import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
-import otoroshi.actions.ApiAction
+import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
+import otoroshi.events.{AdminApiEvent, Alerts, Audit}
 import otoroshi.models._
 import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
 import otoroshi.tcp.TcpService
+import otoroshi.utils.controllers.GenericAlert
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.http.HttpEntity
@@ -135,7 +137,6 @@ case class GenericResourceAccessApi[T <: EntityLocationSupport](format: Format[T
   override def extractId(value: T): String = value.theId
 }
 
-// TODO: handle AdminApiEvent
 class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
   extends AbstractController(cc) {
 
@@ -169,6 +170,36 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     Resource("DateExporter", "data-exporters", "data-exporter", "events.otoroshi.io", ResourceVersion("v1", true, false, true), GenericResourceAccessApi[DataExporterConfig](DataExporterConfig.format, env.datastores.dataExporterConfigDataStore.key, env.datastores.dataExporterConfigDataStore.extractId)),
   )
 
+  private def filterPrefix: Option[String] = "filter.".some
+
+  private def adminApiEvent(ctx: ApiActionContext[_], action: String, message: String, meta: JsValue, alert: Option[String])(implicit env: Env): Unit = {
+    val event: AdminApiEvent = AdminApiEvent(
+      env.snowflakeGenerator.nextIdStr(),
+      env.env,
+      Some(ctx.apiKey),
+      ctx.user,
+      action,
+      message,
+      ctx.from,
+      ctx.ua,
+      meta
+    )
+    Audit.send(event)
+    alert.foreach { a =>
+      Alerts.send(
+        GenericAlert(
+          env.snowflakeGenerator.nextIdStr(),
+          env.env,
+          ctx.user.getOrElse(ctx.apiKey.toJson),
+          a,
+          event,
+          ctx.from,
+          ctx.ua
+        )
+      )
+    }
+  }
+
   private def notFoundBody: JsValue = Json.obj("error" -> "not_found", "error_description" -> "resource not found")
 
   private def extractId(entity: JsValue): String = entity.select("id").asOpt[String].getOrElse(entity.select("clientId").asString)
@@ -184,12 +215,94 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     }
   }
 
+  private def filterEntity(_entity: JsValue, request: RequestHeader): Option[JsValue] = {
+    _entity match {
+      case arr @ JsArray(_) => {
+        val prefix = filterPrefix
+        val filters = request.queryString
+          .mapValues(_.last)
+          .collect {
+            case v if prefix.isEmpty => v
+            case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
+          }
+          .filterNot(a => a._1 == "page" || a._1 == "pageSize" || a._1 == "fields")
+        val hasFilters = filters.nonEmpty
+        if (hasFilters) {
+          // TODO: perform filtering
+          arr.some
+        } else {
+          arr.some
+        }
+      }
+      case _ => _entity.some
+    }
+  }
+
+  private def sortEntity(_entity: JsValue, request: RequestHeader): Option[JsValue] = {
+    _entity match {
+      case arr@JsArray(_) => {
+        val sorted = request
+          .getQueryString("sorted")
+          .map(
+            _.split(",")
+              .map(r => {
+                val field = r.split(":")
+                (field.head, field.last.toBoolean)
+              })
+              .toSeq
+          )
+          .getOrElse(Seq.empty[(String, Boolean)])
+        val hasSorted = sorted.nonEmpty
+        if (hasSorted) {
+          // TODO: perform sorting
+          arr.some
+        } else {
+          arr.some
+        }
+      }
+      case _ => _entity.some
+    }
+  }
+
+  private def paginateEntity(_entity: JsValue, request: RequestHeader): Option[JsValue] = {
+    _entity match {
+      case arr @ JsArray(_) => {
+        val paginationPage: Int =
+          request.queryString
+            .get("page")
+            .flatMap(_.headOption)
+            .map(_.toInt)
+            .getOrElse(1)
+        val paginationPageSize: Int =
+          request.queryString
+            .get("pageSize")
+            .flatMap(_.headOption)
+            .map(_.toInt)
+            .getOrElse(Int.MaxValue)
+        val paginationPosition = (paginationPage - 1) * paginationPageSize
+        JsArray(arr.value.slice(paginationPosition, paginationPosition + paginationPageSize)).some
+      }
+      case _ => _entity.some
+    }
+  }
+
+  private def projectedEntity(_entity: JsValue, request: RequestHeader): Option[JsValue] = {
+    val fields = request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+    val hasFields = fields.nonEmpty
+    if (hasFields) {
+      _entity.some // TODO: perform projection
+    } else {
+      _entity.some
+    }
+  }
+
   private def result(res: Results.Status, _entity: JsValue, request: RequestHeader): Result = {
-    // TODO: handle field extraction
-    // TODO: handle sort
-    // TODO: handle pagination
-    // TODO: handle filtering
-    val entity = _entity
+    val entity = (for {
+      filtered <- filterEntity(_entity, request)
+      sorted <- sortEntity(filtered, request)
+      paginated <- paginateEntity(sorted, request)
+      projected <- projectedEntity(paginated, request)
+    } yield projected).get
     entity match {
       case JsArray(seq) if !request.accepts("application/json") && request.accepts("application/x-ndjson") => {
         res.sendEntity(
@@ -250,6 +363,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                 case Left(error) =>
                   error.stringify.byteString
                 case Right(createdEntity) =>
+                  adminApiEvent(ctx, s"BULK_PATCH_${resource.singularName.toUpperCase()}", s"User bulk patched a ${resource.singularName}", createdEntity, s"${resource.singularName}Patched".some)
                   Json.obj("status" -> 201, "created" -> true, "id" -> extractId(createdEntity)).stringify.byteString
               }
             }
@@ -297,6 +411,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                 case Left(error) =>
                   error.stringify.byteString
                 case Right(createdEntity) =>
+                  adminApiEvent(ctx, s"BULK_CREATE_${resource.singularName.toUpperCase()}", s"User bulk created a ${resource.singularName}", createdEntity, s"${resource.singularName}Created".some)
                   Json.obj("status" -> 201, "created" -> true, "id" -> extractId(createdEntity)).stringify.byteString
               }
             }
@@ -344,6 +459,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                 case Left(error) =>
                   error.stringify.byteString
                 case Right(createdEntity) =>
+                  adminApiEvent(ctx, s"BULK_UPDATE_${resource.singularName.toUpperCase()}", s"User bulk updated a ${resource.singularName}", createdEntity, s"${resource.singularName}Updated".some)
                   Json.obj("status" -> 201, "created" -> true, "id" -> extractId(createdEntity)).stringify.byteString
               }
             }
@@ -388,6 +504,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                 .byteString
                 .future
             case Right((_, entity)) => {
+              adminApiEvent(ctx, s"BULK_DELETED_${resource.singularName.toUpperCase()}", s"User bulk deleted a ${resource.singularName}", Json.obj("id" -> extractId(entity)), s"${resource.singularName}Deleted".some)
               resource.access.deleteOne(namespace, version, extractId(entity)).map { _ =>
                   Json.obj("status" -> 201, "created" -> true, "id" -> extractId(entity)).stringify.byteString
               }
@@ -409,6 +526,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   def countAll(group: String, version: String, namespace: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       resource.access.findAll(namespace, version).map { entities =>
+        adminApiEvent(ctx, s"COUNT_ALL_${resource.pluralName.toUpperCase()}", s"User bulk count all ${resource.pluralName}", Json.obj(), None)
         result(Results.Ok, Json.obj("count" -> entities.count(e => ctx.canUserReadJson(e))), ctx.request)
       }
     }
@@ -418,6 +536,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   def findAll(group: String, version: String, namespace: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       resource.access.findAll(namespace, version).map { entities =>
+        adminApiEvent(ctx, s"READ_ALL_${resource.pluralName.toUpperCase()}", s"User bulk read all ${resource.pluralName}", Json.obj(), None)
         result(Results.Ok, JsArray(entities.filter(e => ctx.canUserReadJson(e))), ctx.request)
       }
     }
@@ -432,7 +551,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         case Right(body) => {
           resource.access.create(namespace, version, resource.singularName, None, body).map {
             case Left(err) => result(Results.InternalServerError, err, ctx.request)
-            case Right(res) => result(Results.Created, res, ctx.request)
+            case Right(res) =>
+              adminApiEvent(ctx, s"CREATE_${resource.singularName.toUpperCase()}", s"User bulk created a ${resource.singularName}", body, s"${resource.singularName}Created".some)
+              result(Results.Created, res, ctx.request)
           }
         }
       }
@@ -443,6 +564,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   def deleteAll(group: String, version: String, namespace: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
       resource.access.deleteAll(namespace, version, e => ctx.canUserWriteJson(e)).map { _ =>
+        adminApiEvent(ctx, s"DELETE_ALL_${resource.pluralName.toUpperCase()}", s"User bulk deleted all ${resource.pluralName}", Json.obj(), s"All${resource.singularName}Deleted".some)
         NoContent
       }
     }
@@ -454,7 +576,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       resource.access.findOne(namespace, version, id).map {
         case None => result(Results.NotFound, notFoundBody, ctx.request)
         case Some(entity) if !ctx.canUserReadJson(entity) => result(Results.Unauthorized, Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"), ctx.request)
-        case Some(entity) => result(Results.Ok, entity, ctx.request)
+        case Some(entity) =>
+          adminApiEvent(ctx, s"READ_${resource.singularName.toUpperCase()}", s"User bulk read a ${resource.singularName}", Json.obj("id" -> id), None)
+          result(Results.Ok, entity, ctx.request)
       }
     }
   }
@@ -465,9 +589,11 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       resource.access.findOne(namespace, version, id).flatMap {
         case None => result(Results.NotFound, notFoundBody, ctx.request).vfuture
         case Some(entity) if !ctx.canUserWriteJson(entity) => result(Results.Unauthorized, Json.obj("error" -> "unauthorized", "error_description" -> "you cannot access this resource"), ctx.request).vfuture
-        case Some(entity) => resource.access.deleteOne(namespace, version, id).map { _ =>
-          result(Results.Ok, entity, ctx.request)
-        }
+        case Some(entity) =>
+          adminApiEvent(ctx, s"DELETE_${resource.singularName.toUpperCase()}", s"User bulk deleted a ${resource.singularName}", Json.obj("id" -> id), s"${resource.singularName}Deleted".some)
+          resource.access.deleteOne(namespace, version, id).map { _ =>
+            result(Results.Ok, entity, ctx.request)
+          }
       }
     }
   }
@@ -485,11 +611,15 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
               resource.access.findOne(namespace, version, id).flatMap {
                 case None => resource.access.create(namespace, version, resource.singularName, None, body).map {
                   case Left(err) => result(Results.InternalServerError, err, ctx.request)
-                  case Right(res) => result(Results.Created, res, ctx.request)
+                  case Right(res) =>
+                    adminApiEvent(ctx, s"CREATE_${resource.singularName.toUpperCase()}", s"User bulk created a ${resource.singularName}", body, s"${resource.singularName}Created".some)
+                    result(Results.Created, res, ctx.request)
                 }
                 case Some(_) => resource.access.create(namespace, version, resource.singularName, id.some, body).map {
                   case Left(err) => result(Results.InternalServerError, err, ctx.request)
-                  case Right(res) => result(Results.Created, res, ctx.request)
+                  case Right(res) =>
+                    adminApiEvent(ctx, s"UPDATE_${resource.singularName.toUpperCase()}", s"User bulk updated a ${resource.singularName}", body, s"${resource.singularName}Updated".some)
+                    result(Results.Created, res, ctx.request)
                 }
               }
             }
@@ -513,7 +643,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                 case None => result(Results.NotFound, notFoundBody, ctx.request).vfuture
                 case Some(_) => resource.access.create(namespace, version, resource.singularName, id.some, body).map {
                   case Left(err) => result(Results.InternalServerError, err, ctx.request)
-                  case Right(res) => result(Results.Created, res, ctx.request)
+                  case Right(res) =>
+                    adminApiEvent(ctx, s"UPDATE_${resource.singularName.toUpperCase()}", s"User bulk updated a ${resource.singularName}", body, s"${resource.singularName}Updated".some)
+                    result(Results.Created, res, ctx.request)
                 }
               }
             }
@@ -537,7 +669,9 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
               val patchedBody = patchJson(body, current)
               resource.access.create(namespace, version, resource.singularName, id.some, patchedBody).map {
                 case Left(err) => result(Results.InternalServerError, err, ctx.request)
-                case Right(res) => result(Results.Created, res, ctx.request)
+                case Right(res) =>
+                  adminApiEvent(ctx, s"PATCHED_${resource.singularName.toUpperCase()}", s"User bulk patched a ${resource.singularName}", body, s"${resource.singularName}Patched".some)
+                  result(Results.Created, res, ctx.request)
               }
             }
           }
