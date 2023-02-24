@@ -1,3 +1,4 @@
+const fetch = require('node-fetch');
 const express = require('express');
 const path = require('path');
 const { FileSystem } = require('../services/file-system');
@@ -45,8 +46,14 @@ router.get('/types/:type', (req, res) => {
             res.status(400).json({ error: err })
           })
       } else if (process.env.MANAGER_TYPES.startsWith('http')) {
-        // fetch()
-        // res.sendFile(path.join(__dirname, '../templates', `${type}.zip`));
+        fetch(`${process.env.MANAGER_TYPES}/types.${type}`, {
+          redirect: 'follow'
+        })
+          .then(r => r.json())
+          .then(r => {
+            fetch(r.download_url)
+              .then(raw => raw.body.pipe(res))
+          })
       } else {
         res
           .status(400)

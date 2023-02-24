@@ -247,17 +247,6 @@ class App extends React.Component {
     })
   }
 
-  extractFilenameFromContentDisposition = value => {
-    if (value && value.indexOf('attachment') !== -1) {
-      const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-      const matches = filenameRegex.exec(value);
-      if (matches != null && matches[1]) {
-        return matches[1].replace(/['"]/g, '');
-      }
-    }
-    return undefined;
-  }
-
   onPluginClick = newSelectedPlugin => {
     this.setState({
       configFiles: [],
@@ -301,11 +290,11 @@ class App extends React.Component {
                   } else if (types.status !== 200) {
                     types.json().then(window.alert)
                   } else {
-                    Promise.all([template.blob(), types.blob(), Promise.resolve(types.headers.get('content-disposition'))])
-                      .then(([templatesFiles, typesFile, contentDisposition]) => {
+                    Promise.all([template.blob(), types.blob()])
+                      .then(([templatesFiles, typesFile]) => {
                         this.downloadPluginTemplate(templatesFiles, plugin)
                           .then(() => {
-                            const filename = this.extractFilenameFromContentDisposition(contentDisposition);
+                            const filename = `types.${plugin.type}`;
                             new File([typesFile], "").text()
                               .then(content => {
                                 this.setState({
