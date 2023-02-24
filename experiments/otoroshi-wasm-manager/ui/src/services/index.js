@@ -51,7 +51,6 @@ export const getPlugin = plugin => rawFetch(`/plugins/${plugin}`)
 export const getPluginConfig = plugin => jsonFetch(`/plugins/${plugin}/configurations`)
 
 export const getPluginTemplate = type => f(`/templates?type=${type}`)
-  .then(r => r.blob())
 
 const buildZip = plugin => {
   const jsZip = new JSZip()
@@ -62,6 +61,8 @@ const buildZip = plugin => {
 
   return jsZip.generateAsync({ type: "uint8array" });
 }
+
+export const getPluginTypes = type => f(`/templates/types/${type}`)
 
 export const savePlugin = async plugin => {
   const bytes = await buildZip(plugin)

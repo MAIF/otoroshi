@@ -54,8 +54,12 @@ const cleanBuildsAndLogsFolders = async () => {
 }
 
 const checkIfInformationsFileExists = (folder, pluginType) => {
+  return existsFile('build', folder, INFORMATIONS_FILENAME[pluginType]);
+}
+
+const existsFile = (...paths) => {
   return new Promise((resolve, reject) => {
-    fs.stat(path.join(process.cwd(), 'build', folder, INFORMATIONS_FILENAME[pluginType]), function (err, stat) {
+    fs.stat(path.join(process.cwd(), ...paths), function (err, stat) {
       if (err == null) {
         resolve();
       } else if (err.code === 'ENOENT') {
@@ -67,6 +71,8 @@ const checkIfInformationsFileExists = (folder, pluginType) => {
   });
 }
 
+const pathsToPath = (...paths) => path.join(process.cwd(), ...paths);
+
 module.exports = {
   FileSystem: {
     createBuildFolder,
@@ -75,6 +81,8 @@ module.exports = {
     folderAlreadyExits,
     removeFolder,
     cleanBuildsAndLogsFolders,
-    checkIfInformationsFileExists
+    checkIfInformationsFileExists,
+    existsFile,
+    pathsToPath
   }
 }
