@@ -222,10 +222,10 @@ class App extends React.Component {
       selectedPlugin: {
         ...plugin,
         files: Object.values(data.files)
-          .filter(f => !f.dir)
+          .filter(f => !f.dir && f.name.split('/').length <= 2)
           .map(r => {
-            const parts = r.name.split('/')
-            const name = parts.length > 1 ? parts[1] : parts[0];
+            const parts = r.name.split('/');
+            const name = parts.length > 1 ? parts[parts.length - 1] : parts[0];
             try {
               return {
                 filename: name,
@@ -233,9 +233,12 @@ class App extends React.Component {
                 ext: name.split('.')[1]
               }
             } catch (err) {
-              alert(err)
+              console.log(err)
+              console.log(`Can't read ${name} file`)
+              return undefined
             }
           })
+          .filter(_ => _)
       }
     })
   }
@@ -249,7 +252,7 @@ class App extends React.Component {
 
       if (plugin.type === "github") {
         const { filename, owner, ref } = plugin;
-        Service.getGithubSources(filename, owner, ref)
+        Service.getGithubSources(filename, owner, ref, plugin.private)
           .then(res => res.blob())
           .then(r => this.downloadPluginTemplate(r, plugin))
           .then(() => {

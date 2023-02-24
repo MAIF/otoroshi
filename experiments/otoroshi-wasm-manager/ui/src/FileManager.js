@@ -60,7 +60,7 @@ function FileManager({
       <Header onNewFile={onNewFile} selectedPlugin={selectedPlugin} />
       {[...files, ...configFiles].map((file, i) => {
         return <File {...file}
-          key={file.filename}
+          key={`${file.filename}-${i}`}
           readOnly={selectedPlugin.type === "github"}
           currentTab={currentTab}
           removeFile={removeFile}

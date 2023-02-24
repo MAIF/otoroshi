@@ -16,15 +16,18 @@ const log = manager.createLogger('plugins');
 const router = express.Router()
 
 router.post('/github', (req, res) => {
-  const { owner, repo, ref } = req.body;
+  const { owner, repo, ref, private } = req.body;
 
   fetch(`https://api.github.com/repos/${owner}/${repo}/zipball/${ref || "main"}`, {
-    redirect: 'follow'
+    redirect: 'follow',
+    headers: private ? {
+      Authorization: `Bearer ${process.env.GITHUB_PERSONAL_TOKEN}`
+    } : {}
   })
     .then(r => {
       const contentType = r.headers.get('Content-Type');
       const contentLength = r.headers.get('Content-Length');
-      if (contentLength > process.env.GIBHUT_MAX_REPO_SIZE) {
+      if (contentLength > process.env.GITHUB_MAX_REPO_SIZE) {
         return {
           status: 400,
           result: 'this repo exceed the limit of the manager'
@@ -118,7 +121,10 @@ router.get('/:id/configurations', (req, res) => {
 
 router.post('/github/repo', (req, res) => {
   fetch(`https://api.github.com/repos/${req.body.owner}/${req.body.repo}/branches/${req.body.ref || "main"}`, {
-    redirect: 'follow'
+    redirect: 'follow',
+    headers: req.body.private ? {
+      Authorization: `Bearer ${process.env.GITHUB_PERSONAL_TOKEN}`
+    } : {}
   })
     .then(r => {
       if (r.status === 200) {
@@ -160,6 +166,7 @@ function createPluginFromGithub(req) {
             ref: req.body.ref,
             type: 'github',
             pluginId: pluginId,
+            private: req.body.private
           }
         ]
         const params = {

@@ -26,13 +26,13 @@ class PluginManager extends React.Component {
 }
 
 function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins }) {
-
   const [showGithubModal, setGithubModal] = useState(false);
 
   const [repo, setRepo] = useState("");
   const [owner, setOwner] = useState("");
   const [branch, setBranch] = useState("main");
   const [error, setError] = useState();
+  const [isPrivate, setStatus] = useState(false);
 
   if (showGithubModal) {
     return <div style={{
@@ -42,45 +42,76 @@ function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins }) {
       zIndex: 100,
       width: 300,
       maxWidth: 500,
-      background: '#ddd'
-    }} className="d-flex flex-column justify-content-center p-3 rounded"
+      background: '#ddd',
+      borderTopLeftRadius: 0,
+      borderBottomLeftRadius: 0,
+      borderTopRightRadius: 4,
+      borderBottomRightRadius: 4
+    }} className="justify-content-center p-3"
       onClick={e => e.stopPropagation()}>
-      {error && <pre class="alert alert-warning" role="alert">
-        {JSON.stringify(error, null, 4)}
-      </pre>}
+      <div className='d-flex flex-column' style={{ position: 'relative' }}>
+        {error && <pre class="alert alert-warning" role="alert">
+          {JSON.stringify(error, null, 4)}
+        </pre>}
 
-      <label for="owner" className='form-label'>Owner</label>
-      <input type="text" class="form-control" placeholder='octocat' value={owner} id="owner" onChange={e => {
-        setError(undefined);
-        setOwner(e.target.value)
-      }} />
-
-      <label for="repository" className='form-label'>Repository</label>
-      <input type="text" value={repo} class="form-control" placeholder='my-wasm-epo' id="repository" onChange={e => {
-        setError(undefined);
-        setRepo(e.target.value)
-      }} />
-
-      <label for="branch" className='form-label'>Branch</label>
-      <input type="text" value={branch} class="form-control" id="branch" onChange={e => {
-        setError(undefined);
-        setBranch(e.target.value)
-      }} />
-
-      <button type="button" className='btn btn-secondary mt-3'
-        onClick={e => {
+        <i className='fa fa-lg fa-times' style={{
+          color: '#000',
+          position: 'absolute',
+          top: 4,
+          right: 6,
+          cursor: 'pointer',
+          left: 252
+        }} onClick={e => {
           e.stopPropagation();
-          setError(undefined)
-          createGithubRepo(owner, repo, branch)
-            .then(r => {
-              if (r.status > 300) {
-                setError(r);
-              } else {
-                showGithubModal(false)
-                reloadPlugins()
-              }
-            })
-        }}>Import sources</button>
+          setGithubModal(false)
+        }} />
+
+        <div className='mb-2'>
+          <label for="owner" className='form-label'>Owner</label>
+          <input type="text" class="form-control form-control-sm" placeholder='octocat' value={owner} id="owner" onChange={e => {
+            setError(undefined);
+            setOwner(e.target.value)
+          }} />
+        </div>
+
+        <div className='mb-2'>
+          <label htmlFor="repository" className='form-label'>Repository</label>
+          <input type="text" value={repo} class="form-control form-control-sm" placeholder='my-wasm-epo' id="repository" onChange={e => {
+            setError(undefined);
+            setRepo(e.target.value)
+          }} />
+        </div>
+
+        <div className='mb-3'>
+          <label htmlFor="branch" className='form-label'>Branch</label>
+          <input type="text" value={branch} class="form-control form-control-sm" id="branch" onChange={e => {
+            setError(undefined);
+            setBranch(e.target.value)
+          }} />
+        </div>
+
+        <div className="form-check">
+          <input className="form-check-input" type="checkbox" checked={isPrivate} id="flexCheckChecked"  onChange={() => setStatus(!isPrivate)}/>
+          <label className="form-check-label" htmlFor="flexCheckChecked">
+            Private repository
+          </label>
+        </div>
+
+        <button type="button" className='btn btn-secondary mt-3'
+          onClick={e => {
+            e.stopPropagation();
+            setError(undefined)
+            createGithubRepo(owner, repo, branch, isPrivate)
+              .then(r => {
+                if (r.status > 300) {
+                  setError(r);
+                } else {
+                  setGithubModal(false)
+                  reloadPlugins()
+                }
+              })
+          }}>Import sources</button>
+      </div>
     </div>
   }
 

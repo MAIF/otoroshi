@@ -100,19 +100,20 @@ export const launchPlugin = (pluginId, input, functionName, pluginType) => jsonF
   })
 });
 
-export const createGithubRepo = (owner, repo, ref) => jsonFetch(`/plugins/github/repo`, {
+export const createGithubRepo = (owner, repo, ref, isPrivate) => jsonFetch(`/plugins/github/repo`, {
   method: 'POST',
   body: JSON.stringify({
-    owner, repo, ref
+    owner, repo, ref,
+    private: isPrivate
   })
 })
 
-export const getGithubSources = (repo, owner, ref) => rawFetch('/plugins/github', {
+export const getGithubSources = (repo, owner, ref, isPrivate) => rawFetch('/plugins/github', {
   method: "POST",
   headers: {
     "Content-Type": 'application/json'
   },
   body: JSON.stringify({
-    repo, owner, ref
+    repo, owner, ref, private: isPrivate
   })
 })
