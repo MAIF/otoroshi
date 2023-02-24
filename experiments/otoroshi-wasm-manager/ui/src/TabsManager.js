@@ -47,17 +47,17 @@ function TabsManager({ plugins, ...props }) {
         color: 'white',
         height: 42
       }} className="p-2 m-0 d-flex align-items-center">OTO WA</h1>
-      <Explorer>
-        <PluginManager
-          plugins={plugins}
-          reloadPlugins={props.reloadPlugins}
-          onPluginClick={props.onPluginClick}
-          onNewPlugin={props.onNewPlugin}
-          setFilename={props.onPluginNameChange}
-          removePlugin={props.removePlugin}
-          enablePluginRenaming={props.enablePluginRenaming}
-        />
-      </Explorer>
+      <PluginManager
+        plugins={plugins}
+        setSelectedPlugin={props.setSelectedPlugin}
+        selectedPlugin={props.selectedPlugin}
+        reloadPlugins={props.reloadPlugins}
+        onPluginClick={props.onPluginClick}
+        onNewPlugin={props.onNewPlugin}
+        setFilename={props.onPluginNameChange}
+        removePlugin={props.removePlugin}
+        enablePluginRenaming={props.enablePluginRenaming}
+      />
       {props.selectedPlugin && <FileManager
         removeFile={props.removeFile}
         currentTab={currentTab}
@@ -117,22 +117,6 @@ function TabsManager({ plugins, ...props }) {
       />
     </div>
   </div>
-}
-
-function Explorer({ children }) {
-  const [show, setShow] = useState(true)
-  return <>
-    <div className='px-2 py-1 d-flex justify-content-between align-items-center'
-      style={{
-        background: 'rgb(228, 229, 230)'
-      }} onClick={() => setShow(!show)}>
-      <div className='d-flex align-items-center'>
-        <i className={`fas fa-chevron-${show ? 'down' : 'right'} fa-sm me-1`} />
-        <span className='fw-bold'>Explorer</span>
-      </div>
-    </div>
-    {show && children}
-  </>
 }
 
 function Tabs({ tabs, setCurrentTab, setTabs, currentTab, selectedPlugin, configFiles }) {

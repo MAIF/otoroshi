@@ -1,5 +1,6 @@
 const fs = require('fs-extra');
 const path = require('path');
+const { INFORMATIONS_FILENAME } = require('../utils');
 
 const createBuildFolder = (type, name) => {
   if (['rust', 'js', 'ts'].includes(type)) {
@@ -52,6 +53,20 @@ const cleanBuildsAndLogsFolders = async () => {
   }))
 }
 
+const checkIfInformationsFileExists = (folder, pluginType) => {
+  return new Promise((resolve, reject) => {
+    fs.stat(path.join(process.cwd(), 'build', folder, INFORMATIONS_FILENAME[pluginType]), function (err, stat) {
+      if (err == null) {
+        resolve();
+      } else if (err.code === 'ENOENT') {
+        reject("file does not exist");
+      } else {
+        reject(err);
+      }
+    });
+  });
+}
+
 module.exports = {
   FileSystem: {
     createBuildFolder,
@@ -59,6 +74,7 @@ module.exports = {
     cleanFolders,
     folderAlreadyExits,
     removeFolder,
-    cleanBuildsAndLogsFolders
+    cleanBuildsAndLogsFolders,
+    checkIfInformationsFileExists
   }
 }

@@ -429,6 +429,10 @@ class App extends React.Component {
     }
   }
 
+  setSelectedPlugin = selectedPlugin => {
+    this.setState({ selectedPlugin });
+  }
+
   render() {
     const { selectedPlugin, plugins, configFiles, editorState } = this.state;
 
@@ -458,6 +462,7 @@ class App extends React.Component {
         showPlaySettings={this.showPlaySettings}
         removeFile={this.removeFile}
         onLoadConfigurationFile={this.onLoadConfigurationFile}
+        setSelectedPlugin={this.setSelectedPlugin}
       />
     </div>
   }

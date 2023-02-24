@@ -11,6 +11,7 @@ const { FileSystem } = require('../services/file-system');
 
 const manager = require('../logger');
 const { InformationsReader } = require('../services/informationsReader');
+const { WebSocket } = require('../services/websocket');
 const log = manager.createLogger('plugins');
 
 const router = express.Router()
@@ -341,7 +342,6 @@ router.post('/:id/build', async (req, res) => {
       if (exists) {
         res.json({ queue_id: pluginId, alreadyExists: true });
       } else {
-
         const folder = await FileSystem.createBuildFolder(plugin.type, pluginId);
         await unzip(isRustBuild, req.body, folder);
         try {
@@ -353,21 +353,46 @@ router.post('/:id/build', async (req, res) => {
           if (plugin['last_hash'] !== zipHash) {
             log.info(`different: ${zipHash} - ${plugin['last_hash']}`);
 
-            const { pluginName, pluginVersion } = InformationsReader.extractInformations(folder, plugin.type);
+            FileSystem.checkIfInformationsFileExists(folder, plugin.type)
+              .then(() => InformationsReader.extractInformations(folder, plugin.type))
+              .then(({ pluginName, pluginVersion, err }) => {
+                if (err) {
+                  WebSocket.emitError(plugin.pluginId, "BUILD", err);
+                  FileSystem.removeFolder('build', folder)
+                    .then(() => {
+                      res
+                        .status(400)
+                        .json({
+                          error: err
+                        });
+                    });
+                } else {
+                  BuildingJob.addBuildToQueue({
+                    folder,
+                    plugin: pluginId,
+                    wasmName: `${pluginName}-${pluginVersion}`,
+                    user: req.user ? req.user.email : 'admin@otoroshi.io',
+                    zipHash,
+                    isRustBuild,
+                    pluginType: plugin.type
+                  });
 
-            BuildingJob.addBuildToQueue({
-              folder,
-              plugin: pluginId,
-              wasmName: `${pluginName}-${pluginVersion}`,
-              user: req.user ? req.user.email : 'admin@otoroshi.io',
-              zipHash,
-              isRustBuild,
-              pluginType: plugin.type
-            });
-
-            res.json({
-              queue_id: folder
-            });
+                  res.json({
+                    queue_id: folder
+                  });
+                }
+              })
+              .catch(err => {
+                WebSocket.emitError(plugin.pluginId, "BUILD", err);
+                FileSystem.removeFolder('build', folder)
+                  .then(() => {
+                    res
+                      .status(400)
+                      .json({
+                        error: err
+                      });
+                  });
+              });
           } else {
             FileSystem.removeFolder('build', folder)
               .then(() => {

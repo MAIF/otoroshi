@@ -8,12 +8,21 @@ import { createGithubRepo } from './services';
 
 class PluginManager extends React.Component {
   render() {
-    const { plugins, onNewPlugin, ...props } = this.props;
+    const { plugins, onNewPlugin, selectedPlugin, ...props } = this.props;
 
     return (
-      <div className='d-flex flex-column' style={{ minWidth: 250, background: '#ddd' }}>
+      <div className='d-flex flex-column' style={{ minWidth: 250 }}>
         <Header onNewPlugin={onNewPlugin} reloadPlugins={props.reloadPlugins} />
-        {plugins.map(plugin => {
+        {selectedPlugin && <div className='d-flex justify-content-between align-items-center sidebar-header'
+          style={{
+            cursor: 'pointer'
+          }} onClick={() => props.setSelectedPlugin(undefined)}>
+          <div className='d-flex align-items-center'>
+            <i className='fas fa-shuffle me-1' />
+            <span className='fw-bold'>Change current plugin</span>
+          </div>
+        </div>}
+        {!selectedPlugin && plugins.map(plugin => {
           return <Plugin
             key={plugin.pluginId || 'new'}
             {...plugin}
@@ -91,7 +100,7 @@ function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins }) {
         </div>
 
         <div className="form-check">
-          <input className="form-check-input" type="checkbox" checked={isPrivate} id="flexCheckChecked"  onChange={() => setStatus(!isPrivate)}/>
+          <input className="form-check-input" type="checkbox" checked={isPrivate} id="flexCheckChecked" onChange={() => setStatus(!isPrivate)} />
           <label className="form-check-label" htmlFor="flexCheckChecked">
             Private repository
           </label>
@@ -154,21 +163,21 @@ function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins }) {
 function Header({ onNewPlugin, reloadPlugins }) {
   const [showProjectSelector, setProjectSelector] = useState(false)
 
-  return <div className='px-2 py-1 d-flex justify-content-between align-items-center'
-    onClick={() => setProjectSelector(false)}
-    style={{
-      backgroundColor: '#a1a1a1',
-      position: 'relative'
-    }}>
-    <div className='d-flex align-items-center text-white'>
-      <i className='fas fa-rocket fa-sm me-1 text-white' />
-      <span className='fw-bold text-white'>Plugins</span>
-    </div>
-
-    <i className='fas fa-plus text-white' onClick={e => {
+  return <div className='d-flex justify-content-between align-items-center sidebar-header'
+    onClick={e => {
       e.stopPropagation();
       setProjectSelector(!showProjectSelector)
-    }} />
+    }}
+    style={{
+      position: 'relative',
+      cursor: 'pointer'
+    }}>
+    <div className='d-flex align-items-center'>
+      <i className='fas fa-chess-rook fa-sm me-1' />
+      <span className='fw-bold'>Plugins</span>
+    </div>
+
+    <i className='fas fa-plus' />
 
     {showProjectSelector && <NewPluginModal
       onNewPlugin={onNewPlugin}

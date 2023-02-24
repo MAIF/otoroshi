@@ -6,7 +6,6 @@ const AdmZip = require('adm-zip');
 const { WebSocket } = require('../services/websocket');
 const manager = require('../logger');
 const { S3 } = require('../s3');
-const { format } = require('../utils');
 const { FileSystem } = require('./file-system');
 const { UserManager } = require('./user');
 

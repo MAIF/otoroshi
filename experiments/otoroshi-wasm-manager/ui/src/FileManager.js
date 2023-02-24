@@ -5,7 +5,7 @@ import { ReactComponent as Json } from './assets/json.svg';
 import { ReactComponent as Ts } from './assets/ts.svg';
 
 const LOGOS = {
-  js: <Js style={{ height: 24, width: 24 }} />,
+  js: <Js style={{ height: 20, width: 20 }} />,
   json: <div className='d-flex justify-content-center'>
     <Json style={{ height: 24, width: 32 }} />
   </div>,
@@ -34,7 +34,7 @@ function File({ newFilename, filename, content, ext, onClick, ...props }) {
     </div> : <div className='d-flex align-items-center justify-content-between w-100'>
       <div className='d-flex align-items-center'>
         <div style={{ minWidth: 32 }}>
-          {LOGOS[ext]}
+          {LOGOS[ext] || <i className='fas fa-file' />}
         </div>
         <span className='ms-2'>{filename}</span>
       </div>
@@ -57,7 +57,7 @@ function FileManager({
   configFiles, currentTab, removeFile }) {
   return (
     <div className='d-flex flex-column' style={{ minWidth: 250, background: '#eee' }}>
-      <Header onNewFile={onNewFile} selectedPlugin={selectedPlugin} />
+      <Header onNewFile={onNewFile} selectedPlugin={selectedPlugin} readOnly={selectedPlugin.type === "github"} />
       {[...files, ...configFiles].map((file, i) => {
         return <File {...file}
           key={`${file.filename}-${i}`}
@@ -71,16 +71,18 @@ function FileManager({
   );
 }
 
-function Header({ onNewFile, selectedPlugin }) {
-  return <div className='px-2 py-1 d-flex justify-content-between align-items-center' style={{
-    backgroundColor: '#a1a1a1'
-  }}>
+function Header({ onNewFile, selectedPlugin, readOnly }) {
+  return <div className='d-flex justify-content-between align-items-center sidebar-header'
+    style={{
+      cursor: readOnly ? 'initial' : 'pointer',
+      pointerEvents: readOnly ? 'none' : 'initial'
+    }} onClick={onNewFile}>
     <div className='d-flex align-items-center'>
-      <i className='fas fa-chess-rook me-1 text-white' />
-      <span className='fw-bold text-white'>{selectedPlugin?.filename}</span>
+      <i className='fas fa-chess-rook me-1' />
+      <span className='fw-bold'>{selectedPlugin?.filename}</span>
     </div>
 
-    <i className='fas fa-file-circle-plus text-white' onClick={onNewFile} />
+    {!readOnly && <i className='fas fa-file-circle-plus' />}
   </div>
 }
 

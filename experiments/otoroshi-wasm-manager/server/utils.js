@@ -29,7 +29,15 @@ const unzip = (isRustBuild, zipString, outputFolder) => {
   }))
 }
 
+const INFORMATIONS_FILENAME = {
+  go: "go.mod",
+  rust: "Cargo.toml",
+  js: "package.json",
+  ts: "package.json"
+};
+
 module.exports = {
   format,
-  unzip
+  unzip,
+  INFORMATIONS_FILENAME
 }

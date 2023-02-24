@@ -33,3 +33,11 @@ code {
   border-bottom: 24px solid #fff;
   border-right: 16px solid #ddd;
 }
+
+.sidebar-header {
+  background-color: rgb(255 255 255);
+  padding: 6px 12px;
+  border-radius: 4px;
+  color: #000;
+  margin: 6px;
+}
