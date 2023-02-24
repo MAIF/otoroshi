@@ -59,7 +59,7 @@ function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins }) {
     }} className="justify-content-center p-3"
       onClick={e => e.stopPropagation()}>
       <div className='d-flex flex-column' style={{ position: 'relative' }}>
-        {error && <pre class="alert alert-warning" role="alert">
+        {error && <pre className="alert alert-warning" role="alert">
           {JSON.stringify(error, null, 4)}
         </pre>}
 
@@ -76,8 +76,8 @@ function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins }) {
         }} />
 
         <div className='mb-2'>
-          <label for="owner" className='form-label'>Owner</label>
-          <input type="text" class="form-control form-control-sm" placeholder='octocat' value={owner} id="owner" onChange={e => {
+          <label htmlFor="owner" className='form-label'>Owner</label>
+          <input type="text" className="form-control form-control-sm" placeholder='octocat' value={owner} id="owner" onChange={e => {
             setError(undefined);
             setOwner(e.target.value)
           }} />
@@ -85,7 +85,7 @@ function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins }) {
 
         <div className='mb-2'>
           <label htmlFor="repository" className='form-label'>Repository</label>
-          <input type="text" value={repo} class="form-control form-control-sm" placeholder='my-wasm-epo' id="repository" onChange={e => {
+          <input type="text" value={repo} className="form-control form-control-sm" placeholder='my-wasm-epo' id="repository" onChange={e => {
             setError(undefined);
             setRepo(e.target.value)
           }} />
@@ -93,7 +93,7 @@ function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins }) {
 
         <div className='mb-3'>
           <label htmlFor="branch" className='form-label'>Branch</label>
-          <input type="text" value={branch} class="form-control form-control-sm" id="branch" onChange={e => {
+          <input type="text" value={branch} className="form-control form-control-sm" id="branch" onChange={e => {
             setError(undefined);
             setBranch(e.target.value)
           }} />
@@ -208,7 +208,7 @@ class Plugin extends React.Component {
         <i className='fas fa-file ' style={{ minWidth: 18, marginLeft: -4, marginRight: 4 }} />
         <input type='text'
           autoFocus
-          class="form-control"
+          className="form-control"
           value={newFilename}
           onChange={e => {
             e.stopPropagation()

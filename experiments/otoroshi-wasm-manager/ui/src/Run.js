@@ -34,10 +34,39 @@ export class Run extends React.Component {
 
   state = {
     selectedPlugin: this.props.selectedPlugin ? { value: this.props.selectedPlugin.pluginId, label: this.props.selectedPlugin.filename } : undefined,
-    input: JSON.stringify(rustTypesToJson('WasmAccessValidatorContext'), null, 4),
+    input: JSON.stringify(rustTypesToJson('EmptyContext'), null, 4),
     functionName: 'execute',
-    context: { value: "WasmAccessValidatorContext", label: "WasmAccessValidatorContext" },
+    context: { value: "EmptyContext", label: "EmptyContext" },
     output: ""
+  }
+
+  componentDidMount() {
+    this.readStateFromLocalStorage();
+  }
+
+  componentWillUnmount() {
+    this.writeStateInLocalStorage();
+  }
+
+  readStateFromLocalStorage = () => {
+    const rawState = localStorage.getItem(`${window.location.hostname}-runner`);
+
+    try {
+      const jsonState = JSON.parse(rawState);
+      this.setState({
+        selectedPlugin: jsonState.selectedPlugin || this.state.selectedPlugin,
+        input: jsonState.input || JSON.stringify(rustTypesToJson('EmptyContext'), null, 4),
+        functionName: jsonState.functionName || 'execute',
+        context: jsonState.context || { value: "EmptyContext", label: "EmptyContext" },
+        output: jsonState.output || ""
+      })
+    } catch (_) { }
+  }
+
+  writeStateInLocalStorage = () => {
+    try {
+      localStorage.setItem(`${window.location.hostname}-runner`, JSON.stringify(this.state, null, 4));
+    } catch (_) { }
   }
 
   run = () => {
@@ -52,7 +81,6 @@ export class Run extends React.Component {
             output: res.error
           })
         } else {
-          console.log(res)
           toast.success('Run done.')
           try {
             this.setState({
@@ -75,7 +103,7 @@ export class Run extends React.Component {
       <div style={{ flex: 1, marginTop: 75, borderRadius: 12 }} className="p-3 bg-light mx-auto w-75"
         onKeyDown={e => e.stopPropagation()}>
         <div className='mb-3'>
-          <label for="selectedPlugin" className='form-label'>Select a plugin</label>
+          <label htmlFor="selectedPlugin" className='form-label'>Select a plugin</label>
           <Select
             id="selectedPlugin"
             value={selectedPlugin}
@@ -89,7 +117,7 @@ export class Run extends React.Component {
         </div>
         <div className='mb-3'>
           <div className='d-flex align-items-center justify-content-between'>
-            <label for="input" className='form-label'>Select and fill the fake input context</label>
+            <label htmlFor="input" className='form-label'>Select and fill the fake input context</label>
             <div className='w-50'>
               <Select
                 value={context}
@@ -113,8 +141,8 @@ export class Run extends React.Component {
           />
         </div>
         <div className='mb-3'>
-          <label for="function" className='form-label'>Select the function to launch</label>
-          <input type="text" id="function" class="form-control"
+          <label htmlFor="function" className='form-label'>Select the function to launch</label>
+          <input type="text" id="function" className="form-control"
             value={functionName}
             onChange={e => this.setState({ functionName: e.target.value })} />
         </div>
@@ -125,7 +153,7 @@ export class Run extends React.Component {
           </button>
         </div>
         <div className='mb-3'>
-          <label for="output" className='form-label'>Output</label>
+          <label htmlFor="output" className='form-label'>Output</label>
           <ReactCodeMirror
             id="output"
             value={output}

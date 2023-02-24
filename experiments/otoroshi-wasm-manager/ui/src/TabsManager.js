@@ -16,7 +16,7 @@ function TabsManager({ plugins, ...props }) {
   useEffect(() => {
     if (props.selectedPlugin && props.selectedPlugin.filename !== currentPlugin) {
       setCurrentPlugin(props.selectedPlugin.filename)
-      setTabs([])
+      setTabs(tabs.filter(t => t === 'Runner'))
     }
   }, [props.selectedPlugin])
 
@@ -84,8 +84,8 @@ function TabsManager({ plugins, ...props }) {
           showPlaySettings={() => {
             if (!tabs.includes('Runner')) {
               setTabs([...tabs, 'Runner'])
-              setCurrentTab('Runner')
             }
+            setCurrentTab('Runner')
             props.showPlaySettings()
           }}>
           <Tabs
@@ -125,6 +125,7 @@ function Tabs({ tabs, setCurrentTab, setTabs, currentTab, selectedPlugin, config
       .filter(tab => tab === 'Runner' || [...(selectedPlugin ? selectedPlugin.files : []), ...configFiles].find(f => f.filename === tab))
       .map(tab => {
         return <TabButton
+          key={tab}
           filename={tab}
           onClick={() => setCurrentTab(tab)}
           closeTab={filename => {
@@ -187,8 +188,8 @@ function Header({ children, onSave, onBuild, showActions, onDocs, showPlaySettin
       {showActions && <>
         <Save onSave={onSave} />
         <Build onBuild={onBuild} />
-        <Play showPlaySettings={showPlaySettings} />
       </>}
+      <Play showPlaySettings={showPlaySettings} />
       <Docs onDocs={onDocs} />
     </div>
   </div>

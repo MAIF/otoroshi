@@ -1,4 +1,5 @@
 {
+  "EmptyContext": {},
   "Backend": {
     "id": "String",
     "hostname": "String",
