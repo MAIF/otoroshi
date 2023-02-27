@@ -264,6 +264,9 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Result = {
+    if (env.isDev) {
+      logger.error(s"proxy engine error on route ${route.map(_.id).getOrElse("")}/${route.map(_.name).getOrElse("")} - ${req.method} ${req.path}: ${error.prettify}")
+    }
     Errors.craftResponseResultSync(
       message = error.select("error_description").asOpt[String].getOrElse("an error occurred !"),
       status = status,
