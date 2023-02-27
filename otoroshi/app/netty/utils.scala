@@ -185,7 +185,7 @@ class AccessLogHandler(addressGet: () => String) extends ChannelDuplexHandler {
       }
       case _                         =>
     }
-    ctx.write(msg, promise)
+    // ctx.write(msg, promise)
   }
 }
 
