@@ -4,6 +4,44 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.1.0] - 2023-02-28
+
+https://github.com/MAIF/otoroshi/milestone/59?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.0.5...v16.1.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.1.0
+
+### Added
+
+- tailscale cert job wants to get cert not handled by tailscale (#1451)
+- add documentation for tailscale documentation (#1462)
+- tailscale TLS integration (#1448)
+- tailscale machines integrations (#1449)
+- http cache plugin (#1423)
+- error response rewrite plugin (#1424)
+- missing request body plugin (#1425)
+- full state exporter for disaster recovery (#1426)
+- support .pfx files import (#1427)
+
+### Changed
+
+- elastic export improvments (#1466)
+- ability to use tls settings in the SOAPAction plugin (#1469)
+- upgrade to Play framework version 2.8.19 (#1447)
+- enhance vault mechanism (#1296)
+
+### Fixed
+
+- http3 request failure (#1468)
+- do not show save button on jwt verifiers page when path contains 'edit' (#1465)
+- proxy settings in route backend parsing fails (#1450)
+- plain text h2c calls failing (#1446)
+- netty native transport fails on linux (#1428)
+- fix missing resources in documentation (#1429)
+- fix errors in kubernetes documentation (#1430)
+- jobs cannot be added in danger zone plugins, only in scripts (#1431)
+- fix coredns integration on azure (#1432)
+- fix coredns integration on kubernetes (#1433)
+
 ## [16.0.5] - 2023-01-26
 
 https://github.com/MAIF/otoroshi/milestone/58?closed=1
