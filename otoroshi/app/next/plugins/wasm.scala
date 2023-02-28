@@ -69,7 +69,7 @@ object WasmQueryConfig {
 object WasmUtils {
   private val scriptCache: Cache[String, ByteString] = Scaffeine()
     .recordStats()
-    .expireAfterWrite(3000.seconds)
+    .expireAfterWrite(30.seconds)
     .maximumSize(100)
     .build()
 
