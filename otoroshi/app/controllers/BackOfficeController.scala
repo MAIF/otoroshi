@@ -1365,13 +1365,13 @@ class BackOfficeController(
   def importP12File(): Action[Source[ByteString, _]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       val password = ctx.request.getQueryString("password").getOrElse("")
-      val client = ctx.request.getQueryString("client").contains("true")
-      val many = ctx.request.getQueryString("many").contains("true")
+      val client   = ctx.request.getQueryString("client").contains("true")
+      val many     = ctx.request.getQueryString("many").contains("true")
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
         Try {
           val certs = P12Helper.extractCertificate(body, password, client)
           if (!many) {
-            val cert  = certs.head
+            val cert = certs.head
             Ok(cert.enrich().copy(client = client).toJson).future
           } else {
             Source(certs.toList)
@@ -1950,18 +1950,18 @@ class BackOfficeController(
   }
 
   def wasmFiles() = BackOfficeActionAuth.async { ctx =>
-    env.datastores.globalConfigDataStore.singleton()
+    env.datastores.globalConfigDataStore
+      .singleton()
       .flatMap { globalConfig =>
-
         globalConfig.wasmManagerSettings match {
           case Some(WasmManagerSettings(url, clientId, clientSecret, pluginsFilter)) =>
             env.Ws
               .url(s"$url/plugins")
               .withFollowRedirects(false)
               .withHttpHeaders(
-                "Otoroshi-Client-Id" -> clientId,
+                "Otoroshi-Client-Id"     -> clientId,
                 "Otoroshi-Client-Secret" -> clientSecret,
-                "kind" -> pluginsFilter.getOrElse("*")
+                "kind"                   -> pluginsFilter.getOrElse("*")
               )
               .get()
               .map(res => {
@@ -1971,15 +1971,16 @@ class BackOfficeController(
                   Ok(Json.arr())
                 }
               })
-              .recover {
-                 case e: Throwable =>
-                    logger.error(e.getMessage)
-                    Ok(Json.arr())
+              .recover { case e: Throwable =>
+                logger.error(e.getMessage)
+                Ok(Json.arr())
               }
-          case _ =>
-            BadRequest(Json.obj(
-              "error" -> "Missing config in global configuration"
-            )).future
+          case _                                                                     =>
+            BadRequest(
+              Json.obj(
+                "error" -> "Missing config in global configuration"
+              )
+            ).future
         }
       }
   }

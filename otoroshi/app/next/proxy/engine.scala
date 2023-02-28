@@ -265,7 +265,9 @@ class ProxyEngine() extends RequestHandler {
       req: RequestHeader
   )(implicit env: Env, ec: ExecutionContext): Result = {
     if (env.isDev) {
-      logger.error(s"proxy engine error on route '${route.map(_.id).getOrElse("")}/${route.map(_.name).getOrElse("")}' - ${req.method} ${req.path}: ${error.prettify}")
+      logger.error(s"proxy engine error on route '${route.map(_.id).getOrElse("")}/${route
+        .map(_.name)
+        .getOrElse("")}' - ${req.method} ${req.path}: ${error.prettify}")
     }
     Errors.craftResponseResultSync(
       message = error.select("error_description").asOpt[String].getOrElse("an error occurred !"),
@@ -3160,7 +3162,7 @@ class ProxyEngine() extends RequestHandler {
       .applyOnIf(!isHttp10)(_.filterNot(h => h._1.toLowerCase() == "content-length"))
       .toSeq // ++ Seq(("Connection" -> "keep-alive"), ("X-Connection" -> "keep-alive"))
 
-    val theBody                        = response.body.applyOnIf(engineConfig.capture) { source =>
+    val theBody = response.body.applyOnIf(engineConfig.capture) { source =>
       var responseChunks = ByteString("")
       source
         .map { chunk =>

@@ -198,7 +198,7 @@ object KubernetesConfig {
           kubeDnsOperatorCoreDnsPort = (conf \ "kubetDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
           connectionTimeout = conf.select("connectionTimeout").asOpt[Long].getOrElse(5000L),
           idleTimeout = conf.select("idleTimeout").asOpt[Long].getOrElse(30000L),
-          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L),
+          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L)
         )
       }
       case None             => {
@@ -291,7 +291,7 @@ object KubernetesConfig {
           kubeDnsOperatorCoreDnsPort = (conf \ "kubetDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
           connectionTimeout = conf.select("connectionTimeout").asOpt[Long].getOrElse(5000L),
           idleTimeout = conf.select("idleTimeout").asOpt[Long].getOrElse(30000L),
-          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L),
+          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L)
         )
       }
     }
@@ -341,9 +341,9 @@ object KubernetesConfig {
         "kubeDnsOperatorCoreDnsNamespace"      -> "otoroshi",
         "kubeDnsOperatorCoreDnsName"           -> "otoroshi-dns",
         "kubeDnsOperatorCoreDnsPort"           -> 5353,
-        "connectionTimeout" -> 5000,
-        "idleTimeout" -> 30000,
-        "callAndStreamTimeout" -> 30000,
+        "connectionTimeout"                    -> 5000,
+        "idleTimeout"                          -> 30000,
+        "callAndStreamTimeout"                 -> 30000,
         "templates"                            -> Json.obj(
           "service-group"      -> Json.obj(),
           "service-descriptor" -> Json.obj(),
@@ -426,7 +426,7 @@ object KubernetesConfig {
       ">>>client settings",
       "connectionTimeout",
       "idleTimeout",
-      "callAndStreamTimeout",
+      "callAndStreamTimeout"
     )
   }
 

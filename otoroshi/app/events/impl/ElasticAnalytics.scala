@@ -38,7 +38,7 @@ case class QueryResponse(resp: JsValue) {
   lazy val hits: Seq[JsValue]      = (resp \ "hits" \ "hits").as[Seq[JsValue]]
 }
 // TODO: handle issue: "mapper [route.plugins.config.version] cannot be changed from type [text] to [long]
-object ElasticTemplates {
+object ElasticTemplates                 {
   val indexTemplate_v6 =
     """{
       |  "template": "$$$INDEX$$$-*",
@@ -375,7 +375,7 @@ object ElasticUtils {
       s"${config.uris.head}$path"
     } else {
       val index = counter.incrementAndGet() % (if (config.uris.nonEmpty) config.uris.size else 1)
-      val uri = config.uris.apply(index.toInt)
+      val uri   = config.uris.apply(index.toInt)
       s"${uri}$path"
     }
   }
@@ -445,8 +445,8 @@ object ElasticUtils {
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Unit] = {
-    val index: String = config.index.getOrElse("otoroshi-events")
-    val numberOfShards: String = config.indexSettings.numberOfShards.toString
+    val index: String            = config.index.getOrElse("otoroshi-events")
+    val numberOfShards: String   = config.indexSettings.numberOfShards.toString
     val numberOfReplicas: String = config.indexSettings.numberOfReplicas.toString
     getElasticVersion(config, env).flatMap { version =>
       // from elastic 7.8, we should use /_index_template/otoroshi-tpl and wrap almost everything expect index_patterns in a "template" object
@@ -458,16 +458,18 @@ object ElasticUtils {
       }
       if (logger.isDebugEnabled) logger.debug(s"$version, $indexTemplatePath")
       val tpl: JsValue                = if (config.indexSettings.clientSide) {
-        Json.parse(strTpl
-          .replace("$$$INDEX$$$", index)
-          .replace("$$$SHARDS$$$", numberOfShards)
-          .replace("$$$REPLICAS$$$", numberOfReplicas)
+        Json.parse(
+          strTpl
+            .replace("$$$INDEX$$$", index)
+            .replace("$$$SHARDS$$$", numberOfShards)
+            .replace("$$$REPLICAS$$$", numberOfReplicas)
         )
       } else {
-        Json.parse(strTpl
-          .replace("$$$INDEX$$$-*", index)
-          .replace("$$$SHARDS$$$", numberOfShards)
-          .replace("$$$REPLICAS$$$", numberOfReplicas)
+        Json.parse(
+          strTpl
+            .replace("$$$INDEX$$$-*", index)
+            .replace("$$$SHARDS$$$", numberOfShards)
+            .replace("$$$REPLICAS$$$", numberOfReplicas)
         )
       }
       if (logger.isDebugEnabled) logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
@@ -649,9 +651,9 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       .grouped(config.maxBulkSize)
       .map(_.map(bulkRequest))
       .mapAsync(config.sendWorkers) { bulk =>
-        val body  = bulk.mkString("", "\n", "\n\n").byteString
+        val body = bulk.mkString("", "\n", "\n\n").byteString
         if (logger.isDebugEnabled) logger.debug(s"preparing bulk of ${bulk.size} items of size ${body.size} bytes")
-        val req = clientInstance.withMethod("POST").withBody(body)
+        val req  = clientInstance.withMethod("POST").withBody(body)
         val post = req.execute()
         post.onComplete {
           case Success(resp) =>

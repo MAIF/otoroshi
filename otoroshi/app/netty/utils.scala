@@ -49,14 +49,14 @@ object EventLoopUtils {
   private val threadFactory = NamedThreadFactory("otoroshi-netty-event-loop")
 
   def createWithoutNative(nThread: Int): EventLoopGroupCreation = {
-    val channelHttp = new NioServerSocketChannel()
+    val channelHttp  = new NioServerSocketChannel()
     val evlGroupHttp = new NioEventLoopGroup(nThread, threadFactory)
     evlGroupHttp.register(channelHttp)
     EventLoopGroupCreation(evlGroupHttp, None)
   }
 
   def createEpoll(nThread: Int): EventLoopGroupCreation = {
-    val channelHttp = new io.netty.channel.epoll.EpollServerSocketChannel()
+    val channelHttp  = new io.netty.channel.epoll.EpollServerSocketChannel()
     val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(nThread, threadFactory)
     evlGroupHttp.register(channelHttp).sync().await()
     EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
@@ -64,7 +64,7 @@ object EventLoopUtils {
 
   def createEpollDomainSocket(nThread: Int): EventLoopGroupCreation = {
     println(s"available: ${io.netty.channel.epoll.Epoll.isAvailable}")
-    val channelHttp = new EpollDomainSocketChannel()
+    val channelHttp  = new EpollDomainSocketChannel()
     val evlGroupHttp = new io.netty.channel.epoll.EpollEventLoopGroup(nThread, threadFactory)
     evlGroupHttp.register(channelHttp).sync().await()
     EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))

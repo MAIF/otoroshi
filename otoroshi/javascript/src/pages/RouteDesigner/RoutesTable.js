@@ -17,7 +17,12 @@ export function RoutesTable(props) {
         <>
           {item.frontend.domains[0] || '-'}{' '}
           {item.frontend.domains.length > 1 && (
-            <span className="badge bg-secondary" style={{ cursor: 'pointer' }} title={item.frontend.domains.map(v => ` - ${v}`).join('\n')}>{item.frontend.domains.length - 1} more</span>
+            <span
+              className="badge bg-secondary"
+              style={{ cursor: 'pointer' }}
+              title={item.frontend.domains.map((v) => ` - ${v}`).join('\n')}>
+              {item.frontend.domains.length - 1} more
+            </span>
           )}
         </>
       );
@@ -32,7 +37,14 @@ export function RoutesTable(props) {
         <>
           {item.backend.targets[0]?.hostname || '-'}{' '}
           {item.backend.targets.length > 1 && (
-            <span className="badge bg-secondary" style={{ cursor: 'pointer' }} title={item.backend.targets.map(v => ` - ${v.tls ? 'https' : 'http'}://${v.hostname}:${v.port}`).join('\n')}>{item.backend.targets.length - 1} more</span>
+            <span
+              className="badge bg-secondary"
+              style={{ cursor: 'pointer' }}
+              title={item.backend.targets
+                .map((v) => ` - ${v.tls ? 'https' : 'http'}://${v.hostname}:${v.port}`)
+                .join('\n')}>
+              {item.backend.targets.length - 1} more
+            </span>
           )}
         </>
       );

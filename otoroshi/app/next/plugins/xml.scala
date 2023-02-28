@@ -409,9 +409,9 @@ class SOAPAction extends NgBackendCall {
         val soapEnvelop: String = el(config.envelope, body, ctx, env)
         val operation           = config.action
         val url                 = config.url.getOrElse(s"${ctx.route.backend.targets.head.baseUrl}${ctx.route.backend.root}")
-        val tlsConfig = ctx.route.backend.targets.headOption.map(_.tlsConfig).filter(_.enabled)
-        val initReq = tlsConfig match {
-          case None => env.Ws.url(url)
+        val tlsConfig           = ctx.route.backend.targets.headOption.map(_.tlsConfig).filter(_.enabled)
+        val initReq             = tlsConfig match {
+          case None       => env.Ws.url(url)
           case Some(conf) => env.MtlsWs.url(url, conf.legacy)
         }
         initReq

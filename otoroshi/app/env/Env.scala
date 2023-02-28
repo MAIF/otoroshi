@@ -85,7 +85,7 @@ class Env(
 
   val logger = Logger("otoroshi-env")
 
-  val otoroshiActorSystem: ActorSystem = ActorSystem(
+  val otoroshiActorSystem: ActorSystem           = ActorSystem(
     "otoroshi-actor-system",
     _configuration
       .getOptionalWithFileSupport[Configuration]("app.actorsystems.otoroshi")
@@ -94,33 +94,38 @@ class Env(
       .getOrElse(ConfigFactory.empty)
   )
   val otoroshiExecutionContext: ExecutionContext = otoroshiActorSystem.dispatcher
-  val otoroshiScheduler: Scheduler = otoroshiActorSystem.scheduler
-  val otoroshiMaterializer: Materializer = Materializer(otoroshiActorSystem)
-  val vaults = new Vaults(this)
+  val otoroshiScheduler: Scheduler               = otoroshiActorSystem.scheduler
+  val otoroshiMaterializer: Materializer         = Materializer(otoroshiActorSystem)
+  val vaults                                     = new Vaults(this)
 
   private val (merged_configuration: Configuration, merged_configuration_json: JsObject) = (for {
     appConfig <- _configuration.getOptionalWithFileSupport[Configuration]("app")
     otoConfig <- _configuration.getOptionalWithFileSupport[Configuration]("otoroshi")
   } yield {
-    val wholeConfigJson: JsObject  =
+    val wholeConfigJson: JsObject     =
       Json
         .parse(_configuration.underlying.root().render(ConfigRenderOptions.concise()))
         .as[JsObject]
         .-("app")
         .-("otoroshi")
-    val appConfigJson: JsObject    =
+    val appConfigJson: JsObject       =
       Json.parse(appConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
-    val otoConfigJson: JsObject    =
+    val otoConfigJson: JsObject       =
       Json.parse(otoConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
     // val appKeys = appConfigJson.value.keySet
     // val otoKeys = otoConfigJson.value.keySet
     // appKeys.filter(key => otoKeys.contains(key)).debugPrintln
-    val mergeConfig: JsObject      = appConfigJson.deepMerge(otoConfigJson)
-    val _finalConfigJson1: JsObject =
+    val mergeConfig: JsObject         = appConfigJson.deepMerge(otoConfigJson)
+    val _finalConfigJson1: JsObject   =
       wholeConfigJson.deepMerge(Json.obj("otoroshi" -> mergeConfig, "app" -> mergeConfig))
-    val _finalConfigJson1Str = _finalConfigJson1.stringify
-    val _finalConfigJson1StrWithVault = Await.result(vaults.fillSecretsAsync("otoroshi-config", _finalConfigJson1Str)(ExecutionContext.fromExecutor(Executors.newFixedThreadPool(3))), 30.seconds)
-    val finalConfigJson1: JsObject = Json.parse(_finalConfigJson1StrWithVault).asObject
+    val _finalConfigJson1Str          = _finalConfigJson1.stringify
+    val _finalConfigJson1StrWithVault = Await.result(
+      vaults.fillSecretsAsync("otoroshi-config", _finalConfigJson1Str)(
+        ExecutionContext.fromExecutor(Executors.newFixedThreadPool(3))
+      ),
+      30.seconds
+    )
+    val finalConfigJson1: JsObject    = Json.parse(_finalConfigJson1StrWithVault).asObject
     (Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1))), finalConfigJson1)
   }) getOrElse (_configuration, Json
     .parse(_configuration.underlying.root().render(ConfigRenderOptions.concise()))

@@ -361,17 +361,20 @@ object ClusterConfig {
         trustAll = configuration.getOptionalWithFileSupport[Boolean]("mtls.trustAll").getOrElse(false),
         mtls = configuration.getOptionalWithFileSupport[Boolean]("mtls.enabled").getOrElse(false)
       ),
-      proxy = configuration.getOptionalWithFileSupport[Boolean]("proxy.enabled").filter(identity).map { _ =>
-        DefaultWSProxyServer(
-          host = configuration.getOptionalWithFileSupport[String]("proxy.host").getOrElse("localhost"),
-          port = configuration.getOptionalWithFileSupport[Int]("proxy.port").getOrElse(1055),
-          principal = configuration.getOptionalWithFileSupport[String]("proxy.principal"),
-          password = configuration.getOptionalWithFileSupport[String]("proxy.password"),
-          ntlmDomain = configuration.getOptionalWithFileSupport[String]("proxy.ntlmDomain"),
-          encoding = configuration.getOptionalWithFileSupport[String]("proxy.encoding"),
-          nonProxyHosts = None
-        )
-      },
+      proxy = configuration
+        .getOptionalWithFileSupport[Boolean]("proxy.enabled")
+        .filter(identity)
+        .map { _ =>
+          DefaultWSProxyServer(
+            host = configuration.getOptionalWithFileSupport[String]("proxy.host").getOrElse("localhost"),
+            port = configuration.getOptionalWithFileSupport[Int]("proxy.port").getOrElse(1055),
+            principal = configuration.getOptionalWithFileSupport[String]("proxy.principal"),
+            password = configuration.getOptionalWithFileSupport[String]("proxy.password"),
+            ntlmDomain = configuration.getOptionalWithFileSupport[String]("proxy.ntlmDomain"),
+            encoding = configuration.getOptionalWithFileSupport[String]("proxy.encoding"),
+            nonProxyHosts = None
+          )
+        },
       leader = LeaderConfig(
         name = configuration
           .getOptionalWithFileSupport[String]("leader.name")

@@ -387,8 +387,12 @@ class ReactorNettyServer(env: Env) {
   }
 
   def createEventLoops(): (LoopResources, LoopResources) = {
-    val groupHttp = if (config.nThread == 0) LoopResources.create("otoroshi-http") else LoopResources.create("otoroshi-http", 2, config.nThread, true)
-    val groupHttps = if (config.nThread == 0) LoopResources.create("otoroshi-https") else LoopResources.create("otoroshi-https", 2, config.nThread, true)
+    val groupHttp  =
+      if (config.nThread == 0) LoopResources.create("otoroshi-http")
+      else LoopResources.create("otoroshi-http", 2, config.nThread, true)
+    val groupHttps =
+      if (config.nThread == 0) LoopResources.create("otoroshi-https")
+      else LoopResources.create("otoroshi-https", 2, config.nThread, true)
     EventLoopUtils.create(config.native, config.nThread).native.foreach { name =>
       logger.info(s"  using ${name} native transport")
       logger.info("")

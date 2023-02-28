@@ -35,7 +35,8 @@ case class KubernetesConfigMap(raw: JsValue) extends KubernetesEntity {
   lazy val rawObj                      = raw.as[JsObject]
   //lazy val corefile: String      = (raw \ "data" \ "Corefile").as[String]
   def corefile(azure: Boolean): String =
-    (if (azure) (raw \ "data" \ "otoroshi.server").asOpt[String] else (raw \ "data" \ "Corefile").asOpt[String]).getOrElse("")
+    (if (azure) (raw \ "data" \ "otoroshi.server").asOpt[String] else (raw \ "data" \ "Corefile").asOpt[String])
+      .getOrElse("")
   lazy val data: JsObject              = (raw \ "data").asOpt[JsObject].getOrElse(Json.obj())
   lazy val stubDomains: JsObject       =
     (data \ "stubDomains").asOpt[String].flatMap(str => Json.parse(str).asOpt[JsObject]).getOrElse(Json.obj())

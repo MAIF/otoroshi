@@ -813,29 +813,29 @@ const possibleExporterConfigFormValues = {
         type: CheckElasticsearchConnection,
         props: { label: 'Check Connection' },
       },
-      'maxBulkSize': {
+      maxBulkSize: {
         type: 'number',
         props: {
-          label: 'Max Bulk Size'
-        }
+          label: 'Max Bulk Size',
+        },
       },
-      'sendWorkers': {
+      sendWorkers: {
         type: 'number',
         props: {
-          label: 'Sending threads'
-        }
+          label: 'Sending threads',
+        },
       },
       'indexSettings.numberOfShards': {
         type: 'number',
         props: {
-          label: 'Number of shards'
-        }
+          label: 'Number of shards',
+        },
       },
       'indexSettings.numberOfReplicas': {
         type: 'number',
         props: {
-          label: 'Number of replicas'
-        }
+          label: 'Number of replicas',
+        },
       },
       'indexSettings.clientSide': {
         type: 'bool',
@@ -1281,7 +1281,7 @@ const possibleExporterConfigFormValues = {
           placeholder: 'Max number of existing files',
           suffix: 'files',
         },
-      }
+      },
     },
   },
   s3: {

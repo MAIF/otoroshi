@@ -50,16 +50,16 @@ object IndexSettingsInterval {
 }
 
 case class IndexSettings(
-  clientSide: Boolean = true,
-  numberOfShards: Int = 1,
-  numberOfReplicas: Int = 1,
-  interval: IndexSettingsInterval = IndexSettingsInterval.Day
+    clientSide: Boolean = true,
+    numberOfShards: Int = 1,
+    numberOfReplicas: Int = 1,
+    interval: IndexSettingsInterval = IndexSettingsInterval.Day
 ) {
   def json: JsValue = Json.obj(
-    "clientSide" -> clientSide,
-    "interval"   -> interval.json,
-    "numberOfShards" -> numberOfShards,
-    "numberOfReplicas" -> numberOfReplicas,
+    "clientSide"       -> clientSide,
+    "interval"         -> interval.json,
+    "numberOfShards"   -> numberOfShards,
+    "numberOfReplicas" -> numberOfReplicas
   )
 }
 
@@ -100,7 +100,7 @@ case class ElasticAnalyticsConfig(
     applyTemplate: Boolean = true,
     version: Option[String] = None,
     maxBulkSize: Int = 100,
-    sendWorkers: Int = 4,
+    sendWorkers: Int = 4
 ) extends Exporter {
   def toJson: JsValue = ElasticAnalyticsConfig.format.writes(this)
 }
@@ -111,7 +111,7 @@ object ElasticAnalyticsConfig {
     override def writes(o: ElasticAnalyticsConfig) =
       Json.obj(
         "clusterUri"    -> o.uris.headOption.map(JsString.apply).getOrElse(JsNull).asValue,
-        "uris"    -> o.uris,
+        "uris"          -> o.uris,
         "index"         -> o.index.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "type"          -> o.`type`.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "user"          -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -122,11 +122,13 @@ object ElasticAnalyticsConfig {
         "applyTemplate" -> o.applyTemplate,
         "version"       -> o.version.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "maxBulkSize"   -> o.maxBulkSize,
-        "sendWorkers"   -> o.sendWorkers,
+        "sendWorkers"   -> o.sendWorkers
       )
     override def reads(json: JsValue)              =
       Try {
-        val uris: Seq[String] = json.select("uris").asOpt[Seq[String]]
+        val uris: Seq[String] = json
+          .select("uris")
+          .asOpt[Seq[String]]
           .orElse((json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).map(s => Seq(s)))
           .getOrElse(Seq.empty[String])
           .flatMap { uri =>
@@ -152,7 +154,7 @@ object ElasticAnalyticsConfig {
               applyTemplate = (json \ "applyTemplate").asOpt[Boolean].getOrElse(true),
               version = (json \ "version").asOpt[String].filter(_.trim.nonEmpty),
               maxBulkSize = json.select("maxBulkSize").asOpt[Int].getOrElse(100),
-              sendWorkers = json.select("sendWorkers").asOpt[Int].getOrElse(4),
+              sendWorkers = json.select("sendWorkers").asOpt[Int].getOrElse(4)
             )
           )
         }
@@ -500,20 +502,20 @@ object TlsSettings {
 }
 
 case class WasmManagerSettings(
-                                url: String = "http://localhost:5001",
-                                clientId: String = "admin-api-apikey-id",
-                                clientSecret: String = "admin-api-apikey-secret",
-                                pluginsFilter: Option[String] = Some("*")
-                              )                  {
+    url: String = "http://localhost:5001",
+    clientId: String = "admin-api-apikey-id",
+    clientSecret: String = "admin-api-apikey-secret",
+    pluginsFilter: Option[String] = Some("*")
+)                          {
   def json: JsValue = WasmManagerSettings.format.writes(this)
 }
 object WasmManagerSettings {
   val format = new Format[WasmManagerSettings] {
     override def writes(o: WasmManagerSettings): JsValue =
       Json.obj(
-        "url"      -> o.url,
-        "clientId"   -> o.clientId,
-        "clientSecret" -> o.clientSecret,
+        "url"           -> o.url,
+        "clientId"      -> o.clientId,
+        "clientSecret"  -> o.clientSecret,
         "pluginsFilter" -> o.pluginsFilter.map(JsString).getOrElse(JsNull).as[JsValue]
       )
 
@@ -647,7 +649,7 @@ case class GlobalConfig(
     quotasSettings: QuotasAlmostExceededSettings = QuotasAlmostExceededSettings(false, 0.8, 0.8),
     plugins: Plugins = Plugins(),
     templates: DefaultTemplates = DefaultTemplates(),
-    wasmManagerSettings: Option[WasmManagerSettings] =  None,
+    wasmManagerSettings: Option[WasmManagerSettings] = None,
     tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty
 ) extends Entity {

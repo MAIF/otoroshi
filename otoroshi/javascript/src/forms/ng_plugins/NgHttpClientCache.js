@@ -5,22 +5,22 @@ export default {
       type: 'number',
       label: 'Max age',
       placeholder: '86400',
-      suffix: 'seconds'
+      suffix: 'seconds',
     },
     methods: {
-      label: "HTTP methods",
+      label: 'HTTP methods',
       type: 'array',
       array: true,
       format: null,
     },
     status: {
-      label: "HTTP status",
+      label: 'HTTP status',
       type: 'array',
       array: true,
       format: 'number',
     },
     mime_types: {
-      label: "Mime types",
+      label: 'Mime types',
       type: 'array',
       array: true,
       format: null,

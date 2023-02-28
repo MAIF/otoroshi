@@ -110,17 +110,17 @@ export function DefaultSidebar(props) {
           </h3>
         </Link>
       </li>
-    <li className="nav-item mt-2">
+      <li className="nav-item mt-2">
         <Link
-            to="/exporters"
-            className={`nav-link ${rootClassName('exporters')}`}
-            {...createTooltip('List all data exporters declared in Otoroshi')}
-            onClick={clearSidebar}>
-            <h3 className="p-2 m-0" title="DATA EXPORTERS">
-                <i className="fas fa-paper-plane" /> DATA EXPORTERS
-            </h3>
+          to="/exporters"
+          className={`nav-link ${rootClassName('exporters')}`}
+          {...createTooltip('List all data exporters declared in Otoroshi')}
+          onClick={clearSidebar}>
+          <h3 className="p-2 m-0" title="DATA EXPORTERS">
+            <i className="fas fa-paper-plane" /> DATA EXPORTERS
+          </h3>
         </Link>
-    </li>
+      </li>
       <li className="nav-item mt-2">
         <Link
           to="/features"

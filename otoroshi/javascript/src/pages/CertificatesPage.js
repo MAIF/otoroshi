@@ -658,14 +658,16 @@ export class CertificatesPage extends Component {
     data.append('file', input.files[0]);
     return window.newPrompt('Certificate password ?').then((password) => {
       if (password !== null) {
-        return window.newConfirm('Is it a client certificate ?', { yesText: 'Yes', noText: 'No' }).then((client) => {
-          return BackOfficeServices.importP12(password, input.files[0], client).then((cert) => {
-            // this.table.update();
-            this.props.setTitle(`Create a new certificate`);
-            window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-            this.table.setState({ currentItem: cert, showAddForm: true });
+        return window
+          .newConfirm('Is it a client certificate ?', { yesText: 'Yes', noText: 'No' })
+          .then((client) => {
+            return BackOfficeServices.importP12(password, input.files[0], client).then((cert) => {
+              // this.table.update();
+              this.props.setTitle(`Create a new certificate`);
+              window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+              this.table.setState({ currentItem: cert, showAddForm: true });
+            });
           });
-        });
       }
     });
   };

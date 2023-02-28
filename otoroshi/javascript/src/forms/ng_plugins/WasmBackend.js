@@ -1,4 +1,4 @@
-import WasmPlugin from "./WasmPlugin";
+import WasmPlugin from './WasmPlugin';
 
 export default {
   id: 'cp:otoroshi.next.plugins.WasmBackend',

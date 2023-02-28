@@ -6,7 +6,11 @@ export function JsonExportButton({ value, entityKind }) {
     <SquareButton
       onClick={() => {
         const what = window.location.pathname.split('/')[3];
-        const itemName = entityKind ? entityKind.toLowerCase() : (what === 'routes' ? 'route' : 'route-composition');
+        const itemName = entityKind
+          ? entityKind.toLowerCase()
+          : what === 'routes'
+          ? 'route'
+          : 'route-composition';
         const kind = entityKind || (what === 'routes' ? 'Route' : 'RouteComposition');
         const name = value.id
           .replace(/ /g, '-')

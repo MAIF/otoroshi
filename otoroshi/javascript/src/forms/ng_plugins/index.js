@@ -160,5 +160,5 @@ export const Plugins = [
   WasmBackend,
   WasmAccessValidator,
   WasmRequestTransformer,
-  WasmResponseTransformer
+  WasmResponseTransformer,
 ];

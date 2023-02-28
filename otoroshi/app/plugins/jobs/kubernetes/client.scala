@@ -427,12 +427,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       newValue: KubernetesConfigMap
   ): Future[Either[(Int, String), KubernetesConfigMap]] = {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/configmaps/$name", false)
-    val req = cli
+    val req            = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
         "Content-Type" -> "application/json"
       )
-    req.put(newValue.raw)
+    req
+      .put(newValue.raw)
       .map { resp =>
         Try {
           if (resp.status == 200 || resp.status == 201) {
@@ -447,8 +448,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             Left((0, e.getMessage))
         }
       }
-      .andThen {
-        case Failure(exception) => req.ignore()
+      .andThen { case Failure(exception) =>
+        req.ignore()
       }
   }
 
@@ -460,7 +461,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     asyncSequence(config.namespaces.flatMap { namespace =>
       Seq(
         fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1", reader, customize),
-        fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1alpha1", reader, customize),
+        fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1alpha1", reader, customize)
       )
     }).map(_.flatten)
   }
@@ -484,10 +485,10 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             if (resp.status == 200) {
               filterLabels((resp.json \ "items").as[JsArray].value.map(v => KubernetesOtoroshiResource(v)))
                 .map { item =>
-                  val spec = (item.raw \ "spec").as[JsValue]
+                  val spec                      = (item.raw \ "spec").as[JsValue]
                   val (failed, err, customSpec) = Try(customize(spec, item)) match {
                     case Success(value) => (false, None, value)
-                    case Failure(e) => (true, e.some, spec)
+                    case Failure(e)     => (true, e.some, spec)
                   }
                   Try {
                     (reader.reads(customSpec), item.raw)
@@ -504,8 +505,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                         error = err.map(_.getMessage).getOrElse("--")
                       ).toAnalytics()(env)
                     }
-                    case Success(_) => ()
-                    case Failure(e) =>
+                    case Success(_)           => ()
+                    case Failure(e)           =>
                       logger.error(s"error while reading entity of type $pluralName", e)
                       FailedCrdParsing(
                         `@id` = env.snowflakeGenerator.nextIdStr(),
@@ -544,12 +545,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       id: String
   ): Future[Option[KubernetesSecret]] = {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets", false)
-    val req = cli
+    val req            = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
         "Content-Type" -> "application/json"
       )
-    req.post(
+    req
+      .post(
         Json.obj(
           "apiVersion" -> "v1",
           "kind"       -> "Secret",
@@ -581,8 +583,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             None
         }
       }
-      .andThen {
-        case Failure(_) => req.ignore()
+      .andThen { case Failure(_) =>
+        req.ignore()
       }
   }
 
@@ -595,12 +597,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       id: String
   ): Future[Option[KubernetesSecret]] = {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
-    val req = cli
+    val req            = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
         "Content-Type" -> "application/json"
       )
-    req.put(
+    req
+      .put(
         Json.obj(
           "apiVersion" -> "v1",
           "kind"       -> "Secret",
@@ -632,18 +635,19 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             None
         }
       }
-      .andThen {
-        case Failure(_) => req.ignore()
+      .andThen { case Failure(_) =>
+        req.ignore()
       }
   }
 
   def deleteSecret(namespace: String, name: String): Future[Either[String, Unit]] = {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
-    val req = cli
+    val req            = cli
       .addHttpHeaders(
         "Accept" -> "application/json"
       )
-    req.delete()
+    req
+      .delete()
       .map { resp =>
         Try {
           if (resp.status == 200) {
@@ -663,12 +667,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   def patchDeployment(namespace: String, name: String, body: JsValue): Future[Option[KubernetesDeployment]] = {
     val cli: WSRequest = client(s"/apis/apps/v1/namespaces/$namespace/deployments/$name", false)
-    val req = cli
+    val req            = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
         "Content-Type" -> "application/json-patch+json"
       )
-    req.patch(body)
+    req
+      .patch(body)
       .map { resp =>
         Try {
           if (resp.status == 200 || resp.status == 201) {
@@ -685,8 +690,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             None
         }
       }
-      .andThen {
-        case Failure(_) => req.ignore()
+      .andThen { case Failure(_) =>
+        req.ignore()
       }
   }
 
@@ -715,11 +720,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       case None      => None.future
       case Some(dns) => {
         val cli: WSRequest = client(s"/apis/operator.openshift.io/v1/dnses/default", false)
-        val req = cli
+        val req            = cli
           .addHttpHeaders(
             "Accept" -> "application/json"
           )
-        req.put(dns.raw.as[JsObject] ++ Json.obj("spec" -> source.spec))
+        req
+          .put(dns.raw.as[JsObject] ++ Json.obj("spec" -> source.spec))
           .map { resp =>
             if (resp.status == 200) {
               KubernetesOpenshiftDnsOperator(resp.json).some
@@ -729,8 +735,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               None
             }
           }
-          .andThen {
-            case Failure(_) => req.ignore()
+          .andThen { case Failure(_) =>
+            req.ignore()
           }
       }
     }
@@ -759,12 +765,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       body: JsValue
   ): Future[Option[KubernetesMutatingWebhookConfiguration]] = {
     val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/$name", false)
-    val req = cli
+    val req            = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
         "Content-Type" -> "application/json-patch+json"
       )
-    req.patch(body)
+    req
+      .patch(body)
       .map { resp =>
         Try {
           if (resp.status == 200 || resp.status == 201) {
@@ -781,8 +788,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             None
         }
       }
-      .andThen {
-        case Failure(_) => req.ignore()
+      .andThen { case Failure(_) =>
+        req.ignore()
       }
   }
 
@@ -809,12 +816,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       body: JsValue
   ): Future[Option[KubernetesValidatingWebhookConfiguration]] = {
     val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations/$name", false)
-    val req = cli
+    val req            = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
         "Content-Type" -> "application/json-patch+json"
       )
-    req.patch(body)
+    req
+      .patch(body)
       .map { resp =>
         Try {
           if (resp.status == 200 || resp.status == 201) {
@@ -831,8 +839,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             None
         }
       }
-      .andThen {
-        case Failure(_) => req.ignore()
+      .andThen { case Failure(_) =>
+        req.ignore()
       }
   }
 
@@ -845,7 +853,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   ): Source[Seq[ByteString], _] = {
     Source.combine(
       watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector),
-      watchResources(namespaces, resources, "proxy.otoroshi.io/v1alpha1", timeout, stop, labelSelector),
+      watchResources(namespaces, resources, "proxy.otoroshi.io/v1alpha1", timeout, stop, labelSelector)
     )(Concat(_))
   }
 

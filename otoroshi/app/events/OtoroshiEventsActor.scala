@@ -8,7 +8,14 @@ import akka.actor.{Actor, Props}
 import akka.http.scaladsl.model.{ContentType, ContentTypes}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3.{ApiVersion, ListBucketResultContents, MemoryBufferType, MetaHeaders, S3Attributes, S3Settings}
+import akka.stream.alpakka.s3.{
+  ApiVersion,
+  ListBucketResultContents,
+  MemoryBufferType,
+  MetaHeaders,
+  S3Attributes,
+  S3Settings
+}
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Attributes, OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
@@ -28,7 +35,20 @@ import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsBoolean, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json.{
+  Format,
+  JsArray,
+  JsBoolean,
+  JsError,
+  JsNull,
+  JsNumber,
+  JsObject,
+  JsResult,
+  JsString,
+  JsSuccess,
+  JsValue,
+  Json
+}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -786,9 +806,12 @@ object Exporters {
           .map { _ =>
             if (exporterConfig.maxNumberOfFile.nonEmpty) {
               val start = file.getName.split("\\.").toSeq.init.mkString(".")
-              val files = file.getParentFile.listFiles(new FilenameFilter() {
-                override def accept(dir: File, name: String): Boolean = name.startsWith(start)
-              }).toSeq.sortWith((f1, f2) => f1.lastModified().compareTo(f2.lastModified()) > 0)
+              val files = file.getParentFile
+                .listFiles(new FilenameFilter() {
+                  override def accept(dir: File, name: String): Boolean = name.startsWith(start)
+                })
+                .toSeq
+                .sortWith((f1, f2) => f1.lastModified().compareTo(f2.lastModified()) > 0)
               files.splitAt(exporterConfig.maxNumberOfFile.get)._2.map(_.delete())
             }
             ExportResult.ExportResultSuccess
@@ -859,8 +882,13 @@ object Exporters {
       }
     }
 
-    def writeToS3WithKeyAndPath(key: String, path: java.nio.file.Path, maxNumberOfFile: Option[Int], conf: S3Configuration): Future[Unit] = {
-      implicit val ec = env.otoroshiExecutionContext
+    def writeToS3WithKeyAndPath(
+        key: String,
+        path: java.nio.file.Path,
+        maxNumberOfFile: Option[Int],
+        conf: S3Configuration
+    ): Future[Unit] = {
+      implicit val ec  = env.otoroshiExecutionContext
       implicit val mat = env.otoroshiMaterializer
       val url          =
         s"${conf.endpoint}/${key}?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
@@ -889,12 +917,16 @@ object Exporters {
               .withAttributes(s3ClientSettingsAttrs(conf))
               .runWith(Sink.seq[ListBucketResultContents])
               .map { contents =>
-                contents.sortWith((c1, c2) => c1.lastModified.compareTo(c2.lastModified) > 0).splitAt(maxNumberOfFile.get)._2.map { content =>
-                  debug(s"deleting ${content.key} - ${content.size} - ${content.lastModified}")
-                  S3.deleteObject(conf.bucket, content.key)
-                    .withAttributes(s3ClientSettingsAttrs(conf))
-                    .runWith(Sink.ignore)
-                }
+                contents
+                  .sortWith((c1, c2) => c1.lastModified.compareTo(c2.lastModified) > 0)
+                  .splitAt(maxNumberOfFile.get)
+                  ._2
+                  .map { content =>
+                    debug(s"deleting ${content.key} - ${content.size} - ${content.lastModified}")
+                    S3.deleteObject(conf.bucket, content.key)
+                      .withAttributes(s3ClientSettingsAttrs(conf))
+                      .runWith(Sink.ignore)
+                  }
               }
           }
           ()

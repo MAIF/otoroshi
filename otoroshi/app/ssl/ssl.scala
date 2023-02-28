@@ -276,8 +276,8 @@ case class Cert(
     env.datastores.certificatesDataStore.set(current)
   }
   lazy val notExpired: Boolean = from.isBefore(org.joda.time.DateTime.now()) && to.isAfter(org.joda.time.DateTime.now())
-  def notExpiredAt(date: DateTime): Boolean = from.isBefore(date) && to.isAfter(date)
-  lazy val notExpiredSoon: Boolean = notExpiredAt(to.minusDays(15))
+  def notExpiredAt(date: DateTime): Boolean             = from.isBefore(date) && to.isAfter(date)
+  lazy val notExpiredSoon: Boolean                      = notExpiredAt(to.minusDays(15))
   lazy val expired: Boolean                             = !notExpired
   def enrich() = {
     val meta = this.metadata.get

@@ -481,12 +481,13 @@ case class NgTransformerRequestContext(
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     implicit val mat = env.otoroshiMaterializer
-    otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _)
+    otoroshiRequest.body
+      .runFold(ByteString.empty)(_ ++ _)
       .map(b => b.encodeBase64.utf8String.json)
       .map(body => {
         json.asObject ++ Json.obj(
           "route" -> route.json,
-          "body" -> body
+          "body"  -> body
         )
       })
   }
@@ -523,15 +524,16 @@ case class NgTransformerResponseContext(
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     implicit val mat = env.otoroshiMaterializer
-    otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _)
+    otoroshiResponse.body
+      .runFold(ByteString.empty)(_ ++ _)
       .map(b => b.encodeBase64.utf8String.json)
       .map(body => {
         json.asObject ++ Json.obj(
           "route" -> route.json,
-          "body" -> body
+          "body"  -> body
         )
       })
-    }
+  }
 }
 
 case class NgTransformerErrorContext(
@@ -773,9 +775,9 @@ case class NgbBackendCallContext(
       case true  => request.body.runFold(ByteString.empty)(_ ++ _).map(b => b.encodeBase64.utf8String.json)
     }).map { body =>
       (json.asObject ++ Json.obj(
-        "route" -> route.json,
+        "route"            -> route.json,
         "raw_request_body" -> body,
-        "request" -> request.json
+        "request"          -> request.json
       ))
     }
   }

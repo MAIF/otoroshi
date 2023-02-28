@@ -175,11 +175,16 @@ object GlobalExpressionLanguage {
                 .getOrElse(s"no-ctx-$field")
             case "user.name" if user.isDefined                              => user.get.name
             case "user.email" if user.isDefined                             => user.get.email
-            case "user.tokens.id_token" if user.isDefined                   => user.get.token.select("id_token").asOpt[String].getOrElse("no-id_token")
-            case "user.tokens.access_token" if user.isDefined               => user.get.token.select("access_token").asOpt[String].getOrElse("no-access_token")
-            case "user.tokens.refresh_token" if user.isDefined              => user.get.token.select("refresh_token").asOpt[String].getOrElse("no-refresh_token")
-            case "user.tokens.token_type" if user.isDefined                 => user.get.token.select("token_type").asOpt[String].getOrElse("no-token_type")
-            case "user.tokens.expires_in" if user.isDefined                 => user.get.token.select("expires_in").asOpt[String].getOrElse("no-expires_in")
+            case "user.tokens.id_token" if user.isDefined                   =>
+              user.get.token.select("id_token").asOpt[String].getOrElse("no-id_token")
+            case "user.tokens.access_token" if user.isDefined               =>
+              user.get.token.select("access_token").asOpt[String].getOrElse("no-access_token")
+            case "user.tokens.refresh_token" if user.isDefined              =>
+              user.get.token.select("refresh_token").asOpt[String].getOrElse("no-refresh_token")
+            case "user.tokens.token_type" if user.isDefined                 =>
+              user.get.token.select("token_type").asOpt[String].getOrElse("no-token_type")
+            case "user.tokens.expires_in" if user.isDefined                 =>
+              user.get.token.select("expires_in").asOpt[String].getOrElse("no-expires_in")
             case r"user.metadata.$field@(.*):$dv@(.*)" if user.isDefined    =>
               user
                 .flatMap(_.otoroshiData)

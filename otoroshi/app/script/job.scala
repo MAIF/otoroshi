@@ -15,7 +15,7 @@ import otoroshi.events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedE
 import otoroshi.models.GlobalConfig
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils
-import otoroshi.utils.{SchedulerHelper, TypedMap, future}
+import otoroshi.utils.{future, SchedulerHelper, TypedMap}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -447,19 +447,19 @@ case class RegisteredJobContext(
       scheduler = actorSystem.scheduler
     )
     Try(job.instantiation(ctx, env)) match {
-      case Failure(e) => JobManager.logger.error("failure during job instantiation fetch", e)
+      case Failure(e)             => JobManager.logger.error("failure during job instantiation fetch", e)
       case Success(instantiation) => {
         instantiation match {
-          case JobInstantiation.OneInstancePerOtoroshiInstance => f
-          case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isOff => f
-          case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isOff => f
-          case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isWorker => f
-          case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isLeader => f
+          case JobInstantiation.OneInstancePerOtoroshiInstance                                             => f
+          case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isOff       => f
+          case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isOff       => f
+          case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isWorker    => f
+          case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isLeader    => f
           case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode == ClusterMode.Off =>
             acquireClusterWideLock(f)
-          case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode.isLeader =>
+          case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode.isLeader           =>
             acquireClusterWideLock(f)
-          case _ => ()
+          case _                                                                                           => ()
         }
       }
     }

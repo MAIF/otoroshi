@@ -352,15 +352,20 @@ class MockResponses extends NgBackendCall {
 
 case class ResponseStatusRange(from: Int, to: Int) {
   def contains(status: Int): Boolean = status >= from && status <= to
-  def json: JsValue = Json.obj(
+  def json: JsValue                  = Json.obj(
     "from" -> from,
-    "to" -> to
+    "to"   -> to
   )
 }
 
-case class NgErrorRewriterConfig(ranges: Seq[ResponseStatusRange], templates: Map[String, String], log: Boolean, export: Boolean) extends NgPluginConfig {
+case class NgErrorRewriterConfig(
+    ranges: Seq[ResponseStatusRange],
+    templates: Map[String, String],
+    log: Boolean,
+    export: Boolean
+) extends NgPluginConfig {
   def matching(status: Int): Boolean = ranges.exists(_.contains(status))
-  def json: JsValue = NgErrorRewriterConfig.fmt.writes(this)
+  def json: JsValue                  = NgErrorRewriterConfig.fmt.writes(this)
 }
 
 object NgErrorRewriterConfig {
@@ -368,33 +373,39 @@ object NgErrorRewriterConfig {
     ranges = Seq(
       ResponseStatusRange(500, 599)
     ),
-    templates = Map("default" ->
+    templates = Map(
+      "default" ->
       """<html>
         |  <body style="background-color: #333; color: #eee; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 40px">
         |    <p>An error occurred with id: <span style="color: red">${error_id}</span></p>
         |    <p>please contact your administrator with this error id !</p>
         |  </body>
-        |</html>""".stripMargin),
+        |</html>""".stripMargin
+    ),
     log = true,
-    export = true,
+    export = true
   )
-  val fmt = new Format[NgErrorRewriterConfig] {
+  val fmt     = new Format[NgErrorRewriterConfig] {
     override def reads(json: JsValue): JsResult[NgErrorRewriterConfig] = Try {
       NgErrorRewriterConfig(
         log = json.select("log").asOpt[Boolean].getOrElse(false),
         export = json.select("export").asOpt[Boolean].getOrElse(false),
         templates = json.select("templates").asOpt[Map[String, String]].getOrElse(Map.empty),
-        ranges = json.select("ranges").asOpt[JsArray].map(arr => arr.value.map(item => ResponseStatusRange(item.select("from").asInt, item.select("to").asInt))).getOrElse(Seq.empty)
+        ranges = json
+          .select("ranges")
+          .asOpt[JsArray]
+          .map(arr => arr.value.map(item => ResponseStatusRange(item.select("from").asInt, item.select("to").asInt)))
+          .getOrElse(Seq.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(s) => JsSuccess(s)
     }
-    override def writes(o: NgErrorRewriterConfig): JsValue = Json.obj(
-      "ranges" -> JsArray(o.ranges.map(_.json)),
+    override def writes(o: NgErrorRewriterConfig): JsValue             = Json.obj(
+      "ranges"    -> JsArray(o.ranges.map(_.json)),
       "templates" -> o.templates,
-      "log" -> o.log,
-      "export" -> o.export
+      "log"       -> o.log,
+      "export"    -> o.export
     )
   }
 }
@@ -403,41 +414,57 @@ class NgErrorRewriter extends NgRequestTransformer {
 
   private val logger = Logger("otoroshi-plugins-error-rewriter")
 
-  override def multiInstance: Boolean = true
+  override def multiInstance: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = NgErrorRewriterConfig.default.some
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def core: Boolean = true
-  override def usesCallbacks: Boolean = false
-  override def transformsRequest: Boolean = false
-  override def transformsResponse: Boolean = true
-  override def transformsError: Boolean = false
-  override def isTransformRequestAsync: Boolean = false
-  override def isTransformResponseAsync: Boolean = true
+  override def steps: Seq[NgStep]                          = Seq(NgStep.TransformResponse)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Transformations)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = false
+  override def transformsResponse: Boolean                 = true
+  override def transformsError: Boolean                    = false
+  override def isTransformRequestAsync: Boolean            = false
+  override def isTransformResponseAsync: Boolean           = true
 
   override def name: String = "Error response rewrite"
 
   override def description: Option[String] =
     "This plugin catch http response with specific statuses and rewrite the response".some
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponse(
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(NgErrorRewriterConfig.fmt).getOrElse(NgErrorRewriterConfig.default)
     if (config.matching(ctx.otoroshiResponse.status)) {
-      val errorId = UUID.randomUUID().toString
-      val (defaultCtype: String, defaultTemplate: String) = config.templates.get("default").map(v => ("text/html", v)).orElse(config.templates.headOption).getOrElse(("text/plain", "error: ${error_id}"))
-      val (ctype: String, template: String) = config.templates.keys.find(ct => ctx.request.accepts(ct)).flatMap(key => config.templates.get(key).map(v => (key, v))).getOrElse((defaultCtype, defaultTemplate))
+      val errorId                                         = UUID.randomUUID().toString
+      val (defaultCtype: String, defaultTemplate: String) = config.templates
+        .get("default")
+        .map(v => ("text/html", v))
+        .orElse(config.templates.headOption)
+        .getOrElse(("text/plain", "error: ${error_id}"))
+      val (ctype: String, template: String)               = config.templates.keys
+        .find(ct => ctx.request.accepts(ct))
+        .flatMap(key => config.templates.get(key).map(v => (key, v)))
+        .getOrElse((defaultCtype, defaultTemplate))
       ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
         val responseBody = template.replace("${error_id}", errorId)
-        val response = ctx.otoroshiResponse.copy(
+        val response     = ctx.otoroshiResponse.copy(
           status = ctx.otoroshiResponse.status,
           headers = Map(
-            "content-type" -> ctype.applyOnWithPredicate(_ == "default")(_ => "text/html"),
+            "content-type" -> ctype.applyOnWithPredicate(_ == "default")(_ => "text/html")
           ),
           cookies = Seq.empty,
           body = responseBody.byteString.chunks(16 * 1024)
         )
-        val event = ErrorRewriteReport(errorId, NgPluginHttpRequest.fromRequest(ctx.request), ctx.otoroshiResponse, bodyRaw.utf8String, response, responseBody)
+        val event        = ErrorRewriteReport(
+          errorId,
+          NgPluginHttpRequest.fromRequest(ctx.request),
+          ctx.otoroshiResponse,
+          bodyRaw.utf8String,
+          response,
+          responseBody
+        )
         if (config.log) {
           logger.error(s"new error rewritten with id: ${errorId}, event: ${event.toJson(env).prettify}")
         }
@@ -452,28 +479,35 @@ class NgErrorRewriter extends NgRequestTransformer {
   }
 }
 
-case class ErrorRewriteReport(id: String, request: NgPluginHttpRequest, rawResponse: NgPluginHttpResponse, rawResponseBody: String, response: NgPluginHttpResponse, responseBody: String) extends AnalyticEvent {
+case class ErrorRewriteReport(
+    id: String,
+    request: NgPluginHttpRequest,
+    rawResponse: NgPluginHttpResponse,
+    rawResponseBody: String,
+    response: NgPluginHttpResponse,
+    responseBody: String
+) extends AnalyticEvent {
 
   private val timestamp = DateTime.now()
 
-  override def `@type`: String = "ErrorRewriteReport"
-  override def `@id`: String = id
-  override def `@timestamp`: DateTime = timestamp
-  override def `@service`: String = "Otoroshi"
-  override def `@serviceId`: String = "--"
-  override def fromOrigin: Option[String] = None
+  override def `@type`: String               = "ErrorRewriteReport"
+  override def `@id`: String                 = id
+  override def `@timestamp`: DateTime        = timestamp
+  override def `@service`: String            = "Otoroshi"
+  override def `@serviceId`: String          = "--"
+  override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
-    "@id" -> `@id`,
-    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
-    "@type" -> `@type`,
-    "@product" -> _env.eventsName,
-    "@serviceId" -> `@serviceId`,
-    "@service" -> `@service`,
-    "@env" -> "prod",
-    "request" -> request.json,
+    "@id"               -> `@id`,
+    "@timestamp"        -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"             -> `@type`,
+    "@product"          -> _env.eventsName,
+    "@serviceId"        -> `@serviceId`,
+    "@service"          -> `@service`,
+    "@env"              -> "prod",
+    "request"           -> request.json,
     "original_response" -> (rawResponse.json.asObject ++ Json.obj("body" -> rawResponseBody)),
-    "sent_response" -> (response.json.asObject ++ Json.obj("body" -> responseBody)),
+    "sent_response"     -> (response.json.asObject ++ Json.obj("body" -> responseBody))
   )
 }
