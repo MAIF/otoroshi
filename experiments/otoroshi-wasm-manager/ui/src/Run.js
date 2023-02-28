@@ -156,7 +156,7 @@ export class Run extends React.Component {
           <label htmlFor="output" className='form-label'>Output</label>
           <ReactCodeMirror
             id="output"
-            value={output}
+            value={(typeof output === 'string' || output instanceof String) ? output : JSON.stringify(output, null, 4)}
             extensions={[]}
             readOnly={true}
             editable={false}

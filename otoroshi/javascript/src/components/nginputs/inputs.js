@@ -1114,6 +1114,8 @@ export class NgSelectRenderer extends Component {
     const creatable = this.state.creatable || props.creatable || this.props.creatable;
     const Component = creatable ? Creatable : Select;
 
+    console.log(this.props)
+
     return (
       <LabelAndInput {...this.props}>
         {readOnly && <ReadOnlyField value={this.props.value} />}
@@ -1131,6 +1133,7 @@ export class NgSelectRenderer extends Component {
               this.state.options || props.options || this.props.options
             )}
             onChange={(e) => {
+              console.log(e, this.state.options)
               if (creatable && !this.state.options.find((o) => o.value === e?.value)) {
                 this.setState({
                   options: [...this.state.options, e.value],

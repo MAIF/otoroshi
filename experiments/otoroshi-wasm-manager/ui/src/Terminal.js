@@ -7,14 +7,12 @@ const socket = io();
 
 function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, selectedPlugin, onLoadConfigurationFile, configFiles }) {
   const [content, setContent] = useState('');
-  const [hasConfigurationFile, setConfigurationFile] = useState(configFiles.find(f => f.filename === 'config'));
   const [loadConfigurationFile, setLoadConfigurationFile] = useState(false);
   const ref = useRef();
 
   useEffect(() => {
     if (loadConfigurationFile) {
       onLoadConfigurationFile()
-      setConfigurationFile(true);
       setLoadConfigurationFile(false);
     }
   }, [loadConfigurationFile]);
@@ -26,7 +24,7 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
           changeTerminalSize(0.5);
         }
 
-        if (hasConfigurationFile === undefined && text.includes("Build done")) {
+        if (text.includes("You can now use the generated wasm")) {
           setLoadConfigurationFile(true)
         }
 

@@ -32,7 +32,7 @@ async function extractInformations(folder, pluginType) {
       const informations = JSON.parse(data);
       return {
         pluginName: informations.name.replace('-', '_'),
-        pluginVersion: informations.file.version
+        pluginVersion: informations.version
       }
     }
   } catch (err) {

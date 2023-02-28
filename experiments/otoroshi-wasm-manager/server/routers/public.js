@@ -34,27 +34,37 @@ router.use((req, res, next) => {
   }
 })
 
-router.get('/wasm/:id', (req, res) => {
+router.get('/wasm/:pluginId/:version', (req, res) => getWasm(`${req.params.pluginId}-${req.params.version}.wasm`, res));
+router.get('/wasm/:id', (req, res) => getWasm(req.params.id, res))
+
+function getWasm(Key, res) {
   const { s3, Bucket } = S3.state()
 
-  s3.getObject({
-    Bucket,
-    Key: req.params.id
-  })
-    .promise()
-    .then(data => {
-      res.attachment(req.params.id);
-      res.send(data.Body);
+  return new Promise(resolve => {
+    s3.getObject({
+      Bucket,
+      Key
     })
-    .catch(err => {
-      res
-        .status(err.statusCode)
-        .json({
+      .promise()
+      .then(data => {
+        resolve({ content: data.Body });
+      })
+      .catch(err => {
+        resolve({
           error: err.code,
           status: err.statusCode
         })
-    })
-})
+      });
+  })
+    .then(({ content, error, status }) => {
+      if (error) {
+        res.status(status).json({ error, status })
+      } else {
+        res.attachment(Key);
+        res.send(content);
+      }
+    });
+}
 
 router.get('/plugins', (req, res) => {
   if (req.headers['kind']) {

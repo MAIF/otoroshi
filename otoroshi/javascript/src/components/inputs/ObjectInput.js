@@ -12,7 +12,7 @@ export class ObjectInput extends React.Component {
 
   componentDidUpdate(prevProps) {
     if (prevProps.value !== this.props.value) {
-      const newData = Object.entries(this.props.value).map(([key, value], i) => ({
+      const newData = Object.entries(this.props.value || {}).map(([key, value], i) => ({
         idx: i,
         key,
         value,

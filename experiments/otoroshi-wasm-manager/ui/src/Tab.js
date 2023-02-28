@@ -8,11 +8,6 @@ import { javascript } from '@codemirror/lang-javascript';
 import { autocompletion } from '@codemirror/autocomplete';
 
 function Tab({ content, ext, handleContent, selected, readOnly }) {
-  const onChange = React.useCallback((value, viewUpdate) => {
-    handleContent(value)
-  }, []);
-
-
   if (!content)
     return null
 
@@ -33,7 +28,9 @@ function Tab({ content, ext, handleContent, selected, readOnly }) {
         ext === 'rs' ? rust() : (ext === 'ts' || ext === 'js') ? javascript({ typescript: true }) : json(),
       autocompletion()
     ]}
-    onChange={onChange}
+    onChange={value => {
+      handleContent(value)
+    }}
   />
 }
 export default Tab;

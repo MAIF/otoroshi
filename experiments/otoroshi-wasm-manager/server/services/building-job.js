@@ -118,14 +118,14 @@ const addChildListener = (plugin, child, stdoutStream, stderrStream) => {
 const onSuccessProcess = (plugin, user, buildFolder, logsFolder, wasmName, zipHash, resolve, reject, code, isRustBuild) => {
   WebSocket.emit(plugin, "BUILD", "Build done.\n")
   try {
-    const newFilename = `${plugin}.wasm`
+    const newFilename = `${wasmName}.wasm`
     WebSocket.emit(plugin, "PACKAGE", "Starting package ...\n")
     Promise.all([
       saveWasmFile(
         plugin,
         newFilename,
         isRustBuild ?
-          path.join(buildFolder, 'target', 'wasm32-unknown-unknown', 'release', `${wasmName}.wasm`) :
+          path.join(buildFolder, 'target', 'wasm32-unknown-unknown', 'release', `${wasmName.substring(0, wasmName.lastIndexOf('-'))}.wasm`) :
           path.join(buildFolder, `${wasmName}.wasm`)
       ),
       saveLogsFile(
@@ -161,6 +161,7 @@ const saveWasmFile = (plugin, filename, srcFile) => {
   return new Promise((resolve, reject) => {
     fs.readFile(srcFile, (err, data) => {
       if (err) {
+        console.log(err)
         reject(err)
       } else {
         const params = {
@@ -242,10 +243,17 @@ function updateHashOfPlugin(user, plugin, newHash, wasm) {
       ...data,
       plugins: data.plugins.map(d => {
         if (d.pluginId === plugin) {
+
+          const versions = d.versions || [];
+
+          if (!versions.includes(wasm))
+            versions.push(wasm)
+
           return {
             ...d,
             last_hash: newHash,
-            wasm
+            wasm,
+            versions
           }
         } else {
           return d

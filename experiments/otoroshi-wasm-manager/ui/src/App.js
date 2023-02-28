@@ -153,6 +153,7 @@ class App extends React.Component {
   onNewPlugin = type => {
     this.setState({
       editorState: 'onNewPlugin',
+      selectedPlugin: undefined,
       plugins: [
         ...this.state.plugins,
         {
@@ -280,9 +281,10 @@ class App extends React.Component {
           .then(res => {
             // first case match the creation of a new plugin
             if (res.error && res.status === 404) {
+              const fetchTypesNeeded = ['ts', 'rust'].includes(plugin.type);
               Promise.all([
                 Service.getPluginTemplate(plugin.type),
-                Service.getPluginTypes(plugin.type)
+                fetchTypesNeeded ? Service.getPluginTypes(plugin.type) : Promise.resolve({ status: 200 })
               ])
                 .then(([template, types]) => {
                   if (template.status !== 200) {
@@ -290,23 +292,25 @@ class App extends React.Component {
                   } else if (types.status !== 200) {
                     types.json().then(window.alert)
                   } else {
-                    Promise.all([template.blob(), types.blob()])
+                    Promise.all([template.blob(), fetchTypesNeeded ? types.blob() : Promise.resolve()])
                       .then(([templatesFiles, typesFile]) => {
                         this.downloadPluginTemplate(templatesFiles, plugin)
                           .then(() => {
-                            const filename = `types.${plugin.type}`;
-                            new File([typesFile], "").text()
-                              .then(content => {
-                                this.setState({
-                                  selectedPlugin: {
-                                    ...this.state.selectedPlugin,
-                                    files: [
-                                      ...this.state.selectedPlugin.files,
-                                      { filename, content, ext: filename.split('.')[1] }
-                                    ]
-                                  }
+                            if (fetchTypesNeeded) {
+                              const filename = `types.${plugin.type}`;
+                              new File([typesFile], "").text()
+                                .then(content => {
+                                  this.setState({
+                                    selectedPlugin: {
+                                      ...this.state.selectedPlugin,
+                                      files: [
+                                        ...this.state.selectedPlugin.files,
+                                        { filename, content, ext: filename.split('.')[1] }
+                                      ]
+                                    }
+                                  });
                                 });
-                              });
+                            }
                           });
                       });
                   }
@@ -366,6 +370,9 @@ class App extends React.Component {
 
   handleContent = (filename, newContent) => {
     const { selectedPlugin } = this.state;
+
+    console.log('handleContent', filename, newContent)
+
     this.setState({
       selectedPlugin: {
         ...selectedPlugin,

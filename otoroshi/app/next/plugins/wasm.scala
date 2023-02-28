@@ -21,7 +21,7 @@ import java.nio.file.{Files, Paths}
 import scala.concurrent.duration.{DurationInt, FiniteDuration, MILLISECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success, Try, Using}
 
 
 case class WasmQueryConfig(
@@ -30,7 +30,8 @@ case class WasmQueryConfig(
                             memoryPages: Int = 4,
                             functionName: String = "execute",
                             config: Map[String, String] = Map.empty,
-                            allowedHosts: Seq[String] = Seq.empty
+                            allowedHosts: Seq[String] = Seq.empty,
+                            wasi: Boolean = false
                           ) extends NgPluginConfig {
   def json: JsValue = Json.obj(
     "raw_source" -> rawSource,
@@ -38,7 +39,8 @@ case class WasmQueryConfig(
     "memoryPages" -> memoryPages,
     "functionName"-> functionName,
     "config" -> config,
-    "allowedHosts" -> allowedHosts
+    "allowedHosts" -> allowedHosts,
+    "wasi" -> wasi
   )
 }
 
@@ -51,7 +53,8 @@ object WasmQueryConfig {
         memoryPages = (json \ "memoryPages").asOpt[Int].getOrElse(4),
         functionName = (json \ "functionName").asOpt[String].getOrElse("execute"),
         config = (json \ "config").asOpt[Map[String, String]].getOrElse(Map.empty),
-        allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty)
+        allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty),
+        wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false),
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -117,23 +120,22 @@ object WasmUtils {
   }
 
   def callWasm(wasm: ByteString, config: WasmQueryConfig, input: JsValue) = {
-    val resolver = new WasmSourceResolver()
-    val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
-    val manifest = new Manifest(
-      Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
-      new MemoryOptions(config.memoryPages),
-      config.config.asJava,
-      config.allowedHosts.asJava
-    )
+    Using (new Context()) { context =>
+      val resolver = new WasmSourceResolver()
+      val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
+      val manifest = new Manifest(
+        Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
+        new MemoryOptions(config.memoryPages),
+        config.config.asJava,
+        config.allowedHosts.asJava
+      )
 
-    val context = new Context()
-    val plugin = context.newPlugin(manifest, true)
-
-    val output = plugin.call(config.functionName, input.stringify)
-
-    plugin.free()
-
-    output
+      Using (context.newPlugin(manifest, true, null)) { plugin =>
+        val output = plugin.call(config.functionName, input.stringify)
+        plugin.free()
+        output
+      }.get
+    }.get
   }
 
   def execute(config: WasmQueryConfig, input: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
