@@ -18,6 +18,7 @@ import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc.{Result, Results}
 
 import java.nio.file.{Files, Paths}
+import scala.annotation.tailrec
 import scala.concurrent.duration.{DurationInt, FiniteDuration, MILLISECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
@@ -68,7 +69,7 @@ object WasmQueryConfig {
 object WasmUtils {
   private val scriptCache: Cache[String, ByteString] = Scaffeine()
     .recordStats()
-    .expireAfterWrite(30.seconds)
+    .expireAfterWrite(3000.seconds)
     .maximumSize(100)
     .build()
 
@@ -119,23 +120,31 @@ object WasmUtils {
     }
   }
 
-  def callWasm(wasm: ByteString, config: WasmQueryConfig, input: JsValue) = {
-    Using (new Context()) { context =>
-      val resolver = new WasmSourceResolver()
-      val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
-      val manifest = new Manifest(
-        Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
-        new MemoryOptions(config.memoryPages),
-        config.config.asJava,
-        config.allowedHosts.asJava
-      )
+  @tailrec
+  def callWasm(wasm: ByteString, config: WasmQueryConfig, input: JsValue, nRetry: Int = 1): String = {
+    val context = new Context()
+    val resolver = new WasmSourceResolver()
+    val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
+    val manifest = new Manifest(
+      Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
+      new MemoryOptions(config.memoryPages),
+      config.config.asJava,
+      config.allowedHosts.asJava
+    )
 
-      Using (context.newPlugin(manifest, true, null)) { plugin =>
-        val output = plugin.call(config.functionName, input.stringify)
-        plugin.free()
-        output
-      }.get
-    }.get
+    try {
+      val plugin = context.newPlugin(manifest, true, null)
+      val output = plugin.call(config.functionName, input.stringify)
+      plugin.close()
+      output
+    } catch {
+      case e: Exception =>
+        if (e.getMessage == "unknown import: `wasi_snapshot_preview1::fd_write` has not been defined" && nRetry > 0) {
+          callWasm(wasm, config, input, nRetry - 1)
+        } else {
+          e.getMessage
+        }
+    }
   }
 
   def execute(config: WasmQueryConfig, input: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
