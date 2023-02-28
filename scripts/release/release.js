@@ -434,10 +434,10 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
       await runSystemCommand('git', ['pull', '--rebase', 'origin', 'master'], location);
       await runSystemCommand('git', ['push', 'origin', 'master'], location);
       await runSystemCommand('git', ['push', '--tags'], location);
-      console.log("Release done !");
     });
     await ensureStep('PUBLISH_DOCKER_OTOROSHI', releaseFile, () => publishDockerOtoroshi(location, to));
     await ensureStep('PUBLISH_HELM_CHART', releaseFile, () => publishHelmChart(location, to));
+    console.log("Release done !");
     process.exit(0);
   }
 }
