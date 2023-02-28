@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Data exporters · Otoroshi</title>
+<title>Tailscale integration · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -62,7 +62,7 @@
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="active page">Data exporters</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
@@ -91,7 +91,7 @@
   <ul>
     <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
     <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
-    <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html" class="active page">Tailscale integration</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -190,7 +190,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
     <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="active page">Data exporters</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/scripts.html" class="page">Scripts</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
@@ -219,7 +219,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../how-to-s/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
     <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
-    <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html" class="active page">Tailscale integration</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
     <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
@@ -272,8 +272,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
-  <li><a href="../entities/index.html">Main entities</a></li>
-  <li>Data exporters</li>
+  <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
+  <li>Tailscale integration</li>
 </ul>
 </div>
 </div>
@@ -281,213 +281,27 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#data-exporters" name="data-exporters" class="anchor"><span class="anchor-link"></span></a>Data exporters</h1>
-<p>The data exporters are the way to export alerts and events from Otoroshi to an external storage.</p>
-<p>To try them, you can folllow <a href="../how-to-s/export-alerts-using-mailgun.html">this tutorial</a>.</p>
-<h2><a href="#common-fields" name="common-fields" class="anchor"><span class="anchor-link"></span></a>Common fields</h2>
+<h1><a href="#tailscale-integration" name="tailscale-integration" class="anchor"><span class="anchor-link"></span></a>Tailscale integration</h1>
+<p><a href="https://tailscale.com/">Tailscale</a> is a VPN service that let you create your own private network based on <a href="https://www.wireguard.com/">Wireguard</a>. Tailscale goes beyond the simple meshed wireguard based VPN and offers out of the box NAT traversal, third party identity provider integration, access control, magic DNS and let&rsquo;s encrypt integration for the machines on your VPN.</p>
+<p>Otoroshi provides somes plugins out of the box to work in a <a href="https://tailscale.com/">Tailscale</a> environment.</p>
+<p>by default Otoroshi, works out of the box when integrated in a <code>tailnet</code> as you can contact other machines usign their ip address. But we can go a little bit further.</p>
+<h2><a href="#tailnet-configuration" name="tailnet-configuration" class="anchor"><span class="anchor-link"></span></a>tailnet configuration</h2>
+<p>first thing, go to your tailnet setting on <a href="https://login.tailscale.com/admin/machines">tailscale.com</a> and go to the <a href="https://login.tailscale.com/admin/dns">DNS tab</a>. Here you can find </p>
 <ul>
-  <li><code>Type</code>: the type of event exporter</li>
-  <li><code>Enabled</code>: enabled or not the exporter</li>
-  <li><code>Name</code>: given name to the exporter</li>
-  <li><code>Description</code>: the data exporter description</li>
-  <li><code>Tags</code>: list of tags associated to the module</li>
-  <li><code>Metadata</code>: list of metadata associated to the module</li>
+  <li>your tailnet name: the domain name of all your machines on your tailnet</li>
+  <li>MagicDNS: a way to address your machines by directly using their names</li>
+  <li>HTTPS Certificates: HTTPS certificates provision for all your machines</li>
 </ul>
-<p>All exporters are split in three parts. The first and second parts are common and the last are specific by exporter.</p>
-<ul>
-  <li><code>Filtering and projection</code> : section to filter the list of sent events and alerts. The projection field allows you to export only certain event fields and reduce the size of exported data. It&rsquo;s composed of <code>Filtering</code> and <code>Projection</code> fields. To get a full usage of this elements, read <a href="data-exporters.html#matching-and-projections">this section</a></li>
-  <li><code>Queue details</code>: set of fields to adjust the workers of the exporter.</li>
-  <li><code>Buffer size</code>: if elements are pushed onto the queue faster than the source is consumed the overflow will be handled with a strategy specified by the user. Keep in memory the number of events.</li>
-  <li><code>JSON conversion workers</code>: number of workers used to transform events to JSON format in paralell</li>
-  <li><code>Send workers</code>: number of workers used to send transformed events</li>
-  <li><code>Group size</code>: chunk up this stream into groups of elements received within a time window (the time window is the next field)</li>
-  <li><code>Group duration</code>: waiting time before sending the group of events. If the group size is reached before the group duration, the events will be instantly sent</li>
-</ul>
-<p>For the last part, the <code>Exporter configuration</code> will be detail individually.</p>
-<h2><a href="#matching-and-projections" name="matching-and-projections" class="anchor"><span class="anchor-link"></span></a>Matching and projections</h2>
-<p><strong>Filtering</strong> is used to <strong>include</strong> or <strong>exclude</strong> some kind of events and alerts. For each include and exclude field, you can add a list of key-value. </p>
-<p>Let&rsquo;s say we only want to keep Otoroshi alerts</p>
-<pre class="prettyprint"><code class="language-json">{ &quot;include&quot;: [{ &quot;@type&quot;: &quot;AlertEvent&quot; }] }
-</code></pre>
-<p>Otoroshi provides a list of rules to keep only events with specific values. We will use the following event to illustrate.</p>
-<pre class="prettyprint"><code class="language-json">{
- &quot;foo&quot;: &quot;bar&quot;,
- &quot;type&quot;: &quot;AlertEvent&quot;,
- &quot;alert&quot;: &quot;big-alert&quot;,
- &quot;status&quot;: 200,
- &quot;codes&quot;: [&quot;a&quot;, &quot;b&quot;],
- &quot;inner&quot;: {
-   &quot;foo&quot;: &quot;bar&quot;,
-   &quot;bar&quot;: &quot;foo&quot;
- }
-}
-</code></pre>
-<p>The rules apply with the previous example as event.</p><div id="filtering">
-<p>&nbsp;</p></div>
-<p><strong>Projection</strong> is a list of fields to export. In the case of an empty list, all the fields of an event will be exported. In other case, <strong>only</strong> the listed fields will be exported.</p>
-<p>Let&rsquo;s say we only want to keep Otoroshi alerts and only type, timestamp and id of each exported events</p>
-<pre class="prettyprint"><code class="language-json">{
- &quot;@type&quot;: true,
- &quot;@timestamp&quot;: true,
- &quot;@id&quot;: true
-}
-</code></pre>
-<p>An other possibility is to <strong>rename</strong> the exported field. This value will be the same but the exported field will have a different name.</p>
-<p>Let&rsquo;s say we want to rename all <code>@id</code> field with <code>unique-id</code> as key</p>
-<pre class="prettyprint"><code class="language-json">{ &quot;@id&quot;: &quot;unique-id&quot; }
-</code></pre>
-<p>The last possiblity is to retrieve a sub-object of an event. Let&rsquo;s say we want to get the name of each exported user of events.</p>
-<pre class="prettyprint"><code class="language-json">{ &quot;user&quot;: { &quot;name&quot;: true } }
-</code></pre>
-<p>You can also expand the entire source object with </p>
-<pre class="prettyprint"><code class="language-json">{
-  &quot;$spread&quot;: true
-}
-</code></pre>
-<p>and the remove fields you don&rsquo;t want with </p>
-<pre class="prettyprint"><code class="language-json">{
-  &quot;fieldthatidontwant&quot;: false
-}
-</code></pre>
-<h2><a href="#elastic" name="elastic" class="anchor"><span class="anchor-link"></span></a>Elastic</h2>
-<p>With this kind of exporter, every matching event will be sent to an elastic cluster (in batch). It is quite useful and can be used in combination with <a href="./global-config.html#analytics-elastic-dashboard-datasource-read-">elastic read in global config</a></p>
-<ul>
-  <li><code>Cluster URI</code>: Elastic cluster URI</li>
-  <li><code>Index</code>: Elastic index</li>
-  <li><code>Type</code>: Event type (not needed for elasticsearch above 6.x)</li>
-  <li><code>User</code>: Elastic User (optional)</li>
-  <li><code>Password</code>: Elastic password (optional)</li>
-  <li><code>Version</code>: Elastic version (optional, if none provided it will be fetched from cluster)</li>
-  <li><code>Apply template</code>: Automatically apply index template</li>
-  <li><code>Check Connection</code>: Button to test the configuration. It will displayed a modal with checked point, and if the case of it&rsquo;s successfull, it will displayed the found version of the Elasticsearch and the index used</li>
-  <li><code>Manually apply index template</code>: try to put the elasticsearch template by calling the api of elasticsearch</li>
-  <li><code>Show index template</code>: try to retrieve the current index template presents in elasticsearch</li>
-  <li><code>Client side temporal indexes handling</code>: When enabled, Otoroshi will manage the creation of indexes. When it&rsquo;s disabled, Otoroshi will push in the same index</li>
-  <li><code>One index per</code>: When the previous field is enabled, you can choose the interval of time between the creation of a new index in elasticsearch</li>
-  <li><code>Custom TLS Settings</code>: Enable the TLS configuration for the communication with Elasticsearch</li>
-  <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
-  <li><code>TrustAll</code>: allows any server certificates even the self-signed ones</li>
-  <li><code>Client certificates</code>: list of client certificates used to communicate with elasticsearch</li>
-  <li><code>Trusted certificates</code>: list of trusted certificates received from elasticsearch</li>
-</ul>
-<h2><a href="#webhook" name="webhook" class="anchor"><span class="anchor-link"></span></a>Webhook</h2>
-<p>With this kind of exporter, every matching event will be sent to a URL (in batch) using a POST method and an JSON array body.</p>
-<ul>
-  <li><code>Alerts hook URL</code>: url used to post events</li>
-  <li><code>Hook Headers</code>: headers add to the post request</li>
-  <li><code>Custom TLS Settings</code>: Enable the TLS configuration for the communication with Elasticsearch</li>
-  <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
-  <li><code>TrustAll</code>: allows any server certificates even the self-signed ones</li>
-  <li><code>Client certificates</code>: list of client certificates used to communicate with elasticsearch</li>
-  <li><code>Trusted certificates</code>: list of trusted certificates received from elasticsearch</li>
-</ul>
-<h2><a href="#pulsar" name="pulsar" class="anchor"><span class="anchor-link"></span></a>Pulsar</h2>
-<p>With this kind of exporter, every matching event will be sent to an <a href="https://pulsar.apache.org/">Apache Pulsar topic</a></p>
-<ul>
-  <li><code>Pulsar URI</code>: URI of the pulsar server</li>
-  <li><code>Custom TLS Settings</code>: Enable the TLS configuration for the communication with Elasticsearch</li>
-  <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
-  <li><code>TrustAll</code>: allows any server certificates even the self-signed ones</li>
-  <li><code>Client certificates</code>: list of client certificates used to communicate with elasticsearch</li>
-  <li><code>Trusted certificates</code>: list of trusted certificates received from elasticsearch</li>
-  <li><code>Pulsar tenant</code>: tenant on the pulsar server</li>
-  <li><code>Pulsar namespace</code>: namespace on the pulsar server</li>
-  <li><code>Pulsar topic</code>: topic on the pulsar server</li>
-</ul>
-<h2><a href="#kafka" name="kafka" class="anchor"><span class="anchor-link"></span></a>Kafka</h2>
-<p>With this kind of exporter, every matching event will be sent to an <a href="https://kafka.apache.org/">Apache Kafka topic</a>. You can find few <a href="../how-to-s/communicate-with-kafka.html">tutorials</a> about the connection between Otoroshi and Kafka based on docker images.</p>
-<ul>
-  <li><code>Kafka Servers</code>: the list of servers to contact to connect the Kafka client with the Kafka cluster</li>
-  <li><code>Kafka topic</code>: the topic on which Otoroshi alerts will be sent</li>
-</ul>
-<p>By default, Kafka is installed with no authentication. Otoroshi supports the following authentication mechanisms and protocols for Kafka brokers.</p>
-<h3><a href="#sasl" name="sasl" class="anchor"><span class="anchor-link"></span></a>SASL</h3>
-<p>The Simple Authentication and Security Layer (SASL) [RFC4422] is a method for adding authentication support to connection-based protocols.</p>
-<ul>
-  <li><code>SASL username</code>: the client username</li>
-  <li><code>SASL password</code>: the client username</li>
-  <li><code>SASL Mechanism</code>:
-    <ul>
-      <li><code>PLAIN</code>: SASL/PLAIN uses a simple username and password for authentication.</li>
-      <li><code>SCRAM-SHA-256</code> and <code>SCRAM-SHA-512</code>: SASL/SCRAM uses usernames and passwords stored in ZooKeeper. Credentials are created during installation.</li>
-    </ul>
-  </li>
-</ul>
-<h3><a href="#ssl" name="ssl" class="anchor"><span class="anchor-link"></span></a>SSL</h3>
-<ul>
-  <li><code>Kafka keypass</code>: the keystore password if you use a keystore/truststore to connect to Kafka cluster</li>
-  <li><code>Kafka keystore path</code>: the keystore path on the server if you use a keystore/truststore to connect to Kafka cluster</li>
-  <li><code>Kafka truststore path</code>: the truststore path on the server if you use a keystore/truststore to connect to Kafka cluster</li>
-  <li><code>Custom TLS Settings</code>: enable the TLS configuration for the communication with Elasticsearch
-    <ul>
-      <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
-      <li><code>TrustAll</code>: allows any server certificates even the self-signed ones</li>
-      <li><code>Client certificates</code>: list of client certificates used to communicate with elasticsearch</li>
-      <li><code>Trusted certificates</code>: list of trusted certificates received from elasticsearch</li>
-    </ul>
-  </li>
-</ul>
-<h3><a href="#sasl-ssl" name="sasl-ssl" class="anchor"><span class="anchor-link"></span></a>SASL + SSL</h3>
-<p>This mechanism uses the SSL configuration and the SASL configuration.</p>
-<h2><a href="#mailer" name="mailer" class="anchor"><span class="anchor-link"></span></a>Mailer</h2>
-<p>With this kind of exporter, every matching event will be sent in batch as an email (using one of the following email provider)</p>
-<p>Otoroshi supports 5 exporters of email type.</p>
-<h3><a href="#console" name="console" class="anchor"><span class="anchor-link"></span></a>Console</h3>
-<p>Nothing to add. The events will be write on the standard output.</p>
-<h3><a href="#generic" name="generic" class="anchor"><span class="anchor-link"></span></a>Generic</h3>
-<ul>
-  <li><code>Mailer url</code>: URL used to push events</li>
-  <li><code>Headers</code>: headers add to the push requests</li>
-  <li><code>Email addresses</code>: recipients of the emails</li>
-</ul>
-<h3><a href="#mailgun" name="mailgun" class="anchor"><span class="anchor-link"></span></a>Mailgun</h3>
-<ul>
-  <li><code>EU</code>: is EU server ? if enabled, *<a href="https://api.eu.mailgun.net/*">https://api.eu.mailgun.net/*</a> will be used, otherwise, the US URL will be used : *<a href="https://api.mailgun.net/*">https://api.mailgun.net/*</a>
-</li>
-  <li><code>Mailgun api key</code>: API key of the mailgun account</li>
-  <li><code>Mailgun domain</code>: domain name of the mailgun account</li>
-  <li><code>Email addresses</code>: recipients of the emails</li>
-</ul>
-<h3><a href="#mailjet" name="mailjet" class="anchor"><span class="anchor-link"></span></a>Mailjet</h3>
-<ul>
-  <li><code>Public api key</code>: public key of the mailjet account</li>
-  <li><code>Private api key</code>: private key of the mailjet account</li>
-  <li><code>Email addresses</code>: recipients of the emails</li>
-</ul>
-<h3><a href="#sendgrid" name="sendgrid" class="anchor"><span class="anchor-link"></span></a>Sendgrid</h3>
-<ul>
-  <li><code>Sendgrid api key</code>: api key of the sendgrid account</li>
-  <li><code>Email addresses</code>: recipients of the emails</li>
-</ul>
-<h2><a href="#file" name="file" class="anchor"><span class="anchor-link"></span></a>File</h2>
-<ul>
-  <li><code>File path</code>: path where the logs will be write</li>
-  <li><code>Max file size</code>: when size is reached, Otoroshi will create a new file postfixed by the current timestamp</li>
-</ul>
-<h2><a href="#goreplay-file" name="goreplay-file" class="anchor"><span class="anchor-link"></span></a>GoReplay file</h2>
-<p>With this kind of exporter, every matching event will be sent to a <code>.gor</code> file compatible with <a href="https://goreplay.org/">GoReplay</a>. </p><div class="callout warning "><div class="callout-title">Warning</div>
-<p>this exporter will only be able to catch <code>TrafficCaptureEvent</code>. Those events are created when a route (or the global config) of the <a href="../topics/engine.html">new proxy engine</a> is setup to capture traffic using the <code>capture</code> flag.</p></div>
-<ul>
-  <li><code>File path</code>: path where the logs will be write</li>
-  <li><code>Max file size</code>: when size is reached, Otoroshi will create a new file postfixed by the current timestamp</li>
-  <li><code>Capture requests</code>: capture http requests in the <code>.gor</code> file</li>
-  <li><code>Capture responses</code>: capture http responses in the <code>.gor</code> file</li>
-</ul>
-<h2><a href="#console" name="console" class="anchor"><span class="anchor-link"></span></a>Console</h2>
-<p>Nothing to add. The events will be write on the standard output.</p>
-<h2><a href="#custom" name="custom" class="anchor"><span class="anchor-link"></span></a>Custom</h2>
-<p>This type of exporter let you the possibility to write your own exporter with your own rules. To create an exporter, we need to navigate to the plugins page, and to create a new item of type exporter.</p>
-<p>When it&rsquo;s done, the exporter will be visible in this list.</p>
-<ul>
-  <li><code>Exporter config.</code>: the configuration of the custom exporter.</li>
-</ul>
-<h2><a href="#metrics" name="metrics" class="anchor"><span class="anchor-link"></span></a>Metrics</h2>
-<p>This plugin is useful to rewrite the metric labels exposed on the <code>/metrics</code> endpoint.</p>
-<ul>
-  <li><code>Labels</code>: list of metric labels. Each pair contains an existing field name and the new name.</li>
-</ul>
+<p>to use otoroshi Tailscale plugin you must enable <code>MagicDNS</code> and <code>HTTPS Certificates</code></p>
+<h2><a href="#tailscale-certificates-integration" name="tailscale-certificates-integration" class="anchor"><span class="anchor-link"></span></a>Tailscale certificates integration</h2>
+<p>you can use tailscale generated let&rsquo;s encrypt certificates in otoroshi by using the <code>Tailscale certificate fetcher job</code> in the plugins section of the danger zone. Once enabled, this job will fetch certificates for domains in <code>xxxx.ts.net</code> that belong to your tailnet. </p>
+<p>as usual, the fetched certificates will be available in the <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">certificates page</a> of otoroshi.</p>
+<h2><a href="#tailscale-targets-integration" name="tailscale-targets-integration" class="anchor"><span class="anchor-link"></span></a>Tailscale targets integration</h2>
+<p>the following pair of plugins let your contact tailscale machine by using their names even if their are multiple instance.</p>
+<p>when you register a machine on a tailnet, you have to provide a name for it, let say <code>my-server</code>. This machine will be addressable in your tailnet with <code>my-server.tailxxx.ts.net</code>. But if you have multiple instance of the same server on several machines with the same <code>my-server</code> name, their DNS name on the tailnet will be <code>my-server.tailxxx.ts.net</code>, <code>my-server-1.tailxxx.ts.net</code>, <code>my-server-2.tailxxx.ts.net</code>, etc. If you want to use those names in an otoroshi backend it could be tricky if the application has something like autoscaling enabled.</p>
+<p>in that case, you can add the <code>Tailscale targets job</code> in the plugins section of the danger zone. Once enabled, this job will fetch periodically available machine on the tailnet with their names and DNS names. Then, in a route, you can use the <code>Tailscale select target by name</code> plugin to tell otoroshi to loadbalance traffic between all machine that have the name specified in the plugin config. instead of their DNS name.</p>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../entities/scripts.html">Scripts</a></p>
+<p><strong>Next:</strong> <a href="../how-to-s/end-to-end-mtls.html">End-to-end mTLS</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -496,20 +310,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../entities/data-exporters.html#data-exporters" class="header">Data exporters</a>
+  <li><a href="../how-to-s/tailscale-integration.html#tailscale-integration" class="header">Tailscale integration</a>
   <ul>
-    <li><a href="../entities/data-exporters.html#common-fields" class="header">Common fields</a></li>
-    <li><a href="../entities/data-exporters.html#matching-and-projections" class="header">Matching and projections</a></li>
-    <li><a href="../entities/data-exporters.html#elastic" class="header">Elastic</a></li>
-    <li><a href="../entities/data-exporters.html#webhook" class="header">Webhook</a></li>
-    <li><a href="../entities/data-exporters.html#pulsar" class="header">Pulsar</a></li>
-    <li><a href="../entities/data-exporters.html#kafka" class="header">Kafka</a></li>
-    <li><a href="../entities/data-exporters.html#mailer" class="header">Mailer</a></li>
-    <li><a href="../entities/data-exporters.html#file" class="header">File</a></li>
-    <li><a href="../entities/data-exporters.html#goreplay-file" class="header">GoReplay file</a></li>
-    <li><a href="../entities/data-exporters.html#console" class="header">Console</a></li>
-    <li><a href="../entities/data-exporters.html#custom" class="header">Custom</a></li>
-    <li><a href="../entities/data-exporters.html#metrics" class="header">Metrics</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html#tailnet-configuration" class="header">tailnet configuration</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html#tailscale-certificates-integration" class="header">Tailscale certificates integration</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html#tailscale-targets-integration" class="header">Tailscale targets integration</a></li>
   </ul></li>
 </ul>
 </div>
