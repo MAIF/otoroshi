@@ -10,6 +10,12 @@ https://github.com/MAIF/otoroshi/milestone/59?closed=1
 https://github.com/MAIF/otoroshi/compare/v16.0.5...v16.1.0
 https://github.com/MAIF/otoroshi/releases/tag/v16.1.0
 
+Major features announcements in this release are 
+
+- [WASM plugin support in otoroshi](https://maif.github.io/otoroshi/manual/how-to-s/wasm-usage.html)
+- [WASM manager to help you build WASM plugins](https://maif.github.io/otoroshi/manual/how-to-s/wasm-manager-installation.html)
+- [Tailscale integration](https://maif.github.io/otoroshi/manual/how-to-s/tailscale-integration.html)
+
 ### Added
 
 - tailscale cert job wants to get cert not handled by tailscale (#1451)
