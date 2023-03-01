@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "jsonwebtoken": "9.0.0",
-    "moment": "2.29.2",
+    "moment": "2.29.4",
     "uuid": "8.3.1"
   }
 }
