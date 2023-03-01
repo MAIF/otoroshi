@@ -1450,7 +1450,7 @@ export class ServicePage extends Component {
                   onChange={(v) => this.changeTheValue('tcpUdpTunneling', v)}
                 />
                 <a
-                  href=" https://github.com/MAIF/otoroshi/tree/master/clients/tcp-udp-tunnel-client"
+                  href=" https://github.com/MAIF/otoroshi/tree/master/tools/tcp-udp-tunnel-client"
                   target="_blank">
                   Learn more about TCP/UDP tunneling
                 </a>

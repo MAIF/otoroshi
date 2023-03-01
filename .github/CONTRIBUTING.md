@@ -7,7 +7,6 @@ We encourage changes that make it easier to achieve our goals in an efficient wa
 
 ## Codebase
 
-* [clients](https://github.com/MAIF/otoroshi/clients): contains code for client libraries and CLI
 * [docker](https://github.com/MAIF/otoroshi/docker): contains various Dockerfiles
 * [docs](https://github.com/MAIF/otoroshi/docs): contains the Otoroshi website, avoid modification as its generated
 * [manual](https://github.com/MAIF/otoroshi/manual): the otoroshi user manual that will be generated with [Paradox](https://github.com/lightbend/paradox)
@@ -66,11 +65,10 @@ You must add the dependency and its licence in https://github.com/MAIF/otoroshi/
 
 ## Documentation
 
-if you add features to Otoroshi, don't forget to modify the user manual, the swagger file and the CLI too
+if you add features to Otoroshi, don't forget to modify the user manual, the swagger file
 
 * https://github.com/MAIF/otoroshi/tree/master/manual/src/main/paradox
 * https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/controllers/SwaggerController.scala
-* https://github.com/MAIF/otoroshi/blob/master/clients/cli/src/main.rs
 
 to build the documentation, run the following command at the root of the repository
 

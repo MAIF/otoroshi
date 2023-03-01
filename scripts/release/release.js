@@ -36,15 +36,7 @@ const files = [
     replace: (from, to, source) => source.replace(`tag: ${from}`, `tag: ${to}`)
   },
   {
-    file: './clients/cli/Cargo.toml',
-    replace: (from, to, source) => source.replace(`version = "${from}"`, `version = "${to}"`)
-  },
-  {
-    file: './clients/cli/src/main.rs',
-    replace: (from, to, source) => source.replace(`version = "${from}"`, `version = "${to}"`)
-  },
-  {
-    file: './clients/tcp-udp-tunnel-client/client.js',
+    file: './tools/tcp-udp-tunnel-client/client.js',
     replace: (from, to, source) => source.replace(`Otoroshi TCP tunnel CLI, version ${from}`, `Otoroshi TCP tunnel CLI, version ${to}`)
   },
   { file: './demos/basic-setup/docker-compose.yml' },
@@ -241,7 +233,7 @@ async function publishDockerOtoroshi(location, version) {
   await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/universal/otoroshi-${version}.zip`), path.resolve(location, `./docker/build/otoroshi-dist.zip`)], location);
   await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/scala-2.12/otoroshi.jar`), path.resolve(location, `./docker/build/otoroshi.jar`)], location);
   await runSystemCommand('sh', [path.resolve(location, `./docker/build/build.sh`), 'build-all', version], path.resolve(location, `./docker/build`));
-  await runSystemCommand('sh', [path.resolve(location, `./clients/sidecar/build.sh`), 'push-all', version], path.resolve(location, `./clients/sidecar`));
+  await runSystemCommand('sh', [path.resolve(location, `./tools/sidecar/build.sh`), 'push-all', version], path.resolve(location, `./tools/sidecar`));
   await runSystemCommand('sh', [path.resolve(location, `./experiments/otoroshi-wasm-manager/build.sh`), 'push-all', version], path.resolve(location, `./experiments/otoroshi-wasm-manager`));
 }
 
@@ -251,12 +243,12 @@ async function publishHelmChart(location, version) {
 
 async function buildTcpTunnelingCli(location, version) {
   await runScript(`
-    cd ${location}/clients/tcp-udp-tunnel-client
+    cd ${location}/tools/tcp-udp-tunnel-client
     yarn install
     yarn pkg
-    cp -v "$LOCATION/clients/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-linux" "$LOCATION/release-$VERSION/"
-    cp -v "$LOCATION/clients/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-macos" "$LOCATION/release-$VERSION/"
-    cp -v "$LOCATION/clients/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-win.exe" "$LOCATION/release-$VERSION/"
+    cp -v "$LOCATION/tools/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-linux" "$LOCATION/release-$VERSION/"
+    cp -v "$LOCATION/tools/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-macos" "$LOCATION/release-$VERSION/"
+    cp -v "$LOCATION/tools/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-win.exe" "$LOCATION/release-$VERSION/"
     `, 
     location, 
     {
@@ -270,10 +262,10 @@ async function buildTcpTunnelingCli(location, version) {
 
 async function buildTcpTunnelingCliGUI(location, version) {
   await runScript(`
-    cd ${location}/clients/tcp-udp-tunnel-client-gui
+    cd ${location}/tools/tcp-udp-tunnel-client-gui
     yarn install
     yarn dist-mac
-    hdiutil create -format UDZO -srcfolder "$LOCATION/clients/tcp-udp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" "$LOCATION/release-$VERSION/otoroshi-tunneling-client.dmg"
+    hdiutil create -format UDZO -srcfolder "$LOCATION/tools/tcp-udp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" "$LOCATION/release-$VERSION/otoroshi-tunneling-client.dmg"
     `, 
     location, 
     {
@@ -380,10 +372,6 @@ async function uploadFilesToRelease(release, file) {
 async function installDependencies(location) {
   await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/loadbalancing'));
   await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/snowmonkey'));
-  await runSystemCommand('yarn', ['install'], path.resolve(location, './connectors/clevercloud'));
-  await runSystemCommand('yarn', ['install'], path.resolve(location, './connectors/common'));
-  await runSystemCommand('yarn', ['install'], path.resolve(location, './connectors/kubernetes'));
-  await runSystemCommand('yarn', ['install'], path.resolve(location, './connectors/rancher'));
 }
 
 async function releaseOtoroshi(from, to, next, last, location, dryRun) {
@@ -497,62 +485,4 @@ nvm use 16
 docker login
 node release.js --from=1.5.0-dev --to=1.5.0-alpha.13 --next=1.5.0-dev --last=1.5.0-alpha.12 --location=/Users/mathieuancelin/projects/otoroshi
 
-*/
-
-/*
-async function publishDockerCli(location, version) {
-  await runScript(`
-    cd $LOCATION/docker/otoroshicli
-    cp ../../clients/cli/target/release/otoroshicli ./otoroshicli
-    docker build --no-cache -t otoroshicli .
-    rm ./otoroshicli
-    docker tag otoroshicli "maif/otoroshicli:$VERSION" 
-    docker tag otoroshicli "maif/otoroshicli:latest"
-    docker push "maif/otoroshicli:$VERSION"
-    docker push "maif/otoroshicli:latest"
-    cd $LOCATION
-    `, 
-    location, 
-    {
-      LOCATION: location,
-      VERSION: version,
-      BINTRAY_API_KEY,
-      GITHUB_TOKEN
-    }
-  );
-}
-
-async function buildMacCLI(location, version) {
-  await runScript(`
-    # build cli for mac
-    sh ./scripts/build.sh cli
-    cp -v "./clients/cli/target/release/otoroshicli" "$LOCATION/release-$VERSION"
-    mv "$LOCATION/release-$VERSION/otoroshicli" "$LOCATION/release-$VERSION/mac-otoroshicli"
-    `, 
-    location, 
-    {
-      LOCATION: location,
-      VERSION: version,
-      BINTRAY_API_KEY,
-      GITHUB_TOKEN
-    }
-  );
-}
-
-async function buildLinuxCLI(location, version) {
-  await runScript(`
-    # build cli for linux
-    sh ./scripts/cli-linux-build.sh
-    cp -v "./clients/cli/target/release/otoroshicli" "$LOCATION/release-$VERSION"
-    mv "$LOCATION/release-$VERSION/otoroshicli" "$LOCATION/release-$VERSION/linux-otoroshicli"  
-    `, 
-    location, 
-    {
-      LOCATION: location,
-      VERSION: version,
-      BINTRAY_API_KEY,
-      GITHUB_TOKEN
-    }
-  );
-}
 */

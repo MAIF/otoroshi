@@ -16,13 +16,6 @@ then
     rm ./otoroshi-dist.zip
     docker tag otoroshi maif/otoroshi
     docker push maif/otoroshi
-
-    cd $LOCATION/docker/otoroshicli
-    cp ../../clients/cli/target/release/otoroshicli ./otoroshicli
-    docker build --no-cache -t otoroshicli .
-    rm ./otoroshicli
-    docker tag otoroshicli maif/otoroshicli
-    docker push maif/otoroshicli
   fi
 fi
 

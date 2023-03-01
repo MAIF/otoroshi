@@ -5,18 +5,12 @@ export SBT_OPTS="-XX:MaxPermSize=2048m -Xmx2048m -Xss8M"
 LOCATION=`pwd`
 
 clean () {
-  cd $LOCATION/clients/cli
   cd $LOCATION
   rm -rf $LOCATION/otoroshi/target/universal
   rm -rf $LOCATION/manual/target/universal
   rm -rf $LOCATION/docs/manual
 }
 
-build_cli () {
-  cd $LOCATION/clients/cli
-  cargo clean
-  cargo build --release
-}
 
 build_ui () {
   cd $LOCATION/otoroshi/javascript
@@ -69,7 +63,6 @@ case "${1}" in
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     test_mtls
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
-    # build_cli
     ;;
   test_all)
     clean
@@ -82,7 +75,6 @@ case "${1}" in
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     test_mtls
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
-    # build_cli
     ;;
   test_server)
     clean
@@ -93,9 +85,6 @@ case "${1}" in
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     test_server
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
-    ;;
-  cli)
-    build_cli
     ;;
   ui)
     build_ui
@@ -119,7 +108,6 @@ case "${1}" in
     build_server
     test_server
     test_mtls
-    # build_cli
 esac
 
 exit ${?}
