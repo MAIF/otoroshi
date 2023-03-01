@@ -4,7 +4,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import org.extism.sdk.Context
+import org.extism.sdk.{Context, HostFunction}
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
 import org.extism.sdk.wasm.WasmSourceResolver
 import otoroshi.env.Env
@@ -119,31 +119,34 @@ object WasmUtils {
     }
   }
 
+
   @tailrec
   def callWasm(wasm: ByteString, config: WasmQueryConfig, input: JsValue, nRetry: Int = 1): String = {
-    val context  = new Context()
-    val resolver = new WasmSourceResolver()
-    val source   = resolver.resolve("wasm", wasm.toByteBuffer.array())
-    val manifest = new Manifest(
-      Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
-      new MemoryOptions(config.memoryPages),
-      config.config.asJava,
-      config.allowedHosts.asJava
-    )
+      val resolver = new WasmSourceResolver()
+      val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
+      val manifest = new Manifest(
+        Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
+        new MemoryOptions(config.memoryPages),
+        config.config.asJava,
+        config.allowedHosts.asJava
+      )
 
-    try {
-      val plugin = context.newPlugin(manifest, true, null)
-      val output = plugin.call(config.functionName, input.stringify)
-      plugin.close()
-      output
-    } catch {
-      case e: Exception =>
-        if (e.getMessage == "unknown import: `wasi_snapshot_preview1::fd_write` has not been defined" && nRetry > 0) {
-          callWasm(wasm, config, input, nRetry - 1)
-        } else {
-          e.getMessage
-        }
-    }
+      try {
+        val context = new Context()
+        val plugin = context.newPlugin(manifest, config.wasi, Array())
+        val output = plugin.call(config.functionName, input.stringify)
+        plugin.close()
+        context.free()
+        output
+      } catch {
+        case e: Exception =>
+          if (e.getMessage == "unknown import: `wasi_snapshot_preview1::fd_write` has not been defined" && nRetry > 0) {
+            println("retry" + e.getMessage)
+            callWasm(wasm, config, input, nRetry - 1)
+          } else {
+            ""
+          }
+      }
   }
 
   def execute(config: WasmQueryConfig, input: JsValue)(implicit

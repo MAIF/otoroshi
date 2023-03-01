@@ -15,6 +15,7 @@ const MAX_JOBS = process.env.MANAGER_MAX_PARALLEL_JOBS || 2;
 
 const CARGO_BUILD = ["cargo"]
 const CARGO_ARGS = _ => ['build --release --target wasm32-unknown-unknown']
+//const CARGO_ARGS = _ => ['build --release --target wasm32-wasi']
   .map(command => command.split(' '));
 
 const JS_BUILD = ["npm", "node", "extism-js"]
@@ -126,6 +127,7 @@ const onSuccessProcess = (plugin, user, buildFolder, logsFolder, wasmName, zipHa
         newFilename,
         isRustBuild ?
           path.join(buildFolder, 'target', 'wasm32-unknown-unknown', 'release', `${wasmName.substring(0, wasmName.lastIndexOf('-'))}.wasm`) :
+          //path.join(buildFolder, 'target', 'wasm32-wasi', 'release', `${wasmName.substring(0, wasmName.lastIndexOf('-'))}.wasm`) :
           path.join(buildFolder, `${wasmName}.wasm`)
       ),
       saveLogsFile(
