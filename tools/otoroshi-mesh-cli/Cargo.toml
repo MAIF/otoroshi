@@ -1,5 +1,5 @@
 [package]
-name = "mesh-cli"
+name = "oto-mesh"
 version = "1.0.0"
 edition = "2021"
 

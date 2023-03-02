@@ -52,15 +52,6 @@ it will run a build server for the JS app of the admin dashboard
 
 then open your browser at <a href="" target="_blank">http://otoroshi.dev.oto.tools:9999</a>
 
-## Build the CLI
-
-the CLI is an app written in rust, so you need the `rustup` toolchain installed with the latest stable version of Rust
-
-```sh
-cd ./clients/cli
-cargo build --release
-```
-
 ## Format the code
 
 at the root of the repository, run the following command

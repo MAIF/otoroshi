@@ -32,7 +32,7 @@ struct AccessTokenCommand {
 impl AccessTokenCommand {
     fn run(&self) {
         let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
-        let exp = now + (3 * 30 * 24 * 60 * 60);
+        let exp = now + (3 * 30 * 24 * 60 * 60); // TODO: from config
         let key: Hmac<Sha512> = Hmac::new_from_slice(self.client_secret.as_bytes()).unwrap();
         let header = Header {
             algorithm: AlgorithmType::Hs512,
@@ -51,8 +51,7 @@ impl AccessTokenCommand {
 
 fn main() {
     match OtoMeshCli::parse() {
-      OtoMeshCli::AccessToken(command) => command.run(),  
-      _ => println!("unknown command")
+      OtoMeshCli::AccessToken(command) => command.run(), 
     }
 }
 

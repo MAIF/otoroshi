@@ -379,20 +379,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mesh-cli"
-version = "1.0.0"
-dependencies = [
- "clap",
- "hmac",
- "hyper",
- "hyper-rustls",
- "jwt",
- "serde",
- "serde_json",
- "sha2",
-]
-
-[[package]]
 name = "mio"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -421,6 +407,20 @@ name = "os_str_bytes"
 version = "6.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b7820b9daea5457c9f21c69448905d723fbd21136ccf521748f23fd49e723ee"
+
+[[package]]
+name = "oto-mesh"
+version = "1.0.0"
+dependencies = [
+ "clap",
+ "hmac",
+ "hyper",
+ "hyper-rustls",
+ "jwt",
+ "serde",
+ "serde_json",
+ "sha2",
+]
 
 [[package]]
 name = "pin-project-lite"
