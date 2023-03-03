@@ -38,7 +38,7 @@ function File({ newFilename, filename, content, ext, onClick, ...props }) {
         </div>
         <span className='ms-2'>{filename}</span>
       </div>
-      {!props.readOnly && (['rs', 'ts', 'js'].includes(ext) && ![
+      {!props.readOnly && (['rs', 'ts', 'js', 'sum'].includes(ext) && ![
         'plugin.ts',
         'lib.rs',
         'esbuild.js',

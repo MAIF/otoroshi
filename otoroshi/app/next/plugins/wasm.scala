@@ -18,6 +18,7 @@ import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc.{Result, Results}
 
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.Optional
 import scala.annotation.tailrec
@@ -33,7 +34,8 @@ case class WasmQueryConfig(
     functionName: String = "execute",
     config: Map[String, String] = Map.empty,
     allowedHosts: Seq[String] = Seq.empty,
-    wasi: Boolean = false
+    wasi: Boolean = false,
+    proxyHttpCallTimeout: Int = 5000
 ) extends NgPluginConfig {
   def json: JsValue = Json.obj(
     "raw_source"      -> rawSource,
@@ -42,7 +44,8 @@ case class WasmQueryConfig(
     "functionName"    -> functionName,
     "config"          -> config,
     "allowedHosts"    -> allowedHosts,
-    "wasi"            -> wasi
+    "wasi"            -> wasi,
+    "proxyHttpCallTimeout"  -> proxyHttpCallTimeout
   )
 }
 
@@ -56,7 +59,8 @@ object WasmQueryConfig {
         functionName = (json \ "functionName").asOpt[String].getOrElse("execute"),
         config = (json \ "config").asOpt[Map[String, String]].getOrElse(Map.empty),
         allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty),
-        wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false)
+        wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false),
+        proxyHttpCallTimeout = (json \ "proxyHttpCallTimeout").asOpt[Int].getOrElse(5000)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -124,28 +128,32 @@ object WasmUtils {
 
   val test: Option[Manifest] = None
 
-  def callWasm(wasm: ByteString, config: WasmQueryConfig, input: JsValue): String = {
-      val resolver = new WasmSourceResolver()
-      val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
-      val manifest = new Manifest(
-        Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
-        new MemoryOptions(config.memoryPages),
-        config.config.asJava,
-        config.allowedHosts.asJava
-      )
+  def callWasm(wasm: ByteString, config: WasmQueryConfig, input: JsValue)
+              (implicit env: Env, executionContext: ExecutionContext): String = {
+    val resolver = new WasmSourceResolver()
+    val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
+    val manifest = new Manifest(
+      Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
+      new MemoryOptions(config.memoryPages),
+      config.config.asJava,
+      config.allowedHosts.asJava
+    )
 
+
+    try {
       val context = new Context()
-      val plugin = context.newPlugin(manifest, config.wasi, next.plugins.HostFunction.functions)
+      val plugin = context.newPlugin(manifest, config.wasi, next.plugins.HostFunctions.getFunctions(config))
       val output = plugin.call(config.functionName, input.stringify)
       plugin.close()
       context.free()
       output
+    } catch {
+      case e: Exception => ""
+    }
   }
 
-  def execute(config: WasmQueryConfig, input: JsValue)(implicit
-      env: Env,
-      ec: ExecutionContext
-  ): Future[Either[String, JsValue]] = {
+  def execute(config: WasmQueryConfig, input: JsValue)
+             (implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
     (config.compilerSource, config.rawSource) match {
       case (Some(pluginId), _)  =>
         scriptCache.getIfPresent(pluginId) match {
@@ -219,21 +227,25 @@ class WasmBackend extends NgBackendCall {
       .map {
         case Left(output) =>
           val response = Json.parse(output)
+
+          val bodyAsBytes = (response \ "body").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
+          val body: Source[ByteString, _] = bodyAsBytes.getOrElse((response.select("body") match {
+              case JsDefined(value) =>
+                value match {
+                  case JsString(value) => value
+                  case o: JsObject => Json.stringify(o)
+                  case _ => "{}"
+                }
+              case _: JsUndefined => "{}"
+            }).byteString
+          ).chunks(16 * 1024)
           bodyResponse(
             status = response.select("status").asOpt[Int].getOrElse(200),
             headers = response
               .select("headers")
               .asOpt[Map[String, String]]
               .getOrElse(Map("Content-Type" -> "application/json")),
-            body = (response.select("body") match {
-              case JsDefined(value) =>
-                value match {
-                  case JsString(value) => value
-                  case o: JsObject     => Json.stringify(o)
-                  case _               => "{}"
-                }
-              case _: JsUndefined   => "{}"
-            }).byteString.chunks(16 * 1024)
+            body = body
           )
         case Right(value) =>
           bodyResponse(
