@@ -21233,6 +21233,10 @@
         "type" : "object",
         "description" : "The global config (dynamic) for otoroshi",
         "properties" : {
+          "anonymousTelemetry" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
           "geolocationSettings" : {
             "$ref" : "#/components/schemas/otoroshi.models.GeolocationSettings",
             "description" : "Settings for geolocation extraction"

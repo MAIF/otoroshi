@@ -363,6 +363,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                                 .get(ClusterAgent.OtoroshiWorkerIdHeader)
                                 .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
                               name = name,
+                              version = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerVersionHeader).getOrElse("undefined"),
                               memberType = ClusterMode.Worker,
                               location =
                                 ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
@@ -482,6 +483,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                     .get(ClusterAgent.OtoroshiWorkerIdHeader)
                     .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
                   name = name,
+                  version = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerVersionHeader).getOrElse("undefined"),
                   memberType = ClusterMode.Worker,
                   location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
                   httpPort = ctx.request.headers

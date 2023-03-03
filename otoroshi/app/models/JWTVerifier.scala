@@ -147,6 +147,8 @@ case object OutputMode                                 extends AlgoMode
 
 trait AlgoSettings extends AsJson {
 
+  def name: String
+
   def keyId: Option[String]
 
   def isAsync: Boolean
@@ -242,6 +244,8 @@ case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) ex
     }
   }
 
+  override def name: String = "HSAlgoSettings"
+
   override def asJson =
     Json.obj(
       "type"   -> "HSAlgoSettings",
@@ -321,6 +325,8 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     }
   }
 
+  override def name: String = "RSAlgoSettings"
+
   override def asJson =
     Json.obj(
       "type"       -> "RSAlgoSettings",
@@ -399,6 +405,7 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
       case _   => None
     }
   }
+  override def name: String = "ESAlgoSettings"
 
   override def asJson =
     Json.obj(
@@ -565,6 +572,8 @@ case class JWKSAlgoSettings(
     }
   }
 
+  override def name: String = "JWKSAlgoSettings"
+
   override def asJson: JsValue =
     Json.obj(
       "type"       -> "JWKSAlgoSettings",
@@ -621,6 +630,8 @@ case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings    
       }
   }
 
+  override def name: String = "RSAKPAlgoSettings"
+
   override def asJson =
     Json.obj(
       "type"   -> "RSAKPAlgoSettings",
@@ -670,6 +681,8 @@ case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings     
         }
       }
   }
+
+  override def name: String = "ESKPAlgoSettings"
 
   override def asJson =
     Json.obj(
@@ -735,6 +748,8 @@ case class KidAlgoSettings(onlyExposedCerts: Boolean) extends AlgoSettings {
       case _                         => None
     }
   }
+
+  override def name: String = "KidAlgoSettings"
 
   override def asJson =
     Json.obj(
@@ -869,6 +884,7 @@ object VerifierStrategy extends FromJson[VerifierStrategy] {
 }
 
 sealed trait VerifierStrategy extends AsJson {
+  def name: String
   def verificationSettings: VerificationSettings
 }
 
@@ -895,6 +911,7 @@ case class DefaultToken(
     token: JsValue, // TODO.next: we need to use a string here !
     verificationSettings: VerificationSettings = VerificationSettings()
 ) extends VerifierStrategy {
+  def name: String = "default_token"
   override def asJson =
     Json.obj(
       "type"                 -> "DefaultToken",
@@ -916,6 +933,7 @@ object PassThrough extends FromJson[VerifierStrategy] {
 }
 
 case class PassThrough(verificationSettings: VerificationSettings) extends VerifierStrategy {
+  def name: String = "pass_through"
   override def asJson =
     Json.obj(
       "type"                 -> "PassThrough",
@@ -936,6 +954,7 @@ object Sign extends FromJson[VerifierStrategy] {
 }
 
 case class Sign(verificationSettings: VerificationSettings, algoSettings: AlgoSettings) extends VerifierStrategy {
+  def name: String = "sign"
   override def asJson =
     Json.obj(
       "type"                 -> "Sign",
@@ -962,6 +981,7 @@ case class Transform(
     transformSettings: TransformSettings,
     algoSettings: AlgoSettings
 ) extends VerifierStrategy {
+  def name: String = "transform"
   override def asJson =
     Json.obj(
       "type"                 -> "Transform",

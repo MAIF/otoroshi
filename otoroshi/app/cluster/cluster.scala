@@ -450,6 +450,7 @@ case class StatsView(
 case class MemberView(
     id: String,
     name: String,
+    version: String,
     location: String,
     httpPort: Int,
     httpsPort: Int,
@@ -467,6 +468,7 @@ case class MemberView(
     Json.obj(
       "id"                -> id,
       "name"              -> name,
+      "version"           -> version,
       "location"          -> location,
       "httpPort"          -> httpPort,
       "httpsPort"         -> httpsPort,
@@ -509,6 +511,7 @@ object MemberView {
         MemberView(
           id = (value \ "id").as[String],
           name = (value \ "name").as[String],
+          version = (value \ "version").asOpt[String].getOrElse("undefined"),
           location = (value \ "location").as[String],
           lastSeen = new DateTime((value \ "lastSeen").as[Long]),
           timeout = Duration((value \ "timeout").as[Long], TimeUnit.MILLISECONDS),
@@ -811,6 +814,7 @@ object ClusterAgent {
 
   val OtoroshiWorkerIdHeader                = "Otoroshi-Worker-Id"
   val OtoroshiWorkerNameHeader              = "Otoroshi-Worker-Name"
+  val OtoroshiWorkerVersionHeader           = "Otoroshi-Worker-Version"
   val OtoroshiWorkerLocationHeader          = "Otoroshi-Worker-Location"
   val OtoroshiWorkerHttpPortHeader          = "Otoroshi-Worker-Http-Port"
   val OtoroshiWorkerHttpsPortHeader         = "Otoroshi-Worker-Https-Port"
@@ -1027,6 +1031,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
       env.datastores.clusterStateDataStore.registerMember(
         MemberView(
           id = ClusterConfig.clusterNodeId,
+          version = env.otoroshiVersion,
           name = env.clusterConfig.leader.name,
           memberType = ClusterMode.Leader,
           location = hostAddress,
@@ -1228,6 +1233,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withHttpHeaders(
               "Host"                                             -> config.leader.host,
               ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
+              ClusterAgent.OtoroshiWorkerVersionHeader           -> env.otoroshiVersion,
               ClusterAgent.OtoroshiWorkerNameHeader              -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader          -> s"$hostAddress",
               ClusterAgent.OtoroshiWorkerHttpPortHeader          -> env.exposedHttpPortInt.toString,
@@ -1275,6 +1281,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withHttpHeaders(
               "Host"                                             -> config.leader.host,
               ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
+              ClusterAgent.OtoroshiWorkerVersionHeader           -> env.otoroshiVersion,
               ClusterAgent.OtoroshiWorkerNameHeader              -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader          -> s"$hostAddress",
               ClusterAgent.OtoroshiWorkerHttpPortHeader          -> env.exposedHttpPortInt.toString,
@@ -1322,6 +1329,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               "Host"                                             -> config.leader.host,
               "Content-Type"                                     -> "application/json",
               ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
+              ClusterAgent.OtoroshiWorkerVersionHeader           -> env.otoroshiVersion,
               ClusterAgent.OtoroshiWorkerNameHeader              -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader          -> s"$hostAddress",
               ClusterAgent.OtoroshiWorkerHttpPortHeader          -> env.exposedHttpPortInt.toString,
@@ -1367,6 +1375,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               "Host"                                             -> config.leader.host,
               "Content-Type"                                     -> "application/json",
               ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
+              ClusterAgent.OtoroshiWorkerVersionHeader           -> env.otoroshiVersion,
               ClusterAgent.OtoroshiWorkerNameHeader              -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader          -> s"$hostAddress",
               ClusterAgent.OtoroshiWorkerHttpPortHeader          -> env.exposedHttpPortInt.toString,
@@ -1410,6 +1419,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withHttpHeaders(
               "Host"                                             -> config.leader.host,
               ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
+              ClusterAgent.OtoroshiWorkerVersionHeader           -> env.otoroshiVersion,
               ClusterAgent.OtoroshiWorkerNameHeader              -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader          -> s"$hostAddress",
               ClusterAgent.OtoroshiWorkerHttpPortHeader          -> env.exposedHttpPortInt.toString,
@@ -1487,6 +1497,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               "Host"                                             -> config.leader.host,
               "Content-Type"                                     -> "application/json",
               ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
+              ClusterAgent.OtoroshiWorkerVersionHeader           -> env.otoroshiVersion,
               ClusterAgent.OtoroshiWorkerNameHeader              -> config.worker.name,
               ClusterAgent.OtoroshiWorkerLocationHeader          -> s"$hostAddress",
               ClusterAgent.OtoroshiWorkerHttpPortHeader          -> env.exposedHttpPortInt.toString,
@@ -1611,6 +1622,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 "Accept"                                           -> "application/x-ndjson",
                 // "Accept-Encoding" -> "gzip",
                 ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
+                ClusterAgent.OtoroshiWorkerVersionHeader           -> env.otoroshiVersion,
                 ClusterAgent.OtoroshiWorkerNameHeader              -> config.worker.name,
                 ClusterAgent.OtoroshiWorkerLocationHeader          -> s"$hostAddress",
                 ClusterAgent.OtoroshiWorkerHttpPortHeader          -> env.exposedHttpPortInt.toString,
@@ -1853,6 +1865,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   "Content-Type"                                     -> "application/x-ndjson",
                   // "Content-Encoding" -> "gzip",
                   ClusterAgent.OtoroshiWorkerIdHeader                -> ClusterConfig.clusterNodeId,
+                  ClusterAgent.OtoroshiWorkerVersionHeader           -> env.otoroshiVersion,
                   ClusterAgent.OtoroshiWorkerNameHeader              -> config.worker.name,
                   ClusterAgent.OtoroshiWorkerLocationHeader          -> s"$hostAddress",
                   ClusterAgent.OtoroshiWorkerHttpPortHeader          -> env.exposedHttpPortInt.toString,

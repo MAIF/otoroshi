@@ -335,7 +335,7 @@ const graph = (env) => {
         },
         {
           title: 'Danger zone',
-          description: 'Break things ;)',
+          description: 'Break stuff ;)',
           img: 'danger-zone',
           link: '/dangerzone',
           display: () => env.userAdmin,

@@ -606,6 +606,7 @@ object DefaultTemplates {
 case class GlobalConfig(
     letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
     lines: Seq[String] = Seq("prod"),
+    anonymousTelemetry: Boolean = true,
     initWithNewEngine: Boolean = true,
     enableEmbeddedMetrics: Boolean = true,
     streamEntityOnly: Boolean = true,
@@ -745,6 +746,7 @@ object GlobalConfig {
         "tags" -> JsArray(o.tags.map(JsString.apply)),
         "letsEncryptSettings"     -> o.letsEncryptSettings.json,
         "lines"                   -> JsArray(o.lines.map(JsString.apply)),
+        "anonymousTelemetry"      -> o.anonymousTelemetry,
         "initWithNewEngine"       -> o.initWithNewEngine,
         "maintenanceMode"         -> o.maintenanceMode,
         "enableEmbeddedMetrics"   -> o.enableEmbeddedMetrics,
@@ -794,6 +796,7 @@ object GlobalConfig {
       Try {
         GlobalConfig(
           lines = (json \ "lines").asOpt[Seq[String]].getOrElse(Seq("prod")),
+          anonymousTelemetry = (json \ "anonymousTelemetry").asOpt[Boolean].getOrElse(true),
           initWithNewEngine = (json \ "initWithNewEngine").asOpt[Boolean].getOrElse(false),
           enableEmbeddedMetrics = (json \ "enableEmbeddedMetrics").asOpt[Boolean].getOrElse(true),
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),
@@ -806,7 +809,7 @@ object GlobalConfig {
           maxConcurrentRequests = (json \ "maxConcurrentRequests").asOpt[Long].getOrElse(1000),
           maxHttp10ResponseSize = (json \ "maxHttp10ResponseSize").asOpt[Long].getOrElse(4 * (1024 * 1024)),
           useCircuitBreakers = (json \ "useCircuitBreakers").asOpt[Boolean].getOrElse(true),
-          otoroshiId = (json \ "otoroshiId").asOpt[String].getOrElse(IdGenerator.uuid),
+          otoroshiId = (json \ "otoroshiId").asOpt[String].getOrElse(s"otoroshi_${IdGenerator.uuid}"),
           apiReadOnly = (json \ "apiReadOnly").asOpt[Boolean].getOrElse(false),
           u2fLoginOnly = (json \ "u2fLoginOnly").asOpt[Boolean].getOrElse(false),
           logAnalyticsOnServer = (json \ "logAnalyticsOnServer").asOpt[Boolean].getOrElse(false),

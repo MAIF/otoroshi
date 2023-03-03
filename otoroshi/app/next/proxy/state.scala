@@ -172,11 +172,11 @@ class NgProxyState(env: Env) {
   }
 
   def updateTeams(values: Seq[Team]): Unit = {
-    teams.addAll(values.map(v => (v.id.value, v))).remAll(teams.keySet.toSeq.diff(values.map(_.id)))
+    teams.addAll(values.map(v => (v.id.value, v))).remAll(teams.keySet.toSeq.diff(values.map(_.id.value)))
   }
 
   def updateTenants(values: Seq[Tenant]): Unit = {
-    tenants.addAll(values.map(v => (v.id.value, v))).remAll(tenants.keySet.toSeq.diff(values.map(_.id)))
+    tenants.addAll(values.map(v => (v.id.value, v))).remAll(tenants.keySet.toSeq.diff(values.map(_.id.value)))
   }
 
   def updateServiceGroups(values: Seq[ServiceGroup]): Unit = {

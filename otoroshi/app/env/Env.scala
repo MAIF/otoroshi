@@ -220,6 +220,9 @@ class Env(
   lazy val healtCheckTTLOnly: Boolean    =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.healthcheck.ttl-only").getOrElse(true)
 
+  lazy val anonymousTelemetry: Boolean =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.anonymous-telemetry").getOrElse(true)
+
   lazy val maxWebhookSize: Int = configuration.getOptionalWithFileSupport[Int]("app.webhooks.size").getOrElse(100)
 
   lazy val clusterConfig: ClusterConfig           = ClusterConfig(
@@ -789,6 +792,7 @@ class Env(
 
   displayDefaultValuesWarning()
 
+  lazy val datastoreKind: String = configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("lettuce")
   lazy val datastores: DataStores = {
     configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("lettuce") match {
       case _ if clusterConfig.mode == ClusterMode.Worker                   =>

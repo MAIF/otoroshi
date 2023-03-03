@@ -278,44 +278,46 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   }
 
   def jsonExport(filter: Option[String] = None): String = {
+    Json.stringify(jsonRawExport(filter))
+  }
+
+  def jsonRawExport(filter: Option[String] = None): JsValue = {
     filter match {
-      case None       => objectMapper.writeValueAsString(metricRegistry)
+      case None       => Json.parse(objectMapper.writeValueAsString(metricRegistry))
       case Some(path) => {
         val jsonRaw = objectMapper.writeValueAsString(metricRegistry)
         val json    = Json.parse(jsonRaw)
-        Json.stringify(
-          JsArray(
-            (json \ "gauges")
-              .as[JsObject]
-              .value
-              .toSeq
-              .filter(t => RegexPool(path).matches(t._1))
-              .map(tuple => Json.obj("type" -> "gauge", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
-            (json \ "counters")
-              .as[JsObject]
-              .value
-              .toSeq
-              .filter(t => RegexPool(path).matches(t._1))
-              .map(tuple => Json.obj("type" -> "counter", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
-            (json \ "histograms")
-              .as[JsObject]
-              .value
-              .toSeq
-              .filter(t => RegexPool(path).matches(t._1))
-              .map(tuple => Json.obj("type" -> "histogram", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
-            (json \ "meters")
-              .as[JsObject]
-              .value
-              .toSeq
-              .filter(t => RegexPool(path).matches(t._1))
-              .map(tuple => Json.obj("type" -> "meter", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
-            (json \ "timers")
-              .as[JsObject]
-              .value
-              .toSeq
-              .filter(t => RegexPool(path).matches(t._1))
-              .map(tuple => Json.obj("type" -> "timer", "name" -> tuple._1) ++ tuple._2.as[JsObject])
-          )
+        JsArray(
+          (json \ "gauges")
+            .as[JsObject]
+            .value
+            .toSeq
+            .filter(t => RegexPool(path).matches(t._1))
+            .map(tuple => Json.obj("type" -> "gauge", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
+          (json \ "counters")
+            .as[JsObject]
+            .value
+            .toSeq
+            .filter(t => RegexPool(path).matches(t._1))
+            .map(tuple => Json.obj("type" -> "counter", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
+          (json \ "histograms")
+            .as[JsObject]
+            .value
+            .toSeq
+            .filter(t => RegexPool(path).matches(t._1))
+            .map(tuple => Json.obj("type" -> "histogram", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
+          (json \ "meters")
+            .as[JsObject]
+            .value
+            .toSeq
+            .filter(t => RegexPool(path).matches(t._1))
+            .map(tuple => Json.obj("type" -> "meter", "name" -> tuple._1) ++ tuple._2.as[JsObject]) ++
+          (json \ "timers")
+            .as[JsObject]
+            .value
+            .toSeq
+            .filter(t => RegexPool(path).matches(t._1))
+            .map(tuple => Json.obj("type" -> "timer", "name" -> tuple._1) ++ tuple._2.as[JsObject])
         )
       }
     }

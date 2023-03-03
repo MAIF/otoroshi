@@ -15,17 +15,24 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
 object NewEngine {
-  def enabledFromConfig(config: GlobalConfig, env: Env): Boolean = {
+
+  def enabledRawFromConfig(config: GlobalConfig, env: Env): (Boolean, Boolean) = {
     val pluginEnabled = config.plugins.enabled
     val pluginInRefs  = config.plugins.refs.contains(s"cp:${classOf[ProxyEngine].getName}")
-    val configEnabled = config.plugins.config
+    val pluginConfig = config.plugins.config
       .select(ProxyEngine.configRoot)
       .asOpt[JsValue]
       .map(s => ProxyEngineConfig.parse(s, env))
       .getOrElse(ProxyEngineConfig.default)
-      .enabled
-    pluginEnabled && pluginInRefs && configEnabled
+    val configEnabled = pluginConfig.enabled
+    val allowedOnAll = pluginConfig.denyDomains.isEmpty && pluginConfig.domains.contains("*")
+    (pluginEnabled && pluginInRefs && configEnabled, pluginEnabled && pluginInRefs && configEnabled && allowedOnAll)
   }
+
+  def enabledFromConfig(config: GlobalConfig, env: Env): Boolean = {
+    enabledRawFromConfig(config, env)._1
+  }
+
   def enabled(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       enabledFromConfig(config, env)
