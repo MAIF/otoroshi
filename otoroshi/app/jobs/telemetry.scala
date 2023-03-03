@@ -250,9 +250,9 @@ class AnonymousTelemetryJob extends Job {
           // "metrics" -> env.metrics.jsonRawExport(None),
         )
       }).flatMap { report =>
-        Files.writeString(new File("./report.json").toPath, report.prettify)
-        report.prettify.debugPrintln
-        report.stringify.byteString.size.debugPrintln
+        //Files.writeString(new File("./report.json").toPath, report.prettify)
+        //report.prettify.debugPrintln
+        //report.stringify.byteString.size.debugPrintln
         env.Ws
           .url("https://telemetry.otoroshi.io/ingest")
           .withFollowRedirects(false)
