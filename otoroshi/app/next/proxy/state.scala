@@ -122,6 +122,7 @@ class NgProxyState(env: Env) {
   def backofficeSession(id: String): Option[BackOfficeUser]         = backofficeSessions.get(id)
   def privateAppsSession(id: String): Option[PrivateAppsUser]       = privateAppsSessions.get(id)
   def tcpService(id: String): Option[TcpService]                    = tcpServices.get(id)
+  def rawRoute(id: String): Option[NgRoute]                         = raw_routes.get(id)
 
   def allScripts(): Seq[Script]                       = scripts.values.toSeq
   def allRawRoutes(): Seq[NgRoute]                    = raw_routes.values.toSeq

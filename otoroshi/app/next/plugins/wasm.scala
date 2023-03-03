@@ -140,16 +140,12 @@ object WasmUtils {
     )
 
 
-    try {
-      val context = new Context()
-      val plugin = context.newPlugin(manifest, config.wasi, next.plugins.HostFunctions.getFunctions(config))
-      val output = plugin.call(config.functionName, input.stringify)
-      plugin.close()
-      context.free()
-      output
-    } catch {
-      case e: Exception => ""
-    }
+    val context = new Context()
+    val plugin = context.newPlugin(manifest, config.wasi, next.plugins.HostFunctions.getFunctions(config))
+    val output = plugin.call(config.functionName, input.stringify)
+    plugin.close()
+    context.free()
+    output
   }
 
   def execute(config: WasmQueryConfig, input: JsValue)
@@ -226,14 +222,23 @@ class WasmBackend extends NgBackendCall {
       .flatMap(input => WasmUtils.execute(config, input))
       .map {
         case Left(output) =>
-          val response = Json.parse(output)
+          val response = try {
+            Json.parse(output)
+          } catch {
+            case e: Exception =>
+              println(e)
+              Json.obj()
+          }
 
           val bodyAsBytes = (response \ "body").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
           val body: Source[ByteString, _] = bodyAsBytes.getOrElse((response.select("body") match {
               case JsDefined(value) =>
                 value match {
                   case JsString(value) => value
+                  case JsNumber(value) => value.toString()
+                  case JsBoolean(value) => value.toString()
                   case o: JsObject => Json.stringify(o)
+                  case o: JsArray => Json.stringify(o)
                   case _ => "{}"
                 }
               case _: JsUndefined => "{}"
