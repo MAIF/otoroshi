@@ -1,11 +1,13 @@
 package next.plugins
 
-import akka.http.scaladsl.util.FastFuture.EnhancedFuture
+import akka.http.scaladsl.util.FastFuture.{EnhancedFuture, successful}
 import akka.stream.Materializer
 import akka.util.ByteString
 import org.extism.sdk._
+import otoroshi.cluster.ClusterConfig
 import otoroshi.env.Env
 import otoroshi.next.plugins.WasmQueryConfig
+import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.libs.json.{JsArray, JsNull, Json}
 
@@ -71,7 +73,7 @@ object Logging {
             Optional.of(EmptyUserData())
     )
 
-  def getFunctions = Seq(proxyLog())
+    def getFunctions = Seq(proxyLog())
 }
 
 object Http {
@@ -135,6 +137,61 @@ object Http {
 
 object State {
 
+  def getClusterState(cc: ClusterConfig) = Json.obj(
+    "mode" -> Json.obj(
+      "name" -> cc.mode.name,
+      "clusterActive" -> cc.mode.clusterActive,
+      "isOff" -> cc.mode.isOff,
+      "isWorker" -> cc.mode.isWorker,
+      "isLeader" -> cc.mode.isLeader,
+    ),
+    "compression" -> cc.compression,
+    "proxy" -> Json.obj(
+      "host" -> cc.proxy.map(_.host),
+      "port" -> cc.proxy.map(_.port),
+      "protocol" -> cc.proxy.map(_.protocol),
+      "principal" -> cc.proxy.map(_.principal),
+      "password" -> cc.proxy.map(_.password),
+      "ntlmDomain" -> cc.proxy.map(_.ntlmDomain),
+      "encoding" -> cc.proxy.map(_.encoding),
+      "nonProxyHosts" -> cc.proxy.map(_.nonProxyHosts),
+    ),
+    "mtlsConfig" -> cc.mtlsConfig.json,
+    "streamed" -> cc.streamed,
+    "relay" -> cc.relay.json,
+    "retryDelay" -> cc.retryDelay,
+    "retryFactor" -> cc.retryFactor,
+    "leader" -> Json.obj(
+      "name" -> cc.leader.name,
+      "urls" -> cc.leader.urls,
+      "host" -> cc.leader.host,
+      "clientId" -> cc.leader.clientId,
+      "clientSecret" -> cc.leader.clientSecret,
+      "groupingBy" -> cc.leader.groupingBy,
+      "cacheStateFor" -> cc.leader.cacheStateFor,
+      "stateDumpPath" -> cc.leader.stateDumpPath
+    ),
+    "worker" -> Json.obj(
+      "name" -> cc.worker.name,
+      "retries" -> cc.worker.retries,
+      "timeout" -> cc.worker.timeout,
+      "dataStaleAfter" -> cc.worker.dataStaleAfter,
+      "dbPath" -> cc.worker.dbPath,
+      "state" -> Json.obj(
+        "timeout" -> cc.worker.state.timeout,
+        "pollEvery" -> cc.worker.state.pollEvery,
+        "retries" -> cc.worker.state.retries
+      ),
+      "quotas" -> Json.obj(
+        "timeout" -> cc.worker.quotas.timeout,
+        "pushEvery" -> cc.worker.quotas.pushEvery,
+        "retries" -> cc.worker.quotas.retries
+      ),
+      "tenants" -> cc.worker.tenants.map(_.value),
+      "swapStrategy" -> cc.worker.swapStrategy.name
+    )
+  )
+
   def getProxyStateFunction: ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
       data.ifPresent(hostData => {
@@ -164,7 +221,6 @@ object State {
         plugin.returnString(returns(0), state)
       })
     }
-
 
   def proxyStateGetValueFunction: ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
@@ -218,6 +274,27 @@ object State {
       })
     }
 
+  def getClusterStateFunction: ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+      data.ifPresent(hostData => {
+        val cc = hostData.env.clusterConfig
+        plugin.returnString(returns(0), getClusterState(cc).stringify)
+      })
+    }
+
+  def proxyClusteStateGetValueFunction: ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+      data.ifPresent(userData => {
+        val path = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
+
+        val cc = userData.env.clusterConfig
+        plugin.returnString(
+          returns(0),
+          JsonOperationsHelper.getValueAtPath(path, getClusterState(cc))._2.stringify
+        )
+      })
+    }
+
   def getProxyState(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     new HostFunction[EnvUserData](
       "get_proxy_state",
@@ -238,9 +315,31 @@ object State {
     )
   }
 
+  def getClusterState(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    new HostFunction[EnvUserData](
+      "get_cluster_state",
+      Array(LibExtism.ExtismValType.I64),
+      Array(LibExtism.ExtismValType.I64),
+      getClusterStateFunction,
+      Optional.of(EnvUserData(env, executionContext, mat, config))
+    )
+  }
+
+  def proxyClusteStateGetValue(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    new HostFunction[EnvUserData](
+      "get_cluster_state_value",
+      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+      Array(LibExtism.ExtismValType.I64),
+      proxyClusteStateGetValueFunction,
+      Optional.of(EnvUserData(env, executionContext, mat, config))
+    )
+  }
+
   def getFunctions(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = Seq(
     getProxyState(config),
     proxyStateGetValue(config),
+    getClusterState(config),
+    proxyClusteStateGetValue(config),
   )
 }
 
