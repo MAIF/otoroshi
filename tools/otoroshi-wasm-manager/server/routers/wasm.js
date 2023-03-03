@@ -1,5 +1,5 @@
 const express = require('express');
-const { Context } = require('@extism/extism');
+// const { Context } = require('@extism/extism');
 const { S3 } = require('../s3');
 const { UserManager } = require('../services/user');
 
@@ -41,15 +41,15 @@ function run(wasm, { input, functionName, wasi }, res) {
   })
     .promise()
     .then(async data => {
-      const ctx = new Context();
-      const plugin = ctx.plugin(data.Body, wasi);
+      // // const ctx = new Context();
+      // // const plugin = ctx.plugin(data.Body, wasi);
 
-      const buf = await plugin.call(functionName, input)
-      const output = buf.toString()
-      plugin.free()
-      res.json({
-        data: output
-      })
+      // // const buf = await plugin.call(functionName, input)
+      // // const output = buf.toString()
+      // // plugin.free()
+      // res.json({
+      //   data: output
+      // })
     })
     .catch(err => {
       console.log(err)

@@ -4,7 +4,8 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import org.extism.sdk.{Context, HostFunction}
+import com.sun.jna.Pointer
+import org.extism.sdk.{Context, ExtismCurrentPlugin, ExtismFunction, HostFunction, HostUserData, LibExtism}
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
 import org.extism.sdk.wasm.WasmSourceResolver
 import otoroshi.env.Env
@@ -18,6 +19,7 @@ import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc.{Result, Results}
 
 import java.nio.file.{Files, Paths}
+import java.util.Optional
 import scala.annotation.tailrec
 import scala.concurrent.duration.{DurationInt, FiniteDuration, MILLISECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -68,7 +70,7 @@ object WasmQueryConfig {
 object WasmUtils {
   private val scriptCache: Cache[String, ByteString] = Scaffeine()
     .recordStats()
-    .expireAfterWrite(30.seconds)
+    .expireAfterWrite(3.seconds)
     .maximumSize(100)
     .build()
 
@@ -120,8 +122,9 @@ object WasmUtils {
   }
 
 
-  @tailrec
-  def callWasm(wasm: ByteString, config: WasmQueryConfig, input: JsValue, nRetry: Int = 1): String = {
+  val test: Option[Manifest] = None
+
+  def callWasm(wasm: ByteString, config: WasmQueryConfig, input: JsValue): String = {
       val resolver = new WasmSourceResolver()
       val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
       val manifest = new Manifest(
@@ -131,22 +134,12 @@ object WasmUtils {
         config.allowedHosts.asJava
       )
 
-      try {
-        val context = new Context()
-        val plugin = context.newPlugin(manifest, config.wasi, Array())
-        val output = plugin.call(config.functionName, input.stringify)
-        plugin.close()
-        context.free()
-        output
-      } catch {
-        case e: Exception =>
-          if (e.getMessage == "unknown import: `wasi_snapshot_preview1::fd_write` has not been defined" && nRetry > 0) {
-            println("retry" + e.getMessage)
-            callWasm(wasm, config, input, nRetry - 1)
-          } else {
-            ""
-          }
-      }
+      val context = new Context()
+      val plugin = context.newPlugin(manifest, config.wasi, next.plugins.HostFunction.functions)
+      val output = plugin.call(config.functionName, input.stringify)
+      plugin.close()
+      context.free()
+      output
   }
 
   def execute(config: WasmQueryConfig, input: JsValue)(implicit
@@ -430,7 +423,7 @@ class WasmSink extends NgRequestSink {
   override def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = WasmQueryConfig.format.reads(ctx.config) match {
       case JsSuccess(value, _) => value
-      case JsError(_)          => WasmQueryConfig()
+      case JsError(_) => WasmQueryConfig()
     }
 
     config.compilerSource.getOrElse(config.rawSource) match {
@@ -445,7 +438,7 @@ class WasmSink extends NgRequestSink {
             }),
           10.seconds
         )
-      case None                 => false
+      case None => false
     }
   }
 
@@ -455,7 +448,7 @@ class WasmSink extends NgRequestSink {
   override def handle(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     val config = WasmQueryConfig.format.reads(ctx.config) match {
       case JsSuccess(value, _) => value
-      case JsError(_)          => WasmQueryConfig()
+      case JsError(_) => WasmQueryConfig()
     }
 
     config.compilerSource.getOrElse(config.rawSource) match {
@@ -471,7 +464,7 @@ class WasmSink extends NgRequestSink {
               .asOpt[Int]
               .getOrElse(200)
 
-            val _headers    = response
+            val _headers = response
               .select("headers")
               .asOpt[Map[String, String]]
               .getOrElse(Map("Content-Type" -> "application/json"))
@@ -504,7 +497,7 @@ class WasmSink extends NgRequestSink {
               .withHeaders(headers.toSeq: _*)
               .as(contentType)
           })
-      case None                 => Results.BadRequest(Json.obj("error" -> "missing source")).future
+      case None => Results.BadRequest(Json.obj("error" -> "missing source")).future
     }
   }
 }

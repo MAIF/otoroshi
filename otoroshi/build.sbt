@@ -163,7 +163,7 @@ libraryDependencies ++= Seq(
   "org.apache.logging.log4j"         % "log4j-api"                                 % "2.19.0",
   "org.sangria-graphql"             %% "sangria"                                   % "3.4.0",
   // using a custom one right now as current build is broken
-  // "org.extism.sdk"                   % "extism"                                    % "0.2.0",
+  "org.extism.sdk"                   % "extism"                                    % "0.2.1",
   if (scalaLangVersion.startsWith("2.12")) {
     "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
   } else {
@@ -284,6 +284,8 @@ packagedArtifacts in publish := {
   val assets: java.io.File                       = (playPackageAssets in Compile).value
   artifacts + (Artifact(moduleName.value, "jar", "jar", "assets") -> assets)
 }
+
+resolvers += Resolver.mavenLocal
 
 bashScriptExtraDefines += """
 addJava "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED"
