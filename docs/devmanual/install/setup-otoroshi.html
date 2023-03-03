@@ -1831,6 +1831,8 @@ otoroshi {
     }
   }
   options {
+  	anonymous-telemetry = true
+  	anonymous-telemetry = ${?OTOROSHI_OPTIONS_ANONYMOUS_TELEMETRY}
     bypassUserRightsCheck = false
     bypassUserRightsCheck = ${?OTOROSHI_OPTIONS_BYPASSUSERRIGHTSCHECK}
     emptyContentLengthIsChunked = true
@@ -3040,6 +3042,7 @@ otoroshi {
     }
   }
   options {
+  	anonymous-telemetry = ${?OTOROSHI_OPTIONS_ANONYMOUS_TELEMETRY}
     bypassUserRightsCheck = ${?OTOROSHI_OPTIONS_BYPASSUSERRIGHTSCHECK}
     emptyContentLengthIsChunked = ${?OTOROSHI_OPTIONS_EMPTYCONTENTLENGTHISCHUNKED}
     detectApiKeySooner = ${?OTOROSHI_OPTIONS_DETECTAPIKEYSOONER}
