@@ -17,7 +17,7 @@ import play.api.libs.json.{JsArray, JsNull, Json}
 import java.nio.charset.StandardCharsets
 import java.util.Optional
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, ExecutionContext}
 
 object Utils {
@@ -178,6 +178,230 @@ object Http {
     }
 
     def getFunctions(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = Seq(proxyHttpCall(config))
+}
+
+object DataStore {
+  def proxyDataStoreKeysFunction(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+      data.ifPresent(hostData => {
+        val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
+
+        Await.result(hostData.env.datastores.rawDataStore.keys(s"${hostData.env.storageRoot}:$key")
+          .map(values => {
+            plugin.returnString(returns(0),  Json.arr(values).stringify)
+          }), 5.seconds)
+      })
+    }
+  def proxyDataStoreGetFunction(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+      data.ifPresent(hostData => {
+        val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
+
+        Await.result(hostData.env.datastores.rawDataStore.get(s"${hostData.env.storageRoot}:$key")
+          .map(value => {
+            plugin.returnBytes(returns(0), value.map(_.toArray).getOrElse(Array.empty[Byte]))
+          }), 5.seconds)
+      })
+    }
+  def proxyDataStoreExistsFunction(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+      data.ifPresent(hostData => {
+        val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
+
+        Await.result(hostData.env.datastores.rawDataStore.exists(s"${hostData.env.storageRoot}:$key")
+          .map(value => {
+            plugin.returnString(returns(0), value.toString)
+          }), 5.seconds)
+      })
+    }
+  def proxyDataStorePttlFunction(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+      data.ifPresent(hostData => {
+        val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
+
+        Await.result(hostData.env.datastores.rawDataStore.pttl(s"${hostData.env.storageRoot}:$key")
+          .map(value => {
+            plugin.returnString(returns(0), value.toString)
+          }), 5.seconds)
+      })
+    }
+  def proxyDataStoreSetnxFunction(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+      data.ifPresent(hostData => {
+        val data = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
+
+        val key = (data \ "key").as[String]
+        val value = (data \ "value").as[String]
+        val ttl = (data \ "ttl").asOpt[Long]
+
+        Await.result(hostData.env.datastores.rawDataStore.setnx(s"${hostData.env.storageRoot}:$key", ByteString(value), ttl)
+          .map(value => {
+            plugin.returnString(returns(0), value.toString)
+          }), 5.seconds)
+      })
+    }
+  def proxyDataStoreDelFunction(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+      data.ifPresent(hostData => {
+        val data = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
+
+        Await.result(hostData.env.datastores.rawDataStore
+          .del((data \ "keys").asOpt[Seq[String]].getOrElse(Seq.empty).map(r => s"${hostData.env.storageRoot}:$r"))
+          .map(value => {
+            plugin.returnString(returns(0), value.toString)
+          }), 5.seconds)
+      })
+    }
+  def proxyDataStoreIncrbyFunction(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+      data.ifPresent(hostData => {
+        val data = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
+
+        val key = (data \ "key").as[String]
+        val incr = (data \ "incr").as[Long]
+
+        Await.result(hostData.env.datastores.rawDataStore.incrby(s"${hostData.env.storageRoot}:$key", incr)
+          .map(value => {
+            plugin.returnString(returns(0), value.toString)
+          }), 5.seconds)
+      })
+    }
+  def proxyDataStorePexpireFunction(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+    data.ifPresent(hostData => {
+      val data = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
+
+      val key = (data \ "key").as[String]
+      val pttl = (data \ "pttl").as[Long]
+
+      Await.result(hostData.env.datastores.rawDataStore.pexpire(s"${hostData.env.storageRoot}:$key", pttl)
+        .map(value => {
+          plugin.returnString(returns(0), value.toString)
+        }), 5.seconds)
+    })
+  }
+  def proxyDataStoreAllMatchingFunction(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+      data.ifPresent(hostData => {
+        val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
+
+        Await.result(hostData.env.datastores.rawDataStore.allMatching(s"${hostData.env.storageRoot}:$key")
+          .map(values => {
+            plugin.returnString(returns(0), Json.arr(values).stringify)
+          }), 5.seconds)
+      })
+    }
+
+  def proxyDataStoreKeys(config: WasmQueryConfig)
+                        (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    new HostFunction[EnvUserData](
+      "proxy_datastore_keys",
+      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+      Array(LibExtism.ExtismValType.I64),
+      proxyDataStoreKeysFunction,
+      Optional.of(EnvUserData(env, executionContext, mat, config))
+    )
+  }
+
+  def proxyDataStoreGet(config: WasmQueryConfig)
+                       (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    new HostFunction[EnvUserData](
+      "proxy_datastore_get",
+      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+      Array(LibExtism.ExtismValType.I64),
+      proxyDataStoreGetFunction,
+      Optional.of(EnvUserData(env, executionContext, mat, config))
+    )
+  }
+
+  def proxyDataStoreExists(config: WasmQueryConfig)
+                          (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    new HostFunction[EnvUserData](
+      "proxy_datastore_exists",
+      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+      Array(LibExtism.ExtismValType.I64),
+      proxyDataStoreExistsFunction,
+      Optional.of(EnvUserData(env, executionContext, mat, config))
+    )
+  }
+
+  def proxyDataStorePttl(config: WasmQueryConfig)
+                        (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    new HostFunction[EnvUserData](
+      "proxy_datastore_pttl",
+      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+      Array(LibExtism.ExtismValType.I64),
+      proxyDataStorePttlFunction,
+      Optional.of(EnvUserData(env, executionContext, mat, config))
+    )
+  }
+
+  def proxyDataStoreSetnx(config: WasmQueryConfig)
+                         (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    new HostFunction[EnvUserData](
+      "proxy_datastore_setnx",
+      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+      Array(LibExtism.ExtismValType.I64),
+      proxyDataStoreSetnxFunction,
+      Optional.of(EnvUserData(env, executionContext, mat, config))
+    )
+  }
+
+  def proxyDataStoreDel(config: WasmQueryConfig)
+                       (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    new HostFunction[EnvUserData](
+      "proxy_datastore_del",
+      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+      Array(LibExtism.ExtismValType.I64),
+      proxyDataStoreDelFunction,
+      Optional.of(EnvUserData(env, executionContext, mat, config))
+    )
+  }
+
+  def proxyDataStoreIncrby(config: WasmQueryConfig)
+                          (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    new HostFunction[EnvUserData](
+      "proxy_datastore_incrby",
+      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+      Array(LibExtism.ExtismValType.I64),
+      proxyDataStoreIncrbyFunction,
+      Optional.of(EnvUserData(env, executionContext, mat, config))
+    )
+  }
+
+  def proxyDataStorePexpire(config: WasmQueryConfig)
+                           (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    new HostFunction[EnvUserData](
+      "proxy_datastore_keys_pexpire",
+      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+      Array(LibExtism.ExtismValType.I64),
+      proxyDataStorePexpireFunction,
+      Optional.of(EnvUserData(env, executionContext, mat, config))
+    )
+  }
+
+  def proxyDataStoreAllMatching(config: WasmQueryConfig)
+                               (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    new HostFunction[EnvUserData](
+      "proxy_datastore_all_matching",
+      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+      Array(LibExtism.ExtismValType.I64),
+      proxyDataStoreAllMatchingFunction,
+      Optional.of(EnvUserData(env, executionContext, mat, config))
+    )
+  }
+
+  def getFunctions(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = Seq(
+    proxyDataStoreKeys(config),
+    proxyDataStoreGet(config),
+    proxyDataStoreExists(config),
+    proxyDataStorePttl(config),
+    proxyDataStoreSetnx(config),
+    proxyDataStoreDel(config),
+    proxyDataStoreIncrby(config),
+    proxyDataStorePexpire(config),
+    proxyDataStoreAllMatching(config),
+  )
 }
 
 object State {
@@ -392,6 +616,10 @@ object HostFunctions {
     def getFunctions(config: WasmQueryConfig, ctx: Option[NgCachedConfigContext])
                     (implicit env: Env, executionContext: ExecutionContext): Array[HostFunction[_ <: HostUserData]] = {
       implicit val mat = env.otoroshiMaterializer
-      (Logging.getFunctions(config, ctx) ++ Http.getFunctions(config) ++ State.getFunctions(config)).toArray
+      (Logging.getFunctions(config, ctx) ++
+        Http.getFunctions(config) ++
+        State.getFunctions(config) ++
+        DataStore.getFunctions(config)
+        ).toArray
     }
 }
