@@ -128,24 +128,27 @@ object WasmUtils {
 
   val test: Option[Manifest] = None
 
-  def callWasm(wasm: ByteString, config: WasmQueryConfig, input: JsValue, ctx: Option[NgCachedConfigContext])
+  def callWasm(wasm: ByteString, config: WasmQueryConfig, input: JsValue, ctx: Option[NgCachedConfigContext] = None, pluginId: String)
               (implicit env: Env, executionContext: ExecutionContext): String = {
-    val resolver = new WasmSourceResolver()
-    val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
-    val manifest = new Manifest(
-      Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
-      new MemoryOptions(config.memoryPages),
-      config.config.asJava,
-      config.allowedHosts.asJava
-    )
+    try {
+      val resolver = new WasmSourceResolver()
+      val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
+      val manifest = new Manifest(
+        Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
+        new MemoryOptions(config.memoryPages),
+        config.config.asJava,
+        config.allowedHosts.asJava
+      )
 
-
-    val context = new Context()
-    val plugin = context.newPlugin(manifest, config.wasi, next.plugins.HostFunctions.getFunctions(config, ctx))
-    val output = plugin.call(config.functionName, input.stringify)
-    plugin.close()
-    context.free()
-    output
+      val context = new Context()
+      val plugin = context.newPlugin(manifest, config.wasi, next.plugins.HostFunctions.getFunctions(config, ctx, pluginId))
+      val output = plugin.call(config.functionName, input.stringify)
+      plugin.close()
+      context.free()
+      output
+    } catch {
+      case e: Exception => e.getMessage()
+    }
   }
 
   def execute(config: WasmQueryConfig, input: JsValue, ctx: Option[NgCachedConfigContext])
@@ -154,7 +157,7 @@ object WasmUtils {
       case (Some(pluginId), _)  =>
         scriptCache.getIfPresent(pluginId) match {
           case Some(wasm) =>
-            WasmUtils.callWasm(wasm, config, input, ctx).left.future
+            WasmUtils.callWasm(wasm, config, input, ctx, pluginId).left.future
           case None       =>
             env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
               globalConfig.wasmManagerSettings match {
@@ -175,7 +178,7 @@ object WasmUtils {
                       } else {
                         val wasm = resp.bodyAsBytes
                         scriptCache.put(pluginId, resp.bodyAsBytes)
-                        WasmUtils.callWasm(wasm, config, input, ctx).left.future
+                        WasmUtils.callWasm(wasm, config, input, ctx, pluginId).left.future
                       }
                     }
                 case _                                                         =>
@@ -186,7 +189,7 @@ object WasmUtils {
       case (_, Some(rawSource)) =>
         WasmUtils
           .getWasm(rawSource)
-          .map(wasm => WasmUtils.callWasm(wasm, config, input, ctx).left)
+          .map(wasm => WasmUtils.callWasm(wasm, config, input, ctx, rawSource).left)
       case _                    => Right(Json.obj("error" -> "missing source")).future
     }
 
@@ -448,7 +451,7 @@ class WasmSink extends NgRequestSink {
         Await.result(
           WasmUtils
             .getWasm(source)
-            .map(wasm => WasmUtils.callWasm(wasm, config.copy(functionName = "matches"), ctx.json, None))
+            .map(wasm => WasmUtils.callWasm(wasm, config.copy(functionName = "matches"), ctx.json, pluginId = source))
             .map(res => {
               val response = Json.parse(res)
               (response \ "result").asOpt[Boolean].getOrElse(false)
@@ -472,7 +475,7 @@ class WasmSink extends NgRequestSink {
       case Some(source: String) =>
         WasmUtils
           .getWasm(source)
-          .map(wasm => WasmUtils.callWasm(wasm, config, ctx.json, None))
+          .map(wasm => WasmUtils.callWasm(wasm, config, ctx.json, pluginId = source))
           .map(res => {
             val response = Json.parse(res)
 
