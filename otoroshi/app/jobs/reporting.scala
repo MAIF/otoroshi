@@ -251,7 +251,20 @@ class AnonymousReportingJob extends Job {
             ),
             "routes" -> Json.obj("count" -> env.proxyState.allRawRoutes().size),
             "router_routes" -> Json.obj("count" -> env.proxyState.allRoutes().size),
-            "route_compositions" -> Json.obj("count" -> env.proxyState.allRouteCompositions().size),
+            "route_compositions" -> Json.obj(
+              "count" -> env.proxyState.allRouteCompositions().size,
+              "by_kind" -> env.proxyState.allRouteCompositions().foldLeft(Json.obj()) {
+                case (obj, rc) =>
+                  val localPlugins = rc.routes.exists(_.plugins.slots.nonEmpty)
+                  val overridesPlugins = rc.routes.exists(v => v.plugins.slots.nonEmpty && v.overridePlugins)
+                  val key = if (localPlugins) {
+                    if (overridesPlugins) "local_with_override" else "local"
+                  } else {
+                    "global"
+                  }
+                  obj ++ Json.obj(key -> (obj.select(key).asOpt[Int].getOrElse(0) + 1))
+              }
+            ),
             "apikeys" -> Json.obj("count" -> env.proxyState.allApikeys().size),
             "jwt_verifiers" -> Json.obj(
               "count" -> env.proxyState.allJwtVerifiers().size,
