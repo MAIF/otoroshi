@@ -1,0 +1,7 @@
+{
+  "name": "otoroshi-wasm-manager",
+  "version": "1.0.0",
+  "dependencies": {
+    "@extism/extism": "^0.2.0"
+  }
+}
