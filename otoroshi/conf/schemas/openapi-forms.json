@@ -450,6 +450,10 @@
                 "label" : "watchGracePeriodSeconds",
                 "type" : "number"
               },
+              "connectionTimeout" : {
+                "label" : "connectionTimeout",
+                "type" : "number"
+              },
               "crds" : {
                 "label" : "crds",
                 "type" : "bool"
@@ -529,6 +533,10 @@
               "clusterDomain" : {
                 "label" : "clusterDomain",
                 "type" : "string"
+              },
+              "idleTimeout" : {
+                "label" : "idleTimeout",
+                "type" : "number"
               },
               "caCert" : {
                 "label" : "caCert",
@@ -618,6 +626,10 @@
                 "label" : "ingressEndpointPublishedService",
                 "type" : "string"
               },
+              "coreDnsAzure" : {
+                "label" : "coreDnsAzure",
+                "type" : "bool"
+              },
               "corednsPort" : {
                 "label" : "corednsPort",
                 "type" : "number"
@@ -645,9 +657,13 @@
               "openshiftDnsOperatorCoreDnsNamespace" : {
                 "label" : "openshiftDnsOperatorCoreDnsNamespace",
                 "type" : "string"
+              },
+              "callAndStreamTimeout" : {
+                "label" : "callAndStreamTimeout",
+                "type" : "number"
               }
             },
-            "flow" : [ "endpoint", "templates", "token", "restartDependantDeployments", "watchGracePeriodSeconds", "crds", "watch", "labels", "openshiftDnsOperatorCoreDnsName", "syncIntervalSeconds", "kubeDnsOperatorCoreDnsName", "defaultGroup", "kubeDnsOperatorCoreDnsNamespace", "triggerKey", "otoroshiNamespace", "watchTimeoutSeconds", "openshiftDnsOperatorCleanupDomains", "namespaces", "openshiftDnsOperatorCoreDnsPort", "coreDnsEnv", "triggerPath", "image", "coreDnsConfigMapName", "clusterDomain", "caCert", "trust", "ingressClasses", "userPassword", "syncDaikokuApikeysOnly", "openshiftDnsOperatorCleanup", "kubeSystemNamespace", "ingressEndpointIp", "namespacesLabels", "openshiftDnsOperatorCleanupNames", "kubeDnsOperatorCoreDnsPort", "mutatingWebhookName", "kubeLeader", "ingressEndpointHostname", "openshiftDnsOperatorIntegration", "validatingWebhookName", "coreDnsDeploymentName", "ingresses", "useProxyState", "coreDnsIntegrationDryRun", "ingressEndpointPublishedService", "corednsPort", "coreDnsIntegration", "otoroshiServiceName", "meshDomain", "kubeDnsOperatorIntegration", "triggerHost", "openshiftDnsOperatorCoreDnsNamespace" ]
+            "flow" : [ "endpoint", "templates", "token", "restartDependantDeployments", "watchGracePeriodSeconds", "connectionTimeout", "crds", "watch", "labels", "openshiftDnsOperatorCoreDnsName", "syncIntervalSeconds", "kubeDnsOperatorCoreDnsName", "defaultGroup", "kubeDnsOperatorCoreDnsNamespace", "triggerKey", "otoroshiNamespace", "watchTimeoutSeconds", "openshiftDnsOperatorCleanupDomains", "namespaces", "openshiftDnsOperatorCoreDnsPort", "coreDnsEnv", "triggerPath", "image", "coreDnsConfigMapName", "clusterDomain", "idleTimeout", "caCert", "trust", "ingressClasses", "userPassword", "syncDaikokuApikeysOnly", "openshiftDnsOperatorCleanup", "kubeSystemNamespace", "ingressEndpointIp", "namespacesLabels", "openshiftDnsOperatorCleanupNames", "kubeDnsOperatorCoreDnsPort", "mutatingWebhookName", "kubeLeader", "ingressEndpointHostname", "openshiftDnsOperatorIntegration", "validatingWebhookName", "coreDnsDeploymentName", "ingresses", "useProxyState", "coreDnsIntegrationDryRun", "ingressEndpointPublishedService", "coreDnsAzure", "corednsPort", "coreDnsIntegration", "otoroshiServiceName", "meshDomain", "kubeDnsOperatorIntegration", "triggerHost", "openshiftDnsOperatorCoreDnsNamespace", "callAndStreamTimeout" ]
           },
           "env" : {
             "label" : "env",
@@ -700,6 +716,45 @@
   "otoroshi.tcp.TlsMode" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.next.plugins.WasmSink" : {
+    "schema" : {
+      "proxy_http_call_timeout" : {
+        "label" : "proxy_http_call_timeout",
+        "type" : "number"
+      },
+      "raw_source" : {
+        "label" : "raw_source",
+        "type" : "string"
+      },
+      "wasi" : {
+        "label" : "wasi",
+        "type" : "bool"
+      },
+      "function_name" : {
+        "label" : "function_name",
+        "type" : "string"
+      },
+      "compiler_source" : {
+        "label" : "compiler_source",
+        "type" : "string"
+      },
+      "config" : {
+        "label" : "config",
+        "type" : "object"
+      },
+      "memory_pages" : {
+        "label" : "memory_pages",
+        "type" : "number"
+      },
+      "allowed_hosts" : {
+        "label" : "allowed_hosts",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      }
+    },
+    "flow" : [ "allowed_hosts", "memory_pages", "config", "compiler_source", "function_name", "wasi", "raw_source", "proxy_http_call_timeout" ]
   },
   "otoroshi.next.models.NgTarget" : {
     "schema" : {
@@ -974,6 +1029,19 @@
     "schema" : { },
     "flow" : [ ]
   },
+  "otoroshi.next.plugins.TailscaleStatusPeer" : {
+    "schema" : {
+      "raw" : {
+        "type" : "code",
+        "props" : {
+          "label" : "raw",
+          "editorOnly" : true,
+          "mode" : "json"
+        }
+      }
+    },
+    "flow" : [ "raw" ]
+  },
   "otoroshi.plugins.log4j.Log4jExpressionText" : {
     "schema" : {
       "value" : {
@@ -1068,186 +1136,6 @@
       }
     },
     "flow" : [ "max_depth", "endpoint", "headers", "path", "schema", "max_complexity" ]
-  },
-  "otoroshi.next.models.StoredNgTarget" : {
-    "schema" : {
-      "name" : {
-        "label" : "name",
-        "type" : "string"
-      },
-      "_loc" : {
-        "label" : "_loc",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "tenant" : {
-            "label" : "tenant",
-            "type" : "string"
-          },
-          "teams" : {
-            "label" : "teams",
-            "type" : "array",
-            "array" : true,
-            "format" : null
-          }
-        },
-        "flow" : [ "tenant", "teams" ]
-      },
-      "metadata" : {
-        "label" : "metadata",
-        "type" : "object"
-      },
-      "description" : {
-        "label" : "description",
-        "type" : "string"
-      },
-      "tags" : {
-        "label" : "tags",
-        "type" : "array",
-        "array" : true,
-        "format" : null
-      },
-      "id" : {
-        "label" : "id",
-        "type" : "string"
-      },
-      "target" : {
-        "label" : "target",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "ip_address" : {
-            "label" : "ip_address",
-            "type" : "string"
-          },
-          "protocol" : {
-            "type" : "select",
-            "props" : {
-              "label" : "protocol",
-              "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0" ]
-            }
-          },
-          "predicate" : {
-            "label" : "predicate",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "type" : {
-                "type" : "select",
-                "props" : {
-                  "label" : "type",
-                  "options" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
-                }
-              },
-              "dc" : {
-                "label" : "dc",
-                "type" : "string"
-              },
-              "positions" : {
-                "label" : "positions",
-                "type" : "array",
-                "array" : true,
-                "format" : "form",
-                "schema" : {
-                  "latitude" : {
-                    "label" : "latitude",
-                    "type" : "number"
-                  },
-                  "longitude" : {
-                    "label" : "longitude",
-                    "type" : "number"
-                  },
-                  "radius" : {
-                    "label" : "radius",
-                    "type" : "number"
-                  }
-                },
-                "flow" : [ "latitude", "longitude", "radius" ]
-              },
-              "provider" : {
-                "label" : "provider",
-                "type" : "string"
-              },
-              "dataCenter" : {
-                "label" : "dataCenter",
-                "type" : "string"
-              },
-              "rack" : {
-                "label" : "rack",
-                "type" : "string"
-              },
-              "region" : {
-                "label" : "region",
-                "type" : "string"
-              },
-              "zone" : {
-                "label" : "zone",
-                "type" : "string"
-              }
-            },
-            "flow" : [ "type", "dc", "positions", "provider", "dataCenter", "rack", "region", "zone" ]
-          },
-          "tls_config" : {
-            "label" : "tls_config",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "enabled" : {
-                "label" : "enabled",
-                "type" : "bool"
-              },
-              "certs" : {
-                "label" : "certs",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              },
-              "loose" : {
-                "label" : "loose",
-                "type" : "bool"
-              },
-              "trust_all" : {
-                "label" : "trust_all",
-                "type" : "bool"
-              },
-              "trusted_certs" : {
-                "label" : "trusted_certs",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              }
-            },
-            "flow" : [ "enabled", "certs", "loose", "trust_all", "trusted_certs" ]
-          },
-          "tls" : {
-            "label" : "tls",
-            "type" : "bool"
-          },
-          "port" : {
-            "label" : "port",
-            "type" : "number"
-          },
-          "id" : {
-            "label" : "id",
-            "type" : "string"
-          },
-          "weight" : {
-            "label" : "weight",
-            "type" : "number"
-          },
-          "hostname" : {
-            "label" : "hostname",
-            "type" : "string"
-          }
-        },
-        "flow" : [ "ip_address", "protocol", "predicate", "tls_config", "tls", "port", "id", "weight", "hostname" ]
-      }
-    },
-    "flow" : [ "id", "tags", "description", "metadata", "name", "_loc", "target" ]
   },
   "otoroshi.models.RefJwtVerifier" : {
     "schema" : {
@@ -1499,6 +1387,19 @@
     },
     "flow" : [ "password", "handle", "credentials", "metadata", "createdAt", "typ", "label", "tags", "username", "type", "_loc", "rights" ]
   },
+  "otoroshi.next.plugins.TailscaleStatus" : {
+    "schema" : {
+      "raw" : {
+        "type" : "code",
+        "props" : {
+          "label" : "raw",
+          "editorOnly" : true,
+          "mode" : "json"
+        }
+      }
+    },
+    "flow" : [ "raw" ]
+  },
   "otoroshi.models.ApiDescriptor" : {
     "schema" : {
       "exposeApi" : {
@@ -1512,9 +1413,72 @@
     },
     "flow" : [ "openApiDescriptorUrl", "exposeApi" ]
   },
+  "otoroshi.next.plugins.WasmBackend" : {
+    "schema" : {
+      "proxy_http_call_timeout" : {
+        "label" : "proxy_http_call_timeout",
+        "type" : "number"
+      },
+      "raw_source" : {
+        "label" : "raw_source",
+        "type" : "string"
+      },
+      "wasi" : {
+        "label" : "wasi",
+        "type" : "bool"
+      },
+      "function_name" : {
+        "label" : "function_name",
+        "type" : "string"
+      },
+      "compiler_source" : {
+        "label" : "compiler_source",
+        "type" : "string"
+      },
+      "config" : {
+        "label" : "config",
+        "type" : "object"
+      },
+      "memory_pages" : {
+        "label" : "memory_pages",
+        "type" : "number"
+      },
+      "allowed_hosts" : {
+        "label" : "allowed_hosts",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      }
+    },
+    "flow" : [ "allowed_hosts", "memory_pages", "config", "compiler_source", "function_name", "wasi", "raw_source", "proxy_http_call_timeout" ]
+  },
   "PemCsrBody" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.models.FakeEntityLocationSupport" : {
+    "schema" : {
+      "_loc" : {
+        "label" : "_loc",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "tenant" : {
+            "label" : "tenant",
+            "type" : "string"
+          },
+          "teams" : {
+            "label" : "teams",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          }
+        },
+        "flow" : [ "tenant", "teams" ]
+      }
+    },
+    "flow" : [ "_loc" ]
   },
   "otoroshi.plugins.clientcert.HasClientCertValidator" : {
     "schema" : { },
@@ -2213,6 +2177,15 @@
     },
     "flow" : [ "audience", "clientId", "jsonPayload", "scope", "clientSecret", "headerName", "user", "headerValueFormat", "cacheTokenSeconds", "password", "kind", "url", "method", "tlsConfig" ]
   },
+  "otoroshi.next.plugins.TailscaleCert" : {
+    "schema" : {
+      "raw" : {
+        "label" : "raw",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "raw" ]
+  },
   "otoroshi.models.DataExporterConfigFiltering" : {
     "schema" : {
       "include" : {
@@ -2249,6 +2222,15 @@
   "TargetsList" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.models.RouteIdentifier" : {
+    "schema" : {
+      "id" : {
+        "label" : "id",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "id" ]
   },
   "otoroshi.next.plugins.NgLegacyAuthModuleCallConfig" : {
     "schema" : {
@@ -2612,6 +2594,28 @@
       }
     },
     "flow" : [ "name", "type" ]
+  },
+  "otoroshi.next.models.KvNgRouteCompositionDataStore" : {
+    "schema" : {
+      "_env" : {
+        "label" : "_env",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "circuitBeakersHolder" : {
+            "label" : "circuitBeakersHolder",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : { },
+            "flow" : [ ]
+          }
+        },
+        "flow" : [ "circuitBeakersHolder" ]
+      }
+    },
+    "flow" : [ "_env" ]
   },
   "otoroshi.plugins.useragent.UserAgentInfoHeader" : {
     "schema" : { },
@@ -6288,18 +6292,12 @@
         },
         "flow" : [ "type", "ratio" ]
       },
-      "target_refs" : {
-        "label" : "target_refs",
-        "type" : "array",
-        "array" : true,
-        "format" : null
-      },
       "rewrite" : {
         "label" : "rewrite",
         "type" : "bool"
       }
     },
-    "flow" : [ "rewrite", "target_refs", "targets", "root", "load_balancing" ]
+    "flow" : [ "rewrite", "targets", "root", "load_balancing" ]
   },
   "otoroshi.utils.letsencrypt.LetsEncryptSettings" : {
     "schema" : {
@@ -6442,6 +6440,439 @@
       }
     },
     "flow" : [ "config" ]
+  },
+  "otoroshi.next.models.NgRouteComposition" : {
+    "schema" : {
+      "capture" : {
+        "label" : "capture",
+        "type" : "bool"
+      },
+      "id" : {
+        "label" : "id",
+        "type" : "string"
+      },
+      "debug_flow" : {
+        "label" : "debug_flow",
+        "type" : "bool"
+      },
+      "routes" : {
+        "label" : "routes",
+        "type" : "array",
+        "array" : true,
+        "format" : "form",
+        "schema" : {
+          "backend_ref" : {
+            "label" : "backend_ref",
+            "type" : "string"
+          },
+          "frontend" : {
+            "label" : "frontend",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "headers" : {
+                "label" : "headers",
+                "type" : "object"
+              },
+              "query" : {
+                "label" : "query",
+                "type" : "object"
+              },
+              "domains" : {
+                "label" : "domains",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "methods" : {
+                "label" : "methods",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "exact" : {
+                "label" : "exact",
+                "type" : "bool"
+              },
+              "strip_path" : {
+                "label" : "strip_path",
+                "type" : "bool"
+              }
+            },
+            "flow" : [ "headers", "query", "domains", "methods", "exact", "strip_path" ]
+          },
+          "override_plugins" : {
+            "label" : "override_plugins",
+            "type" : "bool"
+          },
+          "backend" : {
+            "label" : "backend",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "root" : {
+                "label" : "root",
+                "type" : "string"
+              },
+              "targets" : {
+                "label" : "targets",
+                "type" : "array",
+                "array" : true,
+                "format" : "form",
+                "schema" : {
+                  "ip_address" : {
+                    "label" : "ip_address",
+                    "type" : "string"
+                  },
+                  "protocol" : {
+                    "type" : "select",
+                    "props" : {
+                      "label" : "protocol",
+                      "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0" ]
+                    }
+                  },
+                  "predicate" : {
+                    "label" : "predicate",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : {
+                      "type" : {
+                        "type" : "select",
+                        "props" : {
+                          "label" : "type",
+                          "options" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
+                        }
+                      },
+                      "dc" : {
+                        "label" : "dc",
+                        "type" : "string"
+                      },
+                      "positions" : {
+                        "label" : "positions",
+                        "type" : "array",
+                        "array" : true,
+                        "format" : "form",
+                        "schema" : {
+                          "latitude" : {
+                            "label" : "latitude",
+                            "type" : "number"
+                          },
+                          "longitude" : {
+                            "label" : "longitude",
+                            "type" : "number"
+                          },
+                          "radius" : {
+                            "label" : "radius",
+                            "type" : "number"
+                          }
+                        },
+                        "flow" : [ "latitude", "longitude", "radius" ]
+                      },
+                      "provider" : {
+                        "label" : "provider",
+                        "type" : "string"
+                      },
+                      "dataCenter" : {
+                        "label" : "dataCenter",
+                        "type" : "string"
+                      },
+                      "rack" : {
+                        "label" : "rack",
+                        "type" : "string"
+                      },
+                      "region" : {
+                        "label" : "region",
+                        "type" : "string"
+                      },
+                      "zone" : {
+                        "label" : "zone",
+                        "type" : "string"
+                      }
+                    },
+                    "flow" : [ "type", "dc", "positions", "provider", "dataCenter", "rack", "region", "zone" ]
+                  },
+                  "tls_config" : {
+                    "label" : "tls_config",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : {
+                      "enabled" : {
+                        "label" : "enabled",
+                        "type" : "bool"
+                      },
+                      "certs" : {
+                        "label" : "certs",
+                        "type" : "array",
+                        "array" : true,
+                        "format" : null
+                      },
+                      "loose" : {
+                        "label" : "loose",
+                        "type" : "bool"
+                      },
+                      "trust_all" : {
+                        "label" : "trust_all",
+                        "type" : "bool"
+                      },
+                      "trusted_certs" : {
+                        "label" : "trusted_certs",
+                        "type" : "array",
+                        "array" : true,
+                        "format" : null
+                      }
+                    },
+                    "flow" : [ "enabled", "certs", "loose", "trust_all", "trusted_certs" ]
+                  },
+                  "tls" : {
+                    "label" : "tls",
+                    "type" : "bool"
+                  },
+                  "port" : {
+                    "label" : "port",
+                    "type" : "number"
+                  },
+                  "id" : {
+                    "label" : "id",
+                    "type" : "string"
+                  },
+                  "weight" : {
+                    "label" : "weight",
+                    "type" : "number"
+                  },
+                  "hostname" : {
+                    "label" : "hostname",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "ip_address", "protocol", "predicate", "tls_config", "tls", "port", "id", "weight", "hostname" ]
+              },
+              "load_balancing" : {
+                "label" : "load_balancing",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "type" : {
+                    "type" : "select",
+                    "props" : {
+                      "label" : "type",
+                      "options" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+                    }
+                  },
+                  "ratio" : {
+                    "label" : "ratio",
+                    "type" : "number"
+                  }
+                },
+                "flow" : [ "type", "ratio" ]
+              },
+              "rewrite" : {
+                "label" : "rewrite",
+                "type" : "bool"
+              }
+            },
+            "flow" : [ "root", "targets", "load_balancing", "rewrite" ]
+          }
+        },
+        "flow" : [ "backend_ref", "frontend", "override_plugins", "backend" ]
+      },
+      "enabled" : {
+        "label" : "enabled",
+        "type" : "bool"
+      },
+      "description" : {
+        "label" : "description",
+        "type" : "string"
+      },
+      "metadata" : {
+        "label" : "metadata",
+        "type" : "object"
+      },
+      "export_reporting" : {
+        "label" : "export_reporting",
+        "type" : "bool"
+      },
+      "tags" : {
+        "label" : "tags",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      },
+      "name" : {
+        "label" : "name",
+        "type" : "string"
+      },
+      "_loc" : {
+        "label" : "_loc",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "tenant" : {
+            "label" : "tenant",
+            "type" : "string"
+          },
+          "teams" : {
+            "label" : "teams",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          }
+        },
+        "flow" : [ "tenant", "teams" ]
+      },
+      "client" : {
+        "label" : "client",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "idle_timeout" : {
+            "label" : "idle_timeout",
+            "type" : "number"
+          },
+          "sample_interval" : {
+            "label" : "sample_interval",
+            "type" : "number"
+          },
+          "cache_connection_settings" : {
+            "label" : "cache_connection_settings",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "queue_size" : {
+                "label" : "queue_size",
+                "type" : "number"
+              },
+              "enabled" : {
+                "label" : "enabled",
+                "type" : "bool"
+              }
+            },
+            "flow" : [ "queue_size", "enabled" ]
+          },
+          "call_and_stream_timeout" : {
+            "label" : "call_and_stream_timeout",
+            "type" : "number"
+          },
+          "custom_timeouts" : {
+            "label" : "custom_timeouts",
+            "type" : "array",
+            "array" : true,
+            "format" : "form",
+            "schema" : {
+              "connection_timeout" : {
+                "label" : "connection_timeout",
+                "type" : "number"
+              },
+              "call_and_stream_timeout" : {
+                "label" : "call_and_stream_timeout",
+                "type" : "number"
+              },
+              "path" : {
+                "label" : "path",
+                "type" : "string"
+              },
+              "call_timeout" : {
+                "label" : "call_timeout",
+                "type" : "number"
+              },
+              "idle_timeout" : {
+                "label" : "idle_timeout",
+                "type" : "number"
+              },
+              "global_timeout" : {
+                "label" : "global_timeout",
+                "type" : "number"
+              }
+            },
+            "flow" : [ "connection_timeout", "call_and_stream_timeout", "path", "call_timeout", "idle_timeout", "global_timeout" ]
+          },
+          "connection_timeout" : {
+            "label" : "connection_timeout",
+            "type" : "number"
+          },
+          "call_timeout" : {
+            "label" : "call_timeout",
+            "type" : "number"
+          },
+          "global_timeout" : {
+            "label" : "global_timeout",
+            "type" : "number"
+          },
+          "retry_initial_delay" : {
+            "label" : "retry_initial_delay",
+            "type" : "number"
+          },
+          "backoff_factor" : {
+            "label" : "backoff_factor",
+            "type" : "number"
+          },
+          "proxy" : {
+            "label" : "proxy",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "host" : {
+                "label" : "host",
+                "type" : "string"
+              },
+              "port" : {
+                "label" : "port",
+                "type" : "string"
+              },
+              "protocol" : {
+                "label" : "protocol",
+                "type" : "string"
+              },
+              "principal" : {
+                "label" : "principal",
+                "type" : "string"
+              },
+              "password" : {
+                "label" : "password",
+                "type" : "string"
+              },
+              "ntlmDomain" : {
+                "label" : "ntlmDomain",
+                "type" : "string"
+              },
+              "encoding" : {
+                "label" : "encoding",
+                "type" : "string"
+              },
+              "nonProxyHosts" : {
+                "label" : "nonProxyHosts",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
+          },
+          "retries" : {
+            "label" : "retries",
+            "type" : "number"
+          },
+          "max_errors" : {
+            "label" : "max_errors",
+            "type" : "number"
+          }
+        },
+        "flow" : [ "idle_timeout", "sample_interval", "cache_connection_settings", "call_and_stream_timeout", "custom_timeouts", "connection_timeout", "call_timeout", "global_timeout", "retry_initial_delay", "backoff_factor", "proxy", "retries", "max_errors" ]
+      },
+      "groups" : {
+        "label" : "groups",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      }
+    },
+    "flow" : [ "groups", "name", "tags", "export_reporting", "metadata", "description", "enabled", "routes", "debug_flow", "id", "capture", "_loc", "client" ]
   },
   "otoroshi.plugins.mirror.MirroringPlugin" : {
     "schema" : { },
@@ -6606,6 +7037,19 @@
   "otoroshi.plugins.apikeys.HasAllowedApiKeyValidator" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.next.plugins.NgDefaultRequestBodyConfig" : {
+    "schema" : {
+      "content_type" : {
+        "label" : "content_type",
+        "type" : "string"
+      },
+      "content_encoding" : {
+        "label" : "content_encoding",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "content_encoding", "content_type" ]
   },
   "otoroshi.next.plugins.NgLegacyApikeyCallConfig" : {
     "schema" : {
@@ -7147,8 +7591,16 @@
     },
     "flow" : [ "preferBackendRequest", "captureRequests", "maxFileSize", "preferBackendResponse", "captureResponses", "methods", "type", "s3" ]
   },
+  "otoroshi.next.plugins.TailscaleLocalApiClient" : {
+    "schema" : { },
+    "flow" : [ ]
+  },
   "otoroshi.models.GlobalConfig" : {
     "schema" : {
+      "anonymousTelemetry" : {
+        "label" : "anonymousTelemetry",
+        "type" : "bool"
+      },
       "geolocationSettings" : {
         "label" : "geolocationSettings",
         "type" : "form",
@@ -7798,9 +8250,19 @@
               "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
             }
           },
+          "sendWorkers" : {
+            "label" : "sendWorkers",
+            "type" : "number"
+          },
           "applyTemplate" : {
             "label" : "applyTemplate",
             "type" : "bool"
+          },
+          "uris" : {
+            "label" : "uris",
+            "type" : "array",
+            "array" : true,
+            "format" : null
           },
           "mtlsConfig" : {
             "label" : "mtlsConfig",
@@ -7839,9 +8301,9 @@
             "label" : "version",
             "type" : "string"
           },
-          "clusterUri" : {
-            "label" : "clusterUri",
-            "type" : "string"
+          "maxBulkSize" : {
+            "label" : "maxBulkSize",
+            "type" : "number"
           },
           "headers" : {
             "label" : "headers",
@@ -7857,6 +8319,14 @@
                 "label" : "clientSide",
                 "type" : "bool"
               },
+              "numberOfShards" : {
+                "label" : "numberOfShards",
+                "type" : "number"
+              },
+              "numberOfReplicas" : {
+                "label" : "numberOfReplicas",
+                "type" : "number"
+              },
               "interval" : {
                 "label" : "interval",
                 "type" : "form",
@@ -7866,7 +8336,7 @@
                 "flow" : [ ]
               }
             },
-            "flow" : [ "clientSide", "interval" ]
+            "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
           },
           "user" : {
             "label" : "user",
@@ -7881,7 +8351,7 @@
             "type" : "string"
           }
         },
-        "flow" : [ "type", "applyTemplate", "mtlsConfig", "version", "clusterUri", "headers", "indexSettings", "user", "index", "password" ]
+        "flow" : [ "type", "sendWorkers", "applyTemplate", "uris", "mtlsConfig", "version", "maxBulkSize", "headers", "indexSettings", "user", "index", "password" ]
       },
       "trustXForwarded" : {
         "label" : "trustXForwarded",
@@ -7935,9 +8405,19 @@
               "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
             }
           },
+          "sendWorkers" : {
+            "label" : "sendWorkers",
+            "type" : "number"
+          },
           "applyTemplate" : {
             "label" : "applyTemplate",
             "type" : "bool"
+          },
+          "uris" : {
+            "label" : "uris",
+            "type" : "array",
+            "array" : true,
+            "format" : null
           },
           "mtlsConfig" : {
             "label" : "mtlsConfig",
@@ -7976,9 +8456,9 @@
             "label" : "version",
             "type" : "string"
           },
-          "clusterUri" : {
-            "label" : "clusterUri",
-            "type" : "string"
+          "maxBulkSize" : {
+            "label" : "maxBulkSize",
+            "type" : "number"
           },
           "headers" : {
             "label" : "headers",
@@ -7994,6 +8474,14 @@
                 "label" : "clientSide",
                 "type" : "bool"
               },
+              "numberOfShards" : {
+                "label" : "numberOfShards",
+                "type" : "number"
+              },
+              "numberOfReplicas" : {
+                "label" : "numberOfReplicas",
+                "type" : "number"
+              },
               "interval" : {
                 "label" : "interval",
                 "type" : "form",
@@ -8003,7 +8491,7 @@
                 "flow" : [ ]
               }
             },
-            "flow" : [ "clientSide", "interval" ]
+            "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
           },
           "user" : {
             "label" : "user",
@@ -8018,7 +8506,7 @@
             "type" : "string"
           }
         },
-        "flow" : [ "type", "applyTemplate", "mtlsConfig", "version", "clusterUri", "indexSettings", "user", "index", "password", "headers" ]
+        "flow" : [ "type", "sendWorkers", "applyTemplate", "uris", "mtlsConfig", "version", "maxBulkSize", "indexSettings", "user", "index", "password", "headers" ]
       },
       "logAnalyticsOnServer" : {
         "label" : "logAnalyticsOnServer",
@@ -8204,6 +8692,31 @@
           }
         },
         "flow" : [ "allowed", "enabled", "replyNicely", "notAllowed", "caRef" ]
+      },
+      "wasmManagerSettings" : {
+        "label" : "wasmManagerSettings",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "url" : {
+            "label" : "url",
+            "type" : "string"
+          },
+          "clientId" : {
+            "label" : "clientId",
+            "type" : "string"
+          },
+          "clientSecret" : {
+            "label" : "clientSecret",
+            "type" : "string"
+          },
+          "pluginsFilter" : {
+            "label" : "pluginsFilter",
+            "type" : "string"
+          }
+        },
+        "flow" : [ "url", "clientId", "clientSecret", "pluginsFilter" ]
       },
       "maintenanceMode" : {
         "label" : "maintenanceMode",
@@ -8637,7 +9150,7 @@
         "flow" : [ "enabled" ]
       }
     },
-    "flow" : [ "u2fLoginOnly", "alertsWebhooks", "autoLinkToDefaultGroup", "maxHttp10ResponseSize", "useCircuitBreakers", "perIpThrottlingQuota", "initWithNewEngine", "maintenanceMode", "analyticsWebhooks", "middleFingers", "lines", "otoroshiId", "streamEntityOnly", "backOfficeAuthRef", "apiReadOnly", "metadata", "logAnalyticsOnServer", "elasticWritesConfigs", "useAkkaHttpClient", "limitConcurrentRequests", "tags", "trustXForwarded", "enableEmbeddedMetrics", "maxLogsSize", "endlessIpAddresses", "maxConcurrentRequests", "maxWebhookSize", "throttlingQuota", "alertsEmails", "geolocationSettings", "cleverSettings", "templates", "plugins", "kafkaConfig", "proxies", "elasticReadsConfig", "quotasSettings", "mailerSettings", "autoCert", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "tlsSettings", "statsdConfig", "ipFiltering", "userAgentSettings" ]
+    "flow" : [ "u2fLoginOnly", "alertsWebhooks", "autoLinkToDefaultGroup", "maxHttp10ResponseSize", "useCircuitBreakers", "perIpThrottlingQuota", "initWithNewEngine", "maintenanceMode", "analyticsWebhooks", "middleFingers", "lines", "otoroshiId", "streamEntityOnly", "backOfficeAuthRef", "apiReadOnly", "metadata", "logAnalyticsOnServer", "elasticWritesConfigs", "useAkkaHttpClient", "limitConcurrentRequests", "tags", "trustXForwarded", "enableEmbeddedMetrics", "maxLogsSize", "endlessIpAddresses", "maxConcurrentRequests", "maxWebhookSize", "throttlingQuota", "alertsEmails", "anonymousTelemetry", "geolocationSettings", "cleverSettings", "templates", "plugins", "kafkaConfig", "proxies", "elasticReadsConfig", "quotasSettings", "mailerSettings", "autoCert", "wasmManagerSettings", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "tlsSettings", "statsdConfig", "ipFiltering", "userAgentSettings" ]
   },
   "otoroshi.plugins.users.HasAllowedUsersValidator" : {
     "schema" : { },
@@ -9054,10 +9567,6 @@
     "schema" : { },
     "flow" : [ ]
   },
-  "otoroshi.next.plugins.Http2Caller" : {
-    "schema" : { },
-    "flow" : [ ]
-  },
   "otoroshi.utils.mailer.ConsoleMailerSettings" : {
     "schema" : {
       "type" : {
@@ -9350,12 +9859,6 @@
             "label" : "rewrite",
             "type" : "bool"
           },
-          "target_refs" : {
-            "label" : "target_refs",
-            "type" : "array",
-            "array" : true,
-            "format" : null
-          },
           "targets" : {
             "label" : "targets",
             "type" : "array",
@@ -9491,7 +9994,7 @@
             "flow" : [ "ip_address", "protocol", "predicate", "tls_config", "tls", "port", "id", "weight", "hostname" ]
           }
         },
-        "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "target_refs", "targets" ]
+        "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "targets" ]
       },
       "name" : {
         "label" : "name",
@@ -9764,6 +10267,10 @@
             "label" : "watchGracePeriodSeconds",
             "type" : "number"
           },
+          "connectionTimeout" : {
+            "label" : "connectionTimeout",
+            "type" : "number"
+          },
           "crds" : {
             "label" : "crds",
             "type" : "bool"
@@ -9843,6 +10350,10 @@
           "clusterDomain" : {
             "label" : "clusterDomain",
             "type" : "string"
+          },
+          "idleTimeout" : {
+            "label" : "idleTimeout",
+            "type" : "number"
           },
           "caCert" : {
             "label" : "caCert",
@@ -9932,6 +10443,10 @@
             "label" : "ingressEndpointPublishedService",
             "type" : "string"
           },
+          "coreDnsAzure" : {
+            "label" : "coreDnsAzure",
+            "type" : "bool"
+          },
           "corednsPort" : {
             "label" : "corednsPort",
             "type" : "number"
@@ -9959,9 +10474,13 @@
           "openshiftDnsOperatorCoreDnsNamespace" : {
             "label" : "openshiftDnsOperatorCoreDnsNamespace",
             "type" : "string"
+          },
+          "callAndStreamTimeout" : {
+            "label" : "callAndStreamTimeout",
+            "type" : "number"
           }
         },
-        "flow" : [ "endpoint", "templates", "token", "restartDependantDeployments", "watchGracePeriodSeconds", "crds", "watch", "labels", "openshiftDnsOperatorCoreDnsName", "syncIntervalSeconds", "kubeDnsOperatorCoreDnsName", "defaultGroup", "kubeDnsOperatorCoreDnsNamespace", "triggerKey", "otoroshiNamespace", "watchTimeoutSeconds", "openshiftDnsOperatorCleanupDomains", "namespaces", "openshiftDnsOperatorCoreDnsPort", "coreDnsEnv", "triggerPath", "image", "coreDnsConfigMapName", "clusterDomain", "caCert", "trust", "ingressClasses", "userPassword", "syncDaikokuApikeysOnly", "openshiftDnsOperatorCleanup", "kubeSystemNamespace", "ingressEndpointIp", "namespacesLabels", "openshiftDnsOperatorCleanupNames", "kubeDnsOperatorCoreDnsPort", "mutatingWebhookName", "kubeLeader", "ingressEndpointHostname", "openshiftDnsOperatorIntegration", "validatingWebhookName", "coreDnsDeploymentName", "ingresses", "useProxyState", "coreDnsIntegrationDryRun", "ingressEndpointPublishedService", "corednsPort", "coreDnsIntegration", "otoroshiServiceName", "meshDomain", "kubeDnsOperatorIntegration", "triggerHost", "openshiftDnsOperatorCoreDnsNamespace" ]
+        "flow" : [ "endpoint", "templates", "token", "restartDependantDeployments", "watchGracePeriodSeconds", "connectionTimeout", "crds", "watch", "labels", "openshiftDnsOperatorCoreDnsName", "syncIntervalSeconds", "kubeDnsOperatorCoreDnsName", "defaultGroup", "kubeDnsOperatorCoreDnsNamespace", "triggerKey", "otoroshiNamespace", "watchTimeoutSeconds", "openshiftDnsOperatorCleanupDomains", "namespaces", "openshiftDnsOperatorCoreDnsPort", "coreDnsEnv", "triggerPath", "image", "coreDnsConfigMapName", "clusterDomain", "idleTimeout", "caCert", "trust", "ingressClasses", "userPassword", "syncDaikokuApikeysOnly", "openshiftDnsOperatorCleanup", "kubeSystemNamespace", "ingressEndpointIp", "namespacesLabels", "openshiftDnsOperatorCleanupNames", "kubeDnsOperatorCoreDnsPort", "mutatingWebhookName", "kubeLeader", "ingressEndpointHostname", "openshiftDnsOperatorIntegration", "validatingWebhookName", "coreDnsDeploymentName", "ingresses", "useProxyState", "coreDnsIntegrationDryRun", "ingressEndpointPublishedService", "coreDnsAzure", "corednsPort", "coreDnsIntegration", "otoroshiServiceName", "meshDomain", "kubeDnsOperatorIntegration", "triggerHost", "openshiftDnsOperatorCoreDnsNamespace", "callAndStreamTimeout" ]
       },
       "env" : {
         "label" : "env",
@@ -10621,17 +11140,27 @@
             "label" : "namespace",
             "type" : "string"
           },
+          "sendWorkers" : {
+            "label" : "sendWorkers",
+            "type" : "number"
+          },
           "applyTemplate" : {
             "label" : "applyTemplate",
             "type" : "bool"
+          },
+          "uris" : {
+            "label" : "uris",
+            "type" : "array",
+            "array" : true,
+            "format" : null
           },
           "version" : {
             "label" : "version",
             "type" : "string"
           },
-          "clusterUri" : {
-            "label" : "clusterUri",
-            "type" : "string"
+          "maxBulkSize" : {
+            "label" : "maxBulkSize",
+            "type" : "number"
           },
           "headers" : {
             "label" : "headers",
@@ -10647,6 +11176,14 @@
                 "label" : "clientSide",
                 "type" : "bool"
               },
+              "numberOfShards" : {
+                "label" : "numberOfShards",
+                "type" : "number"
+              },
+              "numberOfReplicas" : {
+                "label" : "numberOfReplicas",
+                "type" : "number"
+              },
               "interval" : {
                 "label" : "interval",
                 "type" : "form",
@@ -10656,7 +11193,7 @@
                 "flow" : [ ]
               }
             },
-            "flow" : [ "clientSide", "interval" ]
+            "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
           },
           "user" : {
             "label" : "user",
@@ -10732,7 +11269,7 @@
             "type" : "string"
           }
         },
-        "flow" : [ "type", "sendEvents", "truststore", "hostValidation", "servers", "mtlsConfig", "securityProtocol", "keystore", "topic", "keyPass", "saslConfig", "tlsTrustCertsFilePath", "tenant", "uri", "namespace", "applyTemplate", "version", "clusterUri", "headers", "indexSettings", "user", "index", "password", "ref", "config", "path", "maxFileSize", "labels", "url", "to", "eu", "apiKey", "domain", "apiKeyPublic", "apiKeyPrivate" ]
+        "flow" : [ "type", "sendEvents", "truststore", "hostValidation", "servers", "mtlsConfig", "securityProtocol", "keystore", "topic", "keyPass", "saslConfig", "tlsTrustCertsFilePath", "tenant", "uri", "namespace", "sendWorkers", "applyTemplate", "uris", "version", "maxBulkSize", "headers", "indexSettings", "user", "index", "password", "ref", "config", "path", "maxFileSize", "labels", "url", "to", "eu", "apiKey", "domain", "apiKeyPublic", "apiKeyPrivate" ]
       },
       "projection" : {
         "label" : "projection",
@@ -10785,6 +11322,14 @@
         "label" : "clientSide",
         "type" : "bool"
       },
+      "numberOfShards" : {
+        "label" : "numberOfShards",
+        "type" : "number"
+      },
+      "numberOfReplicas" : {
+        "label" : "numberOfReplicas",
+        "type" : "number"
+      },
       "interval" : {
         "label" : "interval",
         "type" : "form",
@@ -10794,7 +11339,7 @@
         "flow" : [ ]
       }
     },
-    "flow" : [ "clientSide", "interval" ]
+    "flow" : [ "numberOfReplicas", "numberOfShards", "clientSide", "interval" ]
   },
   "otoroshi.next.plugins.wrappers.RequestSinkWrapper" : {
     "schema" : { },
@@ -11022,6 +11567,10 @@
       }
     },
     "flow" : [ "privateKey", "publicKey", "size", "type" ]
+  },
+  "otoroshi.next.plugins.TailscaleTargetsJob" : {
+    "schema" : { },
+    "flow" : [ ]
   },
   "otoroshi.next.models.NgMatchedRoute" : {
     "schema" : {
@@ -11326,12 +11875,6 @@
                 "label" : "rewrite",
                 "type" : "bool"
               },
-              "target_refs" : {
-                "label" : "target_refs",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              },
               "targets" : {
                 "label" : "targets",
                 "type" : "array",
@@ -11467,7 +12010,7 @@
                 "flow" : [ "ip_address", "protocol", "predicate", "tls_config", "tls", "port", "id", "weight", "hostname" ]
               }
             },
-            "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "target_refs", "targets" ]
+            "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "targets" ]
           }
         },
         "flow" : [ "debug_flow", "enabled", "name", "id", "export_reporting", "metadata", "frontend", "_loc", "tags", "capture", "groups", "backend_ref", "description", "backend" ]
@@ -11824,12 +12367,6 @@
                 "label" : "rewrite",
                 "type" : "bool"
               },
-              "target_refs" : {
-                "label" : "target_refs",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              },
               "targets" : {
                 "label" : "targets",
                 "type" : "array",
@@ -11965,7 +12502,7 @@
                 "flow" : [ "ip_address", "protocol", "predicate", "tls_config", "tls", "port", "id", "weight", "hostname" ]
               }
             },
-            "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "target_refs", "targets" ]
+            "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "targets" ]
           }
         },
         "flow" : [ "debug_flow", "enabled", "name", "id", "export_reporting", "metadata", "frontend", "_loc", "tags", "capture", "groups", "backend_ref", "description", "backend" ]
@@ -11980,6 +12517,19 @@
       }
     },
     "flow" : [ "path", "domain", "route" ]
+  },
+  "otoroshi.next.plugins.ReactorResponse" : {
+    "schema" : {
+      "body" : {
+        "type" : "code",
+        "props" : {
+          "label" : "body",
+          "editorOnly" : true,
+          "mode" : "json"
+        }
+      }
+    },
+    "flow" : [ "body" ]
   },
   "otoroshi.plugins.oidc.ThirdPartyApiKeyConfigType" : {
     "schema" : { },
@@ -12473,12 +13023,6 @@
             "label" : "rewrite",
             "type" : "bool"
           },
-          "target_refs" : {
-            "label" : "target_refs",
-            "type" : "array",
-            "array" : true,
-            "format" : null
-          },
           "targets" : {
             "label" : "targets",
             "type" : "array",
@@ -12614,7 +13158,7 @@
             "flow" : [ "ip_address", "protocol", "predicate", "tls_config", "tls", "port", "id", "weight", "hostname" ]
           }
         },
-        "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "target_refs", "targets" ]
+        "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "targets" ]
       }
     },
     "flow" : [ "description", "backend_ref", "groups", "capture", "tags", "metadata", "export_reporting", "id", "name", "enabled", "debug_flow", "frontend", "_loc", "backend" ]
@@ -13042,6 +13586,23 @@
   "otoroshi.next.plugins.NoopSpanExporter" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.next.plugins.WasmUtils" : {
+    "schema" : { },
+    "flow" : [ ]
+  },
+  "otoroshi.next.plugins.TailscaleSelectTargetByName" : {
+    "schema" : {
+      "machine_name" : {
+        "label" : "machine_name",
+        "type" : "string"
+      },
+      "use_ip_address" : {
+        "label" : "use_ip_address",
+        "type" : "bool"
+      }
+    },
+    "flow" : [ "use_ip_address", "machine_name" ]
   },
   "otoroshi.plugins.jobs.kubernetes.KubernetesCRDsJob" : {
     "schema" : { },
@@ -15764,9 +16325,19 @@
           "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
         }
       },
+      "sendWorkers" : {
+        "label" : "sendWorkers",
+        "type" : "number"
+      },
       "applyTemplate" : {
         "label" : "applyTemplate",
         "type" : "bool"
+      },
+      "uris" : {
+        "label" : "uris",
+        "type" : "array",
+        "array" : true,
+        "format" : null
       },
       "mtlsConfig" : {
         "label" : "mtlsConfig",
@@ -15805,9 +16376,9 @@
         "label" : "version",
         "type" : "string"
       },
-      "clusterUri" : {
-        "label" : "clusterUri",
-        "type" : "string"
+      "maxBulkSize" : {
+        "label" : "maxBulkSize",
+        "type" : "number"
       },
       "headers" : {
         "label" : "headers",
@@ -15823,6 +16394,14 @@
             "label" : "clientSide",
             "type" : "bool"
           },
+          "numberOfShards" : {
+            "label" : "numberOfShards",
+            "type" : "number"
+          },
+          "numberOfReplicas" : {
+            "label" : "numberOfReplicas",
+            "type" : "number"
+          },
           "interval" : {
             "label" : "interval",
             "type" : "form",
@@ -15832,7 +16411,7 @@
             "flow" : [ ]
           }
         },
-        "flow" : [ "clientSide", "interval" ]
+        "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
       },
       "user" : {
         "label" : "user",
@@ -15847,7 +16426,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "password", "index", "user", "headers", "clusterUri", "version", "applyTemplate", "type", "mtlsConfig", "indexSettings" ]
+    "flow" : [ "password", "index", "user", "headers", "maxBulkSize", "version", "uris", "applyTemplate", "sendWorkers", "type", "mtlsConfig", "indexSettings" ]
   },
   "otoroshi.models.ApiKeyConstraints" : {
     "schema" : {
@@ -19252,6 +19831,10 @@
         "label" : "watchGracePeriodSeconds",
         "type" : "number"
       },
+      "connectionTimeout" : {
+        "label" : "connectionTimeout",
+        "type" : "number"
+      },
       "crds" : {
         "label" : "crds",
         "type" : "bool"
@@ -19331,6 +19914,10 @@
       "clusterDomain" : {
         "label" : "clusterDomain",
         "type" : "string"
+      },
+      "idleTimeout" : {
+        "label" : "idleTimeout",
+        "type" : "number"
       },
       "caCert" : {
         "label" : "caCert",
@@ -19420,6 +20007,10 @@
         "label" : "ingressEndpointPublishedService",
         "type" : "string"
       },
+      "coreDnsAzure" : {
+        "label" : "coreDnsAzure",
+        "type" : "bool"
+      },
       "corednsPort" : {
         "label" : "corednsPort",
         "type" : "number"
@@ -19447,15 +20038,96 @@
       "openshiftDnsOperatorCoreDnsNamespace" : {
         "label" : "openshiftDnsOperatorCoreDnsNamespace",
         "type" : "string"
+      },
+      "callAndStreamTimeout" : {
+        "label" : "callAndStreamTimeout",
+        "type" : "number"
       }
     },
-    "flow" : [ "openshiftDnsOperatorCoreDnsNamespace", "triggerHost", "kubeDnsOperatorIntegration", "meshDomain", "otoroshiServiceName", "coreDnsIntegration", "corednsPort", "ingressEndpointPublishedService", "coreDnsIntegrationDryRun", "useProxyState", "ingresses", "coreDnsDeploymentName", "validatingWebhookName", "openshiftDnsOperatorIntegration", "ingressEndpointHostname", "kubeLeader", "mutatingWebhookName", "kubeDnsOperatorCoreDnsPort", "openshiftDnsOperatorCleanupNames", "namespacesLabels", "ingressEndpointIp", "kubeSystemNamespace", "openshiftDnsOperatorCleanup", "syncDaikokuApikeysOnly", "userPassword", "ingressClasses", "trust", "caCert", "clusterDomain", "coreDnsConfigMapName", "image", "triggerPath", "coreDnsEnv", "openshiftDnsOperatorCoreDnsPort", "namespaces", "openshiftDnsOperatorCleanupDomains", "watchTimeoutSeconds", "otoroshiNamespace", "triggerKey", "kubeDnsOperatorCoreDnsNamespace", "defaultGroup", "kubeDnsOperatorCoreDnsName", "syncIntervalSeconds", "openshiftDnsOperatorCoreDnsName", "labels", "watch", "crds", "watchGracePeriodSeconds", "restartDependantDeployments", "token", "templates", "endpoint" ]
+    "flow" : [ "callAndStreamTimeout", "openshiftDnsOperatorCoreDnsNamespace", "triggerHost", "kubeDnsOperatorIntegration", "meshDomain", "otoroshiServiceName", "coreDnsIntegration", "corednsPort", "coreDnsAzure", "ingressEndpointPublishedService", "coreDnsIntegrationDryRun", "useProxyState", "ingresses", "coreDnsDeploymentName", "validatingWebhookName", "openshiftDnsOperatorIntegration", "ingressEndpointHostname", "kubeLeader", "mutatingWebhookName", "kubeDnsOperatorCoreDnsPort", "openshiftDnsOperatorCleanupNames", "namespacesLabels", "ingressEndpointIp", "kubeSystemNamespace", "openshiftDnsOperatorCleanup", "syncDaikokuApikeysOnly", "userPassword", "ingressClasses", "trust", "caCert", "idleTimeout", "clusterDomain", "coreDnsConfigMapName", "image", "triggerPath", "coreDnsEnv", "openshiftDnsOperatorCoreDnsPort", "namespaces", "openshiftDnsOperatorCleanupDomains", "watchTimeoutSeconds", "otoroshiNamespace", "triggerKey", "kubeDnsOperatorCoreDnsNamespace", "defaultGroup", "kubeDnsOperatorCoreDnsName", "syncIntervalSeconds", "openshiftDnsOperatorCoreDnsName", "labels", "watch", "crds", "connectionTimeout", "watchGracePeriodSeconds", "restartDependantDeployments", "token", "templates", "endpoint" ]
+  },
+  "otoroshi.next.plugins.ResponseStatusRange" : {
+    "schema" : {
+      "from" : {
+        "label" : "from",
+        "type" : "number"
+      },
+      "to" : {
+        "label" : "to",
+        "type" : "number"
+      }
+    },
+    "flow" : [ "to", "from" ]
   },
   "otoroshi.plugins.workflow.WorkflowJob" : {
     "schema" : { },
     "flow" : [ ]
   },
+  "otoroshi.models.WasmManagerSettings" : {
+    "schema" : {
+      "url" : {
+        "label" : "url",
+        "type" : "string"
+      },
+      "clientId" : {
+        "label" : "clientId",
+        "type" : "string"
+      },
+      "clientSecret" : {
+        "label" : "clientSecret",
+        "type" : "string"
+      },
+      "pluginsFilter" : {
+        "label" : "pluginsFilter",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "pluginsFilter", "clientSecret", "clientId", "url" ]
+  },
+  "otoroshi.next.plugins.WasmResponseTransformer" : {
+    "schema" : {
+      "proxy_http_call_timeout" : {
+        "label" : "proxy_http_call_timeout",
+        "type" : "number"
+      },
+      "raw_source" : {
+        "label" : "raw_source",
+        "type" : "string"
+      },
+      "wasi" : {
+        "label" : "wasi",
+        "type" : "bool"
+      },
+      "function_name" : {
+        "label" : "function_name",
+        "type" : "string"
+      },
+      "compiler_source" : {
+        "label" : "compiler_source",
+        "type" : "string"
+      },
+      "config" : {
+        "label" : "config",
+        "type" : "object"
+      },
+      "memory_pages" : {
+        "label" : "memory_pages",
+        "type" : "number"
+      },
+      "allowed_hosts" : {
+        "label" : "allowed_hosts",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      }
+    },
+    "flow" : [ "allowed_hosts", "memory_pages", "config", "compiler_source", "function_name", "wasi", "raw_source", "proxy_http_call_timeout" ]
+  },
   "otoroshi.plugins.jobs.kubernetes.KubernetesToOtoroshiCertSyncJob" : {
+    "schema" : { },
+    "flow" : [ ]
+  },
+  "otoroshi.next.models.NgRouteCompositionDataStore" : {
     "schema" : { },
     "flow" : [ ]
   },
@@ -19868,12 +20540,6 @@
                 "label" : "rewrite",
                 "type" : "bool"
               },
-              "target_refs" : {
-                "label" : "target_refs",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              },
               "targets" : {
                 "label" : "targets",
                 "type" : "array",
@@ -20009,7 +20675,7 @@
                 "flow" : [ "ip_address", "protocol", "predicate", "tls_config", "tls", "port", "id", "weight", "hostname" ]
               }
             },
-            "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "target_refs", "targets" ]
+            "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "targets" ]
           }
         },
         "flow" : [ "debug_flow", "enabled", "name", "id", "export_reporting", "frontend", "_loc", "tags", "capture", "groups", "backend_ref", "description", "backend", "metadata" ]
@@ -20410,12 +21076,6 @@
                 "label" : "rewrite",
                 "type" : "bool"
               },
-              "target_refs" : {
-                "label" : "target_refs",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              },
               "targets" : {
                 "label" : "targets",
                 "type" : "array",
@@ -20551,7 +21211,7 @@
                 "flow" : [ "ip_address", "protocol", "predicate", "tls_config", "tls", "port", "id", "weight", "hostname" ]
               }
             },
-            "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "target_refs", "targets" ]
+            "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "targets" ]
           },
           "name" : {
             "label" : "name",
@@ -21324,17 +21984,27 @@
                 "label" : "namespace",
                 "type" : "string"
               },
+              "sendWorkers" : {
+                "label" : "sendWorkers",
+                "type" : "number"
+              },
               "applyTemplate" : {
                 "label" : "applyTemplate",
                 "type" : "bool"
+              },
+              "uris" : {
+                "label" : "uris",
+                "type" : "array",
+                "array" : true,
+                "format" : null
               },
               "version" : {
                 "label" : "version",
                 "type" : "string"
               },
-              "clusterUri" : {
-                "label" : "clusterUri",
-                "type" : "string"
+              "maxBulkSize" : {
+                "label" : "maxBulkSize",
+                "type" : "number"
               },
               "headers" : {
                 "label" : "headers",
@@ -21350,6 +22020,14 @@
                     "label" : "clientSide",
                     "type" : "bool"
                   },
+                  "numberOfShards" : {
+                    "label" : "numberOfShards",
+                    "type" : "number"
+                  },
+                  "numberOfReplicas" : {
+                    "label" : "numberOfReplicas",
+                    "type" : "number"
+                  },
                   "interval" : {
                     "label" : "interval",
                     "type" : "form",
@@ -21359,7 +22037,7 @@
                     "flow" : [ ]
                   }
                 },
-                "flow" : [ "clientSide", "interval" ]
+                "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
               },
               "user" : {
                 "label" : "user",
@@ -21435,7 +22113,7 @@
                 "type" : "string"
               }
             },
-            "flow" : [ "type", "sendEvents", "truststore", "hostValidation", "servers", "mtlsConfig", "securityProtocol", "keystore", "topic", "keyPass", "saslConfig", "tlsTrustCertsFilePath", "tenant", "uri", "namespace", "applyTemplate", "version", "clusterUri", "headers", "indexSettings", "user", "index", "password", "ref", "config", "path", "maxFileSize", "labels", "url", "to", "eu", "apiKey", "domain", "apiKeyPublic", "apiKeyPrivate" ]
+            "flow" : [ "type", "sendEvents", "truststore", "hostValidation", "servers", "mtlsConfig", "securityProtocol", "keystore", "topic", "keyPass", "saslConfig", "tlsTrustCertsFilePath", "tenant", "uri", "namespace", "sendWorkers", "applyTemplate", "uris", "version", "maxBulkSize", "headers", "indexSettings", "user", "index", "password", "ref", "config", "path", "maxFileSize", "labels", "url", "to", "eu", "apiKey", "domain", "apiKeyPublic", "apiKeyPrivate" ]
           },
           "projection" : {
             "label" : "projection",
@@ -21504,171 +22182,23 @@
         },
         "flow" : [ "tags", "name", "description", "tenant", "id", "metadata" ]
       },
-      "services" : {
-        "label" : "services",
+      "routeCompositions" : {
+        "label" : "routeCompositions",
         "type" : "array",
         "array" : true,
         "format" : "form",
         "schema" : {
-          "metadata" : {
-            "label" : "metadata",
-            "type" : "object"
-          },
-          "client" : {
-            "label" : "client",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "idle_timeout" : {
-                "label" : "idle_timeout",
-                "type" : "number"
-              },
-              "sample_interval" : {
-                "label" : "sample_interval",
-                "type" : "number"
-              },
-              "cache_connection_settings" : {
-                "label" : "cache_connection_settings",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : {
-                  "queue_size" : {
-                    "label" : "queue_size",
-                    "type" : "number"
-                  },
-                  "enabled" : {
-                    "label" : "enabled",
-                    "type" : "bool"
-                  }
-                },
-                "flow" : [ "queue_size", "enabled" ]
-              },
-              "call_and_stream_timeout" : {
-                "label" : "call_and_stream_timeout",
-                "type" : "number"
-              },
-              "custom_timeouts" : {
-                "label" : "custom_timeouts",
-                "type" : "array",
-                "array" : true,
-                "format" : "form",
-                "schema" : {
-                  "connection_timeout" : {
-                    "label" : "connection_timeout",
-                    "type" : "number"
-                  },
-                  "call_and_stream_timeout" : {
-                    "label" : "call_and_stream_timeout",
-                    "type" : "number"
-                  },
-                  "path" : {
-                    "label" : "path",
-                    "type" : "string"
-                  },
-                  "call_timeout" : {
-                    "label" : "call_timeout",
-                    "type" : "number"
-                  },
-                  "idle_timeout" : {
-                    "label" : "idle_timeout",
-                    "type" : "number"
-                  },
-                  "global_timeout" : {
-                    "label" : "global_timeout",
-                    "type" : "number"
-                  }
-                },
-                "flow" : [ "connection_timeout", "call_and_stream_timeout", "path", "call_timeout", "idle_timeout", "global_timeout" ]
-              },
-              "connection_timeout" : {
-                "label" : "connection_timeout",
-                "type" : "number"
-              },
-              "call_timeout" : {
-                "label" : "call_timeout",
-                "type" : "number"
-              },
-              "global_timeout" : {
-                "label" : "global_timeout",
-                "type" : "number"
-              },
-              "retry_initial_delay" : {
-                "label" : "retry_initial_delay",
-                "type" : "number"
-              },
-              "backoff_factor" : {
-                "label" : "backoff_factor",
-                "type" : "number"
-              },
-              "proxy" : {
-                "label" : "proxy",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : {
-                  "host" : {
-                    "label" : "host",
-                    "type" : "string"
-                  },
-                  "port" : {
-                    "label" : "port",
-                    "type" : "string"
-                  },
-                  "protocol" : {
-                    "label" : "protocol",
-                    "type" : "string"
-                  },
-                  "principal" : {
-                    "label" : "principal",
-                    "type" : "string"
-                  },
-                  "password" : {
-                    "label" : "password",
-                    "type" : "string"
-                  },
-                  "ntlmDomain" : {
-                    "label" : "ntlmDomain",
-                    "type" : "string"
-                  },
-                  "encoding" : {
-                    "label" : "encoding",
-                    "type" : "string"
-                  },
-                  "nonProxyHosts" : {
-                    "label" : "nonProxyHosts",
-                    "type" : "string"
-                  }
-                },
-                "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
-              },
-              "retries" : {
-                "label" : "retries",
-                "type" : "number"
-              },
-              "max_errors" : {
-                "label" : "max_errors",
-                "type" : "number"
-              }
-            },
-            "flow" : [ "idle_timeout", "sample_interval", "cache_connection_settings", "call_and_stream_timeout", "custom_timeouts", "connection_timeout", "call_timeout", "global_timeout", "retry_initial_delay", "backoff_factor", "proxy", "retries", "max_errors" ]
-          },
-          "name" : {
-            "label" : "name",
-            "type" : "string"
+          "capture" : {
+            "label" : "capture",
+            "type" : "bool"
           },
           "id" : {
             "label" : "id",
             "type" : "string"
           },
-          "capture" : {
-            "label" : "capture",
+          "debug_flow" : {
+            "label" : "debug_flow",
             "type" : "bool"
-          },
-          "description" : {
-            "label" : "description",
-            "type" : "string"
           },
           "routes" : {
             "label" : "routes",
@@ -21885,29 +22415,41 @@
                     },
                     "flow" : [ "type", "ratio" ]
                   },
-                  "target_refs" : {
-                    "label" : "target_refs",
-                    "type" : "array",
-                    "array" : true,
-                    "format" : null
-                  },
                   "rewrite" : {
                     "label" : "rewrite",
                     "type" : "bool"
                   }
                 },
-                "flow" : [ "root", "targets", "load_balancing", "target_refs", "rewrite" ]
+                "flow" : [ "root", "targets", "load_balancing", "rewrite" ]
               }
             },
             "flow" : [ "backend_ref", "frontend", "override_plugins", "backend" ]
           },
-          "debug_flow" : {
-            "label" : "debug_flow",
+          "enabled" : {
+            "label" : "enabled",
             "type" : "bool"
+          },
+          "description" : {
+            "label" : "description",
+            "type" : "string"
+          },
+          "metadata" : {
+            "label" : "metadata",
+            "type" : "object"
           },
           "export_reporting" : {
             "label" : "export_reporting",
             "type" : "bool"
+          },
+          "tags" : {
+            "label" : "tags",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          },
+          "name" : {
+            "label" : "name",
+            "type" : "string"
           },
           "_loc" : {
             "label" : "_loc",
@@ -21928,15 +22470,145 @@
             },
             "flow" : [ "tenant", "teams" ]
           },
-          "enabled" : {
-            "label" : "enabled",
-            "type" : "bool"
-          },
-          "tags" : {
-            "label" : "tags",
-            "type" : "array",
-            "array" : true,
-            "format" : null
+          "client" : {
+            "label" : "client",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "idle_timeout" : {
+                "label" : "idle_timeout",
+                "type" : "number"
+              },
+              "sample_interval" : {
+                "label" : "sample_interval",
+                "type" : "number"
+              },
+              "cache_connection_settings" : {
+                "label" : "cache_connection_settings",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "queue_size" : {
+                    "label" : "queue_size",
+                    "type" : "number"
+                  },
+                  "enabled" : {
+                    "label" : "enabled",
+                    "type" : "bool"
+                  }
+                },
+                "flow" : [ "queue_size", "enabled" ]
+              },
+              "call_and_stream_timeout" : {
+                "label" : "call_and_stream_timeout",
+                "type" : "number"
+              },
+              "custom_timeouts" : {
+                "label" : "custom_timeouts",
+                "type" : "array",
+                "array" : true,
+                "format" : "form",
+                "schema" : {
+                  "connection_timeout" : {
+                    "label" : "connection_timeout",
+                    "type" : "number"
+                  },
+                  "call_and_stream_timeout" : {
+                    "label" : "call_and_stream_timeout",
+                    "type" : "number"
+                  },
+                  "path" : {
+                    "label" : "path",
+                    "type" : "string"
+                  },
+                  "call_timeout" : {
+                    "label" : "call_timeout",
+                    "type" : "number"
+                  },
+                  "idle_timeout" : {
+                    "label" : "idle_timeout",
+                    "type" : "number"
+                  },
+                  "global_timeout" : {
+                    "label" : "global_timeout",
+                    "type" : "number"
+                  }
+                },
+                "flow" : [ "connection_timeout", "call_and_stream_timeout", "path", "call_timeout", "idle_timeout", "global_timeout" ]
+              },
+              "connection_timeout" : {
+                "label" : "connection_timeout",
+                "type" : "number"
+              },
+              "call_timeout" : {
+                "label" : "call_timeout",
+                "type" : "number"
+              },
+              "global_timeout" : {
+                "label" : "global_timeout",
+                "type" : "number"
+              },
+              "retry_initial_delay" : {
+                "label" : "retry_initial_delay",
+                "type" : "number"
+              },
+              "backoff_factor" : {
+                "label" : "backoff_factor",
+                "type" : "number"
+              },
+              "proxy" : {
+                "label" : "proxy",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "host" : {
+                    "label" : "host",
+                    "type" : "string"
+                  },
+                  "port" : {
+                    "label" : "port",
+                    "type" : "string"
+                  },
+                  "protocol" : {
+                    "label" : "protocol",
+                    "type" : "string"
+                  },
+                  "principal" : {
+                    "label" : "principal",
+                    "type" : "string"
+                  },
+                  "password" : {
+                    "label" : "password",
+                    "type" : "string"
+                  },
+                  "ntlmDomain" : {
+                    "label" : "ntlmDomain",
+                    "type" : "string"
+                  },
+                  "encoding" : {
+                    "label" : "encoding",
+                    "type" : "string"
+                  },
+                  "nonProxyHosts" : {
+                    "label" : "nonProxyHosts",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
+              },
+              "retries" : {
+                "label" : "retries",
+                "type" : "number"
+              },
+              "max_errors" : {
+                "label" : "max_errors",
+                "type" : "number"
+              }
+            },
+            "flow" : [ "idle_timeout", "sample_interval", "cache_connection_settings", "call_and_stream_timeout", "custom_timeouts", "connection_timeout", "call_timeout", "global_timeout", "retry_initial_delay", "backoff_factor", "proxy", "retries", "max_errors" ]
           },
           "groups" : {
             "label" : "groups",
@@ -21945,7 +22617,7 @@
             "format" : null
           }
         },
-        "flow" : [ "client", "name", "id", "capture", "description", "routes", "debug_flow", "export_reporting", "_loc", "enabled", "tags", "groups", "metadata" ]
+        "flow" : [ "capture", "id", "debug_flow", "routes", "enabled", "description", "export_reporting", "tags", "name", "_loc", "client", "groups", "metadata" ]
       },
       "serviceDescriptors" : {
         "label" : "serviceDescriptors",
@@ -24356,6 +25028,10 @@
         "array" : true,
         "format" : "form",
         "schema" : {
+          "anonymousTelemetry" : {
+            "label" : "anonymousTelemetry",
+            "type" : "bool"
+          },
           "geolocationSettings" : {
             "label" : "geolocationSettings",
             "type" : "form",
@@ -25005,9 +25681,19 @@
                   "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
                 }
               },
+              "sendWorkers" : {
+                "label" : "sendWorkers",
+                "type" : "number"
+              },
               "applyTemplate" : {
                 "label" : "applyTemplate",
                 "type" : "bool"
+              },
+              "uris" : {
+                "label" : "uris",
+                "type" : "array",
+                "array" : true,
+                "format" : null
               },
               "mtlsConfig" : {
                 "label" : "mtlsConfig",
@@ -25046,9 +25732,9 @@
                 "label" : "version",
                 "type" : "string"
               },
-              "clusterUri" : {
-                "label" : "clusterUri",
-                "type" : "string"
+              "maxBulkSize" : {
+                "label" : "maxBulkSize",
+                "type" : "number"
               },
               "headers" : {
                 "label" : "headers",
@@ -25064,6 +25750,14 @@
                     "label" : "clientSide",
                     "type" : "bool"
                   },
+                  "numberOfShards" : {
+                    "label" : "numberOfShards",
+                    "type" : "number"
+                  },
+                  "numberOfReplicas" : {
+                    "label" : "numberOfReplicas",
+                    "type" : "number"
+                  },
                   "interval" : {
                     "label" : "interval",
                     "type" : "form",
@@ -25073,7 +25767,7 @@
                     "flow" : [ ]
                   }
                 },
-                "flow" : [ "clientSide", "interval" ]
+                "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
               },
               "user" : {
                 "label" : "user",
@@ -25088,7 +25782,7 @@
                 "type" : "string"
               }
             },
-            "flow" : [ "type", "applyTemplate", "mtlsConfig", "version", "clusterUri", "headers", "indexSettings", "user", "index", "password" ]
+            "flow" : [ "type", "sendWorkers", "applyTemplate", "uris", "mtlsConfig", "version", "maxBulkSize", "headers", "indexSettings", "user", "index", "password" ]
           },
           "trustXForwarded" : {
             "label" : "trustXForwarded",
@@ -25142,9 +25836,19 @@
                   "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
                 }
               },
+              "sendWorkers" : {
+                "label" : "sendWorkers",
+                "type" : "number"
+              },
               "applyTemplate" : {
                 "label" : "applyTemplate",
                 "type" : "bool"
+              },
+              "uris" : {
+                "label" : "uris",
+                "type" : "array",
+                "array" : true,
+                "format" : null
               },
               "mtlsConfig" : {
                 "label" : "mtlsConfig",
@@ -25183,9 +25887,9 @@
                 "label" : "version",
                 "type" : "string"
               },
-              "clusterUri" : {
-                "label" : "clusterUri",
-                "type" : "string"
+              "maxBulkSize" : {
+                "label" : "maxBulkSize",
+                "type" : "number"
               },
               "headers" : {
                 "label" : "headers",
@@ -25201,6 +25905,14 @@
                     "label" : "clientSide",
                     "type" : "bool"
                   },
+                  "numberOfShards" : {
+                    "label" : "numberOfShards",
+                    "type" : "number"
+                  },
+                  "numberOfReplicas" : {
+                    "label" : "numberOfReplicas",
+                    "type" : "number"
+                  },
                   "interval" : {
                     "label" : "interval",
                     "type" : "form",
@@ -25210,7 +25922,7 @@
                     "flow" : [ ]
                   }
                 },
-                "flow" : [ "clientSide", "interval" ]
+                "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
               },
               "user" : {
                 "label" : "user",
@@ -25225,7 +25937,7 @@
                 "type" : "string"
               }
             },
-            "flow" : [ "type", "applyTemplate", "mtlsConfig", "version", "clusterUri", "indexSettings", "user", "index", "password", "headers" ]
+            "flow" : [ "type", "sendWorkers", "applyTemplate", "uris", "mtlsConfig", "version", "maxBulkSize", "indexSettings", "user", "index", "password", "headers" ]
           },
           "logAnalyticsOnServer" : {
             "label" : "logAnalyticsOnServer",
@@ -25411,6 +26123,31 @@
               }
             },
             "flow" : [ "allowed", "enabled", "replyNicely", "notAllowed", "caRef" ]
+          },
+          "wasmManagerSettings" : {
+            "label" : "wasmManagerSettings",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "url" : {
+                "label" : "url",
+                "type" : "string"
+              },
+              "clientId" : {
+                "label" : "clientId",
+                "type" : "string"
+              },
+              "clientSecret" : {
+                "label" : "clientSecret",
+                "type" : "string"
+              },
+              "pluginsFilter" : {
+                "label" : "pluginsFilter",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "url", "clientId", "clientSecret", "pluginsFilter" ]
           },
           "maintenanceMode" : {
             "label" : "maintenanceMode",
@@ -25844,7 +26581,7 @@
             "flow" : [ "enabled" ]
           }
         },
-        "flow" : [ "geolocationSettings", "alertsEmails", "throttlingQuota", "maxWebhookSize", "maxConcurrentRequests", "cleverSettings", "templates", "endlessIpAddresses", "plugins", "kafkaConfig", "maxLogsSize", "proxies", "enableEmbeddedMetrics", "elasticReadsConfig", "trustXForwarded", "quotasSettings", "tags", "limitConcurrentRequests", "useAkkaHttpClient", "elasticWritesConfigs", "logAnalyticsOnServer", "apiReadOnly", "backOfficeAuthRef", "streamEntityOnly", "otoroshiId", "mailerSettings", "lines", "middleFingers", "analyticsWebhooks", "autoCert", "maintenanceMode", "initWithNewEngine", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "perIpThrottlingQuota", "useCircuitBreakers", "maxHttp10ResponseSize", "tlsSettings", "statsdConfig", "autoLinkToDefaultGroup", "alertsWebhooks", "ipFiltering", "u2fLoginOnly", "userAgentSettings", "metadata" ]
+        "flow" : [ "anonymousTelemetry", "geolocationSettings", "alertsEmails", "throttlingQuota", "maxWebhookSize", "maxConcurrentRequests", "cleverSettings", "templates", "endlessIpAddresses", "plugins", "kafkaConfig", "maxLogsSize", "proxies", "enableEmbeddedMetrics", "elasticReadsConfig", "trustXForwarded", "quotasSettings", "tags", "limitConcurrentRequests", "useAkkaHttpClient", "elasticWritesConfigs", "logAnalyticsOnServer", "apiReadOnly", "backOfficeAuthRef", "streamEntityOnly", "otoroshiId", "mailerSettings", "lines", "middleFingers", "analyticsWebhooks", "autoCert", "wasmManagerSettings", "maintenanceMode", "initWithNewEngine", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "perIpThrottlingQuota", "useCircuitBreakers", "maxHttp10ResponseSize", "tlsSettings", "statsdConfig", "autoLinkToDefaultGroup", "alertsWebhooks", "ipFiltering", "u2fLoginOnly", "userAgentSettings", "metadata" ]
       },
       "authModules" : {
         "label" : "authModules",
@@ -27095,190 +27832,6 @@
         },
         "flow" : [ "type", "username", "tags", "label", "_loc", "typ", "createdAt", "rights", "password", "metadata" ]
       },
-      "targets" : {
-        "label" : "targets",
-        "type" : "array",
-        "array" : true,
-        "format" : "form",
-        "schema" : {
-          "name" : {
-            "label" : "name",
-            "type" : "string"
-          },
-          "_loc" : {
-            "label" : "_loc",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "tenant" : {
-                "label" : "tenant",
-                "type" : "string"
-              },
-              "teams" : {
-                "label" : "teams",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              }
-            },
-            "flow" : [ "tenant", "teams" ]
-          },
-          "metadata" : {
-            "label" : "metadata",
-            "type" : "object"
-          },
-          "description" : {
-            "label" : "description",
-            "type" : "string"
-          },
-          "tags" : {
-            "label" : "tags",
-            "type" : "array",
-            "array" : true,
-            "format" : null
-          },
-          "id" : {
-            "label" : "id",
-            "type" : "string"
-          },
-          "target" : {
-            "label" : "target",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "ip_address" : {
-                "label" : "ip_address",
-                "type" : "string"
-              },
-              "protocol" : {
-                "type" : "select",
-                "props" : {
-                  "label" : "protocol",
-                  "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0" ]
-                }
-              },
-              "predicate" : {
-                "label" : "predicate",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : {
-                  "type" : {
-                    "type" : "select",
-                    "props" : {
-                      "label" : "type",
-                      "options" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
-                    }
-                  },
-                  "dc" : {
-                    "label" : "dc",
-                    "type" : "string"
-                  },
-                  "positions" : {
-                    "label" : "positions",
-                    "type" : "array",
-                    "array" : true,
-                    "format" : "form",
-                    "schema" : {
-                      "latitude" : {
-                        "label" : "latitude",
-                        "type" : "number"
-                      },
-                      "longitude" : {
-                        "label" : "longitude",
-                        "type" : "number"
-                      },
-                      "radius" : {
-                        "label" : "radius",
-                        "type" : "number"
-                      }
-                    },
-                    "flow" : [ "latitude", "longitude", "radius" ]
-                  },
-                  "provider" : {
-                    "label" : "provider",
-                    "type" : "string"
-                  },
-                  "dataCenter" : {
-                    "label" : "dataCenter",
-                    "type" : "string"
-                  },
-                  "rack" : {
-                    "label" : "rack",
-                    "type" : "string"
-                  },
-                  "region" : {
-                    "label" : "region",
-                    "type" : "string"
-                  },
-                  "zone" : {
-                    "label" : "zone",
-                    "type" : "string"
-                  }
-                },
-                "flow" : [ "type", "dc", "positions", "provider", "dataCenter", "rack", "region", "zone" ]
-              },
-              "tls_config" : {
-                "label" : "tls_config",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : {
-                  "enabled" : {
-                    "label" : "enabled",
-                    "type" : "bool"
-                  },
-                  "certs" : {
-                    "label" : "certs",
-                    "type" : "array",
-                    "array" : true,
-                    "format" : null
-                  },
-                  "loose" : {
-                    "label" : "loose",
-                    "type" : "bool"
-                  },
-                  "trust_all" : {
-                    "label" : "trust_all",
-                    "type" : "bool"
-                  },
-                  "trusted_certs" : {
-                    "label" : "trusted_certs",
-                    "type" : "array",
-                    "array" : true,
-                    "format" : null
-                  }
-                },
-                "flow" : [ "enabled", "certs", "loose", "trust_all", "trusted_certs" ]
-              },
-              "tls" : {
-                "label" : "tls",
-                "type" : "bool"
-              },
-              "port" : {
-                "label" : "port",
-                "type" : "number"
-              },
-              "id" : {
-                "label" : "id",
-                "type" : "string"
-              },
-              "weight" : {
-                "label" : "weight",
-                "type" : "number"
-              },
-              "hostname" : {
-                "label" : "hostname",
-                "type" : "string"
-              }
-            },
-            "flow" : [ "ip_address", "protocol", "predicate", "tls_config", "tls", "port", "id", "weight", "hostname" ]
-          }
-        },
-        "flow" : [ "name", "_loc", "description", "tags", "id", "target", "metadata" ]
-      },
       "serviceGroups" : {
         "label" : "serviceGroups",
         "type" : "array",
@@ -27330,7 +27883,7 @@
         "flow" : [ "id", "_loc", "name", "description", "tags", "metadata" ]
       }
     },
-    "flow" : [ "serviceGroups", "targets", "simpleAdmins", "certificates", "tcpServices", "authModules", "globalConfigs", "serviceDescriptors", "services", "teams", "dataExporters", "tenants", "jwtVerifiers", "scripts", "backends", "apiKeys", "routes" ]
+    "flow" : [ "serviceGroups", "simpleAdmins", "certificates", "tcpServices", "authModules", "globalConfigs", "serviceDescriptors", "routeCompositions", "teams", "dataExporters", "tenants", "jwtVerifiers", "scripts", "backends", "apiKeys", "routes" ]
   },
   "otoroshi.models.BadResponse" : {
     "schema" : {
@@ -31113,18 +31666,12 @@
             },
             "flow" : [ "type", "ratio" ]
           },
-          "target_refs" : {
-            "label" : "target_refs",
-            "type" : "array",
-            "array" : true,
-            "format" : null
-          },
           "rewrite" : {
             "label" : "rewrite",
             "type" : "bool"
           }
         },
-        "flow" : [ "root", "targets", "load_balancing", "target_refs", "rewrite" ]
+        "flow" : [ "root", "targets", "load_balancing", "rewrite" ]
       }
     },
     "flow" : [ "override_plugins", "backend_ref", "frontend", "backend" ]
@@ -34394,6 +34941,15 @@
     },
     "flow" : [ "rack", "type" ]
   },
+  "otoroshi.models.RouteCompositionIdentifier" : {
+    "schema" : {
+      "id" : {
+        "label" : "id",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "id" ]
+  },
   "otoroshi.plugins.loggers.RequestBodyEvent" : {
     "schema" : {
       "ua" : {
@@ -35652,12 +36208,6 @@
                 "label" : "rewrite",
                 "type" : "bool"
               },
-              "target_refs" : {
-                "label" : "target_refs",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              },
               "targets" : {
                 "label" : "targets",
                 "type" : "array",
@@ -35793,7 +36343,7 @@
                 "flow" : [ "ip_address", "protocol", "predicate", "tls_config", "tls", "port", "id", "weight", "hostname" ]
               }
             },
-            "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "target_refs", "targets" ]
+            "flow" : [ "root", "health_check", "client", "load_balancing", "rewrite", "targets" ]
           }
         },
         "flow" : [ "debug_flow", "enabled", "name", "id", "export_reporting", "frontend", "_loc", "tags", "capture", "groups", "backend_ref", "description", "backend", "metadata" ]
@@ -35949,6 +36499,40 @@
     },
     "flow" : [ "type" ]
   },
+  "otoroshi.next.plugins.NgErrorRewriterConfig" : {
+    "schema" : {
+      "ranges" : {
+        "label" : "ranges",
+        "type" : "array",
+        "array" : true,
+        "format" : "form",
+        "schema" : {
+          "from" : {
+            "label" : "from",
+            "type" : "number"
+          },
+          "to" : {
+            "label" : "to",
+            "type" : "number"
+          }
+        },
+        "flow" : [ "from", "to" ]
+      },
+      "templates" : {
+        "label" : "templates",
+        "type" : "object"
+      },
+      "log" : {
+        "label" : "log",
+        "type" : "bool"
+      },
+      "export" : {
+        "label" : "export",
+        "type" : "bool"
+      }
+    },
+    "flow" : [ "export", "log", "templates", "ranges" ]
+  },
   "otoroshi.next.plugins.XmlToJsonRequest" : {
     "schema" : {
       "filter" : {
@@ -36019,16 +36603,53 @@
         "label" : "serviceId",
         "type" : "string"
       },
+      "_loc" : {
+        "label" : "_loc",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "tenant" : {
+            "label" : "tenant",
+            "type" : "string"
+          },
+          "teams" : {
+            "label" : "teams",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          }
+        },
+        "flow" : [ "tenant", "teams" ]
+      },
+      "metadata" : {
+        "label" : "metadata",
+        "type" : "object"
+      },
       "messages" : {
         "label" : "messages",
         "type" : "object"
       },
+      "name" : {
+        "label" : "name",
+        "type" : "string"
+      },
       "template40x" : {
         "label" : "template40x",
         "type" : "string"
+      },
+      "tags" : {
+        "label" : "tags",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      },
+      "description" : {
+        "label" : "description",
+        "type" : "string"
       }
     },
-    "flow" : [ "template40x", "messages", "serviceId", "templateBuild", "templateMaintenance", "template50x" ]
+    "flow" : [ "description", "tags", "template40x", "name", "messages", "metadata", "serviceId", "templateBuild", "templateMaintenance", "template50x", "_loc" ]
   },
   "otoroshi.plugins.oidc.OIDCHeaders" : {
     "schema" : { },
@@ -36879,6 +37500,27 @@
     },
     "flow" : [ "to", "code" ]
   },
+  "otoroshi.next.plugins.NgHttpClientCacheConfig" : {
+    "schema" : {
+      "max_age_seconds" : {
+        "label" : "max_age_seconds",
+        "type" : "number"
+      },
+      "methods" : {
+        "label" : "methods",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      },
+      "mime_types" : {
+        "label" : "mime_types",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      }
+    },
+    "flow" : [ "mime_types", "methods", "max_age_seconds" ]
+  },
   "otoroshi.next.models.NgSelectedBackendTarget" : {
     "schema" : {
       "target" : {
@@ -37216,10 +37858,6 @@
     },
     "flow" : [ "headers" ]
   },
-  "otoroshi.next.models.NgServiceDataStore" : {
-    "schema" : { },
-    "flow" : [ ]
-  },
   "otoroshi.next.plugins.NgApikeyExtractorBasic" : {
     "schema" : {
       "enabled" : {
@@ -37287,6 +37925,19 @@
       }
     },
     "flow" : [ "responses", "ratio" ]
+  },
+  "otoroshi.next.plugins.NgDefaultRequestBody" : {
+    "schema" : {
+      "content_type" : {
+        "label" : "content_type",
+        "type" : "string"
+      },
+      "content_encoding" : {
+        "label" : "content_encoding",
+        "type" : "string"
+      }
+    },
+    "flow" : [ "content_encoding", "content_type" ]
   },
   "otoroshi.next.models.StoredNgBackendDataStore" : {
     "schema" : { },
@@ -37902,6 +38553,45 @@
   "otoroshi.next.models.NgTreeNodePath" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.next.plugins.WasmRequestTransformer" : {
+    "schema" : {
+      "proxy_http_call_timeout" : {
+        "label" : "proxy_http_call_timeout",
+        "type" : "number"
+      },
+      "raw_source" : {
+        "label" : "raw_source",
+        "type" : "string"
+      },
+      "wasi" : {
+        "label" : "wasi",
+        "type" : "bool"
+      },
+      "function_name" : {
+        "label" : "function_name",
+        "type" : "string"
+      },
+      "compiler_source" : {
+        "label" : "compiler_source",
+        "type" : "string"
+      },
+      "config" : {
+        "label" : "config",
+        "type" : "object"
+      },
+      "memory_pages" : {
+        "label" : "memory_pages",
+        "type" : "number"
+      },
+      "allowed_hosts" : {
+        "label" : "allowed_hosts",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      }
+    },
+    "flow" : [ "allowed_hosts", "memory_pages", "config", "compiler_source", "function_name", "wasi", "raw_source", "proxy_http_call_timeout" ]
   },
   "otoroshi.next.models.NgTreeRouter_Test" : {
     "schema" : { },
@@ -38787,10 +39477,6 @@
     "schema" : { },
     "flow" : [ ]
   },
-  "otoroshi.next.models.StoredNgTargetDataStore" : {
-    "schema" : { },
-    "flow" : [ ]
-  },
   "otoroshi.next.plugins.JQ" : {
     "schema" : {
       "request" : {
@@ -39052,12 +39738,6 @@
         "label" : "rewrite",
         "type" : "bool"
       },
-      "target_refs" : {
-        "label" : "target_refs",
-        "type" : "array",
-        "array" : true,
-        "format" : null
-      },
       "targets" : {
         "label" : "targets",
         "type" : "array",
@@ -39193,7 +39873,7 @@
         "flow" : [ "ip_address", "protocol", "predicate", "tls_config", "tls", "port", "id", "weight", "hostname" ]
       }
     },
-    "flow" : [ "targets", "target_refs", "rewrite", "root", "health_check", "client", "load_balancing" ]
+    "flow" : [ "targets", "rewrite", "root", "health_check", "client", "load_balancing" ]
   },
   "otoroshi.plugins.useragent.UserAgentExtractor" : {
     "schema" : { },
@@ -39298,448 +39978,26 @@
     },
     "flow" : [ "csr", "key", "serial", "cert", "caChain", "ca", "csrQuery" ]
   },
-  "otoroshi.next.models.NgService" : {
-    "schema" : {
-      "metadata" : {
-        "label" : "metadata",
-        "type" : "object"
-      },
-      "client" : {
-        "label" : "client",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "idle_timeout" : {
-            "label" : "idle_timeout",
-            "type" : "number"
-          },
-          "sample_interval" : {
-            "label" : "sample_interval",
-            "type" : "number"
-          },
-          "cache_connection_settings" : {
-            "label" : "cache_connection_settings",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "queue_size" : {
-                "label" : "queue_size",
-                "type" : "number"
-              },
-              "enabled" : {
-                "label" : "enabled",
-                "type" : "bool"
-              }
-            },
-            "flow" : [ "queue_size", "enabled" ]
-          },
-          "call_and_stream_timeout" : {
-            "label" : "call_and_stream_timeout",
-            "type" : "number"
-          },
-          "custom_timeouts" : {
-            "label" : "custom_timeouts",
-            "type" : "array",
-            "array" : true,
-            "format" : "form",
-            "schema" : {
-              "connection_timeout" : {
-                "label" : "connection_timeout",
-                "type" : "number"
-              },
-              "call_and_stream_timeout" : {
-                "label" : "call_and_stream_timeout",
-                "type" : "number"
-              },
-              "path" : {
-                "label" : "path",
-                "type" : "string"
-              },
-              "call_timeout" : {
-                "label" : "call_timeout",
-                "type" : "number"
-              },
-              "idle_timeout" : {
-                "label" : "idle_timeout",
-                "type" : "number"
-              },
-              "global_timeout" : {
-                "label" : "global_timeout",
-                "type" : "number"
-              }
-            },
-            "flow" : [ "connection_timeout", "call_and_stream_timeout", "path", "call_timeout", "idle_timeout", "global_timeout" ]
-          },
-          "connection_timeout" : {
-            "label" : "connection_timeout",
-            "type" : "number"
-          },
-          "call_timeout" : {
-            "label" : "call_timeout",
-            "type" : "number"
-          },
-          "global_timeout" : {
-            "label" : "global_timeout",
-            "type" : "number"
-          },
-          "retry_initial_delay" : {
-            "label" : "retry_initial_delay",
-            "type" : "number"
-          },
-          "backoff_factor" : {
-            "label" : "backoff_factor",
-            "type" : "number"
-          },
-          "proxy" : {
-            "label" : "proxy",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "host" : {
-                "label" : "host",
-                "type" : "string"
-              },
-              "port" : {
-                "label" : "port",
-                "type" : "string"
-              },
-              "protocol" : {
-                "label" : "protocol",
-                "type" : "string"
-              },
-              "principal" : {
-                "label" : "principal",
-                "type" : "string"
-              },
-              "password" : {
-                "label" : "password",
-                "type" : "string"
-              },
-              "ntlmDomain" : {
-                "label" : "ntlmDomain",
-                "type" : "string"
-              },
-              "encoding" : {
-                "label" : "encoding",
-                "type" : "string"
-              },
-              "nonProxyHosts" : {
-                "label" : "nonProxyHosts",
-                "type" : "string"
-              }
-            },
-            "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
-          },
-          "retries" : {
-            "label" : "retries",
-            "type" : "number"
-          },
-          "max_errors" : {
-            "label" : "max_errors",
-            "type" : "number"
-          }
-        },
-        "flow" : [ "idle_timeout", "sample_interval", "cache_connection_settings", "call_and_stream_timeout", "custom_timeouts", "connection_timeout", "call_timeout", "global_timeout", "retry_initial_delay", "backoff_factor", "proxy", "retries", "max_errors" ]
-      },
-      "name" : {
-        "label" : "name",
-        "type" : "string"
-      },
-      "id" : {
-        "label" : "id",
-        "type" : "string"
-      },
-      "capture" : {
-        "label" : "capture",
-        "type" : "bool"
-      },
-      "description" : {
-        "label" : "description",
-        "type" : "string"
-      },
-      "routes" : {
-        "label" : "routes",
-        "type" : "array",
-        "array" : true,
-        "format" : "form",
-        "schema" : {
-          "backend_ref" : {
-            "label" : "backend_ref",
-            "type" : "string"
-          },
-          "frontend" : {
-            "label" : "frontend",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "headers" : {
-                "label" : "headers",
-                "type" : "object"
-              },
-              "query" : {
-                "label" : "query",
-                "type" : "object"
-              },
-              "domains" : {
-                "label" : "domains",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              },
-              "methods" : {
-                "label" : "methods",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              },
-              "exact" : {
-                "label" : "exact",
-                "type" : "bool"
-              },
-              "strip_path" : {
-                "label" : "strip_path",
-                "type" : "bool"
-              }
-            },
-            "flow" : [ "headers", "query", "domains", "methods", "exact", "strip_path" ]
-          },
-          "override_plugins" : {
-            "label" : "override_plugins",
-            "type" : "bool"
-          },
-          "backend" : {
-            "label" : "backend",
-            "type" : "form",
-            "collapsable" : true,
-            "collapsed" : true,
-            "schema" : {
-              "root" : {
-                "label" : "root",
-                "type" : "string"
-              },
-              "targets" : {
-                "label" : "targets",
-                "type" : "array",
-                "array" : true,
-                "format" : "form",
-                "schema" : {
-                  "ip_address" : {
-                    "label" : "ip_address",
-                    "type" : "string"
-                  },
-                  "protocol" : {
-                    "type" : "select",
-                    "props" : {
-                      "label" : "protocol",
-                      "options" : [ "HTTP/1.0", "HTTP/1.1", "HTTP/2.0", "HTTP/3.0" ]
-                    }
-                  },
-                  "predicate" : {
-                    "label" : "predicate",
-                    "type" : "form",
-                    "collapsable" : true,
-                    "collapsed" : true,
-                    "schema" : {
-                      "type" : {
-                        "type" : "select",
-                        "props" : {
-                          "label" : "type",
-                          "options" : [ "AlwaysMatch", "NetworkLocationMatch", "GeolocationMatch" ]
-                        }
-                      },
-                      "dc" : {
-                        "label" : "dc",
-                        "type" : "string"
-                      },
-                      "positions" : {
-                        "label" : "positions",
-                        "type" : "array",
-                        "array" : true,
-                        "format" : "form",
-                        "schema" : {
-                          "latitude" : {
-                            "label" : "latitude",
-                            "type" : "number"
-                          },
-                          "longitude" : {
-                            "label" : "longitude",
-                            "type" : "number"
-                          },
-                          "radius" : {
-                            "label" : "radius",
-                            "type" : "number"
-                          }
-                        },
-                        "flow" : [ "latitude", "longitude", "radius" ]
-                      },
-                      "provider" : {
-                        "label" : "provider",
-                        "type" : "string"
-                      },
-                      "dataCenter" : {
-                        "label" : "dataCenter",
-                        "type" : "string"
-                      },
-                      "rack" : {
-                        "label" : "rack",
-                        "type" : "string"
-                      },
-                      "region" : {
-                        "label" : "region",
-                        "type" : "string"
-                      },
-                      "zone" : {
-                        "label" : "zone",
-                        "type" : "string"
-                      }
-                    },
-                    "flow" : [ "type", "dc", "positions", "provider", "dataCenter", "rack", "region", "zone" ]
-                  },
-                  "tls_config" : {
-                    "label" : "tls_config",
-                    "type" : "form",
-                    "collapsable" : true,
-                    "collapsed" : true,
-                    "schema" : {
-                      "enabled" : {
-                        "label" : "enabled",
-                        "type" : "bool"
-                      },
-                      "certs" : {
-                        "label" : "certs",
-                        "type" : "array",
-                        "array" : true,
-                        "format" : null
-                      },
-                      "loose" : {
-                        "label" : "loose",
-                        "type" : "bool"
-                      },
-                      "trust_all" : {
-                        "label" : "trust_all",
-                        "type" : "bool"
-                      },
-                      "trusted_certs" : {
-                        "label" : "trusted_certs",
-                        "type" : "array",
-                        "array" : true,
-                        "format" : null
-                      }
-                    },
-                    "flow" : [ "enabled", "certs", "loose", "trust_all", "trusted_certs" ]
-                  },
-                  "tls" : {
-                    "label" : "tls",
-                    "type" : "bool"
-                  },
-                  "port" : {
-                    "label" : "port",
-                    "type" : "number"
-                  },
-                  "id" : {
-                    "label" : "id",
-                    "type" : "string"
-                  },
-                  "weight" : {
-                    "label" : "weight",
-                    "type" : "number"
-                  },
-                  "hostname" : {
-                    "label" : "hostname",
-                    "type" : "string"
-                  }
-                },
-                "flow" : [ "ip_address", "protocol", "predicate", "tls_config", "tls", "port", "id", "weight", "hostname" ]
-              },
-              "load_balancing" : {
-                "label" : "load_balancing",
-                "type" : "form",
-                "collapsable" : true,
-                "collapsed" : true,
-                "schema" : {
-                  "type" : {
-                    "type" : "select",
-                    "props" : {
-                      "label" : "type",
-                      "options" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
-                    }
-                  },
-                  "ratio" : {
-                    "label" : "ratio",
-                    "type" : "number"
-                  }
-                },
-                "flow" : [ "type", "ratio" ]
-              },
-              "target_refs" : {
-                "label" : "target_refs",
-                "type" : "array",
-                "array" : true,
-                "format" : null
-              },
-              "rewrite" : {
-                "label" : "rewrite",
-                "type" : "bool"
-              }
-            },
-            "flow" : [ "root", "targets", "load_balancing", "target_refs", "rewrite" ]
-          }
-        },
-        "flow" : [ "backend_ref", "frontend", "override_plugins", "backend" ]
-      },
-      "debug_flow" : {
-        "label" : "debug_flow",
-        "type" : "bool"
-      },
-      "export_reporting" : {
-        "label" : "export_reporting",
-        "type" : "bool"
-      },
-      "_loc" : {
-        "label" : "_loc",
-        "type" : "form",
-        "collapsable" : true,
-        "collapsed" : true,
-        "schema" : {
-          "tenant" : {
-            "label" : "tenant",
-            "type" : "string"
-          },
-          "teams" : {
-            "label" : "teams",
-            "type" : "array",
-            "array" : true,
-            "format" : null
-          }
-        },
-        "flow" : [ "tenant", "teams" ]
-      },
-      "enabled" : {
-        "label" : "enabled",
-        "type" : "bool"
-      },
-      "tags" : {
-        "label" : "tags",
-        "type" : "array",
-        "array" : true,
-        "format" : null
-      },
-      "groups" : {
-        "label" : "groups",
-        "type" : "array",
-        "array" : true,
-        "format" : null
-      }
-    },
-    "flow" : [ "groups", "tags", "enabled", "export_reporting", "debug_flow", "routes", "description", "capture", "id", "name", "metadata", "client", "_loc" ]
-  },
   "Unknown" : {
     "schema" : { },
     "flow" : [ ]
+  },
+  "otoroshi.next.plugins.TailscaleCertError" : {
+    "schema" : {
+      "status" : {
+        "label" : "status",
+        "type" : "number"
+      },
+      "body" : {
+        "type" : "code",
+        "props" : {
+          "label" : "body",
+          "editorOnly" : true,
+          "mode" : "json"
+        }
+      }
+    },
+    "flow" : [ "body", "status" ]
   },
   "otoroshi.next.plugins.NgApikeyExtractorCustomHeaders" : {
     "schema" : {
@@ -42915,6 +43173,1593 @@
     },
     "flow" : [ "max_depth", "initial_data", "permissions", "schema" ]
   },
+  "otoroshi.api.TweakedGlobalConfig" : {
+    "schema" : {
+      "config" : {
+        "label" : "config",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : {
+          "anonymousTelemetry" : {
+            "label" : "anonymousTelemetry",
+            "type" : "bool"
+          },
+          "geolocationSettings" : {
+            "label" : "geolocationSettings",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "type" : {
+                "type" : "select",
+                "props" : {
+                  "label" : "type",
+                  "options" : [ "none" ]
+                }
+              },
+              "enabled" : {
+                "label" : "enabled",
+                "type" : "bool"
+              },
+              "apikey" : {
+                "label" : "apikey",
+                "type" : "string"
+              },
+              "timeout" : {
+                "label" : "timeout",
+                "type" : "number"
+              },
+              "path" : {
+                "label" : "path",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "type", "enabled", "apikey", "timeout", "path" ]
+          },
+          "alertsEmails" : {
+            "label" : "alertsEmails",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          },
+          "throttlingQuota" : {
+            "label" : "throttlingQuota",
+            "type" : "number"
+          },
+          "maxWebhookSize" : {
+            "label" : "maxWebhookSize",
+            "type" : "number"
+          },
+          "maxConcurrentRequests" : {
+            "label" : "maxConcurrentRequests",
+            "type" : "number"
+          },
+          "cleverSettings" : {
+            "label" : "cleverSettings",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "consumerSecret" : {
+                "label" : "consumerSecret",
+                "type" : "string"
+              },
+              "consumerKey" : {
+                "label" : "consumerKey",
+                "type" : "string"
+              },
+              "secret" : {
+                "label" : "secret",
+                "type" : "string"
+              },
+              "token" : {
+                "label" : "token",
+                "type" : "string"
+              },
+              "orgaId" : {
+                "label" : "orgaId",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "consumerSecret", "consumerKey", "secret", "token", "orgaId" ]
+          },
+          "templates" : {
+            "label" : "templates",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "team" : {
+                "label" : "team",
+                "type" : "string"
+              },
+              "script" : {
+                "label" : "script",
+                "type" : "string"
+              },
+              "apikey" : {
+                "label" : "apikey",
+                "type" : "string"
+              },
+              "group" : {
+                "label" : "group",
+                "type" : "string"
+              },
+              "tcpService" : {
+                "label" : "tcpService",
+                "type" : "string"
+              },
+              "verifier" : {
+                "label" : "verifier",
+                "type" : "string"
+              },
+              "service" : {
+                "label" : "service",
+                "type" : "string"
+              },
+              "target" : {
+                "label" : "target",
+                "type" : "string"
+              },
+              "certificate" : {
+                "label" : "certificate",
+                "type" : "string"
+              },
+              "dataExporter" : {
+                "label" : "dataExporter",
+                "type" : "string"
+              },
+              "route" : {
+                "label" : "route",
+                "type" : "string"
+              },
+              "backend" : {
+                "label" : "backend",
+                "type" : "string"
+              },
+              "template" : {
+                "label" : "template",
+                "type" : "string"
+              },
+              "tenant" : {
+                "label" : "tenant",
+                "type" : "string"
+              },
+              "authConfig" : {
+                "label" : "authConfig",
+                "type" : "string"
+              },
+              "descriptor" : {
+                "label" : "descriptor",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "team", "script", "apikey", "group", "tcpService", "verifier", "service", "target", "certificate", "dataExporter", "route", "backend", "template", "tenant", "authConfig", "descriptor" ]
+          },
+          "endlessIpAddresses" : {
+            "label" : "endlessIpAddresses",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          },
+          "plugins" : {
+            "label" : "plugins",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "config" : {
+                "label" : "config",
+                "type" : "object"
+              },
+              "enabled" : {
+                "label" : "enabled",
+                "type" : "bool"
+              },
+              "excluded" : {
+                "label" : "excluded",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "refs" : {
+                "label" : "refs",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              }
+            },
+            "flow" : [ "config", "enabled", "excluded", "refs" ]
+          },
+          "kafkaConfig" : {
+            "label" : "kafkaConfig",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "type" : {
+                "type" : "select",
+                "props" : {
+                  "label" : "type",
+                  "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+                }
+              },
+              "sendEvents" : {
+                "label" : "sendEvents",
+                "type" : "bool"
+              },
+              "truststore" : {
+                "label" : "truststore",
+                "type" : "string"
+              },
+              "hostValidation" : {
+                "label" : "hostValidation",
+                "type" : "bool"
+              },
+              "servers" : {
+                "label" : "servers",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "mtlsConfig" : {
+                "label" : "mtlsConfig",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "mtls" : {
+                    "label" : "mtls",
+                    "type" : "bool"
+                  },
+                  "loose" : {
+                    "label" : "loose",
+                    "type" : "bool"
+                  },
+                  "trustAll" : {
+                    "label" : "trustAll",
+                    "type" : "bool"
+                  },
+                  "trustedCerts" : {
+                    "label" : "trustedCerts",
+                    "type" : "array",
+                    "array" : true,
+                    "format" : null
+                  },
+                  "certs" : {
+                    "label" : "certs",
+                    "type" : "array",
+                    "array" : true,
+                    "format" : null
+                  }
+                },
+                "flow" : [ "mtls", "loose", "trustAll", "trustedCerts", "certs" ]
+              },
+              "securityProtocol" : {
+                "label" : "securityProtocol",
+                "type" : "string"
+              },
+              "keystore" : {
+                "label" : "keystore",
+                "type" : "string"
+              },
+              "topic" : {
+                "label" : "topic",
+                "type" : "string"
+              },
+              "keyPass" : {
+                "label" : "keyPass",
+                "type" : "string"
+              },
+              "saslConfig" : {
+                "label" : "saslConfig",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "username" : {
+                    "label" : "username",
+                    "type" : "string"
+                  },
+                  "password" : {
+                    "label" : "password",
+                    "type" : "string"
+                  },
+                  "mechanism" : {
+                    "label" : "mechanism",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "username", "password", "mechanism" ]
+              }
+            },
+            "flow" : [ "type", "sendEvents", "truststore", "hostValidation", "servers", "mtlsConfig", "securityProtocol", "keystore", "topic", "keyPass", "saslConfig" ]
+          },
+          "maxLogsSize" : {
+            "label" : "maxLogsSize",
+            "type" : "number"
+          },
+          "proxies" : {
+            "label" : "proxies",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "elastic" : {
+                "label" : "elastic",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "host" : {
+                    "label" : "host",
+                    "type" : "string"
+                  },
+                  "port" : {
+                    "label" : "port",
+                    "type" : "string"
+                  },
+                  "protocol" : {
+                    "label" : "protocol",
+                    "type" : "string"
+                  },
+                  "principal" : {
+                    "label" : "principal",
+                    "type" : "string"
+                  },
+                  "password" : {
+                    "label" : "password",
+                    "type" : "string"
+                  },
+                  "ntlmDomain" : {
+                    "label" : "ntlmDomain",
+                    "type" : "string"
+                  },
+                  "encoding" : {
+                    "label" : "encoding",
+                    "type" : "string"
+                  },
+                  "nonProxyHosts" : {
+                    "label" : "nonProxyHosts",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
+              },
+              "eventsWebhooks" : {
+                "label" : "eventsWebhooks",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "host" : {
+                    "label" : "host",
+                    "type" : "string"
+                  },
+                  "port" : {
+                    "label" : "port",
+                    "type" : "string"
+                  },
+                  "protocol" : {
+                    "label" : "protocol",
+                    "type" : "string"
+                  },
+                  "principal" : {
+                    "label" : "principal",
+                    "type" : "string"
+                  },
+                  "password" : {
+                    "label" : "password",
+                    "type" : "string"
+                  },
+                  "ntlmDomain" : {
+                    "label" : "ntlmDomain",
+                    "type" : "string"
+                  },
+                  "encoding" : {
+                    "label" : "encoding",
+                    "type" : "string"
+                  },
+                  "nonProxyHosts" : {
+                    "label" : "nonProxyHosts",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
+              },
+              "jwk" : {
+                "label" : "jwk",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "host" : {
+                    "label" : "host",
+                    "type" : "string"
+                  },
+                  "port" : {
+                    "label" : "port",
+                    "type" : "string"
+                  },
+                  "protocol" : {
+                    "label" : "protocol",
+                    "type" : "string"
+                  },
+                  "principal" : {
+                    "label" : "principal",
+                    "type" : "string"
+                  },
+                  "password" : {
+                    "label" : "password",
+                    "type" : "string"
+                  },
+                  "ntlmDomain" : {
+                    "label" : "ntlmDomain",
+                    "type" : "string"
+                  },
+                  "encoding" : {
+                    "label" : "encoding",
+                    "type" : "string"
+                  },
+                  "nonProxyHosts" : {
+                    "label" : "nonProxyHosts",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
+              },
+              "auth" : {
+                "label" : "auth",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "host" : {
+                    "label" : "host",
+                    "type" : "string"
+                  },
+                  "port" : {
+                    "label" : "port",
+                    "type" : "string"
+                  },
+                  "protocol" : {
+                    "label" : "protocol",
+                    "type" : "string"
+                  },
+                  "principal" : {
+                    "label" : "principal",
+                    "type" : "string"
+                  },
+                  "password" : {
+                    "label" : "password",
+                    "type" : "string"
+                  },
+                  "ntlmDomain" : {
+                    "label" : "ntlmDomain",
+                    "type" : "string"
+                  },
+                  "encoding" : {
+                    "label" : "encoding",
+                    "type" : "string"
+                  },
+                  "nonProxyHosts" : {
+                    "label" : "nonProxyHosts",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
+              },
+              "clevercloud" : {
+                "label" : "clevercloud",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "host" : {
+                    "label" : "host",
+                    "type" : "string"
+                  },
+                  "port" : {
+                    "label" : "port",
+                    "type" : "string"
+                  },
+                  "protocol" : {
+                    "label" : "protocol",
+                    "type" : "string"
+                  },
+                  "principal" : {
+                    "label" : "principal",
+                    "type" : "string"
+                  },
+                  "password" : {
+                    "label" : "password",
+                    "type" : "string"
+                  },
+                  "ntlmDomain" : {
+                    "label" : "ntlmDomain",
+                    "type" : "string"
+                  },
+                  "encoding" : {
+                    "label" : "encoding",
+                    "type" : "string"
+                  },
+                  "nonProxyHosts" : {
+                    "label" : "nonProxyHosts",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
+              },
+              "alertEmails" : {
+                "label" : "alertEmails",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "host" : {
+                    "label" : "host",
+                    "type" : "string"
+                  },
+                  "port" : {
+                    "label" : "port",
+                    "type" : "string"
+                  },
+                  "protocol" : {
+                    "label" : "protocol",
+                    "type" : "string"
+                  },
+                  "principal" : {
+                    "label" : "principal",
+                    "type" : "string"
+                  },
+                  "password" : {
+                    "label" : "password",
+                    "type" : "string"
+                  },
+                  "ntlmDomain" : {
+                    "label" : "ntlmDomain",
+                    "type" : "string"
+                  },
+                  "encoding" : {
+                    "label" : "encoding",
+                    "type" : "string"
+                  },
+                  "nonProxyHosts" : {
+                    "label" : "nonProxyHosts",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
+              },
+              "authority" : {
+                "label" : "authority",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "host" : {
+                    "label" : "host",
+                    "type" : "string"
+                  },
+                  "port" : {
+                    "label" : "port",
+                    "type" : "string"
+                  },
+                  "protocol" : {
+                    "label" : "protocol",
+                    "type" : "string"
+                  },
+                  "principal" : {
+                    "label" : "principal",
+                    "type" : "string"
+                  },
+                  "password" : {
+                    "label" : "password",
+                    "type" : "string"
+                  },
+                  "ntlmDomain" : {
+                    "label" : "ntlmDomain",
+                    "type" : "string"
+                  },
+                  "encoding" : {
+                    "label" : "encoding",
+                    "type" : "string"
+                  },
+                  "nonProxyHosts" : {
+                    "label" : "nonProxyHosts",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
+              },
+              "services" : {
+                "label" : "services",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "host" : {
+                    "label" : "host",
+                    "type" : "string"
+                  },
+                  "port" : {
+                    "label" : "port",
+                    "type" : "string"
+                  },
+                  "protocol" : {
+                    "label" : "protocol",
+                    "type" : "string"
+                  },
+                  "principal" : {
+                    "label" : "principal",
+                    "type" : "string"
+                  },
+                  "password" : {
+                    "label" : "password",
+                    "type" : "string"
+                  },
+                  "ntlmDomain" : {
+                    "label" : "ntlmDomain",
+                    "type" : "string"
+                  },
+                  "encoding" : {
+                    "label" : "encoding",
+                    "type" : "string"
+                  },
+                  "nonProxyHosts" : {
+                    "label" : "nonProxyHosts",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "host", "port", "protocol", "principal", "password", "ntlmDomain", "encoding", "nonProxyHosts" ]
+              }
+            },
+            "flow" : [ "elastic", "eventsWebhooks", "jwk", "auth", "clevercloud", "alertEmails", "authority", "services" ]
+          },
+          "enableEmbeddedMetrics" : {
+            "label" : "enableEmbeddedMetrics",
+            "type" : "bool"
+          },
+          "elasticReadsConfig" : {
+            "label" : "elasticReadsConfig",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "type" : {
+                "type" : "select",
+                "props" : {
+                  "label" : "type",
+                  "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+                }
+              },
+              "sendWorkers" : {
+                "label" : "sendWorkers",
+                "type" : "number"
+              },
+              "applyTemplate" : {
+                "label" : "applyTemplate",
+                "type" : "bool"
+              },
+              "uris" : {
+                "label" : "uris",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "mtlsConfig" : {
+                "label" : "mtlsConfig",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "mtls" : {
+                    "label" : "mtls",
+                    "type" : "bool"
+                  },
+                  "loose" : {
+                    "label" : "loose",
+                    "type" : "bool"
+                  },
+                  "trustAll" : {
+                    "label" : "trustAll",
+                    "type" : "bool"
+                  },
+                  "trustedCerts" : {
+                    "label" : "trustedCerts",
+                    "type" : "array",
+                    "array" : true,
+                    "format" : null
+                  },
+                  "certs" : {
+                    "label" : "certs",
+                    "type" : "array",
+                    "array" : true,
+                    "format" : null
+                  }
+                },
+                "flow" : [ "mtls", "loose", "trustAll", "trustedCerts", "certs" ]
+              },
+              "version" : {
+                "label" : "version",
+                "type" : "string"
+              },
+              "maxBulkSize" : {
+                "label" : "maxBulkSize",
+                "type" : "number"
+              },
+              "headers" : {
+                "label" : "headers",
+                "type" : "object"
+              },
+              "indexSettings" : {
+                "label" : "indexSettings",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "clientSide" : {
+                    "label" : "clientSide",
+                    "type" : "bool"
+                  },
+                  "numberOfShards" : {
+                    "label" : "numberOfShards",
+                    "type" : "number"
+                  },
+                  "numberOfReplicas" : {
+                    "label" : "numberOfReplicas",
+                    "type" : "number"
+                  },
+                  "interval" : {
+                    "label" : "interval",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : { },
+                    "flow" : [ ]
+                  }
+                },
+                "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
+              },
+              "user" : {
+                "label" : "user",
+                "type" : "string"
+              },
+              "index" : {
+                "label" : "index",
+                "type" : "string"
+              },
+              "password" : {
+                "label" : "password",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "type", "sendWorkers", "applyTemplate", "uris", "mtlsConfig", "version", "maxBulkSize", "headers", "indexSettings", "user", "index", "password" ]
+          },
+          "trustXForwarded" : {
+            "label" : "trustXForwarded",
+            "type" : "bool"
+          },
+          "quotasSettings" : {
+            "label" : "quotasSettings",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "enabled" : {
+                "label" : "enabled",
+                "type" : "bool"
+              },
+              "dailyQuotasThreshold" : {
+                "label" : "dailyQuotasThreshold",
+                "type" : "number"
+              },
+              "monthlyQuotasThreshold" : {
+                "label" : "monthlyQuotasThreshold",
+                "type" : "number"
+              }
+            },
+            "flow" : [ "enabled", "dailyQuotasThreshold", "monthlyQuotasThreshold" ]
+          },
+          "tags" : {
+            "label" : "tags",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          },
+          "limitConcurrentRequests" : {
+            "label" : "limitConcurrentRequests",
+            "type" : "bool"
+          },
+          "useAkkaHttpClient" : {
+            "label" : "useAkkaHttpClient",
+            "type" : "bool"
+          },
+          "elasticWritesConfigs" : {
+            "label" : "elasticWritesConfigs",
+            "type" : "array",
+            "array" : true,
+            "format" : "form",
+            "schema" : {
+              "type" : {
+                "type" : "select",
+                "props" : {
+                  "label" : "type",
+                  "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+                }
+              },
+              "sendWorkers" : {
+                "label" : "sendWorkers",
+                "type" : "number"
+              },
+              "applyTemplate" : {
+                "label" : "applyTemplate",
+                "type" : "bool"
+              },
+              "uris" : {
+                "label" : "uris",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "mtlsConfig" : {
+                "label" : "mtlsConfig",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "mtls" : {
+                    "label" : "mtls",
+                    "type" : "bool"
+                  },
+                  "loose" : {
+                    "label" : "loose",
+                    "type" : "bool"
+                  },
+                  "trustAll" : {
+                    "label" : "trustAll",
+                    "type" : "bool"
+                  },
+                  "trustedCerts" : {
+                    "label" : "trustedCerts",
+                    "type" : "array",
+                    "array" : true,
+                    "format" : null
+                  },
+                  "certs" : {
+                    "label" : "certs",
+                    "type" : "array",
+                    "array" : true,
+                    "format" : null
+                  }
+                },
+                "flow" : [ "mtls", "loose", "trustAll", "trustedCerts", "certs" ]
+              },
+              "version" : {
+                "label" : "version",
+                "type" : "string"
+              },
+              "maxBulkSize" : {
+                "label" : "maxBulkSize",
+                "type" : "number"
+              },
+              "headers" : {
+                "label" : "headers",
+                "type" : "object"
+              },
+              "indexSettings" : {
+                "label" : "indexSettings",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "clientSide" : {
+                    "label" : "clientSide",
+                    "type" : "bool"
+                  },
+                  "numberOfShards" : {
+                    "label" : "numberOfShards",
+                    "type" : "number"
+                  },
+                  "numberOfReplicas" : {
+                    "label" : "numberOfReplicas",
+                    "type" : "number"
+                  },
+                  "interval" : {
+                    "label" : "interval",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : { },
+                    "flow" : [ ]
+                  }
+                },
+                "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
+              },
+              "user" : {
+                "label" : "user",
+                "type" : "string"
+              },
+              "index" : {
+                "label" : "index",
+                "type" : "string"
+              },
+              "password" : {
+                "label" : "password",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "type", "sendWorkers", "applyTemplate", "uris", "mtlsConfig", "version", "maxBulkSize", "indexSettings", "user", "index", "password", "headers" ]
+          },
+          "logAnalyticsOnServer" : {
+            "label" : "logAnalyticsOnServer",
+            "type" : "bool"
+          },
+          "metadata" : {
+            "label" : "metadata",
+            "type" : "object"
+          },
+          "apiReadOnly" : {
+            "label" : "apiReadOnly",
+            "type" : "bool"
+          },
+          "backOfficeAuthRef" : {
+            "label" : "backOfficeAuthRef",
+            "type" : "string"
+          },
+          "streamEntityOnly" : {
+            "label" : "streamEntityOnly",
+            "type" : "bool"
+          },
+          "otoroshiId" : {
+            "label" : "otoroshiId",
+            "type" : "string"
+          },
+          "mailerSettings" : {
+            "label" : "mailerSettings",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "type" : {
+                "type" : "select",
+                "props" : {
+                  "label" : "type",
+                  "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+                }
+              },
+              "url" : {
+                "label" : "url",
+                "type" : "string"
+              },
+              "headers" : {
+                "label" : "headers",
+                "type" : "object"
+              },
+              "to" : {
+                "label" : "to",
+                "type" : "array",
+                "array" : true,
+                "format" : "form",
+                "schema" : {
+                  "name" : {
+                    "label" : "name",
+                    "type" : "string"
+                  },
+                  "email" : {
+                    "label" : "email",
+                    "type" : "string"
+                  }
+                },
+                "flow" : [ "name", "email" ]
+              },
+              "eu" : {
+                "label" : "eu",
+                "type" : "bool"
+              },
+              "apiKey" : {
+                "label" : "apiKey",
+                "type" : "string"
+              },
+              "domain" : {
+                "label" : "domain",
+                "type" : "string"
+              },
+              "apiKeyPublic" : {
+                "label" : "apiKeyPublic",
+                "type" : "string"
+              },
+              "apiKeyPrivate" : {
+                "label" : "apiKeyPrivate",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "type", "url", "headers", "to", "eu", "apiKey", "domain", "apiKeyPublic", "apiKeyPrivate" ]
+          },
+          "lines" : {
+            "label" : "lines",
+            "type" : "array",
+            "array" : true,
+            "format" : null
+          },
+          "middleFingers" : {
+            "label" : "middleFingers",
+            "type" : "bool"
+          },
+          "analyticsWebhooks" : {
+            "label" : "analyticsWebhooks",
+            "type" : "array",
+            "array" : true,
+            "format" : "form",
+            "schema" : {
+              "type" : {
+                "type" : "select",
+                "props" : {
+                  "label" : "type",
+                  "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+                }
+              },
+              "url" : {
+                "label" : "url",
+                "type" : "string"
+              },
+              "headers" : {
+                "label" : "headers",
+                "type" : "object"
+              },
+              "mtlsConfig" : {
+                "label" : "mtlsConfig",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "mtls" : {
+                    "label" : "mtls",
+                    "type" : "bool"
+                  },
+                  "loose" : {
+                    "label" : "loose",
+                    "type" : "bool"
+                  },
+                  "trustAll" : {
+                    "label" : "trustAll",
+                    "type" : "bool"
+                  },
+                  "trustedCerts" : {
+                    "label" : "trustedCerts",
+                    "type" : "array",
+                    "array" : true,
+                    "format" : null
+                  },
+                  "certs" : {
+                    "label" : "certs",
+                    "type" : "array",
+                    "array" : true,
+                    "format" : null
+                  }
+                },
+                "flow" : [ "mtls", "loose", "trustAll", "trustedCerts", "certs" ]
+              }
+            },
+            "flow" : [ "type", "url", "mtlsConfig", "headers" ]
+          },
+          "autoCert" : {
+            "label" : "autoCert",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "allowed" : {
+                "label" : "allowed",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "enabled" : {
+                "label" : "enabled",
+                "type" : "bool"
+              },
+              "replyNicely" : {
+                "label" : "replyNicely",
+                "type" : "bool"
+              },
+              "notAllowed" : {
+                "label" : "notAllowed",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "caRef" : {
+                "label" : "caRef",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "allowed", "enabled", "replyNicely", "notAllowed", "caRef" ]
+          },
+          "wasmManagerSettings" : {
+            "label" : "wasmManagerSettings",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "url" : {
+                "label" : "url",
+                "type" : "string"
+              },
+              "clientId" : {
+                "label" : "clientId",
+                "type" : "string"
+              },
+              "clientSecret" : {
+                "label" : "clientSecret",
+                "type" : "string"
+              },
+              "pluginsFilter" : {
+                "label" : "pluginsFilter",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "url", "clientId", "clientSecret", "pluginsFilter" ]
+          },
+          "maintenanceMode" : {
+            "label" : "maintenanceMode",
+            "type" : "bool"
+          },
+          "initWithNewEngine" : {
+            "label" : "initWithNewEngine",
+            "type" : "bool"
+          },
+          "letsEncryptSettings" : {
+            "label" : "letsEncryptSettings",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "privateKey" : {
+                "label" : "privateKey",
+                "type" : "string"
+              },
+              "contacts" : {
+                "label" : "contacts",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "emails" : {
+                "label" : "emails",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "enabled" : {
+                "label" : "enabled",
+                "type" : "bool"
+              },
+              "publicKey" : {
+                "label" : "publicKey",
+                "type" : "string"
+              },
+              "server" : {
+                "label" : "server",
+                "type" : "string"
+              }
+            },
+            "flow" : [ "privateKey", "contacts", "emails", "enabled", "publicKey", "server" ]
+          },
+          "snowMonkeyConfig" : {
+            "label" : "snowMonkeyConfig",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "dryRun" : {
+                "label" : "dryRun",
+                "type" : "bool"
+              },
+              "outageDurationTo" : {
+                "label" : "outageDurationTo",
+                "type" : "number"
+              },
+              "chaosConfig" : {
+                "label" : "chaosConfig",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "badResponsesFaultConfig" : {
+                    "label" : "badResponsesFaultConfig",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : {
+                      "ratio" : {
+                        "label" : "ratio",
+                        "type" : "number"
+                      },
+                      "responses" : {
+                        "label" : "responses",
+                        "type" : "array",
+                        "array" : true,
+                        "format" : "form",
+                        "schema" : {
+                          "status" : {
+                            "label" : "status",
+                            "type" : "number"
+                          },
+                          "body" : {
+                            "type" : "code",
+                            "props" : {
+                              "label" : "body",
+                              "editorOnly" : true,
+                              "mode" : "json"
+                            }
+                          },
+                          "headers" : {
+                            "label" : "headers",
+                            "type" : "object"
+                          }
+                        },
+                        "flow" : [ "status", "body", "headers" ]
+                      }
+                    },
+                    "flow" : [ "ratio", "responses" ]
+                  },
+                  "largeRequestFaultConfig" : {
+                    "label" : "largeRequestFaultConfig",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : {
+                      "ratio" : {
+                        "label" : "ratio",
+                        "type" : "number"
+                      },
+                      "additionalRequestSize" : {
+                        "label" : "additionalRequestSize",
+                        "type" : "number"
+                      }
+                    },
+                    "flow" : [ "ratio", "additionalRequestSize" ]
+                  },
+                  "largeResponseFaultConfig" : {
+                    "label" : "largeResponseFaultConfig",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : {
+                      "ratio" : {
+                        "label" : "ratio",
+                        "type" : "number"
+                      },
+                      "additionalResponseSize" : {
+                        "label" : "additionalResponseSize",
+                        "type" : "number"
+                      }
+                    },
+                    "flow" : [ "ratio", "additionalResponseSize" ]
+                  },
+                  "latencyInjectionFaultConfig" : {
+                    "label" : "latencyInjectionFaultConfig",
+                    "type" : "form",
+                    "collapsable" : true,
+                    "collapsed" : true,
+                    "schema" : {
+                      "ratio" : {
+                        "label" : "ratio",
+                        "type" : "number"
+                      },
+                      "from" : {
+                        "label" : "from",
+                        "type" : "number"
+                      },
+                      "to" : {
+                        "label" : "to",
+                        "type" : "number"
+                      }
+                    },
+                    "flow" : [ "ratio", "from", "to" ]
+                  },
+                  "enabled" : {
+                    "label" : "enabled",
+                    "type" : "bool"
+                  }
+                },
+                "flow" : [ "badResponsesFaultConfig", "largeRequestFaultConfig", "largeResponseFaultConfig", "latencyInjectionFaultConfig", "enabled" ]
+              },
+              "timesPerDay" : {
+                "label" : "timesPerDay",
+                "type" : "number"
+              },
+              "outageDurationFrom" : {
+                "label" : "outageDurationFrom",
+                "type" : "number"
+              },
+              "startTime" : {
+                "label" : "startTime",
+                "type" : "string"
+              },
+              "includeUserFacingDescriptors" : {
+                "label" : "includeUserFacingDescriptors",
+                "type" : "bool"
+              },
+              "targetGroups" : {
+                "label" : "targetGroups",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "enabled" : {
+                "label" : "enabled",
+                "type" : "bool"
+              },
+              "stopTime" : {
+                "label" : "stopTime",
+                "type" : "string"
+              },
+              "outageStrategy" : {
+                "type" : "select",
+                "props" : {
+                  "label" : "outageStrategy",
+                  "options" : [ "AllServicesPerGroup", "OneServicePerGroup" ]
+                }
+              }
+            },
+            "flow" : [ "dryRun", "outageDurationTo", "chaosConfig", "timesPerDay", "outageDurationFrom", "startTime", "includeUserFacingDescriptors", "targetGroups", "enabled", "stopTime", "outageStrategy" ]
+          },
+          "scripts" : {
+            "label" : "scripts",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "jobConfig" : {
+                "label" : "jobConfig",
+                "type" : "object"
+              },
+              "enabled" : {
+                "label" : "enabled",
+                "type" : "bool"
+              },
+              "transformersConfig" : {
+                "label" : "transformersConfig",
+                "type" : "object"
+              },
+              "transformersRefs" : {
+                "label" : "transformersRefs",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "preRouteRefs" : {
+                "label" : "preRouteRefs",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "sinkConfig" : {
+                "label" : "sinkConfig",
+                "type" : "object"
+              },
+              "jobRefs" : {
+                "label" : "jobRefs",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "validatorRefs" : {
+                "label" : "validatorRefs",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "sinkRefs" : {
+                "label" : "sinkRefs",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "preRouteConfig" : {
+                "label" : "preRouteConfig",
+                "type" : "object"
+              },
+              "validatorConfig" : {
+                "label" : "validatorConfig",
+                "type" : "object"
+              }
+            },
+            "flow" : [ "jobConfig", "enabled", "transformersConfig", "transformersRefs", "preRouteRefs", "sinkConfig", "jobRefs", "validatorRefs", "sinkRefs", "preRouteConfig", "validatorConfig" ]
+          },
+          "perIpThrottlingQuota" : {
+            "label" : "perIpThrottlingQuota",
+            "type" : "number"
+          },
+          "useCircuitBreakers" : {
+            "label" : "useCircuitBreakers",
+            "type" : "bool"
+          },
+          "maxHttp10ResponseSize" : {
+            "label" : "maxHttp10ResponseSize",
+            "type" : "number"
+          },
+          "tlsSettings" : {
+            "label" : "tlsSettings",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "trustedCAsServer" : {
+                "label" : "trustedCAsServer",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "includeJdkCaClient" : {
+                "label" : "includeJdkCaClient",
+                "type" : "bool"
+              },
+              "randomIfNotFound" : {
+                "label" : "randomIfNotFound",
+                "type" : "bool"
+              },
+              "defaultDomain" : {
+                "label" : "defaultDomain",
+                "type" : "string"
+              },
+              "includeJdkCaServer" : {
+                "label" : "includeJdkCaServer",
+                "type" : "bool"
+              }
+            },
+            "flow" : [ "trustedCAsServer", "includeJdkCaClient", "randomIfNotFound", "defaultDomain", "includeJdkCaServer" ]
+          },
+          "statsdConfig" : {
+            "label" : "statsdConfig",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "datadog" : {
+                "label" : "datadog",
+                "type" : "bool"
+              },
+              "host" : {
+                "label" : "host",
+                "type" : "string"
+              },
+              "port" : {
+                "label" : "port",
+                "type" : "number"
+              }
+            },
+            "flow" : [ "datadog", "host", "port" ]
+          },
+          "autoLinkToDefaultGroup" : {
+            "label" : "autoLinkToDefaultGroup",
+            "type" : "bool"
+          },
+          "alertsWebhooks" : {
+            "label" : "alertsWebhooks",
+            "type" : "array",
+            "array" : true,
+            "format" : "form",
+            "schema" : {
+              "type" : {
+                "type" : "select",
+                "props" : {
+                  "label" : "type",
+                  "options" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+                }
+              },
+              "url" : {
+                "label" : "url",
+                "type" : "string"
+              },
+              "headers" : {
+                "label" : "headers",
+                "type" : "object"
+              },
+              "mtlsConfig" : {
+                "label" : "mtlsConfig",
+                "type" : "form",
+                "collapsable" : true,
+                "collapsed" : true,
+                "schema" : {
+                  "mtls" : {
+                    "label" : "mtls",
+                    "type" : "bool"
+                  },
+                  "loose" : {
+                    "label" : "loose",
+                    "type" : "bool"
+                  },
+                  "trustAll" : {
+                    "label" : "trustAll",
+                    "type" : "bool"
+                  },
+                  "trustedCerts" : {
+                    "label" : "trustedCerts",
+                    "type" : "array",
+                    "array" : true,
+                    "format" : null
+                  },
+                  "certs" : {
+                    "label" : "certs",
+                    "type" : "array",
+                    "array" : true,
+                    "format" : null
+                  }
+                },
+                "flow" : [ "mtls", "loose", "trustAll", "trustedCerts", "certs" ]
+              }
+            },
+            "flow" : [ "type", "url", "mtlsConfig", "headers" ]
+          },
+          "ipFiltering" : {
+            "label" : "ipFiltering",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "whitelist" : {
+                "label" : "whitelist",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              },
+              "blacklist" : {
+                "label" : "blacklist",
+                "type" : "array",
+                "array" : true,
+                "format" : null
+              }
+            },
+            "flow" : [ "whitelist", "blacklist" ]
+          },
+          "u2fLoginOnly" : {
+            "label" : "u2fLoginOnly",
+            "type" : "bool"
+          },
+          "userAgentSettings" : {
+            "label" : "userAgentSettings",
+            "type" : "form",
+            "collapsable" : true,
+            "collapsed" : true,
+            "schema" : {
+              "enabled" : {
+                "label" : "enabled",
+                "type" : "bool"
+              }
+            },
+            "flow" : [ "enabled" ]
+          }
+        },
+        "flow" : [ "anonymousTelemetry", "geolocationSettings", "alertsEmails", "throttlingQuota", "maxWebhookSize", "maxConcurrentRequests", "cleverSettings", "templates", "endlessIpAddresses", "plugins", "kafkaConfig", "maxLogsSize", "proxies", "enableEmbeddedMetrics", "elasticReadsConfig", "trustXForwarded", "quotasSettings", "tags", "limitConcurrentRequests", "useAkkaHttpClient", "elasticWritesConfigs", "logAnalyticsOnServer", "metadata", "apiReadOnly", "backOfficeAuthRef", "streamEntityOnly", "otoroshiId", "mailerSettings", "lines", "middleFingers", "analyticsWebhooks", "autoCert", "wasmManagerSettings", "maintenanceMode", "initWithNewEngine", "letsEncryptSettings", "snowMonkeyConfig", "scripts", "perIpThrottlingQuota", "useCircuitBreakers", "maxHttp10ResponseSize", "tlsSettings", "statsdConfig", "autoLinkToDefaultGroup", "alertsWebhooks", "ipFiltering", "u2fLoginOnly", "userAgentSettings" ]
+      }
+    },
+    "flow" : [ "config" ]
+  },
+  "otoroshi.next.plugins.NgHttpClientCache" : {
+    "schema" : {
+      "max_age_seconds" : {
+        "label" : "max_age_seconds",
+        "type" : "number"
+      },
+      "methods" : {
+        "label" : "methods",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      },
+      "mime_types" : {
+        "label" : "mime_types",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      }
+    },
+    "flow" : [ "mime_types", "methods", "max_age_seconds" ]
+  },
   "otoroshi.plugins.apikeys.ClientCredentialFlowExtractor" : {
     "schema" : { },
     "flow" : [ ]
@@ -45929,6 +47774,19 @@
     },
     "flow" : [ "includeRequestAttributes", "enabled", "maxJwtLifespanSecs", "secretSigned", "headerName", "queryName", "cookieName", "keyPairSigned" ]
   },
+  "otoroshi.next.plugins.TailscaleSelectTargetByNameConfig" : {
+    "schema" : {
+      "machine_name" : {
+        "label" : "machine_name",
+        "type" : "string"
+      },
+      "use_ip_address" : {
+        "label" : "use_ip_address",
+        "type" : "bool"
+      }
+    },
+    "flow" : [ "use_ip_address", "machine_name" ]
+  },
   "otoroshi.models.Proxies" : {
     "schema" : {
       "elastic" : {
@@ -46445,17 +48303,27 @@
         "label" : "namespace",
         "type" : "string"
       },
+      "sendWorkers" : {
+        "label" : "sendWorkers",
+        "type" : "number"
+      },
       "applyTemplate" : {
         "label" : "applyTemplate",
         "type" : "bool"
+      },
+      "uris" : {
+        "label" : "uris",
+        "type" : "array",
+        "array" : true,
+        "format" : null
       },
       "version" : {
         "label" : "version",
         "type" : "string"
       },
-      "clusterUri" : {
-        "label" : "clusterUri",
-        "type" : "string"
+      "maxBulkSize" : {
+        "label" : "maxBulkSize",
+        "type" : "number"
       },
       "headers" : {
         "label" : "headers",
@@ -46471,6 +48339,14 @@
             "label" : "clientSide",
             "type" : "bool"
           },
+          "numberOfShards" : {
+            "label" : "numberOfShards",
+            "type" : "number"
+          },
+          "numberOfReplicas" : {
+            "label" : "numberOfReplicas",
+            "type" : "number"
+          },
           "interval" : {
             "label" : "interval",
             "type" : "form",
@@ -46480,7 +48356,7 @@
             "flow" : [ ]
           }
         },
-        "flow" : [ "clientSide", "interval" ]
+        "flow" : [ "clientSide", "numberOfShards", "numberOfReplicas", "interval" ]
       },
       "user" : {
         "label" : "user",
@@ -46556,7 +48432,7 @@
         "type" : "string"
       }
     },
-    "flow" : [ "apiKeyPrivate", "apiKeyPublic", "domain", "apiKey", "eu", "to", "url", "labels", "maxFileSize", "path", "config", "ref", "password", "index", "user", "headers", "clusterUri", "version", "applyTemplate", "namespace", "uri", "tenant", "tlsTrustCertsFilePath", "keyPass", "topic", "keystore", "securityProtocol", "servers", "hostValidation", "truststore", "sendEvents", "type", "mtlsConfig", "saslConfig", "indexSettings" ]
+    "flow" : [ "apiKeyPrivate", "apiKeyPublic", "domain", "apiKey", "eu", "to", "url", "labels", "maxFileSize", "path", "config", "ref", "password", "index", "user", "headers", "maxBulkSize", "version", "uris", "applyTemplate", "sendWorkers", "namespace", "uri", "tenant", "tlsTrustCertsFilePath", "keyPass", "topic", "keystore", "securityProtocol", "servers", "hostValidation", "truststore", "sendEvents", "type", "mtlsConfig", "saslConfig", "indexSettings" ]
   },
   "otoroshi.plugins.cache.ResponseCacheConfig" : {
     "schema" : {
@@ -47221,6 +49097,47 @@
     "schema" : { },
     "flow" : [ ]
   },
+  "otoroshi.next.plugins.ErrorRewriteReport" : {
+    "schema" : {
+      "raw_response" : {
+        "label" : "raw_response",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : { },
+        "flow" : [ ]
+      },
+      "response" : {
+        "label" : "response",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : { },
+        "flow" : [ ]
+      },
+      "response_body" : {
+        "label" : "response_body",
+        "type" : "string"
+      },
+      "id" : {
+        "label" : "id",
+        "type" : "string"
+      },
+      "raw_response_body" : {
+        "label" : "raw_response_body",
+        "type" : "string"
+      },
+      "request" : {
+        "label" : "request",
+        "type" : "form",
+        "collapsable" : true,
+        "collapsed" : true,
+        "schema" : { },
+        "flow" : [ ]
+      }
+    },
+    "flow" : [ "raw_response_body", "id", "response_body", "raw_response", "response", "request" ]
+  },
   "otoroshi.next.plugins.ViolationsException" : {
     "schema" : {
       "errors" : {
@@ -47256,6 +49173,10 @@
       }
     },
     "flow" : [ "json" ]
+  },
+  "otoroshi.next.plugins.OtoroshiHeadersIn" : {
+    "schema" : { },
+    "flow" : [ ]
   },
   "otoroshi.next.plugins.SOAPAction" : {
     "schema" : {
@@ -48341,6 +50262,45 @@
     },
     "flow" : [ "config", "refs", "excludedPatterns", "enabled" ]
   },
+  "otoroshi.next.plugins.WasmAccessValidator" : {
+    "schema" : {
+      "proxy_http_call_timeout" : {
+        "label" : "proxy_http_call_timeout",
+        "type" : "number"
+      },
+      "raw_source" : {
+        "label" : "raw_source",
+        "type" : "string"
+      },
+      "wasi" : {
+        "label" : "wasi",
+        "type" : "bool"
+      },
+      "function_name" : {
+        "label" : "function_name",
+        "type" : "string"
+      },
+      "compiler_source" : {
+        "label" : "compiler_source",
+        "type" : "string"
+      },
+      "config" : {
+        "label" : "config",
+        "type" : "object"
+      },
+      "memory_pages" : {
+        "label" : "memory_pages",
+        "type" : "number"
+      },
+      "allowed_hosts" : {
+        "label" : "allowed_hosts",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      }
+    },
+    "flow" : [ "allowed_hosts", "memory_pages", "config", "compiler_source", "function_name", "wasi", "raw_source", "proxy_http_call_timeout" ]
+  },
   "otoroshi.auth.BasicAuthUser" : {
     "schema" : {
       "metadata" : {
@@ -48512,6 +50472,40 @@
     },
     "flow" : [ "pass_with_apikey", "module" ]
   },
+  "otoroshi.next.plugins.NgErrorRewriter" : {
+    "schema" : {
+      "ranges" : {
+        "label" : "ranges",
+        "type" : "array",
+        "array" : true,
+        "format" : "form",
+        "schema" : {
+          "from" : {
+            "label" : "from",
+            "type" : "number"
+          },
+          "to" : {
+            "label" : "to",
+            "type" : "number"
+          }
+        },
+        "flow" : [ "from", "to" ]
+      },
+      "templates" : {
+        "label" : "templates",
+        "type" : "object"
+      },
+      "log" : {
+        "label" : "log",
+        "type" : "bool"
+      },
+      "export" : {
+        "label" : "export",
+        "type" : "bool"
+      }
+    },
+    "flow" : [ "export", "log", "templates", "ranges" ]
+  },
   "otoroshi.models.EntityIdentifier" : {
     "schema" : {
       "type" : {
@@ -48594,6 +50588,10 @@
     },
     "flow" : [ "descriptor", "authConfig", "tenant", "template", "backend", "route", "dataExporter", "certificate", "target", "service", "verifier", "tcpService", "group", "apikey", "script", "team" ]
   },
+  "otoroshi.next.plugins.TailscaleCertificatesFetcherJob" : {
+    "schema" : { },
+    "flow" : [ ]
+  },
   "otoroshi.plugins.authcallers.BasicAuthCaller" : {
     "schema" : { },
     "flow" : [ ]
@@ -48613,6 +50611,45 @@
       }
     },
     "flow" : [ "type" ]
+  },
+  "otoroshi.next.plugins.WasmQueryConfig" : {
+    "schema" : {
+      "proxy_http_call_timeout" : {
+        "label" : "proxy_http_call_timeout",
+        "type" : "number"
+      },
+      "raw_source" : {
+        "label" : "raw_source",
+        "type" : "string"
+      },
+      "wasi" : {
+        "label" : "wasi",
+        "type" : "bool"
+      },
+      "function_name" : {
+        "label" : "function_name",
+        "type" : "string"
+      },
+      "compiler_source" : {
+        "label" : "compiler_source",
+        "type" : "string"
+      },
+      "config" : {
+        "label" : "config",
+        "type" : "object"
+      },
+      "memory_pages" : {
+        "label" : "memory_pages",
+        "type" : "number"
+      },
+      "allowed_hosts" : {
+        "label" : "allowed_hosts",
+        "type" : "array",
+        "array" : true,
+        "format" : null
+      }
+    },
+    "flow" : [ "allowed_hosts", "memory_pages", "config", "compiler_source", "function_name", "wasi", "raw_source", "proxy_http_call_timeout" ]
   },
   "otoroshi.plugins.core.apikeys.BasicAuthApikeyExtractor" : {
     "schema" : { },

@@ -168,7 +168,9 @@ class PossibleLeaders(members: Seq[MemberView], route: NgRoute) {
         MemberView(
           id = "local-leader",
           name = "local-leader",
+          os = env.os,
           version = env.otoroshiVersion,
+          javaVersion = env.theJavaVersion,
           location = env.clusterConfig.relay.exposition.urls.headOption.getOrElse("127.0.0.1"),
           httpPort = env.exposedHttpPortInt,
           httpsPort = env.exposedHttpsPortInt,

@@ -606,7 +606,7 @@ object DefaultTemplates {
 case class GlobalConfig(
     letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
     lines: Seq[String] = Seq("prod"),
-    anonymousTelemetry: Boolean = true,
+    anonymousReporting: Boolean = true,
     initWithNewEngine: Boolean = true,
     enableEmbeddedMetrics: Boolean = true,
     streamEntityOnly: Boolean = true,
@@ -746,7 +746,7 @@ object GlobalConfig {
         "tags" -> JsArray(o.tags.map(JsString.apply)),
         "letsEncryptSettings"     -> o.letsEncryptSettings.json,
         "lines"                   -> JsArray(o.lines.map(JsString.apply)),
-        "anonymousTelemetry"      -> o.anonymousTelemetry,
+        "anonymousReporting"      -> o.anonymousReporting,
         "initWithNewEngine"       -> o.initWithNewEngine,
         "maintenanceMode"         -> o.maintenanceMode,
         "enableEmbeddedMetrics"   -> o.enableEmbeddedMetrics,
@@ -796,7 +796,7 @@ object GlobalConfig {
       Try {
         GlobalConfig(
           lines = (json \ "lines").asOpt[Seq[String]].getOrElse(Seq("prod")),
-          anonymousTelemetry = (json \ "anonymousTelemetry").asOpt[Boolean].getOrElse(true),
+          anonymousReporting = (json \ "anonymousReporting").asOpt[Boolean].getOrElse(true),
           initWithNewEngine = (json \ "initWithNewEngine").asOpt[Boolean].getOrElse(false),
           enableEmbeddedMetrics = (json \ "enableEmbeddedMetrics").asOpt[Boolean].getOrElse(true),
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),

@@ -859,10 +859,19 @@
     "type" : "object",
     "description" : "???",
     "properties" : {
+      "proxy_http_call_timeout" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
       "raw_source" : {
         "description" : "null type",
         "type" : "string",
         "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
       },
       "function_name" : {
         "type" : "string",
@@ -17707,10 +17716,19 @@
     "type" : "object",
     "description" : "???",
     "properties" : {
+      "proxy_http_call_timeout" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
       "raw_source" : {
         "description" : "null type",
         "type" : "string",
         "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
       },
       "function_name" : {
         "type" : "string",
@@ -18179,10 +18197,19 @@
     "type" : "object",
     "description" : "???",
     "properties" : {
+      "proxy_http_call_timeout" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
       "raw_source" : {
         "description" : "null type",
         "type" : "string",
         "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
       },
       "function_name" : {
         "type" : "string",
@@ -23161,6 +23188,10 @@
         "type" : "array",
         "items" : {
           "properties" : {
+            "anonymousTelemetry" : {
+              "type" : "boolean",
+              "description" : "???"
+            },
             "geolocationSettings" : {
               "description" : "Settings for geolocation extraction",
               "properties" : {
@@ -27410,6 +27441,10 @@
     "type" : "object",
     "description" : "The global config (dynamic) for otoroshi",
     "properties" : {
+      "anonymousTelemetry" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
       "geolocationSettings" : {
         "description" : "Settings for geolocation extraction",
         "type" : "object",
@@ -31506,10 +31541,19 @@
     "type" : "object",
     "description" : "???",
     "properties" : {
+      "proxy_http_call_timeout" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
       "raw_source" : {
         "description" : "null type",
         "type" : "string",
         "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
       },
       "function_name" : {
         "type" : "string",
@@ -49814,6 +49858,1558 @@
     "type" : "object",
     "description" : "???"
   },
+  "otoroshi.api.TweakedGlobalConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "config" : {
+        "description" : "???",
+        "properties" : {
+          "anonymousTelemetry" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "geolocationSettings" : {
+            "description" : "Settings for geolocation extraction",
+            "type" : "object",
+            "oneOfConstraints" : [ {
+              "required" : [ "type", "enabled", "apikey", "timeout" ]
+            }, {
+              "required" : [ "type", "enabled", "path" ]
+            }, {
+              "required" : [ "type" ]
+            } ],
+            "properties" : {
+              "type" : {
+                "type" : "string",
+                "enum" : [ "none" ]
+              },
+              "enabled" : {
+                "type" : "boolean",
+                "description" : "Geolocation using maxmind db enabled"
+              },
+              "apikey" : {
+                "type" : "string",
+                "description" : "IpStack apikey"
+              },
+              "timeout" : {
+                "type" : "integer",
+                "format" : "int64",
+                "description" : "API call timeout"
+              },
+              "path" : {
+                "type" : "string",
+                "description" : "Maxmlind db file path"
+              }
+            }
+          },
+          "alertsEmails" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Email addresses that will receive all Otoroshi alert events"
+          },
+          "throttlingQuota" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Authorized number of calls per second globally, measured on 10 seconds"
+          },
+          "maxWebhookSize" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Max number of items in webhooks"
+          },
+          "maxConcurrentRequests" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "The number of authorized request processed at the same time"
+          },
+          "cleverSettings" : {
+            "description" : "Optional CleverCloud configuration",
+            "type" : "object",
+            "properties" : {
+              "consumerSecret" : {
+                "type" : "string",
+                "description" : "Clever-Cloud oauth consumer secret"
+              },
+              "consumerKey" : {
+                "type" : "string",
+                "description" : "Clever-Cloud oauth consumer key"
+              },
+              "secret" : {
+                "type" : "string",
+                "description" : "Clever-Cloud oauth secret"
+              },
+              "token" : {
+                "type" : "string",
+                "description" : "Clever-Cloud oauth token"
+              },
+              "orgaId" : {
+                "type" : "string",
+                "description" : "Clever-Cloud organization id"
+              }
+            }
+          },
+          "templates" : {
+            "description" : "The otoroshi default templates for entities",
+            "properties" : {
+              "team" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "script" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "apikey" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "group" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "tcpService" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "verifier" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "service" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "target" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "certificate" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "dataExporter" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "route" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "backend" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "template" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "tenant" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "authConfig" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "descriptor" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              }
+            },
+            "type" : "object"
+          },
+          "endlessIpAddresses" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "IP addresses for which any request to Otoroshi will respond with 128 Gb of zeros"
+          },
+          "plugins" : {
+            "description" : "global plugins settings",
+            "properties" : {
+              "config" : {
+                "type" : "object",
+                "description" : "Plugins configuration"
+              },
+              "enabled" : {
+                "type" : "boolean",
+                "description" : "Plugins enabled"
+              },
+              "excluded" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "Excluded paths"
+              },
+              "refs" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "Enabled plugins"
+              }
+            },
+            "type" : "object"
+          },
+          "kafkaConfig" : {
+            "description" : "Kafka settings",
+            "type" : "object",
+            "properties" : {
+              "type" : {
+                "type" : "string",
+                "description" : "the kind of exporter",
+                "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+              },
+              "sendEvents" : {
+                "type" : "boolean",
+                "description" : "Send events to it, or just connect"
+              },
+              "truststore" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "hostValidation" : {
+                "type" : "boolean",
+                "description" : "Enabled TLS hostname validation"
+              },
+              "servers" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "URLs of the kafka servers"
+              },
+              "mtlsConfig" : {
+                "description" : "TLS config to access the cluster",
+                "properties" : {
+                  "mtls" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "loose" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "trustAll" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "trustedCerts" : {
+                    "type" : "array",
+                    "items" : {
+                      "type" : "string"
+                    },
+                    "description" : "???"
+                  },
+                  "certs" : {
+                    "type" : "array",
+                    "items" : {
+                      "type" : "string"
+                    },
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "securityProtocol" : {
+                "type" : "string",
+                "description" : "Used security protocol"
+              },
+              "keystore" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "topic" : {
+                "type" : "string",
+                "description" : "Optional kafka topic (otoroshi-events by default)"
+              },
+              "keyPass" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "saslConfig" : {
+                "description" : "SASL configuration",
+                "type" : "object",
+                "properties" : {
+                  "username" : {
+                    "type" : "string",
+                    "description" : "SASL username"
+                  },
+                  "password" : {
+                    "type" : "string",
+                    "description" : "SASL password"
+                  },
+                  "mechanism" : {
+                    "type" : "string",
+                    "description" : "SASL login mechanism"
+                  }
+                }
+              }
+            }
+          },
+          "maxLogsSize" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Number of events kept locally"
+          },
+          "proxies" : {
+            "description" : "Web proxies settings",
+            "properties" : {
+              "elastic" : {
+                "description" : "Web proxy used to call elastic",
+                "type" : "object",
+                "properties" : {
+                  "host" : {
+                    "type" : "string",
+                    "description" : "The hostname of the proxy server."
+                  },
+                  "port" : {
+                    "type" : "string",
+                    "description" : "The port of the proxy server."
+                  },
+                  "protocol" : {
+                    "type" : "string",
+                    "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+                  },
+                  "principal" : {
+                    "type" : "string",
+                    "description" : "The principal (aka username) of the credentials for the proxy server."
+                  },
+                  "password" : {
+                    "type" : "string",
+                    "description" : "The password for the credentials for the proxy server."
+                  },
+                  "ntlmDomain" : {
+                    "type" : "string",
+                    "description" : "The ntlm domain for the proxy server."
+                  },
+                  "encoding" : {
+                    "type" : "string",
+                    "description" : "The realm's charset."
+                  },
+                  "nonProxyHosts" : {
+                    "type" : "string",
+                    "description" : "The non proxied hosts"
+                  }
+                }
+              },
+              "eventsWebhooks" : {
+                "description" : "Web proxy used to call webhooks",
+                "type" : "object",
+                "properties" : {
+                  "host" : {
+                    "type" : "string",
+                    "description" : "The hostname of the proxy server."
+                  },
+                  "port" : {
+                    "type" : "string",
+                    "description" : "The port of the proxy server."
+                  },
+                  "protocol" : {
+                    "type" : "string",
+                    "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+                  },
+                  "principal" : {
+                    "type" : "string",
+                    "description" : "The principal (aka username) of the credentials for the proxy server."
+                  },
+                  "password" : {
+                    "type" : "string",
+                    "description" : "The password for the credentials for the proxy server."
+                  },
+                  "ntlmDomain" : {
+                    "type" : "string",
+                    "description" : "The ntlm domain for the proxy server."
+                  },
+                  "encoding" : {
+                    "type" : "string",
+                    "description" : "The realm's charset."
+                  },
+                  "nonProxyHosts" : {
+                    "type" : "string",
+                    "description" : "The non proxied hosts"
+                  }
+                }
+              },
+              "jwk" : {
+                "description" : "Web proxy used to fetch jwks",
+                "type" : "object",
+                "properties" : {
+                  "host" : {
+                    "type" : "string",
+                    "description" : "The hostname of the proxy server."
+                  },
+                  "port" : {
+                    "type" : "string",
+                    "description" : "The port of the proxy server."
+                  },
+                  "protocol" : {
+                    "type" : "string",
+                    "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+                  },
+                  "principal" : {
+                    "type" : "string",
+                    "description" : "The principal (aka username) of the credentials for the proxy server."
+                  },
+                  "password" : {
+                    "type" : "string",
+                    "description" : "The password for the credentials for the proxy server."
+                  },
+                  "ntlmDomain" : {
+                    "type" : "string",
+                    "description" : "The ntlm domain for the proxy server."
+                  },
+                  "encoding" : {
+                    "type" : "string",
+                    "description" : "The realm's charset."
+                  },
+                  "nonProxyHosts" : {
+                    "type" : "string",
+                    "description" : "The non proxied hosts"
+                  }
+                }
+              },
+              "auth" : {
+                "description" : "Web proxy used to call OAuth providers",
+                "type" : "object",
+                "properties" : {
+                  "host" : {
+                    "type" : "string",
+                    "description" : "The hostname of the proxy server."
+                  },
+                  "port" : {
+                    "type" : "string",
+                    "description" : "The port of the proxy server."
+                  },
+                  "protocol" : {
+                    "type" : "string",
+                    "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+                  },
+                  "principal" : {
+                    "type" : "string",
+                    "description" : "The principal (aka username) of the credentials for the proxy server."
+                  },
+                  "password" : {
+                    "type" : "string",
+                    "description" : "The password for the credentials for the proxy server."
+                  },
+                  "ntlmDomain" : {
+                    "type" : "string",
+                    "description" : "The ntlm domain for the proxy server."
+                  },
+                  "encoding" : {
+                    "type" : "string",
+                    "description" : "The realm's charset."
+                  },
+                  "nonProxyHosts" : {
+                    "type" : "string",
+                    "description" : "The non proxied hosts"
+                  }
+                }
+              },
+              "clevercloud" : {
+                "description" : "Web proxy used to call clevercloud",
+                "type" : "object",
+                "properties" : {
+                  "host" : {
+                    "type" : "string",
+                    "description" : "The hostname of the proxy server."
+                  },
+                  "port" : {
+                    "type" : "string",
+                    "description" : "The port of the proxy server."
+                  },
+                  "protocol" : {
+                    "type" : "string",
+                    "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+                  },
+                  "principal" : {
+                    "type" : "string",
+                    "description" : "The principal (aka username) of the credentials for the proxy server."
+                  },
+                  "password" : {
+                    "type" : "string",
+                    "description" : "The password for the credentials for the proxy server."
+                  },
+                  "ntlmDomain" : {
+                    "type" : "string",
+                    "description" : "The ntlm domain for the proxy server."
+                  },
+                  "encoding" : {
+                    "type" : "string",
+                    "description" : "The realm's charset."
+                  },
+                  "nonProxyHosts" : {
+                    "type" : "string",
+                    "description" : "The non proxied hosts"
+                  }
+                }
+              },
+              "alertEmails" : {
+                "description" : "Web proxy used to send alert emails",
+                "type" : "object",
+                "properties" : {
+                  "host" : {
+                    "type" : "string",
+                    "description" : "The hostname of the proxy server."
+                  },
+                  "port" : {
+                    "type" : "string",
+                    "description" : "The port of the proxy server."
+                  },
+                  "protocol" : {
+                    "type" : "string",
+                    "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+                  },
+                  "principal" : {
+                    "type" : "string",
+                    "description" : "The principal (aka username) of the credentials for the proxy server."
+                  },
+                  "password" : {
+                    "type" : "string",
+                    "description" : "The password for the credentials for the proxy server."
+                  },
+                  "ntlmDomain" : {
+                    "type" : "string",
+                    "description" : "The ntlm domain for the proxy server."
+                  },
+                  "encoding" : {
+                    "type" : "string",
+                    "description" : "The realm's charset."
+                  },
+                  "nonProxyHosts" : {
+                    "type" : "string",
+                    "description" : "The non proxied hosts"
+                  }
+                }
+              },
+              "authority" : {
+                "description" : "Web proxy used to check authorities",
+                "type" : "object",
+                "properties" : {
+                  "host" : {
+                    "type" : "string",
+                    "description" : "The hostname of the proxy server."
+                  },
+                  "port" : {
+                    "type" : "string",
+                    "description" : "The port of the proxy server."
+                  },
+                  "protocol" : {
+                    "type" : "string",
+                    "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+                  },
+                  "principal" : {
+                    "type" : "string",
+                    "description" : "The principal (aka username) of the credentials for the proxy server."
+                  },
+                  "password" : {
+                    "type" : "string",
+                    "description" : "The password for the credentials for the proxy server."
+                  },
+                  "ntlmDomain" : {
+                    "type" : "string",
+                    "description" : "The ntlm domain for the proxy server."
+                  },
+                  "encoding" : {
+                    "type" : "string",
+                    "description" : "The realm's charset."
+                  },
+                  "nonProxyHosts" : {
+                    "type" : "string",
+                    "description" : "The non proxied hosts"
+                  }
+                }
+              },
+              "services" : {
+                "description" : "Web proxy used to access services targets",
+                "type" : "object",
+                "properties" : {
+                  "host" : {
+                    "type" : "string",
+                    "description" : "The hostname of the proxy server."
+                  },
+                  "port" : {
+                    "type" : "string",
+                    "description" : "The port of the proxy server."
+                  },
+                  "protocol" : {
+                    "type" : "string",
+                    "description" : "The protocol of the proxy server.  Use \"http\" or \"https\".  Defaults to \"http\" if not specified."
+                  },
+                  "principal" : {
+                    "type" : "string",
+                    "description" : "The principal (aka username) of the credentials for the proxy server."
+                  },
+                  "password" : {
+                    "type" : "string",
+                    "description" : "The password for the credentials for the proxy server."
+                  },
+                  "ntlmDomain" : {
+                    "type" : "string",
+                    "description" : "The ntlm domain for the proxy server."
+                  },
+                  "encoding" : {
+                    "type" : "string",
+                    "description" : "The realm's charset."
+                  },
+                  "nonProxyHosts" : {
+                    "type" : "string",
+                    "description" : "The non proxied hosts"
+                  }
+                }
+              }
+            },
+            "type" : "object"
+          },
+          "enableEmbeddedMetrics" : {
+            "type" : "boolean",
+            "description" : "Enable embedded metrics"
+          },
+          "elasticReadsConfig" : {
+            "description" : "Config. for elastic reads",
+            "type" : "object",
+            "properties" : {
+              "type" : {
+                "type" : "string",
+                "description" : "null type",
+                "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ],
+                "nullable" : true
+              },
+              "sendWorkers" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "applyTemplate" : {
+                "type" : "boolean",
+                "description" : "Enable template creation/update"
+              },
+              "uris" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "???"
+              },
+              "mtlsConfig" : {
+                "description" : "TLS settings for the http client",
+                "properties" : {
+                  "mtls" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "loose" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "trustAll" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "trustedCerts" : {
+                    "type" : "array",
+                    "items" : {
+                      "type" : "string"
+                    },
+                    "description" : "???"
+                  },
+                  "certs" : {
+                    "type" : "array",
+                    "items" : {
+                      "type" : "string"
+                    },
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "version" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "maxBulkSize" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "headers" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "string"
+                },
+                "description" : "Additionnal headers in the http request"
+              },
+              "indexSettings" : {
+                "description" : "Indexation settings",
+                "properties" : {
+                  "clientSide" : {
+                    "type" : "boolean",
+                    "description" : "Enable index splitting on client side"
+                  },
+                  "numberOfShards" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
+                  },
+                  "numberOfReplicas" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
+                  },
+                  "interval" : {
+                    "description" : "Index splitting interval",
+                    "properties" : { },
+                    "type" : "object"
+                  }
+                },
+                "type" : "object"
+              },
+              "user" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "index" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "password" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              }
+            }
+          },
+          "trustXForwarded" : {
+            "type" : "boolean",
+            "description" : "Use X-Forwarded-* headers for routing"
+          },
+          "quotasSettings" : {
+            "description" : "Settings to generate alert when an apikey almost exceeded or exceeded its quotas",
+            "properties" : {
+              "enabled" : {
+                "type" : "boolean",
+                "description" : "Is quotas alert enabled"
+              },
+              "dailyQuotasThreshold" : {
+                "type" : "number",
+                "format" : "double",
+                "description" : "The daily quotas threshold before generating alert"
+              },
+              "monthlyQuotasThreshold" : {
+                "type" : "number",
+                "format" : "double",
+                "description" : "The monthly quotas threshold before generating alert"
+              }
+            },
+            "type" : "object"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Entity tags"
+          },
+          "limitConcurrentRequests" : {
+            "type" : "boolean",
+            "description" : "If enabled, Otoroshi will reject new request if too much at the same time"
+          },
+          "useAkkaHttpClient" : {
+            "type" : "boolean",
+            "description" : "Globally use akka http client for everything"
+          },
+          "elasticWritesConfigs" : {
+            "type" : "array",
+            "items" : {
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "description" : "null type",
+                  "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ],
+                  "nullable" : true
+                },
+                "sendWorkers" : {
+                  "type" : "integer",
+                  "format" : "int32",
+                  "description" : "???"
+                },
+                "applyTemplate" : {
+                  "type" : "boolean",
+                  "description" : "Enable template creation/update"
+                },
+                "uris" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "description" : "???"
+                },
+                "mtlsConfig" : {
+                  "description" : "TLS settings for the http client",
+                  "properties" : {
+                    "mtls" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "loose" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "trustAll" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "trustedCerts" : {
+                      "type" : "array",
+                      "items" : {
+                        "type" : "string"
+                      },
+                      "description" : "???"
+                    },
+                    "certs" : {
+                      "type" : "array",
+                      "items" : {
+                        "type" : "string"
+                      },
+                      "description" : "???"
+                    }
+                  },
+                  "type" : "object"
+                },
+                "version" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                },
+                "maxBulkSize" : {
+                  "type" : "integer",
+                  "format" : "int32",
+                  "description" : "???"
+                },
+                "headers" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "description" : "Additionnal headers in the http request"
+                },
+                "indexSettings" : {
+                  "description" : "Indexation settings",
+                  "properties" : {
+                    "clientSide" : {
+                      "type" : "boolean",
+                      "description" : "Enable index splitting on client side"
+                    },
+                    "numberOfShards" : {
+                      "type" : "integer",
+                      "format" : "int32",
+                      "description" : "???"
+                    },
+                    "numberOfReplicas" : {
+                      "type" : "integer",
+                      "format" : "int32",
+                      "description" : "???"
+                    },
+                    "interval" : {
+                      "description" : "Index splitting interval",
+                      "properties" : { },
+                      "type" : "object"
+                    }
+                  },
+                  "type" : "object"
+                },
+                "user" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                },
+                "index" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                },
+                "password" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                }
+              },
+              "type" : "object"
+            },
+            "description" : "Configs. for Elastic writes"
+          },
+          "logAnalyticsOnServer" : {
+            "type" : "boolean",
+            "description" : "Log analytics event on the server"
+          },
+          "metadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "Entity metadata"
+          },
+          "apiReadOnly" : {
+            "type" : "boolean",
+            "description" : "If enabled, Admin API won't be able to write/update/delete entities"
+          },
+          "backOfficeAuthRef" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "streamEntityOnly" : {
+            "type" : "boolean",
+            "description" : "HTTP will be streamed only. Doesn't work with old browsers"
+          },
+          "otoroshiId" : {
+            "type" : "string",
+            "description" : "Unique id for this otoroshi instance"
+          },
+          "mailerSettings" : {
+            "description" : "Optional mailer configuration",
+            "type" : "object",
+            "oneOfConstraints" : [ {
+              "required" : [ "type" ]
+            }, {
+              "required" : [ "type", "url", "headers", "to" ]
+            }, {
+              "required" : [ "type", "eu", "apiKey", "domain", "to" ]
+            }, {
+              "required" : [ "type", "apiKeyPublic", "apiKeyPrivate", "to" ]
+            }, {
+              "required" : [ "type" ]
+            }, {
+              "required" : [ "type", "apiKey", "to" ]
+            } ],
+            "properties" : {
+              "type" : {
+                "type" : "string",
+                "description" : "the kind of exporter",
+                "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+              },
+              "url" : {
+                "type" : "string",
+                "description" : "Sender URL"
+              },
+              "headers" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "string"
+                },
+                "description" : "Sender headers"
+              },
+              "to" : {
+                "type" : "array",
+                "items" : {
+                  "properties" : {
+                    "name" : {
+                      "type" : "string",
+                      "description" : "Destination name"
+                    },
+                    "email" : {
+                      "type" : "string",
+                      "description" : "Email address"
+                    }
+                  },
+                  "type" : "object"
+                },
+                "description" : "Destination email address"
+              },
+              "eu" : {
+                "type" : "boolean",
+                "description" : "European tenant"
+              },
+              "apiKey" : {
+                "type" : "string",
+                "description" : "Sendgrid apikey"
+              },
+              "domain" : {
+                "type" : "string",
+                "description" : "Mailgun domain"
+              },
+              "apiKeyPublic" : {
+                "type" : "string",
+                "description" : "Public key"
+              },
+              "apiKeyPrivate" : {
+                "type" : "string",
+                "description" : "Private key"
+              }
+            }
+          },
+          "lines" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Possibles lines for Otoroshi"
+          },
+          "middleFingers" : {
+            "type" : "boolean",
+            "description" : "Use middle finger emoji as a response character for endless HTTP responses"
+          },
+          "analyticsWebhooks" : {
+            "type" : "array",
+            "items" : {
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "description" : "the kind of exporter",
+                  "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+                },
+                "url" : {
+                  "type" : "string",
+                  "description" : "The URL where events are posted"
+                },
+                "headers" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "description" : "Headers to authorize the call or whatever"
+                },
+                "mtlsConfig" : {
+                  "description" : "TLS config when calling webhook",
+                  "properties" : {
+                    "mtls" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "loose" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "trustAll" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "trustedCerts" : {
+                      "type" : "array",
+                      "items" : {
+                        "type" : "string"
+                      },
+                      "description" : "???"
+                    },
+                    "certs" : {
+                      "type" : "array",
+                      "items" : {
+                        "type" : "string"
+                      },
+                      "description" : "???"
+                    }
+                  },
+                  "type" : "object"
+                }
+              },
+              "type" : "object"
+            },
+            "description" : "Webhook that will receive all internal Otoroshi events"
+          },
+          "autoCert" : {
+            "description" : "Auto certs settings",
+            "properties" : {
+              "allowed" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "allowed domains"
+              },
+              "enabled" : {
+                "type" : "boolean",
+                "description" : "Enable auto cert"
+              },
+              "replyNicely" : {
+                "type" : "boolean",
+                "description" : "Reply TLS error with an auto generated certificate for the domain"
+              },
+              "notAllowed" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "not allowed domains"
+              },
+              "caRef" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              }
+            },
+            "type" : "object"
+          },
+          "wasmManagerSettings" : {
+            "description" : "???",
+            "type" : "object",
+            "properties" : {
+              "url" : {
+                "type" : "string",
+                "description" : "???"
+              },
+              "clientId" : {
+                "type" : "string",
+                "description" : "???"
+              },
+              "clientSecret" : {
+                "type" : "string",
+                "description" : "???"
+              },
+              "pluginsFilter" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              }
+            }
+          },
+          "maintenanceMode" : {
+            "type" : "boolean",
+            "description" : "Global maintenant mode"
+          },
+          "initWithNewEngine" : {
+            "type" : "boolean",
+            "description" : "Was this instance init with new engine as default"
+          },
+          "letsEncryptSettings" : {
+            "description" : "Let's encrypt (ACME) settings",
+            "properties" : {
+              "privateKey" : {
+                "type" : "string",
+                "description" : "Let's encrypt (ACME) private key"
+              },
+              "contacts" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "Let's encrypt (ACME) contacts"
+              },
+              "emails" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "Let's encrypt (ACME) contact emails"
+              },
+              "enabled" : {
+                "type" : "boolean",
+                "description" : "Let's encrypt (ACME) enabled"
+              },
+              "publicKey" : {
+                "type" : "string",
+                "description" : "Let's encrypt (ACME) public key"
+              },
+              "server" : {
+                "type" : "string",
+                "description" : "Let's encrypt (ACME) server"
+              }
+            },
+            "type" : "object"
+          },
+          "snowMonkeyConfig" : {
+            "description" : "Snowmonky settings",
+            "properties" : {
+              "dryRun" : {
+                "type" : "boolean",
+                "description" : "Whether or not outages will actualy impact requests"
+              },
+              "outageDurationTo" : {
+                "type" : "number",
+                "description" : "End of outage duration range"
+              },
+              "chaosConfig" : {
+                "description" : "Chaos settings",
+                "properties" : {
+                  "badResponsesFaultConfig" : {
+                    "description" : "Settings for bad responses",
+                    "type" : "object",
+                    "properties" : {
+                      "ratio" : {
+                        "type" : "number",
+                        "format" : "double",
+                        "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0"
+                      },
+                      "responses" : {
+                        "type" : "array",
+                        "items" : {
+                          "properties" : {
+                            "status" : {
+                              "type" : "integer",
+                              "format" : "int32",
+                              "description" : "The HTTP status for the response"
+                            },
+                            "body" : {
+                              "type" : "string",
+                              "description" : "The body of the HTTP response"
+                            },
+                            "headers" : {
+                              "type" : "object",
+                              "additionalProperties" : {
+                                "type" : "string"
+                              },
+                              "description" : "The HTTP headers of the response"
+                            }
+                          },
+                          "type" : "object"
+                        },
+                        "description" : "The possibles responses"
+                      }
+                    }
+                  },
+                  "largeRequestFaultConfig" : {
+                    "description" : "Settings for large requests",
+                    "type" : "object",
+                    "properties" : {
+                      "ratio" : {
+                        "type" : "number",
+                        "format" : "double",
+                        "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0"
+                      },
+                      "additionalRequestSize" : {
+                        "type" : "integer",
+                        "format" : "int32",
+                        "description" : "The size added to the request body in bytes. Added payload will be spaces only."
+                      }
+                    }
+                  },
+                  "largeResponseFaultConfig" : {
+                    "description" : "Settings for large responses",
+                    "type" : "object",
+                    "properties" : {
+                      "ratio" : {
+                        "type" : "number",
+                        "format" : "double",
+                        "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0"
+                      },
+                      "additionalResponseSize" : {
+                        "type" : "integer",
+                        "format" : "int32",
+                        "description" : "Add n 0 bytes"
+                      }
+                    }
+                  },
+                  "latencyInjectionFaultConfig" : {
+                    "description" : "Settings for latency injection",
+                    "type" : "object",
+                    "properties" : {
+                      "ratio" : {
+                        "type" : "number",
+                        "format" : "double",
+                        "description" : "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0"
+                      },
+                      "from" : {
+                        "type" : "number",
+                        "description" : "The start range of latency added to the request"
+                      },
+                      "to" : {
+                        "type" : "number",
+                        "description" : "The end range of latency added to the request"
+                      }
+                    }
+                  },
+                  "enabled" : {
+                    "type" : "boolean",
+                    "description" : "Whether or not this config is enabled"
+                  }
+                },
+                "type" : "object"
+              },
+              "timesPerDay" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "Number of time per day each service will be outage"
+              },
+              "outageDurationFrom" : {
+                "type" : "number",
+                "description" : "Start of outage duration range"
+              },
+              "startTime" : {
+                "type" : "string",
+                "description" : "Start time of Snow Monkey each day"
+              },
+              "includeUserFacingDescriptors" : {
+                "type" : "boolean",
+                "description" : "Whether or not user facing apps. will be impacted by Snow Monkey"
+              },
+              "targetGroups" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "Groups impacted by Snow Monkey. If empty, all groups will be impacted"
+              },
+              "enabled" : {
+                "type" : "boolean",
+                "description" : "Whether or not this config is enabled"
+              },
+              "stopTime" : {
+                "type" : "string",
+                "description" : "Stop time of Snow Monkey each day"
+              },
+              "outageStrategy" : {
+                "description" : "",
+                "type" : "string",
+                "enum" : [ "AllServicesPerGroup", "OneServicePerGroup" ]
+              }
+            },
+            "type" : "object"
+          },
+          "scripts" : {
+            "description" : "global plugins settings. will be deprecated soon",
+            "properties" : {
+              "jobConfig" : {
+                "type" : "object",
+                "description" : "jobs enabled"
+              },
+              "enabled" : {
+                "type" : "boolean",
+                "description" : "Global scripts enabled"
+              },
+              "transformersConfig" : {
+                "type" : "object",
+                "description" : "transformers config"
+              },
+              "transformersRefs" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "transformers enabled"
+              },
+              "preRouteRefs" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "pre-route plugins enabled"
+              },
+              "sinkConfig" : {
+                "type" : "object",
+                "description" : "sinks config"
+              },
+              "jobRefs" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "running jobs"
+              },
+              "validatorRefs" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "validator enabled"
+              },
+              "sinkRefs" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "sinks enabled"
+              },
+              "preRouteConfig" : {
+                "type" : "object",
+                "description" : "pre-route config"
+              },
+              "validatorConfig" : {
+                "type" : "object",
+                "description" : "validator config"
+              }
+            },
+            "type" : "object"
+          },
+          "perIpThrottlingQuota" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Authorized number of calls per second globally per IP address, measured on 10 seconds"
+          },
+          "useCircuitBreakers" : {
+            "type" : "boolean",
+            "description" : "If enabled, services will be authorized to use circuit breakers"
+          },
+          "maxHttp10ResponseSize" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "The max size in bytes of an HTTP 1.0 response"
+          },
+          "tlsSettings" : {
+            "description" : "TLS settings",
+            "properties" : {
+              "trustedCAsServer" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "List for CAs trusted by otoroshi when performing TLS termination"
+              },
+              "includeJdkCaClient" : {
+                "type" : "boolean",
+                "description" : "Use known JDK CAs to build trust when performing request from otoroshi to backends"
+              },
+              "randomIfNotFound" : {
+                "type" : "boolean",
+                "description" : "Use a random one"
+              },
+              "defaultDomain" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "includeJdkCaServer" : {
+                "type" : "boolean",
+                "description" : "Use known JDK CAs to build trust for incoming request"
+              }
+            },
+            "type" : "object"
+          },
+          "statsdConfig" : {
+            "description" : "Statsd settings (agent connection)",
+            "type" : "object",
+            "properties" : {
+              "datadog" : {
+                "type" : "boolean",
+                "description" : "Datadog agent"
+              },
+              "host" : {
+                "type" : "string",
+                "description" : "The host of the StatsD agent"
+              },
+              "port" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "The port of the StatsD agent"
+              }
+            }
+          },
+          "autoLinkToDefaultGroup" : {
+            "type" : "boolean",
+            "description" : "If not defined, every new service descriptor will be added to the default group"
+          },
+          "alertsWebhooks" : {
+            "type" : "array",
+            "items" : {
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "description" : "the kind of exporter",
+                  "enum" : [ "elastic", "webhook", "kafka", "pulsar", "file", "mailer", "custom", "console", "metrics" ]
+                },
+                "url" : {
+                  "type" : "string",
+                  "description" : "The URL where events are posted"
+                },
+                "headers" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "description" : "Headers to authorize the call or whatever"
+                },
+                "mtlsConfig" : {
+                  "description" : "TLS config when calling webhook",
+                  "properties" : {
+                    "mtls" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "loose" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "trustAll" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "trustedCerts" : {
+                      "type" : "array",
+                      "items" : {
+                        "type" : "string"
+                      },
+                      "description" : "???"
+                    },
+                    "certs" : {
+                      "type" : "array",
+                      "items" : {
+                        "type" : "string"
+                      },
+                      "description" : "???"
+                    }
+                  },
+                  "type" : "object"
+                }
+              },
+              "type" : "object"
+            },
+            "description" : "Webhook that will receive all Otoroshi alert events"
+          },
+          "ipFiltering" : {
+            "description" : "Global ip filtering settings",
+            "properties" : {
+              "whitelist" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "???"
+              },
+              "blacklist" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "u2fLoginOnly" : {
+            "type" : "boolean",
+            "description" : "If enabled, login to backoffice through Auth0 will be disabled"
+          },
+          "userAgentSettings" : {
+            "description" : "Settings for useragent extraction",
+            "properties" : {
+              "enabled" : {
+                "type" : "boolean",
+                "description" : "User agent extraction enabled"
+              }
+            },
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      }
+    }
+  },
   "otoroshi.next.plugins.MockResponseNotFoundException" : {
     "type" : "object",
     "description" : "???",
@@ -50968,10 +52564,19 @@
     "type" : "object",
     "description" : "???",
     "properties" : {
+      "proxy_http_call_timeout" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
       "raw_source" : {
         "description" : "null type",
         "type" : "string",
         "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
       },
       "function_name" : {
         "type" : "string",
@@ -53667,14 +55272,46 @@
       }
     }
   },
+  "otoroshi.models.FakeEntityLocationSupport" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "_loc" : {
+        "description" : "???",
+        "properties" : {
+          "tenant" : {
+            "description" : "Organization of the current entity",
+            "type" : "string"
+          },
+          "teams" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Teams of the current entity"
+          }
+        },
+        "type" : "object"
+      }
+    }
+  },
   "otoroshi.next.plugins.WasmAccessValidator" : {
     "type" : "object",
     "description" : "???",
     "properties" : {
+      "proxy_http_call_timeout" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
       "raw_source" : {
         "description" : "null type",
         "type" : "string",
         "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
       },
       "function_name" : {
         "type" : "string",

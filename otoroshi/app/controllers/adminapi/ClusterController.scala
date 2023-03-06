@@ -8,7 +8,7 @@ import akka.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
 import otoroshi.cluster._
-import otoroshi.env.Env
+import otoroshi.env.{Env, JavaVersion, OS}
 import otoroshi.models.{PrivateAppsUser, RightsChecker}
 import otoroshi.next.proxy.{ProxyEngine, RelayRoutingRequest}
 import otoroshi.script.RequestHandler
@@ -363,7 +363,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                                 .get(ClusterAgent.OtoroshiWorkerIdHeader)
                                 .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
                               name = name,
+                              os = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerOsHeader).map(OS.fromString).getOrElse(OS.default),
                               version = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerVersionHeader).getOrElse("undefined"),
+                              javaVersion = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerJavaVersionHeader).map(JavaVersion.fromString).getOrElse(JavaVersion.default),
                               memberType = ClusterMode.Worker,
                               location =
                                 ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
@@ -483,7 +485,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                     .get(ClusterAgent.OtoroshiWorkerIdHeader)
                     .getOrElse(s"tmpnode_${IdGenerator.uuid}"),
                   name = name,
+                  os = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerOsHeader).map(OS.fromString).getOrElse(OS.default),
                   version = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerVersionHeader).getOrElse("undefined"),
+                  javaVersion = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerJavaVersionHeader).map(JavaVersion.fromString).getOrElse(JavaVersion.default),
                   memberType = ClusterMode.Worker,
                   location = ctx.request.headers.get(ClusterAgent.OtoroshiWorkerLocationHeader).getOrElse("--"),
                   httpPort = ctx.request.headers
