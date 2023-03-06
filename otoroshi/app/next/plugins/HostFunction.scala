@@ -1,14 +1,17 @@
 package next.plugins
 
-import akka.http.scaladsl.util.FastFuture.{EnhancedFuture, successful}
+import akka.http.scaladsl.util.FastFuture.EnhancedFuture
 import akka.stream.Materializer
 import akka.util.ByteString
 import org.extism.sdk._
+import org.joda.time.DateTime
 import otoroshi.cluster.ClusterConfig
 import otoroshi.env.Env
+import otoroshi.events.{Location, WasmLogEvent}
 import otoroshi.next.plugins.WasmQueryConfig
+import otoroshi.next.plugins.api.NgCachedConfigContext
 import otoroshi.utils.json.JsonOperationsHelper
-import otoroshi.utils.syntax.implicits.BetterJsValue
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.libs.json.{JsArray, JsNull, Json}
 
 import java.nio.charset.StandardCharsets
@@ -26,7 +29,13 @@ object Utils {
     }
 }
 
-case class EnvUserData(env: Env, executionContext: ExecutionContext, mat: Materializer, config: WasmQueryConfig) extends HostUserData
+case class EnvUserData(
+                        env: Env,
+                        executionContext: ExecutionContext,
+                        mat: Materializer,
+                        config: WasmQueryConfig,
+                        ctx: Option[NgCachedConfigContext] = None
+                      ) extends HostUserData
 case class EmptyUserData() extends HostUserData
 
 object LogLevel extends Enumeration {
@@ -64,6 +73,32 @@ object Logging {
 
         returns(0).v.i32 = Status.StatusOK.id
     }
+    
+    def proxyLogWithEventFunction()
+                                 (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
+      (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], hostData: Optional[EnvUserData]) => {
+        hostData
+          .ifPresent(ud => {
+            val data  = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
+
+            val event = WasmLogEvent(
+              `@id` = ud.env.snowflakeGenerator.nextIdStr(),
+              `@service` = ud.ctx.map(e => e.route.name).getOrElse(""),
+              `@serviceId` = ud.ctx.map(e => e.route.id).getOrElse(""),
+              `@timestamp` = DateTime.now(),
+              route = ud.ctx.map(_.route),
+              fromFunction = (data \ "function").asOpt[String].getOrElse("unknown function"),
+              message = (data \ "message").asOpt[String].getOrElse("--"),
+              level = (data \ "level").asOpt[Int].map(r => LogLevel(r)).getOrElse(LogLevel.LogLevelDebug).toString,
+            )
+
+            println(event)
+
+            event.toAnalytics()
+
+            returns(0).v.i32 = Status.StatusOK.id
+        })
+    }
 
     def proxyLog() = new org.extism.sdk.HostFunction[EmptyUserData](
             "proxy_log",
@@ -73,7 +108,18 @@ object Logging {
             Optional.of(EmptyUserData())
     )
 
-    def getFunctions = Seq(proxyLog())
+    def proxyLogWithEvent(config: WasmQueryConfig, ctx: Option[NgCachedConfigContext])
+                         (implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = new org.extism.sdk.HostFunction[EnvUserData](
+        "proxy_log_event",
+        Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+        Array(LibExtism.ExtismValType.I32),
+        proxyLogWithEventFunction,
+        Optional.of(EnvUserData(env, executionContext, mat, config, ctx))
+    )
+
+    def getFunctions(config: WasmQueryConfig, ctx: Option[NgCachedConfigContext])
+                    (implicit env: Env, executionContext: ExecutionContext, mat: Materializer)
+    = Seq(proxyLog(), proxyLogWithEvent(config, ctx))
 }
 
 object Http {
@@ -133,7 +179,6 @@ object Http {
 
     def getFunctions(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = Seq(proxyHttpCall(config))
 }
-
 
 object State {
 
@@ -344,9 +389,9 @@ object State {
 }
 
 object HostFunctions {
-    def getFunctions(config: WasmQueryConfig)
+    def getFunctions(config: WasmQueryConfig, ctx: Option[NgCachedConfigContext])
                     (implicit env: Env, executionContext: ExecutionContext): Array[HostFunction[_ <: HostUserData]] = {
       implicit val mat = env.otoroshiMaterializer
-      (Logging.getFunctions ++ Http.getFunctions(config) ++ State.getFunctions(config)).toArray
+      (Logging.getFunctions(config, ctx) ++ Http.getFunctions(config) ++ State.getFunctions(config)).toArray
     }
 }

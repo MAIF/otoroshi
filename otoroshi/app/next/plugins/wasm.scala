@@ -128,7 +128,7 @@ object WasmUtils {
 
   val test: Option[Manifest] = None
 
-  def callWasm(wasm: ByteString, config: WasmQueryConfig, input: JsValue)
+  def callWasm(wasm: ByteString, config: WasmQueryConfig, input: JsValue, ctx: Option[NgCachedConfigContext])
               (implicit env: Env, executionContext: ExecutionContext): String = {
     val resolver = new WasmSourceResolver()
     val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
@@ -141,20 +141,20 @@ object WasmUtils {
 
 
     val context = new Context()
-    val plugin = context.newPlugin(manifest, config.wasi, next.plugins.HostFunctions.getFunctions(config))
+    val plugin = context.newPlugin(manifest, config.wasi, next.plugins.HostFunctions.getFunctions(config, ctx))
     val output = plugin.call(config.functionName, input.stringify)
     plugin.close()
     context.free()
     output
   }
 
-  def execute(config: WasmQueryConfig, input: JsValue)
+  def execute(config: WasmQueryConfig, input: JsValue, ctx: Option[NgCachedConfigContext])
              (implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
     (config.compilerSource, config.rawSource) match {
       case (Some(pluginId), _)  =>
         scriptCache.getIfPresent(pluginId) match {
           case Some(wasm) =>
-            WasmUtils.callWasm(wasm, config, input).left.future
+            WasmUtils.callWasm(wasm, config, input, ctx).left.future
           case None       =>
             env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
               globalConfig.wasmManagerSettings match {
@@ -175,7 +175,7 @@ object WasmUtils {
                       } else {
                         val wasm = resp.bodyAsBytes
                         scriptCache.put(pluginId, resp.bodyAsBytes)
-                        WasmUtils.callWasm(wasm, config, input).left.future
+                        WasmUtils.callWasm(wasm, config, input, ctx).left.future
                       }
                     }
                 case _                                                         =>
@@ -186,7 +186,7 @@ object WasmUtils {
       case (_, Some(rawSource)) =>
         WasmUtils
           .getWasm(rawSource)
-          .map(wasm => WasmUtils.callWasm(wasm, config, input).left)
+          .map(wasm => WasmUtils.callWasm(wasm, config, input, ctx).left)
       case _                    => Right(Json.obj("error" -> "missing source")).future
     }
 
@@ -219,7 +219,7 @@ class WasmBackend extends NgBackendCall {
       .getOrElse(WasmQueryConfig())
 
     ctx.wasmJson
-      .flatMap(input => WasmUtils.execute(config, input))
+      .flatMap(input => WasmUtils.execute(config, input, ctx.some))
       .map {
         case Left(output) =>
           val response = try {
@@ -281,7 +281,7 @@ class WasmAccessValidator extends NgAccessValidator {
       .getOrElse(WasmQueryConfig())
 
     WasmUtils
-      .execute(config, ctx.wasmJson)
+      .execute(config, ctx.wasmJson, ctx.some)
       .flatMap {
         case Left(res)  =>
           val response = Json.parse(res)
@@ -347,7 +347,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
     ctx.wasmJson
       .flatMap(input => {
         WasmUtils
-          .execute(config, input)
+          .execute(config, input, ctx.some)
           .map {
             case Left(res)    =>
               val response = Json.parse(res)
@@ -397,7 +397,7 @@ class WasmResponseTransformer extends NgRequestTransformer {
     ctx.wasmJson
       .flatMap(input => {
         WasmUtils
-          .execute(config, input)
+          .execute(config, input, ctx.some)
           .map {
             case Left(res)    =>
               val response = Json.parse(res)
@@ -448,7 +448,7 @@ class WasmSink extends NgRequestSink {
         Await.result(
           WasmUtils
             .getWasm(source)
-            .map(wasm => WasmUtils.callWasm(wasm, config.copy(functionName = "matches"), ctx.json))
+            .map(wasm => WasmUtils.callWasm(wasm, config.copy(functionName = "matches"), ctx.json, None))
             .map(res => {
               val response = Json.parse(res)
               (response \ "result").asOpt[Boolean].getOrElse(false)
@@ -472,7 +472,7 @@ class WasmSink extends NgRequestSink {
       case Some(source: String) =>
         WasmUtils
           .getWasm(source)
-          .map(wasm => WasmUtils.callWasm(wasm, config, ctx.json))
+          .map(wasm => WasmUtils.callWasm(wasm, config, ctx.json, None))
           .map(res => {
             val response = Json.parse(res)
 

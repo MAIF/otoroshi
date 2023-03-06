@@ -778,3 +778,34 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
         .getOrElse(FastFuture.successful(None))
     )
 }
+
+case class WasmLogEvent(
+                         `@type`: String = "WasmLogEvent",
+                         `@id`: String,
+                         `@service`: String,
+                         `@serviceId`: String,
+                         `@product`: String = "default",
+                         `@timestamp`: DateTime,
+                         fromFunction: String,
+                         route: Option[NgRoute] = None,
+                         message: String,
+                         level: String
+                       ) extends AnalyticEvent {
+  override def fromOrigin: Option[String] = None
+  override def fromUserAgent: Option[String] = None
+  def toJson(implicit _env: Env): JsValue    = WasmLogEvent.writes(this)
+}
+
+object WasmLogEvent {
+  def writes(o: WasmLogEvent): JsValue =
+    Json.obj(
+      "@type"              -> o.`@type`,
+      "@id"                -> o.`@id`,
+      "@timestamp"         -> o.`@timestamp`,
+      "@serviceId"         -> o.`@serviceId`,
+      "@service"           -> o.`@service`,
+      "route"              -> o.route.map(_.json).getOrElse(JsNull).as[JsValue],
+      "message"            -> o.message,
+      "level"              -> o.level
+    )
+}
