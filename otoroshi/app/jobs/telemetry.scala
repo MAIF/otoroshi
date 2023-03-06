@@ -157,10 +157,12 @@ class AnonymousTelemetryJob extends Job {
             "alive_nodes" -> members.count(m => (m.lastSeen.toDate.getTime + m.timeout.toMillis) > now),
             "leaders_count" -> members.count(mv => mv.memberType == ClusterMode.Leader),
             "workers_count" -> members.count(mv => mv.memberType == ClusterMode.Worker),
-            "nodes" -> JsArray(members.map(_.json).map(json => json.asObject ++ Json.obj(
-              "relay" -> JsBoolean(json.select("relay").select("enabled").asOpt[Boolean].getOrElse(false)),
-              "tunnels" -> json.select("tunnels").asOpt[JsArray].getOrElse(Json.arr()).value.size
-            ))),
+            "nodes" -> JsArray(members.map(_.json).map { json =>
+              json.asObject ++ Json.obj(
+                "relay" -> JsBoolean(json.select("relay").select("enabled").asOpt[Boolean].getOrElse(false)),
+                "tunnels" -> json.select("tunnels").asOpt[JsArray].getOrElse(Json.arr()).value.size
+              )
+            }),
           ),
           "entities" -> Json.obj(
             "scripts" -> Json.obj(
@@ -251,7 +253,7 @@ class AnonymousTelemetryJob extends Job {
         )
       }).flatMap { report =>
         //Files.writeString(new File("./report.json").toPath, report.prettify)
-        //report.prettify.debugPrintln
+        if (env.isDev) report.prettify.debugPrintln
         //report.stringify.byteString.size.debugPrintln
         env.Ws
           .url("https://telemetry.otoroshi.io/ingest")
