@@ -61,6 +61,7 @@ case class GraphlCallException(message: String)           extends Exception(mess
 case class AuthorisationException(message: String)        extends Exception(message)
 case class MissingMockResponsesException(message: String) extends Exception(message)
 case class MockResponseNotFoundException(message: String) extends Exception(message)
+case class WasmException(message: String)                 extends Exception(message)
 
 case class GraphQLQueryConfig(
     url: String,
@@ -363,6 +364,27 @@ class GraphQLBackend extends NgBackendCall {
   val soapJqRequestFilterArg         = Argument("jq_request_filter", OptionInputType(StringType))
   val soapJqResponseFilterArg        = Argument("jq_response_filter", OptionInputType(StringType))
 
+  val wasmRawSourceArg = Argument("wasm_raw_source", OptionInputType(StringType))
+  val wasmCompilerSourceArg = Argument("wasm_compiler_source", OptionInputType(StringType))
+  val wasmFunctionNameArg = Argument("wasm_function_name", StringType)
+  val wasmMemoryPagesArg = Argument("wasm_memory_pages", OptionInputType(IntType))
+  // val wasmConfigArg = Argument("wasm_config", StringType)
+  val wasmAllowedHostsArg = Argument("wasm_allowed_hosts", OptionInputType(ListInputType(StringType)))
+  val wasmWasiArg = Argument("wasm_wasi", BooleanType, defaultValue = true)
+  val wasmProxyHttpCallTimeoutArg = Argument("proxy_http_call_timeout", OptionInputType(IntType))
+  val wasmHttpAccessArg = Argument("http_access", BooleanType, defaultValue = false)
+  val wasmGlobalDataStoreAccessReadArg = Argument("global_datastore_access_read", BooleanType, defaultValue = false)
+  val wasmGlobalDataStoreAccessWriteArg = Argument("global_datastore_access_write", BooleanType, defaultValue = false)
+  val wasmPluginDataStoreAccessReadArg = Argument("plugin_datastore_access_read", BooleanType, defaultValue = false)
+  val wasmPluginDataStoreAccessWriteArg = Argument("plugin_datastore_access_write", BooleanType, defaultValue = false)
+  val wasmGlobalMapAccessReadArg = Argument("global_map_access_read", BooleanType, defaultValue = false)
+  val wasmGlobalMapAccessWriteArg = Argument("global_map_access_write", BooleanType, defaultValue = false)
+  val wasmPluginMapAccessReadArg = Argument("plugin_map_access_read", BooleanType, defaultValue = false)
+  val wasmPluginMapAccessWriteArg = Argument("plugin_map_access_write", BooleanType, defaultValue = false)
+
+  val wasmProxyStateAccessArg = Argument("proxy_state_sccess", BooleanType, defaultValue = false)
+  val wasmConfigurationAccessArg = Argument("configuration_access", BooleanType, defaultValue = false)
+
   val arguments =
     urlArg :: methodArg :: timeoutArg :: headersArg :: queryArg :: responsePathArg :: responseFilterArg :: limitArg :: offsetArg :: paginateArg :: Nil
 
@@ -387,6 +409,25 @@ class GraphQLBackend extends NgBackendCall {
     locations = directivesLocations
   )
   val httpRestDirective        = Directive("rest", arguments = arguments, locations = directivesLocations)
+  val wasmDirective            = Directive("wasm", arguments = wasmRawSourceArg ::
+      wasmCompilerSourceArg ::
+      wasmFunctionNameArg ::
+      wasmMemoryPagesArg ::
+      wasmAllowedHostsArg ::
+      wasmWasiArg ::
+      wasmProxyHttpCallTimeoutArg ::
+      wasmHttpAccessArg ::
+      wasmGlobalDataStoreAccessReadArg ::
+      wasmGlobalDataStoreAccessWriteArg ::
+      wasmPluginDataStoreAccessReadArg ::
+      wasmPluginDataStoreAccessWriteArg ::
+      wasmGlobalMapAccessReadArg ::
+      wasmGlobalMapAccessWriteArg ::
+      wasmPluginMapAccessReadArg ::
+      wasmPluginMapAccessWriteArg ::
+      wasmProxyStateAccessArg ::
+      wasmConfigurationAccessArg :: Nil,
+    locations = directivesLocations)
   val graphQLDirective         = Directive("graphql", arguments = arguments, locations = directivesLocations)
   // val OtoroshiRouteDirective = Directive("otoroshi", arguments = arguments, locations = directivesLocations)
   val soapDirective            = Directive(
@@ -452,6 +493,7 @@ class GraphQLBackend extends NgBackendCall {
     ),
     DirectiveResolver(authorizeDirective, resolve = c => authorizeDirectiveResolver(c, ctx)),
     DirectiveResolver(httpRestDirective, resolve = httpRestDirectiveResolver),
+    DirectiveResolver(wasmDirective, resolve = c => wasmDirectiveResolver(c, ctx)),
     DirectiveResolver(
       graphQLDirective,
       resolve = c => graphQLDirectiveResolver(c, c.arg(queryArg).getOrElse("{}"), ctx, delegates)
@@ -641,7 +683,6 @@ class GraphQLBackend extends NgBackendCall {
     request
       .execute()
       .map { resp =>
-        println(resp)
         if (resp.status == 200) {
           resp.json.atPath(c.arg(responsePathArg).getOrElse("$")).asOpt[JsValue].getOrElse(JsNull) match {
             case JsArray(value) =>
@@ -662,6 +703,69 @@ class GraphQLBackend extends NgBackendCall {
           }
         }
       }
+  }
+
+
+  def wasmDirectiveResolver(c: AstDirectiveContext[Unit], ctx: NgbBackendCallContext)
+                           (implicit env: Env, ec: ExecutionContext): Action[Unit, Any] = {
+
+    val wasmRawSource = c.arg(wasmRawSourceArg)
+    val wasmCompilerSource = c.arg(wasmCompilerSourceArg)
+    val wasmFunctionName = c.argOpt(wasmFunctionNameArg)
+
+    val wasmMemoryPages = c.arg(wasmMemoryPagesArg)
+    val wasmAllowedHosts = c.arg(wasmAllowedHostsArg)
+    val wasmWasi = c.arg(wasmWasiArg)
+    val wasmProxyHttpCallTimeout = c.arg(wasmProxyHttpCallTimeoutArg)
+    val wasmHttpAccess = c.argOpt(wasmHttpAccessArg)
+    val wasmGlobalDataStoreAccessRead = c.argOpt(wasmGlobalDataStoreAccessReadArg)
+    val wasmGlobalDataStoreAccessWrite = c.argOpt(wasmGlobalDataStoreAccessWriteArg)
+    val wasmPluginDataStoreAccessRead = c.argOpt(wasmPluginDataStoreAccessReadArg)
+    val wasmPluginDataStoreAccessWrite = c.argOpt(wasmPluginDataStoreAccessWriteArg)
+    val wasmGlobalMapAccessRead = c.argOpt(wasmGlobalMapAccessReadArg)
+    val wasmGlobalMapAccessWrite = c.argOpt(wasmGlobalMapAccessWriteArg)
+    val wasmPluginMapAccessRead = c.argOpt(wasmPluginMapAccessReadArg)
+    val wasmPluginMapAccessWrite = c.argOpt(wasmPluginMapAccessWriteArg)
+    val wasmProxyStateAccess = c.argOpt(wasmProxyStateAccessArg)
+    val wasmConfigurationAccess = c.argOpt(wasmConfigurationAccessArg)
+
+    if (wasmRawSource.isEmpty && wasmCompilerSource.isEmpty) {
+      throw WasmException("Missing sources")
+    } else if(wasmFunctionName.isEmpty) {
+      throw WasmException("Missing function")
+    } else {
+      val input = ctx.json.asObject ++ Json.obj(
+        "route" -> ctx.route.json,
+        "request" -> ctx.request.json
+      )
+      WasmUtils.execute(WasmConfig(
+            compilerSource = wasmCompilerSource,
+            rawSource = wasmRawSource,
+            memoryPages = wasmMemoryPages.getOrElse(30),
+            functionName = wasmFunctionName.get,
+            config = Map.empty,
+            allowedHosts = wasmAllowedHosts.getOrElse(Seq.empty),
+            wasi = wasmWasi,
+            proxyHttpCallTimeout = wasmProxyHttpCallTimeout.getOrElse(5000),
+            httpAccess = wasmHttpAccess.getOrElse(false),
+            globalDataStoreAccess = WasmDataRights(read = wasmGlobalDataStoreAccessRead.getOrElse(false), write = wasmGlobalDataStoreAccessWrite.getOrElse(false)),
+            pluginDataStoreAccess = WasmDataRights(read = wasmPluginDataStoreAccessRead.getOrElse(false), write = wasmPluginDataStoreAccessWrite.getOrElse(false)),
+            globalMapAccess = WasmDataRights(read = wasmGlobalMapAccessRead.getOrElse(false), write = wasmGlobalMapAccessWrite.getOrElse(false)),
+            pluginMapAccess = WasmDataRights(read = wasmPluginMapAccessRead.getOrElse(false), write = wasmPluginMapAccessWrite.getOrElse(false)),
+            proxyStateAccess = wasmProxyStateAccess.getOrElse(false),
+            configurationAccess = wasmConfigurationAccess.getOrElse(false)
+          ), input, ctx.some)
+          .map {
+            case Left(output) =>
+              try {
+                Json.parse(output)
+              } catch {
+                case _: Exception =>
+                  output
+              }
+            case Right(error) => error
+          }
+    }
   }
 
   def soapDirectiveResolver(

@@ -125,7 +125,7 @@ export default class GraphQLForm extends React.Component {
       });
       this.setState({ tmpSchema: e, error: undefined });
     });
-  }, 500);
+  }, 1000);
 
   render() {
     const { route, hide } = this.props;
@@ -518,6 +518,7 @@ class FieldForm extends React.Component {
             label: 'Type',
             options: [
               'rest',
+              'wasm',
               'graphql',
               'json',
               'soap',
@@ -538,6 +539,7 @@ class FieldForm extends React.Component {
 
             return {
               rest: ['url', 'method', 'headers', 'timeout', 'paginate'],
+              wasm: ['wasm_raw_source', 'wasm_function_name'],
               graphql: [
                 'url',
                 'query',
@@ -651,6 +653,14 @@ class FieldForm extends React.Component {
               type: 'string',
               label: 'JQ Response filter',
             },
+            wasm_raw_source: {
+              type: 'string',
+              label: 'WASM raw source'
+            }, 
+            wasm_function_name: {
+              type: 'string',
+              label: 'WASM Function name'
+            }
           },
         },
       },
