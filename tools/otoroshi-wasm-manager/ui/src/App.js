@@ -248,6 +248,24 @@ class App extends React.Component {
     })
   }
 
+  fetchedTypeToState = (filename, file) => {
+    return new Promise(resolve => {
+      new File([file], "")
+        .text()
+        .then(content => {
+          this.setState({
+            selectedPlugin: {
+              ...this.state.selectedPlugin,
+              files: [
+                ...this.state.selectedPlugin.files,
+                { filename, content, ext: filename.split('.')[1] }
+              ]
+            }
+          }, resolve);
+        });
+    });
+  }
+
   onPluginClick = newSelectedPlugin => {
     this.setState({
       configFiles: [],
@@ -282,34 +300,39 @@ class App extends React.Component {
             // first case match the creation of a new plugin
             if (res.error && res.status === 404) {
               const fetchTypesNeeded = ['ts', 'rust'].includes(plugin.type);
+              const fetchHostFunctionNeeded = ['go'].includes(plugin.type);
               Promise.all([
                 Service.getPluginTemplate(plugin.type),
-                fetchTypesNeeded ? Service.getPluginTypes(plugin.type) : Promise.resolve({ status: 200 })
+                fetchTypesNeeded ? Service.getPluginTypes(plugin.type) : Promise.resolve({ status: 200 }),
+                fetchHostFunctionNeeded ? Service.getPluginHostFunctions(plugin.type) : Promise.resolve({ status: 200 })
               ])
-                .then(([template, types]) => {
+                .then(([template, types, hostFunctions]) => {
                   if (template.status !== 200) {
                     template.json().then(window.alert)
                   } else if (types.status !== 200) {
                     types.json().then(window.alert)
+                  } else if (hostFunctions.status !== 200) {
+                    hostFunctions.json().then(window.alert)
                   } else {
-                    Promise.all([template.blob(), fetchTypesNeeded ? types.blob() : Promise.resolve()])
-                      .then(([templatesFiles, typesFile]) => {
+                    Promise.all([
+                      template.blob(),
+                      fetchTypesNeeded ? types.blob() : Promise.resolve(),
+                      fetchHostFunctionNeeded ? hostFunctions.blob() : Promise.resolve()
+                    ])
+                      .then(([templatesFiles, typesFile, hostFunctionsFile]) => {
                         this.downloadPluginTemplate(templatesFiles, plugin)
                           .then(() => {
-                            if (fetchTypesNeeded) {
+                            if (fetchHostFunctionNeeded && fetchTypesNeeded) {
                               const filename = `types.${plugin.type}`;
-                              new File([typesFile], "").text()
-                                .then(content => {
-                                  this.setState({
-                                    selectedPlugin: {
-                                      ...this.state.selectedPlugin,
-                                      files: [
-                                        ...this.state.selectedPlugin.files,
-                                        { filename, content, ext: filename.split('.')[1] }
-                                      ]
-                                    }
-                                  });
-                                });
+                              const hostFunctionsFilename = `host-functions.${plugin.type}`;
+                              this.fetchedTypeToState(hostFunctionsFilename, hostFunctionsFile)
+                                .then(() => this.fetchedTypeToState(filename, typesFile));
+                            } else if (fetchTypesNeeded) {
+                              const filename = `types.${plugin.type}`;
+                              this.fetchedTypeToState(filename, plugin, typesFile);
+                            } else if (fetchHostFunctionNeeded) {
+                              const filename = `host-functions.${plugin.type}`;
+                              this.fetchedTypeToState(filename, hostFunctionsFile);
                             }
                           });
                       });
@@ -370,8 +393,6 @@ class App extends React.Component {
 
   handleContent = (filename, newContent) => {
     const { selectedPlugin } = this.state;
-
-    console.log('handleContent', filename, newContent)
 
     this.setState({
       selectedPlugin: {

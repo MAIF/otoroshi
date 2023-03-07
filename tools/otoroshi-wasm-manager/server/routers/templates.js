@@ -26,8 +26,53 @@ router.get('/', (req, res) => {
   }
 });
 
+router.get('/host-functions/:type', (req, res) => {
+  if (!req.params.type) {
+    res
+      .status(400)
+      .json({
+        error: 'Missing type of project'
+      })
+  } else {
+    const { type } = req.params;
+    if (['go'].includes(type)) {
+      if (process.env.MANAGER_TYPES.startsWith('file://')) {
+        const paths = [process.env.MANAGER_TYPES.replace('file://', ''), `host-functions.${type}`];
+        FileSystem.existsFile(...paths)
+          .then(() => {
+            res.download(FileSystem.pathsToPath(...paths), `host-functions.${type}`)
+          })
+          .catch(err => {
+            res.status(400).json({ error: err })
+          })
+      } else if (process.env.MANAGER_TYPES.startsWith('http')) {
+        fetch(`${process.env.MANAGER_TYPES}/host-functions.${type}`, {
+          redirect: 'follow'
+        })
+          .then(r => r.json())
+          .then(r => {
+            fetch(r.download_url)
+              .then(raw => raw.body.pipe(res))
+          })
+      } else {
+        res
+          .status(400)
+          .json({
+            error: 'Unable to retrieve the types with provided configuration'
+          })
+      }
+    } else {
+      res
+        .status(404)
+        .json({
+          error: 'No host functions for this type of project'
+        })
+    }
+  }
+});
+
 router.get('/types/:type', (req, res) => {
-  if (!req.params) {
+  if (!req.params.type) {
     res
       .status(400)
       .json({
