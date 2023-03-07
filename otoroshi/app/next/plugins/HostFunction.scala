@@ -125,7 +125,7 @@ object Logging {
 
     def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext])
                     (implicit env: Env, executionContext: ExecutionContext, mat: Materializer)
-    = Seq(proxyLog(), proxyLogWithEvent(config, ctx))
+    = Map("proxyLog" -> proxyLog(), "proxyLogWithEvent" -> proxyLogWithEvent(config, ctx))
 }
 
 object Http {
@@ -183,7 +183,10 @@ object Http {
         )
     }
 
-    def getFunctions(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = Seq(proxyHttpCall(config))
+    def getFunctions(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) =
+      Map(
+        "httpAccess" -> proxyHttpCall(config)
+      )
 }
 
 object DataStore {
@@ -431,26 +434,27 @@ object DataStore {
     )
   }
 
-  def getFunctions(config: WasmConfig, pluginId: String)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = Seq(
-    proxyDataStoreKeys(config = config),
-    proxyDataStoreGet(config = config),
-    proxyDataStoreExists(config = config),
-    proxyDataStorePttl(config = config),
-    proxyDataStoreSetnx(config = config),
-    proxyDataStoreDel(config = config),
-    proxyDataStoreIncrby(config = config),
-    proxyDataStorePexpire(config = config),
-    proxyDataStoreAllMatching(config = config),
+  def getFunctions(config: WasmConfig, pluginId: String)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) =
+    Map(
+      "globalDataStoreAccessRead" -> proxyDataStoreKeys(config = config),
+      "globalDataStoreAccessRead" -> proxyDataStoreGet(config = config),
+      "globalDataStoreAccessRead" -> proxyDataStoreExists(config = config),
+      "globalDataStoreAccessRead" -> proxyDataStorePttl(config = config),
+      "globalDataStoreAccessWrite" -> proxyDataStoreSetnx(config = config),
+      "globalDataStoreAccessWrite" -> proxyDataStoreDel(config = config),
+      "globalDataStoreAccessWrite" -> proxyDataStoreIncrby(config = config),
+      "globalDataStoreAccessWrite" -> proxyDataStorePexpire(config = config),
+      "globalDataStoreAccessRead" -> proxyDataStoreAllMatching(config = config),
 
-    proxyDataStoreKeys(config = config, pluginRestricted = true, prefix = pluginId.some),
-    proxyDataStoreGet(config = config, pluginRestricted = true, prefix = pluginId.some),
-    proxyDataStoreExists(config = config, pluginRestricted = true, prefix = pluginId.some),
-    proxyDataStorePttl(config = config, pluginRestricted = true, prefix = pluginId.some),
-    proxyDataStoreSetnx(config = config, pluginRestricted = true, prefix = pluginId.some),
-    proxyDataStoreDel(config = config, pluginRestricted = true, prefix = pluginId.some),
-    proxyDataStoreIncrby(config = config, pluginRestricted = true, prefix = pluginId.some),
-    proxyDataStorePexpire(config = config, pluginRestricted = true, prefix = pluginId.some),
-    proxyDataStoreAllMatching(config = config, pluginRestricted = true, prefix = pluginId.some)
+      "pluginDataStoreAccessRead" -> proxyDataStoreKeys(config = config, pluginRestricted = true, prefix = pluginId.some),
+      "pluginDataStoreAccessRead" -> proxyDataStoreGet(config = config, pluginRestricted = true, prefix = pluginId.some),
+      "pluginDataStoreAccessRead" -> proxyDataStoreExists(config = config, pluginRestricted = true, prefix = pluginId.some),
+      "pluginDataStoreAccessRead" -> proxyDataStorePttl(config = config, pluginRestricted = true, prefix = pluginId.some),
+      "pluginDataStoreAccessWrite" -> proxyDataStoreSetnx(config = config, pluginRestricted = true, prefix = pluginId.some),
+      "pluginDataStoreAccessWrite" -> proxyDataStoreDel(config = config, pluginRestricted = true, prefix = pluginId.some),
+      "pluginDataStoreAccessWrite" -> proxyDataStoreIncrby(config = config, pluginRestricted = true, prefix = pluginId.some),
+      "pluginDataStoreAccessWrite" -> proxyDataStorePexpire(config = config, pluginRestricted = true, prefix = pluginId.some),
+      "pluginDataStoreAccessRead" -> proxyDataStoreAllMatching(config = config, pluginRestricted = true, prefix = pluginId.some)
   )
 }
 
@@ -740,30 +744,60 @@ object State {
   }
 
   def getFunctions(config: WasmConfig, pluginId: String)
-                  (implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = Seq(
-    getProxyState(config),
-    proxyStateGetValue(config),
-    getClusterState(config),
-    proxyClusteStateGetValue(config),
+                  (implicit env: Env, executionContext: ExecutionContext, mat: Materializer) =
+    Map(
+      "proxyStateAccess" -> getProxyState(config),
+      "proxyStateAccess" -> proxyStateGetValue(config),
+      "configurationAccess" -> getClusterState(config),
+      "configurationAccess" -> proxyClusteStateGetValue(config),
 
-    proxyGlobalMapSet(),
-    proxyGlobalMapGet(),
-    proxyGlobalMap(),
+      "globalMapAccessWrite" -> proxyGlobalMapSet(),
+      "globalMapAccessRead" -> proxyGlobalMapGet(),
+      "globalMapAccessRead" -> proxyGlobalMap(),
 
-    proxyGlobalMapSet(pluginRestricted = true, pluginId.some),
-    proxyGlobalMapGet(pluginRestricted = true, pluginId.some),
-    proxyGlobalMap(pluginRestricted = true, pluginId.some)
+      "pluginMapAccessWrite" -> proxyGlobalMapSet(pluginRestricted = true, pluginId.some),
+      "pluginMapAccessRead" -> proxyGlobalMapGet(pluginRestricted = true, pluginId.some),
+      "pluginMapAccessRead" -> proxyGlobalMap(pluginRestricted = true, pluginId.some)
   )
 }
 
 object HostFunctions {
+
+    private var functions: Map[String, HostFunction[_ <: HostUserData]] = Map.empty[String, HostFunction[_ <: HostUserData]]
+
     def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext], pluginId: String)
                     (implicit env: Env, executionContext: ExecutionContext): Array[HostFunction[_ <: HostUserData]] = {
       implicit val mat = env.otoroshiMaterializer
-      (Logging.getFunctions(config, ctx) ++
-        Http.getFunctions(config) ++
-        State.getFunctions(config, pluginId) ++
-        DataStore.getFunctions(config, pluginId)
-        ).toArray
+
+      if (functions.isEmpty) {
+        functions = Logging.getFunctions(config, ctx) ++
+          Http.getFunctions(config) ++
+          State.getFunctions(config, pluginId) ++
+          DataStore.getFunctions(config, pluginId)
+      }
+
+      val rights =  Map(
+        "globalDataStoreAccessRead" -> config.globalDataStoreAccess.read,
+        "globalDataStoreAccessWrite" -> config.globalDataStoreAccess.write,
+        "pluginDataStoreAccessRead" -> config.pluginDataStoreAccess.read,
+        "pluginDataStoreAccessWrite" -> config.pluginDataStoreAccess.write,
+        "globalMapAccessRead" -> config.globalMapAccess.read,
+        "globalMapAccessWrite" -> config.globalMapAccess.write,
+        "pluginMapAccessRead" -> config.pluginMapAccess.read,
+        "pluginMapAccessWrite" -> config.pluginMapAccess.write,
+        "proxyStateAccess" -> config.proxyStateAccess,
+        "configurationAccess" -> config.configurationAccess,
+        "httpAccess" -> config.httpAccess,
+        "proxyLog" -> true,
+        "proxyLogWithEvent" -> true
+      )
+        .filter(p => p._2)
+        .keys
+        .toSeq
+
+      functions.
+        filter(p => rights.contains(p._1))
+        .values
+        .toArray
     }
 }

@@ -24,6 +24,31 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
+case class WasmDataRights(read: Boolean = false, write: Boolean = false)
+
+object WasmDataRights {
+  def fmt =
+    new Format[WasmDataRights] {
+      override def writes(o: WasmDataRights) =
+        Json.obj(
+          "read"  -> o.read,
+          "write"        -> o.write
+        )
+
+      override def reads(json: JsValue) =
+        Try {
+          JsSuccess(
+            WasmDataRights(
+              read = (json \ "read").asOpt[Boolean].getOrElse(false),
+              write = (json \ "write").asOpt[Boolean].getOrElse(false)
+            )
+          )
+        } recover { case e =>
+          JsError(e.getMessage)
+        } get
+    }
+}
+
 case class WasmConfig(
     compilerSource: Option[String] = None,
     rawSource: Option[String] = None,
@@ -31,18 +56,34 @@ case class WasmConfig(
     functionName: String = "execute",
     config: Map[String, String] = Map.empty,
     allowedHosts: Seq[String] = Seq.empty,
+
     wasi: Boolean = false,
-    proxyHttpCallTimeout: Int = 5000
+    proxyHttpCallTimeout: Int = 5000,
+    httpAccess: Boolean = false,
+    globalDataStoreAccess: WasmDataRights = WasmDataRights(),
+    pluginDataStoreAccess: WasmDataRights = WasmDataRights(),
+    globalMapAccess: WasmDataRights = WasmDataRights(),
+    pluginMapAccess: WasmDataRights = WasmDataRights(),
+    proxyStateAccess: Boolean = false,
+    configurationAccess: Boolean = false
+
 ) extends NgPluginConfig {
   def json: JsValue = Json.obj(
-    "raw_source"      -> rawSource,
-    "compiler_source" -> compilerSource,
-    "memoryPages"     -> memoryPages,
-    "functionName"    -> functionName,
-    "config"          -> config,
-    "allowedHosts"    -> allowedHosts,
-    "wasi"            -> wasi,
-    "proxyHttpCallTimeout"  -> proxyHttpCallTimeout
+    "raw_source"        -> rawSource,
+    "compiler_source"         -> compilerSource,
+    "memoryPages"             -> memoryPages,
+    "functionName"            -> functionName,
+    "config"                  -> config,
+    "allowedHosts"            -> allowedHosts,
+    "wasi"                    -> wasi,
+    "httpAccess"              -> httpAccess,
+    "proxyHttpCallTimeout"    -> proxyHttpCallTimeout,
+    "globalDataStoreAccess"   -> WasmDataRights.fmt.writes(globalDataStoreAccess),
+    "pluginDataStoreAccess"   -> WasmDataRights.fmt.writes(pluginDataStoreAccess),
+    "globalMapAccess"         -> WasmDataRights.fmt.writes(globalMapAccess),
+    "pluginMapAccess"         -> WasmDataRights.fmt.writes(pluginMapAccess),
+    "proxyStateAccess"        -> proxyStateAccess,
+    "configurationAccess"      -> configurationAccess,
   )
 }
 
@@ -57,7 +98,18 @@ object WasmConfig {
         config = (json \ "config").asOpt[Map[String, String]].getOrElse(Map.empty),
         allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty),
         wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false),
-        proxyHttpCallTimeout = (json \ "proxyHttpCallTimeout").asOpt[Int].getOrElse(5000)
+        httpAccess = (json \ "httpAccess").asOpt[Boolean].getOrElse(false),
+        proxyHttpCallTimeout = (json \ "proxyHttpCallTimeout").asOpt[Int].getOrElse(5000),
+        globalDataStoreAccess = (json \ "globalDataStoreAccess")
+          .asOpt[WasmDataRights](WasmDataRights.fmt.reads).getOrElse(WasmDataRights()),
+        pluginDataStoreAccess = (json \ "pluginDataStoreAccess")
+          .asOpt[WasmDataRights](WasmDataRights.fmt.reads).getOrElse(WasmDataRights()),
+        globalMapAccess = (json \ "globalMapAccess")
+          .asOpt[WasmDataRights](WasmDataRights.fmt.reads).getOrElse(WasmDataRights()),
+        pluginMapAccess = (json \ "pluginMapAccess")
+          .asOpt[WasmDataRights](WasmDataRights.fmt.reads).getOrElse(WasmDataRights()),
+        proxyStateAccess = (json \ "proxyStateAccess").asOpt[Boolean].getOrElse(false),
+        configurationAccess = (json \ "configurationAccess").asOpt[Boolean].getOrElse(false)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -154,7 +206,8 @@ object WasmUtils {
       context.free()
       output
     } catch {
-      case e: Exception => e.getMessage()
+      case e: Exception =>
+        s"""{ "error": ${e.getMessage()} }"""
     }
   }
 
