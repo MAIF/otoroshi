@@ -413,6 +413,11 @@ class Env(
   lazy val initialTrustXForwarded: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.trustXForwarded").getOrElse(true)
 
+  lazy val wasmCacheTtl: Int                 =
+    configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.cache.ttl").filter(_ >= 5000).getOrElse(5000)
+  lazy val wasmCacheSize: Int                =
+    configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.cache.size").getOrElse(100)
+
   lazy val manualDnsResolve: Boolean         =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.manualDnsResolve").getOrElse(true)
   lazy val useOldHeadersComposition: Boolean =

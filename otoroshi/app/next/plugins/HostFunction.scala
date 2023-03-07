@@ -8,8 +8,9 @@ import org.joda.time.DateTime
 import otoroshi.cluster.ClusterConfig
 import otoroshi.env.Env
 import otoroshi.events.{Location, WasmLogEvent}
-import otoroshi.next.plugins.WasmQueryConfig
+import otoroshi.next.plugins.WasmConfig
 import otoroshi.next.plugins.api.NgCachedConfigContext
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.libs.json.{JsArray, JsNull, Json}
@@ -33,8 +34,15 @@ case class EnvUserData(
                         env: Env,
                         executionContext: ExecutionContext,
                         mat: Materializer,
-                        config: WasmQueryConfig,
+                        config: WasmConfig,
                         ctx: Option[NgCachedConfigContext] = None
+                      ) extends HostUserData
+
+case class StateUserData(
+                        env: Env,
+                        executionContext: ExecutionContext,
+                        mat: Materializer,
+                        cache: LegitTrieMap[String, LegitTrieMap[String, ByteString]]
                       ) extends HostUserData
 case class EmptyUserData() extends HostUserData
 
@@ -106,7 +114,7 @@ object Logging {
             Optional.of(EmptyUserData())
     )
 
-    def proxyLogWithEvent(config: WasmQueryConfig, ctx: Option[NgCachedConfigContext])
+    def proxyLogWithEvent(config: WasmConfig, ctx: Option[NgCachedConfigContext])
                          (implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = new org.extism.sdk.HostFunction[EnvUserData](
         "proxy_log_event",
         Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
@@ -115,7 +123,7 @@ object Logging {
         Optional.of(EnvUserData(env, executionContext, mat, config, ctx))
     )
 
-    def getFunctions(config: WasmQueryConfig, ctx: Option[NgCachedConfigContext])
+    def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext])
                     (implicit env: Env, executionContext: ExecutionContext, mat: Materializer)
     = Seq(proxyLog(), proxyLogWithEvent(config, ctx))
 }
@@ -165,7 +173,7 @@ object Http {
         })
       }
 
-    def proxyHttpCall(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    def proxyHttpCall(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
         new HostFunction[EnvUserData](
                 "proxy_http_call",
                 Array(LibExtism.ExtismValType.I64,LibExtism.ExtismValType.I32),
@@ -175,7 +183,7 @@ object Http {
         )
     }
 
-    def getFunctions(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = Seq(proxyHttpCall(config))
+    def getFunctions(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = Seq(proxyHttpCall(config))
 }
 
 object DataStore {
@@ -315,7 +323,7 @@ object DataStore {
       })
     }
 
-  def proxyDataStoreKeys(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmQueryConfig)
+  def proxyDataStoreKeys(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)
                         (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     new HostFunction[EnvUserData](
@@ -327,7 +335,7 @@ object DataStore {
     )
   }
 
-  def proxyDataStoreGet(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmQueryConfig)
+  def proxyDataStoreGet(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)
                        (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     new HostFunction[EnvUserData](
@@ -339,7 +347,7 @@ object DataStore {
     )
   }
 
-  def proxyDataStoreExists(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmQueryConfig)
+  def proxyDataStoreExists(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)
                           (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     new HostFunction[EnvUserData](
@@ -351,7 +359,7 @@ object DataStore {
     )
   }
 
-  def proxyDataStorePttl(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmQueryConfig)
+  def proxyDataStorePttl(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)
                         (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     new HostFunction[EnvUserData](
@@ -363,7 +371,7 @@ object DataStore {
     )
   }
 
-  def proxyDataStoreSetnx(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmQueryConfig)
+  def proxyDataStoreSetnx(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)
                          (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     new HostFunction[EnvUserData](
@@ -375,7 +383,7 @@ object DataStore {
     )
   }
 
-  def proxyDataStoreDel(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmQueryConfig)
+  def proxyDataStoreDel(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)
                        (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     new HostFunction[EnvUserData](
@@ -387,7 +395,7 @@ object DataStore {
     )
   }
 
-  def proxyDataStoreIncrby(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmQueryConfig)
+  def proxyDataStoreIncrby(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)
                           (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     new HostFunction[EnvUserData](
@@ -399,7 +407,7 @@ object DataStore {
     )
   }
 
-  def proxyDataStorePexpire(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmQueryConfig)
+  def proxyDataStorePexpire(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)
                            (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     new HostFunction[EnvUserData](
@@ -411,7 +419,7 @@ object DataStore {
     )
   }
 
-  def proxyDataStoreAllMatching(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmQueryConfig)
+  def proxyDataStoreAllMatching(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)
                                (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     new HostFunction[EnvUserData](
@@ -423,7 +431,7 @@ object DataStore {
     )
   }
 
-  def getFunctions(config: WasmQueryConfig, pluginId: String)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = Seq(
+  def getFunctions(config: WasmConfig, pluginId: String)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = Seq(
     proxyDataStoreKeys(config = config),
     proxyDataStoreGet(config = config),
     proxyDataStoreExists(config = config),
@@ -447,6 +455,8 @@ object DataStore {
 }
 
 object State {
+
+  private val cache: LegitTrieMap[String, LegitTrieMap[String, ByteString]] = new LegitTrieMap[String, LegitTrieMap[String, ByteString]]()
 
   def getClusterState(cc: ClusterConfig) = Json.obj(
     "mode" -> Json.obj(
@@ -606,7 +616,57 @@ object State {
       })
     }
 
-  def getProxyState(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  def proxyGlobalMapSetFunction(pluginId: Option[String] = None): ExtismFunction[StateUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[StateUserData]) => {
+      data.ifPresent(hostData => {
+        val data = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
+
+        val key = (data \ "key").as[String]
+        val value = (data \ "value").as[String]
+
+        val id = pluginId.getOrElse("global")
+        hostData.cache.get(id) match {
+          case Some(state) =>
+            state.put(key, ByteString(value))
+            hostData.cache.put(id, state)
+          case None =>
+            val state = new LegitTrieMap[String, ByteString]()
+            state.put(key, ByteString(value))
+            hostData.cache.put(id, state)
+        }
+
+        plugin.returnString(returns(0), Status.StatusOK.toString)
+      })
+    }
+
+  def proxyGlobalMapGetFunction(pluginId: Option[String] = None): ExtismFunction[StateUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[StateUserData]) => {
+      data.ifPresent(hostData => {
+        val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
+
+        val id = pluginId.getOrElse("global")
+
+        plugin.returnString(returns(0), hostData.cache.get(id) match {
+          case Some(state) => state.get(key).map(_.utf8String).getOrElse("")
+          case None => ""
+        })
+      })
+    }
+
+  def proxyGlobalMapFunction(pluginId: Option[String] = None): ExtismFunction[StateUserData] =
+    (plugin: ExtismCurrentPlugin, _: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[StateUserData]) => {
+      data.ifPresent(hostData => {
+        val id = pluginId.getOrElse("global")
+
+        plugin.returnString(returns(0), hostData.cache.get(id) match {
+          case Some(state) => Json.arr(state.toSeq).stringify
+          case None => ""
+        })
+      })
+    }
+
+  def getProxyState(config: WasmConfig)
+                   (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     new HostFunction[EnvUserData](
       "get_proxy_state",
       Array(LibExtism.ExtismValType.I64),
@@ -615,8 +675,8 @@ object State {
       Optional.of(EnvUserData(env, executionContext, mat, config))
     )
   }
-
-  def proxyStateGetValue(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  def proxyStateGetValue(config: WasmConfig)
+                        (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     new HostFunction[EnvUserData](
       "get_proxy_state_value",
       Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
@@ -625,8 +685,8 @@ object State {
       Optional.of(EnvUserData(env, executionContext, mat, config))
     )
   }
-
-  def getClusterState(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  def getClusterState(config: WasmConfig)
+                     (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     new HostFunction[EnvUserData](
       "get_cluster_state",
       Array(LibExtism.ExtismValType.I64),
@@ -635,8 +695,8 @@ object State {
       Optional.of(EnvUserData(env, executionContext, mat, config))
     )
   }
-
-  def proxyClusteStateGetValue(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+  def proxyClusteStateGetValue(config: WasmConfig)
+                              (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     new HostFunction[EnvUserData](
       "get_cluster_state_value",
       Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
@@ -646,21 +706,63 @@ object State {
     )
   }
 
-  def getFunctions(config: WasmQueryConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = Seq(
+  def proxyGlobalMapSet(pluginRestricted: Boolean = false, pluginId: Option[String] = None)
+                       (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[StateUserData] = {
+    new HostFunction[StateUserData](
+      if (pluginRestricted) "proxy_plugin_map_set" else "proxy_global_map_set",
+      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+      Array(LibExtism.ExtismValType.I64),
+      proxyGlobalMapSetFunction(pluginId),
+      Optional.of(StateUserData(env, executionContext, mat, cache))
+    )
+  }
+
+  def proxyGlobalMapGet(pluginRestricted: Boolean = false, pluginId: Option[String] = None)
+                       (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[StateUserData] = {
+    new HostFunction[StateUserData](
+      if (pluginRestricted) "proxy_plugin_map_get" else "proxy_global_map_get",
+      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+      Array(LibExtism.ExtismValType.I64),
+      proxyGlobalMapGetFunction(pluginId),
+      Optional.of(StateUserData(env, executionContext, mat, cache))
+    )
+  }
+
+  def proxyGlobalMap(pluginRestricted: Boolean = false, pluginId: Option[String] = None)
+                       (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[StateUserData] = {
+    new HostFunction[StateUserData](
+      if (pluginRestricted) "proxy_plugin_map" else "proxy_global_map",
+      Array(LibExtism.ExtismValType.I64),
+      Array(LibExtism.ExtismValType.I64),
+      proxyGlobalMapFunction(pluginId),
+      Optional.of(StateUserData(env, executionContext, mat, cache))
+    )
+  }
+
+  def getFunctions(config: WasmConfig, pluginId: String)
+                  (implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = Seq(
     getProxyState(config),
     proxyStateGetValue(config),
     getClusterState(config),
     proxyClusteStateGetValue(config),
+
+    proxyGlobalMapSet(),
+    proxyGlobalMapGet(),
+    proxyGlobalMap(),
+
+    proxyGlobalMapSet(pluginRestricted = true, pluginId.some),
+    proxyGlobalMapGet(pluginRestricted = true, pluginId.some),
+    proxyGlobalMap(pluginRestricted = true, pluginId.some)
   )
 }
 
 object HostFunctions {
-    def getFunctions(config: WasmQueryConfig, ctx: Option[NgCachedConfigContext], pluginId: String)
+    def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext], pluginId: String)
                     (implicit env: Env, executionContext: ExecutionContext): Array[HostFunction[_ <: HostUserData]] = {
       implicit val mat = env.otoroshiMaterializer
       (Logging.getFunctions(config, ctx) ++
         Http.getFunctions(config) ++
-        State.getFunctions(config) ++
+        State.getFunctions(config, pluginId) ++
         DataStore.getFunctions(config, pluginId)
         ).toArray
     }

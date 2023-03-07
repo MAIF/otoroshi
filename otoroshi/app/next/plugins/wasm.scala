@@ -4,8 +4,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import com.sun.jna.Pointer
-import org.extism.sdk.{Context, ExtismCurrentPlugin, ExtismFunction, HostFunction, HostUserData, LibExtism}
+import org.extism.sdk.Context
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
 import org.extism.sdk.wasm.WasmSourceResolver
 import otoroshi.env.Env
@@ -18,16 +17,14 @@ import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc.{Result, Results}
 
-import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import java.util.Optional
-import scala.annotation.tailrec
-import scala.concurrent.duration.{DurationInt, FiniteDuration, MILLISECONDS}
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration, MILLISECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
-import scala.util.{Failure, Success, Try, Using}
+import scala.util.{Failure, Success, Try}
 
-case class WasmQueryConfig(
+case class WasmConfig(
     compilerSource: Option[String] = None,
     rawSource: Option[String] = None,
     memoryPages: Int = 4,
@@ -49,10 +46,10 @@ case class WasmQueryConfig(
   )
 }
 
-object WasmQueryConfig {
-  val format = new Format[WasmQueryConfig] {
-    override def reads(json: JsValue): JsResult[WasmQueryConfig] = Try {
-      WasmQueryConfig(
+object WasmConfig {
+  val format = new Format[WasmConfig] {
+    override def reads(json: JsValue): JsResult[WasmConfig] = Try {
+      WasmConfig(
         compilerSource = (json \ "compiler_source").asOpt[String],
         rawSource = (json \ "raw_source").asOpt[String],
         memoryPages = (json \ "memoryPages").asOpt[Int].getOrElse(4),
@@ -67,16 +64,26 @@ object WasmQueryConfig {
       case Success(value) => JsSuccess(value)
     }
 
-    override def writes(o: WasmQueryConfig): JsValue = o.json
+    override def writes(o: WasmConfig): JsValue = o.json
   }
 }
 
 object WasmUtils {
-  private val scriptCache: Cache[String, ByteString] = Scaffeine()
-    .recordStats()
-    .expireAfterWrite(3.seconds)
-    .maximumSize(100)
-    .build()
+  private var _cache: Option[Cache[String, ByteString]] = None
+
+  private def scriptCache(implicit env: Env) = {
+    _cache match {
+      case Some(value) => value
+      case None =>
+        _cache = Scaffeine()
+          .recordStats()
+          .expireAfterWrite(Duration(env.wasmCacheTtl, TimeUnit.MILLISECONDS))
+          .maximumSize(env.wasmCacheSize)
+          .build[String, ByteString]
+          .some
+        _cache.get
+    }
+  }
 
   def convertJsonCookies(wasmResponse: JsValue): Option[Seq[WSCookie]] =
     wasmResponse
@@ -128,7 +135,7 @@ object WasmUtils {
 
   val test: Option[Manifest] = None
 
-  def callWasm(wasm: ByteString, config: WasmQueryConfig, input: JsValue, ctx: Option[NgCachedConfigContext] = None, pluginId: String)
+  def callWasm(wasm: ByteString, config: WasmConfig, input: JsValue, ctx: Option[NgCachedConfigContext] = None, pluginId: String)
               (implicit env: Env, executionContext: ExecutionContext): String = {
     try {
       val resolver = new WasmSourceResolver()
@@ -151,7 +158,7 @@ object WasmUtils {
     }
   }
 
-  def execute(config: WasmQueryConfig, input: JsValue, ctx: Option[NgCachedConfigContext])
+  def execute(config: WasmConfig, input: JsValue, ctx: Option[NgCachedConfigContext])
              (implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
     (config.compilerSource, config.rawSource) match {
       case (Some(pluginId), _)  =>
@@ -203,7 +210,7 @@ class WasmBackend extends NgBackendCall {
   override def core: Boolean                               = false
   override def name: String                                = "WASM Backend"
   override def description: Option[String]                 = "This plugin can be used to launch a WASM file".some
-  override def defaultConfigObject: Option[NgPluginConfig] = WasmQueryConfig().some
+  override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
@@ -218,8 +225,8 @@ class WasmBackend extends NgBackendCall {
       mat: Materializer
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx
-      .cachedConfig(internalName)(WasmQueryConfig.format)
-      .getOrElse(WasmQueryConfig())
+      .cachedConfig(internalName)(WasmConfig.format)
+      .getOrElse(WasmConfig())
 
     ctx.wasmJson
       .flatMap(input => WasmUtils.execute(config, input, ctx.some))
@@ -276,12 +283,12 @@ class WasmAccessValidator extends NgAccessValidator {
   override def name: String                                = "WASM Access control"
   override def description: Option[String]                 = "Delegate route access to a specified file WASM".some
   override def isAccessAsync: Boolean                      = true
-  override def defaultConfigObject: Option[NgPluginConfig] = WasmQueryConfig().some
+  override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
-      .cachedConfig(internalName)(WasmQueryConfig.format)
-      .getOrElse(WasmQueryConfig())
+      .cachedConfig(internalName)(WasmConfig.format)
+      .getOrElse(WasmConfig())
 
     WasmUtils
       .execute(config, ctx.wasmJson, ctx.some)
@@ -338,14 +345,14 @@ class WasmRequestTransformer extends NgRequestTransformer {
   override def name: String                                = "WASM Request Transformer"
   override def description: Option[String]                 =
     "Transform the content of the request by executing a WASM file".some
-  override def defaultConfigObject: Option[NgPluginConfig] = WasmQueryConfig().some
+  override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx
-      .cachedConfig(internalName)(WasmQueryConfig.format)
-      .getOrElse(WasmQueryConfig())
+      .cachedConfig(internalName)(WasmConfig.format)
+      .getOrElse(WasmConfig())
 
     ctx.wasmJson
       .flatMap(input => {
@@ -388,14 +395,14 @@ class WasmResponseTransformer extends NgRequestTransformer {
   override def name: String                                = "WASM Response Transformer"
   override def description: Option[String]                 =
     "Transform the content of the request by executing a WASM file".some
-  override def defaultConfigObject: Option[NgPluginConfig] = WasmQueryConfig().some
+  override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx
-      .cachedConfig(internalName)(WasmQueryConfig.format)
-      .getOrElse(WasmQueryConfig())
+      .cachedConfig(internalName)(WasmConfig.format)
+      .getOrElse(WasmConfig())
 
     ctx.wasmJson
       .flatMap(input => {
@@ -438,12 +445,12 @@ class WasmSink extends NgRequestSink {
 
   override def description: Option[String] = "Handle unmatched requests".some
 
-  override def defaultConfigObject: Option[NgPluginConfig] = WasmQueryConfig().some
+  override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
   override def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
-    val config = WasmQueryConfig.format.reads(ctx.config) match {
+    val config = WasmConfig.format.reads(ctx.config) match {
       case JsSuccess(value, _) => value
-      case JsError(_) => WasmQueryConfig()
+      case JsError(_) => WasmConfig()
     }
 
     config.compilerSource.getOrElse(config.rawSource) match {
@@ -466,9 +473,9 @@ class WasmSink extends NgRequestSink {
     Await.result(this.handle(ctx), 10.seconds)
 
   override def handle(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    val config = WasmQueryConfig.format.reads(ctx.config) match {
+    val config = WasmConfig.format.reads(ctx.config) match {
       case JsSuccess(value, _) => value
-      case JsError(_) => WasmQueryConfig()
+      case JsError(_) => WasmConfig()
     }
 
     config.compilerSource.getOrElse(config.rawSource) match {
