@@ -1,3 +1,8 @@
+package main 
+
+import (
+    "github.com/extism/go-pdk"
+)
 
 type LogLevel uint32
 
