@@ -453,6 +453,9 @@ const PluginsContainer = ({
               (acc, plugin) => {
                 if (plugin.selected || plugin.filtered) return acc;
                 return acc.map((group) => {
+                  if (!plugin.plugin_categories) {
+                    plugin.plugin_categories = [];
+                  }
                   if (plugin.plugin_categories.includes(group.group))
                     return {
                       ...group,
@@ -861,14 +864,17 @@ class Designer extends React.Component {
       }, {});
   };
 
-  filterSpecificPlugin = (plugin) =>
+  filterSpecificPlugin = (plugin) => {
+    if (!plugin.plugin_steps) {
+      plugin.plugin_steps = [];
+    }
     // plugin.plugin_steps &&
-    !plugin.plugin_steps.includes('Sink') &&
-    !plugin.plugin_steps.includes('HandlesTunnel') &&
-    !['job', 'sink'].includes(plugin.pluginType) &&
-    !EXCLUDED_PLUGINS.plugin_visibility.includes(plugin.plugin_visibility) &&
-    !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''));
-
+    return !plugin.plugin_steps.includes('Sink') &&
+      !plugin.plugin_steps.includes('HandlesTunnel') &&
+      !['job', 'sink'].includes(plugin.pluginType) &&
+      !EXCLUDED_PLUGINS.plugin_visibility.includes(plugin.plugin_visibility) &&
+      !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''));
+  }
   removeNode = (e) => {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
 

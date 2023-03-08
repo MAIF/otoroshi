@@ -19,6 +19,7 @@ import otoroshi.script.{Job, RequestHandler}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
@@ -269,15 +270,18 @@ case class WasmContextSlot(manifest: Manifest, context: Context, plugin: Plugin)
   }
 }
 class WasmContext(plugins: TrieMap[String, WasmContextSlot] = new TrieMap[String, WasmContextSlot]()) {
+  def put(id: String, slot: WasmContextSlot): Unit = plugins.put(id, slot)
   def get(id: String): Option[WasmContextSlot] = plugins.get(id)
   def close(): Unit = {
-    println(s"[WasmContext] will close ${plugins.size} wasm plugin instances")
+    if (WasmUtils.logger.isDebugEnabled) WasmUtils.logger.debug(s"[WasmContext] will close ${plugins.size} wasm plugin instances")
     plugins.foreach(_._2.close())
     plugins.clear()
   }
 }
 
 object WasmUtils {
+
+  private[plugins] val logger = Logger("otoroshi-wasm")
 
   private implicit val executor = ExecutionContext.fromExecutorService(
     Executors.newWorkStealingPool((Runtime.getRuntime.availableProcessors * 2) + 1)
@@ -320,8 +324,9 @@ object WasmUtils {
 
   private def callWasm(wasm: ByteString, config: WasmConfig, input: JsValue, ctx: Option[NgCachedConfigContext] = None, pluginId: String, attrsOpt: Option[TypedMap])(implicit env: Env): String = {
     try {
-
+      
       def createPlugin(): WasmContextSlot = {
+        if (WasmUtils.logger.isDebugEnabled) WasmUtils.logger.debug(s"creating wasm plugin instance for ${config.source.cacheKey}")
         val resolver = new WasmSourceResolver()
         val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
         val manifest = new Manifest(
@@ -355,6 +360,7 @@ object WasmUtils {
           context.get(config.source.cacheKey) match {
             case None => {
               val slot = createPlugin()
+              context.put(config.source.cacheKey, slot)
               slot.plugin.call(config.functionName, input.stringify)
             }
             case Some(plugin) => plugin.plugin.call(config.functionName, input.stringify)
