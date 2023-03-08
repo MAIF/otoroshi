@@ -187,7 +187,7 @@ class ProxyEngine() extends RequestHandler {
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)
-  override def steps: Seq[NgStep]                = Seq.empty
+  override def steps: Seq[NgStep]                = Seq(NgStep.HandlesRequest)
 
   override def description: Option[String] =
     """

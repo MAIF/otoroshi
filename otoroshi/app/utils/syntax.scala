@@ -8,6 +8,7 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import org.apache.commons.codec.binary.{Base64, Hex}
+import otoroshi.next.utils.JsonHelpers
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.{JsonPathUtils, Regex, RegexPool}
@@ -549,48 +550,6 @@ object implicits {
       }
     }
   }
-  implicit class BetterCookie(val cookie: Cookie)                             extends AnyVal {
-    def wsCookie: WSCookie = DefaultWSCookie(
-      name = cookie.name,
-      value = cookie.value,
-      domain = cookie.domain,
-      path = cookie.path.some,
-      maxAge = cookie.maxAge.map(_.toLong),
-      secure = cookie.secure,
-      httpOnly = cookie.httpOnly
-    )
-    def json: JsValue      = Json.obj(
-      "name"     -> cookie.name,
-      "value"    -> cookie.value,
-      "maxAge"   -> cookie.maxAge.map(n => JsNumber(BigDecimal(n))).getOrElse(JsNull).asValue,
-      "path"     -> cookie.path,
-      "domain"   -> cookie.domain.map(JsString.apply).getOrElse(JsNull).asValue,
-      "secure"   -> cookie.secure,
-      "httpOnly" -> cookie.httpOnly,
-      "sameSite" -> cookie.sameSite.map(_.value.json).getOrElse(JsNull).asValue
-    )
-  }
-  implicit class BetterWSCookie(val cookie: WSCookie)                         extends AnyVal {
-    def mvcCookie: Cookie = Cookie(
-      name = cookie.name,
-      value = cookie.value,
-      maxAge = cookie.maxAge.map(_.toInt),
-      path = cookie.path.getOrElse("/"),
-      domain = cookie.domain,
-      secure = cookie.secure,
-      httpOnly = cookie.httpOnly,
-      sameSite = None
-    )
-    def json: JsValue     = Json.obj(
-      "name"     -> cookie.name,
-      "value"    -> cookie.value,
-      "maxAge"   -> cookie.maxAge.map(n => JsNumber(BigDecimal(n))).getOrElse(JsNull).asValue,
-      "path"     -> cookie.path.map(JsString.apply).getOrElse(JsNull).asValue,
-      "domain"   -> cookie.domain.map(JsString.apply).getOrElse(JsNull).asValue,
-      "secure"   -> cookie.secure,
-      "httpOnly" -> cookie.httpOnly
-    )
-  }
   implicit class BetterMapOfStringAndB[B](val theMap: Map[String, B])         extends AnyVal {
     def addAll(other: Map[String, B]): Map[String, B]              = theMap.++(other)
     def put(key: String, value: B): Map[String, B]                 = theMap.+((key, value))
@@ -623,5 +582,71 @@ object implicits {
         sum / seq.size
       }
     }
+  }
+
+  implicit class BetterWSCookieWithSameSite(val c: otoroshi.utils.http.WSCookieWithSameSite) extends AnyVal {
+    def json: JsValue = JsonHelpers.wsCookieToJson(c)
+    def toCookie: play.api.mvc.Cookie = {
+      play.api.mvc.Cookie(
+        name = c.name,
+        value = c.value,
+        maxAge = c.maxAge.map(_.toInt),
+        path = c.path.getOrElse("/"),
+        domain = c.domain,
+        secure = c.secure,
+        httpOnly = c.httpOnly,
+        sameSite = c.sameSite
+      )
+    }
+  }
+
+  implicit class BetterCookie(val cookie: Cookie) extends AnyVal {
+    def json: JsValue = JsonHelpers.cookieToJson(cookie)
+    def toWSCookie: WSCookie = wsCookie
+    def wsCookie: WSCookie = DefaultWSCookie(
+      name = cookie.name,
+      value = cookie.value,
+      domain = cookie.domain,
+      path = cookie.path.some,
+      maxAge = cookie.maxAge.map(_.toLong),
+      secure = cookie.secure,
+      httpOnly = cookie.httpOnly
+    )
+    // def json: JsValue = Json.obj(
+    //   "name" -> cookie.name,
+    //   "value" -> cookie.value,
+    //   "maxAge" -> cookie.maxAge.map(n => JsNumber(BigDecimal(n))).getOrElse(JsNull).asValue,
+    //   "path" -> cookie.path,
+    //   "domain" -> cookie.domain.map(JsString.apply).getOrElse(JsNull).asValue,
+    //   "secure" -> cookie.secure,
+    //   "httpOnly" -> cookie.httpOnly,
+    //   "sameSite" -> cookie.sameSite.map(_.value.json).getOrElse(JsNull).asValue
+    // )
+  }
+
+  implicit class BetterWSCookie(val c: WSCookie) extends AnyVal {
+    def mvcCookie: Cookie = toCookie
+    def toCookie: play.api.mvc.Cookie = {
+      play.api.mvc.Cookie(
+        name = c.name,
+        value = c.value,
+        maxAge = c.maxAge.map(_.toInt),
+        path = c.path.getOrElse("/"),
+        domain = c.domain,
+        secure = c.secure,
+        httpOnly = c.httpOnly,
+        sameSite = None
+      )
+    }
+    def json: JsValue = JsonHelpers.wsCookieToJson(c)
+    // def json: JsValue = Json.obj(
+    //   "name" -> cookie.name,
+    //   "value" -> cookie.value,
+    //   "maxAge" -> cookie.maxAge.map(n => JsNumber(BigDecimal(n))).getOrElse(JsNull).asValue,
+    //   "path" -> cookie.path.map(JsString.apply).getOrElse(JsNull).asValue,
+    //   "domain" -> cookie.domain.map(JsString.apply).getOrElse(JsNull).asValue,
+    //   "secure" -> cookie.secure,
+    //   "httpOnly" -> cookie.httpOnly
+    // )
   }
 }

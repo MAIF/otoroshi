@@ -242,7 +242,9 @@ object NgStep       {
   case object TransformResponse extends NgStep { def name: String = "TransformResponse" }
   case object MatchRoute        extends NgStep { def name: String = "MatchRoute"        }
   case object HandlesTunnel     extends NgStep { def name: String = "HandlesTunnel"     }
+  case object HandlesRequest    extends NgStep { def name: String = "HandlesRequest"    }
   case object CallBackend       extends NgStep { def name: String = "CallBackend"       }
+  case object Job               extends NgStep { def name: String = "Job"               }
 
   val all = Seq(
     Sink,
@@ -252,6 +254,7 @@ object NgStep       {
     TransformResponse,
     MatchRoute,
     HandlesTunnel,
+    HandlesRequest,
     CallBackend
   )
 }

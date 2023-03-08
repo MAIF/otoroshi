@@ -10,12 +10,17 @@ import org.extism.sdk.wasm.WasmSourceResolver
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.WasmManagerSettings
+import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
+import otoroshi.next.utils.JsonHelpers
+import otoroshi.script.{Job, RequestHandler}
+import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
+import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
-import play.api.mvc.{Result, Results}
+import play.api.mvc.{Request, Result, Results}
 
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.TimeUnit
@@ -49,6 +54,8 @@ object WasmDataRights {
     }
 }
 
+// TODO: refactor to have a common source
+// TODO: refactor json names
 case class WasmConfig(
     compilerSource: Option[String] = None,
     rawSource: Option[String] = None,
@@ -211,6 +218,7 @@ object WasmUtils {
     }
   }
 
+  // TODO: fix that weird either
   def execute(config: WasmConfig, input: JsValue, ctx: Option[NgCachedConfigContext])
              (implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
     (config.compilerSource, config.rawSource) match {
@@ -255,6 +263,8 @@ object WasmUtils {
 
   }
 }
+
+////////////////////////////////////////////////////////
 
 class WasmBackend extends NgBackendCall {
 
@@ -580,4 +590,100 @@ class WasmSink extends NgRequestSink {
       case None => Results.BadRequest(Json.obj("error" -> "missing source")).future
     }
   }
+}
+
+class WasmRequestHandler extends RequestHandler {
+
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def steps: Seq[NgStep] = Seq(NgStep.HandlesRequest)
+  override def core: Boolean = true
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def description: Option[String] = "this plugin entirely handle request with a wasm script".some
+  override def name: String = "Wasm request handler"
+  override def configRoot: Option[String] = "WasmRequestHandler".some
+  override def defaultConfig: Option[JsObject] = Json
+    .obj(
+      configRoot.get -> Json.obj(
+        "domains" -> Json.obj(
+          "my.domain.tld" -> WasmConfig().json
+        )
+      )
+    )
+    .some
+
+  override def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String] = {
+    env.datastores.globalConfigDataStore
+      .latest()
+      .plugins
+      .config
+      .select(configRoot.get)
+      .asOpt[JsObject]
+      .map(v => v.value.keys.toSeq)
+      .getOrElse(Seq.empty)
+  }
+
+  private def requestToWasmJson(request: Request[Source[ByteString, _]])(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
+    if (request.theHasBody) {
+      implicit val mat = env.otoroshiMaterializer
+      request.body.runFold(ByteString.empty)(_ ++ _).map { rawBody =>
+        JsonHelpers.requestToJson(request).asObject ++ Json.obj(
+          "body" -> rawBody.utf8String
+        )
+      }
+    } else {
+      JsonHelpers.requestToJson(request).vfuture
+    }
+  }
+
+  override def handle(request: Request[Source[ByteString, _]], defaultRouting: Request[Source[ByteString, _]] => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    val configmap = env.datastores.globalConfigDataStore
+      .latest()
+      .plugins
+      .config
+      .select(configRoot.get)
+      .asOpt[JsObject]
+      .map(v => v.value)
+      .getOrElse(Map.empty[String, JsValue])
+    configmap.get(request.theDomain) match {
+      case None => defaultRouting(request)
+      case Some(configJson) => {
+        WasmConfig.format.reads(configJson).asOpt match {
+          case None => defaultRouting(request)
+          case Some(config) => {
+            requestToWasmJson(request).flatMap { json =>
+              val fakeCtx = FakeContext(configJson)
+              WasmUtils.execute(config, Json.obj("request" -> json), fakeCtx.some)
+                .flatMap {
+                  case Left(ok) => {
+                    val response = Json.parse(ok)
+                    val headers: Map[String, String] = response.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+                    val contentLength: Option[Long] = headers.getIgnoreCase("Content-Length").map(_.toLong)
+                    val contentType: Option[String] = headers.getIgnoreCase("Content-Type")
+                    val status: Int = (response \ "status").asOpt[Int].getOrElse(200)
+                    val cookies: Seq[WSCookie] = WasmUtils.convertJsonCookies(response).getOrElse(Seq.empty)
+                    val body: Source[ByteString, _] = response.select("body").asOpt[String].map(b => ByteString(b)) match {
+                      case None => ByteString.empty.singleSource
+                      case Some(b) => Source.single(b)
+                    }
+                    Results.Status(status).sendEntity(HttpEntity.Streamed(
+                      data = body,
+                      contentLength = contentLength,
+                      contentType = contentType,
+                    ))
+                    .withHeaders(headers.toSeq: _*)
+                    .withCookies(cookies.map(_.toCookie):_*)
+                    .vfuture
+                  }
+                  case Right(bad) => Results.InternalServerError(bad).vfuture
+                }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+case class FakeContext(config: JsValue) extends NgCachedConfigContext {
+  override def route: NgRoute = NgRoute.empty
 }

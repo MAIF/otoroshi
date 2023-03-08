@@ -78,7 +78,9 @@ class AnonymousReportingJob extends Job {
 
   override def description: Option[String] =
     s"""This job will send anonymous Otoroshi usage metrics to the Otoroshi teams in order to define the future of the product more accurately.
-       |No personal or sensible data are sent here, you can check what is sent on our github repository (https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/jobs/reporting.scala#L144-L330).
+       |This job may also capture your current operating system name/version and your current jvm name/version.
+       |No personal or sensible data are sent here, your otoroshi configuration is still safe.
+       |you can check what is sent on our github repository (https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/jobs/reporting.scala).
        |Of course you can disable this job from config. file, config. env. variables and danger zone.
        |""".stripMargin.some
 
