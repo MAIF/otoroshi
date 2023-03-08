@@ -63,6 +63,27 @@ const schema = {
     type: 'string',
     label: 'Raw source',
   },
+  source: {
+    label: 'Source',
+    type: 'form',
+    collapsable: false,
+    collapsed: false,
+    flow: ['kind', "path"],
+    schema: {
+      kind: {
+        label: "Kind",
+        type: 'select',
+        props: {
+          label: 'Kind',
+          options: ['Base64', 'Http', 'WasmManager', 'Local', 'File'].map(v => ({ label: v, value: v.toLowerCase()})),
+        },
+      },
+      path: {
+        label: "Path",
+        type: "string"
+      }
+    }
+  },
   memoryPages: {
     type: 'number',
     label: 'Max number of pages',
@@ -197,8 +218,7 @@ export default {
     ...schema,
   },
   config_flow: [
-    'compiler_source',
-    'raw_source',
+    'source',
     'functionName',
     'wasi',
     {

@@ -324,7 +324,7 @@ object WasmUtils {
 
   private def callWasm(wasm: ByteString, config: WasmConfig, input: JsValue, ctx: Option[NgCachedConfigContext] = None, pluginId: String, attrsOpt: Option[TypedMap])(implicit env: Env): String = {
     try {
-      
+
       def createPlugin(): WasmContextSlot = {
         if (WasmUtils.logger.isDebugEnabled) WasmUtils.logger.debug(s"creating wasm plugin instance for ${config.source.cacheKey}")
         val resolver = new WasmSourceResolver()
