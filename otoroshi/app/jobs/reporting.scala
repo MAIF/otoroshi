@@ -97,9 +97,9 @@ class AnonymousReportingJob extends Job {
 
   private def displayLog(): Unit = {
     logger.info("anonymous reporting is ENABLED. If you want to disable it, you can do it")
-    logger.info(" - from the 'Danger zone'")
-    logger.info(" - with the 'otoroshi.anonymous-reporting.enabled = false' config.")
-    logger.info(" - with the 'OTOROSHI_ANONYMOUS_REPORTING_ENABLED=false' env. variable")
+    logger.info("  from the 'Danger zone'")
+    logger.info("  with the 'otoroshi.anonymous-reporting.enabled = false' config.")
+    logger.info("  with the 'OTOROSHI_ANONYMOUS_REPORTING_ENABLED=false' env. variable")
   }
 
   private def avgDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
@@ -189,6 +189,7 @@ class AnonymousReportingJob extends Job {
             "lets_encrypt" -> globalConfig.letsEncryptSettings.enabled,
             "auto_certs" -> globalConfig.autoCert.enabled,
             "wasm_manager" -> globalConfig.wasmManagerSettings.isDefined,
+            "backoffice_login" -> globalConfig.backOfficeAuthRef.isDefined,
           ),
           "stats" -> Json.obj(
             "calls" -> calls,
@@ -249,10 +250,29 @@ class AnonymousReportingJob extends Job {
                   obj ++ Json.obj(key -> (obj.select(key).asOpt[Int].getOrElse(0) + 1))
               }
             ),
-            "routes" -> Json.obj("count" -> env.proxyState.allRawRoutes().size),
-            "router_routes" -> Json.obj("count" -> env.proxyState.allRoutes().size),
+            "routes" -> Json.obj(
+              "count" -> env.proxyState.allRawRoutes().size,
+              "plugins" -> Json.obj(
+                "min" -> env.proxyState.allRawRoutes().map(_.plugins.slots.size).min,
+                "max" -> env.proxyState.allRawRoutes().map(_.plugins.slots.size).max,
+                "avg" -> env.proxyState.allRawRoutes().avgBy(_.plugins.slots.size),
+              )
+            ),
+            "router_routes" -> Json.obj(
+              "count" -> env.proxyState.allRoutes().size,
+              "plugins" -> Json.obj(
+                "min" -> env.proxyState.allRoutes().map(_.plugins.slots.size).min,
+                "max" -> env.proxyState.allRoutes().map(_.plugins.slots.size).max,
+                "avg" -> env.proxyState.allRoutes().avgBy(_.plugins.slots.size),
+              )
+            ),
             "route_compositions" -> Json.obj(
               "count" -> env.proxyState.allRouteCompositions().size,
+              "plugins" -> Json.obj(
+                "min" -> env.proxyState.allRouteCompositions().map(v => v.plugins.slots.size + v.routes.foldLeft(0)((a, b) => a + b.plugins.slots.size)).min,
+                "max" -> env.proxyState.allRouteCompositions().map(v => v.plugins.slots.size + v.routes.foldLeft(0)((a, b) => a + b.plugins.slots.size)).max,
+                "avg" -> env.proxyState.allRouteCompositions().avgBy(v => v.plugins.slots.size + v.routes.foldLeft(0)((a, b) => a + b.plugins.slots.size)),
+              ),
               "by_kind" -> env.proxyState.allRouteCompositions().foldLeft(Json.obj()) {
                 case (obj, rc) =>
                   val localPlugins = rc.routes.exists(_.plugins.slots.nonEmpty)
@@ -262,10 +282,28 @@ class AnonymousReportingJob extends Job {
                   } else {
                     "global"
                   }
-                  obj ++ Json.obj(key -> (obj.select(key).asOpt[Int].getOrElse(0) + 1))
+                  obj ++ Json.obj(
+                    key -> (obj.select(key).asOpt[Int].getOrElse(0) + 1)
+                  )
               }
             ),
-            "apikeys" -> Json.obj("count" -> env.proxyState.allApikeys().size),
+            "apikeys" -> Json.obj(
+              "count" -> env.proxyState.allApikeys().size,
+              "by_kind" -> Json.obj(
+                "disabled" -> env.proxyState.allApikeys().filterNot(_.enabled).size,
+                "with_rotation" -> env.proxyState.allApikeys().count(_.rotation.enabled),
+                "with_read_only" -> env.proxyState.allApikeys().count(_.readOnly),
+                "with_client_id_only" -> env.proxyState.allApikeys().count(_.allowClientIdOnly),
+                "with_constrained_services" -> env.proxyState.allApikeys().count(_.constrainedServicesOnly),
+                "with_meta" -> env.proxyState.allApikeys().count(_.metadata.nonEmpty),
+                "with_tags" -> env.proxyState.allApikeys().count(_.tags.nonEmpty),
+              ),
+              "authorized_on" -> Json.obj(
+                "min" -> env.proxyState.allApikeys().map(_.authorizedEntities.size).min,
+                "max" -> env.proxyState.allApikeys().map(_.authorizedEntities.size).max,
+                "avg" -> env.proxyState.allApikeys().avgBy(_.authorizedEntities.size),
+              )
+            ),
             "jwt_verifiers" -> Json.obj(
               "count" -> env.proxyState.allJwtVerifiers().size,
               "by_strategy" -> env.proxyState.allJwtVerifiers().foldLeft(Json.obj()) {
@@ -299,10 +337,30 @@ class AnonymousReportingJob extends Job {
                   obj ++ Json.obj(key -> (obj.select(key).asOpt[Int].getOrElse(0) + 1))
               }
             ),
-            "service_descriptors" -> Json.obj("count" -> env.proxyState.allServices().size),
+            "service_descriptors" -> Json.obj(
+              "count" -> env.proxyState.allServices().size,
+              "plugins" -> Json.obj(
+                "old" -> env.proxyState.allServices().filter { v =>
+                  v.preRouting.enabled || v.accessValidator.enabled || v.transformerRefs.nonEmpty
+                }.count(v => v.preRouting.refs.nonEmpty || v.accessValidator.refs.nonEmpty || v.transformerRefs.nonEmpty),
+                "new" -> env.proxyState.allServices().filter(_.plugins.enabled).count(_.plugins.refs.size > 0)
+              ),
+              "by_kind" -> Json.obj(
+                "disabled" -> env.proxyState.allServices().count(!_.enabled),
+                "fault_injection" -> env.proxyState.allServices().count(_.chaosConfig.enabled),
+                "health_check" -> env.proxyState.allServices().count(_.healthCheck.enabled),
+                "gzip" ->  env.proxyState.allServices().count(_.gzip.enabled),
+                "jwt" ->  env.proxyState.allServices().count(_.jwtVerifier.enabled),
+                "cors" ->  env.proxyState.allServices().count(_.cors.enabled),
+                "auth" -> env.proxyState.allServices().count(_.privateApp),
+                "protocol" ->  env.proxyState.allServices().count(_.enforceSecureCommunication),
+                "restrictions" -> env.proxyState.allServices().count(_.restrictions.enabled),
+              )
+            ),
             "teams" -> Json.obj("count" -> env.proxyState.allTeams().size),
             "tenants" -> Json.obj("count" -> env.proxyState.allTenants().size),
             "service_groups" -> Json.obj("count" -> env.proxyState.allServiceGroups().size),
+            //"error_templates" -> Json.obj("count" -> env.proxyState.allErrorTemplates().size),
             "data_exporters" -> Json.obj(
               "count" -> env.proxyState.allDataExporters().size,
               "by_kind" -> env.proxyState.allDataExporters().foldLeft(Json.obj()) {
@@ -341,7 +399,7 @@ class AnonymousReportingJob extends Job {
           // "metrics" -> env.metrics.jsonRawExport(None),
         )
       }).flatMap { report =>
-        if (env.isDev) report.prettify.debugPrintln
+        if (env.isDev) logger.info(report.prettify)
         val req = if (config.tlsConfig.enabled) {
           env.MtlsWs.url(config.url, config.tlsConfig.legacy)
         } else {

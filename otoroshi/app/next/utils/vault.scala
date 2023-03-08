@@ -655,28 +655,28 @@ class Vaults(env: Env) {
       vaultsConfig.select(key).asOpt[JsObject].map { vault =>
         val typ = vault.select("type").asOpt[String].getOrElse("env")
         if (typ == "env") {
-          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
           vaults.put(key, new EnvVault(key, vaultConfig.get[Configuration](key), env))
         } else if (typ == "hashicorp-vault") {
-          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
           vaults.put(key, new HashicorpVault(key, vaultConfig.get[Configuration](key), env))
         } else if (typ == "azure") {
-          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
           vaults.put(key, new AzureVault(key, vaultConfig.get[Configuration](key), env))
         } else if (typ == "aws") {
-          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
           vaults.put(key, new AwsVault(key, vaultConfig.get[Configuration](key), env))
         } else if (typ == "kubernetes") {
-          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
           vaults.put(key, new KubernetesVault(key, vaultConfig.get[Configuration](key), env))
         } else if (typ == "izanami") {
-          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
           vaults.put(key, new IzanamiVault(key, vaultConfig.get[Configuration](key), env))
         } else if (typ == "gcloud") {
-          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
           vaults.put(key, new GoogleSecretManagerVault(key, vaultConfig.get[Configuration](key), env))
         } else if (typ == "alibaba-cloud") {
-          logger.info(s"A vault named '${key}' of kind '${typ}' is now active !")
+          logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
           vaults.put(key, new AlibabaCloudSecretManagerVault(key, vaultConfig.get[Configuration](key), env))
         } else {
           // TODO: support square https://github.com/square/keywhiz ?

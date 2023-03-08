@@ -613,4 +613,15 @@ object implicits {
     def getIgnoreCase(key: String): Option[B]                               = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
     def remAndAddIgnoreCase(tuple: (String, B)): TrieMap[String, B]         = remIgnoreCase(tuple._1).add(tuple)
   }
+  implicit class BetterSeqOfA[A](val seq: Seq[A]) extends AnyVal {
+    def avgBy(f: A => Int): Double = {
+      if (seq.isEmpty) 0.0
+      else {
+        val sum = seq.map(f).foldLeft(0) {
+          case (a, b) => a + b
+        }
+        sum / seq.size
+      }
+    }
+  }
 }
