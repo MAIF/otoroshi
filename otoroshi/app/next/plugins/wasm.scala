@@ -23,7 +23,7 @@ import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc.{Request, Result, Results}
 
 import java.nio.file.{Files, Paths}
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Executors, TimeUnit}
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration, MILLISECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
@@ -128,6 +128,12 @@ object WasmConfig {
 }
 
 object WasmUtils {
+
+  private implicit val executor = ExecutionContext.fromExecutorService(
+    Executors.newWorkStealingPool((Runtime.getRuntime.availableProcessors * 2) + 1)
+  )
+
+  // Not great !
   private var _cache: Option[Cache[String, ByteString]] = None
 
   private def scriptCache(implicit env: Env) = {
@@ -144,7 +150,7 @@ object WasmUtils {
     }
   }
 
-  def convertJsonCookies(wasmResponse: JsValue): Option[Seq[WSCookie]] =
+  private[plugins] def convertJsonCookies(wasmResponse: JsValue): Option[Seq[WSCookie]] =
     wasmResponse
       .select("cookies")
       .asOpt[Seq[JsObject]]
@@ -162,7 +168,7 @@ object WasmUtils {
         }
       }
 
-  def getWasm(source: String)(implicit env: Env, ec: ExecutionContext): Future[ByteString] = {
+  private def getWasm(source: String)(implicit env: Env, ec: ExecutionContext): Future[ByteString] = {
     //val wasm = config.source.getOrElse("https://raw.githubusercontent.com/extism/extism/main/wasm/code.wasm")
     if (source.startsWith("http://") || source.startsWith("https://")) {
       scriptCache.getIfPresent(source) match {
@@ -192,9 +198,9 @@ object WasmUtils {
   }
 
 
-  val test: Option[Manifest] = None
+  private val test: Option[Manifest] = None
 
-  def callWasm(wasm: ByteString, config: WasmConfig, input: JsValue, ctx: Option[NgCachedConfigContext] = None, pluginId: String)
+  private def callWasm(wasm: ByteString, config: WasmConfig, input: JsValue, ctx: Option[NgCachedConfigContext] = None, pluginId: String)
               (implicit env: Env, executionContext: ExecutionContext): String = {
     try {
       val resolver = new WasmSourceResolver()
@@ -219,7 +225,7 @@ object WasmUtils {
   }
 
   def execute(config: WasmConfig, input: JsValue, ctx: Option[NgCachedConfigContext])
-             (implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, String]] = {
+             (implicit env: Env): Future[Either[JsValue, String]] = {
     (config.compilerSource, config.rawSource) match {
       case (Some(pluginId), _)  =>
         scriptCache.getIfPresent(pluginId) match {
@@ -514,21 +520,15 @@ class WasmSink extends NgRequestSink {
       case JsSuccess(value, _) => value
       case JsError(_) => WasmConfig()
     }
-
-    config.compilerSource.getOrElse(config.rawSource) match {
-      case Some(source: String) =>
-        Await.result(
-          WasmUtils
-            .getWasm(source)
-            .map(wasm => WasmUtils.callWasm(wasm, config.copy(functionName = "matches"), ctx.json, pluginId = source))
-            .map(res => {
-              val response = Json.parse(res)
-              (response \ "result").asOpt[Boolean].getOrElse(false)
-            }),
-          10.seconds
-        )
-      case None => false
-    }
+    val fu = WasmUtils.execute(config.copy(functionName = "matches"), ctx.wasmJson, FakeWasmContext(ctx.config).some)
+      .map {
+        case Left(error) => false
+        case Right(res) => {
+          val response = Json.parse(res)
+          (response \ "result").asOpt[Boolean].getOrElse(false)
+        }
+      }
+    Await.result(fu, 10.seconds)
   }
 
   override def handleSync(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Result =
@@ -539,55 +539,51 @@ class WasmSink extends NgRequestSink {
       case JsSuccess(value, _) => value
       case JsError(_) => WasmConfig()
     }
+    WasmUtils.execute(config, ctx.wasmJson, FakeWasmContext(ctx.config).some)
+      .map {
+        case Left(error) => Results.InternalServerError(error)
+        case Right(res) => {
+          val response = Json.parse(res)
 
-    config.compilerSource.getOrElse(config.rawSource) match {
-      case Some(source: String) =>
-        WasmUtils
-          .getWasm(source)
-          .map(wasm => WasmUtils.callWasm(wasm, config, ctx.json, pluginId = source))
-          .map(res => {
-            val response = Json.parse(res)
+          val status = response
+            .select("status")
+            .asOpt[Int]
+            .getOrElse(200)
 
-            val status = response
-              .select("status")
-              .asOpt[Int]
-              .getOrElse(200)
+          val _headers = response
+            .select("headers")
+            .asOpt[Map[String, String]]
+            .getOrElse(Map("Content-Type" -> "application/json"))
 
-            val _headers = response
-              .select("headers")
-              .asOpt[Map[String, String]]
-              .getOrElse(Map("Content-Type" -> "application/json"))
+          val contentType = _headers
+            .get("Content-Type")
+            .orElse(_headers.get("content-type"))
+            .getOrElse("application/json")
 
-            val contentType = _headers
-              .get("Content-Type")
-              .orElse(_headers.get("content-type"))
-              .getOrElse("application/json")
+          val headers = _headers
+            .filterNot(_._1.toLowerCase() == "content-type")
 
-            val headers = _headers
-              .filterNot(_._1.toLowerCase() == "content-type")
+          val bodytext = response
+            .select("body")
+            .asOpt[String]
+            .map(ByteString.apply)
 
-            val bodytext = response
-              .select("body")
-              .asOpt[String]
-              .map(ByteString.apply)
+          val bodyBase64 = response
+            .select("bodyBase64")
+            .asOpt[String]
+            .map(ByteString.apply)
+            .map(_.decodeBase64)
 
-            val bodyBase64 = response
-              .select("bodyBase64")
-              .asOpt[String]
-              .map(ByteString.apply)
-              .map(_.decodeBase64)
+          val body: ByteString = bodytext
+            .orElse(bodyBase64)
+            .getOrElse("""{"message":"hello world!"}""".byteString)
 
-            val body: ByteString = bodytext
-              .orElse(bodyBase64)
-              .getOrElse("""{"message":"hello world!"}""".byteString)
-
-            Results
-              .Status(status)(body)
-              .withHeaders(headers.toSeq: _*)
-              .as(contentType)
-          })
-      case None => Results.BadRequest(Json.obj("error" -> "missing source")).future
-    }
+          Results
+            .Status(status)(body)
+            .withHeaders(headers.toSeq: _*)
+            .as(contentType)
+        }
+      }
   }
 }
 

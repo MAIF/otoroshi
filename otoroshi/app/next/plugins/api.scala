@@ -679,6 +679,7 @@ case class NgRequestSinkContext(
     message: String,
     body: Source[ByteString, _]
 ) {
+  def wasmJson: JsValue = json
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     "request"   -> JsonHelpers.requestToJson(request),
