@@ -134,7 +134,7 @@ object WasmSourceKind {
   def apply(value: String): WasmSourceKind = value.toLowerCase match {
     case "base64" => Base64
     case "http" => Http
-    case "wasmlanager" => WasmManager
+    case "wasmmanager" => WasmManager
     case "local" => Local
     case "file" => File
     case _ => Unknown
