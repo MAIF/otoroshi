@@ -26,6 +26,10 @@ router.get('/', (req, res) => {
   }
 });
 
+router.get('/wapm', (_, res) => {
+  res.sendFile(path.join(__dirname, '../templates', 'wapm.toml'))
+});
+
 router.get('/host-functions/:type', (req, res) => {
   if (!req.params.type) {
     res
@@ -79,8 +83,8 @@ router.get('/types/:type', (req, res) => {
         error: 'Missing type of project'
       })
   } else {
-    const { type } = req.params;
-    if (['rust', 'ts'].includes(type)) {
+    const type = req.params.type === "rust" ? "rs" : req.params.type;
+    if (['rs', 'ts'].includes(type)) {
       if (process.env.MANAGER_TYPES.startsWith('file://')) {
         const paths = [process.env.MANAGER_TYPES.replace('file://', ''), `types.${type}`];
         FileSystem.existsFile(...paths)

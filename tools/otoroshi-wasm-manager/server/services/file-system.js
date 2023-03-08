@@ -38,7 +38,9 @@ const removeFolder = (...paths) => fs.remove(path.join(process.cwd(), ...paths))
 
 const createFolderAtPath = (path) => fs.createWriteStream(path, { flags: 'w+' });
 
-const folderAlreadyExits = (...paths) => fs.pathExists(path.join(process.cwd(), ...paths));
+const buildFolderAlreadyExits = (...paths) => fs.pathExists(path.join(process.cwd(), ...paths));
+
+const folderAlreadyExits = (...paths) => fs.pathExists(path.join(...paths));
 
 const cleanBuildsAndLogsFolders = async () => {
   return Promise.all([
@@ -79,6 +81,7 @@ module.exports = {
     createFolderAtPath,
     cleanFolders,
     folderAlreadyExits,
+    buildFolderAlreadyExits,
     removeFolder,
     cleanBuildsAndLogsFolders,
     checkIfInformationsFileExists,

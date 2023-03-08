@@ -29,6 +29,30 @@ const unzip = (isRustBuild, zipString, outputFolder) => {
   }))
 }
 
+const unzipTo = (zipString, outputPaths) => {
+  const zip = new AdmZip(zipString);
+  const entries = zip.getEntries();
+
+  const folder = path.join(...outputPaths);
+  return fs.mkdir(folder)
+    .then(() => {
+      return Promise.all(entries.map(entry => {
+        try {
+          const content = pako.inflateRaw(entry.getCompressedData(), { to: 'string' });
+
+          return fs.writeFile(
+            path.join(...outputPaths, entry.entryName),
+            content
+          )
+        } catch (err) {
+          console.log(err)
+          return Promise.reject(err)
+        }
+      }))
+        .then(() => folder)
+    })
+}
+
 const INFORMATIONS_FILENAME = {
   go: "go.mod",
   rust: "Cargo.toml",
@@ -39,5 +63,6 @@ const INFORMATIONS_FILENAME = {
 module.exports = {
   format,
   unzip,
+  unzipTo,
   INFORMATIONS_FILENAME
 }

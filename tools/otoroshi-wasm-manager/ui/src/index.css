@@ -12,6 +12,10 @@ code {
     monospace;
 }
 
+h1 {
+  font-size: 1.5rem !important;
+}
+
 
 #root {
   min-height: 100vh;

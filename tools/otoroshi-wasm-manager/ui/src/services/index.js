@@ -50,7 +50,9 @@ export const getPlugin = plugin => rawFetch(`/plugins/${plugin}`)
 
 export const getPluginConfig = plugin => jsonFetch(`/plugins/${plugin}/configurations`)
 
-export const getPluginTemplate = type => f(`/templates?type=${type}`)
+export const getPluginTemplate = type => f(`/templates?type=${type}`);
+
+export const getWapmManifest = () => f('/templates/wapm');
 
 const buildZip = plugin => {
   const jsZip = new JSZip()
@@ -91,6 +93,13 @@ export const buildPlugin = async (plugin, pluginType) => {
   })
     .then(res => res.json())
 };
+
+export const publishPlugin = async plugin => {
+  return rawFetch(`/plugins/${plugin.pluginId}/publish`, {
+    method: 'POST'
+  })
+    .then(res => res.json())
+}
 
 export const removePlugin = plugin => rawFetch(`/plugins/${plugin}`, {
   method: 'DELETE'

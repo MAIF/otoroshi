@@ -12,6 +12,7 @@ const { FileSystem } = require('../services/file-system');
 const manager = require('../logger');
 const { InformationsReader } = require('../services/informationsReader');
 const { WebSocket } = require('../services/websocket');
+const { Publisher } = require('../services/publish-job');
 const log = manager.createLogger('plugins');
 
 const router = express.Router()
@@ -415,6 +416,53 @@ router.post('/:id/build', async (req, res) => {
       }
     })
 })
+
+router.post('/:id/publish', (req, res) => {
+  if (!process.env.WAPM_REGISTRY_TOKEN) {
+    res.status(400)
+      .json({
+        error: 'WAPM registry is not configured!'
+      })
+  } else {
+    const pluginId = req.params.id;
+
+    Publisher.publishIsAlreadyRunning(pluginId)
+      .then(exists => {
+        if (exists) {
+          res.json({
+            queue_id: pluginId,
+            alreadyExists: true
+          });
+        } else {
+          const { s3, Bucket } = S3.state();
+          s3
+            .getObject({
+              Bucket,
+              Key: `${pluginId}.zip`
+            })
+            .promise()
+            .then(data => {
+              Publisher.addPluginToQueue({
+                plugin: pluginId,
+                zipString: data.Body
+              })
+              res.json({
+                queue_id: pluginId
+              })
+            })
+            .catch(err => {
+              console.log(err)
+              res
+                .status(err.statusCode)
+                .json({
+                  error: err.code,
+                  status: err.statusCode
+                })
+            })
+        }
+      })
+  }
+});
 
 router.patch('/:id/filename', (req, res) => {
 

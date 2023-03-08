@@ -100,7 +100,7 @@ export class Run extends React.Component {
     const { plugins } = this.props;
 
     return (
-      <div style={{ flex: 1, marginTop: 75, borderRadius: 12 }} className="p-3 bg-light mx-auto w-75"
+      <div style={{ flex: 1, marginTop: 75 }} className="p-3 bg-light mx-auto w-75"
         onKeyDown={e => e.stopPropagation()}>
         <div className='mb-3'>
           <label htmlFor="selectedPlugin" className='form-label'>Select a plugin</label>

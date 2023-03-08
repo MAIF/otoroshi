@@ -9,13 +9,13 @@ const { S3 } = require('../s3');
 const { FileSystem } = require('./file-system');
 const { UserManager } = require('./user');
 
-const log = manager.createLogger('build_queue');
+const log = manager.createLogger('BUILDER');
 
 const MAX_JOBS = process.env.MANAGER_MAX_PARALLEL_JOBS || 2;
 
 const CARGO_BUILD = ["cargo"]
-const CARGO_ARGS = _ => ['build --release --target wasm32-unknown-unknown']
-//const CARGO_ARGS = _ => ['build --release --target wasm32-wasi']
+const CARGO_ARGS = _ => ['build --manifest-path ./Cargo.toml --release --target wasm32-unknown-unknown']
+  //const CARGO_ARGS = _ => ['build --release --target wasm32-wasi']
   .map(command => command.split(' '));
 
 const JS_BUILD = ["npm", "node", "extism-js"]
@@ -23,7 +23,7 @@ const JS_ARGS = wasmName => ["install", "esbuild.js", `dist/index.js -o ${wasmNa
   .map(command => command.split(' '));
 
 const GO_BUILD = ["go", "go", "go", "tinygo"]
-const GO_ARGS = wasmName => ["get github.com/extism/go-pdk", "get github.com/buger/jsonparser", "mod download", `build -o ${wasmName}.wasm -target wasi`]
+const GO_ARGS = wasmName => ["get github.com/extism/go-pdk", "get github.com/buger/jsonparser", "mod download", `build --no-debug -target=wasi -o ${wasmName}.wasm `]
   .map(command => command.split(' '));
 
 const queue = []
@@ -38,14 +38,9 @@ const addBuildToQueue = props => {
     WebSocket.emit(props.plugin, "QUEUE", `waiting - ${queue.length - 1} before the build start\n`)
   }
 }
-const start = () => {
-  setInterval(() => {
-    loop()
-  }, 5 * 60 * 1000)
-}
 
 const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild, pluginType }) => {
-  log.info(`[buildQueue SERVICE] Starting build ${folder}`)
+  log.info(`Starting build ${folder}`)
 
   const root = process.cwd()
   const buildFolder = path.join(root, 'build', folder)
@@ -212,7 +207,7 @@ const saveLogsFile = (plugin, filename, logsFolder) => {
 }
 
 const loop = () => {
-  log.info(`[buildQueue SERVICE] Running jobs: ${running} - BuildingJob size: ${queue.length}`)
+  log.info(`Running jobs: ${running} - BuildingJob size: ${queue.length}`)
   if (running < MAX_JOBS && queue.length > 0) {
     running += 1;
 
@@ -231,7 +226,7 @@ const loop = () => {
   }
 }
 
-const buildIsAlreadyRunning = folder => FileSystem.folderAlreadyExits('build', folder)
+const buildIsAlreadyRunning = folder => FileSystem.buildFolderAlreadyExits('build', folder)
 
 function updateHashOfPlugin(user, plugin, newHash, wasm) {
   const userReq = {
@@ -266,7 +261,6 @@ function updateHashOfPlugin(user, plugin, newHash, wasm) {
 
 module.exports = {
   BuildingJob: {
-    start,
     addBuildToQueue,
     buildIsAlreadyRunning
   }

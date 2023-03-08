@@ -4,6 +4,7 @@ import Tab from './Tab'
 import PluginManager from './PluginManager'
 import Terminal from './Terminal';
 import { Run } from './Run';
+import { PublishView } from './PublishView';
 
 function TabsManager({ plugins, ...props }) {
   const [tabs, setTabs] = useState([])
@@ -16,7 +17,7 @@ function TabsManager({ plugins, ...props }) {
   useEffect(() => {
     if (props.selectedPlugin && props.selectedPlugin.filename !== currentPlugin) {
       setCurrentPlugin(props.selectedPlugin.filename)
-      setTabs(tabs.filter(t => t === 'Runner'))
+      setTabs(tabs.filter(t => t === 'Runner' || t === 'Publish'))
     }
   }, [props.selectedPlugin])
 
@@ -43,10 +44,12 @@ function TabsManager({ plugins, ...props }) {
   >
     <div className='d-flex flex-column' style={{ background: 'rgb(228,229,230)' }}>
       <h1 style={{
-        fontWeight: 'bold', textTransform: 'uppercase', fontSize: 18, background: '#f9b000',
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        background: '#f9b000',
         color: 'white',
         height: 42
-      }} className="p-2 m-0 d-flex align-items-center">OTO WA</h1>
+      }} className="p-2 m-0 d-flex align-items-center">OTO WASM</h1>
       <PluginManager
         plugins={plugins}
         setSelectedPlugin={props.setSelectedPlugin}
@@ -77,6 +80,7 @@ function TabsManager({ plugins, ...props }) {
     <div style={{ flex: 1, height: '100vh', position: 'relative' }} className="d-flex flex-column">
       <div className='d-flex flex-column' style={{ flex: 1 - sizeTerminal, overflow: 'scroll' }}>
         <Header
+          selectedPluginType={props.selectedPlugin?.type}
           onSave={props.onSave}
           onBuild={props.onBuild}
           showActions={!!props.selectedPlugin}
@@ -87,6 +91,13 @@ function TabsManager({ plugins, ...props }) {
             }
             setCurrentTab('Runner')
             props.showPlaySettings()
+          }}
+          showPublishSettings={() => {
+            if (!tabs.includes('Publish')) {
+              setTabs([...tabs, 'Publish'])
+            }
+            setCurrentTab('Publish')
+            props.showPublishSettings()
           }}>
           <Tabs
             tabs={tabs}
@@ -97,8 +108,26 @@ function TabsManager({ plugins, ...props }) {
             currentTab={currentTab} />
         </Header>
         {props.editorState === 'docs' && <DocsPreview onClose={props.onEditorStateReset} />}
-        {props.editorState === 'play' && currentTab === 'Runner' &&
-          <Run onClose={props.onEditorStateReset} plugins={plugins} selectedPlugin={props.selectedPlugin} />}
+        {currentTab === 'Runner' &&
+          <Run
+            onClose={props.onEditorStateReset}
+            plugins={plugins}
+            selectedPlugin={props.selectedPlugin} />}
+        {currentTab === 'Publish' &&
+          <PublishView
+            onClose={props.onEditorStateReset}
+            plugins={plugins}
+            selectedPlugin={props.selectedPlugin}
+            createManifest={props.createManifest}
+            createReadme={props.createReadme}
+            openTab={name => {
+              if (!tabs.includes(name)) {
+                setTabs([...tabs, name])
+              }
+              setCurrentTab(name)
+            }}
+            publish={props.publish}
+          />}
         {props.selectedPlugin ? <Contents
           tabs={tabs}
           configFiles={props.configFiles}
@@ -122,7 +151,15 @@ function TabsManager({ plugins, ...props }) {
 function Tabs({ tabs, setCurrentTab, setTabs, currentTab, selectedPlugin, configFiles }) {
   return <div style={{ height: 42 }}>
     {tabs
-      .filter(tab => tab === 'Runner' || [...(selectedPlugin ? selectedPlugin.files : []), ...configFiles].find(f => f.filename === tab))
+      .filter(tab => {
+        if (tab === 'Runner') {
+          return true;
+        } else if (tab === 'Publish') {
+          return true;
+        } else {
+          return [...(selectedPlugin ? selectedPlugin.files : []), ...configFiles].find(f => f.filename === tab);
+        }
+      })
       .map(tab => {
         return <TabButton
           key={tab}
@@ -143,7 +180,7 @@ function Tabs({ tabs, setCurrentTab, setTabs, currentTab, selectedPlugin, config
 }
 
 function Contents({ tabs, setCurrentTab, currentTab, handleContent, selectedPlugin, configFiles }) {
-  return <div style={{ flex: 1, marginTop: 42 }}>
+  return <div style={{ flex: 1, marginTop: 42, display: 'flex', flexDirection: 'column' }}>
     {tabs
       .filter(tab => [...selectedPlugin.files, ...configFiles].find(f => f.filename === tab))
       .map(tab => {
@@ -178,7 +215,9 @@ function TabButton({ filename, onClick, selected, closeTab }) {
   </button>
 }
 
-function Header({ children, onSave, onBuild, showActions, onDocs, showPlaySettings }) {
+function Header({
+  children, onSave, onBuild, showActions,
+  onDocs, showPlaySettings, showPublishSettings, selectedPluginType }) {
 
   return <div className='d-flex align-items-center justify-content-between bg-light'
     style={{ position: 'fixed', height: 42, zIndex: 10, width: 'calc(100vw - 250px)' }}>
@@ -188,6 +227,7 @@ function Header({ children, onSave, onBuild, showActions, onDocs, showPlaySettin
       {showActions && <>
         <Save onSave={onSave} />
         <Build onBuild={onBuild} />
+        {selectedPluginType !== 'go' && <Publish showPublishSettings={showPublishSettings} />}
       </>}
       <Play showPlaySettings={showPlaySettings} />
       <Docs onDocs={onDocs} />
@@ -210,6 +250,15 @@ function Build({ onBuild }) {
     className="pe-2"
     onClick={onBuild}>
     <i className='fas fa-hammer' />
+  </button>
+}
+
+function Publish({ showPublishSettings }) {
+  return <button type="button"
+    style={{ border: 'none', background: 'none' }}
+    className="pe-2"
+    onClick={showPublishSettings}>
+    <i className='fas fa-upload' />
   </button>
 }
 

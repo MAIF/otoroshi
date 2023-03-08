@@ -17,23 +17,19 @@ const publicRouter = require('./routers/public');
 const wasmRouter = require('./routers/wasm');
 
 const { WebSocket } = require('./services/websocket');
-const { BuildingJob } = require('./services/building-job');
 const { FileSystem } = require('./services/file-system');
-
-
 const { Security } = require('./security/middlewares');
 
-
 const manager = require('./logger');
+const { Publisher } = require('./services/publish-job');
 const log = manager.createLogger('wasm-manager');
 
 
 S3.initializeS3Connection()
   .then(() => {
-    BuildingJob.start();
-
     S3.createBucketIfMissing();
     FileSystem.cleanBuildsAndLogsFolders();
+    Publisher.initialize();
     // S3.cleanBucket()
     // S3.listObjects()
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import JsZip, { file } from 'jszip';
+import JsZip from 'jszip';
 import Pako from 'pako'
 
 import * as Service from './services'
@@ -322,17 +322,16 @@ class App extends React.Component {
                       .then(([templatesFiles, typesFile, hostFunctionsFile]) => {
                         this.downloadPluginTemplate(templatesFiles, plugin)
                           .then(() => {
+                            const type = plugin.type === "rust" ? 'rs' : plugin.type;
                             if (fetchHostFunctionNeeded && fetchTypesNeeded) {
-                              const filename = `types.${plugin.type}`;
-                              const hostFunctionsFilename = `host-functions.${plugin.type}`;
+                              const filename = `types.${type}`;
+                              const hostFunctionsFilename = `host-functions.${type}`;
                               this.fetchedTypeToState(hostFunctionsFilename, hostFunctionsFile)
                                 .then(() => this.fetchedTypeToState(filename, typesFile));
                             } else if (fetchTypesNeeded) {
-                              const filename = `types.${plugin.type}`;
-                              this.fetchedTypeToState(filename, plugin, typesFile);
+                              this.fetchedTypeToState(`types.${type}`, typesFile);
                             } else if (fetchHostFunctionNeeded) {
-                              const filename = `host-functions.${plugin.type}`;
-                              this.fetchedTypeToState(filename, hostFunctionsFile);
+                              this.fetchedTypeToState(`host-functions.${type}`, hostFunctionsFile);
                             }
                           });
                       });
@@ -422,8 +421,6 @@ class App extends React.Component {
         .find(f => f.filename === "Cargo.toml");
       const isGoPlugin = this.state.selectedPlugin.files
         .find(f => f.filename === "go.mod");
-      const isJsPlugin = this.state.selectedPlugin.files
-        .find(f => f.filename === "package.json");
       const isTsPlugin = this.state.selectedPlugin.files
         .find(f => f.filename.endsWith('.ts'));
 
@@ -466,6 +463,12 @@ class App extends React.Component {
     })
   }
 
+  showPublishSettings = () => {
+    this.setState({
+      editorState: 'publish',
+    })
+  }
+
   removePlugin = pluginId => {
     const plugin = this.state.plugins.filter(f => f.pluginId !== pluginId)
     if (window.confirm(`Delete the ${plugin.filename} plugin ?`)) {
@@ -495,6 +498,64 @@ class App extends React.Component {
     this.setState({ selectedPlugin });
   }
 
+  createManifest = () => {
+    if (!this.state.selectedPlugin.files
+      .find(f => f.filename === "wapm.toml")) {
+      Service.getWapmManifest()
+        .then(r => r.blob())
+        .then(file => new File([file], "").text())
+        .then(content => {
+          this.setState({
+            selectedPlugin: {
+              ...this.state.selectedPlugin,
+              files: [
+                ...this.state.selectedPlugin.files,
+                {
+                  filename: 'wapm.toml',
+                  content,
+                  ext: 'toml'
+                }
+              ]
+            }
+          })
+        })
+    }
+  }
+
+  createReadme = () => {
+    if (!this.state.selectedPlugin.files
+      .find(f => f.filename === "README.md")) {
+      this.setState({
+        selectedPlugin: {
+          ...this.state.selectedPlugin,
+          files: [
+            ...this.state.selectedPlugin.files,
+            {
+              filename: 'README.md',
+              content: `# Your package description`,
+              ext: 'md'
+            }
+          ]
+        }
+      })
+    }
+  }
+
+  publish = () => {
+    const { selectedPlugin } = this.state;
+    Service.savePlugin(selectedPlugin)
+      .then(() => Service.publishPlugin(selectedPlugin))
+      .then(res => {
+        if (res.error) {
+          toast.error(res.error)
+        } else if (res.alreadyExists) {
+          toast.warn("Your plugin is already publishing or already in the queue.");
+        } else {
+          toast.info(res.message);
+        }
+      })
+  }
+
   render() {
     const { selectedPlugin, plugins, configFiles, editorState } = this.state;
 
@@ -522,9 +583,13 @@ class App extends React.Component {
         onDocs={this.onDocs}
         onEditorStateReset={this.onEditorStateReset}
         showPlaySettings={this.showPlaySettings}
+        showPublishSettings={this.showPublishSettings}
         removeFile={this.removeFile}
         onLoadConfigurationFile={this.onLoadConfigurationFile}
         setSelectedPlugin={this.setSelectedPlugin}
+        createManifest={this.createManifest}
+        createReadme={this.createReadme}
+        publish={this.publish}
       />
     </div>
   }

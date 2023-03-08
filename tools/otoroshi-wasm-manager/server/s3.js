@@ -45,7 +45,7 @@ const createBucketIfMissing = () => {
   const params = { Bucket: state.Bucket }
 
   return state.s3.headBucket(params)
-    .promise()  
+    .promise()
     .then(res => {
       if (res.statusCode === 404) {
         return new Promise(resolve => {
