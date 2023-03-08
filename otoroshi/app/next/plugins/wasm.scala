@@ -4,6 +4,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import org.extism.sdk.Plugin
 import org.extism.sdk.Context
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
 import org.extism.sdk.wasm.WasmSourceResolver
@@ -15,6 +16,7 @@ import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{Job, RequestHandler}
+import otoroshi.utils.TypedMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
@@ -24,6 +26,7 @@ import play.api.mvc.{Request, Result, Results}
 
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.{Executors, TimeUnit}
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration, MILLISECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
@@ -259,6 +262,21 @@ object WasmConfig {
   }
 }
 
+case class WasmContextSlot(manifest: Manifest, context: Context, plugin: Plugin) {
+  def close(): Unit = {
+    plugin.close()
+    context.free()
+  }
+}
+class WasmContext(plugins: TrieMap[String, WasmContextSlot] = new TrieMap[String, WasmContextSlot]()) {
+  def get(id: String): Option[WasmContextSlot] = plugins.get(id)
+  def close(): Unit = {
+    println(s"[WasmContext] will close ${plugins.size} wasm plugin instances")
+    plugins.foreach(_._2.close())
+    plugins.clear()
+  }
+}
+
 object WasmUtils {
 
   private implicit val executor = ExecutionContext.fromExecutorService(
@@ -300,39 +318,64 @@ object WasmUtils {
         }
       }
 
-  private def callWasm(wasm: ByteString, config: WasmConfig, input: JsValue, ctx: Option[NgCachedConfigContext] = None, pluginId: String)(implicit env: Env): String = {
+  private def callWasm(wasm: ByteString, config: WasmConfig, input: JsValue, ctx: Option[NgCachedConfigContext] = None, pluginId: String, attrsOpt: Option[TypedMap])(implicit env: Env): String = {
     try {
-      val resolver = new WasmSourceResolver()
-      val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
-      val manifest = new Manifest(
-        Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
-        new MemoryOptions(config.memoryPages),
-        config.config.asJava,
-        config.allowedHosts.asJava
-      )
 
-      val context = new Context()
-      val plugin = context.newPlugin(manifest, config.wasi, next.plugins.HostFunctions.getFunctions(config, ctx, pluginId))
-      val output = plugin.call(config.functionName, input.stringify)
-      plugin.close()
-      context.free()
-      output
+      def createPlugin(): WasmContextSlot = {
+        val resolver = new WasmSourceResolver()
+        val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
+        val manifest = new Manifest(
+          Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
+          new MemoryOptions(config.memoryPages),
+          config.config.asJava,
+          config.allowedHosts.asJava
+        )
+
+        val context = new Context()
+        val plugin = context.newPlugin(manifest, config.wasi, next.plugins.HostFunctions.getFunctions(config, ctx, pluginId))
+        WasmContextSlot(manifest, context, plugin)
+      }
+
+      attrsOpt match {
+        case None => {
+          val slot = createPlugin()
+          val output = slot.plugin.call(config.functionName, input.stringify)
+          slot.close()
+          output
+        }
+        case Some(attrs) => {
+          val context = attrs.get(otoroshi.next.plugins.Keys.WasmContextKey) match {
+            case None => {
+              val context = new WasmContext()
+              attrs.put(otoroshi.next.plugins.Keys.WasmContextKey -> context)
+              context
+            }
+            case Some(context) => context
+          }
+          context.get(config.source.cacheKey) match {
+            case None => {
+              val slot = createPlugin()
+              slot.plugin.call(config.functionName, input.stringify)
+            }
+            case Some(plugin) => plugin.plugin.call(config.functionName, input.stringify)
+          }
+        }
+      }
     } catch {
       case e: Exception =>
         s"""{ "error": ${e.getMessage()} }"""
     }
   }
 
-  def execute(config: WasmConfig, input: JsValue, ctx: Option[NgCachedConfigContext])
-             (implicit env: Env): Future[Either[JsValue, String]] = {
+  def execute(config: WasmConfig, input: JsValue, ctx: Option[NgCachedConfigContext], attrs: Option[TypedMap])(implicit env: Env): Future[Either[JsValue, String]] = {
     val pluginId = config.source.cacheKey
     scriptCache.getIfPresent(pluginId) match {
-      case Some(wasm) => WasmUtils.callWasm(wasm, config, input, ctx, pluginId).right.future
+      case Some(wasm) => WasmUtils.callWasm(wasm, config, input, ctx, pluginId, attrs).right.future
       case None if config.source.kind == WasmSourceKind.Unknown => Left(Json.obj("error" -> "missing source")).future
       case _ => config.source.getWasm(scriptCache(env))
         .map {
           case Left(err) => err.left
-          case Right(wasm) =>  WasmUtils.callWasm(wasm, config, input, ctx, pluginId).right
+          case Right(wasm) =>  WasmUtils.callWasm(wasm, config, input, ctx, pluginId, attrs).right
         }
     }
   }
@@ -366,7 +409,7 @@ class WasmBackend extends NgBackendCall {
       .getOrElse(WasmConfig())
 
     ctx.wasmJson
-      .flatMap(input => WasmUtils.execute(config, input, ctx.some))
+      .flatMap(input => WasmUtils.execute(config, input, ctx.some, ctx.attrs.some))
       .map {
         case Right(output) =>
           val response = try {
@@ -428,7 +471,7 @@ class WasmAccessValidator extends NgAccessValidator {
       .getOrElse(WasmConfig())
 
     WasmUtils
-      .execute(config, ctx.wasmJson, ctx.some)
+      .execute(config, ctx.wasmJson, ctx.some, ctx.attrs.some)
       .flatMap {
         case Right(res)  =>
           val response = Json.parse(res)
@@ -494,7 +537,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
     ctx.wasmJson
       .flatMap(input => {
         WasmUtils
-          .execute(config, input, ctx.some)
+          .execute(config, input, ctx.some, ctx.attrs.some)
           .map {
             case Right(res)    =>
               val response = Json.parse(res)
@@ -544,7 +587,7 @@ class WasmResponseTransformer extends NgRequestTransformer {
     ctx.wasmJson
       .flatMap(input => {
         WasmUtils
-          .execute(config, input, ctx.some)
+          .execute(config, input, ctx.some, ctx.attrs.some)
           .map {
             case Right(res)    =>
               val response = Json.parse(res)
@@ -589,7 +632,7 @@ class WasmSink extends NgRequestSink {
       case JsSuccess(value, _) => value
       case JsError(_) => WasmConfig()
     }
-    val fu = WasmUtils.execute(config.copy(functionName = "matches"), ctx.wasmJson, FakeWasmContext(ctx.config).some)
+    val fu = WasmUtils.execute(config.copy(functionName = "matches"), ctx.wasmJson, FakeWasmContext(ctx.config).some, ctx.attrs.some)
       .map {
         case Left(error) => false
         case Right(res) => {
@@ -608,7 +651,7 @@ class WasmSink extends NgRequestSink {
       case JsSuccess(value, _) => value
       case JsError(_) => WasmConfig()
     }
-    WasmUtils.execute(config, ctx.wasmJson, FakeWasmContext(ctx.config).some)
+    WasmUtils.execute(config, ctx.wasmJson, FakeWasmContext(ctx.config).some, ctx.attrs.some)
       .map {
         case Left(error) => Results.InternalServerError(error)
         case Right(res) => {
@@ -716,7 +759,7 @@ class WasmRequestHandler extends RequestHandler {
           case Some(config) => {
             requestToWasmJson(request).flatMap { json =>
               val fakeCtx = FakeWasmContext(configJson)
-              WasmUtils.execute(config, Json.obj("request" -> json), fakeCtx.some)
+              WasmUtils.execute(config, Json.obj("request" -> json), fakeCtx.some, None)
                 .flatMap {
                   case Right(ok) => {
                     val response = Json.parse(ok)

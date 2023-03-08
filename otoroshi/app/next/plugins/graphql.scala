@@ -753,7 +753,7 @@ class GraphQLBackend extends NgBackendCall {
             pluginMapAccess = WasmDataRights(read = wasmPluginMapAccessRead.getOrElse(false), write = wasmPluginMapAccessWrite.getOrElse(false)),
             proxyStateAccess = wasmProxyStateAccess.getOrElse(false),
             configurationAccess = wasmConfigurationAccess.getOrElse(false)
-          ), input, ctx.some)
+          ), input, ctx.some, ctx.attrs.some)
           .map {
             case Right(output) =>
               try {

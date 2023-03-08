@@ -22,4 +22,5 @@ object Keys {
   val BodyAlreadyConsumedKey     = TypedKey[AtomicBoolean]("otoroshi.next.core.BodyAlreadyConsumed")
   val JwtInjectionKey            = TypedKey[JwtInjection]("otoroshi.next.core.JwtInjection")
   val ResultTransformerKey       = TypedKey[Function[Result, Future[Result]]]("otoroshi.next.core.ResultTransformer")
+  val WasmContextKey             = TypedKey[WasmContext]("otoroshi.next.core.WasmContext")
 }
