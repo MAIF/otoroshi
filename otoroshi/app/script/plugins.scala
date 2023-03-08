@@ -6,9 +6,10 @@ import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
+import otoroshi.next.models.NgPlugins
 import otoroshi.script._
 import otoroshi.utils.RegexPool
-import play.api.libs.json.{Format, JsArray, JsError, JsResult, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils
@@ -245,4 +246,6 @@ case class Plugins(
         defaultRouting(request)
       }
     }
+
+  def ngPlugins(): NgPlugins = NgPlugins.readFrom(config.select("ng"))
 }

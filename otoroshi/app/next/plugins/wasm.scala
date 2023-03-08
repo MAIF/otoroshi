@@ -218,14 +218,13 @@ object WasmUtils {
     }
   }
 
-  // TODO: fix that weird either
   def execute(config: WasmConfig, input: JsValue, ctx: Option[NgCachedConfigContext])
-             (implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+             (implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, String]] = {
     (config.compilerSource, config.rawSource) match {
       case (Some(pluginId), _)  =>
         scriptCache.getIfPresent(pluginId) match {
           case Some(wasm) =>
-            WasmUtils.callWasm(wasm, config, input, ctx, pluginId).left.future
+            WasmUtils.callWasm(wasm, config, input, ctx, pluginId).right.future
           case None       =>
             env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
               globalConfig.wasmManagerSettings match {
@@ -242,23 +241,23 @@ object WasmUtils {
                     .get()
                     .flatMap { resp =>
                       if (resp.status == 400) {
-                        Right(Json.obj("error" -> "missing signed plugin url")).future
+                        Left(Json.obj("error" -> "missing signed plugin url")).future
                       } else {
                         val wasm = resp.bodyAsBytes
                         scriptCache.put(pluginId, resp.bodyAsBytes)
-                        WasmUtils.callWasm(wasm, config, input, ctx, pluginId).left.future
+                        WasmUtils.callWasm(wasm, config, input, ctx, pluginId).right.future
                       }
                     }
                 case _                                                         =>
-                  Right(Json.obj("error" -> "missing wasm manager url")).future
+                  Left(Json.obj("error" -> "missing wasm manager url")).future
               }
             }
         }
       case (_, Some(rawSource)) =>
         WasmUtils
           .getWasm(rawSource)
-          .map(wasm => WasmUtils.callWasm(wasm, config, input, ctx, rawSource).left)
-      case _                    => Right(Json.obj("error" -> "missing source")).future
+          .map(wasm => WasmUtils.callWasm(wasm, config, input, ctx, rawSource).right)
+      case _                    => Left(Json.obj("error" -> "missing source")).future
     }
 
   }
@@ -294,7 +293,7 @@ class WasmBackend extends NgBackendCall {
     ctx.wasmJson
       .flatMap(input => WasmUtils.execute(config, input, ctx.some))
       .map {
-        case Left(output) =>
+        case Right(output) =>
           val response = try {
             Json.parse(output)
           } catch {
@@ -325,7 +324,7 @@ class WasmBackend extends NgBackendCall {
               .getOrElse(Map("Content-Type" -> "application/json")),
             body = body
           )
-        case Right(value) =>
+        case Left(value) =>
           bodyResponse(
             status = 400,
             headers = Map.empty,
@@ -356,7 +355,7 @@ class WasmAccessValidator extends NgAccessValidator {
     WasmUtils
       .execute(config, ctx.wasmJson, ctx.some)
       .flatMap {
-        case Left(res)  =>
+        case Right(res)  =>
           val response = Json.parse(res)
           val result   = (response \ "result").asOpt[Boolean].getOrElse(false)
           if (result) {
@@ -375,7 +374,7 @@ class WasmAccessValidator extends NgAccessValidator {
               )
               .map(r => NgAccess.NgDenied(r))
           }
-        case Right(err) =>
+        case Left(err) =>
           Errors
             .craftResponseResult(
               (err \ "error").asOpt[String].getOrElse("An error occured"),
@@ -422,7 +421,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
         WasmUtils
           .execute(config, input, ctx.some)
           .map {
-            case Left(res)    =>
+            case Right(res)    =>
               val response = Json.parse(res)
 
               Right(
@@ -435,7 +434,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
                   }
                 )
               )
-            case Right(value) => Left(Results.BadRequest(value))
+            case Left(value) => Left(Results.BadRequest(value))
           }
       })
   }
@@ -472,7 +471,7 @@ class WasmResponseTransformer extends NgRequestTransformer {
         WasmUtils
           .execute(config, input, ctx.some)
           .map {
-            case Left(res)    =>
+            case Right(res)    =>
               val response = Json.parse(res)
 
               ctx.otoroshiResponse
@@ -486,7 +485,7 @@ class WasmResponseTransformer extends NgRequestTransformer {
                   }
                 )
                 .right
-            case Right(value) => Left(Results.BadRequest(value))
+            case Left(value) => Left(Results.BadRequest(value))
           }
       })
   }
@@ -651,10 +650,10 @@ class WasmRequestHandler extends RequestHandler {
           case None => defaultRouting(request)
           case Some(config) => {
             requestToWasmJson(request).flatMap { json =>
-              val fakeCtx = FakeContext(configJson)
+              val fakeCtx = FakeWasmContext(configJson)
               WasmUtils.execute(config, Json.obj("request" -> json), fakeCtx.some)
                 .flatMap {
-                  case Left(ok) => {
+                  case Right(ok) => {
                     val response = Json.parse(ok)
                     val headers: Map[String, String] = response.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
                     val contentLength: Option[Long] = headers.getIgnoreCase("Content-Length").map(_.toLong)
@@ -674,7 +673,7 @@ class WasmRequestHandler extends RequestHandler {
                     .withCookies(cookies.map(_.toCookie):_*)
                     .vfuture
                   }
-                  case Right(bad) => Results.InternalServerError(bad).vfuture
+                  case Left(bad) => Results.InternalServerError(bad).vfuture
                 }
             }
           }
@@ -684,6 +683,6 @@ class WasmRequestHandler extends RequestHandler {
   }
 }
 
-case class FakeContext(config: JsValue) extends NgCachedConfigContext {
+case class FakeWasmContext(config: JsValue) extends NgCachedConfigContext {
   override def route: NgRoute = NgRoute.empty
 }

@@ -78,6 +78,7 @@ import WasmBackend from './WasmBackend';
 import WasmAccessValidator from './WasmAccessValidator';
 import WasmRequestTransformer from './WasmRequestTransformer';
 import WasmResponseTransformer from './WasmResponseTransformer';
+import WasmRequestHandler from './WasmRequestHandler';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -160,5 +161,6 @@ export const Plugins = [
   WasmBackend,
   WasmAccessValidator,
   WasmRequestTransformer,
-  WasmResponseTransformer,
+  WasmResponseTransformer, 
+  WasmRequestHandler,
 ];

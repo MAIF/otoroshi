@@ -756,14 +756,14 @@ class GraphQLBackend extends NgBackendCall {
             configurationAccess = wasmConfigurationAccess.getOrElse(false)
           ), input, ctx.some)
           .map {
-            case Left(output) =>
+            case Right(output) =>
               try {
                 Json.parse(output)
               } catch {
                 case _: Exception =>
                   output
               }
-            case Right(error) => error
+            case Left(error) => error
           }
     }
   }
