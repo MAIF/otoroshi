@@ -364,8 +364,8 @@ class GraphQLBackend extends NgBackendCall {
   val soapJqRequestFilterArg         = Argument("jq_request_filter", OptionInputType(StringType))
   val soapJqResponseFilterArg        = Argument("jq_response_filter", OptionInputType(StringType))
 
-  val wasmRawSourceArg = Argument("wasm_raw_source", OptionInputType(StringType))
-  val wasmCompilerSourceArg = Argument("wasm_compiler_source", OptionInputType(StringType))
+  val wasmSourceKindArg = Argument("wasm_source_kind", OptionInputType(StringType))
+  val wasmSourcePathArg = Argument("wasm_source_path", OptionInputType(StringType))
   val wasmFunctionNameArg = Argument("wasm_function_name", StringType)
   val wasmMemoryPagesArg = Argument("wasm_memory_pages", OptionInputType(IntType))
   // val wasmConfigArg = Argument("wasm_config", StringType)
@@ -409,8 +409,8 @@ class GraphQLBackend extends NgBackendCall {
     locations = directivesLocations
   )
   val httpRestDirective        = Directive("rest", arguments = arguments, locations = directivesLocations)
-  val wasmDirective            = Directive("wasm", arguments = wasmRawSourceArg ::
-      wasmCompilerSourceArg ::
+  val wasmDirective            = Directive("wasm", arguments = wasmSourceKindArg ::
+      wasmSourcePathArg ::
       wasmFunctionNameArg ::
       wasmMemoryPagesArg ::
       wasmAllowedHostsArg ::
@@ -709,8 +709,8 @@ class GraphQLBackend extends NgBackendCall {
   def wasmDirectiveResolver(c: AstDirectiveContext[Unit], ctx: NgbBackendCallContext)
                            (implicit env: Env, ec: ExecutionContext): Action[Unit, Any] = {
 
-    val wasmRawSource = c.arg(wasmRawSourceArg)
-    val wasmCompilerSource = c.arg(wasmCompilerSourceArg)
+    val wasmSourceKind = c.arg(wasmSourceKindArg)
+    val wasmSourcePath = c.arg(wasmSourcePathArg)
     val wasmFunctionName = c.argOpt(wasmFunctionNameArg)
 
     val wasmMemoryPages = c.arg(wasmMemoryPagesArg)
@@ -729,7 +729,7 @@ class GraphQLBackend extends NgBackendCall {
     val wasmProxyStateAccess = c.argOpt(wasmProxyStateAccessArg)
     val wasmConfigurationAccess = c.argOpt(wasmConfigurationAccessArg)
 
-    if (wasmRawSource.isEmpty && wasmCompilerSource.isEmpty) {
+    if (wasmSourceKind.isEmpty && wasmSourcePath.isEmpty) {
       throw WasmException("Missing sources")
     } else if(wasmFunctionName.isEmpty) {
       throw WasmException("Missing function")
@@ -739,8 +739,7 @@ class GraphQLBackend extends NgBackendCall {
         "request" -> ctx.request.json
       )
       WasmUtils.execute(WasmConfig(
-            compilerSource = wasmCompilerSource,
-            rawSource = wasmRawSource,
+            source = WasmSource(WasmSourceKind(wasmSourceKind.getOrElse("")), wasmSourcePath.getOrElse("")),
             memoryPages = wasmMemoryPages.getOrElse(30),
             functionName = wasmFunctionName.get,
             config = Map.empty,
