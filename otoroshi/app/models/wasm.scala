@@ -13,9 +13,8 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-// TODO: ui for the api
-// TODO: component for source
-// TODO: add component in plugins
+// TODO: kubernetes support
+// TODO: fix at otoroshi.controllers.adminapi.ScriptApiController.$anonfun$findAllScriptsList$8(ScriptApiController.scala:202)
 case class WasmPlugin(
   id: String,
   name: String,

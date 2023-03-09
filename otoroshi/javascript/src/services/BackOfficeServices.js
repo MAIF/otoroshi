@@ -1636,6 +1636,78 @@ export function updateTeam(ak) {
 }
 
 ///////////////////////////////
+// Wasm Plugins
+///////////////////////////////
+
+export function findAllWasmPluginsWithPagination(ps) {
+  return findAllWithPagination('/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins', ps);
+}
+
+export function findAllWasmPlugins() {
+  return fetch('/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}
+
+export function findWasmPluginById(id) {
+  return fetch(`/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}
+
+export function deleteWasmPlugin(ak) {
+  return fetch(`/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins/${ak.id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}
+
+export function createWasmPlugin(ak) {
+  return fetch(`/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then((r) => r.json());
+}
+
+export function createNewWasmPlugin() {
+  return fetch(`/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins/_template`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}
+
+export function updateWasmPlugin(ak) {
+  return fetch(`/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins/${ak.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then((r) => r.json());
+}
+
+///////////////////////////////
 // Tenants
 ///////////////////////////////
 

@@ -1440,6 +1440,9 @@ class Designer extends React.Component {
     const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
     plugins.map((p) => {
       if (p.legacy) {
+        if (!p.plugin_categories) {
+          p.plugin_categories = [];
+        }
         p.plugin_categories.push('Legacy');
       }
     });

@@ -123,6 +123,17 @@ export function DefaultSidebar(props) {
       </li>
       <li className="nav-item mt-2">
         <Link
+          to="/wasm-plugins"
+          className={`nav-link ${rootClassName('wasm-plugins')}`}
+          {...createTooltip('List all wasm plugins declared in Otoroshi')}
+          onClick={clearSidebar}>
+          <h3 className="p-2 m-0" title="WASM PLUGINS">
+            <i className="fas fa-plug" /> WASM PLUGINS
+          </h3>
+        </Link>
+      </li>
+      <li className="nav-item mt-2">
+        <Link
           to="/features"
           className={`nav-link ${rootClassName('features')}`}
           {...createTooltip('All features')}

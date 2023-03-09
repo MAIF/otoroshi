@@ -582,18 +582,19 @@ GET     /api/openapi.json                                     otoroshi.controlle
 GET     /api/openapi/ui                                       otoroshi.controllers.SwaggerController.openapiUi()
 
 # generic apis
-POST    /apis/:group/:version/:entity/_bulk    otoroshi.api.GenericApiController.bulkCreate(group, version, entity)
-PUT     /apis/:group/:version/:entity/_bulk    otoroshi.api.GenericApiController.bulkUpdate(group, version, entity)
-PATCH   /apis/:group/:version/:entity/_bulk    otoroshi.api.GenericApiController.bulkPatch(group, version, entity)
-DELETE  /apis/:group/:version/:entity/_bulk    otoroshi.api.GenericApiController.bulkDelete(group, version, entity)
-GET     /apis/:group/:version/:entity/_count   otoroshi.api.GenericApiController.countAll(group, version, entity)
-GET     /apis/:group/:version/:entity/:id      otoroshi.api.GenericApiController.findOne(group, version, entity, id)
-POST    /apis/:group/:version/:entity/:id      otoroshi.api.GenericApiController.upsert(group, version, entity, id)
-PUT     /apis/:group/:version/:entity/:id      otoroshi.api.GenericApiController.update(group, version, entity, id)
-DELETE  /apis/:group/:version/:entity/:id      otoroshi.api.GenericApiController.delete(group, version, entity, id)
-GET     /apis/:group/:version/:entity          otoroshi.api.GenericApiController.findAll(group, version, entity)
-POST    /apis/:group/:version/:entity          otoroshi.api.GenericApiController.create(group, version, entity)
-DELETE  /apis/:group/:version/:entity          otoroshi.api.GenericApiController.deleteAll(group, version, entity)
+POST    /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkCreate(group, version, entity)
+PUT     /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkUpdate(group, version, entity)
+PATCH   /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkPatch(group, version, entity)
+DELETE  /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkDelete(group, version, entity)
+GET     /apis/:group/:version/:entity/_count                  otoroshi.api.GenericApiController.countAll(group, version, entity)
+GET     /apis/:group/:version/:entity/_template               otoroshi.api.GenericApiController.template(group, version, entity)
+GET     /apis/:group/:version/:entity/:id                     otoroshi.api.GenericApiController.findOne(group, version, entity, id)
+POST    /apis/:group/:version/:entity/:id                     otoroshi.api.GenericApiController.upsert(group, version, entity, id)
+PUT     /apis/:group/:version/:entity/:id                     otoroshi.api.GenericApiController.update(group, version, entity, id)
+DELETE  /apis/:group/:version/:entity/:id                     otoroshi.api.GenericApiController.delete(group, version, entity, id)
+GET     /apis/:group/:version/:entity                         otoroshi.api.GenericApiController.findAll(group, version, entity)
+POST    /apis/:group/:version/:entity                         otoroshi.api.GenericApiController.create(group, version, entity)
+DELETE  /apis/:group/:version/:entity                         otoroshi.api.GenericApiController.deleteAll(group, version, entity)
 
 ########################################################################################################################
 

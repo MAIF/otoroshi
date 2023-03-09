@@ -281,6 +281,7 @@ case class WasmConfig(
     "config"                  -> config,
     "allowedHosts"            -> allowedHosts,
     "wasi"                    -> wasi,
+    "preserve"                 -> preserve,
     "accesses"                -> accesses.json
   )
 }
@@ -316,6 +317,7 @@ object WasmConfig {
         config = (json \ "config").asOpt[Map[String, String]].getOrElse(Map.empty),
         allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty),
         wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false),
+        preserve = (json \ "preserve").asOpt[Boolean].getOrElse(true),
         accesses = (json \ "accesses").asOpt[WasmAccesses](WasmAccesses.format.reads).getOrElse(WasmAccesses()),
       )
     } match {

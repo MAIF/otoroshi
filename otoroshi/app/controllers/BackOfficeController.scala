@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 case class ServiceLike(entity: EntityLocationSupport, groups: Seq[String]) extends EntityLocationSupport {
   def id: String                                = internalId
@@ -1954,14 +1954,14 @@ class BackOfficeController(
       .singleton()
       .flatMap { globalConfig =>
         globalConfig.wasmManagerSettings match {
-          case Some(WasmManagerSettings(url, clientId, clientSecret, pluginsFilter)) =>
+          case Some(WasmManagerSettings(url, clientId, clientSecret, pluginsFilter)) => Try {
             env.Ws
               .url(s"$url/plugins")
               .withFollowRedirects(false)
               .withHttpHeaders(
-                "Otoroshi-Client-Id"     -> clientId,
+                "Otoroshi-Client-Id" -> clientId,
                 "Otoroshi-Client-Secret" -> clientSecret,
-                "kind"                   -> pluginsFilter.getOrElse("*")
+                "kind" -> pluginsFilter.getOrElse("*")
               )
               .get()
               .map(res => {
@@ -1975,6 +1975,10 @@ class BackOfficeController(
                 logger.error(e.getMessage)
                 Ok(Json.arr())
               }
+          } match {
+            case Failure(err) => Ok(Json.arr()).vfuture
+            case Success(v) => v
+          }
           case _                                                                     =>
             BadRequest(
               Json.obj(

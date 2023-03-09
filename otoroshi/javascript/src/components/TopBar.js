@@ -266,6 +266,12 @@ export class TopBar extends Component {
           label: 'Features',
           value: 'features',
         });
+        options.push({
+          action: () => this.routeTo('/wasm-plugins'),
+          env: <span className="fas fa-plug" />,
+          label: 'Wasm Plugins',
+          value: 'wasm-plugins',
+        });
         if (this.props.env.scriptingEnabled === true) {
           options.push({
             action: () => this.routeTo('/plugins'),
@@ -659,6 +665,9 @@ export class TopBar extends Component {
           <Link to="/certificates" className="dropdown-item">
             <span className="fas fa-certificate" /> SSL/TLS Certificates
           </Link>
+          <Link to="/wasm-plugins" className="dropdown-item">
+              <span className="fas fa-plug" /> Wasm plugins
+            </Link>
           {this.props.env.scriptingEnabled === true && (
             <Link to="/plugins" className="dropdown-item">
               <span className="fas fa-book-dead" /> Plugins

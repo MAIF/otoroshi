@@ -37,6 +37,7 @@ import { CertificatesPage } from '../pages/CertificatesPage';
 import { ClusterPage } from '../pages/ClusterPage';
 import { TunnelsPage, TunnelPage } from '../pages/TunnelsPage';
 import { ScriptsPage } from '../pages/ScriptsPage';
+import { WasmPluginsPage } from '../pages/WasmPluginsPage';
 import { ClientValidatorsPage } from '../pages/ClientValidatorsPage';
 import { GroupStatsPage } from '../pages/GroupStatsPage';
 import { ApiKeyStatsPage } from '../pages/ApiKeyStatsPage';
@@ -610,6 +611,18 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/plugins"
                           component={(props) => this.decorate(ScriptsPage, props)}
+                        />
+                        <Route
+                          path="/wasm-plugins/:taction/:titem"
+                          component={(props) => this.decorate(WasmPluginsPage, props)}
+                        />
+                        <Route
+                          path="/wasm-plugins/:taction"
+                          component={(props) => this.decorate(WasmPluginsPage, props)}
+                        />
+                        <Route
+                          path="/wasm-plugins"
+                          component={(props) => this.decorate(WasmPluginsPage, props)}
                         />
                         <Route
                           path="/provider"

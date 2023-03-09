@@ -2,6 +2,7 @@ import React from 'react';
 import { useEffect } from 'react';
 import { useState } from 'react';
 import { LabelAndInput, NgSelectRenderer } from '../../components/nginputs';
+import { WasmSourcePath } from '../../pages/WasmPluginsPage'; 
 
 // don't import this file in the index.js
 // it served as template for the other Wasm plugin
@@ -79,8 +80,7 @@ const schema = {
         },
       },
       path: {
-        label: "Path",
-        type: "string"
+        renderer: (props) => <WasmSourcePath {...props} />
       }
     }
   },
@@ -115,101 +115,128 @@ const schema = {
         'Plugin is compiled targeting WASI (checked if you use Go or JS/TS as plugin language).',
     },
   },
-  httpAccess: {
+  preserve: {
     type: 'box-bool',
-    label: 'HTTP client',
+    label: 'Preserve VMs',
     props: {
       description:
-        'Add function to call http services',
+        'Doesnt stop the wasm vm during a request',
     },
   },
-  globalDataStoreAccess: {
-    read: {
-      label: "Can read global datastore",
-      type: 'box-bool',
-      props: {
-        description:
-          'Add function to read the global datastore',
+  accesses: {
+    label: 'Host functions',
+    type: 'form',
+    collapsable: true,
+    collapsed: false,
+    flow: [
+      'httpAccess',
+      'globalDataStoreAccess.read',
+      'pluginDataStoreAccess.write',
+      'globalMapAccess.read',
+      'globalMapAccess.write',
+      'pluginMapAccess.read',
+      'pluginMapAccess.write',
+      'proxyStateAccess',
+      'configurationAccess',
+    ],
+    schema: {
+      httpAccess: {
+        type: 'box-bool',
+        label: 'HTTP client',
+        props: {
+          description:
+            'Add function to call http services',
+        },
       },
-    },
-    write: {
-      type: 'box-bool',
-      label: 'Can write global datastore',
-      props: {
-        description:
-          'Add function to read and write the global datastore',
+      globalDataStoreAccess: {
+        read: {
+          label: "Can read global datastore",
+          type: 'box-bool',
+          props: {
+            description:
+              'Add function to read the global datastore',
+          },
+        },
+        write: {
+          type: 'box-bool',
+          label: 'Can write global datastore',
+          props: {
+            description:
+              'Add function to read and write the global datastore',
+          },
+        }
       },
+      pluginDataStoreAccess: {
+        read: {
+          label: "Can read plugin datastore",
+          type: 'box-bool',
+          props: {
+            description:
+              'Add function to read the plugin datastore',
+          },
+        },
+        write: {
+          type: 'box-bool',
+          label: 'Can write plugin datastore',
+          props: {
+            description:
+              'Add function to read and write the plugin datastore',
+          },
+        }
+      },
+      globalMapAccess: {
+        read: {
+          label: "Read plugin global map",
+          type: 'box-bool',
+          props: {
+            description:
+              'Add functions to read a map to store stuff in current otoroshi instance memory between invocations',
+          },
+        },
+        write: {
+          type: 'box-bool',
+          label: 'Write plugin global map',
+          props: {
+            description:
+              'Add functions to write a map to store stuff in current otoroshi instance memory between invocations',
+          },
+        }
+      },
+      pluginMapAccess: {
+        read: {
+          label: "Read plugin map",
+          type: 'box-bool',
+          props: {
+            description:
+              'Add functions to read a map to store stuff in current otoroshi instance memory between invocations. Each plugim has its own map.',
+          },
+        },
+        write: {
+          type: 'box-bool',
+          label: 'Write plugin map',
+          props: {
+            description:
+              'Add functions to write a map to store stuff in current otoroshi instance memory between invocations. Each plugim has its own map.',
+          },
+        }
+      },
+      proxyStateAccess: {
+        type: 'box-bool',
+        label: 'Proxy state access',
+        props: {
+          description:
+            'Add function to access proxy state',
+        },
+      },
+      configurationAccess: {
+        type: 'box-bool',
+        label: 'Configuration access',
+        props: {
+          description:
+            'Add function to access some useful configuration about otoroshi instance',
+        },
+      }
     }
-  },
-  pluginDataStoreAccess: {
-    read: {
-      label: "Can read plugin datastore",
-      type: 'box-bool',
-      props: {
-        description:
-          'Add function to read the plugin datastore',
-      },
-    },
-    write: {
-      type: 'box-bool',
-      label: 'Can write plugin datastore',
-      props: {
-        description:
-          'Add function to read and write the plugin datastore',
-      },
-    }
-  },
-  globalMapAccess: {
-    read: {
-      label: "Read plugin global map",
-      type: 'box-bool',
-      props: {
-        description:
-          'Add functions to read a map to store stuff in current otoroshi instance memory between invocations',
-      },
-    },
-    write: {
-      type: 'box-bool',
-      label: 'Write plugin global map',
-      props: {
-        description:
-          'Add functions to write a map to store stuff in current otoroshi instance memory between invocations',
-      },
-    }
-  },
-  pluginMapAccess: {
-    read: {
-      label: "Read plugin map",
-      type: 'box-bool',
-      props: {
-        description:
-          'Add functions to read a map to store stuff in current otoroshi instance memory between invocations. Each plugim has its own map.',
-      },
-    },
-    write: {
-      type: 'box-bool',
-      label: 'Write plugin map',
-      props: {
-        description:
-          'Add functions to write a map to store stuff in current otoroshi instance memory between invocations. Each plugim has its own map.',
-      },
-    }
-  },
-  proxyStateAccess: {
-    type: 'box-bool',
-    label: 'Proxy state access',
-    props: {
-      description:
-        'Add function to access proxy state',
-    },
-  },
-  configurationAccess: {
-    type: 'box-bool',
-    label: 'Configuration access',
-    props: {
-      description:
-        'Add function to access some useful configuration about otoroshi instance',
-    },
   }
 };
 
@@ -221,20 +248,22 @@ export default {
     'source',
     'functionName',
     'wasi',
-    {
-      type: 'group',
-      name: 'Host functions',
-      fields: [
-        'httpAccess',
-        'globalDataStoreAccess.read',
-        'pluginDataStoreAccess.write',
-        'globalMapAccess.read',
-        'globalMapAccess.write',
-        'pluginMapAccess.read',
-        'pluginMapAccess.write',
-        'proxyStateAccess',
-        'configurationAccess'],
-    },
+    'preserve',
+    'accesses',
+    //{
+    //  type: 'group',
+    //  name: 'Host functions',
+    //  fields: [
+    //    'httpAccess',
+    //    'globalDataStoreAccess.read',
+    //    'pluginDataStoreAccess.write',
+    //    'globalMapAccess.read',
+    //    'globalMapAccess.write',
+    //    'pluginMapAccess.read',
+    //    'pluginMapAccess.write',
+    //    'proxyStateAccess',
+    //    'configurationAccess'],
+    //},
     {
       type: 'group',
       name: 'Advanced settings',
