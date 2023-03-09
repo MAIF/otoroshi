@@ -517,7 +517,6 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     entity.select("id").asOpt[String].getOrElse(entity.select("clientId").asString)
 
   private def bodyIn(request: Request[Source[ByteString, _]]): Future[Either[JsValue, JsValue]] = {
-    println("ctype",  request.contentType, request.headers.get("Content-Length"))
     Option(request.body) match {
       case Some(body) if request.contentType.contains("application/yaml") => {
         body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
