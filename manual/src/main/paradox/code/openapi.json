@@ -18211,7 +18211,7 @@
         }
       }
     },
-    "/apis/{group}/{version}/namespaces/{namespace}/{entity}/_bulk" : {
+    "/apis/{group}/{version}/{entity}/_bulk" : {
       "post" : {
         "tags" : [ ":group" ],
         "summary" : "???",
@@ -18232,14 +18232,6 @@
           },
           "required" : true,
           "description" : "the version parameter"
-        }, {
-          "name" : "namespace",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the namespace parameter"
         }, {
           "name" : "entity",
           "in" : "path",
@@ -18329,14 +18321,6 @@
           "required" : true,
           "description" : "the version parameter"
         }, {
-          "name" : "namespace",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the namespace parameter"
-        }, {
           "name" : "entity",
           "in" : "path",
           "schema" : {
@@ -18424,14 +18408,6 @@
           },
           "required" : true,
           "description" : "the version parameter"
-        }, {
-          "name" : "namespace",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the namespace parameter"
         }, {
           "name" : "entity",
           "in" : "path",
@@ -18521,14 +18497,6 @@
           "required" : true,
           "description" : "the version parameter"
         }, {
-          "name" : "namespace",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the namespace parameter"
-        }, {
           "name" : "entity",
           "in" : "path",
           "schema" : {
@@ -18585,7 +18553,7 @@
         }
       }
     },
-    "/apis/{group}/{version}/namespaces/{namespace}/{entity}/_count" : {
+    "/apis/{group}/{version}/{entity}/_count" : {
       "get" : {
         "tags" : [ ":group" ],
         "summary" : "???",
@@ -18607,14 +18575,6 @@
           "required" : true,
           "description" : "the version parameter"
         }, {
-          "name" : "namespace",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the namespace parameter"
-        }, {
           "name" : "entity",
           "in" : "path",
           "schema" : {
@@ -18671,7 +18631,7 @@
         }
       }
     },
-    "/apis/{group}/{version}/namespaces/{namespace}/{entity}/{id}" : {
+    "/apis/{group}/{version}/{entity}/{id}" : {
       "get" : {
         "tags" : [ ":group" ],
         "summary" : "???",
@@ -18692,14 +18652,6 @@
           },
           "required" : true,
           "description" : "the version parameter"
-        }, {
-          "name" : "namespace",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the namespace parameter"
         }, {
           "name" : "entity",
           "in" : "path",
@@ -18784,14 +18736,6 @@
           },
           "required" : true,
           "description" : "the version parameter"
-        }, {
-          "name" : "namespace",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the namespace parameter"
         }, {
           "name" : "entity",
           "in" : "path",
@@ -18889,14 +18833,6 @@
           "required" : true,
           "description" : "the version parameter"
         }, {
-          "name" : "namespace",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the namespace parameter"
-        }, {
           "name" : "entity",
           "in" : "path",
           "schema" : {
@@ -18993,14 +18929,6 @@
           "required" : true,
           "description" : "the version parameter"
         }, {
-          "name" : "namespace",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the namespace parameter"
-        }, {
           "name" : "entity",
           "in" : "path",
           "schema" : {
@@ -19065,7 +18993,7 @@
         }
       }
     },
-    "/apis/{group}/{version}/namespaces/{namespace}/{entity}" : {
+    "/apis/{group}/{version}/{entity}" : {
       "get" : {
         "tags" : [ ":group" ],
         "summary" : "???",
@@ -19086,14 +19014,6 @@
           },
           "required" : true,
           "description" : "the version parameter"
-        }, {
-          "name" : "namespace",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the namespace parameter"
         }, {
           "name" : "entity",
           "in" : "path",
@@ -19170,14 +19090,6 @@
           },
           "required" : true,
           "description" : "the version parameter"
-        }, {
-          "name" : "namespace",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the namespace parameter"
         }, {
           "name" : "entity",
           "in" : "path",
@@ -19266,14 +19178,6 @@
           },
           "required" : true,
           "description" : "the version parameter"
-        }, {
-          "name" : "namespace",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "the namespace parameter"
         }, {
           "name" : "entity",
           "in" : "path",
