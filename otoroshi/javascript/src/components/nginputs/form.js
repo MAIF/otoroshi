@@ -197,9 +197,6 @@ export class NgStep extends Component {
 
   render() {
     const Renderer = this.renderer();
-    if (!Renderer) {
-      console.log(this.props.name, this.props.value, this.props.schema)
-    }
     // const validation = this.validate(this.props.value);
     const validation = this.state.validation;
     const ValidationRenderer = this.props.components.ValidationRenderer;
@@ -787,7 +784,7 @@ export class NgForm extends Component {
   render() {
     if (this.state.err) {
       console.log('an error occured', this.state.err)
-      return null;
+      return <p>error</p>;
     }
     const value = this.getValue();
     const schema =

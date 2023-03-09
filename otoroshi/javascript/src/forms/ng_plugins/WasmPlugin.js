@@ -69,7 +69,7 @@ const schema = {
     type: 'form',
     collapsable: false,
     collapsed: false,
-    flow: ['kind', "path"],
+    flow: (v) => ['kind', "path", v.kind.toLowerCase() === 'http' && "opts"].filter(v => !!v),
     schema: {
       kind: {
         label: "Kind",
@@ -78,6 +78,10 @@ const schema = {
           label: 'Kind',
           options: ['Base64', 'Http', 'WasmManager', 'Local', 'File'].map(v => ({ label: v, value: v.toLowerCase() })),
         },
+      },
+      opts: {
+        label: 'Options',
+        type: 'object',
       },
       path: {
         renderer: (props) => <WasmSourcePath {...props} />
@@ -244,13 +248,13 @@ export default {
   config_schema: {
     ...schema,
   },
-  config_flow: [
+  config_flow: (v) => [
     'source',
     'functionName',
-    'wasi',
-    'preserve',
-    'accesses',
-    {
+    v.source.kind.toLowerCase() !== 'local' && 'wasi',
+    v.source.kind.toLowerCase() !== 'local' && 'preserve',
+    v.source.kind.toLowerCase() !== 'local' && 'accesses',
+    v.source.kind.toLowerCase() !== 'local' && {
       type: 'group',
       name: 'Advanced settings',
       fields: [
@@ -259,5 +263,5 @@ export default {
         'allowedHosts',
       ]
     }
-  ]
+  ].filter(v => !!v)
 };

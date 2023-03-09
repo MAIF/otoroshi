@@ -148,6 +148,7 @@ export class WasmPluginsPage extends Component {
     '<<<Wasm source',
     'config.source.kind',
     'config.source.path',
+    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts',
     '<<<Wasm configuration',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.memoryPages',
     'config.functionName',
@@ -191,6 +192,12 @@ export class WasmPluginsPage extends Component {
       props: {
         label: 'Kind',
         possibleValues: ['Base64', 'Http', 'WasmManager', 'File'].map(v => ({ label: v, value: v }))
+      }
+    },
+    'config.source.opts': {
+      type: 'object',
+      props: {
+        label: 'Options'
       }
     },
     'config.memoryPages': {

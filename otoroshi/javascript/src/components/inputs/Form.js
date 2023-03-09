@@ -10,7 +10,7 @@ import {
   LabelInput,
   DateTimeInput,
 } from '.';
-import { NgBoxBooleanRenderer } from '../nginputs/inputs'; 
+// import { NgBoxBooleanRenderer } from '../nginputs/inputs'; 
 import { Location } from '../Location';
 const CodeInput = React.lazy(() => Promise.resolve(require('./CodeInput')));
 import { JsonObjectAsCodeInput } from './CodeInput'; // TODO: fix
@@ -201,7 +201,7 @@ export class Form extends Component {
               onChange={(v) => this.changeValue(name, v)}
             />
           );
-        } else if (type === 'box-bool') {
+        } /*else if (type === 'box-bool') {
           component = (
             <NgBoxBooleanRenderer
               disabled={disabled}
@@ -211,7 +211,7 @@ export class Form extends Component {
               onChange={(v) => this.changeValue(name, v)}
             />
           );
-        } else if (type === 'select') {
+        }*/ else if (type === 'select') {
           component = (
             <SelectInput
               disabled={disabled}
