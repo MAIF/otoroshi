@@ -1,16 +1,22 @@
 import React, { Component } from 'react';
 import { Table, BooleanInput, SelectInput } from '../components/inputs';
+import { NgBoxBooleanRenderer } from '../components/nginputs/inputs'; 
+import WasmPlugin from '../forms/ng_plugins/WasmPlugin'
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
 
 class WasmDataRights extends Component {
   render() {
+    const Input = true ? NgBoxBooleanRenderer : BooleanInput;
+    const schema = WasmPlugin.config_schema.accesses.schema
     return (
       <div className="row mb-3">
         <label className="col-xs-12 col-sm-2 col-form-label">{this.props.label}</label>
         <div className="col-sm-10">
-          <BooleanInput label="read" value={this.props.value.read} onChange={v => this.props.onChange({ ...this.props.value, read: v })} />
-          <BooleanInput label="write" value={this.props.value.write} onChange={v => this.props.onChange({ ...this.props.value, write: v })} />
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+            <Input label="Read" description={schema[this.props.property].read.label} value={this.props.value.read} onChange={v => this.props.onChange({ ...this.props.value, read: v })} />
+            <Input label="Write" description={schema[this.props.property].write.label} value={this.props.value.write} onChange={v => this.props.onChange({ ...this.props.value, write: v })} />
+          </div>
         </div>
       </div>
     );
@@ -253,25 +259,29 @@ export class WasmPluginsPage extends Component {
     'config.accesses.globalDataStoreAccess': { 
       type: WasmDataRights,
       props: {
-        label: 'Datastore access'
+        label: 'Datastore access',
+        property: 'globalDataStoreAccess',
       }
     },
     'config.accesses.pluginDataStoreAccess': { 
       type: WasmDataRights,
       props: {
-        label: 'Plugin scoped datastore access'
+        label: 'Plugin scoped datastore access',
+        property: 'pluginDataStoreAccess',
       }
     },
     'config.accesses.globalMapAccess': { 
       type: WasmDataRights,
       props: {
-        label: 'Global map access'
+        label: 'Global map access',
+        property: 'globalMapAccess',
       }
     },
     'config.accesses.pluginMapAccess': { 
       type: WasmDataRights,
       props: {
-        label: 'Plugin scoped map access'
+        label: 'Plugin scoped map access',
+        property: 'pluginMapAccess',
       }
     },
     metadata: {
