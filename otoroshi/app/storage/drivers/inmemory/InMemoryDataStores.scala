@@ -156,6 +156,9 @@ class InMemoryDataStores(
   private lazy val _backendsDataStore                      = new KvStoredNgBackendDataStore(redis, env)
   override def backendsDataStore: StoredNgBackendDataStore = _backendsDataStore
 
+  private lazy val _wasmPluginDataStore = new KvWasmPluginDataStore(redis, env)
+  override def wasmPluginsDataStore: WasmPluginDataStore = _wasmPluginDataStore
+
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
   override def serviceGroupDataStore: ServiceGroupDataStore                     = _serviceGroupDataStore

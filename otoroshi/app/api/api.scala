@@ -441,6 +441,18 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         env.datastores.scriptDataStore.extractId
       )
     ),
+    Resource(
+      "WasmPlugin",
+      "wasm-plugins",
+      "wasm-plugins",
+      "plugins.otoroshi.io",
+      ResourceVersion("v1", served = true, deprecated = true, storage = true),
+      GenericResourceAccessApi[WasmPlugin](
+        WasmPlugin.format,
+        env.datastores.wasmPluginsDataStore.key,
+        env.datastores.wasmPluginsDataStore.extractId
+      )
+    ),
     //////
     Resource(
       "GlobalConfig",

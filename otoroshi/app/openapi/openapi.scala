@@ -821,7 +821,7 @@ class OpenApiGenerator(
           val parts = line.split(" ").toSeq.map(_.trim).filterNot(_.isEmpty).toList
           parts match {
             case verb :: path :: rest
-                if path.startsWith("/api") && !path.startsWith("/api/client-validators") && !path.startsWith(
+                if path.startsWith("/api/") && !path.startsWith("/api/client-validators") && !path.startsWith(
                   "/api/swagger"
                 ) && !path.startsWith("/api/openapi") && !path.startsWith("/api/services/:serviceId/apikeys") && !path
                   .startsWith("/api/groups/:groupId/apikeys") => {
