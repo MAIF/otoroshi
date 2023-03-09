@@ -741,7 +741,7 @@ class GraphQLBackend extends NgBackendCall {
       WasmUtils.execute(WasmConfig(
             source = WasmSource(WasmSourceKind(wasmSourceKind.getOrElse("")), wasmSourcePath.getOrElse("")),
             memoryPages = wasmMemoryPages.getOrElse(30),
-            functionName = wasmFunctionName.get,
+            functionName = wasmFunctionName,
             config = Map.empty,
             allowedHosts = wasmAllowedHosts.getOrElse(Seq.empty),
             wasi = wasmWasi,
@@ -753,7 +753,7 @@ class GraphQLBackend extends NgBackendCall {
             pluginMapAccess = WasmDataRights(read = wasmPluginMapAccessRead.getOrElse(false), write = wasmPluginMapAccessWrite.getOrElse(false)),
             proxyStateAccess = wasmProxyStateAccess.getOrElse(false),
             configurationAccess = wasmConfigurationAccess.getOrElse(false)
-          ), input, ctx.some, ctx.attrs.some)
+          ), "execute", input, ctx.some, ctx.attrs.some)
           .map {
             case Right(output) =>
               try {

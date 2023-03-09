@@ -34,6 +34,10 @@ import scala.util.{Failure, Success, Try}
 
 object implicits {
 
+  // type Result[Success, Failure] = Either[Failure, Success]
+  // type Ok[Success, Failure] = Right[Failure, Success]
+  // type Err[Success, Failure] = Left[Failure, Success]
+
   implicit class BetterSeq(val seq: Seq[(String, String)]) extends AnyVal {
     @inline
     def appendOpt[A](opt: Option[A], f: A => (String, String)): Seq[(String, String)] = {
