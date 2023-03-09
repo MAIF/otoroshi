@@ -11,7 +11,7 @@ class PluginManager extends React.Component {
     const { plugins, onNewPlugin, selectedPlugin, ...props } = this.props;
 
     return (
-      <div className='d-flex flex-column' style={{ minWidth: 250 }}>
+      <div className='d-flex flex-column' style={{ minWidth: 250, flex: selectedPlugin ? 0 : 1 }}>
         <Header onNewPlugin={onNewPlugin} reloadPlugins={props.reloadPlugins} />
         {selectedPlugin && <div className='d-flex justify-content-between align-items-center sidebar-header'
           style={{
@@ -22,13 +22,15 @@ class PluginManager extends React.Component {
             <span className='fw-bold'>Change current plugin</span>
           </div>
         </div>}
-        {!selectedPlugin && plugins.map(plugin => {
-          return <Plugin
-            key={plugin.pluginId || 'new'}
-            {...plugin}
-            {...props}
-          />
-        })}
+        <div className='d-flex flex-column scroll-container'>
+          {!selectedPlugin && plugins.map(plugin => {
+            return <Plugin
+              key={plugin.pluginId || 'new'}
+              {...plugin}
+              {...props}
+            />
+          })}
+        </div>
       </div>
     );
   }

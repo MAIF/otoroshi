@@ -5,6 +5,7 @@ import PluginManager from './PluginManager'
 import Terminal from './Terminal';
 import { Run } from './Run';
 import { PublishView } from './PublishView';
+import { TabsHeader } from './TabsHeader';
 
 function TabsManager({ plugins, ...props }) {
   const [tabs, setTabs] = useState([])
@@ -20,6 +21,13 @@ function TabsManager({ plugins, ...props }) {
       setTabs(tabs.filter(t => t === 'Runner' || t === 'Publish'))
     }
   }, [props.selectedPlugin])
+
+  const setTab = (tab) => {
+    if (!tabs.includes(tab)) {
+      setTabs([...tabs, tab]);
+    }
+    setCurrentTab(tab);
+  }
 
   return <div className='d-flex' style={{ flex: 1 }}
     onMouseLeave={e => {
@@ -79,25 +87,15 @@ function TabsManager({ plugins, ...props }) {
 
     <div style={{ flex: 1, height: '100vh', position: 'relative' }} className="d-flex flex-column">
       <div className='d-flex flex-column' style={{ flex: 1 - sizeTerminal, overflow: 'scroll' }}>
-        <Header
-          selectedPluginType={props.selectedPlugin?.type}
-          onSave={props.onSave}
-          onBuild={props.onBuild}
-          showActions={!!props.selectedPlugin}
-          onDocs={props.onDocs}
+        <TabsHeader
+          {...props}
           showPlaySettings={() => {
-            if (!tabs.includes('Runner')) {
-              setTabs([...tabs, 'Runner'])
-            }
-            setCurrentTab('Runner')
-            props.showPlaySettings()
+            setTab('Runner');
+            props.showPlaySettings();
           }}
           showPublishSettings={() => {
-            if (!tabs.includes('Publish')) {
-              setTabs([...tabs, 'Publish'])
-            }
-            setCurrentTab('Publish')
-            props.showPublishSettings()
+            setTab('Publish');
+            props.showPublishSettings();
           }}>
           <Tabs
             tabs={tabs}
@@ -106,7 +104,7 @@ function TabsManager({ plugins, ...props }) {
             setCurrentTab={setCurrentTab}
             setTabs={setTabs}
             currentTab={currentTab} />
-        </Header>
+        </TabsHeader>
         {props.editorState === 'docs' && <DocsPreview onClose={props.onEditorStateReset} />}
         {currentTab === 'Runner' &&
           <Run
@@ -120,12 +118,7 @@ function TabsManager({ plugins, ...props }) {
             selectedPlugin={props.selectedPlugin}
             createManifest={props.createManifest}
             createReadme={props.createReadme}
-            openTab={name => {
-              if (!tabs.includes(name)) {
-                setTabs([...tabs, name])
-              }
-              setCurrentTab(name)
-            }}
+            openTab={setTab}
             publish={props.publish}
           />}
         {props.selectedPlugin ? <Contents
@@ -215,63 +208,6 @@ function TabButton({ filename, onClick, selected, closeTab }) {
   </button>
 }
 
-function Header({
-  children, onSave, onBuild, showActions,
-  onDocs, showPlaySettings, showPublishSettings, selectedPluginType }) {
-
-  return <div className='d-flex align-items-center justify-content-between bg-light'
-    style={{ position: 'fixed', height: 42, zIndex: 10, width: 'calc(100vw - 250px)' }}>
-    {children}
-
-    <div className='d-flex align-items-center'>
-      {showActions && <>
-        <Save onSave={onSave} />
-        <Build onBuild={onBuild} />
-        {selectedPluginType !== 'go' && <Publish showPublishSettings={showPublishSettings} />}
-      </>}
-      <Play showPlaySettings={showPlaySettings} />
-      <Docs onDocs={onDocs} />
-    </div>
-  </div>
-}
-
-function Save({ onSave }) {
-  return <button type="button"
-    style={{ border: 'none', background: 'none' }}
-    className="pe-2"
-    onClick={onSave}>
-    <i className='fas fa-save' />
-  </button>
-}
-
-function Build({ onBuild }) {
-  return <button type="button"
-    style={{ border: 'none', background: 'none' }}
-    className="pe-2"
-    onClick={onBuild}>
-    <i className='fas fa-hammer' />
-  </button>
-}
-
-function Publish({ showPublishSettings }) {
-  return <button type="button"
-    style={{ border: 'none', background: 'none' }}
-    className="pe-2"
-    onClick={showPublishSettings}>
-    <i className='fas fa-upload' />
-  </button>
-}
-
-function Docs({ onDocs }) {
-  return <button type="button"
-    style={{ border: 'none', background: 'none' }}
-    className="pe-3"
-    onClick={onDocs}
-  >
-    <i className='fas fa-book' />
-  </button>
-}
-
 function DocsPreview({ onClose }) {
   return <div style={{
     position: 'absolute',
@@ -302,16 +238,6 @@ function DocsPreview({ onClose }) {
       }}></iframe>
     </div>
   </div>
-}
-
-function Play({ showPlaySettings }) {
-  return <button type="button"
-    style={{ border: 'none', background: 'none' }}
-    className="pe-2"
-    onClick={showPlaySettings}
-  >
-    <i className='fas fa-play' />
-  </button>
 }
 
 export default TabsManager

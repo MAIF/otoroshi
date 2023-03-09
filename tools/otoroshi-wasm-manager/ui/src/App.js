@@ -341,11 +341,10 @@ class App extends React.Component {
               return this.downloadPluginTemplate(res, plugin)
                 .then(() => {
                   Service.getPluginConfig(newSelectedPlugin)
-                    .then(async configFiles => {
+                    .then(configFiles => Promise.all(configFiles.flatMap(this.unzip)))
+                    .then(configFiles => {
                       this.setState({
-                        configFiles: (await Promise.all(configFiles.flatMap(this.unzip)))
-                          .filter(f => f)
-                          .flat()
+                        configFiles: configFiles.filter(f => f).flat()
                       })
                     });
                 });

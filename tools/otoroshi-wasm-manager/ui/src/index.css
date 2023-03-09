@@ -45,3 +45,16 @@ h1 {
   color: #000;
   margin: 6px;
 }
+
+.scroll-container {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+
+  overflow-y: scroll;
+  flex: 1 1 auto;
+  height: 0px;
+}
+
+.scroll-container::-webkit-scrollbar {
+  display: none;
+}

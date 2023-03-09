@@ -56,17 +56,20 @@ function FileManager({
   files, onNewFile, onFileClick, onFileChange, selectedPlugin,
   configFiles, currentTab, removeFile }) {
   return (
-    <div className='d-flex flex-column' style={{ minWidth: 250, background: '#eee' }}>
+    <div className='d-flex flex-column' style={{ minWidth: 250, background: '#eee', flex: 1 }}>
       <Header onNewFile={onNewFile} selectedPlugin={selectedPlugin} readOnly={selectedPlugin.type === "github"} />
-      {[...files, ...configFiles].map((file, i) => {
-        return <File {...file}
-          key={`${file.filename}-${i}`}
-          readOnly={selectedPlugin.type === "github"}
-          currentTab={currentTab}
-          removeFile={removeFile}
-          onClick={() => onFileClick(file)}
-          setFilename={newFilename => onFileChange(i, newFilename)} />
-      })}
+
+      <div className='d-flex flex-column scroll-container'>
+        {[...files, ...configFiles].map((file, i) => {
+          return <File {...file}
+            key={`${file.filename}-${i}`}
+            readOnly={selectedPlugin.type === "github"}
+            currentTab={currentTab}
+            removeFile={removeFile}
+            onClick={() => onFileClick(file)}
+            setFilename={newFilename => onFileChange(i, newFilename)} />
+        })}
+      </div>
     </div>
   );
 }

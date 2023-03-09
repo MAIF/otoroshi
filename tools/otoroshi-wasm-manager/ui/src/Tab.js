@@ -13,6 +13,23 @@ function Tab({ content, ext, handleContent, selected, readOnly }) {
   if (!content || !selected)
     return null
 
+  const EXTENSIONS = {
+    go: () => StreamLanguage.define(go),
+    md: () => markdown(),
+    rs: () => rust(),
+    js: () => javascript({ typescript: false }),
+    ts: () => javascript({ typescript: true }),
+  }
+
+  const getLanguageExtension = () => {
+    const extension = EXTENSIONS[ext];
+    if (extension) {
+      return extension();
+    } else {
+      return json()
+    }
+  }
+
   const renderCodeMirror = () => {
     return <CodeMirror
       onKeyDown={e => {
@@ -26,12 +43,7 @@ function Tab({ content, ext, handleContent, selected, readOnly }) {
       readOnly={readOnly}
       maxWidth='calc(100vw - 250px)'
       value={content}
-      extensions={[
-        ext === 'go' ? StreamLanguage.define(go) :
-          ext === 'md' ? markdown() :
-            ext === 'rs' ? rust() : (ext === 'ts' || ext === 'js') ? javascript({ typescript: true }) : json(),
-        autocompletion()
-      ]}
+      extensions={[getLanguageExtension(), autocompletion()]}
       onChange={value => {
         handleContent(value)
       }}
