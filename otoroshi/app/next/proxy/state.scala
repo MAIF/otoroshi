@@ -52,6 +52,7 @@ class NgProxyState(env: Env) {
   private val privateAppsSessions = new LegitTrieMap[String, PrivateAppsUser]()
   private val tcpServices         = new LegitTrieMap[String, TcpService]()
   private val scripts             = new LegitTrieMap[String, Script]()
+  private val wasmPlugins         = new LegitTrieMap[String, WasmPlugin]()
   private val tryItEnabledReports = Scaffeine()
     .expireAfterWrite(5.minutes)
     .maximumSize(100)
@@ -103,6 +104,7 @@ class NgProxyState(env: Env) {
     case None        => domainPathTreeRef.get().findWildcard(domain).map(_.routes)
   }
 
+  def wasmPlugins(id: String): Option[WasmPlugin]                   = wasmPlugins.get(id)
   def script(id: String): Option[Script]                            = scripts.get(id)
   def backend(id: String): Option[NgBackend]                        = backends.get(id)
   def errorTemplate(id: String): Option[ErrorTemplate]              = errorTemplates.get(id)
@@ -124,6 +126,7 @@ class NgProxyState(env: Env) {
   def tcpService(id: String): Option[TcpService]                    = tcpServices.get(id)
   def rawRoute(id: String): Option[NgRoute]                         = raw_routes.get(id)
 
+  def allWasmPlugins(): Seq[WasmPlugin]               = wasmPlugins.values.toSeq
   def allScripts(): Seq[Script]                       = scripts.values.toSeq
   def allRawRoutes(): Seq[NgRoute]                    = raw_routes.values.toSeq
   def allRoutes(): Seq[NgRoute]                       = routes.values.toSeq
@@ -173,6 +176,10 @@ class NgProxyState(env: Env) {
 
   def updateTeams(values: Seq[Team]): Unit = {
     teams.addAll(values.map(v => (v.id.value, v))).remAll(teams.keySet.toSeq.diff(values.map(_.id.value)))
+  }
+
+  def updateWasmPlugins(values: Seq[WasmPlugin]): Unit = {
+    wasmPlugins.addAll(values.map(v => (v.id, v))).remAll(wasmPlugins.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateTenants(values: Seq[Tenant]): Unit = {
@@ -551,6 +558,7 @@ class NgProxyState(env: Env) {
       privateAppsSessions <- env.datastores.privateAppsUserDataStore.findAll() // no need for secrets
       tcpServices         <- env.datastores.tcpServiceDataStore.findAllAndFillSecrets() // secrets OK
       scripts             <- env.datastores.scriptDataStore.findAll() // no need for secrets
+      wasmPlugins         <- env.datastores.wasmPluginsDataStore.findAllAndFillSecrets()
       croutes             <- if (dev) {
                                NgRouteComposition
                                  .fromOpenApi(
@@ -604,6 +612,7 @@ class NgProxyState(env: Env) {
       env.proxyState.updatePrivateAppsSessions(privateAppsSessions)
       env.proxyState.updateTcpServices(tcpServices)
       env.proxyState.updateScripts(scripts)
+      env.proxyState.updateWasmPlugins(wasmPlugins)
       env.proxyState.updateNgBackends(backends)
       env.proxyState.updateNgSRouteCompositions(routescomp)
       DynamicSSLEngineProvider.setCertificates(env)

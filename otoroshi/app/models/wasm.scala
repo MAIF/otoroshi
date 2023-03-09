@@ -1,17 +1,26 @@
 package otoroshi.models
 
-import diffson.DiffOps
 import otoroshi.env.Env
-import otoroshi.script.PluginType
+import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
+import otoroshi.next.plugins.{CachedWasmScript, WasmConfig, WasmUtils}
+import otoroshi.script._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.syntax.implicits.BetterJsReadable
-import play.api.libs.json.{Format, JsResult, JsValue}
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
+import play.api.libs.json._
 
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+
+// TODO: ui for the api
+// TODO: component for source
+// TODO: add component in plugins
 case class WasmPlugin(
   id: String,
   name: String,
   description: String,
+  config: WasmConfig,
   tags: Seq[String] = Seq.empty,
   metadata: Map[String, String] = Map.empty,
   location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
@@ -26,8 +35,28 @@ case class WasmPlugin(
 
 object WasmPlugin {
   val format = new Format[WasmPlugin] {
-    override def writes(o: WasmPlugin): JsValue = ???
-    override def reads(json: JsValue): JsResult[WasmPlugin] = ???
+    override def writes(o: WasmPlugin): JsValue = o.location.jsonWithKey ++ Json.obj(
+      "id" -> o.id,
+      "name" -> o.name,
+      "description" -> o.description,
+      "config" -> o.config.json,
+      "metadata" -> o.metadata,
+      "tags" -> JsArray(o.tags.map(JsString.apply))
+    )
+    override def reads(json: JsValue): JsResult[WasmPlugin] = Try {
+      WasmPlugin(
+        location = otoroshi.models.EntityLocation.readFromKey(json),
+        id = (json \ "id").as[String],
+        name = (json \ "name").as[String],
+        description = (json \ "description").as[String],
+        config = (json \ "config").asOpt(WasmConfig.format).getOrElse(WasmConfig()),
+        metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+      )
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
   }
 }
 
@@ -38,7 +67,8 @@ trait WasmPluginDataStore extends BasicStore[WasmPlugin] {
       name = "New wasm plugin",
       description = "New wasm plugin",
       tags = Seq.empty,
-      metadata = Map.empty
+      metadata = Map.empty,
+      config = WasmConfig()
     )
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
@@ -60,8 +90,35 @@ class KvWasmPluginDataStore(redisCli: RedisLike, _env: Env) extends WasmPluginDa
   override def extractId(value: WasmPlugin): String    = value.id
 }
 
-// TODO: refactor access model
-// TODO: fill model
-// TODO: support in plugins
-// TODO: job for caching
 
+class WasmPluginsCacheManager extends Job {
+
+  override def core: Boolean = true
+  override def name: String = "Wasm Plugins cache manager"
+  override def description: Option[String] = "this job try to cache plugins before they expire".some
+  override def defaultConfig: Option[JsObject] = None
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def steps: Seq[NgStep] = Seq(NgStep.Job)
+  override def jobVisibility: JobVisibility = JobVisibility.Internal
+  override def starting: JobStarting = JobStarting.Automatically
+  override def uniqueId: JobId = JobId(s"io.otoroshi.jobs.wasm.WasmPluginsCacheManager")
+  override def kind: JobKind = JobKind.ScheduledEvery
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 20.seconds.some
+  override def cronExpression(ctx: JobContext, env: Env): Option[String] = None
+
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    env.proxyState.allWasmPlugins().foreach { plugin =>
+      val now = System.currentTimeMillis()
+      WasmUtils.scriptCache(env).getIfPresent(plugin.config.source.cacheKey) match {
+        case None => plugin.config.source.getWasm(plugin.config.rawSource)
+        case Some(CachedWasmScript(_, createAt)) if (createAt + env.wasmCacheTtl) < now => plugin.config.source.getWasm(plugin.config.rawSource)
+        case Some(CachedWasmScript(_, createAt)) if (createAt + env.wasmCacheTtl) > now && (createAt + env.wasmCacheTtl + 1000) < now => plugin.config.source.getWasm(plugin.config.rawSource)
+        case _ => ()
+      }
+    }
+    funit
+  }
+}

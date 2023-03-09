@@ -745,14 +745,16 @@ class GraphQLBackend extends NgBackendCall {
             config = Map.empty,
             allowedHosts = wasmAllowedHosts.getOrElse(Seq.empty),
             wasi = wasmWasi,
-            proxyHttpCallTimeout = wasmProxyHttpCallTimeout.getOrElse(5000),
-            httpAccess = wasmHttpAccess.getOrElse(false),
-            globalDataStoreAccess = WasmDataRights(read = wasmGlobalDataStoreAccessRead.getOrElse(false), write = wasmGlobalDataStoreAccessWrite.getOrElse(false)),
-            pluginDataStoreAccess = WasmDataRights(read = wasmPluginDataStoreAccessRead.getOrElse(false), write = wasmPluginDataStoreAccessWrite.getOrElse(false)),
-            globalMapAccess = WasmDataRights(read = wasmGlobalMapAccessRead.getOrElse(false), write = wasmGlobalMapAccessWrite.getOrElse(false)),
-            pluginMapAccess = WasmDataRights(read = wasmPluginMapAccessRead.getOrElse(false), write = wasmPluginMapAccessWrite.getOrElse(false)),
-            proxyStateAccess = wasmProxyStateAccess.getOrElse(false),
-            configurationAccess = wasmConfigurationAccess.getOrElse(false)
+            accesses = WasmAccesses(
+              proxyHttpCallTimeout = wasmProxyHttpCallTimeout.getOrElse(5000),
+              httpAccess = wasmHttpAccess.getOrElse(false),
+              globalDataStoreAccess = WasmDataRights(read = wasmGlobalDataStoreAccessRead.getOrElse(false), write = wasmGlobalDataStoreAccessWrite.getOrElse(false)),
+              pluginDataStoreAccess = WasmDataRights(read = wasmPluginDataStoreAccessRead.getOrElse(false), write = wasmPluginDataStoreAccessWrite.getOrElse(false)),
+              globalMapAccess = WasmDataRights(read = wasmGlobalMapAccessRead.getOrElse(false), write = wasmGlobalMapAccessWrite.getOrElse(false)),
+              pluginMapAccess = WasmDataRights(read = wasmPluginMapAccessRead.getOrElse(false), write = wasmPluginMapAccessWrite.getOrElse(false)),
+              proxyStateAccess = wasmProxyStateAccess.getOrElse(false),
+              configurationAccess = wasmConfigurationAccess.getOrElse(false)
+            )
           ), "execute", input, ctx.some, ctx.attrs.some)
           .map {
             case Right(output) =>

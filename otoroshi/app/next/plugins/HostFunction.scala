@@ -167,7 +167,7 @@ object Http {
                   "body" -> body
                 )
               }
-            }, Duration(hostData.config.proxyHttpCallTimeout, TimeUnit.MILLISECONDS))
+            }, Duration(hostData.config.accesses.proxyHttpCallTimeout, TimeUnit.MILLISECONDS))
 
           plugin.returnString(returns(0), Json.stringify(out))
         })
@@ -777,17 +777,17 @@ object HostFunctions {
       }
 
       val rights =  Map(
-        "globalDataStoreAccessRead" -> config.globalDataStoreAccess.read,
-        "globalDataStoreAccessWrite" -> config.globalDataStoreAccess.write,
-        "pluginDataStoreAccessRead" -> config.pluginDataStoreAccess.read,
-        "pluginDataStoreAccessWrite" -> config.pluginDataStoreAccess.write,
-        "globalMapAccessRead" -> config.globalMapAccess.read,
-        "globalMapAccessWrite" -> config.globalMapAccess.write,
-        "pluginMapAccessRead" -> config.pluginMapAccess.read,
-        "pluginMapAccessWrite" -> config.pluginMapAccess.write,
-        "proxyStateAccess" -> config.proxyStateAccess,
-        "configurationAccess" -> config.configurationAccess,
-        "httpAccess" -> config.httpAccess,
+        "globalDataStoreAccessRead" -> config.accesses.globalDataStoreAccess.read,
+        "globalDataStoreAccessWrite" -> config.accesses.globalDataStoreAccess.write,
+        "pluginDataStoreAccessRead" -> config.accesses.pluginDataStoreAccess.read,
+        "pluginDataStoreAccessWrite" -> config.accesses.pluginDataStoreAccess.write,
+        "globalMapAccessRead" -> config.accesses.globalMapAccess.read,
+        "globalMapAccessWrite" -> config.accesses.globalMapAccess.write,
+        "pluginMapAccessRead" -> config.accesses.pluginMapAccess.read,
+        "pluginMapAccessWrite" -> config.accesses.pluginMapAccess.write,
+        "proxyStateAccess" -> config.accesses.proxyStateAccess,
+        "configurationAccess" -> config.accesses.configurationAccess,
+        "httpAccess" -> config.accesses.httpAccess,
         "proxyLog" -> true,
         "proxyLogWithEvent" -> true
       )
