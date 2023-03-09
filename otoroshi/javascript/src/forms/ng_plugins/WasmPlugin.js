@@ -65,12 +65,12 @@ const schema = {
     label: 'Raw source',
   },
   source: {
-    // label: 'Source',
-    // type: 'form',
-    // collapsable: false,
-    // collapsed: false,
-    // flow: ['kind', "path"],
-    //schema: {
+    label: 'Source',
+    type: 'form',
+    collapsable: false,
+    collapsed: false,
+    flow: ['kind', "path"],
+    schema: {
       kind: {
         label: "Kind",
         type: 'select',
@@ -82,7 +82,7 @@ const schema = {
       path: {
         renderer: (props) => <WasmSourcePath {...props} />
       }
-    //}
+    }
   },
   memoryPages: {
     type: 'number',
@@ -245,8 +245,7 @@ export default {
     ...schema,
   },
   config_flow: [
-    'source.kind',
-    'source.path',
+    'source',
     'functionName',
     'wasi',
     'preserve',

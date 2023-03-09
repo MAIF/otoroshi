@@ -198,7 +198,6 @@ export class NgStep extends Component {
   render() {
     const Renderer = this.renderer();
     if (!Renderer) {
-      debugger
       console.log(this.props.name, this.props.value, this.props.schema)
     }
     // const validation = this.validate(this.props.value);
@@ -337,6 +336,10 @@ export class NgForm extends Component {
     },
   };
   tasks = [];
+
+  componentDidCatch(error, errorInfo) {
+    this.setState({ err: { error, errorInfo }});
+  }
 
   componentDidMount() {
     const value = this.getValue();
@@ -782,6 +785,10 @@ export class NgForm extends Component {
   }
 
   render() {
+    if (this.state.err) {
+      console.log('an error occured', this.state.err)
+      return null;
+    }
     const value = this.getValue();
     const schema =
       (isFunction(this.props.schema) ? this.props.schema(value) : this.props.schema) || {};
