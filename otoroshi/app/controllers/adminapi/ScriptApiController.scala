@@ -4,22 +4,13 @@ import otoroshi.actions.ApiAction
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.RightsChecker.Anyone
+import otoroshi.next.plugins.WasmJob
 import otoroshi.script._
-import otoroshi.utils.controllers.{
-  ApiError,
-  BulkControllerHelper,
-  CrudControllerHelper,
-  EntityAndContext,
-  JsonApiError,
-  NoEntityAndContext,
-  OptionalEntityAndContext,
-  SeqEntityAndContext
-}
+import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
-
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -199,7 +190,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
           cpListenerNames.map(extractInfos) ++
           cpExporterNames.map(extractInfos) ++
           reqHandlers.map(extractInfos) ++
-          cpJobNames.map(extractInfosFromJob).filter {
+          cpJobNames.filter(_ != classOf[WasmJob].getName).map(extractInfosFromJob).filter {
             case JsNull => false
             case _      => true
           }

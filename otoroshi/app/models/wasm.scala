@@ -13,8 +13,6 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-// TODO: kubernetes support
-// TODO: fix at otoroshi.controllers.adminapi.ScriptApiController.$anonfun$findAllScriptsList$8(ScriptApiController.scala:202)
 case class WasmPlugin(
   id: String,
   name: String,
@@ -24,6 +22,7 @@ case class WasmPlugin(
   metadata: Map[String, String] = Map.empty,
   location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
+  def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.wasmPluginsDataStore.set(this)
   override def internalId: String = id
   override def json: JsValue = WasmPlugin.format.writes(this)
   override def theName: String = name

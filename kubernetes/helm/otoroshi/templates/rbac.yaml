@@ -101,6 +101,7 @@ rules:
       - jwt-verifiers
       - auth-modules
       - scripts
+      - wasm-plugins
       - tcp-services
       - admins
       - organizations
