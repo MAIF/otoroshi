@@ -99,7 +99,9 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
         "entity"   -> "otoroshi.next.models.NgService"
       ),
     "Backend"           -> Json
-      .obj("plural" -> "backends", "singular" -> "backend", "entity" -> "otoroshi.next.models.NgBackend")
+      .obj("plural" -> "backends", "singular" -> "backend", "entity" -> "otoroshi.next.models.NgBackend"),
+    "WasmPlugin" -> Json
+      .obj("plural" -> "wasm-plugins", "singular" -> "wasm-plugin", "entity" -> "otoroshi.models.WasmPlugin"),
   )
 
   def run(): Unit = {
