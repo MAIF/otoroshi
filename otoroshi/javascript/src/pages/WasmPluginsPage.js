@@ -197,7 +197,7 @@ export class WasmPluginsPage extends Component {
     'config.functionName': { 
       type: 'string',
       props: {
-        label: 'function name',
+        label: 'Function name',
         placeholder: 'transform_request'
       }
     },
