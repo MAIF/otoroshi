@@ -65,24 +65,24 @@ const schema = {
     label: 'Raw source',
   },
   source: {
-    label: 'Source',
-    type: 'form',
-    collapsable: false,
-    collapsed: false,
-    flow: ['kind', "path"],
-    schema: {
+    // label: 'Source',
+    // type: 'form',
+    // collapsable: false,
+    // collapsed: false,
+    // flow: ['kind', "path"],
+    //schema: {
       kind: {
         label: "Kind",
         type: 'select',
         props: {
           label: 'Kind',
-          options: ['Base64', 'Http', 'WasmManager', 'Local', 'File'].map(v => ({ label: v, value: v.toLowerCase()})),
+          options: ['Base64', 'Http', 'WasmManager', 'Local', 'File'].map(v => ({ label: v, value: v.toLowerCase() })),
         },
       },
       path: {
         renderer: (props) => <WasmSourcePath {...props} />
       }
-    }
+    //}
   },
   memoryPages: {
     type: 'number',
@@ -245,25 +245,12 @@ export default {
     ...schema,
   },
   config_flow: [
-    'source',
+    'source.kind',
+    'source.path',
     'functionName',
     'wasi',
     'preserve',
     'accesses',
-    //{
-    //  type: 'group',
-    //  name: 'Host functions',
-    //  fields: [
-    //    'httpAccess',
-    //    'globalDataStoreAccess.read',
-    //    'pluginDataStoreAccess.write',
-    //    'globalMapAccess.read',
-    //    'globalMapAccess.write',
-    //    'pluginMapAccess.read',
-    //    'pluginMapAccess.write',
-    //    'proxyStateAccess',
-    //    'configurationAccess'],
-    //},
     {
       type: 'group',
       name: 'Advanced settings',

@@ -152,7 +152,7 @@ object WasmSourceKind {
     override def getWasm(path: String, rawSource: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
       env.proxyState.wasmPlugins(path) match {
         case None => Left(Json.obj("error" -> "resource not found")).vfuture
-        case Some(plugin) => plugin.config.source.getWasm(plugin.config.rawSource)
+        case Some(plugin) => plugin.config.source.getWasm()
       }
     }
     override def getConfig(path: String, rawSource: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Option[WasmConfig]] = {
@@ -176,16 +176,16 @@ object WasmSourceKind {
   }
 }
 
-case class WasmSource(kind: WasmSourceKind, path: String) {
+case class WasmSource(kind: WasmSourceKind, path: String, opts: JsValue = Json.obj()) {
   def json: JsValue = WasmSource.format.writes(this)
   def cacheKey = s"${kind.name.toLowerCase}://${path}"
-  def getConfig(rawSource: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Option[WasmConfig]] = kind.getConfig(path, rawSource)
-  def getWasm(rawSource: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
+  def getConfig()(implicit env: Env, ec: ExecutionContext): Future[Option[WasmConfig]] = kind.getConfig(path, opts)
+  def getWasm()(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
     val cache = WasmUtils.scriptCache(env)
     cache.getIfPresent(cacheKey) match {
       case Some(script) => script.script.right.vfuture
       case None => {
-        kind.getWasm(path, rawSource).map {
+        kind.getWasm(path, opts).map {
           case Left(err) => err.left
           case Right(bs) => {
             cache.put(cacheKey, CachedWasmScript(bs, System.currentTimeMillis()))
@@ -201,11 +201,13 @@ object WasmSource {
     override def writes(o: WasmSource): JsValue = Json.obj(
       "kind" -> o.kind.json,
       "path" -> o.path,
+      "opts" -> o.opts,
     )
     override def reads(json: JsValue): JsResult[WasmSource] = Try {
       WasmSource(
         kind = json.select("kind").asOpt[String].map(WasmSourceKind.apply).getOrElse(WasmSourceKind.Unknown),
         path = json.select("path").asString,
+        opts = json.select("opts").asOpt[JsValue].getOrElse(Json.obj()),
       )
     } match {
       case Success(s) => JsSuccess(s)
@@ -263,12 +265,12 @@ object WasmAccesses {
 }
 
 case class WasmConfig(
-    source: WasmSource = WasmSource(WasmSourceKind.Unknown, ""),
-    rawSource: JsValue = WasmSource(WasmSourceKind.Unknown, "").json,
+    source: WasmSource = WasmSource(WasmSourceKind.Unknown, "", Json.obj()),
     memoryPages: Int = 4,
     functionName: Option[String] = None,
     config: Map[String, String] = Map.empty,
     allowedHosts: Seq[String] = Seq.empty,
+    allowedPaths: Seq[String] = Seq.empty,
     ////
     preserve: Boolean = true,
     wasi: Boolean = false,
@@ -280,8 +282,9 @@ case class WasmConfig(
     "functionName"            -> functionName,
     "config"                  -> config,
     "allowedHosts"            -> allowedHosts,
+    "allowedPaths"            -> allowedPaths,
     "wasi"                    -> wasi,
-    "preserve"                 -> preserve,
+    "preserve"                -> preserve,
     "accesses"                -> accesses.json
   )
 }
@@ -311,11 +314,11 @@ object WasmConfig {
       }
       WasmConfig(
         source = source,
-        rawSource = sourceOpt.getOrElse(Json.obj()),
         memoryPages = (json \ "memoryPages").asOpt[Int].getOrElse(4),
         functionName = (json \ "functionName").asOpt[String].filter(_.nonEmpty),
         config = (json \ "config").asOpt[Map[String, String]].getOrElse(Map.empty),
         allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty),
+        allowedPaths = (json \ "allowedPaths").asOpt[Seq[String]].getOrElse(Seq.empty),
         wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false),
         preserve = (json \ "preserve").asOpt[Boolean].getOrElse(true),
         accesses = (json \ "accesses").asOpt[WasmAccesses](WasmAccesses.format.reads).getOrElse(WasmAccesses()),
@@ -447,11 +450,11 @@ object WasmUtils {
     scriptCache.getIfPresent(pluginId) match {
       case Some(wasm) => WasmUtils.callWasm(wasm.script, config, defaultFunctionName, input, ctx, pluginId, attrs).right.future
       case None if config.source.kind == WasmSourceKind.Unknown => Left(Json.obj("error" -> "missing source")).future
-      case _ => config.source.getWasm(config.rawSource).flatMap {
+      case _ => config.source.getWasm().flatMap {
         case Left(err) => err.left.vfuture
-        case Right(wasm) => config.source.getConfig(config.rawSource).map {
+        case Right(wasm) => config.source.getConfig().map {
           case None => WasmUtils.callWasm(wasm, config, defaultFunctionName, input, ctx, pluginId, attrs).right
-          case Some(finalConfig) => WasmUtils.callWasm(wasm, finalConfig, defaultFunctionName, input, ctx, pluginId, attrs).right
+          case Some(finalConfig) => WasmUtils.callWasm(wasm, finalConfig.copy(functionName = finalConfig.functionName.orElse(config.functionName)), defaultFunctionName, input, ctx, pluginId, attrs).right
         }
       }
     }
@@ -728,7 +731,7 @@ class WasmSink extends NgRequestSink {
       case JsSuccess(value, _) => value
       case JsError(_) => WasmConfig()
     }
-    WasmUtils.execute(config, "handle", ctx.wasmJson, FakeWasmContext(ctx.config).some, ctx.attrs.some)
+    WasmUtils.execute(config, "handle_sink", ctx.wasmJson, FakeWasmContext(ctx.config).some, ctx.attrs.some)
       .map {
         case Left(error) => Results.InternalServerError(error)
         case Right(res) => {
@@ -836,7 +839,7 @@ class WasmRequestHandler extends RequestHandler {
           case Some(config) => {
             requestToWasmJson(request).flatMap { json =>
               val fakeCtx = FakeWasmContext(configJson)
-              WasmUtils.execute(config, "handle", Json.obj("request" -> json), fakeCtx.some, None)
+              WasmUtils.execute(config, "handle_request", Json.obj("request" -> json), fakeCtx.some, None)
                 .flatMap {
                   case Right(ok) => {
                     val response = Json.parse(ok)

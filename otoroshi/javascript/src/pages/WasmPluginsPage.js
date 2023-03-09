@@ -138,7 +138,7 @@ export class WasmPluginsPage extends Component {
     });
   };
 
-  formFlow = [
+  formFlow = (value) => [
     '_loc', 
     'id', 
     'name', 
@@ -149,22 +149,22 @@ export class WasmPluginsPage extends Component {
     'config.source.kind',
     'config.source.path',
     '<<<Wasm configuration',
-    'config.memoryPages',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.memoryPages',
     'config.functionName',
-    'config.config',
-    'config.allowedHosts',
-    'config.preserve',
-    'config.wasi',
-    '<<<Wasm host access',
-    'config.accesses.httpAccess',
-    'config.accesses.proxyHttpCallTimeout',
-    'config.accesses.proxyStateAccess',
-    'config.accesses.configurationAccess',
-    'config.accesses.globalDataStoreAccess',
-    'config.accesses.pluginDataStoreAccess',
-    'config.accesses.globalMapAccess',
-    'config.accesses.pluginMapAccess',
-  ];
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.config',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedHosts',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.preserve',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.wasi',
+    value.config.source.kind.toLowerCase() !== 'local' && '<<<Wasm host access',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.httpAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.proxyHttpCallTimeout',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.proxyStateAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.configurationAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.globalDataStoreAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.pluginDataStoreAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.globalMapAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.pluginMapAccess',
+  ].filter(v => !!v);
 
   formSchema = {
     id: { type: 'string', props: { label: 'Id', placeholder: '---' } },
