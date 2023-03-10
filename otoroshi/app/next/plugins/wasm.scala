@@ -122,6 +122,7 @@ object WasmSourceKind {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         globalConfig.wasmManagerSettings match {
           case Some(WasmManagerSettings(url, clientId, clientSecret, _)) => {
+            // println(s"fechting the plugin at $path")
             env.Ws
               .url(s"$url/wasm/$path")
               .withFollowRedirects(false)
@@ -397,6 +398,7 @@ object WasmUtils {
 
       def createPlugin(): WasmContextSlot = {
         if (WasmUtils.logger.isDebugEnabled) WasmUtils.logger.debug(s"creating wasm plugin instance for ${config.source.cacheKey}")
+        // println(s"""creating plugin with wasm with wasi at "${config.wasi}" of "${wasm.size}" bytes""")
         val resolver = new WasmSourceResolver()
         val source = resolver.resolve("wasm", wasm.toByteBuffer.array())
         val manifest = new Manifest(
@@ -449,7 +451,10 @@ object WasmUtils {
   def execute(config: WasmConfig, defaultFunctionName: String, input: JsValue, ctx: Option[NgCachedConfigContext], attrs: Option[TypedMap])(implicit env: Env): Future[Either[JsValue, String]] = {
     val pluginId = config.source.cacheKey
     scriptCache.getIfPresent(pluginId) match {
-      case Some(wasm) => WasmUtils.callWasm(wasm.script, config, defaultFunctionName, input, ctx, pluginId, attrs).right.future
+      case Some(wasm) => config.source.getConfig().map {
+        case None => WasmUtils.callWasm(wasm.script, config, defaultFunctionName, input, ctx, pluginId, attrs).right
+        case Some(finalConfig) => WasmUtils.callWasm(wasm.script, finalConfig.copy(functionName = finalConfig.functionName.orElse(config.functionName)), defaultFunctionName, input, ctx, pluginId, attrs).right
+      }
       case None if config.source.kind == WasmSourceKind.Unknown => Left(Json.obj("error" -> "missing source")).future
       case _ => config.source.getWasm().flatMap {
         case Left(err) => err.left.vfuture

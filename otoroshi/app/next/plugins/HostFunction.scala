@@ -124,8 +124,8 @@ object Logging {
     )
 
     def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext])
-                    (implicit env: Env, executionContext: ExecutionContext, mat: Materializer)
-    = Map("proxyLog" -> proxyLog(), "proxyLogWithEvent" -> proxyLogWithEvent(config, ctx))
+                    (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[(String, HostFunction[_ <: HostUserData])]
+    = Seq("proxyLog" -> proxyLog(), "proxyLogWithEvent" -> proxyLogWithEvent(config, ctx))
 }
 
 object Http {
@@ -139,7 +139,7 @@ object Http {
 
           val builder = hostData.env
             .Ws
-            .url((context \ "url").asOpt[String].getOrElse("mirror.otoroshi.io"))
+            .url((context \ "url").asOpt[String].getOrElse("https://mirror.otoroshi.io"))
             .withMethod((context \ "method").asOpt[String].getOrElse("GET"))
             .withHttpHeaders((context \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
             .withRequestTimeout(Duration((context \ "request_timeout").asOpt[Long].getOrElse(hostData.env.clusterConfig.worker.timeout), TimeUnit.MILLISECONDS))
@@ -152,23 +152,20 @@ object Http {
           }
 
           val out = Await.result(request
-            .stream()
-            .fast
-            .flatMap { res =>
-              res.bodyAsSource.runFold(ByteString.empty)(_ ++ _).map { body =>
-                Json.obj(
-                  "status" -> res.status,
-                  "headers" -> res.headers
-                    .mapValues(_.head)
-                    .toSeq
-                    .filter(_._1 != "Content-Type")
-                    .filter(_._1 != "Content-Length")
-                    .filter(_._1 != "Transfer-Encoding"),
-                  "body" -> body
-                )
-              }
+            .execute()
+            .map { res =>
+              val body = res.body
+              Json.obj(
+                "status" -> res.status,
+                "headers" -> res.headers
+                  .mapValues(_.head)
+                  .toSeq
+                  .filter(_._1 != "Content-Type")
+                  .filter(_._1 != "Content-Length")
+                  .filter(_._1 != "Transfer-Encoding"),
+                "body" -> body
+              )
             }, Duration(hostData.config.accesses.proxyHttpCallTimeout, TimeUnit.MILLISECONDS))
-
           plugin.returnString(returns(0), Json.stringify(out))
         })
       }
@@ -183,8 +180,8 @@ object Http {
         )
     }
 
-    def getFunctions(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) =
-      Map(
+    def getFunctions(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[(String, HostFunction[_ <: HostUserData])] =
+      Seq(
         "httpAccess" -> proxyHttpCall(config)
       )
 }
@@ -434,8 +431,8 @@ object DataStore {
     )
   }
 
-  def getFunctions(config: WasmConfig, pluginId: String)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer) =
-    Map(
+  def getFunctions(config: WasmConfig, pluginId: String)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[(String, HostFunction[_ <: HostUserData])] =
+    Seq(
       "globalDataStoreAccessRead" -> proxyDataStoreKeys(config = config),
       "globalDataStoreAccessRead" -> proxyDataStoreGet(config = config),
       "globalDataStoreAccessRead" -> proxyDataStoreExists(config = config),
@@ -744,8 +741,8 @@ object State {
   }
 
   def getFunctions(config: WasmConfig, pluginId: String)
-                  (implicit env: Env, executionContext: ExecutionContext, mat: Materializer) =
-    Map(
+                  (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[(String, HostFunction[_ <: HostUserData])] =
+    Seq(
       "proxyStateAccess" -> getProxyState(config),
       "proxyStateAccess" -> proxyStateGetValue(config),
       "configurationAccess" -> getClusterState(config),
@@ -763,7 +760,7 @@ object State {
 
 object HostFunctions {
 
-    private var functions: Map[String, HostFunction[_ <: HostUserData]] = Map.empty[String, HostFunction[_ <: HostUserData]]
+    private var functions: Seq[(String, HostFunction[_ <: HostUserData])] = Seq.empty[(String, HostFunction[_ <: HostUserData])]
 
     def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext], pluginId: String)
                     (implicit env: Env, executionContext: ExecutionContext): Array[HostFunction[_ <: HostUserData]] = {
@@ -776,7 +773,7 @@ object HostFunctions {
           DataStore.getFunctions(config, pluginId)
       }
 
-      val rights =  Map(
+      val rights = Seq(
         "globalDataStoreAccessRead" -> config.accesses.globalDataStoreAccess.read,
         "globalDataStoreAccessWrite" -> config.accesses.globalDataStoreAccess.write,
         "pluginDataStoreAccessRead" -> config.accesses.pluginDataStoreAccess.read,
@@ -791,13 +788,12 @@ object HostFunctions {
         "proxyLog" -> true,
         "proxyLogWithEvent" -> true
       )
-        .filter(p => p._2)
-        .keys
-        .toSeq
+      .filter(p => p._2)
+      .map(_._1)
 
       functions.
         filter(p => rights.contains(p._1))
-        .values
+        .map(_._2)
         .toArray
     }
 }
