@@ -443,7 +443,13 @@ object WasmUtils {
         }
       }
     } catch {
-      case e: Throwable => Json.obj("error" -> "wasm_error", "error_description" -> JsString(e.getMessage)).left
+      case e: Throwable if e.getMessage.contains("wasm backtrace") =>
+        Json.obj(
+          "error" -> "wasm_error",
+          "error_description" -> JsArray(e.getMessage.split("\\n").filter(_.trim.nonEmpty).map(JsString.apply))
+        ).left
+      case e: Throwable =>
+        Json.obj("error" -> "wasm_error", "error_description" -> JsString(e.getMessage)).left
     }
   }
 
