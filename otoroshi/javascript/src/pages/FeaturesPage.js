@@ -167,6 +167,13 @@ const graph = (env) => {
           link: '/plugins',
         },
         {
+          title: 'Wasm Plugins',
+          description: 'All your wasm plugins',
+          img: 'plugins',
+          icon: () => 'fa-plug',
+          link: '/wasm-plugins',
+        },
+        {
           title: 'Route compositions',
           description: 'routescomp',
           img: 'routescomp',

@@ -13,7 +13,6 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-// TODO: add menu in features page
 case class WasmPlugin(
   id: String,
   name: String,
