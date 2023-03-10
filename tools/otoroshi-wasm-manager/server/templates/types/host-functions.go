@@ -68,6 +68,20 @@ func OtoroshiClusterConfigBytes() []byte {
   return res_bytes
 }
 
+func OtoroshiDatastoreKeys(pattern string) []string {
+  var res_ptr = ProxyDatastoreKeys(StringBytePtr(pattern), len(pattern))
+  var res_mem = pdk.FindMemory(res_ptr)
+  var res_bytes = make([]byte, int(res_mem.Length()))
+  res_mem.Load(res_bytes)
+  OtoroshiLogInfo(string(res_bytes[:]))
+  var arr = make([]string, 10)
+  jsonparser.ArrayEach(res_bytes, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+      var v, _ = jsonparser.GetString(value)
+      arr[offset] = v
+  })
+  return arr
+}
+
 //export proxy_log
 func ProxyLog(logLevel LogLevel, messageData uint64, messageSize int) Status
 //export proxy_log_event

@@ -502,7 +502,7 @@ class WasmBackend extends NgBackendCall {
             Json.parse(output)
           } catch {
             case e: Exception =>
-              println(e)
+              println("error during json parsing", e)
               Json.obj()
           }
 

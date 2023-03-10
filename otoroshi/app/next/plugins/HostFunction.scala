@@ -13,7 +13,7 @@ import otoroshi.next.plugins.api.NgCachedConfigContext
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
-import play.api.libs.json.{JsArray, JsNull, Json}
+import play.api.libs.json.{JsArray, JsNull, JsString, Json}
 
 import java.nio.charset.StandardCharsets
 import java.util.Optional
@@ -192,13 +192,12 @@ object DataStore {
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
       data.ifPresent(hostData => {
         val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
-
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
-
-        Await.result(hostData.env.datastores.rawDataStore.keys(s"${hostData.env.storageRoot}:$path$key")
-          .map(values => {
-            plugin.returnString(returns(0),  Json.arr(values).stringify)
-          }), 5.seconds)
+        val future = env.datastores.rawDataStore.keys(s"${hostData.env.storageRoot}:$path$key").map { values =>
+          JsArray(values.map(JsString.apply)).stringify
+        }
+        val out = Await.result(future, 5.seconds)
+        plugin.returnString(returns(0), out)
       })
     }
   def proxyDataStoreGetFunction(prefix: Option[String])
