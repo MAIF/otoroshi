@@ -148,7 +148,10 @@ export class WasmPluginsPage extends Component {
     '<<<Wasm source',
     'config.source.kind',
     'config.source.path',
-    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts',
+    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.headers',
+    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.timeout',
+    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.method',
+    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.followRedirect',
     '<<<Wasm configuration',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.memoryPages',
     'config.functionName',
@@ -194,6 +197,10 @@ export class WasmPluginsPage extends Component {
         possibleValues: ['Base64', 'Http', 'WasmManager', 'File'].map(v => ({ label: v, value: v }))
       }
     },
+    'config.source.opts.headers': { type: 'object', props: { label: 'Headers' } },
+    'config.source.opts.timeout': { type: 'number', props: { label: 'Timeout', suffix: 'millis.' } },
+    'config.source.opts.method': { type: 'string', props: { label: 'Method' } },
+    'config.source.opts.followRedirect': { type: 'bool', props: { label: 'Follow redirects' } },
     'config.source.opts': {
       type: 'object',
       props: {
@@ -204,7 +211,7 @@ export class WasmPluginsPage extends Component {
       type: 'number',
       props: {
         label: 'Memory pages',
-        suffix: '32 Kb'
+        suffix: 'pages of 32 Kb'
       }
     },
     'config.functionName': { 

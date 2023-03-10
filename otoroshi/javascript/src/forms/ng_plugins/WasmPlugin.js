@@ -69,7 +69,14 @@ const schema = {
     type: 'form',
     collapsable: false,
     collapsed: false,
-    flow: (v) => ['kind', "path", v.kind.toLowerCase() === 'http' && "opts"].filter(v => !!v),
+    flow: (v) => [
+      'kind', 
+      "path", 
+      v.kind.toLowerCase() === 'http' && 'opts.headers',
+      v.kind.toLowerCase() === 'http' && 'opts.timeout',
+      v.kind.toLowerCase() === 'http' && 'opts.method',
+      v.kind.toLowerCase() === 'http' && 'opts.followRedirect',
+    ].filter(v => !!v),
     schema: {
       kind: {
         label: "Kind",
@@ -80,8 +87,10 @@ const schema = {
         },
       },
       opts: {
-        label: 'Options',
-        type: 'object',
+        headers: { type: 'object', label: 'Headers' },
+        timeout: { type: 'number', label: 'Timeout', props: { suffix: 'millis.' } },
+        method:  { type: 'string', label: 'Method' },
+        followRedirect: { type: 'bool', label: 'Follow redirects' },
       },
       path: {
         renderer: (props) => <WasmSourcePath {...props} />

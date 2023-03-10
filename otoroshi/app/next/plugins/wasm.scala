@@ -63,31 +63,31 @@ object WasmDataRights {
 sealed trait WasmSourceKind {
   def name: String
   def json: JsValue = JsString(name)
-  def getWasm(path: String, rawSource: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]]
-  def getConfig(path: String, rawSource: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Option[WasmConfig]] = None.vfuture
+  def getWasm(path: String, opts: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]]
+  def getConfig(path: String, opts: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Option[WasmConfig]] = None.vfuture
 }
 object WasmSourceKind {
   case object Unknown extends WasmSourceKind {
     def name: String = "Unknown"
-    def getWasm(path: String, rawSource: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
+    def getWasm(path: String, opts: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
       Left(Json.obj("error" -> "unknown source")).vfuture
     }
   }
   case object Base64 extends WasmSourceKind {
     def name: String = "Base64"
-    def getWasm(path: String, rawSource: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
+    def getWasm(path: String, opts: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
       ByteString(path.replace("base64://", "")).decodeBase64.right.future
     }
   }
   case object Http extends WasmSourceKind {
     def name: String = "Http"
-    def getWasm(path: String, rawSource: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
-      val method = rawSource.select("method").asOpt[String].getOrElse("GET")
-      val headers = rawSource.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-      val timeout = rawSource.select("timeout").asOpt[Long].getOrElse(10000L).millis
-      val followRedirect = rawSource.select("followRedirect").asOpt[Boolean].getOrElse(true)
-      val proxy = rawSource.select("proxy").asOpt[JsObject].flatMap(v => WSProxyServerJson.proxyFromJson(v))
-      val tlsConfig = rawSource.select("tls").asOpt(NgTlsConfig.format).map(_.legacy).orElse(rawSource.select("tls").asOpt(MtlsConfig.format))
+    def getWasm(path: String, opts: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
+      val method = opts.select("method").asOpt[String].getOrElse("GET")
+      val headers = opts.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+      val timeout = opts.select("timeout").asOpt[Long].getOrElse(10000L).millis
+      val followRedirect = opts.select("followRedirect").asOpt[Boolean].getOrElse(true)
+      val proxy = opts.select("proxy").asOpt[JsObject].flatMap(v => WSProxyServerJson.proxyFromJson(v))
+      val tlsConfig = opts.select("tls").asOpt(NgTlsConfig.format).map(_.legacy).orElse(opts.select("tls").asOpt(MtlsConfig.format))
       (tlsConfig match {
         case None => env.Ws.url(path)
         case Some(cfg) => env.MtlsWs.url(path, cfg)
@@ -118,7 +118,7 @@ object WasmSourceKind {
   }
   case object WasmManager extends WasmSourceKind {
     def name: String = "WasmManager"
-    def getWasm(path: String, rawSource: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
+    def getWasm(path: String, opts: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         globalConfig.wasmManagerSettings match {
           case Some(WasmManagerSettings(url, clientId, clientSecret, _)) => {
@@ -149,19 +149,19 @@ object WasmSourceKind {
   }
   case object Local extends WasmSourceKind {
     def name: String = "Local"
-    override def getWasm(path: String, rawSource: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
+    override def getWasm(path: String, opts: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
       env.proxyState.wasmPlugins(path) match {
         case None => Left(Json.obj("error" -> "resource not found")).vfuture
         case Some(plugin) => plugin.config.source.getWasm()
       }
     }
-    override def getConfig(path: String, rawSource: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Option[WasmConfig]] = {
+    override def getConfig(path: String, opts: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Option[WasmConfig]] = {
       env.proxyState.wasmPlugins(path).map(_.config).vfuture
     }
   }
   case object File extends WasmSourceKind {
     def name: String = "File"
-    def getWasm(path: String, rawSource: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
+    def getWasm(path: String, opts: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
       Right(ByteString(Files.readAllBytes(Paths.get(path.replace("file://", ""))))).vfuture
     }
   }

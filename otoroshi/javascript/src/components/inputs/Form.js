@@ -201,7 +201,8 @@ export class Form extends Component {
               onChange={(v) => this.changeValue(name, v)}
             />
           );
-        } /*else if (type === 'box-bool') {
+        } else if (type === 'box-bool') {
+          const { NgBoxBooleanRenderer } = require('../nginputs/inputs');
           component = (
             <NgBoxBooleanRenderer
               disabled={disabled}
@@ -211,7 +212,7 @@ export class Form extends Component {
               onChange={(v) => this.changeValue(name, v)}
             />
           );
-        }*/ else if (type === 'select') {
+        } else if (type === 'select') {
           component = (
             <SelectInput
               disabled={disabled}
