@@ -842,7 +842,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                           s"${resource.singularName}Patched".some
                         )
                         Json
-                          .obj("status" -> 201, "created" -> true, "id" -> extractId(createdEntity))
+                          .obj("status" -> 200, "updated" -> true, "id" -> extractId(createdEntity))
                           .stringify
                           .byteString
                     }
@@ -974,7 +974,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                           s"${resource.singularName}Updated".some
                         )
                         Json
-                          .obj("status" -> 201, "created" -> true, "id" -> extractId(createdEntity))
+                          .obj("status" -> 200, "updated" -> true, "id" -> extractId(createdEntity))
                           .stringify
                           .byteString
                     }
@@ -1036,7 +1036,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     s"${resource.singularName}Deleted".some
                   )
                   resource.access.deleteOne(version, extractId(entity)).map { _ =>
-                    Json.obj("status" -> 201, "created" -> true, "id" -> extractId(entity)).stringify.byteString
+                    Json.obj("status" -> 200, "deleted" -> true, "id" -> extractId(entity)).stringify.byteString
                   }
                 }
               }
@@ -1223,7 +1223,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                         body,
                         s"${resource.singularName}Created".some
                       )
-                      result(Results.Created, res, ctx.request, resource.some)
+                      result(Results.Ok, res, ctx.request, resource.some)
                   }
                 case Some(_) =>
                   resource.access.create(version, resource.singularName, id.some, body).map {
@@ -1236,7 +1236,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                         body,
                         s"${resource.singularName}Updated".some
                       )
-                      result(Results.Created, res, ctx.request, resource.some)
+                      result(Results.Ok, res, ctx.request, resource.some)
                   }
               }
             }
@@ -1275,7 +1275,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                         body,
                         s"${resource.singularName}Updated".some
                       )
-                      result(Results.Created, res, ctx.request, resource.some)
+                      result(Results.Ok, res, ctx.request, resource.some)
                   }
               }
             }
@@ -1313,7 +1313,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     body,
                     s"${resource.singularName}Patched".some
                   )
-                  result(Results.Created, res, ctx.request, resource.some)
+                  result(Results.Ok, res, ctx.request, resource.some)
               }
             }
           }
