@@ -18,8 +18,8 @@ import play.api.libs.json.{JsArray, JsNull, JsString, Json}
 import java.nio.charset.StandardCharsets
 import java.util.Optional
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.{Duration, DurationInt}
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 object Utils {
     def rawBytePtrToString(plugin: ExtismCurrentPlugin, offset: Long, arrSize: Int): String = {
@@ -70,7 +70,13 @@ object Status extends Enumeration {
     StatusUnimplemented = Value
 }
 
-object Logging {
+trait AwaitCapable {
+  def await[T](future: Future[T], atMost: FiniteDuration = 5.seconds)(implicit env: Env): T = {
+    Await.result(future, atMost) // TODO: atMost from env
+  }
+}
+
+object Logging extends AwaitCapable {
 
     def proxyLogFunction(): ExtismFunction[EmptyUserData] =
       (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EmptyUserData]) => {
@@ -128,198 +134,192 @@ object Logging {
     = Seq("proxyLog" -> proxyLog(), "proxyLogWithEvent" -> proxyLogWithEvent(config, ctx))
 }
 
-object Http {
-    def httpCallFunction: ExtismFunction[EnvUserData] =
-      (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
-        data.ifPresent(hostData => {
-          implicit val ec  = hostData.executionContext
-          implicit val mat  = hostData.mat
+object Http extends AwaitCapable {
+  def httpCallFunction: ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+      data.ifPresent(hostData => {
+        implicit val ec  = hostData.executionContext
+        implicit val mat  = hostData.mat
 
-          val context = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
+        val context = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
 
-          val builder = hostData.env
-            .Ws
-            .url((context \ "url").asOpt[String].getOrElse("https://mirror.otoroshi.io"))
-            .withMethod((context \ "method").asOpt[String].getOrElse("GET"))
-            .withHttpHeaders((context \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
-            .withRequestTimeout(Duration((context \ "request_timeout").asOpt[Long].getOrElse(hostData.env.clusterConfig.worker.timeout), TimeUnit.MILLISECONDS))
-            .withFollowRedirects((context \ "follow_redirects").asOpt[Boolean].getOrElse(false))
-            .withQueryStringParameters((context \ "query").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
+        val builder = hostData.env
+          .Ws
+          .url((context \ "url").asOpt[String].getOrElse("https://mirror.otoroshi.io"))
+          .withMethod((context \ "method").asOpt[String].getOrElse("GET"))
+          .withHttpHeaders((context \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
+          .withRequestTimeout(Duration((context \ "request_timeout").asOpt[Long].getOrElse(hostData.env.clusterConfig.worker.timeout), TimeUnit.MILLISECONDS))
+          .withFollowRedirects((context \ "follow_redirects").asOpt[Boolean].getOrElse(false))
+          .withQueryStringParameters((context \ "query").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
 
-          val request = (context \ "body").asOpt[String] match {
-            case Some(body) => builder.withBody(body)
-            case None => builder
-          }
+        val request = (context \ "body").asOpt[String] match {
+          case Some(body) => builder.withBody(body)
+          case None => builder
+        }
 
-          val out = Await.result(request
-            .execute()
-            .map { res =>
-              val body = res.body
-              Json.obj(
-                "status" -> res.status,
-                "headers" -> res.headers
-                  .mapValues(_.head)
-                  .toSeq
-                  .filter(_._1 != "Content-Type")
-                  .filter(_._1 != "Content-Length")
-                  .filter(_._1 != "Transfer-Encoding"),
-                "body" -> body
-              )
-            }, Duration(hostData.config.accesses.proxyHttpCallTimeout, TimeUnit.MILLISECONDS))
-          plugin.returnString(returns(0), Json.stringify(out))
-        })
-      }
-
-    def proxyHttpCall(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
-        new HostFunction[EnvUserData](
-                "proxy_http_call",
-                Array(LibExtism.ExtismValType.I64,LibExtism.ExtismValType.I32),
-                Array(LibExtism.ExtismValType.I64),
-                httpCallFunction,
-                Optional.of(EnvUserData(env, executionContext, mat, config))
-        )
+        val out = Await.result(request
+          .execute()
+          .map { res =>
+            val body = res.body
+            Json.obj(
+              "status" -> res.status,
+              "headers" -> res.headers
+                .mapValues(_.head)
+                .toSeq
+                .filter(_._1 != "Content-Type")
+                .filter(_._1 != "Content-Length")
+                .filter(_._1 != "Transfer-Encoding"),
+              "body" -> body
+            )
+          }, Duration(hostData.config.accesses.proxyHttpCallTimeout, TimeUnit.MILLISECONDS))
+        plugin.returnString(returns(0), Json.stringify(out))
+      })
     }
 
-    def getFunctions(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[(String, HostFunction[_ <: HostUserData])] =
-      Seq(
-        "httpAccess" -> proxyHttpCall(config)
+  def proxyHttpCall(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+      new HostFunction[EnvUserData](
+              "proxy_http_call",
+              Array(LibExtism.ExtismValType.I64,LibExtism.ExtismValType.I32),
+              Array(LibExtism.ExtismValType.I64),
+              httpCallFunction,
+              Optional.of(EnvUserData(env, executionContext, mat, config))
       )
+  }
+
+  def getFunctions(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[(String, HostFunction[_ <: HostUserData])] = {
+    Seq(
+      "httpAccess" -> proxyHttpCall(config)
+    )
+  }
 }
 
-object DataStore {
+object DataStore extends AwaitCapable {
+
   def proxyDataStoreKeysFunction(prefix: Option[String])
                                 (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
-      data.ifPresent(hostData => {
+      data.ifPresent { hostData =>
         val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
         val future = env.datastores.rawDataStore.keys(s"${hostData.env.storageRoot}:$path$key").map { values =>
           JsArray(values.map(JsString.apply)).stringify
         }
-        val out = Await.result(future, 5.seconds)
+        val out = await(future)
         plugin.returnString(returns(0), out)
-      })
+      }
     }
   def proxyDataStoreGetFunction(prefix: Option[String])
                                (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
-      data.ifPresent(hostData => {
+      data.ifPresent { hostData =>
         val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
-
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
-
-        Await.result(hostData.env.datastores.rawDataStore.get(s"${hostData.env.storageRoot}:$path$key")
-          .map(value => {
-            plugin.returnBytes(returns(0), value.map(_.toArray).getOrElse(Array.empty[Byte]))
-          }), 5.seconds)
-      })
+        val future = env.datastores.rawDataStore.get(s"${hostData.env.storageRoot}:$path$key").map { value =>
+          value.map(_.toArray).getOrElse(Array.empty[Byte])
+        }
+        val out = await(future)
+        plugin.returnBytes(returns(0), out)
+      }
     }
   def proxyDataStoreExistsFunction(prefix: Option[String])
                                   (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
-      data.ifPresent(hostData => {
+      data.ifPresent { hostData =>
         val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
-
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
-
-        Await.result(hostData.env.datastores.rawDataStore.exists(s"${hostData.env.storageRoot}:$path$key")
-          .map(value => {
-            plugin.returnString(returns(0), value.toString)
-          }), 5.seconds)
-      })
+        val future = env.datastores.rawDataStore.exists(s"${hostData.env.storageRoot}:$path$key").map { value =>
+          value.toString
+        }
+        val out = await(future)
+        plugin.returnString(returns(0), out)
+      }
     }
   def proxyDataStorePttlFunction(prefix: Option[String])
                                 (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
-      data.ifPresent(hostData => {
+      data.ifPresent { hostData =>
         val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
-
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
-
-        Await.result(hostData.env.datastores.rawDataStore.pttl(s"${hostData.env.storageRoot}:$path$key")
-          .map(value => {
-            plugin.returnString(returns(0), value.toString)
-          }), 5.seconds)
-      })
+        val future = env.datastores.rawDataStore.pttl(s"${hostData.env.storageRoot}:$path$key").map { value =>
+          value.toString
+        }
+        val out = await(future)
+        plugin.returnString(returns(0), out)
+      }
     }
   def proxyDataStoreSetnxFunction(prefix: Option[String])
                                  (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
-      data.ifPresent(hostData => {
+      data.ifPresent { hostData =>
         val data = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
-
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
-
         val key = (data \ "key").as[String]
         val value = (data \ "value").as[String]
         val ttl = (data \ "ttl").asOpt[Long]
-
-        Await.result(hostData.env.datastores.rawDataStore.setnx(s"${hostData.env.storageRoot}:$path$key", ByteString(value), ttl)
-          .map(value => {
-            plugin.returnString(returns(0), value.toString)
-          }), 5.seconds)
-      })
+        val future = env.datastores.rawDataStore.setnx(s"${hostData.env.storageRoot}:$path$key", ByteString(value), ttl).map { value =>
+          value.toString
+        }
+        val out = await(future)
+        plugin.returnString(returns(0), out)
+      }
     }
   def proxyDataStoreDelFunction(prefix: Option[String])
                                (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
       data.ifPresent(hostData => {
         val data = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
-
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
-
-        Await.result(hostData.env.datastores.rawDataStore
+        val future = env.datastores.rawDataStore
           .del((data \ "keys").asOpt[Seq[String]].getOrElse(Seq.empty).map(r => s"${hostData.env.storageRoot}:$path$r"))
-          .map(value => {
-            plugin.returnString(returns(0), value.toString)
-          }), 5.seconds)
+          .map { value =>
+            value.toString
+          }
+        val out = await(future)
+        plugin.returnString(returns(0), out)
       })
     }
   def proxyDataStoreIncrbyFunction(prefix: Option[String])
                                   (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
-      data.ifPresent(hostData => {
+      data.ifPresent { hostData =>
         val data = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
-
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
-
         val key = (data \ "key").as[String]
         val incr = (data \ "incr").as[Long]
-
-        Await.result(hostData.env.datastores.rawDataStore.incrby(s"${hostData.env.storageRoot}:$path$key", incr)
-          .map(value => {
-            plugin.returnString(returns(0), value.toString)
-          }), 5.seconds)
-      })
+        val future = env.datastores.rawDataStore.incrby(s"${hostData.env.storageRoot}:$path$key", incr).map { value =>
+          value.toString
+        }
+        val out = await(future)
+        plugin.returnString(returns(0), out)
+      }
     }
   def proxyDataStorePexpireFunction(prefix: Option[String])
                                    (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
-    data.ifPresent(hostData => {
+    data.ifPresent { hostData =>
       val data = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
       val path = prefix.map(p => s"wasm:$p:").getOrElse("")
-
       val key = (data \ "key").as[String]
       val pttl = (data \ "pttl").as[Long]
-
-      Await.result(hostData.env.datastores.rawDataStore.pexpire(s"${hostData.env.storageRoot}:$path$key", pttl)
-        .map(value => {
-          plugin.returnString(returns(0), value.toString)
-        }), 5.seconds)
-    })
+      val future = env.datastores.rawDataStore.pexpire(s"${hostData.env.storageRoot}:$path$key", pttl).map { value =>
+        value.toString
+      }
+      val out = await(future)
+      plugin.returnString(returns(0), out)
+    }
   }
   def proxyDataStoreAllMatchingFunction(prefix: Option[String])
                                        (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
-      data.ifPresent(hostData => {
+      data.ifPresent { hostData =>
         val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
-
-        Await.result(hostData.env.datastores.rawDataStore.allMatching(s"${hostData.env.storageRoot}:$path$key")
-          .map(values => {
-            plugin.returnString(returns(0), Json.arr(values).stringify)
-          }), 5.seconds)
-      })
+        val future = env.datastores.rawDataStore.allMatching(s"${hostData.env.storageRoot}:$path$key").map { values =>
+          Json.arr(values).stringify
+        }
+        val out = await(future)
+        plugin.returnString(returns(0), out)
+      }
     }
 
   def proxyDataStoreKeys(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)

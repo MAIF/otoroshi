@@ -82,7 +82,12 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsValue]] = {
-    val resId = id.getOrElse(s"${singularName}_${IdGenerator.uuid}")
+    val dev = if (env.isDev) "_dev" else ""
+    val resId = id
+      .orElse(body.select("client_id").asOpt[String])
+      .orElse(body.select("clientId").asOpt[String])
+      .orElse(body.select("id").asOpt[String])
+      .getOrElse(s"${singularName}${dev}_${IdGenerator.uuid}")
     format.reads(body) match {
       case err @ JsError(_)    => Left[JsValue, JsValue](JsError.toJson(err)).vfuture
       case JsSuccess(value, _) => {

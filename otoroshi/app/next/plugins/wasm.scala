@@ -391,7 +391,7 @@ object WasmUtils {
         }
       }
 
-  private def callWasm(wasm: ByteString, config: WasmConfig, defaultFunctionName: String, input: JsValue, ctx: Option[NgCachedConfigContext] = None, pluginId: String, attrsOpt: Option[TypedMap])(implicit env: Env): String = {
+  private def callWasm(wasm: ByteString, config: WasmConfig, defaultFunctionName: String, input: JsValue, ctx: Option[NgCachedConfigContext] = None, pluginId: String, attrsOpt: Option[TypedMap])(implicit env: Env): Either[JsValue, String] = {
     try {
 
       val functionName = config.functionName.filter(_.nonEmpty).getOrElse(defaultFunctionName)
@@ -419,7 +419,7 @@ object WasmUtils {
           val slot = createPlugin()
           val output = slot.plugin.call(functionName, input.stringify)
           slot.close()
-          output
+          output.right
         }
         case Some(attrs) => {
           val context = attrs.get(otoroshi.next.plugins.Keys.WasmContextKey) match {
@@ -436,15 +436,14 @@ object WasmUtils {
               if (config.preserve) context.put(config.source.cacheKey, slot)
               val output = slot.plugin.call(functionName, input.stringify)
               if (!config.preserve) slot.close()
-              output
+              output.right
             }
-            case Some(plugin) => plugin.plugin.call(functionName, input.stringify)
+            case Some(plugin) => plugin.plugin.call(functionName, input.stringify).right
           }
         }
       }
     } catch {
-      case e: Exception =>
-        s"""{ "error": ${e.getMessage()} }"""
+      case e: Throwable => Json.obj("error" -> "wasm_error", "error_description" -> JsString(e.getMessage)).left
     }
   }
 
@@ -452,15 +451,15 @@ object WasmUtils {
     val pluginId = config.source.cacheKey
     scriptCache.getIfPresent(pluginId) match {
       case Some(wasm) => config.source.getConfig().map {
-        case None => WasmUtils.callWasm(wasm.script, config, defaultFunctionName, input, ctx, pluginId, attrs).right
-        case Some(finalConfig) => WasmUtils.callWasm(wasm.script, finalConfig.copy(functionName = finalConfig.functionName.orElse(config.functionName)), defaultFunctionName, input, ctx, pluginId, attrs).right
+        case None => WasmUtils.callWasm(wasm.script, config, defaultFunctionName, input, ctx, pluginId, attrs)
+        case Some(finalConfig) => WasmUtils.callWasm(wasm.script, finalConfig.copy(functionName = finalConfig.functionName.orElse(config.functionName)), defaultFunctionName, input, ctx, pluginId, attrs)
       }
       case None if config.source.kind == WasmSourceKind.Unknown => Left(Json.obj("error" -> "missing source")).future
       case _ => config.source.getWasm().flatMap {
         case Left(err) => err.left.vfuture
         case Right(wasm) => config.source.getConfig().map {
-          case None => WasmUtils.callWasm(wasm, config, defaultFunctionName, input, ctx, pluginId, attrs).right
-          case Some(finalConfig) => WasmUtils.callWasm(wasm, finalConfig.copy(functionName = finalConfig.functionName.orElse(config.functionName)), defaultFunctionName, input, ctx, pluginId, attrs).right
+          case None => WasmUtils.callWasm(wasm, config, defaultFunctionName, input, ctx, pluginId, attrs)
+          case Some(finalConfig) => WasmUtils.callWasm(wasm, finalConfig.copy(functionName = finalConfig.functionName.orElse(config.functionName)), defaultFunctionName, input, ctx, pluginId, attrs)
         }
       }
     }
@@ -502,10 +501,9 @@ class WasmBackend extends NgBackendCall {
             Json.parse(output)
           } catch {
             case e: Exception =>
-              println("error during json parsing", e)
+              WasmUtils.logger.error("error during json parsing", e)
               Json.obj()
           }
-
           val bodyAsBytes = (response \ "body").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
           val body: Source[ByteString, _] = bodyAsBytes.getOrElse((response.select("body") match {
               case JsDefined(value) =>
