@@ -72,7 +72,7 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
         borderBottom: '2px solid #f9b000', textTransform: 'uppercase',
         userSelect: 'none',
         width: 'fit-content'
-      }} className='p-1'>
+      }} className='p-1' onClick={() => changeTerminalSize(0.3)}>
         <span>Terminal</span>
       </div>
       <div className='d-flex align-items-center'>

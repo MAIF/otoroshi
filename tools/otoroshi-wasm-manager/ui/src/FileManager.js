@@ -3,20 +3,22 @@ import { ReactComponent as Js } from './assets/js.svg';
 import { ReactComponent as Rust } from './assets/rust.svg';
 import { ReactComponent as Json } from './assets/json.svg';
 import { ReactComponent as Ts } from './assets/ts.svg';
+import { ReactComponent as Go } from './assets/go.svg';
 
 const LOGOS = {
   js: <Js style={{ height: 20, width: 20 }} />,
   json: <div className='d-flex justify-content-center'>
-    <Json style={{ height: 24, width: 32 }} />
+    <Json style={{ height: 18 }} />
   </div>,
-  log: <i className='fas fa-file' />,
-  rs: <Rust style={{ height: 30, width: 32, marginLeft: -4 }} />,
+  log: <i className='fas fa-file' style={{ fontSize: '.9em' }} />,
+  rs: <Rust style={{ height: 30, width: 30, marginLeft: -4, transform: 'scale(.85)' }} />,
   toml: <i className='fas fa-file' />,
   ts: <Ts style={{ height: 22, width: 22, marginBottom: 2 }} />,
+  go: <Go style={{ height: 22, width: 22 }} />,
 }
 
 function File({ newFilename, filename, content, ext, onClick, ...props }) {
-  return <button className='d-flex align-items-center py-1' style={{
+  return <button className='d-flex align-items-center pb-1' style={{
     background: props.currentTab === filename ? '#ddd' : 'initial',
     border: 'none'
   }}
@@ -34,20 +36,23 @@ function File({ newFilename, filename, content, ext, onClick, ...props }) {
     </div> : <div className='d-flex align-items-center justify-content-between w-100'>
       <div className='d-flex align-items-center'>
         <div style={{ minWidth: 32 }}>
-          {LOGOS[ext] || <i className='fas fa-file' />}
+          {LOGOS[ext] || LOGOS.log}
         </div>
-        <span className='ms-2'>{filename}</span>
+        <span style={{ fontSize: '.9em' }}>{filename}</span>
       </div>
-      {!props.readOnly && (['rs', 'ts', 'js', 'sum'].includes(ext) && ![
-        'plugin.ts',
-        'lib.rs',
-        'esbuild.js',
-        'config.js'
-      ].includes(filename)) && < i className='fas fa-times me-2'
-        onClick={e => {
-          e.stopPropagation()
-          props.removeFile(filename)
-        }} />}
+      {!props.readOnly &&
+        !['json', 'mod'].includes(ext) &&
+        ![
+          'plugin.ts',
+          'lib.rs',
+          'main.go',
+          'esbuild.js',
+          'config.js'
+        ].includes(filename) && < i className='fas fa-times me-2'
+          onClick={e => {
+            e.stopPropagation()
+            props.removeFile(filename)
+          }} />}
     </div>}
   </button>
 }
@@ -60,15 +65,18 @@ function FileManager({
       <Header onNewFile={onNewFile} selectedPlugin={selectedPlugin} readOnly={selectedPlugin.type === "github"} />
 
       <div className='d-flex flex-column scroll-container'>
-        {[...files, ...configFiles].map((file, i) => {
-          return <File {...file}
-            key={`${file.filename}-${i}`}
-            readOnly={selectedPlugin.type === "github"}
-            currentTab={currentTab}
-            removeFile={removeFile}
-            onClick={() => onFileClick(file)}
-            setFilename={newFilename => onFileChange(i, newFilename)} />
-        })}
+        {[...files, ...configFiles]
+          .filter(f => f.filename !== '.DS_Store')
+          .sort((a, b) => a.filename.localeCompare(b.filename))
+          .map((file, i) => {
+            return <File {...file}
+              key={`${file.filename}-${i}`}
+              readOnly={selectedPlugin.type === "github"}
+              currentTab={currentTab}
+              removeFile={removeFile}
+              onClick={() => onFileClick(file)}
+              setFilename={newFilename => onFileChange(i, newFilename)} />
+          })}
       </div>
     </div>
   );

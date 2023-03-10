@@ -7,10 +7,12 @@ import { Run } from './Run';
 import { PublishView } from './PublishView';
 import { TabsHeader } from './TabsHeader';
 
+// close the publisher when selecteing other plugins
+
 function TabsManager({ plugins, ...props }) {
   const [tabs, setTabs] = useState([])
   const [currentTab, setCurrentTab] = useState()
-  const [sizeTerminal, changeTerminalSize] = useState(.3)
+  const [sizeTerminal, changeTerminalSize] = useState(!props.selectedPlugin ? 0 : .3)
   const [resizingTerminal, toggleResizingTerminal] = useState(false)
 
   const [currentPlugin, setCurrentPlugin] = useState()
@@ -86,7 +88,7 @@ function TabsManager({ plugins, ...props }) {
     </div>
 
     <div style={{ flex: 1, height: '100vh', position: 'relative' }} className="d-flex flex-column">
-      <div className='d-flex flex-column' style={{ flex: 1 - sizeTerminal, overflow: 'scroll' }}>
+      <div className='d-flex flex-column scroll-container' style={{ flex: 1 - sizeTerminal, overflow: 'scroll' }}>
         <TabsHeader
           {...props}
           showPlaySettings={() => {
@@ -129,14 +131,14 @@ function TabsManager({ plugins, ...props }) {
           setCurrentTab={setCurrentTab}
           currentTab={currentTab} /> : null}
       </div>
-      <Terminal
+      {props.selectedPlugin && <Terminal
         selectedPlugin={props.selectedPlugin}
         sizeTerminal={sizeTerminal}
         changeTerminalSize={changeTerminalSize}
         toggleResizingTerminal={toggleResizingTerminal}
         onLoadConfigurationFile={props.onLoadConfigurationFile}
         configFiles={props.configFiles}
-      />
+      />}
     </div>
   </div>
 }
