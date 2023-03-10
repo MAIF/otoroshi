@@ -270,7 +270,7 @@ case class WasmConfig(
     functionName: Option[String] = None,
     config: Map[String, String] = Map.empty,
     allowedHosts: Seq[String] = Seq.empty,
-    allowedPaths: Seq[String] = Seq.empty,
+    allowedPaths: Map[String, String] = Map.empty,
     ////
     preserve: Boolean = true,
     wasi: Boolean = false,
@@ -318,7 +318,7 @@ object WasmConfig {
         functionName = (json \ "functionName").asOpt[String].filter(_.nonEmpty),
         config = (json \ "config").asOpt[Map[String, String]].getOrElse(Map.empty),
         allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty),
-        allowedPaths = (json \ "allowedPaths").asOpt[Seq[String]].getOrElse(Seq.empty),
+        allowedPaths = (json \ "allowedPaths").asOpt[Map[String, String]].getOrElse(Map.empty),
         wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false),
         preserve = (json \ "preserve").asOpt[Boolean].getOrElse(true),
         accesses = (json \ "accesses").asOpt[WasmAccesses](WasmAccesses.format.reads).getOrElse(WasmAccesses()),
@@ -403,7 +403,8 @@ object WasmUtils {
           Seq[org.extism.sdk.wasm.WasmSource](source).asJava,
           new MemoryOptions(config.memoryPages),
           config.config.asJava,
-          config.allowedHosts.asJava
+          config.allowedHosts.asJava,
+          // config.allowedPaths.asJava, // TODO: uncomment when new lib version available
         )
 
         val context = new Context()

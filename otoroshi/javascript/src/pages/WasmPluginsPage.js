@@ -1,9 +1,18 @@
 import React, { Component } from 'react';
 import { Table, BooleanInput, SelectInput } from '../components/inputs';
 import { NgBoxBooleanRenderer } from '../components/nginputs/inputs'; 
-import WasmPlugin from '../forms/ng_plugins/WasmPlugin'
+import WasmPlugin from '../forms/ng_plugins/WasmPlugin';
+import { Proxy } from '../components/Proxy';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
+
+function tryOrTrue(f) {
+  try {
+    return f();
+  } catch (e) {
+    return true;
+  }
+}
 
 class WasmDataRights extends Component {
   render() {
@@ -148,15 +157,23 @@ export class WasmPluginsPage extends Component {
     '<<<Wasm source',
     'config.source.kind',
     'config.source.path',
+    value.config.source.kind.toLowerCase() === 'http' && '>>>Wasm source http opts',
+    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.method',
     value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.headers',
     value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.timeout',
-    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.method',
     value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.followRedirect',
+    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.proxy',
+    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.enabled',
+    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.loose',
+    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.trust_all',
+    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.certs',
+    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.trusted_certs',
     '<<<Wasm configuration',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.memoryPages',
     'config.functionName',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.config',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedHosts',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedPaths',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.preserve',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.wasi',
     value.config.source.kind.toLowerCase() !== 'local' && '<<<Wasm host access',
@@ -201,6 +218,61 @@ export class WasmPluginsPage extends Component {
     'config.source.opts.timeout': { type: 'number', props: { label: 'Timeout', suffix: 'millis.' } },
     'config.source.opts.method': { type: 'string', props: { label: 'Method' } },
     'config.source.opts.followRedirect': { type: 'bool', props: { label: 'Follow redirects' } },
+    'config.source.opts.proxy': { type: Proxy, props: { label: 'Proxy' } },
+    'config.source.opts.tls.enabled': {
+      type: 'bool',
+      props: { label: 'Custom TLS Settings' },
+    },
+    'config.source.opts.tls.loose': {
+      type: 'bool',
+      display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+      props: { label: 'TLS loose' },
+    },
+    'config.source.opts.tls.trust_all': {
+      type: 'bool',
+      display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+      props: { label: 'TrustAll' },
+    },
+    'config.source.opts.tls.certs': {
+      type: 'array',
+      display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
+      props: {
+        label: 'Client certificates',
+        placeholder: 'Choose a client certificate',
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: (a) => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
+      },
+    },
+    'config.source.opts.tls.trusted_certs': {
+      type: 'array',
+      display: (v) => tryOrTrue(() => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll),
+      props: {
+        label: 'Trusted certificates',
+        placeholder: 'Choose a trusted certificate',
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: (a) => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="badge bg-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
+      },
+    },
     'config.source.opts': {
       type: 'object',
       props: {
@@ -231,6 +303,12 @@ export class WasmPluginsPage extends Component {
       type: 'array',
       props: {
         label: 'Allow hosts'
+      }
+    },
+    'config.allowedPaths': { 
+      type: 'object',
+      props: {
+        label: 'Allow paths'
       }
     },
     'config.preserve': { 

@@ -120,6 +120,10 @@ const schema = {
     array: true,
     format: null,
   },
+  allowedPaths: {
+    label: 'Allowed paths',
+    type: 'object',
+  },
   wasi: {
     type: 'box-bool',
     label: 'Add WASI imports',
@@ -270,6 +274,7 @@ export default {
         'memoryPages',
         'config',
         'allowedHosts',
+        'allowedPaths',
       ]
     }
   ].filter(v => !!v)
