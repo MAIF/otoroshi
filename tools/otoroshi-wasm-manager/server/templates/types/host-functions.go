@@ -38,6 +38,36 @@ func ByteArrPtr(arr []byte) uint64 {
     return mem.Offset()
 }
 
+func OtoroshiLogInfo(message string) {
+  ProxyLog(LogLevelInfo, StringBytePtr(message), len(message))
+}
+
+func OtoroshiHttpCall(req string) string {
+  var res_bytes = OtoroshiHttpCallBytes(req)
+  return string(res_bytes[:])
+}
+
+func OtoroshiHttpCallBytes(req string) []byte {
+  var res_ptr = ProxyHttpCall(StringBytePtr(req), len(req))
+  var res_mem = pdk.FindMemory(res_ptr)
+  var res_bytes = make([]byte, int(res_mem.Length()))
+  res_mem.Load(res_bytes)
+  return res_bytes
+}
+
+func OtoroshiClusterConfig() string {
+  var res_bytes = OtoroshiClusterConfigBytes()
+  return string(res_bytes[:])
+}
+
+func OtoroshiClusterConfigBytes() []byte {
+  var res_ptr = GetClusterState(0)
+  var res_mem = pdk.FindMemory(res_ptr)
+  var res_bytes = make([]byte, int(res_mem.Length()))
+  res_mem.Load(res_bytes)
+  return res_bytes
+}
+
 //export proxy_log
 func ProxyLog(logLevel LogLevel, messageData uint64, messageSize int) Status
 //export proxy_log_event
