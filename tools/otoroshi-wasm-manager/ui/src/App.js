@@ -165,12 +165,12 @@ class App extends React.Component {
     })
   }
 
-  onFileChange = (idx, newFilename) => {
+  onFileChange = (newFilename) => {
     this.setState({
       selectedPlugin: {
         ...this.state.selectedPlugin,
-        files: this.state.selectedPlugin.files.map((f, i) => {
-          if (i === idx)
+        files: this.state.selectedPlugin.files.map(f => {
+          if (f.new)
             return { ...f, newFilename: newFilename }
           return f
         })

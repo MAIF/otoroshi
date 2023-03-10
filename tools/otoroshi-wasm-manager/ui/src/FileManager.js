@@ -65,8 +65,8 @@ function FileManager({
       <Header onNewFile={onNewFile} selectedPlugin={selectedPlugin} readOnly={selectedPlugin.type === "github"} />
 
       <div className='d-flex flex-column scroll-container'>
-        {[...files, ...configFiles]
-          .filter(f => f.filename !== '.DS_Store')
+        {[...[...files, ...configFiles]
+          .filter(f => f.filename !== '.DS_Store')]
           .sort((a, b) => a.filename.localeCompare(b.filename))
           .map((file, i) => {
             return <File {...file}
@@ -75,7 +75,7 @@ function FileManager({
               currentTab={currentTab}
               removeFile={removeFile}
               onClick={() => onFileClick(file)}
-              setFilename={newFilename => onFileChange(i, newFilename)} />
+              setFilename={onFileChange} />
           })}
       </div>
     </div>
