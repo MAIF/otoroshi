@@ -53,6 +53,11 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     val _uri = UrlSanitizer.sanitize(config.endpoint + url)
     val uri  = if (wildcard) Uri(_uri.replace("/namespaces/*", "")) else Uri(_uri)
     if (logger.isDebugEnabled) logger.debug(s"built uri: $uri")
+    val clientConfig = ClientConfig(
+      connectionTimeout = config.connectionTimeout,
+      idleTimeout = config.idleTimeout,
+      callAndStreamTimeout = config.callAndStreamTimeout
+    )
     env.Ws
       .akkaUrlWithTarget(
         uri.toString(),
@@ -66,12 +71,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             trustedCerts = config.caCert.map(_ => Seq("kubernetes-ca-cert")).getOrElse(Seq.empty)
           )
         ),
-        ClientConfig(
-          connectionTimeout = config.connectionTimeout,
-          idleTimeout = config.idleTimeout,
-          callAndStreamTimeout = config.callAndStreamTimeout
-        )
+        clientConfig,
       )
+      .withRequestTimeout(clientConfig.extractTimeout(uri.toRelative.path.toString(), _.callAndStreamTimeout, _.callAndStreamTimeout))
       .applyOn(req =>
         config.token match {
           case None        => req

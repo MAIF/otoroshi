@@ -1242,7 +1242,7 @@ case class AkkaWsClientRequest(
     val req                     = buildRequest()
     val zeTimeout               = requestTimeout
       .map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS))
-      .getOrElse(FiniteDuration(30, TimeUnit.DAYS)) // yeah that's infinity ...
+      .getOrElse(env.longRequestTimeout) // (FiniteDuration(30, TimeUnit.DAYS)) // yeah that's infinity ...
     if (ClientConfig.logger.isDebugEnabled)
       ClientConfig.logger.debug(s"[httpclient] stream request with timeout to ${zeTimeout}")
     if (ClientConfig.logger.isDebugEnabled) ClientConfig.logger.debug(s"[httpclient] start req")
@@ -1305,7 +1305,7 @@ case class AkkaWsClientRequest(
       .exists(_.mtlsConfig.trustAll)
     val zeTimeout               = requestTimeout
       .map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS))
-      .getOrElse(FiniteDuration(30, TimeUnit.DAYS)) // yeah that's infinity ...
+      .getOrElse(env.longRequestTimeout) // (FiniteDuration(30, TimeUnit.DAYS)) // yeah that's infinity ...
     val failure = Timeout
       .timeout(Done, zeTimeout)(client.ec, env.otoroshiScheduler)
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
