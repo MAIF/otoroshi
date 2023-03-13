@@ -356,8 +356,8 @@ object WasmUtils {
 
   private[plugins] val logger = Logger("otoroshi-wasm")
 
-  private implicit val executor = ExecutionContext.fromExecutorService(
-    Executors.newWorkStealingPool((Runtime.getRuntime.availableProcessors * 2) + 1)
+  implicit val executor = ExecutionContext.fromExecutorService(
+    Executors.newWorkStealingPool((Runtime.getRuntime.availableProcessors * 4) + 1)
   )
 
   private val _cache: AtomicReference[Cache[String, CachedWasmScript]] = new AtomicReference[Cache[String, CachedWasmScript]]()
@@ -476,17 +476,48 @@ object WasmUtils {
 
 ////////////////////////////////////////////////////////
 
+class WasmRouteMatcher extends NgRouteMatcher {
+
+  private val logger = Logger("otoroshi-plugins-wasm-route-matcher")
+
+  override def multiInstance: Boolean = true
+  override def core: Boolean = false
+  override def name: String = "Wasm Route Matcher"
+  override def description: Option[String] = "This plugin can be used to use a wasm plugin as route matcher".some
+  override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Wasm)
+  override def steps: Seq[NgStep] = Seq(NgStep.MatchRoute)
+
+  override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
+    implicit val ec = WasmUtils.executor
+    val config = ctx
+      .cachedConfig(internalName)(WasmConfig.format)
+      .getOrElse(WasmConfig())
+    val res = Await.result(WasmUtils.execute(config, "matches_route", ctx.wasmJson, ctx.some, ctx.attrs.some), 10.seconds)
+    res match {
+      case Right(res) => {
+        val response = Json.parse(res)
+        (response \ "result").asOpt[Boolean].getOrElse(false)
+      }
+      case Left(err) =>
+        logger.error(s"error while calling wasm route matcher: ${err.prettify}")
+        false
+    }
+  }
+}
+
 class WasmBackend extends NgBackendCall {
 
   override def useDelegates: Boolean                       = false
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = false
-  override def name: String                                = "WASM Backend"
-  override def description: Option[String]                 = "This plugin can be used to launch a WASM file".some
+  override def name: String                                = "Wasm Backend"
+  override def description: Option[String]                 = "This plugin can be used to use a wasm plugin as backend".some
   override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Wasm)
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
 
   override def callBackend(
@@ -547,13 +578,13 @@ class WasmBackend extends NgBackendCall {
 class WasmAccessValidator extends NgAccessValidator {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Wasm)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
-  override def name: String                                = "WASM Access control"
-  override def description: Option[String]                 = "Delegate route access to a specified file WASM".some
+  override def name: String                                = "Wasm Access control"
+  override def description: Option[String]                 = "Delegate route access to a wasm plugin".some
   override def isAccessAsync: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
@@ -603,7 +634,7 @@ class WasmAccessValidator extends NgAccessValidator {
 class WasmRequestTransformer extends NgRequestTransformer {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.TrafficControl)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Wasm, NgPluginCategory.Transformations)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true
@@ -614,9 +645,9 @@ class WasmRequestTransformer extends NgRequestTransformer {
   override def transformsError: Boolean                    = false
   override def isTransformRequestAsync: Boolean            = false
   override def isTransformResponseAsync: Boolean           = false
-  override def name: String                                = "WASM Request Transformer"
+  override def name: String                                = "Wasm Request Transformer"
   override def description: Option[String]                 =
-    "Transform the content of the request by executing a WASM file".some
+    "Transform the content of the request with a wasm plugin".some
   override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
   override def transformRequest(
@@ -653,7 +684,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
 class WasmResponseTransformer extends NgRequestTransformer {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.TrafficControl)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Wasm, NgPluginCategory.Transformations)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true
@@ -664,9 +695,9 @@ class WasmResponseTransformer extends NgRequestTransformer {
   override def transformsError: Boolean                    = false
   override def isTransformRequestAsync: Boolean            = false
   override def isTransformResponseAsync: Boolean           = true
-  override def name: String                                = "WASM Response Transformer"
+  override def name: String                                = "Wasm Response Transformer"
   override def description: Option[String]                 =
-    "Transform the content of the request by executing a WASM file".some
+    "Transform the content of a response with a wasm plugin".some
   override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
   override def transformResponse(
@@ -705,7 +736,7 @@ class WasmSink extends NgRequestSink {
 
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
 
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Wasm)
 
   override def steps: Seq[NgStep] = Seq(NgStep.Sink)
 
@@ -713,9 +744,9 @@ class WasmSink extends NgRequestSink {
 
   override def core: Boolean = true
 
-  override def name: String = "WASM Sink"
+  override def name: String = "Wasm Sink"
 
-  override def description: Option[String] = "Handle unmatched requests".some
+  override def description: Option[String] = "Handle unmatched requests with a wasm plugin".some
 
   override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
@@ -796,8 +827,8 @@ class WasmRequestHandler extends RequestHandler {
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def steps: Seq[NgStep] = Seq(NgStep.HandlesRequest)
   override def core: Boolean = true
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def description: Option[String] = "this plugin entirely handle request with a wasm script".some
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Wasm)
+  override def description: Option[String] = "this plugin entirely handle request with a wasm plugin".some
   override def name: String = "Wasm request handler"
   override def configRoot: Option[String] = "WasmRequestHandler".some
   override def defaultConfig: Option[JsObject] = Json
@@ -911,9 +942,9 @@ class WasmJob(config: WasmJobsConfig) extends Job {
 
   override def core: Boolean = true
   override def name: String = "Wasm Job"
-  override def description: Option[String] = "this job execute any given Wasm script".some
+  override def description: Option[String] = "this job execute any given Wasm plugin".some
   override def defaultConfig: Option[JsObject] = WasmJobsConfig.default.json.asObject.some
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Wasm)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def steps: Seq[NgStep] = Seq(NgStep.Job)
   override def jobVisibility: JobVisibility = JobVisibility.UserLand

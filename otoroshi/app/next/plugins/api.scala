@@ -210,6 +210,7 @@ object NgPluginCategory {
   case object Experimental    extends NgPluginCategory { def name: String = "Experimental"    }
   case object Integrations    extends NgPluginCategory { def name: String = "Integrations"    }
   case object Tunnel          extends NgPluginCategory { def name: String = "Tunnel"          }
+  case object Wasm            extends NgPluginCategory { def name: String = "Wasm"          }
   case object Classic         extends NgPluginCategory { def name: String = "Classic"         }
 
   val all = Seq(
@@ -226,7 +227,8 @@ object NgPluginCategory {
     Security,
     TrafficControl,
     Transformations,
-    Tunnel
+    Tunnel,
+    Wasm,
   )
 }
 
@@ -720,13 +722,21 @@ case class NgRouteMatcherContext(
     route: NgRoute,
     config: JsValue,
     attrs: TypedMap
-) {
+) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
     // "route" -> route.json,
     "request"   -> JsonHelpers.requestToJson(request),
     "config"    -> config,
     "attrs"     -> attrs.json
+  )
+
+  def wasmJson: JsValue = Json.obj(
+    "snowflake" -> snowflake,
+    "route" -> route.json,
+    "request" -> JsonHelpers.requestToJson(request),
+    "config" -> config,
+    "attrs" -> attrs.json
   )
 }
 
