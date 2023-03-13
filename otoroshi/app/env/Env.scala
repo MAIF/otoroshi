@@ -411,7 +411,7 @@ class Env(
     configuration.getOptionalWithFileSupport[Int]("app.proxy.requestTimeout").map(_.millis).getOrElse(1.hour)
 
   lazy val longRequestTimeout: FiniteDuration =
-    configuration.getOptionalWithFileSupport[Int]("app.proxy.longRequestTimeout").map(_.millis).getOrElse(12.hour)
+    configuration.getOptionalWithFileSupport[Int]("app.proxy.longRequestTimeout").map(_.millis).getOrElse(3.hour)
 
   lazy val initialTrustXForwarded: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.trustXForwarded").getOrElse(true)
