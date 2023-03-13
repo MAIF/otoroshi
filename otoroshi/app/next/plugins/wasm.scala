@@ -394,10 +394,8 @@ object WasmUtils {
       }
 
   private def callWasm(wasm: ByteString, config: WasmConfig, defaultFunctionName: String, input: JsValue, ctx: Option[NgCachedConfigContext] = None, pluginId: String, attrsOpt: Option[TypedMap])(implicit env: Env): Either[JsValue, String] = {
+    val functionName = config.functionName.filter(_.nonEmpty).getOrElse(defaultFunctionName)
     try {
-
-      val functionName = config.functionName.filter(_.nonEmpty).getOrElse(defaultFunctionName)
-
       def createPlugin(): WasmContextSlot = {
         if (WasmUtils.logger.isDebugEnabled) WasmUtils.logger.debug(s"creating wasm plugin instance for ${config.source.cacheKey}")
         // println(s"""creating plugin with wasm with wasi at "${config.wasi}" of "${wasm.size}" bytes""")
@@ -446,11 +444,13 @@ object WasmUtils {
       }
     } catch {
       case e: Throwable if e.getMessage.contains("wasm backtrace") =>
+        logger.error(s"error while invoking wasm function '${functionName}'", e)
         Json.obj(
           "error" -> "wasm_error",
           "error_description" -> JsArray(e.getMessage.split("\\n").filter(_.trim.nonEmpty).map(JsString.apply))
         ).left
       case e: Throwable =>
+        logger.error(s"error while invoking wasm function '${functionName}'", e)
         Json.obj("error" -> "wasm_error", "error_description" -> JsString(e.getMessage)).left
     }
   }
