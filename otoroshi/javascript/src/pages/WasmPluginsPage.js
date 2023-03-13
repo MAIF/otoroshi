@@ -17,7 +17,7 @@ function tryOrTrue(f) {
 class WasmDataRights extends Component {
   render() {
     const Input = true ? NgBoxBooleanRenderer : BooleanInput;
-    const schema = WasmPlugin.config_schema.accesses.schema
+    const schema = WasmPlugin.config_schema.authorizations.schema
     return (
       <div className="row mb-3">
         <label className="col-xs-12 col-sm-2 col-form-label">{this.props.label}</label>
@@ -123,6 +123,11 @@ export class WasmPluginsPage extends Component {
       filterId: 'description',
       content: (item) => item.description,
     },
+    {
+      title: 'Steps',
+      filterId: 'steps',
+      content: (item) => item.steps.map(v => <span className="badge bg-success">{v}</span>),
+    },
   ];
 
   deleteWasmPlugin = (wasmPlugin, table) => {
@@ -152,6 +157,7 @@ export class WasmPluginsPage extends Component {
     'id', 
     'name', 
     'description', 
+    'steps',
     'tags', 
     'metadata',
     '<<<Wasm source',
@@ -176,15 +182,15 @@ export class WasmPluginsPage extends Component {
     value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedPaths',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.preserve',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.wasi',
-    value.config.source.kind.toLowerCase() !== 'local' && '<<<Wasm host access',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.httpAccess',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.proxyHttpCallTimeout',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.proxyStateAccess',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.configurationAccess',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.globalDataStoreAccess',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.pluginDataStoreAccess',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.globalMapAccess',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.accesses.pluginMapAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && '<<<Wasm host function authorizations',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.httpAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.proxyHttpCallTimeout',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.proxyStateAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.configurationAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.globalDataStoreAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.pluginDataStoreAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.globalMapAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.pluginMapAccess',
   ].filter(v => !!v);
 
   formSchema = {
@@ -200,6 +206,24 @@ export class WasmPluginsPage extends Component {
     description: {
       type: 'string',
       props: { label: 'Description', placeholder: 'A nice wasm plugin to do whatever you want' },
+    },
+    steps: {
+      type: 'array',
+      props: {
+        label: 'Steps',
+        possibleValues: [
+          'Sink',
+          'PreRoute',
+          'ValidateAccess',
+          'TransformRequest',
+          'TransformResponse',
+          'MatchRoute',
+          // 'HandlesTunnel',
+          'HandlesRequest',
+          'CallBackend',
+          'Job',
+        ].map(v => ({ label: v, value: v })),
+      },
     },
     'config.source.path': {
       type: WasmSourcePath,
@@ -323,53 +347,53 @@ export class WasmPluginsPage extends Component {
         label: 'WASI'
       }
     },
-    'config.accesses.httpAccess': { 
+    'config.authorizations.httpAccess': { 
       type: 'bool',
       props: {
         label: 'Http Access'
       }
     },
-    'config.accesses.proxyStateAccess': { 
+    'config.authorizations.proxyStateAccess': { 
       type: 'bool',
       props: {
         label: 'Proxy state access'
       }
     },
-    'config.accesses.configurationAccess': { 
+    'config.authorizations.configurationAccess': { 
       type: 'bool',
       props: {
         label: 'Configuration access'
       }
     },
-    'config.accesses.proxyHttpCallTimeout': { 
+    'config.authorizations.proxyHttpCallTimeout': { 
       type: 'number',
       props: {
         label: 'Http timeout',
         suffix: 'millis.'
       }
     },
-    'config.accesses.globalDataStoreAccess': { 
+    'config.authorizations.globalDataStoreAccess': { 
       type: WasmDataRights,
       props: {
         label: 'Datastore access',
         property: 'globalDataStoreAccess',
       }
     },
-    'config.accesses.pluginDataStoreAccess': { 
+    'config.authorizations.pluginDataStoreAccess': { 
       type: WasmDataRights,
       props: {
         label: 'Plugin scoped datastore access',
         property: 'pluginDataStoreAccess',
       }
     },
-    'config.accesses.globalMapAccess': { 
+    'config.authorizations.globalMapAccess': { 
       type: WasmDataRights,
       props: {
         label: 'Global map access',
         property: 'globalMapAccess',
       }
     },
-    'config.accesses.pluginMapAccess': { 
+    'config.authorizations.pluginMapAccess': { 
       type: WasmDataRights,
       props: {
         label: 'Plugin scoped map access',

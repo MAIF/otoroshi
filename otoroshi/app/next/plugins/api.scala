@@ -257,6 +257,20 @@ object NgStep       {
     HandlesRequest,
     CallBackend
   )
+
+  def apply(value: String): Option[NgStep] = value match {
+    case "Sink" => Sink.some
+    case "PreRoute" => PreRoute.some
+    case "ValidateAccess" => ValidateAccess.some
+    case "TransformRequest" => TransformRequest.some
+    case "TransformResponse" => TransformResponse.some
+    case "MatchRoute" => MatchRoute.some
+    case "HandlesTunnel" => HandlesTunnel.some
+    case "HandlesRequest" => HandlesRequest.some
+    case "CallBackend" => CallBackend.some
+    case "Job" => Job.some
+    case _ => None
+  }
 }
 
 trait NgPluginConfig {

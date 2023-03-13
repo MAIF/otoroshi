@@ -17,6 +17,7 @@ case class WasmPlugin(
   id: String,
   name: String,
   description: String,
+  steps: Seq[NgStep] = Seq.empty,
   config: WasmConfig,
   tags: Seq[String] = Seq.empty,
   metadata: Map[String, String] = Map.empty,
@@ -44,6 +45,7 @@ object WasmPlugin {
       "name" -> o.name,
       "description" -> o.description,
       "config" -> o.config.json,
+      "steps" -> JsArray(o.steps.map(_.json)),
       "metadata" -> o.metadata,
       "tags" -> JsArray(o.tags.map(JsString.apply))
     )
@@ -54,6 +56,7 @@ object WasmPlugin {
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
         config = (json \ "config").asOpt(WasmConfig.format).getOrElse(WasmConfig()),
+        steps = (json \ "steps").asOpt[Seq[String]].map(_.map(NgStep.apply).collect { case Some(s) => s }).getOrElse(Seq.empty),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
       )
@@ -72,7 +75,7 @@ trait WasmPluginDataStore extends BasicStore[WasmPlugin] {
       description = "New wasm plugin",
       tags = Seq.empty,
       metadata = Map.empty,
-      config = WasmConfig()
+      config = WasmConfig(),
     )
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)

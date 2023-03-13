@@ -140,8 +140,8 @@ const schema = {
         'Doesnt stop the wasm vm during a request',
     },
   },
-  accesses: {
-    label: 'Host functions',
+  authorizations: {
+    label: 'Host functions authorizations',
     type: 'form',
     collapsable: true,
     collapsed: false,
@@ -266,7 +266,7 @@ export default {
     'functionName',
     v.source.kind.toLowerCase() !== 'local' && 'wasi',
     v.source.kind.toLowerCase() !== 'local' && 'preserve',
-    v.source.kind.toLowerCase() !== 'local' && 'accesses',
+    v.source.kind.toLowerCase() !== 'local' && 'authorizations',
     v.source.kind.toLowerCase() !== 'local' && {
       type: 'group',
       name: 'Advanced settings',
