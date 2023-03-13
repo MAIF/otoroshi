@@ -993,7 +993,8 @@ case class OtoroshiExport(
     teams: Seq[Team] = Seq.empty,
     routes: Seq[NgRoute] = Seq.empty,
     routeCompositions: Seq[NgRouteComposition] = Seq.empty,
-    backends: Seq[StoredNgBackend] = Seq.empty
+    backends: Seq[StoredNgBackend] = Seq.empty,
+    wasmPlugins: Seq[WasmPlugin] = Seq.empty,
 ) {
 
   import otoroshi.utils.json.JsonImplicits._
@@ -1119,6 +1120,34 @@ case class OtoroshiExport(
         _.select("id").asString,
         _.id.value
       ),
+      routes = customizeAndMergeArray[NgRoute](
+        routes,
+        customization.select("routes").asOpt[JsArray].getOrElse(Json.arr()),
+        NgRoute.fmt,
+        _.select("id").asString,
+        _.id
+      ),
+      backends = customizeAndMergeArray[StoredNgBackend](
+        backends,
+        customization.select("backends").asOpt[JsArray].getOrElse(Json.arr()),
+        StoredNgBackend.format,
+        _.select("id").asString,
+        _.id
+      ),
+      wasmPlugins = customizeAndMergeArray[WasmPlugin](
+        wasmPlugins,
+        customization.select("wasmPlugins").asOpt[JsArray].getOrElse(Json.arr()),
+        WasmPlugin.format,
+        _.select("id").asString,
+        _.id
+      ),
+      routeCompositions = customizeAndMergeArray[NgRouteComposition](
+        routeCompositions,
+        customization.select("routeCompositions").asOpt[JsArray].getOrElse(Json.arr()),
+        NgRouteComposition.fmt,
+        _.select("id").asString,
+        _.id
+      ),
       admins = customizeAndMergeArray[WebAuthnOtoroshiAdmin](
         admins,
         customization.select("admins").asOpt[JsArray].getOrElse(Json.arr()),
@@ -1164,7 +1193,8 @@ case class OtoroshiExport(
       "teams"              -> JsArray(teams.map(_.json)),
       "routes"             -> JsArray(routes.map(_.json)),
       "routeCompositions"  -> JsArray(routeCompositions.map(_.json)),
-      "backends"           -> JsArray(backends.map(_.json))
+      "backends"           -> JsArray(backends.map(_.json)),
+      "wasmPlugins"           -> JsArray(wasmPlugins.map(_.json)),
     )
   }
 }

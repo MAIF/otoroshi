@@ -32,6 +32,12 @@ case class WasmPlugin(
 }
 
 object WasmPlugin {
+  def fromJsons(value: JsValue): WasmPlugin =
+    try {
+      format.reads(value).get
+    } catch {
+      case e: Throwable => throw e
+    }
   val format = new Format[WasmPlugin] {
     override def writes(o: WasmPlugin): JsValue = o.location.jsonWithKey ++ Json.obj(
       "id" -> o.id,
