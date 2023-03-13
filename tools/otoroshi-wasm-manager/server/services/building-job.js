@@ -23,7 +23,7 @@ const JS_ARGS = wasmName => ["install", "esbuild.js", `dist/index.js -o ${wasmNa
   .map(command => command.split(' '));
 
 const GO_BUILD = ["go", "go", "go", "tinygo"]
-const GO_ARGS = wasmName => ["get github.com/extism/go-pdk", "get github.com/buger/jsonparser", "mod download", `build --no-debug -target=wasi -o ${wasmName}.wasm `]
+const GO_ARGS = wasmName => ["get github.com/extism/go-pdk", "get github.com/buger/jsonparser", "mod tidy", `build --no-debug -target=wasi -o ${wasmName}.wasm `]
   .map(command => command.split(' '));
 
 const queue = []
