@@ -217,7 +217,7 @@ object WasmSource {
   }
 }
 
-case class WasmAccesses(
+case class WasmAuthorizations(
    httpAccess: Boolean = false,
    globalDataStoreAccess: WasmDataRights = WasmDataRights(),
    pluginDataStoreAccess: WasmDataRights = WasmDataRights(),
@@ -227,12 +227,12 @@ case class WasmAccesses(
    configurationAccess: Boolean = false,
    proxyHttpCallTimeout: Int = 5000,
 ) {
-  def json: JsValue = WasmAccesses.format.writes(this)
+  def json: JsValue = WasmAuthorizations.format.writes(this)
 }
 
-object WasmAccesses {
-  val format = new Format[WasmAccesses] {
-    override def writes(o: WasmAccesses): JsValue = Json.obj(
+object WasmAuthorizations {
+  val format = new Format[WasmAuthorizations] {
+    override def writes(o: WasmAuthorizations): JsValue = Json.obj(
       "httpAccess" -> o.httpAccess,
       "proxyHttpCallTimeout" -> o.proxyHttpCallTimeout,
       "globalDataStoreAccess" -> WasmDataRights.fmt.writes(o.globalDataStoreAccess),
@@ -243,8 +243,8 @@ object WasmAccesses {
       "configurationAccess" -> o.configurationAccess,
 
     )
-    override def reads(json: JsValue): JsResult[WasmAccesses] = Try {
-      WasmAccesses(
+    override def reads(json: JsValue): JsResult[WasmAuthorizations] = Try {
+      WasmAuthorizations(
         httpAccess = (json \ "httpAccess").asOpt[Boolean].getOrElse(false),
         proxyHttpCallTimeout = (json \ "proxyHttpCallTimeout").asOpt[Int].getOrElse(5000),
         globalDataStoreAccess = (json \ "globalDataStoreAccess")
@@ -275,7 +275,7 @@ case class WasmConfig(
     ////
     preserve: Boolean = true,
     wasi: Boolean = false,
-    accesses: WasmAccesses = WasmAccesses(),
+    authorizations: WasmAuthorizations = WasmAuthorizations(),
 ) extends NgPluginConfig {
   def json: JsValue = Json.obj(
     "source"           -> source.json,
@@ -286,7 +286,7 @@ case class WasmConfig(
     "allowedPaths"            -> allowedPaths,
     "wasi"                    -> wasi,
     "preserve"                -> preserve,
-    "accesses"                -> accesses.json
+    "authorizations"          -> authorizations.json
   )
 }
 
@@ -322,7 +322,9 @@ object WasmConfig {
         allowedPaths = (json \ "allowedPaths").asOpt[Map[String, String]].getOrElse(Map.empty),
         wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false),
         preserve = (json \ "preserve").asOpt[Boolean].getOrElse(true),
-        accesses = (json \ "accesses").asOpt[WasmAccesses](WasmAccesses.format.reads).getOrElse(WasmAccesses()),
+        authorizations = (json \ "authorizations").asOpt[WasmAuthorizations](WasmAuthorizations.format.reads)
+          .orElse((json \ "accesses").asOpt[WasmAuthorizations](WasmAuthorizations.format.reads))
+          .getOrElse(WasmAuthorizations()),
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

@@ -1,23 +1,25 @@
 package next.plugins
 
-import akka.http.scaladsl.util.FastFuture.EnhancedFuture
+import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.util.ByteString
 import org.extism.sdk._
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterConfig
 import otoroshi.env.Env
-import otoroshi.events.{Location, WasmLogEvent}
-import otoroshi.next.plugins.WasmConfig
+import otoroshi.events.WasmLogEvent
 import otoroshi.next.plugins.api.NgCachedConfigContext
+import otoroshi.next.plugins.{WasmAuthorizations, WasmConfig}
+import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
-import play.api.libs.json.{JsArray, JsNull, JsString, Json}
+import play.api.libs.json._
 
 import java.nio.charset.StandardCharsets
 import java.util.Optional
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 
@@ -70,6 +72,8 @@ object Status extends Enumeration {
     StatusUnimplemented = Value
 }
 
+case class HostFunctionWithAuthorization(function: HostFunction[_ <: HostUserData], authorized: WasmAuthorizations => Boolean)
+
 trait AwaitCapable {
   def await[T](future: Future[T], atMost: FiniteDuration = 5.seconds)(implicit env: Env): T = {
     Await.result(future, atMost) // TODO: atMost from env
@@ -78,63 +82,68 @@ trait AwaitCapable {
 
 object Logging extends AwaitCapable {
 
-    def proxyLogFunction(): ExtismFunction[EmptyUserData] =
-      (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EmptyUserData]) => {
-      val logLevel = LogLevel(params(0).v.i32)
-      val messageData  = Utils.rawBytePtrToString(plugin, params(1).v.i64, params(2).v.i32)
+  def proxyLogFunction(): ExtismFunction[EmptyUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EmptyUserData]) => {
+    val logLevel = LogLevel(params(0).v.i32)
+    val messageData  = Utils.rawBytePtrToString(plugin, params(1).v.i64, params(2).v.i32)
 
-        System.out.println(String.format("[%s]: %s", logLevel.toString, messageData))
+      System.out.println(String.format("[%s]: %s", logLevel.toString, messageData))
 
-        returns(0).v.i32 = Status.StatusOK.id
-    }
-    
-    def proxyLogWithEventFunction()
-                                 (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
-      (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], hostData: Optional[EnvUserData]) => {
-        hostData
-          .ifPresent(ud => {
-            val data  = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
+      returns(0).v.i32 = Status.StatusOK.id
+  }
 
-            val event = WasmLogEvent(
-              `@id` = ud.env.snowflakeGenerator.nextIdStr(),
-              `@service` = ud.ctx.map(e => e.route.name).getOrElse(""),
-              `@serviceId` = ud.ctx.map(e => e.route.id).getOrElse(""),
-              `@timestamp` = DateTime.now(),
-              route = ud.ctx.map(_.route),
-              fromFunction = (data \ "function").asOpt[String].getOrElse("unknown function"),
-              message = (data \ "message").asOpt[String].getOrElse("--"),
-              level = (data \ "level").asOpt[Int].map(r => LogLevel(r)).getOrElse(LogLevel.LogLevelDebug).toString,
-            )
+  def proxyLogWithEventFunction()
+                               (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], hostData: Optional[EnvUserData]) => {
+      hostData
+        .ifPresent(ud => {
+          val data  = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
 
-            event.toAnalytics()
+          val event = WasmLogEvent(
+            `@id` = ud.env.snowflakeGenerator.nextIdStr(),
+            `@service` = ud.ctx.map(e => e.route.name).getOrElse(""),
+            `@serviceId` = ud.ctx.map(e => e.route.id).getOrElse(""),
+            `@timestamp` = DateTime.now(),
+            route = ud.ctx.map(_.route),
+            fromFunction = (data \ "function").asOpt[String].getOrElse("unknown function"),
+            message = (data \ "message").asOpt[String].getOrElse("--"),
+            level = (data \ "level").asOpt[Int].map(r => LogLevel(r)).getOrElse(LogLevel.LogLevelDebug).toString,
+          )
 
-            returns(0).v.i32 = Status.StatusOK.id
-        })
-    }
+          event.toAnalytics()
 
-    def proxyLog() = new org.extism.sdk.HostFunction[EmptyUserData](
-            "proxy_log",
-            Array(LibExtism.ExtismValType.I32,LibExtism.ExtismValType.I64,LibExtism.ExtismValType.I32),
-            Array(LibExtism.ExtismValType.I32),
-            proxyLogFunction,
-            Optional.of(EmptyUserData())
+          returns(0).v.i32 = Status.StatusOK.id
+      })
+  }
+
+  def proxyLog() = new org.extism.sdk.HostFunction[EmptyUserData](
+    "proxy_log",
+    Array(LibExtism.ExtismValType.I32,LibExtism.ExtismValType.I64,LibExtism.ExtismValType.I32),
+    Array(LibExtism.ExtismValType.I32),
+    proxyLogFunction,
+    Optional.of(EmptyUserData())
+  )
+
+  def proxyLogWithEvent(config: WasmConfig, ctx: Option[NgCachedConfigContext])
+                       (implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = new org.extism.sdk.HostFunction[EnvUserData](
+    "proxy_log_event",
+    Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+    Array(LibExtism.ExtismValType.I32),
+    proxyLogWithEventFunction,
+    Optional.of(EnvUserData(env, executionContext, mat, config, ctx))
+  )
+
+  def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext])
+                  (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[HostFunctionWithAuthorization] = {
+    Seq(
+      HostFunctionWithAuthorization(proxyLog(), _ => true),
+      HostFunctionWithAuthorization(proxyLogWithEvent(config, ctx), _ => true),
     )
-
-    def proxyLogWithEvent(config: WasmConfig, ctx: Option[NgCachedConfigContext])
-                         (implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = new org.extism.sdk.HostFunction[EnvUserData](
-        "proxy_log_event",
-        Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
-        Array(LibExtism.ExtismValType.I32),
-        proxyLogWithEventFunction,
-        Optional.of(EnvUserData(env, executionContext, mat, config, ctx))
-    )
-
-    def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext])
-                    (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[(String, HostFunction[_ <: HostUserData])]
-    = Seq("proxyLog" -> proxyLog(), "proxyLogWithEvent" -> proxyLogWithEvent(config, ctx))
+  }
 }
 
 object Http extends AwaitCapable {
+
   def httpCallFunction: ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
       data.ifPresent(hostData => {
@@ -143,36 +152,46 @@ object Http extends AwaitCapable {
 
         val context = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
 
-        val builder = hostData.env
-          .Ws
-          .url((context \ "url").asOpt[String].getOrElse("https://mirror.otoroshi.io"))
-          .withMethod((context \ "method").asOpt[String].getOrElse("GET"))
-          .withHttpHeaders((context \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
-          .withRequestTimeout(Duration((context \ "request_timeout").asOpt[Long].getOrElse(hostData.env.clusterConfig.worker.timeout), TimeUnit.MILLISECONDS))
-          .withFollowRedirects((context \ "follow_redirects").asOpt[Boolean].getOrElse(false))
-          .withQueryStringParameters((context \ "query").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
-
-        val request = (context \ "body").asOpt[String] match {
-          case Some(body) => builder.withBody(body)
-          case None => builder
+        val url = (context \ "url").asOpt[String].getOrElse("https://mirror.otoroshi.io")
+        val allowedHosts = hostData.config.allowedHosts
+        val urlHost = Uri(url).authority.host.toString()
+        val allowed = allowedHosts.nonEmpty || allowedHosts.contains("*") || allowedHosts.exists(h => RegexPool(h).matches(urlHost))
+        if (allowed) {
+          val builder = hostData.env
+            .Ws
+            .url(url)
+            .withMethod((context \ "method").asOpt[String].getOrElse("GET"))
+            .withHttpHeaders((context \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
+            .withRequestTimeout(Duration((context \ "request_timeout").asOpt[Long].getOrElse(hostData.env.clusterConfig.worker.timeout), TimeUnit.MILLISECONDS))
+            .withFollowRedirects((context \ "follow_redirects").asOpt[Boolean].getOrElse(false))
+            .withQueryStringParameters((context \ "query").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
+          val request = (context \ "body").asOpt[String] match {
+            case Some(body) => builder.withBody(body)
+            case None => builder
+          }
+          val out = Await.result(request
+            .execute()
+            .map { res =>
+              val body = res.body
+              Json.obj(
+                "status" -> res.status,
+                "headers" -> res.headers
+                  .mapValues(_.head)
+                  .toSeq
+                  .filter(_._1 != "Content-Type")
+                  .filter(_._1 != "Content-Length")
+                  .filter(_._1 != "Transfer-Encoding"),
+                "body" -> body
+              )
+            }, Duration(hostData.config.authorizations.proxyHttpCallTimeout, TimeUnit.MILLISECONDS))
+          plugin.returnString(returns(0), Json.stringify(out))
+        } else {
+          plugin.returnString(returns(0), Json.stringify(Json.obj(
+            "status" -> 403,
+            "headers" -> Json.obj("content-type" -> "text/plain"),
+            "body" -> s"you cannot access host: ${urlHost}"
+          )))
         }
-
-        val out = Await.result(request
-          .execute()
-          .map { res =>
-            val body = res.body
-            Json.obj(
-              "status" -> res.status,
-              "headers" -> res.headers
-                .mapValues(_.head)
-                .toSeq
-                .filter(_._1 != "Content-Type")
-                .filter(_._1 != "Content-Length")
-                .filter(_._1 != "Transfer-Encoding"),
-              "body" -> body
-            )
-          }, Duration(hostData.config.accesses.proxyHttpCallTimeout, TimeUnit.MILLISECONDS))
-        plugin.returnString(returns(0), Json.stringify(out))
       })
     }
 
@@ -186,9 +205,9 @@ object Http extends AwaitCapable {
       )
   }
 
-  def getFunctions(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[(String, HostFunction[_ <: HostUserData])] = {
+  def getFunctions(config: WasmConfig)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[HostFunctionWithAuthorization] = {
     Seq(
-      "httpAccess" -> proxyHttpCall(config)
+      HostFunctionWithAuthorization(proxyHttpCall(config), _.httpAccess)
     )
   }
 }
@@ -430,27 +449,26 @@ object DataStore extends AwaitCapable {
     )
   }
 
-  def getFunctions(config: WasmConfig, pluginId: String)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[(String, HostFunction[_ <: HostUserData])] =
+  def getFunctions(config: WasmConfig, pluginId: String)(implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[HostFunctionWithAuthorization] =
     Seq(
-      "globalDataStoreAccessRead" -> proxyDataStoreKeys(config = config),
-      "globalDataStoreAccessRead" -> proxyDataStoreGet(config = config),
-      "globalDataStoreAccessRead" -> proxyDataStoreExists(config = config),
-      "globalDataStoreAccessRead" -> proxyDataStorePttl(config = config),
-      "globalDataStoreAccessWrite" -> proxyDataStoreSetnx(config = config),
-      "globalDataStoreAccessWrite" -> proxyDataStoreDel(config = config),
-      "globalDataStoreAccessWrite" -> proxyDataStoreIncrby(config = config),
-      "globalDataStoreAccessWrite" -> proxyDataStorePexpire(config = config),
-      "globalDataStoreAccessRead" -> proxyDataStoreAllMatching(config = config),
-
-      "pluginDataStoreAccessRead" -> proxyDataStoreKeys(config = config, pluginRestricted = true, prefix = pluginId.some),
-      "pluginDataStoreAccessRead" -> proxyDataStoreGet(config = config, pluginRestricted = true, prefix = pluginId.some),
-      "pluginDataStoreAccessRead" -> proxyDataStoreExists(config = config, pluginRestricted = true, prefix = pluginId.some),
-      "pluginDataStoreAccessRead" -> proxyDataStorePttl(config = config, pluginRestricted = true, prefix = pluginId.some),
-      "pluginDataStoreAccessWrite" -> proxyDataStoreSetnx(config = config, pluginRestricted = true, prefix = pluginId.some),
-      "pluginDataStoreAccessWrite" -> proxyDataStoreDel(config = config, pluginRestricted = true, prefix = pluginId.some),
-      "pluginDataStoreAccessWrite" -> proxyDataStoreIncrby(config = config, pluginRestricted = true, prefix = pluginId.some),
-      "pluginDataStoreAccessWrite" -> proxyDataStorePexpire(config = config, pluginRestricted = true, prefix = pluginId.some),
-      "pluginDataStoreAccessRead" -> proxyDataStoreAllMatching(config = config, pluginRestricted = true, prefix = pluginId.some)
+      HostFunctionWithAuthorization(proxyDataStoreKeys(config = config), _.globalDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreGet(config = config), _.globalDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreExists(config = config), _.globalDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStorePttl(config = config), _.globalDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreSetnx(config = config), _.globalDataStoreAccess.write),
+      HostFunctionWithAuthorization(proxyDataStoreDel(config = config), _.globalDataStoreAccess.write),
+      HostFunctionWithAuthorization(proxyDataStoreIncrby(config = config), _.globalDataStoreAccess.write),
+      HostFunctionWithAuthorization(proxyDataStorePexpire(config = config), _.globalDataStoreAccess.write),
+      HostFunctionWithAuthorization(proxyDataStoreAllMatching(config = config), _.globalDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreKeys(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreGet(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreExists(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStorePttl(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreAllMatching(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreSetnx(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.write),
+      HostFunctionWithAuthorization(proxyDataStoreDel(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.write),
+      HostFunctionWithAuthorization(proxyDataStoreIncrby(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.write),
+      HostFunctionWithAuthorization(proxyDataStorePexpire(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.write),
   )
 }
 
@@ -458,60 +476,7 @@ object State {
 
   private val cache: LegitTrieMap[String, LegitTrieMap[String, ByteString]] = new LegitTrieMap[String, LegitTrieMap[String, ByteString]]()
 
-  def getClusterState(cc: ClusterConfig) = Json.obj(
-    "mode" -> Json.obj(
-      "name" -> cc.mode.name,
-      "clusterActive" -> cc.mode.clusterActive,
-      "isOff" -> cc.mode.isOff,
-      "isWorker" -> cc.mode.isWorker,
-      "isLeader" -> cc.mode.isLeader,
-    ),
-    "compression" -> cc.compression,
-    "proxy" -> Json.obj(
-      "host" -> cc.proxy.map(_.host),
-      "port" -> cc.proxy.map(_.port),
-      "protocol" -> cc.proxy.map(_.protocol),
-      "principal" -> cc.proxy.map(_.principal),
-      "password" -> cc.proxy.map(_.password),
-      "ntlmDomain" -> cc.proxy.map(_.ntlmDomain),
-      "encoding" -> cc.proxy.map(_.encoding),
-      "nonProxyHosts" -> cc.proxy.map(_.nonProxyHosts),
-    ),
-    "mtlsConfig" -> cc.mtlsConfig.json,
-    "streamed" -> cc.streamed,
-    "relay" -> cc.relay.json,
-    "retryDelay" -> cc.retryDelay,
-    "retryFactor" -> cc.retryFactor,
-    "leader" -> Json.obj(
-      "name" -> cc.leader.name,
-      "urls" -> cc.leader.urls,
-      "host" -> cc.leader.host,
-      "clientId" -> cc.leader.clientId,
-      "clientSecret" -> cc.leader.clientSecret,
-      "groupingBy" -> cc.leader.groupingBy,
-      "cacheStateFor" -> cc.leader.cacheStateFor,
-      "stateDumpPath" -> cc.leader.stateDumpPath
-    ),
-    "worker" -> Json.obj(
-      "name" -> cc.worker.name,
-      "retries" -> cc.worker.retries,
-      "timeout" -> cc.worker.timeout,
-      "dataStaleAfter" -> cc.worker.dataStaleAfter,
-      "dbPath" -> cc.worker.dbPath,
-      "state" -> Json.obj(
-        "timeout" -> cc.worker.state.timeout,
-        "pollEvery" -> cc.worker.state.pollEvery,
-        "retries" -> cc.worker.state.retries
-      ),
-      "quotas" -> Json.obj(
-        "timeout" -> cc.worker.quotas.timeout,
-        "pushEvery" -> cc.worker.quotas.pushEvery,
-        "retries" -> cc.worker.quotas.retries
-      ),
-      "tenants" -> cc.worker.tenants.map(_.value),
-      "swapStrategy" -> cc.worker.swapStrategy.name
-    )
-  )
+  def getClusterState(cc: ClusterConfig): JsValue = cc.json
 
   def getProxyStateFunction: ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
@@ -537,6 +502,7 @@ object State {
           "privateAppsSessions" -> JsArray(proxyState.allPrivateAppsSessions().map(_.json)),
           "tcpServices" -> JsArray(proxyState.allTcpServices().map(_.json)),
           "scripts" -> JsArray(proxyState.allScripts().map(_.json)),
+          "wasmPlugins" -> JsArray(proxyState.allWasmPlugins().map(_.json)),
         ).stringify
 
         plugin.returnString(returns(0), state)
@@ -685,6 +651,45 @@ object State {
       Optional.of(EnvUserData(env, executionContext, mat, config))
     )
   }
+
+  def getProxyConfigFunction: ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+      data.ifPresent(hostData => {
+        val cc = hostData.env.configurationJson.stringify
+        plugin.returnString(returns(0), cc)
+      })
+    }
+
+  def getProxyConfig(config: WasmConfig)
+               (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    new HostFunction[EnvUserData](
+      "get_proxy_config",
+      Array(LibExtism.ExtismValType.I64),
+      Array(LibExtism.ExtismValType.I64),
+      getProxyConfigFunction,
+      Optional.of(EnvUserData(env, executionContext, mat, config))
+    )
+  }
+
+  def getGlobalProxyConfigFunction(implicit env: Env, executionContext: ExecutionContext): ExtismFunction[EnvUserData] =
+    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
+      data.ifPresent(hostData => {
+        val cc = hostData.env.datastores.globalConfigDataStore.latest().json.stringify
+        plugin.returnString(returns(0), cc)
+      })
+    }
+
+  def getGlobalProxyConfig(config: WasmConfig)
+                    (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    new HostFunction[EnvUserData](
+      "get_proxy_global_config",
+      Array(LibExtism.ExtismValType.I64),
+      Array(LibExtism.ExtismValType.I64),
+      getGlobalProxyConfigFunction,
+      Optional.of(EnvUserData(env, executionContext, mat, config))
+    )
+  }
+
   def getClusterState(config: WasmConfig)
                      (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     new HostFunction[EnvUserData](
@@ -740,59 +745,47 @@ object State {
   }
 
   def getFunctions(config: WasmConfig, pluginId: String)
-                  (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[(String, HostFunction[_ <: HostUserData])] =
+                  (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[HostFunctionWithAuthorization] =
     Seq(
-      "proxyStateAccess" -> getProxyState(config),
-      "proxyStateAccess" -> proxyStateGetValue(config),
-      "configurationAccess" -> getClusterState(config),
-      "configurationAccess" -> proxyClusteStateGetValue(config),
+      HostFunctionWithAuthorization(getProxyState(config), _.proxyStateAccess),
+      HostFunctionWithAuthorization(proxyStateGetValue(config), _.proxyStateAccess),
+      HostFunctionWithAuthorization(getGlobalProxyConfig(config), _.proxyStateAccess),
 
-      "globalMapAccessWrite" -> proxyGlobalMapSet(),
-      "globalMapAccessRead" -> proxyGlobalMapGet(),
-      "globalMapAccessRead" -> proxyGlobalMap(),
+      HostFunctionWithAuthorization(getClusterState(config), _.configurationAccess),
+      HostFunctionWithAuthorization(proxyClusteStateGetValue(config), _.configurationAccess),
+      HostFunctionWithAuthorization(getProxyConfig(config), _.configurationAccess),
 
-      "pluginMapAccessWrite" -> proxyGlobalMapSet(pluginRestricted = true, pluginId.some),
-      "pluginMapAccessRead" -> proxyGlobalMapGet(pluginRestricted = true, pluginId.some),
-      "pluginMapAccessRead" -> proxyGlobalMap(pluginRestricted = true, pluginId.some)
+      HostFunctionWithAuthorization(proxyGlobalMapSet(), _.globalMapAccess.write),
+      HostFunctionWithAuthorization(proxyGlobalMapGet(), _.globalMapAccess.read),
+      HostFunctionWithAuthorization(proxyGlobalMap(), _.globalMapAccess.read),
+
+      HostFunctionWithAuthorization(proxyGlobalMapSet(pluginRestricted = true, pluginId.some), _.pluginMapAccess.write),
+      HostFunctionWithAuthorization(proxyGlobalMapGet(pluginRestricted = true, pluginId.some), _.pluginMapAccess.read),
+      HostFunctionWithAuthorization(proxyGlobalMap(pluginRestricted = true, pluginId.some), _.pluginMapAccess.read),
   )
 }
 
 object HostFunctions {
 
-    private var functions: Seq[(String, HostFunction[_ <: HostUserData])] = Seq.empty[(String, HostFunction[_ <: HostUserData])]
+  private val functions: AtomicReference[Seq[HostFunctionWithAuthorization]] =
+    new AtomicReference[Seq[HostFunctionWithAuthorization]](Seq.empty[HostFunctionWithAuthorization])
 
-    def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext], pluginId: String)
-                    (implicit env: Env, executionContext: ExecutionContext): Array[HostFunction[_ <: HostUserData]] = {
-      implicit val mat = env.otoroshiMaterializer
-
-      if (functions.isEmpty) {
-        functions = Logging.getFunctions(config, ctx) ++
-          Http.getFunctions(config) ++
-          State.getFunctions(config, pluginId) ++
-          DataStore.getFunctions(config, pluginId)
-      }
-
-      val rights = Seq(
-        "globalDataStoreAccessRead" -> config.accesses.globalDataStoreAccess.read,
-        "globalDataStoreAccessWrite" -> config.accesses.globalDataStoreAccess.write,
-        "pluginDataStoreAccessRead" -> config.accesses.pluginDataStoreAccess.read,
-        "pluginDataStoreAccessWrite" -> config.accesses.pluginDataStoreAccess.write,
-        "globalMapAccessRead" -> config.accesses.globalMapAccess.read,
-        "globalMapAccessWrite" -> config.accesses.globalMapAccess.write,
-        "pluginMapAccessRead" -> config.accesses.pluginMapAccess.read,
-        "pluginMapAccessWrite" -> config.accesses.pluginMapAccess.write,
-        "proxyStateAccess" -> config.accesses.proxyStateAccess,
-        "configurationAccess" -> config.accesses.configurationAccess,
-        "httpAccess" -> config.accesses.httpAccess,
-        "proxyLog" -> true,
-        "proxyLogWithEvent" -> true
+  def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext], pluginId: String)
+                  (implicit env: Env, executionContext: ExecutionContext): Array[HostFunction[_ <: HostUserData]] = {
+    implicit val mat = env.otoroshiMaterializer
+    if (functions.get.isEmpty) {
+      functions.set(
+        Logging.getFunctions(config, ctx) ++
+        Http.getFunctions(config) ++
+        State.getFunctions(config, pluginId) ++
+        DataStore.getFunctions(config, pluginId)
       )
-      .filter(p => p._2)
-      .map(_._1)
-
-      functions.
-        filter(p => rights.contains(p._1))
-        .map(_._2)
-        .toArray
     }
+    functions
+      .get()
+      .collect {
+        case func if func.authorized(config.authorizations) => func.function
+      }
+      .toArray
+  }
 }

@@ -8,12 +8,13 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import org.apache.commons.codec.binary.{Base64, Hex}
+import otoroshi.models.WSProxyServerJson
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.{JsonPathUtils, Regex, RegexPool}
 import play.api.libs.json._
-import play.api.libs.ws.{DefaultWSCookie, WSCookie}
+import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSProxyServer}
 import play.api.mvc.Cookie
 import play.api.{ConfigLoader, Configuration, Logger}
 import reactor.core.publisher.Mono
@@ -626,6 +627,10 @@ object implicits {
     //   "httpOnly" -> cookie.httpOnly,
     //   "sameSite" -> cookie.sameSite.map(_.value.json).getOrElse(JsNull).asValue
     // )
+  }
+
+  implicit class BetterWSProxyServer(val proxy: WSProxyServer) extends AnyVal {
+    def json: JsValue = WSProxyServerJson.proxyToJson(proxy)
   }
 
   implicit class BetterWSCookie(val c: WSCookie) extends AnyVal {

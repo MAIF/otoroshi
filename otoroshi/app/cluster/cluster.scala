@@ -95,6 +95,7 @@ trait ClusterMode {
   def isOff: Boolean
   def isWorker: Boolean
   def isLeader: Boolean
+  def json: JsValue = JsString(name)
 }
 
 object ClusterMode {
@@ -133,8 +134,20 @@ object ClusterMode {
     }
 }
 
-case class WorkerQuotasConfig(timeout: Long = 2000, pushEvery: Long = 2000, retries: Int = 3)
-case class WorkerStateConfig(timeout: Long = 2000, pollEvery: Long = 10000, retries: Int = 3)
+case class WorkerQuotasConfig(timeout: Long = 2000, pushEvery: Long = 2000, retries: Int = 3) {
+  def json: JsValue = Json.obj(
+    "timeout" -> timeout,
+    "push_every" -> pushEvery,
+    "retries" -> retries,
+  )
+}
+case class WorkerStateConfig(timeout: Long = 2000, pollEvery: Long = 10000, retries: Int = 3) {
+  def json: JsValue = Json.obj(
+    "timeout" -> timeout,
+    "poll_every" -> pollEvery,
+    "retries" -> retries,
+  )
+}
 case class WorkerConfig(
     name: String = s"otoroshi-worker-${IdGenerator.token(16)}",
     retries: Int = 3,
@@ -146,7 +159,19 @@ case class WorkerConfig(
     tenants: Seq[TenantId] = Seq.empty,
     swapStrategy: SwapStrategy = SwapStrategy.Replace
     //initialCacert: Option[String] = None
-)
+) {
+  def json: JsValue = Json.obj(
+    "name" -> name,
+    "retries" -> retries,
+    "timeout" -> timeout,
+    "data_stale_after" -> dataStaleAfter,
+    "db_path" -> dbPath,
+    "state" -> state.json,
+    "quotas" -> quotas.json,
+    "tenants" -> tenants.map(_.value),
+    "swap_strategy" -> swapStrategy.name,
+  )
+}
 
 case class LeaderConfig(
     name: String = s"otoroshi-leader-${IdGenerator.token(16)}",
@@ -157,7 +182,18 @@ case class LeaderConfig(
     groupingBy: Int = 50,
     cacheStateFor: Long = 4000,
     stateDumpPath: Option[String] = None
-)
+) {
+  def json: JsValue = Json.obj(
+    "name" -> name,
+    "urls" -> urls,
+    "host" -> host,
+    "clientId" -> clientId,
+    "clientSecret" -> clientSecret,
+    "groupingBy" -> groupingBy,
+    "cacheStateFor" -> cacheStateFor,
+    "stateDumpPath" -> stateDumpPath,
+  )
+}
 
 case class InstanceLocation(
     provider: String,
@@ -273,7 +309,6 @@ case class ClusterConfig(
     mtlsConfig: MtlsConfig,
     streamed: Boolean,
     relay: RelayRouting,
-    // autoUpdateState: Boolean,
     retryDelay: Long,
     retryFactor: Long,
     leader: LeaderConfig = LeaderConfig(),
@@ -285,6 +320,18 @@ case class ClusterConfig(
     if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)
   def gunzip(): Flow[ByteString, ByteString, NotUsed] =
     if (compression == -1) Flow.apply[ByteString] else Compression.gunzip()
+  def json: JsValue = Json.obj(
+    "mode" -> mode.json,
+    "compression" -> compression,
+    "proxy" -> proxy.map(_.json).getOrElse(JsNull).asValue,
+    "tls_config" -> NgTlsConfig.fromLegacy(mtlsConfig).json,
+    "streamed" -> streamed,
+    "relay" -> relay.json,
+    "retry_delay" -> retryDelay,
+    "retry_factor" -> retryFactor,
+    "leader" -> leader.json,
+    "worker" -> worker.json,
+  )
 }
 
 object ClusterConfig {

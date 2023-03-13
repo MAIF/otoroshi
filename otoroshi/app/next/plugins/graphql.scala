@@ -745,7 +745,7 @@ class GraphQLBackend extends NgBackendCall {
             config = Map.empty,
             allowedHosts = wasmAllowedHosts.getOrElse(Seq.empty),
             wasi = wasmWasi,
-            accesses = WasmAccesses(
+            authorizations = WasmAuthorizations(
               proxyHttpCallTimeout = wasmProxyHttpCallTimeout.getOrElse(5000),
               httpAccess = wasmHttpAccess.getOrElse(false),
               globalDataStoreAccess = WasmDataRights(read = wasmGlobalDataStoreAccessRead.getOrElse(false), write = wasmGlobalDataStoreAccessWrite.getOrElse(false)),
