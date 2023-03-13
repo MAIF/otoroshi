@@ -155,7 +155,7 @@ object Http extends AwaitCapable {
         val url = (context \ "url").asOpt[String].getOrElse("https://mirror.otoroshi.io")
         val allowedHosts = hostData.config.allowedHosts
         val urlHost = Uri(url).authority.host.toString()
-        val allowed = allowedHosts.nonEmpty || allowedHosts.contains("*") || allowedHosts.exists(h => RegexPool(h).matches(urlHost))
+        val allowed = allowedHosts.isEmpty || allowedHosts.contains("*") || allowedHosts.exists(h => RegexPool(h).matches(urlHost))
         if (allowed) {
           val builder = hostData.env
             .Ws
