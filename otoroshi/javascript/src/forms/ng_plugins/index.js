@@ -79,6 +79,9 @@ import WasmAccessValidator from './WasmAccessValidator';
 import WasmRequestTransformer from './WasmRequestTransformer';
 import WasmResponseTransformer from './WasmResponseTransformer';
 import WasmRequestHandler from './WasmRequestHandler';
+import WasmRouteMatcher  from './WasmRouteMatcher';
+import WasmSink  from './WasmSink';
+import WasmJob  from './WasmJob';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -163,4 +166,7 @@ export const Plugins = [
   WasmRequestTransformer,
   WasmResponseTransformer, 
   WasmRequestHandler,
+  WasmRouteMatcher,
+  WasmSink,
+  WasmJob,
 ];
