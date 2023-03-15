@@ -118,7 +118,7 @@ object Logging extends AwaitCapable {
 
   def proxyLog() = new org.extism.sdk.HostFunction[EmptyUserData](
     "proxy_log",
-    Array(LibExtism.ExtismValType.I32,LibExtism.ExtismValType.I64,LibExtism.ExtismValType.I32),
+    Array(LibExtism.ExtismValType.I32,LibExtism.ExtismValType.I64,LibExtism.ExtismValType.I64),
     Array(LibExtism.ExtismValType.I32),
     proxyLogFunction,
     Optional.of(EmptyUserData())
