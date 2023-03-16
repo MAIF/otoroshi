@@ -719,6 +719,14 @@ export class DangerZonePage extends Component {
         help: 'Use middle finger emoji (🖕) as a response character for endless HTTP responses.',
       },
     },
+    anonymousReporting: {
+      type: 'bool',
+      props: {
+        label: 'Send anonymous reports',
+        placeholder: '-',
+        help: 'If enabled, otoroshi will send anonymous usage metrics to the Otoroshi teams in order to define the future of the product more accurately',
+      },
+    },
     maxConcurrentRequests: {
       type: 'number',
       props: {
@@ -1098,6 +1106,7 @@ export class DangerZonePage extends Component {
     'middleFingers',
     'limitConcurrentRequests',
     'trustXForwarded',
+    'anonymousReporting',
     'maxConcurrentRequests',
     'maxHttp10ResponseSize',
     'maxLogsSize',

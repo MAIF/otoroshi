@@ -93,15 +93,16 @@ class AnonymousReportingJob extends Job {
   override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
     JobInstantiation.OneInstancePerOtoroshiCluster
 
-  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 30.seconds.some
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.hour.some
 
   private def displayLog(): Unit = {
     logger.info("anonymous reporting is ENABLED. If you want to disable it, you can do it")
-    logger.info("  from the 'Danger zone'")
+    logger.info("  from the 'Danger zone' > 'Send anonymous reports' flag off")
     logger.info("  with the 'otoroshi.anonymous-reporting.enabled = false' config.")
     logger.info("  with the 'OTOROSHI_ANONYMOUS_REPORTING_ENABLED=false' env. variable")
+    logger.info("you can find more about anonymous reporting at https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html")
   }
 
   private def avgDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
@@ -136,7 +137,6 @@ class AnonymousReportingJob extends Job {
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     // TODO: add doc
-    // TODO: add flag in the danger zone
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val config = AnonymousReportingJobConfig.fromEnv(env)
     if (config.enabled && globalConfig.anonymousReporting) {
