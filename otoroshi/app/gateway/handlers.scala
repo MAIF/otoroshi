@@ -349,7 +349,34 @@ class GatewayRequestHandler(
       )
     }
 
+  def incrementCounters(request: RequestHeader): Unit = {
+    val ws = request.headers.get("Sec-WebSocket-Version").isDefined
+    val tls = request.theSecured
+    val http2 = request.version.toLowerCase == "http/2" || request.headers.get("x-http2-stream-id").isDefined
+    val http3 = request.version.toLowerCase == "http/3"
+    val http1 = !http2 && !http3
+    val grpc = request.headers.get("Content-Type").exists(_.contains("application/grpc"))
+    env.clusterAgent.incrementCounter("requests", 1)
+    if (ws) {
+      if (tls) env.clusterAgent.incrementCounter("wss", 1)
+      if (!tls) env.clusterAgent.incrementCounter("ws", 1)
+    } else if (grpc) {
+      if (tls) env.clusterAgent.incrementCounter("grpcs", 1)
+      if (!tls) env.clusterAgent.incrementCounter("grpc", 1)
+    } else {
+      if (tls) {
+        if (http1) env.clusterAgent.incrementCounter("https", 1)
+        if (http2) env.clusterAgent.incrementCounter("h2", 1)
+        if (http3) env.clusterAgent.incrementCounter("h3", 1)
+      } else {
+        if (http1) env.clusterAgent.incrementCounter("http", 1)
+        if (http2) env.clusterAgent.incrementCounter("h2c", 1)
+      }
+    }
+  }
+
   override def routeRequest(request: RequestHeader): Option[Handler] = {
+    incrementCounters(request)
     val config = env.datastores.globalConfigDataStore.latestSafe
     if (request.theSecured && config.isDefined && config.get.autoCert.enabled) { // && config.get.autoCert.replyNicely) { // to avoid cache effet
       request.headers.get("Tls-Session-Info").flatMap(SSLSessionJavaHelper.computeKey) match {

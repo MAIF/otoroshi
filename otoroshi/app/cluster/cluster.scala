@@ -1003,7 +1003,7 @@ object ClusterLeaderAgent {
     }
     res
     // val enumeration = NetworkInterface.getNetworkInterfaces.asScala.toSeq
-    // enumeration.foreach(_.getDisplayName.debugPrintln)
+    // enumeration.foreach(_.getDisplayName)
     // val ipAddresses = enumeration.flatMap(p => p.getInetAddresses.asScala.toSeq)
     // val address = ipAddresses.find { address =>
     //   val host = address.getHostAddress
@@ -1055,6 +1055,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
         "live_threads"              -> ManagementFactory.getThreadMXBean.getThreadCount,
         "live_peak_threads"         -> ManagementFactory.getThreadMXBean.getPeakThreadCount,
         "daemon_threads"            -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
+        "counters"                  -> env.clusterAgent.counters.toSeq.map(t => Json.obj(t._1 -> t._2.get())).fold(Json.obj())(_ ++ _),
         "rate"                      -> BigDecimal(
           Option(rate)
             .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)
@@ -1261,6 +1262,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     .maximumSize(1000L)
     .expireAfterWrite(env.clusterConfig.worker.state.pollEvery.millis * 3)
     .build[String, PrivateAppsUser]()
+  private[cluster] val counters = new LegitTrieMap[String, AtomicLong]()
   /////////////
 
   def lastSync: DateTime = lastPoll.get()
@@ -1596,13 +1598,21 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
+  def incrementCounter(counter: String, increment: Long): Unit = {
+    if (Cluster.logger.isTraceEnabled) Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment counter ${counter} of ${increment}")
+    if (!counters.contains(counter)) {
+      counters.putIfAbsent(counter, new AtomicLong(0L))
+    }
+    counters.get(counter).foreach(_.addAndGet(increment))
+  }
+
   def incrementApi(id: String, increment: Long): Unit = {
     if (env.clusterConfig.mode == ClusterMode.Worker) {
       if (Cluster.logger.isTraceEnabled) Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] Increment API $id")
       if (!apiIncrementsRef.get().contains(id)) {
         apiIncrementsRef.get().putIfAbsent(id, new AtomicLong(0L))
       }
-      apiIncrementsRef.get().get(id).foreach(_.incrementAndGet())
+      apiIncrementsRef.get().get(id).foreach(_.addAndGet(increment))
     }
   }
 
@@ -1881,6 +1891,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   "live_threads"              -> ManagementFactory.getThreadMXBean.getThreadCount,
                   "live_peak_threads"         -> ManagementFactory.getThreadMXBean.getPeakThreadCount,
                   "daemon_threads"            -> ManagementFactory.getThreadMXBean.getDaemonThreadCount,
+                  "counters" -> counters.toSeq.map(t => Json.obj(t._1 -> t._2.get())).fold(Json.obj())(_ ++ _),
                   "rate"                      -> BigDecimal(
                     Option(rate)
                       .filterNot(a => a.isInfinity || a.isNaN || a.isNegInfinity || a.isPosInfinity)

@@ -95,7 +95,7 @@ class AnonymousReportingJob extends Job {
 
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
-  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.hour.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some //1.hour.some
 
   private def displayLog(): Unit = {
     logger.info("anonymous reporting is ENABLED. If you want to disable it, you can do it")
@@ -262,6 +262,12 @@ class AnonymousReportingJob extends Job {
             ),
             "router_routes" -> Json.obj(
               "count" -> env.proxyState.allRoutes().size,
+              "http_clients" -> Json.obj(
+                "ahc" -> env.proxyState.allRoutes().count(_.useAhcClient),
+                "akka" -> env.proxyState.allRoutes().count(_.useAkkaHttpClient),
+                "netty" -> env.proxyState.allRoutes().count(_.useNettyClient),
+                "akka_ws" -> env.proxyState.allRoutes().count(_.useAkkaHttpWsClient),
+              ),
               "plugins" -> Json.obj(
                 "min" -> env.proxyState.allRoutes().map(_.plugins.slots.size).min,
                 "max" -> env.proxyState.allRoutes().map(_.plugins.slots.size).max,
