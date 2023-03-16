@@ -233,7 +233,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
 
   private implicit val mat = env.otoroshiMaterializer
 
-  private val resources = Seq(
+  private lazy val resources = Seq(
     ///////
     Resource(
       "Route",
