@@ -24,10 +24,10 @@ import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 object Utils {
-    def rawBytePtrToString(plugin: ExtismCurrentPlugin, offset: Long, arrSize: Int): String = {
+    def rawBytePtrToString(plugin: ExtismCurrentPlugin, offset: Long, arrSize: Long): String = {
         val memoryLength = LibExtism.INSTANCE.extism_current_plugin_memory_length(plugin.pointer, arrSize)
         val arr = plugin.memory().share(offset, memoryLength)
-                .getByteArray(0, arrSize)
+                .getByteArray(0, arrSize.toInt)
         new String(arr, StandardCharsets.UTF_8)
     }
 }
@@ -131,17 +131,18 @@ object Logging extends AwaitCapable {
 
   def proxyLogFunction(): ExtismFunction[EmptyUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EmptyUserData]) => {
-    val logLevel = LogLevel(params(0).v.i32)
-    val messageData  = Utils.rawBytePtrToString(plugin, params(1).v.i64, params(2).v.i32)
+      val logLevel = LogLevel(params(0).v.i32)
+
+      val messageData = Utils.rawBytePtrToString(plugin, params(1).v.i64, params(2).v.i64)
 
       System.out.println(String.format("[%s]: %s", logLevel.toString, messageData))
 
       returns(0).v.i32 = Status.StatusOK.id
-  }
-
+    }
+  
   def proxyLog() = new org.extism.sdk.HostFunction[EmptyUserData](
     "proxy_log",
-    Array(LibExtism.ExtismValType.I32,LibExtism.ExtismValType.I64,LibExtism.ExtismValType.I64),
+    Array(LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I64),
     Array(LibExtism.ExtismValType.I32),
     proxyLogFunction,
     Optional.of(EmptyUserData())
