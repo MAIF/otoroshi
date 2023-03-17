@@ -173,6 +173,7 @@ class AnonymousReportingJob extends Job {
         val counting = plugins.groupBy(identity).mapValues(v => JsNumber(v.size))
         Json.obj(
           "@timestamp" ->  play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(DateTime.now()),
+          "timestamp_str" -> DateTime.now().toString(),
           "@id" -> IdGenerator.uuid,
           "otoroshi_cluster_id" -> globalConfig.otoroshiId,
           "otoroshi_version" -> env.otoroshiVersion,
