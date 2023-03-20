@@ -27,6 +27,7 @@ case class NgCorsSettings(
 ) extends NgPluginConfig {
   def json: JsValue             = NgCorsSettings.format.writes(this)
   lazy val legacy: CorsSettings = CorsSettings(
+    enabled = true,
     allowOrigin = allowOrigin,
     exposeHeaders = exposeHeaders,
     allowHeaders = allowHeaders,
@@ -90,7 +91,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
   override def isTransformRequestAsync: Boolean            = true
   override def isTransformResponseAsync: Boolean           = false
   override def isPreRouteAsync: Boolean                    = true
-  override def transformsError: Boolean                    = false
+  override def transformsError: Boolean                    = true
   override def name: String                                = "CORS"
   override def description: Option[String]                 = "This plugin applies CORS rules".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgCorsSettings().some
@@ -140,7 +141,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
           HeadersExpressionLanguage(
             v._2,
             Some(req),
-            ctx.route.serviceDescriptor.some,
+            ctx.route.legacy.some,
             ctx.apikey,
             ctx.user,
             ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
@@ -151,5 +152,31 @@ class Cors extends NgRequestTransformer with NgPreRouting {
       )
       .filterNot(h => h._2 == "null")
     ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ corsHeaders).right
+  }
+
+  override def transformError(ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+    val req = ctx.request
+    val cors =
+      CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true, excludedPatterns = Seq.empty)
+    val corsHeaders = cors
+      .asHeaders(req)
+      .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
+      .map(v =>
+        (
+          v._1,
+          HeadersExpressionLanguage(
+            v._2,
+            Some(req),
+            ctx.route.legacy.some,
+            ctx.apikey,
+            ctx.user,
+            ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+            ctx.attrs,
+            env
+          )
+        )
+      )
+      .filterNot(h => h._2 == "null")
+    ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ corsHeaders).vfuture
   }
 }
