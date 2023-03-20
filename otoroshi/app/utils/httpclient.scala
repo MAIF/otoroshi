@@ -935,18 +935,29 @@ case class AkkWsClientStreamedResponse(
     httpResponse: HttpResponse,
     underlyingUrl: String,
     mat: Materializer,
-    requestTimeout: FiniteDuration
+    requestTimeout: FiniteDuration,
+    env: Env,
 ) extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
     val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
       ("Content-Type" -> Seq(contentType))
-    ) /* ++ (if (httpResponse.entity.isChunked()) {
-      Seq(("Transfer-Encoding" -> Seq("chunked")))
+    )
+    val headz = TreeMap(headers: _*)(CaseInsensitiveOrdered)
+    val noContentLengthHeader: Boolean = headz.getIgnoreCase("Content-Length").isEmpty
+    val hasChunkedHeader: Boolean = headz.getIgnoreCase("Transfer-Encoding").isDefined
+    val isChunked: Boolean = Option(httpResponse.entity.isChunked()).filter(identity) match { // don't know if actualy legit ...
+      case Some(chunked) => chunked
+      case None if !env.emptyContentLengthIsChunked => hasChunkedHeader // false
+      case None if env.emptyContentLengthIsChunked && hasChunkedHeader => true
+      case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader => true
+      case _ => false
+    }
+    if (isChunked) {
+      headz + ("Transfer-Encoding" -> Seq("chunked"))
     } else {
-      Seq.empty
-    })*/
-    TreeMap(headers: _*)(CaseInsensitiveOrdered)
+      headz
+    }
   }
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
@@ -1278,7 +1289,8 @@ case class AkkaWsClientRequest(
             resp,
             rawUrl,
             client.mat,
-            remainingTimeout
+            remainingTimeout,
+            env,
           ).future
         }
       }
