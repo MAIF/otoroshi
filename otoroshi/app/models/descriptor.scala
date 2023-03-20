@@ -1255,6 +1255,8 @@ object SecComVersion       {
     version match {
       case "V1" => Some(V1)
       case "V2" => Some(V2)
+      case "v1" => Some(V1)
+      case "v2" => Some(V2)
       case _    => None
     }
 }
@@ -2037,7 +2039,10 @@ object ServiceDescriptor {
           secComHeaders = (json \ "secComHeaders").asOpt(SecComHeaders.format).getOrElse(SecComHeaders()),
           secComTtl =
             (json \ "secComTtl").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(30.seconds),
-          secComVersion = (json \ "secComVersion").asOpt[Int].flatMap(SecComVersion.apply).getOrElse(SecComVersion.V1),
+          secComVersion = (json \ "secComVersion")
+            .asOpt[Int].flatMap(SecComVersion.apply)
+            .orElse((json \ "secComVersion").asOpt[String].flatMap(SecComVersion.apply))
+            .getOrElse(SecComVersion.V1),
           secComInfoTokenVersion = (json \ "secComInfoTokenVersion")
             .asOpt[String]
             .flatMap(SecComInfoTokenVersion.apply)

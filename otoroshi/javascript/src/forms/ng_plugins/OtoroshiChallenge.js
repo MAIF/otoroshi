@@ -20,8 +20,8 @@ export default {
         'The version of the challenge, either a simple value passed in headers or a jwt token signed by both parties',
       props: {
         options: [
-          { label: 'V1', value: 1 },
-          { label: 'V2', value: 2 },
+          { label: 'V1', value: 'V1' },
+          { label: 'V2', value: 'V2' },
         ],
       },
     },

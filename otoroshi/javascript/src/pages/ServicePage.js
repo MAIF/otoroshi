@@ -1923,8 +1923,8 @@ export class ServicePage extends Component {
               help="Version the otoroshi exchange protocol challenge. This option will be set to V2 in a near future."
               onChange={(arr) => this.changeTheValue('secComVersion', arr)}
               possibleValues={[
-                { label: 'V1 - simple values exchange', value: 1 },
-                { label: 'V2 - signed JWT tokens exchange', value: 2 },
+                { label: 'V1 - simple values exchange', value: 'V1' },
+                { label: 'V2 - signed JWT tokens exchange', value: 'V2' },
               ]}
             />
             <SelectInput

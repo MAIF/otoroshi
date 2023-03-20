@@ -1164,8 +1164,8 @@ class Designer extends React.Component {
       plugins: this.state.plugins.map((plugin) => ({
         ...plugin,
         filtered: !(
-          plugin.id.toLowerCase().includes(searched.toLowerCase()) ||
-          plugin.name.toLowerCase().includes(searched.toLowerCase())
+          (plugin.id ? plugin.id.toLowerCase().includes(searched.toLowerCase()) : false) ||
+          (plugin.name ? plugin.name.toLowerCase().includes(searched.toLowerCase()) : false)
         ),
       })),
     });
