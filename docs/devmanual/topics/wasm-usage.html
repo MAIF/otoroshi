@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Export events to Elasticsearch · Otoroshi</title>
+<title>Otoroshi and WASM · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -86,7 +86,7 @@
     <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
     <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
-    <li><a href="../topics/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/wasm-usage.html" class="active page">Otoroshi and WASM</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
@@ -96,7 +96,7 @@
     <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html" class="active page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
     <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
     <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
     <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
@@ -216,7 +216,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
     <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
-    <li><a href="../topics/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/wasm-usage.html" class="active page">Otoroshi and WASM</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
@@ -226,7 +226,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
     <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html" class="active page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
     <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
     <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
     <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
@@ -276,8 +276,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
-  <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
-  <li>Export events to Elasticsearch</li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>Otoroshi and WASM</li>
 </ul>
 </div>
 </div>
@@ -285,111 +285,408 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#export-events-to-elasticsearch" name="export-events-to-elasticsearch" class="anchor"><span class="anchor-link"></span></a>Export events to Elasticsearch</h1>
-<h3><a href="#before-you-start" name="before-you-start" class="anchor"><span class="anchor-link"></span></a>Before you start</h3><p>If you already have an up and running otoroshi instance, you can skip the following instructions</p><div class="instructions">
-<div id="instructions-toggle">
-<span class="instructions-title">Set up an Otoroshi</span>
-<button id="instructions-toggle-button">close</button>
-</div>
-<p>Let&rsquo;s start by downloading the latest Otoroshi.</p>
-<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v16.0.0-dev/otoroshi.jar&#39;
-</code></pre>
-<p>then you can run start Otoroshi :</p>
-<pre class="prettyprint"><code class="language-sh">java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
-</code></pre>
-<p>Now you can log into Otoroshi at <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> with <code>admin@otoroshi.io/password</code></p>
-<p>Create a new route, exposed on <code>http://myservice.oto.tools:8080</code>, which will forward all requests to the mirror <code>https://mirror.otoroshi.io</code>. Each call to this service will returned the body and the headers received by the mirror.</p>
-<pre class="prettyprint"><code class="language-sh">curl -X POST &#39;http://otoroshi-api.oto.tools:8080/api/routes&#39; \
--H &quot;Content-type: application/json&quot; \
--u admin-api-apikey-id:admin-api-apikey-secret \
--d @- &lt;&lt;&#39;EOF&#39;
-{
-  &quot;name&quot;: &quot;my-service&quot;,
-  &quot;frontend&quot;: {
-    &quot;domains&quot;: [&quot;myservice.oto.tools&quot;]
-  },
-  &quot;backend&quot;: {
-    &quot;targets&quot;: [
-      {
-        &quot;hostname&quot;: &quot;mirror.otoroshi.io&quot;,
-        &quot;port&quot;: 443,
-        &quot;tls&quot;: true
-      }
-    ]
-  }
-}
-EOF
-</code></pre>
-<button id="instructions-toggle-confirm">Confirm the installation</button></div>
-<h3><a href="#deploy-a-elasticsearch-and-kibana-stack-on-docker" name="deploy-a-elasticsearch-and-kibana-stack-on-docker" class="anchor"><span class="anchor-link"></span></a>Deploy a Elasticsearch and kibana stack on Docker</h3>
-<p>Let&rsquo;s start by creating an Elasticsearch and Kibana stack on our machine (if it&rsquo;s already done for you, you can skip this section).</p>
-<p>To start an Elasticsearch container for development or testing, run:</p>
-<pre class="prettyprint"><code class="language-sh">docker network create elastic
-docker pull docker.elastic.co/elasticsearch/elasticsearch:7.15.1
-docker run --name es01-test --net elastic -p 9200:9200 -p 9300:9300 -e &quot;discovery.type=single-node&quot; docker.elastic.co/elasticsearch/elasticsearch:7.15.1
-</code></pre>
-<pre class="prettyprint"><code class="language-sh">docker pull docker.elastic.co/kibana/kibana:7.15.1
-docker run --name kib01-test --net elastic -p 5601:5601 -e &quot;ELASTICSEARCH_HOSTS=http://es01-test:9200&quot; docker.elastic.co/kibana/kibana:7.15.1
-</code></pre>
-<p>To access Kibana, go to <a href="http://localhost:5601" title="http://localhost:5601" target="_blank" rel="noopener noreferrer">http://localhost:5601</a>.</p>
-<h3><a href="#create-an-elasticsearch-exporter" name="create-an-elasticsearch-exporter" class="anchor"><span class="anchor-link"></span></a>Create an Elasticsearch exporter</h3>
-<p>Let&rsquo;s create an exporter. The exporter will export by default all events generated by Otoroshi.</p>
-<ol>
-  <li>Go ahead, and navigate to <a href="http://otoroshi.oto.tools:8080" title="http://otoroshi.oto.tools:8080" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080</a></li>
-  <li>Click on the cog icon on the top right</li>
-  <li>Then <code>Exporters</code> button</li>
-  <li>And add a new configuration when clicking on the <code>Add item</code> button</li>
-  <li>Select the <code>elastic</code> in the <code>type</code> selector field</li>
-  <li>Jump to <code>Exporter config</code></li>
-  <li>Set the following values: <code>Cluster URI</code> -&gt; <code>http://localhost:9200</code></li>
-</ol>
-<p>Then test your configuration by clicking on the <code>Check connection</code> button. This should output a modal with the Elasticsearch version and the number of loaded docs.</p>
-<p>Save at the bottom of the page and enable the exporter (on the top of the page or in list of exporters).</p>
-<h3><a href="#testing-your-configuration" name="testing-your-configuration" class="anchor"><span class="anchor-link"></span></a>Testing your configuration</h3>
-<p>One simple way to test is to setup the reading of our Elasticsearch instance by Otoroshi.</p>
-<p>Navigate to the danger zone (click on the cog on the top right and scroll to <code>danger zone</code>). Jump to the <code>Analytics: Elastic dashboard datasource (read)</code> section.</p>
-<p>Set the following values : <code>Cluster URI</code> -&gt; <code>http://localhost:9200</code></p>
-<p>Then click on the <code>Check connection</code>. This should ouput the same result as the previous part. Save the global configuration and navigate to <a href="http://otoroshi.oto.tools:8080/bo/dashboard/stats" title="http://otoroshi.oto.tools:8080/bo/dashboard/stats" target="_blank" rel="noopener noreferrer">http://otoroshi.oto.tools:8080/bo/dashboard/stats</a>.</p>
-<p>This should output a list of graphs.</p>
-<h3><a href="#advanced-usage" name="advanced-usage" class="anchor"><span class="anchor-link"></span></a>Advanced usage</h3>
-<p>By default, an exporter handle all events from Otoroshi. In some case, you need to filter the events to send to elasticsearch.</p>
-<p>To filter the events, jump to the <code>Filtering and projection</code> field in exporter view. Otoroshi supports to include a kind of events or to exclude a list of events (if you want to deep learn about this section, read this <a href="../entities/data-exporters.html#matching-and-projections">part</a>). </p>
-<p>An example which keep only events with a field <code>@type</code> of value <code>AlertEvent</code>:</p>
-<pre class="prettyprint"><code class="language-json">{
-    &quot;include&quot;: [
-        { &quot;@type&quot;: &quot;AlertEvent&quot; }
-    ],
-    &quot;exclude&quot;: []
-}
-</code></pre>
-<p>An example which exclude only events with a field <code>@type</code> of value <code>GatewayEvent</code> :</p>
-<pre class="prettyprint"><code class="language-json">{
-    &quot;exclude&quot;: [
-        { &quot;@type&quot;: &quot;GatewayEvent&quot; }
-    ],
-    &quot;include&quot;: []
-}
-</code></pre>
-<p>The next field is the <strong>Projection</strong>. This field is a json when you can list the fields to keep for each event.</p>
-<pre class="prettyprint"><code class="language-json">{
- &quot;@type&quot;: true,
- &quot;@timestamp&quot;: true,
- &quot;@id&quot;: true
-}
-</code></pre>
-<p>With this example, only <code>@type</code>, <code>@timestamp</code> and <code>@id</code> will be send to ES.</p>
-<h3><a href="#debug-your-configuration" name="debug-your-configuration" class="anchor"><span class="anchor-link"></span></a>Debug your configuration</h3>
-<h4><a href="#missing-user-rights-on-elasticsearch" name="missing-user-rights-on-elasticsearch" class="anchor"><span class="anchor-link"></span></a>Missing user rights on Elasticsearch</h4>
-<p>When creating an exporter, Otoroshi try to join the index route of the elasticsearch instance. If you have a specific management access rights on Elasticsearch, you have two possiblities :</p>
+<h1><a href="#otoroshi-and-wasm" name="otoroshi-and-wasm" class="anchor"><span class="anchor-link"></span></a>Otoroshi and WASM</h1>
+<p>WebAssembly (WASM) is a simple machine model and executable format with an extensive specification. It is designed to be portable, compact, and execute at or near native speeds. Otoroshi already supports the execution of WASM files by providing different plugins that can be applied on routes. These plugins are:</p>
 <ul>
-  <li>set a full access to the user used in Otoroshi for write in Elasticsearch</li>
-  <li>set the version of Elasticsearch inside the <code>Version</code> field of your exporter.</li>
+  <li><code>WasmRouteMatcher</code>: useful to define if a route can handle a request</li>
+  <li><code>WasmPreRoute</code>: useful to check request and extract useful stuff for the other plugins</li>
+  <li><code>WasmAccessValidator</code>: useful to control access to a route (jump to the next section to learn more about it)</li>
+  <li><code>WasmRequestTransformer</code>: transform the content of an incoming request (body, headers, etc &hellip;)</li>
+  <li><code>WasmBackend</code>: execute a WASM file as Otoroshi target. Useful to implement user defined logic and function at the edge</li>
+  <li><code>WasmResponseTransformer</code>: transform the content of the response produced by the target</li>
+  <li><code>WasmSink</code>: create a sink plugin to handle unmatched requests</li>
+  <li><code>WasmRequestHandler</code>: create a plugin that can handle the whole request lifecycle</li>
+  <li><code>WasmJob</code>: create a job backed by a wasm function</li>
 </ul>
-<h4><a href="#none-event-appear-in-your-elasticsearch" name="none-event-appear-in-your-elasticsearch" class="anchor"><span class="anchor-link"></span></a>None event appear in your Elasticsearch</h4>
-<p>When creating an exporter, Otoroshi try to push the index template on Elasticsearch. If the post failed, Otoroshi will fail for each push of events and your database will keep empty. </p>
-<p>To fix this problem, you can try to send the index template with the <code>Manually apply index template</code> button in your exporter.</p>
+<p>To simplify the process of WASM creation and usage, Otoroshi provides:</p>
+<ul>
+  <li>otoroshi ui integration: a full set of plugins that let you pick which WASM function to runtime at any point in a route</li>
+  <li>otoroshi <code>wasm-manager</code>: a code editor in the browser that let you write your plugin in <code>Rust</code> or <code>Assembly Script</code> without having to think about compiling it to WASM (you can find a complete tutorial about it <a href="../how-to-s/wasm-manager-installation.html">here</a>)</li>
+</ul><div class="centered-img">
+<img src="../imgs/otoroshi-wasm-manager-1.png" title="screenshot of a wasm manager instance" /></div>
+<h2><a href="#available-tutorials" name="available-tutorials" class="anchor"><span class="anchor-link"></span></a>Available tutorials</h2>
+<p>here is the list of available tutorials about wasm in Otoroshi</p>
+<ol>
+  <li><a href="../how-to-s/wasm-manager-installation.html">install a wasm manager</a></li>
+  <li><a href="../how-to-s/wasm-usage.html">use a wasm plugin</a></li>
+</ol>
+<h2><a href="#wasm-plugins-entities" name="wasm-plugins-entities" class="anchor"><span class="anchor-link"></span></a>WASM plugins entities</h2>
+<h2><a href="#authorization" name="authorization" class="anchor"><span class="anchor-link"></span></a>Authorization</h2>
+<h2><a href="#plugins-api" name="plugins-api" class="anchor"><span class="anchor-link"></span></a>Plugins api</h2>
+<h3><a href="#wasmroutematcher" name="wasmroutematcher" class="anchor"><span class="anchor-link"></span></a>WasmRouteMatcher</h3>
+<pre class="prettyprint"><code class="language-rs">#[plugin_fn]
+pub fn matches_route(Json(_context): Json&lt;types::WasmMatchRouteContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmMatchRouteResponse&gt;&gt; {
+    ///
+}
+</code></pre>
+<h3><a href="#wasmpreroute" name="wasmpreroute" class="anchor"><span class="anchor-link"></span></a>WasmPreRoute</h3>
+<pre class="prettyprint"><code class="language-rs">#[plugin_fn]
+pub fn pre_route(Json(_context): Json&lt;types::WasmPreRouteContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmPreRouteResponse&gt;&gt; {
+    ///
+}
+</code></pre>
+<h3><a href="#wasmaccessvalidator" name="wasmaccessvalidator" class="anchor"><span class="anchor-link"></span></a>WasmAccessValidator</h3>
+<pre class="prettyprint"><code class="language-rs">#[plugin_fn]
+pub fn can_access(Json(_context): Json&lt;types::WasmAccessValidatorContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmAccessValidatorResponse&gt;&gt; {
+    ///
+}
+</code></pre>
+<h3><a href="#wasmrequesttransformer" name="wasmrequesttransformer" class="anchor"><span class="anchor-link"></span></a>WasmRequestTransformer</h3>
+<pre class="prettyprint"><code class="language-rs">#[plugin_fn]
+pub fn transform_request(Json(_context): Json&lt;types::WasmRequestTransformerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmTransformerResponse&gt;&gt; {
+    ///
+}
+</code></pre>
+<h3><a href="#wasmbackend" name="wasmbackend" class="anchor"><span class="anchor-link"></span></a>WasmBackend</h3>
+<pre class="prettyprint"><code class="language-rs">#[plugin_fn]
+pub fn call_backend(Json(_context): Json&lt;types::WasmQueryContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmQueryResponse&gt;&gt; {
+    ///
+}
+</code></pre>
+<h3><a href="#wasmresponsetransformer" name="wasmresponsetransformer" class="anchor"><span class="anchor-link"></span></a>WasmResponseTransformer</h3>
+<pre class="prettyprint"><code class="language-rs">#[plugin_fn]
+pub fn transform_response(Json(_context): Json&lt;types::WasmResponseTransformerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmTransformerResponse&gt;&gt; {
+    ///
+}
+</code></pre>
+<h3><a href="#wasmsink" name="wasmsink" class="anchor"><span class="anchor-link"></span></a>WasmSink</h3>
+<pre class="prettyprint"><code class="language-rs">#[plugin_fn]
+pub fn sink_matches(Json(_context): Json&lt;types::WasmSinkContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmSinkMatchesResponse&gt;&gt; {
+    ///
+}
+
+#[plugin_fn]
+pub fn sink_handle(Json(_context): Json&lt;types::WasmSinkContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmSinkHandleResponse&gt;&gt; {
+    ///
+}
+</code></pre>
+<h3><a href="#wasmrequesthandler" name="wasmrequesthandler" class="anchor"><span class="anchor-link"></span></a>WasmRequestHandler</h3>
+<pre class="prettyprint"><code class="language-rs">#[plugin_fn]
+pub fn handle_request(Json(_context): Json&lt;types::WasmRequestHandlerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmRequestHandlerResponse&gt;&gt; {
+    ///
+}
+</code></pre>
+<h3><a href="#wasmjob" name="wasmjob" class="anchor"><span class="anchor-link"></span></a>WasmJob</h3>
+<pre class="prettyprint"><code class="language-rs">#[plugin_fn]
+pub fn job_run(Json(_context): Json&lt;types::WasmJobContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmJobResult&gt;&gt; {
+    ///
+}
+</code></pre>
+<h3><a href="#models" name="models" class="anchor"><span class="anchor-link"></span></a>Models</h3>
+<pre class="prettyprint"><code class="language-rs">#[derive(Serialize, Deserialize, Debug)]
+pub struct Backend {
+    pub id: String,
+    pub hostname: String,
+    pub port: u32,
+    pub tls: bool,
+    pub weight: u32,
+    pub protocol: String,
+    pub ip_address: Option&lt;String&gt;,
+    pub predicate: Value,
+    pub tls_config: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Apikey {
+    #[serde(alias = &quot;clientId&quot;)]
+    pub client_id: String,
+    #[serde(alias = &quot;clientName&quot;)]
+    pub client_name: String,
+    pub metadata: HashMap&lt;String, String&gt;,
+    pub tags: Vec&lt;String&gt;,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct User {
+    pub name: String,
+    pub email: String,
+    pub profile: Value,
+    pub metadata: HashMap&lt;String, String&gt;,
+    pub tags: Vec&lt;String&gt;,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RawRequest {
+    pub id: u32,
+    pub method: String,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub cookies: Value,
+    pub tls: bool,
+    pub uri: String,
+    pub path: String,
+    pub version: String,
+    pub has_body: bool,
+    pub remote: String,
+    pub client_cert_chain: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Frontend {
+    pub domains: Vec&lt;String&gt;,
+    pub strict_path: Option&lt;String&gt;,
+    pub exact: bool,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub query: HashMap&lt;String, String&gt;,
+    pub methods: Vec&lt;String&gt;,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct HealthCheck {
+    pub enabled: bool,
+    pub url: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RouteBackend {
+    pub targets: Vec&lt;Backend&gt;,
+    pub root: String,
+    pub rewrite: bool,
+    pub load_balancing: Value,
+    pub client: Value,
+    pub health_check: Option&lt;HealthCheck&gt;,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Route {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub tags: Vec&lt;String&gt;,
+    pub metadata: HashMap&lt;String, String&gt;,
+    pub enabled: bool,
+    pub debug_flow: bool,
+    pub export_reporting: bool,
+    pub capture: bool,
+    pub groups: Vec&lt;String&gt;,
+    pub frontend: Frontend,
+    pub backend: RouteBackend,
+    pub backend_ref: Option&lt;String&gt;,
+    pub plugins: Value,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct OtoroshiResponse {
+    pub status: u32,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub cookies: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct OtoroshiRequest {
+    pub url: String,
+    pub method: String,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub version: String,
+    pub client_cert_chain: Value,
+    pub backend: Option&lt;Backend&gt;,
+    pub cookies: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmQueryContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub backend: Backend,
+    pub apikey: Option&lt;Apikey&gt;,
+    pub user: Option&lt;User&gt;,
+    pub raw_request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+    pub request_body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+    pub request: OtoroshiRequest,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmAccessValidatorContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub apikey: Option&lt;Apikey&gt;,
+    pub user: Option&lt;User&gt;,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmRequestTransformerContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub raw_request: OtoroshiRequest,
+    pub otoroshi_request: OtoroshiRequest,
+    pub backend: Backend,
+    pub apikey: Option&lt;Apikey&gt;,
+    pub user: Option&lt;User&gt;,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+    pub request_body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmResponseTransformerContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub raw_response: OtoroshiResponse,
+    pub otoroshi_response: OtoroshiResponse,
+    pub apikey: Option&lt;Apikey&gt;,
+    pub user: Option&lt;User&gt;,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+    pub response_body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmSinkContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub origin: String,
+    pub status: u32,
+    pub message: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct OtoroshiPluginResponse {
+    pub content: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmQueryResponse {
+    pub headers: Option&lt;HashMap&lt;String, String&gt;&gt;,
+    pub body_bytes: Vec&lt;u8&gt;,
+    pub status: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmAccessValidatorError {
+    pub message: String,
+    pub status: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmAccessValidatorResponse {
+    pub result: bool,
+    pub error: Option&lt;WasmAccessValidatorError&gt;,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmTransformerResponse {
+    pub headers: HashMap&lt;String, String&gt;,
+    pub cookies: Value,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmSinkMatchesResponse {
+    pub result: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmSinkHandleResponse {
+    pub status: u32,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmJobContext {
+    pub attrs: Value,
+    pub global_config: Value,
+    pub snowflake: Option&lt;String&gt;,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmJobResult {
+  
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmMatchRouteContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub route: Route,
+    pub request: RawRequest,
+    pub config: Value,
+    pub attrs: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmMatchRouteResponse {
+  pub result: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmPreRouteContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub route: Route,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmPreRouteResponse {
+    pub status: u32,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmRequestHandlerContext {
+    pub request: RawRequest
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmRequestHandlerResponse {
+    pub status: u32,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+}
+</code></pre>
+<h2><a href="#host-functions" name="host-functions" class="anchor"><span class="anchor-link"></span></a>Host functions</h2>
+<pre class="prettyprint"><code class="language-rs">extern &quot;C&quot; {
+  fn proxy_log(logLevel: i32, message: u64, size: u64) -&gt; u32;
+  fn proxy_log_event(context: u64, size: u64) -&gt; u32;
+  fn proxy_http_call(context: u64, size: u64) -&gt; u32;
+  fn get_proxy_state(context: u64) -&gt; u32;
+  fn get_proxy_state_value(context: u64, size: u64) -&gt; u32;
+  fn get_cluster_state(context: u64) -&gt; u32;
+  fn get_cluster_state_value(context: u64, size: u64) -&gt; u32;
+  fn proxy_datastore_keys(context: u64, size: u64) -&gt; u32;
+  fn proxy_datastore_get(context: u64, size: u64) -&gt; u32;
+  fn proxy_datastore_exists(context: u64, size: u64) -&gt; u32;
+  fn proxy_datastore_pttl(context: u64, size: u64) -&gt; u32;
+  fn proxy_datastore_setnx(context: u64, size: u64) -&gt; u32;
+  fn proxy_datastore_del(context: u64, size: u64) -&gt; u32;
+  fn proxy_datastore_incrby(context: u64, size: u64) -&gt; u32;
+  fn proxy_datastore_pexpire(context: u64, size: u64) -&gt; u32;
+  fn proxy_datastore_all_matching(context: u64, size: u64) -&gt; u32;
+  fn proxy_plugin_datastore_keys(context: u64, size: u64) -&gt; u32;
+  fn proxy_plugin_datastore_get(context: u64, size: u64) -&gt; u32;
+  fn proxy_plugin_datastore_exists(context: u64, size: u64) -&gt; u32;
+  fn proxy_plugin_datastore_pttl(context: u64, size: u64) -&gt; u32;
+  fn proxy_plugin_datastore_setnx(context: u64, size: u64) -&gt; u32;
+  fn proxy_plugin_datastore_del(context: u64, size: u64) -&gt; u32;
+  fn proxy_plugin_datastore_incrby(context: u64, size: u64) -&gt; u32;
+  fn proxy_plugin_datastore_pexpire(context: u64, size: u64) -&gt; u32;
+  fn proxy_plugin_datastore_all_matching(context: u64, size: u64) -&gt; u32;
+  fn proxy_plugin_map_set(context: u64, size: u64) -&gt; u32;
+  fn proxy_plugin_map_get(context: u64, size: u64) -&gt; u32;
+  fn proxy_plugin_map(unused: u32) -&gt; u32;
+  fn proxy_global_map_set(context: u64, size: u64) -&gt; u32;
+  fn proxy_global_map_get(context: u64, size: u64) -&gt; u32;
+  fn proxy_global_map(unused: u32) -&gt; u32;
+}
+</code></pre>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../how-to-s/import-export-otoroshi-datastore.html">Import and export Otoroshi datastore</a></p>
+<p><strong>Next:</strong> <a href="../topics/anonymous-reporting.html">Anonymous reporting</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -398,14 +695,13 @@ docker run --name kib01-test --net elastic -p 5601:5601 -e &quot;ELASTICSEARCH_H
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../how-to-s/export-events-to-elastic.html#export-events-to-elasticsearch" class="header">Export events to Elasticsearch</a>
+  <li><a href="../topics/wasm-usage.html#otoroshi-and-wasm" class="header">Otoroshi and WASM</a>
   <ul>
-    <li><a href="../how-to-s/export-events-to-elastic.html#before-you-start" class="header">Before you start</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html#deploy-a-elasticsearch-and-kibana-stack-on-docker" class="header">Deploy a Elasticsearch and kibana stack on Docker</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html#create-an-elasticsearch-exporter" class="header">Create an Elasticsearch exporter</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html#testing-your-configuration" class="header">Testing your configuration</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html#advanced-usage" class="header">Advanced usage</a></li>
-    <li><a href="../how-to-s/export-events-to-elastic.html#debug-your-configuration" class="header">Debug your configuration</a></li>
+    <li><a href="../topics/wasm-usage.html#available-tutorials" class="header">Available tutorials</a></li>
+    <li><a href="../topics/wasm-usage.html#wasm-plugins-entities" class="header">WASM plugins entities</a></li>
+    <li><a href="../topics/wasm-usage.html#authorization" class="header">Authorization</a></li>
+    <li><a href="../topics/wasm-usage.html#plugins-api" class="header">Plugins api</a></li>
+    <li><a href="../topics/wasm-usage.html#host-functions" class="header">Host functions</a></li>
   </ul></li>
 </ul>
 </div>

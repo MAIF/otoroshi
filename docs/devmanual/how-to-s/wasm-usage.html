@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Otoroshi and WASM · Otoroshi</title>
+<title>Using wasm plugins · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -86,10 +86,12 @@
     <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
     <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
-    <li><a href="../how-to-s/wasm-usage.html" class="active page">Otoroshi and WASM</a></li>
+    <li><a href="../how-to-s/wasm-usage.html" class="active page">Using wasm plugins</a></li>
     <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
     <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
@@ -214,10 +216,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
     <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
-    <li><a href="../how-to-s/wasm-usage.html" class="active page">Otoroshi and WASM</a></li>
+    <li><a href="../how-to-s/wasm-usage.html" class="active page">Using wasm plugins</a></li>
     <li><a href="../how-to-s/wasm-manager-installation.html" class="page">Deploy your own WASM Manager</a></li>
     <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
     <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
@@ -273,7 +277,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../how-to-s/index.html">How to&rsquo;s</a></li>
-  <li>Otoroshi and WASM</li>
+  <li>Using wasm plugins</li>
 </ul>
 </div>
 </div>
@@ -281,21 +285,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#otoroshi-and-wasm" name="otoroshi-and-wasm" class="anchor"><span class="anchor-link"></span></a>Otoroshi and WASM</h1>
-<p>WebAssembly (WASM) is a simple machine model and executable format with an extensive specification. It is designed to be portable, compact, and execute at or near native speeds. Otoroshi already supports the execution of WASM files by providing different plugins that can be applied on routes. These plugins are:</p>
-<ul>
-  <li><code>WasmAccessValidator</code>: useful to control access to a route (jump to the next section to learn more about it)</li>
-  <li><code>WasmRequestTransformer</code>: transform the content of an incoming request (body, headers, etc &hellip;)</li>
-  <li><code>WasmBackend</code>: execute a WASM file as Otoroshi target. Useful to implement user defined logic and function at the edge</li>
-  <li><code>WasmResponseTransformer</code>: transform the content of the response produced by the target</li>
-  <li><code>WasmSink</code>: create a sink plugin to handle unmatched requests</li>
-</ul>
+<h1><a href="#using-wasm-plugins" name="using-wasm-plugins" class="anchor"><span class="anchor-link"></span></a>Using wasm plugins</h1>
+<p>WebAssembly (WASM) is a simple machine model and executable format with an extensive specification. It is designed to be portable, compact, and execute at or near native speeds. Otoroshi already supports the execution of WASM files by providing different plugins that can be applied on routes. You can find more about those plugins <a href="../topics/wasm-usage.html">here</a></p>
 <p>To simplify the process of WASM creation and usage, Otoroshi provides:</p>
 <ul>
   <li>otoroshi ui integration: a full set of plugins that let you pick which WASM function to runtime at any point in a route</li>
   <li>otoroshi <code>wasm-manager</code>: a code editor in the browser that let you write your plugin in <code>Rust</code> or <code>Assembly Script</code> without having to think about compiling it to WASM (you can find a complete tutorial about it <a href="wasm-manager-installation.html">here</a>)</li>
 </ul><div class="centered-img">
-<img src="../imgs/otoroshi-wasm-manager-1.png" /></div>
+<img src="../imgs/otoroshi-wasm-manager-1.png" title="screenshot of a wasm manager instance" /></div>
 <h2><a href="#tutorial" name="tutorial" class="anchor"><span class="anchor-link"></span></a>Tutorial</h2>
 <ol>
   <li><a href="#before-your-start">Before your start</a></li>
@@ -785,7 +782,7 @@ EOF
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../how-to-s/wasm-usage.html#otoroshi-and-wasm" class="header">Otoroshi and WASM</a>
+  <li><a href="../how-to-s/wasm-usage.html#using-wasm-plugins" class="header">Using wasm plugins</a>
   <ul>
     <li><a href="../how-to-s/wasm-usage.html#tutorial" class="header">Tutorial</a></li>
     <li><a href="../how-to-s/wasm-usage.html#before-your-start" class="header">Before your start</a></li>
