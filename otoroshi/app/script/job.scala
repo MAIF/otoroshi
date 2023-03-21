@@ -30,13 +30,15 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Random, Success, Try}
 
-sealed trait JobKind
+sealed trait JobKind {
+  def name: String
+}
 object JobKind {
 
-  case object ScheduledOnce  extends JobKind
-  case object ScheduledEvery extends JobKind
-  case object Cron           extends JobKind
-  case object Autonomous     extends JobKind
+  case object ScheduledOnce  extends JobKind { def name: String = "ScheduledOnce" }
+  case object ScheduledEvery extends JobKind { def name: String = "ScheduledEvery" }
+  case object Cron           extends JobKind { def name: String = "Cron" }
+  case object Autonomous     extends JobKind { def name: String = "Autonomous" }
 
   def apply(value: String): JobKind = value.toLowerCase() match {
     case "scheduledonce" => ScheduledOnce
@@ -54,13 +56,15 @@ object JobStarting {
   case object FromConfiguration extends JobStarting
 }
 
-sealed trait JobInstantiation
+sealed trait JobInstantiation {
+  def name: String
+}
 object JobInstantiation {
 
-  case object OneInstancePerOtoroshiInstance       extends JobInstantiation
-  case object OneInstancePerOtoroshiWorkerInstance extends JobInstantiation
-  case object OneInstancePerOtoroshiLeaderInstance extends JobInstantiation
-  case object OneInstancePerOtoroshiCluster        extends JobInstantiation
+  case object OneInstancePerOtoroshiInstance       extends JobInstantiation { def name: String = "OneInstancePerOtoroshiInstance" }
+  case object OneInstancePerOtoroshiWorkerInstance extends JobInstantiation { def name: String = "OneInstancePerOtoroshiWorkerInstance" }
+  case object OneInstancePerOtoroshiLeaderInstance extends JobInstantiation { def name: String = "OneInstancePerOtoroshiLeaderInstance" }
+  case object OneInstancePerOtoroshiCluster        extends JobInstantiation { def name: String = "OneInstancePerOtoroshiCluster" }
 
   def apply(value: String): JobInstantiation = value.toLowerCase() match {
     case "oneinstanceperotoroshiinstance" => OneInstancePerOtoroshiInstance

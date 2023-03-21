@@ -1,16 +1,42 @@
 package otoroshi.next.utils
 
+import akka.stream.Materializer
+import akka.util.ByteString
+import otoroshi.next.plugins.api.{NgPluginHttpRequest, NgPluginHttpResponse}
 import otoroshi.utils.http.DN
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits.BetterJsValue
+import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc.{Cookie, RequestHeader}
 
 import java.security.cert.X509Certificate
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 object JsonHelpers {
+
+  def requestBody(request: NgPluginHttpRequest)(implicit ec: ExecutionContext, mat: Materializer): Future[JsValue] = {
+    if (request.hasBody) {
+      request.body.runFold(ByteString.empty)(_ ++ _).map { b =>
+        val arr = b.toArray[Byte]
+        Writes.arrayWrites[Byte].writes(arr)
+      }
+    } else {
+      JsNull.vfuture
+    }
+  }
+
+  def responseBody(response: NgPluginHttpResponse)(implicit ec: ExecutionContext, mat: Materializer): Future[JsValue] = {
+    response.body.runFold(ByteString.empty)(_ ++ _).map { b =>
+      val arr = b.toArray[Byte]
+      if (arr.isEmpty) {
+        JsNull
+      } else {
+        Writes.arrayWrites[Byte].writes(arr)
+      }
+    }
+  }
 
   def reader[A](f: => A): JsResult[A] = Try {
     f

@@ -500,15 +500,12 @@ case class NgTransformerRequestContext(
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     implicit val mat = env.otoroshiMaterializer
-    otoroshiRequest.body
-      .runFold(ByteString.empty)(_ ++ _)
-      .map(b => b.encodeBase64.utf8String.json)
-      .map(body => {
-        json.asObject ++ Json.obj(
-          "route" -> route.json,
-          "body"  -> body
-        )
-      })
+    JsonHelpers.requestBody(otoroshiRequest).map { body =>
+      json.asObject ++ Json.obj(
+        "route" -> route.json,
+        "request_body_bytes"  -> body
+      )
+    }
   }
 }
 
@@ -543,15 +540,12 @@ case class NgTransformerResponseContext(
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     implicit val mat = env.otoroshiMaterializer
-    otoroshiResponse.body
-      .runFold(ByteString.empty)(_ ++ _)
-      .map(b => b.encodeBase64.utf8String.json)
-      .map(body => {
-        json.asObject ++ Json.obj(
-          "route" -> route.json,
-          "body"  -> body
-        )
-      })
+    JsonHelpers.responseBody(otoroshiResponse).map { bodyOut =>
+      json.asObject ++ Json.obj(
+        "route" -> route.json,
+        "response_body_bytes" -> bodyOut,
+      )
+    }
   }
 }
 
@@ -798,13 +792,10 @@ case class NgbBackendCallContext(
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     implicit val mat = env.otoroshiMaterializer
-    (request.hasBody match {
-      case false => JsNull.vfuture
-      case true  => request.body.runFold(ByteString.empty)(_ ++ _).map(b => b.encodeBase64.utf8String.json)
-    }).map { body =>
+    JsonHelpers.requestBody(request).map { body =>
       (json.asObject ++ Json.obj(
         "route"            -> route.json,
-        "raw_request_body" -> body,
+        "request_body_bytes" -> body,
         "request"          -> request.json
       ))
     }

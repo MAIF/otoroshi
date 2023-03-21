@@ -1,6 +1,7 @@
 package otoroshi.next.models
 
 import otoroshi.env.Env
+import otoroshi.next.plugins.WasmJob
 import otoroshi.next.plugins.api._
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
@@ -291,6 +292,7 @@ case class NgContextualPlugins(
     .partition(_.enabled)
 
   lazy val (allPlugins, filteredPlugins) = enabledPlugins
+    .filterNot(_.plugin.endsWith(classOf[WasmJob].getName))
     .partition(_.matches(request))
 
   lazy val requestSinkPlugins = {

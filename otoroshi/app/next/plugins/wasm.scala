@@ -531,7 +531,6 @@ class WasmBackend extends NgBackendCall {
     val config = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
-
     ctx.wasmJson
       .flatMap(input => WasmUtils.execute(config, "call_backend", input, ctx.some, ctx.attrs.some))
       .map {
@@ -543,20 +542,11 @@ class WasmBackend extends NgBackendCall {
               WasmUtils.logger.error("error during json parsing", e)
               Json.obj()
           }
-          val bodyAsBytes = (response \ "body").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
-          val body: Source[ByteString, _] = bodyAsBytes.getOrElse((response.select("body") match {
-              case JsDefined(value) =>
-                value match {
-                  case JsString(value) => value
-                  case JsNumber(value) => value.toString()
-                  case JsBoolean(value) => value.toString()
-                  case o: JsObject => Json.stringify(o)
-                  case o: JsArray => Json.stringify(o)
-                  case _ => "{}"
-                }
-              case _: JsUndefined => "{}"
-            }).byteString
-          ).chunks(16 * 1024)
+          val bodyAsBytes = response.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
+          val bodyBase64 = response.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
+          val bodyJson = response.select("body_json").asOpt[JsValue].map(str => ByteString(str.stringify))
+          val bodyStr = response.select("body_str").asOpt[String].orElse(response.select("body").asOpt[String]).map(str => ByteString(str))
+          val body: Source[ByteString, _] = bodyStr.orElse(bodyJson).orElse(bodyBase64).orElse(bodyAsBytes).getOrElse(ByteString.empty).chunks(16 * 1024)
           bodyResponse(
             status = response.select("status").asOpt[Int].getOrElse(200),
             headers = response
@@ -857,7 +847,7 @@ class WasmRequestHandler extends RequestHandler {
       implicit val mat = env.otoroshiMaterializer
       request.body.runFold(ByteString.empty)(_ ++ _).map { rawBody =>
         JsonHelpers.requestToJson(request).asObject ++ Json.obj(
-          "body" -> rawBody.utf8String
+          "request_body_bytes" -> rawBody.toArray[Byte]
         )
       }
     } else {
@@ -928,7 +918,15 @@ case class WasmJobsConfig(
   cronExpression: Option[String] = None,
   rawConfig: JsValue = Json.obj()
 ) {
-  def json: JsValue = ???
+  def json: JsValue = Json.obj(
+    "unique_id" -> uniqueId,
+    "config" -> config.json,
+    "kind" -> kind.name,
+    "instantiation" -> instantiation.name,
+    "initial_delay" -> initialDelay.map(_.toMillis).map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).asValue,
+    "interval" -> interval.map(_.toMillis).map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).asValue,
+    "cron_expression" -> cronExpression.map(JsString.apply).getOrElse(JsNull).asValue,
+  )
 }
 
 object WasmJobsConfig {
@@ -948,7 +946,7 @@ class WasmJob(config: WasmJobsConfig) extends Job {
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def steps: Seq[NgStep] = Seq(NgStep.Job)
   override def jobVisibility: JobVisibility = JobVisibility.UserLand
-  override def starting: JobStarting = JobStarting.FromConfiguration
+  override def starting: JobStarting = JobStarting.Automatically
 
   override def uniqueId: JobId = JobId(s"io.otoroshi.next.plugins.wasm.WasmJob#${config.uniqueId}")
   override def kind: JobKind = config.kind
@@ -957,23 +955,38 @@ class WasmJob(config: WasmJobsConfig) extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = config.interval
   override def cronExpression(ctx: JobContext, env: Env): Option[String] = config.cronExpression
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
     WasmUtils.execute(config.config.copy(functionName = "job_start".some), "job_start", ctx.wasmJson, FakeWasmContext(config.config.json).some, attrs.some).map {
       case Left(err) => logger.error(s"error while starting wasm job ${config.uniqueId}: ${err.stringify}")
       case Right(_) => ()
     }
+  } match {
+    case Failure(e) =>
+      logger.error("error during wasm job start", e)
+      funit
+    case Success(s) => s
   }
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
     WasmUtils.execute(config.config.copy(functionName = "job_stop".some), "job_stop", ctx.wasmJson, FakeWasmContext(config.config.json).some, attrs.some).map {
       case Left(err) => logger.error(s"error while stopping wasm job ${config.uniqueId}: ${err.stringify}")
       case Right(_) => ()
     }
+  } match {
+    case Failure(e) =>
+      logger.error("error during wasm job stop", e)
+      funit
+    case Success(s) => s
   }
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
     WasmUtils.execute(config.config, "job_run", ctx.wasmJson, FakeWasmContext(config.config.json).some, attrs.some).map {
       case Left(err) => logger.error(s"error while running wasm job ${config.uniqueId}: ${err.stringify}")
       case Right(_) => ()
     }
+  } match {
+    case Failure(e) =>
+      logger.error("error during wasm job run", e)
+      funit
+    case Success(s) => s
   }
 }
 
@@ -997,7 +1010,7 @@ class WasmJobsLauncher extends Job {
 
   private val handledJobs = new TrieMap[String, Job]()
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val wasmJobs = globalConfig.plugins.ngPlugins().slots.filter(_.enabled).filter(_.plugin == s"cp:${classOf[WasmJob].getName}")
     val currentIds: Seq[String] = wasmJobs.map { job =>
@@ -1024,5 +1037,10 @@ class WasmJobsLauncher extends Job {
       }
     }
     funit
+  } match {
+    case Failure(e) =>
+      e.printStackTrace()
+      funit
+    case Success(s) => s
   }
 }

@@ -80,6 +80,53 @@ trait AwaitCapable {
   }
 }
 
+object HFunction {
+
+  def defineEmptyFunction(fname: String, returnType: LibExtism.ExtismValType, params: LibExtism.ExtismValType*)(f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal]) => Unit): org.extism.sdk.HostFunction[EmptyUserData] = {
+    defineFunction[EmptyUserData](fname, None, returnType, params:_*)((p1, p2, p3, _) => f(p1, p2, p3))
+  }
+
+  def defineClassicFunction(
+    fname: String,
+    config: WasmConfig,
+    returnType: LibExtism.ExtismValType,
+    params: LibExtism.ExtismValType*
+  )(
+    f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal], EnvUserData) => Unit
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): org.extism.sdk.HostFunction[EnvUserData] = {
+    val ev = EnvUserData(env, ec, mat, config)
+    defineFunction[EnvUserData](fname, ev.some, returnType, params:_*)((p1, p2, p3, _) => f(p1, p2, p3, ev))
+  }
+
+  def defineContextualFunction(
+    fname: String,
+    config: WasmConfig,
+    maybeContext: Option[NgCachedConfigContext]
+  )(
+    f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal], EnvUserData) => Unit
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): org.extism.sdk.HostFunction[EnvUserData] = {
+    val ev = EnvUserData(env, ec, mat, config, maybeContext)
+    defineFunction[EnvUserData](fname, ev.some, LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I64,LibExtism.ExtismValType.I32)((p1, p2, p3, _) => f(p1, p2, p3, ev))
+  }
+
+  def defineFunction[A <: HostUserData](fname: String, data: Option[A], returnType: LibExtism.ExtismValType, params: LibExtism.ExtismValType*)(f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal], Option[A]) => Unit): org.extism.sdk.HostFunction[A] = {
+    new org.extism.sdk.HostFunction[A](
+      fname,
+      Array(params:_*),
+      Array(returnType),
+      new ExtismFunction[A] {
+        override def invoke(plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[A]): Unit = {
+          f(plugin, params, returns, if (data.isEmpty) Some(data.get()) else None)
+        }
+      },
+      data match {
+        case None => Optional.empty[A]()
+        case Some(d) => Optional.of(d)
+      }
+    )
+  }
+}
+
 object Logging extends AwaitCapable {
 
   def proxyLogFunction(): ExtismFunction[EmptyUserData] =
@@ -92,30 +139,6 @@ object Logging extends AwaitCapable {
       returns(0).v.i32 = Status.StatusOK.id
   }
 
-  def proxyLogWithEventFunction()
-                               (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
-    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], hostData: Optional[EnvUserData]) => {
-      hostData
-        .ifPresent(ud => {
-          val data  = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
-
-          val event = WasmLogEvent(
-            `@id` = ud.env.snowflakeGenerator.nextIdStr(),
-            `@service` = ud.ctx.map(e => e.route.name).getOrElse(""),
-            `@serviceId` = ud.ctx.map(e => e.route.id).getOrElse(""),
-            `@timestamp` = DateTime.now(),
-            route = ud.ctx.map(_.route),
-            fromFunction = (data \ "function").asOpt[String].getOrElse("unknown function"),
-            message = (data \ "message").asOpt[String].getOrElse("--"),
-            level = (data \ "level").asOpt[Int].map(r => LogLevel(r)).getOrElse(LogLevel.LogLevelDebug).toString,
-          )
-
-          event.toAnalytics()
-
-          returns(0).v.i32 = Status.StatusOK.id
-      })
-  }
-
   def proxyLog() = new org.extism.sdk.HostFunction[EmptyUserData](
     "proxy_log",
     Array(LibExtism.ExtismValType.I32,LibExtism.ExtismValType.I64,LibExtism.ExtismValType.I64),
@@ -124,14 +147,56 @@ object Logging extends AwaitCapable {
     Optional.of(EmptyUserData())
   )
 
-  def proxyLogWithEvent(config: WasmConfig, ctx: Option[NgCachedConfigContext])
-                       (implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = new org.extism.sdk.HostFunction[EnvUserData](
-    "proxy_log_event",
-    Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
-    Array(LibExtism.ExtismValType.I32),
-    proxyLogWithEventFunction,
-    Optional.of(EnvUserData(env, executionContext, mat, config, ctx))
-  )
+  // def proxyLogWithEventFunction()
+  //                              (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
+  //   (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], hostData: Optional[EnvUserData]) => {
+  //     hostData
+  //       .ifPresent(ud => {
+  //         val data = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
+  //
+  //         val event = WasmLogEvent(
+  //           `@id` = ud.env.snowflakeGenerator.nextIdStr(),
+  //           `@service` = ud.ctx.map(e => e.route.name).getOrElse(""),
+  //           `@serviceId` = ud.ctx.map(e => e.route.id).getOrElse(""),
+  //           `@timestamp` = DateTime.now(),
+  //           route = ud.ctx.map(_.route),
+  //           fromFunction = (data \ "function").asOpt[String].getOrElse("unknown function"),
+  //           message = (data \ "message").asOpt[String].getOrElse("--"),
+  //           level = (data \ "level").asOpt[Int].map(r => LogLevel(r)).getOrElse(LogLevel.LogLevelDebug).toString,
+  //         )
+  //
+  //         event.toAnalytics()
+  //
+  //         returns(0).v.i32 = Status.StatusOK.id
+  //       })
+  //   }
+  // def proxyLogWithEvent(config: WasmConfig, ctx: Option[NgCachedConfigContext])
+  //                      (implicit env: Env, executionContext: ExecutionContext, mat: Materializer) = new org.extism.sdk.HostFunction[EnvUserData](
+  //   "proxy_log_event",
+  //   Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+  //   Array(LibExtism.ExtismValType.I32),
+  //   proxyLogWithEventFunction,
+  //   Optional.of(EnvUserData(env, executionContext, mat, config, ctx))
+  // )
+
+  def proxyLogWithEvent(config: WasmConfig, mctx: Option[NgCachedConfigContext])
+                       (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): org.extism.sdk.HostFunction[EnvUserData] = {
+    HFunction.defineContextualFunction("proxy_log_event", config, mctx) { (plugin, params, returns, ud) =>
+      val data = Json.parse(Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32))
+      val event = WasmLogEvent(
+        `@id` = ud.env.snowflakeGenerator.nextIdStr(),
+        `@service` = ud.ctx.map(e => e.route.name).getOrElse(""),
+        `@serviceId` = ud.ctx.map(e => e.route.id).getOrElse(""),
+        `@timestamp` = DateTime.now(),
+        route = ud.ctx.map(_.route),
+        fromFunction = (data \ "function").asOpt[String].getOrElse("unknown function"),
+        message = (data \ "message").asOpt[String].getOrElse("--"),
+        level = (data \ "level").asOpt[Int].map(r => LogLevel(r)).getOrElse(LogLevel.LogLevelDebug).toString,
+      )
+      event.toAnalytics()
+      returns(0).v.i32 = Status.StatusOK.id
+    }
+  }
 
   def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext])
                   (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[HostFunctionWithAuthorization] = {
@@ -623,7 +688,6 @@ object State {
     (plugin: ExtismCurrentPlugin, _: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[StateUserData]) => {
       data.ifPresent(hostData => {
         val id = pluginId.getOrElse("global")
-
         plugin.returnString(returns(0), hostData.cache.get(id) match {
           case Some(state) => Json.arr(state.toSeq).stringify
           case None => ""
