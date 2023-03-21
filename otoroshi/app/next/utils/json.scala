@@ -79,6 +79,7 @@ object JsonHelpers {
       "cookies"           -> JsArray(request.cookies.toSeq.map(c => cookieToJson(c))),
       "tls"               -> request.theSecuredTrusted,
       "uri"               -> request.uri,
+      "query"             -> request.queryString,
       "path"              -> request.path,
       "version"           -> request.version,
       "has_body"          -> request.theHasBody,

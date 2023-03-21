@@ -30,9 +30,44 @@ here is the list of available tutorials about wasm in Otoroshi
 
 ## WASM plugins entities
 
-## Authorization
+TODO
 
 ## Plugins api
+
+the following parts illustrates the apis for the different plugins. Otoroshi uses [Extism](https://extism.org/) to handle content sharing between the JVM and the wasm VM. All structures are sent to/from the plugins as json strings. 
+
+for instance, if we want to write a `WasmBackendCall` plugin using javascript, we could write something like
+
+```js
+function backend_call() {
+  const input_str = Host.inputString(); // here we get the context passed by otoroshi as json string
+  const backend_call_context = JSON.parse(input_str); // and parse it
+  if (backend_call_context.path === '/hello') {
+    Host.outputString(JSON.stringify({  // now we return a json string to otoroshi with the "backend" call result
+      headers: { 
+        'content-type': 'application/json' 
+      },
+      body_json: { 
+        message: `Hello ${ctx.request.query.name[0]}!` 
+      },
+      status: 200,
+    }));
+  } else {
+    Host.outputString(JSON.stringify({  // now we return a json string to otoroshi with the "backend" call result
+      headers: { 
+        'content-type': 'application/json' 
+      },
+      body_json: { 
+        error: "not found"
+      },
+      status: 404,
+    }));
+  }
+  return 0; // we return 0 to tell otoroshi that everything went fine
+}
+```
+
+the following examples are written in rust. the rust macros provided by extism makes the usage of `Host.inputString` and `Host.outputString` useless. Remember that it's still used under the hood and that the structures are passed as json strings.
 
 ### WasmRouteMatcher
 
@@ -40,6 +75,20 @@ here is the list of available tutorials about wasm in Otoroshi
 #[plugin_fn]
 pub fn matches_route(Json(_context): Json<types::WasmMatchRouteContext>) -> FnResult<Json<types::WasmMatchRouteResponse>> {
     ///
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmMatchRouteContext {
+    pub snowflake: Option<String>,
+    pub route: Route,
+    pub request: RawRequest,
+    pub config: Value,
+    pub attrs: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmMatchRouteResponse {
+  pub result: bool,
 }
 ```
 
@@ -50,6 +99,23 @@ pub fn matches_route(Json(_context): Json<types::WasmMatchRouteContext>) -> FnRe
 pub fn pre_route(Json(_context): Json<types::WasmPreRouteContext>) -> FnResult<Json<types::WasmPreRouteResponse>> {
     ///
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmPreRouteContext {
+    pub snowflake: Option<String>,
+    pub route: Route,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmPreRouteResponse {
+    pub status: u32,
+    pub headers: HashMap<String, String>,
+    pub body_bytes: Option<Vec<u8>>,
+}
 ```
 
 ### WasmAccessValidator
@@ -58,6 +124,30 @@ pub fn pre_route(Json(_context): Json<types::WasmPreRouteContext>) -> FnResult<J
 #[plugin_fn]
 pub fn can_access(Json(_context): Json<types::WasmAccessValidatorContext>) -> FnResult<Json<types::WasmAccessValidatorResponse>> {
     ///
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmAccessValidatorContext {
+    pub snowflake: Option<String>,
+    pub apikey: Option<Apikey>,
+    pub user: Option<User>,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmAccessValidatorError {
+    pub message: String,
+    pub status: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmAccessValidatorResponse {
+    pub result: bool,
+    pub error: Option<WasmAccessValidatorError>,
 }
 ```
 
@@ -68,6 +158,22 @@ pub fn can_access(Json(_context): Json<types::WasmAccessValidatorContext>) -> Fn
 pub fn transform_request(Json(_context): Json<types::WasmRequestTransformerContext>) -> FnResult<Json<types::WasmTransformerResponse>> {
     ///
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmRequestTransformerContext {
+    pub snowflake: Option<String>,
+    pub raw_request: OtoroshiRequest,
+    pub otoroshi_request: OtoroshiRequest,
+    pub backend: Backend,
+    pub apikey: Option<Apikey>,
+    pub user: Option<User>,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+    pub request_body_bytes: Option<Vec<u8>>,
+}
 ```
 
 ### WasmBackend
@@ -77,6 +183,28 @@ pub fn transform_request(Json(_context): Json<types::WasmRequestTransformerConte
 pub fn call_backend(Json(_context): Json<types::WasmQueryContext>) -> FnResult<Json<types::WasmQueryResponse>> {
     ///
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmBackendContext {
+    pub snowflake: Option<String>,
+    pub backend: Backend,
+    pub apikey: Option<Apikey>,
+    pub user: Option<User>,
+    pub raw_request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+    pub request_body_bytes: Option<Vec<u8>>,
+    pub request: OtoroshiRequest,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmBackendResponse {
+    pub headers: Option<HashMap<String, String>>,
+    pub body_bytes: Vec<u8>,
+    pub status: u32,
+}
 ```
 
 ### WasmResponseTransformer
@@ -85,6 +213,28 @@ pub fn call_backend(Json(_context): Json<types::WasmQueryContext>) -> FnResult<J
 #[plugin_fn]
 pub fn transform_response(Json(_context): Json<types::WasmResponseTransformerContext>) -> FnResult<Json<types::WasmTransformerResponse>> {
     ///
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmResponseTransformerContext {
+    pub snowflake: Option<String>,
+    pub raw_response: OtoroshiResponse,
+    pub otoroshi_response: OtoroshiResponse,
+    pub apikey: Option<Apikey>,
+    pub user: Option<User>,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+    pub response_body_bytes: Option<Vec<u8>>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmTransformerResponse {
+    pub headers: HashMap<String, String>,
+    pub cookies: Value,
+    pub body_bytes: Option<Vec<u8>>,
 }
 ```
 
@@ -100,6 +250,30 @@ pub fn sink_matches(Json(_context): Json<types::WasmSinkContext>) -> FnResult<Js
 pub fn sink_handle(Json(_context): Json<types::WasmSinkContext>) -> FnResult<Json<types::WasmSinkHandleResponse>> {
     ///
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmSinkContext {
+    pub snowflake: Option<String>,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub origin: String,
+    pub status: u32,
+    pub message: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmSinkMatchesResponse {
+    pub result: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmSinkHandleResponse {
+    pub status: u32,
+    pub headers: HashMap<String, String>,
+    pub body_bytes: Option<Vec<u8>>,
+}
 ```
 
 ### WasmRequestHandler
@@ -108,6 +282,18 @@ pub fn sink_handle(Json(_context): Json<types::WasmSinkContext>) -> FnResult<Jso
 #[plugin_fn]
 pub fn handle_request(Json(_context): Json<types::WasmRequestHandlerContext>) -> FnResult<Json<types::WasmRequestHandlerResponse>> {
     ///
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmRequestHandlerContext {
+    pub request: RawRequest
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmRequestHandlerResponse {
+    pub status: u32,
+    pub headers: HashMap<String, String>,
+    pub body_bytes: Option<Vec<u8>>,
 }
 ```
 
@@ -118,9 +304,21 @@ pub fn handle_request(Json(_context): Json<types::WasmRequestHandlerContext>) ->
 pub fn job_run(Json(_context): Json<types::WasmJobContext>) -> FnResult<Json<types::WasmJobResult>> {
     ///
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmJobContext {
+    pub attrs: Value,
+    pub global_config: Value,
+    pub snowflake: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmJobResult {
+
+}
 ```
 
-### Models
+### Common types
 
 ```rs
 #[derive(Serialize, Deserialize, Debug)]
@@ -231,178 +429,17 @@ pub struct OtoroshiRequest {
     pub backend: Option<Backend>,
     pub cookies: Value,
 }
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmQueryContext {
-    pub snowflake: Option<String>,
-    pub backend: Backend,
-    pub apikey: Option<Apikey>,
-    pub user: Option<User>,
-    pub raw_request: RawRequest,
-    pub config: Value,
-    pub global_config: Value,
-    pub attrs: Value,
-    pub route: Route,
-    pub request_body_bytes: Option<Vec<u8>>,
-    pub request: OtoroshiRequest,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmAccessValidatorContext {
-    pub snowflake: Option<String>,
-    pub apikey: Option<Apikey>,
-    pub user: Option<User>,
-    pub request: RawRequest,
-    pub config: Value,
-    pub global_config: Value,
-    pub attrs: Value,
-    pub route: Route,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmRequestTransformerContext {
-    pub snowflake: Option<String>,
-    pub raw_request: OtoroshiRequest,
-    pub otoroshi_request: OtoroshiRequest,
-    pub backend: Backend,
-    pub apikey: Option<Apikey>,
-    pub user: Option<User>,
-    pub request: RawRequest,
-    pub config: Value,
-    pub global_config: Value,
-    pub attrs: Value,
-    pub route: Route,
-    pub request_body_bytes: Option<Vec<u8>>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmResponseTransformerContext {
-    pub snowflake: Option<String>,
-    pub raw_response: OtoroshiResponse,
-    pub otoroshi_response: OtoroshiResponse,
-    pub apikey: Option<Apikey>,
-    pub user: Option<User>,
-    pub request: RawRequest,
-    pub config: Value,
-    pub global_config: Value,
-    pub attrs: Value,
-    pub route: Route,
-    pub response_body_bytes: Option<Vec<u8>>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmSinkContext {
-    pub snowflake: Option<String>,
-    pub request: RawRequest,
-    pub config: Value,
-    pub global_config: Value,
-    pub attrs: Value,
-    pub origin: String,
-    pub status: u32,
-    pub message: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct OtoroshiPluginResponse {
-    pub content: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmQueryResponse {
-    pub headers: Option<HashMap<String, String>>,
-    pub body_bytes: Vec<u8>,
-    pub status: u32,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmAccessValidatorError {
-    pub message: String,
-    pub status: u32,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmAccessValidatorResponse {
-    pub result: bool,
-    pub error: Option<WasmAccessValidatorError>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmTransformerResponse {
-    pub headers: HashMap<String, String>,
-    pub cookies: Value,
-    pub body_bytes: Option<Vec<u8>>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmSinkMatchesResponse {
-    pub result: bool,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmSinkHandleResponse {
-    pub status: u32,
-    pub headers: HashMap<String, String>,
-    pub body_bytes: Option<Vec<u8>>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmJobContext {
-    pub attrs: Value,
-    pub global_config: Value,
-    pub snowflake: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmJobResult {
-  
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmMatchRouteContext {
-    pub snowflake: Option<String>,
-    pub route: Route,
-    pub request: RawRequest,
-    pub config: Value,
-    pub attrs: Value,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmMatchRouteResponse {
-  pub result: bool,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmPreRouteContext {
-    pub snowflake: Option<String>,
-    pub route: Route,
-    pub request: RawRequest,
-    pub config: Value,
-    pub global_config: Value,
-    pub attrs: Value,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmPreRouteResponse {
-    pub status: u32,
-    pub headers: HashMap<String, String>,
-    pub body_bytes: Option<Vec<u8>>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmRequestHandlerContext {
-    pub request: RawRequest
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmRequestHandlerResponse {
-    pub status: u32,
-    pub headers: HashMap<String, String>,
-    pub body_bytes: Option<Vec<u8>>,
-}
 ```
 
-
 ## Host functions
+
+otoroshi provides some host function in order make wasm interact with otoroshi internals. Those functions are enabled with specific authorizations to avoid security issues with third party plugins.
+
+### authorizations
+
+TODO
+
+### host functions abi
 
 ```rs
 extern "C" {
