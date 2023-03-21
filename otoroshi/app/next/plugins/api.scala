@@ -359,6 +359,7 @@ case class NgPreRoutingContext(
     sequence: NgReportPluginSequence,
     markPluginItem: Function4[NgReportPluginSequenceItem, NgPreRoutingContext, Boolean, JsValue, Unit]
 ) extends NgCachedConfigContext {
+  def wasmJson: JsValue = json.asObject ++ Json.obj("route" -> route.json)
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
     // "route" -> route.json,

@@ -19,6 +19,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Relay routing](./relay-routing.md)
 * @ref:[Alternative http backend](./netty-server.md)
 * @ref:[HTTP3 support](./http3.md)
+* @ref:[WASM support](./wasm-usage.md)
 * @ref:[Anonymous reporting](./anonymous-reporting.md)
 
 @@@ index
@@ -40,6 +41,7 @@ In this sections, you will find informations about various Otoroshi topics
 * [Relay routing](./relay-routing.md)
 * [Alternative http backend](./netty-server.md)
 * [HTTP3 support](./http3.md)
+* [WASM support](./wasm-usage.md)
 * [Anonymous reporting](./anonymous-reporting.md)
   
 @@@

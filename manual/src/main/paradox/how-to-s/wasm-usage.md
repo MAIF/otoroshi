@@ -1,20 +1,14 @@
-# Otoroshi and WASM
+# Using wasm plugins
 
-WebAssembly (WASM) is a simple machine model and executable format with an extensive specification. It is designed to be portable, compact, and execute at or near native speeds. Otoroshi already supports the execution of WASM files by providing different plugins that can be applied on routes. These plugins are:
-
-- `WasmAccessValidator`: useful to control access to a route (jump to the next section to learn more about it)
-- `WasmRequestTransformer`: transform the content of an incoming request (body, headers, etc ...)
-- `WasmBackend`: execute a WASM file as Otoroshi target. Useful to implement user defined logic and function at the edge
-- `WasmResponseTransformer`: transform the content of the response produced by the target
-- `WasmSink`: create a sink plugin to handle unmatched requests
+WebAssembly (WASM) is a simple machine model and executable format with an extensive specification. It is designed to be portable, compact, and execute at or near native speeds. Otoroshi already supports the execution of WASM files by providing different plugins that can be applied on routes. You can find more about those plugins @ref:[here](../topics/wasm-usage.md)
 
 To simplify the process of WASM creation and usage, Otoroshi provides:
 
 - otoroshi ui integration: a full set of plugins that let you pick which WASM function to runtime at any point in a route
-- otoroshi `wasm-manager`: a code editor in the browser that let you write your plugin in `Rust` or `Assembly Script` without having to think about compiling it to WASM (you can find a complete tutorial about it @ref:[here](./wasm-manager-installation.md))
+- otoroshi `wasm-manager`: a code editor in the browser that let you write your plugin in `Rust` or `Assembly Script` without having to think about compiling it to WASM (you can find a complete tutorial about it @ref:[here](../how-to-s/wasm-manager-installation.md))
 
 @@@ div { .centered-img }
-<img src="../imgs/otoroshi-wasm-manager-1.png" />
+<img src="../imgs/otoroshi-wasm-manager-1.png" title="screenshot of a wasm manager instance" />
 @@@
 
 ## Tutorial

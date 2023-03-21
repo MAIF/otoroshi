@@ -82,6 +82,7 @@ import WasmRequestHandler from './WasmRequestHandler';
 import WasmRouteMatcher  from './WasmRouteMatcher';
 import WasmSink  from './WasmSink';
 import WasmJob  from './WasmJob';
+import WasmPreRoute  from './WasmPreRoute';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -169,4 +170,5 @@ export const Plugins = [
   WasmRouteMatcher,
   WasmSink,
   WasmJob,
+  WasmPreRoute,
 ];

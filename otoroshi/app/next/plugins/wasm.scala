@@ -1,5 +1,6 @@
 package otoroshi.next.plugins
 
+import akka.Done
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -12,7 +13,7 @@ import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{WSProxyServerJson, WasmManagerSettings}
 import otoroshi.next.models.{NgRoute, NgTlsConfig}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.{NgPreRoutingError, _}
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility, RequestHandler}
@@ -481,7 +482,7 @@ class WasmRouteMatcher extends NgRouteMatcher {
   private val logger = Logger("otoroshi-plugins-wasm-route-matcher")
 
   override def multiInstance: Boolean = true
-  override def core: Boolean = false
+  override def core: Boolean = true
   override def name: String = "Wasm Route Matcher"
   override def description: Option[String] = "This plugin can be used to use a wasm plugin as route matcher".some
   override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
@@ -507,11 +508,62 @@ class WasmRouteMatcher extends NgRouteMatcher {
   }
 }
 
+class WasmPreRoute extends NgPreRouting {
+
+  override def multiInstance: Boolean = true
+  override def core: Boolean = true
+  override def name: String = "Wasm pre-route"
+  override def description: Option[String] = "This plugin can be used to use a wasm plugin as in pre-route phase".some
+  override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Wasm)
+  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  override def isPreRouteAsync: Boolean = true
+
+  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+    val config = ctx
+      .cachedConfig(internalName)(WasmConfig.format)
+      .getOrElse(WasmConfig())
+    val input = ctx.wasmJson
+    WasmUtils.execute(config, "pre_route", input, ctx.some, ctx.attrs.some).map {
+      case Left(err) => Left(NgPreRoutingErrorWithResult(Results.InternalServerError(err)))
+      case Right(resStr) => {
+        Try(Json.parse(resStr)) match {
+          case Failure(e) =>  Left(NgPreRoutingErrorWithResult(Results.InternalServerError(Json.obj("error" -> e.getMessage))))
+          case Success(response) => {
+            val error = response.select("error").asOpt[Boolean].getOrElse(false)
+            if (error) {
+              val bodyAsBytes = response.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
+              val bodyBase64 = response.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
+              val bodyJson = response.select("body_json").asOpt[JsValue].map(str => ByteString(str.stringify))
+              val bodyStr = response.select("body_str").asOpt[String].orElse(response.select("body").asOpt[String]).map(str => ByteString(str))
+              val body: ByteString = bodyStr.orElse(bodyJson).orElse(bodyBase64).orElse(bodyAsBytes).getOrElse(ByteString.empty)
+              val headers: Map[String, String] = response
+                .select("headers")
+                .asOpt[Map[String, String]]
+                .getOrElse(Map("Content-Type" -> "application/json"))
+              val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/json")
+              Left(NgPreRoutingErrorRaw(
+                code = response.select("status").asOpt[Int].getOrElse(200),
+                headers = headers,
+                contentType = contentType,
+                body = body
+              ))
+            } else {
+              Right(Done)
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 class WasmBackend extends NgBackendCall {
 
   override def useDelegates: Boolean                       = false
   override def multiInstance: Boolean                      = true
-  override def core: Boolean                               = false
+  override def core: Boolean                               = true
   override def name: String                                = "Wasm Backend"
   override def description: Option[String]                 = "This plugin can be used to use a wasm plugin as backend".some
   override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
@@ -646,7 +698,6 @@ class WasmRequestTransformer extends NgRequestTransformer {
     val config = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
-
     ctx.wasmJson
       .flatMap(input => {
         WasmUtils
@@ -725,19 +776,12 @@ class WasmResponseTransformer extends NgRequestTransformer {
 class WasmSink extends NgRequestSink {
 
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Wasm)
-
   override def steps: Seq[NgStep] = Seq(NgStep.Sink)
-
   override def multiInstance: Boolean = false
-
   override def core: Boolean = true
-
   override def name: String = "Wasm Sink"
-
   override def description: Option[String] = "Handle unmatched requests with a wasm plugin".some
-
   override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
 
   override def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
@@ -745,7 +789,7 @@ class WasmSink extends NgRequestSink {
       case JsSuccess(value, _) => value
       case JsError(_) => WasmConfig()
     }
-    val fu = WasmUtils.execute(config.copy(functionName = "matches".some), "matches", ctx.wasmJson, FakeWasmContext(ctx.config).some, ctx.attrs.some)
+    val fu = WasmUtils.execute(config.copy(functionName = "sink_matches".some), "matches", ctx.wasmJson, FakeWasmContext(ctx.config).some, ctx.attrs.some)
       .map {
         case Left(error) => false
         case Right(res) => {
@@ -773,7 +817,7 @@ class WasmSink extends NgRequestSink {
     }
     requestToWasmJson(ctx.body).flatMap { body =>
       val input = ctx.wasmJson.asObject ++ Json.obj("body_bytes" -> body)
-      WasmUtils.execute(config, "handle_sink", input, FakeWasmContext(ctx.config).some, ctx.attrs.some)
+      WasmUtils.execute(config, "sink_handle", input, FakeWasmContext(ctx.config).some, ctx.attrs.some)
         .map {
           case Left(error) => Results.InternalServerError(error)
           case Right(res) => {
@@ -1031,9 +1075,10 @@ class WasmJobsLauncher extends Job {
       }
       uniqueId
     }
-    handledJobs.values.foreach { job =>
+    handledJobs.values.toSeq.foreach { job =>
       val id: String = job.uniqueId.id
       if (!currentIds.contains(id)) {
+        handledJobs.remove(id)
         env.jobManager.unregisterJob(job)
       }
     }
