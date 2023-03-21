@@ -23,4 +23,5 @@ object Keys {
   val JwtInjectionKey            = TypedKey[JwtInjection]("otoroshi.next.core.JwtInjection")
   val ResultTransformerKey       = TypedKey[Function[Result, Future[Result]]]("otoroshi.next.core.ResultTransformer")
   val WasmContextKey             = TypedKey[WasmContext]("otoroshi.next.core.WasmContext")
+  val ResponseAddHeadersKey      = TypedKey[Seq[(String, String)]]("otoroshi.next.core.ResponseAddHeaders")
 }

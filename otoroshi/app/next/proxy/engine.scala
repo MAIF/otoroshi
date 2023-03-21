@@ -436,7 +436,10 @@ class ProxyEngine() extends RequestHandler {
       .flatMap {
         case Left(error)   =>
           report.markDoneAndStart("rendering-intermediate-result").markSuccess()
-          error.asResult()
+          attrs.get(otoroshi.next.plugins.Keys.ResponseAddHeadersKey) match {
+            case None => error.asResult()
+            case Some(addHeaders) => error.asResult().map(r => r.withHeaders(addHeaders: _*))
+          }
         case Right(result) =>
           report.markSuccess()
           result.vfuture
@@ -3147,7 +3150,9 @@ class ProxyEngine() extends RequestHandler {
       .exists(h => h.toLowerCase().contains("chunked"))*/
     val isChunked: Boolean             = rawResponse.isChunked() match { // don't know if actualy legit ...
       case Some(true)                                                                            => true
+      case Some(false) if !env.emptyContentLengthIsChunked                                       => hasChunkedHeader
       case Some(false) if env.emptyContentLengthIsChunked && noContentLengthHeader               => true
+      case Some(false) if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader => true
       case Some(false)                                                                           => false
       case None if !env.emptyContentLengthIsChunked                                              =>
         hasChunkedHeader // false

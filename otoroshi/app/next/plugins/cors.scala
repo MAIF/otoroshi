@@ -122,6 +122,11 @@ class Cors extends NgRequestTransformer with NgPreRouting {
         ).left.vfuture
       }
     } else {
+      if (!cors.legacy.shouldNotPass(req)) {
+        val corsHeaders = cors.legacy.asHeaders(req)
+        val oldHeaders = ctx.attrs.get(otoroshi.next.plugins.Keys.ResponseAddHeadersKey).getOrElse(Seq.empty)
+        ctx.attrs.put(otoroshi.next.plugins.Keys.ResponseAddHeadersKey -> (oldHeaders ++ corsHeaders))
+      }
       Done.right.vfuture
     }
   }
