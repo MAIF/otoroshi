@@ -311,12 +311,56 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../how-to-s/wasm-usage.html">use a wasm plugin</a></li>
 </ol>
 <h2><a href="#wasm-plugins-entities" name="wasm-plugins-entities" class="anchor"><span class="anchor-link"></span></a>WASM plugins entities</h2>
-<h2><a href="#authorization" name="authorization" class="anchor"><span class="anchor-link"></span></a>Authorization</h2>
+<p>TODO</p>
 <h2><a href="#plugins-api" name="plugins-api" class="anchor"><span class="anchor-link"></span></a>Plugins api</h2>
+<p>the following parts illustrates the apis for the different plugins. Otoroshi uses <a href="https://extism.org/">Extism</a> to handle content sharing between the JVM and the wasm VM. All structures are sent to/from the plugins as json strings. </p>
+<p>for instance, if we want to write a <code>WasmBackendCall</code> plugin using javascript, we could write something like</p>
+<pre class="prettyprint"><code class="language-js">function backend_call() {
+  const input_str = Host.inputString(); // here we get the context passed by otoroshi as json string
+  const backend_call_context = JSON.parse(input_str); // and parse it
+  if (backend_call_context.path === &#39;/hello&#39;) {
+    Host.outputString(JSON.stringify({  // now we return a json string to otoroshi with the &quot;backend&quot; call result
+      headers: { 
+        &#39;content-type&#39;: &#39;application/json&#39; 
+      },
+      body_json: { 
+        message: `Hello ${ctx.request.query.name[0]}!` 
+      },
+      status: 200,
+    }));
+  } else {
+    Host.outputString(JSON.stringify({  // now we return a json string to otoroshi with the &quot;backend&quot; call result
+      headers: { 
+        &#39;content-type&#39;: &#39;application/json&#39; 
+      },
+      body_json: { 
+        error: &quot;not found&quot;
+      },
+      status: 404,
+    }));
+  }
+  return 0; // we return 0 to tell otoroshi that everything went fine
+}
+</code></pre>
+<p>the following examples are written in rust. the rust macros provided by extism makes the usage of <code>Host.inputString</code> and <code>Host.outputString</code> useless. Remember that it&rsquo;s still used under the hood and that the structures are passed as json strings.</p>
 <h3><a href="#wasmroutematcher" name="wasmroutematcher" class="anchor"><span class="anchor-link"></span></a>WasmRouteMatcher</h3>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn matches_route(Json(_context): Json&lt;types::WasmMatchRouteContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmMatchRouteResponse&gt;&gt; {
     ///
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmMatchRouteContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub route: Route,
+    pub request: RawRequest,
+    pub config: Value,
+    pub attrs: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmMatchRouteResponse {
+  pub result: bool,
 }
 </code></pre>
 <h3><a href="#wasmpreroute" name="wasmpreroute" class="anchor"><span class="anchor-link"></span></a>WasmPreRoute</h3>
@@ -324,11 +368,52 @@ pub fn matches_route(Json(_context): Json&lt;types::WasmMatchRouteContext&gt;) -
 pub fn pre_route(Json(_context): Json&lt;types::WasmPreRouteContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmPreRouteResponse&gt;&gt; {
     ///
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmPreRouteContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub route: Route,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmPreRouteResponse {
+    pub status: u32,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+}
 </code></pre>
 <h3><a href="#wasmaccessvalidator" name="wasmaccessvalidator" class="anchor"><span class="anchor-link"></span></a>WasmAccessValidator</h3>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn can_access(Json(_context): Json&lt;types::WasmAccessValidatorContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmAccessValidatorResponse&gt;&gt; {
     ///
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmAccessValidatorContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub apikey: Option&lt;Apikey&gt;,
+    pub user: Option&lt;User&gt;,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmAccessValidatorError {
+    pub message: String,
+    pub status: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmAccessValidatorResponse {
+    pub result: bool,
+    pub error: Option&lt;WasmAccessValidatorError&gt;,
 }
 </code></pre>
 <h3><a href="#wasmrequesttransformer" name="wasmrequesttransformer" class="anchor"><span class="anchor-link"></span></a>WasmRequestTransformer</h3>
@@ -336,17 +421,77 @@ pub fn can_access(Json(_context): Json&lt;types::WasmAccessValidatorContext&gt;)
 pub fn transform_request(Json(_context): Json&lt;types::WasmRequestTransformerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmTransformerResponse&gt;&gt; {
     ///
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmRequestTransformerContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub raw_request: OtoroshiRequest,
+    pub otoroshi_request: OtoroshiRequest,
+    pub backend: Backend,
+    pub apikey: Option&lt;Apikey&gt;,
+    pub user: Option&lt;User&gt;,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+    pub request_body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+}
 </code></pre>
 <h3><a href="#wasmbackend" name="wasmbackend" class="anchor"><span class="anchor-link"></span></a>WasmBackend</h3>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn call_backend(Json(_context): Json&lt;types::WasmQueryContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmQueryResponse&gt;&gt; {
     ///
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmBackendContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub backend: Backend,
+    pub apikey: Option&lt;Apikey&gt;,
+    pub user: Option&lt;User&gt;,
+    pub raw_request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+    pub request_body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+    pub request: OtoroshiRequest,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmBackendResponse {
+    pub headers: Option&lt;HashMap&lt;String, String&gt;&gt;,
+    pub body_bytes: Vec&lt;u8&gt;,
+    pub status: u32,
+}
 </code></pre>
 <h3><a href="#wasmresponsetransformer" name="wasmresponsetransformer" class="anchor"><span class="anchor-link"></span></a>WasmResponseTransformer</h3>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn transform_response(Json(_context): Json&lt;types::WasmResponseTransformerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmTransformerResponse&gt;&gt; {
     ///
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmResponseTransformerContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub raw_response: OtoroshiResponse,
+    pub otoroshi_response: OtoroshiResponse,
+    pub apikey: Option&lt;Apikey&gt;,
+    pub user: Option&lt;User&gt;,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub route: Route,
+    pub response_body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmTransformerResponse {
+    pub headers: HashMap&lt;String, String&gt;,
+    pub cookies: Value,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
 }
 </code></pre>
 <h3><a href="#wasmsink" name="wasmsink" class="anchor"><span class="anchor-link"></span></a>WasmSink</h3>
@@ -359,11 +504,47 @@ pub fn sink_matches(Json(_context): Json&lt;types::WasmSinkContext&gt;) -&gt; Fn
 pub fn sink_handle(Json(_context): Json&lt;types::WasmSinkContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmSinkHandleResponse&gt;&gt; {
     ///
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmSinkContext {
+    pub snowflake: Option&lt;String&gt;,
+    pub request: RawRequest,
+    pub config: Value,
+    pub global_config: Value,
+    pub attrs: Value,
+    pub origin: String,
+    pub status: u32,
+    pub message: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmSinkMatchesResponse {
+    pub result: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WasmSinkHandleResponse {
+    pub status: u32,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+}
 </code></pre>
 <h3><a href="#wasmrequesthandler" name="wasmrequesthandler" class="anchor"><span class="anchor-link"></span></a>WasmRequestHandler</h3>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn handle_request(Json(_context): Json&lt;types::WasmRequestHandlerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmRequestHandlerResponse&gt;&gt; {
     ///
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmRequestHandlerContext {
+    pub request: RawRequest
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmRequestHandlerResponse {
+    pub status: u32,
+    pub headers: HashMap&lt;String, String&gt;,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
 }
 </code></pre>
 <h3><a href="#wasmjob" name="wasmjob" class="anchor"><span class="anchor-link"></span></a>WasmJob</h3>
@@ -371,8 +552,20 @@ pub fn handle_request(Json(_context): Json&lt;types::WasmRequestHandlerContext&g
 pub fn job_run(Json(_context): Json&lt;types::WasmJobContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmJobResult&gt;&gt; {
     ///
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmJobContext {
+    pub attrs: Value,
+    pub global_config: Value,
+    pub snowflake: Option&lt;String&gt;,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WasmJobResult {
+
+}
 </code></pre>
-<h3><a href="#models" name="models" class="anchor"><span class="anchor-link"></span></a>Models</h3>
+<h3><a href="#common-types" name="common-types" class="anchor"><span class="anchor-link"></span></a>Common types</h3>
 <pre class="prettyprint"><code class="language-rs">#[derive(Serialize, Deserialize, Debug)]
 pub struct Backend {
     pub id: String,
@@ -481,176 +674,12 @@ pub struct OtoroshiRequest {
     pub backend: Option&lt;Backend&gt;,
     pub cookies: Value,
 }
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmQueryContext {
-    pub snowflake: Option&lt;String&gt;,
-    pub backend: Backend,
-    pub apikey: Option&lt;Apikey&gt;,
-    pub user: Option&lt;User&gt;,
-    pub raw_request: RawRequest,
-    pub config: Value,
-    pub global_config: Value,
-    pub attrs: Value,
-    pub route: Route,
-    pub request_body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
-    pub request: OtoroshiRequest,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmAccessValidatorContext {
-    pub snowflake: Option&lt;String&gt;,
-    pub apikey: Option&lt;Apikey&gt;,
-    pub user: Option&lt;User&gt;,
-    pub request: RawRequest,
-    pub config: Value,
-    pub global_config: Value,
-    pub attrs: Value,
-    pub route: Route,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmRequestTransformerContext {
-    pub snowflake: Option&lt;String&gt;,
-    pub raw_request: OtoroshiRequest,
-    pub otoroshi_request: OtoroshiRequest,
-    pub backend: Backend,
-    pub apikey: Option&lt;Apikey&gt;,
-    pub user: Option&lt;User&gt;,
-    pub request: RawRequest,
-    pub config: Value,
-    pub global_config: Value,
-    pub attrs: Value,
-    pub route: Route,
-    pub request_body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmResponseTransformerContext {
-    pub snowflake: Option&lt;String&gt;,
-    pub raw_response: OtoroshiResponse,
-    pub otoroshi_response: OtoroshiResponse,
-    pub apikey: Option&lt;Apikey&gt;,
-    pub user: Option&lt;User&gt;,
-    pub request: RawRequest,
-    pub config: Value,
-    pub global_config: Value,
-    pub attrs: Value,
-    pub route: Route,
-    pub response_body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmSinkContext {
-    pub snowflake: Option&lt;String&gt;,
-    pub request: RawRequest,
-    pub config: Value,
-    pub global_config: Value,
-    pub attrs: Value,
-    pub origin: String,
-    pub status: u32,
-    pub message: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct OtoroshiPluginResponse {
-    pub content: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmQueryResponse {
-    pub headers: Option&lt;HashMap&lt;String, String&gt;&gt;,
-    pub body_bytes: Vec&lt;u8&gt;,
-    pub status: u32,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmAccessValidatorError {
-    pub message: String,
-    pub status: u32,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmAccessValidatorResponse {
-    pub result: bool,
-    pub error: Option&lt;WasmAccessValidatorError&gt;,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmTransformerResponse {
-    pub headers: HashMap&lt;String, String&gt;,
-    pub cookies: Value,
-    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmSinkMatchesResponse {
-    pub result: bool,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct WasmSinkHandleResponse {
-    pub status: u32,
-    pub headers: HashMap&lt;String, String&gt;,
-    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmJobContext {
-    pub attrs: Value,
-    pub global_config: Value,
-    pub snowflake: Option&lt;String&gt;,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmJobResult {
-  
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmMatchRouteContext {
-    pub snowflake: Option&lt;String&gt;,
-    pub route: Route,
-    pub request: RawRequest,
-    pub config: Value,
-    pub attrs: Value,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmMatchRouteResponse {
-  pub result: bool,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmPreRouteContext {
-    pub snowflake: Option&lt;String&gt;,
-    pub route: Route,
-    pub request: RawRequest,
-    pub config: Value,
-    pub global_config: Value,
-    pub attrs: Value,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmPreRouteResponse {
-    pub status: u32,
-    pub headers: HashMap&lt;String, String&gt;,
-    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmRequestHandlerContext {
-    pub request: RawRequest
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WasmRequestHandlerResponse {
-    pub status: u32,
-    pub headers: HashMap&lt;String, String&gt;,
-    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
-}
 </code></pre>
 <h2><a href="#host-functions" name="host-functions" class="anchor"><span class="anchor-link"></span></a>Host functions</h2>
+<p>otoroshi provides some host function in order make wasm interact with otoroshi internals. Those functions are enabled with specific authorizations to avoid security issues with third party plugins.</p>
+<h3><a href="#authorizations" name="authorizations" class="anchor"><span class="anchor-link"></span></a>authorizations</h3>
+<p>TODO</p>
+<h3><a href="#host-functions-abi" name="host-functions-abi" class="anchor"><span class="anchor-link"></span></a>host functions abi</h3>
 <pre class="prettyprint"><code class="language-rs">extern &quot;C&quot; {
   fn proxy_log(logLevel: i32, message: u64, size: u64) -&gt; u32;
   fn proxy_log_event(context: u64, size: u64) -&gt; u32;
@@ -699,7 +728,6 @@ pub struct WasmRequestHandlerResponse {
   <ul>
     <li><a href="../topics/wasm-usage.html#available-tutorials" class="header">Available tutorials</a></li>
     <li><a href="../topics/wasm-usage.html#wasm-plugins-entities" class="header">WASM plugins entities</a></li>
-    <li><a href="../topics/wasm-usage.html#authorization" class="header">Authorization</a></li>
     <li><a href="../topics/wasm-usage.html#plugins-api" class="header">Plugins api</a></li>
     <li><a href="../topics/wasm-usage.html#host-functions" class="header">Host functions</a></li>
   </ul></li>
