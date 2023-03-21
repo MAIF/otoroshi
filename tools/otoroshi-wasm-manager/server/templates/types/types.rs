@@ -112,7 +112,7 @@ pub struct OtoroshiRequest {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct WasmQueryContext {
+pub struct WasmBackendContext {
     pub snowflake: Option<String>,
     pub backend: Backend,
     pub apikey: Option<Apikey>,
@@ -187,9 +187,12 @@ pub struct OtoroshiPluginResponse {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct WasmQueryResponse {
+pub struct WasmBackendResponse {
     pub headers: Option<HashMap<String, String>>,
-    pub body_bytes: Vec<u8>,
+    pub body_bytes: Option<Vec<u8>>,
+    pub body_base64: Option<String>,
+    pub body_json: Option<Value>,
+    pub body_str: Option<String>,
     pub status: u32,
 }
 
@@ -210,6 +213,9 @@ pub struct WasmTransformerResponse {
     pub headers: HashMap<String, String>,
     pub cookies: Value,
     pub body_bytes: Option<Vec<u8>>,
+    pub body_base64: Option<String>,
+    pub body_json: Option<Value>,
+    pub body_str: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -222,6 +228,9 @@ pub struct WasmSinkHandleResponse {
     pub status: u32,
     pub headers: HashMap<String, String>,
     pub body_bytes: Option<Vec<u8>>,
+    pub body_base64: Option<String>,
+    pub body_json: Option<Value>,
+    pub body_str: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -265,6 +274,9 @@ pub struct WasmPreRouteResponse {
     pub status: u32,
     pub headers: HashMap<String, String>,
     pub body_bytes: Option<Vec<u8>>,
+    pub body_base64: Option<String>,
+    pub body_json: Option<Value>,
+    pub body_str: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -277,4 +289,7 @@ pub struct WasmRequestHandlerResponse {
     pub status: u32,
     pub headers: HashMap<String, String>,
     pub body_bytes: Option<Vec<u8>>,
+    pub body_base64: Option<String>,
+    pub body_json: Option<Value>,
+    pub body_str: Option<String>,
 }

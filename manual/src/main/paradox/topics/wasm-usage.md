@@ -71,6 +71,8 @@ the following examples are written in rust. the rust macros provided by extism m
 
 ### WasmRouteMatcher
 
+TODO
+
 ```rs
 #[plugin_fn]
 pub fn matches_route(Json(_context): Json<types::WasmMatchRouteContext>) -> FnResult<Json<types::WasmMatchRouteResponse>> {
@@ -94,6 +96,8 @@ pub struct WasmMatchRouteResponse {
 
 ### WasmPreRoute
 
+TODO
+
 ```rs
 #[plugin_fn]
 pub fn pre_route(Json(_context): Json<types::WasmPreRouteContext>) -> FnResult<Json<types::WasmPreRouteResponse>> {
@@ -112,13 +116,19 @@ pub struct WasmPreRouteContext {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WasmPreRouteResponse {
-    pub status: u32,
-    pub headers: HashMap<String, String>,
+    pub error: bool,
+    pub status: Option<u32>,
+    pub headers: Option<HashMap<String, String>>,
     pub body_bytes: Option<Vec<u8>>,
+    pub body_base64: Option<String>,
+    pub body_json: Option<Value>,
+    pub body_str: Option<String>,
 }
 ```
 
 ### WasmAccessValidator
+
+TODO
 
 ```rs
 #[plugin_fn]
@@ -153,6 +163,8 @@ pub struct WasmAccessValidatorResponse {
 
 ### WasmRequestTransformer
 
+TODO
+
 ```rs
 #[plugin_fn]
 pub fn transform_request(Json(_context): Json<types::WasmRequestTransformerContext>) -> FnResult<Json<types::WasmTransformerResponse>> {
@@ -178,6 +190,8 @@ pub struct WasmRequestTransformerContext {
 
 ### WasmBackend
 
+TODO
+
 ```rs
 #[plugin_fn]
 pub fn call_backend(Json(_context): Json<types::WasmQueryContext>) -> FnResult<Json<types::WasmQueryResponse>> {
@@ -202,12 +216,17 @@ pub struct WasmBackendContext {
 #[derive(Serialize, Deserialize)]
 pub struct WasmBackendResponse {
     pub headers: Option<HashMap<String, String>>,
-    pub body_bytes: Vec<u8>,
+    pub body_bytes: Option<Vec<u8>>,
+    pub body_base64: Option<String>,
+    pub body_json: Option<Value>,
+    pub body_str: Option<String>,
     pub status: u32,
 }
 ```
 
 ### WasmResponseTransformer
+
+TODO
 
 ```rs
 #[plugin_fn]
@@ -235,10 +254,15 @@ pub struct WasmTransformerResponse {
     pub headers: HashMap<String, String>,
     pub cookies: Value,
     pub body_bytes: Option<Vec<u8>>,
+    pub body_base64: Option<String>,
+    pub body_json: Option<Value>,
+    pub body_str: Option<String>,
 }
 ```
 
 ### WasmSink
+
+TODO
 
 ```rs
 #[plugin_fn]
@@ -273,10 +297,15 @@ pub struct WasmSinkHandleResponse {
     pub status: u32,
     pub headers: HashMap<String, String>,
     pub body_bytes: Option<Vec<u8>>,
+    pub body_base64: Option<String>,
+    pub body_json: Option<Value>,
+    pub body_str: Option<String>,
 }
 ```
 
 ### WasmRequestHandler
+
+TODO
 
 ```rs
 #[plugin_fn]
@@ -294,10 +323,15 @@ pub struct WasmRequestHandlerResponse {
     pub status: u32,
     pub headers: HashMap<String, String>,
     pub body_bytes: Option<Vec<u8>>,
+    pub body_base64: Option<String>,
+    pub body_json: Option<Value>,
+    pub body_str: Option<String>,
 }
 ```
 
 ### WasmJob
+
+TODO
 
 ```rs
 #[plugin_fn]
@@ -440,6 +474,8 @@ otoroshi provides some host function in order make wasm interact with otoroshi i
 TODO
 
 ### host functions abi
+
+TODO
 
 ```rs
 extern "C" {

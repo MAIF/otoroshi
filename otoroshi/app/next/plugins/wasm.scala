@@ -550,6 +550,7 @@ class WasmPreRoute extends NgPreRouting {
                 body = body
               ))
             } else {
+              // TODO: handle attrs
               Right(Done)
             }
           }
