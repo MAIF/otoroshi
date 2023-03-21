@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 import scala.collection.concurrent.TrieMap
 
 trait TypedMap {
+  def update[A](key: TypedKey[A])(f: Option[A] => A): TypedMap = put(key -> f(get[A](key)))
   def get[A](key: TypedKey[A]): Option[A]
   def contains(key: TypedKey[_]): Boolean
   def put(entries: TypedEntry[_]*): TypedMap
