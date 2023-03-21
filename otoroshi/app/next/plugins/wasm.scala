@@ -756,6 +756,13 @@ class WasmSink extends NgRequestSink {
     Await.result(fu, 10.seconds)
   }
 
+  private def requestToWasmJson(body: Source[ByteString, _])(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
+    implicit val mat = env.otoroshiMaterializer
+    body.runFold(ByteString.empty)(_ ++ _).map { rawBody =>
+      Writes.arrayWrites[Byte].writes(rawBody.toArray[Byte])
+    }
+  }
+
   override def handleSync(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Result =
     Await.result(this.handle(ctx), 10.seconds)
 
@@ -764,51 +771,45 @@ class WasmSink extends NgRequestSink {
       case JsSuccess(value, _) => value
       case JsError(_) => WasmConfig()
     }
-    WasmUtils.execute(config, "handle_sink", ctx.wasmJson, FakeWasmContext(ctx.config).some, ctx.attrs.some)
-      .map {
-        case Left(error) => Results.InternalServerError(error)
-        case Right(res) => {
-          val response = Json.parse(res)
+    requestToWasmJson(ctx.body).flatMap { body =>
+      val input = ctx.wasmJson.asObject ++ Json.obj("body_bytes" -> body)
+      WasmUtils.execute(config, "handle_sink", input, FakeWasmContext(ctx.config).some, ctx.attrs.some)
+        .map {
+          case Left(error) => Results.InternalServerError(error)
+          case Right(res) => {
+            val response = Json.parse(res)
 
-          val status = response
-            .select("status")
-            .asOpt[Int]
-            .getOrElse(200)
+            val status = response
+              .select("status")
+              .asOpt[Int]
+              .getOrElse(200)
 
-          val _headers = response
-            .select("headers")
-            .asOpt[Map[String, String]]
-            .getOrElse(Map("Content-Type" -> "application/json"))
+            val _headers = response
+              .select("headers")
+              .asOpt[Map[String, String]]
+              .getOrElse(Map("Content-Type" -> "application/json"))
 
-          val contentType = _headers
-            .get("Content-Type")
-            .orElse(_headers.get("content-type"))
-            .getOrElse("application/json")
+            val contentType = _headers
+              .get("Content-Type")
+              .orElse(_headers.get("content-type"))
+              .getOrElse("application/json")
 
-          val headers = _headers
-            .filterNot(_._1.toLowerCase() == "content-type")
+            val headers = _headers
+              .filterNot(_._1.toLowerCase() == "content-type")
 
-          val bodytext = response
-            .select("body")
-            .asOpt[String]
-            .map(ByteString.apply)
+            val bodyAsBytes = response.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
+            val bodyBase64 = response.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
+            val bodyJson = response.select("body_json").asOpt[JsValue].map(str => ByteString(str.stringify))
+            val bodyStr = response.select("body_str").asOpt[String].orElse(response.select("body").asOpt[String]).map(str => ByteString(str))
+            val body:ByteString = bodyStr.orElse(bodyJson).orElse(bodyBase64).orElse(bodyAsBytes).getOrElse(ByteString.empty)
 
-          val bodyBase64 = response
-            .select("bodyBase64")
-            .asOpt[String]
-            .map(ByteString.apply)
-            .map(_.decodeBase64)
-
-          val body: ByteString = bodytext
-            .orElse(bodyBase64)
-            .getOrElse("""{"message":"hello world!"}""".byteString)
-
-          Results
-            .Status(status)(body)
-            .withHeaders(headers.toSeq: _*)
-            .as(contentType)
+            Results
+              .Status(status)(body)
+              .withHeaders(headers.toSeq: _*)
+              .as(contentType)
+          }
         }
-      }
+    }
   }
 }
 

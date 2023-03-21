@@ -2,6 +2,7 @@ package main
 
 import (
     "github.com/extism/go-pdk"
+    "github.com/tidwall/gjson"
 )
 
 type LogLevel uint32
@@ -73,12 +74,11 @@ func OtoroshiDatastoreKeys(pattern string) []string {
   var res_mem = pdk.FindMemory(res_ptr)
   var res_bytes = make([]byte, int(res_mem.Length()))
   res_mem.Load(res_bytes)
-  OtoroshiLogInfo(string(res_bytes[:]))
-  var arr = make([]string, 10)
-  jsonparser.ArrayEach(res_bytes, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-      var v, _ = jsonparser.GetString(value)
-      arr[offset] = v
-  })
+  var arr []string
+  var keys = gjson.ParseBytes(res_bytes)
+  for _, key := range keys.Array() {
+    arr = append(arr, key.String())
+  }
   return arr
 }
 

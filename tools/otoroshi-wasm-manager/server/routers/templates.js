@@ -65,6 +65,32 @@ router.get('/host-functions/:type', (req, res) => {
             error: 'Unable to retrieve the types with provided configuration'
           })
       }
+    } else if (['rust'].includes(type)) {
+      if (process.env.MANAGER_TYPES.startsWith('file://')) {
+        const paths = [process.env.MANAGER_TYPES.replace('file://', ''), `host.rs`];
+        FileSystem.existsFile(...paths)
+          .then(() => {
+            res.download(FileSystem.pathsToPath(...paths), `host.rs`)
+          })
+          .catch(err => {
+            res.status(400).json({ error: err })
+          })
+      } else if (process.env.MANAGER_TYPES.startsWith('http')) {
+        fetch(`${process.env.MANAGER_TYPES}/host.rs`, {
+          redirect: 'follow'
+        })
+          .then(r => r.json())
+          .then(r => {
+            fetch(r.download_url)
+              .then(raw => raw.body.pipe(res))
+          })
+      } else {
+        res
+          .status(400)
+          .json({
+            error: 'Unable to retrieve the types with provided configuration'
+          })
+      }
     } else {
       res
         .status(404)

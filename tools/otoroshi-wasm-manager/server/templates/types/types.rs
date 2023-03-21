@@ -122,7 +122,7 @@ pub struct WasmQueryContext {
     pub global_config: Value,
     pub attrs: Value,
     pub route: Route,
-    pub raw_request_body: Option<String>,
+    pub request_body_bytes: Option<Vec<u8>>,
     pub request: OtoroshiRequest,
 }
 
@@ -151,6 +151,7 @@ pub struct WasmRequestTransformerContext {
     pub global_config: Value,
     pub attrs: Value,
     pub route: Route,
+    pub request_body_bytes: Option<Vec<u8>>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -165,7 +166,7 @@ pub struct WasmResponseTransformerContext {
     pub global_config: Value,
     pub attrs: Value,
     pub route: Route,
-    pub body: Option<String>,
+    pub response_body_bytes: Option<Vec<u8>>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -188,7 +189,7 @@ pub struct OtoroshiPluginResponse {
 #[derive(Serialize, Deserialize)]
 pub struct WasmQueryResponse {
     pub headers: Option<HashMap<String, String>>,
-    pub body: String,
+    pub body_bytes: Vec<u8>,
     pub status: u32,
 }
 
@@ -208,7 +209,7 @@ pub struct WasmAccessValidatorResponse {
 pub struct WasmTransformerResponse {
     pub headers: HashMap<String, String>,
     pub cookies: Value,
-    pub body: Option<String>,
+    pub body_bytes: Option<Vec<u8>>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -220,6 +221,5 @@ pub struct WasmSinkMatchesResponse {
 pub struct WasmSinkHandleResponse {
     pub status: u32,
     pub headers: HashMap<String, String>,
-    pub body: Option<String>,
-    pub bodyBase64: Option<String>,
+    pub body_bytes: Option<Vec<u8>>,
 }
