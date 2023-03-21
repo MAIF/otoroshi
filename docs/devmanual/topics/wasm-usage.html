@@ -344,6 +344,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <p>the following examples are written in rust. the rust macros provided by extism makes the usage of <code>Host.inputString</code> and <code>Host.outputString</code> useless. Remember that it&rsquo;s still used under the hood and that the structures are passed as json strings.</p>
 <h3><a href="#wasmroutematcher" name="wasmroutematcher" class="anchor"><span class="anchor-link"></span></a>WasmRouteMatcher</h3>
+<p>TODO</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn matches_route(Json(_context): Json&lt;types::WasmMatchRouteContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmMatchRouteResponse&gt;&gt; {
     ///
@@ -364,6 +365,7 @@ pub struct WasmMatchRouteResponse {
 }
 </code></pre>
 <h3><a href="#wasmpreroute" name="wasmpreroute" class="anchor"><span class="anchor-link"></span></a>WasmPreRoute</h3>
+<p>TODO</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn pre_route(Json(_context): Json&lt;types::WasmPreRouteContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmPreRouteResponse&gt;&gt; {
     ///
@@ -381,12 +383,17 @@ pub struct WasmPreRouteContext {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WasmPreRouteResponse {
-    pub status: u32,
-    pub headers: HashMap&lt;String, String&gt;,
+    pub error: bool,
+    pub status: Option&lt;u32&gt;,
+    pub headers: Option&lt;HashMap&lt;String, String&gt;&gt;,
     pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+    pub body_base64: Option&lt;String&gt;,
+    pub body_json: Option&lt;Value&gt;,
+    pub body_str: Option&lt;String&gt;,
 }
 </code></pre>
 <h3><a href="#wasmaccessvalidator" name="wasmaccessvalidator" class="anchor"><span class="anchor-link"></span></a>WasmAccessValidator</h3>
+<p>TODO</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn can_access(Json(_context): Json&lt;types::WasmAccessValidatorContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmAccessValidatorResponse&gt;&gt; {
     ///
@@ -417,6 +424,7 @@ pub struct WasmAccessValidatorResponse {
 }
 </code></pre>
 <h3><a href="#wasmrequesttransformer" name="wasmrequesttransformer" class="anchor"><span class="anchor-link"></span></a>WasmRequestTransformer</h3>
+<p>TODO</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn transform_request(Json(_context): Json&lt;types::WasmRequestTransformerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmTransformerResponse&gt;&gt; {
     ///
@@ -439,6 +447,7 @@ pub struct WasmRequestTransformerContext {
 }
 </code></pre>
 <h3><a href="#wasmbackend" name="wasmbackend" class="anchor"><span class="anchor-link"></span></a>WasmBackend</h3>
+<p>TODO</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn call_backend(Json(_context): Json&lt;types::WasmQueryContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmQueryResponse&gt;&gt; {
     ///
@@ -462,11 +471,15 @@ pub struct WasmBackendContext {
 #[derive(Serialize, Deserialize)]
 pub struct WasmBackendResponse {
     pub headers: Option&lt;HashMap&lt;String, String&gt;&gt;,
-    pub body_bytes: Vec&lt;u8&gt;,
+    pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+    pub body_base64: Option&lt;String&gt;,
+    pub body_json: Option&lt;Value&gt;,
+    pub body_str: Option&lt;String&gt;,
     pub status: u32,
 }
 </code></pre>
 <h3><a href="#wasmresponsetransformer" name="wasmresponsetransformer" class="anchor"><span class="anchor-link"></span></a>WasmResponseTransformer</h3>
+<p>TODO</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn transform_response(Json(_context): Json&lt;types::WasmResponseTransformerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmTransformerResponse&gt;&gt; {
     ///
@@ -492,9 +505,13 @@ pub struct WasmTransformerResponse {
     pub headers: HashMap&lt;String, String&gt;,
     pub cookies: Value,
     pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+    pub body_base64: Option&lt;String&gt;,
+    pub body_json: Option&lt;Value&gt;,
+    pub body_str: Option&lt;String&gt;,
 }
 </code></pre>
 <h3><a href="#wasmsink" name="wasmsink" class="anchor"><span class="anchor-link"></span></a>WasmSink</h3>
+<p>TODO</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn sink_matches(Json(_context): Json&lt;types::WasmSinkContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmSinkMatchesResponse&gt;&gt; {
     ///
@@ -527,9 +544,13 @@ pub struct WasmSinkHandleResponse {
     pub status: u32,
     pub headers: HashMap&lt;String, String&gt;,
     pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+    pub body_base64: Option&lt;String&gt;,
+    pub body_json: Option&lt;Value&gt;,
+    pub body_str: Option&lt;String&gt;,
 }
 </code></pre>
 <h3><a href="#wasmrequesthandler" name="wasmrequesthandler" class="anchor"><span class="anchor-link"></span></a>WasmRequestHandler</h3>
+<p>TODO</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn handle_request(Json(_context): Json&lt;types::WasmRequestHandlerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmRequestHandlerResponse&gt;&gt; {
     ///
@@ -545,9 +566,13 @@ pub struct WasmRequestHandlerResponse {
     pub status: u32,
     pub headers: HashMap&lt;String, String&gt;,
     pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
+    pub body_base64: Option&lt;String&gt;,
+    pub body_json: Option&lt;Value&gt;,
+    pub body_str: Option&lt;String&gt;,
 }
 </code></pre>
 <h3><a href="#wasmjob" name="wasmjob" class="anchor"><span class="anchor-link"></span></a>WasmJob</h3>
+<p>TODO</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn job_run(Json(_context): Json&lt;types::WasmJobContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmJobResult&gt;&gt; {
     ///
@@ -680,6 +705,7 @@ pub struct OtoroshiRequest {
 <h3><a href="#authorizations" name="authorizations" class="anchor"><span class="anchor-link"></span></a>authorizations</h3>
 <p>TODO</p>
 <h3><a href="#host-functions-abi" name="host-functions-abi" class="anchor"><span class="anchor-link"></span></a>host functions abi</h3>
+<p>TODO</p>
 <pre class="prettyprint"><code class="language-rs">extern &quot;C&quot; {
   fn proxy_log(logLevel: i32, message: u64, size: u64) -&gt; u32;
   fn proxy_log_event(context: u64, size: u64) -&gt; u32;
