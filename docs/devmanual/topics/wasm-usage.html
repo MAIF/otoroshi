@@ -310,9 +310,19 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../how-to-s/wasm-manager-installation.html">install a wasm manager</a></li>
   <li><a href="../how-to-s/wasm-usage.html">use a wasm plugin</a></li>
 </ol>
-<h2><a href="#wasm-plugins-entities" name="wasm-plugins-entities" class="anchor"><span class="anchor-link"></span></a>WASM plugins entities</h2>
-<p>TODO</p>
-<h2><a href="#plugins-api" name="plugins-api" class="anchor"><span class="anchor-link"></span></a>Plugins api</h2>
+<h2><a href="#wasm-plugins-entities" name="wasm-plugins-entities" class="anchor"><span class="anchor-link"></span></a>Wasm plugins entities</h2>
+<p>Otoroshi provides a dedicated entity for wasm plugins. Those entities makes it easy to declare a wasm plugin with specific configuration only once and use it in multiple places. </p>
+<p>You can find wasm plugin entities at <code>/bo/dashboard/wasm-plugins</code></p>
+<p>In a wasm plugin entity, you can define the source of your wasm plugin. You can choose between</p>
+<ul>
+  <li><code>base64</code>: a base64 encoded wasm script</li>
+  <li><code>file</code>: the path to a wasm script file</li>
+  <li><code>http</code>: the url to a wasm script file</li>
+  <li><code>wasm-manager</code>: the name of a wasm script compiled by a wasm manager instance</li>
+</ul>
+<p>then you can define the number of memory pages available for each plugin instanciation, the name of the function you want to invoke, the config. map of the VM and if you want to keep a wasm vm alive during the request lifecycle to be able to reuse it in different plugin steps</p><div class="centered-img">
+<img src="../imgs/wasm-plugin.png" title="screenshot of wasm plugin" /></div>
+<h2><a href="#otoroshi-plugins-api" name="otoroshi-plugins-api" class="anchor"><span class="anchor-link"></span></a>Otoroshi plugins api</h2>
 <p>the following parts illustrates the apis for the different plugins. Otoroshi uses <a href="https://extism.org/">Extism</a> to handle content sharing between the JVM and the wasm VM. All structures are sent to/from the plugins as json strings. </p>
 <p>for instance, if we want to write a <code>WasmBackendCall</code> plugin using javascript, we could write something like</p>
 <pre class="prettyprint"><code class="language-js">function backend_call() {
@@ -344,7 +354,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <p>the following examples are written in rust. the rust macros provided by extism makes the usage of <code>Host.inputString</code> and <code>Host.outputString</code> useless. Remember that it&rsquo;s still used under the hood and that the structures are passed as json strings.</p>
 <h3><a href="#wasmroutematcher" name="wasmroutematcher" class="anchor"><span class="anchor-link"></span></a>WasmRouteMatcher</h3>
-<p>TODO</p>
+<p>A route matcher is a plugin that can help the otoroshi router to select a route instance based on your own custom predicate. Basically it&rsquo;s a function that returns a boolean answer.</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn matches_route(Json(_context): Json&lt;types::WasmMatchRouteContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmMatchRouteResponse&gt;&gt; {
     ///
@@ -365,7 +375,7 @@ pub struct WasmMatchRouteResponse {
 }
 </code></pre>
 <h3><a href="#wasmpreroute" name="wasmpreroute" class="anchor"><span class="anchor-link"></span></a>WasmPreRoute</h3>
-<p>TODO</p>
+<p>A pre-route plugin can be used to short-circuit a request or enrich it (maybe extracting your own kind of auth. token, etc) a the very beginning of the request handling process, just after the routing part, when a route has bee chosen by the otoroshi router.</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn pre_route(Json(_context): Json&lt;types::WasmPreRouteContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmPreRouteResponse&gt;&gt; {
     ///
@@ -384,6 +394,7 @@ pub struct WasmPreRouteContext {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WasmPreRouteResponse {
     pub error: bool,
+    pub attrs: Option&lt;HashMap&lt;String, String&gt;&gt;,
     pub status: Option&lt;u32&gt;,
     pub headers: Option&lt;HashMap&lt;String, String&gt;&gt;,
     pub body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
@@ -393,7 +404,7 @@ pub struct WasmPreRouteResponse {
 }
 </code></pre>
 <h3><a href="#wasmaccessvalidator" name="wasmaccessvalidator" class="anchor"><span class="anchor-link"></span></a>WasmAccessValidator</h3>
-<p>TODO</p>
+<p>An access validator plugin is typically used to verify if the request can continue or must be cancelled. For instance, the otoroshi apikey plugin is an access validator that check if the current apikey provided by the client is legit and authorized on the current route.</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn can_access(Json(_context): Json&lt;types::WasmAccessValidatorContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmAccessValidatorResponse&gt;&gt; {
     ///
@@ -424,7 +435,7 @@ pub struct WasmAccessValidatorResponse {
 }
 </code></pre>
 <h3><a href="#wasmrequesttransformer" name="wasmrequesttransformer" class="anchor"><span class="anchor-link"></span></a>WasmRequestTransformer</h3>
-<p>TODO</p>
+<p>A request transformer plugin can be used to compose or transform the request that will be sent to the backend</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn transform_request(Json(_context): Json&lt;types::WasmRequestTransformerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmTransformerResponse&gt;&gt; {
     ///
@@ -446,8 +457,8 @@ pub struct WasmRequestTransformerContext {
     pub request_body_bytes: Option&lt;Vec&lt;u8&gt;&gt;,
 }
 </code></pre>
-<h3><a href="#wasmbackend" name="wasmbackend" class="anchor"><span class="anchor-link"></span></a>WasmBackend</h3>
-<p>TODO</p>
+<h3><a href="#wasmbackendcall" name="wasmbackendcall" class="anchor"><span class="anchor-link"></span></a>WasmBackendCall</h3>
+<p>A backend call plugin can be used to simulate a backend behavior in otoroshi. For instance the static backend of otoroshi return the content of a file</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn call_backend(Json(_context): Json&lt;types::WasmQueryContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmQueryResponse&gt;&gt; {
     ///
@@ -479,7 +490,7 @@ pub struct WasmBackendResponse {
 }
 </code></pre>
 <h3><a href="#wasmresponsetransformer" name="wasmresponsetransformer" class="anchor"><span class="anchor-link"></span></a>WasmResponseTransformer</h3>
-<p>TODO</p>
+<p>A response transformer plugin can be used to compose or transform the response that will be sent back to the client</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn transform_response(Json(_context): Json&lt;types::WasmResponseTransformerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmTransformerResponse&gt;&gt; {
     ///
@@ -511,7 +522,7 @@ pub struct WasmTransformerResponse {
 }
 </code></pre>
 <h3><a href="#wasmsink" name="wasmsink" class="anchor"><span class="anchor-link"></span></a>WasmSink</h3>
-<p>TODO</p>
+<p>A sink is a kind of plugin that can be used to respond to any unmatched request before otoroshi sends back a 404 response</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn sink_matches(Json(_context): Json&lt;types::WasmSinkContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmSinkMatchesResponse&gt;&gt; {
     ///
@@ -550,8 +561,13 @@ pub struct WasmSinkHandleResponse {
 }
 </code></pre>
 <h3><a href="#wasmrequesthandler" name="wasmrequesthandler" class="anchor"><span class="anchor-link"></span></a>WasmRequestHandler</h3>
-<p>TODO</p>
+<p>A request handler is a very special kind of plugin that can bypass the otoroshi proxy engine on specific domains and completely handles the request/response lifecycle on it&rsquo;s own.</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
+pub fn can_handle_request(Json(_context): Json&lt;types::WasmRequestHandlerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmSinkMatchesResponse&gt;&gt; {
+    ///
+}
+
+#[plugin_fn]
 pub fn handle_request(Json(_context): Json&lt;types::WasmRequestHandlerContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmRequestHandlerResponse&gt;&gt; {
     ///
 }
@@ -572,7 +588,7 @@ pub struct WasmRequestHandlerResponse {
 }
 </code></pre>
 <h3><a href="#wasmjob" name="wasmjob" class="anchor"><span class="anchor-link"></span></a>WasmJob</h3>
-<p>TODO</p>
+<p>A job is a plugin that can run periodically an do whatever you want. Typically, the kubernetes plugins of otoroshi are jobs that periodically sync stuff between otoroshi and kubernetes using the kube-api</p>
 <pre class="prettyprint"><code class="language-rs">#[plugin_fn]
 pub fn job_run(Json(_context): Json&lt;types::WasmJobContext&gt;) -&gt; FnResult&lt;Json&lt;types::WasmJobResult&gt;&gt; {
     ///
@@ -700,10 +716,22 @@ pub struct OtoroshiRequest {
     pub cookies: Value,
 }
 </code></pre>
-<h2><a href="#host-functions" name="host-functions" class="anchor"><span class="anchor-link"></span></a>Host functions</h2>
-<p>otoroshi provides some host function in order make wasm interact with otoroshi internals. Those functions are enabled with specific authorizations to avoid security issues with third party plugins.</p>
+<h2><a href="#otoroshi-interop-with-host-functions" name="otoroshi-interop-with-host-functions" class="anchor"><span class="anchor-link"></span></a>Otoroshi interop. with host functions</h2>
+<p>otoroshi provides some host function in order make wasm interact with otoroshi internals. You can</p>
+<ul>
+  <li>access wasi resources</li>
+  <li>access http resources</li>
+  <li>access otoroshi internal state</li>
+  <li>access otoroshi internal configuration</li>
+  <li>access otoroshi static configuration</li>
+  <li>access plugin scoped in-memory key/value storage</li>
+  <li>access global in-memory key/value storage</li>
+  <li>access plugin scoped persistent key/value storage</li>
+  <li>access global persistent key/value storage</li>
+</ul>
 <h3><a href="#authorizations" name="authorizations" class="anchor"><span class="anchor-link"></span></a>authorizations</h3>
-<p>TODO</p>
+<p>all the previously listed host functions are enabled with specific authorizations to avoid security issues with third party plugins. You can enable/disable the host function from the wasm plugin entity</p><div class="centered-img">
+<img src="../imgs/wasm-authz.png" title="screenshot of wasm authz" /></div>
 <h3><a href="#host-functions-abi" name="host-functions-abi" class="anchor"><span class="anchor-link"></span></a>host functions abi</h3>
 <p>you&rsquo;ll find here the raw signatures for the otoroshi host functions. we are currently in the process of writing higher level functions to hide the complexity.</p>
 <p>every time you the the following signature: <code>(context: u64, size: u64) -&gt; u64</code> it means that otoroshi is expecting for a pointer to the call context (which is a json string) and it&rsquo;s size. The return is a pointer to the response (which is a json string).</p>
@@ -768,9 +796,9 @@ pub struct OtoroshiRequest {
   <li><a href="../topics/wasm-usage.html#otoroshi-and-wasm" class="header">Otoroshi and WASM</a>
   <ul>
     <li><a href="../topics/wasm-usage.html#available-tutorials" class="header">Available tutorials</a></li>
-    <li><a href="../topics/wasm-usage.html#wasm-plugins-entities" class="header">WASM plugins entities</a></li>
-    <li><a href="../topics/wasm-usage.html#plugins-api" class="header">Plugins api</a></li>
-    <li><a href="../topics/wasm-usage.html#host-functions" class="header">Host functions</a></li>
+    <li><a href="../topics/wasm-usage.html#wasm-plugins-entities" class="header">Wasm plugins entities</a></li>
+    <li><a href="../topics/wasm-usage.html#otoroshi-plugins-api" class="header">Otoroshi plugins api</a></li>
+    <li><a href="../topics/wasm-usage.html#otoroshi-interop-with-host-functions" class="header">Otoroshi interop. with host functions</a></li>
   </ul></li>
 </ul>
 </div>
