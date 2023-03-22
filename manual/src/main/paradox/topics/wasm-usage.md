@@ -84,6 +84,18 @@ function backend_call() {
 
 the following examples are written in rust. the rust macros provided by extism makes the usage of `Host.inputString` and `Host.outputString` useless. Remember that it's still used under the hood and that the structures are passed as json strings.
 
+do not forget to add the extism pdk library to your project to make it compile
+
+```rs
+[dependencies]
+extism-pdk = "0.2.0"
+serde = "1.0.152"
+serde_json = "1.0.91"
+
+[lib]
+crate_type = ["cdylib"]
+```
+
 ### WasmRouteMatcher
 
 A route matcher is a plugin that can help the otoroshi router to select a route instance based on your own custom predicate. Basically it's a function that returns a boolean answer.
