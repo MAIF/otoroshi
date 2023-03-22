@@ -23,8 +23,8 @@ class WasmDataRights extends Component {
         <label className="col-xs-12 col-sm-2 col-form-label">{this.props.label}</label>
         <div className="col-sm-10">
           <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-            <Input label="Read" description={schema[this.props.property].read.label} value={this.props.value.read} onChange={v => this.props.onChange({ ...this.props.value, read: v })} />
-            <Input label="Write" description={schema[this.props.property].write.label} value={this.props.value.write} onChange={v => this.props.onChange({ ...this.props.value, write: v })} />
+            <Input width={this.props.boxWidth} label="Read" description={schema[this.props.property].read.label} value={this.props.value.read} onChange={v => this.props.onChange({ ...this.props.value, read: v })} />
+            <Input width={this.props.boxWidth} label="Write" description={schema[this.props.property].write.label} value={this.props.value.write} onChange={v => this.props.onChange({ ...this.props.value, write: v })} />
           </div>
         </div>
       </div>
@@ -375,6 +375,7 @@ export class WasmPluginsPage extends Component {
     'config.authorizations.globalDataStoreAccess': { 
       type: WasmDataRights,
       props: {
+        boxWidth: 400,
         label: 'Datastore access',
         property: 'globalDataStoreAccess',
       }
@@ -382,6 +383,7 @@ export class WasmPluginsPage extends Component {
     'config.authorizations.pluginDataStoreAccess': { 
       type: WasmDataRights,
       props: {
+        boxWidth: 400,
         label: 'Plugin scoped datastore access',
         property: 'pluginDataStoreAccess',
       }
@@ -389,6 +391,7 @@ export class WasmPluginsPage extends Component {
     'config.authorizations.globalMapAccess': { 
       type: WasmDataRights,
       props: {
+        boxWidth: 400,
         label: 'Global map access',
         property: 'globalMapAccess',
       }
@@ -396,6 +399,7 @@ export class WasmPluginsPage extends Component {
     'config.authorizations.pluginMapAccess': { 
       type: WasmDataRights,
       props: {
+        boxWidth: 400,
         label: 'Plugin scoped map access',
         property: 'pluginMapAccess',
       }

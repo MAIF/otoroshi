@@ -284,7 +284,7 @@ object DataStore extends AwaitCapable {
                                 (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): ExtismFunction[EnvUserData] =
     (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EnvUserData]) => {
       data.ifPresent { hostData =>
-        val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
+        val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i64)
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
         val future = env.datastores.rawDataStore.keys(s"${hostData.env.storageRoot}:$path$key").map { values =>
           JsArray(values.map(JsString.apply)).stringify

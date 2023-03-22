@@ -125,7 +125,7 @@ const schema = {
       },
       pluginDataStoreAccess: {
         read: {
-          label: "Can read plugin datastore",
+          label: "Can read from persistent key/value storage",
           type: 'box-bool',
           props: {
             description:
@@ -134,7 +134,7 @@ const schema = {
         },
         write: {
           type: 'box-bool',
-          label: 'Can write plugin datastore',
+          label: 'Can write to persistent key/value storage',
           props: {
             description:
               'Add function to read and write the plugin datastore',
@@ -143,7 +143,7 @@ const schema = {
       },
       globalMapAccess: {
         read: {
-          label: "Read plugin global map",
+          label: "Can read plugin global in-memory key/value storage",
           type: 'box-bool',
           props: {
             description:
@@ -152,7 +152,7 @@ const schema = {
         },
         write: {
           type: 'box-bool',
-          label: 'Write plugin global map',
+          label: 'Can write plugin global in-memory key/value storage',
           props: {
             description:
               'Add functions to write a map to store stuff in current otoroshi instance memory between invocations',
@@ -161,7 +161,7 @@ const schema = {
       },
       pluginMapAccess: {
         read: {
-          label: "Read plugin map",
+          label: "Can read plugin scoped in-memory key/value storage",
           type: 'box-bool',
           props: {
             description:
@@ -170,7 +170,7 @@ const schema = {
         },
         write: {
           type: 'box-bool',
-          label: 'Write plugin map',
+          label: 'Can read plugin scoped in-memory key/value storage',
           props: {
             description:
               'Add functions to write a map to store stuff in current otoroshi instance memory between invocations. Each plugim has its own map.',

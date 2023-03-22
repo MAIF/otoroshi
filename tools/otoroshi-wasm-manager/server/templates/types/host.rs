@@ -55,7 +55,7 @@ pub fn otoroshi_proxy_log(level: i32, msg: String) -> i32 {
   unsafe { proxy_log(level, mem.offset, mem.length) }
 }
 
-pub fn otoroshi_proxy_datastore_keys(pattern: String) -> Vec<String> {
+pub fn otoroshi_proxy_datastore_keys(pattern: &str) -> Result<Vec<String>, Error>  {
   let mut mem_in = extism_pdk::Memory::new(pattern.len());
   mem_in.store(pattern);
   let res_ptr = unsafe { proxy_datastore_keys(mem_in.offset, mem_in.length) };
@@ -68,9 +68,7 @@ pub fn otoroshi_proxy_datastore_keys(pattern: String) -> Vec<String> {
           let json: serde_json::Value = serde_json::from_str(&json_str).unwrap();
           match json.as_array() {
             None => Vec::new(),
-            Some(arr) => {
-              arr.into_iter().map(|x| x.as_str().unwrap().to_string()).collect()
-            }
+            Some(arr) => arr.into_iter().map(|x| x.as_str().unwrap().to_string()).collect()
           }  
         }
       }

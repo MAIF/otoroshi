@@ -575,7 +575,7 @@ export class NgBoxBooleanRenderer extends Component {
             outline: 'rgb(65, 65, 62) solid 1px',
             padding: '5px',
             margin: '5px 0px',
-            width: '100%',
+            width: this.props.width || '100%',
             height: '100%',
             borderRadius: '4px',
           }}>
