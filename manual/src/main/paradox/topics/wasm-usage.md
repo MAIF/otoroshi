@@ -28,11 +28,26 @@ here is the list of available tutorials about wasm in Otoroshi
 1. @ref:[install a wasm manager](../how-to-s/wasm-manager-installation.md)
 2. @ref:[use a wasm plugin](../how-to-s/wasm-usage.md)
 
-## WASM plugins entities
+## Wasm plugins entities
 
-TODO
+Otoroshi provides a dedicated entity for wasm plugins. Those entities makes it easy to declare a wasm plugin with specific configuration only once and use it in multiple places. 
 
-## Plugins api
+You can find wasm plugin entities at `/bo/dashboard/wasm-plugins`
+
+In a wasm plugin entity, you can define the source of your wasm plugin. You can choose between
+
+- `base64`: a base64 encoded wasm script
+- `file`: the path to a wasm script file
+- `http`: the url to a wasm script file
+- `wasm-manager`: the name of a wasm script compiled by a wasm manager instance
+
+then you can define the number of memory pages available for each plugin instanciation, the name of the function you want to invoke, the config. map of the VM and if you want to keep a wasm vm alive during the request lifecycle to be able to reuse it in different plugin steps
+
+@@@ div { .centered-img }
+<img src="../imgs/wasm-plugin.png" title="screenshot of wasm plugin" />
+@@@
+
+## Otoroshi plugins api
 
 the following parts illustrates the apis for the different plugins. Otoroshi uses [Extism](https://extism.org/) to handle content sharing between the JVM and the wasm VM. All structures are sent to/from the plugins as json strings. 
 
@@ -71,7 +86,7 @@ the following examples are written in rust. the rust macros provided by extism m
 
 ### WasmRouteMatcher
 
-TODO
+A route matcher is a plugin that can help the otoroshi router to select a route instance based on your own custom predicate. Basically it's a function that returns a boolean answer.
 
 ```rs
 #[plugin_fn]
@@ -96,7 +111,7 @@ pub struct WasmMatchRouteResponse {
 
 ### WasmPreRoute
 
-TODO
+A pre-route plugin can be used to short-circuit a request or enrich it (maybe extracting your own kind of auth. token, etc) a the very beginning of the request handling process, just after the routing part, when a route has bee chosen by the otoroshi router.
 
 ```rs
 #[plugin_fn]
@@ -117,6 +132,7 @@ pub struct WasmPreRouteContext {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WasmPreRouteResponse {
     pub error: bool,
+    pub attrs: Option<HashMap<String, String>>,
     pub status: Option<u32>,
     pub headers: Option<HashMap<String, String>>,
     pub body_bytes: Option<Vec<u8>>,
@@ -128,7 +144,7 @@ pub struct WasmPreRouteResponse {
 
 ### WasmAccessValidator
 
-TODO
+An access validator plugin is typically used to verify if the request can continue or must be cancelled. For instance, the otoroshi apikey plugin is an access validator that check if the current apikey provided by the client is legit and authorized on the current route.
 
 ```rs
 #[plugin_fn]
@@ -163,7 +179,7 @@ pub struct WasmAccessValidatorResponse {
 
 ### WasmRequestTransformer
 
-TODO
+A request transformer plugin can be used to compose or transform the request that will be sent to the backend
 
 ```rs
 #[plugin_fn]
@@ -188,9 +204,9 @@ pub struct WasmRequestTransformerContext {
 }
 ```
 
-### WasmBackend
+### WasmBackendCall
 
-TODO
+A backend call plugin can be used to simulate a backend behavior in otoroshi. For instance the static backend of otoroshi return the content of a file
 
 ```rs
 #[plugin_fn]
@@ -226,7 +242,8 @@ pub struct WasmBackendResponse {
 
 ### WasmResponseTransformer
 
-TODO
+A response transformer plugin can be used to compose or transform the response that will be sent back to the client
+
 
 ```rs
 #[plugin_fn]
@@ -262,7 +279,7 @@ pub struct WasmTransformerResponse {
 
 ### WasmSink
 
-TODO
+A sink is a kind of plugin that can be used to respond to any unmatched request before otoroshi sends back a 404 response
 
 ```rs
 #[plugin_fn]
@@ -305,9 +322,14 @@ pub struct WasmSinkHandleResponse {
 
 ### WasmRequestHandler
 
-TODO
+A request handler is a very special kind of plugin that can bypass the otoroshi proxy engine on specific domains and completely handles the request/response lifecycle on it's own.
 
 ```rs
+#[plugin_fn]
+pub fn can_handle_request(Json(_context): Json<types::WasmRequestHandlerContext>) -> FnResult<Json<types::WasmSinkMatchesResponse>> {
+    ///
+}
+
 #[plugin_fn]
 pub fn handle_request(Json(_context): Json<types::WasmRequestHandlerContext>) -> FnResult<Json<types::WasmRequestHandlerResponse>> {
     ///
@@ -331,7 +353,7 @@ pub struct WasmRequestHandlerResponse {
 
 ### WasmJob
 
-TODO
+A job is a plugin that can run periodically an do whatever you want. Typically, the kubernetes plugins of otoroshi are jobs that periodically sync stuff between otoroshi and kubernetes using the kube-api
 
 ```rs
 #[plugin_fn]
@@ -465,13 +487,28 @@ pub struct OtoroshiRequest {
 }
 ```
 
-## Host functions
+## Otoroshi interop. with host functions
 
-otoroshi provides some host function in order make wasm interact with otoroshi internals. Those functions are enabled with specific authorizations to avoid security issues with third party plugins.
+otoroshi provides some host function in order make wasm interact with otoroshi internals. You can
+
+- access wasi resources
+- access http resources
+- access otoroshi internal state
+- access otoroshi internal configuration
+- access otoroshi static configuration
+- access plugin scoped in-memory key/value storage
+- access global in-memory key/value storage
+- access plugin scoped persistent key/value storage
+- access global persistent key/value storage
 
 ### authorizations
 
-TODO
+all the previously listed host functions are enabled with specific authorizations to avoid security issues with third party plugins. You can enable/disable the host function from the wasm plugin entity
+
+@@@ div { .centered-img }
+<img src="../imgs/wasm-authz.png" title="screenshot of wasm authz" />
+@@@
+
 
 ### host functions abi
 

@@ -178,12 +178,12 @@ export class WasmPluginsPage extends Component {
     value.config.source.kind.toLowerCase() !== 'local' && 'config.memoryPages',
     'config.functionName',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.config',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedHosts',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedPaths',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.preserve',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.wasi',
     value.config.source.kind.toLowerCase() !== 'local' && '<<<Wasm host function authorizations',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.wasi',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedPaths',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.httpAccess',
+    value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedHosts',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.proxyHttpCallTimeout',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.proxyStateAccess',
     value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.configurationAccess',
@@ -325,14 +325,16 @@ export class WasmPluginsPage extends Component {
     },
     'config.allowedHosts': { 
       type: 'array',
+      display: (v) => v.config.authorizations.httpAccess,
       props: {
-        label: 'Allow hosts'
+        label: 'Allow http hosts'
       }
     },
     'config.allowedPaths': { 
       type: 'object',
+      display: (v) => v.config.wasi,
       props: {
-        label: 'Allow paths'
+        label: 'Allow file paths'
       }
     },
     'config.preserve': { 
@@ -367,6 +369,7 @@ export class WasmPluginsPage extends Component {
     },
     'config.authorizations.proxyHttpCallTimeout': { 
       type: 'number',
+      display: (v) => v.config.authorizations.httpAccess,
       props: {
         label: 'Http timeout',
         suffix: 'millis.'
@@ -376,7 +379,7 @@ export class WasmPluginsPage extends Component {
       type: WasmDataRights,
       props: {
         boxWidth: 400,
-        label: 'Datastore access',
+        label: 'Global persistent key/value storage access',
         property: 'globalDataStoreAccess',
       }
     },
@@ -384,7 +387,7 @@ export class WasmPluginsPage extends Component {
       type: WasmDataRights,
       props: {
         boxWidth: 400,
-        label: 'Plugin scoped datastore access',
+        label: 'Plugin scoped persistent key/value storage access',
         property: 'pluginDataStoreAccess',
       }
     },
@@ -392,7 +395,7 @@ export class WasmPluginsPage extends Component {
       type: WasmDataRights,
       props: {
         boxWidth: 400,
-        label: 'Global map access',
+        label: 'Global in-memory key/value storage access',
         property: 'globalMapAccess',
       }
     },
@@ -400,7 +403,7 @@ export class WasmPluginsPage extends Component {
       type: WasmDataRights,
       props: {
         boxWidth: 400,
-        label: 'Plugin scoped map access',
+        label: 'Plugin scoped in-memory key/value storage access',
         property: 'pluginMapAccess',
       }
     },
