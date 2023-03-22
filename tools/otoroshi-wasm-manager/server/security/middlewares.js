@@ -34,10 +34,12 @@ const extractUserFromQuery = (req, res, next) => {
         const decodedToken = jwt.verify(jwtUser, secret, { algorithms: ['HS512'] });
         req.user = decodedToken.user
         next()
-      } catch (_) {
+      } catch (err) {
+        console.log(err)
         missingCredentials(res)
       }
     } else {
+      console.log(`Missing jwt user ${jwtUser}`)
       missingCredentials(res)
     }
   } else if (process.env.AUTH_MODE === 'NO_AUTH') {
