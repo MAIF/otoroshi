@@ -256,8 +256,8 @@ class AnonymousReportingJob extends Job {
             "routes" -> Json.obj(
               "count" -> env.proxyState.allRawRoutes().size,
               "plugins" -> Json.obj(
-                "min" -> env.proxyState.allRawRoutes().map(_.plugins.slots.size).min,
-                "max" -> env.proxyState.allRawRoutes().map(_.plugins.slots.size).max,
+                "min" -> env.proxyState.allRawRoutes().map(_.plugins.slots.size).theMin(0),
+                "max" -> env.proxyState.allRawRoutes().map(_.plugins.slots.size).theMax(0),
                 "avg" -> env.proxyState.allRawRoutes().avgBy(_.plugins.slots.size),
               )
             ),
@@ -270,16 +270,16 @@ class AnonymousReportingJob extends Job {
                 "akka_ws" -> env.proxyState.allRoutes().count(_.useAkkaHttpWsClient),
               ),
               "plugins" -> Json.obj(
-                "min" -> env.proxyState.allRoutes().map(_.plugins.slots.size).min,
-                "max" -> env.proxyState.allRoutes().map(_.plugins.slots.size).max,
+                "min" -> env.proxyState.allRoutes().map(_.plugins.slots.size).theMin(0),
+                "max" -> env.proxyState.allRoutes().map(_.plugins.slots.size).theMax(0),
                 "avg" -> env.proxyState.allRoutes().avgBy(_.plugins.slots.size),
               )
             ),
             "route_compositions" -> Json.obj(
               "count" -> env.proxyState.allRouteCompositions().size,
               "plugins" -> Json.obj(
-                "min" -> env.proxyState.allRouteCompositions().map(v => v.plugins.slots.size + v.routes.foldLeft(0)((a, b) => a + b.plugins.slots.size)).min,
-                "max" -> env.proxyState.allRouteCompositions().map(v => v.plugins.slots.size + v.routes.foldLeft(0)((a, b) => a + b.plugins.slots.size)).max,
+                "min" -> env.proxyState.allRouteCompositions().map(v => v.plugins.slots.size + v.routes.foldLeft(0)((a, b) => a + b.plugins.slots.size)).theMin(0),
+                "max" -> env.proxyState.allRouteCompositions().map(v => v.plugins.slots.size + v.routes.foldLeft(0)((a, b) => a + b.plugins.slots.size)).theMax(0),
                 "avg" -> env.proxyState.allRouteCompositions().avgBy(v => v.plugins.slots.size + v.routes.foldLeft(0)((a, b) => a + b.plugins.slots.size)),
               ),
               "by_kind" -> env.proxyState.allRouteCompositions().foldLeft(Json.obj()) {
@@ -308,8 +308,8 @@ class AnonymousReportingJob extends Job {
                 "with_tags" -> env.proxyState.allApikeys().count(_.tags.nonEmpty),
               ),
               "authorized_on" -> Json.obj(
-                "min" -> env.proxyState.allApikeys().map(_.authorizedEntities.size).min,
-                "max" -> env.proxyState.allApikeys().map(_.authorizedEntities.size).max,
+                "min" -> env.proxyState.allApikeys().map(_.authorizedEntities.size).theMin(0),
+                "max" -> env.proxyState.allApikeys().map(_.authorizedEntities.size).theMax(0),
                 "avg" -> env.proxyState.allApikeys().avgBy(_.authorizedEntities.size),
               )
             ),
@@ -408,7 +408,7 @@ class AnonymousReportingJob extends Job {
           // "metrics" -> env.metrics.jsonRawExport(None),
         )
       }).flatMap { report =>
-        if (env.isDev) logger.debug(report.prettify)
+        if (env.isDev) logger.info(report.prettify)
         val req = if (config.tlsConfig.enabled) {
           env.MtlsWs.url(config.url, config.tlsConfig.legacy)
         } else {

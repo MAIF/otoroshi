@@ -39,7 +39,23 @@ object implicits {
   // type Ok[Success, Failure] = Right[Failure, Success]
   // type Err[Success, Failure] = Left[Failure, Success]
 
-  implicit class BetterSeq(val seq: Seq[(String, String)]) extends AnyVal {
+  implicit class BetterSeqOfInt(val seq: Seq[Int]) extends AnyVal {
+    def theMin(default: Int): Int = {
+      if (seq.isEmpty) {
+        default
+      } else {
+        seq.min
+      }
+    }
+    def theMax(default: Int): Int = {
+      if (seq.isEmpty) {
+        default
+      } else {
+        seq.max
+      }
+    }
+  }
+  implicit class BetterSeqOfTupleStringString(val seq: Seq[(String, String)]) extends AnyVal {
     @inline
     def appendOpt[A](opt: Option[A], f: A => (String, String)): Seq[(String, String)] = {
       opt match {
