@@ -6,10 +6,6 @@ const compression = require('compression');
 const bodyParser = require('body-parser');
 const path = require('path');
 const { S3 } = require('./s3');
-const swaggerUi = require('swagger-ui-express');
-
-const swaggerDocument = require('./swagger.json');
-swaggerDocument.servers = (process.env.MANAGER_EXPOSED_DOMAINS || "").split(',').map(url => ({ url }))
 
 const pluginsRouter = require('./routers/plugins');
 const templatesRouter = require('./routers/templates');
@@ -23,7 +19,6 @@ const { Security } = require('./security/middlewares');
 const manager = require('./logger');
 const { Publisher } = require('./services/publish-job');
 const log = manager.createLogger('wasm-manager');
-
 
 S3.initializeS3Connection()
   .then(() => {
@@ -43,8 +38,6 @@ S3.initializeS3Connection()
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(bodyParser.text());
-
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
     app.use('/', Security.extractUserFromQuery);
     app.use('/api/plugins', pluginsRouter);

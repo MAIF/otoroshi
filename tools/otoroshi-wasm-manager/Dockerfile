@@ -40,7 +40,7 @@ RUN curl https://get.wasmer.io -sSfL | sh
 
 RUN curl -L -o opa https://openpolicyagent.org/downloads/v0.50.2/opa_linux_amd64_static
 RUN chmod 755 ./opa
-RUN echo "export PATH=\$PATH:$(pwd)" >> ~/.bashrc
+RUN mv opa /usr/local/bin
 
 ADD ui $HOME/ui
 ADD server $HOME/server

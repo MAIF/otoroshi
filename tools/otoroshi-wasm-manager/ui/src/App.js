@@ -157,16 +157,20 @@ class App extends React.Component {
 
   onNewPlugin = type => {
     this.setState({
-      editorState: 'onNewPlugin',
-      selectedPlugin: undefined,
-      plugins: [
-        ...this.state.plugins,
-        {
-          new: true,
-          filename: '',
-          type
-        }
-      ]
+      plugins: this.state.plugins.filter(p => !p.new)
+    }, () => {
+      this.setState({
+        editorState: 'onNewPlugin',
+        selectedPlugin: undefined,
+        plugins: [
+          ...this.state.plugins,
+          {
+            new: true,
+            filename: '',
+            type
+          }
+        ]
+      })
     })
   }
 
@@ -449,12 +453,6 @@ class App extends React.Component {
       })
   }
 
-  onDocs = () => {
-    this.setState({
-      editorState: 'docs'
-    })
-  }
-
   onEditorStateReset = () => {
     this.setState({
       editorState: undefined
@@ -588,7 +586,6 @@ class App extends React.Component {
         handleContent={this.handleContent}
         onSave={this.onSave}
         onBuild={this.onBuild}
-        onDocs={this.onDocs}
         onEditorStateReset={this.onEditorStateReset}
         showPlaySettings={this.showPlaySettings}
         showPublishSettings={this.showPublishSettings}

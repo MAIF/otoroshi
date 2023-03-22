@@ -112,7 +112,6 @@ function TabsManager({ plugins, ...props }) {
             setTabs={setTabs}
             currentTab={currentTab} />
         </TabsHeader>
-        {props.editorState === 'docs' && <DocsPreview onClose={props.onEditorStateReset} />}
         {currentTab === 'Runner' &&
           <Run
             onClose={props.onEditorStateReset}
@@ -213,38 +212,6 @@ function TabButton({ filename, onClick, selected, closeTab }) {
       closeTab(filename)
     }} />
   </button>
-}
-
-function DocsPreview({ onClose }) {
-  return <div style={{
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: "25%",
-    right: 0,
-    background: '#eee',
-    zIndex: 100,
-    borderLeft: '3px solid #eee'
-  }}>
-    <div style={{
-      height: '100%',
-      width: '100%',
-      position: 'relative'
-    }}>
-      <button type="button" className='btn btn-light btn-sm' onClick={onClose} style={{
-        position: 'absolute',
-        top: 12,
-        right: 12
-      }}>
-        <i className='fas fa-times me-1' />
-        Close
-      </button>
-      <iframe src='/api-docs' style={{
-        height: '100%',
-        width: '100%'
-      }}></iframe>
-    </div>
-  </div>
 }
 
 export default TabsManager

@@ -122,7 +122,7 @@ object WasmSourceKind {
     def getWasm(path: String, opts: JsValue)(implicit env: Env, ec: ExecutionContext): Future[Either[JsValue, ByteString]] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         globalConfig.wasmManagerSettings match {
-          case Some(WasmManagerSettings(url, clientId, clientSecret, _)) => {
+          case Some(WasmManagerSettings(url, clientId, clientSecret, kind)) => {
             // println(s"fechting the plugin at $path")
             env.Ws
               .url(s"$url/wasm/$path")
@@ -131,7 +131,8 @@ object WasmSourceKind {
               .withHttpHeaders(
                 "Accept" -> "application/json",
                 "Otoroshi-Client-Id" -> clientId,
-                "Otoroshi-Client-Secret" -> clientSecret
+                "Otoroshi-Client-Secret" -> clientSecret,
+                "kind" -> kind.getOrElse("*")
               )
               .get()
               .flatMap { resp =>

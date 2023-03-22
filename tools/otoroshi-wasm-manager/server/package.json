@@ -21,7 +21,6 @@
     "pako": "^2.1.0",
     "simple-node-logger": "^21.8.12",
     "socket.io": "^4.5.4",
-    "swagger-ui-express": "^4.6.0",
     "toml": "^3.0.0"
   },
   "devDependencies": {

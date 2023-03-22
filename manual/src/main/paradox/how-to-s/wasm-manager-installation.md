@@ -30,7 +30,6 @@ Feel free to change the following variables:
 | MANAGER_PORT              | 5001               | The manager will be exposed on this port                                   |
 | MANAGER_ALLOWED_DOMAINS   | otoroshi.oto.tools | Array of origins, separated by comma, which is allowed to call the manager |
 | MANAGER_MAX_PARALLEL_JOBS | 2                  | Number of parallel jobs to compile plugins                                 |
-| MANAGER_EXPOSED DOMAINS   | /                  | Array to specify one or more base URLs for the Manager's public API        |
 
 The following variables are useful to bind the manager with Otoroshi and to run it behind (we will use them in the next section of this tutorial).
 
@@ -60,20 +59,20 @@ After completing these steps you will have a running Otoroshi instance and our o
 Let's start by deploying an instance of S3. If you already have an instance you can skip the next section.
 
 ```sh
-docker run --name s3Server -p 8000:8000 -e SCALITY_ACCESS_KEY_ID=access_key -e SCALITY_SECRET_ACCESS_KEY=secret scality/s3server
+docker network create manager-network
+docker run --name s3Server -p 8000:8000 -e SCALITY_ACCESS_KEY_ID=access_key -e SCALITY_SECRET_ACCESS_KEY=secret --net manager-network scality/s3server 
 ```
 
 Once launched, we can run a manager instance.
 
 ```sh
-docker run -d \
+docker run -d --net manager-network \
   --name wasm-manager \
   -p 5001:5001 \
   -e "MANAGER_PORT=5001" \
   -e "AUTH_MODE=AUTH" \
   -e "MANAGER_MAX_PARALLEL_JOBS=2" \
   -e "MANAGER_ALLOWED_DOMAINS=otoroshi.oto.tools,wasm-manager.oto.tools,localhost:5001" \
-  -e "MANAGER_EXPOSED DOMAINS=/" \
   -e "OTOROSHI_USER_HEADER=Otoroshi-User" \
   -e "OTOROSHI_TOKEN_SECRET=veryverysecret" \
   -e "S3_ACCESS_KEY_ID=access_key" \

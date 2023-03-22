@@ -1,7 +1,7 @@
 
 
 export function TabsHeader({
-  selectedPlugin, onSave, onBuild, onDocs,
+  selectedPlugin, onSave, onBuild,
   showPlaySettings, showPublishSettings, children }) {
 
   return <Header
@@ -9,7 +9,6 @@ export function TabsHeader({
     onSave={onSave}
     onBuild={onBuild}
     showActions={!!selectedPlugin}
-    onDocs={onDocs}
     showPlaySettings={showPlaySettings}
     showPublishSettings={showPublishSettings}>
     {children}
@@ -18,7 +17,7 @@ export function TabsHeader({
 
 function Header({
   children, onSave, onBuild, showActions,
-  onDocs, showPlaySettings, showPublishSettings, selectedPluginType }) {
+  showPlaySettings, showPublishSettings, selectedPluginType }) {
 
   return <div className='d-flex align-items-center justify-content-between bg-light'
     style={{ position: 'fixed', height: 42, zIndex: 10, width: 'calc(100vw - 250px)' }}>
@@ -31,7 +30,6 @@ function Header({
         {selectedPluginType !== 'go' && <Publish showPublishSettings={showPublishSettings} />}
       </>}
       <Play showPlaySettings={showPlaySettings} />
-      <Docs onDocs={onDocs} />
     </div>
   </div>
 }
@@ -60,16 +58,6 @@ function Publish({ showPublishSettings }) {
     className="pe-2"
     onClick={showPublishSettings}>
     <i className='fas fa-upload' />
-  </button>
-}
-
-function Docs({ onDocs }) {
-  return <button type="button"
-    style={{ border: 'none', background: 'none' }}
-    className="pe-3"
-    onClick={onDocs}
-  >
-    <i className='fas fa-book' />
   </button>
 }
 

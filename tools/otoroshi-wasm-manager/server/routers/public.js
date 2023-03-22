@@ -67,29 +67,24 @@ function getWasm(Key, res) {
 }
 
 router.get('/plugins', (req, res) => {
-  if (req.headers['kind']) {
-    const reg = req.headers['kind']
+  const reg = req.headers['kind'] || '*';
 
-    if (reg === '*') {
-      UserManager.getUsers()
-        .then(users => {
-          if (users.length > 0) {
-            Promise.all(users.map(UserManager.getUserFromString))
-              .then(pluginsByUser => {
-                res.json(pluginsByUser
-                  .map(user => user.plugins)
-                  .flat())
-              })
-          } else {
-            res.json([])
-          }
-        })
-    } else {
-      UserManager.getUserFromString(format(reg))
-        .then(data => res.json(data.plugins))
-    }
+  if (reg === '*') {
+    UserManager.getUsers()
+      .then(users => {
+        if (users.length > 0) {
+          Promise.all(users.map(UserManager.getUserFromString))
+            .then(pluginsByUser => {
+              res.json(pluginsByUser
+                .map(user => user.plugins)
+                .flat())
+            })
+        } else {
+          res.json([])
+        }
+      })
   } else {
-    UserManager.getUser(req)
+    UserManager.getUserFromString(format(reg))
       .then(data => res.json(data.plugins))
   }
 });
