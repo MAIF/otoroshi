@@ -57,7 +57,8 @@ const INFORMATIONS_FILENAME = {
   go: "go.mod",
   rust: "Cargo.toml",
   js: "package.json",
-  ts: "package.json"
+  ts: "package.json",
+  opa: "package.json"
 };
 
 module.exports = {

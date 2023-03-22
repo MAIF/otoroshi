@@ -276,6 +276,7 @@ case class WasmConfig(
     ////
     preserve: Boolean = true,
     wasi: Boolean = false,
+    opa: Boolean = false,
     authorizations: WasmAuthorizations = WasmAuthorizations(),
 ) extends NgPluginConfig {
   def json: JsValue = Json.obj(
@@ -286,6 +287,7 @@ case class WasmConfig(
     "allowedHosts"            -> allowedHosts,
     "allowedPaths"            -> allowedPaths,
     "wasi"                    -> wasi,
+    "opa"                     -> opa,
     "preserve"                -> preserve,
     "authorizations"          -> authorizations.json
   )
@@ -322,6 +324,7 @@ object WasmConfig {
         allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty),
         allowedPaths = (json \ "allowedPaths").asOpt[Map[String, String]].getOrElse(Map.empty),
         wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false),
+        opa = (json \ "opa").asOpt[Boolean].getOrElse(false),
         preserve = (json \ "preserve").asOpt[Boolean].getOrElse(true),
         authorizations = (json \ "authorizations").asOpt[WasmAuthorizations](WasmAuthorizations.format.reads)
           .orElse((json \ "accesses").asOpt[WasmAuthorizations](WasmAuthorizations.format.reads))
@@ -337,7 +340,7 @@ object WasmConfig {
 
 case class WasmContextSlot(manifest: Manifest, context: Context, plugin: Plugin) {
   def close(): Unit = {
-    plugin.close()
+//    plugin.free()
     context.free()
   }
 }
@@ -411,14 +414,21 @@ object WasmUtils {
         )
 
         val context = new Context()
-        val plugin = context.newPlugin(manifest, config.wasi, next.plugins.HostFunctions.getFunctions(config, ctx, pluginId))
+        val plugin = context.newPlugin(manifest, config.wasi,
+          next.plugins.HostFunctions.getFunctions(config, ctx, pluginId),
+          next.plugins.LinearMemories.getMemories(config, ctx, pluginId))
         WasmContextSlot(manifest, context, plugin)
       }
 
       attrsOpt match {
         case None => {
           val slot = createPlugin()
-          val output = slot.plugin.call(functionName, input.stringify)
+
+          val output = (if (config.opa) {
+            next.plugins.OPA.evalute(slot.plugin, input.stringify)
+          } else {
+            slot.plugin.call(functionName, input.stringify)
+          })
           slot.close()
           output.right
         }
@@ -435,7 +445,11 @@ object WasmUtils {
             case None => {
               val slot = createPlugin()
               if (config.preserve) context.put(config.source.cacheKey, slot)
-              val output = slot.plugin.call(functionName, input.stringify)
+              val output = (if (config.opa) {
+                next.plugins.OPA.evalute(slot.plugin, input.stringify)
+              } else {
+                slot.plugin.call(functionName, input.stringify)
+              })
               if (!config.preserve) slot.close()
               output.right
             }
@@ -1089,5 +1103,52 @@ class WasmJobsLauncher extends Job {
       e.printStackTrace()
       funit
     case Success(s) => s
+  }
+}
+
+class WasmOPA extends NgAccessValidator {
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Wasm)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Open Policy Agent (OPA)"
+  override def description: Option[String]                 = "Repo policies as WASM modules".some
+  override def isAccessAsync: Boolean                      = true
+  override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig(
+    opa = true
+  ).some
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val config = ctx
+      .cachedConfig(internalName)(WasmConfig.format)
+      .getOrElse(WasmConfig())
+
+    WasmUtils
+      .execute(config, "access", ctx.wasmJson, ctx.some, ctx.attrs.some)
+      .flatMap {
+        case Right(res)  =>
+          val result = Json.parse(res).asOpt[JsArray].getOrElse(Json.arr())
+          val canAccess = (result.value.head \ "result").asOpt[Boolean].getOrElse(false)
+          if (canAccess) {
+            NgAccess.NgAllowed.vfuture
+          } else {
+            NgAccess.NgDenied(Results.Forbidden).vfuture
+          }
+        case Left(err) =>
+          Errors
+            .craftResponseResult(
+              (err \ "error").asOpt[String].getOrElse("An error occured"),
+              Results.Status(400),
+              ctx.request,
+              None,
+              None,
+              attrs = ctx.attrs,
+              maybeRoute = ctx.route.some
+            )
+            .map(r => NgAccess.NgDenied(r))
+      }
   }
 }

@@ -1,0 +1,7 @@
+{
+  "name": "rego-plugin",
+  "version": "1.0.0",
+  "metadata": {
+    "entrypoint": "example/can_access"
+  }
+}

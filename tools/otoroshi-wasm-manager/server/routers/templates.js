@@ -14,7 +14,7 @@ router.get('/', (req, res) => {
       })
   } else {
     const { type } = req.query;
-    if (['rust', 'assembly-script', 'js', 'go', 'ts'].includes(type)) {
+    if (['rust', 'assembly-script', 'js', 'go', 'ts', 'opa'].includes(type)) {
       res.sendFile(path.join(__dirname, '../templates', `${type}.zip`));
     } else {
       res

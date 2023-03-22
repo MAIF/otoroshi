@@ -4,7 +4,9 @@ import { ReactComponent as Js } from './assets/js.svg';
 import { ReactComponent as Ts } from './assets/ts.svg';
 import { ReactComponent as Go } from './assets/go.svg';
 import { ReactComponent as Github } from './assets/github.svg';
+import { ReactComponent as OPA } from './assets/opa.svg';
 import { createGithubRepo } from './services';
+import { LOGOS } from './FilesLogo';
 
 class PluginManager extends React.Component {
   render() {
@@ -23,13 +25,16 @@ class PluginManager extends React.Component {
           </div>
         </div>}
         <div className='d-flex flex-column scroll-container'>
-          {!selectedPlugin && plugins.map(plugin => {
-            return <Plugin
-              key={plugin.pluginId || 'new'}
-              {...plugin}
-              {...props}
-            />
-          })}
+          {!selectedPlugin &&
+            [...plugins]
+              .sort((a, b) => a.type.localeCompare(b.type))
+              .map(plugin => {
+                return <Plugin
+                  key={plugin.pluginId || 'new'}
+                  {...plugin}
+                  {...props}
+                />
+              })}
         </div>
       </div>
     );
@@ -130,13 +135,14 @@ function NewPluginModal({ onNewPlugin, setProjectSelector, reloadPlugins }) {
     position: 'absolute',
     left: 252,
     zIndex: 100,
-    background: '#ddd'
+    background: '#ccc'
   }} className="d-flex justify-content-center project-confirm-box rounded">
     {[
       { icon: <Rust style={{ height: 30, width: 32, marginLeft: -4, transform: 'scale(1.5)' }} />, onClick: () => onNewPlugin('rust') },
       { icon: <Js style={{ height: 32, width: 32 }} />, onClick: () => onNewPlugin('js') },
       { icon: <Ts style={{ height: 32, width: 32 }} />, onClick: () => onNewPlugin('ts') },
       { icon: <Go style={{ height: 32, width: 32 }} />, onClick: () => onNewPlugin('go') },
+      { icon: <OPA style={{ height: 32, width: 32 }} />, onClick: () => onNewPlugin('opa') },
       {
         icon: <Github style={{ height: 32, width: 32 }} />, onClick: e => {
           e.stopPropagation()
@@ -207,7 +213,10 @@ class Plugin extends React.Component {
     >
 
       {props.new && <>
-        <i className='fas fa-file ' style={{ minWidth: 18, marginLeft: -4, marginRight: 4 }} />
+        {/* <i className='fas fa-file ' style={{ minWidth: 18, marginLeft: -4, marginRight: 4 }} /> */}
+        <div style={{ minWidth: 18, marginLeft: -4, marginRight: 4 }}>
+          {LOGOS[props.type]}
+        </div>
         <input type='text'
           autoFocus
           className="form-control"
@@ -220,11 +229,9 @@ class Plugin extends React.Component {
 
       {!props.new && <>
         <div className='d-flex align-items-center'>
-          <i className='fas fa-times me-2'
-            onClick={e => {
-              e.stopPropagation()
-              props.removePlugin(pluginId)
-            }} />
+          <div style={{ minWidth: 18, marginLeft: 2, marginRight: 8 }}>
+            {LOGOS[props.type]}
+          </div>
           <span style={{
             whiteSpace: 'nowrap',
             overflow: 'hidden',

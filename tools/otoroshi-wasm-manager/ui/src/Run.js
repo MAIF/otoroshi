@@ -107,7 +107,9 @@ export class Run extends React.Component {
           <Select
             id="selectedPlugin"
             value={selectedPlugin}
-            options={plugins.map(plugin => ({ value: plugin.pluginId, label: plugin.filename }))}
+            options={plugins
+              .filter(plugin => plugin.type !== 'opa')
+              .map(plugin => ({ value: plugin.pluginId, label: plugin.filename }))}
             onChange={e => {
               this.setState({
                 selectedPlugin: e

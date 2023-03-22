@@ -85,6 +85,11 @@ function TabsManager({ plugins, ...props }) {
 
           setCurrentTab(file.filename)
         }} />}
+
+      {props.selectedPlugin && <button type="button" className='btn btn-outline-danger m-3' style={{ fontSize: '.8rem' }}
+        onClick={props.removePlugin}>
+        Remove {props.selectedPlugin.filename}
+      </button>}
     </div>
 
     <div style={{ flex: 1, height: '100vh', position: 'relative' }} className="d-flex flex-column">

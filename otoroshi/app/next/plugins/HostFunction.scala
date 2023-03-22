@@ -843,7 +843,8 @@ object HostFunctions {
         Logging.getFunctions(config, ctx) ++
         Http.getFunctions(config) ++
         State.getFunctions(config, pluginId) ++
-        DataStore.getFunctions(config, pluginId)
+        DataStore.getFunctions(config, pluginId) ++
+        OPA.getFunctions(config, ctx)
       )
     }
     functions

@@ -23,8 +23,20 @@ const JS_ARGS = wasmName => ["install", "esbuild.js", `dist/index.js -o ${wasmNa
   .map(command => command.split(' '));
 
 const GO_BUILD = ["go", "go", "go", "tinygo"]
-const GO_ARGS = wasmName => ["get github.com/extism/go-pdk", "get github.com/buger/jsonparser", "mod tidy", `build --no-debug -target=wasi -o ${wasmName}.wasm `]
+const GO_ARGS = wasmName => [
+  "get github.com/extism/go-pdk",
+  "get github.com/buger/jsonparser",
+  "mod tidy",
+  `build --no-debug -target=wasi -o ${wasmName}.wasm `
+]
   .map(command => command.split(' '));
+
+const OPA_BUILD = ["opa", "tar", "mv"]
+const OPA_ARGS = (entrypoint, wasmName) => [
+  `build -t wasm -e ${entrypoint} ./policies.rego`,
+  '-xzf bundle.tar.gz',
+  `policy.wasm ${wasmName}.wasm`
+].map(command => command.split(' '));
 
 const queue = []
 let running = 0
@@ -32,14 +44,14 @@ let running = 0
 const addBuildToQueue = props => {
   queue.push(props);
 
-  if (running === 0)
+  if (running <= 0)
     loop()
   else {
     WebSocket.emit(props.plugin, "QUEUE", `waiting - ${queue.length - 1} before the build start\n`)
   }
 }
 
-const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild, pluginType }) => {
+const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild, pluginType, metadata }) => {
   log.info(`Starting build ${folder}`)
 
   const root = process.cwd()
@@ -64,6 +76,9 @@ const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild, pluginTyp
         } : pluginType === 'go' ? {
           commands: GO_BUILD,
           args: GO_ARGS(wasmName)
+        } : pluginType === 'opa' ? {
+          commands: OPA_BUILD,
+          args: OPA_ARGS(metadata.entrypoint, wasmName)
         } : {
           commands: [],
           args: []
@@ -240,7 +255,6 @@ function updateHashOfPlugin(user, plugin, newHash, wasm) {
       ...data,
       plugins: data.plugins.map(d => {
         if (d.pluginId === plugin) {
-
           const versions = d.versions || [];
 
           if (!versions.includes(wasm))

@@ -40,8 +40,23 @@ async function extractInformations(folder, pluginType) {
   }
 }
 
+const extractOPAInformations = folder => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const data = JSON.parse(await fs.readFile(path.join(process.cwd(), 'build', folder, "package.json")));
+
+      resolve({
+        entrypoint: (data.metadata || {}).entrypoint
+      });
+    } catch (err) {
+      reject(JSON.stringify(err, Object.getOwnPropertyNames(err)))
+    }
+  })
+}
+
 module.exports = {
   InformationsReader: {
-    extractInformations
+    extractInformations,
+    extractOPAInformations
   }
 }

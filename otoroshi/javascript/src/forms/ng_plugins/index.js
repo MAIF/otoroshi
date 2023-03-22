@@ -83,6 +83,7 @@ import WasmRouteMatcher  from './WasmRouteMatcher';
 import WasmSink  from './WasmSink';
 import WasmJob  from './WasmJob';
 import WasmPreRoute  from './WasmPreRoute';
+import WasmOPA from './WasmOPA';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -164,6 +165,7 @@ export const Plugins = [
   XmlToJsonResponse,
   WasmBackend,
   WasmAccessValidator,
+  WasmOPA,
   WasmRequestTransformer,
   WasmResponseTransformer, 
   WasmRequestHandler,

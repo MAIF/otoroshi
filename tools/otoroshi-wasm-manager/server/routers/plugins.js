@@ -368,19 +368,31 @@ router.post('/:id/build', async (req, res) => {
                         });
                     });
                 } else {
-                  BuildingJob.addBuildToQueue({
-                    folder,
-                    plugin: pluginId,
-                    wasmName: `${pluginName}-${pluginVersion}`,
-                    user: req.user ? req.user.email : 'admin@otoroshi.io',
-                    zipHash,
-                    isRustBuild,
-                    pluginType: plugin.type
-                  });
+                  (plugin.type === 'opa' ? InformationsReader.extractOPAInformations(folder) : Promise.resolve({}))
+                    .then(metadata => {
+                      BuildingJob.addBuildToQueue({
+                        folder,
+                        plugin: pluginId,
+                        wasmName: `${pluginName}-${pluginVersion}`,
+                        user: req.user ? req.user.email : 'admin@otoroshi.io',
+                        zipHash,
+                        isRustBuild,
+                        pluginType: plugin.type,
+                        metadata
+                      });
 
-                  res.json({
-                    queue_id: folder
-                  });
+                      res.json({
+                        queue_id: folder
+                      });
+                    })
+                    .catch(err => {
+                      WebSocket.emitError(plugin.pluginId, "BUILD", err)
+                      res
+                        .status(400)
+                        .json({
+                          error: err
+                        })
+                    })
                 }
               })
               .catch(err => {

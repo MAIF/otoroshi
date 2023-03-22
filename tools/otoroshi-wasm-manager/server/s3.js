@@ -19,7 +19,6 @@ const initializeS3Connection = () => {
     const URL = url.parse(process.env.S3_ENDPOINT)
 
     return new Promise(resolve => dns.lookup(URL.hostname, function (err, ip) {
-      // console.log(URL)
       log.debug(`${URL.protocol}//${ip}:${URL.port}${URL.pathname}`)
       state = {
         s3: new AWS.S3({
@@ -34,6 +33,7 @@ const initializeS3Connection = () => {
     state = {
       s3: new AWS.S3({
         endpoint: process.env.S3_ENDPOINT,
+        s3ForcePathStyle: process.env.S3_FORCE_PATH_STYLE
       }),
       Bucket: process.env.S3_BUCKET
     }
@@ -41,18 +41,22 @@ const initializeS3Connection = () => {
   }
 }
 
+// TODO cacth error
 const createBucketIfMissing = () => {
   const params = { Bucket: state.Bucket }
 
   return state.s3.headBucket(params)
     .promise()
-    .then(res => {
+    .then(() => log.info("Using existing bucket"))
+    .catch(res => {
       if (res.statusCode === 404) {
+        log.info(`Bucket ${state.Bucket} is missing.`)
         return new Promise(resolve => {
           state.s3.createBucket(params, err => {
             if (err) {
-              return log.error('err createBucket', err);
+              throw err;
             } else {
+              log.info(`Bucket ${state.Bucket} created.`)
               resolve()
             }
           });

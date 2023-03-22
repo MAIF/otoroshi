@@ -62,6 +62,11 @@ class App extends React.Component {
             if (!res.error) {
               this.setState({
                 plugins: res.plugins
+              }, () => {
+                const plugin = res.plugins.find(p => p.filename === newPlugin.newFilename)
+                if (plugin) {
+                  this.onPluginClick(plugin.pluginId);
+                }
               })
             }
           })
@@ -468,17 +473,21 @@ class App extends React.Component {
     })
   }
 
-  removePlugin = pluginId => {
-    const plugin = this.state.plugins.filter(f => f.pluginId !== pluginId)
-    if (window.confirm(`Delete the ${plugin.filename} plugin ?`)) {
-      Service.removePlugin(pluginId)
-        .then(res => {
-          if (res.status === 204)
-            this.setState({
-              plugins: this.state.plugins.filter(f => f.pluginId !== pluginId),
-              selectedPlugin: undefined
-            })
-        })
+  removePlugin = () => {
+    if (this.state.selectedPlugin) {
+      const { pluginId } = this.state.selectedPlugin
+      console.log(this.state.selectedPlugin, this.state.plugins.map(p => p.pluginId))
+      const plugin = this.state.plugins.find(f => f.pluginId === pluginId)
+      if (window.confirm(`Delete the ${plugin.filename} plugin ?`)) {
+        Service.removePlugin(pluginId)
+          .then(res => {
+            if (res.status === 204)
+              this.setState({
+                plugins: this.state.plugins.filter(f => f.pluginId !== pluginId),
+                selectedPlugin: undefined
+              })
+          })
+      }
     }
   }
 
