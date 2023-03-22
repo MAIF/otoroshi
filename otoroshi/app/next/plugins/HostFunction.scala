@@ -412,7 +412,7 @@ object DataStore extends AwaitCapable {
     val prefixName = if (pluginRestricted) "plugin_" else ""
     new HostFunction[EnvUserData](
       s"proxy_${prefixName}datastore_keys",
-      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
+      Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I64),
       Array(LibExtism.ExtismValType.I64),
       proxyDataStoreKeysFunction(prefix),
       Optional.of(EnvUserData(env, executionContext, mat, config))
@@ -699,7 +699,7 @@ object State {
   def getProxyState(config: WasmConfig)
                    (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     new HostFunction[EnvUserData](
-      "get_proxy_state",
+      "proxy_state",
       Array(LibExtism.ExtismValType.I64),
       Array(LibExtism.ExtismValType.I64),
       getProxyStateFunction,
@@ -709,7 +709,7 @@ object State {
   def proxyStateGetValue(config: WasmConfig)
                         (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     new HostFunction[EnvUserData](
-      "get_proxy_state_value",
+      "proxy_state_value",
       Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
       Array(LibExtism.ExtismValType.I64),
       proxyStateGetValueFunction,
@@ -728,7 +728,7 @@ object State {
   def getProxyConfig(config: WasmConfig)
                (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     new HostFunction[EnvUserData](
-      "get_proxy_config",
+      "proxy_config",
       Array(LibExtism.ExtismValType.I64),
       Array(LibExtism.ExtismValType.I64),
       getProxyConfigFunction,
@@ -747,7 +747,7 @@ object State {
   def getGlobalProxyConfig(config: WasmConfig)
                     (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     new HostFunction[EnvUserData](
-      "get_proxy_global_config",
+      "proxy_global_config",
       Array(LibExtism.ExtismValType.I64),
       Array(LibExtism.ExtismValType.I64),
       getGlobalProxyConfigFunction,
@@ -758,7 +758,7 @@ object State {
   def getClusterState(config: WasmConfig)
                      (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     new HostFunction[EnvUserData](
-      "get_cluster_state",
+      "proxy_cluster_state",
       Array(LibExtism.ExtismValType.I64),
       Array(LibExtism.ExtismValType.I64),
       getClusterStateFunction,
@@ -768,7 +768,7 @@ object State {
   def proxyClusteStateGetValue(config: WasmConfig)
                               (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     new HostFunction[EnvUserData](
-      "get_cluster_state_value",
+      "proxy_cluster_state_value",
       Array(LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I32),
       Array(LibExtism.ExtismValType.I64),
       proxyClusteStateGetValueFunction,
@@ -832,23 +832,27 @@ object State {
 
 object HostFunctions {
 
-  private val functions: AtomicReference[Seq[HostFunctionWithAuthorization]] =
-    new AtomicReference[Seq[HostFunctionWithAuthorization]](Seq.empty[HostFunctionWithAuthorization])
+  //private val functions: AtomicReference[Seq[HostFunctionWithAuthorization]] =
+  //  new AtomicReference[Seq[HostFunctionWithAuthorization]](Seq.empty[HostFunctionWithAuthorization])
 
   def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext], pluginId: String)
                   (implicit env: Env, executionContext: ExecutionContext): Array[HostFunction[_ <: HostUserData]] = {
     implicit val mat = env.otoroshiMaterializer
-    if (functions.get.isEmpty) {
-      functions.set(
-        Logging.getFunctions(config, ctx) ++
-        Http.getFunctions(config) ++
-        State.getFunctions(config, pluginId) ++
-        DataStore.getFunctions(config, pluginId) ++
-        OPA.getFunctions(config, ctx)
-      )
-    }
+    // if (functions.get.isEmpty) {
+    //   functions.set(
+    //     Logging.getFunctions(config, ctx) ++
+    //     Http.getFunctions(config) ++
+    //     State.getFunctions(config, pluginId) ++
+    //     DataStore.getFunctions(config, pluginId)
+    //   )
+    //   functions.get().foreach(_.function.name.debugPrintln)
+    // }
+    val functions = Logging.getFunctions(config, ctx) ++
+      Http.getFunctions(config) ++
+      State.getFunctions(config, pluginId) ++
+      DataStore.getFunctions(config, pluginId) ++
+      OPA.getFunctions(config, ctx)
     functions
-      .get()
       .collect {
         case func if func.authorized(config.authorizations) => func.function
       }

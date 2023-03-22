@@ -329,7 +329,10 @@ object WasmConfig {
         preserve = (json \ "preserve").asOpt[Boolean].getOrElse(true),
         authorizations = (json \ "authorizations").asOpt[WasmAuthorizations](WasmAuthorizations.format.reads)
           .orElse((json \ "accesses").asOpt[WasmAuthorizations](WasmAuthorizations.format.reads))
-          .getOrElse(WasmAuthorizations()),
+          .getOrElse {
+            println("pouet")
+            WasmAuthorizations()
+          },
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

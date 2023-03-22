@@ -475,41 +475,58 @@ TODO
 
 ### host functions abi
 
-TODO
+you'll find here the raw signatures for the otoroshi host functions. we are currently in the process of writing higher level functions to hide the complexity.
 
-```rs
+every time you the the following signature: `(context: u64, size: u64) -> u64` it means that otoroshi is expecting for a pointer to the call context (which is a json string) and it's size. The return is a pointer to the response (which is a json string).
+
+the signature `(unused: u64) -> u64` means that there is no need for a params but as we technically need one (and hope to don't need one in the future), you have to pass something like `0` as parameter.
+
+```rust
 extern "C" {
-  fn proxy_log(logLevel: i32, message: u64, size: u64) -> u32;
-  fn proxy_log_event(context: u64, size: u64) -> u32;
-  fn proxy_http_call(context: u64, size: u64) -> u32;
-  fn get_proxy_state(context: u64) -> u32;
-  fn get_proxy_state_value(context: u64, size: u64) -> u32;
-  fn get_cluster_state(context: u64) -> u32;
-  fn get_cluster_state_value(context: u64, size: u64) -> u32;
-  fn proxy_datastore_keys(context: u64, size: u64) -> u32;
-  fn proxy_datastore_get(context: u64, size: u64) -> u32;
-  fn proxy_datastore_exists(context: u64, size: u64) -> u32;
-  fn proxy_datastore_pttl(context: u64, size: u64) -> u32;
-  fn proxy_datastore_setnx(context: u64, size: u64) -> u32;
-  fn proxy_datastore_del(context: u64, size: u64) -> u32;
-  fn proxy_datastore_incrby(context: u64, size: u64) -> u32;
-  fn proxy_datastore_pexpire(context: u64, size: u64) -> u32;
-  fn proxy_datastore_all_matching(context: u64, size: u64) -> u32;
-  fn proxy_plugin_datastore_keys(context: u64, size: u64) -> u32;
-  fn proxy_plugin_datastore_get(context: u64, size: u64) -> u32;
-  fn proxy_plugin_datastore_exists(context: u64, size: u64) -> u32;
-  fn proxy_plugin_datastore_pttl(context: u64, size: u64) -> u32;
-  fn proxy_plugin_datastore_setnx(context: u64, size: u64) -> u32;
-  fn proxy_plugin_datastore_del(context: u64, size: u64) -> u32;
-  fn proxy_plugin_datastore_incrby(context: u64, size: u64) -> u32;
-  fn proxy_plugin_datastore_pexpire(context: u64, size: u64) -> u32;
-  fn proxy_plugin_datastore_all_matching(context: u64, size: u64) -> u32;
-  fn proxy_plugin_map_set(context: u64, size: u64) -> u32;
-  fn proxy_plugin_map_get(context: u64, size: u64) -> u32;
-  fn proxy_plugin_map(unused: u32) -> u32;
-  fn proxy_global_map_set(context: u64, size: u64) -> u32;
-  fn proxy_global_map_get(context: u64, size: u64) -> u32;
-  fn proxy_global_map(unused: u32) -> u32;
+  // log messages in otoroshi (log levels are 0 to 6 for trace, debug, info, warn, error, critical, max)
+  fn proxy_log(logLevel: i32, message: u64, size: u64) -> i32;
+  // trigger an otoroshi wasm event that can be exported through data exporters
+  fn proxy_log_event(context: u64, size: u64) -> u64;
+  // an http client
+  fn proxy_http_call(context: u64, size: u64) -> u64;
+  // access the current otoroshi state containing a snapshot of all otoroshi entities
+  fn proxy_state(context: u64) -> u64;
+  fn proxy_state_value(context: u64, size: u64) -> u64;
+  // access the current otoroshi cluster configuration
+  fn proxy_cluster_state(context: u64) -> u64;
+  fn proxy_cluster_state_value(context: u64, size: u64) -> u64;
+  // access the current otoroshi static configuration
+  fn proxy_global_config(unused: u64) -> u64;
+  // access the current otoroshi dynamic configuration
+  fn proxy_config(unused: u64) -> u64;
+  // access a persistent key/value store shared by every wasm plugins
+  fn proxy_datastore_keys(context: u64, size: u64) -> u64;
+  fn proxy_datastore_get(context: u64, size: u64) -> u64;
+  fn proxy_datastore_exists(context: u64, size: u64) -> u64;
+  fn proxy_datastore_pttl(context: u64, size: u64) -> u64;
+  fn proxy_datastore_setnx(context: u64, size: u64) -> u64;
+  fn proxy_datastore_del(context: u64, size: u64) -> u64;
+  fn proxy_datastore_incrby(context: u64, size: u64) -> u64;
+  fn proxy_datastore_pexpire(context: u64, size: u64) -> u64;
+  fn proxy_datastore_all_matching(context: u64, size: u64) -> u64;
+  // access a persistent key/value store for the current plugin instance only
+  fn proxy_plugin_datastore_keys(context: u64, size: u64) -> u64;
+  fn proxy_plugin_datastore_get(context: u64, size: u64) -> u64;
+  fn proxy_plugin_datastore_exists(context: u64, size: u64) -> u64;
+  fn proxy_plugin_datastore_pttl(context: u64, size: u64) -> u64;
+  fn proxy_plugin_datastore_setnx(context: u64, size: u64) -> u64;
+  fn proxy_plugin_datastore_del(context: u64, size: u64) -> u64;
+  fn proxy_plugin_datastore_incrby(context: u64, size: u64) -> u64;
+  fn proxy_plugin_datastore_pexpire(context: u64, size: u64) -> u64;
+  fn proxy_plugin_datastore_all_matching(context: u64, size: u64) -> u64;
+  // access an in memory key/value store for the current plugin instance only
+  fn proxy_plugin_map_set(context: u64, size: u64) -> u64;
+  fn proxy_plugin_map_get(context: u64, size: u64) -> u64;
+  fn proxy_plugin_map(unused: u64) -> u64;
+  // access an in memory key/value store shared by every wasm plugins
+  fn proxy_global_map_set(context: u64, size: u64) -> u64;
+  fn proxy_global_map_get(context: u64, size: u64) -> u64;
+  fn proxy_global_map(unused: u64) -> u64;
 }
 ```
 
