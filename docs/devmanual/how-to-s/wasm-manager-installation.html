@@ -320,11 +320,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td>2 </td>
       <td>Number of parallel jobs to compile plugins </td>
     </tr>
-    <tr>
-      <td>MANAGER_EXPOSED DOMAINS </td>
-      <td>/ </td>
-      <td>Array to specify one or more base URLs for the Manager&rsquo;s public API </td>
-    </tr>
   </tbody>
 </table>
 <p>The following variables are useful to bind the manager with Otoroshi and to run it behind (we will use them in the next section of this tutorial).</p>
@@ -397,17 +392,17 @@ EOF
 <button id="instructions-toggle-confirm">Confirm the installation</button></div>
 <h3><a href="#deploy-the-manager-using-docker" name="deploy-the-manager-using-docker" class="anchor"><span class="anchor-link"></span></a>Deploy the manager using Docker</h3>
 <p>Let&rsquo;s start by deploying an instance of S3. If you already have an instance you can skip the next section.</p>
-<pre class="prettyprint"><code class="language-sh">docker run --name s3Server -p 8000:8000 -e SCALITY_ACCESS_KEY_ID=access_key -e SCALITY_SECRET_ACCESS_KEY=secret scality/s3server
+<pre class="prettyprint"><code class="language-sh">docker network create manager-network
+docker run --name s3Server -p 8000:8000 -e SCALITY_ACCESS_KEY_ID=access_key -e SCALITY_SECRET_ACCESS_KEY=secret --net manager-network scality/s3server 
 </code></pre>
 <p>Once launched, we can run a manager instance.</p>
-<pre class="prettyprint"><code class="language-sh">docker run -d \
+<pre class="prettyprint"><code class="language-sh">docker run -d --net manager-network \
   --name wasm-manager \
   -p 5001:5001 \
   -e &quot;MANAGER_PORT=5001&quot; \
   -e &quot;AUTH_MODE=AUTH&quot; \
   -e &quot;MANAGER_MAX_PARALLEL_JOBS=2&quot; \
   -e &quot;MANAGER_ALLOWED_DOMAINS=otoroshi.oto.tools,wasm-manager.oto.tools,localhost:5001&quot; \
-  -e &quot;MANAGER_EXPOSED DOMAINS=/&quot; \
   -e &quot;OTOROSHI_USER_HEADER=Otoroshi-User&quot; \
   -e &quot;OTOROSHI_TOKEN_SECRET=veryverysecret&quot; \
   -e &quot;S3_ACCESS_KEY_ID=access_key&quot; \
