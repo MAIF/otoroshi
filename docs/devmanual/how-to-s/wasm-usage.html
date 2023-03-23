@@ -528,7 +528,12 @@ func main() {}</code></pre></dd>
       &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.WasmAccessValidator&quot;,
       &quot;enabled&quot;: true,
       &quot;config&quot;: {
-        &quot;raw_source&quot;: &quot;https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm&quot;,
+        &quot;source&quot;: {
+          &quot;kind&quot;: &quot;http&quot;,
+          &quot;path&quot;: &quot;https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm&quot;,
+          &quot;opts&quot;: {}
+        },
+        &quot;memoryPages&quot;: 4,
         &quot;functionName&quot;: &quot;execute&quot;
       }
     }
@@ -732,7 +737,12 @@ func main() {}</code></pre></dd>
       &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.WasmAccessValidator&quot;,
       &quot;enabled&quot;: true,
       &quot;config&quot;: {
-        &quot;raw_source&quot;: &quot;https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm&quot;,
+         &quot;source&quot;: {
+          &quot;kind&quot;: &quot;http&quot;,
+          &quot;path&quot;: &quot;https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm&quot;,
+          &quot;opts&quot;: {}
+        },
+        &quot;memoryPages&quot;: 4,
         &quot;functionName&quot;: &quot;execute&quot;
       }
     },
@@ -740,7 +750,12 @@ func main() {}</code></pre></dd>
       &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.WasmBackend&quot;,
       &quot;enabled&quot;: true,
       &quot;config&quot;: {
-        &quot;raw_source&quot;: &quot;https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/wasm-target.wasm&quot;,
+         &quot;source&quot;: {
+          &quot;kind&quot;: &quot;http&quot;,
+          &quot;path&quot;: &quot;https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/wasm-target.wasm&quot;,
+          &quot;opts&quot;: {}
+        },
+        &quot;memoryPages&quot;: 4,
         &quot;functionName&quot;: &quot;execute&quot;
       }
     }
