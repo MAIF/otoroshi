@@ -86,15 +86,14 @@ the following examples are written in rust. the rust macros provided by extism m
 
 do not forget to add the extism pdk library to your project to make it compile
 
-```rs
-[dependencies]
-extism-pdk = "0.2.0"
-serde = "1.0.152"
-serde_json = "1.0.91"
+Cargo.toml
+:   @@snip [Cargo.toml](../../../../../tools/otoroshi-wasm-manager/server/templates/rust/Cargo.toml) 
 
-[lib]
-crate_type = ["cdylib"]
-```
+go.mod
+:   @@snip [go.mod](../../../../../tools/otoroshi-wasm-manager/server/templates/go/go.mod) 
+
+package.json
+:   @@snip [package.json](../../../../../tools/otoroshi-wasm-manager/server/templates/js/package.json) 
 
 ### WasmRouteMatcher
 
