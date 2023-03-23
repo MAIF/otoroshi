@@ -354,14 +354,43 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <p>the following examples are written in rust. the rust macros provided by extism makes the usage of <code>Host.inputString</code> and <code>Host.outputString</code> useless. Remember that it&rsquo;s still used under the hood and that the structures are passed as json strings.</p>
 <p>do not forget to add the extism pdk library to your project to make it compile</p>
-<pre class="prettyprint"><code class="language-rs">[dependencies]
-extism-pdk = &quot;0.2.0&quot;
+<dl>
+  <dt>Cargo.toml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-toml">[package]
+name = &quot;http-plugin&quot;
+version = &quot;0.1.0&quot;
+edition = &quot;2021&quot;
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+extism-pdk = &quot;0.1.1&quot;
 serde = &quot;1.0.152&quot;
 serde_json = &quot;1.0.91&quot;
 
 [lib]
-crate_type = [&quot;cdylib&quot;]
-</code></pre>
+crate_type = [&quot;cdylib&quot;]</code></pre></dd>
+  <dt>go.mod
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-mod">module go-plugin
+
+go 1.19
+
+require github.com/buger/jsonparser v1.1.1 // indirect</code></pre></dd>
+  <dt>package.json
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-json">{
+  &quot;name&quot;: &quot;js-plugin&quot;,
+  &quot;version&quot;: &quot;0.0.1&quot;,
+  &quot;devDependencies&quot;: {
+    &quot;esbuild&quot;: &quot;^0.17.9&quot;
+  }
+}</code></pre></dd>
+</dl>
 <h3><a href="#wasmroutematcher" name="wasmroutematcher" class="anchor"><span class="anchor-link"></span></a>WasmRouteMatcher</h3>
 <p>A route matcher is a plugin that can help the otoroshi router to select a route instance based on your own custom predicate. Basically it&rsquo;s a function that returns a boolean answer.</p>
 <pre class="prettyprint"><code class="language-rs">use extism_pdk::*;
