@@ -3,6 +3,7 @@
 In this sections, you will find informations about various Otoroshi topics  
 
 * @ref:[Proxy engine](./engine.md)
+* @ref:[WASM support](./wasm-usage.md)
 * @ref:[Chaos engineering](./chaos-engineering.md)
 * @ref:[TLS](./tls.md)
 * @ref:[Otoroshi's PKI](./pki.md)
@@ -19,12 +20,12 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Relay routing](./relay-routing.md)
 * @ref:[Alternative http backend](./netty-server.md)
 * @ref:[HTTP3 support](./http3.md)
-* @ref:[WASM support](./wasm-usage.md)
 * @ref:[Anonymous reporting](./anonymous-reporting.md)
 
 @@@ index
 
 * [Proxy engine](./engine.md)
+* [WASM support](./wasm-usage.md)
 * [Chaos engineering](./chaos-engineering.md)
 * [TLS](./tls.md)
 * [Otoroshi's PKI](./pki.md)
@@ -41,7 +42,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [Relay routing](./relay-routing.md)
 * [Alternative http backend](./netty-server.md)
 * [HTTP3 support](./http3.md)
-* [WASM support](./wasm-usage.md)
 * [Anonymous reporting](./anonymous-reporting.md)
   
 @@@
