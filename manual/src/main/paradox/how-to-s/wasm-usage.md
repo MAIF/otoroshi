@@ -84,7 +84,12 @@ curl -X POST "http://otoroshi-api.oto.tools:8080/api/routes" \
       "plugin": "cp:otoroshi.next.plugins.WasmAccessValidator",
       "enabled": true,
       "config": {
-        "raw_source": "https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm",
+        "source": {
+          "kind": "http",
+          "path": "https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm",
+          "opts": {}
+        },
+        "memoryPages": 4,
         "functionName": "execute"
       }
     }
@@ -189,7 +194,12 @@ curl -X PUT "http://otoroshi-api.oto.tools:8080/api/routes/demo-otoroshi" \
       "plugin": "cp:otoroshi.next.plugins.WasmAccessValidator",
       "enabled": true,
       "config": {
-        "raw_source": "https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm",
+         "source": {
+          "kind": "http",
+          "path": "https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/first-validator.wasm",
+          "opts": {}
+        },
+        "memoryPages": 4,
         "functionName": "execute"
       }
     },
@@ -197,7 +207,12 @@ curl -X PUT "http://otoroshi-api.oto.tools:8080/api/routes/demo-otoroshi" \
       "plugin": "cp:otoroshi.next.plugins.WasmBackend",
       "enabled": true,
       "config": {
-        "raw_source": "https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/wasm-target.wasm",
+         "source": {
+          "kind": "http",
+          "path": "https://raw.githubusercontent.com/MAIF/otoroshi/master/demos/wasm/wasm-target.wasm",
+          "opts": {}
+        },
+        "memoryPages": 4,
         "functionName": "execute"
       }
     }

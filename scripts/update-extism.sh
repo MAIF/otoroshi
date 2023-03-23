@@ -1,4 +1,7 @@
-EXTISM_VERSION=$(curl https://api.github.com/repos/extism/extism/releases/latest | jq -r '.name')
+# EXTISM_REPO=extism
+EXTISM_REPO=MAIF
+
+EXTISM_VERSION=$(curl https://api.github.com/repos/${EXTISM_REPO}/extism/releases/latest | jq -r '.name')
 
 echo "latest extism version is: ${EXTISM_VERSION}"
 
@@ -8,11 +11,11 @@ rm -rfv ./otoroshi/conf/linux-*
 
 mkdir ./otoroshi/conf/native
 
-curl -L -o "./otoroshi/conf/native/libextism-aarch64-apple-darwin-${EXTISM_VERSION}.tar.gz" "https://github.com/extism/extism/releases/download/${EXTISM_VERSION}/libextism-aarch64-apple-darwin-${EXTISM_VERSION}.tar.gz"
-curl -L -o "./otoroshi/conf/native/libextism-aarch64-apple-darwin-${EXTISM_VERSION}.tar.gz" "https://github.com/extism/extism/releases/download/${EXTISM_VERSION}/libextism-aarch64-apple-darwin-${EXTISM_VERSION}.tar.gz"
-curl -L -o "./otoroshi/conf/native/libextism-x86_64-unknown-linux-gnu-${EXTISM_VERSION}.tar.gz" "https://github.com/extism/extism/releases/download/${EXTISM_VERSION}/libextism-x86_64-unknown-linux-gnu-${EXTISM_VERSION}.tar.gz"
-curl -L -o "./otoroshi/conf/native/libextism-aarch64-unknown-linux-gnu-${EXTISM_VERSION}.tar.gz" "https://github.com/extism/extism/releases/download/${EXTISM_VERSION}/libextism-aarch64-unknown-linux-gnu-${EXTISM_VERSION}.tar.gz"
-curl -L -o "./otoroshi/conf/native/libextism-x86_64-apple-darwin-${EXTISM_VERSION}.tar.gz" "https://github.com/extism/extism/releases/download/${EXTISM_VERSION}/libextism-x86_64-apple-darwin-${EXTISM_VERSION}.tar.gz"
+curl -L -o "./otoroshi/conf/native/libextism-aarch64-apple-darwin-${EXTISM_VERSION}.tar.gz" "https://github.com/${EXTISM_REPO}/extism/releases/download/${EXTISM_VERSION}/libextism-aarch64-apple-darwin-${EXTISM_VERSION}.tar.gz"
+curl -L -o "./otoroshi/conf/native/libextism-aarch64-apple-darwin-${EXTISM_VERSION}.tar.gz" "https://github.com/${EXTISM_REPO}/extism/releases/download/${EXTISM_VERSION}/libextism-aarch64-apple-darwin-${EXTISM_VERSION}.tar.gz"
+curl -L -o "./otoroshi/conf/native/libextism-x86_64-unknown-linux-gnu-${EXTISM_VERSION}.tar.gz" "https://github.com/${EXTISM_REPO}/extism/releases/download/${EXTISM_VERSION}/libextism-x86_64-unknown-linux-gnu-${EXTISM_VERSION}.tar.gz"
+curl -L -o "./otoroshi/conf/native/libextism-aarch64-unknown-linux-gnu-${EXTISM_VERSION}.tar.gz" "https://github.com/${EXTISM_REPO}/extism/releases/download/${EXTISM_VERSION}/libextism-aarch64-unknown-linux-gnu-${EXTISM_VERSION}.tar.gz"
+curl -L -o "./otoroshi/conf/native/libextism-x86_64-apple-darwin-${EXTISM_VERSION}.tar.gz" "https://github.com/${EXTISM_REPO}/extism/releases/download/${EXTISM_VERSION}/libextism-x86_64-apple-darwin-${EXTISM_VERSION}.tar.gz"
 
 mkdir ./otoroshi/conf/darwin-aarch64
 mkdir ./otoroshi/conf/darwin-x86-64
