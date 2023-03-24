@@ -2,9 +2,13 @@ package otoroshi.cluster
 
 import akka.NotUsed
 import akka.actor.{ActorSystem, Cancellable}
+import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Compression, Flow, Framing, Sink, Source}
+import akka.stream.{Attributes, Materializer}
+import akka.stream.alpakka.s3.{ApiVersion, MemoryBufferType, MetaHeaders, MultipartUploadResult, ObjectMetadata, S3Attributes, S3Settings}
+import akka.stream.alpakka.s3.headers.CannedAcl
+import akka.stream.alpakka.s3.scaladsl.S3
+import akka.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
@@ -37,6 +41,9 @@ import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxy
 import play.api.mvc.RequestHeader
 import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
+import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.regions.providers.AwsRegionProvider
 
 import java.io.File
 import java.lang.management.ManagementFactory
@@ -45,7 +52,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import javax.management.{Attribute, ObjectName}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.math.BigDecimal.RoundingMode
 import scala.util.control.NoStackTrace
@@ -311,6 +318,7 @@ case class ClusterConfig(
     relay: RelayRouting,
     retryDelay: Long,
     retryFactor: Long,
+    backup: ClusterBackup,// = ClusterBackup(),
     leader: LeaderConfig = LeaderConfig(),
     worker: WorkerConfig = WorkerConfig()
 ) {
@@ -422,6 +430,40 @@ object ClusterConfig {
             nonProxyHosts = None
           )
         },
+      backup = ClusterBackup(
+        enabled = configuration.getOptionalWithFileSupport[Boolean]("backup.enabled").getOrElse(false),
+        kind = configuration.getOptionalWithFileSupport[String]("backup.kind").flatMap(ClusterBackupKind.apply).getOrElse(ClusterBackupKind.S3),
+        s3 = for {
+          bucket <- configuration.getOptionalWithFileSupport[String] ("backup.s3.bucket")
+          endpoint <- configuration.getOptionalWithFileSupport[String] ("backup.s3.endpoint")
+          access <- configuration.getOptionalWithFileSupport[String] ("backup.s3.access")
+          secret <- configuration.getOptionalWithFileSupport[String] ("backup.s3.secret")
+        } yield {
+          S3Configuration(
+            bucket = bucket,
+            endpoint = endpoint,
+            region = configuration.getOptionalWithFileSupport[String] ("backup.s3.region").getOrElse("eu-west-1"),
+            access = access,
+            secret = secret,
+            key = configuration.getOptionalWithFileSupport[String] ("backup.s3.key").getOrElse("/otoroshi/cluster_state"),
+            chunkSize = configuration.getOptionalWithFileSupport[Int] ("backup.s3.chunkSize").getOrElse(1024 * 1024 * 8),
+            v4auth = configuration.getOptionalWithFileSupport[Boolean] ("backup.s3.v4auth").getOrElse(true),
+            writeEvery = 1.second,
+            acl = configuration.getOptionalWithFileSupport[String]("backup.s3.acl").map {
+              case "AuthenticatedRead" => CannedAcl.AuthenticatedRead
+              case "AwsExecRead" => CannedAcl.AwsExecRead
+              case "BucketOwnerFullControl" => CannedAcl.BucketOwnerFullControl
+              case "BucketOwnerRead" => CannedAcl.BucketOwnerRead
+              case "Private" => CannedAcl.Private
+              case "PublicRead" => CannedAcl.PublicRead
+              case "PublicReadWrite" => CannedAcl.PublicReadWrite
+              case _ => CannedAcl.Private
+            }.getOrElse(CannedAcl.Private),
+          )
+        },
+        instanceCanWrite = configuration.getOptionalWithFileSupport[Boolean]("backup.instance.can-write").getOrElse(false),
+        instanceCanRead = configuration.getOptionalWithFileSupport[Boolean]("backup.instance.can-read").getOrElse(false),
+      ),
       leader = LeaderConfig(
         name = configuration
           .getOptionalWithFileSupport[String]("leader.name")
@@ -482,6 +524,107 @@ object ClusterConfig {
         }
       )
     )
+  }
+}
+
+sealed trait ClusterBackupKind {
+  def name: String
+}
+object ClusterBackupKind {
+  case object S3 extends ClusterBackupKind { def name: String = "S3" }
+  def apply(str: String): Option[ClusterBackupKind] = str.toLowerCase() match {
+    case "s3" => S3.some
+    case _ => None
+  }
+}
+
+case class ClusterBackup(
+  enabled: Boolean = false,
+  kind: ClusterBackupKind = ClusterBackupKind.S3,
+  s3: Option[S3Configuration] = None,
+  instanceCanWrite: Boolean = false,
+  instanceCanRead: Boolean = false,
+) {
+
+  def tryToWriteBackup(payload: () => ByteString)(implicit ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    if (enabled && instanceCanWrite) {
+      kind match {
+        case ClusterBackupKind.S3 => s3 match {
+          case None =>
+            Cluster.logger.error("try to write cluster state on S3 but no config. found !")
+            ().vfuture
+          case Some(conf) => writeToS3(payload(), conf).map(_ => ())
+        }
+      }
+    } else {
+      ().vfuture
+    }
+  }
+
+  def tryToReadBackup()(implicit ec: ExecutionContext, mat: Materializer): Future[Either[String, ByteString]] = {
+    if (enabled && instanceCanRead) {
+      kind match {
+        case ClusterBackupKind.S3 => s3 match {
+          case None =>
+            Cluster.logger.error("try to read cluster state on S3 but no config. found !")
+            Left("try to read cluster state on S3 but no config. found !").vfuture
+          case Some(conf) => readFromS3(conf).map {
+            case None => Left("cluster_state not found")
+            case Some(state) => Right(state)
+          }
+        }
+      }
+    } else {
+      Left("Cannot read from backup").vfuture
+    }
+  }
+
+  private def url(conf: S3Configuration): String =
+    s"${conf.endpoint}/${conf.key}?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
+
+  private def s3ClientSettingsAttrs(conf: S3Configuration): Attributes = {
+    val awsCredentials = StaticCredentialsProvider.create(
+      AwsBasicCredentials.create(conf.access, conf.secret)
+    )
+    val settings = S3Settings(
+      bufferType = MemoryBufferType,
+      credentialsProvider = awsCredentials,
+      s3RegionProvider = new AwsRegionProvider {
+        override def getRegion: Region = Region.of(conf.region)
+      },
+      listBucketApiVersion = ApiVersion.ListBucketVersion2
+    ).withEndpointUrl(conf.endpoint)
+    S3Attributes.settings(settings)
+  }
+
+  private def writeToS3(payload: ByteString, conf: S3Configuration)(implicit ec: ExecutionContext, mat: Materializer): Future[MultipartUploadResult] = {
+    val ctype = ContentTypes.`application/octet-stream`
+    val meta = MetaHeaders(Map("content-type" -> ctype.value))
+    val sink = S3
+      .multipartUpload(
+        bucket = conf.bucket,
+        key = conf.key,
+        contentType = ctype,
+        metaHeaders = meta,
+        cannedAcl = conf.acl,
+        chunkingParallelism = 1
+      )
+      .withAttributes(s3ClientSettingsAttrs(conf))
+    if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"writing state to ${url(conf)}")
+    Source
+      .single(payload)
+      .toMat(sink)(Keep.right)
+      .run()
+  }
+
+  private def readFromS3(conf: S3Configuration)(implicit ec: ExecutionContext, mat: Materializer): Future[Option[ByteString]] = {
+    val none: Option[(Source[ByteString, NotUsed], ObjectMetadata)] = None
+    S3.download(conf.bucket, conf.key).withAttributes(s3ClientSettingsAttrs(conf)).runFold(none)((_, opt) => opt).flatMap {
+      case None =>
+        Cluster.logger.error(s"resource '${url(conf)}' does not exist")
+        None.vfuture
+      case Some((source, meta)) => source.runFold(ByteString.empty)(_ ++ _).map(v => v.some)
+    }
   }
 }
 
@@ -1209,8 +1352,11 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
               cacheCount.set(counter.get())
               cacheDigest.set(Hex.encodeHexString(digest.digest()))
               env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
+              // write state to file if enabled
               env.clusterConfig.leader.stateDumpPath
                 .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
+              // write backup from leader if enabled
+              env.clusterConfig.backup.tryToWriteBackup(() => stateCache)
               if (Cluster.logger.isDebugEnabled)
                 Cluster.logger.debug(
                   s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
@@ -1638,6 +1784,40 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 
+  def loadStateFromBackup(): Future[Boolean] = {
+    if (env.clusterConfig.backup.instanceCanRead) {
+      env.clusterConfig.backup.tryToReadBackup()(env.otoroshiExecutionContext, env.otoroshiMaterializer).flatMap {
+        case Left(err) =>
+          Cluster.logger.error(s"unable to load cluster state from backup: ${err}")
+          false.vfuture
+        case Right(payload) => {
+          val store = new LegitConcurrentHashMap[String, Any]()
+          val expirations = new LegitConcurrentHashMap[String, Long]()
+          payload.chunks(32 * 1024)
+            .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, true))
+            .map(bs => Try(Json.parse(bs.utf8String)))
+            .collect { case Success(item) => item }
+            .runWith(Sink.foreach { item =>
+              val key = (item \ "k").as[String]
+              val value = (item \ "v").as[JsValue]
+              val what = (item \ "w").as[String]
+              val ttl = (item \ "t").asOpt[Long].getOrElse(-1L)
+              fromJson(what, value, _modern).foreach(v => store.put(key, v))
+              if (ttl > -1L) {
+                expirations.put(key, ttl)
+              }
+            }).map { _ =>
+              firstSuccessfulStateFetchDone.compareAndSet(false, true)
+              env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
+              true
+            }
+        }
+      }
+    } else {
+      false.vfuture
+    }
+  }
+
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
     import collection.JavaConverters._
@@ -1754,6 +1934,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 val counter        = new AtomicLong(0L)
                 val digest         = MessageDigest.getInstance("SHA-256")
                 val from           = new DateTime(responseFrom.getOrElse(0))
+                val fullBody       = new AtomicReference[ByteString](ByteString.empty)
 
                 val responseBody =
                   if (env.clusterConfig.streamed) resp.bodyAsSource else Source.single(resp.bodyAsBytes)
@@ -1761,6 +1942,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   .via(env.clusterConfig.gunzip())
                   .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, true))
                   .alsoTo(Sink.foreach { item =>
+                    if (env.clusterConfig.backup.instanceCanWrite) {
+                      fullBody.updateAndGet(bs => bs ++ item ++ ByteString("\n"))
+                    }
                     digest.update((item ++ ByteString("\n")).asByteBuffer)
                     counter.incrementAndGet()
                   })
@@ -1799,6 +1983,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                     if (valid) {
                       lastPoll.set(DateTime.now())
                       if (!store.isEmpty) {
+                        // write backup from leader if enabled
+                        env.clusterConfig.backup.tryToWriteBackup { () =>
+                          val state = fullBody.get()
+                          fullBody.set(null)
+                          state
+                        }
                         firstSuccessfulStateFetchDone.compareAndSet(false, true)
                         if (Cluster.logger.isDebugEnabled)
                           Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] start swap (${DateTime.now()})")
