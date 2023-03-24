@@ -97,11 +97,16 @@ class AnonymousReportingJob extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.hour.some
 
-  private def displayLog(): Unit = {
+  private def displayYouCanDisableLog(): Unit = {
     logger.info("anonymous reporting is ENABLED. If you want to disable it, you can do it")
     logger.info("  from the 'Danger zone' > 'Send anonymous reports' flag off")
     logger.info("  with the 'otoroshi.anonymous-reporting.enabled = false' config.")
     logger.info("  with the 'OTOROSHI_ANONYMOUS_REPORTING_ENABLED=false' env. variable")
+    logger.info("you can find more about anonymous reporting at https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html")
+  }
+
+  private def displayPleaseEnableLog(): Unit = {
+    logger.info("anonymous reporting is DISABLED. It will help us a lot to build the future of the product if you enable it from the 'Danger zone' > 'Send anonymous reports' flag on.")
     logger.info("you can find more about anonymous reporting at https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html")
   }
 
@@ -141,7 +146,7 @@ class AnonymousReportingJob extends Job {
     val config = AnonymousReportingJobConfig.fromEnv(env)
     if (config.enabled && globalConfig.anonymousReporting) {
       if (showLog.compareAndSet(true, false)) {
-        displayLog()
+        displayYouCanDisableLog()
       }
       (for {
         members <- env.datastores.clusterStateDataStore.getMembers()
@@ -433,6 +438,7 @@ class AnonymousReportingJob extends Job {
           }
       }
     } else {
+      displayPleaseEnableLog()
       ().vfuture
     }
   }.recover {

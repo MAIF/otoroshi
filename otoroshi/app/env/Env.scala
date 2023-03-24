@@ -417,7 +417,7 @@ class Env(
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.trustXForwarded").getOrElse(true)
 
   lazy val wasmCacheTtl: Int                 =
-    configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.cache.ttl").filter(_ >= 5000).getOrElse(5000)
+    configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.cache.ttl").getOrElse(10000)
   lazy val wasmCacheSize: Int                =
     configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.cache.size").getOrElse(100)
 
