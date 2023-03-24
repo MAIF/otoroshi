@@ -47,6 +47,41 @@ fn find_memory(offset: u64) -> Option<extism_pdk::Memory> {
   })
 }
 
+fn allocate_string(s: &str) -> extism_pdk::Memory {
+  let mut mem_in = extism_pdk::Memory::new(pattern.len());
+  mem_in.store(pattern);
+  mem_in
+}
+
+fn get_string_from_ptr(ptr: u64) -> Option<&str> {
+  match find_memory(res_ptr) {
+    None => None,
+    Some(mem_out) => {
+      match  mem_out.to_string() {
+        Err(_e) => None,
+        Ok(json_str) => Some(json_str)
+      }
+    }
+  }
+}
+
+fn get_json_from_ptr(ptr: u64) -> Option<serde_json::Value> {
+  match get_string_from_ptr(ptr) {
+    None => None,
+    Some(string) => {
+      let json: serde_json::Value = serde_json::from_str(&json_str).unwrap();
+      json
+    }
+  }
+}
+
+fn get_json_array_from_ptr(ptr: u64) -> Option<serde_json::Value> {
+  match get_json_from_ptr(ptr) {
+    None => None,
+    Some(json) => json.as_array()
+  }
+}
+
 /////// api   ///////
 
 pub fn otoroshi_proxy_log(level: i32, msg: String) -> i32 {
@@ -55,23 +90,29 @@ pub fn otoroshi_proxy_log(level: i32, msg: String) -> i32 {
   unsafe { proxy_log(level, mem.offset, mem.length) }
 }
 
-pub fn otoroshi_proxy_datastore_keys(pattern: &str) -> Result<Vec<String>, Error>  {
-  let mut mem_in = extism_pdk::Memory::new(pattern.len());
-  mem_in.store(pattern);
-  let res_ptr = unsafe { proxy_datastore_keys(mem_in.offset, mem_in.length) };
-  match find_memory(res_ptr) {
+pub fn otoroshi_proxy_datastore_keys(pattern: &str) -> Vec<String>  {
+  let mem = allocate_string(pattern);
+  let ptr = unsafe { proxy_datastore_keys(mem.offset, mem.length) };
+  match get_json_array_from_ptr(ptr) {
     None => Vec::new(),
-    Some(mem_out) => {
-      match  mem_out.to_string() {
-        Err(_e) => Vec::new(),
-        Ok(json_str) => {
-          let json: serde_json::Value = serde_json::from_str(&json_str).unwrap();
-          match json.as_array() {
-            None => Vec::new(),
-            Some(arr) => arr.into_iter().map(|x| x.as_str().unwrap().to_string()).collect()
-          }  
-        }
-      }
-    }
+    Some(arr) => arr.into_iter().map(|x| x.as_str().unwrap().to_string()).collect()
   }
+  // let mut mem_in = extism_pdk::Memory::new(pattern.len());
+  // mem_in.store(pattern);
+  // let res_ptr = unsafe { proxy_datastore_keys(mem_in.offset, mem_in.length) };
+  // match find_memory(res_ptr) {
+  //   None => Vec::new(),
+  //   Some(mem_out) => {
+  //     match  mem_out.to_string() {
+  //       Err(_e) => Vec::new(),
+  //       Ok(json_str) => {
+  //         let json: serde_json::Value = serde_json::from_str(&json_str).unwrap();
+  //         match json.as_array() {
+  //           None => Vec::new(),
+  //           Some(arr) => arr.into_iter().map(|x| x.as_str().unwrap().to_string()).collect()
+  //         }  
+  //       }
+  //     }
+  //   }
+  // }
 }
