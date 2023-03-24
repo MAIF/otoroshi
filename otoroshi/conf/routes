@@ -56,6 +56,7 @@ GET     /bo/api/loggers                                       otoroshi.controlle
 GET     /bo/api/services/top10                                otoroshi.controllers.BackOfficeController.mostCalledServices()
 GET     /bo/api/services/map                                  otoroshi.controllers.BackOfficeController.servicesMap()
 DELETE  /bo/api/services/:id/circuitbreakers                  otoroshi.controllers.BackOfficeController.resetCircuitBreakers(id)
+POST    /bo/api/_anonymous_reporting                          otoroshi.controllers.BackOfficeController.anonymousReporting()
 
 GET     /bo/api/bodies/:serviceId/:requestId                  otoroshi.controllers.BackOfficeController.fetchBodiesFor(serviceId, requestId)
 

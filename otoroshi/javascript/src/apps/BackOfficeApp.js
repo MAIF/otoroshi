@@ -67,6 +67,56 @@ import { NgFormPlayground } from '../components/nginputs';
 import Loader from '../components/Loader';
 import { globalConfig } from 'antd/lib/config-provider';
 
+class AnonymousReportingEnabled extends Component {
+  render() {
+    return (
+      <>
+        <div className="modal-body">
+          <p style={{ textAlign: 'justify' }}>As you may know, Otoroshi is an open-source project. As such, we do not have much feedback from our users. But this feedback is essential for us to shape the future of Otoroshi.</p>
+          <p style={{ textAlign: 'justify' }}>If you enable anonymous reporting, we will receive periodical report from this Otoroshi cluster.</p>
+          <p style={{ textAlign: 'justify' }}>Don't worry, we won't send sensitive or personnal data, just a bunch of statistics about your usage of otoroshi features.</p>
+          <p style={{ textAlign: 'justify' }}>At any moment, you can turn off anonymous reporting from the danger zone.</p>
+          <p style={{ textAlign: 'justify' }}>Thanks for helping us building better products !</p>
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+            No, thanks
+          </button>
+          <button
+            type="button"
+            className="btn btn-success"
+            onClick={(e) => this.props.ok(true)}>
+            Enable anonymous reporting
+          </button>
+        </div>
+      </>
+    );
+  }
+}
+
+class AnonymousReportingEnable extends Component {
+  render() {
+    return (
+      <>
+        <div className="modal-body">
+          enable it in config file !
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn-success"
+            onClick={(e) => this.props.ok(true)}>
+            Enable anonymous reporting
+          </button>
+        </div>
+      </>
+    );
+  }
+}
+
 class BackOfficeAppContainer extends Component {
   constructor(props) {
     super(props);
@@ -96,6 +146,31 @@ class BackOfficeAppContainer extends Component {
     }
   }
 
+  triggerAnonymousReportingPopup = (env) => {
+    if (false) {
+      console.log(env.anonymousReporting)
+      if (env.anonymousReporting.should_ask) {
+        if (!env.anonymousReporting.should_enable) {
+          window
+            .popup(
+              'Enable anonymous reporting',
+              (ok, cancel) => <AnonymousReportingEnabled ok={ok} cancel={cancel} />,
+              { style: { width: '100%' } }
+            )
+            .then((enable) => {
+              if (enable) {
+                BackOfficeServices.anonymousReporting({ enabled: true })
+              } else {
+                BackOfficeServices.anonymousReporting({ enabled: false })
+              }
+            });
+        } else {
+          // Do something here as the user disabled it on purpose in static config ???
+        }
+      }
+    }
+  }
+
   componentDidMount() {
     Promise.all([
       BackOfficeServices.env(),
@@ -109,6 +184,7 @@ class BackOfficeAppContainer extends Component {
         loading: false,
         usedNewEngine: env.newEngineEnabled,
       });
+      this.triggerAnonymousReportingPopup(env);
     });
     this.readShortMenu();
   }

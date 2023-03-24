@@ -48,6 +48,18 @@ window.__otoroshi__env__latest = {
   bypassUserRightsCheck: false,
 };
 
+export function anonymousReporting(enabled) {
+  return fetch('/bo/api/_anonymous_reporting', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(enabled)
+  });
+}
+
 export function env() {
   return fetch('/bo/api/env', {
     method: 'GET',
