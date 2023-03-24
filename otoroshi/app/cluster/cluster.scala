@@ -445,7 +445,7 @@ object ClusterConfig {
             region = configuration.getOptionalWithFileSupport[String] ("backup.s3.region").getOrElse("eu-west-1"),
             access = access,
             secret = secret,
-            key = configuration.getOptionalWithFileSupport[String] ("backup.s3.key").getOrElse("/otoroshi/cluster_state"),
+            key = configuration.getOptionalWithFileSupport[String] ("backup.s3.key").getOrElse("otoroshi/cluster_state"),
             chunkSize = configuration.getOptionalWithFileSupport[Int] ("backup.s3.chunkSize").getOrElse(1024 * 1024 * 8),
             v4auth = configuration.getOptionalWithFileSupport[Boolean] ("backup.s3.v4auth").getOrElse(true),
             writeEvery = 1.second,
