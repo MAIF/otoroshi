@@ -15,7 +15,7 @@ WebAssembly (WASM) is a simple machine model and executable format with an exten
 To simplify the process of WASM creation and usage, Otoroshi provides:
 
 - otoroshi ui integration: a full set of plugins that let you pick which WASM function to runtime at any point in a route
-- otoroshi `wasm-manager`: a code editor in the browser that let you write your plugin in `Rust` or `Assembly Script` without having to think about compiling it to WASM (you can find a complete tutorial about it @ref:[here](../how-to-s/wasm-manager-installation.md))
+- otoroshi `wasm-manager`: a code editor in the browser that let you write your plugin in `Rust`, `TinyGo`, `Javascript` or `Assembly Script` without having to think about compiling it to WASM (you can find a complete tutorial about it @ref:[here](../how-to-s/wasm-manager-installation.md))
 
 @@@ div { .centered-img }
 <img src="../imgs/otoroshi-wasm-manager-1.png" title="screenshot of a wasm manager instance" />
