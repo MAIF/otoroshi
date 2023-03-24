@@ -606,7 +606,7 @@ object DefaultTemplates {
 case class GlobalConfig(
     letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
     lines: Seq[String] = Seq("prod"),
-    anonymousReporting: Boolean = true,
+    anonymousReporting: Boolean = false,
     initWithNewEngine: Boolean = true,
     enableEmbeddedMetrics: Boolean = true,
     streamEntityOnly: Boolean = true,
@@ -796,7 +796,7 @@ object GlobalConfig {
       Try {
         GlobalConfig(
           lines = (json \ "lines").asOpt[Seq[String]].getOrElse(Seq("prod")),
-          anonymousReporting = (json \ "anonymousReporting").asOpt[Boolean].getOrElse(true),
+          anonymousReporting = (json \ "anonymousReporting").asOpt[Boolean].getOrElse(false),
           initWithNewEngine = (json \ "initWithNewEngine").asOpt[Boolean].getOrElse(false),
           enableEmbeddedMetrics = (json \ "enableEmbeddedMetrics").asOpt[Boolean].getOrElse(true),
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),

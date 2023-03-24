@@ -408,7 +408,7 @@ class AnonymousReportingJob extends Job {
           // "metrics" -> env.metrics.jsonRawExport(None),
         )
       }).flatMap { report =>
-        if (env.isDev) logger.info(report.prettify)
+        if (env.isDev) logger.debug(report.prettify)
         val req = if (config.tlsConfig.enabled) {
           env.MtlsWs.url(config.url, config.tlsConfig.legacy)
         } else {
