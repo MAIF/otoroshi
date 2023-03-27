@@ -382,7 +382,7 @@ object DataStore extends AwaitCapable {
   def proxyDataStorePexpire(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)
                            (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val prefixName = if (pluginRestricted) "plugin_" else ""
-    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_keys_pexpire", config, None) {
+    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_pexpire", config, None) {
       (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], hostData: EnvUserData) => {
         val data = Utils.contextParamsToJson(plugin, params: _*)
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
@@ -657,6 +657,7 @@ object HostFunctions {
       State.getFunctions(config, pluginId) ++
       DataStore.getFunctions(config, pluginId) ++
       OPA.getFunctions(config, ctx)
+    
     functions
       .collect {
         case func if func.authorized(config.authorizations) => func.function
