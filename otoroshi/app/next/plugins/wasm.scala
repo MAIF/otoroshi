@@ -9,6 +9,7 @@ import org.extism.sdk.Plugin
 import org.extism.sdk.Context
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
 import org.extism.sdk.wasm.WasmSourceResolver
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{WSProxyServerJson, WasmManagerSettings}
@@ -477,16 +478,21 @@ object WasmUtils {
   def execute(config: WasmConfig, defaultFunctionName: String, input: JsValue, ctx: Option[NgCachedConfigContext], attrs: Option[TypedMap])(implicit env: Env): Future[Either[JsValue, String]] = {
     val pluginId = config.source.cacheKey
     scriptCache.getIfPresent(pluginId) match {
-      case Some(wasm) => config.source.getConfig().map {
-        case None => WasmUtils.callWasm(wasm.script, config, defaultFunctionName, input, ctx, pluginId, attrs)
-        case Some(finalConfig) => WasmUtils.callWasm(wasm.script, finalConfig.copy(functionName = finalConfig.functionName.orElse(config.functionName)), defaultFunctionName, input, ctx, pluginId, attrs)
-      }
+      case Some(wasm) =>
+        // println(s"\n\nusing script from ${new DateTime(wasm.createAt).toString()}\n")
+        config.source.getConfig().map {
+          case None => WasmUtils.callWasm(wasm.script, config, defaultFunctionName, input, ctx, pluginId, attrs)
+          case Some(finalConfig) => WasmUtils.callWasm(wasm.script, finalConfig.copy(functionName = finalConfig.functionName.orElse(config.functionName)), defaultFunctionName, input, ctx, pluginId, attrs)
+        }
       case None if config.source.kind == WasmSourceKind.Unknown => Left(Json.obj("error" -> "missing source")).future
       case _ => config.source.getWasm().flatMap {
         case Left(err) => err.left.vfuture
-        case Right(wasm) => config.source.getConfig().map {
-          case None => WasmUtils.callWasm(wasm, config, defaultFunctionName, input, ctx, pluginId, attrs)
-          case Some(finalConfig) => WasmUtils.callWasm(wasm, finalConfig.copy(functionName = finalConfig.functionName.orElse(config.functionName)), defaultFunctionName, input, ctx, pluginId, attrs)
+        case Right(wasm) => {
+          if (env.isProd) scriptCache.put(pluginId, CachedWasmScript(wasm, System.currentTimeMillis()))
+          config.source.getConfig().map {
+            case None => WasmUtils.callWasm(wasm, config, defaultFunctionName, input, ctx, pluginId, attrs)
+            case Some(finalConfig) => WasmUtils.callWasm(wasm, finalConfig.copy(functionName = finalConfig.functionName.orElse(config.functionName)), defaultFunctionName, input, ctx, pluginId, attrs)
+          }
         }
       }
     }
@@ -1089,6 +1095,7 @@ class WasmJobsLauncher extends Job {
       ))
       val uniqueId: String = actualJob.uniqueId.id
       if (!handledJobs.contains(uniqueId)) {
+        println(s"registzriung ${uniqueId}")
         handledJobs.put(uniqueId, actualJob)
         env.jobManager.registerJob(actualJob)
       }

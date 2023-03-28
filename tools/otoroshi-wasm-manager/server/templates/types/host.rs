@@ -219,8 +219,12 @@ impl Otoroshi {
     Self::get_json_object_from_ptr(ptr)
   }
 
-  pub fn state_value(path: &str) -> Option<serde_json::Map<String, serde_json::Value>> {
-    let mem = Self::allocate_string(path);
+  pub fn state_value(entity: &str, id: &str) -> Option<serde_json::Map<String, serde_json::Value>> {
+    let obj = serde_json::json!({
+      "entity": entity,
+      "id": id,
+    });
+    let mem = Self::allocate_string(serde_json::to_string(&obj).unwrap().as_str());
     let ptr = unsafe { proxy_state_value(mem.offset, mem.length) };
     Self::get_json_object_from_ptr(ptr)
   }
@@ -258,8 +262,11 @@ impl Otoroshi {
   } 
 
   pub fn plugin_mem_set(key: &str, value: Vec<u8>) {
-    let payload_string = format!("{{\"key\":\"{}\",\"value\":{}}}", key, Self::encode_base64(value));
-    let mem = Self::allocate_string(payload_string.as_str());
+    let obj = serde_json::json!({
+      "key": key,
+      "value": Self::encode_base64(value),
+    });
+    let mem = Self::allocate_string(serde_json::to_string(&obj).unwrap().as_str());
     unsafe { proxy_plugin_map_set(mem.offset, mem.length) };
   } 
 
@@ -332,8 +339,11 @@ impl Otoroshi {
   } 
 
   pub fn shared_mem_set(key: &str, value: Vec<u8>) {
-    let payload_string = format!("{{\"key\":\"{}\",\"value\":{}}}", key, Self::encode_base64(value));
-    let mem = Self::allocate_string(payload_string.as_str());
+    let obj = serde_json::json!({
+      "key": key,
+      "value": Self::encode_base64(value),
+    });
+    let mem = Self::allocate_string(serde_json::to_string(&obj).unwrap().as_str());
     unsafe { proxy_global_map_set(mem.offset, mem.length) };
   } 
 
@@ -383,7 +393,7 @@ impl Otoroshi {
   pub fn datastore_set(key: &str, value: Vec<u8>, ttl: Option<u64>) {
     let ttl_str: serde_json::Value = match ttl {
       None => serde_json::Value::Null,
-      Some(v) => serde_json::Value::String(format!("{}", v))
+      Some(v) => serde_json::Value::Number(serde_json::Number::from(v))
     };
     let obj = serde_json::json!({
       "key": key,
@@ -397,7 +407,7 @@ impl Otoroshi {
   pub fn datastore_setnx(key: &str, value: Vec<u8>, ttl: Option<u64>) {
     let ttl_str: serde_json::Value = match ttl {
       None => serde_json::Value::Null,
-      Some(v) => serde_json::Value::String(format!("{}", v))
+      Some(v) => serde_json::Value::Number(serde_json::Number::from(v))
     };
     let obj = serde_json::json!({
       "key": key,
@@ -484,7 +494,7 @@ impl Otoroshi {
   pub fn plugin_datastore_set(key: &str, value: Vec<u8>, ttl: Option<u64>) {
     let ttl_str: serde_json::Value = match ttl {
       None => serde_json::Value::Null,
-      Some(v) => serde_json::Value::String(format!("{}", v))
+      Some(v) => serde_json::Value::Number(serde_json::Number::from(v))
     };
     let obj = serde_json::json!({
       "key": key,
@@ -498,7 +508,7 @@ impl Otoroshi {
   pub fn plugin_datastore_setnx(key: &str, value: Vec<u8>, ttl: Option<u64>) {
     let ttl_str: serde_json::Value = match ttl {
       None => serde_json::Value::Null,
-      Some(v) => serde_json::Value::String(format!("{}", v))
+      Some(v) => serde_json::Value::Number(serde_json::Number::from(v))
     };
     let obj = serde_json::json!({
       "key": key,

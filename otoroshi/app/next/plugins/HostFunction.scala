@@ -153,9 +153,11 @@ object Logging extends AwaitCapable {
   def proxyLogWithEvent(config: WasmConfig, ctx: Option[NgCachedConfigContext])
                        (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): org.extism.sdk.HostFunction[EnvUserData] = {
     HFunction.defineClassicFunction("proxy_log_event", config,
-      LibExtism.ExtismValType.I32,
+      LibExtism.ExtismValType.I64,
       ctx,
-      LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I64) { (plugin, params, returns, ud) =>
+      LibExtism.ExtismValType.I64,
+      LibExtism.ExtismValType.I64
+    ) { (plugin, params, returns, ud) =>
       val data = Utils.contextParamsToJson(plugin, params:_*)
       val event = WasmLogEvent(
         `@id` = ud.env.snowflakeGenerator.nextIdStr(),
@@ -705,6 +707,10 @@ object HostFunctions {
       .collect {
         case func if func.authorized(config.authorizations) => func.function
       }
+      //.map { f =>
+      //  f.name.debugPrintln
+      //  f
+      //}
       .toArray
   }
 }
