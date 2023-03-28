@@ -1,4 +1,4 @@
-
+import { SidebarContext } from "./Sidebar"
 
 export function TabsHeader({
   selectedPlugin, onSave, onBuild, onDownload,
@@ -20,21 +20,25 @@ function Header({
   children, onSave, onBuild, showActions, onDownload,
   showPlaySettings, showPublishSettings, selectedPluginType }) {
 
-  return <div className='d-flex align-items-center justify-content-between bg-light'
-    style={{ position: 'fixed', height: 42, zIndex: 10, width: 'calc(100vw - 250px)' }}>
-    {children}
+  return <SidebarContext.Consumer>
+    {({ open, sidebarSize }) => (
+      <div className='d-flex align-items-center justify-content-between bg-light'
+        style={{ position: 'fixed', height: 42, zIndex: 10, width: `calc(100vw - ${open ? `${sidebarSize}px` : '52px'})` }}>
+        {children}
 
-    <div className='d-flex align-items-center'>
-      {showActions && <>
-        <Save onSave={onSave} />
-        <Build onBuild={onBuild} />
-        <Release onBuild={onBuild} />
-        <Download onDownload={onDownload} />
-        {selectedPluginType !== 'go' && <Publish showPublishSettings={showPublishSettings} />}
-      </>}
-      <Play showPlaySettings={showPlaySettings} />
-    </div>
-  </div>
+        <div className='d-flex align-items-center'>
+          {showActions && <>
+            <Save onSave={onSave} />
+            <Build onBuild={onBuild} />
+            <Release onBuild={onBuild} />
+            <Download onDownload={onDownload} />
+            {selectedPluginType !== 'go' && <Publish showPublishSettings={showPublishSettings} />}
+          </>}
+          <Play showPlaySettings={showPlaySettings} />
+        </div>
+      </div>
+    )}
+  </SidebarContext.Consumer>
 }
 
 function Save({ onSave }) {

@@ -8,6 +8,7 @@ import { StreamLanguage } from '@codemirror/language';
 import { javascript } from '@codemirror/lang-javascript';
 import { autocompletion } from '@codemirror/autocomplete';
 import { marked } from "marked";
+import { SidebarContext } from './Sidebar';
 
 function Tab({ content, ext, handleContent, selected, readOnly }) {
   const ref = useRef()
@@ -33,27 +34,31 @@ function Tab({ content, ext, handleContent, selected, readOnly }) {
   }
 
   const renderCodeMirror = () => {
-    return <CodeMirror
-      ref={ref}
-      onKeyDown={e => {
-        const charCode = String.fromCharCode(e.which).toLowerCase();
+    return <SidebarContext.Consumer>
+      {({ open, sidebarSize }) => (
+        <CodeMirror
+          ref={ref}
+          onKeyDown={e => {
+            const charCode = String.fromCharCode(e.which).toLowerCase();
 
-        if (!((e.ctrlKey || e.metaKey) && charCode === 's')) {
-          e.stopPropagation()
-        }
-      }}
-      height='100%'
-      readOnly={readOnly}
-      maxWidth='calc(100vw - 250px)'
-      value={content}
-      extensions={[
-        getLanguageExtension(),
-        autocompletion(),
-      ]}
-      onChange={value => {
-        handleContent(value)
-      }}
-    />
+            if (!((e.ctrlKey || e.metaKey) && charCode === 's')) {
+              e.stopPropagation()
+            }
+          }}
+          height='100%'
+          readOnly={readOnly}
+          maxWidth={`calc(100vw - ${open ? `${sidebarSize}px` : '52px'})`}
+          value={content}
+          extensions={[
+            getLanguageExtension(),
+            autocompletion(),
+          ]}
+          onChange={value => {
+            handleContent(value)
+          }}
+        />
+      )}
+    </SidebarContext.Consumer>
   }
 
   if (ext === 'md') {

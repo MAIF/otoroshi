@@ -211,14 +211,13 @@ class Plugin extends React.Component {
         if (!props.new)
           onPluginClick(pluginId)
       }}
-      onDoubleClick={e => {
-        e.stopPropagation()
-        props.enablePluginRenaming(pluginId)
-      }}
+    // onDoubleClick={e => {
+    //   e.stopPropagation()
+    //   props.enablePluginRenaming(pluginId)
+    // }}
     >
 
       {props.new && <>
-        {/* <i className='fas fa-file ' style={{ minWidth: 18, marginLeft: -4, marginRight: 4 }} /> */}
         <div style={{ minWidth: 18, marginLeft: -4, marginRight: 4 }}>
           {LOGOS[props.type]}
         </div>
@@ -248,5 +247,4 @@ class Plugin extends React.Component {
     </button>
   }
 }
-
 export default PluginManager;

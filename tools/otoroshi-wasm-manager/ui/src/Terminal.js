@@ -3,6 +3,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { solarizedDark } from '@uiw/codemirror-theme-solarized';
 
 import io from 'socket.io-client';
+import { SidebarContext } from './Sidebar';
 const socket = io();
 
 function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, selectedPlugin, onLoadConfigurationFile, configFiles }) {
@@ -83,20 +84,24 @@ function Terminal({ sizeTerminal, toggleResizingTerminal, changeTerminalSize, se
       </div>
     </div>
 
-    <CodeMirror
-      ref={ref}
-      maxWidth='calc(100vw - 250px)'
-      height={`calc(${(sizeTerminal) * 100}vh)`}
-      value={content}
-      extensions={[]}
-      theme={solarizedDark}
-      readOnly={true}
-      editable={false}
-      basicSetup={{
-        lineNumbers: false,
-        dropCursor: false
-      }}
-    />
+    <SidebarContext.Consumer>
+      {({ open, sidebarSize }) => (
+        <CodeMirror
+          ref={ref}
+          maxWidth={`calc(100vw - ${open ? `${sidebarSize}px` : '52px'})`}
+          height={`calc(${(sizeTerminal) * 100}vh)`}
+          value={content}
+          extensions={[]}
+          theme={solarizedDark}
+          readOnly={true}
+          editable={false}
+          basicSetup={{
+            lineNumbers: false,
+            dropCursor: false
+          }}
+        />
+      )}
+    </SidebarContext.Consumer>
   </div>
 }
 

@@ -6,6 +6,8 @@ import Terminal from './Terminal';
 import { Run } from './Run';
 import { PublishView } from './PublishView';
 import { TabsHeader } from './TabsHeader';
+import { Sidebar, SidebarContext } from './Sidebar';
+import { LOGOS } from './FilesLogo';
 
 // close the publisher when selecteing other plugins
 
@@ -14,6 +16,10 @@ function TabsManager({ plugins, ...props }) {
   const [currentTab, setCurrentTab] = useState()
   const [sizeTerminal, changeTerminalSize] = useState(!props.selectedPlugin ? 0 : .3)
   const [resizingTerminal, toggleResizingTerminal] = useState(false)
+  const [sidebarContext, setSidebarContext] = useState({
+    open: false,
+    ButtonWhenHidden: () => null
+  })
 
   const [currentPlugin, setCurrentPlugin] = useState()
 
@@ -52,99 +58,127 @@ function TabsManager({ plugins, ...props }) {
       }
     }}
   >
-    <div className='d-flex flex-column' style={{ background: 'rgb(228,229,230)' }}>
-      <h1 style={{
-        fontWeight: 'bold',
-        textTransform: 'uppercase',
-        background: '#f9b000',
-        color: 'white',
-        height: 42
-      }} className="p-2 m-0 d-flex align-items-center">OTO WASM</h1>
-      <PluginManager
-        plugins={plugins}
-        setSelectedPlugin={props.setSelectedPlugin}
-        selectedPlugin={props.selectedPlugin}
-        reloadPlugins={props.reloadPlugins}
-        onPluginClick={props.onPluginClick}
-        onNewPlugin={props.onNewPlugin}
-        setFilename={props.onPluginNameChange}
-        removePlugin={props.removePlugin}
-        enablePluginRenaming={props.enablePluginRenaming}
-      />
-      {props.selectedPlugin && <FileManager
-        removeFile={props.removeFile}
-        currentTab={currentTab}
-        selectedPlugin={props.selectedPlugin}
-        files={props.selectedPlugin.files}
-        configFiles={props.configFiles}
-        onNewFile={props.onNewFile}
-        onFileChange={props.onFileChange}
-        onFileClick={file => {
-          if (!tabs.find(f => f === file.filename))
-            setTabs([...tabs, file.filename]);
+    <SidebarContext.Provider value={sidebarContext}>
+      <>
+        <Sidebar setContext={setSidebarContext} context={sidebarContext}>
+          <SidebarHeader />
+          <SidebarContext.Consumer>
+            {({ open, ButtonWhenHidden }) => !open ? ButtonWhenHidden() : <>
+              <PluginManager
+                plugins={plugins}
+                setSelectedPlugin={props.setSelectedPlugin}
+                selectedPlugin={props.selectedPlugin}
+                reloadPlugins={props.reloadPlugins}
+                onPluginClick={props.onPluginClick}
+                onNewPlugin={props.onNewPlugin}
+                setFilename={props.onPluginNameChange}
+                removePlugin={props.removePlugin}
+                enablePluginRenaming={props.enablePluginRenaming}
+              />
+              {props.selectedPlugin && <FileManager
+                removeFile={props.removeFile}
+                currentTab={currentTab}
+                selectedPlugin={props.selectedPlugin}
+                files={props.selectedPlugin.files}
+                configFiles={props.configFiles}
+                onNewFile={props.onNewFile}
+                onFileChange={props.onFileChange}
+                onFileClick={file => {
+                  if (!tabs.find(f => f === file.filename))
+                    setTabs([...tabs, file.filename]);
 
-          setCurrentTab(file.filename)
-        }} />}
+                  setCurrentTab(file.filename)
+                }} />}
 
-      {props.selectedPlugin && <button type="button" className='btn btn-outline-danger m-3' style={{ fontSize: '.8rem' }}
-        onClick={props.removePlugin}>
-        Remove {props.selectedPlugin.filename}
-      </button>}
-    </div>
+              {open && <button type="button" className='d-flex align-items-center justify-content-center py-3' style={{
+                background: '#ddd',
+                border: 'none'
+              }} onClick={() => setSidebarContext({ ...sidebarContext, open: false })}>
+                <i className="fa fa-chevron-left" />
+              </button>}
 
-    <div style={{ flex: 1, height: '100vh', position: 'relative' }} className="d-flex flex-column">
-      <div className='d-flex flex-column scroll-container' style={{ flex: 1 - sizeTerminal, overflow: 'scroll' }}>
-        <TabsHeader
-          {...props}
-          showPlaySettings={() => {
-            setTab('Runner');
-            props.showPlaySettings();
-          }}
-          showPublishSettings={() => {
-            setTab('Publish');
-            props.showPublishSettings();
-          }}>
-          <Tabs
-            tabs={tabs}
-            configFiles={props.configFiles}
-            selectedPlugin={props.selectedPlugin}
-            setCurrentTab={setCurrentTab}
-            setTabs={setTabs}
-            currentTab={currentTab} />
-        </TabsHeader>
-        {currentTab === 'Runner' &&
-          <Run
-            onClose={props.onEditorStateReset}
-            plugins={plugins}
-            selectedPlugin={props.selectedPlugin} />}
-        {currentTab === 'Publish' &&
-          <PublishView
-            onClose={props.onEditorStateReset}
-            plugins={plugins}
-            selectedPlugin={props.selectedPlugin}
-            createManifest={props.createManifest}
-            createReadme={props.createReadme}
-            openTab={setTab}
-            publish={props.publish}
-          />}
-        {props.selectedPlugin ? <Contents
-          tabs={tabs}
-          configFiles={props.configFiles}
-          selectedPlugin={props.selectedPlugin}
-          handleContent={newContent => props.handleContent(currentTab, newContent)}
-          setCurrentTab={setCurrentTab}
-          currentTab={currentTab} /> : null}
-      </div>
-      {props.selectedPlugin && <Terminal
-        selectedPlugin={props.selectedPlugin}
-        sizeTerminal={sizeTerminal}
-        changeTerminalSize={changeTerminalSize}
-        toggleResizingTerminal={toggleResizingTerminal}
-        onLoadConfigurationFile={props.onLoadConfigurationFile}
-        configFiles={props.configFiles}
-      />}
-    </div>
+              {props.selectedPlugin && <button type="button" className='btn btn-outline-danger m-3' style={{ fontSize: '.8rem' }}
+                onClick={props.removePlugin}>
+                Remove {props.selectedPlugin.filename}
+              </button>}
+            </>}
+          </SidebarContext.Consumer>
+        </Sidebar>
+
+        <SidebarContext.Consumer>
+          {({ open, sidebarSize }) => (
+            <div
+              style={{ flex: 1, height: '100vh', position: 'relative', marginLeft: open ? `${sidebarSize}px` : '52px' }}
+              className="d-flex flex-column">
+              <div className='d-flex flex-column scroll-container' style={{ flex: 1 - sizeTerminal, overflow: 'scroll' }}>
+                <TabsHeader
+                  {...props}
+                  showPlaySettings={() => {
+                    setTab('Runner');
+                    props.showPlaySettings();
+                  }}
+                  showPublishSettings={() => {
+                    setTab('Publish');
+                    props.showPublishSettings();
+                  }}>
+                  <Tabs
+                    tabs={tabs}
+                    configFiles={props.configFiles}
+                    selectedPlugin={props.selectedPlugin}
+                    setCurrentTab={setCurrentTab}
+                    setTabs={setTabs}
+                    currentTab={currentTab} />
+                </TabsHeader>
+                {currentTab === 'Runner' &&
+                  <Run
+                    onClose={props.onEditorStateReset}
+                    plugins={plugins}
+                    selectedPlugin={props.selectedPlugin} />}
+                {currentTab === 'Publish' &&
+                  <PublishView
+                    onClose={props.onEditorStateReset}
+                    plugins={plugins}
+                    selectedPlugin={props.selectedPlugin}
+                    createManifest={props.createManifest}
+                    createReadme={props.createReadme}
+                    openTab={setTab}
+                    publish={props.publish}
+                  />}
+                {props.selectedPlugin ? <Contents
+                  tabs={tabs}
+                  configFiles={props.configFiles}
+                  selectedPlugin={props.selectedPlugin}
+                  handleContent={newContent => props.handleContent(currentTab, newContent)}
+                  setCurrentTab={setCurrentTab}
+                  currentTab={currentTab} /> : null}
+              </div>
+              {props.selectedPlugin && <Terminal
+                selectedPlugin={props.selectedPlugin}
+                sizeTerminal={sizeTerminal}
+                changeTerminalSize={changeTerminalSize}
+                toggleResizingTerminal={toggleResizingTerminal}
+                onLoadConfigurationFile={props.onLoadConfigurationFile}
+                configFiles={props.configFiles}
+              />}
+            </div>
+          )}
+        </SidebarContext.Consumer>
+      </>
+    </SidebarContext.Provider>
   </div>
+}
+
+function SidebarHeader({ }) {
+  return <SidebarContext.Consumer>
+    {({ open }) => open ? <h1 style={{
+      fontWeight: 'bold',
+      textTransform: 'uppercase',
+      background: '#f9b000',
+      color: 'white',
+      height: 42
+    }} className="p-2 m-0 d-flex align-items-center">OTO WASM</h1> : LOGOS.logo
+    }
+  </SidebarContext.Consumer>
 }
 
 function Tabs({ tabs, setCurrentTab, setTabs, currentTab, selectedPlugin, configFiles }) {
