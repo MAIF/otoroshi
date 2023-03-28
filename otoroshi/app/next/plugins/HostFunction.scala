@@ -202,8 +202,13 @@ object Http extends AwaitCapable {
             .withRequestTimeout(Duration((context \ "request_timeout").asOpt[Long].getOrElse(hostData.env.clusterConfig.worker.timeout), TimeUnit.MILLISECONDS))
             .withFollowRedirects((context \ "follow_redirects").asOpt[Boolean].getOrElse(false))
             .withQueryStringParameters((context \ "query").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
-          val request = (context \ "body").asOpt[String] match {
-            case Some(body) => builder.withBody(body)
+          val bodyAsBytes = context.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
+          val bodyBase64 = context.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
+          val bodyJson = context.select("body_json").asOpt[JsValue].map(str => ByteString(str.stringify))
+          val bodyStr = context.select("body_str").asOpt[String].orElse(context.select("body").asOpt[String]).map(str => ByteString(str))
+          val body: Option[ByteString] = bodyStr.orElse(bodyJson).orElse(bodyBase64).orElse(bodyAsBytes)
+          val request = body match {
+            case Some(bytes) => builder.withBody(bytes)
             case None => builder
           }
           val out = Await.result(request
@@ -251,10 +256,10 @@ object DataStore extends AwaitCapable {
         val key = Utils.contextParamsToString(plugin, params:_*)
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
         val future = env.datastores.rawDataStore.allMatching(s"${hostData.env.storageRoot}:$path$key").map { values =>
-          values
+          values.map(v => JsString(v.encodeBase64.utf8String))
         }
-        val out: Seq[ByteString] = await(future)
-        plugin.returnBytes(returns(0), out.flatten.toArray)
+        val out: ByteString = ByteString(JsArray(await(future)).stringify)
+        plugin.returnBytes(returns(0), out.toArray)
       }
     }
   }
