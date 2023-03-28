@@ -370,6 +370,10 @@ router.post('/:id/build', async (req, res) => {
                 } else {
                   (plugin.type === 'opa' ? InformationsReader.extractOPAInformations(folder) : Promise.resolve({}))
                     .then(metadata => {
+                      // BuildingJob.checkIfBinaryExists(`${pluginName}-${pluginVersion}`)
+                      //   .then(exists => {
+
+                      //   })
                       BuildingJob.addBuildToQueue({
                         folder,
                         plugin: pluginId,

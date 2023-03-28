@@ -453,6 +453,27 @@ class App extends React.Component {
       })
   }
 
+  onDownload = () => {
+    const jsZip = new JsZip()
+
+    this.state.selectedPlugin.files.forEach(file => {
+      jsZip.file(`${file.filename}`, file.content);
+    })
+
+    jsZip.generateAsync({ type: "blob" })
+      .then(zip => {
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(zip);
+        link.setAttribute(
+          'download',
+          `${this.state.selectedPlugin.filename}.zip`,
+        );
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+      })
+  }
+
   onEditorStateReset = () => {
     this.setState({
       editorState: undefined
@@ -586,6 +607,7 @@ class App extends React.Component {
         handleContent={this.handleContent}
         onSave={this.onSave}
         onBuild={this.onBuild}
+        onDownload={this.onDownload}
         onEditorStateReset={this.onEditorStateReset}
         showPlaySettings={this.showPlaySettings}
         showPublishSettings={this.showPublishSettings}
