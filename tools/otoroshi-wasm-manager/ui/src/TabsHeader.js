@@ -38,7 +38,9 @@ function Header({
 }
 
 function Save({ onSave }) {
-  return <button type="button"
+  return <button
+    type="button"
+    tooltip="Save plugin"
     style={{ border: 'none', background: 'none' }}
     className="pe-2"
     onClick={onSave}>
@@ -70,6 +72,7 @@ function Release({ onBuild }) {
 
 function Download({ onDownload }) {
   return <button type="button"
+    tooltip="Download plugin as zip"
     style={{ border: 'none', background: 'none' }}
     className="pe-2"
     onClick={onDownload}>
@@ -79,6 +82,8 @@ function Download({ onDownload }) {
 
 function Publish({ showPublishSettings }) {
   return <button type="button"
+    tooltip="Publish to WAPM.io"
+    tooltipMargin="-80px"
     style={{ border: 'none', background: 'none' }}
     className="pe-2"
     onClick={showPublishSettings}>
@@ -88,6 +93,7 @@ function Publish({ showPublishSettings }) {
 
 function Play({ showPlaySettings }) {
   return <button type="button"
+    tooltip="Run"
     style={{ border: 'none', background: 'none' }}
     className="pe-2"
     onClick={showPlaySettings}
