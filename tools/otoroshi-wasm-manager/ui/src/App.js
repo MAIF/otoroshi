@@ -437,13 +437,15 @@ class App extends React.Component {
       return this.state.selectedPlugin.type;
   }
 
-  onBuild = () => {
+  onBuild = release => {
     Service.savePlugin(this.state.selectedPlugin)
       .then(() => {
-        Service.buildPlugin(this.state.selectedPlugin, this.getPluginType())
+        Service.buildPlugin(this.state.selectedPlugin, this.getPluginType(), release)
           .then(res => {
             if (res.message) {
               toast.info(res.message)
+            } else if (res.error) {
+              toast.error(res.error)
             } else if (res.alreadyExists) {
               toast.warn("Your plugin is already building or already in the queue.");
             } else {

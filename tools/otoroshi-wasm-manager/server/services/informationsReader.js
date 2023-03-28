@@ -25,13 +25,13 @@ async function extractInformations(folder, pluginType) {
     } else if (isRustBuild) {
       const informations = toml.parse(data);
       return {
-        pluginName: informations.package.name.replace('-', '_'),
+        pluginName: informations.package.name,//.replace('-', '_'),
         pluginVersion: informations.package.version
       };
     } else { // ts and js
       const informations = JSON.parse(data);
       return {
-        pluginName: informations.name.replace('-', '_'),
+        pluginName: informations.name, //.replace('-', '_'),
         pluginVersion: informations.version
       }
     }

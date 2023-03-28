@@ -80,10 +80,10 @@ export const savePlugin = async plugin => {
   })
 }
 
-export const buildPlugin = async (plugin, pluginType) => {
+export const buildPlugin = async (plugin, pluginType, release) => {
   const bytes = await buildZip(plugin)
 
-  return rawFetch(`/plugins/${plugin.pluginId}/build?plugin_type=${pluginType}`, {
+  return rawFetch(`/plugins/${plugin.pluginId}/build?plugin_type=${pluginType}&release=${release}`, {
     method: 'POST',
     body: bytes,
     headers: {

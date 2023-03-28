@@ -77,7 +77,12 @@ function Header({ onNewFile, selectedPlugin, readOnly }) {
       <span className='fw-bold'>{selectedPlugin?.filename}</span>
     </div>
 
-    {!readOnly && <i className='fas fa-file-circle-plus' />}
+    {!readOnly && <div style={{
+      background: '#eee',
+      borderRadius: 4
+    }}>
+      <i className='fas fa-file-circle-plus p-1' />
+    </div>}
   </div>
 }
 

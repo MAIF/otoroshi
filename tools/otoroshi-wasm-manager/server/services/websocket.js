@@ -6,12 +6,12 @@ const createLogsWebSocket = server => {
   io = new Server(server);
 }
 
-const emit = (channel, group, message) => {
-  io.emit(channel, `[${group}] ${message}`)
+const emit = (channel, release, message) => {
+  io.emit(channel, `[${release ? "RELEASE" : "BUILD"}] ${message}`)
 }
 
-const emitError = (channel, group, message) => {
-  io.emit(channel, `ERROR - [${group}] ${message}`)
+const emitError = (channel, release, message) => {
+  io.emit(channel, `ERROR - [${release ? "RELEASE" : "BUILD"}] ${message}`)
 }
 
 module.exports = {

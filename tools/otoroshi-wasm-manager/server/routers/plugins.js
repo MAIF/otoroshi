@@ -329,6 +329,7 @@ router.delete('/:id', async (req, res) => {
 
 router.post('/:id/build', async (req, res) => {
   const pluginId = req.params.id;
+  const release = req.query.release === 'true';
 
   const data = await UserManager.getUser(req)
   let plugin = (data.plugins || []).find(p => p.pluginId === pluginId);
@@ -351,14 +352,12 @@ router.post('/:id/build', async (req, res) => {
             .update(req.body.toString())
             .digest('hex');
 
-          if (plugin['last_hash'] !== zipHash) {
-            log.info(`different: ${zipHash} - ${plugin['last_hash']}`);
-
+          if (release || plugin['last_hash'] !== zipHash) {
             FileSystem.checkIfInformationsFileExists(folder, plugin.type)
               .then(() => InformationsReader.extractInformations(folder, plugin.type))
               .then(({ pluginName, pluginVersion, err }) => {
                 if (err) {
-                  WebSocket.emitError(plugin.pluginId, "BUILD", err);
+                  WebSocket.emitError(plugin.pluginId, release, err);
                   FileSystem.removeFolder('build', folder)
                     .then(() => {
                       res
@@ -370,27 +369,39 @@ router.post('/:id/build', async (req, res) => {
                 } else {
                   (plugin.type === 'opa' ? InformationsReader.extractOPAInformations(folder) : Promise.resolve({}))
                     .then(metadata => {
-                      // BuildingJob.checkIfBinaryExists(`${pluginName}-${pluginVersion}`)
-                      //   .then(exists => {
+                      const wasmName = `${pluginName}-${pluginVersion}${release ? '' : '-dev'}`;
+                      BuildingJob.checkIfBinaryExists(wasmName, release)
+                        .then(exists => {
+                          if (exists) {
+                            FileSystem.removeFolder('build', folder)
+                              .then(() => {
+                                res
+                                  .status(400)
+                                  .json({
+                                    error: 'binary already exists'
+                                  });
+                              });
+                          } else {
+                            BuildingJob.addBuildToQueue({
+                              folder,
+                              plugin: pluginId,
+                              wasmName,
+                              user: req.user ? req.user.email : 'admin@otoroshi.io',
+                              zipHash,
+                              isRustBuild,
+                              pluginType: plugin.type,
+                              metadata,
+                              release
+                            });
 
-                      //   })
-                      BuildingJob.addBuildToQueue({
-                        folder,
-                        plugin: pluginId,
-                        wasmName: `${pluginName}-${pluginVersion}`,
-                        user: req.user ? req.user.email : 'admin@otoroshi.io',
-                        zipHash,
-                        isRustBuild,
-                        pluginType: plugin.type,
-                        metadata
-                      });
-
-                      res.json({
-                        queue_id: folder
-                      });
+                            res.json({
+                              queue_id: folder
+                            });
+                          }
+                        })
                     })
                     .catch(err => {
-                      WebSocket.emitError(plugin.pluginId, "BUILD", err)
+                      WebSocket.emitError(plugin.pluginId, release, err)
                       res
                         .status(400)
                         .json({
@@ -400,7 +411,7 @@ router.post('/:id/build', async (req, res) => {
                 }
               })
               .catch(err => {
-                WebSocket.emitError(plugin.pluginId, "BUILD", err);
+                WebSocket.emitError(plugin.pluginId, release, err);
                 FileSystem.removeFolder('build', folder)
                   .then(() => {
                     res

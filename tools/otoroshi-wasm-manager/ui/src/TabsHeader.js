@@ -28,6 +28,7 @@ function Header({
       {showActions && <>
         <Save onSave={onSave} />
         <Build onBuild={onBuild} />
+        <Release onBuild={onBuild} />
         <Download onDownload={onDownload} />
         {selectedPluginType !== 'go' && <Publish showPublishSettings={showPublishSettings} />}
       </>}
@@ -46,11 +47,24 @@ function Save({ onSave }) {
 }
 
 function Build({ onBuild }) {
-  return <button type="button"
+  return <button
+    type="button"
+    tooltip="Build"
     style={{ border: 'none', background: 'none' }}
     className="pe-2"
-    onClick={onBuild}>
+    onClick={() => onBuild(false)}>
     <i className='fas fa-hammer' />
+  </button>
+}
+
+function Release({ onBuild }) {
+  return <button
+    type="button"
+    tooltip="Release"
+    style={{ border: 'none', background: 'none' }}
+    className="pe-2"
+    onClick={() => onBuild(true)}>
+    <i className='fas fa-rocket' />
   </button>
 }
 

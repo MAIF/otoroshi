@@ -37,7 +37,7 @@ const build = ({ plugin, zipString }) => {
         onFailedProcess(folder, -1, Promise.reject);
       } else {
         return new Promise((resolve, reject) => {
-          WebSocket.emit(plugin, "BUILD", `Running command ${PUBLISH_COMMAND} ${PUBLISH_ARGS.join(' ')} ...\n`)
+          WebSocket.emit(plugin, "PUBLISH", `Running command ${PUBLISH_COMMAND} ${PUBLISH_ARGS.join(' ')} ...\n`)
 
           const source = toml.parse(data).module[0].source;
 

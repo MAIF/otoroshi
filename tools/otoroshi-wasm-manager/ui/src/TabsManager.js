@@ -179,7 +179,7 @@ function Tabs({ tabs, setCurrentTab, setTabs, currentTab, selectedPlugin, config
 }
 
 function Contents({ tabs, setCurrentTab, currentTab, handleContent, selectedPlugin, configFiles }) {
-  return <div style={{ flex: 1, marginTop: 42, display: 'flex', flexDirection: 'column' }}>
+  return <div style={{ flex: 1, marginTop: 42, display: 'flex', flexDirection: 'column', position: 'relative' }}>
     {tabs
       .filter(tab => [...selectedPlugin.files, ...configFiles].find(f => f.filename === tab))
       .map(tab => {
@@ -200,10 +200,11 @@ function Contents({ tabs, setCurrentTab, currentTab, handleContent, selectedPlug
 
 function TabButton({ filename, onClick, selected, closeTab }) {
   return <button type="button"
-    className={`p-2 px-3 ${selected ? 'bg-light' : ''}`}
+    className={`p-2 px-3`}
     style={{
       border: 'none',
-      borderTop: selected ? '1px solid #f9b000' : 'none'
+      background: selected ? '#fff' : 'rgba(var(--bs-light-rgb),var(--bs-bg-opacity))',
+      borderTop: selected ? '3px solid #f9b000' : 'none'
     }}
     onClick={onClick}>
     {filename}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { rust } from '@codemirror/lang-rust';
 import { json } from '@codemirror/lang-json';
@@ -10,6 +10,8 @@ import { autocompletion } from '@codemirror/autocomplete';
 import { marked } from "marked";
 
 function Tab({ content, ext, handleContent, selected, readOnly }) {
+  const ref = useRef()
+
   if (!content || !selected)
     return null
 
@@ -32,6 +34,7 @@ function Tab({ content, ext, handleContent, selected, readOnly }) {
 
   const renderCodeMirror = () => {
     return <CodeMirror
+      ref={ref}
       onKeyDown={e => {
         const charCode = String.fromCharCode(e.which).toLowerCase();
 
@@ -43,7 +46,10 @@ function Tab({ content, ext, handleContent, selected, readOnly }) {
       readOnly={readOnly}
       maxWidth='calc(100vw - 250px)'
       value={content}
-      extensions={[getLanguageExtension(), autocompletion()]}
+      extensions={[
+        getLanguageExtension(),
+        autocompletion(),
+      ]}
       onChange={value => {
         handleContent(value)
       }}

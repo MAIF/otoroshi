@@ -185,7 +185,12 @@ function Header({ onNewPlugin, reloadPlugins }) {
       <span className='fw-bold'>Plugins</span>
     </div>
 
-    <i className='fas fa-plus' />
+    <div style={{
+      background: '#eee',
+      borderRadius: 4
+    }}>
+      <i className='fas fa-plus p-1' />
+    </div>
 
     {showProjectSelector && <NewPluginModal
       onNewPlugin={onNewPlugin}

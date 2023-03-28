@@ -51,7 +51,7 @@ const addBuildToQueue = props => {
   }
 }
 
-const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild, pluginType, metadata }) => {
+const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild, pluginType, metadata, release }) => {
   log.info(`Starting build ${folder}`)
 
   const root = process.cwd()
@@ -65,7 +65,7 @@ const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild, pluginTyp
         const stdoutStream = FileSystem.createFolderAtPath(path.join(logsFolder, 'stdout.log'));
         const stderrStream = FileSystem.createFolderAtPath(path.join(logsFolder, 'stderr.log'));
 
-        WebSocket.emit(plugin, "BUILD", 'Starting build ...\n')
+        WebSocket.emit(plugin, release, 'Starting build ...\n')
 
         const { commands, args } = (pluginType === 'rust' ? {
           commands: CARGO_BUILD,
@@ -87,16 +87,16 @@ const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild, pluginTyp
         commands
           .reduce((promise, fn, index) => promise.then(() => {
             return new Promise(childResolve => {
-              WebSocket.emit(plugin, "BUILD", `Running command ${fn} ${args[index].join(' ')} ...\n`)
+              WebSocket.emit(plugin, release, `Running command ${fn} ${args[index].join(' ')} ...\n`)
 
               const child = spawn(fn, args[index], { cwd: buildFolder })
 
-              addChildListener(plugin, child, stdoutStream, stderrStream)
+              addChildListener(plugin, child, stdoutStream, stderrStream, release)
 
               child.on('close', (code) => {
                 if (code === 0) {
                   if (commands.length - 1 === index) {
-                    onSuccessProcess(plugin, user, buildFolder, logsFolder, wasmName, zipHash, resolve, reject, code, isRustBuild);
+                    onSuccessProcess(plugin, user, buildFolder, logsFolder, wasmName, zipHash, resolve, reject, code, isRustBuild, release);
                   } else {
                     childResolve()
                   }
@@ -111,23 +111,23 @@ const build = ({ folder, plugin, wasmName, user, zipHash, isRustBuild, pluginTyp
     })
 }
 
-const addChildListener = (plugin, child, stdoutStream, stderrStream) => {
+const addChildListener = (plugin, child, stdoutStream, stderrStream, release) => {
   child.stdout.on('data', data => {
-    WebSocket.emit(plugin, "BUILD", data)
+    WebSocket.emit(plugin, release, data)
     stdoutStream.write(data)
   });
   child.stderr.on('data', data => {
-    WebSocket.emit(plugin, "BUILD", data)
+    WebSocket.emit(plugin, release, data)
     stderrStream.write(data)
   });
   child.on('error', (error) => {
-    WebSocket.emitError(plugin, "BUILD", error)
+    WebSocket.emitError(plugin, release, error)
     stderrStream.write(`${error.stack}\n`)
   });
 }
 
-const onSuccessProcess = (plugin, user, buildFolder, logsFolder, wasmName, zipHash, resolve, reject, code, isRustBuild) => {
-  WebSocket.emit(plugin, "BUILD", "Build done.\n")
+const onSuccessProcess = (plugin, user, buildFolder, logsFolder, wasmName, zipHash, resolve, reject, code, isRustBuild, release) => {
+  WebSocket.emit(plugin, release, "Build done.\n")
   try {
     const newFilename = `${wasmName}.wasm`
     WebSocket.emit(plugin, "PACKAGE", "Starting package ...\n")
@@ -255,10 +255,27 @@ function updateHashOfPlugin(user, plugin, newHash, wasm) {
       ...data,
       plugins: data.plugins.map(d => {
         if (d.pluginId === plugin) {
-          const versions = d.versions || [];
+          let versions = d.versions || [];
 
-          if (!versions.includes(wasm))
-            versions.push(wasm)
+          // convert legacy array
+          if (versions.length > 0 && isAString(versions[0])) {
+            versions = versions.map(name => ({ name }))
+          }
+
+          const index = versions.findIndex(item => item.name === wasm);
+          if (index === -1)
+            versions.push({
+              name: wasm,
+              updated_at: Date.now(),
+              creator: user
+            })
+          else {
+            versions[index] = {
+              ...versions[index],
+              updated_at: Date.now(),
+              creator: user
+            }
+          }
 
           return {
             ...d,
@@ -273,9 +290,33 @@ function updateHashOfPlugin(user, plugin, newHash, wasm) {
     }))
 }
 
+const isAString = variable => typeof variable === 'string' || variable instanceof String;
+
+const checkIfBinaryExists = (name, release) => {
+  const { s3, Bucket } = S3.state()
+
+  if (!release) {
+    return Promise.resolve(false);
+  } else {
+    return new Promise(resolve => {
+      s3.getObject({
+        Bucket,
+        Key: `${name}.wasm`
+      }, err => {
+        if (err && err.code === 'NoSuchKey') {
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      })
+    })
+  }
+}
+
 module.exports = {
   BuildingJob: {
     addBuildToQueue,
-    buildIsAlreadyRunning
+    buildIsAlreadyRunning,
+    checkIfBinaryExists
   }
 }
