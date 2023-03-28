@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Table, BooleanInput, SelectInput } from '../components/inputs';
-import { NgBoxBooleanRenderer } from '../components/nginputs/inputs'; 
+import { NgBoxBooleanRenderer } from '../components/nginputs/inputs';
 import WasmPlugin from '../forms/ng_plugins/WasmPlugin';
 import { Proxy } from '../components/Proxy';
 
@@ -43,26 +43,29 @@ export class WasmSourcePath extends Component {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-    }).catch(e => ({ json: () => []})).then(r => r.json()).then(plugins => {
+    }).catch(e => ({ json: () => [] })).then(r => r.json()).then(plugins => {
       const values = plugins
         .map((plugin) => plugin.versions || [])
         .flat()
         .map((plugin) => {
-          const parts = plugin.split('.wasm');
+          const wasmName = (this.isAString(plugin) ? plugin : plugin.name) || "";
+          const parts = wasmName.split('.wasm');
           return {
-            label: parts[0],
-            value: plugin,
+            label: `${parts[0]} - ${parts[0].endsWith('-dev') ? '[DEV]' : '[RELEASE]'}`,
+            value: this.isAString(plugin) ? plugin : plugin.name,
           };
         });
       this.setState({ manager: values });
     })
     BackOfficeServices.findAllWasmPlugins().then(plugins => {
-      this.setState({ local: plugins.map(p => ({ label: p.name, value: p.id }))})
+      this.setState({ local: plugins.map(p => ({ label: p.name, value: p.id })) })
     })
   }
 
+  isAString = variable => typeof variable === 'string' || variable instanceof String;
+
   render() {
-    const rawValue = this.props.rawValue ||  {
+    const rawValue = this.props.rawValue || {
       config: {
         source: {
           kind: 'Unknown',
@@ -70,6 +73,7 @@ export class WasmSourcePath extends Component {
         }
       }
     }
+    console.log(this.props.value, this.state.manager)
     const source = this.props.rootValue || rawValue.config.source;
     const kind = source.kind.toLowerCase();
     if (kind === 'unknown') {
@@ -153,12 +157,12 @@ export class WasmPluginsPage extends Component {
   };
 
   formFlow = (value) => [
-    '_loc', 
-    'id', 
-    'name', 
-    'description', 
+    '_loc',
+    'id',
+    'name',
+    'description',
     'steps',
-    'tags', 
+    'tags',
     'metadata',
     '<<<Wasm source',
     'config.source.kind',
@@ -310,64 +314,64 @@ export class WasmPluginsPage extends Component {
         suffix: 'pages of 32 Kb'
       }
     },
-    'config.functionName': { 
+    'config.functionName': {
       type: 'string',
       props: {
         label: 'Function name',
         placeholder: 'transform_request'
       }
     },
-    'config.config': { 
+    'config.config': {
       type: 'object',
       props: {
         label: 'Config. map'
-      } 
+      }
     },
-    'config.allowedHosts': { 
+    'config.allowedHosts': {
       type: 'array',
       display: (v) => v.config.authorizations.httpAccess,
       props: {
         label: 'Allow http hosts'
       }
     },
-    'config.allowedPaths': { 
+    'config.allowedPaths': {
       type: 'object',
       display: (v) => v.config.wasi,
       props: {
         label: 'Allow file paths'
       }
     },
-    'config.preserve': { 
+    'config.preserve': {
       type: 'bool',
       props: {
         label: 'Preserve VMs'
       }
     },
-    'config.wasi': { 
+    'config.wasi': {
       type: 'bool',
       props: {
         label: 'WASI'
       }
     },
-    'config.authorizations.httpAccess': { 
+    'config.authorizations.httpAccess': {
       type: 'bool',
       props: {
         label: 'Http Access'
       }
     },
-    'config.authorizations.proxyStateAccess': { 
+    'config.authorizations.proxyStateAccess': {
       type: 'bool',
       props: {
         label: 'Proxy state access'
       }
     },
-    'config.authorizations.configurationAccess': { 
+    'config.authorizations.configurationAccess': {
       type: 'bool',
       props: {
         label: 'Configuration access'
       }
     },
-    'config.authorizations.proxyHttpCallTimeout': { 
+    'config.authorizations.proxyHttpCallTimeout': {
       type: 'number',
       display: (v) => v.config.authorizations.httpAccess,
       props: {
@@ -375,7 +379,7 @@ export class WasmPluginsPage extends Component {
         suffix: 'millis.'
       }
     },
-    'config.authorizations.globalDataStoreAccess': { 
+    'config.authorizations.globalDataStoreAccess': {
       type: WasmDataRights,
       props: {
         boxWidth: 400,
@@ -383,7 +387,7 @@ export class WasmPluginsPage extends Component {
         property: 'globalDataStoreAccess',
       }
     },
-    'config.authorizations.pluginDataStoreAccess': { 
+    'config.authorizations.pluginDataStoreAccess': {
       type: WasmDataRights,
       props: {
         boxWidth: 400,
@@ -391,7 +395,7 @@ export class WasmPluginsPage extends Component {
         property: 'pluginDataStoreAccess',
       }
     },
-    'config.authorizations.globalMapAccess': { 
+    'config.authorizations.globalMapAccess': {
       type: WasmDataRights,
       props: {
         boxWidth: 400,
@@ -399,7 +403,7 @@ export class WasmPluginsPage extends Component {
         property: 'globalMapAccess',
       }
     },
-    'config.authorizations.pluginMapAccess': { 
+    'config.authorizations.pluginMapAccess': {
       type: WasmDataRights,
       props: {
         boxWidth: 400,
