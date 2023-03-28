@@ -251,10 +251,10 @@ object DataStore extends AwaitCapable {
         val key = Utils.contextParamsToString(plugin, params:_*)
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
         val future = env.datastores.rawDataStore.allMatching(s"${hostData.env.storageRoot}:$path$key").map { values =>
-          Json.arr(values).stringify
+          values
         }
-        val out = await(future)
-        plugin.returnString(returns(0), out)
+        val out: Seq[ByteString] = await(future)
+        plugin.returnBytes(returns(0), out.flatten.toArray)
       }
     }
   }
@@ -282,11 +282,10 @@ object DataStore extends AwaitCapable {
       (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], hostData: EnvUserData) => {
         val key = Utils.contextParamsToString(plugin, params:_*)
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
-        val future = env.datastores.rawDataStore.get(s"${hostData.env.storageRoot}:$path$key").map { value =>
-          value.map(_.toArray).getOrElse(Array.empty[Byte])
-        }
+        val future = env.datastores.rawDataStore.get(s"${hostData.env.storageRoot}:$path$key")
         val out = await(future)
-        plugin.returnBytes(returns(0), out)
+        val bytes = out.map(_.toArray).getOrElse(Array.empty[Byte])
+        plugin.returnBytes(returns(0), bytes)
       }
     }
   }
@@ -298,12 +297,9 @@ object DataStore extends AwaitCapable {
       (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], hostData: EnvUserData) => {
         val key = Utils.contextParamsToString(plugin, params: _*)
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
-        val future = env.datastores.rawDataStore.exists(s"${hostData.env.storageRoot}:$path$key").map { value =>
-          println(value)
-          value.toString
-        }
+        val future = env.datastores.rawDataStore.exists(s"${hostData.env.storageRoot}:$path$key")
         val out = await(future)
-        plugin.returnString(returns(0), out)
+        plugin.returnInt(returns(0), if(out) 1 else 0)
       }
     }
   }
@@ -315,11 +311,8 @@ object DataStore extends AwaitCapable {
       (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], hostData: EnvUserData) => {
         val key = Utils.contextParamsToString(plugin, params: _*)
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
-        val future = env.datastores.rawDataStore.pttl(s"${hostData.env.storageRoot}:$path$key").map { value =>
-          value.toString
-        }
-        val out = await(future)
-        plugin.returnString(returns(0), out)
+        val future = env.datastores.rawDataStore.pttl(s"${hostData.env.storageRoot}:$path$key")
+        returns(0).v.i64 = await(future)
       }
     }
   }
@@ -334,11 +327,9 @@ object DataStore extends AwaitCapable {
         val key = (data \ "key").as[String]
         val value = (data \ "value").as[String]
         val ttl = (data \ "ttl").asOpt[Long]
-        val future = env.datastores.rawDataStore.setnx(s"${hostData.env.storageRoot}:$path$key", ByteString(value), ttl).map { value =>
-          value.toString
-        }
+        val future = env.datastores.rawDataStore.setnx(s"${hostData.env.storageRoot}:$path$key", ByteString(value), ttl)
         val out = await(future)
-        plugin.returnString(returns(0), out)
+        plugin.returnInt(returns(0), if(out) 1 else 0)
       }
     }
   }
@@ -352,11 +343,8 @@ object DataStore extends AwaitCapable {
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
         val future = env.datastores.rawDataStore
           .del((data \ "keys").asOpt[Seq[String]].getOrElse(Seq.empty).map(r => s"${hostData.env.storageRoot}:$path$r"))
-          .map { value =>
-            value.toString
-          }
         val out = await(future)
-        plugin.returnString(returns(0), out)
+        returns(0).v.i64 = out
       }
     }
   }
@@ -370,11 +358,9 @@ object DataStore extends AwaitCapable {
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
         val key = (data \ "key").as[String]
         val incr = (data \ "incr").asOpt[String].map(_.toInt).getOrElse((data \ "incr").asOpt[Int].getOrElse(0))
-        val future = env.datastores.rawDataStore.incrby(s"${hostData.env.storageRoot}:$path$key", incr).map { value =>
-          value.toString
-        }
+        val future = env.datastores.rawDataStore.incrby(s"${hostData.env.storageRoot}:$path$key", incr)
         val out = await(future)
-        plugin.returnString(returns(0), out)
+        returns(0).v.i64 = out
       }
     }
   }
@@ -387,12 +373,10 @@ object DataStore extends AwaitCapable {
         val data = Utils.contextParamsToJson(plugin, params: _*)
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
         val key = (data \ "key").as[String]
-        val pttl = (data \ "pttl").as[Long]
-        val future = env.datastores.rawDataStore.pexpire(s"${hostData.env.storageRoot}:$path$key", pttl).map { value =>
-          value.toString
-        }
+        val pttl = (data \ "pttl").asOpt[String].map(_.toInt).getOrElse((data \ "pttl").asOpt[Int].getOrElse(0))
+        val future = env.datastores.rawDataStore.pexpire(s"${hostData.env.storageRoot}:$path$key", pttl)
         val out = await(future)
-        plugin.returnString(returns(0), out)
+        plugin.returnInt(returns(0), if(out) 1 else 0)
       }
     }
   }
@@ -579,7 +563,7 @@ object State {
               hostData.cache.put(id, state)
           }
 
-          plugin.returnString(returns(0), Status.StatusOK.toString)
+          plugin.returnInt(returns(0), Status.StatusOK.id)
         })
       }
     }
@@ -598,9 +582,9 @@ object State {
 
           val id = pluginId.getOrElse("global")
 
-          plugin.returnString(returns(0), hostData.cache.get(id) match {
-            case Some(state) => state.get(key).map(_.utf8String).getOrElse("")
-            case None => ""
+          plugin.returnBytes(returns(0), hostData.cache.get(id) match {
+            case Some(state) => state.get(key).map(_.toArray).getOrElse(Array.empty[Byte])
+            case None => Array.empty[Byte]
           })
         })
       }
@@ -618,7 +602,10 @@ object State {
         userData.map(hostData => {
           val id = pluginId.getOrElse("global")
           plugin.returnString(returns(0), hostData.cache.get(id) match {
-            case Some(state) => Json.arr(state.toSeq).stringify
+            case Some(state) =>
+              state.foldLeft(Json.obj()) {
+                case (values, element) => values ++ Json.obj(element._1 -> element._2.encodeBase64.utf8String)
+              }.stringify
             case None => ""
           })
         })
@@ -657,7 +644,7 @@ object HostFunctions {
       State.getFunctions(config, pluginId) ++
       DataStore.getFunctions(config, pluginId) ++
       OPA.getFunctions(config, ctx)
-    
+
     functions
       .collect {
         case func if func.authorized(config.authorizations) => func.function
