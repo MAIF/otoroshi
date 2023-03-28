@@ -569,6 +569,32 @@ object State {
     }
   }
 
+  def proxyGlobalMapDel(pluginRestricted: Boolean = false, pluginId: Option[String] = None)
+                       (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[StateUserData] = {
+    HFunction.defineFunction[StateUserData](
+      if (pluginRestricted) "proxy_plugin_map_del" else "proxy_global_map_del",
+      StateUserData(env, executionContext, mat, cache).some,
+      LibExtism.ExtismValType.I64,
+      LibExtism.ExtismValType.I64, LibExtism.ExtismValType.I64) {
+      (plugin, params, returns, userData: Option[StateUserData]) => {
+        userData.map(hostData => {
+          val key = Utils.rawBytePtrToString(plugin, params(0).v.i64, params(1).v.i32)
+          val id = pluginId.getOrElse("global")
+          hostData.cache.get(id) match {
+            case Some(state) =>
+              state.remove(key)
+              hostData.cache.put(id, state)
+            case None =>
+              val state = new LegitTrieMap[String, ByteString]()
+              state.remove(key)
+              hostData.cache.put(id, state)
+          }
+          plugin.returnString(returns(0), Status.StatusOK.toString)
+        })
+      }
+    }
+  }
+
   def proxyGlobalMapGet(pluginRestricted: Boolean = false, pluginId: Option[String] = None)
                        (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[StateUserData] = {
     HFunction.defineFunction[StateUserData](
@@ -624,10 +650,12 @@ object State {
       HostFunctionWithAuthorization(proxyClusteStateGetValue(config), _.configurationAccess),
       HostFunctionWithAuthorization(getProxyConfig(config), _.configurationAccess),
 
+      HostFunctionWithAuthorization(proxyGlobalMapDel(), _.globalMapAccess.write),
       HostFunctionWithAuthorization(proxyGlobalMapSet(), _.globalMapAccess.write),
       HostFunctionWithAuthorization(proxyGlobalMapGet(), _.globalMapAccess.read),
       HostFunctionWithAuthorization(proxyGlobalMap(), _.globalMapAccess.read),
 
+      HostFunctionWithAuthorization(proxyGlobalMapDel(pluginRestricted = true, pluginId.some), _.pluginMapAccess.write),
       HostFunctionWithAuthorization(proxyGlobalMapSet(pluginRestricted = true, pluginId.some), _.pluginMapAccess.write),
       HostFunctionWithAuthorization(proxyGlobalMapGet(pluginRestricted = true, pluginId.some), _.pluginMapAccess.read),
       HostFunctionWithAuthorization(proxyGlobalMap(pluginRestricted = true, pluginId.some), _.pluginMapAccess.read),
