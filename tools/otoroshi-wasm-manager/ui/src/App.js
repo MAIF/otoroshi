@@ -334,13 +334,13 @@ class App extends React.Component {
                             const type = plugin.type === "rust" ? 'rs' : plugin.type;
                             if (fetchHostFunctionNeeded && fetchTypesNeeded) {
                               const filename = `types.${type}`;
-                              const hostFunctionsFilename = `host-functions.${type}`;
+                              const hostFunctionsFilename = `host.${type}`;
                               this.fetchedTypeToState(hostFunctionsFilename, hostFunctionsFile)
                                 .then(() => this.fetchedTypeToState(filename, typesFile));
                             } else if (fetchTypesNeeded) {
                               this.fetchedTypeToState(`types.${type}`, typesFile);
                             } else if (fetchHostFunctionNeeded) {
-                              this.fetchedTypeToState(`host-functions.${type}`, hostFunctionsFile);
+                              this.fetchedTypeToState(`host.${type}`, hostFunctionsFile);
                             }
                           });
                       });

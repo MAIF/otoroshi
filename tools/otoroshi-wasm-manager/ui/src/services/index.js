@@ -66,7 +66,7 @@ const buildZip = plugin => {
 
 export const getPluginTypes = type => f(`/templates/types/${type}`)
 
-export const getPluginHostFunctions = type => f(`/templates/host-functions/${type}`)
+export const getPluginHostFunctions = type => f(`/templates/host/${type}`)
 
 export const savePlugin = async plugin => {
   const bytes = await buildZip(plugin)

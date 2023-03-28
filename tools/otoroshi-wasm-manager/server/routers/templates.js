@@ -30,7 +30,7 @@ router.get('/wapm', (_, res) => {
   res.sendFile(path.join(__dirname, '../templates', 'wapm.toml'))
 });
 
-router.get('/host-functions/:type', (req, res) => {
+router.get('/host/:type', (req, res) => {
   if (!req.params.type) {
     res
       .status(400)
@@ -38,19 +38,19 @@ router.get('/host-functions/:type', (req, res) => {
         error: 'Missing type of project'
       })
   } else {
-    const { type } = req.params;
-    if (['go'].includes(type)) {
+    const type = req.params.type === "rust" ? "rs" : req.params.type;
+    if (['go', 'rs'].includes(type)) {
       if (process.env.MANAGER_TYPES.startsWith('file://')) {
-        const paths = [process.env.MANAGER_TYPES.replace('file://', ''), `host-functions.${type}`];
+        const paths = [process.env.MANAGER_TYPES.replace('file://', ''), `host.${type}`];
         FileSystem.existsFile(...paths)
           .then(() => {
-            res.download(FileSystem.pathsToPath(...paths), `host-functions.${type}`)
+            res.download(FileSystem.pathsToPath(...paths), `host.${type}`)
           })
           .catch(err => {
             res.status(400).json({ error: err })
           })
       } else if (process.env.MANAGER_TYPES.startsWith('http')) {
-        fetch(`${process.env.MANAGER_TYPES}/host-functions.${type}`, {
+        fetch(`${process.env.MANAGER_TYPES}/host.${type}`, {
           redirect: 'follow'
         })
           .then(r => r.json())
@@ -110,7 +110,7 @@ router.get('/types/:type', (req, res) => {
       })
   } else {
     const type = req.params.type === "rust" ? "rs" : req.params.type;
-    if (['rs', 'ts'].includes(type)) {
+    if (['rs', 'ts', 'go'].includes(type)) {
       if (process.env.MANAGER_TYPES.startsWith('file://')) {
         const paths = [process.env.MANAGER_TYPES.replace('file://', ''), `types.${type}`];
         FileSystem.existsFile(...paths)
