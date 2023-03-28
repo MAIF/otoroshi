@@ -49,6 +49,54 @@ func pointerToString(p uint64) string {
   return string(buf[:])
 }
 
+type LogLevel uint32
+
+const (
+	LogLevelTrace    LogLevel = iota
+	LogLevelDebug
+	LogLevelInfo
+	LogLevelWarn
+	LogLevelError
+	LogLevelCritical
+	LogLevelMax
+)
+
+func (bp LogLevel) String() string {
+    return []string{
+      "LogLevelTrace", 
+      "LogLevelDebug", 
+      "LogLevelInfo", 
+      "LogLevelWarn",
+      "LogLevelError", 
+      "LogLevelCritical", 
+      "LogLevelMax",
+    }[bp]
+}
+
+type Status uint32
+
+const (
+	StatusOK              Status = iota
+	StatusNotFound
+	StatusBadArgument
+	StatusEmpty
+	StatusCasMismatch
+	StatusInternalFailure
+	StatusUnimplemented
+)
+
+func (bp Status) String() string {
+    return []string{
+      "StatusOK",
+      "StatusNotFound",
+      "StatusBadArgument",
+      "StatusEmpty",
+      "StatusCasMismatch",
+      "StatusInternalFailure",
+      "StatusUnimplemented",
+    }[bp]
+}
+
 
 //export proxy_log
 func ProxyLog(logLevel LogLevel, messageData uint64, messageSize uint64) Status
