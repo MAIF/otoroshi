@@ -325,11 +325,32 @@ object DataStore extends AwaitCapable {
         val data = Utils.contextParamsToJson(plugin, params: _*)
         val path = prefix.map(p => s"wasm:$p:").getOrElse("")
         val key = (data \ "key").as[String]
-        val value = (data \ "value").as[String]
+        val value = (data \ "value").asOpt[String].map(ByteString.apply)
+          .orElse(data.select("value_base64").asOpt[String].map(s => ByteString(s).decodeBase64))
+          .get
         val ttl = (data \ "ttl").asOpt[Long]
-        val future = env.datastores.rawDataStore.setnx(s"${hostData.env.storageRoot}:$path$key", ByteString(value), ttl)
+        val future = env.datastores.rawDataStore.setnx(s"${hostData.env.storageRoot}:$path$key", value, ttl)
         val out = await(future)
         plugin.returnInt(returns(0), if(out) 1 else 0)
+      }
+    }
+  }
+
+  def proxyDataStoreSet(pluginRestricted: Boolean = false, prefix: Option[String] = None, config: WasmConfig)
+                         (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    val prefixName = if (pluginRestricted) "plugin_" else ""
+    HFunction.defineContextualFunction(s"proxy_${prefixName}datastore_set", config, None) {
+      (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], hostData: EnvUserData) => {
+        val data = Utils.contextParamsToJson(plugin, params: _*)
+        val path = prefix.map(p => s"wasm:$p:").getOrElse("")
+        val key = (data \ "key").as[String]
+        val value = (data \ "value").asOpt[String].map(ByteString.apply)
+          .orElse(data.select("value_base64").asOpt[String].map(s => ByteString(s).decodeBase64))
+          .get
+        val ttl = (data \ "ttl").asOpt[Long]
+        val future = env.datastores.rawDataStore.set(s"${hostData.env.storageRoot}:$path$key", value, ttl)
+        val out = await(future)
+        plugin.returnInt(returns(0), if (out) 1 else 0)
       }
     }
   }
@@ -387,6 +408,7 @@ object DataStore extends AwaitCapable {
       HostFunctionWithAuthorization(proxyDataStoreGet(config = config), _.globalDataStoreAccess.read),
       HostFunctionWithAuthorization(proxyDataStoreExists(config = config), _.globalDataStoreAccess.read),
       HostFunctionWithAuthorization(proxyDataStorePttl(config = config), _.globalDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreSet(config = config), _.globalDataStoreAccess.write),
       HostFunctionWithAuthorization(proxyDataStoreSetnx(config = config), _.globalDataStoreAccess.write),
       HostFunctionWithAuthorization(proxyDataStoreDel(config = config), _.globalDataStoreAccess.write),
       HostFunctionWithAuthorization(proxyDataStoreIncrby(config = config), _.globalDataStoreAccess.write),
@@ -397,6 +419,7 @@ object DataStore extends AwaitCapable {
       HostFunctionWithAuthorization(proxyDataStoreExists(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.read),
       HostFunctionWithAuthorization(proxyDataStorePttl(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.read),
       HostFunctionWithAuthorization(proxyDataStoreAllMatching(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.read),
+      HostFunctionWithAuthorization(proxyDataStoreSet(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.write),
       HostFunctionWithAuthorization(proxyDataStoreSetnx(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.write),
       HostFunctionWithAuthorization(proxyDataStoreDel(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.write),
       HostFunctionWithAuthorization(proxyDataStoreIncrby(config = config, pluginRestricted = true, prefix = pluginId.some), _.pluginDataStoreAccess.write),
