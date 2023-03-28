@@ -308,8 +308,8 @@ class App extends React.Component {
           .then(res => {
             // first case match the creation of a new plugin
             if (res.error && res.status === 404) {
-              const fetchTypesNeeded = ['ts', 'rust'].includes(plugin.type);
-              const fetchHostFunctionNeeded = ['go'].includes(plugin.type);
+              const fetchTypesNeeded = ['ts', 'rust', 'go'].includes(plugin.type);
+              const fetchHostFunctionNeeded = ['go', 'rust'].includes(plugin.type);
               Promise.all([
                 Service.getPluginTemplate(plugin.type),
                 fetchTypesNeeded ? Service.getPluginTypes(plugin.type) : Promise.resolve({ status: 200 }),
