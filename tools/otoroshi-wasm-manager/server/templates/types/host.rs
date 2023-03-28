@@ -145,8 +145,13 @@ impl Otoroshi {
   fn decode_base64(value: String) -> Vec<u8> {
     let base64_eng: general_purpose::GeneralPurpose = general_purpose::STANDARD_NO_PAD;
     let mut buffer = Vec::<u8>::new();
-    base64_eng.decode_vec(value, &mut buffer).unwrap();
-    buffer
+    match base64_eng.decode_vec(value, &mut buffer) {
+      Err(e) => {
+        Self::log(2, format!("error: {}", e));
+        buffer
+      },
+      Ok(_) => buffer
+    }
   }
 
   fn decode_base64_string(value: String) -> String {
@@ -620,7 +625,7 @@ pub struct OtoroshiHttpRequest {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OtoroshiHttpResponse {
-  pub status: i32,
+  pub status: u32,
   pub headers: Option<HashMap<String, String>>,
   pub body_base64: Option<String>,
 }

@@ -559,7 +559,10 @@ class WasmPreRoute extends NgPreRouting {
             if (error) {
               val bodyAsBytes = response.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
               val bodyBase64 = response.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
-              val bodyJson = response.select("body_json").asOpt[JsValue].map(str => ByteString(str.stringify))
+              val bodyJson = response.select("body_json").asOpt[JsValue].filter {
+                case JsNull => false
+                case _ => true
+              }.map(str => ByteString(str.stringify))
               val bodyStr = response.select("body_str").asOpt[String].orElse(response.select("body").asOpt[String]).map(str => ByteString(str))
               val body: ByteString = bodyStr.orElse(bodyJson).orElse(bodyBase64).orElse(bodyAsBytes).getOrElse(ByteString.empty)
               val headers: Map[String, String] = response
@@ -621,7 +624,10 @@ class WasmBackend extends NgBackendCall {
           }
           val bodyAsBytes = response.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
           val bodyBase64 = response.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
-          val bodyJson = response.select("body_json").asOpt[JsValue].map(str => ByteString(str.stringify))
+          val bodyJson = response.select("body_json").asOpt[JsValue].filter {
+            case JsNull => false
+            case _ => true
+          }.map(str => ByteString(str.stringify))
           val bodyStr = response.select("body_str").asOpt[String].orElse(response.select("body").asOpt[String]).map(str => ByteString(str))
           val body: Source[ByteString, _] = bodyStr.orElse(bodyJson).orElse(bodyBase64).orElse(bodyAsBytes).getOrElse(ByteString.empty).chunks(16 * 1024)
           bodyResponse(
@@ -868,7 +874,10 @@ class WasmSink extends NgRequestSink {
 
             val bodyAsBytes = response.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
             val bodyBase64 = response.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
-            val bodyJson = response.select("body_json").asOpt[JsValue].map(str => ByteString(str.stringify))
+            val bodyJson = response.select("body_json").asOpt[JsValue].filter {
+              case JsNull => false
+              case _ => true
+            }.map(str => ByteString(str.stringify))
             val bodyStr = response.select("body_str").asOpt[String].orElse(response.select("body").asOpt[String]).map(str => ByteString(str))
             val body:ByteString = bodyStr.orElse(bodyJson).orElse(bodyBase64).orElse(bodyAsBytes).getOrElse(ByteString.empty)
 

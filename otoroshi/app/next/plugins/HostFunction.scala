@@ -216,16 +216,12 @@ object Http extends AwaitCapable {
           val out = Await.result(request
             .execute()
             .map { res =>
-              val body = res.body
+              val body = res.bodyAsBytes.encodeBase64.utf8String
+              val headers: Map[String, String] = res.headers.mapValues(_.head)
               Json.obj(
                 "status" -> res.status,
-                "headers" -> res.headers
-                  .mapValues(_.head)
-                  .toSeq
-                  .filter(_._1 != "Content-Type")
-                  .filter(_._1 != "Content-Length")
-                  .filter(_._1 != "Transfer-Encoding"),
-                "body" -> body
+                "headers" -> headers,
+                "body_base64" -> body
               )
             }, Duration(hostData.config.authorizations.proxyHttpCallTimeout, TimeUnit.MILLISECONDS))
           plugin.returnString(returns(0), Json.stringify(out))
@@ -233,7 +229,7 @@ object Http extends AwaitCapable {
           plugin.returnString(returns(0), Json.stringify(Json.obj(
             "status" -> 403,
             "headers" -> Json.obj("content-type" -> "text/plain"),
-            "body" -> s"you cannot access host: ${urlHost}"
+            "body_base64" -> ByteString(s"you cannot access host: ${urlHost}").encodeBase64.utf8String
           )))
         }
       }
@@ -260,8 +256,8 @@ object DataStore extends AwaitCapable {
         val future = env.datastores.rawDataStore.allMatching(s"${hostData.env.storageRoot}:$path$key").map { values =>
           values.map(v => JsString(v.encodeBase64.utf8String))
         }
-        val out: ByteString = ByteString(JsArray(await(future)).stringify)
-        plugin.returnBytes(returns(0), out.toArray)
+        val res = await(future)
+        plugin.returnBytes(returns(0), ByteString(JsArray(res).stringify).toArray)
       }
     }
   }
