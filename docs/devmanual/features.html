@@ -340,6 +340,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     </ul>
   </li>
   <li>Support middlewares compiled to WASM</li>
+  <li>Support Open Policy Agent policies for traffic control</li>
   <li>Write your own custom middlewares
     <ul>
       <li>in scala deployed as jar files</li>
@@ -350,6 +351,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p><strong>Routes Monitoring</strong></p>
 <ul>
   <li>Active healthchecks</li>
+  <li>Route state for the last 90 days</li>
   <li>Calls tracing using W3C trace context</li>
   <li>Export alerts and events to external database
     <ul>
@@ -432,16 +434,24 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>ACME / Let&rsquo;s Encrypt support</li>
   <li>On-the-fly certificate generation based on a CA certificate without request loss</li>
   <li>JWKS exposition for public keypair</li>
+  <li>Default certificate</li>
+  <li>Customize mTLS trusted CAs in the TLS handshake</li>
+</ul>
+<p><strong>Clustering</strong></p>
+<ul>
+  <li>based on a control plane/data plane pattern</li>
+  <li>encrypted communication</li>
+  <li>backup capabilities to allow data plane to start without control plane reachable to improve resilience</li>
+  <li>relay routing to forward traffic from one network zone to others</li>
 </ul>
 <p><strong>Performances and testing</strong></p>
 <ul>
   <li>Chaos engineering</li>
-  <li>Clustering with encrypted communication
-    <ul>
-      <li>based on a control plane/data plane pattern</li>
-    </ul>
-  </li>
   <li>Scalability</li>
+  <li>Canary testing</li>
+  <li>Http client in UI</li>
+  <li>Request debugging</li>
+  <li>Traffic capture</li>
 </ul>
 <p><strong>Kubernetes integration</strong></p>
 <ul>
