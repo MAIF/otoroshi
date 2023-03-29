@@ -843,6 +843,123 @@ pub struct OtoroshiRequest {
   fn proxy_global_map(unused: u64) -&gt; u64;
 }
 </code></pre>
+<p>right know, when using the wasm manager, a default idiomatic implementation is provided for <code>TinyGo</code> and <code>Rust</code></p>
+<dl>
+  <dt>host.rs
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-rs">/// logs
+pub fn log(level: i32, msg: String)
+pub fn log_event(level: i32, function: String,  message: String)
+/// static config access api
+pub fn static_config() -&gt; Option&lt;serde_json::Map&lt;String, serde_json::Value&gt;&gt;
+pub fn static_config_at(path: &amp;str) -&gt; Option&lt;serde_json::Value&gt;
+/// global config access api
+pub fn global_config() -&gt; Option&lt;serde_json::Map&lt;String, serde_json::Value&gt;&gt;
+pub fn global_config_at(path: &amp;str) -&gt; Option&lt;serde_json::Value&gt;
+/// cluster config access api
+pub fn cluster_config() -&gt; Option&lt;serde_json::Map&lt;String, serde_json::Value&gt;&gt;
+pub fn cluster_config_value(path: &amp;str) -&gt; Option&lt;serde_json::Map&lt;String, serde_json::Value&gt;&gt; 
+pub fn cluster_config_at(path: &amp;str) -&gt; Option&lt;serde_json::Value&gt; 
+//// state access api
+pub fn state() -&gt; Option&lt;serde_json::Map&lt;String, serde_json::Value&gt;&gt;
+pub fn state_value(entity: &amp;str, id: &amp;str) -&gt; Option&lt;serde_json::Map&lt;String, serde_json::Value&gt;&gt;
+pub fn state_at(path: &amp;str) -&gt; Option&lt;serde_json::Value&gt;
+//// plugin memory api
+pub fn plugin_mem() -&gt; Option&lt;HashMap&lt;String, Vec&lt;u8&gt;&gt;&gt;
+pub fn plugin_mem_get(key: &amp;str) -&gt; Option&lt;Vec&lt;u8&gt;&gt;
+pub fn plugin_mem_del(key: &amp;str)
+pub fn plugin_mem_set(key: &amp;str, value: Vec&lt;u8&gt;)
+pub fn plugin_mem_set_string(key: &amp;str, value: String)
+pub fn plugin_mem_get_string(key: &amp;str) -&gt; Option&lt;String&gt; 
+pub fn plugin_mem_set_json(key: &amp;str, value: serde_json::Value)
+pub fn plugin_mem_get_json(key: &amp;str) -&gt; Option&lt;serde_json::Value&gt;
+pub fn plugin_mem_set_bool(key: &amp;str, value: bool)
+pub fn plugin_mem_get_bool(key: &amp;str) -&gt; Option&lt;bool&gt;
+//// shared memory api
+pub fn shared_mem() -&gt; Option&lt;HashMap&lt;String, Vec&lt;u8&gt;&gt;&gt;
+pub fn shared_mem_get(key: &amp;str) -&gt; Option&lt;Vec&lt;u8&gt;&gt;
+pub fn shared_mem_del(key: &amp;str)
+pub fn shared_mem_set(key: &amp;str, value: Vec&lt;u8&gt;)
+pub fn shared_mem_set_string(key: &amp;str, value: String)
+pub fn shared_mem_get_string(key: &amp;str) -&gt; Option&lt;String&gt;
+pub fn shared_mem_set_json(key: &amp;str, value: serde_json::Value)
+pub fn shared_mem_get_json(key: &amp;str) -&gt; Option&lt;serde_json::Value&gt;
+pub fn shared_mem_set_bool(key: &amp;str, value: bool)
+pub fn shared_mem_get_bool(key: &amp;str) -&gt; Option&lt;bool&gt;
+/// datastore access api
+pub fn datastore_set(key: &amp;str, value: Vec&lt;u8&gt;, ttl: Option&lt;u64&gt;)
+pub fn datastore_setnx(key: &amp;str, value: Vec&lt;u8&gt;, ttl: Option&lt;u64&gt;)
+pub fn datastore_get(key: &amp;str) -&gt; Option&lt;Vec&lt;u8&gt;&gt;
+pub fn datastore_exists(key: &amp;str) -&gt; bool
+pub fn datastore_pttl(key: &amp;str) -&gt; u64
+pub fn datastore_del(keys: Vec&lt;&amp;str&gt;)
+pub fn datastore_incrby(key: &amp;str, incr: u64) -&gt; u64
+pub fn datastore_pexpire(key: &amp;str, ttl: u64)
+pub fn datastore_keys(pattern: &amp;str) -&gt; Vec&lt;String&gt;
+pub fn datastore_all_matching(pattern: &amp;str) -&gt; Vec&lt;Vec&lt;u8&gt;&gt;
+pub fn datastore_all_matching_string(pattern: &amp;str) -&gt; Vec&lt;String&gt;
+pub fn datastore_all_matching_json(pattern: &amp;str) -&gt; Vec&lt;serde_json::Value&gt; 
+/// plugin scoped datastore access api
+pub fn plugin_datastore_set(key: &amp;str, value: Vec&lt;u8&gt;, ttl: Option&lt;u64&gt;)
+pub fn plugin_datastore_setnx(key: &amp;str, value: Vec&lt;u8&gt;, ttl: Option&lt;u64&gt;)
+pub fn plugin_datastore_get(key: &amp;str) -&gt; Option&lt;Vec&lt;u8&gt;&gt;
+pub fn plugin_datastore_exists(key: &amp;str) -&gt; bool
+pub fn plugin_datastore_pttl(key: &amp;str) -&gt; u64
+pub fn plugin_datastore_del(keys: Vec&lt;&amp;str&gt;)
+pub fn plugin_datastore_incrby(key: &amp;str, incr: u64) -&gt; u64
+pub fn plugin_datastore_pexpire(key: &amp;str, ttl: u64)
+pub fn plugin_datastore_keys(pattern: &amp;str) -&gt; Vec&lt;String&gt;
+pub fn plugin_datastore_all_matching(pattern: &amp;str) -&gt; Vec&lt;Vec&lt;u8&gt;&gt;
+pub fn plugin_datastore_all_matching_string(pattern: &amp;str) -&gt; Vec&lt;String&gt;
+pub fn plugin_datastore_all_matching_json(pattern: &amp;str) -&gt; Vec&lt;serde_json::Value&gt;
+/// http client api
+pub fn http_call(req: OtoroshiHttpRequest) -&gt; Option&lt;OtoroshiHttpResponse&gt;</code></pre></dd>
+  <dt>host.go
+  </dt>
+  <dd>
+  <pre class="prettyprint"><button class="snippet-button copy-snippet" title="Copy snippet to clipboard">copy</button><code class="language-go">// PLUGIN MAP 
+func ProxyPluginMapSet(key string, value string)
+func ProxyPluginMapGet(key string) []byte
+func ProxyPluginMap() map[string][]byte
+// GLOBAL PLUGIN MAP
+func ProxyGlobalMapSet(key string, value string)
+func ProxyGlobalMapGet(key string) []byte
+func ProxyGlobalMap() map[string][]byte
+// PLUGIN DATASTORE
+func ProxyPluginDatastoreKeys(key string) []byte
+func ProxyPluginDataStoreGet(key string) []byte
+func ProxyPluginDataStoreExists(key string) bool
+func ProxyPluginDataStorePttl(key string) uint64
+func ProxyPluginDataStoreSetnx(value []byte)
+func ProxyPluginDataStoreDel(keys ...string)
+func ProxyPluginDataStoreIncrby(key string, incr int)
+func ProxyPluginDataStorePexpire(key string, pttl int64)
+func ProxyPluginDataStoreAllMatching(key string) []byte
+// PROXY DATASTORE 
+func ProxyDatastoreKeys(key string) []byte
+func ProxyDataStoreGet(key string) []byte
+func ProxyDataStoreExists(key string) bool
+func ProxyDataStorePttl(key string) uint64
+func ProxyDataStoreSetnx(value []byte)
+func ProxyDataStoreDel(keys ...string)
+func ProxyDataStoreIncrby(key string, incr int)
+func ProxyDataStorePexpire(key string, pttl int64)
+func ProxyDataStoreAllMatching(key string) []byte
+// cluster config
+func ClusterState() []byte
+func ClusterStateField(field string) []byte
+// proxy state
+func ProxyState() []byte
+func ProxyStateEntities(entity string) []byte
+func ProxyStateEntity(entity string, id string) []byte
+// logs
+func Log(logLevel LogLevel, message string) Status
+func LogBool(logLevel LogLevel, message bool) Status
+func LogLong(logLevel LogLevel, message uint64) Status
+func LogBytes(logLevel LogLevel, message []byte) Status
+func LogEvent(function string, message string, level LogLevel) Status</code></pre></dd>
+</dl>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/chaos-engineering.html">Chaos engineering with the Snow Monkey</a></p>
 </div>

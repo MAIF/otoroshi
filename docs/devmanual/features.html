@@ -289,6 +289,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li>Can proxy any HTTP(s) service (apis, webapps, websocket, etc)</li>
   <li>Can proxy any TCP service (app, database, etc)</li>
+  <li>Can proxy any GRPC service</li>
   <li>Multiple load-balancing options:
     <ul>
       <li>RoundRobin</li>
@@ -299,13 +300,31 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </li>
   <li>Distributed in-flight request limiting</li>
   <li>Distributed rate limiting</li>
-  <li>End-to-end HTTP3 support</li>
+  <li>End-to-end HTTP/1.1 support</li>
+  <li>End-to-end H2 support</li>
+  <li>End-to-end H3 support</li>
   <li>Traffic mirroring</li>
+  <li>Traffic capture</li>
   <li>Canary deployments</li>
   <li>Relay routing</li>
   <li>Tunnels for easier network exposition</li>
 </ul>
-<p><strong>Services customization</strong></p>
+<p><strong>Routing</strong></p>
+<ul>
+  <li>Router can support ten of thousands of concurrent routes</li>
+  <li>Router support path params extraction (can be regex validated)</li>
+  <li>Routing based on
+    <ul>
+      <li>hostname (exact, wildcard)</li>
+      <li>method</li>
+      <li>path (exact, wildcard)</li>
+      <li>header values (exact, regex, wildcard)</li>
+      <li>query param values (exact, regex, wildcard)</li>
+    </ul>
+  </li>
+  <li>Support full url rewriting</li>
+</ul>
+<p><strong>Routes customization</strong></p>
 <ul>
   <li>Dozens of built-in middlewares (policies/plugins)
     <ul>
@@ -320,15 +339,31 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <li>etc</li>
     </ul>
   </li>
-  <li>Write your own custom middlewares</li>
+  <li>Support middlewares compiled to WASM</li>
+  <li>Write your own custom middlewares
+    <ul>
+      <li>in scala deployed as jar files</li>
+      <li>in whatever language you want that can be compiled to WASM</li>
+    </ul>
+  </li>
 </ul>
-<p><strong>Services Monitoring</strong></p>
+<p><strong>Routes Monitoring</strong></p>
 <ul>
   <li>Active healthchecks</li>
   <li>Calls tracing using W3C trace context</li>
-  <li>Export alerts and events to external database</li>
+  <li>Export alerts and events to external database
+    <ul>
+      <li>file</li>
+      <li>S3</li>
+      <li>elastic</li>
+      <li>pulsar</li>
+      <li>kafka</li>
+      <li>webhook</li>
+      <li>mailer</li>
+      <li>logger</li>
+    </ul>
+  </li>
   <li>Real-time traffic metrics</li>
-  <li>Alert mailers</li>
   <li>Real-time traffic metrics (Datadog, Prometheus, StatsD)</li>
 </ul>
 <p><strong>Services discovery</strong></p>
@@ -346,7 +381,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>End-to-end mTLS calls</li>
   <li>Routing constraints</li>
   <li>Routing restrictions</li>
-  <li>JWT tokens validation and manipulation</li>
+  <li>JWT tokens validation and manipulation
+    <ul>
+      <li>can support multiple validator on the same routes</li>
+    </ul>
+  </li>
 </ul>
 <p><strong>Administration UI</strong></p>
 <ul>
@@ -381,14 +420,27 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li>Dynamic TLS certificates store</li>
   <li>Dynamic TLS termination</li>
-  <li>Internal PKI</li>
+  <li>Internal PKI
+    <ul>
+      <li>generate self signed certificates/CAs</li>
+      <li>generate/sign certificates/CAs/subCAs</li>
+      <li>AIA</li>
+      <li>OCSP responder</li>
+      <li>import P12/certificate bundles</li>
+    </ul>
+  </li>
   <li>ACME / Let&rsquo;s Encrypt support</li>
   <li>On-the-fly certificate generation based on a CA certificate without request loss</li>
+  <li>JWKS exposition for public keypair</li>
 </ul>
 <p><strong>Performances and testing</strong></p>
 <ul>
   <li>Chaos engineering</li>
-  <li>Clustering with encrypted communication</li>
+  <li>Clustering with encrypted communication
+    <ul>
+      <li>based on a control plane/data plane pattern</li>
+    </ul>
+  </li>
   <li>Scalability</li>
 </ul>
 <p><strong>Kubernetes integration</strong></p>
@@ -400,7 +452,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     </ul>
   </li>
   <li>Validation of resources via webhook</li>
-  <li>Service Mesh for easy service-to-service communication</li>
+  <li>Service Mesh for easy service-to-service communication (based on Kubernetes sidecars)</li>
 </ul>
 <p><strong>Developpers portal</strong></p>
 <ul>

@@ -1837,8 +1837,6 @@ otoroshi {
     }
   }
   options {
-  	anonymous-reporting = true
-  	anonymous-reporting = ${?OTOROSHI_OPTIONS_ANONYMOUS_REPORTING}
     bypassUserRightsCheck = false
     bypassUserRightsCheck = ${?OTOROSHI_OPTIONS_BYPASSUSERRIGHTSCHECK}
     emptyContentLengthIsChunked = true
@@ -1858,6 +1856,14 @@ otoroshi {
     disableFunnyLogos = false
     disableFunnyLogos = ${?OTOROSHI_OPTIONS_DISABLE_FUNNY_LOGOS}
     staticExposedDomain = ${?OTOROSHI_OPTIONS_STATIC_EXPOSED_DOMAIN}
+  }
+  wasm {
+  	cache {
+  		ttl = 10000
+  		ttl = ${?OTOROSHI_WASM_CACHE_TTL}
+  		size = 100
+  		size = ${?OTOROSHI_WASM_CACHE_SIZE}
+  	}
   }
   anonymous-reporting {
   	enabled = true
@@ -2024,6 +2030,29 @@ otoroshi {
     autoUpdateState = true # auto update cluster state with a job (more efficient)
     autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
     autoUpdateState = ${?OTOROSHI_CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
+    backup {
+      enabled = false
+      enabled = ${?OTOROSHI_CLUSTER_BACKUP_ENABLED}
+			kind = &quot;S3&quot;
+			kind = ${?OTOROSHI_CLUSTER_BACKUP_KIND}
+			instance {
+				can-write = false
+				can-write = ${?OTOROSHI_CLUSTER_BACKUP_INSTANCE_CAN_WRITE}
+				can-read = false
+				can-read = ${?OTOROSHI_CLUSTER_BACKUP_INSTANCE_CAN_READ}
+			}
+			s3 {
+				bucket = ${?OTOROSHI_CLUSTER_BACKUP_S3_BUCKET}
+        endpoint = ${?OTOROSHI_CLUSTER_BACKUP_S3_ENDPOINT}
+        region = ${?OTOROSHI_CLUSTER_BACKUP_S3_REGION}
+        access = ${?OTOROSHI_CLUSTER_BACKUP_S3_ACCESSKEY}
+        secret = ${?OTOROSHI_CLUSTER_BACKUP_S3_SECRET}
+        path = ${?OTOROSHI_CLUSTER_BACKUP_S3_PATH}
+        chunk-size = ${?OTOROSHI_CLUSTER_BACKUP_S3_CHUNK_SIZE}
+        v4auth = ${?OTOROSHI_CLUSTER_BACKUP_S3_V4AUTH}
+        acl = ${?OTOROSHI_CLUSTER_BACKUP_S3_ACL}
+			}
+    }
     relay { # relay routing settings
       enabled = false # enable relay routing
       enabled = ${?OTOROSHI_CLUSTER_RELAY_ENABLED} # enable relay routing
@@ -3079,7 +3108,6 @@ otoroshi {
     }
   }
   options {
-  	anonymous-reporting = ${?OTOROSHI_OPTIONS_ANONYMOUS_REPORTING}
     bypassUserRightsCheck = ${?OTOROSHI_OPTIONS_BYPASSUSERRIGHTSCHECK}
     emptyContentLengthIsChunked = ${?OTOROSHI_OPTIONS_EMPTYCONTENTLENGTHISCHUNKED}
     detectApiKeySooner = ${?OTOROSHI_OPTIONS_DETECTAPIKEYSOONER}
@@ -3090,6 +3118,12 @@ otoroshi {
     trustXForwarded = ${?OTOROSHI_OPTIONS_TRUST_XFORWARDED}
     disableFunnyLogos = ${?OTOROSHI_OPTIONS_DISABLE_FUNNY_LOGOS}
     staticExposedDomain = ${?OTOROSHI_OPTIONS_STATIC_EXPOSED_DOMAIN}
+  }
+  wasm {
+  	cache {
+  		ttl = ${?OTOROSHI_WASM_CACHE_TTL}
+  		size = ${?OTOROSHI_WASM_CACHE_SIZE}
+  	}
   }
   anonymous-reporting {
 		enabled = ${?OTOROSHI_ANONYMOUS_REPORTING_ENABLED}
@@ -3206,6 +3240,25 @@ otoroshi {
     selfAddress = ${?OTOROSHI_CLUSTER_SELF_ADDRESS} # the instance ip address
     autoUpdateState = ${?CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
     autoUpdateState = ${?OTOROSHI_CLUSTER_AUTO_UPDATE_STATE} # auto update cluster state with a job (more efficient
+    backup {
+      enabled = ${?OTOROSHI_CLUSTER_BACKUP_ENABLED}
+			kind = ${?OTOROSHI_CLUSTER_BACKUP_KIND}
+			instance {
+				can-write = ${?OTOROSHI_CLUSTER_BACKUP_INSTANCE_CAN_WRITE}
+				can-read = ${?OTOROSHI_CLUSTER_BACKUP_INSTANCE_CAN_READ}
+			}
+			s3 {
+				bucket = ${?OTOROSHI_CLUSTER_BACKUP_S3_BUCKET}
+        endpoint = ${?OTOROSHI_CLUSTER_BACKUP_S3_ENDPOINT}
+        region = ${?OTOROSHI_CLUSTER_BACKUP_S3_REGION}
+        access = ${?OTOROSHI_CLUSTER_BACKUP_S3_ACCESSKEY}
+        secret = ${?OTOROSHI_CLUSTER_BACKUP_S3_SECRET}
+        path = ${?OTOROSHI_CLUSTER_BACKUP_S3_PATH}
+        chunk-size = ${?OTOROSHI_CLUSTER_BACKUP_S3_CHUNK_SIZE}
+        v4auth = ${?OTOROSHI_CLUSTER_BACKUP_S3_V4AUTH}
+        acl = ${?OTOROSHI_CLUSTER_BACKUP_S3_ACL}
+			}
+    }
     relay { # relay routing settings
       enabled = ${?OTOROSHI_CLUSTER_RELAY_ENABLED} # enable relay routing
       leaderOnly = ${?OTOROSHI_CLUSTER_RELAY_LEADER_ONLY} # workers always pass through leader for relay routing
