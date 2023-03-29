@@ -20,14 +20,15 @@
 * Canary deployments
 * Relay routing 
 * Tunnels for easier network exposition
+* Error templates
 
 **Routing**
 
 * Router can support ten of thousands of concurrent routes
 * Router support path params extraction (can be regex validated)
 * Routing based on 
-    * hostname (exact, wildcard)
     * method
+    * hostname (exact, wildcard)
     * path (exact, wildcard)
     * header values (exact, regex, wildcard)
     * query param values (exact, regex, wildcard)
@@ -45,7 +46,7 @@
     * body transformation
     * graphql gateway
     * etc 
-* Support middlewares compiled to WASM
+* Support middlewares compiled to WASM (using extism)
 * Support Open Policy Agent policies for traffic control
 * Write your own custom middlewares
     * in scala deployed as jar files
@@ -90,7 +91,7 @@
 
 * Manage and organize all resources
 * Secured users access with Authentication module
-* Traced users actions
+* Audited users actions
 * Dynamic changes at runtime without full reload
 * Test your routes without any external tools
 
@@ -134,11 +135,12 @@
 * encrypted communication
 * backup capabilities to allow data plane to start without control plane reachable to improve resilience
 * relay routing to forward traffic from one network zone to others
+* distributed web authentication accross nodes
 
 **Performances and testing**
 
 * Chaos engineering
-* Scalability
+* Horizontal Scalability or clustering
 * Canary testing
 * Http client in UI
 * Request debugging
@@ -151,6 +153,12 @@
     * Manage Otoroshi resources from Kubernetes
 * Validation of resources via webhook
 * Service Mesh for easy service-to-service communication (based on Kubernetes sidecars)
+
+**Organize**
+
+* multi-organizations
+* multi-teams
+* routes groups
 
 **Developpers portal**
 
