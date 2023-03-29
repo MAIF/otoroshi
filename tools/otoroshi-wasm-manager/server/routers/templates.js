@@ -15,7 +15,7 @@ router.get('/', (req, res) => {
   } else {
     const { type } = req.query;
     if (['rust', 'assembly-script', 'js', 'go', 'ts', 'opa'].includes(type)) {
-      res.sendFile(path.join(__dirname, '../templates', `${type}.zip`));
+      getTemplates(type, res);
     } else {
       res
         .status(404)
@@ -30,120 +30,43 @@ router.get('/wapm', (_, res) => {
   res.sendFile(path.join(__dirname, '../templates', 'wapm.toml'))
 });
 
-router.get('/host/:type', (req, res) => {
-  if (!req.params.type) {
-    res
-      .status(400)
-      .json({
-        error: 'Missing type of project'
-      })
-  } else {
-    const type = req.params.type === "rust" ? "rs" : req.params.type;
-    if (['go', 'rs'].includes(type)) {
-      if (process.env.MANAGER_TYPES.startsWith('file://')) {
-        const paths = [process.env.MANAGER_TYPES.replace('file://', ''), `host.${type}`];
-        FileSystem.existsFile(...paths)
-          .then(() => {
-            res.download(FileSystem.pathsToPath(...paths), `host.${type}`)
-          })
-          .catch(err => {
-            res.status(400).json({ error: err })
-          })
-      } else if (process.env.MANAGER_TYPES.startsWith('http')) {
-        fetch(`${process.env.MANAGER_TYPES}/host.${type}`, {
-          redirect: 'follow'
-        })
-          .then(r => r.json())
-          .then(r => {
-            fetch(r.download_url)
-              .then(raw => raw.body.pipe(res))
-          })
-      } else {
-        res
-          .status(400)
-          .json({
-            error: 'Unable to retrieve the types with provided configuration'
-          })
-      }
-    } else if (['rust'].includes(type)) {
-      if (process.env.MANAGER_TYPES.startsWith('file://')) {
-        const paths = [process.env.MANAGER_TYPES.replace('file://', ''), `host.rs`];
-        FileSystem.existsFile(...paths)
-          .then(() => {
-            res.download(FileSystem.pathsToPath(...paths), `host.rs`)
-          })
-          .catch(err => {
-            res.status(400).json({ error: err })
-          })
-      } else if (process.env.MANAGER_TYPES.startsWith('http')) {
-        fetch(`${process.env.MANAGER_TYPES}/host.rs`, {
-          redirect: 'follow'
-        })
-          .then(r => r.json())
-          .then(r => {
-            fetch(r.download_url)
-              .then(raw => raw.body.pipe(res))
-          })
-      } else {
-        res
-          .status(400)
-          .json({
-            error: 'Unable to retrieve the types with provided configuration'
-          })
-      }
-    } else {
-      res
-        .status(404)
-        .json({
-          error: 'No host functions for this type of project'
-        })
-    }
-  }
-});
+function getTemplatesFromPath(type, res) {
+  return res.sendFile(path.join(__dirname, '../templates', `${type}.zip`))
+}
 
-router.get('/types/:type', (req, res) => {
-  if (!req.params.type) {
-    res
-      .status(400)
-      .json({
-        error: 'Missing type of project'
+function getTemplates(type, res) {
+  const source = process.env.MANAGER_TEMPLATES;
+  const zipName = `${type}.zip`;
+
+  if (!source) {
+    return getTemplatesFromPath(type, res);
+  } else if (source.startsWith('file://')) {
+    const paths = [source.replace('file://', ''), zipName];
+    FileSystem.existsFile(...paths)
+      .then(() => {
+        res.download(FileSystem.pathsToPath(...paths), zipName)
       })
-  } else {
-    const type = req.params.type === "rust" ? "rs" : req.params.type;
-    if (['rs', 'ts', 'go'].includes(type)) {
-      if (process.env.MANAGER_TYPES.startsWith('file://')) {
-        const paths = [process.env.MANAGER_TYPES.replace('file://', ''), `types.${type}`];
-        FileSystem.existsFile(...paths)
-          .then(() => {
-            res.download(FileSystem.pathsToPath(...paths), `types.${type}`)
-          })
-          .catch(err => {
-            res.status(400).json({ error: err })
-          })
-      } else if (process.env.MANAGER_TYPES.startsWith('http')) {
-        fetch(`${process.env.MANAGER_TYPES}/types.${type}`, {
-          redirect: 'follow'
-        })
-          .then(r => r.json())
-          .then(r => {
-            fetch(r.download_url)
-              .then(raw => raw.body.pipe(res))
-          })
-      } else {
+      .catch(err => {
         res
           .status(400)
-          .json({
-            error: 'Unable to retrieve the types with provided configuration'
-          })
-      }
-    } else {
-      res
-        .status(404)
-        .json({
-          error: 'No template for this type of project'
-        })
-    }
+          .json({ error: err })
+      })
+  } else if (source.startsWith('http')) {
+    fetch(`${source}/${zipName}`, {
+      redirect: 'follow'
+    })
+      .then(r => r.json())
+      .then(r => {
+        fetch(r.download_url)
+          .then(raw => raw.body.pipe(res))
+      })
+  } else {
+    res
+      .status(404)
+      .json({
+        error: 'No template for this type of project'
+      })
   }
-});
+}
 
 module.exports = router

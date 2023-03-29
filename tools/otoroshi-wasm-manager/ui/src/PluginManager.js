@@ -192,6 +192,7 @@ function Header({ onNewPlugin, reloadPlugins }) {
       <i className='fas fa-plus p-1' />
     </div>
 
+
     {showProjectSelector && <NewPluginModal
       onNewPlugin={onNewPlugin}
       reloadPlugins={reloadPlugins}

@@ -9,7 +9,7 @@ class Sidebar extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      width: 52,
+      width: 250,
       isResizing: false,
       lastDownX: 0
     };
@@ -89,8 +89,14 @@ class Sidebar extends React.Component {
   }
 
   render() {
-    return <div className="sidebar sidebar-resize-handle" style={{ width: this.state.width }} onMouseDown={this.onMouseDown}>
-      <div className='d-flex flex-column scroll-container' style={{ height: '100vh' }}>
+    return <div className="sidebar sidebar-resize-handle"
+      style={{ width: this.state.width, zIndex: 100 }}
+      onMouseDown={this.onMouseDown}>
+      <div className='d-flex flex-column sidebar-container'
+        style={{
+          height: '100vh'
+        }}
+      >
         {this.props.children}
       </div>
     </div>

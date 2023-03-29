@@ -64,10 +64,6 @@ const buildZip = plugin => {
   return jsZip.generateAsync({ type: "uint8array" });
 }
 
-export const getPluginTypes = type => f(`/templates/types/${type}`)
-
-export const getPluginHostFunctions = type => f(`/templates/host/${type}`)
-
 export const savePlugin = async plugin => {
   const bytes = await buildZip(plugin)
 

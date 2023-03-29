@@ -6,5 +6,5 @@
   width: 200px;
   background-color: rgb(228, 229, 230);
   color: #fff;
-  overflow-x: hidden;
+  /* overflow-x: hidden; */
 }

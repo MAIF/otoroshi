@@ -156,6 +156,7 @@ class App extends React.Component {
   }
 
   onNewPlugin = type => {
+    console.log('here')
     this.setState({
       plugins: this.state.plugins.filter(p => !p.new)
     }, () => {
@@ -257,24 +258,6 @@ class App extends React.Component {
     })
   }
 
-  fetchedTypeToState = (filename, file) => {
-    return new Promise(resolve => {
-      new File([file], "")
-        .text()
-        .then(content => {
-          this.setState({
-            selectedPlugin: {
-              ...this.state.selectedPlugin,
-              files: [
-                ...this.state.selectedPlugin.files,
-                { filename, content, ext: filename.split('.')[1] }
-              ]
-            }
-          }, resolve);
-        });
-    });
-  }
-
   onPluginClick = newSelectedPlugin => {
     this.setState({
       configFiles: [],
@@ -308,40 +291,26 @@ class App extends React.Component {
           .then(res => {
             // first case match the creation of a new plugin
             if (res.error && res.status === 404) {
-              const fetchTypesNeeded = ['ts', 'rust', 'go'].includes(plugin.type);
-              const fetchHostFunctionNeeded = ['go', 'rust'].includes(plugin.type);
-              Promise.all([
-                Service.getPluginTemplate(plugin.type),
-                fetchTypesNeeded ? Service.getPluginTypes(plugin.type) : Promise.resolve({ status: 200 }),
-                fetchHostFunctionNeeded ? Service.getPluginHostFunctions(plugin.type) : Promise.resolve({ status: 200 })
-              ])
-                .then(([template, types, hostFunctions]) => {
+              Service.getPluginTemplate(plugin.type)
+                .then(template => {
                   if (template.status !== 200) {
                     template.json().then(window.alert)
-                  } else if (types.status !== 200) {
-                    types.json().then(window.alert)
-                  } else if (hostFunctions.status !== 200) {
-                    hostFunctions.json().then(window.alert)
                   } else {
-                    Promise.all([
-                      template.blob(),
-                      fetchTypesNeeded ? types.blob() : Promise.resolve(),
-                      fetchHostFunctionNeeded ? hostFunctions.blob() : Promise.resolve()
-                    ])
-                      .then(([templatesFiles, typesFile, hostFunctionsFile]) => {
+                    template.blob()
+                      .then(templatesFiles => {
                         this.downloadPluginTemplate(templatesFiles, plugin)
                           .then(() => {
-                            const type = plugin.type === "rust" ? 'rs' : plugin.type;
-                            if (fetchHostFunctionNeeded && fetchTypesNeeded) {
-                              const filename = `types.${type}`;
-                              const hostFunctionsFilename = `host.${type}`;
-                              this.fetchedTypeToState(hostFunctionsFilename, hostFunctionsFile)
-                                .then(() => this.fetchedTypeToState(filename, typesFile));
-                            } else if (fetchTypesNeeded) {
-                              this.fetchedTypeToState(`types.${type}`, typesFile);
-                            } else if (fetchHostFunctionNeeded) {
-                              this.fetchedTypeToState(`host.${type}`, hostFunctionsFile);
-                            }
+                            // const type = plugin.type === "rust" ? 'rs' : plugin.type;
+                            // if (fetchHostFunctionNeeded && fetchTypesNeeded) {
+                            //   const filename = `types.${type}`;
+                            //   const hostFunctionsFilename = `host.${type}`;
+                            //   this.fetchedTypeToState(hostFunctionsFilename, hostFunctionsFile)
+                            //     .then(() => this.fetchedTypeToState(filename, typesFile));
+                            // } else if (fetchTypesNeeded) {
+                            //   this.fetchedTypeToState(`types.${type}`, typesFile);
+                            // } else if (fetchHostFunctionNeeded) {
+                            //   this.fetchedTypeToState(`host.${type}`, hostFunctionsFile);
+                            // }
                           });
                       });
                   }
