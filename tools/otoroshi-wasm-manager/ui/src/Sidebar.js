@@ -9,9 +9,7 @@ class Sidebar extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      width: 250,
-      isResizing: false,
-      lastDownX: 0
+      width: 250
     };
 
     this.props.setContext({
@@ -26,16 +24,6 @@ class Sidebar extends React.Component {
     }
   }
 
-  componentDidMount() {
-    document.addEventListener("mousemove", this.onMouseMove);
-    document.addEventListener("mouseup", this.onMouseUp);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener("mousemove", this.onMouseMove);
-    document.removeEventListener("mouseup", this.onMouseUp);
-  }
-
   onWidthChange = newValue => {
     this.props.setContext({
       open: newValue > MIN_SIDEBAR_WIDTH ? true : false,
@@ -47,51 +35,13 @@ class Sidebar extends React.Component {
     })
   }
 
-  onMouseDown = e => {
-    e.stopPropagation()
-    this.setState({
-      isResizing: true,
-      lastDownX: e.clientX
-    });
-  };
-
-  onMouseUp = e => {
-    e.stopPropagation()
-    if (this.state.isResizing) {
-      this.setState({ isResizing: false });
-    }
-  };
-
-  onMouseMove = e => {
-    e.stopPropagation()
-    // update the width of the sidebar if the user is resizing it
-    if (this.state.isResizing) {
-      const delta = e.clientX - this.state.lastDownX;
-      const newWidth = this.state.width + delta;
-
-      if (newWidth < MIN_SIDEBAR_WIDTH) {
-        this.onWidthChange(52)
-        this.setState({
-          lastDownX: e.clientX
-        });
-      }
-      else if (newWidth >= 52 && newWidth <= 250) {
-        this.onWidthChange(newWidth)
-        this.setState({
-          lastDownX: e.clientX
-        });
-      }
-    }
-  };
-
   toggle = () => {
     this.onWidthChange(this.state.width > 52 ? 52 : 250)
   }
 
   render() {
     return <div className="sidebar sidebar-resize-handle"
-      style={{ width: this.state.width, zIndex: 100 }}
-      onMouseDown={this.onMouseDown}>
+      style={{ width: this.state.width, zIndex: 100 }}>
       <div className='d-flex flex-column sidebar-container'
         style={{
           height: '100vh'
