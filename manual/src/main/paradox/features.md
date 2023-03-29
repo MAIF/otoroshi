@@ -4,6 +4,7 @@
 
 * Can proxy any HTTP(s) service (apis, webapps, websocket, etc)
 * Can proxy any TCP service (app, database, etc)
+* Can proxy any GRPC service
 * Multiple load-balancing options: 
     * RoundRobin
     * Random, Sticky
@@ -11,13 +12,28 @@
     * Best Response Time
 * Distributed in-flight request limiting	
 * Distributed rate limiting 
-* End-to-end HTTP3 support
+* End-to-end HTTP/1.1 support
+* End-to-end H2 support
+* End-to-end H3 support
 * Traffic mirroring
+* Traffic capture
 * Canary deployments
 * Relay routing 
 * Tunnels for easier network exposition
 
-**Services customization**
+**Routing**
+
+* Router can support ten of thousands of concurrent routes
+* Router support path params extraction (can be regex validated)
+* Routing based on 
+    * hostname (exact, wildcard)
+    * method
+    * path (exact, wildcard)
+    * header values (exact, regex, wildcard)
+    * query param values (exact, regex, wildcard)
+* Support full url rewriting
+
+**Routes customization**
 
 * Dozens of built-in middlewares (policies/plugins) 
     * circuit breakers
@@ -29,15 +45,25 @@
     * body transformation
     * graphql gateway
     * etc 
+* Support middlewares compiled to WASM
 * Write your own custom middlewares
+    * in scala deployed as jar files
+    * in whatever language you want that can be compiled to WASM
 
-**Services Monitoring**
+**Routes Monitoring**
 
 * Active healthchecks
 * Calls tracing using W3C trace context
 * Export alerts and events to external database
+    * file
+    * S3
+    * elastic
+    * pulsar
+    * kafka
+    * webhook
+    * mailer
+    * logger
 * Real-time traffic metrics
-* Alert mailers
 * Real-time traffic metrics (Datadog, Prometheus, StatsD)
 
 **Services discovery**
@@ -56,6 +82,7 @@
 * Routing constraints
 * Routing restrictions
 * JWT tokens validation and manipulation
+    * can support multiple validator on the same routes
 
 **Administration UI**
 
@@ -88,13 +115,20 @@
 * Dynamic TLS certificates store 
 * Dynamic TLS termination
 * Internal PKI
+    * generate self signed certificates/CAs
+    * generate/sign certificates/CAs/subCAs
+    * AIA
+    * OCSP responder
+    * import P12/certificate bundles
 * ACME / Let's Encrypt support
 * On-the-fly certificate generation based on a CA certificate without request loss
+* JWKS exposition for public keypair
 
 **Performances and testing**
 
 * Chaos engineering
 * Clustering with encrypted communication
+    * based on a control plane/data plane pattern
 * Scalability
 
 **Kubernetes integration**
@@ -103,7 +137,7 @@
 * Custom Ingress controller
     * Manage Otoroshi resources from Kubernetes
 * Validation of resources via webhook
-* Service Mesh for easy service-to-service communication
+* Service Mesh for easy service-to-service communication (based on Kubernetes sidecars)
 
 **Developpers portal**
 
