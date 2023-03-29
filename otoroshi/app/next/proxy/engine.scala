@@ -830,25 +830,33 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       mat: Materializer
   ): FEither[NgProxyEngineError, NgRoute] = {
-    val maybeRoute: Option[NgMatchedRoute] = if (useTree) {
-      env.proxyState.findRoute(request, attrs)
-    } else {
-      env.proxyState
-        .getDomainRoutes(request.theDomain)
-        .flatMap(
-          _.find(
-            _.matches(
-              request,
-              attrs,
-              "/",
-              scala.collection.mutable.HashMap.empty,
-              noMoreSegments = false,
-              skipDomainVerif = true,
-              skipPathVerif = false
+    val routers = global_plugins.routerPlugins(request)
+    val pluginRoute = if (routers.nonEmpty) routers.findFirstSome(p => p.plugin.findRoute(NgRouterContext(
+      request = request,
+      config = p.instance.config.raw,
+      attrs = attrs,
+    ))) else None
+    val maybeRoute: Option[NgMatchedRoute] = pluginRoute.orElse {
+      if (useTree) {
+        env.proxyState.findRoute(request, attrs)
+      } else {
+        env.proxyState
+          .getDomainRoutes(request.theDomain)
+          .flatMap(
+            _.find(
+              _.matches(
+                request,
+                attrs,
+                "/",
+                scala.collection.mutable.HashMap.empty,
+                noMoreSegments = false,
+                skipDomainVerif = true,
+                skipPathVerif = false
+              )
             )
           )
-        )
-        .map(r => NgMatchedRoute(r))
+          .map(r => NgMatchedRoute(r))
+      }
     }
     maybeRoute match {
       case Some(_route) =>

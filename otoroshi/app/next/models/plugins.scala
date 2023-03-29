@@ -138,6 +138,22 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
     slots.find(pi => pi.plugin == name).filter(_.enabled)
   }
 
+  def routerPlugins(
+    request: RequestHeader
+  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRouter]] = {
+    val pls = slots
+      .filter(_.enabled)
+      .filter(_.matches(request))
+      .map(inst => (inst, inst.getPlugin[NgRouter]))
+      .collect { case (inst, Some(plugin)) =>
+        NgPluginWrapper.NgSimplePluginWrapper(inst, plugin)
+      }
+    val (plsWithIndex, plsWithoutIndex) = pls.partition(_.instance.pluginIndex.exists(_.sink.isDefined))
+    plsWithIndex.sortWith((a, b) =>
+      a.instance.pluginIndex.get.sink.get.compareTo(b.instance.pluginIndex.get.sink.get) < 0
+    ) ++ plsWithoutIndex
+  }
+
   def requestSinkPlugins(
       request: RequestHeader
   )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestSink]] = {

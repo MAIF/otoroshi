@@ -83,6 +83,7 @@ import WasmRouteMatcher  from './WasmRouteMatcher';
 import WasmSink  from './WasmSink';
 import WasmJob  from './WasmJob';
 import WasmPreRoute  from './WasmPreRoute';
+import WasmRouter  from './WasmRouter';
 import WasmOPA from './WasmOPA';
 
 export const Backend = NgBackend;
@@ -173,4 +174,5 @@ export const Plugins = [
   WasmSink,
   WasmJob,
   WasmPreRoute,
+  WasmRouter,
 ];

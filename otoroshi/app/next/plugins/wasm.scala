@@ -5,19 +5,17 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import org.extism.sdk.Plugin
-import org.extism.sdk.Context
+import org.extism.sdk.{Context, Plugin}
 import org.extism.sdk.manifest.{Manifest, MemoryOptions}
 import org.extism.sdk.wasm.WasmSourceResolver
-import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{WSProxyServerJson, WasmManagerSettings}
-import otoroshi.next.models.{NgRoute, NgTlsConfig}
-import otoroshi.next.plugins.api.{NgPreRoutingError, _}
+import otoroshi.next.models.{NgMatchedRoute, NgRoute, NgTlsConfig}
+import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.utils.JsonHelpers
-import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility, RequestHandler}
+import otoroshi.script._
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -1173,5 +1171,39 @@ class WasmOPA extends NgAccessValidator {
             )
             .map(r => NgAccess.NgDenied(r))
       }
+  }
+}
+
+class WasmRouter extends NgRouter {
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.Router)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Wasm)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "Wasm Router"
+  override def description: Option[String]                 =
+    "Can decide for routing with a wasm plugin".some
+  override def defaultConfigObject: Option[NgPluginConfig] = WasmConfig().some
+
+  override def findRoute(ctx: NgRouterContext)(implicit env: Env, ec: ExecutionContext): Option[NgMatchedRoute] = {
+    val config = WasmConfig.format.reads(ctx.config).getOrElse(WasmConfig())
+    Await.result(WasmUtils.execute(config, "find_route",  ctx.json, FakeWasmContext(ctx.config).some, ctx.attrs.some), 3.seconds) match {
+      case Right(res)    =>
+        val response = Json.parse(res)
+        Try {
+          NgMatchedRoute(
+            route = NgRoute.fmt.reads(response.select("route").asValue).get,
+            path = response.select("path").asString,
+            pathParams = response.select("path_params")
+              .asOpt[Map[String, String]]
+              .map(m => scala.collection.mutable.HashMap.apply(m.toSeq: _*))
+              .getOrElse(scala.collection.mutable.HashMap.empty),
+            noMoreSegments = response.select("no_more_segments").asOpt[Boolean].getOrElse(false),
+          )
+        }.toOption
+      case Left(_) => None
+    }
   }
 }

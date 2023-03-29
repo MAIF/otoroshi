@@ -8,7 +8,7 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser}
-import otoroshi.next.models.{NgPluginInstance, NgRoute, NgTarget}
+import otoroshi.next.models.{NgMatchedRoute, NgPluginInstance, NgRoute, NgTarget}
 import otoroshi.next.proxy.{NgExecutionReport, NgProxyEngineError, NgReportPluginSequence, NgReportPluginSequenceItem}
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
@@ -237,6 +237,7 @@ sealed trait NgStep {
   def json: JsValue = name.json
 }
 object NgStep       {
+  case object Router            extends NgStep { def name: String = "Router"            }
   case object Sink              extends NgStep { def name: String = "Sink"              }
   case object PreRoute          extends NgStep { def name: String = "PreRoute"          }
   case object ValidateAccess    extends NgStep { def name: String = "ValidateAccess"    }
@@ -249,6 +250,7 @@ object NgStep       {
   case object Job               extends NgStep { def name: String = "Job"               }
 
   val all = Seq(
+    Router,
     Sink,
     PreRoute,
     ValidateAccess,
@@ -261,6 +263,7 @@ object NgStep       {
   )
 
   def apply(value: String): Option[NgStep] = value match {
+    case "Router" => Router.some
     case "Sink" => Sink.some
     case "PreRoute" => PreRoute.some
     case "ValidateAccess" => ValidateAccess.some
@@ -433,6 +436,22 @@ trait NgPreRouting extends NgPlugin {
   def preRoute(
       ctx: NgPreRoutingContext
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]]                                  = preRouteSync(ctx).vfuture
+}
+
+case class NgRouterContext(
+  request: RequestHeader,
+  config: JsValue,
+  attrs: TypedMap,
+) {
+  def json: JsValue = Json.obj(
+    "request"       -> JsonHelpers.requestToJson(request),
+    "config"        -> config,
+    "attrs"         -> attrs.json
+  )
+}
+
+trait NgRouter extends NgPlugin {
+  def findRoute(ctx: NgRouterContext)(implicit env: Env, ec: ExecutionContext): Option[NgMatchedRoute] = None
 }
 
 case class NgBeforeRequestContext(

@@ -603,6 +603,19 @@ object implicits {
         sum / seq.size
       }
     }
+    def findFirstSome[B](f: A => Option[B]): Option[B] = {
+      if (seq.isEmpty) {
+        None
+      } else {
+        for (a <- seq) {
+          val res = f(a)
+          if (res.isDefined) {
+            return res
+          }
+        }
+        None
+      }
+    }
   }
 
   implicit class BetterWSCookieWithSameSite(val c: otoroshi.utils.http.WSCookieWithSameSite) extends AnyVal {
