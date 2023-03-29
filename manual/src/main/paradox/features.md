@@ -46,6 +46,7 @@
     * graphql gateway
     * etc 
 * Support middlewares compiled to WASM
+* Support Open Policy Agent policies for traffic control
 * Write your own custom middlewares
     * in scala deployed as jar files
     * in whatever language you want that can be compiled to WASM
@@ -53,6 +54,7 @@
 **Routes Monitoring**
 
 * Active healthchecks
+* Route state for the last 90 days
 * Calls tracing using W3C trace context
 * Export alerts and events to external database
     * file
@@ -123,13 +125,24 @@
 * ACME / Let's Encrypt support
 * On-the-fly certificate generation based on a CA certificate without request loss
 * JWKS exposition for public keypair
+* Default certificate
+* Customize mTLS trusted CAs in the TLS handshake
+
+**Clustering**
+
+* based on a control plane/data plane pattern
+* encrypted communication
+* backup capabilities to allow data plane to start without control plane reachable to improve resilience
+* relay routing to forward traffic from one network zone to others
 
 **Performances and testing**
 
 * Chaos engineering
-* Clustering with encrypted communication
-    * based on a control plane/data plane pattern
 * Scalability
+* Canary testing
+* Http client in UI
+* Request debugging
+* Traffic capture
 
 **Kubernetes integration**
 
