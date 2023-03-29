@@ -308,6 +308,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Canary deployments</li>
   <li>Relay routing</li>
   <li>Tunnels for easier network exposition</li>
+  <li>Error templates</li>
 </ul>
 <p><strong>Routing</strong></p>
 <ul>
@@ -315,8 +316,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Router support path params extraction (can be regex validated)</li>
   <li>Routing based on
     <ul>
-      <li>hostname (exact, wildcard)</li>
       <li>method</li>
+      <li>hostname (exact, wildcard)</li>
       <li>path (exact, wildcard)</li>
       <li>header values (exact, regex, wildcard)</li>
       <li>query param values (exact, regex, wildcard)</li>
@@ -339,7 +340,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <li>etc</li>
     </ul>
   </li>
-  <li>Support middlewares compiled to WASM</li>
+  <li>Support middlewares compiled to WASM (using extism)</li>
   <li>Support Open Policy Agent policies for traffic control</li>
   <li>Write your own custom middlewares
     <ul>
@@ -393,7 +394,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li>Manage and organize all resources</li>
   <li>Secured users access with Authentication module</li>
-  <li>Traced users actions</li>
+  <li>Audited users actions</li>
   <li>Dynamic changes at runtime without full reload</li>
   <li>Test your routes without any external tools</li>
 </ul>
@@ -443,11 +444,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>encrypted communication</li>
   <li>backup capabilities to allow data plane to start without control plane reachable to improve resilience</li>
   <li>relay routing to forward traffic from one network zone to others</li>
+  <li>distributed web authentication accross nodes</li>
 </ul>
 <p><strong>Performances and testing</strong></p>
 <ul>
   <li>Chaos engineering</li>
-  <li>Scalability</li>
+  <li>Horizontal Scalability or clustering</li>
   <li>Canary testing</li>
   <li>Http client in UI</li>
   <li>Request debugging</li>
@@ -463,6 +465,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </li>
   <li>Validation of resources via webhook</li>
   <li>Service Mesh for easy service-to-service communication (based on Kubernetes sidecars)</li>
+</ul>
+<p><strong>Organize</strong></p>
+<ul>
+  <li>multi-organizations</li>
+  <li>multi-teams</li>
+  <li>routes groups</li>
 </ul>
 <p><strong>Developpers portal</strong></p>
 <ul>
