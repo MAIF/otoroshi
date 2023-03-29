@@ -171,6 +171,7 @@ function TabsManager({ plugins, ...props }) {
 function SidebarHeader({ }) {
   return <SidebarContext.Consumer>
     {({ open }) => open ? <h1 style={{
+      userSelect: 'none',
       fontWeight: 'bold',
       textTransform: 'uppercase',
       background: '#f9b000',
@@ -237,6 +238,7 @@ function TabButton({ filename, onClick, selected, closeTab }) {
     className={`p-2 px-3`}
     style={{
       border: 'none',
+      userSelect: 'none',
       background: selected ? '#fff' : 'rgba(var(--bs-light-rgb),var(--bs-bg-opacity))',
       borderTop: selected ? '3px solid #f9b000' : 'none'
     }}

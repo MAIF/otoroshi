@@ -20,7 +20,7 @@ const LOGOS = {
   opa: <OPA style={{ height: 22, width: 22 }} />,
   github: <Github style={{ height: 22, width: 22 }} />,
   logo: <img src={window.location.origin + "/android-chrome-512x512.png"}
-    style={{ width: 52 }} />,
+    style={{ width: 52, userSelect: 'none' }} />,
 };
 
 LOGOS.rust = LOGOS.rs;
