@@ -482,16 +482,19 @@ object WasmUtils {
         // println(s"\n\nusing script from ${new DateTime(wasm.createAt).toString()}\n")
         config.source.getConfig().map {
           case None => WasmUtils.callWasm(wasm.script, config, defaultFunctionName, input, ctx, pluginId, attrs)
-          case Some(finalConfig) => WasmUtils.callWasm(wasm.script, finalConfig.copy(functionName = finalConfig.functionName.orElse(config.functionName)), defaultFunctionName, input, ctx, pluginId, attrs)
+          case Some(finalConfig) =>
+            val functionName = config.functionName.filter(_.nonEmpty).orElse(finalConfig.functionName)
+            WasmUtils.callWasm(wasm.script, finalConfig.copy(functionName = functionName), defaultFunctionName, input, ctx, pluginId, attrs)
         }
       case None if config.source.kind == WasmSourceKind.Unknown => Left(Json.obj("error" -> "missing source")).future
       case _ => config.source.getWasm().flatMap {
         case Left(err) => err.left.vfuture
         case Right(wasm) => {
-          if (env.isProd) scriptCache.put(pluginId, CachedWasmScript(wasm, System.currentTimeMillis()))
           config.source.getConfig().map {
             case None => WasmUtils.callWasm(wasm, config, defaultFunctionName, input, ctx, pluginId, attrs)
-            case Some(finalConfig) => WasmUtils.callWasm(wasm, finalConfig.copy(functionName = finalConfig.functionName.orElse(config.functionName)), defaultFunctionName, input, ctx, pluginId, attrs)
+            case Some(finalConfig) =>
+              val functionName = config.functionName.filter(_.nonEmpty).orElse(finalConfig.functionName)
+              WasmUtils.callWasm(wasm, finalConfig.copy(functionName = functionName), defaultFunctionName, input, ctx, pluginId, attrs)
           }
         }
       }
