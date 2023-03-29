@@ -159,6 +159,8 @@ impl Otoroshi {
   }
 
   /////// apis ///////
+  
+  /// logs
 
   pub fn log(level: i32, msg: String) {
     let mem = Self::allocate_string(msg.as_str());
@@ -595,7 +597,7 @@ impl Otoroshi {
     Self::datastore_all_matching_string(pattern).iter().map(|s| serde_json::from_str(s).unwrap()).collect()
   }
 
-  /// http api
+  /// http client api
 
   pub fn http_call(req: OtoroshiHttpRequest) -> Option<OtoroshiHttpResponse> {
     let mem = Self::allocate_string(req.to_json().as_str());
@@ -621,7 +623,6 @@ pub struct OtoroshiHttpRequest {
   pub body_str: Option<String>,
   pub body_json: Option<serde_json::Value>,
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OtoroshiHttpResponse {

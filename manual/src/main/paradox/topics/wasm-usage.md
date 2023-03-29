@@ -599,3 +599,10 @@ extern "C" {
 }
 ```
 
+right know, when using the wasm manager, a default idiomatic implementation is provided for `TinyGo` and `Rust`
+
+host.rs
+:   @@snip [host.rs](../snippets/wasm-manager/host.rs) 
+
+host.go
+:   @@snip [host.go](../snippets/wasm-manager/host.go) 
