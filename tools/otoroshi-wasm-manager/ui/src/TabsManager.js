@@ -177,7 +177,9 @@ function SidebarHeader({ }) {
       background: '#f9b000',
       color: 'white',
       height: 42
-    }} className="p-2 m-0 d-flex align-items-center">OTO WASM</h1> : LOGOS.logo
+    }} className="p-2 m-0 d-flex align-items-center">OTO WASM</h1> : <div className='d-flex justify-content-center p-1'>
+      {LOGOS.logo}
+    </div>
     }
   </SidebarContext.Consumer>
 }
