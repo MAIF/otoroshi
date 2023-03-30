@@ -97,7 +97,7 @@ function TabsManager({ plugins, ...props }) {
                 <i className="fa fa-chevron-left" />
               </button>}
 
-              {props.selectedPlugin && <button type="button" className='btn btn-outline-danger m-3' style={{ fontSize: '.8rem' }}
+              {props.selectedPlugin && <button type="button" className='btn btn-outline-danger m-3 my-2' style={{ fontSize: '.8rem' }}
                 onClick={props.removePlugin}>
                 Remove {props.selectedPlugin.filename}
               </button>}
