@@ -56,6 +56,7 @@ extern "C" {
   ///
   fn proxy_get_attrs(unused: u64) -> u64;
   fn proxy_clear_attrs(unused: u64) -> u64;
+  fn proxy_get_attr(context: u64, size: u64) -> u64;
   fn proxy_set_attr(context: u64, size: u64) -> u64;
   fn proxy_del_attr(context: u64, size: u64) -> u64;
 }
@@ -607,6 +608,12 @@ impl Otoroshi {
   pub fn attrs() -> Option<serde_json::Map<String, serde_json::Value>> {
     let ptr = unsafe { proxy_get_attrs(0) };
     Self::get_json_object_from_ptr(ptr)
+  }
+
+  pub fn attrs_get(key: String) -> Option<serde_json::Value> {
+    let mem = Self::allocate_string(&key);
+    let ptr = unsafe { proxy_get_attr(mem.offset, mem.length) };
+    Self::get_json_from_ptr(ptr)
   }
 
   pub fn attrs_set(key: String, value: serde_json::Value) {

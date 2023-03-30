@@ -247,6 +247,22 @@ object Http extends AwaitCapable {
     }
   }
 
+  def getAttribute(config: WasmConfig, attrs: Option[TypedMap])(implicit env: Env, ec: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    HFunction.defineContextualFunction("proxy_get_attr", config, None) {
+      (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], hostData: EnvUserData) => {
+        attrs match {
+          case None => plugin.returnBytes(returns(0), Array.empty[Byte])
+          case Some(at) =>
+            val key = Utils.contextParamsToString(plugin, params: _*)
+            at.json.select(key).asOpt[JsValue] match {
+              case None => plugin.returnBytes(returns(0), Array.empty[Byte])
+              case Some(value) => plugin.returnBytes(returns(0), value.stringify.byteString.toArray)
+            }
+        }
+      }
+    }
+  }
+
   def clearAttributes(config: WasmConfig, attrs: Option[TypedMap])(implicit env: Env, ec: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     HFunction.defineClassicFunction("proxy_clear_attrs", config, LibExtism.ExtismValType.I64, None, LibExtism.ExtismValType.I64) { (plugin, _, returns, hostData) =>
       attrs match {
@@ -320,6 +336,7 @@ object Http extends AwaitCapable {
     Seq(
       HostFunctionWithAuthorization(proxyHttpCall(config), _.httpAccess),
       HostFunctionWithAuthorization(getAttributes(config, attrs), _ => true),
+      HostFunctionWithAuthorization(getAttribute(config, attrs), _ => true),
       HostFunctionWithAuthorization(setAttribute(config, attrs), _ => true),
       HostFunctionWithAuthorization(delAttribute(config, attrs), _ => true),
       HostFunctionWithAuthorization(clearAttributes(config, attrs), _ => true),
