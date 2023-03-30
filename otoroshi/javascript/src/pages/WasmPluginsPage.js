@@ -216,6 +216,7 @@ export class WasmPluginsPage extends Component {
       props: {
         label: 'Steps',
         possibleValues: [
+          'Router',
           'Sink',
           'PreRoute',
           'ValidateAccess',
