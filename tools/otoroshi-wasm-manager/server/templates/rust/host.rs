@@ -53,6 +53,11 @@ extern "C" {
   fn proxy_global_map_set(context: u64, size: u64) -> u64;
   fn proxy_global_map_get(context: u64, size: u64) -> u64;
   fn proxy_global_map(unused: u64) -> u64;
+  ///
+  fn proxy_get_attrs(unused: u64) -> u64;
+  fn proxy_clear_attrs(unused: u64) -> u64;
+  fn proxy_set_attr(context: u64, size: u64) -> u64;
+  fn proxy_del_attr(context: u64, size: u64) -> u64;
 }
 
 pub struct Otoroshi {}
@@ -595,6 +600,31 @@ impl Otoroshi {
 
   pub fn plugin_datastore_all_matching_json(pattern: &str) -> Vec<serde_json::Value> {
     Self::datastore_all_matching_string(pattern).iter().map(|s| serde_json::from_str(s).unwrap()).collect()
+  }
+
+  /// attrs api
+  
+  pub fn attrs() -> Option<serde_json::Map<String, serde_json::Value>> {
+    let ptr = unsafe { proxy_get_attrs(0) };
+    Self::get_json_object_from_ptr(ptr)
+  }
+
+  pub fn attrs_set(key: String, value: serde_json::Value) {
+    let obj = serde_json::json!({
+      "key": key,
+      "value": value,
+    });
+    let mem = Self::allocate_string(serde_json::to_string(&obj).unwrap().as_str());
+    unsafe { proxy_set_attr(mem.offset, mem.length) };
+  }
+
+  pub fn attrs_del(key: String) {
+    let mem = Self::allocate_string(&key);
+    unsafe { proxy_del_attr(mem.offset, mem.length) };
+  }
+
+  pub fn attrs_clear() {
+    unsafe { proxy_clear_attrs(0) };
   }
 
   /// http client api

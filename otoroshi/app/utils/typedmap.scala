@@ -2,12 +2,12 @@ package otoroshi.utils
 
 import akka.http.scaladsl.model.DateTime
 import otoroshi.gateway.GwError
-import otoroshi.models.{ApiKey, ApiKeyRotationInfo, ApikeyTuple, JwtInjection, PrivateAppsUser, RemainingQuotas, Target}
-import otoroshi.next.models.{NgBackend, NgContextualPlugins, NgMatchedRoute, NgRoute, NgTarget}
+import otoroshi.models._
+import otoroshi.next.models.{NgBackend, NgRoute, NgTarget}
 import otoroshi.utils.cache.types.LegitTrieMap
-import play.api.libs.json.{JsArray, JsBoolean, JsNumber, JsObject, JsString, JsValue, Json}
-import play.api.libs.typedmap.{TypedEntry, TypedKey}
 import otoroshi.utils.json._
+import play.api.libs.json._
+import play.api.libs.typedmap.{TypedEntry, TypedKey}
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 import scala.collection.concurrent.TrieMap
@@ -18,7 +18,7 @@ trait TypedMap {
   def contains(key: TypedKey[_]): Boolean
   def put(entries: TypedEntry[_]*): TypedMap
   def putIfAbsent(entries: TypedEntry[_]*): TypedMap
-  def remove(entries: TypedEntry[_]*): TypedMap
+  def remove(entries: TypedKey[_]*): TypedMap
   def replace(entries: TypedEntry[_]*): TypedMap
   def update(entries: TypedEntry[_]*): TypedMap
   def clear(): TypedMap
@@ -34,7 +34,7 @@ object TypedMap {
   }
 }
 
-final class ConcurrentMutableTypedMap(m: TrieMap[TypedKey[_], Any]) extends TypedMap {
+final class ConcurrentMutableTypedMap(val m: TrieMap[TypedKey[_], Any]) extends TypedMap {
 
   override def json: JsValue = {
     JsObject(m.toSeq.zipWithIndex.map {
@@ -105,9 +105,9 @@ final class ConcurrentMutableTypedMap(m: TrieMap[TypedKey[_], Any]) extends Type
     this
   }
 
-  override def remove(entries: TypedEntry[_]*): TypedMap = {
-    entries.foreach { e =>
-      m.remove(e.key)
+  override def remove(keys: TypedKey[_]*): TypedMap = {
+    keys.foreach { key =>
+      m.remove(key)
     }
     this
   }

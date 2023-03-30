@@ -8,12 +8,14 @@ import org.joda.time.DateTime
 import otoroshi.cluster.ClusterConfig
 import otoroshi.env.Env
 import otoroshi.events.WasmLogEvent
+import otoroshi.models.{ApiKey, ApikeyTuple, JwtInjection, PrivateAppsUser, Target}
+import otoroshi.next.models.NgTarget
 import otoroshi.next.plugins.api.NgCachedConfigContext
 import otoroshi.next.plugins.{WasmAuthorizations, WasmConfig}
-import otoroshi.utils.RegexPool
+import otoroshi.utils.{ConcurrentMutableTypedMap, RegexPool, TypedMap}
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
+import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
 import java.nio.charset.StandardCharsets
@@ -236,10 +238,91 @@ object Http extends AwaitCapable {
     }
   }
 
-  def getFunctions(config: WasmConfig)
+  def getAttributes(config: WasmConfig, attrs: Option[TypedMap])(implicit env: Env, ec: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    HFunction.defineClassicFunction("proxy_get_attrs", config, LibExtism.ExtismValType.I64, None, LibExtism.ExtismValType.I64) { (plugin, _, returns, hostData) =>
+      attrs match {
+        case None => plugin.returnBytes(returns(0), Array.empty[Byte])
+        case Some(at) => plugin.returnBytes(returns(0), at.json.stringify.byteString.toArray)
+      }
+    }
+  }
+
+  def clearAttributes(config: WasmConfig, attrs: Option[TypedMap])(implicit env: Env, ec: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    HFunction.defineClassicFunction("proxy_clear_attrs", config, LibExtism.ExtismValType.I64, None, LibExtism.ExtismValType.I64) { (plugin, _, returns, hostData) =>
+      attrs match {
+        case None => plugin.returnInt(returns(0), 0)
+        case Some(at) => {
+          at.clear()
+          plugin.returnInt(returns(0), 0)
+        }
+      }
+    }
+  }
+
+  private lazy val possibleAttributes: Map[String, otoroshi.plugins.AttributeSetter[_]] = Seq(
+    otoroshi.plugins.AttributeSetter(otoroshi.next.plugins.Keys.ResponseAddHeadersKey, json => json.asObject.value.mapValues(_.asString).toSeq),
+    otoroshi.plugins.AttributeSetter(otoroshi.next.plugins.Keys.JwtInjectionKey, json => JwtInjection.fromJson(json).right.get),
+    otoroshi.plugins.AttributeSetter(otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey, json => ApikeyTuple.fromJson(json).right.get),
+    otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.UserKey, json => PrivateAppsUser.fmt.reads(json).get),
+    otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.ApiKeyKey, json => ApiKey._fmt.reads(json).get),
+    otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.ExtraAnalyticsDataKey, json => json),
+    otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.GatewayEventExtraInfosKey, json => json),
+    otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.PreExtractedRequestTargetKey, json => Target.format.reads(json).get),
+    otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey, json => json.asArray.value.map(v => NgTarget.fmt.reads(v).get)),
+    otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.ElCtxKey, json => json.asObject.value.mapValues(_.asString)),
+  )
+  .map(s => (s.key.displayName, s))
+  .collect {
+    case (Some(k), s) => (k, s)
+  }
+  .toMap
+
+  def setAttribute(config: WasmConfig, attrs: Option[TypedMap])(implicit env: Env, ec: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    HFunction.defineContextualFunction("proxy_set_attr", config, None) {
+      (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], hostData: EnvUserData) => {
+        attrs match {
+          case Some(at: ConcurrentMutableTypedMap) => {
+            val context = Json.parse(Utils.contextParamsToString(plugin, params: _*))
+            val key = context.select("key").asString
+            val value = context.select("value").asValue
+            try {
+              possibleAttributes.get(key).foreach { setter =>
+                at.m.put(setter.key, setter.f(value))
+              }
+            } catch {
+              case t: Throwable => t.printStackTrace()
+            }
+            plugin.returnInt(returns(0), 1)
+          }
+          case _ => plugin.returnInt(returns(0), 0)
+        }
+      }
+    }
+  }
+
+  def delAttribute(config: WasmConfig, attrs: Option[TypedMap])(implicit env: Env, ec: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
+    HFunction.defineContextualFunction("proxy_del_attr", config, None) {
+      (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], hostData: EnvUserData) => {
+        attrs match {
+          case Some(at: ConcurrentMutableTypedMap) => {
+            val key = Utils.contextParamsToString(plugin, params: _*)
+            at.m.keySet.find(_.displayName.contains(key)).foreach(tk => at.remove(tk))
+            plugin.returnInt(returns(0), 1)
+          }
+          case _ => plugin.returnInt(returns(0), 0)
+        }
+      }
+    }
+  }
+
+  def getFunctions(config: WasmConfig, attrs: Option[TypedMap])
                   (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[HostFunctionWithAuthorization] = {
     Seq(
-      HostFunctionWithAuthorization(proxyHttpCall(config), _.httpAccess)
+      HostFunctionWithAuthorization(proxyHttpCall(config), _.httpAccess),
+      HostFunctionWithAuthorization(getAttributes(config, attrs), _ => true),
+      HostFunctionWithAuthorization(setAttribute(config, attrs), _ => true),
+      HostFunctionWithAuthorization(delAttribute(config, attrs), _ => true),
+      HostFunctionWithAuthorization(clearAttributes(config, attrs), _ => true),
     )
   }
 }
@@ -690,11 +773,14 @@ object State {
 
 object HostFunctions {
 
-  def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext], pluginId: String)
+  def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext], pluginId: String, attrs: Option[TypedMap])
                   (implicit env: Env, executionContext: ExecutionContext): Array[HostFunction[_ <: HostUserData]] = {
+
     implicit val mat = env.otoroshiMaterializer
-    val functions = Logging.getFunctions(config, ctx) ++
-      Http.getFunctions(config) ++
+
+    val functions =
+      Logging.getFunctions(config, ctx) ++
+      Http.getFunctions(config, attrs) ++
       State.getFunctions(config, pluginId) ++
       DataStore.getFunctions(config, pluginId) ++
       OPA.getFunctions(config, ctx)
@@ -703,10 +789,6 @@ object HostFunctions {
       .collect {
         case func if func.authorized(config.authorizations) => func.function
       }
-      //.map { f =>
-      //  f.name.debugPrintln
-      //  f
-      //}
       .toArray
   }
 }

@@ -418,7 +418,7 @@ object WasmUtils {
 
         val context = new Context()
         val plugin = context.newPlugin(manifest, config.wasi,
-          next.plugins.HostFunctions.getFunctions(config, ctx, pluginId),
+          next.plugins.HostFunctions.getFunctions(config, ctx, pluginId, attrsOpt),
           next.plugins.LinearMemories.getMemories(config, ctx, pluginId))
         WasmContextSlot(manifest, context, plugin)
       }
@@ -471,6 +471,10 @@ object WasmUtils {
         logger.error(s"error while invoking wasm function '${functionName}'", e)
         Json.obj("error" -> "wasm_error", "error_description" -> JsString(e.getMessage)).left
     }
+  }
+
+  def executeSync(config: WasmConfig, defaultFunctionName: String, input: JsValue, ctx: Option[NgCachedConfigContext], attrs: Option[TypedMap], atMost: Duration)(implicit env: Env): Either[JsValue, String] = {
+    Await.result(execute(config, defaultFunctionName, input, ctx, attrs)(env), atMost)
   }
 
   def execute(config: WasmConfig, defaultFunctionName: String, input: JsValue, ctx: Option[NgCachedConfigContext], attrs: Option[TypedMap])(implicit env: Env): Future[Either[JsValue, String]] = {

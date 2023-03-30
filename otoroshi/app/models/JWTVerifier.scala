@@ -63,7 +63,17 @@ case class JwtInjection(
 }
 
 object JwtInjection extends FromJson[JwtInjection] {
-  override def fromJson(json: JsValue) = ???
+  override def fromJson(json: JsValue): Either[Throwable, JwtInjection] = {
+    Try {
+      JwtInjection(
+        decodedToken = json.select("decodedToken").asOpt[String].map(JWT.decode),
+        additionalHeaders = json.select("additionalHeaders").as[Map[String, String]],
+        removeHeaders = json.select("removeHeaders").as[Seq[String]],
+        additionalCookies = json.select("additionalCookies").as[Map[String, String]],
+        removeCookies = json.select("removeCookies").as[Seq[String]],
+      )
+    }.toEither
+  }
 }
 
 sealed trait JwtTokenLocation                          extends AsJson                     {
