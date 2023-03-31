@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <title>Otoroshi</title>
   <link href="https://fonts.cdnfonts.com/css/roboto" rel="stylesheet">
-
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
     html,
     body {
@@ -102,6 +102,7 @@
       type="button">+</button>
     <button id="zoom-reset" style="margin-left: 5px;" type="button">reset</button>
     <button id="toggle-contrib" style="margin-left: 5px;" type="button">show contributions</button>
+    <button id="image" style="margin-left: 5px;" type="button">.png</button>
   </div>
   <script>
 
@@ -215,11 +216,34 @@
         }
         refresh();
       }
+
+      function asImage() {
+        html2canvas(document.getElementById('group-root')).then(canvas => {
+          const data = canvas.toDataURL('image/png');
+          const byteString = atob(data.split(',')[1]);
+          const mimeString = data.split(',')[0].split(':')[1].split(';')[0]
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          const blob = new Blob([ab], {type: mimeString});
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.download = `capture.png`;
+          a.href = url;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => document.body.removeChild(a), 300);
+        });
+      }
  
       document.getElementById('zoom-in').addEventListener('click', zoomIn)
       document.getElementById('zoom-out').addEventListener('click', zoomOut)
       document.getElementById('zoom-reset').addEventListener('click', zoomReset)
       document.getElementById('toggle-contrib').addEventListener('click', toggleContrib)
+      document.getElementById('image').addEventListener('click', asImage)
 
       container.addEventListener('wheel', onZoom);
 
