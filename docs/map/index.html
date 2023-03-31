@@ -47,10 +47,18 @@
 
     * {
       gap: 4px;
+      user-select: none;
     }
 
     p {
       margin: 0;
+    }
+
+    #zoom-out,
+    #zoom-int,
+    #zoom-value,
+    #zoom-reset {
+      font-family: 'Roboto Medium', Arial, sans-serif;
     }
   </style>
 </head>
@@ -79,6 +87,12 @@
     let start = { x: 0, y: 0 }
     let zoom = 1;
     const ZOOM_SPEED = 0.04;
+
+
+
+    function updateZoomDisplay() {
+      document.getElementById('zoom-value').textContent = `${(zoom * 100).toFixed(0)}%`
+    }
 
     window.addEventListener('load', () => {
       const container = document.getElementById('scroll-container');
@@ -141,10 +155,6 @@
         updateZoomDisplay()
       }
 
-      function updateZoomDisplay() {
-        document.getElementById('zoom-value').textContent = `${(zoom * 100).toFixed(0)}%`
-      }
-
       function setZoomValue(value) {
         container.style.transform = `scale(${value})`;
       }
@@ -198,19 +208,15 @@
         if (dragging && !hasMoved) {
           const container = document.getElementById('scroll-container');
           container.style.transform = `scale(1)`;
-
-
           const root = document.getElementById('group-root');
 
           let rect = el.getBoundingClientRect();
 
           let ratio = rect.width > rect.height ? ((rect.width + 10) / window.innerWidth) : ((rect.height + 10) / window.innerHeight);
 
-
-
           zoom = 1 / ratio
+          updateZoomDisplay()
           container.style.transform = `scale(${1 / ratio})`;
-
 
           if (rect.height * 1 / ratio > window.innerHeight) {
             ratio = (rect.height + 20) / window.innerHeight;
@@ -224,6 +230,7 @@
       el.setAttribute("class", "group");
       el.setAttribute("style", [
         `display: flex`,
+        "cursor: pointer",
         `height: 100%`,
         `max-width: ${group.width ? group.width : '20%'}`,
         `background-color: rgba(68, 99, 137, 0.62)`, //#446389`, 
