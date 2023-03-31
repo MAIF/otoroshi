@@ -16,20 +16,27 @@
     .subgroup {
       text-transform: capitalize;
     }
+
+    *::-webkit-scrollbar {
+      display: none;
+    }
   </style>
 </head>
 
 <body>
-  <div id="scroll-container" style="position: relative; height: 100vh; width: 100vh">
+  <div id="scroll-container" style="position: relative; height: 100vh; width: 100vh;
+  -ms-overflow-style: none;
+  scrollbar-width: none;">
     <div id="group-root" style="transform: scale(1.0); font-family: sans-serif; margin: 0px; padding: 0px; 
       display: flex; flex-wrap: wrap; position: absolute; top: 0; left: 0; width: 300vh">
     </div>
   </div>
-  <div style="position: absolute; right: 10px; top: 5px; display: flex; flex-direction: row; justify-content: center; align-items: center;">
-    <button id="zoom-out" type="button">-</button>
+  <div
+    style="position: absolute; right: 10px; top: 5px; display: flex; flex-direction: row; justify-content: center; align-items: center; background: #fff;padding: 6px; border-radius: 3px">
+    <button id="zoom-out" type="button" style="border: 1px solid #ccc; background: #eee; border-radius: 3px">-</button>
     <div id="zoom-value" style="font-family: sans-serif; margin-left: 5px; margin-right: 5px;">100%</div>
-    <button id="zoom-in" style="margin-left: 5px;" type="button">+</button>
-    <button id="zoom-reset" style="margin-left: 5px;" type="button">reset</button>
+    <button id="zoom-in" style="margin-left: 5px; border: 1px solid #ccc; background: #eee; border-radius: 3px"
+      type="button">+</button>
   </div>
   <script>
 
@@ -43,12 +50,14 @@
       const ZOOM_SPEED = 0.1;
 
       const down = e => {
+        e.stopPropagation()
         dragging = true
         start.x = e.clientX
         start.y = e.clientY
       }
 
       const move = e => {
+        e.stopPropagation()
         if (dragging) {
           const delta = {
             x: (start.x - e.clientX) * (1 / zoom),
@@ -58,7 +67,7 @@
             x: ~~root.style.left.replace('px', ''),
             y: ~~root.style.top.replace('px', ''),
           }
-          console.log(delta)
+          
           root.style.left = `${rect.x - delta.x}px`;
           root.style.top = `${rect.y - delta.y}px`;
 
@@ -67,11 +76,13 @@
         }
       }
 
-      const up = () => {
+      const up = e => {
+        e.stopPropagation()
         dragging = false
       }
 
       const onZoom = e => {
+        e.stopPropagation()
         if (e.deltaY > 0) {
           container.style.transform = `scale(${zoom += ZOOM_SPEED})`;
         } else if (zoom > .2) {
@@ -132,6 +143,10 @@
 
     function renderRootGroup(group) {
       const el = document.createElement('div');
+      el.addEventListener('click', () => {
+        console.log('here')
+        el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" })
+      });
       el.setAttribute("id", "group-" + group.id);
       el.setAttribute("class", "group");
       el.setAttribute("style", [
