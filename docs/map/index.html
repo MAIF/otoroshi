@@ -5,6 +5,21 @@
   <meta charset="utf-8">
   <title>Otoroshi</title>
   <style>
+    html,
+    body {
+      overflow: hidden;
+    }
+
+    .scroll-container {
+      transition: transform .5s linear;
+      will-change: transform;
+    }
+
+    .group-root {
+      transition: transform .5s linear;
+      will-change: transform;
+    }
+
     .node {
       text-transform: capitalize;
     }
@@ -26,13 +41,13 @@
 <body>
   <div id="scroll-container" style="position: relative; height: 100vh; width: 100vh;
   -ms-overflow-style: none;
-  scrollbar-width: none; transform: scale(0.5);">
+  scrollbar-width: none; transform: scale(.5); transform-origin: top left;">
     <div id="group-root" style="transform: scale(1.0); font-family: sans-serif; margin: 0px; padding: 0px; 
-      display: flex; flex-wrap: wrap; position: absolute; top: -300px; left: -300px; width: 300vh">
+      display: flex; flex-wrap: wrap; position: fixed; width: 300vh">
     </div>
   </div>
   <div
-    style="position: absolute; right: 10px; top: 5px; display: flex; flex-direction: row; justify-content: center; align-items: center; background: #fff;padding: 6px; border-radius: 3px">
+    style="position: absolute; right: 12px; bottom: 0; display: flex; flex-direction: row; justify-content: center; align-items: center; background: #eee;padding: 6px; border-radius: 3px">
     <button id="zoom-out" type="button" style="border: 1px solid #ccc; background: #eee; border-radius: 3px">-</button>
     <div id="zoom-value" style="font-family: sans-serif; margin-left: 5px; margin-right: 5px;">100%</div>
     <button id="zoom-in" style="margin-left: 5px; border: 1px solid #ccc; background: #eee; border-radius: 3px"
@@ -41,14 +56,14 @@
   </div>
   <script>
 
+    let dragging = false
+    let start = { x: 0, y: 0 }
+    let zoom = 1;
+    const ZOOM_SPEED = 0.04;
+
     window.addEventListener('load', () => {
       const container = document.getElementById('scroll-container');
       const root = document.getElementById('group-root');
-
-      let dragging = false
-      let start = { x: 0, y: 0 }
-      let zoom = 1.0;
-      const ZOOM_SPEED = 0.04;
 
       const down = e => {
         e.stopPropagation()
@@ -64,13 +79,18 @@
             x: (start.x - e.clientX) * (1 / zoom),
             y: (start.y - e.clientY) * (1 / zoom)
           }
+
+          const transform = root.style.transform.replace('translate(', '').replace(')', '').split(',').map(r => r.replace('px', ''))
           const rect = {
-            x: ~~root.style.left.replace('px', ''),
-            y: ~~root.style.top.replace('px', ''),
+            // x: ~~root.style.left.replace('px', ''),
+            // y: ~~root.style.top.replace('px', ''),
+            x: ~~transform[0],
+            y: ~~transform[1],
           }
 
-          root.style.left = `${rect.x - delta.x}px`;
-          root.style.top = `${rect.y - delta.y}px`;
+          root.style.transform = `translate(${rect.x - delta.x}px, ${rect.y - delta.y}px)`
+          // root.style.left = ``;
+          // root.style.top = ``;
 
           start.x = e.clientX
           start.y = e.clientY
@@ -86,6 +106,13 @@
         e.stopPropagation()
         if (e.deltaY > 0) {
           container.style.transform = `scale(${zoom += ZOOM_SPEED})`;
+          const transform = root.style.transform.replace('translate(', '').replace(')', '').split(',').map(r => r.replace('px', ''))
+          const r = {
+            x: ~~transform[0],
+            y: ~~transform[1],
+          }
+          root.style.left = r.x * ZOOM_SPEED;
+          root.style.top = r.y * ZOOM_SPEED;
         } else if (zoom > .2) {
           container.style.transform = `scale(${zoom -= ZOOM_SPEED})`;
         }
@@ -145,19 +172,28 @@
     function renderRootGroup(group) {
       const el = document.createElement('div');
       el.addEventListener('mousedown', () => {
-        el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" })
+        const container = document.getElementById('scroll-container');
+        container.style.transform = `scale(1)`;
+
+        const root = document.getElementById('group-root');
+
+        let rect = el.getBoundingClientRect();
+        
+        root.style.transform = `translate(-${el.offsetLeft}px, -${el.offsetTop}px)`
+        let ratio = rect.width > rect.height ? ((rect.width + 10) / window.innerWidth) : ((rect.height + 10) / window.innerHeight);
+
+        if (rect.height * 1 / ratio > window.innerHeight) {
+          ratio = (rect.height + 20) / window.innerHeight;
+          root.style.transform = `translate(-${el.offsetLeft}px, -${el.offsetTop-20}px)`
+        }
+
+        document.getElementById('scroll-container').style.transform = `scale(${1 / ratio})`;
       });
       el.setAttribute("id", "group-" + group.id);
       el.setAttribute("class", "group");
       el.setAttribute("style", [
         `display: flex`,
-        // `flex-direction: ${group.direction || 'row'}`,
-        // `justify-content: space-between`,
-        `align-items: flex-start`,
-        //`min-width: 25%`, 
-        // `min-height: 300px`,
         `height: 100%`,
-        // group.width ? `width: ${group.width}` : 'width: 20vw',
         `max-width: ${group.width ? group.width : '20%'}`,
         `background-color: rgba(68, 99, 137, 0.62)`, //#446389`, 
         `margin: 10px`,
