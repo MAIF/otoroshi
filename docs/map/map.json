@@ -6,7 +6,7 @@
         "id": "plugins",
         "title": "Plugins",
         "group_id": null,
-        "width": "60%"
+        "width": "30%"
       },
       {
         "title": "API Management",
@@ -48,13 +48,13 @@
         "title": "Traffic Management",
         "id": "traffic_management",
         "group_id": null,
-        "width": "45%"
+        "width": "25%"
       },
       {
         "title": "Security",
         "id": "security",
         "group_id": null,
-        "width": "45%"
+        "width": "25%"
       },
       {
         "title": "Reverse proxy",
