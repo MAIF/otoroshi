@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Otoroshi</title>
+    <style>
+      .node {
+        text-transform: capitalize;
+      }
+      .group {
+        text-transform: capitalize;
+      }
+      .subgroup {
+        text-transform: capitalize;
+      }
+    </style>
+  </head>
+  <body>
+      <div id="group-root" style="transform: scale(1.0); font-family: sans-serif; display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: flex-start; margin: 0px; padding: 10px;"></div>
+      <div style="position: fixed; right: 10px; top: 5px; display: flex; flex-direction: row; justify-content: center; align-items: center;">
+        <button id="zoom-out" type="button">-</button>
+        <div id="zoom-value" style="font-family: sans-serif; margin-left: 5px; margin-right: 5px;">100%</div>
+        <button id="zoom-in" style="margin-left: 5px;" type="button">+</button>
+      </div>
+      <script>
+
+        function renderRootGroup(group) {
+          const el = document.createElement('div');
+          el.setAttribute("id", "group-" + group.id);
+          el.setAttribute("class", "group");
+          el.setAttribute("style", [
+              `display: flex`, 
+              `flex-direction: ${group.direction || 'row'}`, 
+              `justify-content: space-between`, 
+              `align-items: flex-start`, 
+              `min-width: 25%`, 
+              `min-height: 300px`,
+              `height: 100%`, 
+              group.width ? `width: ${group.width}` : 'width: 20vw',
+              `background-color: rgba(68, 99, 137, 0.62)`, //#446389`, 
+              `margin: 10px`, 
+              `padding: 10px`, 
+              'border-radius: 5px',
+              'flex-wrap: wrap',
+            ].join("; ")
+          )
+          const title = document.createElement('h3');
+          title.textContent = group.title;
+          title.setAttribute('style', 'display: flex; justify-content: center; align-items: center; background-color: #f9b000; padding: 10px; color: white; width: 100%; border-radius: 5px; margin: 0px 0px 5px 0px;')
+          el.appendChild(title);
+          document.getElementById('group-root').appendChild(el)
+        }
+
+        function renderSubGroup(group) {
+          const el = document.createElement('div');
+          el.setAttribute("id", "subgroup-" + group.id);
+          el.setAttribute("class", "subgroup");
+          el.setAttribute("style", [
+            "display: flex", 
+            "flex-direction: column", 
+            "justify-content: center;",
+            "align-items: flex-start", 
+            "width: 100%", 
+            "height: 100%", 
+            "background-color: rgba(52, 88, 110, 0.79)", 
+            'border-radius: 5px',
+            'color: white',
+            "margin-top:5px", 
+            'font-size: 12px',
+            "padding: 10px", 
+          ].join('; '))
+          const title = document.createElement('h4');
+          title.textContent = group.title;
+          title.setAttribute("style", "width: 100%; text-align: center")
+          el.appendChild(title);
+          const container = document.createElement('div');
+          container.setAttribute("id", "group-" + group.id);
+          container.setAttribute("style", [
+            "display: flex", 
+            "flex-direction: row", 
+            "flex-wrap: wrap",
+            "justify-content: center;",
+            "align-items: flex-start", 
+            "width: 100%", 
+            "height: 100%", 
+          ].join("; "))
+          el.appendChild(container);
+          document.getElementById('group-' + (group.group_id || 'root')).appendChild(el)
+        }
+
+        function renderNode(node) {
+          const el = document.createElement('div');
+          el.setAttribute("id", "node-" + node.id);
+          el.setAttribute("class", "node");
+          el.setAttribute("style", [
+            "display: flex", 
+            "flex-direction: row", 
+            "justify-content: center", 
+            "align-items: center", 
+            "width: 120px", 
+            "height: 30px", 
+            "text-align: center",
+            "background-color: rgb(52, 88, 110)", 
+            'border-radius: 5px',
+            'margin-top: 5px',
+            'margin-left: 2px',
+            'margin-right: 2px',
+            "padding: 10px",
+            'font-size: 11px',
+            "color: white"
+          ].join('; '))
+          const p = document.createElement('p')
+          p.textContent = node.title;
+          el.appendChild(p);
+          const id = 'group-' + (node.group_id || 'root');
+          const n = document.getElementById(id) || document.getElementById("group-root")
+          n.appendChild(el)
+        }
+
+        function renderAll(doc) {
+          doc.groups.map(group => {
+            if (group.group_id) {
+              renderSubGroup(group);
+            } else {
+              renderRootGroup(group);
+            }
+          });
+          doc.nodes.map(node => {
+            renderNode(node);
+          });
+        }
+        
+
+        function zoomValue() {
+          const el = document.getElementById('group-root');
+          const scale = parseFloat(el.style.transform.replace("scale(", "").replace(")"));
+          return scale;
+        }
+
+        function setZoomValue(value) {
+          const el = document.getElementById('group-root');
+          el.style.transform = `scale(${value})`
+        }
+
+        function zoomIn() {
+          const value = zoomValue()
+          if (value < 4.00) {
+            setZoomValue(value + 0.1);
+            document.getElementById('zoom-value').textContent = `${((value + 0.1) * 100).toFixed(0)}%`
+          }
+        }
+
+        function zoomOut() {
+          const value = zoomValue()
+          if (value > 0) {
+            setZoomValue(value - 0.1);
+            document.getElementById('zoom-value').textContent = `${((value - 0.1) * 100).toFixed(0)}%`
+          }
+        }
+
+        document.getElementById('zoom-in').addEventListener('click', (e) => zoomIn())
+        document.getElementById('zoom-out').addEventListener('click', (e) => zoomOut())
+        fetch('/map.json').then(r => r.json()).then(doc => {
+          renderAll(doc.map)
+        });
+      </script>
+  </body>
+</html>

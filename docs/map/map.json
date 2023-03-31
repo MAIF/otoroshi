@@ -1,0 +1,1528 @@
+{
+  "map": {
+    "updated_at": 1680184548811,
+    "groups": [
+      {
+        "id": "plugins",
+        "title": "Plugins",
+        "group_id": null,
+        "width": "100%"
+      },
+      {
+        "title": "API Management",
+        "id": "apimgt",
+        "group_id": null
+      },
+      {
+        "title": "API Keys",
+        "id": "apikeys",
+        "group_id": "apimgt"
+      },
+      {
+        "title": "Resilience",
+        "id": "resilience",
+        "group_id": null
+      },
+      {
+        "title": "Observability",
+        "id": "observability",
+        "group_id": null,
+        "width": "45%"
+      },
+      {
+        "title": "Events",
+        "id": "events",
+        "group_id": "observability"
+      },
+      {
+        "title": "Metrics",
+        "id": "metrics",
+        "group_id": "observability"
+      },
+      {
+        "title": "Exporters",
+        "id": "exporters",
+        "group_id": "observability"
+      },
+      {
+        "title": "Traffic Management",
+        "id": "traffic_management",
+        "group_id": null,
+        "width": "45%"
+      },
+      {
+        "title": "Security",
+        "id": "security",
+        "group_id": null,
+        "width": "45%"
+      },
+      {
+        "title": "Reverse proxy",
+        "id": "reverse_proxy",
+        "group_id": null
+      },
+      {
+        "title": "HTTP(S)",
+        "id": "https",
+        "group_id": "traffic_management"
+      },
+      {
+        "title": "TCP",
+        "id": "tcp",
+        "group_id": "traffic_management"
+      },
+      {
+        "title": "LoadBalancing",
+        "id": "load_balancing",
+        "group_id": "traffic_management"
+      },
+      {
+        "title": "Misc",
+        "id": "misc",
+        "group_id": null
+      },
+      {
+        "title": "Chaos Engineering",
+        "id": "chaos_engineering",
+        "group_id": null
+      },
+      {
+        "title": "crypto & tls",
+        "id": "crypto",
+        "group_id": "security"
+      },
+      {
+        "title": "authentication modules",
+        "id": "authmods",
+        "group_id": "security"
+      },
+      {
+        "title": "jwt verifiers",
+        "id": "jwt_verifiers",
+        "group_id": "security"
+      },
+      {
+        "title": "WASM integration",
+        "id": "wasm_integration",
+        "group_id": null
+      },
+      {
+        "title": "Documentation",
+        "id": "documentation",
+        "group_id": null
+      },
+      {
+        "title": "Sessions management",
+        "id": "sessions_management",
+        "group_id": null
+      },
+      {
+        "title": "Entities management",
+        "id": "entities_management",
+        "group_id": null
+      },
+      {
+        "title": "GraphQL integration",
+        "id": "graphql_integration",
+        "group_id": null
+      },
+      {
+        "title": "Kubernetes integration",
+        "id": "kubernetes_integration",
+        "group_id": null
+      },
+      {
+        "title": "CLI & Tools",
+        "id": "cli_and_tools",
+        "group_id": null
+      },
+      {
+        "title": "Datastore",
+        "id": "datastore",
+        "group_id": null
+      },
+      {
+        "title": "Clustering",
+        "id": "clustering",
+        "group_id": null
+      },
+      {
+        "title": "Extism usage & fork",
+        "id": "extism_usage",
+        "group_id": null
+      },
+      {
+        "title": "UI Stack",
+        "id": "ui",
+        "group_id": null
+      },
+      {
+        "title": "WASM Manager",
+        "id": "wasm_manager",
+        "group_id": null
+      },
+      {
+        "title": "Backend Stack",
+        "id": "backend_stack",
+        "group_id": null
+      }
+    ],
+    "nodes": [
+      {
+        "title": "Additional headers in",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Additional headers out",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Allowed HTTP methods",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Apikeys",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Apikey quotas",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Authentication",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Build mode",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Canary mode",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Context validator",
+        "group_id": "plugins"
+      },
+      {
+        "title": "CORS",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Disable HTTP/1.0",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Endless HTTP responses",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Eureka instance",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Internal Eureka target",
+        "group_id": "plugins"
+      },
+      {
+        "title": "External Eureka target",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Force HTTPS traffic",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Global Maintenance mode",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Global per ip address throttling",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Global throttling",
+        "group_id": "plugins"
+      },
+      {
+        "title": "GraphQL Composer",
+        "group_id": "plugins"
+      },
+      {
+        "title": "GraphQL Proxy",
+        "group_id": "plugins"
+      },
+      {
+        "title": "GraphQL Query to REST",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Gzip compression",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Headers validation",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Http3 traffic switch",
+        "group_id": "plugins"
+      },
+      {
+        "title": "IP allowed list",
+        "group_id": "plugins"
+      },
+      {
+        "title": "IP block list",
+        "group_id": "plugins"
+      },
+      {
+        "title": "JQ",
+        "group_id": "plugins"
+      },
+      {
+        "title": "JQ transform request",
+        "group_id": "plugins"
+      },
+      {
+        "title": "JQ transform response",
+        "group_id": "plugins"
+      },
+      {
+        "title": "request body json-to-xml",
+        "group_id": "plugins"
+      },
+      {
+        "title": "response body json-to-xml",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Jwt signer",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Jwt verifiers",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Jwt verification only",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Maintenance mode",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Missing headers in",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Missing headers out",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Mock Responses",
+        "group_id": "plugins"
+      },
+      {
+        "title": "User logged in expected",
+        "group_id": "plugins"
+      },
+      {
+        "title": "User extraction from auth. module",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Html Patcher",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Legacy apikeys",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Legacy Authentication",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Otoroshi challenge token",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Otoroshi info. token",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Override host header",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Public/Private paths",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Query param transformer",
+        "group_id": "plugins"
+      },
+      {
+        "title": "RBAC",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Read only requests",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Redirection",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Remove headers in",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Remove headers out",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Robots",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Routing Restrictions",
+        "group_id": "plugins"
+      },
+      {
+        "title": "S3 Static backend",
+        "group_id": "plugins"
+      },
+      {
+        "title": "SOAP action",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Send otoroshi headers back",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Snow Monkey Chaos",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Static backend",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Static Response",
+        "group_id": "plugins"
+      },
+      {
+        "title": "TCP Tunnel",
+        "group_id": "plugins"
+      },
+      {
+        "title": "UDP Tunnel",
+        "group_id": "plugins"
+      },
+      {
+        "title": "W3C Trace Context",
+        "group_id": "plugins"
+      },
+      {
+        "title": "X-Forwarded-* headers",
+        "group_id": "plugins"
+      },
+      {
+        "title": "request body xml-to-json",
+        "group_id": "plugins"
+      },
+      {
+        "title": "response body xml-to-json",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Remote tunnel calls",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Access log (CLF)",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Access log (JSON)",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Kafka access log",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Basic Auth. caller",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "OAuth2 caller",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Response Cache",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Client certificate header",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Defer Responses",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Self registration endpoints (service discovery)",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Envoy Control Plane (experimental)",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Geolocation endpoint",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Geolocation header",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "HMAC caller plugin",
+        "group_id": "plugins"
+      },
+      {
+        "title": "Izanami Canary Campaign",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Izanami APIs Proxy",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "JQ bodies transformer",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Html Patcher",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Log4Shell mitigation plugin",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Body logger",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Prometheus Service Metrics",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Service Metrics",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Mirroring plugin",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "OAuth1 caller",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "OIDC headers",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Security Txt",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Static Response",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "User-Agent endpoint",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "User-Agent header",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Workflow endpoint",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Biscuit token validator",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Client Certificate + Api Key only",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Client certificate matching (over http)",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Client certificate matching",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Client Certificate Only",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "External Http Validator",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "HMAC access validator",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "OIDC access_token validator",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Instance quotas",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Public quotas",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Allowed users only",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Apikey auth module",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Client certificate as apikey",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Client Credential Flow ApiKey extractor",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Apikey from Biscuit token extractor",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Service discovery target selector (service discovery)",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Geolocation details extractor (using IpStack api)",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Geolocation details extractor (using Maxmind db)",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Jwt user extractor",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "OIDC access_token as apikey",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "User-Agent details extractor",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Client Credential Service",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Global self registration endpoints (service discovery)",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Kubernetes admission validator webhook",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Kubernetes sidecar injector webhook",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Prometheus Endpoint",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Otoroshi state exporter job",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Tailscale certificate fetcher job",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Tailscale targets job",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Kubernetes Ingress Controller",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Kubernetes Otoroshi CRDs Controller",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Kubernetes to Otoroshi certs. synchronizer",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Otoroshi certs. to Kubernetes secrets synchronizer",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Workflow job",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Otoroshi next proxy engine (experimental)",
+        "legacy": true,
+        "group_id": "plugins"
+      },
+      {
+        "title": "Forward traffic",
+        "group_id": "plugins"
+      },
+      {
+        "title": "TTL",
+        "group_id": "apikeys"
+      },
+      {
+        "title": "Routing restrictions",
+        "group_id": "apikeys"
+      },
+      {
+        "title": "Automatic Secret rotation",
+        "group_id": "apikeys"
+      },
+      {
+        "title": "throttling",
+        "group_id": "apikeys"
+      },
+      {
+        "title": "quotas",
+        "group_id": "apikeys"
+      },
+      {
+        "title": "Constrained routing for services",
+        "group_id": "apikeys"
+      },
+      {
+        "title": "OAuth2 client_credentia ls support",
+        "group_id": "apikeys"
+      },
+      {
+        "title": "custom apikey extraction with plugins",
+        "group_id": "apikeys"
+      },
+      {
+        "title": "Retries",
+        "group_id": "resilience"
+      },
+      {
+        "title": "ip allowed list",
+        "group_id": "resilience"
+      },
+      {
+        "title": "global throttling",
+        "group_id": "resilience"
+      },
+      {
+        "title": "ip denied list",
+        "group_id": "resilience"
+      },
+      {
+        "title": "instance location with target filtering",
+        "group_id": "resilience"
+      },
+      {
+        "title": "Circuit breakers",
+        "group_id": "resilience"
+      },
+      {
+        "title": "Load-balancing",
+        "group_id": "resilience"
+      },
+      {
+        "title": "global throttling",
+        "group_id": "resilience"
+      },
+      {
+        "title": "per ip",
+        "group_id": "resilience"
+      },
+      {
+        "title": "endless responses",
+        "group_id": "resilience"
+      },
+      {
+        "title": "global state export job",
+        "group_id": "resilience"
+      },
+      {
+        "title": "Audit ",
+        "group_id": "events"
+      },
+      {
+        "title": "global status ",
+        "group_id": "events"
+      },
+      {
+        "title": "Internal ",
+        "group_id": "events"
+      },
+      {
+        "title": "events",
+        "group_id": "events"
+      },
+      {
+        "title": "Alerts ",
+        "group_id": "events"
+      },
+      {
+        "title": "global analytics ",
+        "group_id": "events"
+      },
+      {
+        "title": "Event bus",
+        "group_id": "events"
+      },
+      {
+        "title": "statsd ",
+        "group_id": "metrics"
+      },
+      {
+        "title": "json",
+        "group_id": "metrics"
+      },
+      {
+        "title": "datadog ",
+        "group_id": "metrics"
+      },
+      {
+        "title": "prometheus",
+        "group_id": "metrics"
+      },
+      {
+        "title": "monitoring ",
+        "group_id": "metrics"
+      },
+      {
+        "title": "endpoints",
+        "group_id": "metrics"
+      },
+      {
+        "title": "Kafka ",
+        "group_id": "exporters"
+      },
+      {
+        "title": "Mailer ",
+        "group_id": "exporters"
+      },
+      {
+        "title": "Pulsar ",
+        "group_id": "exporters"
+      },
+      {
+        "title": "Goreplay",
+        "group_id": "exporters"
+      },
+      {
+        "title": "Webhook ",
+        "group_id": "exporters"
+      },
+      {
+        "title": "Elastic ",
+        "group_id": "exporters"
+      },
+      {
+        "title": "Files ",
+        "group_id": "exporters"
+      },
+      {
+        "title": "S3",
+        "group_id": "exporters"
+      },
+      {
+        "title": "Request routing metrics",
+        "group_id": "exporters"
+      },
+      {
+        "title": "debug mode ",
+        "group_id": "reverse_proxy"
+      },
+      {
+        "title": "plugin system",
+        "group_id": "reverse_proxy"
+      },
+      {
+        "title": "pluggable traffic handler",
+        "group_id": "reverse_proxy"
+      },
+      {
+        "title": "http3 ",
+        "group_id": "reverse_proxy"
+      },
+      {
+        "title": "io_uring",
+        "group_id": "reverse_proxy"
+      },
+      {
+        "title": "reporting ",
+        "group_id": "reverse_proxy"
+      },
+      {
+        "title": "router",
+        "group_id": "reverse_proxy"
+      },
+      {
+        "title": "proxy state",
+        "group_id": "reverse_proxy"
+      },
+      {
+        "title": "exp. http backend",
+        "group_id": "reverse_proxy"
+      },
+      {
+        "title": "API ",
+        "group_id": "https"
+      },
+      {
+        "title": "webapp ",
+        "group_id": "https"
+      },
+      {
+        "title": "websocket",
+        "group_id": "https"
+      },
+      {
+        "title": "database",
+        "group_id": "tcp"
+      },
+      {
+        "title": "app",
+        "group_id": "tcp"
+      },
+      {
+        "title": "RoundRobin",
+        "group_id": "load_balancing"
+      },
+      {
+        "title": "Best response ",
+        "group_id": "load_balancing"
+      },
+      {
+        "title": "Sticky time",
+        "group_id": "load_balancing"
+      },
+      {
+        "title": "IP adress hash",
+        "group_id": "load_balancing"
+      },
+      {
+        "title": "Random",
+        "group_id": "load_balancing"
+      },
+      {
+        "title": "Distributed in- flight request limiting",
+        "group_id": "traffic_management"
+      },
+      {
+        "title": "Distributed rate limiting",
+        "group_id": "traffic_management"
+      },
+      {
+        "title": "End-to-end h3 support",
+        "group_id": "traffic_management"
+      },
+      {
+        "title": "Traffic mirroring ",
+        "group_id": "traffic_management"
+      },
+      {
+        "title": "Traffic capture",
+        "group_id": "traffic_management"
+      },
+      {
+        "title": "Canary deployments",
+        "group_id": "traffic_management"
+      },
+      {
+        "title": "Relay routing",
+        "group_id": "traffic_management"
+      },
+      {
+        "title": "Tunnels for easier network exposition",
+        "group_id": "traffic_management"
+      },
+      {
+        "title": "End-to-end h2 support",
+        "group_id": "traffic_management"
+      },
+      {
+        "title": "End-to-end grpc support",
+        "group_id": "traffic_management"
+      },
+      {
+        "title": "clever cloud integration",
+        "group_id": "misc"
+      },
+      {
+        "title": "tailscale integration",
+        "group_id": "misc"
+      },
+      {
+        "title": "resources loader",
+        "group_id": "misc"
+      },
+      {
+        "title": "job framework with distributed scheduling across nodes",
+        "group_id": "misc"
+      },
+      {
+        "title": "global import/export",
+        "group_id": "misc"
+      },
+      {
+        "title": "TCP Proxy",
+        "group_id": "misc"
+      },
+      {
+        "title": "TCP/UPD tunneling",
+        "group_id": "misc"
+      },
+      {
+        "title": "contextual expression language",
+        "group_id": "misc"
+      },
+      {
+        "title": "entity templates",
+        "group_id": "misc"
+      },
+      {
+        "title": "panic mode",
+        "group_id": "misc"
+      },
+      {
+        "title": "anonymous reporting",
+        "group_id": "misc"
+      },
+      {
+        "title": "eureka2 integration",
+        "group_id": "misc"
+      },
+      {
+        "title": "big response body fault",
+        "group_id": "chaos_engineering"
+      },
+      {
+        "title": "big request body fault",
+        "group_id": "chaos_engineering"
+      },
+      {
+        "title": "bad response fault",
+        "group_id": "chaos_engineering"
+      },
+      {
+        "title": "latency injection fault",
+        "group_id": "chaos_engineering"
+      },
+      {
+        "title": "PKI self signed tools",
+        "group_id": "crypto"
+      },
+      {
+        "title": "ACME support",
+        "group_id": "crypto"
+      },
+      {
+        "title": "Let's encrypt support",
+        "group_id": "crypto"
+      },
+      {
+        "title": "PKI tools OCSP responder AIA",
+        "group_id": "crypto"
+      },
+      {
+        "title": "public keypair JWKS",
+        "group_id": "crypto"
+      },
+      {
+        "title": "TLS termination",
+        "group_id": "crypto"
+      },
+      {
+        "title": "End-to-end MTLS",
+        "group_id": "crypto"
+      },
+      {
+        "title": "auto certs",
+        "group_id": "crypto"
+      },
+      {
+        "title": "customize TLS handshake",
+        "group_id": "crypto"
+      },
+      {
+        "title": "bad cert human readable response",
+        "group_id": "crypto"
+      },
+      {
+        "title": "secrets vault",
+        "group_id": "crypto"
+      },
+      {
+        "title": "OAuth/OIDC 2.0/2.1",
+        "group_id": "authmods"
+      },
+      {
+        "title": "SAML V2 ",
+        "group_id": "authmods"
+      },
+      {
+        "title": "webauthn",
+        "group_id": "authmods"
+      },
+      {
+        "title": "OAuth 1.0a ",
+        "group_id": "authmods"
+      },
+      {
+        "title": "In memory ",
+        "group_id": "authmods"
+      },
+      {
+        "title": "LDAP ",
+        "group_id": "authmods"
+      },
+      {
+        "title": "proxy sso",
+        "group_id": "authmods"
+      },
+      {
+        "title": "RSASSA-PCKS1 + SHA",
+        "group_id": "jwt_verifiers"
+      },
+      {
+        "title": "RSASSA-PKCS1 + From KeyPair",
+        "group_id": "jwt_verifiers"
+      },
+      {
+        "title": "Otoroshi keypair from token KID",
+        "group_id": "jwt_verifiers"
+      },
+      {
+        "title": "validate tokens",
+        "group_id": "jwt_verifiers"
+      },
+      {
+        "title": "HMAC + SHA",
+        "group_id": "jwt_verifiers"
+      },
+      {
+        "title": "ECDSA + SHA",
+        "group_id": "jwt_verifiers"
+      },
+      {
+        "title": "JWT Set",
+        "group_id": "jwt_verifiers"
+      },
+      {
+        "title": "ECSA + SHA from keypair",
+        "group_id": "jwt_verifiers"
+      },
+      {
+        "title": "re-sign tokens ",
+        "group_id": "jwt_verifiers"
+      },
+      {
+        "title": "transform tokens",
+        "group_id": "jwt_verifiers"
+      },
+      {
+        "title": "WASM Manager",
+        "group_id": "wasm_integration"
+      },
+      {
+        "title": "Custom Go/Rust/Typescript Host functions",
+        "group_id": "wasm_integration"
+      },
+      {
+        "title": "Open Policy Agen integration",
+        "group_id": "wasm_integration"
+      },
+      {
+        "title": "Http/File/Local/ Manager WASM source support",
+        "group_id": "wasm_integration"
+      },
+      {
+        "title": "Extism contribution",
+        "group_id": "wasm_integration"
+      },
+      {
+        "title": "Extism integration",
+        "group_id": "wasm_integration"
+      },
+      {
+        "title": "WASM plugin entity",
+        "group_id": "wasm_integration"
+      },
+      {
+        "title": "9 kind of wasm plugins",
+        "group_id": "wasm_integration"
+      },
+      {
+        "title": "81 pages ",
+        "group_id": "documentation"
+      },
+      {
+        "title": "17 topics",
+        "group_id": "documentation"
+      },
+      {
+        "title": "23 tutorials ",
+        "group_id": "documentation"
+      },
+      {
+        "title": "113 schemas / screenshots",
+        "group_id": "documentation"
+      },
+      {
+        "title": "Control Plane / Data plane",
+        "group_id": "clustering"
+      },
+      {
+        "title": "backup for data plane resilience",
+        "group_id": "clustering"
+      },
+      {
+        "title": "Quotas sync",
+        "group_id": "clustering"
+      },
+      {
+        "title": "Cluster state sync",
+        "group_id": "clustering"
+      },
+      {
+        "title": "distributed web authentication accross nodes",
+        "group_id": "clustering"
+      },
+      {
+        "title": "Redis pool ",
+        "group_id": "datastore"
+      },
+      {
+        "title": "Redis-cluster ",
+        "group_id": "datastore"
+      },
+      {
+        "title": "Redis sentinel ",
+        "group_id": "datastore"
+      },
+      {
+        "title": "Redis",
+        "group_id": "datastore"
+      },
+      {
+        "title": "Http",
+        "group_id": "datastore"
+      },
+      {
+        "title": "Redis mpool ",
+        "group_id": "datastore"
+      },
+      {
+        "title": "Redis-lf ",
+        "group_id": "datastore"
+      },
+      {
+        "title": "Redis sentinel lf ",
+        "group_id": "datastore"
+      },
+      {
+        "title": "In memory ",
+        "group_id": "datastore"
+      },
+      {
+        "title": "File",
+        "group_id": "datastore"
+      },
+      {
+        "title": "S3 ",
+        "group_id": "datastore"
+      },
+      {
+        "title": "Cassandra ",
+        "group_id": "datastore"
+      },
+      {
+        "title": "postgresql",
+        "group_id": "datastore"
+      },
+      {
+        "title": "Otoroshi Mesh ",
+        "group_id": "cli_and_tools"
+      },
+      {
+        "title": "Wasm Manager ",
+        "group_id": "cli_and_tools"
+      },
+      {
+        "title": "TCP UDP tunnel client",
+        "group_id": "cli_and_tools"
+      },
+      {
+        "title": "TCP UDP tunnel client GUI",
+        "group_id": "cli_and_tools"
+      },
+      {
+        "title": "Otoroshi remote tunnel agent",
+        "group_id": "cli_and_tools"
+      },
+      {
+        "title": "Service mesh sidecar",
+        "group_id": "cli_and_tools"
+      },
+      {
+        "title": "alternative rustls based tls termination",
+        "group_id": "cli_and_tools"
+      },
+      {
+        "title": "service mesh sidecar Otoroshi CRDS",
+        "group_id": "kubernetes_integration"
+      },
+      {
+        "title": "CRD Validation",
+        "group_id": "kubernetes_integration"
+      },
+      {
+        "title": "Otoroshi as Ingress controller",
+        "group_id": "kubernetes_integration"
+      },
+      {
+        "title": "Custom CoreDNS",
+        "group_id": "kubernetes_integration"
+      },
+      {
+        "title": "service mesh",
+        "group_id": "kubernetes_integration"
+      },
+      {
+        "title": "GraphQL Composer",
+        "group_id": "graphql_integration"
+      },
+      {
+        "title": "HTTP to graphQL",
+        "group_id": "graphql_integration"
+      },
+      {
+        "title": "Proxy GraphQL API",
+        "group_id": "graphql_integration"
+      },
+      {
+        "title": "GraphQL testing editor",
+        "group_id": "graphql_integration"
+      },
+      {
+        "title": "admin. sessions ",
+        "group_id": "sessions_management"
+      },
+      {
+        "title": "auth. modules users sessions",
+        "group_id": "sessions_management"
+      },
+      {
+        "title": "Fine-grained admin permissions",
+        "group_id": "sessions_management"
+      },
+      {
+        "title": "Teams support ",
+        "group_id": "entities_management"
+      },
+      {
+        "title": "Multi tenants",
+        "group_id": "entities_management"
+      },
+      {
+        "title": "Organizations ",
+        "group_id": "entities_management"
+      },
+      {
+        "title": "Scala",
+        "group_id": "backend_stack"
+      },
+      {
+        "title": "Netty",
+        "group_id": "backend_stack"
+      },
+      {
+        "title": "Akka",
+        "group_id": "backend_stack"
+      },
+      {
+        "title": "reactor netty",
+        "group_id": "backend_stack"
+      },
+      {
+        "title": "Play",
+        "group_id": "backend_stack"
+      },
+      {
+        "title": "Akka Streams",
+        "group_id": "backend_stack"
+      },
+      {
+        "title": "Akka Http",
+        "group_id": "backend_stack"
+      },
+      {
+        "title": "ReactJS",
+        "group_id": "ui"
+      },
+      {
+        "title": "Webpack",
+        "group_id": "ui"
+      },
+      {
+        "title": "Bootstrap ",
+        "group_id": "ui"
+      },
+      {
+        "title": "SASS",
+        "group_id": "ui"
+      },
+      {
+        "title": "WASM ecosystem",
+        "group_id": "extism_usage"
+      },
+      {
+        "title": "Rust ",
+        "group_id": "extism_usage"
+      },
+      {
+        "title": "Java JNA",
+        "group_id": "extism_usage"
+      },
+      {
+        "title": "cross compilation",
+        "group_id": "extism_usage"
+      },
+      {
+        "title": "NodeJS ",
+        "group_id": "wasm_manager"
+      },
+      {
+        "title": "Websocket",
+        "group_id": "wasm_manager"
+      },
+      {
+        "title": "WASM ecosytem",
+        "group_id": "wasm_manager"
+      },
+      {
+        "title": "Extism ecosystem",
+        "group_id": "wasm_manager"
+      },
+      {
+        "title": "Express ",
+        "group_id": "wasm_manager"
+      },
+      {
+        "title": "Docker / S3",
+        "group_id": "wasm_manager"
+      },
+      {
+        "title": "NodeJS processes management",
+        "group_id": "wasm_manager"
+      },
+      {
+        "title": "WAPM",
+        "group_id": "wasm_manager"
+      }
+    ]
+  }
+}
