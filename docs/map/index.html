@@ -24,12 +24,12 @@
     <div id="group-root" style="transform: scale(1.0); font-family: sans-serif; margin: 0px; padding: 0px; 
       display: flex; flex-wrap: wrap; position: absolute; top: 0; left: 0; width: 300vh">
     </div>
-    <div
-      style="position: absolute; right: 10px; top: 5px; display: flex; flex-direction: row; justify-content: center; align-items: center;">
-      <button id="zoom-out" type="button">-</button>
-      <div id="zoom-value" style="font-family: sans-serif; margin-left: 5px; margin-right: 5px;">100%</div>
-      <button id="zoom-in" style="margin-left: 5px;" type="button">+</button>
-    </div>
+  </div>
+  <div
+    style="position: absolute; right: 10px; top: 5px; display: flex; flex-direction: row; justify-content: center; align-items: center;">
+    <button id="zoom-out" type="button">-</button>
+    <div id="zoom-value" style="font-family: sans-serif; margin-left: 5px; margin-right: 5px;">100%</div>
+    <button id="zoom-in" style="margin-left: 5px;" type="button">+</button>
   </div>
   <script>
 
@@ -39,7 +39,7 @@
 
       let dragging = false
       let start = { x: 0, y: 0 }
-      let zoom = 1;
+      let zoom = 1.0;
       const ZOOM_SPEED = 0.1;
 
       const down = e => {
@@ -77,7 +77,38 @@
         } else if (zoom > .2) {
           container.style.transform = `scale(${zoom -= ZOOM_SPEED})`;
         }
+        updateZoomDisplay()
       }
+
+      function updateZoomDisplay() {
+        document.getElementById('zoom-value').textContent = `${(zoom * 100).toFixed(0)}%`
+      }
+
+      function setZoomValue(value) {
+        container.style.transform = `scale(${value})`;
+      }
+
+      function zoomIn() {
+        const value = zoomValue()
+        if (value < 4.00) {
+          setZoomValue(zoom += ZOOM_SPEED);
+          updateZoomDisplay()
+        }
+      }
+
+      function zoomOut() {
+        if (zoom > 0.2) {
+          setZoomValue(zoom -= ZOOM_SPEED);
+          updateZoomDisplay()
+        }
+      }
+
+      function zoomValue() {
+        return zoom;
+      }
+
+      document.getElementById('zoom-in').addEventListener('click', zoomIn)
+      document.getElementById('zoom-out').addEventListener('click', zoomOut)
 
       container.addEventListener('wheel', onZoom);
 
@@ -202,36 +233,6 @@
       });
     }
 
-
-    function zoomValue() {
-      const el = document.getElementById('group-root');
-      const scale = parseFloat(el.style.transform.replace("scale(", "").replace(")"));
-      return scale;
-    }
-
-    function setZoomValue(value) {
-      const el = document.getElementById('group-root');
-      el.style.transform = `scale(${value})`
-    }
-
-    function zoomIn() {
-      const value = zoomValue()
-      if (value < 4.00) {
-        setZoomValue(value + 0.1);
-        document.getElementById('zoom-value').textContent = `${((value + 0.1) * 100).toFixed(0)}%`
-      }
-    }
-
-    function zoomOut() {
-      const value = zoomValue()
-      if (value > 0) {
-        setZoomValue(value - 0.1);
-        document.getElementById('zoom-value').textContent = `${((value - 0.1) * 100).toFixed(0)}%`
-      }
-    }
-
-    document.getElementById('zoom-in').addEventListener('click', (e) => zoomIn())
-    document.getElementById('zoom-out').addEventListener('click', (e) => zoomOut())
     fetch('map.json').then(r => r.json()).then(doc => {
       renderAll(doc.map)
     });
