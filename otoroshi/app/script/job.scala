@@ -17,7 +17,7 @@ import otoroshi.next.plugins.WasmJob
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils
-import otoroshi.utils.{SchedulerHelper, TypedMap, future}
+import otoroshi.utils.{future, SchedulerHelper, TypedMap}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -33,19 +33,19 @@ import scala.util.{Failure, Random, Success, Try}
 sealed trait JobKind {
   def name: String
 }
-object JobKind {
+object JobKind       {
 
-  case object ScheduledOnce  extends JobKind { def name: String = "ScheduledOnce" }
+  case object ScheduledOnce  extends JobKind { def name: String = "ScheduledOnce"  }
   case object ScheduledEvery extends JobKind { def name: String = "ScheduledEvery" }
-  case object Cron           extends JobKind { def name: String = "Cron" }
-  case object Autonomous     extends JobKind { def name: String = "Autonomous" }
+  case object Cron           extends JobKind { def name: String = "Cron"           }
+  case object Autonomous     extends JobKind { def name: String = "Autonomous"     }
 
   def apply(value: String): JobKind = value.toLowerCase() match {
-    case "scheduledonce" => ScheduledOnce
+    case "scheduledonce"  => ScheduledOnce
     case "scheduledevery" => ScheduledEvery
-    case "cron" => Cron
-    case "autonomous" => Autonomous
-    case _ => ScheduledEvery
+    case "cron"           => Cron
+    case "autonomous"     => Autonomous
+    case _                => ScheduledEvery
   }
 }
 
@@ -59,19 +59,27 @@ object JobStarting {
 sealed trait JobInstantiation {
   def name: String
 }
-object JobInstantiation {
+object JobInstantiation       {
 
-  case object OneInstancePerOtoroshiInstance       extends JobInstantiation { def name: String = "OneInstancePerOtoroshiInstance" }
-  case object OneInstancePerOtoroshiWorkerInstance extends JobInstantiation { def name: String = "OneInstancePerOtoroshiWorkerInstance" }
-  case object OneInstancePerOtoroshiLeaderInstance extends JobInstantiation { def name: String = "OneInstancePerOtoroshiLeaderInstance" }
-  case object OneInstancePerOtoroshiCluster        extends JobInstantiation { def name: String = "OneInstancePerOtoroshiCluster" }
+  case object OneInstancePerOtoroshiInstance       extends JobInstantiation {
+    def name: String = "OneInstancePerOtoroshiInstance"
+  }
+  case object OneInstancePerOtoroshiWorkerInstance extends JobInstantiation {
+    def name: String = "OneInstancePerOtoroshiWorkerInstance"
+  }
+  case object OneInstancePerOtoroshiLeaderInstance extends JobInstantiation {
+    def name: String = "OneInstancePerOtoroshiLeaderInstance"
+  }
+  case object OneInstancePerOtoroshiCluster        extends JobInstantiation {
+    def name: String = "OneInstancePerOtoroshiCluster"
+  }
 
   def apply(value: String): JobInstantiation = value.toLowerCase() match {
-    case "oneinstanceperotoroshiinstance" => OneInstancePerOtoroshiInstance
+    case "oneinstanceperotoroshiinstance"       => OneInstancePerOtoroshiInstance
     case "oneinstanceperotoroshiworkerinstance" => OneInstancePerOtoroshiWorkerInstance
     case "oneinstanceperotoroshileaderinstance" => OneInstancePerOtoroshiLeaderInstance
-    case "oneinstanceperotoroshicluster" => OneInstancePerOtoroshiCluster
-    case _ => OneInstancePerOtoroshiInstance
+    case "oneinstanceperotoroshicluster"        => OneInstancePerOtoroshiCluster
+    case _                                      => OneInstancePerOtoroshiInstance
   }
 }
 
@@ -90,10 +98,10 @@ case class JobContext(
 ) extends ContextWithConfig {
   final def config: JsValue     = Json.obj()
   final override def index: Int = 0
-  def wasmJson: JsValue = Json.obj(
-    "snowflake" -> snowflake,
-    "attrs" -> attrs.json,
-    "global_config" -> globalConfig,
+  def wasmJson: JsValue         = Json.obj(
+    "snowflake"     -> snowflake,
+    "attrs"         -> attrs.json,
+    "global_config" -> globalConfig
   )
 }
 

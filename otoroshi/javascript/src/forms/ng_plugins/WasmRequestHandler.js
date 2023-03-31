@@ -5,4 +5,3 @@ export default {
   config_schema: WasmPlugin.config_schema,
   config_flow: WasmPlugin.config_flow,
 };
-

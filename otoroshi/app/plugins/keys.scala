@@ -13,14 +13,14 @@ import play.api.libs.typedmap.TypedKey
 case class AttributeSetter[A](key: play.api.libs.typedmap.TypedKey[_ <: A], f: JsValue => _ <: A)
 
 object Keys {
-  val OtoTokenKey                   = TypedKey[JsObject]("otoroshi.core.OtoToken")
-  val ApiKeyKey                     = TypedKey[ApiKey]("otoroshi.core.ApiKey")
-  val ApiKeyRotationKey             = TypedKey[ApiKeyRotationInfo]("otoroshi.core.ApiKeyRotationInfo")
-  val ApiKeyRemainingQuotasKey      = TypedKey[RemainingQuotas]("otoroshi.core.RemainingQuotas")
-  val UserKey                       = TypedKey[PrivateAppsUser]("otoroshi.core.UserKey")
-  val GeolocationInfoKey            = TypedKey[JsValue]("otoroshi.plugins.GeolocationInfo")
-  val UserAgentInfoKey              = TypedKey[JsValue]("otoroshi.plugins.UserAgentInfo")
-  val ExtraAnalyticsDataKey         = TypedKey[JsValue]("otoroshi.plugins.ExtraAnalyticsData")
+  val OtoTokenKey              = TypedKey[JsObject]("otoroshi.core.OtoToken")
+  val ApiKeyKey                = TypedKey[ApiKey]("otoroshi.core.ApiKey")
+  val ApiKeyRotationKey        = TypedKey[ApiKeyRotationInfo]("otoroshi.core.ApiKeyRotationInfo")
+  val ApiKeyRemainingQuotasKey = TypedKey[RemainingQuotas]("otoroshi.core.RemainingQuotas")
+  val UserKey                  = TypedKey[PrivateAppsUser]("otoroshi.core.UserKey")
+  val GeolocationInfoKey       = TypedKey[JsValue]("otoroshi.plugins.GeolocationInfo")
+  val UserAgentInfoKey         = TypedKey[JsValue]("otoroshi.plugins.UserAgentInfo")
+  val ExtraAnalyticsDataKey    = TypedKey[JsValue]("otoroshi.plugins.ExtraAnalyticsData")
 
   val CaptureRequestBodyKey         = TypedKey[ByteString]("otoroshi.core.CaptureRequestBody")
   val RequestTimestampKey           = TypedKey[DateTime]("otoroshi.core.RequestTimestamp")

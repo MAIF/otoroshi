@@ -331,7 +331,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       routes            <- env.datastores.routeDataStore.findAll()
       routeCompositions <- env.datastores.routeCompositionDataStore.findAll()
       backends          <- env.datastores.backendsDataStore.findAll()
-      wasmPlugins          <- env.datastores.wasmPluginsDataStore.findAll()
+      wasmPlugins       <- env.datastores.wasmPluginsDataStore.findAll()
     } yield OtoroshiExport(
       config,
       descs,
@@ -355,7 +355,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       routes,
       routeCompositions,
       backends,
-      wasmPlugins,
+      wasmPlugins
     ).json
   }
 

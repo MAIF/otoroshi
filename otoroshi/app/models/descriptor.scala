@@ -2040,7 +2040,8 @@ object ServiceDescriptor {
           secComTtl =
             (json \ "secComTtl").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(30.seconds),
           secComVersion = (json \ "secComVersion")
-            .asOpt[Int].flatMap(SecComVersion.apply)
+            .asOpt[Int]
+            .flatMap(SecComVersion.apply)
             .orElse((json \ "secComVersion").asOpt[String].flatMap(SecComVersion.apply))
             .getOrElse(SecComVersion.V1),
           secComInfoTokenVersion = (json \ "secComInfoTokenVersion")

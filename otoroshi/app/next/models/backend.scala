@@ -221,7 +221,7 @@ case class NgTlsConfig(
 }
 
 object NgTlsConfig {
-  val default = NgTlsConfig()
+  val default                                     = NgTlsConfig()
   val format                                      = new Format[NgTlsConfig] {
     override def reads(json: JsValue): JsResult[NgTlsConfig] = {
       Try {

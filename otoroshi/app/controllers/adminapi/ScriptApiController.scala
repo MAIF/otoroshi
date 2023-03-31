@@ -6,7 +6,16 @@ import otoroshi.env.Env
 import otoroshi.models.RightsChecker.Anyone
 import otoroshi.next.plugins.WasmJob
 import otoroshi.script._
-import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SeqEntityAndContext
+}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator

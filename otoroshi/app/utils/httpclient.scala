@@ -936,23 +936,24 @@ case class AkkWsClientStreamedResponse(
     underlyingUrl: String,
     mat: Materializer,
     requestTimeout: FiniteDuration,
-    env: Env,
+    env: Env
 ) extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
-    val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
+    val headers                        = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
       ("Content-Type" -> Seq(contentType))
     )
-    val headz = TreeMap(headers: _*)(CaseInsensitiveOrdered)
+    val headz                          = TreeMap(headers: _*)(CaseInsensitiveOrdered)
     val noContentLengthHeader: Boolean = headz.getIgnoreCase("Content-Length").isEmpty
-    val hasChunkedHeader: Boolean = headz.getIgnoreCase("Transfer-Encoding").isDefined
-    val isChunked: Boolean = Option(httpResponse.entity.isChunked()).filter(identity) match { // don't know if actualy legit ...
-      case Some(chunked) => chunked
-      case None if !env.emptyContentLengthIsChunked => hasChunkedHeader // false
-      case None if env.emptyContentLengthIsChunked && hasChunkedHeader => true
-      case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader => true
-      case _ => false
-    }
+    val hasChunkedHeader: Boolean      = headz.getIgnoreCase("Transfer-Encoding").isDefined
+    val isChunked: Boolean             =
+      Option(httpResponse.entity.isChunked()).filter(identity) match { // don't know if actualy legit ...
+        case Some(chunked)                                                                         => chunked
+        case None if !env.emptyContentLengthIsChunked                                              => hasChunkedHeader // false
+        case None if env.emptyContentLengthIsChunked && hasChunkedHeader                           => true
+        case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader => true
+        case _                                                                                     => false
+      }
     if (isChunked) {
       headz + ("Transfer-Encoding" -> Seq("chunked"))
     } else {
@@ -1290,7 +1291,7 @@ case class AkkaWsClientRequest(
             rawUrl,
             client.mat,
             remainingTimeout,
-            env,
+            env
           ).future
         }
       }

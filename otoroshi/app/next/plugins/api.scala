@@ -210,7 +210,7 @@ object NgPluginCategory {
   case object Experimental    extends NgPluginCategory { def name: String = "Experimental"    }
   case object Integrations    extends NgPluginCategory { def name: String = "Integrations"    }
   case object Tunnel          extends NgPluginCategory { def name: String = "Tunnel"          }
-  case object Wasm            extends NgPluginCategory { def name: String = "Wasm"          }
+  case object Wasm            extends NgPluginCategory { def name: String = "Wasm"            }
   case object Classic         extends NgPluginCategory { def name: String = "Classic"         }
 
   val all = Seq(
@@ -228,7 +228,7 @@ object NgPluginCategory {
     TrafficControl,
     Transformations,
     Tunnel,
-    Wasm,
+    Wasm
   )
 }
 
@@ -263,18 +263,18 @@ object NgStep       {
   )
 
   def apply(value: String): Option[NgStep] = value match {
-    case "Router" => Router.some
-    case "Sink" => Sink.some
-    case "PreRoute" => PreRoute.some
-    case "ValidateAccess" => ValidateAccess.some
-    case "TransformRequest" => TransformRequest.some
+    case "Router"            => Router.some
+    case "Sink"              => Sink.some
+    case "PreRoute"          => PreRoute.some
+    case "ValidateAccess"    => ValidateAccess.some
+    case "TransformRequest"  => TransformRequest.some
     case "TransformResponse" => TransformResponse.some
-    case "MatchRoute" => MatchRoute.some
-    case "HandlesTunnel" => HandlesTunnel.some
-    case "HandlesRequest" => HandlesRequest.some
-    case "CallBackend" => CallBackend.some
-    case "Job" => Job.some
-    case _ => None
+    case "MatchRoute"        => MatchRoute.some
+    case "HandlesTunnel"     => HandlesTunnel.some
+    case "HandlesRequest"    => HandlesRequest.some
+    case "CallBackend"       => CallBackend.some
+    case "Job"               => Job.some
+    case _                   => None
   }
 }
 
@@ -363,7 +363,7 @@ case class NgPreRoutingContext(
     markPluginItem: Function4[NgReportPluginSequenceItem, NgPreRoutingContext, Boolean, JsValue, Unit]
 ) extends NgCachedConfigContext {
   def wasmJson: JsValue = json.asObject ++ Json.obj("route" -> route.json)
-  def json: JsValue = Json.obj(
+  def json: JsValue     = Json.obj(
     "snowflake"     -> snowflake,
     // "route" -> route.json,
     "request"       -> JsonHelpers.requestToJson(request),
@@ -439,14 +439,14 @@ trait NgPreRouting extends NgPlugin {
 }
 
 case class NgRouterContext(
-  request: RequestHeader,
-  config: JsValue,
-  attrs: TypedMap,
+    request: RequestHeader,
+    config: JsValue,
+    attrs: TypedMap
 ) {
   def json: JsValue = Json.obj(
-    "request"       -> JsonHelpers.requestToJson(request),
-    "config"        -> config,
-    "attrs"         -> attrs.json
+    "request" -> JsonHelpers.requestToJson(request),
+    "config"  -> config,
+    "attrs"   -> attrs.json
   )
 }
 
@@ -522,8 +522,8 @@ case class NgTransformerRequestContext(
     implicit val mat = env.otoroshiMaterializer
     JsonHelpers.requestBody(otoroshiRequest).map { body =>
       json.asObject ++ Json.obj(
-        "route" -> route.json,
-        "request_body_bytes"  -> body
+        "route"              -> route.json,
+        "request_body_bytes" -> body
       )
     }
   }
@@ -562,8 +562,8 @@ case class NgTransformerResponseContext(
     implicit val mat = env.otoroshiMaterializer
     JsonHelpers.responseBody(otoroshiResponse).map { bodyOut =>
       json.asObject ++ Json.obj(
-        "route" -> route.json,
-        "response_body_bytes" -> bodyOut,
+        "route"               -> route.json,
+        "response_body_bytes" -> bodyOut
       )
     }
   }
@@ -710,7 +710,7 @@ case class NgRequestSinkContext(
     body: Source[ByteString, _]
 ) {
   def wasmJson: JsValue = json
-  def json: JsValue = Json.obj(
+  def json: JsValue     = Json.obj(
     "snowflake" -> snowflake,
     "request"   -> JsonHelpers.requestToJson(request),
     "config"    -> config,
@@ -747,10 +747,10 @@ case class NgRouteMatcherContext(
 
   def wasmJson: JsValue = Json.obj(
     "snowflake" -> snowflake,
-    "route" -> route.json,
-    "request" -> JsonHelpers.requestToJson(request),
-    "config" -> config,
-    "attrs" -> attrs.json
+    "route"     -> route.json,
+    "request"   -> JsonHelpers.requestToJson(request),
+    "config"    -> config,
+    "attrs"     -> attrs.json
   )
 }
 
@@ -814,9 +814,9 @@ case class NgbBackendCallContext(
     implicit val mat = env.otoroshiMaterializer
     JsonHelpers.requestBody(request).map { body =>
       (json.asObject ++ Json.obj(
-        "route"            -> route.json,
+        "route"              -> route.json,
         "request_body_bytes" -> body,
-        "request"          -> request.json
+        "request"            -> request.json
       ))
     }
   }

@@ -666,8 +666,8 @@ export class TopBar extends Component {
             <span className="fas fa-certificate" /> SSL/TLS Certificates
           </Link>
           <Link to="/wasm-plugins" className="dropdown-item">
-              <span className="fas fa-plug" /> Wasm plugins
-            </Link>
+            <span className="fas fa-plug" /> Wasm plugins
+          </Link>
           {this.props.env.scriptingEnabled === true && (
             <Link to="/plugins" className="dropdown-item">
               <span className="fas fa-book-dead" /> Plugins

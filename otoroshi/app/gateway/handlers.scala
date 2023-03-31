@@ -350,12 +350,12 @@ class GatewayRequestHandler(
     }
 
   def incrementCounters(request: RequestHeader): Unit = {
-    val ws = request.headers.get("Sec-WebSocket-Version").isDefined
-    val tls = request.theSecured
+    val ws    = request.headers.get("Sec-WebSocket-Version").isDefined
+    val tls   = request.theSecured
     val http2 = request.version.toLowerCase == "http/2" || request.headers.get("x-http2-stream-id").isDefined
     val http3 = request.version.toLowerCase == "http/3"
     val http1 = !http2 && !http3
-    val grpc = request.headers.get("Content-Type").exists(_.contains("application/grpc"))
+    val grpc  = request.headers.get("Content-Type").exists(_.contains("application/grpc"))
     env.clusterAgent.incrementCounter("requests", 1)
     if (ws) {
       if (tls) env.clusterAgent.incrementCounter("wss", 1)

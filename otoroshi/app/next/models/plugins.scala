@@ -139,9 +139,9 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
   }
 
   def routerPlugins(
-    request: RequestHeader
+      request: RequestHeader
   )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRouter]] = {
-    val pls = slots
+    val pls                             = slots
       .filter(_.enabled)
       .filter(_.matches(request))
       .map(inst => (inst, inst.getPlugin[NgRouter]))

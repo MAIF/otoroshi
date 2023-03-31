@@ -438,72 +438,73 @@ class BackOfficeController(
       val hash = BCrypt.hashpw("password", BCrypt.gensalt())
       env.datastores.globalConfigDataStore.singleton().flatMap { config =>
         env.datastores.simpleAdminDataStore.findAll().flatMap { users =>
-          env.datastores.rawDataStore.get(s"${env.storageRoot}:backoffice:anonymous-reporting-refused").map { refusedOpt =>
-            val reporting = AnonymousReportingJobConfig.fromEnv(env)
-            val refusedDate = refusedOpt.map(_.utf8String).map(DateTime.parse)
-            val refused: JsValue = refusedDate.map(_.toString).map(JsString.apply).getOrElse(JsNull)
-            val (shouldAsk, shouldEnable) = if (reporting.enabled) {
-              if (!config.anonymousReporting) {
-                refusedDate match {
-                  case None => (true, false)
-                  case Some(date) if date.plusDays(30).isBefore(DateTime.now()) => (true, false)
-                  case _ => (false, false)
+          env.datastores.rawDataStore.get(s"${env.storageRoot}:backoffice:anonymous-reporting-refused").map {
+            refusedOpt =>
+              val reporting                 = AnonymousReportingJobConfig.fromEnv(env)
+              val refusedDate               = refusedOpt.map(_.utf8String).map(DateTime.parse)
+              val refused: JsValue          = refusedDate.map(_.toString).map(JsString.apply).getOrElse(JsNull)
+              val (shouldAsk, shouldEnable) = if (reporting.enabled) {
+                if (!config.anonymousReporting) {
+                  refusedDate match {
+                    case None                                                     => (true, false)
+                    case Some(date) if date.plusDays(30).isBefore(DateTime.now()) => (true, false)
+                    case _                                                        => (false, false)
+                  }
+                } else {
+                  (false, false)
                 }
               } else {
-                (false, false)
+                (true, true)
               }
-            } else {
-              (true, true)
-            }
-            val changePassword = users.filter { user =>
-              //(user \ "password").as[String] == hash &&
-              user.username == "admin@otoroshi.io"
-            }.nonEmpty
-            Ok(
-              Json.obj(
-                "newEngineEnabled" -> NewEngine.enabledFromConfig(config, env),
-                "initWithNewEngine" -> config.initWithNewEngine,
-                "scriptingEnabled" -> env.scriptingEnabled,
-                "otoroshiLogo" -> env.otoroshiLogo,
-                "clusterRole" -> env.clusterConfig.mode.name,
-                "snowMonkeyRunning" -> config.snowMonkeyConfig.enabled,
-                "changePassword" -> changePassword,
-                "mailgun" -> config.mailerSettings.isDefined,
-                "clevercloud" -> config.cleverSettings.isDefined,
-                "apiReadOnly" -> config.apiReadOnly,
-                "u2fLoginOnly" -> config.u2fLoginOnly,
-                "env" -> env.env,
-                "redirectToDev" -> false,
-                "userAdmin" -> ctx.user.rights.superAdmin,
-                "superAdmin" -> ctx.user.rights.superAdmin,
-                "tenantAdmin" -> ctx.user.rights.tenantAdmin(ctx.currentTenant),
-                "currentTenant" -> ctx.currentTenant.value,
-                "bypassUserRightsCheck" -> env.bypassUserRightsCheck,
-                "clientIdHeader" -> env.Headers.OtoroshiClientId,
-                "clientSecretHeader" -> env.Headers.OtoroshiClientSecret,
-                "version" -> SoftwareUpdatesJobs.latestVersionHolder.get(),
-                "currentVersion" -> env.otoroshiVersion,
-                "commitVersion" -> commitVersion,
-                "adminApiId" -> env.backOfficeServiceId,
-                "adminGroupId" -> env.backOfficeGroupId,
-                "adminApikeyId" -> env.backOfficeApiKeyClientId,
-                "user" -> ctx.user.email,
-                "instanceId" -> config.otoroshiId,
-                "staticExposedDomain" -> env.staticExposedDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-                "providerDashboardUrl" -> env.providerDashboardUrl.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-                "providerDashboardTitle" -> env.providerDashboardTitle,
-                "providerDashboardSecret" -> env.providerDashboardSecret,
-                "instanceId" -> config.otoroshiId,
-                "instanceName" -> env.name,
-                "anonymousReporting" -> Json.obj(
-                  "static" -> reporting.enabled,
-                  "global" -> config.anonymousReporting,
-                  "refused" -> refused,
-                  "should_ask" -> shouldAsk,
-                  "should_enable" -> shouldEnable,
+              val changePassword            = users.filter { user =>
+                //(user \ "password").as[String] == hash &&
+                user.username == "admin@otoroshi.io"
+              }.nonEmpty
+              Ok(
+                Json.obj(
+                  "newEngineEnabled"        -> NewEngine.enabledFromConfig(config, env),
+                  "initWithNewEngine"       -> config.initWithNewEngine,
+                  "scriptingEnabled"        -> env.scriptingEnabled,
+                  "otoroshiLogo"            -> env.otoroshiLogo,
+                  "clusterRole"             -> env.clusterConfig.mode.name,
+                  "snowMonkeyRunning"       -> config.snowMonkeyConfig.enabled,
+                  "changePassword"          -> changePassword,
+                  "mailgun"                 -> config.mailerSettings.isDefined,
+                  "clevercloud"             -> config.cleverSettings.isDefined,
+                  "apiReadOnly"             -> config.apiReadOnly,
+                  "u2fLoginOnly"            -> config.u2fLoginOnly,
+                  "env"                     -> env.env,
+                  "redirectToDev"           -> false,
+                  "userAdmin"               -> ctx.user.rights.superAdmin,
+                  "superAdmin"              -> ctx.user.rights.superAdmin,
+                  "tenantAdmin"             -> ctx.user.rights.tenantAdmin(ctx.currentTenant),
+                  "currentTenant"           -> ctx.currentTenant.value,
+                  "bypassUserRightsCheck"   -> env.bypassUserRightsCheck,
+                  "clientIdHeader"          -> env.Headers.OtoroshiClientId,
+                  "clientSecretHeader"      -> env.Headers.OtoroshiClientSecret,
+                  "version"                 -> SoftwareUpdatesJobs.latestVersionHolder.get(),
+                  "currentVersion"          -> env.otoroshiVersion,
+                  "commitVersion"           -> commitVersion,
+                  "adminApiId"              -> env.backOfficeServiceId,
+                  "adminGroupId"            -> env.backOfficeGroupId,
+                  "adminApikeyId"           -> env.backOfficeApiKeyClientId,
+                  "user"                    -> ctx.user.email,
+                  "instanceId"              -> config.otoroshiId,
+                  "staticExposedDomain"     -> env.staticExposedDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+                  "providerDashboardUrl"    -> env.providerDashboardUrl.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+                  "providerDashboardTitle"  -> env.providerDashboardTitle,
+                  "providerDashboardSecret" -> env.providerDashboardSecret,
+                  "instanceId"              -> config.otoroshiId,
+                  "instanceName"            -> env.name,
+                  "anonymousReporting"      -> Json.obj(
+                    "static"        -> reporting.enabled,
+                    "global"        -> config.anonymousReporting,
+                    "refused"       -> refused,
+                    "should_ask"    -> shouldAsk,
+                    "should_enable" -> shouldEnable
+                  )
                 )
               )
-            )
           }
         }
       }
@@ -1980,31 +1981,32 @@ class BackOfficeController(
       .singleton()
       .flatMap { globalConfig =>
         globalConfig.wasmManagerSettings match {
-          case Some(WasmManagerSettings(url, clientId, clientSecret, pluginsFilter)) => Try {
-            env.Ws
-              .url(s"$url/plugins")
-              .withFollowRedirects(false)
-              .withHttpHeaders(
-                "Otoroshi-Client-Id" -> clientId,
-                "Otoroshi-Client-Secret" -> clientSecret,
-                "kind" -> pluginsFilter.getOrElse("*")
-              )
-              .get()
-              .map(res => {
-                if (res.status == 200) {
-                  Ok(res.json)
-                } else {
+          case Some(WasmManagerSettings(url, clientId, clientSecret, pluginsFilter)) =>
+            Try {
+              env.Ws
+                .url(s"$url/plugins")
+                .withFollowRedirects(false)
+                .withHttpHeaders(
+                  "Otoroshi-Client-Id"     -> clientId,
+                  "Otoroshi-Client-Secret" -> clientSecret,
+                  "kind"                   -> pluginsFilter.getOrElse("*")
+                )
+                .get()
+                .map(res => {
+                  if (res.status == 200) {
+                    Ok(res.json)
+                  } else {
+                    Ok(Json.arr())
+                  }
+                })
+                .recover { case e: Throwable =>
+                  logger.error(e.getMessage)
                   Ok(Json.arr())
                 }
-              })
-              .recover { case e: Throwable =>
-                logger.error(e.getMessage)
-                Ok(Json.arr())
-              }
-          } match {
-            case Failure(err) => Ok(Json.arr()).vfuture
-            case Success(v) => v
-          }
+            } match {
+              case Failure(err) => Ok(Json.arr()).vfuture
+              case Success(v)   => v
+            }
           case _                                                                     =>
             BadRequest(
               Json.obj(
@@ -2018,13 +2020,21 @@ class BackOfficeController(
   def anonymousReporting() = BackOfficeActionAuth.async(parse.json) { ctx =>
     val enabled = ctx.request.body.select("enabled").asOpt[Boolean].getOrElse(false)
     if (enabled) {
-      env.datastores.globalConfigDataStore.set(env.datastores.globalConfigDataStore.latest().copy(anonymousReporting = true)).map { _ =>
-        NoContent
-      }
+      env.datastores.globalConfigDataStore
+        .set(env.datastores.globalConfigDataStore.latest().copy(anonymousReporting = true))
+        .map { _ =>
+          NoContent
+        }
     } else {
-      env.datastores.rawDataStore.set(s"${env.storageRoot}:backoffice:anonymous-reporting-refused", DateTime.now().toString().byteString, Some(30.days.toMillis)).map { _ =>
-        NoContent
-      }
+      env.datastores.rawDataStore
+        .set(
+          s"${env.storageRoot}:backoffice:anonymous-reporting-refused",
+          DateTime.now().toString().byteString,
+          Some(30.days.toMillis)
+        )
+        .map { _ =>
+          NoContent
+        }
     }
   }
 }

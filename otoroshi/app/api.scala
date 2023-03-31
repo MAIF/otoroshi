@@ -177,17 +177,34 @@ object OtoroshiLoaderHelper {
             )
           )
           .flatMap {
-            case SubSystemInitializationState.Failed(_, er, _) => components.env.clusterAgent.loadStateFromBackup() map {
-              case true => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start)
-              case false => SubSystemInitializationState.Failed(task, new RuntimeException(s"failed to fetch cluster state (${er.getMessage}) and failed to load state from backup"), System.currentTimeMillis() - start)
-            }
-            case SubSystemInitializationState.Timeout(_, _) => components.env.clusterAgent.loadStateFromBackup() map {
-              case true => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start)
-              case false => SubSystemInitializationState.Failed(task, new RuntimeException("failed to fetch cluster state (timeout) and failed to load state from backup"), System.currentTimeMillis() - start)
-            }
-            case r => components.env.proxyState.sync().map { _ =>
-              r
-            }
+            case SubSystemInitializationState.Failed(_, er, _) =>
+              components.env.clusterAgent.loadStateFromBackup() map {
+                case true  => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start)
+                case false =>
+                  SubSystemInitializationState.Failed(
+                    task,
+                    new RuntimeException(
+                      s"failed to fetch cluster state (${er.getMessage}) and failed to load state from backup"
+                    ),
+                    System.currentTimeMillis() - start
+                  )
+              }
+            case SubSystemInitializationState.Timeout(_, _)    =>
+              components.env.clusterAgent.loadStateFromBackup() map {
+                case true  => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start)
+                case false =>
+                  SubSystemInitializationState.Failed(
+                    task,
+                    new RuntimeException(
+                      "failed to fetch cluster state (timeout) and failed to load state from backup"
+                    ),
+                    System.currentTimeMillis() - start
+                  )
+              }
+            case r                                             =>
+              components.env.proxyState.sync().map { _ =>
+                r
+              }
           }
       } else {
         FastFuture.successful(SubSystemInitializationState.NoWait(task))

@@ -27,7 +27,9 @@ object JsonHelpers {
     }
   }
 
-  def responseBody(response: NgPluginHttpResponse)(implicit ec: ExecutionContext, mat: Materializer): Future[JsValue] = {
+  def responseBody(
+      response: NgPluginHttpResponse
+  )(implicit ec: ExecutionContext, mat: Materializer): Future[JsValue] = {
     response.body.runFold(ByteString.empty)(_ ++ _).map { b =>
       val arr = b.toArray[Byte]
       if (arr.isEmpty) {
@@ -102,28 +104,29 @@ object JsonHelpers {
   def wsCookieToJson(cookie: WSCookie): JsValue = {
     cookie match {
       case cc: otoroshi.utils.http.WSCookieWithSameSite => wsCookieWithSameSiteToJson(cc)
-      case _ => Json.obj(
-        "name" -> cookie.name,
-        "value" -> cookie.value,
-        "path" -> cookie.path,
-        "domain" -> cookie.domain,
-        "http_only" -> cookie.httpOnly,
-        "max_age" -> cookie.maxAge,
-        "secure" -> cookie.secure
-      )
+      case _                                            =>
+        Json.obj(
+          "name"      -> cookie.name,
+          "value"     -> cookie.value,
+          "path"      -> cookie.path,
+          "domain"    -> cookie.domain,
+          "http_only" -> cookie.httpOnly,
+          "max_age"   -> cookie.maxAge,
+          "secure"    -> cookie.secure
+        )
     }
   }
 
   def wsCookieWithSameSiteToJson(cookie: otoroshi.utils.http.WSCookieWithSameSite): JsValue = {
     Json.obj(
-      "name" -> cookie.name,
-      "value" -> cookie.value,
-      "path" -> cookie.path,
-      "domain" -> cookie.domain,
+      "name"      -> cookie.name,
+      "value"     -> cookie.value,
+      "path"      -> cookie.path,
+      "domain"    -> cookie.domain,
       "http_only" -> cookie.httpOnly,
-      "max_age" -> cookie.maxAge,
-      "secure" -> cookie.secure,
-      "sameSite" -> cookie.sameSite.map(ss => JsString.apply(ss.value)).getOrElse(JsNull).as[JsValue],
+      "max_age"   -> cookie.maxAge,
+      "secure"    -> cookie.secure,
+      "sameSite"  -> cookie.sameSite.map(ss => JsString.apply(ss.value)).getOrElse(JsNull).as[JsValue]
     )
   }
   def cookieFromJson(cookie: JsValue): WSCookie = {

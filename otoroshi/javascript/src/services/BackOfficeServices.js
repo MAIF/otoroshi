@@ -56,7 +56,7 @@ export function anonymousReporting(enabled) {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(enabled)
+    body: JSON.stringify(enabled),
   });
 }
 

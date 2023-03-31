@@ -39,7 +39,7 @@ object implicits {
   // type Ok[Success, Failure] = Right[Failure, Success]
   // type Err[Success, Failure] = Left[Failure, Success]
 
-  implicit class BetterSeqOfInt(val seq: Seq[Int]) extends AnyVal {
+  implicit class BetterSeqOfInt(val seq: Seq[Int])                            extends AnyVal {
     def theMin(default: Int): Int = {
       if (seq.isEmpty) {
         default
@@ -593,12 +593,12 @@ object implicits {
     def getIgnoreCase(key: String): Option[B]                               = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
     def remAndAddIgnoreCase(tuple: (String, B)): TrieMap[String, B]         = remIgnoreCase(tuple._1).add(tuple)
   }
-  implicit class BetterSeqOfA[A](val seq: Seq[A]) extends AnyVal {
+  implicit class BetterSeqOfA[A](val seq: Seq[A])                             extends AnyVal {
     def avgBy(f: A => Int): Double = {
       if (seq.isEmpty) 0.0
       else {
-        val sum = seq.map(f).foldLeft(0) {
-          case (a, b) => a + b
+        val sum = seq.map(f).foldLeft(0) { case (a, b) =>
+          a + b
         }
         sum / seq.size
       }
@@ -635,9 +635,9 @@ object implicits {
   }
 
   implicit class BetterCookie(val cookie: Cookie) extends AnyVal {
-    def json: JsValue = JsonHelpers.cookieToJson(cookie)
+    def json: JsValue        = JsonHelpers.cookieToJson(cookie)
     def toWSCookie: WSCookie = wsCookie
-    def wsCookie: WSCookie = DefaultWSCookie(
+    def wsCookie: WSCookie   = DefaultWSCookie(
       name = cookie.name,
       value = cookie.value,
       domain = cookie.domain,
@@ -676,7 +676,7 @@ object implicits {
         sameSite = None
       )
     }
-    def json: JsValue = JsonHelpers.wsCookieToJson(c)
+    def json: JsValue     = JsonHelpers.wsCookieToJson(c)
     // def json: JsValue = Json.obj(
     //   "name" -> cookie.name,
     //   "value" -> cookie.value,

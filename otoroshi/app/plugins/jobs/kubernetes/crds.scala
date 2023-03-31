@@ -391,7 +391,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
         env.datastores.authConfigsDataStore.template(source.select("type").asOpt[String], env).json.asObject
       case "tcp-service"        => env.datastores.tcpServiceDataStore.template(env).json.asObject
       case "script"             => env.datastores.scriptDataStore.template(env).json.asObject
-      case "wasm-plugin"             => env.datastores.wasmPluginsDataStore.template(env).json.asObject
+      case "wasm-plugin"        => env.datastores.wasmPluginsDataStore.template(env).json.asObject
       case "team"               =>
         env.datastores.teamDataStore
           .template(
@@ -874,9 +874,9 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   }
 
   private[kubernetes] def customizeWasmPlugins(
-    _spec: JsValue,
-    res: KubernetesOtoroshiResource,
-    entities: Seq[WasmPlugin]
+      _spec: JsValue,
+      res: KubernetesOtoroshiResource,
+      entities: Seq[WasmPlugin]
   ): JsValue = {
     val spec = findAndMerge[WasmPlugin](_spec, res, "wasm-plugin", None, entities, _.metadata, _.id, _.json)
     customizeIdAndName(spec, res)
@@ -1068,8 +1068,12 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     )
   def crdsFetchScripts(scripts: Seq[Script]): Future[Seq[OtoResHolder[Script]]]                                        =
     client.fetchOtoroshiResources[Script]("scripts", Script._fmt, (a, b) => customizeScripts(a, b, scripts))
-  def crdsFetchWasmPlugins(plugins: Seq[WasmPlugin]): Future[Seq[OtoResHolder[WasmPlugin]]] =
-    client.fetchOtoroshiResources[WasmPlugin]("wasm-plugins", WasmPlugin.format, (a, b) => customizeWasmPlugins(a, b, plugins))
+  def crdsFetchWasmPlugins(plugins: Seq[WasmPlugin]): Future[Seq[OtoResHolder[WasmPlugin]]]                            =
+    client.fetchOtoroshiResources[WasmPlugin](
+      "wasm-plugins",
+      WasmPlugin.format,
+      (a, b) => customizeWasmPlugins(a, b, plugins)
+    )
   def crdsFetchTcpServices(services: Seq[TcpService]): Future[Seq[OtoResHolder[TcpService]]]                           =
     client
       .fetchOtoroshiResources[TcpService]("tcp-services", TcpService.fmt, (a, b) => customizeTcpService(a, b, services))
@@ -1191,7 +1195,8 @@ object KubernetesCRDsJob {
       otoauthModules        <-
         if (useProxyState) env.proxyState.allAuthModules().vfuture else env.datastores.authConfigsDataStore.findAll()
       otoscripts            <- if (useProxyState) env.proxyState.allScripts().vfuture else env.datastores.scriptDataStore.findAll()
-      otoplugins            <- if (useProxyState) env.proxyState.allWasmPlugins().vfuture else env.datastores.wasmPluginsDataStore.findAll()
+      otoplugins            <-
+        if (useProxyState) env.proxyState.allWasmPlugins().vfuture else env.datastores.wasmPluginsDataStore.findAll()
       ototcpServices        <-
         if (useProxyState) env.proxyState.allTcpServices().vfuture else env.datastores.tcpServiceDataStore.findAll()
       otosimpleAdmins       <- if (useProxyState)
@@ -1410,7 +1415,9 @@ object KubernetesCRDsJob {
       _ <-
         ctx.otoroshi.wasmPlugins
           .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
-          .filterNot(sg => ctx.kubernetes.wasmPlugins.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+          .filterNot(sg =>
+            ctx.kubernetes.wasmPlugins.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path))
+          )
           .map(_.id)
           .debug(seq => logger.info(s"Will delete ${seq.size} out of date wasm-plugin entities"))
           .applyOn(env.datastores.wasmPluginsDataStore.deleteByIds)

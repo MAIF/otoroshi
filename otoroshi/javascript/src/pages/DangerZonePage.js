@@ -724,7 +724,8 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Send anonymous reports',
         placeholder: '-',
-        help: 'If enabled, otoroshi will send anonymous usage metrics to the Otoroshi teams in order to define the future of the product more accurately',
+        help:
+          'If enabled, otoroshi will send anonymous usage metrics to the Otoroshi teams in order to define the future of the product more accurately',
       },
     },
     maxConcurrentRequests: {

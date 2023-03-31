@@ -10,7 +10,7 @@ import {
   LabelInput,
   DateTimeInput,
 } from '.';
-// import { NgBoxBooleanRenderer } from '../nginputs/inputs'; 
+// import { NgBoxBooleanRenderer } from '../nginputs/inputs';
 import { Location } from '../Location';
 const CodeInput = React.lazy(() => Promise.resolve(require('./CodeInput')));
 import { JsonObjectAsCodeInput } from './CodeInput'; // TODO: fix

@@ -994,7 +994,7 @@ case class OtoroshiExport(
     routes: Seq[NgRoute] = Seq.empty,
     routeCompositions: Seq[NgRouteComposition] = Seq.empty,
     backends: Seq[StoredNgBackend] = Seq.empty,
-    wasmPlugins: Seq[WasmPlugin] = Seq.empty,
+    wasmPlugins: Seq[WasmPlugin] = Seq.empty
 ) {
 
   import otoroshi.utils.json.JsonImplicits._
@@ -1194,7 +1194,7 @@ case class OtoroshiExport(
       "routes"             -> JsArray(routes.map(_.json)),
       "routeCompositions"  -> JsArray(routeCompositions.map(_.json)),
       "backends"           -> JsArray(backends.map(_.json)),
-      "wasmPlugins"           -> JsArray(wasmPlugins.map(_.json)),
+      "wasmPlugins"        -> JsArray(wasmPlugins.map(_.json))
     )
   }
 }

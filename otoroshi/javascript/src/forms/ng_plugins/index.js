@@ -79,11 +79,11 @@ import WasmAccessValidator from './WasmAccessValidator';
 import WasmRequestTransformer from './WasmRequestTransformer';
 import WasmResponseTransformer from './WasmResponseTransformer';
 import WasmRequestHandler from './WasmRequestHandler';
-import WasmRouteMatcher  from './WasmRouteMatcher';
-import WasmSink  from './WasmSink';
-import WasmJob  from './WasmJob';
-import WasmPreRoute  from './WasmPreRoute';
-import WasmRouter  from './WasmRouter';
+import WasmRouteMatcher from './WasmRouteMatcher';
+import WasmSink from './WasmSink';
+import WasmJob from './WasmJob';
+import WasmPreRoute from './WasmPreRoute';
+import WasmRouter from './WasmRouter';
 import WasmOPA from './WasmOPA';
 
 export const Backend = NgBackend;
@@ -168,7 +168,7 @@ export const Plugins = [
   WasmAccessValidator,
   WasmOPA,
   WasmRequestTransformer,
-  WasmResponseTransformer, 
+  WasmResponseTransformer,
   WasmRequestHandler,
   WasmRouteMatcher,
   WasmSink,

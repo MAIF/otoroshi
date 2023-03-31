@@ -17,14 +17,32 @@ function tryOrTrue(f) {
 class WasmDataRights extends Component {
   render() {
     const Input = true ? NgBoxBooleanRenderer : BooleanInput;
-    const schema = WasmPlugin.config_schema.authorizations.schema
+    const schema = WasmPlugin.config_schema.authorizations.schema;
     return (
       <div className="row mb-3">
         <label className="col-xs-12 col-sm-2 col-form-label">{this.props.label}</label>
         <div className="col-sm-10">
-          <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-            <Input width={this.props.boxWidth} label="Read" description={schema[this.props.property].read.label} value={this.props.value.read} onChange={v => this.props.onChange({ ...this.props.value, read: v })} />
-            <Input width={this.props.boxWidth} label="Write" description={schema[this.props.property].write.label} value={this.props.value.write} onChange={v => this.props.onChange({ ...this.props.value, write: v })} />
+          <div
+            style={{
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+            }}>
+            <Input
+              width={this.props.boxWidth}
+              label="Read"
+              description={schema[this.props.property].read.label}
+              value={this.props.value.read}
+              onChange={(v) => this.props.onChange({ ...this.props.value, read: v })}
+            />
+            <Input
+              width={this.props.boxWidth}
+              label="Write"
+              description={schema[this.props.property].write.label}
+              value={this.props.value.write}
+              onChange={(v) => this.props.onChange({ ...this.props.value, write: v })}
+            />
           </div>
         </div>
       </div>
@@ -33,8 +51,7 @@ class WasmDataRights extends Component {
 }
 
 export class WasmSourcePath extends Component {
-
-  state = { local: [], manager: [] }
+  state = { local: [], manager: [] };
 
   componentDidMount() {
     fetch('/bo/api/plugins/wasm', {
@@ -43,26 +60,29 @@ export class WasmSourcePath extends Component {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-    }).catch(e => ({ json: () => [] })).then(r => r.json()).then(plugins => {
-      const values = plugins
-        .map((plugin) => plugin.versions || [])
-        .flat()
-        .map((plugin) => {
-          const wasmName = (this.isAString(plugin) ? plugin : plugin.name) || "";
-          const parts = wasmName.split('.wasm');
-          return {
-            label: `${parts[0]} - ${parts[0].endsWith('-dev') ? '[DEV]' : '[RELEASE]'}`,
-            value: this.isAString(plugin) ? plugin : plugin.name,
-          };
-        });
-      this.setState({ manager: values });
     })
-    BackOfficeServices.findAllWasmPlugins().then(plugins => {
-      this.setState({ local: plugins.map(p => ({ label: p.name, value: p.id })) })
-    })
+      .catch((e) => ({ json: () => [] }))
+      .then((r) => r.json())
+      .then((plugins) => {
+        const values = plugins
+          .map((plugin) => plugin.versions || [])
+          .flat()
+          .map((plugin) => {
+            const wasmName = (this.isAString(plugin) ? plugin : plugin.name) || '';
+            const parts = wasmName.split('.wasm');
+            return {
+              label: `${parts[0]} - ${parts[0].endsWith('-dev') ? '[DEV]' : '[RELEASE]'}`,
+              value: this.isAString(plugin) ? plugin : plugin.name,
+            };
+          });
+        this.setState({ manager: values });
+      });
+    BackOfficeServices.findAllWasmPlugins().then((plugins) => {
+      this.setState({ local: plugins.map((p) => ({ label: p.name, value: p.id })) });
+    });
   }
 
-  isAString = variable => typeof variable === 'string' || variable instanceof String;
+  isAString = (variable) => typeof variable === 'string' || variable instanceof String;
 
   render() {
     const rawValue = this.props.rawValue || {
@@ -70,10 +90,10 @@ export class WasmSourcePath extends Component {
         source: {
           kind: 'Unknown',
           path: 'foo',
-        }
-      }
-    }
-    console.log(this.props.value, this.state.manager)
+        },
+      },
+    };
+    console.log(this.props.value, this.state.manager);
     const source = this.props.rootValue || rawValue.config.source;
     const kind = source.kind.toLowerCase();
     if (kind === 'unknown') {
@@ -97,17 +117,22 @@ export class WasmSourcePath extends Component {
         />
       );
     } else {
-      let label = "Path"
-      if (kind === "http") {
-        label = "URL"
-      } else if (kind === "base64") {
-        label = "Base64 encoded script"
+      let label = 'Path';
+      if (kind === 'http') {
+        label = 'URL';
+      } else if (kind === 'base64') {
+        label = 'Base64 encoded script';
       }
       return (
         <div className="row mb-3">
           <label className="col-xs-12 col-sm-2 col-form-label">{label}</label>
           <div className="col-sm-10">
-            <input type="text" className="form-control" value={source.path} onChange={e => this.props.onChange(e.target.value)} />
+            <input
+              type="text"
+              className="form-control"
+              value={source.path}
+              onChange={(e) => this.props.onChange(e.target.value)}
+            />
           </div>
         </div>
       );
@@ -130,7 +155,7 @@ export class WasmPluginsPage extends Component {
     {
       title: 'Steps',
       filterId: 'steps',
-      content: (item) => item.steps.map(v => <span className="badge bg-success">{v}</span>),
+      content: (item) => item.steps.map((v) => <span className="badge bg-success">{v}</span>),
     },
   ];
 
@@ -156,46 +181,52 @@ export class WasmPluginsPage extends Component {
     });
   };
 
-  formFlow = (value) => [
-    '_loc',
-    'id',
-    'name',
-    'description',
-    'steps',
-    'tags',
-    'metadata',
-    '<<<Wasm source',
-    'config.source.kind',
-    'config.source.path',
-    value.config.source.kind.toLowerCase() === 'http' && '>>>Wasm source http opts',
-    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.method',
-    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.headers',
-    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.timeout',
-    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.followRedirect',
-    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.proxy',
-    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.enabled',
-    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.loose',
-    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.trust_all',
-    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.certs',
-    value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.trusted_certs',
-    '<<<Wasm configuration',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.memoryPages',
-    'config.functionName',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.config',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.preserve',
-    value.config.source.kind.toLowerCase() !== 'local' && '<<<Wasm host function authorizations',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.wasi',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedPaths',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.httpAccess',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedHosts',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.proxyHttpCallTimeout',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.proxyStateAccess',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.configurationAccess',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.globalDataStoreAccess',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.pluginDataStoreAccess',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.globalMapAccess',
-    value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.pluginMapAccess',
-  ].filter(v => !!v);
+  formFlow = (value) =>
+    [
+      '_loc',
+      'id',
+      'name',
+      'description',
+      'steps',
+      'tags',
+      'metadata',
+      '<<<Wasm source',
+      'config.source.kind',
+      'config.source.path',
+      value.config.source.kind.toLowerCase() === 'http' && '>>>Wasm source http opts',
+      value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.method',
+      value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.headers',
+      value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.timeout',
+      value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.followRedirect',
+      value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.proxy',
+      value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.enabled',
+      value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.loose',
+      value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.trust_all',
+      value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.certs',
+      value.config.source.kind.toLowerCase() === 'http' && 'config.source.opts.tls.trusted_certs',
+      '<<<Wasm configuration',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.memoryPages',
+      'config.functionName',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.config',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.preserve',
+      value.config.source.kind.toLowerCase() !== 'local' && '<<<Wasm host function authorizations',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.wasi',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedPaths',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.httpAccess',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedHosts',
+      value.config.source.kind.toLowerCase() !== 'local' &&
+        'config.authorizations.proxyHttpCallTimeout',
+      value.config.source.kind.toLowerCase() !== 'local' &&
+        'config.authorizations.proxyStateAccess',
+      value.config.source.kind.toLowerCase() !== 'local' &&
+        'config.authorizations.configurationAccess',
+      value.config.source.kind.toLowerCase() !== 'local' &&
+        'config.authorizations.globalDataStoreAccess',
+      value.config.source.kind.toLowerCase() !== 'local' &&
+        'config.authorizations.pluginDataStoreAccess',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.globalMapAccess',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.authorizations.pluginMapAccess',
+    ].filter((v) => !!v);
 
   formSchema = {
     id: { type: 'string', props: { label: 'Id', placeholder: '---' } },
@@ -227,24 +258,30 @@ export class WasmPluginsPage extends Component {
           'HandlesRequest',
           'CallBackend',
           'Job',
-        ].map(v => ({ label: v, value: v })),
+        ].map((v) => ({ label: v, value: v })),
       },
     },
     'config.source.path': {
       type: WasmSourcePath,
       props: {
-        label: 'Path'
-      }
+        label: 'Path',
+      },
     },
     'config.source.kind': {
       type: 'select',
       props: {
         label: 'Kind',
-        possibleValues: ['Base64', 'Http', 'WasmManager', 'File'].map(v => ({ label: v, value: v }))
-      }
+        possibleValues: ['Base64', 'Http', 'WasmManager', 'File'].map((v) => ({
+          label: v,
+          value: v,
+        })),
+      },
     },
     'config.source.opts.headers': { type: 'object', props: { label: 'Headers' } },
-    'config.source.opts.timeout': { type: 'number', props: { label: 'Timeout', suffix: 'millis.' } },
+    'config.source.opts.timeout': {
+      type: 'number',
+      props: { label: 'Timeout', suffix: 'millis.' },
+    },
     'config.source.opts.method': { type: 'string', props: { label: 'Method' } },
     'config.source.opts.followRedirect': { type: 'bool', props: { label: 'Follow redirects' } },
     'config.source.opts.proxy': { type: Proxy, props: { label: 'Proxy' } },
@@ -305,80 +342,80 @@ export class WasmPluginsPage extends Component {
     'config.source.opts': {
       type: 'object',
       props: {
-        label: 'Options'
-      }
+        label: 'Options',
+      },
     },
     'config.memoryPages': {
       type: 'number',
       props: {
         label: 'Memory pages',
-        suffix: 'pages of 32 Kb'
-      }
+        suffix: 'pages of 32 Kb',
+      },
     },
     'config.functionName': {
       type: 'string',
       props: {
         label: 'Function name',
-        placeholder: 'transform_request'
-      }
+        placeholder: 'transform_request',
+      },
     },
     'config.config': {
       type: 'object',
       props: {
-        label: 'Config. map'
-      }
+        label: 'Config. map',
+      },
     },
     'config.allowedHosts': {
       type: 'array',
       display: (v) => v.config.authorizations.httpAccess,
       props: {
-        label: 'Allow http hosts'
-      }
+        label: 'Allow http hosts',
+      },
     },
     'config.allowedPaths': {
       type: 'object',
       display: (v) => v.config.wasi,
       props: {
-        label: 'Allow file paths'
-      }
+        label: 'Allow file paths',
+      },
     },
     'config.preserve': {
       type: 'bool',
       props: {
-        label: 'Preserve VMs'
-      }
+        label: 'Preserve VMs',
+      },
     },
     'config.wasi': {
       type: 'bool',
       props: {
-        label: 'WASI'
-      }
+        label: 'WASI',
+      },
     },
     'config.authorizations.httpAccess': {
       type: 'bool',
       props: {
-        label: 'Http Access'
-      }
+        label: 'Http Access',
+      },
     },
     'config.authorizations.proxyStateAccess': {
       type: 'bool',
       props: {
-        label: 'Proxy state access'
-      }
+        label: 'Proxy state access',
+      },
     },
     'config.authorizations.configurationAccess': {
       type: 'bool',
       props: {
-        label: 'Configuration access'
-      }
+        label: 'Configuration access',
+      },
     },
     'config.authorizations.proxyHttpCallTimeout': {
       type: 'number',
       display: (v) => v.config.authorizations.httpAccess,
       props: {
         label: 'Http timeout',
-        suffix: 'millis.'
-      }
+        suffix: 'millis.',
+      },
     },
     'config.authorizations.globalDataStoreAccess': {
       type: WasmDataRights,
@@ -386,7 +423,7 @@ export class WasmPluginsPage extends Component {
         boxWidth: 400,
         label: 'Global persistent key/value storage access',
         property: 'globalDataStoreAccess',
-      }
+      },
     },
     'config.authorizations.pluginDataStoreAccess': {
       type: WasmDataRights,
@@ -394,7 +431,7 @@ export class WasmPluginsPage extends Component {
         boxWidth: 400,
         label: 'Plugin scoped persistent key/value storage access',
         property: 'pluginDataStoreAccess',
-      }
+      },
     },
     'config.authorizations.globalMapAccess': {
       type: WasmDataRights,
@@ -402,7 +439,7 @@ export class WasmPluginsPage extends Component {
         boxWidth: 400,
         label: 'Global in-memory key/value storage access',
         property: 'globalMapAccess',
-      }
+      },
     },
     'config.authorizations.pluginMapAccess': {
       type: WasmDataRights,
@@ -410,7 +447,7 @@ export class WasmPluginsPage extends Component {
         boxWidth: 400,
         label: 'Plugin scoped in-memory key/value storage access',
         property: 'pluginMapAccess',
-      }
+      },
     },
     metadata: {
       type: 'object',

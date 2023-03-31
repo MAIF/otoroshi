@@ -1,5 +1,5 @@
 import React from 'react';
-import { WasmSourcePath } from '../../pages/WasmPluginsPage'; 
+import { WasmSourcePath } from '../../pages/WasmPluginsPage';
 
 // don't import this file in the index.js
 // it served as template for the other Wasm plugin
@@ -9,33 +9,37 @@ const schema = {
     type: 'form',
     collapsable: false,
     collapsed: false,
-    flow: (v) => [
-      'kind', 
-      "path", 
-      v.kind.toLowerCase() === 'http' && 'opts.headers',
-      v.kind.toLowerCase() === 'http' && 'opts.timeout',
-      v.kind.toLowerCase() === 'http' && 'opts.method',
-      v.kind.toLowerCase() === 'http' && 'opts.followRedirect',
-    ].filter(v => !!v),
+    flow: (v) =>
+      [
+        'kind',
+        'path',
+        v.kind.toLowerCase() === 'http' && 'opts.headers',
+        v.kind.toLowerCase() === 'http' && 'opts.timeout',
+        v.kind.toLowerCase() === 'http' && 'opts.method',
+        v.kind.toLowerCase() === 'http' && 'opts.followRedirect',
+      ].filter((v) => !!v),
     schema: {
       kind: {
-        label: "Kind",
+        label: 'Kind',
         type: 'select',
         props: {
           label: 'Kind',
-          options: ['Base64', 'Http', 'WasmManager', 'Local', 'File'].map(v => ({ label: v, value: v.toLowerCase() })),
+          options: ['Base64', 'Http', 'WasmManager', 'Local', 'File'].map((v) => ({
+            label: v,
+            value: v.toLowerCase(),
+          })),
         },
       },
       opts: {
         headers: { type: 'object', label: 'Headers' },
         timeout: { type: 'number', label: 'Timeout', props: { suffix: 'millis.' } },
-        method:  { type: 'string', label: 'Method' },
+        method: { type: 'string', label: 'Method' },
         followRedirect: { type: 'bool', label: 'Follow redirects' },
       },
       path: {
-        renderer: (props) => <WasmSourcePath {...props} />
-      }
-    }
+        renderer: (props) => <WasmSourcePath {...props} />,
+      },
+    },
   },
   memoryPages: {
     type: 'number',
@@ -76,8 +80,7 @@ const schema = {
     type: 'box-bool',
     label: 'Preserve VMs',
     props: {
-      description:
-        'Doesnt stop the wasm vm during a request',
+      description: 'Doesnt stop the wasm vm during a request',
     },
   },
   authorizations: {
@@ -101,49 +104,44 @@ const schema = {
         type: 'box-bool',
         label: 'HTTP client',
         props: {
-          description:
-            'Add function to call http services',
+          description: 'Add function to call http services',
         },
       },
       globalDataStoreAccess: {
         read: {
-          label: "Can read from global persistent key/value storage",
+          label: 'Can read from global persistent key/value storage',
           type: 'box-bool',
           props: {
-            description:
-              'Add function to read the global datastore',
+            description: 'Add function to read the global datastore',
           },
         },
         write: {
           type: 'box-bool',
           label: 'Can write to global persistent key/value storage',
           props: {
-            description:
-              'Add function to read and write the global datastore',
+            description: 'Add function to read and write the global datastore',
           },
-        }
+        },
       },
       pluginDataStoreAccess: {
         read: {
-          label: "Can read from plugin scoped persistent key/value storage",
+          label: 'Can read from plugin scoped persistent key/value storage',
           type: 'box-bool',
           props: {
-            description:
-              'Add function to read the plugin datastore',
+            description: 'Add function to read the plugin datastore',
           },
         },
         write: {
           type: 'box-bool',
           label: 'Can write to plugin scoped persistent key/value storage',
           props: {
-            description:
-              'Add function to read and write the plugin datastore',
+            description: 'Add function to read and write the plugin datastore',
           },
-        }
+        },
       },
       globalMapAccess: {
         read: {
-          label: "Can read from plugin global in-memory key/value storage",
+          label: 'Can read from plugin global in-memory key/value storage',
           type: 'box-bool',
           props: {
             description:
@@ -157,11 +155,11 @@ const schema = {
             description:
               'Add functions to write a map to store stuff in current otoroshi instance memory between invocations',
           },
-        }
+        },
       },
       pluginMapAccess: {
         read: {
-          label: "Can read from plugin scoped in-memory key/value storage",
+          label: 'Can read from plugin scoped in-memory key/value storage',
           type: 'box-bool',
           props: {
             description:
@@ -175,47 +173,41 @@ const schema = {
             description:
               'Add functions to write a map to store stuff in current otoroshi instance memory between invocations. Each plugim has its own map.',
           },
-        }
+        },
       },
       proxyStateAccess: {
         type: 'box-bool',
         label: 'Proxy state access',
         props: {
-          description:
-            'Add function to access proxy state',
+          description: 'Add function to access proxy state',
         },
       },
       configurationAccess: {
         type: 'box-bool',
         label: 'Configuration access',
         props: {
-          description:
-            'Add function to access some useful configuration about otoroshi instance',
+          description: 'Add function to access some useful configuration about otoroshi instance',
         },
-      }
-    }
-  }
+      },
+    },
+  },
 };
 
 export default {
   config_schema: {
     ...schema,
   },
-  config_flow: (v) => [
-    'source',
-    'functionName',
-    v.source.kind.toLowerCase() !== 'local' && 'wasi',
-    v.source.kind.toLowerCase() !== 'local' && 'preserve',
-    v.source.kind.toLowerCase() !== 'local' && 'authorizations',
-    v.source.kind.toLowerCase() !== 'local' && {
-      type: 'group',
-      name: 'Advanced settings',
-      fields: [
-        'memoryPages',
-        'config',
-        'allowedHosts',
-        'allowedPaths',
-      ]
-    }
-  ].filter(v => !!v)
+  config_flow: (v) =>
+    [
+      'source',
+      'functionName',
+      v.source.kind.toLowerCase() !== 'local' && 'wasi',
+      v.source.kind.toLowerCase() !== 'local' && 'preserve',
+      v.source.kind.toLowerCase() !== 'local' && 'authorizations',
+      v.source.kind.toLowerCase() !== 'local' && {
+        type: 'group',
+        name: 'Advanced settings',
+        fields: ['memoryPages', 'config', 'allowedHosts', 'allowedPaths'],
+      },
+    ].filter((v) => !!v),
 };

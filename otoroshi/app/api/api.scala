@@ -82,7 +82,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsValue]] = {
-    val dev = if (env.isDev) "_dev" else ""
+    val dev   = if (env.isDev) "_dev" else ""
     val resId = id
       .orElse(body.select("client_id").asOpt[String])
       .orElse(body.select("clientId").asOpt[String])
@@ -99,7 +99,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           .deepMerge(
             Json.obj(
               idKey      -> resId,
-              "metadata" -> Json.obj(updateKey -> DateTime.now().toString()),
+              "metadata" -> Json.obj(updateKey -> DateTime.now().toString())
             )
           )
         env.datastores.rawDataStore
@@ -180,7 +180,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
               val k = key(entity.theId)
               env.datastores.rawDataStore.del(Seq(k)).map(_ => ())
             }
-            case _ => ().vfuture
+            case _                    => ().vfuture
           }
         case None          => ().vfuture
       }
@@ -198,9 +198,9 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           val json = item.utf8String.parseJson
           format.reads(json) match {
             case JsSuccess(entity, _) =>
-                //if namespace == "any" || namespace == "all" || namespace == "*" || entity.location.tenant.value == namespace =>
+              //if namespace == "any" || namespace == "all" || namespace == "*" || entity.location.tenant.value == namespace =>
               entity.json.some
-            case _ => None
+            case _                    => None
           }
       }
   }
@@ -217,8 +217,8 @@ case class GenericResourceAccessApi[T <: EntityLocationSupport](
     canDelete: Boolean = true,
     canBulk: Boolean = true
 ) extends ResourceAccessApi[T] {
-  override def key(id: String): String     = keyf.apply(id)
-  override def extractId(value: T): String = value.theId
+  override def key(id: String): String            = keyf.apply(id)
+  override def extractId(value: T): String        = value.theId
   override def template(version: String): JsValue = tmpl
 }
 
@@ -459,7 +459,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         WasmPlugin.format,
         env.datastores.wasmPluginsDataStore.key,
         env.datastores.wasmPluginsDataStore.extractId,
-        env.datastores.wasmPluginsDataStore.template(env).json,
+        env.datastores.wasmPluginsDataStore.template(env).json
       )
     ),
     //////
@@ -526,7 +526,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
       case Some(body) if request.contentType.contains("application/yaml") => {
         body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
           Yaml.parse(bodyRaw.utf8String) match {
-            case None => Left(Json.obj("error" -> "bad_request", "error_description" -> "error while parsing yaml"))
+            case None      => Left(Json.obj("error" -> "bad_request", "error_description" -> "error while parsing yaml"))
             case Some(yml) => Right(yml)
           }
         }
@@ -802,73 +802,72 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
   }
 
   // PATCH /apis/:group/:version/:entity/_bulk
-  def bulkPatch(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) {
-    ctx =>
-      import otoroshi.utils.json.JsonPatchHelpers.patchJson
-      ctx.request.headers.get("Content-Type") match {
-        case Some("application/x-ndjson") =>
-          withResource(group, version, entity, ctx.request, bulk = true) { resource =>
-            val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
-            val src      = ctx.request.body
-              .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
-              .map(bs => Try(Json.parse(bs.utf8String)))
-              .collect { case Success(e) => e }
-              .mapAsync(1) { e =>
-                resource.access.findOne(version, extractId(e)).map(ee => (e.select("patch").asValue, ee))
+  def bulkPatch(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) { ctx =>
+    import otoroshi.utils.json.JsonPatchHelpers.patchJson
+    ctx.request.headers.get("Content-Type") match {
+      case Some("application/x-ndjson") =>
+        withResource(group, version, entity, ctx.request, bulk = true) { resource =>
+          val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
+          val src      = ctx.request.body
+            .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+            .map(bs => Try(Json.parse(bs.utf8String)))
+            .collect { case Success(e) => e }
+            .mapAsync(1) { e =>
+              resource.access.findOne(version, extractId(e)).map(ee => (e.select("patch").asValue, ee))
+            }
+            .map {
+              case (e, None)    => Left((Json.obj("error" -> "entity not found"), e))
+              case (_, Some(e)) => Right(("--", e))
+            }
+            .filter {
+              case Left(_)            => true
+              case Right((_, entity)) => ctx.canUserWriteJson(entity)
+            }
+            .mapAsync(grouping) {
+              case Left((error, json))        =>
+                Json
+                  .obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json)
+                  .stringify
+                  .byteString
+                  .future
+              case Right((patchBody, entity)) => {
+                val patchedEntity = patchJson(Json.parse(patchBody), entity)
+                resource.access
+                  .create(version, resource.singularName, extractId(patchedEntity).some, patchedEntity)
+                  .map {
+                    case Left(error)          =>
+                      error.stringify.byteString
+                    case Right(createdEntity) =>
+                      adminApiEvent(
+                        ctx,
+                        s"BULK_PATCH_${resource.singularName.toUpperCase()}",
+                        s"User bulk patched a ${resource.singularName}",
+                        createdEntity,
+                        s"${resource.singularName}Patched".some
+                      )
+                      Json
+                        .obj("status" -> 200, "updated" -> true, "id" -> extractId(createdEntity))
+                        .stringify
+                        .byteString
+                  }
               }
-              .map {
-                case (e, None)    => Left((Json.obj("error" -> "entity not found"), e))
-                case (_, Some(e)) => Right(("--", e))
-              }
-              .filter {
-                case Left(_)            => true
-                case Right((_, entity)) => ctx.canUserWriteJson(entity)
-              }
-              .mapAsync(grouping) {
-                case Left((error, json))        =>
-                  Json
-                    .obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json)
-                    .stringify
-                    .byteString
-                    .future
-                case Right((patchBody, entity)) => {
-                  val patchedEntity = patchJson(Json.parse(patchBody), entity)
-                  resource.access
-                    .create(version, resource.singularName, extractId(patchedEntity).some, patchedEntity)
-                    .map {
-                      case Left(error)          =>
-                        error.stringify.byteString
-                      case Right(createdEntity) =>
-                        adminApiEvent(
-                          ctx,
-                          s"BULK_PATCH_${resource.singularName.toUpperCase()}",
-                          s"User bulk patched a ${resource.singularName}",
-                          createdEntity,
-                          s"${resource.singularName}Patched".some
-                        )
-                        Json
-                          .obj("status" -> 200, "updated" -> true, "id" -> extractId(createdEntity))
-                          .stringify
-                          .byteString
-                    }
-                }
-              }
-            Ok.sendEntity(
-              HttpEntity.Streamed.apply(
-                data = src.filterNot(_.isEmpty).intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
-                contentLength = None,
-                contentType = Some("application/x-ndjson")
-              )
-            ).future
-          }
-        case _                            =>
-          result(
-            Results.BadRequest,
-            Json.obj("error" -> "bad_content_type", "error_description" -> "Unsupported content type"),
-            ctx.request,
-            None
-          ).vfuture
-      }
+            }
+          Ok.sendEntity(
+            HttpEntity.Streamed.apply(
+              data = src.filterNot(_.isEmpty).intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
+              contentLength = None,
+              contentType = Some("application/x-ndjson")
+            )
+          ).future
+        }
+      case _                            =>
+        result(
+          Results.BadRequest,
+          Json.obj("error" -> "bad_content_type", "error_description" -> "Unsupported content type"),
+          ctx.request,
+          None
+        ).vfuture
+    }
   }
 
   // POST /apis/:group/:version/:entity/_bulk

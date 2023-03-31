@@ -437,7 +437,7 @@ class ProxyEngine() extends RequestHandler {
         case Left(error)   =>
           report.markDoneAndStart("rendering-intermediate-result").markSuccess()
           attrs.get(otoroshi.next.plugins.Keys.ResponseAddHeadersKey) match {
-            case None => error.asResult()
+            case None             => error.asResult()
             case Some(addHeaders) => error.asResult().map(r => r.withHeaders(addHeaders: _*))
           }
         case Right(result) =>
@@ -830,12 +830,19 @@ class ProxyEngine() extends RequestHandler {
       attrs: TypedMap,
       mat: Materializer
   ): FEither[NgProxyEngineError, NgRoute] = {
-    val routers = global_plugins.routerPlugins(request)
-    val pluginRoute = if (routers.nonEmpty) routers.findFirstSome(p => p.plugin.findRoute(NgRouterContext(
-      request = request,
-      config = p.instance.config.raw,
-      attrs = attrs,
-    ))) else None
+    val routers                            = global_plugins.routerPlugins(request)
+    val pluginRoute                        =
+      if (routers.nonEmpty)
+        routers.findFirstSome(p =>
+          p.plugin.findRoute(
+            NgRouterContext(
+              request = request,
+              config = p.instance.config.raw,
+              attrs = attrs
+            )
+          )
+        )
+      else None
     val maybeRoute: Option[NgMatchedRoute] = pluginRoute.orElse {
       if (useTree) {
         env.proxyState.findRoute(request, attrs)
@@ -3157,18 +3164,18 @@ class ProxyEngine() extends RequestHandler {
       .orElse(response.headers.get("Transfer-Encoding"))
       .exists(h => h.toLowerCase().contains("chunked"))*/
     val isChunked: Boolean             = rawResponse.isChunked() match { // don't know if actualy legit ...
-      case Some(true)                                                                            => true
-      case Some(false) if !env.emptyContentLengthIsChunked                                       => hasChunkedHeader
-      case Some(false) if env.emptyContentLengthIsChunked && noContentLengthHeader               => true
+      case Some(true)                                                                                   => true
+      case Some(false) if !env.emptyContentLengthIsChunked                                              => hasChunkedHeader
+      case Some(false) if env.emptyContentLengthIsChunked && noContentLengthHeader                      => true
       case Some(false) if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader => true
-      case Some(false)                                                                           => false
-      case None if !env.emptyContentLengthIsChunked                                              =>
+      case Some(false)                                                                                  => false
+      case None if !env.emptyContentLengthIsChunked                                                     =>
         hasChunkedHeader // false
-      case None if env.emptyContentLengthIsChunked && hasChunkedHeader                           =>
+      case None if env.emptyContentLengthIsChunked && hasChunkedHeader                                  =>
         true
-      case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader =>
+      case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader        =>
         true
-      case _                                                                                     => false
+      case _                                                                                            => false
     }
     val status                         = attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(response.status)
     val isHttp10                       = rawRequest.version == "HTTP/1.0"

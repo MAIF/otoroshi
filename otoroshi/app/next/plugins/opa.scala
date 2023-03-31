@@ -12,41 +12,75 @@ import java.util.Optional
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext;
 
-
 object OPA extends AwaitCapable {
 
   def opaAbortFunction: ExtismFunction[EmptyUserData] =
-    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EmptyUserData]) => {
+    (
+        plugin: ExtismCurrentPlugin,
+        params: Array[LibExtism.ExtismVal],
+        returns: Array[LibExtism.ExtismVal],
+        data: Optional[EmptyUserData]
+    ) => {
       System.out.println("opaAbortFunction");
     }
 
   def opaPrintlnFunction: ExtismFunction[EmptyUserData] =
-    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EmptyUserData]) => {
+    (
+        plugin: ExtismCurrentPlugin,
+        params: Array[LibExtism.ExtismVal],
+        returns: Array[LibExtism.ExtismVal],
+        data: Optional[EmptyUserData]
+    ) => {
       System.out.println("opaPrintlnFunction");
     }
 
   def opaBuiltin0Function: ExtismFunction[EmptyUserData] =
-    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EmptyUserData]) => {
+    (
+        plugin: ExtismCurrentPlugin,
+        params: Array[LibExtism.ExtismVal],
+        returns: Array[LibExtism.ExtismVal],
+        data: Optional[EmptyUserData]
+    ) => {
       System.out.println("opaBuiltin0Function");
     }
 
   def opaBuiltin1Function: ExtismFunction[EmptyUserData] =
-    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EmptyUserData]) => {
+    (
+        plugin: ExtismCurrentPlugin,
+        params: Array[LibExtism.ExtismVal],
+        returns: Array[LibExtism.ExtismVal],
+        data: Optional[EmptyUserData]
+    ) => {
       System.out.println("opaBuiltin1Function");
     }
 
   def opaBuiltin2Function: ExtismFunction[EmptyUserData] =
-    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EmptyUserData]) => {
+    (
+        plugin: ExtismCurrentPlugin,
+        params: Array[LibExtism.ExtismVal],
+        returns: Array[LibExtism.ExtismVal],
+        data: Optional[EmptyUserData]
+    ) => {
       System.out.println("opaBuiltin2Function");
     }
 
   def opaBuiltin3Function: ExtismFunction[EmptyUserData] =
-    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EmptyUserData]) => {
+    (
+        plugin: ExtismCurrentPlugin,
+        params: Array[LibExtism.ExtismVal],
+        returns: Array[LibExtism.ExtismVal],
+        data: Optional[EmptyUserData]
+    ) => {
       System.out.println("opaBuiltin3Function");
     };
 
   def opaBuiltin4Function: ExtismFunction[EmptyUserData] =
-    (plugin: ExtismCurrentPlugin, params: Array[LibExtism.ExtismVal], returns: Array[LibExtism.ExtismVal], data: Optional[EmptyUserData]) => {
+    (
+        plugin: ExtismCurrentPlugin,
+        params: Array[LibExtism.ExtismVal],
+        returns: Array[LibExtism.ExtismVal],
+        data: Optional[EmptyUserData]
+    ) => {
       System.out.println("opaBuiltin4Function");
     }
 
@@ -84,7 +118,12 @@ object OPA extends AwaitCapable {
 
   def opaBuiltin2() = new org.extism.sdk.HostFunction[EmptyUserData](
     "opa_builtin2",
-    Array(LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32),
+    Array(
+      LibExtism.ExtismValType.I32,
+      LibExtism.ExtismValType.I32,
+      LibExtism.ExtismValType.I32,
+      LibExtism.ExtismValType.I32
+    ),
     Array(LibExtism.ExtismValType.I32),
     opaBuiltin2Function,
     Optional.empty()
@@ -92,7 +131,13 @@ object OPA extends AwaitCapable {
 
   def opaBuiltin3() = new org.extism.sdk.HostFunction[EmptyUserData](
     "opa_builtin3",
-    Array(LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32),
+    Array(
+      LibExtism.ExtismValType.I32,
+      LibExtism.ExtismValType.I32,
+      LibExtism.ExtismValType.I32,
+      LibExtism.ExtismValType.I32,
+      LibExtism.ExtismValType.I32
+    ),
     Array(LibExtism.ExtismValType.I32),
     opaBuiltin3Function,
     Optional.empty()
@@ -100,14 +145,24 @@ object OPA extends AwaitCapable {
 
   def opaBuiltin4() = new org.extism.sdk.HostFunction[EmptyUserData](
     "opa_builtin4",
-    Array(LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32, LibExtism.ExtismValType.I32),
+    Array(
+      LibExtism.ExtismValType.I32,
+      LibExtism.ExtismValType.I32,
+      LibExtism.ExtismValType.I32,
+      LibExtism.ExtismValType.I32,
+      LibExtism.ExtismValType.I32,
+      LibExtism.ExtismValType.I32
+    ),
     Array(LibExtism.ExtismValType.I32),
     opaBuiltin4Function,
     Optional.empty()
   )
 
-  def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext])
-                  (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[HostFunctionWithAuthorization] = {
+  def getFunctions(config: WasmConfig, ctx: Option[NgCachedConfigContext])(implicit
+      env: Env,
+      executionContext: ExecutionContext,
+      mat: Materializer
+  ): Seq[HostFunctionWithAuthorization] = {
     Seq(
       HostFunctionWithAuthorization(opaAbort(), _ => config.opa),
       HostFunctionWithAuthorization(opaPrintln(), _ => config.opa),
@@ -115,12 +170,15 @@ object OPA extends AwaitCapable {
       HostFunctionWithAuthorization(opaBuiltin1(), _ => config.opa),
       HostFunctionWithAuthorization(opaBuiltin2(), _ => config.opa),
       HostFunctionWithAuthorization(opaBuiltin3(), _ => config.opa),
-      HostFunctionWithAuthorization(opaBuiltin4(), _ => config.opa),
+      HostFunctionWithAuthorization(opaBuiltin4(), _ => config.opa)
     )
   }
 
-  def getLinearMemories(config: WasmConfig, ctx: Option[NgCachedConfigContext])
-                       (implicit env: Env, executionContext: ExecutionContext, mat: Materializer): Seq[LinearMemory] = {
+  def getLinearMemories(config: WasmConfig, ctx: Option[NgCachedConfigContext])(implicit
+      env: Env,
+      executionContext: ExecutionContext,
+      mat: Materializer
+  ): Seq[LinearMemory] = {
     Seq(
       new LinearMemory("memory", "env", new LinearMemoryOptions(5, Optional.empty()))
     )
@@ -131,19 +189,21 @@ object OPA extends AwaitCapable {
       return 0
     } else {
       val value_buf_len = value.length
-      var parameters = new Parameters(1)
-      val parameter = new IntegerParameter()
+      var parameters    = new Parameters(1)
+      val parameter     = new IntegerParameter()
       parameter.add(parameters, value_buf_len, 0)
 
       val raw_addr = plugin.call("opa_malloc", parameters, 1, "".getBytes())
 
-      if (LibExtism.INSTANCE.extism_memory_write_bytes(
-        plugin.getPointer(),
-        plugin.getIndex(),
-        value,
-        value_buf_len,
-        raw_addr.getValue(0).v.i32
-      ) == -1) {
+      if (
+        LibExtism.INSTANCE.extism_memory_write_bytes(
+          plugin.getPointer(),
+          plugin.getIndex(),
+          value,
+          value_buf_len,
+          raw_addr.getValue(0).v.i32
+        ) == -1
+      ) {
         throw new ExtismException("Cant' write in memory")
       }
 
@@ -190,7 +250,7 @@ object OPA extends AwaitCapable {
       data_heap_ptr
     )
 
-    val heap_ptr = data_heap_ptr + input_len
+    val heap_ptr   = data_heap_ptr + input_len
     val input_addr = data_heap_ptr
 
     val ptr = new Parameters(7)
@@ -204,13 +264,10 @@ object OPA extends AwaitCapable {
 
     val ret = plugin.call("opa_eval", ptr, 1)
 
-    val memory = LibExtism.INSTANCE.extism_get_memory(
-      plugin.getPointer(),
-      plugin.getIndex(),
-      "memory")
+    val memory = LibExtism.INSTANCE.extism_get_memory(plugin.getPointer(), plugin.getIndex(), "memory")
 
     val mem: Array[Byte] = memory.getByteArray(ret.getValue(0).v.i32, 65356)
-    val size: Int = lastValidByte(mem)
+    val size: Int        = lastValidByte(mem)
 
     new String(java.util.Arrays.copyOf(mem, size), StandardCharsets.UTF_8)
   }
@@ -230,8 +287,10 @@ object LinearMemories {
   private val memories: AtomicReference[Seq[LinearMemory]] =
     new AtomicReference[Seq[LinearMemory]](Seq.empty[LinearMemory])
 
-  def getMemories(config: WasmConfig, ctx: Option[NgCachedConfigContext], pluginId: String)
-                  (implicit env: Env, executionContext: ExecutionContext): Array[LinearMemory] = {
+  def getMemories(config: WasmConfig, ctx: Option[NgCachedConfigContext], pluginId: String)(implicit
+      env: Env,
+      executionContext: ExecutionContext
+  ): Array[LinearMemory] = {
     implicit val mat = env.otoroshiMaterializer
     if (memories.get.isEmpty) {
       memories.set(
@@ -263,16 +322,3 @@ object LinearMemories {
         return new String(Arrays.copyOf(mem, size), StandardCharsets.UTF_8);
     }
 }*/
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -63,44 +63,46 @@ import scala.util.{Failure, Success}
 
 case class RoutingInfo(id: String, name: String)
 
-object JavaVersion {
-  val default = JavaVersion(PlatformDependent.javaVersion().toString, "--")
-  def fromString(value: String): JavaVersion = fromJson(Json.parse(value).asOpt[JsValue])
+object JavaVersion                                         {
+  val default                                       = JavaVersion(PlatformDependent.javaVersion().toString, "--")
+  def fromString(value: String): JavaVersion        = fromJson(Json.parse(value).asOpt[JsValue])
   def fromJson(value: Option[JsValue]): JavaVersion = value match {
-    case None => JavaVersion.default
-    case Some(json) => (for {
-      version <- json.select("version").asOpt[String]
-      vendor <- json.select("vendor").asOpt[String]
-    } yield JavaVersion(version, vendor)).getOrElse(JavaVersion.default)
+    case None       => JavaVersion.default
+    case Some(json) =>
+      (for {
+        version <- json.select("version").asOpt[String]
+        vendor  <- json.select("vendor").asOpt[String]
+      } yield JavaVersion(version, vendor)).getOrElse(JavaVersion.default)
   }
 }
-case class JavaVersion(version: String, vendor: String) {
-  def str: String = s"${version} $vendor"
+case class JavaVersion(version: String, vendor: String)    {
+  def str: String     = s"${version} $vendor"
   def jsonStr: String = json.stringify
-  def json: JsValue = Json.obj(
+  def json: JsValue   = Json.obj(
     "version" -> version,
-    "vendor" -> vendor,
+    "vendor"  -> vendor
   )
 }
-object OS {
-  val default = OS("undefined", "undefined", "undefined")
-  def fromString(value: String): OS = fromJson(Json.parse(value).asOpt[JsValue])
+object OS                                                  {
+  val default                              = OS("undefined", "undefined", "undefined")
+  def fromString(value: String): OS        = fromJson(Json.parse(value).asOpt[JsValue])
   def fromJson(value: Option[JsValue]): OS = value match {
-    case None => OS.default
-    case Some(json) => (for {
-      name <- json.select("name").asOpt[String]
-      version <- json.select("version").asOpt[String]
-      arch <- json.select("arch").asOpt[String]
-    } yield OS(name, version, arch)).getOrElse(OS.default)
+    case None       => OS.default
+    case Some(json) =>
+      (for {
+        name    <- json.select("name").asOpt[String]
+        version <- json.select("version").asOpt[String]
+        arch    <- json.select("arch").asOpt[String]
+      } yield OS(name, version, arch)).getOrElse(OS.default)
   }
 }
 case class OS(name: String, version: String, arch: String) {
-  def str: String = s"${name} ${version} ($arch)"
+  def str: String     = s"${name} ${version} ($arch)"
   def jsonStr: String = json.stringify
-  def json: JsValue = Json.obj(
-    "name" -> name,
+  def json: JsValue   = Json.obj(
+    "name"    -> name,
     "version" -> version,
-    "arch" -> arch,
+    "arch"    -> arch
   )
 }
 
@@ -416,9 +418,9 @@ class Env(
   lazy val initialTrustXForwarded: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.trustXForwarded").getOrElse(true)
 
-  lazy val wasmCacheTtl: Int                 =
+  lazy val wasmCacheTtl: Int  =
     configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.cache.ttl").getOrElse(10000)
-  lazy val wasmCacheSize: Int                =
+  lazy val wasmCacheSize: Int =
     configuration.getOptionalWithFileSupport[Int]("otoroshi.wasm.cache.size").getOrElse(100)
 
   lazy val manualDnsResolve: Boolean         =
@@ -1179,12 +1181,12 @@ class Env(
 
   lazy val theJavaVersion = (for {
     version <- Option(System.getProperty("java.version"))
-    vendor <- Option(System.getProperty("java.vendor"))
+    vendor  <- Option(System.getProperty("java.vendor"))
   } yield JavaVersion(version, vendor)).getOrElse(JavaVersion.default)
 
   lazy val os = (for {
-    name <- Option(System.getProperty("os.name"))
-    arch <- Option(System.getProperty("os.arch"))
+    name    <- Option(System.getProperty("os.name"))
+    arch    <- Option(System.getProperty("os.arch"))
     version <- Option(System.getProperty("os.version"))
   } yield OS(name, version, arch)).getOrElse(OS.default)
 

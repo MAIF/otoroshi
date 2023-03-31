@@ -125,7 +125,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
       if (!cors.legacy.shouldNotPass(req)) {
         val corsHeaders = cors.legacy.asHeaders(req)
         ctx.attrs.update(otoroshi.next.plugins.Keys.ResponseAddHeadersKey) {
-          case None => corsHeaders
+          case None             => corsHeaders
           case Some(oldHeaders) => oldHeaders ++ corsHeaders
         }
       }
@@ -161,9 +161,11 @@ class Cors extends NgRequestTransformer with NgPreRouting {
     ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ corsHeaders).right
   }
 
-  override def transformError(ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
-    val req = ctx.request
-    val cors =
+  override def transformError(
+      ctx: NgTransformerErrorContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+    val req         = ctx.request
+    val cors        =
       CorsSettings.fromJson(ctx.config).getOrElse(CorsSettings()).copy(enabled = true, excludedPatterns = Seq.empty)
     val corsHeaders = cors
       .asHeaders(req)

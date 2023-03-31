@@ -9,7 +9,16 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.common.base.Charsets
 import otoroshi.env.Env
-import otoroshi.events.{Alerts, ApiKeyQuotasAlmostExceededAlert, ApiKeyQuotasAlmostExceededReason, ApiKeyQuotasExceededAlert, ApiKeyQuotasExceededReason, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
+import otoroshi.events.{
+  Alerts,
+  ApiKeyQuotasAlmostExceededAlert,
+  ApiKeyQuotasAlmostExceededReason,
+  ApiKeyQuotasExceededAlert,
+  ApiKeyQuotasExceededReason,
+  ApiKeySecretHasRotated,
+  ApiKeySecretWillRotate,
+  RevokedApiKeyUsageAlert
+}
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.next.plugins.api.NgAccess
@@ -21,7 +30,13 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{BetterDecodedJWT, BetterJsLookupResult, BetterJsReadable, BetterJsValue, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{
+  BetterDecodedJWT,
+  BetterJsLookupResult,
+  BetterJsReadable,
+  BetterJsValue,
+  BetterSyntax
+}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -631,7 +646,7 @@ case class ApikeyTuple(
     clientSecret: Option[String] = None,
     jwtToken: Option[DecodedJWT] = None,
     location: Option[ApikeyLocation]
-) {
+)                                                                 {
   def json: JsValue = Json.obj(
     "client_id"     -> clientId,
     "client_secret" -> clientSecret.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -651,10 +666,10 @@ object ApikeyTuple {
           ApikeyLocation(
             name = loc.select("name").asString,
             kind = loc.select("kind").asString match {
-              case "Query" => ApikeyLocationKind.Query
+              case "Query"  => ApikeyLocationKind.Query
               case "Cookie" => ApikeyLocationKind.Cookie
-              case _ => ApikeyLocationKind.Header
-            },
+              case _        => ApikeyLocationKind.Header
+            }
           )
         }
       )

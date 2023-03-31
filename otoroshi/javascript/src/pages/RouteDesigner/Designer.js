@@ -869,12 +869,14 @@ class Designer extends React.Component {
       plugin.plugin_steps = [];
     }
     // plugin.plugin_steps &&
-    return !plugin.plugin_steps.includes('Sink') &&
+    return (
+      !plugin.plugin_steps.includes('Sink') &&
       !plugin.plugin_steps.includes('HandlesTunnel') &&
       !['job', 'sink'].includes(plugin.pluginType) &&
       !EXCLUDED_PLUGINS.plugin_visibility.includes(plugin.plugin_visibility) &&
-      !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''));
-  }
+      !EXCLUDED_PLUGINS.ids.includes(plugin.id.replace('cp:', ''))
+    );
+  };
   removeNode = (e) => {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
 

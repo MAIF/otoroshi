@@ -655,12 +655,12 @@ class FieldForm extends React.Component {
             },
             wasm_raw_source: {
               type: 'string',
-              label: 'WASM raw source'
-            }, 
+              label: 'WASM raw source',
+            },
             wasm_function_name: {
               type: 'string',
-              label: 'WASM Function name'
-            }
+              label: 'WASM Function name',
+            },
           },
         },
       },

@@ -19,13 +19,13 @@ object NewEngine {
   def enabledRawFromConfig(config: GlobalConfig, env: Env): (Boolean, Boolean) = {
     val pluginEnabled = config.plugins.enabled
     val pluginInRefs  = config.plugins.refs.contains(s"cp:${classOf[ProxyEngine].getName}")
-    val pluginConfig = config.plugins.config
+    val pluginConfig  = config.plugins.config
       .select(ProxyEngine.configRoot)
       .asOpt[JsValue]
       .map(s => ProxyEngineConfig.parse(s, env))
       .getOrElse(ProxyEngineConfig.default)
     val configEnabled = pluginConfig.enabled
-    val allowedOnAll = pluginConfig.denyDomains.isEmpty && pluginConfig.domains.contains("*")
+    val allowedOnAll  = pluginConfig.denyDomains.isEmpty && pluginConfig.domains.contains("*")
     (pluginEnabled && pluginInRefs && configEnabled, pluginEnabled && pluginInRefs && configEnabled && allowedOnAll)
   }
 

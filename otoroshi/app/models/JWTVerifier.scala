@@ -70,7 +70,7 @@ object JwtInjection extends FromJson[JwtInjection] {
         additionalHeaders = json.select("additionalHeaders").as[Map[String, String]],
         removeHeaders = json.select("removeHeaders").as[Seq[String]],
         additionalCookies = json.select("additionalCookies").as[Map[String, String]],
-        removeCookies = json.select("removeCookies").as[Seq[String]],
+        removeCookies = json.select("removeCookies").as[Seq[String]]
       )
     }.toEither
   }
@@ -921,7 +921,7 @@ case class DefaultToken(
     token: JsValue, // TODO.next: we need to use a string here !
     verificationSettings: VerificationSettings = VerificationSettings()
 ) extends VerifierStrategy {
-  def name: String = "default_token"
+  def name: String    = "default_token"
   override def asJson =
     Json.obj(
       "type"                 -> "DefaultToken",
@@ -943,7 +943,7 @@ object PassThrough extends FromJson[VerifierStrategy] {
 }
 
 case class PassThrough(verificationSettings: VerificationSettings) extends VerifierStrategy {
-  def name: String = "pass_through"
+  def name: String    = "pass_through"
   override def asJson =
     Json.obj(
       "type"                 -> "PassThrough",
@@ -964,7 +964,7 @@ object Sign extends FromJson[VerifierStrategy] {
 }
 
 case class Sign(verificationSettings: VerificationSettings, algoSettings: AlgoSettings) extends VerifierStrategy {
-  def name: String = "sign"
+  def name: String    = "sign"
   override def asJson =
     Json.obj(
       "type"                 -> "Sign",
@@ -991,7 +991,7 @@ case class Transform(
     transformSettings: TransformSettings,
     algoSettings: AlgoSettings
 ) extends VerifierStrategy {
-  def name: String = "transform"
+  def name: String    = "transform"
   override def asJson =
     Json.obj(
       "type"                 -> "Transform",

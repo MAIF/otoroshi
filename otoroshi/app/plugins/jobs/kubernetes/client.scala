@@ -50,8 +50,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
 
   private def client(url: String, wildcard: Boolean = true): WSRequest = {
-    val _uri = UrlSanitizer.sanitize(config.endpoint + url)
-    val uri  = if (wildcard) Uri(_uri.replace("/namespaces/*", "")) else Uri(_uri)
+    val _uri         = UrlSanitizer.sanitize(config.endpoint + url)
+    val uri          = if (wildcard) Uri(_uri.replace("/namespaces/*", "")) else Uri(_uri)
     if (logger.isDebugEnabled) logger.debug(s"built uri: $uri")
     val clientConfig = ClientConfig(
       connectionTimeout = config.connectionTimeout,
@@ -71,9 +71,11 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             trustedCerts = config.caCert.map(_ => Seq("kubernetes-ca-cert")).getOrElse(Seq.empty)
           )
         ),
-        clientConfig,
+        clientConfig
       )
-      .withRequestTimeout(clientConfig.extractTimeout(uri.toRelative.path.toString(), _.callAndStreamTimeout, _.callAndStreamTimeout))
+      .withRequestTimeout(
+        clientConfig.extractTimeout(uri.toRelative.path.toString(), _.callAndStreamTimeout, _.callAndStreamTimeout)
+      )
       .applyOn(req =>
         config.token match {
           case None        => req
