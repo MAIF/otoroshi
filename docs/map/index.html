@@ -219,6 +219,12 @@
       container.addEventListener('mousemove', move)
       container.addEventListener('touchmove', move)
 
+      const searchParams = new URLSearchParams(window.location.search);
+      const zoomParam = searchParams.get('zoom')
+      if (zoomParam) {
+        zoom = parseFloat(zoomParam);
+      }
+      
       updateZoomDisplay();
       setZoomValue(zoom);
 
