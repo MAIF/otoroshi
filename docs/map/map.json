@@ -996,7 +996,7 @@
         "group_id": "load_balancing"
       },
       {
-        "title": "Sticky time",
+        "title": "Sticky",
         "group_id": "load_balancing"
       },
       {
@@ -1112,19 +1112,19 @@
         "group_id": "chaos_engineering"
       },
       {
-        "title": "PKI self signed tools",
+        "title": "ACME support / Let's encrypt support",
         "group_id": "crypto"
       },
       {
-        "title": "ACME support",
+        "title": "PKI tools",
         "group_id": "crypto"
       },
       {
-        "title": "Let's encrypt support",
+        "title": "OCSP responder",
         "group_id": "crypto"
       },
       {
-        "title": "PKI tools OCSP responder AIA",
+        "title": "AIA",
         "group_id": "crypto"
       },
       {
@@ -1256,11 +1256,11 @@
         "group_id": "wasm_integration"
       },
       {
-        "title": "81 pages ",
+        "title": "81 pages",
         "group_id": "documentation"
       },
       {
-        "title": "17 topics",
+        "title": "17 detailed topics",
         "group_id": "documentation"
       },
       {
