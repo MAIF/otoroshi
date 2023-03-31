@@ -160,7 +160,7 @@
 
         document.getElementById('zoom-in').addEventListener('click', (e) => zoomIn())
         document.getElementById('zoom-out').addEventListener('click', (e) => zoomOut())
-        fetch('/map.json').then(r => r.json()).then(doc => {
+        fetch('map.json').then(r => r.json()).then(doc => {
           renderAll(doc.map)
         });
       </script>
