@@ -233,7 +233,7 @@
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.style.display = 'none';
-          a.download = `capture.png`;
+          a.download = `capture-${Date.now()}.png`;
           a.href = url;
           document.body.appendChild(a);
           a.click();
