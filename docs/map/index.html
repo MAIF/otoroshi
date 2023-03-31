@@ -104,6 +104,7 @@
   </div>
   <script>
 
+    let showContrib = false;
     let dragging = false
     let hasMoved = false
     let start = { x: 0, y: 0 }
@@ -195,7 +196,7 @@
       }
 
       function zoomReset() {
-        setZoomValue(zoom = 1.0);
+        setZoomValue(zoom = 0.45);
         updateZoomDisplay()
       }
 
@@ -326,7 +327,7 @@
         // "max-width: 120px",
         "max-height: 44px",
         "text-align: center",
-        `background-color: ${node.contributors ? '#e74c3c' : 'rgb(52, 88, 110)'}`,
+        `background-color: ${(showContrib && node.contributors) ? '#e74c3c' : 'rgb(52, 88, 110)'}`,
         // 'border-radius: 5px',
         // 'margin-top: 5px',
         // 'margin-left: 2px',
