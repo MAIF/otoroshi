@@ -40,12 +40,13 @@
       let dragging = false
       let start = { x: 0, y: 0 }
 
-      container.addEventListener('mousedown', e => {
+      const down = e => {
         dragging = true
         start.x = e.clientX
         start.y = e.clientY
-      })
-      container.addEventListener('mousemove', e => {
+      }
+
+      const move = e => {
         if (dragging) {
           const delta = {
             x: start.x - e.clientX,
@@ -62,12 +63,23 @@
           start.x = e.clientX
           start.y = e.clientY
         }
-      })
+      }
 
-      container.addEventListener('mouseup', () => {
+      const up = () => {
         dragging = false
-      })
-    })
+      }
+
+      container.addEventListener('mouseup', up)
+      container.addEventListener('mouseleave', up)
+      container.addEventListener('touchup', up)
+
+      container.addEventListener('touchdown', down)
+      container.addEventListener('mousedown', down)
+
+      container.addEventListener('mousemove', move)
+      container.addEventListener('touchmove', move)
+
+    });
 
     function renderRootGroup(group) {
       const el = document.createElement('div');
