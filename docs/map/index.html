@@ -25,7 +25,7 @@
       display: flex; flex-wrap: wrap; position: absolute; top: 0; left: 0; width: 200vh">
     </div>
     <div
-      style="position: fixed; right: 10px; top: 5px; display: flex; flex-direction: row; justify-content: center; align-items: center;">
+      style="position: absolute; right: 10px; top: 5px; display: flex; flex-direction: row; justify-content: center; align-items: center;">
       <button id="zoom-out" type="button">-</button>
       <div id="zoom-value" style="font-family: sans-serif; margin-left: 5px; margin-right: 5px;">100%</div>
       <button id="zoom-in" style="margin-left: 5px;" type="button">+</button>
@@ -39,6 +39,8 @@
 
       let dragging = false
       let start = { x: 0, y: 0 }
+      let zoom = 1;
+      const ZOOM_SPEED = 0.1;
 
       const down = e => {
         dragging = true
@@ -49,14 +51,14 @@
       const move = e => {
         if (dragging) {
           const delta = {
-            x: start.x - e.clientX,
-            y: start.y - e.clientY
+            x: (start.x - e.clientX) * (1 / zoom),
+            y: (start.y - e.clientY) * (1 / zoom)
           }
           const rect = {
             x: ~~root.style.left.replace('px', ''),
             y: ~~root.style.top.replace('px', ''),
           }
-          console.log(delta, rect)
+          console.log(delta)
           root.style.left = `${rect.x - delta.x}px`;
           root.style.top = `${rect.y - delta.y}px`;
 
@@ -68,6 +70,16 @@
       const up = () => {
         dragging = false
       }
+
+      const onZoom = e => {
+        if (e.deltaY > 0) {
+          container.style.transform = `scale(${zoom += ZOOM_SPEED})`;
+        } else if (zoom > .2) {
+          container.style.transform = `scale(${zoom -= ZOOM_SPEED})`;
+        }
+      }
+
+      container.addEventListener('wheel', onZoom);
 
       container.addEventListener('mouseup', up)
       container.addEventListener('mouseleave', up)
