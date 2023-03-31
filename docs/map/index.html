@@ -209,10 +209,10 @@
       function toggleContrib() {
         if (showContrib) {
            showContrib = false;
-           document.getElementById('toggle-contrib').textContext = "show contributions"
+           document.getElementById('toggle-contrib').textContent = "show contributions"
         } else {
            showContrib = true;
-           document.getElementById('toggle-contrib').textContext = "hide contributions"
+           document.getElementById('toggle-contrib').textContent = "hide contributions"
         }
         refresh();
       }
@@ -233,7 +233,7 @@
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.style.display = 'none';
-          a.download = `capture-${Date.now()}.png`;
+          a.download = `otoroshi-features-${Date.now()}.png`;
           a.href = url;
           document.body.appendChild(a);
           a.click();
