@@ -6,7 +6,7 @@
         "id": "plugins",
         "title": "Plugins",
         "group_id": null,
-        "width": "100%"
+        "width": "60%"
       },
       {
         "title": "API Management",
@@ -27,7 +27,7 @@
         "title": "Observability",
         "id": "observability",
         "group_id": null,
-        "width": "45%"
+        "width": "25%"
       },
       {
         "title": "Events",

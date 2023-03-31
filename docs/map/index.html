@@ -20,16 +20,54 @@
 </head>
 
 <body>
-  <div id="group-root"
-    style="transform: scale(1.0); font-family: sans-serif; display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: flex-start; margin: 0px; padding: 10px;">
-  </div>
-  <div
-    style="position: fixed; right: 10px; top: 5px; display: flex; flex-direction: row; justify-content: center; align-items: center;">
-    <button id="zoom-out" type="button">-</button>
-    <div id="zoom-value" style="font-family: sans-serif; margin-left: 5px; margin-right: 5px;">100%</div>
-    <button id="zoom-in" style="margin-left: 5px;" type="button">+</button>
+  <div id="scroll-container" style="position: relative; height: 100vh; width: 100vh">
+    <div id="group-root" style="transform: scale(1.0); font-family: sans-serif; margin: 0px; padding: 0px; 
+      display: flex; flex-wrap: wrap; position: absolute; top: 0; left: 0; width: 200vh">
+    </div>
+    <div
+      style="position: fixed; right: 10px; top: 5px; display: flex; flex-direction: row; justify-content: center; align-items: center;">
+      <button id="zoom-out" type="button">-</button>
+      <div id="zoom-value" style="font-family: sans-serif; margin-left: 5px; margin-right: 5px;">100%</div>
+      <button id="zoom-in" style="margin-left: 5px;" type="button">+</button>
+    </div>
   </div>
   <script>
+
+    window.addEventListener('load', () => {
+      const container = document.getElementById('scroll-container');
+      const root = document.getElementById('group-root');
+
+      let dragging = false
+      let start = { x: 0, y: 0 }
+
+      container.addEventListener('mousedown', e => {
+        dragging = true
+        start.x = e.clientX
+        start.y = e.clientY
+      })
+      container.addEventListener('mousemove', e => {
+        if (dragging) {
+          const delta = {
+            x: start.x - e.clientX,
+            y: start.y - e.clientY
+          }
+          const rect = {
+            x: ~~root.style.left.replace('px', ''),
+            y: ~~root.style.top.replace('px', ''),
+          }
+          console.log(delta, rect)
+          root.style.left = `${rect.x - delta.x}px`;
+          root.style.top = `${rect.y - delta.y}px`;
+
+          start.x = e.clientX
+          start.y = e.clientY
+        }
+      })
+
+      container.addEventListener('mouseup', () => {
+        dragging = false
+      })
+    })
 
     function renderRootGroup(group) {
       const el = document.createElement('div');
@@ -44,7 +82,7 @@
         // `min-height: 300px`,
         `height: 100%`,
         // group.width ? `width: ${group.width}` : 'width: 20vw',
-        "max-width: 50%",
+        `max-width: ${group.width ? group.width : '30%'}`,
         `background-color: rgba(68, 99, 137, 0.62)`, //#446389`, 
         `margin: 10px`,
         `padding: 10px`,
@@ -107,7 +145,7 @@
         "align-items: center",
         // "width: 120px",
         "flex: 1",
-        "min-width: 80px", 
+        "min-width: 80px",
         "height: 30px",
         "text-align: center",
         "background-color: rgb(52, 88, 110)",
