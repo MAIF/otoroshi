@@ -218,6 +218,8 @@
       }
 
       function asImage() {
+        const oldZoom = zoom + 0;
+        setZoomValue(1)
         html2canvas(document.getElementById('group-root')).then(canvas => {
           const data = canvas.toDataURL('image/png');
           const byteString = atob(data.split(',')[1]);
@@ -236,6 +238,7 @@
           document.body.appendChild(a);
           a.click();
           setTimeout(() => document.body.removeChild(a), 300);
+          setZoomValue(oldZoom)
         });
       }
  
