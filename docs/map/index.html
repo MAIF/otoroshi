@@ -57,6 +57,7 @@
   <script>
 
     let dragging = false
+    let hasMoved = false
     let start = { x: 0, y: 0 }
     let zoom = 1;
     const ZOOM_SPEED = 0.04;
@@ -67,7 +68,9 @@
 
       const down = e => {
         e.stopPropagation()
+        console.log('parent')
         dragging = true
+        hasMoved = false
         start.x = e.clientX
         start.y = e.clientY
       }
@@ -75,6 +78,7 @@
       const move = e => {
         e.stopPropagation()
         if (dragging) {
+          hasMoved = true
           const delta = {
             x: (start.x - e.clientX) * (1 / zoom),
             y: (start.y - e.clientY) * (1 / zoom)
@@ -171,24 +175,29 @@
 
     function renderRootGroup(group) {
       const el = document.createElement('div');
-      el.addEventListener('mousedown', () => {
-        const container = document.getElementById('scroll-container');
-        container.style.transform = `scale(1)`;
+      el.addEventListener('mouseup', () => {
+        console.log({ dragging, hasMoved})
+        if (dragging && !hasMoved) {
+          const container = document.getElementById('scroll-container');
+          container.style.transform = `scale(1)`;
 
-        const root = document.getElementById('group-root');
+          const root = document.getElementById('group-root');
 
-        let rect = el.getBoundingClientRect();
-        
-        root.style.transform = `translate(-${el.offsetLeft}px, -${el.offsetTop}px)`
-        let ratio = rect.width > rect.height ? ((rect.width + 10) / window.innerWidth) : ((rect.height + 10) / window.innerHeight);
+          let rect = el.getBoundingClientRect();
 
-        if (rect.height * 1 / ratio > window.innerHeight) {
-          ratio = (rect.height + 20) / window.innerHeight;
-          root.style.transform = `translate(-${el.offsetLeft}px, -${el.offsetTop-20}px)`
+          root.style.transform = `translate(-${el.offsetLeft}px, -${el.offsetTop}px)`
+          let ratio = rect.width > rect.height ? ((rect.width + 10) / window.innerWidth) : ((rect.height + 10) / window.innerHeight);
+
+          if (rect.height * 1 / ratio > window.innerHeight) {
+            ratio = (rect.height + 20) / window.innerHeight;
+            root.style.transform = `translate(-${el.offsetLeft}px, -${el.offsetTop - 20}px)`
+          }
+
+          zoom = 1 / ratio
+          document.getElementById('scroll-container').style.transform = `scale(${1 / ratio})`;
+        } else {
+
         }
-
-        zoom = 1 / ratio
-        document.getElementById('scroll-container').style.transform = `scale(${1 / ratio})`;
       });
       el.setAttribute("id", "group-" + group.id);
       el.setAttribute("class", "group");
