@@ -37,6 +37,7 @@
     <div id="zoom-value" style="font-family: sans-serif; margin-left: 5px; margin-right: 5px;">100%</div>
     <button id="zoom-in" style="margin-left: 5px; border: 1px solid #ccc; background: #eee; border-radius: 3px"
       type="button">+</button>
+    <button id="zoom-reset" style="margin-left: 5px;" type="button">reset</button>
   </div>
   <script>
 
@@ -67,7 +68,7 @@
             x: ~~root.style.left.replace('px', ''),
             y: ~~root.style.top.replace('px', ''),
           }
-          
+
           root.style.left = `${rect.x - delta.x}px`;
           root.style.top = `${rect.y - delta.y}px`;
 
