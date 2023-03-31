@@ -218,15 +218,24 @@
       },
       {
         "title": "Eureka instance",
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Internal Eureka target",
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "External Eureka target",
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Force HTTPS traffic",
@@ -246,11 +255,17 @@
       },
       {
         "title": "GraphQL Composer",
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "GraphQL Proxy",
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "GraphQL Query to REST",
@@ -298,7 +313,10 @@
       },
       {
         "title": "Jwt signer",
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Jwt verifiers",
@@ -306,7 +324,10 @@
       },
       {
         "title": "Jwt verification only",
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Maintenance mode",
@@ -322,7 +343,10 @@
       },
       {
         "title": "Mock Responses",
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "User logged in expected",
@@ -462,12 +486,18 @@
       {
         "title": "Basic Auth. caller",
         "legacy": true,
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "OAuth2 caller",
         "legacy": true,
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Response Cache",
@@ -506,7 +536,10 @@
       },
       {
         "title": "HMAC caller plugin",
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Izanami Canary Campaign",
@@ -541,7 +574,10 @@
       {
         "title": "Prometheus Service Metrics",
         "legacy": true,
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Service Metrics",
@@ -556,7 +592,10 @@
       {
         "title": "OAuth1 caller",
         "legacy": true,
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "OIDC headers",
@@ -716,7 +755,10 @@
       {
         "title": "Prometheus Endpoint",
         "legacy": true,
-        "group_id": "plugins"
+        "group_id": "plugins",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Otoroshi state exporter job",
@@ -792,7 +834,7 @@
         "group_id": "apikeys"
       },
       {
-        "title": "OAuth2 client_credentia ls support",
+        "title": "OAuth2 client_credentials support",
         "group_id": "apikeys"
       },
       {
@@ -860,11 +902,11 @@
         "group_id": "events"
       },
       {
-        "title": "Alerts ",
+        "title": "Alerts",
         "group_id": "events"
       },
       {
-        "title": "global analytics ",
+        "title": "global analytics",
         "group_id": "events"
       },
       {
@@ -880,12 +922,15 @@
         "group_id": "metrics"
       },
       {
-        "title": "datadog ",
+        "title": "datadog",
         "group_id": "metrics"
       },
       {
         "title": "prometheus",
-        "group_id": "metrics"
+        "group_id": "metrics",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "monitoring ",
@@ -896,15 +941,15 @@
         "group_id": "metrics"
       },
       {
-        "title": "Kafka ",
+        "title": "Kafka",
         "group_id": "exporters"
       },
       {
-        "title": "Mailer ",
+        "title": "Mailer",
         "group_id": "exporters"
       },
       {
-        "title": "Pulsar ",
+        "title": "Pulsar",
         "group_id": "exporters"
       },
       {
@@ -917,7 +962,10 @@
       },
       {
         "title": "Elastic ",
-        "group_id": "exporters"
+        "group_id": "exporters",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Files ",
@@ -929,10 +977,13 @@
       },
       {
         "title": "Request routing metrics",
-        "group_id": "exporters"
+        "group_id": "exporters",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
-        "title": "debug mode ",
+        "title": "debug mode",
         "group_id": "reverse_proxy"
       },
       {
@@ -944,7 +995,7 @@
         "group_id": "reverse_proxy"
       },
       {
-        "title": "http3 ",
+        "title": "http3",
         "group_id": "reverse_proxy"
       },
       {
@@ -969,11 +1020,17 @@
       },
       {
         "title": "API ",
-        "group_id": "https"
+        "group_id": "https",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "webapp ",
-        "group_id": "https"
+        "group_id": "https",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "websocket",
@@ -985,7 +1042,10 @@
       },
       {
         "title": "app",
-        "group_id": "tcp"
+        "group_id": "tcp",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "RoundRobin",
@@ -1057,7 +1117,10 @@
       },
       {
         "title": "resources loader",
-        "group_id": "misc"
+        "group_id": "misc",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "job framework with distributed scheduling across nodes",
@@ -1077,7 +1140,10 @@
       },
       {
         "title": "contextual expression language",
-        "group_id": "misc"
+        "group_id": "misc",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "entity templates",
@@ -1093,7 +1159,10 @@
       },
       {
         "title": "eureka2 integration",
-        "group_id": "misc"
+        "group_id": "misc",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "big response body fault",
@@ -1121,11 +1190,17 @@
       },
       {
         "title": "OCSP responder",
-        "group_id": "crypto"
+        "group_id": "crypto",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "AIA",
-        "group_id": "crypto"
+        "group_id": "crypto",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "public keypair JWKS",
@@ -1157,11 +1232,17 @@
       },
       {
         "title": "OAuth/OIDC 2.0/2.1",
-        "group_id": "authmods"
+        "group_id": "authmods",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "SAML V2 ",
-        "group_id": "authmods"
+        "group_id": "authmods",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "webauthn",
@@ -1169,19 +1250,31 @@
       },
       {
         "title": "OAuth 1.0a ",
-        "group_id": "authmods"
+        "group_id": "authmods",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "In memory ",
-        "group_id": "authmods"
+        "group_id": "authmods",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "LDAP ",
-        "group_id": "authmods"
+        "group_id": "authmods",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "proxy sso",
-        "group_id": "authmods"
+        "group_id": "authmods",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "RSASSA-PCKS1 + SHA",
@@ -1225,51 +1318,87 @@
       },
       {
         "title": "WASM Manager",
-        "group_id": "wasm_integration"
+        "group_id": "wasm_integration",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Custom Go/Rust/Typescript Host functions",
-        "group_id": "wasm_integration"
+        "group_id": "wasm_integration",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Open Policy Agen integration",
-        "group_id": "wasm_integration"
+        "group_id": "wasm_integration",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Http/File/Local/ Manager WASM source support",
-        "group_id": "wasm_integration"
+        "group_id": "wasm_integration",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Extism contribution",
-        "group_id": "wasm_integration"
+        "group_id": "wasm_integration",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Extism integration",
-        "group_id": "wasm_integration"
+        "group_id": "wasm_integration",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "WASM plugin entity",
-        "group_id": "wasm_integration"
+        "group_id": "wasm_integration",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "9 kind of wasm plugins",
-        "group_id": "wasm_integration"
+        "group_id": "wasm_integration",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "81 pages",
-        "group_id": "documentation"
+        "group_id": "documentation",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "17 detailed topics",
-        "group_id": "documentation"
+        "group_id": "documentation",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "23 tutorials ",
-        "group_id": "documentation"
+        "group_id": "documentation",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "113 schemas / screenshots",
-        "group_id": "documentation"
+        "group_id": "documentation",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Control Plane / Data plane",
@@ -1349,7 +1478,10 @@
       },
       {
         "title": "Wasm Manager ",
-        "group_id": "cli_and_tools"
+        "group_id": "cli_and_tools",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "TCP UDP tunnel client",
@@ -1393,7 +1525,10 @@
       },
       {
         "title": "GraphQL Composer",
-        "group_id": "graphql_integration"
+        "group_id": "graphql_integration",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "HTTP to graphQL",
@@ -1401,11 +1536,17 @@
       },
       {
         "title": "Proxy GraphQL API",
-        "group_id": "graphql_integration"
+        "group_id": "graphql_integration",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "GraphQL testing editor",
-        "group_id": "graphql_integration"
+        "group_id": "graphql_integration",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "admin. sessions ",
@@ -1433,7 +1574,10 @@
       },
       {
         "title": "Scala",
-        "group_id": "backend_stack"
+        "group_id": "backend_stack",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Netty",
@@ -1449,7 +1593,10 @@
       },
       {
         "title": "Play",
-        "group_id": "backend_stack"
+        "group_id": "backend_stack",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Akka Streams",
@@ -1461,67 +1608,115 @@
       },
       {
         "title": "ReactJS",
-        "group_id": "ui"
+        "group_id": "ui",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Webpack",
-        "group_id": "ui"
+        "group_id": "ui",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Bootstrap ",
-        "group_id": "ui"
+        "group_id": "ui",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "SASS",
-        "group_id": "ui"
+        "group_id": "ui",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "WASM ecosystem",
-        "group_id": "extism_usage"
+        "group_id": "extism_usage",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Rust ",
-        "group_id": "extism_usage"
+        "group_id": "extism_usage",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Java JNA",
-        "group_id": "extism_usage"
+        "group_id": "extism_usage",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "cross compilation",
-        "group_id": "extism_usage"
+        "group_id": "extism_usage",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "NodeJS ",
-        "group_id": "wasm_manager"
+        "group_id": "wasm_manager",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Websocket",
-        "group_id": "wasm_manager"
+        "group_id": "wasm_manager",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "WASM ecosytem",
-        "group_id": "wasm_manager"
+        "group_id": "wasm_manager",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Extism ecosystem",
-        "group_id": "wasm_manager"
+        "group_id": "wasm_manager",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Express ",
-        "group_id": "wasm_manager"
+        "group_id": "wasm_manager",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "Docker / S3",
-        "group_id": "wasm_manager"
+        "group_id": "wasm_manager",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "NodeJS processes management",
-        "group_id": "wasm_manager"
+        "group_id": "wasm_manager",
+        "contributors": [
+          "zwiterrion"
+        ]
       },
       {
         "title": "WAPM",
-        "group_id": "wasm_manager"
+        "group_id": "wasm_manager",
+        "contributors": [
+          "zwiterrion"
+        ]
       }
     ]
   }

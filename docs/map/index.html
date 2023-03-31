@@ -224,7 +224,7 @@
       if (zoomParam) {
         zoom = parseFloat(zoomParam);
       }
-      
+
       updateZoomDisplay();
       setZoomValue(zoom);
 
@@ -237,6 +237,7 @@
         if (dragging && !hasMoved) {
           const container = document.getElementById('scroll-container');
           container.style.transform = `scale(1)`;
+
           const root = document.getElementById('group-root');
 
           let rect = el.getBoundingClientRect();
@@ -254,9 +255,9 @@
             zoom = 1 / ratio
             updateZoomDisplay()
             container.style.transform = `scale(${1 / ratio})`;
-            root.style.transform = `translate(-${el.offsetLeft}px, -${(el.offsetTop + (offset / 2))}px)`
+            root.style.transform = `translate(${-el.offsetLeft}px, ${(-el.offsetTop + (offset / 2))}px)`
           } else {
-            root.style.transform = `translate(-${el.offsetLeft}px, -${(el.offsetTop - (offset / 2))}px)`
+            root.style.transform = `translate(${-el.offsetLeft}px, ${(-el.offsetTop - (offset / 2))}px)`
           }
         }
       });
@@ -325,7 +326,7 @@
         // "max-width: 120px",
         "max-height: 44px",
         "text-align: center",
-        "background-color: rgb(52, 88, 110)",
+        `background-color: ${node.contributors ? '#e74c3c' : 'rgb(52, 88, 110)'}`,
         // 'border-radius: 5px',
         // 'margin-top: 5px',
         // 'margin-left: 2px',
@@ -353,6 +354,8 @@
       doc.nodes.map(node => {
         renderNode(node);
       });
+
+      console.log(`${Math.round(doc.nodes.filter(f => f.contributors).length / doc.nodes.length * 100)}%`)
     }
 
     fetch('map.json').then(r => r.json()).then(doc => {
