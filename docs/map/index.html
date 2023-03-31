@@ -101,6 +101,7 @@
     <button id="zoom-in" style="margin-left: 5px; border: 1px solid #ccc; background: #eee; border-radius: 3px"
       type="button">+</button>
     <button id="zoom-reset" style="margin-left: 5px;" type="button">reset</button>
+    <button id="toggle-contrib" style="margin-left: 5px;" type="button">show contributions</button>
   </div>
   <script>
 
@@ -203,10 +204,22 @@
       function zoomValue() {
         return zoom;
       }
-
+      
+      function toggleContrib() {
+        if (showContrib) {
+           showContrib = false;
+           document.getElementById('toggle-contrib').textContext = "show contributions"
+        } else {
+           showContrib = true;
+           document.getElementById('toggle-contrib').textContext = "hide contributions"
+        }
+        refresh();
+      }
+ 
       document.getElementById('zoom-in').addEventListener('click', zoomIn)
       document.getElementById('zoom-out').addEventListener('click', zoomOut)
       document.getElementById('zoom-reset').addEventListener('click', zoomReset)
+      document.getElementById('toggle-contrib').addEventListener('click', toggleContrib)
 
       container.addEventListener('wheel', onZoom);
 
@@ -230,6 +243,13 @@
       setZoomValue(zoom);
 
     });
+    
+    function refresh() {
+      document.getElementById('group-root').innerHTML = '';
+      fetch('map.json').then(r => r.json()).then(doc => {
+        renderAll(doc.map)
+      });
+    }
 
     function renderRootGroup(group) {
       const el = document.createElement('div');
