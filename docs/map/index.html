@@ -4,20 +4,19 @@
 <head>
   <meta charset="utf-8">
   <title>Otoroshi</title>
+  <link href="https://fonts.cdnfonts.com/css/roboto" rel="stylesheet">
+
   <style>
     html,
     body {
       overflow: hidden;
     }
 
-    .scroll-container {
-      transition: transform .5s linear;
-      will-change: transform;
-    }
+    #scroll-container {}
 
-    .group-root {
-      transition: transform 5s linear;
-      will-change: transform;
+    #group-root {
+      background: #eee;
+      border-radius: 12px;
     }
 
     .node {
@@ -35,6 +34,24 @@
     *::-webkit-scrollbar {
       display: none;
     }
+
+    .version {
+      position: absolute;
+      top: 4px;
+      margin: 0;
+      right: 12px;
+      font-family: 'Roboto Black', Arial, sans-serif;
+      font-size: 5em;
+      font-weight: bold;
+    }
+
+    * {
+      gap: 4px;
+    }
+
+    p {
+      margin: 0;
+    }
   </style>
 </head>
 
@@ -42,14 +59,15 @@
   <div id="scroll-container" style="position: relative; height: 100vh; width: 100vh;
   -ms-overflow-style: none;
   scrollbar-width: none; transform: scale(.5); transform-origin: top left;">
-    <div id="group-root" style="transform: scale(1.0); font-family: sans-serif; margin: 0px; padding: 0px; 
-      display: flex; flex-wrap: wrap; position: fixed; width: 300vh">
+    <div id="group-root" style="transform: scale(1.0); margin: 0px; padding: 0px; 
+      display: flex; flex-wrap: wrap; position: fixed; width: 300vh; top: 30px;">
+      <h1 class="version">Otoroshi v.16</h1>
     </div>
   </div>
   <div
     style="position: absolute; right: 12px; bottom: 0; display: flex; flex-direction: row; justify-content: center; align-items: center; background: #eee;padding: 6px; border-radius: 3px">
     <button id="zoom-out" type="button" style="border: 1px solid #ccc; background: #eee; border-radius: 3px">-</button>
-    <div id="zoom-value" style="font-family: sans-serif; margin-left: 5px; margin-right: 5px;">100%</div>
+    <div id="zoom-value" style="margin-left: 5px; margin-right: 5px;">100%</div>
     <button id="zoom-in" style="margin-left: 5px; border: 1px solid #ccc; background: #eee; border-radius: 3px"
       type="button">+</button>
     <button id="zoom-reset" style="margin-left: 5px;" type="button">reset</button>
@@ -176,27 +194,30 @@
     function renderRootGroup(group) {
       const el = document.createElement('div');
       el.addEventListener('mouseup', () => {
-        console.log({ dragging, hasMoved})
+        console.log({ dragging, hasMoved })
         if (dragging && !hasMoved) {
           const container = document.getElementById('scroll-container');
           container.style.transform = `scale(1)`;
+
 
           const root = document.getElementById('group-root');
 
           let rect = el.getBoundingClientRect();
 
-          root.style.transform = `translate(-${el.offsetLeft}px, -${el.offsetTop}px)`
           let ratio = rect.width > rect.height ? ((rect.width + 10) / window.innerWidth) : ((rect.height + 10) / window.innerHeight);
+
+
+
+          zoom = 1 / ratio
+          container.style.transform = `scale(${1 / ratio})`;
+
 
           if (rect.height * 1 / ratio > window.innerHeight) {
             ratio = (rect.height + 20) / window.innerHeight;
             root.style.transform = `translate(-${el.offsetLeft}px, -${el.offsetTop - 20}px)`
+          } else {
+            root.style.transform = `translate(-${el.offsetLeft}px, -${el.offsetTop - 10}px)`
           }
-
-          zoom = 1 / ratio
-          document.getElementById('scroll-container').style.transform = `scale(${1 / ratio})`;
-        } else {
-
         }
       });
       el.setAttribute("id", "group-" + group.id);
@@ -210,6 +231,7 @@
         `padding: 10px`,
         'border-radius: 5px',
         'flex-wrap: wrap',
+        "font-family: 'Roboto Medium', Arial, sans-serif"
       ].join("; ")
       )
       const title = document.createElement('h3');
@@ -225,36 +247,22 @@
       el.setAttribute("class", "subgroup");
       el.setAttribute("style", [
         "display: flex",
-        // "flex-direction: column",
-        "flex-direction: row",
         "flex-wrap: wrap",
-        "justify-content: center;",
         "align-items: flex-start",
         "width: 100%",
         "height: 100%",
         "background-color: rgba(52, 88, 110, 0.79)",
         'border-radius: 5px',
         'color: white',
-        "margin-top:5px",
+        // "margin-top:5px",
         'font-size: 14px',
+        "font-family: 'Roboto Medium', Arial, sans-serif",
         "padding: 10px",
       ].join('; '))
       const title = document.createElement('div');
       title.textContent = group.title;
-      title.setAttribute("style", "width: 100%; text-align: left; padding: 5px;")
+      title.setAttribute("style", "width: 100%; text-align: left; padding: 5px; flex: .2; display: flex; align-items: center; align-self: center; margin-right: .5em")
       el.appendChild(title);
-      // const container = document.createElement('div');
-      // container.setAttribute("id", "group-" + group.id);
-      // container.setAttribute("style", [
-      //   "display: flex",
-      //   "flex-direction: row",
-      //   "flex-wrap: wrap",
-      //   "justify-content: center;",
-      //   "align-items: flex-start",
-      //   "width: 100%",
-      //   "height: 100%",
-      // ].join("; "))
-      // el.appendChild(container);
       document.getElementById('group-' + (group.group_id || 'root')).appendChild(el)
     }
 
@@ -264,19 +272,19 @@
       el.setAttribute("class", "node");
       el.setAttribute("style", [
         "display: flex",
-        "flex-direction: row",
         "justify-content: center",
         "align-items: center",
-        // "width: 120px",
+        "font-family: 'Roboto Light', Arial, sans-serif",
         "flex: 1",
         "min-width: 80px",
-        "height: 30px",
+        "max-width: 120px",
+        // "min-height: 22px",
         "text-align: center",
         "background-color: rgb(52, 88, 110)",
         'border-radius: 5px',
-        'margin-top: 5px',
-        'margin-left: 2px',
-        'margin-right: 2px',
+        // 'margin-top: 5px',
+        // 'margin-left: 2px',
+        // 'margin-right: 2px',
         "padding: 10px",
         'font-size: 11px',
         "color: white"
