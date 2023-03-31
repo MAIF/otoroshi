@@ -4,6 +4,61 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.2.0] - 2023-03-31
+
+https://github.com/MAIF/otoroshi/milestone/60?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.1.0...v16.2.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.2.0
+
+Major features announcements in this release are 
+
+- new plugin kind to handle routing decisions
+- [WASM host functions](https://maif.github.io/otoroshi/devmanual/topics/wasm-usage.html)
+- new WASM plugin entities
+- New wasm plugin kind supported (request handlers, jobs, ...)
+- Lots of improvements on the WASM manager
+- New backup feature to improve resilience of otoroshi workers
+- JDK20 docker images
+
+### Added
+
+- add an anonymous telemetry agent to gather usage statistics (#1305)
+- research around open policy agent integration (#1315)
+- support file versioning through git integration (#1453)
+- support versioned binary releases (#1454)
+- support selecting a binary release from the wasm manager (#1455)
+- add otoroshi integration through host functions (#1456)
+- add graphql directive to handle wasm targets (#1457)
+- support github repo as sources of the wasm manager (#1460)
+- implement host functions and flags to enable special access for wasm plugins (#1464)
+- ensure wasm execution happens in a dedicated execution context outside of main one (#1478)
+- support S3 import during first leader sync if leader down (#1479)
+- support wasm jobs (#1480)
+- support wasm RequestHandlers (#1481)
+- support fetching wapm artifacts (#1482)
+- new kind of plugin that can take routing decisions (#1483)
+- refactor wasm related plugin stuff to have a common infrastructure (#1484)
+- let wasm vm run during the whole request lifecycle to speed up reuse (#1485)
+- add a new kind of entity to handle wasm scripts at one place (#1486)
+- support WASI allowed paths for wasm  (#1488)
+- provide host function wrappers (#1491)
+- add documentations for wasm plugins (#1492)
+- support call to \"native\" WASM functions (#1494)
+- upload/donwload plugin sources (zip) (#1498)
+- Support JDK20 (#1500)
+- rewrite wasm plugins creation process in wasm manager (#1503)
+- support request attributes access from wasm (#1504)
+
+### Fixed
+
+- fix openapi generator to handle generic apis (#1487)
+- potential memory leak caused by big timeouts in kubernetes client (#1489)
+- fix otoroshi exchange protocol form (#1495)
+- bad cors translation to ng plugins (#1496)
+- Prevent multiples plugins with same name (#1499)
+- function name override does not seems to work (#1502)
+
+
 ## [16.1.0] - 2023-02-28
 
 https://github.com/MAIF/otoroshi/milestone/59?closed=1
