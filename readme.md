@@ -1,6 +1,6 @@
 # Otoroshi
 
-[![Build status](https://github.com/MAIF/otoroshi/actions/workflows/server_build_and_test.yaml/badge.svg)](https://github.com/MAIF/otoroshi/actions/workflows/server_build_and_test.yaml) [![Join the chat at https://gitter.im/MAIF/otoroshi](https://badges.gitter.im/MAIF/otoroshi.svg)](https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [ ![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg) ](https://github.com/MAIF/otoroshi/releases/download/v16.1.0-rc.1/otoroshi.jar)
+[![Join the discord](https://img.shields.io/discord/1089571852940218538?color=f9b000&label=Community&logo=Discord&logoColor=f9b000)](https://discord.gg/2pqaMzmx) [ ![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg) ](https://github.com/MAIF/otoroshi/releases/download/v16.1.0/otoroshi.jar) 
 
 <p align="center">
   <img style="width: 45%;" src="https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png" alt="Otoroshi http reverse proxy and api management"/>
@@ -24,7 +24,7 @@ You can join these groups and chats to discuss and ask Otoroshi related question
 
 - Issue tracker: [![github: MAIF/otoroshi/issues](https://img.shields.io/github/issues/MAIF/otoroshi.svg)](https://github.com/MAIF/otoroshi/issues)
 - Pull request: [![github: MAIF/otoroshi/pulls](https://img.shields.io/github/issues-pr/MAIF/otoroshi.svg)](https://github.com/MAIF/otoroshi/pulls)
-- Chat room: [![Join the chat at https://gitter.im/MAIF/otoroshi](https://badges.gitter.im/MAIF/otoroshi.svg)](https://gitter.im/MAIF/otoroshi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+- Chat room: [![Join the chat on Discord](https://img.shields.io/discord/1089571852940218538?color=f9b000&label=Community&logo=Discord&logoColor=f9b000)](https://discord.gg/2pqaMzmx)
 
 ## Contributing
 
