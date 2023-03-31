@@ -144,8 +144,7 @@
 
     function renderRootGroup(group) {
       const el = document.createElement('div');
-      el.addEventListener('click', () => {
-        console.log('here')
+      el.addEventListener('mousedown', () => {
         el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" })
       });
       el.setAttribute("id", "group-" + group.id);
