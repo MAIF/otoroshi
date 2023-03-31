@@ -86,8 +86,8 @@
   </style>
 </head>
 
-<body>
-  <div id="scroll-container" style="position: relative; height: 100vh; width: 100vh;
+<body style=" height: 100vh; width: 100vw">
+  <div id="scroll-container" style="position: relative; height: 100vh; width: 100vw;
   -ms-overflow-style: none;
   scrollbar-width: none; transform: scale(.5); transform-origin: top left;">
     <div id="group-root">
@@ -107,10 +107,8 @@
     let dragging = false
     let hasMoved = false
     let start = { x: 0, y: 0 }
-    let zoom = 1;
+    let zoom = 0.45;
     const ZOOM_SPEED = 0.04;
-
-
 
     function updateZoomDisplay() {
       document.getElementById('zoom-value').textContent = `${(zoom * 100).toFixed(0)}%`
@@ -220,6 +218,9 @@
 
       container.addEventListener('mousemove', move)
       container.addEventListener('touchmove', move)
+
+      updateZoomDisplay();
+      setZoomValue(zoom);
 
     });
 
