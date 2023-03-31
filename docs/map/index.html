@@ -16,7 +16,7 @@
     }
 
     .group-root {
-      transition: transform .5s linear;
+      transition: transform 5s linear;
       will-change: transform;
     }
 
@@ -187,6 +187,7 @@
           root.style.transform = `translate(-${el.offsetLeft}px, -${el.offsetTop-20}px)`
         }
 
+        zoom = 1 / ratio
         document.getElementById('scroll-container').style.transform = `scale(${1 / ratio})`;
       });
       el.setAttribute("id", "group-" + group.id);
