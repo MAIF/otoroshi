@@ -1,5 +1,5 @@
 [package]
-name = "http-plugin"
+name = "plugin-template"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,3 +12,4 @@ serde_json = "1.0.91"
 
 [lib]
 crate_type = ["cdylib"]
+path = "./lib.rs"
