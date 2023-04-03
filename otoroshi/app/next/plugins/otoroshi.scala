@@ -45,8 +45,10 @@ object NgOtoroshiChallengeConfig {
         }
       }
       lazy val secComTtl: FiniteDuration          = raw.select("ttl").asOpt[Long].map(_.seconds).getOrElse(30.seconds)
-      lazy val requestHeaderName: Option[String]  = raw.select("request_header_name").asOpt[String].filterNot(_.trim.isEmpty)
-      lazy val responseHeaderName: Option[String] = raw.select("response_header_name").asOpt[String].filterNot(_.trim.isEmpty)
+      lazy val requestHeaderName: Option[String]  =
+        raw.select("request_header_name").asOpt[String].filterNot(_.trim.isEmpty)
+      lazy val responseHeaderName: Option[String] =
+        raw.select("response_header_name").asOpt[String].filterNot(_.trim.isEmpty)
       lazy val algoOtoToBackend: AlgoSettings     = AlgoSettings
         .fromJson(raw.select("algo_to_backend").asOpt[JsObject].getOrElse(Json.obj()))
         .getOrElse(HSAlgoSettings(512, "secret", false))
