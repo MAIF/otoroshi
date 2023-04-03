@@ -230,7 +230,8 @@ const ProcessStep = ({ state, history }) => {
               {
                 ...template.backend.targets[0],
                 hostname: url.hostname,
-                port: url.port || (secured ? 443 : 80),
+                port: ~~url.port || (secured ? 443 : 80),
+                tls: secured,
                 tls_config: {
                   ...template.backend.targets[0].tls_config,
                   enabled: secured,
