@@ -49,7 +49,7 @@ now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blan
 
 ## Discussion
 
-Join the [Otoroshi](https://gitter.im/MAIF/otoroshi) channel on the [MAIF Gitter](https://gitter.im/MAIF) { open=new }
+Join the @link:[Otoroshi server](https://discord.gg/2pqaMzmx) { open=new } Discord
 
 ## Sources
 
