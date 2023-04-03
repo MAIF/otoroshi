@@ -277,6 +277,8 @@ export default function ({ route, hide }) {
 
     const { clientId, clientSecret } = apikey || request.apikey;
 
+    console.log(format, apikey, apikeyHeader)
+
     return {
       ...Object.fromEntries(
         Object.entries(request.headers).filter(
@@ -292,10 +294,10 @@ export default function ({ route, hide }) {
             },
           }
         : {
-            'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: apikey },
+            'Otoroshi-Client-Id': { key: 'Otoroshi-Client-Id', value: clientId },
             'Otoroshi-Client-Secret': {
               key: 'Otoroshi-Client-Secret',
-              value: apikeys.find((c) => c.clientId === apikey)?.clientSecret,
+              value: clientSecret,
             },
           }),
     };
@@ -454,7 +456,7 @@ export default function ({ route, hide }) {
                               setRequest({
                                 ...request,
                                 apikey: k,
-                                headers: apikeyToHeader(request.apikeyFormat, k),
+                                headers: apikeyToHeader(request.apikeyFormat, apikeys.find(a => a.clientId === k)),
                               });
                             }}
                             ngOptions={{
