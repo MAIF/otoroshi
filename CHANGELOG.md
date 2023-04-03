@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.2.1] - 2023-04-03
+
+https://github.com/MAIF/otoroshi/milestone/62?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.2.0...v16.2.1
+https://github.com/MAIF/otoroshi/releases/tag/v16.2.1
+
+- fix release java version
+- creation of wizard route failed (#1505)
+- clean array of string in a plugin form doesn't work (#1506)
+- bad header names in otoroshi challenge and info. plugins (#1507)
+
 ## [16.2.0] - 2023-03-31
 
 https://github.com/MAIF/otoroshi/milestone/60?closed=1
