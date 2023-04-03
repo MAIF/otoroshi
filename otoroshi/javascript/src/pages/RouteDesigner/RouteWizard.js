@@ -12,6 +12,7 @@ const RouteNameStep = ({ state, onChange }) => (
     <div className="">
       <label className="mb-2">Route name</label>
       <TextInput
+        autoFocus
         placeholder="Your route name..."
         flex={true}
         className="my-3"
@@ -66,9 +67,8 @@ const RouteChooser = ({ state, onChange }) => (
       ].map(({ kind, title, text }) => (
         <button
           type="button"
-          className={`btn ${
-            state.route.kind === kind ? 'btn-save' : 'btn-dark'
-          } py-3 wizard-route-chooser`}
+          className={`btn ${state.route.kind === kind ? 'btn-save' : 'btn-dark'
+            } py-3 wizard-route-chooser`}
           onClick={() => onChange(kind)}
           key={kind}>
           <h3 className="wizard-h3--small">{title}</h3>
@@ -92,6 +92,7 @@ const FrontendStep = ({ state, onChange }) => (
     <div className="">
       <label className="mb-2">Domain name</label>
       <TextInput
+        autoFocus
         placeholder="Your domain name..."
         flex={true}
         className="my-3"
@@ -132,6 +133,7 @@ const BackendStep = ({ state, onChange, onError, error }) => {
       <div className="">
         <label className="mb-2">{sentences[state.route.kind]?.title || 'Target URL'}</label>
         <TextInput
+          autoFocus
           placeholder={sentences[state.route.kind]?.text || 'Your target URL...'}
           flex={true}
           className="my-3"
@@ -187,10 +189,10 @@ const ProcessStep = ({ state, history }) => {
     ]).then(([plugins, oldPlugins, metadataPlugins, template]) => {
       const url = ['mock', 'graphql'].includes(state.route.kind)
         ? {
-            pahtname: '/',
-            hostname: '',
-            protocol: 'https://',
-          }
+          pahtname: '/',
+          hostname: '',
+          protocol: 'https://',
+        }
         : new URL(state.route.url);
       const secured = url.protocol.includes('https');
 
@@ -199,7 +201,7 @@ const ProcessStep = ({ state, history }) => {
       nextClient
         .create(nextClient.ENTITIES.ROUTES, {
           ...template,
-          enabled: false,
+          enabled: state.route.enabled,
           name: state.route.name,
           frontend: {
             ...template.frontend,
@@ -307,8 +309,8 @@ const ProcessStep = ({ state, history }) => {
             {state.route.kind === 'mock'
               ? 'Start creating mocks'
               : state.route.kind === 'graphql'
-              ? 'Start creating schema'
-              : 'Start editing plugins'}
+                ? 'Start creating schema'
+                : 'Start editing plugins'}
           </button>
         </div>
       </Loader>
@@ -455,17 +457,38 @@ export class RouteWizard extends React.Component {
                   style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                   className="mt-auto">
                   {step !== 1 && <Button type="save" text="Previous" onClick={this.prevStep} />}
-                  <button
-                    className="btn btn-save"
-                    style={{
-                      backgroundColor: '#f9b000',
-                      borderColor: '#f9b000',
-                      padding: '12px 48px',
-                    }}
-                    disabled={error}
-                    onClick={this.nextStep}>
-                    {step === steps ? 'Create' : 'Continue'}
-                  </button>
+                  <div className="d-flex">
+                    <button
+                      className="btn btn-save"
+                      style={{
+                        backgroundColor: '#f9b000',
+                        borderColor: '#f9b000',
+                        padding: '12px 48px',
+                      }}
+                      disabled={error}
+                      onClick={this.nextStep}>
+                      {step === steps ? 'Create' : 'Continue'}
+                    </button>
+
+                    {step === steps && <button
+                      className="btn btn-save ms-1"
+                      style={{
+                        backgroundColor: '#f9b000',
+                        borderColor: '#f9b000',
+                        padding: '12px 48px'
+                      }}
+                      disabled={error}
+                      onClick={() => {
+                        this.setState({
+                          route: {
+                            ...this.state.route,
+                            enabled: true
+                          }
+                        }, this.nextStep)
+                      }}>
+                      Create and publish
+                    </button>}
+                  </div>
                 </div>
               )}
             </div>
