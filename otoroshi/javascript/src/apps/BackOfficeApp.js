@@ -714,6 +714,10 @@ class BackOfficeAppContainer extends Component {
                         component={(props) => this.decorate(WasmPluginsPage, props)}
                       />
                       <Route
+                        path="/design"
+                        component={(props) => this.decorate(AtomicDesignPage, props)}
+                      />
+                      <Route
                         path="/provider"
                         component={(props) => this.decorate(ProvidersDashboardPage, props)}
                       />

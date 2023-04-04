@@ -7,12 +7,12 @@ import {
   TextInput,
   SelectInput,
   SimpleBooleanInput,
-  ArrayInput,NumberInput
+  ArrayInput, NumberInput
 } from "../components/inputs";
 
 import { NgSelectRenderer, LabelAndInput, NgForm } from "../components/nginputs";
 export class AtomicDesignPage extends Component {
-state = {
+  state = {
     pillButton: false,
     booleanInput: false,
   };
@@ -159,13 +159,13 @@ state = {
           <SquareButton
             level="primary"
             className="me-3"
-            onClick={() => {}}
+            onClick={() => { }}
             text="primary - cog"
             icon="fa-cog"
           />
           <SquareButton
             level="danger"
-            onClick={() => {}}
+            onClick={() => { }}
             text="danger - cog"
             icon="fa-cog"
           />
@@ -209,23 +209,23 @@ state = {
         <p style={{ color: "var(--color-primary)" }}>Colors global</p>
         <table>
           <tbody>
-          <tr>
-            <td style={{paddingLeft:10, paddingRight:10}}>--color-green</td>
-            <td style={{paddingLeft:10, paddingRight:10}}>--color-blue</td>
-            <td style={{paddingLeft:10, paddingRight:10}}>--color-red</td>
-            <td style={{paddingLeft:10, paddingRight:10}}>--color-primary</td>
-            <td style={{paddingLeft:10, paddingRight:10}}>--color-primary-lighter</td>
-          </tr>
-          <tr style={{height:30}}>
-            <td style={{ backgroundColor: "var(--color-green)" }}></td>
-            <td style={{ backgroundColor: "var(--color-blue)" }}></td>
-            <td style={{ backgroundColor: "var(--color-red)" }}></td>
-            <td style={{ backgroundColor: "var(--color-primary)" }}></td>
-            <td style={{ backgroundColor: "var(--color-primary-lighter)" }}></td>
-          </tr></tbody>
+            <tr>
+              <td style={{ paddingLeft: 10, paddingRight: 10 }}>--color-green</td>
+              <td style={{ paddingLeft: 10, paddingRight: 10 }}>--color-blue</td>
+              <td style={{ paddingLeft: 10, paddingRight: 10 }}>--color-red</td>
+              <td style={{ paddingLeft: 10, paddingRight: 10 }}>--color-primary</td>
+              <td style={{ paddingLeft: 10, paddingRight: 10 }}>--color-primary-lighter</td>
+            </tr>
+            <tr style={{ height: 30 }}>
+              <td style={{ backgroundColor: "var(--color-green)" }}></td>
+              <td style={{ backgroundColor: "var(--color-blue)" }}></td>
+              <td style={{ backgroundColor: "var(--color-red)" }}></td>
+              <td style={{ backgroundColor: "var(--color-primary)" }}></td>
+              <td style={{ backgroundColor: "var(--color-primary-lighter)" }}></td>
+            </tr></tbody>
         </table>
-        <br/>
-        <br/>
+        <br />
+        <br />
         <p style={{ color: "var(--color-primary)" }}>
           Colors & bg-colors levels for Dark/White Mode
         </p>
@@ -234,32 +234,32 @@ state = {
             width: 400,
             backgroundColor: "var(--bg-color_level1)",
             color: "var(--color_level1)",
-            border:"1px solid",
-            padding:10
+            border: "1px solid",
+            padding: 10
           }}
         >
-           --bg-color_level1 & --color_level1
+          --bg-color_level1 & --color_level1
           <div
             style={{
               width: 300,
               margin: "0 auto",
               backgroundColor: "var(--bg-color_level2)",
               color: "var(--color_level2)",
-              padding:10
+              padding: 10
             }}
           >
-           --bg-color_level2 & --color_level2
-           <div
-            style={{
-              width: 200,
-              margin: "0 auto",
-              backgroundColor: "var(--bg-color_level3)",
-              color: "var(--color_level3)",
-              padding:10
-            }}
-          >
-           --bg-color_level3 & --color_level3
-          </div>
+            --bg-color_level2 & --color_level2
+            <div
+              style={{
+                width: 200,
+                margin: "0 auto",
+                backgroundColor: "var(--bg-color_level3)",
+                color: "var(--color_level3)",
+                padding: 10
+              }}
+            >
+              --bg-color_level3 & --color_level3
+            </div>
           </div>
         </div>
 
@@ -271,15 +271,15 @@ state = {
           help="Here comes the label"
           value="TextInput"
         />
-         TextInput with suffix (label, help, value)
+        TextInput with suffix (label, help, value)
         <TextInput
           label="My label"
           help="Here comes the label"
           value="TextInput"
           suffix="suffix"
         />
-         TextInput with prefix (label, help, value)
-                <TextInput
+        TextInput with prefix (label, help, value)
+        <TextInput
           label="My label"
           help="Here comes the label"
           value="TextInput"
@@ -287,10 +287,10 @@ state = {
         />
         NumberInput with suffix (label, help, value)
         <NumberInput
-        label="My label"
-        value="0"
-        
-        suffix="seconds" />
+          label="My label"
+          value="0"
+
+          suffix="seconds" />
         SelectInput (label, help, values)
         <SelectInput
           label="My label"
@@ -301,7 +301,7 @@ state = {
             { value: "S256", label: "HMAC-SHA256" },
             { value: "plain", label: "PLAIN" },
           ]}
-          // onChange={(v) => changeTheValue(path + '.pkce.algorithm', v)}
+          onChange={(v) => { }}
         />
         ArrayInput (label, help, values)
         <ArrayInput
@@ -311,71 +311,73 @@ state = {
             { value: "1", label: "Value 1" },
             { value: "2", label: "value 2" },
           ]}
+          onChange={(v) => { }}
           help="Here comes the help"
         />
         <p style={{ color: "var(--color-primary)" }}>Formulaires (new way)</p>
 
-      NgSelectRenderer
-      <NgSelectRenderer
-        id="rows-per-page"
-        value="3"
-        label={' '}
-        options={[5, 15, 20, 50, 100]}
-      />
-      LabelAndInput
-            <LabelAndInput label="My label" help="Here comes the help">
-            <NgForm
-                  schema={{
-                    header: {
-                      ngOptions: {
-                        spread: true,
-                      },
-                      type: 'json',
-                      props: {
-                        editorOnly: true,
-                        height: '50px',
-                        defaultValue: {
-                          Authorization: 'Bearer XXX.XXX.XXX',
-                        },
-                      },
+        NgSelectRenderer
+        <NgSelectRenderer
+          id="rows-per-page"
+          value="3"
+          label={' '}
+          options={[5, 15, 20, 50, 100]}
+          onChange={(v) => { }}
+        />
+        LabelAndInput
+        <LabelAndInput label="My label" help="Here comes the help">
+          <NgForm
+            schema={{
+              header: {
+                ngOptions: {
+                  spread: true,
+                },
+                type: 'json',
+                props: {
+                  editorOnly: true,
+                  height: '50px',
+                  defaultValue: {
+                    Authorization: 'Bearer XXX.XXX.XXX',
+                  },
+                },
+              },
+              result: {
+                type: 'form',
+                label: 'Form values',
+                schema: {
+                  headerName: {
+                    type: 'string',
+                    label: 'Name',
+                    props: {
+                      disabled: true,
+                      defaultValue: 'Authorization',
                     },
-                    result: {
-                      type: 'form',
-                      label: 'Form values',
-                      schema: {
-                        headerName: {
-                          type: 'string',
-                          label: 'Name',
-                          props: {
-                            disabled: true,
-                            defaultValue: 'Authorization',
-                          },
-                        },
-                        remove: {
-                          type: 'string',
-                          label: 'Remove value',
-                          props: {
-                            disabled: true,
-                            defaultValue: 'Bearer ',
-                          },
-                        },
-                      },
-                      flow: ['headerName', 'remove'],
+                  },
+                  remove: {
+                    type: 'string',
+                    label: 'Remove value',
+                    props: {
+                      disabled: true,
+                      defaultValue: 'Bearer ',
                     },
-                  }}
-                  flow={[
-                    {
-                      type: 'group',
-                      collapsable: false,
-                      name: 'A bearer token expected in Authorization header',
-                      fields: ['header', 'result'],
-                    },
-                  ]}
-                />
-          </LabelAndInput>
-  </div>
-      
+                  },
+                },
+                flow: ['headerName', 'remove'],
+              },
+            }}
+            flow={[
+              {
+                type: 'group',
+                collapsable: false,
+                name: 'A bearer token expected in Authorization header',
+                fields: ['header', 'result'],
+              },
+            ]}
+          />
+        </LabelAndInput>
+      </div>
+
     );
-    
+
   }
 }
