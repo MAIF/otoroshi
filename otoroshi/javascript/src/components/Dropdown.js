@@ -4,11 +4,10 @@ export function Dropdown({ children, className = '', style = {}, buttonStyle }) 
   return (
     <div className={`dropdown ${className}`} style={style}>
       <button
-        className="btn btn-sm toggle-form-buttons d-flex align-items-center dark-background"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center dark-background h-100"
         style={{
-          backgroundColor: '#494948',
-          color: '#fff',
-          height: '100%',
+          backgroundColor: "var(--bg-color_level2)",
+          color: "var(--color_level2)",
           ...(buttonStyle || {}),
         }}
         id="menu"
@@ -21,8 +20,10 @@ export function Dropdown({ children, className = '', style = {}, buttonStyle }) 
         className="dropdown-menu"
         aria-labelledby="menu"
         style={{
-          background: 'rgb(73, 73, 72)',
-          border: '1px solid #373735',
+          backgroundColor: "var(--bg-color_level2)",
+          color: "var(--color_level2)",
+          border: '1px solid',
+          borderColor:"var(--bg-color_level2)",
           borderTop: 0,
           padding: '12px',
           zIndex: 4000,

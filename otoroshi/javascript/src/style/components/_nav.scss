@@ -1,28 +1,11 @@
-.nav-tabs {
-  border-bottom: 1px solid $primaryColor;
-  position: fixed;
-  top: 179px;
-  width: 100%;
-  background-color: $fondBody;
-  z-index: 10;
-}
-
 .add-menu > li.active > a
 .add-menu > li.active > a:focus,
-.add-menu > li.active > a:hover,
-.nav-tabs > li.active > a,
-.nav-tabs > li.active > a:focus,
-.nav-tabs > li.active > a:hover {
+.add-menu > li.active > a:hover {
   color: $colorGris;
   cursor: default;
   background-color: $primaryColor;
   border: 1px solid $primaryColor;
   border-bottom-color: transparent;
-}
-
-.nav-tabs > li > a {
-  margin-right: 5px;
-  border: 1px solid $primaryColor;
 }
 
 .tab-content {
@@ -31,28 +14,38 @@
 
 .sidebar{
   .nav > li > a {
-    // transition-duration: 1s;
-    padding: 3px 0;
-    // &:focus,
+    
     &:hover {
       background-color: $fondGrisclairSurvolMenu;
       color: #fff;
       border-color: $primaryColor;
       border-radius: 5px;
-      // margin-left: 5px;
-      // margin-right: 5px;
-      // padding-left: 31px;
     }
   }
+}
+
+.dashboard-button {
+  padding: .5em 1em;
+  color: #fff;
+}
+
+.active,
+.active *{
+  color: var(--color-primary) !important;
+}
+
+.dashboard-button:hover {
+  background-color: $fondGrisclairSurvolMenu;
+  color: #fff;
+  border-color: $primaryColor;
+  border-radius: 5px;
 }
 
 .nav >li >a:focus {
   background: none;
 }
 
-.nav > li > h3 > a {
-  // padding: 5px 0 5px 30px;
-  margin-left: -30px;
+.nav > li > a {
   display: block;
   transition-duration: 1s;
 
@@ -79,7 +72,12 @@
 }
 
 .nav-link {
-  padding: 0;
+  padding: .25 1em !important;
+  color: #fff;
+}
+
+.nav-item--open i {
+  margin-right: .5em;
 }
 
 .nav-link:focus{

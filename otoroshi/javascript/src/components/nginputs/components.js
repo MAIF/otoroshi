@@ -30,7 +30,7 @@ export class NgValidationRenderer extends Component {
           {this.props.children}
           <>
             {this.props.validation.__errors.map((err, idx) => (
-              <p key={idx} style={{ color: 'red', marginBottom: 0 }}>
+              <p key={idx} style={{ color: "var(--color-red)", marginBottom: 0 }}>
                 {err.message || err}
               </p>
             ))}
@@ -191,7 +191,7 @@ export class NgFormRenderer extends Component {
       const titleComponent =
         !showChildren && showSummary ? (
           <div style={{ marginLeft: 5, marginTop: 7, marginBottom: 10 }}>
-            <span style={{ color: 'rgb(249, 176, 0)', fontWeight: 'bold' }}>{title}</span>
+            <span style={{ color: "var(--color-primary)", fontWeight: 'bold' }}>{title}</span>
             {summary.length > 0 && this.displaySummary(summary, summaryFields)}
           </div>
         ) : isFunction(titleVar) && React.isValidElement(title) && !showChildren ? (
@@ -199,7 +199,6 @@ export class NgFormRenderer extends Component {
         ) : (
           <div
             style={{
-              color: 'rgb(249, 176, 0)',
               fontWeight: 'bold',
               marginLeft: 5,
               marginTop: 7,
@@ -227,7 +226,7 @@ export class NgFormRenderer extends Component {
         return (
           <div
             style={{
-              outline: clickable ? '1px solid #41413e' : 'none',
+              outline: clickable ? '1px solid var(--bg-color_level2)' : 'none',
               padding: clickable ? 5 : 0,
               margin: clickable ? '5px 0' : '',
               display: 'flex',
@@ -253,7 +252,7 @@ export class NgFormRenderer extends Component {
                 {!this.props.setBreadcrumb && !this.props.readOnly && (
                   <button
                     type="button"
-                    className="btn btn-info float-end btn-sm"
+                    className="btn btn-primary float-end btn-sm"
                     onClick={this.setBreadcrumb}>
                     <i className={`fas fa-eye${this.state.folded ? '-slash' : ''}`} />
                   </button>
@@ -261,7 +260,7 @@ export class NgFormRenderer extends Component {
                 {this.props.setBreadcrumb && clickable && !this.props.readOnly && (
                   <button
                     type="button"
-                    className="btn btn-info float-end btn-sm"
+                    className="btn btn-primary float-end btn-sm"
                     onClick={this.setBreadcrumb}>
                     <i className="fas fa-chevron-right"></i>
                   </button>
@@ -282,7 +281,7 @@ export class NgFormRenderer extends Component {
         return (
           <div
             style={{
-              outline: clickable ? '1px solid #41413e' : 'none',
+              outline: clickable ? '1px solid var(--bg-color_level2)' : 'none',
               padding: clickable ? 5 : 0,
               margin: clickable ? '5px 0' : '',
               display: 'flex',

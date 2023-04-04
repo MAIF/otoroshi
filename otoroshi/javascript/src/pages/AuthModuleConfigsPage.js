@@ -17,7 +17,7 @@ export class AuthModuleConfigsPage extends Component {
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Global auth. configs`);
+    this.props.setTitle(`Global auth. modules`);
   }
 
   gotoConfig = (config) => {
@@ -57,19 +57,19 @@ export class AuthModuleConfigsPage extends Component {
         <Table
           parentProps={this.props}
           selfUrl="auth-configs"
-          defaultTitle="All Global auth. configs"
+          defaultTitle="All Global auth. modules"
           defaultValue={BackOfficeServices.createNewAuthConfig}
           _defaultValue={() => {
             const defv = {
               ...Oauth2ModuleConfig.defaultConfig,
               id: faker.random.alphaNumeric(64),
-              name: 'New auth. config',
-              desc: 'A auth. config',
+              name: 'New auth. module',
+              desc: 'A auth. module',
               type: 'oauth2',
             };
             return defv;
           }}
-          itemName="Auth. config"
+          itemName="Auth. module"
           formSchema={this.formSchema}
           formFlow={this.formFlow}
           columns={this.columns}
@@ -98,7 +98,7 @@ export class AuthModuleConfigsPage extends Component {
               <div className="mb-3 btnsService">
                 <div className="displayGroupBtn">
                   <button
-                    className="btn btn-info"
+                    className="btn btn-primary"
                     type="button"
                     style={{ marginRight: 20 }}
                     onClick={(e) => this.duplicate(s, ss, e)}>
@@ -116,7 +116,7 @@ export class AuthModuleConfigsPage extends Component {
                   showWizard: true,
                 });
               }}
-              style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+              style={{ _backgroundColor: "var(--color-primary)", _borderColor: "var(--color-primary)", marginLeft: 5 }}>
               <i className="fas fa-hat-wizard" /> Create with wizard
             </Button>
           )}

@@ -94,15 +94,14 @@ function DuplicateButton({ value, history }) {
 
 function BackToRouteTab({ history, routeId, viewPlugins }) {
   return (
-    <div className="ms-2" style={{ height: '100%' }}>
+    <div className="ms-2">
       <button
         type="button"
-        className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center h-100"
         onClick={() => history.replace(`${routeId}?tab=routes&view_plugins=${viewPlugins}`)}
         style={{
-          backgroundColor: '#494948',
-          color: '#fff',
-          height: '100%',
+          backgroundColor: "var(--bg-color_level2)",
+          color: "var(--color_level2)",
         }}>
         <i className="fas fa-arrow-left me-2" style={{ fontSize: '1.33333em' }} />
         Back to route
@@ -115,10 +114,10 @@ function InformationsTab({ isActive, entity, value, history }) {
   const isWhiteMode = document.body.classList.contains('white-mode');
 
   return (
-    <div className="ms-2" style={{ height: '100%' }}>
+    <div className="ms-2">
       <button
         type="button"
-        className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center h-100"
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=informations`;
           if (!window.location.href.includes(to))
@@ -130,9 +129,8 @@ function InformationsTab({ isActive, entity, value, history }) {
             });
         }}
         style={{
-          backgroundColor: isActive ? '#f9b000' : isWhiteMode ? '#fff' : '#494948',
-          height: '100%',
-          color: isWhiteMode && !isActive ? '#000' : '#fff',
+          backgroundColor: isActive ? "var(--color-primary)" : "var(--bg-color_level2)",
+          color: isActive ? "var(--color-white)" : "var(--color_level2)",
         }}>
         <i className="fas fa-file-alt me-2" style={{ fontSize: '1.33333em' }} />
         Informations
@@ -143,10 +141,10 @@ function InformationsTab({ isActive, entity, value, history }) {
 
 function RoutesTab({ isActive, entity, value, history }) {
   return (
-    <div className="ms-2" style={{ height: '100%' }}>
+    <div className="ms-2">
       <button
         type="button"
-        className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center h-100"
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=routes`;
           if (!window.location.href.includes(to))
@@ -158,9 +156,8 @@ function RoutesTab({ isActive, entity, value, history }) {
             });
         }}
         style={{
-          backgroundColor: isActive ? '#f9b000' : '#494948',
-          color: '#fff',
-          height: '100%',
+          backgroundColor: isActive ? "var(--color-primary)" : "var(--bg-color_level2)",
+          color: isActive ? "var(--color-white)" : "var(--color_level2)",
         }}>
         <i className="fas fa-road me-2" style={{ fontSize: '1.33333em' }} />
         Routes
@@ -173,10 +170,10 @@ function DesignerTab({ isActive, entity, value, history }) {
   const isWhiteMode = document.body.classList.contains('white-mode');
 
   return (
-    <div className="ms-2" style={{ height: '100%' }}>
+    <div className="ms-2">
       <button
         type="button"
-        className="btn btn-sm toggle-form-buttons d-flex align-items-center"
+        className="btn btn-sm toggle-form-buttons d-flex align-items-center h-100"
         onClick={() => {
           const to = `/${entity.link}/${value.id}?tab=flow`;
           if (!window.location.href.includes(to))
@@ -188,9 +185,8 @@ function DesignerTab({ isActive, entity, value, history }) {
             });
         }}
         style={{
-          backgroundColor: isActive ? '#f9b000' : isWhiteMode ? '#fff' : '#494948',
-          height: '100%',
-          color: isWhiteMode && !isActive ? '#000' : '#fff',
+          backgroundColor: isActive ? "var(--color-primary)" : "var(--bg-color_level2)",
+          color: isActive ? "var(--color-white)" : "var(--color_level2)",
         }}>
         <i className="fas fa-pencil-ruler me-2" style={{ fontSize: '1.33333em' }} />
         Designer
@@ -224,15 +220,16 @@ function TesterButton({
         }}>
         <button
           type="button"
-          className="btn btn-sm btn-dark d-flex align-items-center dark-background"
+          className="btn btn-sm d-flex align-items-center dark-background h-100"
           onClick={() => {
             setForceTester(true);
             viewRef?.current?.onTestingButtonClick(history, value);
           }}
           style={{
             marginLeft: 20,
-            height: '100%',
             borderRadius: '.2rem !important',
+            backgroundColor: "var(--bg-color_level2)",
+            color:  "var(--color_level2)",
           }}>
           <i className="fas fa-vials" style={{ fontSize: '1.33333em' }} />
           Tester
@@ -537,14 +534,14 @@ class Manager extends React.Component {
     if (component.length > 0) {
       return (
         <Loader loading={loading}>
-          <div className="designer row">{component[0].render()}</div>
+          <div className="designer">{component[0].render()}</div>
         </Loader>
       );
     }
 
     return (
       <Loader loading={loading}>
-        <div className="designer row ps-3">
+        <div className="designer ps-3">
           <Informations
             {...this.props}
             routeId={p.routeId}
@@ -581,13 +578,13 @@ const RoutesView = ({ history, globalEnv }) => {
               <button
                 onClick={() => setCreation(true)}
                 className="btn btn-primary"
-                style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+                style={{ _backgroundColor: "var(--color-primary)", _borderColor: "var(--color-primary)", marginLeft: 5 }}>
                 <i className="fas fa-hat-wizard" /> Create with wizard
               </button>
               <button
                 onClick={() => setImportServiceDescriptor(true)}
                 className="btn btn-primary"
-                style={{ _backgroundColor: '#f9b000', _borderColor: '#f9b000', marginLeft: 5 }}>
+                style={{ _backgroundColor: "var(--color-primary)", _borderColor: "var(--color-primary)", marginLeft: 5 }}>
                 <i className="fas fas fa-exchange-alt" /> Convert a service descriptor
               </button>
             </>
@@ -600,25 +597,8 @@ const RoutesView = ({ history, globalEnv }) => {
 
 class RouteDesigner extends React.Component {
   componentDidMount() {
-    this.patchStyle(true);
     this.props.setTitle('Routes');
   }
-
-  componentWillUnmount() {
-    this.patchStyle(false);
-  }
-
-  patchStyle = (applyPatch) => {
-    if (applyPatch) {
-      document.getElementsByClassName('main')[0].classList.add('patch-main');
-      [...document.getElementsByClassName('row')].map((r) => r.classList.add('patch-row', 'g-0'));
-    } else {
-      document.getElementsByClassName('main')[0].classList.remove('patch-main');
-      [...document.getElementsByClassName('row')].map((r) =>
-        r.classList.remove('patch-row', 'g-0')
-      );
-    }
-  };
 
   render() {
     const { match, history, location, globalEnv } = this.props;

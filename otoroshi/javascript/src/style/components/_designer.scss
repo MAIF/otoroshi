@@ -60,14 +60,14 @@
     .element {
         margin: 6px;
         margin-right: 0;
-        background-color: #ecf0f1;
+        background-color: var(--bg-color_level3);
+        color: var(--color_level3);
         display: flex;
         align-items: center;
         border-bottom-left-radius: 6px;
         border-top-left-radius: 6px;
         overflow: hidden;
         box-shadow: 0 1px 2px rgba(.25, .25, .25, .6);
-        color: #000;
         cursor: pointer;
     }
 
@@ -79,8 +79,8 @@
         width: 100%;
     }
 
-    .element-arrow {
-        color: $fondNavbar;
+    .element-arrow {        
+        color: var(--color_level3);
     }
 
     .group {
@@ -104,21 +104,21 @@
         min-width: 42px;
         height: 42px;
         border-radius: 6px;
-        background-color: #f9b000;
+        background-color: var(--color-primary);
     }
 
     div[class^='nestedform__border'] {
-        background-color: $fondNavbar;
+        background-color: var(--bg-color_level2);
     }
 
     .search-group-header,
     .group-header {
-        background-color: $fondNavbar;
+        background-color: var(--bg-color_level2);
         display: flex;
         align-items: center;
         font-weight: 500;
-        color: #000;
-        border-right: 3px solid #f9b000;
+        color: var(--color_level2);
+        border-right: 3px solid var(--color-primary);
         border-top-left-radius: 4px;
         border-bottom-left-radius: 4px;
     }
@@ -130,7 +130,7 @@
     }
 
     .designer-group-header-icon {
-        background-color: #f9b000;
+        background-color: var(--color-primary);
         min-width: 42px;
         height: 42px;
     }
@@ -154,7 +154,7 @@
         background: none;
         color: #fff;
         border: none;
-        background-color: $fondNavbar;
+        background-color: var(--bg-color_level2);
         border-radius: 8px;
         height: 42px;
         width: 42px;
@@ -164,7 +164,7 @@
     }
 
     .tab-selected i {
-        color: #f9b000;
+        color: var(--color-primary);
     }
 
     form {
@@ -189,15 +189,15 @@
     }
 
     .dot-icon {
-        color: #fff;
+        color: var(--color_level2);
         font-size: 20;
     }
 
     .dot-text {
         padding: 4px 12px;
         border-radius: 4px;
-        color: #fff;
-        white-space: wrap;
+        // color: var(--color_level2);
+        // white-space: wrap;
         width: fit-content;
     }
 
@@ -214,8 +214,8 @@
     }
 
     .form-description {
-        background-color: $fondNavbar;
-        color: $grisTexte;
+        background-color: var(--bg-color_level2);
+        color: var(--color_level2);
         padding: 12px;
         padding-bottom: 0;
     }
@@ -241,15 +241,13 @@
     .report-step {
         width: 100%;
         cursor: pointer;
-        background-color: $fondNavbar;
+        background-color: var(--bg-color_level2);
         color: $grisTexte;
         border-radius: 4px;
     }
 
     .dark-background {
-        background-color: $fondNavbar;
-        color: $grisTexte;
-        border-radius: 4px;
+        color: var(--color_level3);
     }
 
     .plugins-stack-column {
@@ -265,7 +263,7 @@
     .plugins-background-bar {
         height: calc(100% - 12px);
         width: 3px;
-        background-color: #f9b000;
+        background-color: var(--color-primary);
         position: absolute;
         left: 20px;
         top: 0;
@@ -296,7 +294,6 @@
 
     .frontend-button-icon {
         font-size: 20px;
-        color: #fff;
     }
 
     .editor-view-form {
@@ -326,27 +323,27 @@
     }
 
     .editor-view-informations {
-        border-bottom: 1px solid #f9b000;
+        border-bottom: 1px solid var(--color-primary);
         border-right: 0;
     }
 
     .editor-view-icon {
-        color: #fff;
+        color: var(--color-white);
         border-bottom-left-radius: 0;
     }
 
     .editor-view-text {
-        color: #fff;
+        color: var(--color_level2);
         padding-left: 12px;
     }
 
     .flow-container {
-        background: rgb(60, 60, 60);
+        background: var(--bg-color_level2)
     }
 
     .backend-selector {
         padding: 12px;
-        background-color: #404040;
+        // background-color: #404040;
     }
 
     .toggle-form-buttons,
@@ -380,7 +377,7 @@
 
     .legacy-dot {
         margin-left: 2px;
-        background-color: #f9b000;
+        background-color: var(--color-primary);
     }
 
     .backend-button {
@@ -397,7 +394,7 @@
         right: -12px;
         font-size: 42px;
         color: #fff;
-        background-color: #f9b000;
+        background-color: var(--color-primary);
         border-radius: 50%;
         z-index: 100;
     }
@@ -406,24 +403,24 @@
         z-index: 1002;
     }
 
-    input[type="text"],
-    input[type="number"],
-    input[type="password"],
-    input[type="date"],
-    input[type="datetime"],
-    input[type="time"] {
-        color: #E6E6E6;
-        background-color: #595959;
-        border-color: $fondNavbar;
-    }
+    // input[type="text"],
+    // input[type="number"],
+    // input[type="password"],
+    // input[type="date"],
+    // input[type="datetime"],
+    // input[type="time"] {
+    //     color: #E6E6E6;
+    //     background-color: #595959;
+    //     border-color: var(--bg-color_level2);
+    // }
 
-    .react-form-select__control,
-    .react-form-select__menu,
-    .react-form-select__single-value {
-        color: #E6E6E6;
-        background-color: #595959 !important;
-        border-color: $fondNavbar;
-    }
+    // .react-form-select__control,
+    // .react-form-select__menu,
+    // .react-form-select__single-value {
+    //     color: #E6E6E6;
+    //     background-color: #595959 !important;
+    //     border-color: var(--bg-color_level2);
+    // }
 
     .node-cursor {
         position: absolute;
@@ -463,7 +460,7 @@
     }
 
     .plugins-action:hover {
-        background-color: #f9b000;
+        background-color: var(--color-primary);
     }
 
     .plugins-action-container {
@@ -483,13 +480,14 @@
         left: 0;
         right: 0;
         border-radius: 4px;
-        background: rgb(73, 73, 72, .98);
+        // background: rgb(73, 73, 72, .98);
+        background-color: var(--bg-color_level2);
     }
 
     .target_information {
         color: #E6E6E6;
-        background-color: #595959;
-        border-color: $fondNavbar;
+        background-color: var(--bg-color_level3);
+        border-color: var(--color_level3);
         padding: 4px 8px;
         border-radius: 4px;
         margin-right: 4px;
@@ -504,7 +502,7 @@
     .route-item {
         flex: 1;
         border-radius: 4px;
-        background-color: $fondNavbar;
+        background-color: var(--bg-color_level2);
     }
 
     .route-forms-title {
@@ -512,7 +510,7 @@
     }
 
     .route-forms-header {
-        border-bottom: 1px solid #373735;
+        border-bottom: 1px solid var(--bg-color_level3);
     }
 
     div[role*="button"] svg {
@@ -534,30 +532,32 @@
 
     .graphql-form {
         position: absolute;
-        top: 56px;
-        right: 4px;
-        left: 16.66666667%;
-        bottom: 0;
-        background-color: $fondNavbar;
+        top: 1em;
+        right: 0;
+        left: 0;
+        bottom: 4em;
+        background-color: var(--bg-color_level1);
         z-index: 800;
         border-radius: 4px;
 
         .sub-container {
-            background: #3c3c3c;
+            background: var(--bg-color_level2);
             padding: 12px;
             border-radius: 8px;
             margin: 10px;
-            flex: 1
+            flex: 1;
+            padding-right: 24px;
         }
     }
 
     .graphql-form-type {
-        background-color: rgba(55, 55, 53, .5);
-        border: 1px solid rgb(55, 55, 53);
+        background-color:  var(--bg-color_level2);
+        border: 1px solid  var(--bg-color_level1);
     }
 
     .graphql-form-element {
-        background-color: #595959;
+        background-color: var(--bg-color_level3);
+        color:var(--color_level3);
         margin: 6px;
         display: flex;
         align-items: center;
@@ -568,7 +568,7 @@
 
     .endpoint {
         // cursor: pointer;
-        background-color: #595959;
+        background-color:var(--bg-color_level2);
         border-radius: 4px;
         padding: 4px 8px;
     }
@@ -599,7 +599,7 @@
 
 .wizard-container {
     position: relative;
-    background-color: $fondBody;
+    background-color: var(--bg-color_level1);
     display: flex;
     flex-direction: column;
     margin-left: auto;
@@ -607,7 +607,7 @@
     height: 100vh;
     min-height: 100vh;
     overflow-y: scroll;
-    box-shadow: 0px 0 2px 1px #f9b000c2;
+    box-shadow: 0px 0 2px 1px var(--color-primary)c2;
 }
 
 .wizard-container h3 {
@@ -621,10 +621,10 @@
     flex-direction: column;
 }
 
-.wizard-content .btn-save {
-    background-color: #f9b000 !important;
-    border-color: #f9b000 !important;
-}
+// .wizard-content .btn-save {
+//     background-color: var(--color-primary) !important;
+//     border-color: var(--color-primary) !important;
+// }
 
 .wizard-route-chooser {
     flex: 1;
@@ -655,18 +655,7 @@
 }
 
 .patch-main {
-    padding-right: 12px !important;
-    padding-left: 12px !important;
-}
-
-.patch-row {
-    margin-right: 0 !important;
-    --bs-gutter-x: 0;
-    --bs-gutter-y: 0;
-}
-
-.patch-main {
-    .page-header {
+    .page-header_title {
 
         h4,
         .dropdown {
@@ -678,8 +667,8 @@
         }
 
         .ms-2:not(.dropdown)>button {
-            border-bottom-left-radius: 0px;
-            border-bottom-right-radius: 0px;
+            // border-bottom-left-radius: 0px;
+            // border-bottom-right-radius: 0px;
 
         }
     }
@@ -704,77 +693,4 @@
         transform: rotate(678deg) translateX(30px);
         top: calc(100vh - 52px);
     }
-}
-
-@import '../layout/bright-mode';
-
-.white-mode {
-
-    * {
-        outline-color: #fff !important;
-    }
-
-    .plugins-action,
-    .designer input[type=text],
-    .delete-node-button,
-    .editor-view-form,
-    .form-description,
-    .steps,
-    .backend-selector {
-        @include bright-mode_background-color--darker;
-        @include bright-mode_color--darker;
-
-    }
-
-    .designer .graphql-form .sub-container {
-        @include bright-mode_background-color--darkest;
-    }
-
-    .frontend-button,
-    .dot,
-    .endpoint,
-    .designer-modal,
-    .report-step,
-    .backend-selector>div {
-        background: #fff !important;
-        // background-color: #fff !important;
-    }
-
-    .dark-background,
-    .element,
-    .graphql-form {
-        background-color: #f3f3f4 !important;
-    }
-
-    .delete-node-button {
-        border: 1px solid #333;
-    }
-
-    .designer {
-        background: none !important;
-    }
-
-    .search-group-header,
-    .group-header,
-    .vertical-line,
-    .flow-container,
-    .wizard-container,
-    .route-item {
-        @include bright-mode_background--light;
-    }
-
-    .search-group-header span,
-    .search-group-header i,
-    .plugins-action,
-    .dot span,
-    .dot i,
-    .frontend-button i,
-    .form-description p,
-    .editor-view-informations i,
-    .editor-view-informations span,
-    .backend-selector>div button {
-        @include bright-mode_color--darker;
-    }
-
-
 }

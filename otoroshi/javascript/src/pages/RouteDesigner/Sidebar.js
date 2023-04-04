@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link, useHistory, useLocation } from 'react-router-dom';
 import { createTooltip } from '../../tooltips';
 import { useEntityFromURI } from '../../util';
+import { SidebarContext } from '../../apps/BackOfficeApp';
 
 const LINKS = (entity, route) =>
   [
@@ -46,6 +47,7 @@ export default ({ route, setSidebarContent }) => {
   const history = useHistory();
   const entity = useEntityFromURI();
   const location = useLocation();
+  const { openedSidebar } = useContext(SidebarContext);
 
   const currentTab = location.pathname.split('/').slice(-1)[0];
   const isActive = (tab) => {
@@ -59,22 +61,23 @@ export default ({ route, setSidebarContent }) => {
       className="d-flex"
       style={{
         flexDirection: 'column',
+        position: 'relative',
+        borderTop: `${!openedSidebar ? '1px solid #fff' : 'none'}`,
+        borderBottom: `${!openedSidebar ? '1px solid #fff' : 'none'}`,
+        padding: openedSidebar ? 'inherit' : '18px 0 6px'
       }}>
-      <ul className="nav flex-column nav-sidebar no-margin-left">
-        <li
-          className="nav-item mb-1"
-          onClick={() => history.push(`/${entity.link}/${route.id}?tab=flow`)}
-          style={{ cursor: 'pointer' }}>
-          <h3>
-            <span className="fas fa-road" /> {route.name}
-          </h3>
+      <ul className="nav flex-column nav-sidebar">
+        <li className="nav-item mb-1">
+          <Link to={`/${entity.link}/${route.id}?tab=flow`} className='p-2 m-0'>
+            <i className="fas fa-road" /> {openedSidebar ? route.name : ''}
+          </Link>
         </li>
         {LINKS(entity.link, route).map(({ to, icon, title, tooltip, tab }) => (
-          <li className="nav-item" key={title}>
-            <Link to={to} {...(tooltip || {})} className={`nav-link ${isActive(tab)}`}>
-              <h3 className={`ms-3 p-2 m-0 ${isActive(tab)}`}>
-                <i className={`fas ${icon}`} /> {title}
-              </h3>
+          <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
+            <Link
+              to={to} {...(tooltip || {})}
+              className={`nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''} p-2 m-0 ${isActive(tab)}`}>
+              <i className={`fas ${icon}`} /> {openedSidebar ? title : ''}
             </Link>
           </li>
         ))}

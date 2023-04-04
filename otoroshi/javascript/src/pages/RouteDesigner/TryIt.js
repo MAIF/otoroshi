@@ -385,8 +385,7 @@ export default function ({ route, hide }) {
               onChange={(e) => setRequest({ ...request, path: e.target.value })}
             />
             <button
-              className="btn btn-success"
-              style={{ backgroundColor: '#f9b000', borderColor: '#f9b000' }}
+              className="btn btn-primaryColor"
               onClick={send}>
               Send
             </button>
@@ -688,8 +687,7 @@ export default function ({ route, hide }) {
                     </span>
                   </div>
                   <button
-                    className="btn btn-sm btn-success"
-                    style={{ backgroundColor: '#f9b000', borderColor: '#f9b000' }}
+                    className="btn btn-sm btn-primaryColor"
                     onClick={saveResponse}>
                     Save Response
                   </button>

@@ -24,8 +24,8 @@ function WizardStepButton(props) {
       {...props}
       type="save"
       style={{
-        backgroundColor: '#f9b000',
-        borderColor: '#f9b000',
+        backgroundColor: "var(--color-primary)",
+        borderColor: "var(--color-primary)",
         padding: '12px 48px',
       }}
     />
@@ -237,8 +237,8 @@ export class AuthenticationWizard extends React.Component {
                 <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
                   <FeedbackButton
                     style={{
-                      backgroundColor: '#f9b000',
-                      borderColor: '#f9b000',
+                      backgroundColor: "var(--color-primary)",
+                      borderColor: "var(--color-primary)",
                       padding: '12px 48px',
                     }}
                     onPress={() => BackOfficeServices.updateAuthConfig(authenticationConfig)}
@@ -580,8 +580,8 @@ function InformationsStep({ name, onChange }) {
   return (
     <>
       <h3>Let's start with a name for your Authentication</h3>
-
       <div>
+        <label className="mb-2">Authentication name</label>
         <TextInput
           autoFocus={true}
           placeholder="Your authentication configuration name..."
@@ -589,7 +589,6 @@ function InformationsStep({ name, onChange }) {
           className="my-3"
           style={{
             fontSize: '2em',
-            color: '#f9b000',
           }}
           label="Route name"
           value={name}
@@ -830,8 +829,8 @@ function OAuth2FastConfiguration({ value, onChange }) {
             <LabelAndInput label=" ">
               <FeedbackButton
                 style={{
-                  backgroundColor: '#f9b000',
-                  borderColor: '#f9b000',
+                  backgroundColor: "var(--color-primary)",
+                  borderColor: "var(--color-primary)",
                 }}
                 onPress={
                   'OIDC config' === props.rootValue?.source ? fetchConfig : fetchKeycloakConfig
@@ -1321,7 +1320,7 @@ class User extends React.Component {
 function SelectableButton({ value, expected, title, desc, onChange }) {
   return (
     <Button
-      type={value === expected ? 'save' : 'dark'}
+      type={value === expected ? 'primaryColor' : 'dark'}
       className="py-3 d-flex align-items-center flex-column col-3"
       style={{
         gap: '12px',
@@ -1336,9 +1335,9 @@ function SelectableButton({ value, expected, title, desc, onChange }) {
         </h3>
       </div>
       <div className="d-flex flex-column align-items-center" style={{ flex: 1 }}>
-        <label className="d-flex align-items-center" style={{ textAlign: 'left' }}>
+        <span className="d-flex align-items-center" style={{ textAlign: 'left' }}>
           {desc}
-        </label>
+        </span>
       </div>
     </Button>
   );
@@ -1544,8 +1543,8 @@ function SAMLConfiguration({ value, onChange }) {
             <LabelAndInput label=" ">
               <FeedbackButton
                 style={{
-                  backgroundColor: '#f9b000',
-                  borderColor: '#f9b000',
+                  backgroundColor: "var(--color-primary)",
+                  borderColor: "var(--color-primary)",
                 }}
                 onPress={'Paste configuration' === value.from ? fetchConfig : fetchFromURL}
                 icon={() => <i className="fas fa-paper-plane" />}

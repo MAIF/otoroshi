@@ -166,7 +166,7 @@ export function ResourceLoaderPage({ setTitle }) {
                     className="badge"
                     style={{
                       padding: '0 12 0 12',
-                      backgroundColor: resource.error ? 'red' : '#eee',
+                      backgroundColor: resource.error ? "var(--color-red)" : '#eee',
                       color: '#000',
                     }}>
                     {resource.error || resource.kind}
@@ -190,7 +190,7 @@ export function ResourceLoaderPage({ setTitle }) {
                 <td>
                   <span
                     className="badge"
-                    style={{ backgroundColor: resource.status ? '#f9b000' : '' }}>
+                    style={{ backgroundColor: resource.status ? "var(--color-primary)" : '' }}>
                     {resource.status}
                   </span>
                 </td>
@@ -283,7 +283,7 @@ export function ResourceLoaderPage({ setTitle }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: '#f9b000',
+                backgroundColor: "var(--color-primary)",
                 color: '#fff',
                 fontStyle: 'italic',
               }}>

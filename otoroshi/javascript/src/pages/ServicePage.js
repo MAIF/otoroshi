@@ -1197,7 +1197,7 @@ export class ServicePage extends Component {
           <div className="mb-3 btnsService">
             <div className="displayGroupBtn">
               <button
-                className="btn btn-info"
+                className="btn btn-primary"
                 type="button"
                 {...createTooltip('.....', 'left', true)}
                 disabled={!this.state.service.enabled}
@@ -1218,7 +1218,7 @@ export class ServicePage extends Component {
               </button>
               {this.state.allCollapsed && (
                 <button
-                  className="btn btn-info"
+                  className="btn btn-primary"
                   type="button"
                   onClick={this.toggleCollapsed}
                   {...createTooltip('Unfold all form groups', 'left', true)}>
@@ -1227,7 +1227,7 @@ export class ServicePage extends Component {
               )}
               {!this.state.allCollapsed && (
                 <button
-                  className="btn btn-info"
+                  className="btn btn-primary"
                   type="button"
                   onClick={this.toggleCollapsed}
                   {...createTooltip('Fold all form groups', 'left', true)}>
@@ -1236,14 +1236,14 @@ export class ServicePage extends Component {
               )}
 
               <button
-                className="btn btn-info"
+                className="btn btn-primary"
                 type="button"
                 {...createTooltip('Export the current service as a JSON file.', 'left', true)}
                 onClick={this.exportService}>
                 <i className="fas fa-file-export" /> JSON
               </button>
               <button
-                className="btn btn-info"
+                className="btn btn-primary"
                 type="button"
                 {...createTooltip(
                   'Export the current service as a kubernetes YAML file.',
@@ -1254,7 +1254,7 @@ export class ServicePage extends Component {
                 <i className="fas fa-file-export" /> YAML
               </button>
               <button
-                className="btn btn-info"
+                className="btn btn-primary"
                 type="button"
                 {...createTooltip(
                   'Duplicate the current service as a new one to avoid refilling the form with same informations',
@@ -1523,7 +1523,7 @@ export class ServicePage extends Component {
                   <label className="col-xs-12 col-sm-2 col-form-label" />
                   <div className="col-sm-10 input-group-btn">
                     <button
-                      className="btn btn-sm btn-info"
+                      className="btn btn-sm btn-primary"
                       type="button"
                       onClick={(e) => {
                         e.preventDefault();
@@ -1537,7 +1537,7 @@ export class ServicePage extends Component {
                       <button
                         type="button"
                         onClick={this.createLetsEncrypt}
-                        className="btn btn-sm btn-info">
+                        className="btn btn-sm btn-primary">
                         <i className="fas fa-plus-circle" /> Create Let's Encrypt cert.
                       </button>
                     )}
@@ -1545,7 +1545,7 @@ export class ServicePage extends Component {
                       <button
                         type="button"
                         onClick={this.createCert}
-                        className="btn btn-sm btn-info">
+                        className="btn btn-sm btn-primary">
                         <i className="fas fa-plus-circle" /> Create certificate
                       </button>
                     )}
@@ -2041,7 +2041,7 @@ export class ServicePage extends Component {
               onChange={(v) => this.changeTheValue('privateApp', v)}
             />
             <SelectInput
-              label="Auth. config"
+              label="Auth. module"
               value={this.state.service.authConfigRef}
               onChange={(e) => this.changeTheValue('authConfigRef', e)}
               valuesFrom="/bo/api/proxy/api/auths"
@@ -2053,18 +2053,18 @@ export class ServicePage extends Component {
               <div className="col-sm-10 input-group-btn">
                 {!this.state.service.authConfigRef && (
                   <Link to="/auth-configs/add" className="btn btn-sm btn-primary">
-                    <i className="fas fa-plus" /> Create a new auth. config.
+                    <i className="fas fa-plus" /> Create a new auth. module
                   </Link>
                 )}
                 {this.state.service.authConfigRef && (
                   <Link
                     to={`/auth-configs/edit/${this.state.service.authConfigRef}`}
                     className="btn btn-sm btn-success">
-                    <i className="fas fa-edit" /> Edit the auth. config.
+                    <i className="fas fa-edit" /> Edit the auth. module
                   </Link>
                 )}
                 <Link to="/auth-configs" className="btn btn-sm btn-primary">
-                  <i className="fas fa-link" /> all auth. config.
+                  <i className="fas fa-link" /> all auth. module
                 </Link>
               </div>
             </div>
@@ -2289,7 +2289,7 @@ export class ServicePage extends Component {
             initCollapsed={true}
             label="Third party Api Keys">
             <p style={{ textAlign: 'justify' }}>
-              <b style={{ color: '#D5443F' }}>WARNING: </b> Third party Api Keys are
+              <b style={{ color: "var(--color-red)" }}>WARNING: </b> Third party Api Keys are
               deprecated and will be removed in a near future.
               <br />
               Please use dedicated <b>Access validator</b> or <b>pre-route</b>instead (see above).
@@ -2337,18 +2337,18 @@ export class ServicePage extends Component {
                   <div className="col-sm-10">
                     {!this.state.service.thirdPartyApiKey.oidcConfigRef && (
                       <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
-                        <i className="fas fa-plus" /> Create a new auth. config.
+                        <i className="fas fa-plus" /> Create a new auth. module
                       </a>
                     )}
                     {this.state.service.thirdPartyApiKey.oidcConfigRef && (
                       <a
                         href={`/bo/dashboard/auth-configs/edit/${this.state.service.thirdPartyApiKey.oidcConfigRef}`}
                         className="btn btn-sm btn-success">
-                        <i className="fas fa-edit" /> Edit the auth. config.
+                        <i className="fas fa-edit" /> Edit the auth. module
                       </a>
                     )}
                     <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
-                      <i className="fas fa-link" /> all auth. config.
+                      <i className="fas fa-link" /> all auth. module
                     </a>
                   </div>
                 </div>
@@ -2720,7 +2720,7 @@ export class ServicePage extends Component {
                     width: '100%',
                   }}>
                   <p style={{ textAlign: 'justify' }}>
-                    <b style={{ color: '#D5443F' }}>WARNING: </b> Validation authorities are
+                    <b style={{ color: "var(--color-red)" }}>WARNING: </b> Validation authorities are
                     deprecated and will be removed in a near future.
                     <br />
                     Please use <b>Access validator</b> instead (see above).

@@ -57,7 +57,7 @@ class Metric extends Component {
         <div className="metric-box">
           <Sparklines data={this.state.values} limit={this.state.values.length} height={65}>
             <SparklinesLine
-              color={mode === 'dark' ? 'rgb(249, 176, 0)' : 'black'}
+              color={mode === 'dark' ? "var(--color-primary)" : 'black'}
               _color="rgb(249, 176, 0)"
             />
             <SparklinesSpots />
@@ -181,7 +181,10 @@ export class LiveStatTiles extends Component {
       );
     }
     return (
-      <div>
+      <div style={{
+        maxWidth: '1050px',
+        margin: '0 auto'
+      }}>
         <h4 className="live-title">LIVE METRICS</h4>
         <div className="rowMetrics">
           <Metric time={Date.now()} value={this.state.rate} legend="requests per second" />

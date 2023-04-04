@@ -25,15 +25,15 @@ export class Collapse extends Component {
         <div data-screenshot={this.props.dataScreenshot || ''}>
           <hr />
           <div className="row mb-3">
-            <label className={this.props.noLeftColumn ? 'col-sm-0' : 'col-sm-2'} />
+            {!this.props.noLeftColumn&&  <label className='col-sm-2' />} 
             <div
               className={this.props.noLeftColumn ? 'col-sm-12' : 'col-sm-10'}
               onClick={this.toggle}
               role="button">
-              <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>
+              <span style={{ color: "var(--color-primary)", fontWeight: 'bold', marginTop: 7 }}>
                 {this.props.label}
               </span>
-              <button type="button" className="btn btn-info float-end btn-sm" onClick={this.toggle}>
+              <button type="button" className="btn btn-primary float-end btn-sm" onClick={this.toggle}>
                 <i className="fas fa-eye" />
               </button>
             </div>
@@ -46,15 +46,15 @@ export class Collapse extends Component {
         <div data-screenshot={this.props.dataScreenshot || ''}>
           <hr />
           <div className="row mb-3">
-            <label className={this.props.noLeftColumn ? 'col-sm-0' : 'col-sm-2'} />
+            {!this.props.noLeftColumn&&  <label className='col-sm-2' />}           
             <div
               className={this.props.noLeftColumn ? 'col-sm-12' : 'col-sm-10'}
               onClick={this.toggle}
               role="button">
-              <span style={{ color: '#f9b000', fontWeight: 'bold', marginTop: 7 }}>
+              <span style={{ color: "var(--color-primary)", fontWeight: 'bold', marginTop: 7 }}>
                 {this.props.label}
               </span>
-              <button type="button" className="btn btn-info float-end btn-sm" onClick={this.toggle}>
+              <button type="button" className="btn btn-primary float-end btn-sm" onClick={this.toggle}>
                 <i className="fas fa-eye-slash" />
               </button>
             </div>

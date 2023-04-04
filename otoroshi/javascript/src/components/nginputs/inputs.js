@@ -7,19 +7,20 @@ import { Help, ObjectInput } from '../inputs';
 import isEqual from 'lodash/isEqual';
 import { Forms } from '../../forms';
 import { Button } from '../Button';
+import ReactTooltip from 'react-tooltip';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput')));
 
 const ReadOnlyField = ({ value, pre }) => {
   if (pre) {
     return (
-      <pre className="d-flex align-items-center" style={{ height: '100%', color: '#fff' }}>
+      <pre className="d-flex align-items-center" style={{ height: '100%'}}>
         {value}
       </pre>
     );
   } else {
     return (
-      <span className="d-flex align-items-center" style={{ height: '100%', color: '#fff' }}>
+      <span className="d-flex align-items-center" style={{ height: '100%' }}>
         {value}
       </span>
     );
@@ -118,19 +119,17 @@ export class NgDotsRenderer extends Component {
               const selected = isValueArray ? value.includes(rawOption) : value === rawOption;
 
               let backgroundColorFromOption = null;
+              let opacityFromOption = 1;
               // let btnBackground = '';
 
               if (option.color)
-                backgroundColorFromOption = `rgba(${option.color
-                  .replace(')', '')
-                  .replace('rgb(', '')}, ${selected ? 1 : 0.45})`;
-
-              // if (!optObj || backgroundColorFromOption === 'initial')
-              //   btnBackground = selected ? 'btn-info' : 'btn-dark';
+                backgroundColorFromOption = `${option.color}`;
+                opacityFromOption= `${selected ? 1 : 0.45}`;
 
               let style = {
                 borderRadius: '24px',
                 backgroundColor: backgroundColorFromOption,
+                opacity:opacityFromOption
               };
 
               if (backgroundColorFromOption) {
@@ -143,7 +142,7 @@ export class NgDotsRenderer extends Component {
               return (
                 <button
                   className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-info' : 'btn-dark'
+                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
                   } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
@@ -263,7 +262,15 @@ export function LabelAndInput(_props) {
         style={{
           textAlign: labelColumn === 2 ? 'right' : 'left',
         }}>
-        {label.replace(/_/g, ' ')} {help && <Help text={help} />}
+        {label.replace(/_/g, ' ')}{' '}
+        {_props.help && (
+          <span>
+            <i 
+            className="far fa-question-circle"
+            data-tip={_props.help} />
+            <ReactTooltip />
+          </span>
+        )}
       </label>
       <div className={`col-sm-${12 - labelColumn}`}>{_props.children}</div>
     </div>
@@ -572,7 +579,7 @@ export class NgBoxBooleanRenderer extends Component {
           }}
           className="d-flex"
           style={{
-            outline: 'rgb(65, 65, 62) solid 1px',
+            outline: 'var(--bg-color_level2) solid 1px',
             padding: '5px',
             margin: '5px 0px',
             width: this.props.width || '100%',
@@ -582,7 +589,7 @@ export class NgBoxBooleanRenderer extends Component {
           <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
             <div
               style={{
-                color: 'rgb(249, 176, 0)',
+                // color: "var(--color-primary)",
                 fontWeight: 'bold',
                 marginLeft: '5px',
                 marginTop: '7px',
@@ -684,7 +691,7 @@ export class NgArrayRenderer extends Component {
                     display: 'flex',
                     alignItems: 'center',
                     width: '100%',
-                    outline: showItem ? 'rgb(65, 65, 62) solid 1px' : 'none',
+                    outline: showItem ? 'var(--bg-color_level2) solid 1px' : 'none',
                     padding: showItem ? '6px' : 0,
                     marginBottom: showItem ? '6px' : 0,
                   }}
@@ -760,7 +767,7 @@ export class NgArrayRenderer extends Component {
           {showActions && !readOnly && (
             <button
               type="button"
-              className="btn btn-sm btn-info float-end"
+              className="btn btn-sm btn-primary float-end"
               style={{ width: 42, marginTop: 5 }}
               onClick={() => {
                 let newArr = [...(this.props.value || [])];
@@ -936,7 +943,7 @@ export class NgArraySelectRenderer extends Component {
             })}
           <button
             type="button"
-            className="btn btn-sm btn-info float-end"
+            className="btn btn-sm btn-primary float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={(e) => {
               const newArray = Array.isArray(this.props.value) ? [...this.props.value, ''] : [''];
@@ -1043,7 +1050,7 @@ export class NgObjectSelectRenderer extends Component {
               })}
           <button
             type="button"
-            className="btn btn-sm btn-info float-end"
+            className="btn btn-sm btn-primary float-end"
             style={{ width: 42, marginTop: 5 }}
             onClick={(e) => {
               const newObject = { ...this.props.value };

@@ -17,8 +17,8 @@
 
 .table-hover tbody tr:hover td,
 .table-hover tbody tr:hover th {
-  background-color: $fondNavbar;
-  color: #fff;
+  background-color: var(--bg-color_level2);
+  color: var(--color_level2);;
 }
 
 .table > tbody > tr > td,
@@ -52,14 +52,14 @@ thead > tr > td > span {
 .pagination > .active > span,
 .pagination > .active > span:focus,
 .pagination > .active > span:hover {
-  background-color: $fondNavbar;
-  border-color: $colorGris;
+  background-color: var(--bg-color_level2);
+  border-color: var(--color-grey);
 }
 
 .pagination > li > a,
 .pagination > li > span {
   background: none;
-  color: $colorGris;
+  color: var(--color-grey);
 }
 
 .titleTable {
@@ -70,23 +70,23 @@ thead > tr > td > span {
 }
 
 .active > .titleTable {
-  background-color: $colorBleue;
+  background-color: var(--color-blue);
   color: #fff;
   border: thin solid $fondGrisclairSurvolMenu;
 }
 
 .titleTable:hover {
-  background-color: lighten($colorBleue,5%);
+  background-color: var(--color-blue-lighter);
   color: #fff;
 }
 
 thead {
-  background-color: $primaryColor;
+  background-color: var(--color-primary);
 }
 
 .fa-download {
   cursor: pointer;
-  color: $colorBleue;
+  color: var(--color-blue);
 }
 
 .table-liste {
@@ -98,7 +98,7 @@ thead {
 }
 
 .link-service {
-  color: $colorGris;
+  color: var(--color-grey);
   text-decoration: none;
 
   &:hover {
