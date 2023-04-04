@@ -1,7 +1,5 @@
 .sidebar {
-  background: -moz-linear-gradient(top, $fondBody 1%, $fondNavbar 100%);
-  background: -webkit-linear-gradient(top, $fondBody 1%, $fondNavbar);
-  background: linear-gradient(180deg, $fondBody 1%, $fondNavbar);
+  background: var(--bg-color_level2);
   position: relative;
   min-width: 250px;
   max-width: 250px;
@@ -23,12 +21,11 @@
   scrollbar-width: none;
   
   
-  a.active h3{
+  a.active {
     color: var(--color-primary);
   }
   
-  h2 a,
-  h3 {
+  a, *{
     color: var(--color_level1);
     font-size: 15px;
     text-transform: uppercase;

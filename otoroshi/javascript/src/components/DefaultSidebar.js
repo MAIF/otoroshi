@@ -4,14 +4,23 @@ import { Link } from 'react-router-dom';
 import { createTooltip } from '../tooltips';
 import { SidebarContext } from '../apps/BackOfficeApp';
 
+function SidebarLink({ openedSidebar, clearSidebar, path, text, icon, rootClassName }) {
+  return <li className={`nav-item mt-0 ${openedSidebar ? 'nav-item--open' : ''}`}>
+    <Link
+      to={`/${path}`}
+      className={`nav-link ${rootClassName(path)}`}
+      {...createTooltip(text)}
+      onClick={clearSidebar}>
+      <i className={`fas fa-${icon}`} /> {!openedSidebar ? '' : path.toUpperCase()}
+    </Link>
+  </li>
+}
+
 export function DefaultSidebar(props) {
   const pathname = window.location.pathname;
   const search = (window.location.search || '?').substring(1);
-  const base = `/bo/dashboard/services`;
   const rootClassName = (part) =>
     pathname === `/bo/dashboard/${part}` && search === '' ? 'active' : '';
-  const className = (part) =>
-    base === pathname && search.indexOf(`env=${part}`) > -1 ? 'active' : '';
 
   const clearSidebar = () => {
     if (props.setSidebarContent) props.setSidebarContent(null);
@@ -23,105 +32,92 @@ export function DefaultSidebar(props) {
   return (
     <ul className="nav flex-column nav-sidebar">
       {props.env && !props.env.initWithNewEngine && (
-        <>
-          <li className={`nav-item mt-2 ${openedSidebar ? 'nav-item--open' : ''}`}>
-            <Link
-              to="/services"
-              className={`nav-link ${rootClassName('services')}`}
-              {...createTooltip('List all services declared in Otoroshi')}
-              onClick={clearSidebar}>
-              <i className="fas fa-cubes" /> {!openedSidebar ? '' : 'SERVICES'}
-            </Link>
-          </li>
-        </>
+        <SidebarLink
+          rootClassName={rootClassName}
+          openedSidebar={openedSidebar}
+          clearSidebar={clearSidebar}
+          path="services"
+          text="List all services declared in Otoroshi"
+          icon="cubes"
+        />
       )}
-      <li className={`nav-item mt-2 ${openedSidebar ? 'nav-item--open' : ''}`}>
-        <Link
-          to="/routes"
-          className={`nav-link ${rootClassName('routes')}`}
-          {...createTooltip('List all routes declared in Otoroshi')}
-          onClick={clearSidebar}>
-          <i className="fas fa-road" /> {!openedSidebar ? '' : 'ROUTES'}
-        </Link>
-      </li>
-      <li className={`nav-item mt-2 ${openedSidebar ? 'nav-item--open' : ''}`}>
-        <Link
-          to="/backends"
-          className={`nav-link ${rootClassName('backends')}`}
-          {...createTooltip('List all backends declared in Otoroshi')}
-          onClick={clearSidebar}>
-          <i className="fas fa-microchip" /> {!openedSidebar ? '' : 'BACKENDS'}
-        </Link>
-      </li>
-      <li className={`nav-item mt-2 ${openedSidebar ? 'nav-item--open' : ''}`}>
-        <Link
-          to="/apikeys"
-          className={`nav-link ${rootClassName('apikeys')}`}
-          {...createTooltip('List all apikeys declared in Otoroshi')}
-          onClick={clearSidebar}>
-          <i className="fas fa-key" /> {!openedSidebar ? '' : 'APIKEYS'}
-        </Link>
-      </li>
-      <li className={`nav-item mt-2 ${openedSidebar ? 'nav-item--open' : ''}`}>
-        <Link
-          to="/certificates"
-          className={`nav-link ${rootClassName('certificates')}`}
-          {...createTooltip('List all certificates declared in Otoroshi')}
-          onClick={clearSidebar}>
-          <i className="fas fa-certificate" /> {!openedSidebar ? '' : 'CERTIFICATES'}
-        </Link>
-      </li>
-      <li className={`nav-item mt-2 ${openedSidebar ? 'nav-item--open' : ''}`}>
-        <Link
-          to="/auth-configs"
-          className={`nav-link ${rootClassName('auth-configs')}`}
-          {...createTooltip('List all auth. modules declared in Otoroshi')}
-          onClick={clearSidebar}>
-          <i className="fas fa-lock" /> {!openedSidebar ? '' : 'AUTH. MODULES'}
-        </Link>
-      </li>
-      <li className={`nav-item mt-2 ${openedSidebar ? 'nav-item--open' : ''}`}>
-        <Link
-          to="/jwt-verifiers"
-          className={`nav-link ${rootClassName('jwt-verifiers')}`}
-          {...createTooltip('List all jwt verifiers declared in Otoroshi')}
-          onClick={clearSidebar}>
-          <i className="fas fa-circle-check" /> {!openedSidebar ? '' : 'JWT VERIFIERS'}
-        </Link>
-      </li>
-      <li className={`nav-item mt-2 ${openedSidebar ? 'nav-item--open' : ''}`}>
-        <Link
-          to="/tcp/services"
-          className={`nav-link ${rootClassName('tcp/services')}`}
-          {...createTooltip('List all Tcp services declared in Otoroshi')}
-          onClick={clearSidebar}>
-          <i className="fas fa-cubes" /> {!openedSidebar ? '' : 'TCP SERVICES'}
-        </Link>
-      </li>
-      <li className={`nav-item mt-2 ${openedSidebar ? 'nav-item--open' : ''}`}>
-        <Link
-          to="/exporters"
-          className={`nav-link ${rootClassName('exporters')}`}
-          {...createTooltip('List all data exporters declared in Otoroshi')}
-          onClick={clearSidebar}>
-          <i className="fas fa-paper-plane" /> {!openedSidebar ? '' : 'DATA EXPORTERS'}
-        </Link>
-      </li>
-      <li className={`nav-item mt-2 ${openedSidebar ? 'nav-item--open' : ''}`}>
-        <Link
-          to="/wasm-plugins"
-          className={`nav-link ${rootClassName('wasm-plugins')}`}
-          {...createTooltip('List all wasm plugins declared in Otoroshi')}
-          onClick={clearSidebar}>
-          <i className="fas fa-plug" /> {!openedSidebar ? '' : 'WASM PLUGINS'}
-        </Link>
-      </li>
-      <li className={`nav-item mt-2 ${openedSidebar ? 'nav-item--open' : ''}`}>
+      <SidebarLink
+        rootClassName={rootClassName}
+        openedSidebar={openedSidebar}
+        clearSidebar={clearSidebar}
+        path="routes"
+        text="List all routes declared in Otoroshi"
+        icon="road"
+      />
+      <SidebarLink
+        rootClassName={rootClassName}
+        openedSidebar={openedSidebar}
+        clearSidebar={clearSidebar}
+        path="backends"
+        text="List all backends declared in Otoroshi"
+        icon="microchip"
+      />
+      <SidebarLink
+        rootClassName={rootClassName}
+        openedSidebar={openedSidebar}
+        clearSidebar={clearSidebar}
+        path="apikeys"
+        text="List all apikeys declared in Otoroshi"
+        icon="key"
+      />
+      <SidebarLink
+        rootClassName={rootClassName}
+        openedSidebar={openedSidebar}
+        clearSidebar={clearSidebar}
+        path="certificates"
+        text="List all certificates declared in Otoroshi"
+        icon="certificate"
+      />
+      <SidebarLink
+        rootClassName={rootClassName}
+        openedSidebar={openedSidebar}
+        clearSidebar={clearSidebar}
+        path="auth-configs"
+        text="List all auth. modules declared in Otoroshi"
+        icon="lock"
+      />
+      <SidebarLink
+        rootClassName={rootClassName}
+        openedSidebar={openedSidebar}
+        clearSidebar={clearSidebar}
+        path="jwt-verifiers"
+        text="List all jwt verifiers declared in Otoroshi"
+        icon="circle-check"
+      />
+      <SidebarLink
+        rootClassName={rootClassName}
+        openedSidebar={openedSidebar}
+        clearSidebar={clearSidebar}
+        path="tcp/services"
+        text="List all Tcp services declared in Otoroshi"
+        icon="cubes"
+      />
+      <SidebarLink
+        rootClassName={rootClassName}
+        openedSidebar={openedSidebar}
+        clearSidebar={clearSidebar}
+        path="exporters"
+        text="List all data exporters declared in Otoroshi"
+        icon="paper-plane"
+      />
+      <SidebarLink
+        rootClassName={rootClassName}
+        openedSidebar={openedSidebar}
+        clearSidebar={clearSidebar}
+        path="wasm-plugins"
+        text="List all wasm-plugins declared in Otoroshi"
+        icon="plug"
+      />
+      <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''} pt-3 mt-1`}>
         <Link
           to="/features"
           className={`nav-link ${rootClassName('features')} d-flex align-items-center`}
           {...createTooltip('All features')}
-          style={{ marginTop: 30 }}
           onClick={clearSidebar}>
           <div className='icon-menu'
             style={{
