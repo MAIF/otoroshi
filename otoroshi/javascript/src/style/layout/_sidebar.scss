@@ -2,19 +2,22 @@
   background: -moz-linear-gradient(top, $fondBody 1%, $fondNavbar 100%);
   background: -webkit-linear-gradient(top, $fondBody 1%, $fondNavbar);
   background: linear-gradient(180deg, $fondBody 1%, $fondNavbar);
-  position: fixed;
-  top: 51px;
-  bottom: 0;
-  left: 0;
+  position: relative;
+  // top: 51px;
+  // bottom: 0;
+  // left: 0;
   z-index: 1001;
   display: block;
-  padding: 20px;
-  overflow-x: hidden;
-  overflow-y: auto;
+  // padding: 20px;
+  // overflow-x: hidden;
+  // overflow-y: scroll;
   border-right: none;
   transition: all 150ms ease;
 
-  -ms-overflow-style: none;  /* IE and Edge */
+  padding-right: 0 !important;
+
+  -ms-overflow-style: none;
+  /* IE and Edge */
   scrollbar-width: none;
 
   .active a {
@@ -25,18 +28,18 @@
     color: $colorGris;
   }
 
-  h2 a,
+  h2,
   h3 {
     color: $colorGris;
     font-size: 15px;
     text-transform: uppercase;
-    margin-left: 10px;
+    // margin-left: 10px;
   }
 
 
-  i {
-    margin-right: 5px;
-  }
+  // i {
+  //   margin-right: 5px;
+  // }
 }
 
 .sidebar::-webkit-scrollbar {
@@ -50,10 +53,16 @@
   padding: 0 !important;
 }
 
-.sidebar-container {
-  display: flex;
-  height: 100%;
-  flex-direction: column;
+.sidebar--closed {
+  width: 52px;
+}
+
+.nav-item a {
+  padding: .25em 1em !important;
+}
+
+.nav-item--open i {
+  margin-right: .5rem;
 }
 
 .sidebar-content {
@@ -63,38 +72,74 @@
 }
 
 .nav-sidebar {
-  margin-right: -21px;
-  margin-left: -20px;
-  margin-bottom: 20px;
 
-  > li > h3 {
+  >li>h3 {
     color: $primaryColor;
+    padding-left: 0 !important;
   }
 
-  > li > a > h3 {
+  >li>a>h3 {
     text-transform: initial;
+    padding-left: 0 !important;
   }
 
-  > li > a > h3,
-  > li > a {
+  >li>a>h3>i {
+    margin-right: 5px;
+  }
+
+  >li>a>h3,
+  >li>a {
+
     // padding: 5px 10px 5px 36px;
-    &.active{
+    &.active {
       color: $primaryColor;
     }
   }
 }
 
 .nav-item {
-  a.active > h3 {
+  display: flex;
+  justify-content: flex-start;
+
+  a.active>h3 {
     color: $primaryColor !important;
   }
+}
+
+.sidebar-toggle {
+  position: absolute;
+  right: -6px;
+  top: 44px;
+  z-index: 10000;
+
+  opacity: .5;
+
+  background-color: $fondLighter;
+  padding: 5px;
+  border-radius: 50%;
+
+  width: 22px;
+  height: 22px;
+
+  color: #fff;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-menu {
+  width: 14px;
+  height: 14px;
+  // background-color: var();
 }
 
 .nav-sidebar-plus {
   padding-left: 20px;
   margin-top: -15px;
 
-  > li > a {
+  >li>a {
     padding: 5px 10px 5px 36px;
 
     &:hover {
@@ -117,13 +162,19 @@
 @media screen and (max-width:767px) {
   .sidebar {
     display: none;
-    top:141px;
+    top: 141px;
     width: 100%
   }
+
   .logo {
     width: 20%;
   }
-  .collapse.show{
+
+  .collapse.show {
     display: block;
+  }
+
+  .nav-sidebar>li>a>h3>i {
+    margin-right: 0 !important;
   }
 }

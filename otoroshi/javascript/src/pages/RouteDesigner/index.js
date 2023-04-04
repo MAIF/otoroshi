@@ -600,25 +600,8 @@ const RoutesView = ({ history, globalEnv }) => {
 
 class RouteDesigner extends React.Component {
   componentDidMount() {
-    this.patchStyle(true);
     this.props.setTitle('Routes');
   }
-
-  componentWillUnmount() {
-    this.patchStyle(false);
-  }
-
-  patchStyle = (applyPatch) => {
-    if (applyPatch) {
-      document.getElementsByClassName('main')[0].classList.add('patch-main');
-      [...document.getElementsByClassName('row')].map((r) => r.classList.add('patch-row', 'g-0'));
-    } else {
-      document.getElementsByClassName('main')[0].classList.remove('patch-main');
-      [...document.getElementsByClassName('row')].map((r) =>
-        r.classList.remove('patch-row', 'g-0')
-      );
-    }
-  };
 
   render() {
     const { match, history, location, globalEnv } = this.props;

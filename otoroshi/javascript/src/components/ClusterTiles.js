@@ -150,7 +150,10 @@ export class ClusterTiles extends Component {
     if (health === 'orange') healthValue = 1;
     if (health === 'green') healthValue = 2;
     return (
-      <div>
+      <div style={{
+        maxWidth: '1050px',
+        margin: '0 auto'
+      }}>
         <h4 className="live-title">CLUSTER METRICS</h4>
         <div className="rowMetrics">
           <Metric time={Date.now()} link="/cluster" value={this.state.workers} legend="" />

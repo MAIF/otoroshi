@@ -181,7 +181,10 @@ export class LiveStatTiles extends Component {
       );
     }
     return (
-      <div>
+      <div style={{
+        maxWidth: '1050px',
+        margin: '0 auto'
+      }}>
         <h4 className="live-title">LIVE METRICS</h4>
         <div className="rowMetrics">
           <Metric time={Date.now()} value={this.state.rate} legend="requests per second" />

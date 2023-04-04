@@ -10,6 +10,7 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { JsonObjectAsCodeInput } from './inputs/CodeInput';
 import { Link } from 'react-router-dom';
 import { Button } from './Button';
+import { SidebarContext } from '../apps/BackOfficeApp';
 
 function extractEnv(value = '') {
   const parts = value.split(' ');
@@ -1028,10 +1029,10 @@ export class TopBar extends Component {
 
   render() {
     const selected = (this.props.params || {}).lineId;
-    return (
-      <nav
+    return <SidebarContext.Consumer>
+      {({ openedSidebar }) => <nav
         className="navbar navbar-expand-md fixed-top"
-        // style={{ zIndex: 100 }}
+      // style={{ zIndex: 100 }}
       >
         <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
           <div className="d-flex flex-column flex-md-row top-md-0 w-100">
@@ -1048,7 +1049,11 @@ export class TopBar extends Component {
               <Link
                 className="navbar-brand"
                 to="/"
-                style={{ display: 'flex' }}
+                style={{
+                  display: 'flex',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden'
+                }}
                 onClick={() => {
                   this.props.setTitle(null);
                 }}>
@@ -1247,9 +1252,8 @@ export class TopBar extends Component {
                 />
                 <ul
                   id="dropdown"
-                  className={`custom-dropdown ${
-                    this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                  } py-2 pb-4`}
+                  className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                    } py-2 pb-4`}
                   aria-labelledby="dropdownMenuParams"
                   onClick={(e) => {
                     this.setState({ dropdownStatus: 'closed' });
@@ -1261,8 +1265,8 @@ export class TopBar extends Component {
             </div>
           </div>
         </div>
-      </nav>
-    );
+      </nav>}
+    </SidebarContext.Consumer>
   }
 }
 

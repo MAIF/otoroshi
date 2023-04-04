@@ -41,7 +41,7 @@ export class ServiceSidebar extends Component {
     const base = `/bo/dashboard/lines/${env}/services/${serviceId}/`;
     const className = (part) => (`${base}${part}` === pathname ? 'active' : '');
     return (
-      <ul className="nav flex-column nav-sidebar no-margin-left">
+      <ul className="nav flex-column nav-sidebar">
         <li className="nav-item">
           <Link
             to={`/lines/${env}/services/${serviceId}`}
