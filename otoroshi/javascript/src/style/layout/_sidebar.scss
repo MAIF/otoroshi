@@ -3,7 +3,7 @@
   background: -webkit-linear-gradient(top, $fondBody 1%, $fondNavbar);
   background: linear-gradient(180deg, $fondBody 1%, $fondNavbar);
   position: relative;
-  width: 250px;
+  min-width: 250px;
   // top: 51px;
   // bottom: 0;
   // left: 0;
@@ -73,6 +73,12 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+.icon-menu {
+  background: var(--color_level3);
+  width: 14px;
+  height: 14px;
 }
 
 .sidebar--closed {

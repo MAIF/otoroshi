@@ -119,15 +119,17 @@ export function DefaultSidebar(props) {
       <li className={`nav-item mt-2 ${openedSidebar ? 'nav-item--open' : ''}`}>
         <Link
           to="/features"
-          className={`nav-link ${rootClassName('features')}`}
+          className={`nav-link ${rootClassName('features')} d-flex align-items-center`}
           {...createTooltip('All features')}
           style={{ marginTop: 30 }}
           onClick={clearSidebar}>
-          {/* <i className="fas fa-grip" /> {!openedSidebar ? '' : 'FEATURES'} */}
-          <div className='icon-menu' style={{
+          <div className='icon-menu'
+            style={{
+              marginRight: openedSidebar ? '1em' : '',
               '-webkit-mask': `url('/assets/images/svgs/menu-icon.svg') no-repeat center`,
               mask: `url('/assets/images/svgs/menu-icon.svg') no-repeat center`
-          }}/>
+            }} />
+          {!openedSidebar ? '' : 'FEATURES'}
         </Link>
       </li>
     </ul>
