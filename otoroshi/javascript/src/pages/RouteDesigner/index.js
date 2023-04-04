@@ -534,14 +534,14 @@ class Manager extends React.Component {
     if (component.length > 0) {
       return (
         <Loader loading={loading}>
-          <div className="designer row">{component[0].render()}</div>
+          <div className="designer">{component[0].render()}</div>
         </Loader>
       );
     }
 
     return (
       <Loader loading={loading}>
-        <div className="designer row ps-3">
+        <div className="designer ps-3">
           <Informations
             {...this.props}
             routeId={p.routeId}

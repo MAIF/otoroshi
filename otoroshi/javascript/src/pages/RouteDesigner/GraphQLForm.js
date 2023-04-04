@@ -133,7 +133,7 @@ export default class GraphQLForm extends React.Component {
     if (!route) return null;
 
     return (
-      <div className="graphql-form p-3 pe-2 flex-column" style={{ overflowY: 'scroll' }}>
+      <div className="graphql-form p-3 pe-2 flex-column" style={{ overflowY: 'scroll', overflowX: 'hidden' }}>
         <Header
           hide={(e) => {
             this.savePlugin().then(() => hide(e));
@@ -790,7 +790,7 @@ const Header = ({ schemaView, toggleSchema, hide }) => (
   <>
     <div className="d-flex-between">
       <h3>GraphQL Schema Editor</h3>
-      <button className="btn btn-sm btn-primary" onClick={hide}>
+      <button className="btn btn-sm" onClick={hide}>
         <i className="fas fa-times" />
       </button>
     </div>

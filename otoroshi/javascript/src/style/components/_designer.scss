@@ -247,9 +247,7 @@
     }
 
     .dark-background {
-        background-color: var(--bg-color_level3);
         color: var(--color_level3);
-        border-radius: 4px;
     }
 
     .plugins-stack-column {
@@ -536,8 +534,8 @@
         position: absolute;
         top: 1em;
         right: 0;
-        left: 1em;
-        bottom: 1em;
+        left: 0;
+        bottom: 4em;
         background-color: var(--bg-color_level1);
         z-index: 800;
         border-radius: 4px;
@@ -547,7 +545,8 @@
             padding: 12px;
             border-radius: 8px;
             margin: 10px;
-            flex: 1
+            flex: 1;
+            padding-right: 24px;
         }
     }
 

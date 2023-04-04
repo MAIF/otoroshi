@@ -67,15 +67,16 @@ export default ({ route, setSidebarContent }) => {
         padding: openedSidebar ? 'inherit' : '18px 0 6px'
       }}>
       <ul className="nav flex-column nav-sidebar">
-        <li
-          className="nav-item mb-1"
-          onClick={() => history.push(`/${entity.link}/${route.id}?tab=flow`)}
-          style={{ cursor: 'pointer' }}>
-          <span className="fas fa-road" /> {openedSidebar ? route.name : ''}
+        <li className="nav-item mb-1">
+          <Link to={`/${entity.link}/${route.id}?tab=flow`} className='p-2 m-0'>
+            <i className="fas fa-road" /> {openedSidebar ? route.name : ''}
+          </Link>
         </li>
         {LINKS(entity.link, route).map(({ to, icon, title, tooltip, tab }) => (
-          <li className="nav-item" key={title}>
-            <Link to={to} {...(tooltip || {})} className={`nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''} p-2 m-0 ${isActive(tab)}`}>
+          <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
+            <Link
+              to={to} {...(tooltip || {})}
+              className={`nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''} p-2 m-0 ${isActive(tab)}`}>
               <i className={`fas ${icon}`} /> {openedSidebar ? title : ''}
             </Link>
           </li>
