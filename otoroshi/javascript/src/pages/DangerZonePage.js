@@ -1418,19 +1418,15 @@ export class DangerZonePage extends Component {
     }
     return (
       <div>
-        <div className="row">
-          <div className="mb-3 btnsService">
-            <div className="displayGroupBtn">
-              <button
-                title="Add item"
-                className="btn btn-success"
-                type="button"
-                onClick={this.saveGlobalConfig}
-                {...propsDisabled}>
-                <i className="fas fa-hdd" />
-              </button>
-            </div>
-          </div>
+        <div className="displayGroupBtn">
+          <button
+            title="Add item"
+            className="btn btn-success"
+            type="button"
+            onClick={this.saveGlobalConfig}
+            {...propsDisabled}>
+            <i className="fas fa-hdd" />
+          </button>
         </div>
         <Form
           value={this.state.value}
@@ -1745,11 +1741,10 @@ const GlobalPluginInformation = ({ plugin, open }) => {
     'https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html';
 
   const getNgPluginDocumentationUrl = () => {
-    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${
-      plugin.id.replace('cp:', '')
+    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${plugin.id.replace('cp:', '')
       // .replace(/\./g, '-')
       // .toLowerCase()
-    }`;
+      }`;
   };
 
   return (

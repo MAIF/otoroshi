@@ -4,6 +4,7 @@
   background: linear-gradient(180deg, $fondBody 1%, $fondNavbar);
   position: relative;
   min-width: 250px;
+  max-width: 250px;
   // top: 51px;
   // bottom: 0;
   // left: 0;
@@ -82,7 +83,8 @@
 }
 
 .sidebar--closed {
-  width: 52px;
+  min-width: 52px;
+  max-width: 52px;
 }
 
 .bottom-sidebar {
