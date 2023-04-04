@@ -143,13 +143,13 @@ function PushView({ endpoints, resources }) {
                     {!endpoint.body && !endpoint.model && (
                       <div className="mx-1 d-flex-between endpoint-helper">
                         <span
-                          style={{ color: '#D5443F' }}
+                          style={{ color: "var(--color-red)" }}
                           {...createTooltip('Missing raw body or model')}>
                           <i className="fas fa-exclamation-triangle" />
                         </span>
                       </div>
                     )}
-                    <button className="btn btn-sm btn-info me-1" type="button">
+                    <button className="btn btn-sm btn-primary me-1" type="button">
                       <i className={`fas fa-chevron-${status[idx] ? 'up' : 'down'}`} />
                     </button>
                   </div>
@@ -190,7 +190,7 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
       <div className="mt-3">
         <div className="d-flex">
           <h4 className="mb-0">Models</h4>
-          <button className="btn btn-sm btn-info ms-3" onClick={showResourceForm}>
+          <button className="btn btn-sm btn-primary ms-3" onClick={showResourceForm}>
             <i className="fas fa-plus-circle me-1" />
             New model
           </button>
@@ -213,7 +213,7 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
                   !resources.find((e) =>
                     e.schema?.find((f) => f.field_type === 'Model' && f.value === resource.name)
                   ) && (
-                    <span style={{ color: '#D5443F' }} {...createTooltip('Model not used')}>
+                    <span style={{ color: "var(--color-red)" }} {...createTooltip('Model not used')}>
                       <i className="fas fa-exclamation-triangle" />
                     </span>
                   )}
@@ -249,7 +249,7 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
     <>
       <div className="d-flex">
         <h4 className="mb-0">Endpoints</h4>
-        <button className="btn btn-sm btn-info ms-3" onClick={(e) => showEndpointForm(e, false)}>
+        <button className="btn btn-sm btn-primary ms-3" onClick={(e) => showEndpointForm(e, false)}>
           <i className="fas fa-plus-circle me-1" />
           New endpoint(s)
         </button>
@@ -259,7 +259,7 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
           className="d-flex-between mb-2 endpoint"
           style={{
             border: `1px solid rgba(25, 25, 25, .25)`,
-            backgroundColor: `rgba(25, 25, 25, .25)`,
+            backgroundColor: "var(--bg-color_level2)",
           }}>
           <div className="d-flex-between flex">
             <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
@@ -328,7 +328,7 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                   {!endpoint.body && !endpoint.model && (
                     <div className="mx-1 d-flex-between endpoint-helper">
                       <span
-                        style={{ color: '#D5443F' }}
+                        style={{ color: "var(--color-red)" }}
                         {...createTooltip('Missing raw body or model')}>
                         <i className="fas fa-exclamation-triangle" />
                       </span>
@@ -338,7 +338,7 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                   {!endpoint.model && <span className="btn btn-sm ms-3 me-3"></span>}
                   {endpoint.model && (
                     <span
-                      className="btn btn-sm btn-info ms-3 me-3"
+                      className="btn btn-sm btn-primary ms-3 me-3"
                       onClick={(e) => {
                         e.stopPropagation();
                         openResource(endpoint.model);
@@ -639,7 +639,7 @@ export default class MocksDesigner extends React.Component {
 function OpenAPIParameters({ resources, ...props }) {
   const model = resources.find((r) => r.name === props.model);
   return (
-    <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
+    <div className="designer p-3" style={{ backgroundColor:"var(--bg-color_level1)", borderRadius: '4px' }}>
       <h4>Parameters</h4>
       <div className="d-flex" style={{ borderBottom: '1px solid' }}>
         <p style={{ minWidth: '120px' }} className="me-3">
@@ -670,7 +670,7 @@ function OpenAPIParameters({ resources, ...props }) {
 
 function OpenAPIResponse({ body, status, description, model, resource_list }) {
   return (
-    <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
+    <div className="designer p-3" style={{ backgroundColor:"var(--bg-color_level1)", borderRadius: '4px' }}>
       <h4>Responses</h4>
       <div className="d-flex" style={{ borderBottom: '1px solid' }}>
         <p className="me-3">Code</p>
@@ -718,7 +718,7 @@ class NewResource extends React.Component {
 
   render() {
     return (
-      <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
+      <div className="designer p-3" style={{ backgroundColor : "var(--bg-color_level1)", borderRadius: '4px' }}>
         <NgForm
           value={this.state}
           schema={this.schema}
@@ -984,7 +984,7 @@ class NewEndpoint extends React.Component {
           <div className="d-flex justify-content-end">
             <button
               type="button"
-              className="btn btn-sm btn-info"
+              className="btn btn-sm btn-primary"
               onClick={() => {
                 props.onChange(true);
               }}>
@@ -1083,7 +1083,7 @@ class NewEndpoint extends React.Component {
 
   render() {
     return (
-      <div className="designer p-3" style={{ background: '#373735', borderRadius: '4px' }}>
+      <div className="designer p-3" style={{ backgroundColor:"var(--bg-color_level1)", borderRadius: '4px' }}>
         <NgForm
           value={this.state}
           flow={this.flow}
@@ -1133,13 +1133,13 @@ function Header({ hide, onDesigner, setDesigner }) {
 }
 
 export const HTTP_COLORS = {
-  GET: 'rgb(89, 179, 255)',
-  POST: 'rgb(74, 203, 145)',
-  DELETE: 'rgb(249, 63, 62)',
-  PUT: 'rgb(251, 161, 47)',
-  HEAD: 'rgb(155, 89, 182)',
-  PATCH: 'rgb(155, 89, 182)',
-  OPTIONS: 'rgb(155, 89, 182)',
+  GET: "var(--http_color-get)",
+  POST: "var(--http_color-post)",
+  DELETE: "var(--http_color-delete)",
+  PUT: "var(--http_color-put)",
+  HEAD: "var(--http_color-others)",
+  PATCH: "var(--http_color-others)",
+  OPTIONS: "var(--http_color-others)",
 };
 
 const FakerOptions = [

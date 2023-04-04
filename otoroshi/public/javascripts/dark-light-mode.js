@@ -41,17 +41,13 @@ window.OtoroshiDarkLightMode = window.OtoroshiDarkLightMode || (function() {
                 button.classList.remove("fa-moon");
                 button.classList.remove("fa-lightbulb");
                 button.classList.add("fa-lightbulb");
-                window.document.body.classList.remove("white-mode");
-                window.document.body.classList.remove("dark-mode");
-                window.document.body.classList.add("dark-mode");
+                document.documentElement.setAttribute('data-theme', 'dark');
             }
             if (mode === "light") {
                 button.classList.remove("fa-moon");
                 button.classList.remove("fa-lightbulb");
                 button.classList.add("fa-moon");
-                window.document.body.classList.remove("white-mode");
-                window.document.body.classList.remove("dark-mode");
-                window.document.body.classList.add("white-mode");
+                document.documentElement.setAttribute('data-theme', 'light');
             }
         } else {
             setTimeout(function() {

@@ -18,7 +18,6 @@ const RouteNameStep = ({ state, onChange }) => (
         className="my-3"
         style={{
           fontSize: '2em',
-          color: '#f9b000',
         }}
         label="Route name"
         value={state.route.name}
@@ -67,20 +66,19 @@ const RouteChooser = ({ state, onChange }) => (
       ].map(({ kind, title, text }) => (
         <button
           type="button"
-          className={`btn ${
-            state.route.kind === kind ? 'btn-save' : 'btn-dark'
-          } py-3 wizard-route-chooser`}
+          className={`btn ${state.route.kind === kind ? 'btn-primaryColor' : 'btn-dark'
+            } py-3 wizard-route-chooser`}
           onClick={() => onChange(kind)}
           key={kind}>
           <h3 className="wizard-h3--small">{title}</h3>
-          <label
+          <span
             style={{
               flex: 1,
               display: 'flex',
               alignItems: 'center',
             }}>
             {text}
-          </label>
+          </span>
         </button>
       ))}
     </div>
@@ -141,7 +139,7 @@ const BackendStep = ({ state, onChange, onError, error }) => {
           value={state.route.url}
           onChange={checkChange}
         />
-        <label style={{ color: '#D5443F' }}>{error}</label>
+        <label style={{ color: "var(--color-red)" }}>{error}</label>
       </div>
     </>
   );
@@ -190,10 +188,10 @@ const ProcessStep = ({ state, history }) => {
     ]).then(([plugins, oldPlugins, metadataPlugins, template]) => {
       const url = ['mock', 'graphql'].includes(state.route.kind)
         ? {
-            pahtname: '/',
-            hostname: '',
-            protocol: 'https://',
-          }
+          pahtname: '/',
+          hostname: '',
+          protocol: 'https://',
+        }
         : new URL(state.route.url);
       const secured = url.protocol.includes('https');
 
@@ -280,7 +278,7 @@ const ProcessStep = ({ state, history }) => {
         }>
         {pluginsLength === 0 && (
           <button
-            className="btn btn-save mx-auto"
+            className="btn btn-primaryColor mx-auto"
             style={{ borderRadius: '50%', width: '42px', height: '42px' }}>
             <i className="fas fa-check" />
           </button>
@@ -296,7 +294,7 @@ const ProcessStep = ({ state, history }) => {
           <h3>Your route is now available!</h3>
 
           <button
-            className="btn btn-save"
+            className="btn btn-primaryColor"
             onClick={() => {
               if (['mock', 'graphql'].includes(state.route.kind))
                 history.push(`/routes/${createdRoute.id}?tab=flow`, {
@@ -310,8 +308,8 @@ const ProcessStep = ({ state, history }) => {
             {state.route.kind === 'mock'
               ? 'Start creating mocks'
               : state.route.kind === 'graphql'
-              ? 'Start creating schema'
-              : 'Start editing plugins'}
+                ? 'Start creating schema'
+                : 'Start editing plugins'}
           </button>
         </div>
       </Loader>
@@ -338,7 +336,7 @@ const LoaderItem = ({ text, timeout }) => {
       }}>
       <Loader loading={loading} minLoaderTime={timeout}>
         <button
-          className="btn btn-save mx-auto"
+          className="btn btn-primaryColor mx-auto"
           style={{
             borderRadius: '50%',
             width: '32px',
@@ -354,7 +352,6 @@ const LoaderItem = ({ text, timeout }) => {
         style={{
           flex: 1,
           marginLeft: '12px',
-          color: loading ? '#eee' : '#ccc',
           fontWeight: loading ? 'normal' : 'bold',
         }}>
         {text}
@@ -457,44 +454,42 @@ export class RouteWizard extends React.Component {
                 <div
                   style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                   className="mt-auto">
-                  {step !== 1 && <Button type="save" text="Previous" onClick={this.prevStep} />}
-                  <div className="d-flex">
+                  {step !== 1 && <Button type="primaryColor" text="Previous" onClick={this.prevStep} />}
+                  <button
+                    className="btn btn-primaryColor"
+                    style={{
+                      backgroundColor: "var(--color-primary)",
+                      borderColor: "var(--color-primary)",
+                      padding: '12px 48px',
+                    }}
+                    disabled={error}
+                    onClick={this.nextStep}>
+                    {step === steps ? 'Create' : 'Continue'}
+                  </button>
+
+                  {step === steps && (
                     <button
-                      className="btn btn-save"
+                      className="btn btn-primaryColor ms-1"
                       style={{
-                        backgroundColor: '#f9b000',
-                        borderColor: '#f9b000',
+                        backgroundColor: "var(--color-primary)",
+                      borderColor: "var(--color-primary)",
                         padding: '12px 48px',
                       }}
                       disabled={error}
-                      onClick={this.nextStep}>
-                      {step === steps ? 'Create' : 'Continue'}
-                    </button>
-
-                    {step === steps && (
-                      <button
-                        className="btn btn-save ms-1"
-                        style={{
-                          backgroundColor: '#f9b000',
-                          borderColor: '#f9b000',
-                          padding: '12px 48px',
-                        }}
-                        disabled={error}
-                        onClick={() => {
-                          this.setState(
-                            {
-                              route: {
-                                ...this.state.route,
-                                enabled: true,
-                              },
+                      onClick={() => {
+                        this.setState(
+                          {
+                            route: {
+                              ...this.state.route,
+                              enabled: true,
                             },
-                            this.nextStep
-                          );
-                        }}>
-                        Create and publish
-                      </button>
-                    )}
-                  </div>
+                          },
+                          this.nextStep
+                        );
+                      }}>
+                      Create and publish
+                    </button>
+                  )}
                 </div>
               )}
             </div>

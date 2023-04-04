@@ -1,0 +1,119 @@
+.page-container {
+  > h3 + .row {
+    margin-left: 0px;
+    margin-right: -10px;
+  }
+  > .row {
+    margin-left: 0px;
+  }
+  .label {
+    margin-right: 5px;
+  }
+}
+@media only screen and (max-width: 767px) {
+  .page-container {
+    margin-top: 56px;
+  }
+}
+
+.page-header {
+  position: fixed;
+  background-color: var(--bg-color_level1);
+  width: 100%;
+  z-index: 110;
+  margin-left: -25px;
+  & + .row {
+    padding-top: 88px;
+  }
+}
+
+.page-header_title {
+  margin-top: 32px;
+  margin-left: 25px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--color-primary);
+  color: var(--color-primary);
+}
+
+.sub-container {
+  border-radius: 4px;
+  padding: 10px;
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+.sub-container__bg-color {
+  background-color: var(--bg-color_level2);
+}
+
+.logoOtoroshi {
+  width: 240px;
+  margin-top: 60px;
+  margin-bottom: 0;
+}
+
+.global-tenant-selector {
+  width: 100%;
+}
+
+//monkey page
+.monkey {
+  width: 200px;
+  margin-top: 50px;
+  .st0 {
+    fill: var(--bg-color_level1);
+  }
+  .st1 {
+    fill: var(--color_level1);
+  }
+}
+
+.snowMonkeyAnim {
+  animation-name: shake;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+  margin-top: 30px;
+}
+
+@keyframes shake {
+  from,
+  50% {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  5%,
+  15%,
+  25%,
+  35%,
+  45% {
+    -webkit-transform: translate3d(-10px, 0, 0);
+    transform: translate3d(-10px, 0, 0);
+  }
+
+  10%,
+  20%,
+  30%,
+  40% {
+    -webkit-transform: translate3d(10px, 0, 0);
+    transform: translate3d(10px, 0, 0);
+  }
+}
+
+.screen {
+  background-image: linear-gradient(transparent, transparent 3px, #222);
+  font-family: "Fira Mono", monospace;
+  font-size: 20px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.screen p:last-child:after {
+  animation: blink 1s infinite;
+  content: "_";
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}

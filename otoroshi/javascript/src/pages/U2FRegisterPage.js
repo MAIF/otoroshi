@@ -364,7 +364,7 @@ export class U2FRegisterPage extends Component {
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <p>{!this.state.error && this.state.message}</p>
-              <p style={{ color: 'red' }}>{!!this.state.error && this.state.error}</p>
+              <p style={{ color: "var(--color-red)" }}>{!!this.state.error && this.state.error}</p>
             </div>
           </div>
         </form>
@@ -678,7 +678,7 @@ export class RegisterAdminModal extends Component {
               <label className="col-sm-2 col-form-label" />
               <div className="col-sm-10">
                 <p>{!this.state.error && this.state.message}</p>
-                <p style={{ color: 'red' }}>{!!this.state.error && this.state.error}</p>
+                <p style={{ color: "var(--color-red)" }}>{!!this.state.error && this.state.error}</p>
               </div>
             </div>
           </form>

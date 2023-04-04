@@ -1,12 +1,9 @@
-@import 'variables';
+@import 'variables.module';
 
-@import 'utils';
 @import 'components/checkbox';
 @import 'components/table';
 @import 'components/btn';
-@import 'components/input-search';
 @import 'components/nav';
-@import 'components/dropdown';
 @import 'components/form';
 @import 'components/input';
 @import 'components/reactTable';
@@ -24,8 +21,9 @@
 @import 'components/pagination';
 @import 'components/designer';
 @import 'components/breadcrumb';
+@import 'components/antPicker';
 
 @import 'layout/global';
 @import 'layout/header';
 @import 'layout/sidebar';
-@import 'layout/bright-mode';
+@import 'layout/pagecontent';

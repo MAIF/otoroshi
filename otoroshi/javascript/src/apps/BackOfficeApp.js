@@ -47,6 +47,7 @@ import { ResourceLoaderPage } from '../pages/ResourceLoaderPage';
 import RouteDesignerPage from '../pages/RouteDesigner';
 import { BackendsPage } from '../pages/BackendsPage';
 import { MetricsPage } from '../pages/MetricsPage';
+import { AtomicDesignPage } from '../pages/AtomicDesignPage';
 import { FeaturesPage } from '../pages/FeaturesPage';
 import { ErrorTemplatesPage } from '../pages/ErrorTemplatePage';
 
@@ -231,7 +232,7 @@ class BackOfficeAppContainer extends Component {
   };
 
   render() {
-    const classes = ['backoffice-container'];
+    const classes = ['page-container'];
     if (
       this.props.children &&
       this.props.children.type &&

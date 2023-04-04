@@ -47,9 +47,9 @@ const TryItComponent = React.lazy(() => import('./TryIt'));
 
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
-    <div className="flex-column p-1">
-      <i className={`fas fa-arrow-${icon}`} style={{ color: '#fff' }} />
-      <span style={{ color: '#fff' }}>{text}</span>
+    <div className="flex-column p-1"  style={{ color: "var(--color_level2)" }}>
+      <i className={`fas fa-arrow-${icon}`} />
+      <span>{text}</span>
     </div>
   </Dot>
 );
@@ -58,7 +58,7 @@ const Status = ({ value }) => (
   <div
     className="status-dot"
     title={value ? 'plugin enabled' : 'plugin disabled'}
-    style={{ backgroundColor: value ? '#198754' : '#D5443F' }}
+    style={{ backgroundColor: value ? "var(--color-green)" : "var(--color-red)" }}
   />
 );
 
@@ -90,7 +90,8 @@ const Dot = ({
     style={{
       cursor: clickable ? 'pointer' : 'initial',
       opacity: !selectedNode || highlighted ? 1 : 0.25,
-      backgroundColor: highlighted ? '#f9b000' : '#494948',
+      backgroundColor: highlighted ? "var(--color-primary)"  : "var(--bg-color_level2)",
+      color: highlighted ? "var(--color-white)"  : "var(--color_level2)",
       ...style,
     }}
     onClick={(e) => {
@@ -317,8 +318,12 @@ const FrontendNode = ({ frontend, selectedNode, setSelectedNode, removeNode }) =
         opacity: !selectedNode || (selectedNode && selectedNode.id === 'Frontend') ? 1 : 0.25,
         background:
           selectedNode && selectedNode.id === 'Frontend'
-            ? 'linear-gradient(to right, rgb(249, 176, 0) 55%, transparent 1%)'
-            : 'linear-gradient(to right, rgb(73, 73, 72) 55%, transparent 1%)',
+            ? 'linear-gradient(to right, var(--color-primary) 55%, transparent 1%)'
+            : 'linear-gradient(to right, var(--bg-color_level2) 55%, transparent 1%)',
+        color:
+          selectedNode && selectedNode.id === 'Frontend'
+          ? 'var(--color-white)'
+          : 'var(--color_level2)',
       }}>
       <i className="fas fa-user frontend-button-icon" />
     </div>
@@ -1718,13 +1723,12 @@ const Group = ({ group, elements, addNode, ...props }) => {
         <i
           className={`fas fa-chevron-${open ? 'down' : 'right'} ms-3`}
           size={16}
-          style={{ color: '#fff' }}
           onClick={(e) => {
             e.stopPropagation();
             setOpen(!open);
           }}
         />
-        <span style={{ color: '#fff', padding: '10px' }}>
+        <span style={{ padding: '10px' }}>
           {group.charAt(0).toUpperCase() + group.slice(1)}
         </span>
       </div>
@@ -1753,20 +1757,13 @@ const SearchBar = ({ handleSearch }) => (
       <i className="fas fa-search group-icon designer-group-header-icon" />
       <div
         style={{
-          paddingLeft: '6px',
           width: '100%',
           display: 'flex',
           alignItems: 'center',
         }}>
         <input
           type="text"
-          style={{
-            borderWidth: 0,
-            padding: '6px 0px 6px 6px',
-            width: '100%',
-            outline: 'none',
-            borderRadius: '4px',
-          }}
+          className="form-control"
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search the plugin"
         />
@@ -1814,7 +1811,7 @@ const UnselectedNode = ({
           <span style={{ fontStyle: 'italic' }}> Start by selecting a</span>
           <Dot style={{ width: 'initial' }} className="mx-1">
             <div className="flex-column p-1">
-              <span style={{ color: '#fff' }}>plugin</span>
+              <span style={{ color: "var(--color_level2)" }}>plugin</span>
             </div>
           </Dot>
           <span>to configure it</span>
@@ -1833,7 +1830,6 @@ const UnselectedNode = ({
               marginTop: 10,
               paddingTop: 10,
               paddingBottom: 10,
-              backgroundColor: '#555',
               borderRadius: 3,
             }}>
             {frontend.domains.map((domain) => {
@@ -1865,6 +1861,7 @@ const UnselectedNode = ({
             <div className="">
               <span>this route will match only if the following query params are present</span>
               <pre
+              className="dark-background"
                 onDoubleClick={selectFrontend}
                 style={{
                   padding: 10,
@@ -1915,7 +1912,6 @@ const UnselectedNode = ({
               marginTop: 10,
               paddingTop: 10,
               paddingBottom: 10,
-              backgroundColor: '#555',
               borderRadius: 3,
             }}>
             {backend.targets
@@ -2004,7 +2000,7 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
 );
 
 const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonClick }) => (
-  <div className="d-flex justify-content-end mb-2 dark-background">
+  <div className="d-flex justify-content-end mb-2 me-2 dark-background">
     <PillButton
       className="mt-3"
       rightEnabled={!asJsonFormat}
@@ -2018,14 +2014,14 @@ const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonCli
       className="btn-sm mt-3"
       disabled={errors && errors.length > 0}
       onClick={onFormClick}
-      style={{ backgroundColor: asJsonFormat ? '#373735' : '#f9b000' }}>
+      style={{ backgroundColor: asJsonFormat ? '#373735' : "var(--color-primary)" }}>
       FORM
     </Button>
     <Button
       type='dark'
       className="btn-sm mx-1 mt-3"
       onClick={onRawJsonClick}
-      style={{ backgroundColor: asJsonFormat ? '#f9b000' : '#373735' }}>
+      style={{ backgroundColor: asJsonFormat ? "var(--color-primary)" : '#373735' }}>
       RAW JSON
     </Button> */}
   </div>
@@ -2389,7 +2385,7 @@ class EditView extends React.Component {
                 onPress={saveRoute}
               />
               {route.backend_ref && (
-                <Link className="btn btn-info ms-2" to={`/backends/edit/${route.backend_ref}/`}>
+                <Link className="btn btn-primary ms-2" to={`/backends/edit/${route.backend_ref}/`}>
                   <i className="fas fa-microchip me-1" />
                   Edit this backend
                 </Link>
@@ -2425,10 +2421,10 @@ const BackendSelector = ({
 }) => {
   return (
     enabled && (
-      <div className="backend-selector">
+      <div className="dark-background backend-selector">
         <PillButton
           pillButtonStyle={{ width: 'auto', flex: 1 }}
-          style={{ backgroundColor: '#494949', display: 'flex', width: '100%' }}
+          style={{  display: 'flex', width: '100%' }}
           rightEnabled={usingExistingBackend}
           leftText="Select an existing backend"
           rightText="Create a new backend"

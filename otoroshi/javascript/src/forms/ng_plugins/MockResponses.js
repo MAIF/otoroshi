@@ -8,7 +8,7 @@ export default {
       renderer: () => (
         <button
           type="button"
-          className="btn btn-sm btn-info mb-3"
+          className="btn btn-sm btn-primary mb-3"
           onClick={() => showAdvancedDesignerView(MocksDesigner)}>
           Edit with the Mocks Designer
         </button>

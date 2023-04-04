@@ -155,7 +155,7 @@ export default class GraphQLForm extends React.Component {
         {this.state.schemaView ? (
           <>
             {this.state.error && (
-              <span className="my-3" style={{ color: '#D5443F', fontWeight: 'bold' }}>
+              <span className="my-3" style={{ color: "var(--color-red)", fontWeight: 'bold' }}>
                 {this.state.error}
               </span>
             )}
@@ -346,7 +346,7 @@ class SideView extends React.Component {
               <span
                 className="my-3"
                 style={{
-                  color: '#D5443F',
+                  color: "var(--color-red)",
                   fontWeight: 'bold',
                 }}>
                 {error}
@@ -577,8 +577,8 @@ class FieldForm extends React.Component {
               label: 'HTTP Method',
               props: {
                 options: [
-                  { value: 'GET', label: 'GET', color: 'rgb(89, 179, 255)' },
-                  { value: 'POST', label: 'POST', color: 'rgb(74, 203, 145)' },
+                  { value: 'GET', label: 'GET', color: "var(--http_color-get)" },
+                  { value: 'POST', label: 'POST', color: "var(--http_color-post)" },
                 ],
               },
             },
@@ -675,7 +675,7 @@ class FieldForm extends React.Component {
     }
 
     return (
-      <div className="p-3" style={{ background: '#373735', borderRadius: '4px' }}>
+      <div className="p-3" style={{ backgroundColor: "var(--bg-color_level1)", borderRadius: '4px' }}>
         <h4>Field: {field.name}</h4>
         <NgForm
           useBreadcrumb={true}
@@ -724,7 +724,7 @@ const Type = ({
           <i
             className={`fas fa-chevron-${open ? 'down' : 'right'}`}
             style={{ minWidth: '32px' }}></i>
-          <span style={{ color: '#fff' }}>{name}</span>
+          <span>{name}</span>
           <span className="badge bg-warning ms-2">{kind}</span>
         </div>
         <button className="btn btn-sm btn-danger ms-1" onClick={removeType}>
@@ -733,8 +733,8 @@ const Type = ({
       </div>
       <div
         style={{
-          backgroundColor: 'rgba(55, 55, 53, .5)',
-          border: open ? '1px solid rgb(55, 55, 53)' : 'none',
+          backgroundColor: "var(--bg-color_level1)",
+          border: open ? '1px solid var(--bg-color_level1)' : 'none',
           paddingTop: open ? '4px' : 0,
         }}>
         {open &&
@@ -749,7 +749,7 @@ const Type = ({
                   flex: 0.75,
                   opacity: isSelected(i) !== false ? 1 : 0.5,
                 }}>
-                <span className="me-2 flex" style={{ color: '#fff' }}>
+                <span className="me-2 flex">
                   {field.name}
                 </span>
                 <span className="badge bg-light ms-2" style={{ color: '#000' }}>
@@ -767,7 +767,7 @@ const Type = ({
                 <button className="btn btn-sm btn-danger me-1" onClick={(e) => removeField(e, i)}>
                   <i className="fas fa-trash" />
                 </button>
-                <button className="btn btn-sm btn-info" onClick={(e) => selectField(e, i)}>
+                <button className="btn btn-sm btn-primary" onClick={(e) => selectField(e, i)}>
                   <i className="fas fa-chevron-right" />
                 </button>
               </div>
@@ -790,7 +790,7 @@ const Header = ({ schemaView, toggleSchema, hide }) => (
   <>
     <div className="d-flex-between">
       <h3>GraphQL Schema Editor</h3>
-      <button className="btn btn-sm btn-info" onClick={hide}>
+      <button className="btn btn-sm btn-primary" onClick={hide}>
         <i className="fas fa-times" />
       </button>
     </div>

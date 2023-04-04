@@ -203,7 +203,6 @@ export class SnowMonkeyPage extends Component {
               viewBox="0 0 244.1 244.1">
               <g id="_x34_9a67235-e3a1-4929-8868-b30847745300">
                 <g id="b11c2c3a-c434-45dc-a441-e60dd5d9d3f6">
-                  <circle className="st0" cx="122" cy="122" r="120" />
                   <polygon
                     className="st1"
                     points="73.8,56.4 56,85.6 52.7,123.5 71,159.6 69.8,187.7 85.7,206.2 122.1,216.9 157.1,204.9 182.5,179

@@ -7,29 +7,18 @@ fieldset[disabled] .form-control {
 }
 
 .form-control:focus {
-  border-color: $primaryColor;
+  border-color: var(--color-primary);
   box-shadow: none;
 }
 
-form.new-service {
-  align-content: center;
-  margin-left: 10px;
-  margin-right: -10px;
-}
-
-.form-addon {
-  margin-left: 23px;
-  width: 98%;
-}
-
 label {
-  color: #fff;
+  color: var(--color_level1);
 }
 
 .has-error .col-form-label {
-  color: $colorRouge;
+  color: var(--color-red);
 }
 
 .has-error .form-control {
-  border-color: $colorRouge;
+  border-color: var(--color-red);
 }

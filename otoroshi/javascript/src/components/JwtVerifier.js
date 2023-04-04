@@ -50,7 +50,7 @@ function EntityGraph({ entity, id }) {
       <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
         <div
           style={{
-            color: 'rgb(249, 176, 0)',
+            color: "var(--color-primary)",
             fontWeight: 'bold',
             marginLeft: '5px',
             marginTop: '7px',
@@ -254,9 +254,6 @@ export class JwtVerifier extends Component {
 function Header({ isConfigView, onChange }) {
   return (
     <PillButton
-      style={{
-        backgroundColor: '#494949',
-      }}
       rightEnabled={isConfigView}
       leftText="Edition"
       rightText="Visualization"

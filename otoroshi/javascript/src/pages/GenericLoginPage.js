@@ -176,7 +176,7 @@ export class GenericLoginPage extends Component {
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <p>{!this.state.error && this.state.message}</p>
-              <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>
+              <p style={{ color: "var(--color-red)", width: '100%', textAlign: 'left' }}>
                 {!!this.state.error && this.state.error}
               </p>
             </div>
@@ -344,7 +344,7 @@ export class GenericLoginPageWithWebAuthn extends Component {
             <label className="col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <p>{!this.state.error && this.state.message}</p>
-              <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>
+              <p style={{ color: "var(--color-red)", width: '100%', textAlign: 'left' }}>
                 {!!this.state.error && this.state.error}
               </p>
             </div>

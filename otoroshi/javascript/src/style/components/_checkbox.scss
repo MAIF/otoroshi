@@ -106,5 +106,5 @@ input[type="checkbox"].ios8-switch-lg:checked + label:after {
 }
 
 .text-success {
-    color: $savecolor;
+    color: var(--color-green);
 }

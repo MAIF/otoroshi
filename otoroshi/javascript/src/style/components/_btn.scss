@@ -1,24 +1,19 @@
 .btn {
   background-color: transparent;
   background: none;
-  // margin-right: 5px;
 }
 
 .btnsService {
   position: fixed;
   width: 100%;
   z-index: 1000;
-  background-color: $fondBody;
+  background-color: var(--bg-color_level1);
   padding-bottom: 16px;
-  right: 40px;
+  right: 10px;
 }
 
-.btnsService+div {
+.btnsService + div {
   padding-top: 50px;
-}
-
-.btnsOtoroshi {
-  margin-top: 10px;
 }
 
 .displayGroupBtn {
@@ -29,45 +24,22 @@
   }
 
   .btn-danger:focus {
-    outline-color: $colorRouge;
+    outline-color: var(--color-red);
   }
-}
-
-.btn-info:hover {
-  color: #fff;
-  background-color: $colorBleue;
-  border-color: $colorBleue;
-}
-
-.btn-info,
-.btn_info:focus {
-  color: #fff;
-  background-color: transparent;
-  background-image: none;
-  border-color: $colorBleue;
 }
 
 .btn-save {
-  color: #fff;
-  border-color: $savecolor;
-  background-color: $savecolor;
-
-  &[disabled] {
-    color: $colorGris;
-    border-color: $colorGris;
-    background: none;
-  }
+  color: var(--color-white);
+  border-color: var(--color-green);
+  background-color: var(--color-green);
 }
 
-
-
-.input-group-btn>.btn,
-.input-group-btn>.btn-group {
+.input-group-btn > .btn,
+.input-group-btn > .btn-group {
   margin-left: 4px;
 }
 
-
-.input-group-btn:last-child>.btn {
+.input-group-btn:last-child > .btn {
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
 
@@ -86,21 +58,21 @@
 
   &-on {
     @extend .content-switch-button;
-    background-color: $savecolor;
-    border: 1px solid $savecolor;
+    background-color: var(--color-green);
+    border: 1px solid var(--color-green);
     justify-content: flex-end;
   }
 
   &-off {
     @extend .content-switch-button;
-    background-color: #fff;
+    background-color: var(--color-white);
     border: 1px solid #dfdfdf;
     justify-content: flex-start;
   }
 }
 
 .switch-button {
-  background-color: #fff;
+  background-color: var(--color-white);
   border-radius: 20px;
   cursor: pointer;
 
@@ -108,7 +80,7 @@
     @extend .switch-button;
     width: 20px;
     height: 20px;
-    background-color: #fff;
+    background-color: var(--color-white);
     border-radius: 20px;
   }
 
@@ -123,127 +95,92 @@
   }
 }
 
-.btn-primary {
-  color: #fff;
+.btn-primary,
+.btn-primary:focus, .btn-info, .btn-info:focus {
+  color: var(--color_level1);
   border: 1px solid;
-  border-color: $colorBleue;
-
+  border-color: var(--color-blue);
+  background-color: transparent;
   &:hover,
   &.active,
   &.active:hover {
-    color: #fff;
+    color: var(--color-white);
     border: 1px solid;
-    border-color: $colorBleue;
-    background-color: $colorBleue;
+    border-color: var(--color-blue);
+    background-color: var(--color-blue);
   }
 }
 
-.btn-danger {
-  color: #fff;
+.btn-primaryColor,
+.btn-primaryColor:focus {
+  color: var(--color-white);
   border: 1px solid;
-  border-color: $colorRouge;
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  &:hover,
+  &.active,
+  &.active:hover {
+    color: var(--color-white);
+    border: 1px solid;
+    border-color: var(--color-primary-lighter);
+    background-color: var(--color-primary-lighter);
+  }
+}
+
+.btn-secondary,
+.btn-secondary:focus {
+  color: var(--color_level1);
+}
+
+.btn-danger,
+.btn-danger:focus {
+  color: var(--color_level1);
+  border: 1px solid;
+  border-color: var(--color-red);
+  background-color: transparent;
 
   &:hover {
-    color: #fff;
+    color: var(--color-white);
     border: 1px solid;
-    border-color: $colorRouge;
-    background-color: $colorRouge;
+    border-color: var(--color-red);
+    background-color: var(--color-red);
   }
 
   .fa-lock {
-    color: #fff;
+    color: var(--color_level1);
   }
 }
 
-.btn-success {
-  color: #fff;
+.btn-success,
+.btn-success:focus {
+  color: var(--color_level1);
   border: 1px solid;
-  border-color: $savecolor;
-
-  &:hover {
-    color: #fff;
-    border: 1px solid;
-    border-color: $savecolor;
-    background-color: $savecolor;
-  }
-
-  &[disabled] {
-    color: $colorGris;
-    text-shadow: none;
-    background-color: transparent;
-    border-color: $savecolor;
-  }
-
-  &.disabled {
-    color: $colorGris;
-    text-shadow: none;
-    background-color: transparent;
-    border-color: $colorGris;
-  }
-}
-
-.btn-default.disabled,
-.btn-default.disabled:hover {
-  color: $colorGris;
-  text-shadow: none;
+  border-color: var(--color-green);
   background-color: transparent;
-}
-
-.btn-danger[disabled],
-.btn-danger[disabled]:hover {
-  background-color: #e2e6e9;
-  color: #000000a6;
-  border-color: #000000a6;
-}
-
-.prod,
-.prod:hover {
-  color: #fff;
-  background-color: $savecolor;
-  width: 80px;
-  border-color: $savecolor;
-  margin-bottom: 1px;
-}
-
-.preprod,
-.preprod:hover {
-  color: #fff;
-  background-color: $colorBleue;
-  width: 80px;
-  border-color: $colorBleue;
-  margin-bottom: 1px;
-}
-
-.experiments,
-.experiments:hover {
-  color: #fff;
-  background-color: $primaryColor;
-  width: 80px;
-  border-color: $primaryColor;
-  margin-bottom: 1px;
-}
-
-.refresh {
-  background-color: $fondBody;
-  border-color: $colorGris;
-  color: $colorGris;
-  background-image: none;
-  margin-left: 10px;
-  padding: 3px 5px 0px 5px;
-  text-shadow: none;
-}
-
-.btn-menu {
-  border-color: $fondNavbar;
 
   &:hover {
-    background-color: $fondNavbar;
-    color: #FFF;
+    color: var(--color-white);
+    border: 1px solid;
+    border-color: var(--color-green);
+    background-color: var(--color-green);
   }
+}
 
-  &:focus {
-    box-shadow: 0 0 0 0;
-  }
+.btn-dark{
+  color: var(--color-white);
+  border: 1px solid;
+  border-color: var(--color-dark);
+  background-color: var(--color-dark);
+}
+
+[class*="btn-"].disabled,
+[class*="btn-"].disabled:hover,
+[class*="btn-"][disabled],
+[class*="btn-"][disabled]:hover {
+  color: var(--color-dark);
+  text-shadow: none;
+  background-color:var(--color-grey);
+  border-color: var(--color-grey);
 }
 
 .btn-radius-25 {
@@ -253,7 +190,6 @@
 .pill-mode {
   border: none;
   padding: 2px 0;
-  // color: #fff;
   text-align: center;
   background: none;
   z-index: 21;
@@ -267,9 +203,10 @@
 }
 
 .pill-cursor {
-  transition: left .25s;
+  transition: left 0.25s;
   position: absolute;
-  background-color: #f9b000;
+  background-color: var(--color-primary);
+  color: var(--color-white);
   top: 4px;
   bottom: 4px;
   left: 4px;
@@ -278,7 +215,7 @@
   z-index: 20;
 }
 
-.square-button{
+.square-button {
   min-width: 80px;
   min-height: 80px;
   max-width: 80px;

@@ -378,8 +378,7 @@ const Feature = ({ title, description, img, link, icon }) => {
       to={link}
       className="d-flex"
       style={{
-        backgroundColor: '#efefef',
-        boxShadow: '0 1px 3px rgba(225,225,225,.75)',
+        backgroundColor: 'var(--bg-color_level2)',   
         margin: '5px 0px',
         height: '100%',
         borderRadius: '12px',
@@ -404,7 +403,7 @@ const Feature = ({ title, description, img, link, icon }) => {
         }}></div>
       <div
         className="d-flex flex-column"
-        style={{ flex: 1, backgroundColor: '#fff', padding: '12px' }}>
+        style={{ flex: 1, backgroundColor: 'var(--bg-color_level3)', padding: '12px' }}>
         <div
           style={{
             fontWeight: 'bold',
@@ -412,12 +411,12 @@ const Feature = ({ title, description, img, link, icon }) => {
             marginTop: '7px',
             marginBottom: '10px',
             fontSize: 20,
-            color: '#000',
+            color: 'var(--color_level3)',
             textTransform: 'capitalize',
           }}>
           {zeIcon} {title}
         </div>
-        <div className="me-1" style={{ marginLeft: '5px', marginBottom: '10px', color: '#000' }}>
+        <div className="me-1" style={{ marginLeft: '5px', marginBottom: '10px', color: 'var(--color_level3)' }}>
           <p>{description}</p>
         </div>
       </div>
@@ -430,7 +429,7 @@ const Features = ({ title, description, children }) => {
     return null;
   }
   return (
-    <div className="mb-3">
+    <div className="my-3">
       <h3 className="mb-0">{title}</h3>
       <p style={{ margin: 0, marginTop: 12, marginBottom: 12 }}>{description}</p>
       <div className="d-flex flex-wrap" style={{ gap: 12, marginBottom: 30, marginTop: 20 }}>
