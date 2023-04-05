@@ -465,9 +465,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     asyncSequence(config.namespaces.flatMap { namespace =>
       Seq(
         fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1", reader, customize),
-        fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1alpha1", reader, customize)
+        // fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1alpha1", reader, customize)
       )
-    }).map(_.flatten)
+    }).map(_.flatten.groupBy(_.uid).values.flatten.toSeq)
   }
 
   def fetchOtoroshiResourcesForNamespaceAndVersion[T](
@@ -855,10 +855,11 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       stop: => Boolean,
       labelSelector: Option[String] = None
   ): Source[Seq[ByteString], _] = {
-    Source.combine(
-      watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector),
-      watchResources(namespaces, resources, "proxy.otoroshi.io/v1alpha1", timeout, stop, labelSelector)
-    )(Concat(_))
+    watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector),
+    // Source.combine(
+    //   watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector),
+    //   watchResources(namespaces, resources, "proxy.otoroshi.io/v1alpha1", timeout, stop, labelSelector)
+    // )(Concat(_))
   }
 
   def watchNetResources(

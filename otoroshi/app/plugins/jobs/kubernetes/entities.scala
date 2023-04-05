@@ -16,6 +16,7 @@ trait KubernetesEntity {
   def raw: JsValue
   def pretty: String                        = raw.prettify
   lazy val spec: JsObject                   = (raw \ "spec").asOpt[JsObject].getOrElse(Json.obj())
+  lazy val creationVersion: Option[String]  = raw.select("metadata").select("annotations").select("kubectl.kubernetes.io/last-applied-configuration").asOpt[String].flatMap(_.parseJson.select("apiVersion").asOpt[String])
   lazy val uid: String                      = (raw \ "metadata" \ "uid").as[String]
   lazy val name: String                     = (raw \ "metadata" \ "name").as[String]
   lazy val metaKind: Option[String]         = annotations.get("io.otoroshi/kind").orElse(annotations.get("otoroshi.io/kind"))

@@ -260,7 +260,7 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
       kind: String,
       plural: String,
       singular: String,
-      versions: Map[String, (Boolean, JsValue)]
+      versions: Map[String, (Boolean, Boolean, JsValue)]
   ) =
     Json.obj(
       "apiVersion" -> "apiextensions.k8s.io/v1",
@@ -277,10 +277,10 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
           "singular" -> s"$singular"
         ),
         "scope"    -> "Namespaced",
-        "versions" -> JsArray(versions.map { case (version, (deprecated, content)) =>
+        "versions" -> JsArray(versions.map { case (version, (served, deprecated, content)) =>
           Json.obj(
             "name"       -> version,
-            "served"     -> true,
+            "served"     -> served,
             "storage"    -> !deprecated,
             "deprecated" -> deprecated,
             "schema"     -> overrideGeneratedOpenapiV3Schema(content)
@@ -305,8 +305,8 @@ class CrdsGenerator(spec: JsValue = Json.obj()) {
         plural = (crdEntity \ "plural").as[String],
         singular = (crdEntity \ "singular").as[String],
         versions = Map(
-          "v1alpha1" -> (true, preserveUnknownFieldsSchema),
-          "v1"       -> (false, if (withoutSchema) preserveUnknownFieldsSchema else patchSchema(allData, data._1, data._2))
+          "v1alpha1" -> (false, true, preserveUnknownFieldsSchema),
+          "v1"       -> (true, false, if (withoutSchema) preserveUnknownFieldsSchema else patchSchema(allData, data._1, data._2))
         )
       )
   }
