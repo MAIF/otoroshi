@@ -2313,11 +2313,13 @@ class SwappableInMemoryDataStores(
   private val materializer       = Materializer(actorSystem)
   val _optimized                 = configuration.betterGetOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
   val _modern                    = configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
-  lazy val redis                 = if (_modern) {
+  lazy val swredis                 = if (_modern) {
     new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
   } else {
     new SwappableInMemoryRedis(_optimized, env, actorSystem)
   }
+
+  def redis(): otoroshi.storage.RedisLike = swredis
 
   override def before(
       configuration: Configuration,
@@ -2367,7 +2369,7 @@ class SwappableInMemoryDataStores(
   }
 
   def swap(memory: Memory): Unit = {
-    redis.swap(memory, env.clusterConfig.worker.swapStrategy)
+    swredis.swap(memory, env.clusterConfig.worker.swapStrategy)
   }
 
   private val cancelRef                 = new AtomicReference[Cancellable]()
@@ -2389,7 +2391,7 @@ class SwappableInMemoryDataStores(
         expirations.put(key, ttl)
       }
     }
-    redis.swap(Memory(store, expirations), env.clusterConfig.worker.swapStrategy)
+    swredis.swap(Memory(store, expirations), env.clusterConfig.worker.swapStrategy)
   }
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {

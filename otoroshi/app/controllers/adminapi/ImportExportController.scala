@@ -6,6 +6,7 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit, OtoroshiExportAlert}
 import otoroshi.models.RightsChecker
+import otoroshi.next.extensions.FooAdminExtension
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json.{JsObject, Json}

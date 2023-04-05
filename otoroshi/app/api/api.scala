@@ -452,7 +452,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     Resource(
       "WasmPlugin",
       "wasm-plugins",
-      "wasm-plugins",
+      "wasm-plugin",
       "plugins.otoroshi.io",
       ResourceVersion("v1", served = true, deprecated = true, storage = true),
       GenericResourceAccessApi[WasmPlugin](
@@ -466,7 +466,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
     Resource(
       "GlobalConfig",
       "global-configs",
-      "global-configs",
+      "global-config",
       "config.otoroshi.io",
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApi[TweakedGlobalConfig](
@@ -478,7 +478,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         canBulk = false
       )
     )
-  )
+  ) ++ env.adminExtensions.resources()
 
   private def filterPrefix: Option[String] = "filter.".some
 

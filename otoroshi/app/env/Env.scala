@@ -18,6 +18,7 @@ import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
 import otoroshi.health.HealthCheckerActor
 import otoroshi.jobs.updates.Version
 import otoroshi.models._
+import otoroshi.next.extensions.{AdminExtensionConfig, AdminExtensions}
 import otoroshi.next.models.NgRoute
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.next.tunnel.{TunnelAgent, TunnelManager}
@@ -946,14 +947,22 @@ class Env(
 
   val servers = TcpService.runServers(this)
 
+  lazy val adminExtensionsConfig = AdminExtensionConfig(
+    enabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.admin-extensions.enabled").getOrElse(true)
+  )
+
+  lazy val adminExtensions = AdminExtensions.current(this, adminExtensionsConfig)
+
   datastores.before(configuration, environment, lifecycle)
   // geoloc.start()
   // ua.start()
+  adminExtensions.start()
   lifecycle.addStopHook(() => {
     implicit val ec = otoroshiExecutionContext
     // geoloc.stop()
     // ua.stop()
     // healthCheckerActor ! PoisonPill
+    adminExtensions.stop()
     otoroshiEventsActor ! StopExporters
     otoroshiEventsActor ! PoisonPill
     Option(ahcStats.get()).foreach(_.cancel())
@@ -1347,7 +1356,8 @@ class Env(
                   groups = Seq(backOfficeGroup, defaultGroup),
                   simpleAdmins = Seq(admin),
                   teams = Seq(defaultTeam),
-                  tenants = Seq(defaultTenant)
+                  tenants = Seq(defaultTenant),
+                  extensions = Map.empty
                 )
 
                 val initialCustomization = configuration

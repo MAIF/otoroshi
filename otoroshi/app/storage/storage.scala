@@ -34,6 +34,7 @@ case object Unhealthy   extends DataStoreHealth
 case object Unreachable extends DataStoreHealth
 
 trait DataStores {
+  def redis: RedisLike
   def before(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle): Future[Unit]
   def after(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle): Future[Unit]
   def health()(implicit ec: ExecutionContext): Future[DataStoreHealth]

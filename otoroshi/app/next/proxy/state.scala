@@ -104,7 +104,7 @@ class NgProxyState(env: Env) {
     case None        => domainPathTreeRef.get().findWildcard(domain).map(_.routes)
   }
 
-  def wasmPlugins(id: String): Option[WasmPlugin]                   = wasmPlugins.get(id)
+  def wasmPlugin(id: String): Option[WasmPlugin]                    = wasmPlugins.get(id)
   def script(id: String): Option[Script]                            = scripts.get(id)
   def backend(id: String): Option[NgBackend]                        = backends.get(id)
   def errorTemplate(id: String): Option[ErrorTemplate]              = errorTemplates.get(id)
@@ -593,6 +593,7 @@ class NgProxyState(env: Env) {
                                    )
                                  })
                              } else Seq.empty[NgRoute].vfuture
+      _ <- env.adminExtensions.syncStates()
     } yield {
       env.proxyState.updateRawRoutes(routes)
       env.proxyState.updateRoutes(newRoutes ++ croutes)

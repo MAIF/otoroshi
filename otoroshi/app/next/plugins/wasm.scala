@@ -171,7 +171,7 @@ object WasmSourceKind       {
         env: Env,
         ec: ExecutionContext
     ): Future[Either[JsValue, ByteString]] = {
-      env.proxyState.wasmPlugins(path) match {
+      env.proxyState.wasmPlugin(path) match {
         case None         => Left(Json.obj("error" -> "resource not found")).vfuture
         case Some(plugin) => plugin.config.source.getWasm()
       }
@@ -180,7 +180,7 @@ object WasmSourceKind       {
         env: Env,
         ec: ExecutionContext
     ): Future[Option[WasmConfig]] = {
-      env.proxyState.wasmPlugins(path).map(_.config).vfuture
+      env.proxyState.wasmPlugin(path).map(_.config).vfuture
     }
   }
   case object File        extends WasmSourceKind {

@@ -112,7 +112,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         expirations.put(key, ttl)
       }
     }
-    ds.redis.swap(Memory(store, expirations), SwapStrategy.Replace)
+    ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
   }
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
@@ -255,7 +255,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
               }
             }
             .map { _ =>
-              ds.redis.swap(Memory(store, expirations), SwapStrategy.Replace)
+              ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
             }
       }
   }
@@ -488,7 +488,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     S3.download(conf.bucket, conf.key).withAttributes(s3ClientSettingsAttrs).runFold(none)((_, opt) => opt).map {
       case None                 =>
         logger.warn(s"asset at ${url} does not exists yet ...")
-        ds.redis.swap(Memory(store, expirations), SwapStrategy.Replace)
+        ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
       case Some((source, meta)) => {
         source
           .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
@@ -509,7 +509,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
           }
           .runWith(Sink.ignore)
           .andThen { case _ =>
-            ds.redis.swap(Memory(store, expirations), SwapStrategy.Replace)
+            ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
           }
       }
     }

@@ -56,7 +56,9 @@ class InMemoryDataStores(
   } else {
     new SwappableInMemoryRedis(_optimized, env, actorSystem)
   }
-  lazy val redis       = if (env.isDev) new SwappableRedisLikeMetricsWrapper(_redis, env) else _redis
+  lazy val swredis       = if (env.isDev) new SwappableRedisLikeMetricsWrapper(_redis, env) else _redis
+
+  def redis(): otoroshi.storage.RedisLike = swredis
 
   lazy val persistence = persistenceKind match {
     case PersistenceKind.HttpPersistenceKind => new HttpPersistence(this, env)

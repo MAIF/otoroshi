@@ -22,6 +22,7 @@ import otoroshi.gateway.GwError
 
 import javax.script._
 import otoroshi.models._
+import otoroshi.next.extensions.AdminExtension
 import otoroshi.next.plugins.api.{NgNamedPlugin, NgPlugin, NgPluginCategory, NgPluginVisibility, NgStep}
 import play.api.Logger
 import play.api.libs.json._
@@ -767,7 +768,8 @@ class ScriptManager(env: Env) {
     listenerNames,
     jobNames,
     exporterNames,
-    ngNames
+    ngNames,
+    adminExtensionNames,
   ) =
     Try {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
@@ -947,6 +949,11 @@ class ScriptManager(env: Env) {
             .filterNot(predicate)
             .map(_.getName)
 
+        val adminExts: Seq[String] = (scanResult.getSubclasses(classOf[AdminExtension].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[AdminExtension].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName)
+
         (
           requestTransformers,
           validators,
@@ -956,12 +963,14 @@ class ScriptManager(env: Env) {
           listenerNames,
           jobNames,
           customExporters,
-          ngPlugins
+          ngPlugins,
+          adminExts
         )
       } catch {
         case e: Throwable =>
           e.printStackTrace()
           (
+            Seq.empty[String],
             Seq.empty[String],
             Seq.empty[String],
             Seq.empty[String],
@@ -976,6 +985,7 @@ class ScriptManager(env: Env) {
         if (scanResult != null) ClassgraphUtils.clear(scanResult)
       }
     } getOrElse (
+      Seq.empty[String],
       Seq.empty[String],
       Seq.empty[String],
       Seq.empty[String],
