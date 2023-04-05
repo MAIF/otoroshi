@@ -24,19 +24,6 @@ import { Dropdown } from '../../components/Dropdown';
 import PageTitle from '../../components/PageTitle';
 import Loader from '../../components/Loader';
 
-function BackToButton({ history }) {
-  return (
-    <SquareButton
-      onClick={() => {
-        const what = window.location.pathname.split('/')[3];
-        history.push('/' + what);
-      }}
-      icon="fa-arrow-left"
-      text={`Back to ${window.location.pathname.split('/')[3]}`}
-    />
-  );
-}
-
 function DeleteRouteButton(props) {
   const what = window.location.pathname.split('/')[3];
   const id = window.location.pathname.split('/')[4];
@@ -111,8 +98,6 @@ function BackToRouteTab({ history, routeId, viewPlugins }) {
 }
 
 function InformationsTab({ isActive, entity, value, history }) {
-  const isWhiteMode = document.body.classList.contains('white-mode');
-
   return (
     <div className="ms-2">
       <button
@@ -129,6 +114,8 @@ function InformationsTab({ isActive, entity, value, history }) {
             });
         }}
         style={{
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
           backgroundColor: isActive ? "var(--color-primary)" : "var(--bg-color_level2)",
           color: isActive ? "var(--color-white)" : "var(--color_level2)",
         }}>
@@ -167,8 +154,6 @@ function RoutesTab({ isActive, entity, value, history }) {
 }
 
 function DesignerTab({ isActive, entity, value, history }) {
-  const isWhiteMode = document.body.classList.contains('white-mode');
-
   return (
     <div className="ms-2">
       <button
@@ -185,6 +170,8 @@ function DesignerTab({ isActive, entity, value, history }) {
             });
         }}
         style={{
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
           backgroundColor: isActive ? "var(--color-primary)" : "var(--bg-color_level2)",
           color: isActive ? "var(--color-white)" : "var(--color_level2)",
         }}>
@@ -212,7 +199,7 @@ function TesterButton({
   return (
     <HelpWrapper text={disabled ? disabledHelp : undefined} dataPlacement="bottom">
       <div
-        className="ms-2 pb-2"
+        className="ms-2 pb-1"
         style={{
           height: '100%',
           opacity: hidden ? 0 : 1,
@@ -229,7 +216,7 @@ function TesterButton({
             marginLeft: 20,
             borderRadius: '.2rem !important',
             backgroundColor: "var(--bg-color_level2)",
-            color:  "var(--color_level2)",
+            color: "var(--color_level2)",
           }}>
           <i className="fas fa-vials" style={{ fontSize: '1.33333em' }} />
           Tester
@@ -240,16 +227,15 @@ function TesterButton({
 }
 
 function MoreActionsButton({ value, menu, history, globalEnv }) {
-  return (
+  return <div className='mb-1'>
     <Dropdown className="ms-2" style={{ height: '100%' }}>
       <DuplicateButton value={value} history={history} />
       <JsonExportButton value={value} />
       <YAMLExportButton value={value} />
       <DeleteRouteButton globalEnv={globalEnv} history={history} />
       {menu}
-      {/* <BackToButton history={history} /> */}
     </Dropdown>
-  );
+  </div>
 }
 
 function ManagerTitle({

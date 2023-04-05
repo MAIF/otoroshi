@@ -535,7 +535,7 @@ class Designer extends React.Component {
     const entityName = isOnRouteCompositions ? 'route composition' : 'route';
     this.props.setSaveButton(
       <FeedbackButton
-        className="ms-2"
+        className="ms-2 mb-1"
         onPress={this.saveRoute}
         text={`Save ${entityName}`}
         _disabled={isEqual(this.state.route, this.state.originalRoute)}
@@ -719,6 +719,7 @@ class Designer extends React.Component {
         ? pluginsWithNodeId
         : this.generatedPluginIndex(pluginsWithNodeId);
 
+      console.log(formattedPlugins)
       this.setState(
         {
           backends,

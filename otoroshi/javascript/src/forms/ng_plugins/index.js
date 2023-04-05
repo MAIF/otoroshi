@@ -21,6 +21,7 @@ import GraphQLBackend from './GraphQLBackend';
 import GraphQLProxy from './GraphQLProxy';
 import GraphQLQuery from './GraphQLQuery';
 import GzipResponseCompressor from './GzipResponseCompressor';
+import HMACValidator from './HMACValidator';
 import HeadersValidation from './HeadersValidation';
 import HtmlPatcher from './HtmlPatcher';
 import Http3Switch from './Http3Switch';
@@ -113,6 +114,7 @@ export const Plugins = [
   GraphQLProxy,
   GraphQLQuery,
   GzipResponseCompressor,
+  HMACValidator,
   HeadersValidation,
   HtmlPatcher,
   Http3Switch,
