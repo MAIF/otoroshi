@@ -5,6 +5,7 @@ import ApikeyCalls from './ApikeyCalls';
 import ApikeyQuotas from './ApikeyQuotas';
 import AuthModule from './AuthModule';
 import BuildMode from './BuildMode';
+import BasicAuthCaller from './BasicAuthCaller';
 import CanaryMode from './CanaryMode';
 import ContextValidation from './ContextValidation';
 import Cors from './Cors';
@@ -98,6 +99,7 @@ export const Plugins = [
   ApikeyCalls,
   ApikeyQuotas,
   AuthModule,
+  BasicAuthCaller,
   BuildMode,
   CanaryMode,
   ContextValidation,

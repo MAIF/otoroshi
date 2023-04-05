@@ -1,5 +1,7 @@
 package otoroshi.next.plugins
 
+import akka.stream.Materializer
+import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.PrivateAppsUserHelper
@@ -8,7 +10,8 @@ import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.Results
+import play.api.mvc.Results.BadRequest
+import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -366,5 +369,74 @@ class NgAuthModuleExpectedUser extends NgAccessValidator {
       }
       case Some(_)                         => NgAccess.NgAllowed.vfuture
     }
+  }
+}
+
+
+case class BasicAuthCallerConfig(
+                                  username: Option[String] = None,
+                                  password: Option[String] = None,
+                                  headerName: String = "Authorization",
+                                  headerValueFormat: String = "Basic %s") extends NgPluginConfig {
+  override def json: JsValue = BasicAuthCallerConfig.format.writes(this)
+}
+
+object BasicAuthCallerConfig {
+  val format: Format[BasicAuthCallerConfig] = new Format[BasicAuthCallerConfig] {
+    override def writes(o: BasicAuthCallerConfig): JsValue = Json.obj(
+      "username" -> o.username,
+      "passaword" -> o.password,
+      "headerName" -> o.headerName,
+      "headerValueFormat" -> o.headerValueFormat
+    )
+
+    override def reads(json: JsValue): JsResult[BasicAuthCallerConfig] = Try {
+      BasicAuthCallerConfig(
+        username = json.select("username").asOpt[String].filter(_.nonEmpty),
+        password = json.select("password").asOpt[String].filter(_.nonEmpty),
+        headerName = json.select("headerName").asOpt[String].getOrElse("Authorization"),
+        headerValueFormat = json.select("headerValueFormat").asOpt[String].getOrElse("Basic %s")
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+  }
+}
+
+class BasicAuthCaller extends NgRequestTransformer {
+
+  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean = false
+  override def core: Boolean = true
+  override def usesCallbacks: Boolean = false
+  override def transformsRequest: Boolean = true
+  override def transformsResponse: Boolean = false
+  override def transformsError: Boolean = false
+  override def isTransformRequestAsync: Boolean = false
+  override def isTransformResponseAsync: Boolean = false
+  override def name: String = "Basic Auth. caller"
+  override def description: Option[String] = "This plugin can be used to call api that are authenticated using basic auth.".some
+  override def defaultConfigObject: Option[NgPluginConfig] = BasicAuthCallerConfig().some
+
+  override def transformRequestSync(
+                                        ctx: NgTransformerRequestContext
+                                      )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+    val config = ctx.cachedConfig(internalName)(BasicAuthCallerConfig.format.reads).getOrElse(BasicAuthCallerConfig())
+
+    (config.username, config.password) match {
+      case (Some(username), Some(password)) if username.nonEmpty && password.nonEmpty =>
+        val token: String = ByteString(s"$username:$password").encodeBase64.utf8String
+        Right(
+          ctx.otoroshiRequest.copy(headers =
+            ctx.otoroshiRequest.headers + (config.headerName -> config.headerValueFormat.format(token))
+          )
+        )
+      case _ => BadRequest(Json.obj("error" -> "Bad configuration")).left
+    }
+
+
   }
 }
