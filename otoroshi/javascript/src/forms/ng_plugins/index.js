@@ -50,6 +50,7 @@ import NgFrontend from './NgFrontend';
 import NgHttpClientCache from './NgHttpClientCache';
 import NgLegacyApikeyCall from './NgLegacyApikeyCall';
 import NgLegacyAuthModuleCall from './NgLegacyAuthModuleCall';
+import OAuth1Caller from './OAuth1Caller';
 import OtoroshiChallenge from './OtoroshiChallenge';
 import OtoroshiHeadersIn from './OtoroshiHeadersIn';
 import OtoroshiInfos from './OtoroshiInfos';
@@ -143,6 +144,7 @@ export const Plugins = [
   NgHttpClientCache,
   NgLegacyApikeyCall,
   NgLegacyAuthModuleCall,
+  OAuth1Caller,
   OtoroshiChallenge,
   OtoroshiHeadersIn,
   OtoroshiInfos,
