@@ -30,7 +30,7 @@ export class ServiceSidebar extends Component {
                 <Link
                   {...createTooltip(`Show healthcheck report for ${name}`)}
                   to={`/lines/${env}/services/${serviceId}/health`}
-                  className={`nav-link ${className("health")}`}
+                  className={`nav-link ${className("health")} ${openedSidebar ? 'ms-3' : ''}`}
                 >
                   <i className="fas fa-heart" />{" "}
                   {!openedSidebar ? "" : "Health"}
@@ -42,7 +42,7 @@ export class ServiceSidebar extends Component {
                 <Link
                   to={`/lines/${env}/services/${serviceId}/stats`}
                   {...createTooltip(`Show live metrics report for ${name}`)}
-                  className={`nav-link ${className("stats")}`}
+                  className={`nav-link ${className("stats")} ${openedSidebar ? 'ms-3' : ''}`}
                 >
                   <i className="fas fa-chart-bar" />{" "}
                   {!openedSidebar ? "" : "Live metrics"}
@@ -54,7 +54,7 @@ export class ServiceSidebar extends Component {
                 <Link
                   to={`/lines/${env}/services/${serviceId}/analytics`}
                   {...createTooltip(`Show analytics report for ${name}`)}
-                  className={`nav-link ${className("analytics")}`}
+                  className={`nav-link ${className("analytics")} ${openedSidebar ? 'ms-3' : ''}`}
                 >
                   <i className="fas fa-signal" />{" "}
                   {!openedSidebar ? "" : "Analytics"}
@@ -66,7 +66,7 @@ export class ServiceSidebar extends Component {
                 <Link
                   to={`/lines/${env}/services/${serviceId}/events`}
                   {...createTooltip(`Show raw events report for ${name}`)}
-                  className={`nav-link ${className("events")}`}
+                  className={`nav-link ${className("events")} ${openedSidebar ? 'ms-3' : ''}`}
                 >
                   <i className="fas fa-list" /> {!openedSidebar ? "" : "Events"}
                 </Link>
@@ -79,7 +79,7 @@ export class ServiceSidebar extends Component {
                   {...createTooltip(
                     `Manage all API keys that can access ${name}`
                   )}
-                  className={`nav-link ${className("apikeys")}`}
+                  className={`nav-link ${className("apikeys")} ${openedSidebar ? 'ms-3' : ''}`}
                 >
                   <i className="fas fa-lock" />{" "}
                   {!openedSidebar ? "" : "API Keys"}
@@ -91,14 +91,14 @@ export class ServiceSidebar extends Component {
                 <Link
                   to={`/lines/${env}/services/${serviceId}/doc`}
                   {...createTooltip(`Show open API documentation for ${name}`)}
-                  className={`nav-link ${className("doc")}`}
+                  className={`nav-link ${className("doc")} ${openedSidebar ? 'ms-3' : ''}`}
                 >
                   <i className="fas fa-folder" />{" "}
                   {!openedSidebar ? "" : "Documentation"}
                 </Link>
               </li>
             )}
-            <li className="dropdown-divider" style={{borderColor:"var(--color_level1)", width:"80%", marginLeft:"5px" }}/>
+            <li className="dropdown-divider" style={{borderColor:"var(--color_level1)",  marginLeft:"5px",  marginRight:"5px" }}/>
           </ul>
         )}
       </SidebarContext.Consumer>
