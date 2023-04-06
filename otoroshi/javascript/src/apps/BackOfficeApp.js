@@ -122,7 +122,9 @@ class AnonymousReportingEnable extends Component {
   }
 }
 
-export const SidebarContext = React.createContext(false);
+const sidebarOpenOnLoad = (window.localStorage.getItem("otoroshi-sidebar-open") || 'true') === 'true'
+
+export const SidebarContext = React.createContext(sidebarOpenOnLoad);
 
 class BackOfficeAppContainer extends Component {
   constructor(props) {
@@ -134,7 +136,7 @@ class BackOfficeAppContainer extends Component {
       catchedError: null,
       env: null,
       loading: true,
-      openedSidebar: false
+      openedSidebar: sidebarOpenOnLoad
     };
   }
 
@@ -268,6 +270,7 @@ class BackOfficeAppContainer extends Component {
                   className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'} sidebar-toggle`}
                   onClick={e => {
                     e.stopPropagation();
+                    window.localStorage.setItem("otoroshi-sidebar-open", String(!this.state.openedSidebar));
                     this.setState({
                       openedSidebar: !this.state.openedSidebar
                     })
