@@ -467,7 +467,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1", reader, customize),
         // fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1alpha1", reader, customize)
       )
-    }).map(_.flatten.groupBy(_.uid).values.flatten.toSeq)
+    }).map(_.flatten.groupBy(_.uid).values.flatMap(_.headOption).toSeq)
   }
 
   def fetchOtoroshiResourcesForNamespaceAndVersion[T](
