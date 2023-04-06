@@ -3,6 +3,7 @@ import AdditionalHeadersOut from './AdditionalHeadersOut';
 import AllowHttpMethods from './AllowHttpMethods';
 import ApikeyCalls from './ApikeyCalls';
 import ApikeyQuotas from './ApikeyQuotas';
+import ApikeyAuthModule from './ApikeyAuthModule';
 import AuthModule from './AuthModule';
 import BuildMode from './BuildMode';
 import BasicAuthCaller from './BasicAuthCaller';
@@ -98,6 +99,7 @@ export const Plugins = [
   AdditionalHeadersOut,
   AllowHttpMethods,
   ApikeyCalls,
+  ApikeyAuthModule,
   ApikeyQuotas,
   AuthModule,
   BasicAuthCaller,
