@@ -62,9 +62,8 @@ export default ({ route, setSidebarContent }) => {
       style={{
         flexDirection: 'column',
         position: 'relative',
-        borderTop: `${!openedSidebar ? '1px solid #fff' : 'none'}`,
         borderBottom: `${!openedSidebar ? '1px solid #fff' : 'none'}`,
-        padding: openedSidebar ? 'inherit' : '18px 0 6px'
+        padding: openedSidebar ? 'inherit' : '12px 0 6px'
       }}>
       <ul className="nav flex-column nav-sidebar">
         <li className="nav-item mb-1">
