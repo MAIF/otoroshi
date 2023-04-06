@@ -1296,7 +1296,7 @@ export class ServicePage extends Component {
           {this.state.service.enabled && (
             <div className="alert alert-warning" role="warning" style={{ marginTop: 20 }}>
               You are using service descriptors. There is a new way to configure otoroshi through{' '}
-              <Link to="/routes">routes</Link>. Service descriptors will be eventually deprecated in
+              <Link style={{color:"var(--color-primary)"}} to="/routes">routes</Link>. Service descriptors will be eventually deprecated in
               future otoroshi versions.
             </div>
           )}
