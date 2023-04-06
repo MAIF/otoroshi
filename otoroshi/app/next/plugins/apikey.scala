@@ -1,11 +1,15 @@
 package otoroshi.next.plugins
 
+import akka.Done
 import akka.stream.Materializer
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import com.google.common.base.Charsets
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.next.plugins.api._
 import otoroshi.next.utils.JsonHelpers
+import otoroshi.script.PreRoutingError
+import otoroshi.security.OtoroshiClaim
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.Result
@@ -626,4 +630,144 @@ object NgApikeyCallsConfig {
     wipeBackendRequest = true,
     updateQuotas = true
   )
+}
+
+case class ApikeyAuthModuleConfig (
+    realm: Option[String] = "apikey-auth-module-realm".some,
+    matcher: Option[ApiKeyRouteMatcher] = None
+  ) extends NgPluginConfig {
+  override def json: JsValue = ApikeyAuthModuleConfig.format.writes(this)
+}
+
+object ApikeyAuthModuleConfig {
+  val format = new Format[ApikeyAuthModuleConfig] {
+    override def writes(o: ApikeyAuthModuleConfig): JsValue = Json.obj(
+      "realm" -> o.realm,
+      "matcher" -> o.matcher.map(ApiKeyRouteMatcher.format.writes)
+    )
+
+    override def reads(json: JsValue): JsResult[ApikeyAuthModuleConfig] = Try {
+      ApikeyAuthModuleConfig(
+        realm = json.select("realm").asOpt[String],
+        matcher = ApiKeyRouteMatcher.format.reads(json.select("matcher").getOrElse(Json.obj())) match {
+          case JsSuccess(value, _) => value.some
+          case JsError(_) => None
+        }
+      )
+    } match {
+      case Failure(ex) => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
+class ApikeyAuthModule extends NgPreRouting {
+
+  override def name: String = "Apikey auth module"
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  override def multiInstance: Boolean = false
+  override def defaultConfigObject: Option[NgPluginConfig] = ApikeyAuthModuleConfig().some
+  override def description: Option[String] = "This plugin adds basic auth on service where credentials are valid apikeys on the current service.".some
+
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+
+  def extractUsernamePassword(header: String): Option[(String, String)] = {
+    val base64 = header.replace("Basic ", "").replace("basic ", "")
+    Option(base64)
+      .map(decodeBase64)
+      .map(_.split(":").toSeq)
+      .flatMap(a => a.headOption.flatMap(head => a.lastOption.map(last => (head, last))))
+  }
+
+  def unauthorized(config: ApikeyAuthModuleConfig) = {
+    val realm = config.realm.getOrElse("apikey-auth-module-realm")
+    PreRoutingError(
+      body = "<h3>not authorized</h3>".byteString,
+      code = 401,
+      contentType = "text/html",
+      headers = Map("WWW-Authenticate" -> s"""Basic realm="${realm}"""")
+    ).asResult
+  }
+
+  def forbidden(config: ApikeyAuthModuleConfig) = {
+    val realm = config.realm.getOrElse("apikey-auth-module-realm")
+    PreRoutingError(
+      body = "<h3>forbidden</h3>".byteString,
+      code = 403,
+      contentType = "text/html",
+      headers = Map("WWW-Authenticate" -> s"""Basic realm="${realm}"""")
+    ).asResult
+  }
+
+  def validApikey(apikey: ApiKey, routing: ApiKeyRouteMatcher): Boolean = {
+    import otoroshi.models.SeqImplicits._
+
+    val matchOnRole: Boolean   = Option(routing.oneTagIn)
+      .filter(_.nonEmpty)
+      .forall(tags => apikey.tags.findOne(tags))
+    val matchAllRoles: Boolean = Option(routing.allTagsIn)
+      .filter(_.nonEmpty)
+      .forall(tags => apikey.tags.findAll(tags))
+    val matchNoneRole: Boolean = !Option(routing.noneTagIn)
+      .filter(_.nonEmpty)
+      .exists(tags => apikey.tags.findOne(tags))
+
+    val matchOneMeta: Boolean  = Option(routing.oneMetaIn.toSeq)
+      .filter(_.nonEmpty)
+      .forall(metas => apikey.metadata.toSeq.findOne(metas))
+    val matchAllMeta: Boolean  = Option(routing.allMetaIn.toSeq)
+      .filter(_.nonEmpty)
+      .forall(metas => apikey.metadata.toSeq.findAll(metas))
+    val matchNoneMeta: Boolean = !Option(routing.noneMetaIn.toSeq)
+      .filter(_.nonEmpty)
+      .exists(metas => apikey.metadata.toSeq.findOne(metas))
+
+    val matchOneMetakeys: Boolean  = Option(routing.oneMetaKeyIn)
+      .filter(_.nonEmpty)
+      .forall(keys => apikey.metadata.toSeq.map(_._1).findOne(keys))
+    val matchAllMetaKeys: Boolean  = Option(routing.allMetaKeysIn)
+      .filter(_.nonEmpty)
+      .forall(keys => apikey.metadata.toSeq.map(_._1).findAll(keys))
+    val matchNoneMetaKeys: Boolean = !Option(routing.noneMetaKeysIn)
+      .filter(_.nonEmpty)
+      .exists(keys => apikey.metadata.toSeq.map(_._1).findOne(keys))
+
+    val result = Seq(
+      matchOnRole,
+      matchAllRoles,
+      matchNoneRole,
+      matchOneMeta,
+      matchAllMeta,
+      matchNoneMeta,
+      matchOneMetakeys,
+      matchAllMetaKeys,
+      matchNoneMetaKeys
+    )
+      .forall(bool => bool)
+    result
+  }
+
+  override def preRoute(ctx: NgPreRoutingContext)
+                       (implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+
+    val config = ctx.cachedConfig(internalName)(ApikeyAuthModuleConfig.format)
+      .getOrElse(ApikeyAuthModuleConfig())
+
+    ctx.request.headers.get("Authorization") match {
+      case Some(auth) if auth.startsWith("Basic ") =>
+        extractUsernamePassword(auth) match {
+          case None                       => Left(NgPreRoutingErrorWithResult(forbidden(config))).vfuture
+          case Some((username, password)) =>
+            env.datastores.apiKeyDataStore.findById(username).flatMap {
+              case Some(apikey) if apikey.clientSecret == password && validApikey(apikey, config.matcher.getOrElse(ApiKeyRouteMatcher())) =>
+                ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
+                Done.right.vfuture
+              case _                       => Left(NgPreRoutingErrorWithResult(unauthorized(config))).vfuture
+            }
+        }
+      case _                               => Left(NgPreRoutingErrorWithResult(unauthorized(config))).vfuture
+    }
+  }
 }
