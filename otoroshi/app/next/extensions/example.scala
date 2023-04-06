@@ -111,6 +111,12 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
     })
   )
 
+  override def adminApiRoutes(): Seq[AdminExtensionAdminApiRoute] = Seq(
+    AdminExtensionAdminApiRoute("GET", "/api/extensions/foo/private", false, (request, apk, _) => {
+      Results.Ok(Json.obj("private" -> true)).vfuture
+    })
+  )
+
   override def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = {
     Seq(
       AdminExtensionEntity(

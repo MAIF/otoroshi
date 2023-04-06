@@ -11,6 +11,7 @@ import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.{AuthModuleConfig, SamlAuthModuleConfig, SessionCookieValues}
 import com.google.common.base.Charsets
 import controllers.Assets
+import otoroshi.actions.{ApiAction, BackOfficeAction, PrivateAppsAction}
 import otoroshi.controllers.HealthController
 import otoroshi.env.Env
 import otoroshi.events._
@@ -265,6 +266,9 @@ class GatewayRequestHandler(
     webCommands: WebCommands,
     optDevContext: Option[DevContext],
     actionBuilder: ActionBuilder[Request, AnyContent],
+    apiActionBuilder: ApiAction,
+    backofficeActionBuilder: BackOfficeAction,
+    privateActionBuilder: PrivateAppsAction,
     healthController: HealthController
 )(implicit env: Env, mat: Materializer)
     extends DefaultHttpRequestHandler(webCommands, optDevContext, router, errorHandler, configuration, filters) {
@@ -475,9 +479,9 @@ class GatewayRequestHandler(
 
           case env.adminApiExposedHost if monitoring          => super.routeRequest(request)
           case env.backOfficeHost if monitoring               => super.routeRequest(request)
-          case env.adminApiHost if env.exposeAdminApi         => env.adminExtensions.handleAdminApiCall(request)(super.routeRequest(request))
-          case env.backOfficeHost if env.exposeAdminDashboard => env.adminExtensions.handleBackofficeCall(request)(super.routeRequest(request))
-          case env.privateAppsHost                            => env.adminExtensions.handlePrivateAppsCall(request)(super.routeRequest(request))
+          case env.adminApiHost if env.exposeAdminApi         => env.adminExtensions.handleAdminApiCall(request, actionBuilder, apiActionBuilder, sourceBodyParser)(super.routeRequest(request))
+          case env.backOfficeHost if env.exposeAdminDashboard => env.adminExtensions.handleBackofficeCall(request, actionBuilder, backofficeActionBuilder, sourceBodyParser)(super.routeRequest(request))
+          case env.privateAppsHost                            => env.adminExtensions.handlePrivateAppsCall(request, actionBuilder, privateActionBuilder, sourceBodyParser)(super.routeRequest(request))
 
           case env.adminApiHost if !env.exposeAdminApi && relativeUri.startsWith("/api/cluster/") =>
             super.routeRequest(request)
@@ -502,16 +506,12 @@ class GatewayRequestHandler(
           case h if env.privateAppsDomains.contains(h) && monitoring                                               => Some(forbidden())
           case h if env.adminApiExposedDomains.contains(h) && monitoring                                           => super.routeRequest(request)
           case h if env.backofficeDomains.contains(h) && monitoring                                                => super.routeRequest(request)
-          case h if env.adminApiDomains.contains(h) && env.exposeAdminApi                                          => env.adminExtensions.handleAdminApiCall(request)(super.routeRequest(request))
-          case h if env.backofficeDomains.contains(h) && env.exposeAdminDashboard                                  => env.adminExtensions.handleBackofficeCall(request)(super.routeRequest(request))
-          case h if env.privateAppsDomains.contains(h)                                                             => env.adminExtensions.handlePrivateAppsCall(request)(super.routeRequest(request))
+          case h if env.adminApiDomains.contains(h) && env.exposeAdminApi                                          => env.adminExtensions.handleAdminApiCall(request, actionBuilder, apiActionBuilder, sourceBodyParser)(super.routeRequest(request))
+          case h if env.backofficeDomains.contains(h) && env.exposeAdminDashboard                                  => env.adminExtensions.handleBackofficeCall(request, actionBuilder, backofficeActionBuilder, sourceBodyParser)(super.routeRequest(request))
+          case h if env.privateAppsDomains.contains(h)                                                             => env.adminExtensions.handlePrivateAppsCall(request, actionBuilder, privateActionBuilder, sourceBodyParser)(super.routeRequest(request))
           case _                                                                                                   => {
             if (relativeUri.startsWith("/.well-known/otoroshi/extensions/")) {
-              env.adminExtensions.findWellKnownRoute(request) match {
-                case None => reverseProxyCall(request, config)
-                case Some(route) if route.wantsBody => Some(actionBuilder.async(sourceBodyParser) { req => route.route(req, req.body.some) })
-                case Some(route) if !route.wantsBody => Some(actionBuilder.async { req => route.route(req, None) })
-              }
+              env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser)(reverseProxyCall(request, config))
             } else {
               reverseProxyCall(request, config)
             }

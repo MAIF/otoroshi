@@ -2,15 +2,16 @@ package otoroshi.next.extensions
 
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
+import otoroshi.actions.{ApiAction, BackOfficeAction, PrivateAppsAction}
 import otoroshi.api.Resource
 import otoroshi.env.Env
-import otoroshi.models.EntityLocationSupport
+import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocationSupport, PrivateAppsUser}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Configuration
 import play.api.libs.json.{JsObject, JsValue}
-import play.api.mvc.{Handler, RequestHeader, Result}
+import play.api.mvc.{ActionBuilder, AnyContent, BodyParser, Handler, Request, RequestHeader, Result}
 
 import scala.concurrent.Future
 import scala.reflect.ClassTag
@@ -21,14 +22,21 @@ case class AdminExtensionId(value: String) {
 case class AdminExtensionEntity[A <: EntityLocationSupport](resource: otoroshi.api.Resource, datastore: BasicStore[A])
 
 case class AdminExtensionFrontendExtension()
-case class AdminExtensionAsset()
-case class AdminExtensionBackofficeAuthRoute()
-case class AdminExtensionBackofficePublicRoute()
-case class AdminExtensionAdminApiAuthRoute()
-case class AdminExtensionAdminApiPublicRoute()
-case class AdminExtensionPrivateAppAuthRoute()
-case class AdminExtensionPrivateAppPublicRoute()
-case class AdminExtensionWellKnownRoute(method: String, path: String, wantsBody: Boolean, route: (RequestHeader, Option[Source[ByteString, _]]) => Future[Result])
+trait AdminExtensionRoute {
+  def method: String
+  def path: String
+  def wantsBody: Boolean
+}
+case class AdminExtensionAssetRoute(path: String) extends AdminExtensionRoute {
+  override def method: String = "GET"
+  override def wantsBody: Boolean = false
+}
+case class AdminExtensionBackofficeAuthRoute(method: String, path: String, wantsBody: Boolean, handle: (RequestHeader, Option[BackOfficeUser], Option[Source[ByteString, _]]) => Future[Result]) extends AdminExtensionRoute
+case class AdminExtensionBackofficePublicRoute(method: String, path: String, wantsBody: Boolean, handle: (RequestHeader, Option[Source[ByteString, _]]) => Future[Result]) extends AdminExtensionRoute
+case class AdminExtensionAdminApiRoute(method: String, path: String, wantsBody: Boolean, handle: (RequestHeader, ApiKey, Option[Source[ByteString, _]]) => Future[Result]) extends AdminExtensionRoute
+case class AdminExtensionPrivateAppAuthRoute(method: String, path: String, wantsBody: Boolean, handle: (RequestHeader, Option[PrivateAppsUser], Option[Source[ByteString, _]]) => Future[Result]) extends AdminExtensionRoute
+case class AdminExtensionPrivateAppPublicRoute(method: String, path: String, wantsBody: Boolean, handle: (RequestHeader, Option[Source[ByteString, _]]) => Future[Result]) extends AdminExtensionRoute
+case class AdminExtensionWellKnownRoute(method: String, path: String, wantsBody: Boolean, route: (RequestHeader, Option[Source[ByteString, _]]) => Future[Result]) extends AdminExtensionRoute
 
 
 case class AdminExtensionConfig(enabled: Boolean)
@@ -48,11 +56,10 @@ trait AdminExtension {
 
   def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = Seq.empty
   def frontendExtension(): Seq[AdminExtensionFrontendExtension] = Seq.empty
-  def assets(): Seq[AdminExtensionAsset] = Seq.empty
+  def assets(): Seq[AdminExtensionAssetRoute] = Seq.empty
   def backofficeAuthRoutes(): Seq[AdminExtensionBackofficeAuthRoute] = Seq.empty
   def backofficePublicRoutes(): Seq[AdminExtensionBackofficePublicRoute] = Seq.empty
-  def adminApiAuthRoutes(): Seq[AdminExtensionAdminApiAuthRoute] = Seq.empty
-  def adminApiPublicRoutes(): Seq[AdminExtensionAdminApiPublicRoute] = Seq.empty
+  def adminApiRoutes(): Seq[AdminExtensionAdminApiRoute] = Seq.empty
   def privateAppAuthRoutes(): Seq[AdminExtensionPrivateAppAuthRoute] = Seq.empty
   def privateAppPublicRoutes(): Seq[AdminExtensionPrivateAppPublicRoute] = Seq.empty
   def wellKnownRoutes(): Seq[AdminExtensionWellKnownRoute] = Seq.empty
@@ -100,11 +107,10 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   private val entities: Seq[AdminExtensionEntity[EntityLocationSupport]] = entitiesMap.values.flatten.toSeq
 
   private val frontendExtension: Seq[AdminExtensionFrontendExtension] = extensions.flatMap(_.frontendExtension())
-  private val assets: Seq[AdminExtensionAsset] = extensions.flatMap(_.assets())
+  private val assets: Seq[AdminExtensionAssetRoute] = extensions.flatMap(_.assets())
   private val backofficeAuthRoutes: Seq[AdminExtensionBackofficeAuthRoute] = extensions.flatMap(_.backofficeAuthRoutes())
   private val backofficePublicRoutes: Seq[AdminExtensionBackofficePublicRoute] = extensions.flatMap(_.backofficePublicRoutes())
-  private val adminApiAuthRoutes: Seq[AdminExtensionAdminApiAuthRoute] = extensions.flatMap(_.adminApiAuthRoutes())
-  private val adminApiPublicRoutes: Seq[AdminExtensionAdminApiPublicRoute] = extensions.flatMap(_.adminApiPublicRoutes())
+  private val adminApiRoutes: Seq[AdminExtensionAdminApiRoute] = extensions.flatMap(_.adminApiRoutes())
   private val privateAppAuthRoutes: Seq[AdminExtensionPrivateAppAuthRoute] = extensions.flatMap(_.privateAppAuthRoutes())
   private val privateAppPublicRoutes: Seq[AdminExtensionPrivateAppPublicRoute] = extensions.flatMap(_.privateAppPublicRoutes())
   private val wellKnownRoutes: Seq[AdminExtensionWellKnownRoute] = extensions.flatMap(_.wellKnownRoutes())
@@ -130,38 +136,65 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
     }
   }
 
-  def handleAdminApiCall(request: RequestHeader)(f: => Option[Handler]): Option[Handler] = {
-    if (hasExtensions && !(adminApiAuthRoutes.isEmpty && adminApiPublicRoutes.isEmpty)) {
-      // TODO: additional admin api routes
-      f
-    } else f
-  }
-
-  def handleBackofficeCall(request: RequestHeader)(f: => Option[Handler]): Option[Handler] = {
-    if (hasExtensions && !(backofficeAuthRoutes.isEmpty && backofficePublicRoutes.isEmpty && assets.isEmpty)) {
-      // TODO: additional backoffice routes + additional assets routes
-      f
-    } else f
-  }
-
-  def handlePrivateAppsCall(request: RequestHeader)(f: => Option[Handler]): Option[Handler] = {
-    if (hasExtensions && !(privateAppAuthRoutes.isEmpty && privateAppPublicRoutes.isEmpty && assets.isEmpty)) {
-      // TODO: additional privateapps routes + additional assets routes
-      f
-    } else f
-  }
-
-  def findWellKnownRoute(request: RequestHeader): Option[AdminExtensionWellKnownRoute] = {
-    if (hasExtensions) {
-      if (wellKnownRoutes.isEmpty) {
-        None
-      } else {
-        // TODO: need an actual router
-        wellKnownRoutes.filter(r => r.method == "*" || r.method == request.method).find(_.path == request.path)
+  def handleWellKnownCall(request: RequestHeader, actionBuilder: ActionBuilder[Request, AnyContent], sourceBodyParser: BodyParser[Source[ByteString, _]])(f: => Option[Handler]): Option[Handler] = {
+    if (hasExtensions && request.path.startsWith("/.well-known/otoroshi/extensions/") && wellKnownRoutes.nonEmpty) {
+      // TODO: need an actual router
+      wellKnownRoutes.filter(r => r.method == "*" || r.method == request.method).find(_.path == request.path) match {
+        case None => f
+        case Some(route) if route.wantsBody => Some(actionBuilder.async(sourceBodyParser) { req => route.route(req, req.body.some) })
+        case Some(route) if !route.wantsBody => Some(actionBuilder.async { req => route.route(req, None) })
       }
     } else {
-      None
+      f
     }
+  }
+
+  def handleAdminApiCall(request: RequestHeader, actionBuilder: ActionBuilder[Request, AnyContent], ApiAction: ApiAction, sourceBodyParser: BodyParser[Source[ByteString, _]])(f: => Option[Handler]): Option[Handler] = {
+    if (hasExtensions && request.path.startsWith("/api/extensions/") && adminApiRoutes.nonEmpty) {
+      // TODO: use a router
+      adminApiRoutes.filter(r => r.method == "*" || r.method == request.method).find(_.path == request.path) match {
+        case Some(route) if route.wantsBody => Some(ApiAction.async(sourceBodyParser) { ctx => route.handle(ctx.request, ctx.apiKey, ctx.request.body.some) })
+        case Some(route) if !route.wantsBody => Some(ApiAction.async { ctx => route.handle(ctx.request, ctx.apiKey, None) })
+        case None => f
+      }
+    } else f
+  }
+
+  def handleBackofficeCall(request: RequestHeader, actionBuilder: ActionBuilder[Request, AnyContent], BackOfficeAction: BackOfficeAction, sourceBodyParser: BodyParser[Source[ByteString, _]])(f: => Option[Handler]): Option[Handler] = {
+    if (hasExtensions && request.path.startsWith("/extensions/") && !(backofficeAuthRoutes.isEmpty && backofficePublicRoutes.isEmpty && assets.isEmpty)) {
+      // TODO: additional assets routes
+      // TODO: use a router
+      backofficePublicRoutes.filter(r => r.method == "*" || r.method == request.method).find(_.path == request.path) match {
+        case Some(route) if route.wantsBody => Some(actionBuilder.async(sourceBodyParser) { req => route.handle(req, req.body.some) })
+        case Some(route) if !route.wantsBody => Some(actionBuilder.async { req => route.handle(req, None) })
+        case None => {
+          // TODO: use a router
+          backofficeAuthRoutes.filter(r => r.method == "*" || r.method == request.method).find(_.path == request.path) match {
+            case Some(route) if route.wantsBody => Some(BackOfficeAction.async(sourceBodyParser) { ctx => route.handle(ctx.request, ctx.user, ctx.request.body.some) })
+            case Some(route) if !route.wantsBody => Some(BackOfficeAction.async { ctx => route.handle(ctx.request, ctx.user, None) })
+            case None => f
+          }
+        }
+      }
+    } else f
+  }
+
+  def handlePrivateAppsCall(request: RequestHeader, actionBuilder: ActionBuilder[Request, AnyContent], PrivateAppsAction: PrivateAppsAction, sourceBodyParser: BodyParser[Source[ByteString, _]])(f: => Option[Handler]): Option[Handler] = {
+    if (hasExtensions && request.path.startsWith("/extensions/") && !(privateAppAuthRoutes.isEmpty && privateAppPublicRoutes.isEmpty && assets.isEmpty)) {
+      // TODO: additional assets routes
+      privateAppPublicRoutes.filter(r => r.method == "*" || r.method == request.method).find(_.path == request.path) match {
+        case Some(route) if route.wantsBody => Some(actionBuilder.async(sourceBodyParser) { req => route.handle(req, req.body.some) })
+        case Some(route) if !route.wantsBody => Some(actionBuilder.async { req => route.handle(req, None) })
+        case None => {
+          // TODO: use a router
+          privateAppAuthRoutes.filter(r => r.method == "*" || r.method == request.method).find(_.path == request.path) match {
+            case Some(route) if route.wantsBody => Some(PrivateAppsAction.async(sourceBodyParser) { ctx => route.handle(ctx.request, ctx.user, ctx.request.body.some) })
+            case Some(route) if !route.wantsBody => Some(PrivateAppsAction.async { ctx => route.handle(ctx.request, ctx.user, None) })
+            case None => f
+          }
+        }
+      }
+    } else f
   }
 
   def resources(): Seq[Resource] = {
