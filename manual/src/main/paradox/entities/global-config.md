@@ -2,20 +2,20 @@
 
 The global config, named `Danger zone` in Otoroshi, is the place to configure Otoroshi globally. 
 
-> Warning: In this page, the configuration is really sensitive and affect the global behaviour of Otoroshi.
+> Warning: In this page, the configuration is really sensitive and affects the global behaviour of Otoroshi.
 
 
 ### Misc. Settings
 
 
-* `Maintenance mode` : It pass every single service in maintenance mode. If an user calls a service, the maintenance page will be displayed
+* `Maintenance mode` : It passes every single service in maintenance mode. If a user calls a service, the maintenance page will be displayed
 * `No OAuth login for BackOffice` : Forces admins to login only with user/password or user/password/u2F device
-* `API Read Only`: Freeze the Otoroshi datastore in read only mode. Only people with access to the actual underlying datastore will be able to disable this.
+* `API Read Only`: Freeze Otoroshi datastore in read only mode. Only people with access to the actual underlying datastore will be able to disable this.
 * `Auto link default` : When no group is specified on a service, it will be assigned to default one
 * `Use circuit breakers` : Use circuit breaker on all services
 * `Use new http client as the default Http client` : All http calls will use the new http client by default
 * `Enable live metrics` : Enable live metrics in the Otoroshi cluster. Performs a lot of writes in the datastore
-* `Digitus medius` : Use middle finger emoji as a response character for endless HTTP responses.
+* `Digitus medius` : Use middle finger emoji as a response character for endless HTTP responses (see [IP address filtering settings](#ip-address-filtering-settings)).
 * `Limit conc. req.` : Limit the number of concurrent request processed by Otoroshi to a certain amount. Highly recommended for resilience
 * `Use X-Forwarded-* headers for routing` : When evaluating routing of a request, X-Forwarded-* headers will be used if presents
 * `Max conc. req.` : Maximum number of concurrent requests processed by otoroshi.
@@ -44,10 +44,10 @@ The global config, named `Danger zone` in Otoroshi, is the place to configure Ot
 * `Password`: Elastic password (optional)
 * `Version`: Elastic version (optional, if none provided it will be fetched from cluster)
 * `Apply template`: Automatically apply index template
-* `Check Connection`: Button to test the configuration. It will displayed a modal with checked point, and if the case of it's successfull, it will displayed the found version of the Elasticsearch and the index used
+* `Check Connection`: Button to test the configuration. It will displayed a modal with a connection checklist, if connection is successfull, it will display the found version of the Elasticsearch and the index used
 * `Manually apply index template`: try to put the elasticsearch template by calling the api of elasticsearch
-* `Show index template`: try to retrieve the current index template presents in elasticsearch
-* `Client side temporal indexes handling`: When enabled, Otoroshi will manage the creation of indexes. When it's disabled, Otoroshi will push in the same index
+* `Show index template`: try to retrieve the current index template present in elasticsearch
+* `Client side temporal indexes handling`: When enabled, Otoroshi will manage the creation of indexes over time. When it's disabled, Otoroshi will push in the same index
 * `One index per`: When the previous field is enabled, you can choose the interval of time between the creation of a new index in elasticsearch 
 * `Custom TLS Settings`: Enable the TLS configuration for the communication with Elasticsearch
 * `TLS loose`: if enabled, will block all untrustful ssl configs
@@ -93,9 +93,9 @@ Global scripts will be deprecated soon, please use global plugins instead (see t
 
 ###  Global plugins
 
-* `Enabled`: enabled all global plugins
+* `Enabled`: enable the use of global plugins
 * `Plugins on new Otoroshi engine`: list of plugins used by the new Otoroshi engine
-* `Plugins on old Otoroshi engine`: list of plugins bused by the old Otoroshi engine
+* `Plugins on old Otoroshi engine`: list of plugins used by the old Otoroshi engine
 * `Plugin configuration`: the overloaded configuration of plugins
 
 ###  Proxies
@@ -131,11 +131,11 @@ Each proxy has the following fields
 
 ###  Geolocation extraction settings
 
-Extract an geolocation for each call to Otoroshi.
+Extract a geolocation for each call to Otoroshi.
 
 ###  Tls Settings
 
-* `Use random cert.`: Use the first available cert none matches the current domain
+* `Use random cert.`: Use the first available cert when none matches the current domain
 * `Default domain`: When the SNI domain cannot be found, this one will be used to find the matching certificate 
 * `Trust JDK CAs (server)`: Trust JDK CAs. The CAs from the JDK CA bundle will be proposed in the certificate request when performing TLS handshake 
 * `Trust JDK CAs (trust)`: Trust JDK CAs. The CAs from the JDK CA bundle will be used as trusted CAs when calling HTTPS resources 
@@ -144,11 +144,11 @@ Extract an geolocation for each call to Otoroshi.
 
 ###  Auto Generate Certificates
 
-* `Enabled`: Generate certificates on the fly when they not exist
-* `Reply Nicely`: When not allowed domain name, accept connection and display a nice error message 
+* `Enabled`: Generate certificates on the fly when they don't exist
+* `Reply Nicely`: When receiving request from a not allowed domain name, accept connection and display a nice error message 
 * `CA`: certificate CA used to generate missing certificate
 * `Allowed domains`: Allowed domains
-* `Not allowed domains`: Allowed domains
+* `Not allowed domains`: Not allowed domains
   
 
 ###  Global metadata
