@@ -10,7 +10,7 @@
   "dependencies": {
     "@extism/extism": "^0.2.0",
     "adm-zip": "^0.5.10",
-    "aws-sdk": "^2.1294.0",
+    "aws-sdk": "^2.1354.0",
     "body-parser": "^1.20.1",
     "compression": "^1.7.4",
     "dotenv": "^16.0.3",
