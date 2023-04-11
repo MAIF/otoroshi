@@ -251,3 +251,47 @@ vaults {
 ```
 
 you should define your references like `${vault://izanami_vault/the:secret:id/key_name}`. `key_name` is optional if the secret value is not a json object
+
+### Spring Cloud Config
+
+a backend for [Spring Cloud Config.](https://docs.spring.io/spring-cloud-config/docs/current/reference/html/)
+
+
+the configuration of this backend should be like
+
+```conf
+vaults {
+  ...
+  name_of_the_vault {
+    type = "spring-cloud"
+    url = "http://127.0.0.1:8000"
+    root = "myapp/prod"
+    headers {
+      authorization = "Basic xxxx"
+    }
+  }
+}
+```
+
+you should define your references like `${vault://spring_vault/the/path/of/the/value}` where `/the/path/of/the/value` is the path of the value.
+
+### Http backend
+
+a backend for that uses the result of an http endpoint
+
+the configuration of this backend should be like
+
+```conf
+vaults {
+  ...
+  name_of_the_vault {
+    type = "http"
+    url = "http://127.0.0.1:8000/endpoint/for/config"
+    headers {
+      authorization = "Basic xxxx"
+    }
+  }
+}
+```
+
+you should define your references like `${vault://http_vault/the/path/of/the/value}` where `/the/path/of/the/value` is the path of the value.

@@ -23,8 +23,9 @@ import play.api.{Configuration, Logger}
 
 import java.net.URLEncoder
 import java.util.Base64
+import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.{DurationInt, DurationLong}
+import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
@@ -653,6 +654,121 @@ class IzanamiVault(name: String, configuration: Configuration, _env: Env) extend
   }
 }
 
+class SpringCloudConfigVault(name: String, configuration: Configuration, _env: Env) extends Vault {
+
+  private val logger = Logger("otoroshi-spring-cloud-vault")
+
+  private val baseUrl      = configuration
+    .getOptionalWithFileSupport[String](s"url")
+    .getOrElse("http://127.0.0.1:8888")
+
+  private val method =
+    configuration.getOptionalWithFileSupport[String](s"method").getOrElse("GET")
+  private val headers =
+    configuration.getOptionalWithFileSupport[Map[String, String]](s"headers").getOrElse(Map.empty).toSeq
+  private val timeout =
+    configuration.getOptionalWithFileSupport[Long](s"timeout").map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(1.minute)
+  private val root =
+    configuration.getOptionalWithFileSupport[String](s"root").getOrElse("foo/dev")
+
+  override def get(path: String, options: Map[String, String])(implicit
+                                                               env: Env,
+                                                               ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus] = {
+    val parts     = path.split("/").toSeq.filterNot(_.isEmpty)
+    val pointer   = parts.mkString("/", "/", "")
+    val url       = s"${baseUrl}/${root}"
+    env.Ws
+      .url(url)
+      .withHttpHeaders(headers: _*)
+      .withRequestTimeout(timeout)
+      .withMethod(method)
+      .withFollowRedirects(false)
+      .execute()
+      .map { response =>
+        println(response.status, response.body)
+        if (response.status == 200) {
+          val sources = response.json.select("propertySources").asOpt[Seq[JsValue]].getOrElse(Seq.empty).map(_.select("source").asOpt[JsObject].getOrElse(Json.obj()))
+          val source = sources.foldRight(Json.obj())((s, next) => s.deepMerge(next))
+          source.atPointer(pointer).asOpt[JsValue] match {
+            case Some(JsString(value))  => CachedVaultSecretStatus.SecretReadSuccess(value)
+            case Some(JsNumber(value))  => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
+            case Some(JsBoolean(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString)
+            case Some(o @ JsObject(_))  => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
+            case Some(arr @ JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
+            case Some(JsNull)           => CachedVaultSecretStatus.SecretReadSuccess("null")
+            case _                      => CachedVaultSecretStatus.SecretValueNotFound
+          }
+        } else if (response.status == 401) {
+          CachedVaultSecretStatus.SecretReadUnauthorized
+        } else if (response.status == 403) {
+          CachedVaultSecretStatus.SecretReadForbidden
+        } else {
+          CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
+        }
+      }
+      .recover { case e: Throwable =>
+        CachedVaultSecretStatus.SecretReadError(e.getMessage)
+      }
+  }
+}
+
+class HttpVault(name: String, configuration: Configuration, _env: Env) extends Vault {
+
+  private val logger = Logger("otoroshi-http-vault")
+
+  private val baseUrl      = configuration
+    .getOptionalWithFileSupport[String](s"url")
+    .getOrElse("http://127.0.0.1:8888")
+
+  private val method =
+    configuration.getOptionalWithFileSupport[String](s"method").getOrElse("GET")
+  private val headers =
+    configuration.getOptionalWithFileSupport[Map[String, String]](s"headers").getOrElse(Map.empty).toSeq
+  private val timeout =
+    configuration.getOptionalWithFileSupport[Long](s"timeout").map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(1.minute)
+
+  override def get(path: String, options: Map[String, String])(implicit
+                                                               env: Env,
+                                                               ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus] = {
+    val parts     = path.split("/").toSeq.filterNot(_.isEmpty)
+    val pointer   = parts.mkString("/", "/", "")
+    val url       = s"${baseUrl}"
+    env.Ws
+      .url(url)
+      .withHttpHeaders(headers: _*)
+      .withRequestTimeout(timeout)
+      .withMethod(method)
+      .withFollowRedirects(false)
+      .execute()
+      .map { response =>
+        println(response.status, response.body)
+        if (response.status == 200) {
+          val source = response.json
+          source.atPointer(pointer).asOpt[JsValue] match {
+            case Some(JsString(value))  => CachedVaultSecretStatus.SecretReadSuccess(value)
+            case Some(JsNumber(value))  => CachedVaultSecretStatus.SecretReadSuccess(value.toString())
+            case Some(JsBoolean(value)) => CachedVaultSecretStatus.SecretReadSuccess(value.toString)
+            case Some(o @ JsObject(_))  => CachedVaultSecretStatus.SecretReadSuccess(o.stringify)
+            case Some(arr @ JsArray(_)) => CachedVaultSecretStatus.SecretReadSuccess(arr.stringify)
+            case Some(JsNull)           => CachedVaultSecretStatus.SecretReadSuccess("null")
+            case _                      => CachedVaultSecretStatus.SecretValueNotFound
+          }
+        } else if (response.status == 401) {
+          CachedVaultSecretStatus.SecretReadUnauthorized
+        } else if (response.status == 403) {
+          CachedVaultSecretStatus.SecretReadForbidden
+        } else {
+          CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
+        }
+      }
+      .recover { case e: Throwable =>
+        CachedVaultSecretStatus.SecretReadError(e.getMessage)
+      }
+  }
+}
+
 class Vaults(env: Env) {
 
   private val logger              = Logger("otoroshi-vaults")
@@ -717,6 +833,12 @@ class Vaults(env: Env) {
         } else if (typ == "izanami") {
           logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
           vaults.put(key, new IzanamiVault(key, vaultConfig.get[Configuration](key), env))
+        } else if (typ == "spring-cloud") {
+          logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
+          vaults.put(key, new SpringCloudConfigVault(key, vaultConfig.get[Configuration](key), env))
+        } else if (typ == "http") {
+          logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
+          vaults.put(key, new HttpVault(key, vaultConfig.get[Configuration](key), env))
         } else if (typ == "gcloud") {
           logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
           vaults.put(key, new GoogleSecretManagerVault(key, vaultConfig.get[Configuration](key), env))

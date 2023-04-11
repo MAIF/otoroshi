@@ -112,6 +112,9 @@
     * Google secret manager
     * Kubernetes secrets
     * Izanami
+    * Spring Cloud Config
+    * Http
+    * Local
 
 **Certificates management**
 
