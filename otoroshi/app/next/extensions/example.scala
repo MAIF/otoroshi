@@ -106,14 +106,17 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
   }
 
   override def wellKnownRoutes(): Seq[AdminExtensionWellKnownRoute] = Seq(
-    AdminExtensionWellKnownRoute("GET", "/.well-known/otoroshi/extensions/foo/check", false, (request, body) => {
+    AdminExtensionWellKnownRoute("GET", "/.well-known/otoroshi/extensions/foo/bars/:id", false, (ctx, request, body) => {
+      Results.Ok(Json.obj("id" -> ctx.named("id").map(JsString.apply).getOrElse(JsNull).asValue)).vfuture
+    }),
+    AdminExtensionWellKnownRoute("GET", "/.well-known/otoroshi/extensions/foo/check", false, (ctx, request, body) => {
       Results.Ok(Json.obj("check" -> true)).vfuture
-    })
+    }),
   )
 
   override def adminApiRoutes(): Seq[AdminExtensionAdminApiRoute] = Seq(
-    AdminExtensionAdminApiRoute("GET", "/api/extensions/foo/private", false, (request, apk, _) => {
-      Results.Ok(Json.obj("private" -> true)).vfuture
+    AdminExtensionAdminApiRoute("GET", "/api/extensions/foo/foos/:id", false, (ctx, request, apk, _) => {
+      Results.Ok(Json.obj("foo_id" -> ctx.named("id").map(JsString.apply).getOrElse(JsNull).asValue)).vfuture
     })
   )
 

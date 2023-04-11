@@ -162,6 +162,7 @@ libraryDependencies ++= Seq(
   "com.amazonaws"                    % "aws-java-sdk-secretsmanager"               % "1.12.326" excludeAll (excludesJackson: _*),
   "org.apache.logging.log4j"         % "log4j-api"                                 % "2.19.0",
   "org.sangria-graphql"             %% "sangria"                                   % "3.4.0",
+  "org.bigtesting"                   % "routd"                                     % "1.0.7",
   // using a custom one right now as current build is broken
   // "org.extism.sdk"                   % "extism"                                    % "0.3.0",
   if (scalaLangVersion.startsWith("2.12")) {
