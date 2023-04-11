@@ -27,7 +27,7 @@ export default function Loader({ loading, children, loadingChildren, minLoaderTi
     return (
       <>
         <div className="d-flex justify-content-center">
-          <i className="fas fa-cog fa-spin" style={{ fontSize: '40px' }} />
+          <i className="fas fa-cog fa-spin" style={{ fontSize: '30px' }} />
         </div>
         {loadingChildren}
       </>
