@@ -859,28 +859,18 @@
     "type" : "object",
     "description" : "???",
     "properties" : {
-      "proxy_http_call_timeout" : {
+      "memory_pages" : {
         "type" : "integer",
         "format" : "int32",
         "description" : "???"
       },
-      "raw_source" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
-      },
-      "wasi" : {
+      "preserve" : {
         "type" : "boolean",
         "description" : "???"
       },
-      "function_name" : {
-        "type" : "string",
+      "opa" : {
+        "type" : "boolean",
         "description" : "???"
-      },
-      "compiler_source" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
       },
       "config" : {
         "type" : "object",
@@ -889,9 +879,118 @@
         },
         "description" : "???"
       },
-      "memory_pages" : {
-        "type" : "integer",
-        "format" : "int32",
+      "authorizations" : {
+        "description" : "???",
+        "properties" : {
+          "global_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "plugin_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "global_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "http_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "configuration_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "proxy_http_call_timeout" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "plugin_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "proxy_state_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "function_name" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "source" : {
+        "description" : "???",
+        "properties" : {
+          "kind" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          },
+          "path" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "opts" : {
+            "type" : "object",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "allowed_paths" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
         "description" : "???"
       },
       "allowed_hosts" : {
@@ -1055,6 +1154,153 @@
         "description" : "???"
       },
       "private_patterns" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      }
+    }
+  },
+  "otoroshi.next.plugins.WasmConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "memory_pages" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "preserve" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "opa" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "config" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "authorizations" : {
+        "description" : "???",
+        "properties" : {
+          "global_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "plugin_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "global_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "http_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "configuration_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "proxy_http_call_timeout" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "plugin_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "proxy_state_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "function_name" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "source" : {
+        "description" : "???",
+        "properties" : {
+          "kind" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          },
+          "path" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "opts" : {
+            "type" : "object",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "allowed_paths" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "allowed_hosts" : {
         "type" : "array",
         "items" : {
           "type" : "string"
@@ -4103,6 +4349,11 @@
       }
     }
   },
+  "otoroshi.next.plugins.WasmSourceKind" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
+  },
   "otoroshi.next.plugins.JwtSigner" : {
     "type" : "object",
     "description" : "???",
@@ -4507,6 +4758,210 @@
     "type" : "object",
     "description" : "???",
     "properties" : { }
+  },
+  "otoroshi.models.WasmPlugin" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "_loc" : {
+        "description" : "???",
+        "properties" : {
+          "tenant" : {
+            "description" : "Organization of the current entity",
+            "type" : "string"
+          },
+          "teams" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Teams of the current entity"
+          }
+        },
+        "type" : "object"
+      },
+      "name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "tags" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "steps" : {
+        "type" : "array",
+        "items" : {
+          "properties" : { },
+          "type" : "object"
+        },
+        "description" : "???"
+      },
+      "id" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "metadata" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "description" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "config" : {
+        "description" : "???",
+        "properties" : {
+          "memory_pages" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "preserve" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "opa" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "config" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "authorizations" : {
+            "description" : "???",
+            "properties" : {
+              "global_map_access" : {
+                "description" : "???",
+                "properties" : {
+                  "read" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "write" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "plugin_map_access" : {
+                "description" : "???",
+                "properties" : {
+                  "read" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "write" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "global_data_store_access" : {
+                "description" : "???",
+                "properties" : {
+                  "read" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "write" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "http_access" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "configuration_access" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "proxy_http_call_timeout" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "plugin_data_store_access" : {
+                "description" : "???",
+                "properties" : {
+                  "read" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "write" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "proxy_state_access" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "function_name" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "wasi" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "source" : {
+            "description" : "???",
+            "properties" : {
+              "kind" : {
+                "description" : "???",
+                "properties" : { },
+                "type" : "object"
+              },
+              "path" : {
+                "type" : "string",
+                "description" : "???"
+              },
+              "opts" : {
+                "type" : "object",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "allowed_paths" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "allowed_hosts" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      }
+    }
   },
   "ScriptsList" : {
     "type" : "array",
@@ -8487,6 +8942,85 @@
       }
     }
   },
+  "otoroshi.next.plugins.WasmAuthorizations" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "global_map_access" : {
+        "description" : "???",
+        "properties" : {
+          "read" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "write" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "plugin_map_access" : {
+        "description" : "???",
+        "properties" : {
+          "read" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "write" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "global_data_store_access" : {
+        "description" : "???",
+        "properties" : {
+          "read" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "write" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "http_access" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "configuration_access" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "proxy_http_call_timeout" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "plugin_data_store_access" : {
+        "description" : "???",
+        "properties" : {
+          "read" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "write" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "proxy_state_access" : {
+        "type" : "boolean",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.next.models.NgMatchedRoutes" : {
     "type" : "object",
     "description" : "???",
@@ -9516,6 +10050,11 @@
     "type" : "string",
     "enum" : [ "V1", "v2" ],
     "description" : "Version of the challenge token"
+  },
+  "otoroshi.script.JobKind" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
   },
   "otoroshi.plugins.authcallers.OAuth2Caller" : {
     "type" : "object",
@@ -12261,6 +12800,86 @@
       }
     }
   },
+  "otoroshi.next.plugins.ApikeyAuthModuleConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "realm" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "matcher" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "oneTagIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "noneMetaKeysIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "oneMetaIn" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "oneMetaKeyIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "allMetaKeysIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "noneTagIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "allTagsIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "allMetaIn" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "noneMetaIn" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          }
+        }
+      }
+    }
+  },
   "otoroshi.models.InHeader" : {
     "properties" : {
       "type" : {
@@ -12816,6 +13435,55 @@
     },
     "type" : "object",
     "description" : "???"
+  },
+  "otoroshi.next.extensions.Foo" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "metadata" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "id" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "tags" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "description" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "_loc" : {
+        "description" : "???",
+        "properties" : {
+          "tenant" : {
+            "description" : "Organization of the current entity",
+            "type" : "string"
+          },
+          "teams" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Teams of the current entity"
+          }
+        },
+        "type" : "object"
+      }
+    }
   },
   "otoroshi.plugins.quotas.InstanceQuotas" : {
     "type" : "object",
@@ -14766,6 +15434,26 @@
       "issuer" : {
         "description" : "???",
         "type" : "string"
+      }
+    }
+  },
+  "otoroshi.next.plugins.HMACCallerConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "secret" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "algo" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "authorization_header" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
       }
     }
   },
@@ -17712,54 +18400,6 @@
       }
     }
   },
-  "otoroshi.next.plugins.WasmQueryConfig" : {
-    "type" : "object",
-    "description" : "???",
-    "properties" : {
-      "proxy_http_call_timeout" : {
-        "type" : "integer",
-        "format" : "int32",
-        "description" : "???"
-      },
-      "raw_source" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
-      },
-      "wasi" : {
-        "type" : "boolean",
-        "description" : "???"
-      },
-      "function_name" : {
-        "type" : "string",
-        "description" : "???"
-      },
-      "compiler_source" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
-      },
-      "config" : {
-        "type" : "object",
-        "additionalProperties" : {
-          "type" : "string"
-        },
-        "description" : "???"
-      },
-      "memory_pages" : {
-        "type" : "integer",
-        "format" : "int32",
-        "description" : "???"
-      },
-      "allowed_hosts" : {
-        "type" : "array",
-        "items" : {
-          "type" : "string"
-        },
-        "description" : "???"
-      }
-    }
-  },
   "otoroshi.plugins.jobs.kubernetes.KubernetesSupport" : {
     "type" : "object",
     "description" : "???",
@@ -17797,6 +18437,101 @@
     "type" : "string",
     "enum" : [ "SIMPLE", "WEBAUTHN" ],
     "description" : "Admin kind"
+  },
+  "otoroshi.next.plugins.OAuth2Caller" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "cache_token_seconds" : {
+        "type" : "number",
+        "description" : "???"
+      },
+      "client_id" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "client_secret" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "scope" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "password" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "header_name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "method" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "user" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "kind" : {
+        "description" : "The kind of oauth2 flow",
+        "type" : "string",
+        "enum" : [ "client_credentials", "password" ]
+      },
+      "header_value_format" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "json_payload" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "audience" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "url" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "tls_config" : {
+        "description" : "???",
+        "properties" : {
+          "mtls" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "loose" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "trustAll" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "trustedCerts" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "certs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      }
+    }
   },
   "otoroshi.plugins.log4j.Log4jExpressionParser" : {
     "type" : "object",
@@ -18197,28 +18932,18 @@
     "type" : "object",
     "description" : "???",
     "properties" : {
-      "proxy_http_call_timeout" : {
+      "memory_pages" : {
         "type" : "integer",
         "format" : "int32",
         "description" : "???"
       },
-      "raw_source" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
-      },
-      "wasi" : {
+      "preserve" : {
         "type" : "boolean",
         "description" : "???"
       },
-      "function_name" : {
-        "type" : "string",
+      "opa" : {
+        "type" : "boolean",
         "description" : "???"
-      },
-      "compiler_source" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
       },
       "config" : {
         "type" : "object",
@@ -18227,9 +18952,118 @@
         },
         "description" : "???"
       },
-      "memory_pages" : {
-        "type" : "integer",
-        "format" : "int32",
+      "authorizations" : {
+        "description" : "???",
+        "properties" : {
+          "global_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "plugin_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "global_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "http_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "configuration_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "proxy_http_call_timeout" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "plugin_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "proxy_state_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "function_name" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "source" : {
+        "description" : "???",
+        "properties" : {
+          "kind" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          },
+          "path" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "opts" : {
+            "type" : "object",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "allowed_paths" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
         "description" : "???"
       },
       "allowed_hosts" : {
@@ -23188,10 +24022,6 @@
         "type" : "array",
         "items" : {
           "properties" : {
-            "anonymousTelemetry" : {
-              "type" : "boolean",
-              "description" : "???"
-            },
             "geolocationSettings" : {
               "description" : "Settings for geolocation extraction",
               "properties" : {
@@ -23231,10 +24061,18 @@
               "format" : "int64",
               "description" : "Authorized number of calls per second globally, measured on 10 seconds"
             },
+            "anonymousReporting" : {
+              "type" : "boolean",
+              "description" : "???"
+            },
             "maxWebhookSize" : {
               "type" : "integer",
               "format" : "int32",
               "description" : "Max number of items in webhooks"
+            },
+            "env" : {
+              "type" : "object",
+              "description" : "???"
             },
             "maxConcurrentRequests" : {
               "type" : "integer",
@@ -26067,6 +26905,213 @@
         },
         "description" : "???"
       },
+      "wasmPlugins" : {
+        "type" : "array",
+        "items" : {
+          "properties" : {
+            "_loc" : {
+              "description" : "???",
+              "properties" : {
+                "tenant" : {
+                  "description" : "Organization of the current entity",
+                  "type" : "string"
+                },
+                "teams" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "description" : "Teams of the current entity"
+                }
+              },
+              "type" : "object"
+            },
+            "name" : {
+              "type" : "string",
+              "description" : "???"
+            },
+            "tags" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              },
+              "description" : "???"
+            },
+            "steps" : {
+              "type" : "array",
+              "items" : {
+                "properties" : { },
+                "type" : "object"
+              },
+              "description" : "???"
+            },
+            "id" : {
+              "type" : "string",
+              "description" : "???"
+            },
+            "metadata" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string"
+              },
+              "description" : "???"
+            },
+            "description" : {
+              "type" : "string",
+              "description" : "???"
+            },
+            "config" : {
+              "description" : "???",
+              "properties" : {
+                "memory_pages" : {
+                  "type" : "integer",
+                  "format" : "int32",
+                  "description" : "???"
+                },
+                "preserve" : {
+                  "type" : "boolean",
+                  "description" : "???"
+                },
+                "opa" : {
+                  "type" : "boolean",
+                  "description" : "???"
+                },
+                "config" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "description" : "???"
+                },
+                "authorizations" : {
+                  "description" : "???",
+                  "properties" : {
+                    "global_map_access" : {
+                      "description" : "???",
+                      "properties" : {
+                        "read" : {
+                          "type" : "boolean",
+                          "description" : "???"
+                        },
+                        "write" : {
+                          "type" : "boolean",
+                          "description" : "???"
+                        }
+                      },
+                      "type" : "object"
+                    },
+                    "plugin_map_access" : {
+                      "description" : "???",
+                      "properties" : {
+                        "read" : {
+                          "type" : "boolean",
+                          "description" : "???"
+                        },
+                        "write" : {
+                          "type" : "boolean",
+                          "description" : "???"
+                        }
+                      },
+                      "type" : "object"
+                    },
+                    "global_data_store_access" : {
+                      "description" : "???",
+                      "properties" : {
+                        "read" : {
+                          "type" : "boolean",
+                          "description" : "???"
+                        },
+                        "write" : {
+                          "type" : "boolean",
+                          "description" : "???"
+                        }
+                      },
+                      "type" : "object"
+                    },
+                    "http_access" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "configuration_access" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    },
+                    "proxy_http_call_timeout" : {
+                      "type" : "integer",
+                      "format" : "int32",
+                      "description" : "???"
+                    },
+                    "plugin_data_store_access" : {
+                      "description" : "???",
+                      "properties" : {
+                        "read" : {
+                          "type" : "boolean",
+                          "description" : "???"
+                        },
+                        "write" : {
+                          "type" : "boolean",
+                          "description" : "???"
+                        }
+                      },
+                      "type" : "object"
+                    },
+                    "proxy_state_access" : {
+                      "type" : "boolean",
+                      "description" : "???"
+                    }
+                  },
+                  "type" : "object"
+                },
+                "function_name" : {
+                  "description" : "null type",
+                  "type" : "string",
+                  "nullable" : true
+                },
+                "wasi" : {
+                  "type" : "boolean",
+                  "description" : "???"
+                },
+                "source" : {
+                  "description" : "???",
+                  "properties" : {
+                    "kind" : {
+                      "description" : "???",
+                      "properties" : { },
+                      "type" : "object"
+                    },
+                    "path" : {
+                      "type" : "string",
+                      "description" : "???"
+                    },
+                    "opts" : {
+                      "type" : "object",
+                      "description" : "???"
+                    }
+                  },
+                  "type" : "object"
+                },
+                "allowed_paths" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "description" : "???"
+                },
+                "allowed_hosts" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "description" : "???"
+                }
+              },
+              "type" : "object"
+            }
+          },
+          "type" : "object"
+        },
+        "description" : "???"
+      },
       "serviceGroups" : {
         "type" : "array",
         "items" : {
@@ -26735,6 +27780,17 @@
     "type" : "object",
     "description" : "???",
     "properties" : { }
+  },
+  "otoroshi.next.plugins.HMACValidatorConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "secret" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      }
+    }
   },
   "otoroshi.next.plugins.EurekaServerConfig" : {
     "type" : "object",
@@ -27441,10 +28497,6 @@
     "type" : "object",
     "description" : "The global config (dynamic) for otoroshi",
     "properties" : {
-      "anonymousTelemetry" : {
-        "type" : "boolean",
-        "description" : "???"
-      },
       "geolocationSettings" : {
         "description" : "Settings for geolocation extraction",
         "type" : "object",
@@ -27491,10 +28543,18 @@
         "format" : "int64",
         "description" : "Authorized number of calls per second globally, measured on 10 seconds"
       },
+      "anonymousReporting" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
       "maxWebhookSize" : {
         "type" : "integer",
         "format" : "int32",
         "description" : "Max number of items in webhooks"
+      },
+      "env" : {
+        "type" : "object",
+        "description" : "???"
       },
       "maxConcurrentRequests" : {
         "type" : "integer",
@@ -29111,6 +30171,11 @@
       }
     }
   },
+  "otoroshi.next.plugins.WasmJobsLauncher" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
+  },
   "otoroshi.next.plugins.QueryTransformerConfig" : {
     "type" : "object",
     "description" : "???",
@@ -29197,6 +30262,153 @@
       "strip_path" : {
         "type" : "boolean",
         "description" : "Is path stripped from backend request"
+      }
+    }
+  },
+  "otoroshi.next.plugins.WasmPreRoute" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "memory_pages" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "preserve" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "opa" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "config" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "authorizations" : {
+        "description" : "???",
+        "properties" : {
+          "global_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "plugin_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "global_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "http_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "configuration_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "proxy_http_call_timeout" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "plugin_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "proxy_state_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "function_name" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "source" : {
+        "description" : "???",
+        "properties" : {
+          "kind" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          },
+          "path" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "opts" : {
+            "type" : "object",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "allowed_paths" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "allowed_hosts" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
       }
     }
   },
@@ -29600,6 +30812,153 @@
       "sampleInterval" : {
         "type" : "integer",
         "format" : "int64",
+        "description" : "???"
+      }
+    }
+  },
+  "otoroshi.next.plugins.WasmRouter" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "memory_pages" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "preserve" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "opa" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "config" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "authorizations" : {
+        "description" : "???",
+        "properties" : {
+          "global_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "plugin_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "global_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "http_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "configuration_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "proxy_http_call_timeout" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "plugin_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "proxy_state_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "function_name" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "source" : {
+        "description" : "???",
+        "properties" : {
+          "kind" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          },
+          "path" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "opts" : {
+            "type" : "object",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "allowed_paths" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "allowed_hosts" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
         "description" : "???"
       }
     }
@@ -30166,6 +31525,16 @@
     "type" : "object",
     "description" : "???",
     "properties" : { }
+  },
+  "otoroshi.next.plugins.WasmException" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "message" : {
+        "type" : "string",
+        "description" : "???"
+      }
+    }
   },
   "otoroshi.next.plugins.NgOtoroshiInfoConfig" : {
     "description" : "Configuration for OtoroshiInfos",
@@ -30814,6 +32183,198 @@
             "description" : "???"
           }
         }
+      }
+    }
+  },
+  "otoroshi.next.plugins.WasmJob" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "config" : {
+        "description" : "???",
+        "properties" : {
+          "unique_id" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "instantiation" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          },
+          "cron_expression" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "kind" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          },
+          "config" : {
+            "description" : "???",
+            "properties" : {
+              "memory_pages" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "preserve" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "opa" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "config" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "string"
+                },
+                "description" : "???"
+              },
+              "authorizations" : {
+                "description" : "???",
+                "properties" : {
+                  "global_map_access" : {
+                    "description" : "???",
+                    "properties" : {
+                      "read" : {
+                        "type" : "boolean",
+                        "description" : "???"
+                      },
+                      "write" : {
+                        "type" : "boolean",
+                        "description" : "???"
+                      }
+                    },
+                    "type" : "object"
+                  },
+                  "plugin_map_access" : {
+                    "description" : "???",
+                    "properties" : {
+                      "read" : {
+                        "type" : "boolean",
+                        "description" : "???"
+                      },
+                      "write" : {
+                        "type" : "boolean",
+                        "description" : "???"
+                      }
+                    },
+                    "type" : "object"
+                  },
+                  "global_data_store_access" : {
+                    "description" : "???",
+                    "properties" : {
+                      "read" : {
+                        "type" : "boolean",
+                        "description" : "???"
+                      },
+                      "write" : {
+                        "type" : "boolean",
+                        "description" : "???"
+                      }
+                    },
+                    "type" : "object"
+                  },
+                  "http_access" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "configuration_access" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "proxy_http_call_timeout" : {
+                    "type" : "integer",
+                    "format" : "int32",
+                    "description" : "???"
+                  },
+                  "plugin_data_store_access" : {
+                    "description" : "???",
+                    "properties" : {
+                      "read" : {
+                        "type" : "boolean",
+                        "description" : "???"
+                      },
+                      "write" : {
+                        "type" : "boolean",
+                        "description" : "???"
+                      }
+                    },
+                    "type" : "object"
+                  },
+                  "proxy_state_access" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "function_name" : {
+                "description" : "null type",
+                "type" : "string",
+                "nullable" : true
+              },
+              "wasi" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "source" : {
+                "description" : "???",
+                "properties" : {
+                  "kind" : {
+                    "description" : "???",
+                    "properties" : { },
+                    "type" : "object"
+                  },
+                  "path" : {
+                    "type" : "string",
+                    "description" : "???"
+                  },
+                  "opts" : {
+                    "type" : "object",
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "allowed_paths" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "string"
+                },
+                "description" : "???"
+              },
+              "allowed_hosts" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                },
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "interval" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "initial_delay" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "raw_config" : {
+            "type" : "object",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
       }
     }
   },
@@ -31541,28 +33102,18 @@
     "type" : "object",
     "description" : "???",
     "properties" : {
-      "proxy_http_call_timeout" : {
+      "memory_pages" : {
         "type" : "integer",
         "format" : "int32",
         "description" : "???"
       },
-      "raw_source" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
-      },
-      "wasi" : {
+      "preserve" : {
         "type" : "boolean",
         "description" : "???"
       },
-      "function_name" : {
-        "type" : "string",
+      "opa" : {
+        "type" : "boolean",
         "description" : "???"
-      },
-      "compiler_source" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
       },
       "config" : {
         "type" : "object",
@@ -31571,9 +33122,118 @@
         },
         "description" : "???"
       },
-      "memory_pages" : {
-        "type" : "integer",
-        "format" : "int32",
+      "authorizations" : {
+        "description" : "???",
+        "properties" : {
+          "global_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "plugin_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "global_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "http_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "configuration_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "proxy_http_call_timeout" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "plugin_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "proxy_state_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "function_name" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "source" : {
+        "description" : "???",
+        "properties" : {
+          "kind" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          },
+          "path" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "opts" : {
+            "type" : "object",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "allowed_paths" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
         "description" : "???"
       },
       "allowed_hosts" : {
@@ -31584,6 +33244,11 @@
         "description" : "???"
       }
     }
+  },
+  "otoroshi.script.JobInstantiation" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
   },
   "otoroshi.models.GeoPositionRadius" : {
     "type" : "object",
@@ -32696,6 +34361,26 @@
     "description" : "???",
     "properties" : { }
   },
+  "otoroshi.next.plugins.HMACCaller" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "secret" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "algo" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "authorization_header" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      }
+    }
+  },
   "otoroshi.models.RemainingQuotas" : {
     "type" : "object",
     "description" : "Remaining quotas for an apikey",
@@ -33604,6 +35289,153 @@
       },
       "body" : {
         "type" : "string",
+        "description" : "???"
+      }
+    }
+  },
+  "otoroshi.next.plugins.WasmOPA" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "memory_pages" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "preserve" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "opa" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "config" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "authorizations" : {
+        "description" : "???",
+        "properties" : {
+          "global_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "plugin_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "global_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "http_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "configuration_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "proxy_http_call_timeout" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "plugin_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "proxy_state_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "function_name" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "source" : {
+        "description" : "???",
+        "properties" : {
+          "kind" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          },
+          "path" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "opts" : {
+            "type" : "object",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "allowed_paths" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "allowed_hosts" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
         "description" : "???"
       }
     }
@@ -39115,6 +40947,30 @@
       }
     }
   },
+  "otoroshi.next.plugins.BasicAuthCallerConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "username" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "password" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "header_name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "header_value_format" : {
+        "type" : "string",
+        "description" : "???"
+      }
+    }
+  },
   "CertValidResponse" : {
     "type" : "object",
     "description" : "Is certificate valid",
@@ -39138,6 +40994,17 @@
       }
     }
   },
+  "otoroshi.next.plugins.CachedWasmScript" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "create_at" : {
+        "type" : "integer",
+        "format" : "int64",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.plugins.loggers.BodyLoggerFilterConfig" : {
     "type" : "object",
     "description" : "???",
@@ -39145,6 +41012,37 @@
       "json" : {
         "type" : "object",
         "description" : "???"
+      }
+    }
+  },
+  "otoroshi.next.plugins.OAuth1Caller" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "token_secret" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "consumer_secret" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "algo" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "token" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "consumer_key" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
       }
     }
   },
@@ -40291,6 +42189,86 @@
       }
     }
   },
+  "otoroshi.next.plugins.ApikeyAuthModule" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "realm" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "matcher" : {
+        "description" : "???",
+        "type" : "object",
+        "properties" : {
+          "oneTagIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "noneMetaKeysIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "oneMetaIn" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "oneMetaKeyIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "allMetaKeysIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "noneTagIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "allTagsIn" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "allMetaIn" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "noneMetaIn" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          }
+        }
+      }
+    }
+  },
   "otoroshi.utils.http.CacheConnectionSettings" : {
     "type" : "object",
     "description" : "???",
@@ -41117,6 +43095,11 @@
         "description" : "???"
       }
     }
+  },
+  "otoroshi.next.plugins.WasmContext" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
   },
   "otoroshi.plugins.jsoup.HtmlPatcher" : {
     "type" : "object",
@@ -42129,6 +44112,153 @@
     "type" : "object",
     "description" : "Alert trail event"
   },
+  "otoroshi.next.plugins.WasmRouteMatcher" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "memory_pages" : {
+        "type" : "integer",
+        "format" : "int32",
+        "description" : "???"
+      },
+      "preserve" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "opa" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "config" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "authorizations" : {
+        "description" : "???",
+        "properties" : {
+          "global_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "plugin_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "global_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "http_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "configuration_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "proxy_http_call_timeout" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "plugin_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "proxy_state_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "function_name" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "source" : {
+        "description" : "???",
+        "properties" : {
+          "kind" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          },
+          "path" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "opts" : {
+            "type" : "object",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "allowed_paths" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      },
+      "allowed_hosts" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        },
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.models.ApiDescriptor" : {
     "type" : "object",
     "description" : "???",
@@ -42155,6 +44285,37 @@
       "secure" : {
         "type" : "boolean",
         "description" : "???"
+      }
+    }
+  },
+  "otoroshi.next.plugins.OAuth1CallerConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "token_secret" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "consumer_secret" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "algo" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "token" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "consumer_key" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
       }
     }
   },
@@ -42509,6 +44670,101 @@
       "value" : {
         "type" : "object",
         "description" : "???"
+      }
+    }
+  },
+  "otoroshi.next.plugins.OAuth2CallerConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "cache_token_seconds" : {
+        "type" : "number",
+        "description" : "???"
+      },
+      "client_id" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "client_secret" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "scope" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "password" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "header_name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "method" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "user" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "kind" : {
+        "description" : "The kind of oauth2 flow",
+        "type" : "string",
+        "enum" : [ "client_credentials", "password" ]
+      },
+      "header_value_format" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "json_payload" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "audience" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "url" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "tls_config" : {
+        "description" : "???",
+        "properties" : {
+          "mtls" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "loose" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "trustAll" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "trustedCerts" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "certs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          }
+        },
+        "type" : "object"
       }
     }
   },
@@ -46206,6 +48462,11 @@
       }
     }
   },
+  "otoroshi.plugins.AttributeSetter" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
+  },
   "otoroshi.next.plugins.AuthorisationException" : {
     "type" : "object",
     "description" : "???",
@@ -46639,6 +48900,197 @@
   "PemCsrBody" : {
     "type" : "string",
     "description" : "PEM encoded csr"
+  },
+  "otoroshi.next.plugins.WasmContextSlot" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
+  },
+  "otoroshi.next.plugins.WasmJobsConfig" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "unique_id" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "instantiation" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      },
+      "cron_expression" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "kind" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      },
+      "config" : {
+        "description" : "???",
+        "properties" : {
+          "memory_pages" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "preserve" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "opa" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "config" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "authorizations" : {
+            "description" : "???",
+            "properties" : {
+              "global_map_access" : {
+                "description" : "???",
+                "properties" : {
+                  "read" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "write" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "plugin_map_access" : {
+                "description" : "???",
+                "properties" : {
+                  "read" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "write" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "global_data_store_access" : {
+                "description" : "???",
+                "properties" : {
+                  "read" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "write" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "http_access" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "configuration_access" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "proxy_http_call_timeout" : {
+                "type" : "integer",
+                "format" : "int32",
+                "description" : "???"
+              },
+              "plugin_data_store_access" : {
+                "description" : "???",
+                "properties" : {
+                  "read" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  },
+                  "write" : {
+                    "type" : "boolean",
+                    "description" : "???"
+                  }
+                },
+                "type" : "object"
+              },
+              "proxy_state_access" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "function_name" : {
+            "description" : "null type",
+            "type" : "string",
+            "nullable" : true
+          },
+          "wasi" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "source" : {
+            "description" : "???",
+            "properties" : {
+              "kind" : {
+                "description" : "???",
+                "properties" : { },
+                "type" : "object"
+              },
+              "path" : {
+                "type" : "string",
+                "description" : "???"
+              },
+              "opts" : {
+                "type" : "object",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "allowed_paths" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "allowed_hosts" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "interval" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "initial_delay" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "raw_config" : {
+        "type" : "object",
+        "description" : "???"
+      }
+    }
   },
   "Unknown" : {
     "type" : "object",
@@ -49551,6 +52003,20 @@
     "description" : "???",
     "properties" : { }
   },
+  "otoroshi.next.plugins.WasmDataRights" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "read" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "write" : {
+        "type" : "boolean",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.next.plugins.NgHeaderNamesConfig" : {
     "type" : "object",
     "description" : "???",
@@ -49865,10 +52331,6 @@
       "config" : {
         "description" : "???",
         "properties" : {
-          "anonymousTelemetry" : {
-            "type" : "boolean",
-            "description" : "???"
-          },
           "geolocationSettings" : {
             "description" : "Settings for geolocation extraction",
             "type" : "object",
@@ -49915,10 +52377,18 @@
             "format" : "int64",
             "description" : "Authorized number of calls per second globally, measured on 10 seconds"
           },
+          "anonymousReporting" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
           "maxWebhookSize" : {
             "type" : "integer",
             "format" : "int32",
             "description" : "Max number of items in webhooks"
+          },
+          "env" : {
+            "type" : "object",
+            "description" : "???"
           },
           "maxConcurrentRequests" : {
             "type" : "integer",
@@ -51410,6 +53880,17 @@
       }
     }
   },
+  "otoroshi.next.plugins.HMACValidator" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "secret" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      }
+    }
+  },
   "otoroshi.next.plugins.MockResponseNotFoundException" : {
     "type" : "object",
     "description" : "???",
@@ -52560,32 +55041,46 @@
     "type" : "object",
     "description" : "Settings to use RSA signing algorithm from a certificate keypair"
   },
+  "otoroshi.next.plugins.BasicAuthCaller" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "username" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "password" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "header_name" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "header_value_format" : {
+        "type" : "string",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.next.plugins.WasmBackend" : {
     "type" : "object",
     "description" : "???",
     "properties" : {
-      "proxy_http_call_timeout" : {
+      "memory_pages" : {
         "type" : "integer",
         "format" : "int32",
         "description" : "???"
       },
-      "raw_source" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
-      },
-      "wasi" : {
+      "preserve" : {
         "type" : "boolean",
         "description" : "???"
       },
-      "function_name" : {
-        "type" : "string",
+      "opa" : {
+        "type" : "boolean",
         "description" : "???"
-      },
-      "compiler_source" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
       },
       "config" : {
         "type" : "object",
@@ -52594,9 +55089,118 @@
         },
         "description" : "???"
       },
-      "memory_pages" : {
-        "type" : "integer",
-        "format" : "int32",
+      "authorizations" : {
+        "description" : "???",
+        "properties" : {
+          "global_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "plugin_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "global_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "http_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "configuration_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "proxy_http_call_timeout" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "plugin_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "proxy_state_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "function_name" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "source" : {
+        "description" : "???",
+        "properties" : {
+          "kind" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          },
+          "path" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "opts" : {
+            "type" : "object",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "allowed_paths" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
         "description" : "???"
       },
       "allowed_hosts" : {
@@ -53469,6 +56073,16 @@
     "type" : "object",
     "description" : "BulkPatchBody object"
   },
+  "otoroshi.next.plugins.FakeWasmContext" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "config" : {
+        "type" : "object",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.next.plugins.W3CTracing" : {
     "type" : "object",
     "description" : "???",
@@ -53640,6 +56254,11 @@
         "description" : "???"
       }
     }
+  },
+  "otoroshi.next.plugins.WasmRequestHandler" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : { }
   },
   "GlobalConfigImportBody" : {
     "type" : "object",
@@ -54634,6 +57253,25 @@
       }
     }
   },
+  "otoroshi.next.plugins.WasmSource" : {
+    "type" : "object",
+    "description" : "???",
+    "properties" : {
+      "kind" : {
+        "description" : "???",
+        "properties" : { },
+        "type" : "object"
+      },
+      "path" : {
+        "type" : "string",
+        "description" : "???"
+      },
+      "opts" : {
+        "type" : "object",
+        "description" : "???"
+      }
+    }
+  },
   "otoroshi.utils.mailer.GenericMailerSettings" : {
     "properties" : {
       "type" : {
@@ -55299,28 +57937,18 @@
     "type" : "object",
     "description" : "???",
     "properties" : {
-      "proxy_http_call_timeout" : {
+      "memory_pages" : {
         "type" : "integer",
         "format" : "int32",
         "description" : "???"
       },
-      "raw_source" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
-      },
-      "wasi" : {
+      "preserve" : {
         "type" : "boolean",
         "description" : "???"
       },
-      "function_name" : {
-        "type" : "string",
+      "opa" : {
+        "type" : "boolean",
         "description" : "???"
-      },
-      "compiler_source" : {
-        "description" : "null type",
-        "type" : "string",
-        "nullable" : true
       },
       "config" : {
         "type" : "object",
@@ -55329,9 +57957,118 @@
         },
         "description" : "???"
       },
-      "memory_pages" : {
-        "type" : "integer",
-        "format" : "int32",
+      "authorizations" : {
+        "description" : "???",
+        "properties" : {
+          "global_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "plugin_map_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "global_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "http_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "configuration_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          },
+          "proxy_http_call_timeout" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "???"
+          },
+          "plugin_data_store_access" : {
+            "description" : "???",
+            "properties" : {
+              "read" : {
+                "type" : "boolean",
+                "description" : "???"
+              },
+              "write" : {
+                "type" : "boolean",
+                "description" : "???"
+              }
+            },
+            "type" : "object"
+          },
+          "proxy_state_access" : {
+            "type" : "boolean",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "function_name" : {
+        "description" : "null type",
+        "type" : "string",
+        "nullable" : true
+      },
+      "wasi" : {
+        "type" : "boolean",
+        "description" : "???"
+      },
+      "source" : {
+        "description" : "???",
+        "properties" : {
+          "kind" : {
+            "description" : "???",
+            "properties" : { },
+            "type" : "object"
+          },
+          "path" : {
+            "type" : "string",
+            "description" : "???"
+          },
+          "opts" : {
+            "type" : "object",
+            "description" : "???"
+          }
+        },
+        "type" : "object"
+      },
+      "allowed_paths" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "type" : "string"
+        },
         "description" : "???"
       },
       "allowed_hosts" : {

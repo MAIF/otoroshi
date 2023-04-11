@@ -1091,6 +1091,13 @@ export class DangerZonePage extends Component {
       type: 'array',
       props: { label: 'Tags' },
     },
+    env: {
+      type: 'jsonobjectcode',
+      props: {
+        label: 'Otoroshi environment',
+        mode: 'json',
+      },
+    },
   };
 
   formFlow = (value) => [
@@ -1192,6 +1199,7 @@ export class DangerZonePage extends Component {
     '>>>Global metadata',
     'tags',
     'metadata',
+    'env'
   ];
 
   syncSchema = {

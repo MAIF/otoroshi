@@ -20146,6 +20146,10 @@
             "format" : "int32",
             "description" : "Max number of items in webhooks"
           },
+          "env" : {
+            "type" : "object",
+            "description" : "???"
+          },
           "maxConcurrentRequests" : {
             "type" : "integer",
             "format" : "int64",

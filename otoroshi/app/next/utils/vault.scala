@@ -11,20 +11,18 @@ import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.base.Charsets
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.plugins.hmac.HMACUtils
 import otoroshi.plugins.jobs.kubernetes.{KubernetesClient, KubernetesConfig}
 import otoroshi.utils.ReplaceAllWith
 import otoroshi.utils.cache.Caches
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits._
-import play.api.{Configuration, Logger}
 import play.api.libs.json._
 import play.api.libs.ws.WSAuthScheme
+import play.api.{Configuration, Logger}
 
 import java.net.URLEncoder
 import java.util.Base64
-import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -44,10 +42,10 @@ object CachedVaultSecretStatus {
   }
   case object SecretReadForbidden              extends CachedVaultSecretStatus { def value: String = "secret-read-forbidden"  }
   case object SecretReadTimeout                extends CachedVaultSecretStatus { def value: String = "secret-read-timeout"    }
-  case class SecretReadError(error: String)    extends CachedVaultSecretStatus {
+  case class  SecretReadError(error: String)    extends CachedVaultSecretStatus {
     def value: String = s"secret-read-error: ${error}"
   }
-  case class SecretReadSuccess(secret: String) extends CachedVaultSecretStatus { def value: String = secret                   }
+  case class  SecretReadSuccess(secret: String) extends CachedVaultSecretStatus { def value: String = secret                   }
 }
 
 case class CachedVaultSecret(key: String, at: DateTime, status: CachedVaultSecretStatus)
@@ -105,6 +103,46 @@ class EnvVault(vaultName: String, configuration: Configuration, _env: Env) exten
         case None         => CachedVaultSecretStatus.SecretNotFound.vfuture
         case Some(status) => status.vfuture
       }
+    }
+  }
+}
+
+class LocalVault(vaultName: String, configuration: Configuration, _env: Env) extends Vault {
+
+  private val logger        = Logger("otoroshi-local-vault")
+  private val defaultRoot = configuration.getOptionalWithFileSupport[String](s"root")
+
+  private def extractValue(obj: JsObject, path: String): CachedVaultSecretStatus = {
+    Try {
+      obj.atPointer(path).asOpt[JsValue] match {
+        case Some(JsString(value)) => value.some
+        case Some(JsNumber(value)) => value.toString().some
+        case Some(JsBoolean(value)) => value.toString.some
+        case Some(o@JsObject(_)) => o.stringify.some
+        case Some(arr@JsArray(_)) => arr.stringify.some
+        case Some(JsNull) => "null".some
+        case _ => None
+      }
+    } match {
+      case Failure(e) =>
+        logger.error("error while trying to read JSON env. variable", e)
+        CachedVaultSecretStatus.SecretReadError(e.getMessage)
+      case Success(None) => CachedVaultSecretStatus.SecretNotFound
+      case Success(Some(secret)) => CachedVaultSecretStatus.SecretReadSuccess(secret)
+    }
+  }
+
+  override def get(path: String, options: Map[String, String])(implicit
+                                                               env: Env,
+                                                               ec: ExecutionContext
+  ): Future[CachedVaultSecretStatus] = {
+    val parts  = path.split("/").toSeq.map(_.trim).filterNot(_.isEmpty)
+    if (parts.isEmpty) {
+      CachedVaultSecretStatus.BadSecretPath.vfuture
+    } else {
+      val root = options.get("root").orElse(defaultRoot)
+      val name = (root ++ parts).mkString("/", "/", "")
+      extractValue(env.datastores.globalConfigDataStore.latest().env, name).vfuture
     }
   }
 }
@@ -624,6 +662,10 @@ class Vaults(env: Env) {
     .getOptionalWithFileSupport[Long]("secrets-ttl")
     .map(_.milliseconds)
     .getOrElse(5.minutes)
+  private val secretsErrorTtl = vaultConfig
+    .getOptionalWithFileSupport[Long]("secrets-error-ttl")
+    .map(_.milliseconds)
+    .getOrElse(20.seconds)
   private val readTtl             = vaultConfig
     .getOptionalWithFileSupport[Long]("read-timeout")
     .map(_.milliseconds)
@@ -657,6 +699,9 @@ class Vaults(env: Env) {
         if (typ == "env") {
           logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
           vaults.put(key, new EnvVault(key, vaultConfig.get[Configuration](key), env))
+        } else if (typ == "local") {
+          logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
+          vaults.put(key, new LocalVault(key, vaultConfig.get[Configuration](key), env))
         } else if (typ == "hashicorp-vault") {
           logger.info(s"a vault named '${key}' of kind '${typ}' is now active !")
           vaults.put(key, new HashicorpVault(key, vaultConfig.get[Configuration](key), env))
@@ -704,41 +749,48 @@ class Vaults(env: Env) {
     )
   }
 
-  def resolveExpression(expr: String): Future[CachedVaultSecretStatus] = {
+  def resolveExpression(expr: String, force: Boolean): Future[CachedVaultSecretStatus] = {
     val uri     = Uri(expr)
     val name    = uri.authority.host.toString()
     val path    = uri.path.toString()
     val options = uri.query().toMap
-    cache.getIfPresent(expr) match {
-      case Some(res) => res.status.vfuture
-      case None      => {
-        vaults.get(name) match {
-          case None        =>
-            cache.put(expr, CachedVaultSecret(expr, DateTime.now(), CachedVaultSecretStatus.VaultNotFound))
-            CachedVaultSecretStatus.VaultNotFound.vfuture
-          case Some(vault) => {
-            getWithTimeout(vault, path, options)
-              .map { status =>
-                val theStatus = status match {
-                  case CachedVaultSecretStatus.SecretReadSuccess(v) =>
-                    val computed = JsString(v).stringify.substring(1).init
-                    CachedVaultSecretStatus.SecretReadSuccess(computed)
-                  case s                                            => s
-                }
-                val secret    = CachedVaultSecret(expr, DateTime.now(), theStatus)
+
+    def fetchSecret(): Future[CachedVaultSecretStatus] = {
+      vaults.get(name) match {
+        case None =>
+          cache.put(expr, CachedVaultSecret(expr, DateTime.now(), CachedVaultSecretStatus.VaultNotFound))
+          CachedVaultSecretStatus.VaultNotFound.vfuture
+        case Some(vault) => {
+          getWithTimeout(vault, path, options)
+            .map { status =>
+              val theStatus = status match {
+                case CachedVaultSecretStatus.SecretReadSuccess(v) =>
+                  val computed = JsString(v).stringify.substring(1).init
+                  CachedVaultSecretStatus.SecretReadSuccess(computed)
+                case s => s
+              }
+              val secret = CachedVaultSecret(expr, DateTime.now(), theStatus)
+              cache.put(expr, secret)
+              theStatus
+            }
+            .recover {
+              case e: Throwable => {
+                val secret =
+                  CachedVaultSecret(expr, DateTime.now(), CachedVaultSecretStatus.SecretReadError(e.getMessage))
                 cache.put(expr, secret)
-                theStatus
+                secret.status
               }
-              .recover {
-                case e: Throwable => {
-                  val secret =
-                    CachedVaultSecret(expr, DateTime.now(), CachedVaultSecretStatus.SecretReadError(e.getMessage))
-                  cache.put(expr, secret)
-                  secret.status
-                }
-              }
-          }
+            }
         }
+      }
+    }
+
+    if (force) {
+      fetchSecret()
+    } else {
+      cache.getIfPresent(expr) match {
+        case Some(res) => res.status.vfuture
+        case None => fetchSecret()
       }
     }
   }
@@ -755,8 +807,21 @@ class Vaults(env: Env) {
           }
         }
         .mapAsync(parallelFetchs) { secret =>
-          resolveExpression(secret.key).recover { case e: Throwable =>
-            ()
+
+          def resolve(force: Boolean): Future[Unit] = {
+            resolveExpression(secret.key, force)
+              .map(_ => ())
+              .recover {
+                case e: Throwable => ()
+              }
+          }
+
+          val shouldRetry: Boolean = (System.currentTimeMillis() - secret.at.toDate.getTime) > secretsErrorTtl.toMillis
+          secret.status match {
+            case CachedVaultSecretStatus.SecretReadSuccess(_) => resolve(force = false)
+            case CachedVaultSecretStatus.VaultNotFound => resolve(force = false)
+            case _ if shouldRetry => resolve(force = true)
+            case _ if !shouldRetry => resolve(force = false)
           }
         }
         .runWith(Sink.ignore)(env.otoroshiMaterializer)
@@ -783,7 +848,7 @@ class Vaults(env: Env) {
   def fillSecretsAsync(id: String, source: String)(implicit ec: ExecutionContext): Future[String] = {
     if (enabled) {
       expressionReplacer.replaceOnAsync(source) { expr =>
-        resolveExpression(expr)
+        resolveExpression(expr, force = false)
           .map {
             case CachedVaultSecretStatus.SecretReadSuccess(value) =>
               if (logger.isDebugEnabled)
