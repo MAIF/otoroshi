@@ -67,6 +67,7 @@ import ReadOnlyCalls from './ReadOnlyCalls';
 import Redirection from './Redirection';
 import RemoveHeadersIn from './RemoveHeadersIn';
 import RemoveHeadersOut from './RemoveHeadersOut';
+import ResponseCache from './ResponseCache';
 import Robots from './Robots';
 import RoutingRestrictions from './RoutingRestrictions';
 import S3Backend from './S3Backend';
@@ -166,6 +167,7 @@ export const Plugins = [
   Redirection,
   RemoveHeadersIn,
   RemoveHeadersOut,
+  ResponseCache,
   Robots,
   RoutingRestrictions,
   S3Backend,

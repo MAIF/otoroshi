@@ -106,7 +106,6 @@ class OIDCHeaders extends NgRequestTransformer {
     (payload \ name).asOpt[String] match {
       case None               => "--"
       case Some(value) if jwt =>
-        println(payload, name, jwt)
         Try(new String(org.apache.commons.codec.binary.Base64.decodeBase64(value.split("\\.")(1)))).getOrElse("--")
       case Some(value)        => value
     }
@@ -125,9 +124,6 @@ class OIDCHeaders extends NgRequestTransformer {
         val accessTokenMap =
           if (config.accessToken.send) Map(config.accessToken.headerName -> extract(user.token, config.accessToken.name, config.accessToken.jwt))
           else Map.empty
-
-
-        println(user.token)
 
         Right(
           ctx.otoroshiRequest.copy(
