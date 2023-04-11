@@ -53,6 +53,9 @@ import NgLegacyApikeyCall from './NgLegacyApikeyCall';
 import NgLegacyAuthModuleCall from './NgLegacyAuthModuleCall';
 import OAuth1Caller from './OAuth1Caller';
 import OAuth2Caller from './OAuth2Caller';
+import OIDCAccessTokenAsApikey from './OIDCAccessTokenAsApikey';
+import OIDCAccessTokenValidator from './OIDCAccessTokenValidator';
+import OIDCHeaders from './OIDCHeaders';
 import OtoroshiChallenge from './OtoroshiChallenge';
 import OtoroshiHeadersIn from './OtoroshiHeadersIn';
 import OtoroshiInfos from './OtoroshiInfos';
@@ -149,6 +152,9 @@ export const Plugins = [
   NgLegacyAuthModuleCall,
   OAuth1Caller,
   OAuth2Caller,
+  OIDCAccessTokenAsApikey,
+  OIDCAccessTokenValidator,
+  OIDCHeaders,
   OtoroshiChallenge,
   OtoroshiHeadersIn,
   OtoroshiInfos,

@@ -444,7 +444,7 @@ case class OIDCThirdPartyApiKeyConfig(
 
   def toJson: JsValue = OIDCThirdPartyApiKeyConfig.format.writes(this)
 
-  private def findAt(json: JsValue, path: String): Option[JsValue] = {
+  protected def findAt(json: JsValue, path: String): Option[JsValue] = {
     val parts                                = path.split("\\.").toSeq
     def tail(rest: Seq[String]): Seq[String] = if (rest.isEmpty) Seq.empty[String] else rest.tail
     def navTo(value: JsValue, field: Option[String], rest: Seq[String]): Option[JsValue] = {
@@ -470,10 +470,10 @@ case class OIDCThirdPartyApiKeyConfig(
     }
   }
 
-  private def shouldBeVerified(path: String): Boolean =
+  protected def shouldBeVerified(path: String): Boolean =
     !excludedPatterns.exists(p => RegexPool.regex(p).matches(path))
 
-  private def handleInternal[A](
+  protected def handleInternal[A](
       req: RequestHeader,
       descriptor: ServiceDescriptor,
       config: GlobalConfig,

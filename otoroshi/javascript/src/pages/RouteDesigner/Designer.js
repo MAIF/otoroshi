@@ -719,7 +719,6 @@ class Designer extends React.Component {
         ? pluginsWithNodeId
         : this.generatedPluginIndex(pluginsWithNodeId);
 
-      console.log(formattedPlugins)
       this.setState(
         {
           backends,
