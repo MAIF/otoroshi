@@ -12,17 +12,17 @@
   margin-top: 200px;
 }
 
-.sidebar{
-  .nav > li > a {
+// .sidebar{
+//   .nav > li > a {
     
-    &:hover {
-      background-color: $fondGrisclairSurvolMenu;
-      color: #fff;
-      border-color: $primaryColor;
-      border-radius: 5px;
-    }
-  }
-}
+//     &:hover {
+//       background-color: $fondGrisclairSurvolMenu;
+//       color: #fff;
+//       border-color: $primaryColor;
+//       border-radius: 5px;
+//     }
+//   }
+// }
 
 .dashboard-button {
   padding: .5em 1em;
@@ -41,21 +41,21 @@
   border-radius: 5px;
 }
 
-.nav >li >a:focus {
-  background: none;
-}
+// .nav >li >a:focus {
+//   background: none;
+// }
 
-.nav > li > a {
-  display: block;
-  transition-duration: 1s;
+// .nav > li > a {
+//   display: block;
+//   transition-duration: 1s;
 
-  &:focus,
-  &:hover {
-    text-decoration: none;
-    background-color: $fondGrisclairSurvolMenu;
-    color: #fff;
-  }
-}
+//   &:focus,
+//   &:hover {
+//     text-decoration: none;
+//     background-color: $fondGrisclairSurvolMenu;
+//     color: #fff;
+//   }
+// }
 
 .add-menu > li > a {
   border-radius: 5px;
@@ -75,14 +75,14 @@
   padding: .25 1em !important;
   color: #fff;
 }
+.nav-link:focus{
+  color: $primaryColor;
+}
 
 .nav-item--open i {
   margin-right: .5em;
 }
 
-.nav-link:focus{
-  color: $primaryColor;
-}
 
 .navbar-toggler-icon{
   width: auto;
