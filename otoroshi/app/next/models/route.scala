@@ -1172,7 +1172,7 @@ object NgRoute {
           .applyOnIf(service.enforceSecureCommunication && service.sendInfoToken) { seq =>
             seq :+ NgPluginInstance(
               plugin = pluginId[OtoroshiInfos],
-              exclude = service.secComExcludedPatterns,
+              // exclude = service.secComExcludedPatterns,
               config = NgPluginInstanceConfig(
                 NgOtoroshiInfoConfig(
                   Json.obj(
