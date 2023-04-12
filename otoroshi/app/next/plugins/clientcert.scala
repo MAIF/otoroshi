@@ -152,7 +152,7 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
 
   override def name: String = "Client certificate matching"
   override def description: Option[String] = "Check if client certificate matches the following configuration".some
-  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def defaultConfigObject: Option[NgPluginConfig] = NgHasClientCertMatchingValidatorConfig().some
   override def multiInstance: Boolean = true
   override def core: Boolean = true
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
@@ -244,7 +244,7 @@ class NgClientCertChainHeader extends NgRequestTransformer {
   override def name: String = "Client certificate header"
   override def description: Option[String] = "This plugin pass client certificate informations to the target in headers".some
 
-  override def defaultConfigObject: Option[NgPluginConfig] = None
+  override def defaultConfigObject: Option[NgPluginConfig] = NgClientCertChainHeaderConfig().some
   override def multiInstance: Boolean = true
   override def core: Boolean = true
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
