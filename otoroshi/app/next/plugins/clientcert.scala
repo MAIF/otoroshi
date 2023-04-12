@@ -8,9 +8,11 @@ import otoroshi.cluster.ClusterAgent
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, RemainingQuotas, RouteIdentifier, ServiceDescriptorIdentifier}
+import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.{NgPluginConfig, _}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.RegexPool
+import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.http.DN
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.syntax.implicits._
@@ -18,6 +20,7 @@ import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
 import java.security.cert.X509Certificate
+import scala.concurrent.duration.DurationLong
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -389,6 +392,143 @@ class NgCertificateAsApikey extends NgPreRouting {
             Done.right
           }
       }
+    }
+  }
+}
+
+case class NgHasClientCertMatchingHttpValidatorConfig(
+ url: String,
+ method: String,
+ timeout: Long,
+ headers: Map[String, String],
+ tls: NgTlsConfig,
+) extends NgPluginConfig {
+  override def json: JsValue = Json.obj(
+    "url" -> url,
+    "method" -> method,
+    "timeout" -> timeout,
+    "headers" -> headers,
+    "tls" -> tls.json,
+  )
+}
+
+object NgHasClientCertMatchingHttpValidatorConfig {
+  val format = new Format[NgHasClientCertMatchingHttpValidatorConfig] {
+    override def writes(o: NgHasClientCertMatchingHttpValidatorConfig): JsValue = o.json
+    override def reads(json: JsValue): JsResult[NgHasClientCertMatchingHttpValidatorConfig] = Try {
+      NgHasClientCertMatchingHttpValidatorConfig(
+        url = json.select("url").asString,
+        method = json.select("method").asOpt[String].getOrElse("GET"),
+        timeout = json.select("timeout").asOpt[Long].getOrElse(2000),
+        headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        tls = json.select("tls").asOpt[JsValue].flatMap(json => NgTlsConfig.format.reads(json).asOpt).getOrElse(NgTlsConfig.default),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+  }
+}
+
+class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
+
+  override def name: String = "Client certificate matching (over http)"
+  override def description: Option[String] = "Check if client certificate matches the following fetched from an http endpoint".some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgHasClientCertMatchingValidatorConfig().some
+  override def multiInstance: Boolean = true
+  override def core: Boolean = true
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  private val cache = new LegitTrieMap[String, (Long, JsValue)]
+
+  def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    Errors
+      .craftResponseResult(
+        "forbidden",
+        Results.Forbidden,
+        ctx.request,
+        None,
+        None,
+        duration = ctx.report.getDurationNow(),
+        overhead = ctx.report.getOverheadInNow(),
+        attrs = ctx.attrs,
+        maybeRoute = ctx.route.some
+      )
+      .map(r => NgAccess.NgDenied(r))
+  }
+
+  private def validate(certs: Seq[X509Certificate], values: JsValue, ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val allowedSerialNumbers =
+      (values \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+    val allowedSubjectDNs =
+      (values \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+    val allowedIssuerDNs =
+      (values \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+    val regexAllowedSubjectDNs =
+      (values \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+    val regexAllowedIssuerDNs =
+      (values \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+    if (
+      certs.exists(cert => allowedSerialNumbers.exists(s => s == cert.getSerialNumber.toString(16))) ||
+        certs
+          .exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(DN(cert.getSubjectDN.getName).stringify))) ||
+        certs
+          .exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(DN(cert.getIssuerDN.getName).stringify))) ||
+        certs.exists(cert =>
+          regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getSubjectDN.getName).stringify))
+        ) ||
+        certs.exists(cert =>
+          regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getIssuerDN.getName).stringify))
+        )
+    ) {
+      NgAccess.NgAllowed.vfuture
+    } else {
+      forbidden(ctx)
+    }
+  }
+
+  private def fetch(method: String, url: String, headers: Map[String, String], timeout: Long, tls: NgTlsConfig)(implicit
+                                                                                                  env: Env,
+                                                                                                  ec: ExecutionContext
+  ): Future[JsValue] = {
+    env.MtlsWs
+      .url(url, tls.legacy)
+      .withMethod(method)
+      .withHttpHeaders(headers.toSeq: _*)
+      .withRequestTimeout(timeout.millis)
+      .execute()
+      .map {
+        case r if r.status == 200 =>
+          cache.put(url, (System.currentTimeMillis(), r.json))
+          r.json
+        case _ =>
+          cache.put(url, (System.currentTimeMillis(), Json.obj()))
+          Json.obj()
+      }
+      .recover { case e =>
+        e.printStackTrace()
+        cache.put(url, (System.currentTimeMillis(), Json.obj()))
+        Json.obj()
+      }
+  }
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    ctx.request.clientCertificateChain match {
+      case Some(certs) => {
+        val config = ctx.cachedConfig(internalName)(NgHasClientCertMatchingHttpValidatorConfig.format).getOrElse(NgHasClientCertMatchingHttpValidatorConfig())
+        val start = System.currentTimeMillis()
+        cache.get(config.url) match {
+          case None =>
+            fetch(config.method, config.url, config.headers, config.timeout, config.tls).flatMap(b => validate(certs, b, ctx))
+          case Some((time, values)) if start - time <= config.timeout =>
+            validate(certs, values, ctx)
+          case Some((time, values)) if start - time > config.timeout =>
+            fetch(config.method, config.url, config.headers, config.timeout, config.tls)
+            validate(certs, values, ctx)
+        }
+      }
+      case _ => forbidden(ctx)
     }
   }
 }
