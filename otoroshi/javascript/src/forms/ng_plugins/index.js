@@ -56,6 +56,30 @@ import NgHasClientCertMatchingApikeyValidator from './NgHasClientCertMatchingApi
 import NgHasClientCertMatchingValidator from './NgHasClientCertMatchingValidator';
 import NgClientCertChainHeader from './NgClientCertChainHeader';
 import NgCertificateAsApikey from './NgCertificateAsApikey';
+import NgBiscuitExtractor from './NgBiscuitExtractor';
+import NgBiscuitValidator from './NgBiscuitValidator';
+import NgHasClientCertMatchingHttpValidator from './NgHasClientCertMatchingHttpValidator';
+import NgHasAllowedUsersValidator from './NgHasAllowedUsersValidator';
+import NgUserAgentExtractor from './NgUserAgentExtractor';
+import NgUserAgentInfoEndpoint from './NgUserAgentInfoEndpoint';
+import NgUserAgentInfoHeader from './NgUserAgentInfoHeader';
+import NgSecurityTxt from './NgSecurityTxt';
+import NgServiceQuotas from './NgServiceQuotas';
+import NgMirroringPlugin from './NgMirroringPlugin';
+import NgLog4ShellFilter from './NgLog4ShellFilter';
+import NgJwtUserExtractor from './NgJwtUserExtractor';
+import NgIzanamiProxy from './NgIzanamiProxy';
+import NgIzanamiCanary from './NgIzanamiCanary';
+import NgHMACValidator from './NgHMACValidator';
+import NgMaxMindGeolocationInfoExtractor from './NgMaxMindGeolocationInfoExtractor';
+import NgIpStackGeolocationInfoExtractor from './NgIpStackGeolocationInfoExtractor';
+import NgGeolocationInfoHeader from './NgGeolocationInfoHeader';
+import NgGeolocationInfoEndpoint from './NgGeolocationInfoEndpoint';
+import NgDiscoverySelfRegistrationSink from './NgDiscoverySelfRegistrationSink';
+import NgDiscoverySelfRegistrationTransformer from './NgDiscoverySelfRegistrationTransformer';
+import NgDiscoveryTargetsSelector from './NgDiscoveryTargetsSelector';
+import NgDeferPlugin from './NgDeferPlugin';
+import NgClientCredentialService from './NgClientCredentialService';
 import OAuth1Caller from './OAuth1Caller';
 import OAuth2Caller from './OAuth2Caller';
 import OIDCAccessTokenAsApikey from './OIDCAccessTokenAsApikey';
@@ -161,6 +185,30 @@ export const Plugins = [
   NgHasClientCertMatchingValidator,
   NgClientCertChainHeader,
   NgCertificateAsApikey,
+  NgBiscuitExtractor,
+  NgBiscuitValidator,
+  NgHasClientCertMatchingHttpValidator,
+  NgHasAllowedUsersValidator,
+  NgUserAgentExtractor,
+  NgUserAgentInfoEndpoint,
+  NgUserAgentInfoHeader,
+  NgSecurityTxt,
+  NgServiceQuotas,
+  NgMirroringPlugin,
+  NgLog4ShellFilter,
+  NgJwtUserExtractor,
+  NgIzanamiProxy,
+  NgIzanamiCanary,
+  NgHMACValidator,
+  NgMaxMindGeolocationInfoExtractor,
+  NgIpStackGeolocationInfoExtractor,
+  NgGeolocationInfoHeader,
+  NgGeolocationInfoEndpoint,
+  NgDiscoverySelfRegistrationSink,
+  NgDiscoverySelfRegistrationTransformer,
+  NgDiscoveryTargetsSelector,
+  NgDeferPlugin,
+  NgClientCredentialService,
   OAuth1Caller,
   OAuth2Caller,
   OIDCAccessTokenAsApikey,
