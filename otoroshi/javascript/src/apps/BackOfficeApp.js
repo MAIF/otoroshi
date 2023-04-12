@@ -280,17 +280,28 @@ class BackOfficeAppContainer extends Component {
                   alignItems: this.state.openedSidebar ? 'flex-start' : 'center',
                 }}>
                   {this.state.env && <GlobalTenantSelector env={this.state.env} />}
-                  <Link
-                    to="/"
-                    className='my-2 mt-3 px-3 d-flex align-items-center dashboard-button'
-                    {...createTooltip('Home dashboard of Otoroshi displaying global metrics')}
-                    onClick={() => {
-                      DynamicTitle.setContent(null);
-                      DynamicSidebar.setContent(null);
-                    }}>
-                    <i className={`fab fa-fort-awesome mb-1 ${this.state.openedSidebar ? 'me-2' : ''}`} />
-                    <span>{this.state.openedSidebar ? 'DASHBOARD' : ''}</span>
-                  </Link>
+                  <ul className="nav flex-column nav-sidebar mt-3">
+                    <li className="nav-item mt-0 nav-item--open">
+                       <Link
+                        to="/"
+                        className={`nav-link ${window.location.pathname==="/bo/dashboard/" ?"active":""}`}
+                        {...createTooltip(
+                          "Home dashboard of Otoroshi displaying global metrics"
+                        )}
+                        onClick={() => {
+                          DynamicTitle.setContent(null);
+                          DynamicSidebar.setContent(null);
+                        }}
+                      >
+                        <i
+                          className={`fab fa-fort-awesome ${
+                            this.state.openedSidebar ? "me-2" : ""
+                          }`}
+                        />
+                        {this.state.openedSidebar ? "DASHBOARD" : ""}
+                      </Link>
+                    </li>
+                  </ul>
                   <DynamicSidebar />
                   <DefaultSidebar
                     lines={this.state.lines}

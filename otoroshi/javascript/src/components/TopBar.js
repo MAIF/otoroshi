@@ -1497,12 +1497,11 @@ export class TopBar extends Component {
                   className="dropdown-menu add-menu"
                   aria-labelledby="add-components"
                   style={{
-                    background: 'rgb(73, 73, 72)',
-                    border: '1px solid #373735',
+                    background: "var(--bg-color_level1)",
+                    border: '1px solid var(--bg-color_level1)',
                     borderTop: 0,
                     padding: '12px',
                     zIndex: 4000,
-                    color: '#E6E6E6',
                     gap: 5,
                   }}>
                   {this.props && !this.props.env.initWithNewEngine && (

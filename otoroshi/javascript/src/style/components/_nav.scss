@@ -1,27 +1,15 @@
-.add-menu > li.active > a
-.add-menu > li.active > a:focus,
-.add-menu > li.active > a:hover {
-  color: $colorGris;
-  cursor: default;
-  background-color: $primaryColor;
-  border: 1px solid $primaryColor;
-  border-bottom-color: transparent;
-}
+// .add-menu > li.active > a
+// .add-menu > li.active > a:focus,
+// .add-menu > li.active > a:hover {
+//   color: $colorGris;
+//   cursor: default;
+//   background-color: $primaryColor;
+//   border: 1px solid $primaryColor;
+//   border-bottom-color: transparent;
+// }
 
 .tab-content {
   margin-top: 200px;
-}
-
-.sidebar{
-  .nav > li > a {
-    
-    &:hover {
-      background-color: $fondGrisclairSurvolMenu;
-      color: #fff;
-      border-color: $primaryColor;
-      border-radius: 5px;
-    }
-  }
 }
 
 .dashboard-button {
@@ -41,27 +29,11 @@
   border-radius: 5px;
 }
 
-.nav >li >a:focus {
-  background: none;
-}
-
-.nav > li > a {
-  display: block;
-  transition-duration: 1s;
-
-  &:focus,
-  &:hover {
-    text-decoration: none;
-    background-color: $fondGrisclairSurvolMenu;
-    color: #fff;
-  }
-}
-
 .add-menu > li > a {
   border-radius: 5px;
   padding: 5px;
   width: 100%;
-  color: #fff;
+  color: var(--color_level1);
 
   &:focus,
   &:hover {
@@ -75,14 +47,14 @@
   padding: .25 1em !important;
   color: #fff;
 }
+.nav-link:focus{
+  color: $primaryColor;
+}
 
 .nav-item--open i {
   margin-right: .5em;
 }
 
-.nav-link:focus{
-  color: $primaryColor;
-}
 
 .navbar-toggler-icon{
   width: auto;

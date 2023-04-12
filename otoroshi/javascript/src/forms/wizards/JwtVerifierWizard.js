@@ -1000,14 +1000,12 @@ function LoaderItem({ text, timeout, started }) {
   return (
     <div
       style={{
-        display: 'grid',
         gridTemplateColumns: '42px 1fr',
         minHeight: '42px',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        marginBottom: '6px',
+        backgroundColor:"var(--bg-color_level2)",
+        borderRadius:'5px',
       }}
-      className="mt-3">
+      className="d-grid align-items-center justify-content-start mt-3 mb-2 p-3">
       {started && (
         <Loader loading={loading} minLoaderTime={timeout}>
           <i className="fas fa-check fa-2x" style={{ color: "var(--color-primary)" }} />
@@ -1016,8 +1014,6 @@ function LoaderItem({ text, timeout, started }) {
       {!started && <i className="fas fa-square fa-2x" />}
       <div
         style={{
-          flex: 1,
-          marginLeft: '12px',
           fontWeight: loading ? 'normal' : 'bold',
         }}>
         <div>{text}</div>
