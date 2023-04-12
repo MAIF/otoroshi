@@ -193,6 +193,7 @@ object BiscuitHelper {
   }
 }
 
+// TODO: MIGRATE !
 class BiscuitExtractor extends PreRouting {
 
   import collection.JavaConverters._
@@ -353,6 +354,7 @@ class BiscuitExtractor extends PreRouting {
   }
 }
 
+// TODO: MIGRATE !
 class BiscuitValidator extends AccessValidator {
 
   override def name: String = "Biscuit token validator"

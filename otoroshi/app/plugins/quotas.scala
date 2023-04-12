@@ -11,9 +11,12 @@ import play.api.libs.json.{JsObject, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
+// DEPRECATED
 class InstanceQuotas extends AccessValidator {
 
-  override def name: String = "Instance quotas"
+  override def deprecated: Boolean = true
+
+  override def name: String = "[Deprecated] Instance quotas"
 
   override def defaultConfig: Option[JsObject] =
     Some(
@@ -138,6 +141,7 @@ case class ServiceQuotasConfig(
     monthlyQuota: Long = RemainingQuotas.MaxValue
 )
 
+// TODO: MIGRATE !
 class ServiceQuotas extends AccessValidator {
 
   override def name: String = "Public quotas"

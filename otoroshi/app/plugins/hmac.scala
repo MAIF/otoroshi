@@ -24,6 +24,7 @@ object HMACUtils {
   )
 }
 
+// MIGRATED
 class HMACCallerPlugin extends RequestTransformer {
 
   private val logger = Logger("otoroshi-plugins-hmac-caller-plugin")
@@ -138,6 +139,7 @@ class HMACCallerPlugin extends RequestTransformer {
   }
 }
 
+// TODO: MIGRATE !
 class HMACValidator extends AccessValidator {
 
   private val logger = Logger("otoroshi-plugins-hmac-access-validator-plugin")

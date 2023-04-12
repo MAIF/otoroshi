@@ -137,7 +137,7 @@ libraryDependencies ++= Seq(
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                             % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-akka-streams"                     % pulsarVersion excludeAll (excludesJackson: _*),
   "org.jsoup"                        % "jsoup"                                     % "1.15.3",
-  "com.clever-cloud"                 % "biscuit-java"                              % "2.2.0",
+  "org.biscuitsec"                   % "biscuit"                                   % "2.3.1",
   "org.opensaml"                     % "opensaml-core"                             % "4.0.1",
   "org.opensaml"                     % "opensaml-saml-api"                         % "4.0.1",
   //"org.opensaml"                     % "opensaml-xmlsec-impl"        % "4.0.1",

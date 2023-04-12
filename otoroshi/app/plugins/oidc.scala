@@ -29,6 +29,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
+// MIGRATED
 class OIDCHeaders extends RequestTransformer {
 
   override def name: String = "OIDC headers"
@@ -162,6 +163,7 @@ class OIDCHeaders extends RequestTransformer {
   }
 }
 
+// MIGRATED
 class OIDCAccessTokenValidator extends AccessValidator {
 
   override def name: String = "OIDC access_token validator"
@@ -269,6 +271,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
   }
 }
 
+// MIGRATED
 class OIDCAccessTokenAsApikey extends PreRouting {
 
   override def name: String = "OIDC access_token as apikey"

@@ -60,6 +60,7 @@ case class IzanamiCanaryConfig(
     routeConfig: Option[JsObject]
 )
 
+// TODO: MIGRATE !
 class IzanamiProxy extends RequestTransformer {
 
   override def name: String = "Izanami APIs Proxy"
@@ -331,6 +332,7 @@ object IzanamiCanaryRoutingConfig {
   }
 }
 
+// TODO: MIGRATE !
 class IzanamiCanary extends RequestTransformer {
 
   private val cookieJar = new LegitTrieMap[String, WSCookie]()

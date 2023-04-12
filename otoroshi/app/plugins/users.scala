@@ -10,6 +10,7 @@ import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
+// TODO: MIGRATE !
 class HasAllowedUsersValidator extends AccessValidator {
 
   private val logger = Logger("otoroshi-plugins-hasallowedusersvalidator")

@@ -78,6 +78,7 @@ object OAuth2CallerConfig {
   }
 }
 
+// MIGRATED
 class OAuth2Caller extends RequestTransformer {
 
   override def name: String = "OAuth2 caller"
@@ -354,6 +355,7 @@ class OAuth2Caller extends RequestTransformer {
 
 case class BasicAuthCallerConfig(username: String, password: String, headerName: String, headerValueFormat: String)
 
+// MIGRATED
 object BasicAuthCallerConfig {
   def parse(json: JsValue): BasicAuthCallerConfig = {
     BasicAuthCallerConfig(

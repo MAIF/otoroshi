@@ -19,6 +19,7 @@ import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
+// MIGRATED
 class OAuth1CallerPlugin extends RequestTransformer {
 
   private val logger = Logger("otoroshi-plugins-oauth1-caller-plugin")

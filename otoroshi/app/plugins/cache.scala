@@ -51,6 +51,7 @@ object ResponseCache {
   val logger        = Logger("otoroshi-plugins-response-cache")
 }
 
+// MIGRATED
 class ResponseCache extends RequestTransformer {
 
   override def name: String = "Response Cache"

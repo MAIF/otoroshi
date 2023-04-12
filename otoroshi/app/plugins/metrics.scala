@@ -17,9 +17,11 @@ import otoroshi.utils.future.Implicits._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+// DEPRECATED
 class ServiceMetrics extends RequestTransformer {
 
-  override def name: String = "Service Metrics"
+  override def deprecated: Boolean = true
+  override def name: String = "[Deprecated] Service Metrics"
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)
@@ -190,13 +192,15 @@ object PrometheusSupport {
   }
 }
 
+// DEPRECATED
 class PrometheusEndpoint extends RequestSink {
 
   private val ipRegex = RegexPool.regex(
     "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(:\\d{2,5})?$"
   )
 
-  override def name: String = "Prometheus Endpoint"
+  override def deprecated: Boolean = true
+  override def name: String = "[Deprecated] Prometheus Endpoint"
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)
@@ -270,6 +274,7 @@ class PrometheusEndpoint extends RequestSink {
   }
 }
 
+// DEPRECATED
 class PrometheusServiceMetrics extends RequestTransformer {
 
   import io.prometheus.client._
@@ -331,7 +336,8 @@ class PrometheusServiceMetrics extends RequestTransformer {
       .create()
   )
 
-  override def name: String = "Prometheus Service Metrics"
+  override def deprecated: Boolean = true
+  override def name: String = "[Deprecated] Prometheus Service Metrics"
 
   override def defaultConfig: Option[JsObject] =
     Some(

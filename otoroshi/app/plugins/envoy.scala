@@ -25,11 +25,14 @@ import otoroshi.utils.cache.types.LegitTrieMap
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
+// DEPRECATED
 class EnvoyControlPlane extends RequestTransformer {
+
+  override def deprecated: Boolean = true
 
   private val awaitingRequests = new LegitTrieMap[String, Promise[Source[ByteString, _]]]()
 
-  override def name: String = "Envoy Control Plane (experimental)"
+  override def name: String = "[Deprecated] Envoy Control Plane"
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)

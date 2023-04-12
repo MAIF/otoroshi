@@ -14,6 +14,7 @@ import play.api.libs.json.{JsObject, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
+// MIGRATED
 class HtmlPatcher extends RequestTransformer {
 
   override def name: String = "Html Patcher"

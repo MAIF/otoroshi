@@ -10,6 +10,7 @@ import otoroshi.utils.future.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 
+// TODO: MIGRATE !
 class SecurityTxt extends RequestTransformer {
 
   override def name: String = "Security Txt"

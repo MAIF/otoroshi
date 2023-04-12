@@ -35,11 +35,14 @@ case class ExternalHttpValidatorConfig(config: JsValue) {
   lazy val mtlsConfig: MtlsConfig       = MtlsConfig.read((config \ "mtlsConfig").asOpt[JsValue])
 }
 
+// DEPRECATED
 class ExternalHttpValidator extends AccessValidator {
 
   import otoroshi.utils.http.Implicits._
 
-  override def name: String = "External Http Validator"
+  override def deprecated: Boolean = true
+
+  override def name: String = "[Deprecated] External Http Validator"
 
   override def defaultConfig: Option[JsObject] =
     Some(

@@ -24,6 +24,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+// TODO: MIGRATE !
 class MaxMindGeolocationInfoExtractor extends PreRouting {
 
   private val logger = Logger("otoroshi-plugins-maxmind-geolocation-info")
@@ -96,6 +97,7 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
   }
 }
 
+// TODO: MIGRATE !
 class IpStackGeolocationInfoExtractor extends PreRouting {
 
   private val logger = Logger("otoroshi-plugins-ipstack-geolocation-info")
@@ -155,6 +157,7 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
   }
 }
 
+// TODO: MIGRATE !
 class GeolocationInfoHeader extends RequestTransformer {
 
   override def name: String = "Geolocation header"
@@ -208,6 +211,7 @@ class GeolocationInfoHeader extends RequestTransformer {
   }
 }
 
+// TODO: MIGRATE !
 class GeolocationInfoEndpoint extends RequestTransformer {
 
   override def name: String = "Geolocation endpoint"

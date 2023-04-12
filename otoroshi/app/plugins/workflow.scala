@@ -20,11 +20,13 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class WorkflowJob extends Job {
 
+  override def deprecated: Boolean = true
+
   private val logger = Logger("otoroshi-apikeys-workflow-job")
 
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.WorkflowJob")
 
-  override def name: String = "Workflow job"
+  override def name: String = "[DEPRECATED] Workflow job"
 
   override def defaultConfig: Option[JsObject] =
     Json

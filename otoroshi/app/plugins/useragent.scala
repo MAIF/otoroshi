@@ -65,6 +65,7 @@ object UserAgentHelper {
   }
 }
 
+// TODO: MIGRATE !
 class UserAgentExtractor extends PreRouting {
 
   private val logger = Logger("otoroshi-plugins-user-agent-extractor")
@@ -117,6 +118,7 @@ class UserAgentExtractor extends PreRouting {
   }
 }
 
+// TODO: MIGRATE !
 class UserAgentInfoEndpoint extends RequestTransformer {
 
   override def name: String = "User-Agent endpoint"
@@ -149,6 +151,7 @@ class UserAgentInfoEndpoint extends RequestTransformer {
   }
 }
 
+// TODO: MIGRATE !
 class UserAgentInfoHeader extends RequestTransformer {
 
   override def name: String = "User-Agent header"

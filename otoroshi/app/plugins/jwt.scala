@@ -14,6 +14,7 @@ import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
+// TODO: MIGRATE !
 class JwtUserExtractor extends PreRouting {
 
   override def name: String = "Jwt user extractor"

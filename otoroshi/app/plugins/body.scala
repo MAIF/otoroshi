@@ -130,6 +130,7 @@ object BodyLogger {
   val base64Encoder = java.util.Base64.getEncoder
 }
 
+// MIGRATED: this feature is now integrated in the new proxy engine (body capture)
 class BodyLogger extends RequestTransformer {
 
   override def name: String = "Body logger"

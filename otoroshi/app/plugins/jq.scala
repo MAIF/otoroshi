@@ -18,6 +18,7 @@ import play.api.mvc.{Request, RequestHeader, Result, Results}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
 
+// MIGRATED
 class JqBodyTransformer extends RequestTransformer {
 
   private val logger = Logger("otoroshi-plugins-jq")

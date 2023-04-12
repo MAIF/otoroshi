@@ -182,6 +182,7 @@ object DiscoveryHelper {
   }
 }
 
+// TODO: MIGRATE !
 class DiscoverySelfRegistrationSink extends RequestSink {
 
   import kaleidoscope._
@@ -235,6 +236,7 @@ class DiscoverySelfRegistrationSink extends RequestSink {
   }
 }
 
+// TODO: MIGRATE !
 class DiscoverySelfRegistrationTransformer extends RequestTransformer {
 
   import kaleidoscope._
@@ -318,6 +320,7 @@ class DiscoverySelfRegistrationTransformer extends RequestTransformer {
   }
 }
 
+// TODO: MIGRATE !
 class DiscoveryTargetsSelector extends PreRouting {
 
   override def name: String = "Service discovery target selector (service discovery)"
@@ -380,6 +383,7 @@ class DiscoveryTargetsSelector extends PreRouting {
 
 case class DiscoveryJobServiceId(id: String)
 case class DiscoveryJobRegistrationId(id: String)
+
 trait DiscoveryJob extends Job {
 
   override def jobVisibility: JobVisibility                                    = JobVisibility.UserLand

@@ -38,6 +38,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
+// DEPRECATED
 class HasAllowedApiKeyValidator extends AccessValidator {
 
   override def deprecated: Boolean = true
@@ -144,6 +145,7 @@ class HasAllowedApiKeyValidator extends AccessValidator {
   }
 }
 
+// DEPRECATED
 class ApiKeyAllowedOnThisServiceValidator extends AccessValidator {
 
   override def deprecated: Boolean = true
@@ -177,6 +179,7 @@ class ApiKeyAllowedOnThisServiceValidator extends AccessValidator {
   }
 }
 
+// MIGRATED
 class CertificateAsApikey extends PreRouting {
 
   override def name: String = "Client certificate as apikey"
@@ -264,6 +267,7 @@ case class ClientCredentialFlowBody(
     bearerKind: String
 )
 
+// DEPRECATED
 class ClientCredentialFlowExtractor extends PreRouting {
 
   override def name: String = "Client Credential Flow ApiKey extractor"
@@ -308,6 +312,7 @@ class ClientCredentialFlowExtractor extends PreRouting {
   }
 }
 
+// DEPRECATED
 class ClientCredentialFlow extends RequestTransformer {
 
   import otoroshi.utils.http.RequestImplicits._
@@ -949,6 +954,7 @@ case class BiscuitConf(
     rules: Seq[String] = Seq.empty
 )
 
+// TODO: MIGRATE !
 class ClientCredentialService extends RequestSink {
 
   import otoroshi.utils.http.RequestImplicits._
@@ -1198,7 +1204,7 @@ class ClientCredentialService extends RequestSink {
               val privKeyValue = apiKey.metadata.get("biscuit_pubkey").orElse(biscuitConf.privkey)
               val keypair      = new KeyPair(privKeyValue.get)
               val rng          = new SecureRandom()
-              Biscuit.make(rng, keypair, symbols, authority_builder.build()).serialize_b64url()
+              Biscuit.make(rng, keypair, io.vavr.control.Option.none(), symbols, authority_builder.build()).serialize_b64url()
             }
 
             val pass = scope.forall { s =>
@@ -1376,6 +1382,7 @@ class ClientCredentialService extends RequestSink {
 
 import scala.concurrent.{ExecutionContext, Future}
 
+// MIGRATED
 class ApikeyAuthModule extends PreRouting {
 
   override def name: String = "Apikey auth module"

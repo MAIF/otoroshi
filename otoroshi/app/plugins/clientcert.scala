@@ -18,6 +18,7 @@ import otoroshi.utils.http.MtlsConfig
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 
+// MIGRATED
 class HasClientCertValidator extends AccessValidator {
 
   override def name: String = "Client Certificate Only"
@@ -36,6 +37,7 @@ class HasClientCertValidator extends AccessValidator {
   }
 }
 
+// MIGRATED
 class HasClientCertMatchingApikeyValidator extends AccessValidator {
 
   override def name: String = "Client Certificate + Api Key only"
@@ -80,6 +82,7 @@ class HasClientCertMatchingApikeyValidator extends AccessValidator {
 
 case class SubIss(sn: String, subject: DN, issuer: DN)
 
+// MIGRATED
 class HasClientCertMatchingValidator extends AccessValidator {
 
   override def name: String = "Client certificate matching"
@@ -172,6 +175,7 @@ class HasClientCertMatchingValidator extends AccessValidator {
  * }
  *
  */
+// TODO: MIGRATE !
 class HasClientCertMatchingHttpValidator extends AccessValidator {
 
   override def name: String = "Client certificate matching (over http)"
@@ -326,6 +330,7 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
   }
 }
 
+// MIGRATED
 class ClientCertChainHeader extends RequestTransformer {
 
   override def name: String = "Client certificate header"

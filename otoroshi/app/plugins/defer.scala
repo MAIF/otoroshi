@@ -12,6 +12,7 @@ import play.api.mvc.Result
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
+// TODO: MIGRATE !
 class DeferPlugin extends RequestTransformer {
 
   override def name: String = "Defer Responses"

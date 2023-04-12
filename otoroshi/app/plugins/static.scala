@@ -11,6 +11,7 @@ import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
 
+// MIGRATED
 class StaticResponse extends RequestTransformer {
 
   override def name: String = "Static Response"
