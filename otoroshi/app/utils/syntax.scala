@@ -342,6 +342,10 @@ object implicits {
     def asObject: JsObject = obj.as[JsObject]
     def asArray: JsArray   = obj.as[JsArray]
     def asValue: JsValue   = obj.as[JsValue]
+    def asOptString: Option[String] = obj.asOpt[String]
+    def asOptBoolean: Option[Boolean] = obj.asOpt[Boolean]
+    def asOptInt: Option[Int] = obj.asOpt[Int]
+    def asOptLong: Option[Long] = obj.asOpt[Long]
   }
   implicit class BetterFuture[A](private val obj: Future[A])           extends AnyVal {
     def mono(implicit ec: ExecutionContext): Mono[A]                          = ReactiveStreamUtils.MonoUtils.fromFuture(obj)
