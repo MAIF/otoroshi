@@ -1,9 +1,15 @@
 package otoroshi.next.plugins
 
+import akka.Done
 import akka.stream.Materializer
+import org.apache.commons.codec.binary.Base64
+import org.joda.time.DateTime
+import otoroshi.cluster.ClusterAgent
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
+import otoroshi.models.{ApiKey, RemainingQuotas, RouteIdentifier, ServiceDescriptorIdentifier}
 import otoroshi.next.plugins.api.{NgPluginConfig, _}
+import otoroshi.security.IdGenerator
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.DN
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -284,6 +290,104 @@ class NgClientCertChainHeader extends NgRequestTransformer {
             headers = ctx.otoroshiRequest.headers ++ pemMap ++ dnsMap ++ chainMap
           )
         ).future
+      }
+    }
+  }
+}
+
+case class NgCertificateAsApikeyConfig(
+  readOnly: Boolean = false,
+  allowClientIdOnly: Boolean = false,
+  throttlingQuota: Long = 100,
+  dailyQuota: Long = RemainingQuotas.MaxValue,
+  monthlyQuota: Long = RemainingQuotas.MaxValue,
+  constrainedServicesOnly: Boolean = false,
+  tags: Seq[String] = Seq.empty,
+  metadata: Map[String, String] = Map.empty,
+) extends NgPluginConfig {
+  def json: JsValue = Json.obj(
+    "read_only" -> readOnly,
+    "allow_client_id_only" -> allowClientIdOnly,
+    "throttling_quota" -> throttlingQuota,
+    "daily_quota" -> dailyQuota,
+    "monthly_quota" -> monthlyQuota,
+    "constrained_services_only" -> constrainedServicesOnly,
+    "tags" -> tags,
+    "metadata" -> metadata,
+  )
+}
+
+object NgCertificateAsApikeyConfig {
+  val format = new Format[NgCertificateAsApikeyConfig] {
+    override def writes(o: NgCertificateAsApikeyConfig): JsValue = o.json
+    override def reads(json: JsValue): JsResult[NgCertificateAsApikeyConfig] = Try {
+      NgCertificateAsApikeyConfig(
+        readOnly = json.select("read_only").asOpt[Boolean].getOrElse(false),
+        allowClientIdOnly = json.select("allow_client_id_only").asOpt[Boolean].getOrElse(false),
+        throttlingQuota = json.select("throttling_quota").asOpt[Long].getOrElse(100L),
+        dailyQuota = json.select("daily_quota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+        monthlyQuota = json.select("monthly_quota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+        constrainedServicesOnly = json.select("constrained_services_only").asOpt[Boolean].getOrElse(false),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+  }
+}
+
+class NgCertificateAsApikey extends NgPreRouting {
+
+  override def name: String = "Client certificate as apikey"
+  override def description: Option[String] = "This plugin uses client certificate as an apikey. The apikey will be stored for classic apikey usage".some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgCertificateAsApikeyConfig().some
+
+  override def multiInstance: Boolean = true
+  override def core: Boolean = true
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
+
+  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+    ctx.request.clientCertificateChain.flatMap(_.headOption) match {
+      case None => Done.rightf
+      case Some(cert) => {
+        val config = ctx.cachedConfig(internalName)(NgCertificateAsApikeyConfig.format).getOrElse(NgCertificateAsApikeyConfig())
+        val serialNumber = cert.getSerialNumber.toString
+        val subjectDN = DN(cert.getSubjectDN.getName).stringify
+        val clientId = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
+        env.datastores.apiKeyDataStore
+          .findById(clientId)
+          .flatMap {
+            case Some(apikey) => apikey.vfuture
+            case None => {
+              val apikey = ApiKey(
+                clientId = clientId,
+                clientSecret = IdGenerator.token(128),
+                clientName = s"$subjectDN ($serialNumber)",
+                authorizedEntities = Seq(RouteIdentifier(ctx.route.id)),
+                validUntil = Some(new DateTime(cert.getNotAfter)),
+                readOnly = config.readOnly,
+                allowClientIdOnly = config.allowClientIdOnly,
+                throttlingQuota = config.throttlingQuota,
+                dailyQuota = config.dailyQuota,
+                monthlyQuota = config.monthlyQuota,
+                constrainedServicesOnly = config.constrainedServicesOnly,
+                tags = config.tags,
+                metadata = config.metadata,
+              )
+              if (env.clusterConfig.mode.isWorker) {
+                ClusterAgent.clusterSaveApikey(env, apikey)(ec, env.otoroshiMaterializer)
+              }
+              apikey.save().map(_ => apikey)
+            }
+          }
+          .map { apikey =>
+            ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
+            Done.right
+          }
       }
     }
   }

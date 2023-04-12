@@ -55,6 +55,7 @@ import NgHasClientCertValidator from './NgHasClientCertValidator';
 import NgHasClientCertMatchingApikeyValidator from './NgHasClientCertMatchingApikeyValidator';
 import NgHasClientCertMatchingValidator from './NgHasClientCertMatchingValidator';
 import NgClientCertChainHeader from './NgClientCertChainHeader';
+import NgCertificateAsApikey from './NgCertificateAsApikey';
 import OAuth1Caller from './OAuth1Caller';
 import OAuth2Caller from './OAuth2Caller';
 import OIDCAccessTokenAsApikey from './OIDCAccessTokenAsApikey';
@@ -159,6 +160,7 @@ export const Plugins = [
   NgHasClientCertMatchingApikeyValidator,
   NgHasClientCertMatchingValidator,
   NgClientCertChainHeader,
+  NgCertificateAsApikey,
   OAuth1Caller,
   OAuth2Caller,
   OIDCAccessTokenAsApikey,
