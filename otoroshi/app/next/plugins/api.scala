@@ -600,6 +600,9 @@ case class NgTransformerErrorContext(
   )
 }
 
+trait NgFakePlugin extends NgPlugin {}
+trait NgFakePluginContext extends NgCachedConfigContext
+
 trait NgRequestTransformer extends NgPlugin {
 
   def usesCallbacks: Boolean            = true
