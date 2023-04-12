@@ -3,7 +3,7 @@ package otoroshi.next.plugins
 import akka.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.{NgPluginConfig, _}
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.DN
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -13,9 +13,8 @@ import play.api.mvc.{Result, Results}
 
 import java.security.cert.X509Certificate
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
-// TODO: client side form
-// TODO: translation in route
 class NgHasClientCertValidator extends NgAccessValidator {
 
   override def name: String = "Client Certificate Only"
@@ -109,6 +108,40 @@ class NgHasClientCertMatchingApikeyValidator extends NgAccessValidator {
 
 case class SubIss(sn: String, subject: DN, issuer: DN)
 
+case class NgHasClientCertMatchingValidatorConfig(
+  serialNumbers: Seq[String] = Seq.empty,
+  subjectDNs: Seq[String] = Seq.empty,
+  issuerDNs: Seq[String] = Seq.empty,
+  regexSubjectDNs: Seq[String] = Seq.empty,
+  regexIssuerDNs: Seq[String] = Seq.empty,
+) extends NgPluginConfig {
+  override def json: JsValue = Json.obj(
+    "serial_numbers" -> serialNumbers,
+    "subject_dns" -> subjectDNs,
+    "issuer_dns" -> issuerDNs,
+    "regex_subject_dns" -> regexSubjectDNs,
+    "regex_issuer_dns" -> regexIssuerDNs,
+  )
+}
+
+object NgHasClientCertMatchingValidatorConfig {
+  val format = new Format[NgHasClientCertMatchingValidatorConfig] {
+    override def writes(o: NgHasClientCertMatchingValidatorConfig): JsValue = o.json
+    override def reads(json: JsValue): JsResult[NgHasClientCertMatchingValidatorConfig] = Try {
+      NgHasClientCertMatchingValidatorConfig(
+        serialNumbers = json.select("serial_numbers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        subjectDNs = json.select("subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
+        issuerDNs = json.select("issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
+        regexSubjectDNs = json.select("regex_subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
+        regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+  }
+}
+
 class NgHasClientCertMatchingValidator extends NgAccessValidator {
 
   override def name: String = "Client certificate matching"
@@ -144,24 +177,14 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
         )
       ) match {
       case Some(certs) => {
-        val config                 = context.config
-        val allowedSerialNumbers   =
-          (config \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val allowedSubjectDNs      =
-          (config \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val allowedIssuerDNs       =
-          (config \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val regexAllowedSubjectDNs =
-          (config \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val regexAllowedIssuerDNs  =
-          (config \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val config = context.cachedConfig(internalName)(NgHasClientCertMatchingValidatorConfig.format).getOrElse(NgHasClientCertMatchingValidatorConfig())
         if (
-          certs.exists(cert => allowedSerialNumbers.contains(cert.sn)) ||
-            certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.subject.stringify))) ||
-            certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(cert.issuer.stringify))) ||
+          certs.exists(cert => config.serialNumbers.contains(cert.sn)) ||
+            certs.exists(cert => config.subjectDNs.exists(s => RegexPool(s).matches(cert.subject.stringify))) ||
+            certs.exists(cert => config.issuerDNs.exists(s => RegexPool(s).matches(cert.issuer.stringify))) ||
             certs
-              .exists(cert => regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.subject.stringify))) ||
-            certs.exists(cert => regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.issuer.stringify)))
+              .exists(cert => config.regexSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.subject.stringify))) ||
+            certs.exists(cert => config.regexIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.issuer.stringify)))
         ) {
           NgAccess.NgAllowed.vfuture
         } else {
@@ -169,6 +192,43 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
         }
       }
       case _           => forbidden(context)
+    }
+  }
+}
+
+case class NgClientCertChainHeaderConfig(
+    sendPem: Boolean = false,
+    pemHeaderName: String = "X-Client-Cert-Pem",
+    sendDns: Boolean = false,
+    dnsHeaderName: String = "X-Client-Cert-DNs",
+    sendChain: Boolean = false,
+    chainHeaderName: String = "X-Client-Cert-Chain",
+) extends NgPluginConfig {
+  def json: JsValue = Json.obj(
+    "send_pem" -> sendPem,
+    "pem_header_name" -> pemHeaderName,
+    "send_dns" -> sendDns,
+    "dns_header_name" -> dnsHeaderName,
+    "send_chain" -> sendChain,
+    "chain_header_name" -> chainHeaderName,
+  )
+}
+
+object NgClientCertChainHeaderConfig {
+  val format = new Format[NgClientCertChainHeaderConfig] {
+    override def writes(o: NgClientCertChainHeaderConfig): JsValue = o.json
+    override def reads(json: JsValue): JsResult[NgClientCertChainHeaderConfig] = Try {
+      NgClientCertChainHeaderConfig(
+        sendPem = json.select("send_pem").asOpt[Boolean].getOrElse(false),
+        pemHeaderName = json.select("pem_header_name").asOpt[String].getOrElse("X-Client-Cert-Pem"),
+        sendDns = json.select("send_dns").asOpt[Boolean].getOrElse(false),
+        dnsHeaderName = json.select("dns_header_name").asOpt[String].getOrElse("X-Client-Cert-DNs"),
+        sendChain = json.select("send_chain").asOpt[Boolean].getOrElse(false),
+        chainHeaderName = json.select("chain_header_name").asOpt[String].getOrElse("X-Client-Cert-Chain"),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
     }
   }
 }
@@ -213,29 +273,12 @@ class NgClientCertChainHeader extends NgRequestTransformer {
     ctx.request.clientCertificateChain match {
       case None        => Right(ctx.otoroshiRequest).future
       case Some(chain) => {
-
-        val config = ctx.config
-
-        val sendAsPem     = (config \ "pem" \ "send").asOpt[Boolean].getOrElse(false)
-        val pemHeaderName =
-          (config \ "pem" \ "header").asOpt[String].getOrElse(env.Headers.OtoroshiClientCertChain + "-pem")
-
-        val sendDns       = (config \ "dns" \ "send").asOpt[Boolean].getOrElse(false)
-        val dnsHeaderName =
-          (config \ "dns" \ "header").asOpt[String].getOrElse(env.Headers.OtoroshiClientCertChain + "-dns")
-
-        val sendChain       = (config \ "chain" \ "send").asOpt[Boolean].getOrElse(true)
-        val chainHeaderName = (config \ "chain" \ "header").asOpt[String].getOrElse(env.Headers.OtoroshiClientCertChain)
-
-        val pemMap   = if (sendAsPem) Map(pemHeaderName -> ctx.request.clientCertChainPemString) else Map.empty
-        val dnsMap   =
-          if (sendDns)
-            Map(
-              dnsHeaderName -> Json.stringify(JsArray(chain.map(c => JsString(DN(c.getSubjectDN.getName).stringify))))
-            )
+        val config = ctx.cachedConfig(internalName)(NgClientCertChainHeaderConfig.format).getOrElse(NgClientCertChainHeaderConfig())
+        val pemMap = if (config.sendPem) Map(config.pemHeaderName -> ctx.request.clientCertChainPemString) else Map.empty
+        val dnsMap =
+          if (config.sendDns) Map(config.dnsHeaderName -> Json.stringify(JsArray(chain.map(c => JsString(DN(c.getSubjectDN.getName).stringify)))))
           else Map.empty
-        val chainMap = if (sendChain) Map(chainHeaderName -> Json.stringify(jsonChain(chain))) else Map.empty
-
+        val chainMap = if (config.sendChain) Map(config.chainHeaderName -> Json.stringify(jsonChain(chain))) else Map.empty
         Right(
           ctx.otoroshiRequest.copy(
             headers = ctx.otoroshiRequest.headers ++ pemMap ++ dnsMap ++ chainMap

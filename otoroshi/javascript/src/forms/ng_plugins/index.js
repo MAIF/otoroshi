@@ -51,6 +51,10 @@ import NgFrontend from './NgFrontend';
 import NgHttpClientCache from './NgHttpClientCache';
 import NgLegacyApikeyCall from './NgLegacyApikeyCall';
 import NgLegacyAuthModuleCall from './NgLegacyAuthModuleCall';
+import NgHasClientCertValidator from './NgHasClientCertValidator';
+import NgHasClientCertMatchingApikeyValidator from './NgHasClientCertMatchingApikeyValidator';
+import NgHasClientCertMatchingValidator from './NgHasClientCertMatchingValidator';
+import NgClientCertChainHeader from './NgClientCertChainHeader';
 import OAuth1Caller from './OAuth1Caller';
 import OAuth2Caller from './OAuth2Caller';
 import OIDCAccessTokenAsApikey from './OIDCAccessTokenAsApikey';
@@ -151,6 +155,10 @@ export const Plugins = [
   NgHttpClientCache,
   NgLegacyApikeyCall,
   NgLegacyAuthModuleCall,
+  NgHasClientCertValidator,
+  NgHasClientCertMatchingApikeyValidator,
+  NgHasClientCertMatchingValidator,
+  NgClientCertChainHeader,
   OAuth1Caller,
   OAuth2Caller,
   OIDCAccessTokenAsApikey,
