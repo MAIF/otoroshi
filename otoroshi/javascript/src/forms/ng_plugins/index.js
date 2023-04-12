@@ -199,7 +199,6 @@ export const Plugins = [
   NgJwtUserExtractor,
   NgIzanamiProxy,
   NgIzanamiCanary,
-  NgHMACValidator,
   NgMaxMindGeolocationInfoExtractor,
   NgIpStackGeolocationInfoExtractor,
   NgGeolocationInfoHeader,
