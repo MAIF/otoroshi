@@ -135,9 +135,9 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
             c => datastores.fooDatastore.extractId(c),
             stateAll = () => states.allFoos(),
             stateOne = (id) => states.foo(id),
+            stateUpdate = (values) => states.updateFoos(values)
           )
-        ),
-        datastores.fooDatastore.asInstanceOf[BasicStore[EntityLocationSupport]]
+        )
       )
     )
   }

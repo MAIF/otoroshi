@@ -654,6 +654,7 @@ case class GlobalConfig(
     tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty,
     env: JsObject = Json.obj(),
+    extensions: Map[String, JsValue] = Map.empty,
 ) extends Entity {
 
   def internalId: String               = "global"
@@ -791,6 +792,7 @@ object GlobalConfig {
         "wasmManagerSettings"     -> o.wasmManagerSettings.map(_.json).getOrElse(JsNull).as[JsValue],
         "metadata"                -> o.metadata,
         "env"                     -> o.env,
+        "extensions"              -> o.extensions,
         "templates"               -> o.templates.json
       )
     }
@@ -934,6 +936,7 @@ object GlobalConfig {
             .some,
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           env = (json \ "env").asOpt[JsObject].getOrElse(Json.obj()),
+          extensions = (json \ "extensions").asOpt[Map[String, JsValue]].getOrElse(Map.empty),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
         )
       } map { case sd =>

@@ -27,7 +27,7 @@ object KubernetesHelper {
 case class AdminExtensionId(value: String) {
   lazy val cleanup: String = value.replace(".", "_").toLowerCase()
 }
-case class AdminExtensionEntity[A <: EntityLocationSupport](resource: otoroshi.api.Resource, datastore: BasicStore[A]) // TODO: get rid of the datastore
+case class AdminExtensionEntity[A <: EntityLocationSupport](resource: otoroshi.api.Resource)
 
 case class AdminExtensionFrontendExtension()
 case class AdminExtensionGlobalConfigExtension()
@@ -87,6 +87,8 @@ trait AdminExtension {
   def start(): Unit = ()
   def stop(): Unit = ()
   def syncStates(): Future[Unit] = ().vfuture
+
+  // TODO: add util function to access and update global_config extensions with id as key
 
   def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = Seq.empty
   def frontendExtensions(): Seq[AdminExtensionFrontendExtension] = Seq.empty
@@ -292,10 +294,11 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           case (group, ett) => {
             Source(ett.toList)
               .mapAsync(1) { entity =>
-                entity.datastore.findAll().map(values => (entity.resource.pluralName, values))
+                entity.resource.access.findAll(entity.resource.version.name).map(values => (entity.resource.pluralName, values))
+                // entity.datastore.findAll().map(values => (entity.resource.pluralName, values))
               }
               .runFold((group, Map.empty[String, Seq[JsValue]])) { (tuple, elem) =>
-                val newMap = tuple._2 + (elem._1 -> elem._2.map(_.json))
+                val newMap = tuple._2 + (elem._1 -> elem._2)
                 (tuple._1, newMap)
               }
           }
@@ -318,7 +321,8 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
             case Some(ent) => {
               Source(entities.toList)
                 .mapAsync(1) { value =>
-                  env.datastores.rawDataStore.set(ent.datastore.key(value.select("id").asString), value.stringify.byteString, None)
+                  // env.datastores.rawDataStore.set(ent.datastore.key(value.select("id").asString), value.stringify.byteString, None)
+                  env.datastores.rawDataStore.set(ent.resource.access.key(value.select("id").asString), value.stringify.byteString, None)
                 }
                 .runWith(Sink.ignore)
             }

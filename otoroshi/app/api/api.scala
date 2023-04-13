@@ -214,8 +214,10 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
 
   def allJson(): Seq[JsValue] = all().map(_.json)
   def oneJson(id: String): Option[JsValue] = one(id).map(_.json)
+  def updateJson(values: Seq[JsValue]): Unit = update(values.map(v => format.reads(v)).collect { case JsSuccess(v, _) => v })
   def all(): Seq[T]
   def one(id: String): Option[T]
+  def update(values: Seq[T]): Unit
 }
 
 case class GenericResourceAccessApi[T <: EntityLocationSupport](
@@ -234,6 +236,7 @@ case class GenericResourceAccessApi[T <: EntityLocationSupport](
   override def template(version: String): JsValue = tmpl
   override def all(): Seq[T] = throw new UnsupportedOperationException()
   override def one(id: String): Option[T] = throw new UnsupportedOperationException()
+  override def update(values: Seq[T]): Unit = throw new UnsupportedOperationException()
 }
 
 case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
@@ -248,12 +251,14 @@ case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
    canBulk: Boolean = true,
    stateAll: () => Seq[T],
    stateOne: (String) => Option[T],
+   stateUpdate: (Seq[T]) => Unit,
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String            = keyf.apply(id)
   override def extractId(value: T): String        = value.theId
   override def template(version: String): JsValue = tmpl
   override def all(): Seq[T] = stateAll()
   override def one(id: String): Option[T] = stateOne(id)
+  override def update(values: Seq[T]): Unit = stateUpdate(values)
 }
 
 class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
