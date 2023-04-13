@@ -22,7 +22,6 @@ import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util._  
 
-  
 case class NgIzanamiV1ProxyConfig(
   path: String = "/api/izanami",
   featurePattern: String = "*",

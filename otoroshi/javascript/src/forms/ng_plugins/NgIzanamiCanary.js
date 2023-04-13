@@ -13,7 +13,7 @@ export default {
       type: 'string',
       label: 'Izanami url',
     },
-    tls_config: {
+    tls: {
       label: 'Custom TLS setup',
       type: 'form',
       collapsable: true,
