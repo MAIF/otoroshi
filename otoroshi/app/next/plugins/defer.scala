@@ -28,7 +28,7 @@ object NgDeferPluginConfig {
     override def writes(o: NgDeferPluginConfig): JsValue = o.json
     override def reads(json: JsValue): JsResult[NgDeferPluginConfig] = Try {
       NgDeferPluginConfig(
-        duration = FiniteDuration(json.select("duration").asOpt[Long].getOrElse(0), TimeUnit.MILLISECONDS)
+        duration = json.select("duration").asOpt[Long].getOrElse(0L).millis
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
