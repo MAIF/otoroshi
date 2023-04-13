@@ -103,7 +103,7 @@ object Log4jExpressionParser {
   }
 }
 
-// TODO: MIGRATE !
+// MIGRATED
 class Log4ShellFilter extends RequestTransformer {
 
   private val logger = Logger("otoroshi-plugins-log4shell")
