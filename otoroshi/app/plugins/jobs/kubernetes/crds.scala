@@ -12,6 +12,7 @@ import otoroshi.auth.AuthModuleConfig
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
 import otoroshi.models._
+import otoroshi.next.extensions.KubernetesHelper
 import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
@@ -195,7 +196,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
                 "data-exporters",
                 "teams",
                 "organizations"
-              ),
+              ) ++ env.adminExtensions.resources().map(_.pluralName),
               conf.watchTimeoutSeconds,
               !watchCommand.get()
             )
@@ -1004,6 +1005,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       NgRouteComposition.fmt,
       (a, b) => customizeRouteComposition(a, b, compositions)
     )
+
   def crdsFetchBackends(backends: Seq[StoredNgBackend]): Future[Seq[OtoResHolder[StoredNgBackend]]]                    =
     client.fetchOtoroshiResources[StoredNgBackend](
       "backends",
@@ -1098,6 +1100,33 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       v => SimpleOtoroshiAdmin.reads(v),
       (a, b) => customizeAdmin(a, b, admins)
     )
+
+  private[kubernetes] def customizeExtensionResource(
+    _spec: JsValue,
+    res: KubernetesOtoroshiResource,
+    entities: Seq[JsValue],
+    resource: otoroshi.api.Resource
+  ): JsValue = {
+    val spec = findAndMerge[JsValue](_spec, res, resource.singularName, None, entities, _.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty), _.select("id").asString, identity)
+    customizeIdAndName(spec, res)
+  }
+
+  private[kubernetes] def crdsFetchExtensionResources(resources: Map[otoroshi.api.Resource, Seq[JsValue]]): Future[Map[otoroshi.api.Resource, Seq[OtoResHolder[JsValue]]]] = {
+    val futures = resources.map {
+      case (resource, values) =>
+        () => client.fetchOtoroshiResources[JsValue](
+          resource.pluralName,
+          KubernetesHelper.reader(resource.access.validateToJson),
+          (a, b) => customizeExtensionResource(a, b, values, resource)
+        ).map(holders => (resource, holders))
+    }.toList
+    Source(futures)
+      .mapAsync(1) { f =>
+        f()
+      }
+      .runWith(Sink.seq)(env.otoroshiMaterializer)
+      .map(_.toMap)
+  }
 }
 
 case class KubernetesResourcesContext(
@@ -1117,7 +1146,8 @@ case class KubernetesResourcesContext(
     dataExporters: Seq[OtoResHolder[DataExporterConfig]],
     routes: Seq[OtoResHolder[NgRoute]],
     routesCompositions: Seq[OtoResHolder[NgRouteComposition]],
-    backends: Seq[OtoResHolder[StoredNgBackend]]
+    backends: Seq[OtoResHolder[StoredNgBackend]],
+    extRes: Map[otoroshi.api.Resource, Seq[OtoResHolder[JsValue]]]
 )
 
 case class OtoroshiResourcesContext(
@@ -1137,7 +1167,8 @@ case class OtoroshiResourcesContext(
     dataExporters: Seq[DataExporterConfig],
     routes: Seq[NgRoute],
     routeCompositions: Seq[NgRouteComposition],
-    backends: Seq[StoredNgBackend]
+    backends: Seq[StoredNgBackend],
+    extRes: Map[otoroshi.api.Resource, Seq[JsValue]],
 )
 
 case class CRDContext(
@@ -1222,6 +1253,8 @@ object KubernetesCRDsJob {
       otobackends           <-
         if (useProxyState) env.proxyState.allBackends().vfuture else env.datastores.backendsDataStore.findAll()
 
+      otoextres             <- env.adminExtensions.resources().map(r => (r, r.access.allJson())).groupBy(_._1).mapValues(_.map(_._2).flatten).vfuture
+
       services           <- clientSupport.client.fetchServices()
       endpoints          <- clientSupport.client.fetchEndpoints()
       secrets            <- clientSupport.client.fetchSecrets()
@@ -1242,6 +1275,7 @@ object KubernetesCRDsJob {
       routes             <- clientSupport.crdsFetchRoutes(otoroutes)
       routecomps         <- clientSupport.crdsFetchRouteCompositions(otoroutecomps)
       backends           <- clientSupport.crdsFetchBackends(otobackends)
+      extres             <- clientSupport.crdsFetchExtensionResources(otoextres)
 
     } yield {
       CRDContext(
@@ -1262,7 +1296,8 @@ object KubernetesCRDsJob {
           tenants = tenants,
           routes = routes,
           routesCompositions = routecomps,
-          backends = backends
+          backends = backends,
+          extRes = extres,
         ),
         otoroshi = OtoroshiResourcesContext(
           serviceGroups = otoserviceGroups,
@@ -1281,7 +1316,8 @@ object KubernetesCRDsJob {
           tenants = ototenants,
           routes = otoroutes,
           routeCompositions = otoroutecomps,
-          backends = otobackends
+          backends = otobackends,
+          extRes = otoextres,
         )
       )
     }
@@ -1324,7 +1360,16 @@ object KubernetesCRDsJob {
           compareAndSave(ctx.kubernetes.apiKeys)(ctx.otoroshi.apiKeys, _.clientId, _.save()) ++
           compareAndSave(ctx.kubernetes.routes)(ctx.otoroshi.routes, _.id, _.save()) ++
           compareAndSave(ctx.kubernetes.routesCompositions)(ctx.otoroshi.routeCompositions, _.id, _.save()) ++
-          compareAndSave(ctx.kubernetes.backends)(ctx.otoroshi.backends, _.id, _.save())
+          compareAndSave(ctx.kubernetes.backends)(ctx.otoroshi.backends, _.id, _.save()) ++ (
+            ctx.kubernetes.extRes.map {
+              case (resource, values) => compareAndSave(values)(
+                ctx.otoroshi.extRes.apply(resource),
+                v => v.select("id").asString,
+                v => resource.access.create(resource.version.name, resource.singularName, v.select("id").asOptString, v).map(_.isRight)
+              )
+            }.flatten
+          )
+
       ).toList
       logger.info(s"Will now sync ${entities.size} entities !")
       Source(entities)
@@ -1484,6 +1529,17 @@ object KubernetesCRDsJob {
           .debug(seq => logger.info(s"Will delete ${seq.size} out of date ng-backends entities"))
           .applyOn(env.datastores.backendsDataStore.deleteByIds)
 
+      _ <-
+        Source(ctx.otoroshi.extRes.map {
+          case (resource, values) => {
+            () => values.filter(sg => sg.select("metadata").as[Map[String, String]].get("otoroshi-provider").contains("kubernetes-crds"))
+              .filterNot(sg => ctx.kubernetes.extRes.apply(resource).exists(ssg => sg.select("metadata").as[Map[String, String]].get("kubernetes-path").contains(ssg.path)))
+              .map(_.select("id").asString)
+              .debug(seq => logger.info(s"Will delete ${seq.size} out of date extension resources entities"))
+              .applyOn(ids => resource.access.deleteMany(resource.version.name, ids))
+          }
+        }.toList).mapAsync(1)(f => f()).runWith(Sink.ignore)(env.otoroshiMaterializer)
+      
     } yield ()
   }
 

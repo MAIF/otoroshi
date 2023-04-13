@@ -186,6 +186,13 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       }
   }
 
+  def deleteMany(version: String, ids: Seq[String])(implicit
+                                             ec: ExecutionContext,
+                                             env: Env
+  ): Future[Unit] = {
+    env.datastores.rawDataStore.del(ids.map(id => key(id))).map(_ => ())
+  }
+
   def findOne(version: String, id: String)(implicit
       ec: ExecutionContext,
       env: Env
@@ -204,6 +211,11 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           }
       }
   }
+
+  def allJson(): Seq[JsValue] = all().map(_.json)
+  def oneJson(id: String): Option[JsValue] = one(id).map(_.json)
+  def all(): Seq[T]
+  def one(id: String): Option[T]
 }
 
 case class GenericResourceAccessApi[T <: EntityLocationSupport](
@@ -220,6 +232,28 @@ case class GenericResourceAccessApi[T <: EntityLocationSupport](
   override def key(id: String): String            = keyf.apply(id)
   override def extractId(value: T): String        = value.theId
   override def template(version: String): JsValue = tmpl
+  override def all(): Seq[T] = throw new UnsupportedOperationException()
+  override def one(id: String): Option[T] = throw new UnsupportedOperationException()
+}
+
+case class GenericResourceAccessApiWithState[T <: EntityLocationSupport](
+   format: Format[T],
+   keyf: String => String,
+   extractIdf: T => String,
+   tmpl: JsValue = Json.obj(),
+   canRead: Boolean = true,
+   canCreate: Boolean = true,
+   canUpdate: Boolean = true,
+   canDelete: Boolean = true,
+   canBulk: Boolean = true,
+   stateAll: () => Seq[T],
+   stateOne: (String) => Option[T],
+) extends ResourceAccessApi[T] {
+  override def key(id: String): String            = keyf.apply(id)
+  override def extractId(value: T): String        = value.theId
+  override def template(version: String): JsValue = tmpl
+  override def all(): Seq[T] = stateAll()
+  override def one(id: String): Option[T] = stateOne(id)
 }
 
 class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)

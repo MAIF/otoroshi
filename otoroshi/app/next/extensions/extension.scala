@@ -10,16 +10,24 @@ import otoroshi.storage.BasicStore
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Configuration
-import play.api.libs.json.{JsObject, JsValue}
+import play.api.libs.json.{Format, JsObject, JsResult, JsSuccess, JsValue, Reads}
 import play.api.mvc._
 
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
+
+class KubernetesResourceReader(f: JsValue => JsResult[JsValue]) extends Reads[JsValue] {
+  override def reads(json: JsValue): JsResult[JsValue] = f(json)
+}
+object KubernetesHelper {
+  def reader(f: JsValue => JsResult[JsValue]): Reads[JsValue] = new KubernetesResourceReader(f)
+}
+
 case class AdminExtensionId(value: String) {
   lazy val cleanup: String = value.replace(".", "_").toLowerCase()
 }
-case class AdminExtensionEntity[A <: EntityLocationSupport](resource: otoroshi.api.Resource, datastore: BasicStore[A])
+case class AdminExtensionEntity[A <: EntityLocationSupport](resource: otoroshi.api.Resource, datastore: BasicStore[A]) // TODO: get rid of the datastore
 
 case class AdminExtensionFrontendExtension()
 case class AdminExtensionGlobalConfigExtension()

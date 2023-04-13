@@ -129,10 +129,12 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
           "foo",
           "foo.extensions.otoroshi.io",
           ResourceVersion("v1", true, false, true),
-          GenericResourceAccessApi[Foo](
+          GenericResourceAccessApiWithState[Foo](
             Foo.format,
             id => datastores.fooDatastore.key(id),
             c => datastores.fooDatastore.extractId(c),
+            stateAll = () => states.allFoos(),
+            stateOne = (id) => states.foo(id),
           )
         ),
         datastores.fooDatastore.asInstanceOf[BasicStore[EntityLocationSupport]]
