@@ -141,7 +141,7 @@ case class ServiceQuotasConfig(
     monthlyQuota: Long = RemainingQuotas.MaxValue
 )
 
-// TODO: MIGRATE !
+// MIGRATED
 class ServiceQuotas extends AccessValidator {
 
   override def name: String = "Public quotas"
