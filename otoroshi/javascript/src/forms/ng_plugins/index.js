@@ -78,7 +78,7 @@ import NgDiscoverySelfRegistrationSink from './NgDiscoverySelfRegistrationSink';
 import NgDiscoverySelfRegistrationTransformer from './NgDiscoverySelfRegistrationTransformer';
 import NgDiscoveryTargetsSelector from './NgDiscoveryTargetsSelector';
 import NgDeferPlugin from './NgDeferPlugin';
-import NgClientCredentialService from './NgClientCredentialService';
+import NgClientCredentials from './NgClientCredentials';
 import OAuth1Caller from './OAuth1Caller';
 import OAuth2Caller from './OAuth2Caller';
 import OIDCAccessTokenAsApikey from './OIDCAccessTokenAsApikey';
@@ -206,7 +206,7 @@ export const Plugins = [
   NgDiscoverySelfRegistrationTransformer,
   NgDiscoveryTargetsSelector,
   NgDeferPlugin,
-  NgClientCredentialService,
+  NgClientCredentials,
   OAuth1Caller,
   OAuth2Caller,
   OIDCAccessTokenAsApikey,
