@@ -22,6 +22,7 @@ case class AdminExtensionId(value: String) {
 case class AdminExtensionEntity[A <: EntityLocationSupport](resource: otoroshi.api.Resource, datastore: BasicStore[A])
 
 case class AdminExtensionFrontendExtension()
+case class AdminExtensionGlobalConfigExtension()
 trait AdminExtensionRoute {
   def method: String
   def path: String
@@ -80,7 +81,8 @@ trait AdminExtension {
   def syncStates(): Future[Unit] = ().vfuture
 
   def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = Seq.empty
-  def frontendExtension(): Seq[AdminExtensionFrontendExtension] = Seq.empty
+  def frontendExtensions(): Seq[AdminExtensionFrontendExtension] = Seq.empty
+  def globalConfigExtensions(): Seq[AdminExtensionGlobalConfigExtension] = Seq.empty
   def assets(): Seq[AdminExtensionAssetRoute] = Seq.empty
   def backofficeAuthRoutes(): Seq[AdminExtensionBackofficeAuthRoute] = Seq.empty
   def backofficePublicRoutes(): Seq[AdminExtensionBackofficePublicRoute] = Seq.empty
@@ -131,7 +133,8 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   private val entitiesMap: Map[String, Seq[AdminExtensionEntity[EntityLocationSupport]]] = extensions.map(v => (v.id.cleanup, v.entities())).toMap
   private val entities: Seq[AdminExtensionEntity[EntityLocationSupport]] = entitiesMap.values.flatten.toSeq
 
-  private val frontendExtension: Seq[AdminExtensionFrontendExtension] = extensions.flatMap(_.frontendExtension())
+  private val frontendExtensions: Seq[AdminExtensionFrontendExtension] = extensions.flatMap(_.frontendExtensions())
+  private val globalConfigExtensions: Seq[AdminExtensionGlobalConfigExtension] = extensions.flatMap(_.globalConfigExtensions())
 
   private val assets: Seq[AdminExtensionAssetRoute] = extensions.flatMap(_.assets())
   private val assetsRouter = new AdminExtensionRouter[AdminExtensionAssetRoute](assets)
@@ -196,43 +199,43 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   }
 
   def handleBackofficeCall(request: RequestHeader, actionBuilder: ActionBuilder[Request, AnyContent], BackOfficeAction: BackOfficeAction, sourceBodyParser: BodyParser[Source[ByteString, _]])(f: => Option[Handler]): Option[Handler] = {
-    if (hasExtensions && request.path.startsWith("/extensions/") && !(backofficeAuthRoutes.isEmpty && backofficePublicRoutes.isEmpty && assets.isEmpty)) {
+    if (hasExtensions && request.path.startsWith("/extensions/assets/") && assets.nonEmpty) {
+      assetsRouter.find(request) match {
+        case Some(route) => Some(actionBuilder.async { ctx => route.adminRoute.handle(route, ctx) })
+        case None => f
+      }
+    } else if (hasExtensions && request.path.startsWith("/extensions/pub/") && backofficePublicRoutes.nonEmpty) {
       backofficePublicRouter.find(request) match {
         case Some(route) if route.adminRoute.wantsBody => Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
         case Some(route) if !route.adminRoute.wantsBody => Some(actionBuilder.async { req => route.adminRoute.handle(route, req, None) })
-        case None => {
-          backofficeAuthRouter.find(request) match {
-            case Some(route) if route.adminRoute.wantsBody => Some(BackOfficeAction.async(sourceBodyParser) { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, ctx.request.body.some) })
-            case Some(route) if !route.adminRoute.wantsBody => Some(BackOfficeAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, None) })
-            case None => {
-              assetsRouter.find(request) match {
-                case Some(route) => Some(actionBuilder.async { ctx => route.adminRoute.handle(route, ctx) })
-                case None => f
-              }
-            }
-          }
-        }
+        case None => f
+      }
+    } else if (hasExtensions && request.path.startsWith("/extensions/") && backofficeAuthRoutes.nonEmpty) {
+      backofficeAuthRouter.find(request) match {
+        case Some(route) if route.adminRoute.wantsBody => Some(BackOfficeAction.async(sourceBodyParser) { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, ctx.request.body.some) })
+        case Some(route) if !route.adminRoute.wantsBody => Some(BackOfficeAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, None) })
+        case None => f
       }
     } else f
   }
 
   def handlePrivateAppsCall(request: RequestHeader, actionBuilder: ActionBuilder[Request, AnyContent], PrivateAppsAction: PrivateAppsAction, sourceBodyParser: BodyParser[Source[ByteString, _]])(f: => Option[Handler]): Option[Handler] = {
-    if (hasExtensions && request.path.startsWith("/extensions/") && !(privateAppAuthRoutes.isEmpty && privateAppPublicRoutes.isEmpty && assets.isEmpty)) {
+    if (hasExtensions && request.path.startsWith("/extensions/assets/") && assets.nonEmpty) {
+      assetsRouter.find(request) match {
+        case Some(route) => Some(actionBuilder.async { ctx => route.adminRoute.handle(route, ctx) })
+        case None => f
+      }
+    } else if (hasExtensions && request.path.startsWith("/extensions/pub/") && privateAppPublicRoutes.nonEmpty) {
       privateAppPublicRouter.find(request) match {
         case Some(route) if route.adminRoute.wantsBody => Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
         case Some(route) if !route.adminRoute.wantsBody => Some(actionBuilder.async { req => route.adminRoute.handle(route, req, None) })
-        case None => {
-          privateAppAuthRouter.find(request) match {
-            case Some(route) if route.adminRoute.wantsBody => Some(PrivateAppsAction.async(sourceBodyParser) { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, ctx.request.body.some) })
-            case Some(route) if !route.adminRoute.wantsBody => Some(PrivateAppsAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, None) })
-            case None => {
-              assetsRouter.find(request) match {
-                case Some(route) => Some(actionBuilder.async { ctx => route.adminRoute.handle(route, ctx) })
-                case None => f
-              }
-            }
-          }
-        }
+        case None => f
+      }
+    } else if (hasExtensions && request.path.startsWith("/extensions/") && privateAppAuthRoutes.nonEmpty) {
+      privateAppAuthRouter.find(request) match {
+        case Some(route) if route.adminRoute.wantsBody => Some(PrivateAppsAction.async(sourceBodyParser) { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, ctx.request.body.some) })
+        case Some(route) if !route.adminRoute.wantsBody => Some(PrivateAppsAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, None) })
+        case None => f
       }
     } else f
   }
