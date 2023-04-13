@@ -182,7 +182,7 @@ object DiscoveryHelper {
   }
 }
 
-// TODO: MIGRATE !
+// MIGRATED
 class DiscoverySelfRegistrationSink extends RequestSink {
 
   import kaleidoscope._
@@ -236,7 +236,7 @@ class DiscoverySelfRegistrationSink extends RequestSink {
   }
 }
 
-// TODO: MIGRATE !
+// MIGRATED
 class DiscoverySelfRegistrationTransformer extends RequestTransformer {
 
   import kaleidoscope._
@@ -320,7 +320,7 @@ class DiscoverySelfRegistrationTransformer extends RequestTransformer {
   }
 }
 
-// TODO: MIGRATE !
+// MIGRATED
 class DiscoveryTargetsSelector extends PreRouting {
 
   override def name: String = "Service discovery target selector (service discovery)"
