@@ -175,7 +175,7 @@ class HasClientCertMatchingValidator extends AccessValidator {
  * }
  *
  */
-// TODO: MIGRATE !
+// MIGRATED
 class HasClientCertMatchingHttpValidator extends AccessValidator {
 
   override def name: String = "Client certificate matching (over http)"
