@@ -221,7 +221,7 @@ object MirroringPluginConfig {
   def apply(conf: JsValue) = new MirroringPluginConfig(conf)
 }
 
-// TODO: MIGRATE !
+// MIGRATED
 class MirroringPlugin extends RequestTransformer {
 
   override def name: String = "Mirroring plugin"
