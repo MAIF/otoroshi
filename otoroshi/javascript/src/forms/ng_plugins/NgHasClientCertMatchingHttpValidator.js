@@ -17,7 +17,7 @@ export default {
       type: 'object',
       label: 'Http headers',
     },
-    tls_config: {
+    tls: {
       label: 'Custom TLS setup',
       type: 'form',
       collapsable: true,
