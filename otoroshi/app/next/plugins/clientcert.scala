@@ -397,11 +397,11 @@ class NgCertificateAsApikey extends NgPreRouting {
 }
 
 case class NgHasClientCertMatchingHttpValidatorConfig(
- url: String,
- method: String,
- timeout: Long,
- headers: Map[String, String],
- tls: NgTlsConfig,
+ url: String = "https://validate.foo.bar",
+ method: String = "GET",
+ timeout: Long = 2000,
+ headers: Map[String, String] = Map.empty,
+ tls: NgTlsConfig = NgTlsConfig.default,
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
     "url" -> url,
