@@ -1229,6 +1229,8 @@ class DataExporterUpdateJob extends Job {
   override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
     JobInstantiation.OneInstancePerOtoroshiInstance
 
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
+
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     FastFuture.successful(env.otoroshiEventsActor ! UpdateExporters)
   }

@@ -225,6 +225,15 @@ class TailscaleTargetsJob extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 30.seconds.some
 
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
+    val config = currentConfig("TailscaleTargetsJob", ctx, env)
+    config.map(_.select("predicates").isDefined) match {
+      case None => None
+      case Some(false) => None
+      case Some(true) => Some(true)
+    }
+  }
+
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val cli = client(env)
     cli.status().map { status =>
@@ -379,7 +388,16 @@ class TailscaleCertificatesFetcherJob extends Job {
 
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
 
-  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 30.seconds.some // TODO: 1 hour ?
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.minute.some
+
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
+    val config = currentConfig("TailscaleCertificatesFetcherJob", ctx, env)
+    config.map(_.select("predicates").isDefined) match {
+      case None => None
+      case Some(false) => None
+      case Some(true) => Some(true)
+    }
+  }
 
   def certAlreadyExistsFor(domain: String)(implicit env: Env, ec: ExecutionContext): Boolean = {
     env.proxyState

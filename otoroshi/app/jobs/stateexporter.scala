@@ -5,8 +5,9 @@ import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._
+import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsSuccess, JsValue, Json}
 
 import java.util.UUID
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -64,30 +65,26 @@ class StateExporter extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = {
-    env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
-      .plugins
-      .config
-      .select("StateExporter")
-      .asOpt[JsObject] match {
-      case None         => None
-      case Some(config) =>
-        config.select("every_sec").asOpt[Int] match {
-          case None        => None
-          case Some(every) => every.seconds.some
-        }
+    currentConfig("StateExporter", ctx, env).flatMap { config =>
+      config.select("every_sec").asOpt[Int] match {
+        case None => None
+        case Some(every) => every.seconds.some
+      }
+    }
+  }
+
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
+    val config = currentConfig("StateExporter", ctx, env)
+    config.map(_.select("predicates").isDefined) match {
+      case None => None
+      case Some(false) => None
+      case Some(true) => Some(true)
     }
   }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val format = env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
-      .plugins
-      .config
-      .select("StateExporter")
-      .asOpt[JsObject]
-      .flatMap(_.select("format").asOpt[String])
-      .getOrElse("json")
+    val config = currentConfig("StateExporter", ctx, env)
+    val format = config.flatMap(_.select("format").asOpt[String]).getOrElse("json")
     format match {
       case "raw" =>
         env.datastores.fullNdJsonExport(100, 1, 4).flatMap { source =>

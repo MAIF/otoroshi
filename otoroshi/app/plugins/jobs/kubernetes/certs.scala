@@ -13,6 +13,7 @@ import otoroshi.ssl.DynamicSSLEngineProvider
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util._
 
 object KubernetesCertSyncJob {
 
@@ -249,6 +250,15 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
 
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
+    Try(KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext)) match {
+      case Failure(e) =>
+        e.printStackTrace()
+        Some(false)
+      case Success(_) => None
+    }
+  }
+
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(false)
     lastWatchStopped.set(true)
@@ -367,6 +377,15 @@ class OtoroshiToKubernetesCertSyncJob extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
+
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
+    Try(KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext)) match {
+      case Failure(e) =>
+        e.printStackTrace()
+        Some(false)
+      case Success(_) => None
+    }
+  }
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(false)

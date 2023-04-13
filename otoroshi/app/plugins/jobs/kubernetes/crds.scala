@@ -75,12 +75,12 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     Option(env)
       .flatMap(env => env.datastores.globalConfigDataStore.latestSafe.map(c => (env, c)))
       .map { case (env, c) =>
-        val cfg = c.scripts.jobConfig
-          .select("KubernetesConfig")
-          .asOpt[JsValue]
-          .orElse(c.plugins.config.select("KubernetesConfig").asOpt[JsValue])
-          .getOrElse(Json.obj())
-        (env, KubernetesConfig.theConfig(cfg)(env, env.otoroshiExecutionContext))
+        //val cfg = c.scripts.jobConfig
+        //  .select("KubernetesConfig")
+        //  .asOpt[JsValue]
+        //  .orElse(c.plugins.config.select("KubernetesConfig").asOpt[JsValue])
+        //  .getOrElse(Json.obj())
+        (env, KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext))
       }
       .map { case (env, cfg) =>
         env.clusterConfig.mode match {
@@ -97,6 +97,15 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] =
     KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext).syncIntervalSeconds.seconds.some
+
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
+    Try(KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext)) match {
+      case Failure(e) =>
+        e.printStackTrace()
+        Some(false)
+      case Success(_) => None
+    }
+  }
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info("start")

@@ -47,6 +47,8 @@ class EventstoreCheckerJob extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
+
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.globalConfigDataStore.singleton().flatMap { config =>
       config.elasticReadsConfig match {

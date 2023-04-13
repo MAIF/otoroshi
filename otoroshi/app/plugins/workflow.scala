@@ -95,6 +95,8 @@ class WorkflowJob extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] =
     ctx.config.select("intervalMillis").asOpt[Long].getOrElse(60000L).millis.some
 
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
+
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     implicit val mat = env.otoroshiMaterializer
     val input        = ctx.configFor("WorkflowJob").select("input").asOpt[JsObject].getOrElse(Json.obj())

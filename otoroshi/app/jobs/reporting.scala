@@ -111,6 +111,8 @@ class AnonymousReportingJob extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 6.hour.some
 
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
+
   private def displayYouCanDisableLog(): Unit = {
     logger.info("anonymous reporting is ENABLED. If you want to disable it, you can do it")
     logger.info("  from the 'Danger zone' > 'Send anonymous reports' flag off")

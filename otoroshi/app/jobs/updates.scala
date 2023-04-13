@@ -44,6 +44,8 @@ class SoftwareUpdatesJobs extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 24.hours.some
 
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
+
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val otoroshiVersion = env.otoroshiVersion
     if (env.checkForUpdates) {

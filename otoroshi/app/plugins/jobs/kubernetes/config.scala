@@ -2,11 +2,11 @@ package otoroshi.plugins.jobs.kubernetes
 
 import java.io.File
 import java.nio.file.Files
-
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import otoroshi.env.Env
 import otoroshi.script._
+import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.libs.json._
@@ -76,12 +76,52 @@ case class KubernetesConfig(
 object KubernetesConfig {
   import collection.JavaConverters._
   def theConfig(ctx: ContextWithConfig)(implicit env: Env, ec: ExecutionContext): KubernetesConfig = {
+    val globalConfig = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
     val conf = ctx
       .configForOpt("KubernetesConfig")
-      .orElse((env.datastores.globalConfigDataStore.latest().scripts.jobConfig \ "KubernetesConfig").asOpt[JsValue])
-      .orElse((env.datastores.globalConfigDataStore.latest().plugins.config \ "KubernetesConfig").asOpt[JsValue])
+      .orElse((globalConfig.scripts.jobConfig \ "KubernetesConfig").asOpt[JsValue])
+      .orElse((globalConfig.plugins.config \ "KubernetesConfig").asOpt[JsValue])
       .getOrElse(Json.obj())
-    theConfig(conf)
+    conf match {
+      case JsArray(values) => {
+        val context = Json.obj(
+          "env" -> globalConfig.env,
+          "instance" -> env.configurationJson.select("otoroshi").select("instance").asValue
+        )
+        val cfg = values.find { value =>
+          value.select("predicates").asOpt[Seq[JsObject]] match {
+            case None => false
+            case Some(predicates) => {
+              val validators = predicates.map(v => JsonPathValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
+              validators.forall(_.validate(context))
+            }
+          }
+        }.getOrElse {
+          throw new RuntimeException("Unable to read kubernetes config on this instance !")
+        }
+        theConfig(cfg)
+      }
+      case obj @ JsObject(_) if obj.select("predicates").asOpt[Seq[JsObject]].isDefined => {
+        obj.select("predicates").asOpt[Seq[JsObject]] match {
+          case None => theConfig(obj)
+          case Some(predicates) => {
+            val validators = predicates.map(v => JsonPathValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
+            val context = Json.obj(
+              "env" -> globalConfig.env,
+              "instance" -> env.configurationJson.select("otoroshi").select("instance").asValue
+            )
+            if (validators.forall(_.validate(context))) {
+              theConfig(obj)
+            } else {
+              throw new RuntimeException("Unable to read kubernetes config on this instance !")
+            }
+          }
+        }
+      }
+      case JsObject(_) => theConfig(conf)
+      case _ => theConfig(conf)
+    }
+
   }
   def theConfig(conf: JsValue)(implicit _env: Env, ec: ExecutionContext): KubernetesConfig = {
     sys.env.get("KUBECONFIG") match {

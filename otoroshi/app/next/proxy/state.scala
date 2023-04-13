@@ -652,6 +652,8 @@ class NgProxyStateLoaderJob extends Job {
   override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
     JobInstantiation.OneInstancePerOtoroshiInstance
 
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
+
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     env.proxyState.sync()
   }
@@ -682,6 +684,8 @@ class NgInternalStateMonitor extends Job {
 
   override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
     JobInstantiation.OneInstancePerOtoroshiInstance
+
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
   def monitorProxyState(env: Env): Unit = {
     val start    = System.currentTimeMillis()

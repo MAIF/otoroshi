@@ -394,6 +394,7 @@ trait DiscoveryJob extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = Some(
     FiniteDuration(10, TimeUnit.SECONDS)
   )
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None
 
   def fetchAllTargets(ctx: JobContext, config: SelfRegistrationConfig)(implicit
       env: Env,

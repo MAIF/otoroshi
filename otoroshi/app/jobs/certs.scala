@@ -35,6 +35,8 @@ class InitialCertsJob extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 24.hours.some
 
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
+
   @deprecated(message = "this way of generating certs is deprecated, use the new pki", since = "1.5.0")
   def runWithOldSchoolPki(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.certificatesDataStore

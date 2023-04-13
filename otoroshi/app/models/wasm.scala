@@ -120,6 +120,7 @@ class WasmPluginsCacheManager extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration]     = 20.seconds.some
   override def cronExpression(ctx: JobContext, env: Env): Option[String]       = None
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     env.proxyState.allWasmPlugins().foreach { plugin =>

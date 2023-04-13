@@ -619,6 +619,7 @@ class WasmJob(config: WasmJobsConfig) extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = config.initialDelay
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration]     = config.interval
   override def cronExpression(ctx: JobContext, env: Env): Option[String]       = config.cronExpression
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None // TODO: make it configurable base on global env ???
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
     WasmUtils
@@ -691,6 +692,7 @@ class WasmJobsLauncher extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration]     = 20.seconds.some
   override def cronExpression(ctx: JobContext, env: Env): Option[String]       = None
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None
 
   private val handledJobs = new TrieMap[String, Job]()
 
