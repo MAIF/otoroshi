@@ -139,7 +139,7 @@ class HMACCallerPlugin extends RequestTransformer {
   }
 }
 
-// TODO: MIGRATE !
+// MIGRATED
 class HMACValidator extends AccessValidator {
 
   private val logger = Logger("otoroshi-plugins-hmac-access-validator-plugin")
