@@ -20293,6 +20293,13 @@
             },
             "description" : "Possibles lines for Otoroshi"
           },
+          "extensions" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "description" : "???"
+          },
           "middleFingers" : {
             "type" : "boolean",
             "description" : "Use middle finger emoji as a response character for endless HTTP responses"
