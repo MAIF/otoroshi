@@ -153,7 +153,7 @@ class EurekaServerSink extends NgBackendCall {
   override def description: Option[String]                 = "Eureka plugin description".some
   override def defaultConfigObject: Option[NgPluginConfig] = EurekaServerConfig().some
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Integrations)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.ServiceDiscovery)
   override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
 
   private def notFoundResponse() = {
@@ -677,7 +677,7 @@ class ExternalEurekaTarget extends NgPreRouting {
   override def name: String = "External Eureka target"
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.ServiceDiscovery)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
   override def description: Option[String] = {

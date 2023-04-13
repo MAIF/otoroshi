@@ -273,7 +273,7 @@ class TailscaleSelectTargetByName extends NgRequestTransformer {
   private val logger  = Logger("otoroshi-plugin-tailscale-select-target-by-name")
 
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.ServiceDiscovery)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean            = true
   override def core: Boolean                     = true

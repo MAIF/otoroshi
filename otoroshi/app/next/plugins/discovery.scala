@@ -56,7 +56,7 @@ class NgDiscoverySelfRegistrationSink extends NgRequestSink {
   override def multiInstance: Boolean = true
   override def core: Boolean = true
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.ServiceDiscovery)
   override def steps: Seq[NgStep] = Seq(NgStep.Sink)
 
   override def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
@@ -87,7 +87,7 @@ class NgDiscoverySelfRegistrationTransformer extends NgRequestTransformer {
   override def multiInstance: Boolean = true
   override def core: Boolean = true
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.ServiceDiscovery)
   override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
 
   override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
@@ -112,7 +112,7 @@ class NgDiscoveryTargetsSelector extends NgPreRouting {
   override def multiInstance: Boolean = true
   override def core: Boolean = true
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.ServiceDiscovery)
   override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
 
   override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
