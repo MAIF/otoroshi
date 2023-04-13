@@ -1,4 +1,4 @@
-FROM node
+FROM node:19.9.0-bullseye
 
 RUN mkdir -p /server
 WORKDIR /server
