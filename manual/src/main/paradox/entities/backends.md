@@ -6,7 +6,7 @@ The backends can be define directly on the route designer or on their dedicated 
 
 ## UI page
 
-You can find all backends [here](http://otoroshi.oto.tools:8080/bo/dashboard/backend)
+You can find all backends [here](http://otoroshi.oto.tools:8080/bo/dashboard/backends)
 
 ## Global Properties
 
