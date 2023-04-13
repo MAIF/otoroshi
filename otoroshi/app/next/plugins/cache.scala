@@ -8,20 +8,19 @@ import akka.util.ByteString
 import org.joda.time.{DateTime, DateTimeZone}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
-import otoroshi.plugins.cache.{ResponseCache, ResponseCacheConfig}
-import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext, TransformerResponseBodyContext}
+import otoroshi.script._
+import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.{RegexPool, SchedulerHelper}
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.libs.Codecs
-import play.api.libs.json.JsResult.Exception
 import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
 import redis.{RedisClientMasterSlaves, RedisServer}
 
 import java.util.Locale
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util._
 
@@ -211,7 +210,13 @@ object NgResponseCacheConfig {
   }
 }
 
-class ResponseCache extends NgRequestTransformer {
+object NgResponseCache {
+  val base64Encoder = java.util.Base64.getEncoder
+  val base64Decoder = java.util.Base64.getDecoder
+  val logger        = Logger("otoroshi-plugins-response-cache")
+}
+
+class NgResponseCache extends NgRequestTransformer {
 
   override def name: String = "Response Cache"
   override def defaultConfigObject: Option[NgPluginConfig] = NgResponseCacheConfig().some
@@ -240,17 +245,6 @@ class ResponseCache extends NgRequestTransformer {
   override def start(env: Env): Future[Unit] = {
     val actorSystem = ActorSystem("cache-redis")
     implicit val ec = actorSystem.dispatcher
-    jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(1.minute, 10.minutes) {
-      //jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(10.seconds, 10.seconds) {
-      SchedulerHelper.runnable(
-        try {
-          cleanCache(env)
-        } catch {
-          case e: Throwable =>
-            ResponseCache.logger.error("error while cleaning cache", e)
-        }
-      )
-    })
     env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
       if ((conf.scripts.transformersConfig \ "ResponseCache").isDefined) {
         val redis: RedisClientMasterSlaves = {
@@ -283,68 +277,6 @@ class ResponseCache extends NgRequestTransformer {
     Option(ref.get()).foreach(_._2.terminate())
     Option(jobRef.get()).foreach(_.cancel())
     FastFuture.successful(())
-  }
-
-  private def cleanCache(env: Env): Future[Unit] = {
-    implicit val ev  = env
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
-    env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-      val possibleServices = services.filter(s =>
-        s.transformerRefs.nonEmpty && s.transformerRefs.contains("cp:otoroshi.plugins.cache.ResponseCache")
-      )
-      val functions        = possibleServices.map { service => () =>
-      {
-        val config  =
-          ResponseCacheConfig(service.transformerConfig.select("ResponseCache").asOpt[JsObject].getOrElse(Json.obj()))
-        val maxSize = config.maxSize
-        if (config.autoClean) {
-          env.datastores.rawDataStore.keys(s"${env.storageRoot}:noclustersync:cache:${service.id}:*").flatMap {
-            keys =>
-              if (keys.nonEmpty) {
-                Source(keys.toList)
-                  .mapAsync(1) { key =>
-                    for {
-                      size <- env.datastores.rawDataStore.strlen(key).map(_.getOrElse(0L))
-                      pttl <- env.datastores.rawDataStore.pttl(key)
-                    } yield (key, size, pttl)
-                  }
-                  .runWith(Sink.seq)
-                  .flatMap { values =>
-                    val globalSize = values.foldLeft(0L)((a, b) => a + b._2)
-                    if (globalSize > maxSize) {
-                      var acc    = 0L
-                      val sorted = values
-                        .sortWith((a, b) => a._3.compareTo(b._3) < 0)
-                        .filter { t =>
-                          if ((globalSize - acc) < maxSize) {
-                            acc = acc + t._2
-                            false
-                          } else {
-                            acc = acc + t._2
-                            true
-                          }
-                        }
-                        .map(_._1)
-                      env.datastores.rawDataStore.del(sorted).map(_ => ())
-                    } else {
-                      ().future
-                    }
-                  }
-              } else {
-                ().future
-              }
-          }
-        } else {
-          ().future
-        }
-      }
-      }
-      Source(functions.toList)
-        .mapAsync(1) { f => f() }
-        .runWith(Sink.ignore)
-        .map(_ => ())
-    }
   }
 
   private def get(key: String)(implicit env: Env, ec: ExecutionContext): Future[Option[ByteString]] = {
@@ -442,11 +374,11 @@ class ResponseCache extends NgRequestTransformer {
         )
       case Right(Some(res)) => {
         val status  = (res \ "status").as[Int]
-        val body    = ByteString(ResponseCache.base64Decoder.decode((res \ "body").as[String]))
+        val body    = ByteString(NgResponseCache.base64Decoder.decode((res \ "body").as[String]))
         val headers = (res \ "headers").as[Map[String, String]] ++ Map("X-Otoroshi-Cache" -> "HIT")
         val ctype   = (res \ "ctype").as[String]
-        if (ResponseCache.logger.isDebugEnabled)
-          ResponseCache.logger.debug(
+        if (NgResponseCache.logger.isDebugEnabled)
+          NgResponseCache.logger.debug(
             s"Serving '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' from cache"
           )
         Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq: _*))
@@ -488,10 +420,10 @@ class ResponseCache extends NgRequestTransformer {
                 "status"  -> ctx.rawResponse.status,
                 "headers" -> headers,
                 "ctype"   -> ctype,
-                "body"    -> ResponseCache.base64Encoder.encodeToString(ref.get().toArray)
+                "body"    -> NgResponseCache.base64Encoder.encodeToString(ref.get().toArray)
               )
-              if (ResponseCache.logger.isDebugEnabled)
-                ResponseCache.logger.debug(
+              if (NgResponseCache.logger.isDebugEnabled)
+                NgResponseCache.logger.debug(
                   s"Storing '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' in cache for the next ${config.ttl} ms."
                 )
               set(
@@ -510,5 +442,92 @@ class ResponseCache extends NgRequestTransformer {
         .vfuture
     }
   }
+}
+
+class NgResponseCacheCleanupJob extends Job {
+
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+
+  override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.NgResponseCacheCleanupJob")
+
+  override def name: String = "Cleanup object stored by response cache plugin if cache get too large"
+
+  override def jobVisibility: JobVisibility = JobVisibility.Internal
+
+  override def kind: JobKind = JobKind.ScheduledEvery
+
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.minutes.some
+
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.minutes.some
+
+  override def starting: JobStarting = JobStarting.Automatically
+
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation =
+    JobInstantiation.OneInstancePerOtoroshiCluster
+
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    cleanCache(env)
+  }
+
+  private def cleanCache(env: Env): Future[Unit] = {
+    implicit val ev = env
+    implicit val ec = env.otoroshiExecutionContext
+    implicit val mat = env.otoroshiMaterializer
+    val functions = env.proxyState.allRoutes().map { route =>
+      (route, route.plugins.getPluginByClass[NgResponseCache])
+    } collect {
+      case (route, Some(plugin)) => (route, plugin)
+    } map {
+      case (route, plugin) => { () =>
+        val config = NgResponseCacheConfig.format.reads(plugin.config.raw.asValue).get
+        val maxSize = config.maxSize
+        if (config.autoClean) {
+          env.datastores.rawDataStore.keys(s"${env.storageRoot}:noclustersync:cache:${route.id}:*").flatMap {
+            keys =>
+              if (keys.nonEmpty) {
+                Source(keys.toList)
+                  .mapAsync(1) { key =>
+                    for {
+                      size <- env.datastores.rawDataStore.strlen(key).map(_.getOrElse(0L))
+                      pttl <- env.datastores.rawDataStore.pttl(key)
+                    } yield (key, size, pttl)
+                  }
+                  .runWith(Sink.seq)
+                  .flatMap { values =>
+                    val globalSize = values.foldLeft(0L)((a, b) => a + b._2)
+                    if (globalSize > maxSize) {
+                      var acc = 0L
+                      val sorted = values
+                        .sortWith((a, b) => a._3.compareTo(b._3) < 0)
+                        .filter { t =>
+                          if ((globalSize - acc) < maxSize) {
+                            acc = acc + t._2
+                            false
+                          } else {
+                            acc = acc + t._2
+                            true
+                          }
+                        }
+                        .map(_._1)
+                      env.datastores.rawDataStore.del(sorted).map(_ => ())
+                    } else {
+                      ().future
+                    }
+                  }
+              } else {
+                ().future
+              }
+          }
+        } else {
+          ().future
+        }
+      }
+    }
+    Source(functions.toList)
+      .mapAsync(1) { f => f() }
+      .runWith(Sink.ignore)
+      .map(_ => ())
+  }
+
 }
 

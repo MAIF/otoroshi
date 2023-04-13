@@ -1,4 +1,4 @@
-package next.plugins
+package otoroshi.wasm
 
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
@@ -8,14 +8,13 @@ import org.joda.time.DateTime
 import otoroshi.cluster.ClusterConfig
 import otoroshi.env.Env
 import otoroshi.events.WasmLogEvent
-import otoroshi.models.{ApiKey, ApikeyTuple, JwtInjection, PrivateAppsUser, Target}
+import otoroshi.models._
 import otoroshi.next.models.NgTarget
 import otoroshi.next.plugins.api.NgCachedConfigContext
-import otoroshi.next.plugins.{WasmAuthorizations, WasmConfig}
-import otoroshi.utils.{ConcurrentMutableTypedMap, RegexPool, TypedMap}
 import otoroshi.utils.cache.types.LegitTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.{ConcurrentMutableTypedMap, RegexPool, TypedMap}
 import play.api.libs.json._
 
 import java.nio.charset.StandardCharsets

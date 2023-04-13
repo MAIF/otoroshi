@@ -1,8 +1,9 @@
 package otoroshi.next.plugins
 
 import otoroshi.models.{ApiKey, ApikeyTuple, JwtInjection}
-import otoroshi.next.models.{NgBackend, NgContextualPlugins, NgMatchedRoute, NgRoute, NgTarget}
+import otoroshi.next.models._
 import otoroshi.next.proxy.NgExecutionReport
+import otoroshi.wasm.WasmContext
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Result
 

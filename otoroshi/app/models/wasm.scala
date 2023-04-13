@@ -2,11 +2,11 @@ package otoroshi.models
 
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.next.plugins.{CachedWasmScript, WasmConfig, WasmUtils}
 import otoroshi.script._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
+import otoroshi.wasm._
 import play.api.libs.json._
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}

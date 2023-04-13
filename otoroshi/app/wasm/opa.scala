@@ -1,10 +1,9 @@
-package next.plugins;
+package otoroshi.wasm;
 
 import akka.stream.Materializer
 import org.extism.sdk.parameters.{IntegerParameter, Parameters}
 import org.extism.sdk._
 import otoroshi.env.Env
-import otoroshi.next.plugins.WasmConfig
 import otoroshi.next.plugins.api.NgCachedConfigContext
 
 import java.nio.charset.StandardCharsets

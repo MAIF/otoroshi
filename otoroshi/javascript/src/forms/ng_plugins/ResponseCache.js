@@ -1,5 +1,5 @@
 export default {
-  id: 'cp:otoroshi.next.plugins.ResponseCache',
+  id: 'cp:otoroshi.next.plugins.NgResponseCache',
   config_schema: {
     ttl: {
       type: 'number',
