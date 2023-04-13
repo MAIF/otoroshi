@@ -15,7 +15,7 @@ import otoroshi.script._
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{RequestHeader, Results}
 
 import java.security.SecureRandom
@@ -93,10 +93,9 @@ object BiscuitHelper {
 
   import collection.JavaConverters._
 
-  def readConfig(name: String, ctx: ContextWithConfig): BiscuitConfig = {
-    val rawConfig = ctx.configFor(name)
+  def readConfigFromJson(rawConfig: JsValue): BiscuitConfig = {
     BiscuitConfig(
-      publicKey = (rawConfig \ "publicKey").asOpt[String],
+      publicKey = (rawConfig \ "publicKey").asOpt[String].orElse((rawConfig \ "public_key").asOpt[String]),
       checks = (rawConfig \ "checks").asOpt[Seq[String]].getOrElse(Seq.empty),
       facts = (rawConfig \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty),
       resources = (rawConfig \ "resources").asOpt[Seq[String]].getOrElse(Seq.empty),
@@ -106,6 +105,11 @@ object BiscuitHelper {
       extractorName = (rawConfig \ "extractor" \ "name").asOpt[String].getOrElse("Authorization"),
       enforce = (rawConfig \ "enforce").asOpt[Boolean].getOrElse(false)
     )
+  }
+
+  def readConfig(name: String, ctx: ContextWithConfig): BiscuitConfig = {
+    val rawConfig = ctx.configFor(name)
+    readConfigFromJson(rawConfig)
   }
 
   def readOrWrite(method: String): String =
