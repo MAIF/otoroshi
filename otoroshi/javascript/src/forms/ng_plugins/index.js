@@ -70,7 +70,6 @@ import NgLog4ShellFilter from './NgLog4ShellFilter';
 import NgJwtUserExtractor from './NgJwtUserExtractor';
 import NgIzanamiProxy from './NgIzanamiProxy';
 import NgIzanamiCanary from './NgIzanamiCanary';
-import NgHMACValidator from './NgHMACValidator';
 import NgMaxMindGeolocationInfoExtractor from './NgMaxMindGeolocationInfoExtractor';
 import NgIpStackGeolocationInfoExtractor from './NgIpStackGeolocationInfoExtractor';
 import NgGeolocationInfoHeader from './NgGeolocationInfoHeader';
