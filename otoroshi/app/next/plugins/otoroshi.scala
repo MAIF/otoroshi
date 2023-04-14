@@ -249,13 +249,13 @@ class OtoroshiChallenge extends NgRequestTransformer {
                     .build()
                     .verify(resp)
                   val extractedState: Option[String] =
-                    Option(jwt.getClaim("state-resp")).filterNot(_.isNull).map(_.asString())
+                    Option(jwt.getClaim("state-resp")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asString())
                   val exp: Option[Long]              =
-                    Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
+                    Option(jwt.getClaim("exp")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
                   val iat: Option[Long]              =
-                    Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
+                    Option(jwt.getClaim("iat")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
                   val nbf: Option[Long]              =
-                    Option(jwt.getClaim("nbf")).filterNot(_.isNull).map(_.asLong())
+                    Option(jwt.getClaim("nbf")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
                   if (exp.isEmpty || iat.isEmpty) {
                     StateRespInvalid(
                       at,

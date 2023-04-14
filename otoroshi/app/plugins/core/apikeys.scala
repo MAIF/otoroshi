@@ -121,17 +121,17 @@ class JwtApikeyExtractor extends PreRouting {
                           )
                       } // getOrElse Algorithm.HMAC512(apiKey.clientSecret)
                       val exp                             =
-                        Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
+                        Option(jwt.getClaim("exp")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
                       val iat                             =
-                        Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
+                        Option(jwt.getClaim("iat")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
                       val httpPath                        = Option(jwt.getClaim("httpPath"))
-                        .filterNot(_.isNull)
+                        .filterNot(_.isNull).filterNot(_.isMissing)
                         .map(_.asString())
                       val httpVerb                        = Option(jwt.getClaim("httpVerb"))
-                        .filterNot(_.isNull)
+                        .filterNot(_.isNull).filterNot(_.isMissing)
                         .map(_.asString())
                       val httpHost                        = Option(jwt.getClaim("httpHost"))
-                        .filterNot(_.isNull)
+                        .filterNot(_.isNull).filterNot(_.isMissing)
                         .map(_.asString())
                       algorithmOpt match {
                         case Some(algorithm) => {
@@ -145,9 +145,9 @@ class JwtApikeyExtractor extends PreRouting {
                             .filter { token =>
                               val xsrfToken       = token.getClaim("xsrfToken")
                               val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
-                              if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
+                              if (!xsrfToken.isNull && !xsrfToken.isMissing && xsrfTokenHeader.isDefined) {
                                 xsrfToken.asString() == xsrfTokenHeader.get
-                              } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
+                              } else if (!xsrfToken.isNull && !xsrfToken.isMissing && xsrfTokenHeader.isEmpty) {
                                 false
                               } else {
                                 true

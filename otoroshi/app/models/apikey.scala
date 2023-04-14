@@ -843,17 +843,17 @@ object ApiKeyHelper {
                       )
                   } // getOrElse Algorithm.HMAC512(apiKey.clientSecret)
                   val exp                             =
-                    Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
+                    Option(jwt.getClaim("exp")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
                   val iat                             =
-                    Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
+                    Option(jwt.getClaim("iat")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
                   val httpPath                        = Option(jwt.getClaim("httpPath"))
-                    .filterNot(_.isNull)
+                    .filterNot(_.isNull).filterNot(_.isMissing)
                     .map(_.asString())
                   val httpVerb                        = Option(jwt.getClaim("httpVerb"))
-                    .filterNot(_.isNull)
+                    .filterNot(_.isNull).filterNot(_.isMissing)
                     .map(_.asString())
                   val httpHost                        = Option(jwt.getClaim("httpHost"))
-                    .filterNot(_.isNull)
+                    .filterNot(_.isNull).filterNot(_.isMissing)
                     .map(_.asString())
                   algorithmOpt match {
                     case Some(algorithm) => {
@@ -867,9 +867,9 @@ object ApiKeyHelper {
                         .filter { token =>
                           val xsrfToken       = token.getClaim("xsrfToken")
                           val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
-                          if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
+                          if (!xsrfToken.isNull && !xsrfToken.isMissing && xsrfTokenHeader.isDefined) {
                             xsrfToken.asString() == xsrfTokenHeader.get
-                          } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
+                          } else if (!xsrfToken.isNull && !xsrfToken.isMissing && xsrfTokenHeader.isEmpty) {
                             false
                           } else {
                             true
@@ -1360,20 +1360,20 @@ object ApiKeyHelper {
                   } //getOrElse Algorithm.HMAC512(apiKey.clientSecret)
                   val exp                             =
                     Option(jwt.getClaim("exp"))
-                      .filterNot(_.isNull)
+                      .filterNot(_.isNull).filterNot(_.isMissing)
                       .map(_.asLong())
                   val iat                             =
                     Option(jwt.getClaim("iat"))
-                      .filterNot(_.isNull)
+                      .filterNot(_.isNull).filterNot(_.isMissing)
                       .map(_.asLong())
                   val httpPath                        = Option(jwt.getClaim("httpPath"))
-                    .filterNot(_.isNull)
+                    .filterNot(_.isNull).filterNot(_.isMissing)
                     .map(_.asString())
                   val httpVerb                        = Option(jwt.getClaim("httpVerb"))
-                    .filterNot(_.isNull)
+                    .filterNot(_.isNull).filterNot(_.isMissing)
                     .map(_.asString())
                   val httpHost                        = Option(jwt.getClaim("httpHost"))
-                    .filterNot(_.isNull)
+                    .filterNot(_.isNull).filterNot(_.isMissing)
                     .map(_.asString())
                   algorithmOpt match {
                     case Some(algorithm) => {
@@ -1387,9 +1387,9 @@ object ApiKeyHelper {
                         .filter { token =>
                           val xsrfToken       = token.getClaim("xsrfToken")
                           val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
-                          if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
+                          if (!xsrfToken.isNull && !xsrfToken.isMissing && xsrfTokenHeader.isDefined) {
                             xsrfToken.asString() == xsrfTokenHeader.get
-                          } else !(!xsrfToken.isNull && xsrfTokenHeader.isEmpty)
+                          } else !(!xsrfToken.isNull && !xsrfToken.isMissing && xsrfTokenHeader.isEmpty)
                         }
                         .filter { _ =>
                           descriptor.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs.map { maxJwtLifespanSecs =>
@@ -1566,14 +1566,14 @@ object ApiKeyHelper {
           )
           .filter(_.split("\\.").length == 3)
           .flatMap(v => Try(JWT.decode(v)).toOption)
-          .flatMap(jwt =>
+          .flatMap { jwt =>
             jwt
               .claimStr("clientId")
               .orElse(jwt.claimStr("client_id"))
               .orElse(jwt.claimStr("cid"))
               .orElse(jwt.claimStr("iss"))
               .map(cid => (cid, jwt))
-          )
+          }
           .map(t => ApikeyTuple(t._1, jwtToken = t._2.some, location = location.some))
         val authBasic: Option[ApikeyTuple]                  = req.headers
           .get(
@@ -1744,17 +1744,17 @@ object ApiKeyHelper {
                     )
                 }
                 val exp                             =
-                  Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
+                  Option(jwt.getClaim("exp")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
                 val iat                             =
-                  Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
+                  Option(jwt.getClaim("iat")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
                 val httpPath                        = Option(jwt.getClaim("httpPath"))
-                  .filterNot(_.isNull)
+                  .filterNot(_.isNull).filterNot(_.isMissing)
                   .map(_.asString())
                 val httpVerb                        = Option(jwt.getClaim("httpVerb"))
-                  .filterNot(_.isNull)
+                  .filterNot(_.isNull).filterNot(_.isMissing)
                   .map(_.asString())
                 val httpHost                        = Option(jwt.getClaim("httpHost"))
-                  .filterNot(_.isNull)
+                  .filterNot(_.isNull).filterNot(_.isMissing)
                   .map(_.asString())
                 algorithmOpt match {
                   case Some(algorithm) => {
@@ -1768,9 +1768,9 @@ object ApiKeyHelper {
                       .filter { token =>
                         val xsrfToken       = token.getClaim("xsrfToken")
                         val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
-                        if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
+                        if (!xsrfToken.isNull && !xsrfToken.isMissing && xsrfTokenHeader.isDefined) {
                           xsrfToken.asString() == xsrfTokenHeader.get
-                        } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
+                        } else if (!xsrfToken.isNull && !xsrfToken.isMissing && xsrfTokenHeader.isEmpty) {
                           false
                         } else {
                           true
