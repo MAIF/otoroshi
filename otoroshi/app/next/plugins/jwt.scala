@@ -237,7 +237,7 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
   override def defaultConfigObject: Option[NgPluginConfig] = NgJwtSignerConfig().some
 
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess, NgStep.TransformRequest)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Transformations)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean      = true

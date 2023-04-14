@@ -32,7 +32,7 @@ class EnvoyControlPlane extends RequestTransformer {
 
   private val awaitingRequests = new LegitTrieMap[String, Promise[Source[ByteString, _]]]()
 
-  override def name: String = "[Deprecated] Envoy Control Plane"
+  override def name: String = "[DEPRECATED] Envoy Control Plane"
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Experimental)

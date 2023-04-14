@@ -45,7 +45,7 @@ object ContextValidationConfig {
 class ContextValidation extends NgAccessValidator {
 
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
   override def multiInstance: Boolean                      = true

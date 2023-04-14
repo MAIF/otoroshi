@@ -42,7 +42,7 @@ class ExternalHttpValidator extends AccessValidator {
 
   override def deprecated: Boolean = true
 
-  override def name: String = "[Deprecated] External Http Validator"
+  override def name: String = "[DEPRECATED] External Http Validator"
 
   override def defaultConfig: Option[JsObject] =
     Some(

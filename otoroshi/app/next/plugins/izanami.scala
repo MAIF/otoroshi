@@ -77,7 +77,7 @@ object NgIzanamiV1ProxyConfig {
   }
 }
 
-class NgIzanamiProxy extends NgRequestTransformer {
+class NgIzanamiV1Proxy extends NgRequestTransformer {
 
   override def name: String = "Izanami v1 APIs Proxy"
   override def description: Option[String] = "This plugin exposes routes to proxy Izanami configuration and features tree APIs".some
@@ -311,7 +311,7 @@ object NgIzanamiV1CanaryRoutingConfig {
 
 class NgIzanamiV1Canary extends NgRequestTransformer {
 
-  override def name: String = "Izanami Canary Campaign"
+  override def name: String = "Izanami V1 Canary Campaign"
   override def description: Option[String] = "This plugin allow you to perform canary testing based on an izanami experiment campaign (A/B test)".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgIzanamiV1CanaryConfig().some
   override def multiInstance: Boolean = true

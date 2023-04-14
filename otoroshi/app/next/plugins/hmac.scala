@@ -40,7 +40,7 @@ class HMACValidator extends NgAccessValidator {
   private val logger = Logger("otoroshi-next-plugins-hmac-access-validator-plugin")
 
   override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
   override def multiInstance: Boolean = true
   override def core: Boolean = true

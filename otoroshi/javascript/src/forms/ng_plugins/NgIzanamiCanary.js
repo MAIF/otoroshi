@@ -1,5 +1,5 @@
 export default {
-  id: 'cp:otoroshi.next.plugins.NgIzanamiCanary',
+  id: 'cp:otoroshi.next.plugins.NgIzanamiV1Canary',
   config_schema: {
     experiment_id: {
       type: 'string',

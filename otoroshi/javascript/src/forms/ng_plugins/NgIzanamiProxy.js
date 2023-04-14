@@ -1,5 +1,5 @@
 export default {
-  id: 'cp:otoroshi.next.plugins.NgIzanamiProxy',
+  id: 'cp:otoroshi.next.plugins.NgIzanamiV1Proxy',
   config_schema: {
     path: {
       type: 'string',

@@ -21,7 +21,7 @@ import scala.util.{Failure, Success, Try}
 class ServiceMetrics extends RequestTransformer {
 
   override def deprecated: Boolean = true
-  override def name: String = "[Deprecated] Service Metrics"
+  override def name: String = "[DEPRECATED] Service Metrics"
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)
@@ -52,7 +52,9 @@ class ServiceMetrics extends RequestTransformer {
       |  }
       |}
       |```
-    """.stripMargin
+      |
+      |This plugin is deprecated and can be replaced by a data exporter !
+      |    """.stripMargin
     )
 
   override def transformRequestWithCtx(
@@ -200,7 +202,7 @@ class PrometheusEndpoint extends RequestSink {
   )
 
   override def deprecated: Boolean = true
-  override def name: String = "[Deprecated] Prometheus Endpoint"
+  override def name: String = "[DEPRECATED] Prometheus Endpoint"
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)
@@ -233,6 +235,8 @@ class PrometheusEndpoint extends RequestSink {
         |  }
         |}
         |```
+        |
+        |This plugin is deprecated and can be replaced by a data exporter !
       """.stripMargin
     )
 
@@ -337,7 +341,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
   )
 
   override def deprecated: Boolean = true
-  override def name: String = "[Deprecated] Prometheus Service Metrics"
+  override def name: String = "[DEPRECATED] Prometheus Service Metrics"
 
   override def defaultConfig: Option[JsObject] =
     Some(
@@ -361,7 +365,9 @@ class PrometheusServiceMetrics extends RequestTransformer {
         |  }
         |}
         |```
-      """.stripMargin
+        |
+        |This plugin is deprecated and can be replaced by a data exporter !
+        |""".stripMargin
     )
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand

@@ -132,7 +132,7 @@ class WorkflowEndpoint extends RequestTransformer {
     ctx.body
   }
 
-  override def name: String = "Workflow endpoint"
+  override def name: String = "[DEPRECATED] Workflow endpoint"
 
   override def defaultConfig: Option[JsObject] = {
     Some(

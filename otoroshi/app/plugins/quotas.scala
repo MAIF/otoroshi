@@ -16,7 +16,7 @@ class InstanceQuotas extends AccessValidator {
 
   override def deprecated: Boolean = true
 
-  override def name: String = "[Deprecated] Instance quotas"
+  override def name: String = "[DEPRECATED] Instance quotas"
 
   override def defaultConfig: Option[JsObject] =
     Some(

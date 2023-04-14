@@ -132,7 +132,7 @@ class IzanamiProxy extends RequestTransformer {
   }
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
   private val awaitingRequests = new LegitTrieMap[String, Promise[Source[ByteString, _]]]()

@@ -496,7 +496,7 @@ class Designer extends React.Component {
     searched: '',
     expandAll: false,
     showLegacy:
-      (window.localStorage.getItem('io.otoroshi.next.designer.showLegacy') || 'true') === 'true',
+      (window.localStorage.getItem('io.otoroshi.next.designer.showLegacy') || 'false') === 'true',
     preview: {
       enabled: false,
     },

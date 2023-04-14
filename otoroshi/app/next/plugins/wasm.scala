@@ -467,6 +467,7 @@ class WasmSink extends NgRequestSink {
 
 class WasmRequestHandler extends RequestHandler {
 
+  override def deprecated: Boolean               = false
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def steps: Seq[NgStep]                = Seq(NgStep.HandlesRequest)
   override def core: Boolean                     = true
@@ -716,7 +717,6 @@ class WasmJobsLauncher extends Job {
       )
       val uniqueId: String = actualJob.uniqueId.id
       if (!handledJobs.contains(uniqueId)) {
-        println(s"registzriung ${uniqueId}")
         handledJobs.put(uniqueId, actualJob)
         env.jobManager.registerJob(actualJob)
       }
