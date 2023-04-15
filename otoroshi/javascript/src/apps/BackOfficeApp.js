@@ -339,6 +339,14 @@ class BackOfficeAppContainer extends Component {
                           })
                         }
                       />
+                      {Otoroshi.extensions().flatMap(ext => ext.routes).map(item => {
+                        return (
+                          <Route
+                            path={item.path}
+                            component={(props) => this.decorate(item.component, props)}
+                          />
+                        )
+                      })}
                       <Route
                         path="/lines/:lineId/services/:serviceId/stats"
                         component={(props) => this.decorate(ServiceLiveStatsPage, props)}

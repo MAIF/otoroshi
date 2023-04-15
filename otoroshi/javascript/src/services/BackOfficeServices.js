@@ -2016,7 +2016,7 @@ const fetchWrapper = (url, method = 'GET', body) =>
     body: body ? JSON.stringify(body) : undefined,
   }).then((r) => r.json());
 
-const findAllWithPagination = (
+export const findAllWithPagination = (
   route,
   { page, pageSize, fields, filtered, sorted, ...props } = { page: 1 },
   prefix = ''
@@ -2120,3 +2120,18 @@ export const convertAsRoute = (id) =>
   }).then((r) => r.json());
 
 export const getEntityGraph = (entity, id) => fetchWrapper(`/entities/${entity}/${id}`);
+
+export function apisClient(group, version, pluralName) {
+  return {
+    findAll: () => fetchWrapper(`s/${group}/${version}/${pluralName}`),
+    findAllWithPagination: (paginationState) =>
+        findAllWithPagination(pluralName, paginationState, `/bo/api/proxy/apis/${group}/${version}/`),
+    create: (content) => fetchWrapper(`s/${group}/${version}/${pluralName}`, 'POST', content),
+    update: (content) => fetchWrapper(`s/${group}/${version}/${pluralName}/${content.id}`, 'PUT', content),
+    findById: (entityId) => fetchWrapper(`s/${group}/${version}/${pluralName}/${entityId}`),
+    delete: (content) => fetchWrapper(`s/${group}/${version}/${pluralName}/${content.id}`, 'DELETE'),
+    deleteById: (id) => fetchWrapper(`s/${group}/${version}/${pluralName}/${id}`, 'DELETE'),
+    template: () => fetchWrapper(`s/${group}/${version}/${pluralName}/_template`),
+    form: () => fetchWrapper(`s/${group}/${version}/${pluralName}/_form`),
+  };
+};

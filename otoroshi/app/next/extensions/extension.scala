@@ -12,6 +12,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Configuration
 import play.api.libs.json.{Format, JsObject, JsResult, JsSuccess, JsValue, Reads}
 import play.api.mvc._
+import play.twirl.api.Html
 
 import scala.concurrent.Future
 import scala.reflect.ClassTag
@@ -29,7 +30,7 @@ case class AdminExtensionId(value: String) {
 }
 case class AdminExtensionEntity[A <: EntityLocationSupport](resource: otoroshi.api.Resource)
 
-case class AdminExtensionFrontendExtension()
+case class AdminExtensionFrontendExtension(path: String)
 case class AdminExtensionGlobalConfigExtension()
 trait AdminExtensionRoute {
   def method: String
@@ -88,7 +89,7 @@ trait AdminExtension {
   def stop(): Unit = ()
   def syncStates(): Future[Unit] = ().vfuture
 
-  // TODO: add util function to access and update global_config extensions with id as key
+  // TODO: add util function to access and update global_config extensions with id cleanup as key
 
   def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = Seq.empty
   def frontendExtensions(): Seq[AdminExtensionFrontendExtension] = Seq.empty
@@ -333,5 +334,14 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
     } else {
       ().vfuture
     }
+  }
+
+  def frontendExtensionsHtml(): Html = {
+    Html(
+      frontendExtensions
+        .map(_.path)
+        .map(p => s"""<script type=\"text/javascript\" src=\"${p}\"></script>""")
+        .mkString("\n")
+    )
   }
 }

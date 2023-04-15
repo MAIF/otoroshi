@@ -19,6 +19,11 @@ import { GenericLoginPage, GenericLoginPageWithWebAuthn } from './pages/GenericL
 import { SelfUpdatePage } from './pages/SelfUpdatePage';
 import * as BackOfficeServices from './services/BackOfficeServices';
 import isObject from 'lodash/isObject';
+import * as Inputs from './components/inputs';
+import * as NgInputs from './components/nginputs';
+import lodash from 'lodash';
+import moment from 'moment';
+import { v4 as uuid } from 'uuid';
 
 import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';
 
@@ -183,4 +188,37 @@ export function selfUpdate(opts, node) {
   setupOutdatedBrowser();
   setupWindowUtils();
   ReactDOM.render(<SelfUpdatePage {...opts} />, node);
+}
+
+const _extensions = {};
+
+export function registerExtension(name, thunk) {
+  const ctx = {
+    dependencies: {
+      react: React,
+      'react-dom': ReactDOM,
+      fetch: fetch,
+      BackOfficeServices: BackOfficeServices,
+      Components: {
+        Inputs,
+        NgInputs,
+      },
+      lodash,
+      moment,
+      uuid,
+    }
+  };
+  _extensions[name] = thunk(ctx);
+}
+
+export function extensions() {
+  return Object.values(_extensions);
+}
+
+export function getExtensions() {
+  return _extensions;
+}
+
+export function getExtension(name) {
+  return _extensions[name];
 }

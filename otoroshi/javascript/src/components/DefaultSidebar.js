@@ -4,14 +4,14 @@ import { Link } from 'react-router-dom';
 import { createTooltip } from '../tooltips';
 import { SidebarContext } from '../apps/BackOfficeApp';
 
-function SidebarLink({ openedSidebar, clearSidebar, path, text, icon, rootClassName }) {
+function SidebarLink({ openedSidebar, clearSidebar, path, title, text, icon, rootClassName }) {
   return <li className={`nav-item mt-0 ${openedSidebar ? 'nav-item--open' : ''}`}>
     <Link
       to={`/${path}`}
       className={`nav-link ${rootClassName(path)}`}
       {...createTooltip(text)}
       onClick={clearSidebar}>
-      <i className={`fas fa-${icon}`} /> {!openedSidebar ? '' : path.toUpperCase()}
+      <i className={`fas fa-${icon}`} /> {!openedSidebar ? '' : (title ? title.toUpperCase(): path.toUpperCase())}
     </Link>
   </li>
 }
@@ -113,6 +113,15 @@ export function DefaultSidebar(props) {
         text="List all wasm-plugins declared in Otoroshi"
         icon="plug"
       />
+      {Otoroshi.extensions().flatMap(ext => ext.sidebarItems).map(item => <SidebarLink
+        rootClassName={rootClassName}
+        openedSidebar={openedSidebar}
+        clearSidebar={clearSidebar}
+        path={item.path}
+        text={item.text}
+        title={item.title}
+        icon={item.icon}
+      />)}
       <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''} pt-3 mt-1`}>
         <Link
           to="/features"

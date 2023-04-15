@@ -38,5 +38,6 @@
         <script type="text/javascript" src="@routes.Assets.versioned("javascripts/bootstrap.bundle.min.js")"></script>
         <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/dark-light-mode.js?v=${_env.hash}")"></script>
         @moreScripts
+        @(_env.adminExtensions.frontendExtensionsHtml())
     </body>
 </html>

@@ -816,6 +816,11 @@ export class TopBar extends Component {
           label: 'Snow Monkey',
           value: 'SnowMonkey',
         });
+        OtoroshiChallenge.extensions().map(ext => {
+          ext.searchItems.map(item => {
+            options.push(item);
+          })
+        })
         return { options };
       });
   };
@@ -1535,6 +1540,11 @@ export class TopBar extends Component {
                       <Link to="/clever">Service from a CleverApp</Link>
                     </li>
                   )}
+                  {Otoroshi.extensions().flatMap(ext => ext.creationItems).map(item => (
+                    <li className="d-flex">
+                      <Link to={item.path}>{item.title}</Link>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </form>

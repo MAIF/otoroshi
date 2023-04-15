@@ -105,6 +105,12 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
     }
   }
 
+  override def frontendExtensions(): Seq[AdminExtensionFrontendExtension] = {
+    Seq(
+      AdminExtensionFrontendExtension("/__otoroshi_assets/javascripts/extension.js")
+    )
+  }
+
   override def wellKnownRoutes(): Seq[AdminExtensionWellKnownRoute] = Seq(
     AdminExtensionWellKnownRoute("GET", "/.well-known/otoroshi/extensions/foo/bars/:id", false, (ctx, request, body) => {
       Results.Ok(Json.obj("id" -> ctx.named("id").map(JsString.apply).getOrElse(JsNull).asValue)).vfuture

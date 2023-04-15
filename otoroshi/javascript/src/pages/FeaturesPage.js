@@ -184,6 +184,11 @@ const graph = (env) => {
       ],
     },
     {
+      title: 'Extensions',
+      description: 'All the features provided by your installed extensions',
+      features: Otoroshi.extensions().flatMap(ext => ext.features)
+    },
+    {
       title: 'Analytics',
       description: 'Everything about everything on your otoroshi cluster',
       features: [
@@ -478,6 +483,7 @@ export class FeaturesPage extends Component {
           </button>
         </div>
         {graph(env).map(({ title, description, features = [] }) => {
+          if (features.length === 0) return null;
           return (
             <Features title={title} description={description} key={title}>
               {features

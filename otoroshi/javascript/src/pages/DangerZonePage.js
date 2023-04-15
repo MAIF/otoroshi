@@ -560,7 +560,7 @@ export class DangerZonePage extends Component {
     'mtlsConfig.trustedCerts',
   ];
 
-  formSchema = {
+  formSchema = () => ({
     'ipFiltering.whitelist': {
       type: 'array',
       props: {
@@ -1098,7 +1098,8 @@ export class DangerZonePage extends Component {
         mode: 'json',
       },
     },
-  };
+    ...Otoroshi.extensions().flatMap(ext => ext.dangerZoneParts).map(part => part.schema).reduce((a, b) => ({ ...a, ...b }), {})
+  });
 
   formFlow = (value) => [
     '<<<Misc. Settings',
@@ -1199,7 +1200,10 @@ export class DangerZonePage extends Component {
     '>>>Global metadata',
     'tags',
     'metadata',
-    'env'
+    'env',
+    ...Otoroshi.extensions().flatMap(ext => ext.dangerZoneParts).flatMap(part => {
+      return ['>>>' + part.title, ...part.flow]
+    })
   ];
 
   syncSchema = {
@@ -1424,6 +1428,9 @@ export class DangerZonePage extends Component {
     if (this.state.changed) {
       delete propsDisabled.disabled;
     }
+    console.log(Otoroshi.extensions().flatMap(ext => ext.dangerZoneParts).flatMap(part => {
+      return ['>>>' + part.title]//, ...part.flow]
+    }))
     return (
       <div>
         <div className="displayGroupBtn">
@@ -1440,7 +1447,7 @@ export class DangerZonePage extends Component {
           value={this.state.value}
           onChange={this.updateState}
           flow={this.formFlow(this.state.value)}
-          schema={this.formSchema}
+          schema={this.formSchema()}
           style={{ marginTop: 50 }}
         />
         <hr />
