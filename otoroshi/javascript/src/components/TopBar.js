@@ -816,7 +816,7 @@ export class TopBar extends Component {
           label: 'Snow Monkey',
           value: 'SnowMonkey',
         });
-        OtoroshiChallenge.extensions().map(ext => {
+        Otoroshi.extensions().map(ext => {
           ext.searchItems.map(item => {
             options.push(item);
           })
