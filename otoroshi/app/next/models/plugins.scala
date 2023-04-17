@@ -356,21 +356,21 @@ case class NgContextualPlugins(
       val new_plugins = plugs
         .foldLeft((true, Seq.empty[NgPluginWrapper[NgRequestTransformer]])) {
           case ((latestAsync, coll), plug) => {
-            // if (plug.plugin.isTransformRequestAsync) {
-            (true, coll :+ plug)
-            // } else {
-            //   if (!latestAsync) {
-            //     coll.last match {
-            //       case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _)               =>
-            //         (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(Seq(wrap, plug)))
-            //       case NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins) =>
-            //         (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins :+ plug))
-            //       case _                                                                => (true, coll :+ plug)
-            //     }
-            //   } else {
-            //     (false, coll :+ plug)
-            //   }
-            // }
+            if (plug.plugin.isTransformRequestAsync) {
+               (true, coll :+ plug)
+            } else {
+             if (!latestAsync) {
+               coll.last match {
+                 case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _)               =>
+                   (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(Seq(wrap, plug)))
+                 case NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins) =>
+                   (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins :+ plug))
+                 case _                                                                => (true, coll :+ plug)
+               }
+             } else {
+               (false, coll :+ plug)
+             }
+           }
           }
         }
         ._2
