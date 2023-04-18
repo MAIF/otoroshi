@@ -156,7 +156,6 @@ class App extends React.Component {
   }
 
   onNewPlugin = type => {
-    console.log('here')
     this.setState({
       plugins: this.state.plugins.filter(p => !p.new)
     }, () => {
@@ -258,6 +257,34 @@ class App extends React.Component {
     })
   }
 
+  initializeEmptyPlugin = () => {
+    const { selectedPlugin } = this.state;
+
+    const INFORMATIONS_FILENAME = {
+      go: "go.mod",
+      rust: "Cargo.toml",
+      rs: "Cargo.toml",
+      js: "package.json",
+      ts: "package.json",
+      opa: "package.json"
+    };
+
+    this.setState({
+      selectedPlugin: {
+        ...selectedPlugin,
+        files: selectedPlugin.files.map(file => {
+          if (file.filename === INFORMATIONS_FILENAME[selectedPlugin.type]) {
+            return {
+              ...file,
+              content: file.content.replace('@@PLUGIN_NAME@@', selectedPlugin.filename)
+            }
+          }
+          return file;
+        })
+      }
+    })
+  }
+
   onPluginClick = newSelectedPlugin => {
     this.setState({
       configFiles: [],
@@ -297,22 +324,8 @@ class App extends React.Component {
                     template.json().then(window.alert)
                   } else {
                     template.blob()
-                      .then(templatesFiles => {
-                        this.downloadPluginTemplate(templatesFiles, plugin)
-                          .then(() => {
-                            // const type = plugin.type === "rust" ? 'rs' : plugin.type;
-                            // if (fetchHostFunctionNeeded && fetchTypesNeeded) {
-                            //   const filename = `types.${type}`;
-                            //   const hostFunctionsFilename = `host.${type}`;
-                            //   this.fetchedTypeToState(hostFunctionsFilename, hostFunctionsFile)
-                            //     .then(() => this.fetchedTypeToState(filename, typesFile));
-                            // } else if (fetchTypesNeeded) {
-                            //   this.fetchedTypeToState(`types.${type}`, typesFile);
-                            // } else if (fetchHostFunctionNeeded) {
-                            //   this.fetchedTypeToState(`host.${type}`, hostFunctionsFile);
-                            // }
-                          });
-                      });
+                      .then(templatesFiles => this.downloadPluginTemplate(templatesFiles, plugin))
+                      .then(this.initializeEmptyPlugin);
                   }
                 })
             } else {
@@ -466,7 +479,7 @@ class App extends React.Component {
   removePlugin = () => {
     if (this.state.selectedPlugin) {
       const { pluginId } = this.state.selectedPlugin
-      console.log(this.state.selectedPlugin, this.state.plugins.map(p => p.pluginId))
+
       const plugin = this.state.plugins.find(f => f.pluginId === pluginId)
       if (window.confirm(`Delete the ${plugin.filename} plugin ?`)) {
         Service.removePlugin(pluginId)

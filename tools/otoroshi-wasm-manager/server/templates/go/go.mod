@@ -1,4 +1,4 @@
-module go-plugin
+module @@PLUGIN_NAME@@
 
 go 1.19
 
