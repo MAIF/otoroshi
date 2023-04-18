@@ -1112,14 +1112,14 @@ class ProxyEngine() extends RequestHandler {
         )
       } else {
         val promise = Promise[Either[NgProxyEngineError, Done]]()
-        def next(plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Unit = {
+        def next(plugins: Seq[NgPluginWrapper[NgRequestTransformer]], pluginIndex: Int): Unit = {
           plugins.headOption match {
             case None          => promise.trySuccess(Right(Done))
             case Some(wrapper) => {
               val pluginConfig: JsValue = wrapper.plugin.defaultConfig
                 .map(dc => dc ++ wrapper.instance.config.raw)
                 .getOrElse(wrapper.instance.config.raw)
-              val ctx                   = _ctx.copy(config = pluginConfig)
+              val ctx                   = _ctx.copy(config = pluginConfig, id = pluginIndex)
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
               val item                  = NgReportPluginSequenceItem(
@@ -1167,12 +1167,12 @@ class ProxyEngine() extends RequestHandler {
                   promise.trySuccess(Right(Done))
                 case Success(_)                      =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
-                  next(plugins.tail)
+                  next(plugins.tail, pluginIndex - 1)
               }
             }
           }
         }
-        next(all_plugins)
+        next(all_plugins, all_plugins.size)
         FEither.apply(promise.future)
       }
     } else {
@@ -1285,14 +1285,14 @@ class ProxyEngine() extends RequestHandler {
         )
       } else {
         val promise = Promise[Either[NgProxyEngineError, Done]]()
-        def next(plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Unit = {
+        def next(plugins: Seq[NgPluginWrapper[NgRequestTransformer]], pluginIndex: Int): Unit = {
           plugins.headOption match {
             case None          => promise.trySuccess(Right(Done))
             case Some(wrapper) => {
               val pluginConfig: JsValue = wrapper.plugin.defaultConfig
                 .map(dc => dc ++ wrapper.instance.config.raw)
                 .getOrElse(wrapper.instance.config.raw)
-              val ctx                   = _ctx.copy(config = pluginConfig)
+              val ctx                   = _ctx.copy(config = pluginConfig, id = pluginIndex)
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
               val item                  = NgReportPluginSequenceItem(
@@ -1340,12 +1340,12 @@ class ProxyEngine() extends RequestHandler {
                   promise.trySuccess(Right(Done))
                 case Success(_)                      =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
-                  next(plugins.tail)
+                  next(plugins.tail, pluginIndex - 1)
               }
             }
           }
         }
-        next(all_plugins)
+        next(all_plugins, all_plugins.size)
         FEither.apply(promise.future)
       }
     } else {
@@ -1474,7 +1474,7 @@ class ProxyEngine() extends RequestHandler {
         )
       } else {
         val promise = Promise[Either[NgProxyEngineError, Done]]()
-        def next(plugins: Seq[NgPluginWrapper[NgPreRouting]]): Unit = {
+        def next(plugins: Seq[NgPluginWrapper[NgPreRouting]], pluginIndex: Int): Unit = {
           plugins.headOption match {
             case None          => promise.trySuccess(Right(Done))
             case Some(wrapper) => {
@@ -1543,12 +1543,12 @@ class ProxyEngine() extends RequestHandler {
                   promise.trySuccess(Right(Done))
                 case Success(Right(_))                      =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "successful"))
-                  next(plugins.tail)
+                  next(plugins.tail, pluginIndex - 1)
               }
             }
           }
         }
-        next(all_plugins)
+        next(all_plugins, all_plugins.size)
         FEither.apply(promise.future)
       }
     } else {
@@ -1662,7 +1662,7 @@ class ProxyEngine() extends RequestHandler {
         })
       } else {
         val promise = Promise[Either[NgProxyEngineError, Done]]()
-        def next(plugins: Seq[NgPluginWrapper[NgAccessValidator]]): Unit = {
+        def next(plugins: Seq[NgPluginWrapper[NgAccessValidator]], pluginIndex: Int): Unit = {
           plugins.headOption match {
             case None          => promise.trySuccess(Right(Done))
             case Some(wrapper) => {
@@ -1672,7 +1672,8 @@ class ProxyEngine() extends RequestHandler {
               val ctx                   = _ctx.copy(
                 config = pluginConfig,
                 apikey = _ctx.apikey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
-                user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey))
+                user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+                id = pluginIndex
               )
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
@@ -1725,12 +1726,12 @@ class ProxyEngine() extends RequestHandler {
                   promise.trySuccess(Right(Done))
                 case Success(NgAccess.NgAllowed)                      =>
                   markPluginItem(item, ctx, debug, Json.obj("kind" -> "allowed"))
-                  next(plugins.tail)
+                  next(plugins.tail, pluginIndex - 1)
               }
             }
           }
         }
-        next(all_plugins)
+        next(all_plugins, all_plugins.size)
         FEither.apply(promise.future)
       }
     } else {
@@ -2475,6 +2476,7 @@ class ProxyEngine() extends RequestHandler {
         sequence = sequence,
         markPluginItem = markPluginItem
       )
+
       if (all_plugins.size == 1) {
         val wrapper               = all_plugins.head
         val pluginConfig: JsValue = wrapper.plugin.defaultConfig
@@ -2531,7 +2533,7 @@ class ProxyEngine() extends RequestHandler {
         })
       } else {
         val promise = Promise[Either[NgProxyEngineError, NgPluginHttpRequest]]()
-        def next(_ctx: NgTransformerRequestContext, plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Unit = {
+        def next(_ctx: NgTransformerRequestContext, plugins: Seq[NgPluginWrapper[NgRequestTransformer]], pluginIndex: Int): Unit = {
           plugins.headOption match {
             case None          => promise.trySuccess(Right(_ctx.otoroshiRequest))
             case Some(wrapper) => {
@@ -2541,8 +2543,10 @@ class ProxyEngine() extends RequestHandler {
               val ctx                   = _ctx.copy(
                 config = pluginConfig,
                 apikey = _ctx.apikey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
-                user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey))
+                user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+                id = pluginIndex
               )
+              println("id", pluginIndex)
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
               val item                  = NgReportPluginSequenceItem(
@@ -2603,13 +2607,13 @@ class ProxyEngine() extends RequestHandler {
                   promise.trySuccess(Right(req_next))
                 case Success(Right(req_next))                      =>
                   markPluginItem(item, ctx.copy(otoroshiRequest = req_next), debug, Json.obj("kind" -> "successful"))
-                  next(_ctx.copy(otoroshiRequest = req_next), plugins.tail)
+                  next(_ctx.copy(otoroshiRequest = req_next), plugins.tail, pluginIndex - 1)
               }
             }
           }
         }
 
-        next(__ctx, all_plugins)
+        next(__ctx, all_plugins, all_plugins.length)
         FEither.apply(promise.future)
       }
     } else {
@@ -2992,7 +2996,7 @@ class ProxyEngine() extends RequestHandler {
         })
       } else {
         val promise = Promise[Either[NgProxyEngineError, NgPluginHttpResponse]]()
-        def next(_ctx: NgTransformerResponseContext, plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Unit = {
+        def next(_ctx: NgTransformerResponseContext, plugins: Seq[NgPluginWrapper[NgRequestTransformer]], pluginIndex: Int): Unit = {
           plugins.headOption match {
             case None          => promise.trySuccess(Right(_ctx.otoroshiResponse))
             case Some(wrapper) => {
@@ -3002,7 +3006,8 @@ class ProxyEngine() extends RequestHandler {
               val ctx                   = _ctx.copy(
                 config = pluginConfig,
                 apikey = _ctx.apikey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
-                user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey))
+                user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+                id = pluginIndex
               )
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
@@ -3064,13 +3069,13 @@ class ProxyEngine() extends RequestHandler {
                   promise.trySuccess(Right(resp_next))
                 case Success(Right(resp_next))                      =>
                   markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
-                  next(_ctx.copy(otoroshiResponse = resp_next), plugins.tail)
+                  next(_ctx.copy(otoroshiResponse = resp_next), plugins.tail, pluginIndex - 1)
               }
             }
           }
         }
 
-        next(__ctx, all_plugins)
+        next(__ctx, all_plugins, all_plugins.size)
         FEither.apply(promise.future)
       }
     } else {
