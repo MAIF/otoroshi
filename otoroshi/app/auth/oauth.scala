@@ -173,7 +173,10 @@ case class GenericOauth2ModuleConfig(
   def theName: String                                                  = name
   def theTags: Seq[String]                                             = tags
   def `type`: String                                                   = "oauth2"
+  def humanName: String                                                = "OAuth2 / OIDC provider"
   override def authModule(config: GlobalConfig): AuthModule            = GenericOauth2Module(this)
+  override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
+  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
   override def asJson                                                  =
     location.jsonWithKey ++ Json.obj(
       "type"                     -> "oauth2",
@@ -230,6 +233,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   import otoroshi.utils.http.Implicits._
   import otoroshi.utils.syntax.implicits._
   import play.api.libs.ws.DefaultBodyWritables._
+
+  def this() = this(GenericOauth2Module.defaultConfig)
 
   private def encryptState(signingObject: JsValue)(implicit env: Env) = {
     val cipher: Cipher = Cipher.getInstance("AES")
@@ -829,6 +834,16 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 }
 
 object GenericOauth2Module {
+  def defaultConfig = GenericOauth2ModuleConfig(
+    id = IdGenerator.namedId("auth_mod", IdGenerator.uuid),
+    name = "New auth. module",
+    desc = "New auth. module",
+    tags = Seq.empty,
+    metadata = Map.empty,
+    sessionCookieValues = SessionCookieValues(),
+    clientSideSessionEnabled = true
+  )
+
   def handleTokenRefresh(auth: AuthModuleConfig, user: RefreshableUser)(implicit
       ec: ExecutionContext,
       env: Env

@@ -144,12 +144,15 @@ case class Oauth1ModuleConfig(
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends AuthModuleConfig {
   def `type`: String                   = "oauth1"
+  def humanName: String                = "OAuth1 provider"
   def theDescription: String           = desc
   def theMetadata: Map[String, String] = metadata
   def theName: String                  = name
   def theTags: Seq[String]             = tags
 
-  override def authModule(config: GlobalConfig): AuthModule = Oauth1AuthModule(this)
+  override def authModule(config: GlobalConfig): AuthModule             = Oauth1AuthModule(this)
+  override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
+  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
 
   override def asJson =
     location.jsonWithKey ++ Json.obj(
@@ -181,6 +184,23 @@ case class Oauth1ModuleConfig(
 }
 
 object Oauth1AuthModule {
+
+  def defaultConfig = Oauth1ModuleConfig(
+    id = IdGenerator.namedId("auth_mod", IdGenerator.uuid),
+    name = "New OAuth 1.0 module",
+    desc = "New OAuth 1.0 module",
+    consumerKey = "",
+    consumerSecret = "",
+    requestTokenURL = "",
+    authorizeURL = "",
+    accessTokenURL = "",
+    profileURL = "",
+    callbackURL = "",
+    tags = Seq.empty,
+    metadata = Map.empty,
+    sessionCookieValues = SessionCookieValues(),
+    clientSideSessionEnabled = true
+  )
 
   def encodeURI(str: String): String = URLEncoder.encode(str, "UTF-8")
 
@@ -241,8 +261,9 @@ object Oauth1AuthModule {
 }
 
 case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
-
   import Oauth1AuthModule._
+
+  def this() = this(Oauth1AuthModule.defaultConfig)
 
   override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,

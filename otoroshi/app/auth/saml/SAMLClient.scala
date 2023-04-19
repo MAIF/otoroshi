@@ -58,9 +58,11 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.{asScalaBufferConverter, asScalaSetConverter}
 import scala.util.Try
 
-case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
+case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
 
   import SAMLModule._
+
+  def this() = this(SAMLModule.defaultConfig)
 
   override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
@@ -69,7 +71,7 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
     implicit val req: RequestHeader = request
 
     val redirect   = request.getQueryString("redirect")
-    val hash       = env.sign(s"${samlConfig.id}:::backoffice")
+    val hash       = env.sign(s"${authConfig.id}:::backoffice")
     val relayState = URLEncoder.encode(
       s"hash=$hash&desc=${descriptor.id}&redirect_uri=${redirect.getOrElse(
         routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
@@ -77,16 +79,16 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
       "UTF-8"
     )
 
-    getRequest(env, samlConfig).map {
+    getRequest(env, authConfig).map {
       case Left(value)    => BadRequest(value)
       case Right(encoded) =>
-        if (samlConfig.ssoProtocolBinding == SAMLProtocolBinding.Post)
-          Ok(otoroshi.views.html.oto.saml(encoded, samlConfig.singleSignOnUrl, env, Some(relayState)))
+        if (authConfig.ssoProtocolBinding == SAMLProtocolBinding.Post)
+          Ok(otoroshi.views.html.oto.saml(encoded, authConfig.singleSignOnUrl, env, Some(relayState)))
         else
           Redirect(
-            s"${samlConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}&RelayState=${relayState}"
+            s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}&RelayState=${relayState}"
           )
-            .addingToSession("hash" -> env.sign(s"${samlConfig.id}:::backoffice"))
+            .addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))
     }
   }
 
@@ -96,14 +98,14 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
       config: GlobalConfig,
       descriptor: ServiceDescriptor
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
-    getLogoutRequest(env, samlConfig, user.map(_.metadata.getOrElse("saml-id", ""))).map {
+    getLogoutRequest(env, authConfig, user.map(_.metadata.getOrElse("saml-id", ""))).map {
       case Left(_)        => Right(None)
       case Right(encoded) =>
-        if (samlConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
-          Left(Ok(otoroshi.views.html.oto.saml(encoded, samlConfig.singleLogoutUrl, env)))
+        if (authConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
+          Left(Ok(otoroshi.views.html.oto.saml(encoded, authConfig.singleLogoutUrl, env)))
         else {
           env.Ws
-            .url(s"${samlConfig.singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
+            .url(s"${authConfig.singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
             .get()
           Right(None)
         }
@@ -119,7 +121,7 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
       case Some(body) =>
         val samlResponse = body("SAMLResponse").head
 
-        decodeAndValidateSamlResponse(env, samlConfig, samlResponse, "") match {
+        decodeAndValidateSamlResponse(env, authConfig, samlResponse, "") match {
           case Left(value)       =>
             env.logger.error(value)
             FastFuture.successful(Left(value))
@@ -146,7 +148,7 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
               }
 
             val email =
-              if (samlConfig.usedNameIDAsEmail)
+              if (authConfig.usedNameIDAsEmail)
                 assertion.getSubject.getNameID.getValue
               else
                 attributes.get("Email").map(_.head).getOrElse("no.name@oto.tools")
@@ -163,13 +165,13 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
                   "email" -> email
                 ),
                 token = Json.obj(),
-                authConfigId = samlConfig.id,
-                realm = samlConfig.cookieSuffix(descriptor),
+                authConfigId = authConfig.id,
+                realm = authConfig.cookieSuffix(descriptor),
                 tags = Seq.empty,
                 metadata = Map("saml-id" -> assertion.getSubject.getNameID.getValue),
                 otoroshiData = None,
-                location = samlConfig.location
-              ).validate(samlConfig.userValidators)
+                location = authConfig.location
+              ).validate(authConfig.userValidators)
             )
         }
       case None       => FastFuture.successful(Left(""))
@@ -180,16 +182,16 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
-    val encodedRequest = getRequest(env, samlConfig)
+    val encodedRequest = getRequest(env, authConfig)
 
     encodedRequest.map {
       case Left(value)    => BadRequest(value)
       case Right(encoded) =>
-        if (samlConfig.ssoProtocolBinding == SAMLProtocolBinding.Post)
-          Ok(otoroshi.views.html.oto.saml(encoded, samlConfig.singleSignOnUrl, env))
+        if (authConfig.ssoProtocolBinding == SAMLProtocolBinding.Post)
+          Ok(otoroshi.views.html.oto.saml(encoded, authConfig.singleSignOnUrl, env))
         else {
-          Redirect(s"${samlConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
-            .addingToSession("hash" -> env.sign(s"${samlConfig.id}:::backoffice"))(request)
+          Redirect(s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
+            .addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))(request)
         }
     }
   }
@@ -199,14 +201,14 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
       env: Env
   ): Future[Either[Result, Option[String]]] = {
 
-    getLogoutRequest(env, samlConfig, Some(user.metadata.getOrElse("saml-id", ""))).map {
+    getLogoutRequest(env, authConfig, Some(user.metadata.getOrElse("saml-id", ""))).map {
       case Left(_)        => Right(None)
       case Right(encoded) =>
-        if (samlConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
-          Left(Ok(otoroshi.views.html.oto.saml(encoded, samlConfig.singleLogoutUrl, env)))
+        if (authConfig.singleLogoutProtocolBinding == SAMLProtocolBinding.Post)
+          Left(Ok(otoroshi.views.html.oto.saml(encoded, authConfig.singleLogoutUrl, env)))
         else {
           env.Ws
-            .url(s"${samlConfig.singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
+            .url(s"${authConfig.singleLogoutUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}")
             .get()
           Right(None)
         }
@@ -222,7 +224,7 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
       case Some(body) =>
         val samlResponse = body("SAMLResponse").head
 
-        decodeAndValidateSamlResponse(env, samlConfig, samlResponse, "") match {
+        decodeAndValidateSamlResponse(env, authConfig, samlResponse, "") match {
           case Left(value)       =>
             env.logger.error(value)
             FastFuture.successful(Left(value))
@@ -249,7 +251,7 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
               }
 
             val email =
-              if (samlConfig.usedNameIDAsEmail)
+              if (authConfig.usedNameIDAsEmail)
                 assertion.getSubject.getNameID.getValue
               else
                 attributes.get("Email").map(_.head).getOrElse("no.name@oto.tools")
@@ -265,20 +267,20 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
                   "email" -> email
                 ),
                 email = email,
-                authConfigId = samlConfig.id,
+                authConfigId = authConfig.id,
                 simpleLogin = false,
                 tags = Seq.empty,
                 metadata = Map("saml-id" -> assertion.getSubject.getNameID.getValue),
                 rights = UserRights(
                   Seq(
                     UserRight(
-                      TenantAccess(samlConfig.location.tenant.value),
-                      samlConfig.location.teams.map(t => TeamAccess(t.value))
+                      TenantAccess(authConfig.location.tenant.value),
+                      authConfig.location.teams.map(t => TeamAccess(t.value))
                     )
                   )
                 ),
-                location = samlConfig.location
-              ).validate(samlConfig.userValidators)
+                location = authConfig.location
+              ).validate(authConfig.userValidators)
             )
         }
       case None       => FastFuture.successful(Left(""))
@@ -668,7 +670,10 @@ case class SamlAuthModuleConfig(
   def theName: String                                       = name
   def theTags: Seq[String]                                  = tags
   def `type`: String                                        = "saml"
-  override def authModule(config: GlobalConfig): AuthModule = SAMLModule(this)
+  def humanName: String                                     = "SAML v2 provider"
+  override def authModule(config: GlobalConfig): AuthModule = new SAMLModule(this)
+  override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
+  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
   override def cookieSuffix(desc: ServiceDescriptor)        = s"saml-auth-$id"
   override def asJson                                       = location.jsonWithKey ++ Json.obj(
     "type"                        -> "saml",
@@ -705,6 +710,19 @@ case class SamlAuthModuleConfig(
 object SAMLModule {
 
   lazy val logger: Logger = Logger("SAMLModule")
+
+  def defaultConfig = SamlAuthModuleConfig(
+    id = IdGenerator.namedId("auth_mod", IdGenerator.uuid),
+    name = "New auth. module",
+    desc = "New auth. module",
+    tags = Seq.empty,
+    metadata = Map.empty,
+    singleSignOnUrl = "",
+    singleLogoutUrl = "",
+    issuer = "",
+    sessionCookieValues = SessionCookieValues(),
+    clientSideSessionEnabled = true
+  )
 
   def getRequest(env: Env, samlConfig: SamlAuthModuleConfig): Future[Either[String, String]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext

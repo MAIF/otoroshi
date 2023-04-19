@@ -1,43 +1,38 @@
 package otoroshi.script
 
+import akka.Done
+import akka.actor.Cancellable
+import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Sink, Source}
+import akka.util.ByteString
+import com.google.common.hash.Hashing
+import io.github.classgraph.ClassgraphUtils
+import otoroshi.auth.AuthModule
+import otoroshi.env.Env
+import otoroshi.events._
+import otoroshi.gateway.GwError
+import otoroshi.models._
+import otoroshi.next.extensions.AdminExtension
+import otoroshi.next.plugins.api._
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
+import otoroshi.utils.cache.types.LegitTrieMap
+import otoroshi.utils.config.ConfigUtils
+import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.{SchedulerHelper, TypedMap}
+import play.api.Logger
+import play.api.libs.json._
+import play.api.libs.ws.{DefaultWSCookie, WSCookie}
+import play.api.mvc._
+
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.security.cert.X509Certificate
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import otoroshi.actions.ApiAction
-import akka.{Done, NotUsed}
-import akka.actor.{Actor, ActorRef, Cancellable, Props}
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.util.ByteString
-import com.google.common.hash.Hashing
-import io.github.classgraph.ClassgraphUtils
-import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.events.{AnalyticEvent, OtoroshiEvent}
-import otoroshi.gateway.GwError
-
 import javax.script._
-import otoroshi.models._
-import otoroshi.next.extensions.AdminExtension
-import otoroshi.next.plugins.api.{NgNamedPlugin, NgPlugin, NgPluginCategory, NgPluginVisibility, NgStep}
-import play.api.Logger
-import play.api.libs.json._
-import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{DefaultWSCookie, WSCookie}
-import play.api.mvc._
-import redis.RedisClientMasterSlaves
-import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.cache.types.LegitTrieMap
-import otoroshi.utils.{SchedulerHelper, TypedMap}
-import otoroshi.utils.config.ConfigUtils
-import otoroshi.utils.syntax.implicits._
-
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
@@ -770,9 +765,10 @@ class ScriptManager(env: Env) {
     exporterNames,
     ngNames,
     adminExtensionNames,
+    authModuleNames
   ) =
     Try {
-      import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
+      import io.github.classgraph.ClassInfo
 
       import collection.JavaConverters._
       val start      = System.currentTimeMillis()
@@ -954,6 +950,11 @@ class ScriptManager(env: Env) {
           .filterNot(predicate)
           .map(_.getName)
 
+        val authModuleConfigs: Seq[String] = (scanResult.getSubclasses(classOf[AuthModule].getName).asScala ++
+          scanResult.getClassesImplementing(classOf[AuthModule].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName)
+
         (
           requestTransformers,
           validators,
@@ -964,12 +965,14 @@ class ScriptManager(env: Env) {
           jobNames,
           customExporters,
           ngPlugins,
-          adminExts
+          adminExts,
+          authModuleConfigs
         )
       } catch {
         case e: Throwable =>
           e.printStackTrace()
           (
+            Seq.empty[String],
             Seq.empty[String],
             Seq.empty[String],
             Seq.empty[String],
@@ -985,6 +988,7 @@ class ScriptManager(env: Env) {
         if (scanResult != null) ClassgraphUtils.clear(scanResult)
       }
     } getOrElse (
+      Seq.empty[String],
       Seq.empty[String],
       Seq.empty[String],
       Seq.empty[String],

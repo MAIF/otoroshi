@@ -1371,7 +1371,7 @@ class Env(
                   )
                   .getOrElse(Json.obj())
 
-                val finalConfig = baseExport.customizeWith(initialCustomization)
+                val finalConfig = baseExport.customizeWith(initialCustomization)(this)
 
                 logger.info(
                   s"You can log into the Otoroshi admin console with the following credentials: $login / $password"

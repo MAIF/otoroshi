@@ -6,6 +6,7 @@ import com.google.common.base.Charsets
 import org.joda.time.DateTime
 import otoroshi.auth.Oauth1AuthModule.encodeURI
 import otoroshi.env.Env
+import otoroshi.models.{GlobalConfig, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api._
 import otoroshi.plugins.authcallers.{ForceRetryException, OAuth2Kind}
@@ -16,7 +17,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.mvc.Results.BadRequest
-import play.api.mvc.{Result, Results}
+import play.api.mvc.{AnyContent, Request, RequestHeader, Result, Results}
 import play.utils.UriEncoding
 
 import java.util.Base64
