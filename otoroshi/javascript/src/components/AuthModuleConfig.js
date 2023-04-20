@@ -29,7 +29,7 @@ import bcrypt from 'bcryptjs';
 import { JsonObjectAsCodeInput } from './inputs/CodeInput';
 import { Form } from './inputs';
 import isString from 'lodash/isString';
-import { LabelAndInput, NgCodeRenderer } from './nginputs';
+import { LabelAndInput, NgCodeRenderer, NgForm } from './nginputs';
 
 function Base64Url() {
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -2103,6 +2103,15 @@ export class SamlModuleConfig extends Component {
 }
 
 export function CustomModuleConfig({ value, onChange }) {
+  if (value.form) {
+    const { form } = value
+    return <NgForm
+      value={value}
+      onChange={onChange}
+      flow={form.flow}
+      schema={form.schema}
+    />
+  }
 
   return <LabelAndInput label="Configuration">
     <span className="d-flex align-items-center" style={{ height: '100%' }}>

@@ -1,10 +1,16 @@
-package otoroshi.auth
+package otoroshi.auth.custom
+
+import akka.http.scaladsl.util.FastFuture
+import otoroshi.auth.{AuthModule, AuthModuleConfig, Form, SessionCookieValues}
+import otoroshi.controllers.routes
 import otoroshi.env.Env
-import otoroshi.models.{BackOfficeUser, EntityLocation, GlobalConfig, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.models._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.JsonPathValidator
-import play.api.libs.json.{Format, JsArray, JsError, JsResult, JsString, JsSuccess, JsValue, Json}
-import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
+import otoroshi.utils.syntax.implicits.BetterSyntax
+import play.api.http.MimeTypes
+import play.api.libs.json._
+import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -19,7 +25,8 @@ case class CustomModuleConfig(
                                tags: Seq[String],
                                metadata: Map[String, String],
                                sessionCookieValues: SessionCookieValues,
-                               location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+                               location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
+                               form: Option[Form] = None
                              ) extends AuthModuleConfig {
   def `type`: String = "custom"
   def humanName: String = "Custom Authentication"
@@ -44,7 +51,11 @@ case class CustomModuleConfig(
         userValidators = (json \ "userValidators")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty),
+        form = (json \ "form").asOpt[JsValue].flatMap(json => Form._fmt.reads(json) match {
+          case JsSuccess(value, _) => Some(value)
+          case JsError(_) => None
+        })
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -63,13 +74,13 @@ case class CustomModuleConfig(
       "metadata" -> this.metadata,
       "tags" -> JsArray(tags.map(JsString.apply)),
       "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
-      "userValidators" -> JsArray(userValidators.map(_.json))
+      "userValidators" -> JsArray(userValidators.map(_.json)),
+      "form" -> this.form.map(Form._fmt.writes)
     )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
 
   override def cookieSuffix(desc: ServiceDescriptor) = s"custom-auth-$id"
-
   def theDescription: String = desc
   def theMetadata: Map[String, String] = metadata
   def theName: String = name
@@ -84,18 +95,82 @@ object CustomAuthModule {
     tags = Seq.empty,
     metadata = Map.empty,
     sessionCookieValues = SessionCookieValues(),
-    clientSideSessionEnabled = true
+    clientSideSessionEnabled = true,
+    form = Some(Form(
+      flow = Seq("name"),
+      schema = Json.obj(
+        "name" -> Json.obj(
+          "type" -> "string",
+          "label" -> "Module name"
+        ))
+    ))
   )
 }
 
 case class CustomAuthModule(authConfig: CustomModuleConfig) extends AuthModule {
   def this() = this(CustomAuthModule.defaultConfig)
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result] = ???
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    val redirect = request.getQueryString("redirect")
+    val hash = env.sign(s"${authConfig.id}:::${descriptor.id}")
+    env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
+      Results
+        .Ok(
+          """
+            |<!DOCTYPE>
+            |<html>
+            |<body>
+            | <h2>Login page</h2>
+            |</body>
+            |</html>
+            |""".stripMargin)
+        .as(MimeTypes.HTML)
+        .addingToSession(
+          s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
+            routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)(request)
+          )
+        )(request)
+        .future
+    }
+  }
 
-  override def paLogout(request: RequestHeader, user: Option[PrivateAppsUser], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = ???
+  override def paLogout(request: RequestHeader, user: Option[PrivateAppsUser], config: GlobalConfig, descriptor: ServiceDescriptor)
+                       (implicit ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = FastFuture.successful(Right(None))
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = ???
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)
+                         (implicit ec: ExecutionContext, env: Env): Future[Either[String, PrivateAppsUser]] = {
+    request.body.asFormUrlEncoded match {
+      case None => FastFuture.successful(Left("No Authorization form here"))
+      case Some(form) => {
+        (form.get("username").map(_.last), form.get("password").map(_.last), form.get("token").map(_.last)) match {
+          case (Some(username), Some(password), Some(token)) => {
+            env.datastores.authConfigsDataStore.validateLoginToken(token).map {
+              case false => Left("Bad token")
+              case true =>
+                PrivateAppsUser(
+                  randomId = IdGenerator.token(64),
+                  name = username,
+                  email = s"$username@oto.tools",
+                  profile = Json.obj(
+                    "name" -> username,
+                    "email" -> s"$username@oto.tools"
+                  ),
+                  realm = authConfig.cookieSuffix(descriptor),
+                  otoroshiData = None,
+                  authConfigId = authConfig.id,
+                  tags = Seq.empty,
+                  metadata = Map.empty,
+                  location = authConfig.location
+                ).validate(authConfig.userValidators)
+            }
+          }
+          case _ => {
+            FastFuture.successful(Left("Authorization form is not complete"))
+          }
+        }
+      }
+    }
+  }
 
   override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result] = ???
 

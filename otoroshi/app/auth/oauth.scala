@@ -177,6 +177,7 @@ case class GenericOauth2ModuleConfig(
   override def authModule(config: GlobalConfig): AuthModule            = GenericOauth2Module(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
+  override def form: Option[Form]                                      = None
   override def asJson                                                  =
     location.jsonWithKey ++ Json.obj(
       "type"                     -> "oauth2",

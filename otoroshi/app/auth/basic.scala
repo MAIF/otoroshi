@@ -166,6 +166,7 @@ case class BasicAuthModuleConfig(
 ) extends AuthModuleConfig {
   def `type`: String                                                   = "basic"
   def humanName: String                                                = "In memory auth. provider"
+  override def form: Option[Form]                                      = None
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def authModule(config: GlobalConfig): AuthModule            = BasicAuthModule(this)
   override def asJson                                                  =
