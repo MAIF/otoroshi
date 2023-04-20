@@ -161,7 +161,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       ctx.checkRights(RightsChecker.Anyone) {
         Ok(process(Json.obj("templates" -> env.datastores.authConfigsDataStore.templates()
           .map(template => Json.obj(
-            "type" ->template.`type`,
+            "type"  -> template.`type`,
             "label" -> template.humanName
           ))), ctx.request)
         ).future

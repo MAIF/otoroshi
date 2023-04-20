@@ -149,7 +149,36 @@ trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport
   def withLocation(location: EntityLocation): AuthModuleConfig
   override def internalId: String = id
   override def json: JsValue      = asJson
+
+  def form: Option[Form]
+  def loginHTMLPage: String = "otoroshi.view.oto.login.scala.html"
 }
+
+
+case class Form(schema: JsValue, flow: Seq[String] = Seq.empty) extends AsJson {
+  def asJson: JsValue = Json.obj(
+    "schema" -> schema,
+    "flow"   -> flow
+  )
+}
+
+object Form {
+  val _fmt = new Format[Form] {
+    override def writes(o: Form): JsValue = o.asJson
+
+    override def reads(json: JsValue): JsResult[Form] = Try {
+
+        Form(
+          flow = (json \ "flow").asOpt[Seq[String]].getOrElse(Seq.empty),
+          schema = (json \ "schema").asOpt[JsValue].getOrElse(Json.obj()),
+        )
+      } match {
+        case Failure(exception) => JsError(exception.getMessage)
+        case Success(value) => JsSuccess(value)
+      }
+  }
+}
+
 
 case class AuthModuleConfigFormat(env: Env) extends Format[AuthModuleConfig] {
 
@@ -168,7 +197,6 @@ case class AuthModuleConfigFormat(env: Env) extends Format[AuthModuleConfig] {
         case Some(config) => config._fmt()(env).reads(json)
         case None => unknownConfigTypeError
       }
-      case _ => unknownConfigTypeError
     }
   }
 

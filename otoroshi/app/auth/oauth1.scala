@@ -150,6 +150,7 @@ case class Oauth1ModuleConfig(
   def theName: String                  = name
   def theTags: Seq[String]             = tags
 
+  override def form: Option[Form]                                       = None
   override def authModule(config: GlobalConfig): AuthModule             = Oauth1AuthModule(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
