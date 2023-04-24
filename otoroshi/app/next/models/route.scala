@@ -603,14 +603,14 @@ case class NgRoute(
         }
       } else {
         val promise = Promise[Either[NgProxyEngineError, NgPluginHttpResponse]]()
-        def next(_ctx: NgTransformerErrorContext, plugins: Seq[NgPluginWrapper[NgRequestTransformer]], pluginIndex: Int): Unit = {
+        def next(_ctx: NgTransformerErrorContext, plugins: Seq[NgPluginWrapper[NgRequestTransformer]]): Unit = {
           plugins.headOption match {
             case None          => promise.trySuccess(Right(_ctx.otoroshiResponse))
             case Some(wrapper) => {
               val pluginConfig: JsValue = wrapper.plugin.defaultConfig
                 .map(dc => dc ++ wrapper.instance.config.raw)
                 .getOrElse(wrapper.instance.config.raw)
-              val ctx                   = _ctx.copy(config = pluginConfig, id = pluginIndex)
+              val ctx                   = _ctx.copy(config = pluginConfig, id = wrapper.instance.instanceId)
               val debug                 = debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
               val item                  = NgReportPluginSequenceItem(
@@ -656,12 +656,12 @@ case class NgRoute(
                   promise.trySuccess(Right(resp_next))
                 case Success(resp_next)                      =>
                   markPluginItem(item, ctx.copy(otoroshiResponse = resp_next), debug, Json.obj("kind" -> "successful"))
-                  next(_ctx.copy(otoroshiResponse = resp_next), plugins.tail, pluginIndex - 1)
+                  next(_ctx.copy(otoroshiResponse = resp_next), plugins.tail)
               }
             }
           }
         }
-        next(__ctx, all_plugins, all_plugins.size)
+        next(__ctx, all_plugins)
         promise.future.flatMap {
           case Left(err)  => err.asResult()
           case Right(res) => res.asResult.vfuture

@@ -94,7 +94,9 @@ case class NgPluginInstance(
     include: Seq[String] = Seq.empty,
     exclude: Seq[String] = Seq.empty,
     config: NgPluginInstanceConfig = NgPluginInstanceConfig(),
-    pluginIndex: Option[PluginIndex] = None
+    pluginIndex: Option[PluginIndex] = None,
+
+    instanceId: Int = -1
 ) {
   def json: JsValue = Json
     .obj(
@@ -305,6 +307,8 @@ case class NgContextualPlugins(
   implicit val ec: ExecutionContext = _ec
 
   lazy val (enabledPlugins, disabledPlugins) = (global_plugins.slots ++ plugins.slots)
+    .zipWithIndex
+    .map { case (plugin, idx) => plugin.copy(instanceId = idx) }
     .partition(_.enabled)
 
   lazy val (allPlugins, filteredPlugins) = enabledPlugins
