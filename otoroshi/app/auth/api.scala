@@ -265,13 +265,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
   def setUserForToken(token: String, user: JsValue)(implicit ec: ExecutionContext): Future[Unit]
   def getUserForToken(token: String)(implicit ec: ExecutionContext): Future[Option[JsValue]]
 
-  def templates()(implicit env: Env): Seq[AuthModuleConfig] = env.scriptManager.authModuleNames.flatMap(ref => {
-    Try(env.environment.classLoader.loadClass(ref))
-      .map(clazz => clazz.getDeclaredConstructor().newInstance()) match {
-      case Success(tr) => tr.asInstanceOf[AuthModule].authConfig.some
-      case Failure(_) => None
-    }
-  })
+  def templates()(implicit env: Env): Seq[AuthModuleConfig] = env.scriptManager.authModules
 
   def template(modType: Option[String], env: Env)(implicit ec: ExecutionContext): AuthModuleConfig = {
 

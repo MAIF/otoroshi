@@ -1001,6 +1001,14 @@ class ScriptManager(env: Env) {
       Seq.empty[String]
     )
 
+  lazy val authModules = authModuleNames.flatMap(ref => {
+    Try(env.environment.classLoader.loadClass(ref))
+      .map(clazz => clazz.getDeclaredConstructor().newInstance()) match {
+      case Success(tr) => tr.asInstanceOf[AuthModule].authConfig.some
+      case Failure(_) => None
+    }
+  })
+
   private val allPlugins   = Seq(
     transformersNames,
     validatorsNames,

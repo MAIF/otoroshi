@@ -2103,7 +2103,7 @@ export class SamlModuleConfig extends Component {
 }
 
 export function CustomModuleConfig({ value, onChange }) {
-  if (value.form) {
+  if (value.form && Object.keys(value.form.schema).length > 0) {
     const { form } = value
     return <NgForm
       value={value}
