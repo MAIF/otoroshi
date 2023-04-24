@@ -279,7 +279,7 @@ class HealthCheckJob extends Job {
 
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
-  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
