@@ -1017,7 +1017,7 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
   private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType
-    .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+    .toString().applyOnWithPredicate(_ == "none/none")(_ => "application/octet-stream") + _charset.map(v => ";charset=" + v.value).getOrElse("")
   private lazy val _bodyAsBytes: ByteString      = rawbody
   private lazy val _bodyAsString: String         = rawbody.utf8String
   private lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
