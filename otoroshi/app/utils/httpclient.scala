@@ -947,8 +947,9 @@ case class AkkWsClientStreamedResponse(
     val noContentLengthHeader: Boolean = headz.getIgnoreCase("Content-Length").isEmpty
     val isContentLengthZero: Boolean   = headz.getIgnoreCase("Content-Length").exists(_.contains("0"))
     val hasChunkedHeader: Boolean      = headz.getIgnoreCase("Transfer-Encoding").isDefined && headz.getIgnoreCase("Transfer-Encoding").exists(_.contains("chunked"))
+
     val isChunked: Boolean             =
-      Option(httpResponse.entity.isChunked()).filter(identity) match { // don't know if actualy legit ...
+      Option(httpResponse.entity.isChunked()) match { // don't know if actualy legit ...
         case _ if isContentLengthZero                                                              => false
         case Some(chunked)                                                                         => chunked
         case None if !env.emptyContentLengthIsChunked                                              => hasChunkedHeader // false
@@ -965,7 +966,7 @@ case class AkkWsClientStreamedResponse(
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
   private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType
-    .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+    .toString().applyOnWithPredicate(_ == "none/none")(_ => "application/octet-stream") + _charset.map(v => ";charset=" + v.value).getOrElse("")
   private lazy val _bodyAsBytes: ByteString      =
     Await.result(
       bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat),
