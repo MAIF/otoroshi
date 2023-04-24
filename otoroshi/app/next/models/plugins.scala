@@ -94,7 +94,9 @@ case class NgPluginInstance(
     include: Seq[String] = Seq.empty,
     exclude: Seq[String] = Seq.empty,
     config: NgPluginInstanceConfig = NgPluginInstanceConfig(),
-    pluginIndex: Option[PluginIndex] = None
+    pluginIndex: Option[PluginIndex] = None,
+
+    instanceId: Int = -1
 ) {
   def json: JsValue = Json
     .obj(
@@ -305,6 +307,8 @@ case class NgContextualPlugins(
   implicit val ec: ExecutionContext = _ec
 
   lazy val (enabledPlugins, disabledPlugins) = (global_plugins.slots ++ plugins.slots)
+    .zipWithIndex
+    .map { case (plugin, idx) => plugin.copy(instanceId = idx) }
     .partition(_.enabled)
 
   lazy val (allPlugins, filteredPlugins) = enabledPlugins
@@ -352,25 +356,26 @@ case class NgContextualPlugins(
   lazy val (transformerPluginsWithCallbacks, tpwoCallbacks)    = transformerPlugins.partition(_.plugin.usesCallbacks)
   lazy val (transformerPluginsThatTransformsRequest, tpwoRequest) = {
     val (plugs, b) = transformerPlugins.partition(_.plugin.transformsRequest)
+
     if (nextPluginsMerge && plugs.size > 1) {
       val new_plugins = plugs
         .foldLeft((true, Seq.empty[NgPluginWrapper[NgRequestTransformer]])) {
           case ((latestAsync, coll), plug) => {
-            // if (plug.plugin.isTransformRequestAsync) {
-            (true, coll :+ plug)
-            // } else {
-            //   if (!latestAsync) {
-            //     coll.last match {
-            //       case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _)               =>
-            //         (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(Seq(wrap, plug)))
-            //       case NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins) =>
-            //         (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins :+ plug))
-            //       case _                                                                => (true, coll :+ plug)
-            //     }
-            //   } else {
-            //     (false, coll :+ plug)
-            //   }
-            // }
+            if (plug.plugin.isTransformRequestAsync) {
+               (true, coll :+ plug)
+            } else {
+             if (!latestAsync) {
+               coll.last match {
+                 case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _)               =>
+                   (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(Seq(wrap, plug)))
+                 case NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins) =>
+                   (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins :+ plug))
+                 case _                                                                => (true, coll :+ plug)
+               }
+             } else {
+               (false, coll :+ plug)
+             }
+           }
           }
         }
         ._2
@@ -385,21 +390,21 @@ case class NgContextualPlugins(
       val new_plugins = plugs
         .foldLeft((true, Seq.empty[NgPluginWrapper[NgRequestTransformer]])) {
           case ((latestAsync, coll), plug) => {
-            // if (plug.plugin.isTransformResponseAsync) {
-            (true, coll :+ plug)
-            // } else {
-            //   if (!latestAsync) {
-            //     coll.last match {
-            //       case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _)               =>
-            //         (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(Seq(wrap, plug)))
-            //       case NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins) =>
-            //         (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins :+ plug))
-            //       case _                                                                => (true, coll :+ plug)
-            //     }
-            //   } else {
-            //     (false, coll :+ plug)
-            //   }
-            // }
+             if (plug.plugin.isTransformResponseAsync) {
+              (true, coll :+ plug)
+             } else {
+               if (!latestAsync) {
+                 coll.last match {
+                   case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _)               =>
+                     (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(Seq(wrap, plug)))
+                   case NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins) =>
+                     (false, coll.init :+ NgPluginWrapper.NgMergedRequestTransformerPluginWrapper(plugins :+ plug))
+                   case _                                                                => (true, coll :+ plug)
+                 }
+               } else {
+                 (false, coll :+ plug)
+               }
+             }
           }
         }
         ._2
@@ -426,21 +431,21 @@ case class NgContextualPlugins(
       val new_plugins = plugs
         .foldLeft((true, Seq.empty[NgPluginWrapper[NgPreRouting]])) {
           case ((latestAsync, coll), plug) => {
-            //  if (plug.plugin.isPreRouteAsync) {
-            (true, coll :+ plug)
-            //   } else {
-            //     if (!latestAsync) {
-            //       coll.last match {
-            //         case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _)       =>
-            //           (false, coll.init :+ NgPluginWrapper.NgMergedPreRoutingPluginWrapper(Seq(wrap, plug)))
-            //         case NgPluginWrapper.NgMergedPreRoutingPluginWrapper(plugins) =>
-            //           (false, coll.init :+ NgPluginWrapper.NgMergedPreRoutingPluginWrapper(plugins :+ plug))
-            //         case _                                                        => (true, coll :+ plug)
-            //       }
-            //     } else {
-            //       (false, coll :+ plug)
-            //     }
-            //   }
+            if (plug.plugin.isPreRouteAsync) {
+              (true, coll :+ plug)
+            } else {
+               if (!latestAsync) {
+                 coll.last match {
+                   case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _)       =>
+                     (false, coll.init :+ NgPluginWrapper.NgMergedPreRoutingPluginWrapper(Seq(wrap, plug)))
+                   case NgPluginWrapper.NgMergedPreRoutingPluginWrapper(plugins) =>
+                     (false, coll.init :+ NgPluginWrapper.NgMergedPreRoutingPluginWrapper(plugins :+ plug))
+                   case _                                                        => (true, coll :+ plug)
+                 }
+               } else {
+                 (false, coll :+ plug)
+               }
+             }
           }
         }
         ._2
@@ -466,21 +471,21 @@ case class NgContextualPlugins(
       val new_plugins = plugs
         .foldLeft((true, Seq.empty[NgPluginWrapper[NgAccessValidator]])) {
           case ((latestAsync, coll), plug) => {
-            // if (plug.plugin.isAccessAsync) {
-            (true, coll :+ plug)
-            // } else {
-            //   if (!latestAsync) {
-            //     coll.last match {
-            //       case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _)            =>
-            //         (false, coll.init :+ NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(Seq(wrap, plug)))
-            //       case NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(plugins) =>
-            //         (false, coll.init :+ NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(plugins :+ plug))
-            //       case _                                                             => (true, coll :+ plug)
-            //     }
-            //   } else {
-            //     (false, coll :+ plug)
-            //   }
-            // }
+            if (plug.plugin.isAccessAsync) {
+              (true, coll :+ plug)
+            } else {
+              if (!latestAsync) {
+               coll.last match {
+                 case wrap @ NgPluginWrapper.NgSimplePluginWrapper(_, _)            =>
+                   (false, coll.init :+ NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(Seq(wrap, plug)))
+                 case NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(plugins) =>
+                   (false, coll.init :+ NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(plugins :+ plug))
+                 case _                                                             => (true, coll :+ plug)
+               }
+              } else {
+                (false, coll :+ plug)
+              }
+            }
           }
         }
         ._2
