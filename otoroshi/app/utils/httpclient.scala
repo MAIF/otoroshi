@@ -945,9 +945,11 @@ case class AkkWsClientStreamedResponse(
     )
     val headz                          = TreeMap(headers: _*)(CaseInsensitiveOrdered)
     val noContentLengthHeader: Boolean = headz.getIgnoreCase("Content-Length").isEmpty
-    val hasChunkedHeader: Boolean      = headz.getIgnoreCase("Transfer-Encoding").isDefined
+    val isContentLengthZero: Boolean   = headz.getIgnoreCase("Content-Length").exists(_.contains("0"))
+    val hasChunkedHeader: Boolean      = headz.getIgnoreCase("Transfer-Encoding").isDefined && headz.getIgnoreCase("Transfer-Encoding").exists(_.contains("chunked"))
     val isChunked: Boolean             =
       Option(httpResponse.entity.isChunked()).filter(identity) match { // don't know if actualy legit ...
+        case _ if isContentLengthZero                                                              => false
         case Some(chunked)                                                                         => chunked
         case None if !env.emptyContentLengthIsChunked                                              => hasChunkedHeader // false
         case None if env.emptyContentLengthIsChunked && hasChunkedHeader                           => true

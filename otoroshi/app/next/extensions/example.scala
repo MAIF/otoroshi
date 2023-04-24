@@ -84,7 +84,7 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
 
   override def description: Option[String] = "Foo".some
 
-  override def enabled: Boolean = env.isDev // configuration.getOptional[Boolean]("enabled").getOrElse(false)
+  override def enabled: Boolean = env.isDev || configuration.getOptional[Boolean]("enabled").getOrElse(false)
 
   override def start(): Unit = {
     "start example extension".debugPrintln

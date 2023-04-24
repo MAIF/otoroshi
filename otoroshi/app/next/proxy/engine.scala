@@ -3158,12 +3158,14 @@ class ProxyEngine() extends RequestHandler {
         )
       }
     }
+    val isContentLengthZero: Boolean   = response.headers.getIgnoreCase("Content-Length").contains("0")
     val noContentLengthHeader: Boolean = !response.hasLength // rawResponse.contentLength.isEmpty
     val hasChunkedHeader: Boolean      = response.isChunked /*rawResponse
       .header("Transfer-Encoding")
       .orElse(response.headers.get("Transfer-Encoding"))
       .exists(h => h.toLowerCase().contains("chunked"))*/
     val isChunked: Boolean             = rawResponse.isChunked() match { // don't know if actualy legit ...
+      case _ if isContentLengthZero                                                                     => false
       case Some(true)                                                                                   => true
       case Some(false) if !env.emptyContentLengthIsChunked                                              => hasChunkedHeader
       case Some(false) if env.emptyContentLengthIsChunked && noContentLengthHeader                      => true
@@ -3436,7 +3438,9 @@ class ProxyEngine() extends RequestHandler {
       val hasChunkedHeader: Boolean      = rawResponse
         .header("Transfer-Encoding")
         .exists(h => h.toLowerCase().contains("chunked"))
+      val isContentLengthZero: Boolean   = rawResponse.header("Content-Length").contains("0")
       val isChunked: Boolean             = rawResponse.isChunked() match {
+        case _ if isContentLengthZero                                                              => false
         case Some(chunked)                                                                         => chunked
         case None if !env.emptyContentLengthIsChunked                                              =>
           hasChunkedHeader // false
