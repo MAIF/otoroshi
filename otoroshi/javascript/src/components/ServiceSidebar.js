@@ -98,7 +98,7 @@ export class ServiceSidebar extends Component {
                 </Link>
               </li>
             )}
-            <li className="dropdown-divider" style={{borderColor:"var(--color_level1)",  marginLeft:"5px",  marginRight:"5px" }}/>
+            {/*<li className="dropdown-divider" style={{borderColor:"var(--color_level1)",  marginLeft:"5px",  marginRight:"5px" }}/>*/}
           </ul>
         )}
       </SidebarContext.Consumer>

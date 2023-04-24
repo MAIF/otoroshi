@@ -30,7 +30,7 @@ export function DefaultSidebar(props) {
   const { openedSidebar } = sidebarContext;
 
   return (
-    <ul className="nav flex-column nav-sidebar">
+    <ul className="nav flex-column nav-sidebar" style={{ marginTop: 20 }}>
       {props.env && !props.env.initWithNewEngine && (
         <SidebarLink
           rootClassName={rootClassName}
