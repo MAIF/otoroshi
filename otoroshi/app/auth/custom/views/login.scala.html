@@ -1,0 +1,15 @@
+@import otoroshi.env.Env
+
+@(action: String, token: String)
+
+<div id="app">
+    <h2>COUCOU</h2>
+
+    <form method="POST" action="@Html(action)">
+    <input type="hidden" name="token" className="form-control" value="@token" />
+    <button
+        type="submit">
+        Login
+    </button>
+    </form>
+</div>

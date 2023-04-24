@@ -152,6 +152,7 @@ class ForwardTrafficHandler extends RequestHandler {
             val transferEncoding   =
               resp.headers.get("Transfer-Encoding").orElse(resp.headers.get("transfer-encoding")).map(_.last)
             val hasChunkedHeader   = transferEncoding.exists(h => h.toLowerCase().contains("chunked"))
+
             val isChunked: Boolean = resp.isChunked() match { // don't know if actualy legit ...
               case Some(chunked)                                                                   => chunked
               case None if !env.emptyContentLengthIsChunked                                        =>
