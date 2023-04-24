@@ -38,7 +38,7 @@ object HealthCheck {
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Unit] = {
-    Retry.retry(times = 3, delay = 20, ctx = "leader-session-valid") { tryCount =>
+    Retry.retry(times = 3, delay = 20, ctx = "check-target-health") { tryCount =>
       val url        = s"${target.scheme}://${target.host}${desc.healthCheck.url}"
       val start      = System.currentTimeMillis()
       val stateValue = IdGenerator.extendedToken(128)
