@@ -126,7 +126,7 @@ export class GlobalStatusPage extends Component {
                 />
               </div>
             </div>
-            <div className="content-health">
+            <div className="content-health" style={{ maxWidth: '100%' }}>
               {this.state.status
                 .sort((s1, s2) => s1.service.localeCompare(s2.service))
                 .map((health, idx) => {
