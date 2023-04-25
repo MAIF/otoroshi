@@ -298,7 +298,7 @@ class BackOfficeAppContainer extends Component {
                             this.state.openedSidebar ? "me-2" : ""
                           }`}
                         />
-                        {this.state.openedSidebar ? "DASHBOARD" : ""}
+                        {this.state.openedSidebar ? "Dashboard" : ""}
                       </Link>
                     </li>
                   </ul>

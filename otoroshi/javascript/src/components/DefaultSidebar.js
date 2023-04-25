@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { createTooltip } from '../tooltips';
 import { SidebarContext } from '../apps/BackOfficeApp';
+import { firstLetterUppercase } from '../util';
 
 function SidebarLink({ openedSidebar, clearSidebar, path, title, text, icon, rootClassName }) {
   return <li className={`nav-item mt-0 ${openedSidebar ? 'nav-item--open' : ''}`}>
@@ -11,7 +12,7 @@ function SidebarLink({ openedSidebar, clearSidebar, path, title, text, icon, roo
       className={`nav-link ${rootClassName(path)}`}
       {...createTooltip(text)}
       onClick={clearSidebar}>
-      <i className={`fas fa-${icon}`} /> {!openedSidebar ? '' : (title ? title.toUpperCase(): path.toUpperCase())}
+      <i className={`fas fa-${icon}`} /> {!openedSidebar ? '' : (title ? firstLetterUppercase(title): firstLetterUppercase(path))}
     </Link>
   </li>
 }
@@ -134,7 +135,7 @@ export function DefaultSidebar(props) {
               '-webkit-mask': `url('/assets/images/svgs/menu-icon.svg') no-repeat center`,
               mask: `url('/assets/images/svgs/menu-icon.svg') no-repeat center`
             }} />
-          {!openedSidebar ? '' : 'FEATURES'}
+          {!openedSidebar ? '' : 'Features'}
         </Link>
       </li>
     </ul>

@@ -19,10 +19,17 @@ export class ServiceSidebar extends Component {
               <Link
                 {...createTooltip(`Back to the service descriptor of ${name}`)}
                 to={`/lines/${env}/services/${serviceId}`}
-                className="nav-link active"
+                className="d-flex nav-link active"
               >
-                <i className="fas fa-cube" />{" "}
-                {!openedSidebar ? "" : name.toUpperCase()}
+                <div
+                  style={{ width: "20px" }}
+                  className="d-flex justify-content-center"
+                >
+                  <i className="fas fa-cube" />
+                </div>
+                <div className="ms-2">
+                  {!openedSidebar ? "" : name.toUpperCase()}
+                </div>
               </Link>
             </li>
             {!this.props.noSideMenu && (
@@ -30,10 +37,14 @@ export class ServiceSidebar extends Component {
                 <Link
                   {...createTooltip(`Show healthcheck report for ${name}`)}
                   to={`/lines/${env}/services/${serviceId}/health`}
-                  className={`nav-link ${className("health")} ${openedSidebar ? 'ms-3' : ''}`}
+                  className={`d-flex nav-link ${className(
+                    "health"
+                  )} ${openedSidebar ? "ms-3" : ""}`}
                 >
-                  <i className="fas fa-heart" />{" "}
-                  {!openedSidebar ? "" : "Health"}
+                  <div style={{ width: "20px" }} className="d-flex justify-content-center">
+                    <i className="fas fa-heart" />
+                  </div>
+                  <div className="ms-2">{!openedSidebar ? "" : "Health"}</div>
                 </Link>
               </li>
             )}
@@ -42,10 +53,16 @@ export class ServiceSidebar extends Component {
                 <Link
                   to={`/lines/${env}/services/${serviceId}/stats`}
                   {...createTooltip(`Show live metrics report for ${name}`)}
-                  className={`nav-link ${className("stats")} ${openedSidebar ? 'ms-3' : ''}`}
+                  className={`d-flex nav-link ${className("stats")} ${
+                    openedSidebar ? "ms-3" : ""
+                  }`}
                 >
-                  <i className="fas fa-chart-bar" />{" "}
-                  {!openedSidebar ? "" : "Live metrics"}
+                  <div style={{ width: "20px" }} className="d-flex justify-content-center">
+                    <i className="fas fa-chart-bar" />
+                  </div>
+                  <div className="ms-2">
+                    {!openedSidebar ? "" : "Live metrics"}
+                  </div>
                 </Link>
               </li>
             )}
@@ -54,10 +71,16 @@ export class ServiceSidebar extends Component {
                 <Link
                   to={`/lines/${env}/services/${serviceId}/analytics`}
                   {...createTooltip(`Show analytics report for ${name}`)}
-                  className={`nav-link ${className("analytics")} ${openedSidebar ? 'ms-3' : ''}`}
+                  className={`d-flex nav-link ${className("analytics")} ${
+                    openedSidebar ? "ms-3" : ""
+                  }`}
                 >
-                  <i className="fas fa-signal" />{" "}
-                  {!openedSidebar ? "" : "Analytics"}
+                  <div style={{ width: "20px" }} className="d-flex justify-content-center">
+                    <i className="fas fa-signal" />
+                  </div>
+                  <div className="ms-2">
+                    {!openedSidebar ? "" : "Analytics"}
+                  </div>
                 </Link>
               </li>
             )}
@@ -66,9 +89,14 @@ export class ServiceSidebar extends Component {
                 <Link
                   to={`/lines/${env}/services/${serviceId}/events`}
                   {...createTooltip(`Show raw events report for ${name}`)}
-                  className={`nav-link ${className("events")} ${openedSidebar ? 'ms-3' : ''}`}
+                  className={`d-flex nav-link ${className("events")} ${
+                    openedSidebar ? "ms-3" : ""
+                  }`}
                 >
-                  <i className="fas fa-list" /> {!openedSidebar ? "" : "Events"}
+                  <div style={{ width: "20px" }} className="d-flex justify-content-center">
+                    <i className="fas fa-list" />
+                  </div>
+                  <div className="ms-2">{!openedSidebar ? "" : "Events"}</div>
                 </Link>
               </li>
             )}
@@ -79,10 +107,14 @@ export class ServiceSidebar extends Component {
                   {...createTooltip(
                     `Manage all API keys that can access ${name}`
                   )}
-                  className={`nav-link ${className("apikeys")} ${openedSidebar ? 'ms-3' : ''}`}
+                  className={`d-flex nav-link ${className("apikeys")} ${
+                    openedSidebar ? "ms-3" : ""
+                  }`}
                 >
-                  <i className="fas fa-lock" />{" "}
-                  {!openedSidebar ? "" : "API Keys"}
+                  <div style={{ width: "20px" }} className="d-flex justify-content-center">
+                    <i className="fas fa-lock" />
+                  </div>
+                  <div className="ms-2">{!openedSidebar ? "" : "API Keys"}</div>
                 </Link>
               </li>
             )}
@@ -91,10 +123,16 @@ export class ServiceSidebar extends Component {
                 <Link
                   to={`/lines/${env}/services/${serviceId}/doc`}
                   {...createTooltip(`Show open API documentation for ${name}`)}
-                  className={`nav-link ${className("doc")} ${openedSidebar ? 'ms-3' : ''}`}
+                  className={`d-flex nav-link ${className("doc")} ${
+                    openedSidebar ? "ms-3" : ""
+                  }`}
                 >
-                  <i className="fas fa-folder" />{" "}
-                  {!openedSidebar ? "" : "Documentation"}
+                  <div style={{ width: "20px" }} className="d-flex justify-content-center">
+                    <i className="fas fa-folder" />
+                  </div>
+                  <div className="ms-2">
+                    {!openedSidebar ? "" : "Documentation"}
+                  </div>
                 </Link>
               </li>
             )}
