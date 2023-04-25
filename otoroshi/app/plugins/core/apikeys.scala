@@ -125,13 +125,16 @@ class JwtApikeyExtractor extends PreRouting {
                       val iat                             =
                         Option(jwt.getClaim("iat")).filterNot(_.isNull).filterNot(_.isMissing).map(_.asLong())
                       val httpPath                        = Option(jwt.getClaim("httpPath"))
-                        .filterNot(_.isNull).filterNot(_.isMissing)
+                        .filterNot(_.isNull)
+                        .filterNot(_.isMissing)
                         .map(_.asString())
                       val httpVerb                        = Option(jwt.getClaim("httpVerb"))
-                        .filterNot(_.isNull).filterNot(_.isMissing)
+                        .filterNot(_.isNull)
+                        .filterNot(_.isMissing)
                         .map(_.asString())
                       val httpHost                        = Option(jwt.getClaim("httpHost"))
-                        .filterNot(_.isNull).filterNot(_.isMissing)
+                        .filterNot(_.isNull)
+                        .filterNot(_.isMissing)
                         .map(_.asString())
                       algorithmOpt match {
                         case Some(algorithm) => {

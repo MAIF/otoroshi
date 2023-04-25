@@ -67,7 +67,7 @@ class StateExporter extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = {
     currentConfig("StateExporter", ctx, env).flatMap { config =>
       config.select("every_sec").asOpt[Int] match {
-        case None => None
+        case None        => None
         case Some(every) => every.seconds.some
       }
     }
@@ -76,9 +76,9 @@ class StateExporter extends Job {
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
     val config = currentConfig("StateExporter", ctx, env)
     config.map(_.select("predicates").isDefined) match {
-      case None => None
+      case None        => None
       case Some(false) => None
-      case Some(true) => Some(true)
+      case Some(true)  => Some(true)
     }
   }
 

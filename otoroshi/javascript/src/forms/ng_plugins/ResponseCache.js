@@ -3,15 +3,15 @@ export default {
   config_schema: {
     ttl: {
       type: 'number',
-      label: 'TTL'
+      label: 'TTL',
     },
     maxSize: {
       type: 'number',
-      label: 'Max cache size'
+      label: 'Max cache size',
     },
     autoClean: {
       type: 'bool',
-      label: 'Auto clean'
+      label: 'Auto clean',
     },
     filter: {
       type: 'form',
@@ -27,43 +27,36 @@ export default {
         statuses: {
           type: 'array',
           array: true,
-          label: 'Statuses'
+          label: 'Statuses',
         },
         methods: {
           type: 'array',
           array: true,
-          label: 'Methods'
+          label: 'Methods',
         },
         paths: {
           type: 'array',
           array: true,
-          label: 'Paths'
+          label: 'Paths',
         },
         notStatuses: {
           type: 'array',
           array: true,
-          label: 'Not statuses'
+          label: 'Not statuses',
         },
         notMethods: {
           type: 'array',
           array: true,
-          label: 'Not methods'
+          label: 'Not methods',
         },
         notPaths: {
           type: 'array',
           array: true,
-          label: 'Not paths'
-        }
+          label: 'Not paths',
+        },
       },
-      flow: [
-        'statuses',
-        'methods',
-        'paths',
-        'notStatuses',
-        'notMethods',
-        'notPaths'
-      ]
-    }
+      flow: ['statuses', 'methods', 'paths', 'notStatuses', 'notMethods', 'notPaths'],
+    },
   },
-  config_flow: ['ttl', 'maxSize', 'autoClean', 'filter']
+  config_flow: ['ttl', 'maxSize', 'autoClean', 'filter'],
 };

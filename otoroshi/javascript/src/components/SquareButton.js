@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from './Button';
 
 export function SquareButton({ text, icon, level = 'info', ...props }) {
-  const { className = "", ...restProps } = props; 
+  const { className = '', ...restProps } = props;
   return (
     <Button
       type={level}

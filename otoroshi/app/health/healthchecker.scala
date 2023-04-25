@@ -82,25 +82,25 @@ object HealthCheck {
         )
         .get()
         .andThen {
-          case Success(res) => {
+          case Success(res)   => {
             val checkDone =
               res.header(env.Headers.OtoroshiHealthCheckLogicTestResult).exists(_.toLong == value.toLong + 42L)
 
-            val useDefaultConfiguration = desc.healthCheck.healthyStatuses.isEmpty && desc.healthCheck.unhealthyStatuses.isEmpty
+            val useDefaultConfiguration =
+              desc.healthCheck.healthyStatuses.isEmpty && desc.healthCheck.unhealthyStatuses.isEmpty
 
             val rawHealth = (res.status, checkDone) match {
-              case (a, true) if a > 199 && a < 500 => Some("GREEN")
+              case (a, true) if a > 199 && a < 500  => Some("GREEN")
               case (a, false) if a > 199 && a < 500 => Some("YELLOW")
-              case _ => Some("RED")
+              case _                                => Some("RED")
             }
 
-            val health    = if(useDefaultConfiguration) {
+            val health = if (useDefaultConfiguration) {
               rawHealth
             } else {
               if (desc.healthCheck.unhealthyStatuses.contains(res.status)) {
                 Some("RED")
-              }
-              else if (desc.healthCheck.healthyStatuses.contains(res.status)) {
+              } else if (desc.healthCheck.healthyStatuses.contains(res.status)) {
                 if (checkDone) {
                   Some("GREEN")
                 } else {
@@ -111,7 +111,7 @@ object HealthCheck {
               }
             }
 
-            val hce       = HealthCheckEvent(
+            val hce = HealthCheckEvent(
               `@id` = value,
               `@timestamp` = DateTime.now(),
               `@serviceId` = desc.id,

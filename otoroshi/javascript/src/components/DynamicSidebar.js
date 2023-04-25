@@ -21,9 +21,7 @@ export class DynamicSidebar extends Component {
   };
 
   render() {
-    return <div className='mt-3'>
-      {this.state.content}
-    </div>
+    return <div className="mt-3">{this.state.content}</div>;
   }
 
   static setContent(content) {

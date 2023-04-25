@@ -186,7 +186,7 @@ const graph = (env) => {
     {
       title: 'Extensions',
       description: 'All the features provided by your installed extensions',
-      features: Otoroshi.extensions().flatMap(ext => ext.features)
+      features: Otoroshi.extensions().flatMap((ext) => ext.features),
     },
     {
       title: 'Analytics',
@@ -383,7 +383,7 @@ const Feature = ({ title, description, img, link, icon }) => {
       to={link}
       className="d-flex"
       style={{
-        backgroundColor: 'var(--bg-color_level2)',   
+        backgroundColor: 'var(--bg-color_level2)',
         margin: '5px 0px',
         height: '100%',
         borderRadius: '12px',
@@ -421,7 +421,9 @@ const Feature = ({ title, description, img, link, icon }) => {
           }}>
           {zeIcon} {title}
         </div>
-        <div className="me-1" style={{ marginLeft: '5px', marginBottom: '10px', color: 'var(--color_level3)' }}>
+        <div
+          className="me-1"
+          style={{ marginLeft: '5px', marginBottom: '10px', color: 'var(--color_level3)' }}>
           <p>{description}</p>
         </div>
       </div>

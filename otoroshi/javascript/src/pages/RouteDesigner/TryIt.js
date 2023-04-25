@@ -277,7 +277,7 @@ export default function ({ route, hide }) {
 
     const { clientId, clientSecret } = apikey || request.apikey;
 
-    console.log(format, apikey, apikeyHeader)
+    console.log(format, apikey, apikeyHeader);
 
     return {
       ...Object.fromEntries(
@@ -384,9 +384,7 @@ export default function ({ route, hide }) {
               value={request.path}
               onChange={(e) => setRequest({ ...request, path: e.target.value })}
             />
-            <button
-              className="btn btn-primaryColor"
-              onClick={send}>
+            <button className="btn btn-primaryColor" onClick={send}>
               Send
             </button>
           </div>
@@ -455,7 +453,10 @@ export default function ({ route, hide }) {
                               setRequest({
                                 ...request,
                                 apikey: k,
-                                headers: apikeyToHeader(request.apikeyFormat, apikeys.find(a => a.clientId === k)),
+                                headers: apikeyToHeader(
+                                  request.apikeyFormat,
+                                  apikeys.find((a) => a.clientId === k)
+                                ),
                               });
                             }}
                             ngOptions={{
@@ -686,9 +687,7 @@ export default function ({ route, hide }) {
                       {bytesToSize(rawResponse.headers.get('content-length'))}
                     </span>
                   </div>
-                  <button
-                    className="btn btn-sm btn-primaryColor"
-                    onClick={saveResponse}>
+                  <button className="btn btn-sm btn-primaryColor" onClick={saveResponse}>
                     Save Response
                   </button>
                 </div>

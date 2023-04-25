@@ -3,7 +3,7 @@ export default {
   config_schema: {
     realm: {
       label: 'Realm',
-      type: 'string'
+      type: 'string',
     },
     matcher: {
       label: 'Apikey Matcher',
@@ -85,7 +85,7 @@ export default {
         'oneMetaKeyIn',
         'noneTagIn',
       ],
-    }
+    },
   },
-  config_flow: ['realm', 'matcher']
+  config_flow: ['realm', 'matcher'],
 };

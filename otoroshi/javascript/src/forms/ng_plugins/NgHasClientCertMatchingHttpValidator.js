@@ -87,13 +87,7 @@ export default {
           };
       }, {}),
       flow: ['enabled', 'loose', 'trust_all', 'certs', 'trusted_certs'],
-    }
+    },
   },
-  config_flow: [
-    'url',
-    'method',
-    'timeout',
-    'headers',
-    'tls',
-  ],
+  config_flow: ['url', 'method', 'timeout', 'headers', 'tls'],
 };

@@ -17,7 +17,7 @@ import otoroshi.next.plugins.WasmJob
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils
-import otoroshi.utils.{JsonPathValidator, SchedulerHelper, TypedMap, future}
+import otoroshi.utils.{future, JsonPathValidator, SchedulerHelper, TypedMap}
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator
@@ -132,40 +132,41 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
 
   def currentConfig(name: String, ctx: JobContext, env: Env): Option[JsValue] = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
-    val context = Json.obj(
-      "env" -> globalConfig.env,
+    val context      = Json.obj(
+      "env"      -> globalConfig.env,
       "instance" -> env.configurationJson.select("otoroshi").select("instance").asValue
     )
-    globalConfig.plugins
-      .config
+    globalConfig.plugins.config
       .select(name)
       .asOpt[JsValue] match {
-        case Some(JsArray(values)) => {
-          values.find { value =>
-            value.select("predicates").asOpt[Seq[JsObject]] match {
-              case None => false
-              case Some(predicates) => {
-                val validators = predicates.map(v => JsonPathValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
-                validators.forall(_.validate(context))
-              }
-            }
-          }
-        }
-        case Some(obj@JsObject(_)) => {
-          obj.select("predicates").asOpt[Seq[JsObject]] match {
-            case None => None
+      case Some(JsArray(values))   => {
+        values.find { value =>
+          value.select("predicates").asOpt[Seq[JsObject]] match {
+            case None             => false
             case Some(predicates) => {
-              val validators = predicates.map(v => JsonPathValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
-              if (validators.forall(_.validate(context))) {
-                obj.some
-              } else {
-                None
-              }
+              val validators =
+                predicates.map(v => JsonPathValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
+              validators.forall(_.validate(context))
             }
           }
         }
-        case _ => None
       }
+      case Some(obj @ JsObject(_)) => {
+        obj.select("predicates").asOpt[Seq[JsObject]] match {
+          case None             => None
+          case Some(predicates) => {
+            val validators =
+              predicates.map(v => JsonPathValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
+            if (validators.forall(_.validate(context))) {
+              obj.some
+            } else {
+              None
+            }
+          }
+        }
+      }
+      case _                       => None
+    }
   }
 
   private[script] def jobStartHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
@@ -524,21 +525,21 @@ case class RegisteredJobContext(
     )
     job.predicate(ctx, env) match {
       case Some(false) => ()
-      case _ => {
+      case _           => {
         Try(job.instantiation(ctx, env)) match {
-          case Failure(e) => JobManager.logger.error("failure during job instantiation fetch", e)
+          case Failure(e)             => JobManager.logger.error("failure during job instantiation fetch", e)
           case Success(instantiation) => {
             instantiation match {
-              case JobInstantiation.OneInstancePerOtoroshiInstance => f
-              case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isOff => f
-              case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isOff => f
-              case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isWorker => f
-              case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isLeader => f
+              case JobInstantiation.OneInstancePerOtoroshiInstance                                             => f
+              case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isOff       => f
+              case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isOff       => f
+              case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isWorker    => f
+              case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isLeader    => f
               case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode == ClusterMode.Off =>
                 acquireClusterWideLock(f)
-              case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode.isLeader =>
+              case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode.isLeader           =>
                 acquireClusterWideLock(f)
-              case _ => ()
+              case _                                                                                           => ()
             }
           }
         }
@@ -706,14 +707,14 @@ class JobManager(env: Env) {
 }
 
 object DefaultJob extends Job {
-  override def uniqueId: JobId                   = JobId("otoroshi.script.default.DefaultJob")
-  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def uniqueId: JobId                                       = JobId("otoroshi.script.default.DefaultJob")
+  override def categories: Seq[NgPluginCategory]                     = Seq.empty
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 }
 
 object CompilingJob extends Job {
-  override def uniqueId: JobId                   = JobId("otoroshi.script.default.CompilingJob")
-  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def uniqueId: JobId                                       = JobId("otoroshi.script.default.CompilingJob")
+  override def categories: Seq[NgPluginCategory]                     = Seq.empty
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 }
 

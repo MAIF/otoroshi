@@ -689,16 +689,18 @@ object IpFiltering {
   }
 }
 
-case class HealthCheck(enabled: Boolean,
-                       url: String,
-                       timeout: Int = 5000,
-                       healthyStatuses: Seq[Int] = Seq.empty,
-                       unhealthyStatuses: Seq[Int] = Seq.empty) {
+case class HealthCheck(
+    enabled: Boolean,
+    url: String,
+    timeout: Int = 5000,
+    healthyStatuses: Seq[Int] = Seq.empty,
+    unhealthyStatuses: Seq[Int] = Seq.empty
+) {
   def toJson = Json.obj(
-    "enabled" -> enabled,
-    "url" -> url,
-    "timeout" -> timeout,
-    "healthyStatuses" -> healthyStatuses,
+    "enabled"           -> enabled,
+    "url"               -> url,
+    "timeout"           -> timeout,
+    "healthyStatuses"   -> healthyStatuses,
     "unhealthyStatuses" -> unhealthyStatuses
   )
 }
@@ -715,7 +717,7 @@ object HealthCheck {
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
-      case Success(value) => JsSuccess(value)
+      case Success(value)     => JsSuccess(value)
     }
 
     override def writes(o: HealthCheck): JsValue = o.toJson

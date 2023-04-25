@@ -18,10 +18,5 @@ export default {
       label: 'Generate mirroring event',
     },
   },
-  config_flow: [
-    'to',
-    'enabled',
-    'capture_response',
-    'generate_events',
-  ],
+  config_flow: ['to', 'enabled', 'capture_response', 'generate_events'],
 };

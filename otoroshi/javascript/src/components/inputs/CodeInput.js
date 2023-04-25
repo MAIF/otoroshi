@@ -194,7 +194,7 @@ export default class CodeInput extends Component {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: "var(--color-primary)",
+                    backgroundColor: 'var(--color-primary)',
                     color: '#fff',
                     fontStyle: 'italic',
                   }}>

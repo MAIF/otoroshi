@@ -1,9 +1,5 @@
 export default {
   id: 'cp:otoroshi.next.plugins.NgGeolocationInfoEndpoint',
-  config_schema: {
-
-  },
-  config_flow: [
-
-  ],
+  config_schema: {},
+  config_flow: [],
 };

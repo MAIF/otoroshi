@@ -1098,7 +1098,10 @@ export class DangerZonePage extends Component {
         mode: 'json',
       },
     },
-    ...Otoroshi.extensions().flatMap(ext => ext.dangerZoneParts).map(part => part.schema).reduce((a, b) => ({ ...a, ...b }), {})
+    ...Otoroshi.extensions()
+      .flatMap((ext) => ext.dangerZoneParts)
+      .map((part) => part.schema)
+      .reduce((a, b) => ({ ...a, ...b }), {}),
   });
 
   formFlow = (value) => [
@@ -1201,9 +1204,11 @@ export class DangerZonePage extends Component {
     'tags',
     'metadata',
     'env',
-    ...Otoroshi.extensions().flatMap(ext => ext.dangerZoneParts).flatMap(part => {
-      return ['>>>' + part.title, ...part.flow]
-    })
+    ...Otoroshi.extensions()
+      .flatMap((ext) => ext.dangerZoneParts)
+      .flatMap((part) => {
+        return ['>>>' + part.title, ...part.flow];
+      }),
   ];
 
   syncSchema = {
@@ -1428,9 +1433,13 @@ export class DangerZonePage extends Component {
     if (this.state.changed) {
       delete propsDisabled.disabled;
     }
-    console.log(Otoroshi.extensions().flatMap(ext => ext.dangerZoneParts).flatMap(part => {
-      return ['>>>' + part.title]//, ...part.flow]
-    }))
+    console.log(
+      Otoroshi.extensions()
+        .flatMap((ext) => ext.dangerZoneParts)
+        .flatMap((part) => {
+          return ['>>>' + part.title]; //, ...part.flow]
+        })
+    );
     return (
       <div>
         <div className="displayGroupBtn">
@@ -1756,10 +1765,11 @@ const GlobalPluginInformation = ({ plugin, open }) => {
     'https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html';
 
   const getNgPluginDocumentationUrl = () => {
-    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${plugin.id.replace('cp:', '')
+    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${
+      plugin.id.replace('cp:', '')
       // .replace(/\./g, '-')
       // .toLowerCase()
-      }`;
+    }`;
   };
 
   return (

@@ -357,13 +357,16 @@ case class LdapAuthModuleConfig(
               val item  = groupSearch.next()
               val attrs = item.getAttributes
 
-              attrs.getAll.asScala.toSeq.filter(a => a.getID == "uniqueMember" || a.getID == "member" || a.getID == "memberUid").flatMap { attr =>
-                if (attr.getID == "memberUid") {
-                  attr.getAll.asScala.toSeq.map(a => s"uid=${a.toString},${userBase.map(ub => s"${ub},").getOrElse("")}${searchBase}")
-                } else {
-                  attr.getAll.asScala.toSeq.map(_.toString)
+              attrs.getAll.asScala.toSeq
+                .filter(a => a.getID == "uniqueMember" || a.getID == "member" || a.getID == "memberUid")
+                .flatMap { attr =>
+                  if (attr.getID == "memberUid") {
+                    attr.getAll.asScala.toSeq
+                      .map(a => s"uid=${a.toString},${userBase.map(ub => s"${ub},").getOrElse("")}${searchBase}")
+                  } else {
+                    attr.getAll.asScala.toSeq.map(_.toString)
+                  }
                 }
-              }
             } else {
               Seq.empty[String]
             }

@@ -15,8 +15,7 @@ import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class HMACValidatorConfig(secret: Option[String] = None)
-  extends NgPluginConfig {
+case class HMACValidatorConfig(secret: Option[String] = None) extends NgPluginConfig {
   def json: JsValue = HMACValidatorConfig.format.writes(this)
 }
 
@@ -39,12 +38,12 @@ class HMACValidator extends NgAccessValidator {
 
   private val logger = Logger("otoroshi-next-plugins-hmac-access-validator-plugin")
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def name: String = "HMAC access validator"
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def name: String                                = "HMAC access validator"
   override def isAccessAsync: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = HMACValidatorConfig().some
   override def description: Option[String] = {
@@ -92,16 +91,16 @@ class HMACValidator extends NgAccessValidator {
 
     ((secret match {
       case Some(value) if value.nonEmpty => Some(value)
-      case _ => context.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.clientSecret)
+      case _                             => context.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.clientSecret)
     }) match {
-      case None =>
+      case None         =>
         if (logger.isDebugEnabled) logger.debug("No api key found and no secret found in configuration of the plugin")
         NgAccess.NgDenied(BadRequest)
       case Some(secret) =>
         (context.request.headers.get("Authorization"), context.request.headers.get("Proxy-Authorization")) match {
           case (Some(authorization), None) => checkHMACSignature(authorization, context, secret)
           case (None, Some(authorization)) => checkHMACSignature(authorization, context, secret)
-          case (_, _) =>
+          case (_, _)                      =>
             if (logger.isDebugEnabled) logger.debug("Missing authorization header")
             NgAccess.NgDenied(BadRequest)
         }
@@ -109,8 +108,11 @@ class HMACValidator extends NgAccessValidator {
   }
 }
 
-case class HMACCallerConfig(secret: Option[String] = None, algo: String = "HMAC-SHA512", authorizationHeader: Option[String] = None)
-  extends NgPluginConfig {
+case class HMACCallerConfig(
+    secret: Option[String] = None,
+    algo: String = "HMAC-SHA512",
+    authorizationHeader: Option[String] = None
+) extends NgPluginConfig {
   def json: JsValue = HMACCallerConfig.format.writes(this)
 }
 
@@ -135,18 +137,18 @@ class HMACCaller extends NgRequestTransformer {
 
   private val logger = Logger("otoroshi-next-plugins-hmac-caller-plugin")
 
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def multiInstance: Boolean = false
-  override def core: Boolean = true
-  override def usesCallbacks: Boolean = false
-  override def transformsRequest: Boolean = true
-  override def transformsResponse: Boolean = false
-  override def isTransformRequestAsync: Boolean = false
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean            = false
+  override def core: Boolean                     = true
+  override def usesCallbacks: Boolean            = false
+  override def transformsRequest: Boolean        = true
+  override def transformsResponse: Boolean       = false
+  override def isTransformRequestAsync: Boolean  = false
   override def isTransformResponseAsync: Boolean = false
-  override def transformsError: Boolean = false
-  override def name: String = "HMAC caller plugin"
+  override def transformsError: Boolean          = false
+  override def name: String                      = "HMAC caller plugin"
 
   override def description: Option[String] = {
     Some(
@@ -158,8 +160,8 @@ class HMACCaller extends NgRequestTransformer {
   override def defaultConfigObject: Option[NgPluginConfig] = HMACCallerConfig().some
 
   override def transformRequestSync(
-                                     ctx: NgTransformerRequestContext)
-                                   (implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val HMACCallerConfig(secret, algo, authorizationHeader) =
       ctx.cachedConfig(internalName)(HMACCallerConfig.format).getOrElse(HMACCallerConfig())
 
@@ -170,14 +172,13 @@ class HMACCaller extends NgRequestTransformer {
         }
         Left(BadRequest(Json.obj("error" -> "Bad parameters")))
       case Some(secret) =>
-        val authHeader = authorizationHeader.getOrElse("Authorization")
+        val authHeader    = authorizationHeader.getOrElse("Authorization")
         val signingString = System.currentTimeMillis().toString
         val signature     =
           Base64.getEncoder.encodeToString(Signatures.hmac(HMACUtils.Algo(algo), signingString, secret))
 
         if (logger.isDebugEnabled) {
-          logger.debug(
-            s"""
+          logger.debug(s"""
                |Secret used : $secret
                |Signature send : $signature
                |Algorithm used : $algo
@@ -187,16 +188,13 @@ class HMACCaller extends NgRequestTransformer {
         }
 
         val hmacHeaders = Map(
-          "Date" -> signingString,
+          "Date"     -> signingString,
           authHeader -> s"""hmac algorithm="${algo.toLowerCase}", headers="Date", signature="$signature""""
         )
 
-        ctx
-          .otoroshiRequest
+        ctx.otoroshiRequest
           .copy(headers = ctx.otoroshiRequest.headers ++ hmacHeaders)
           .right
     }
   }
 }
-
-

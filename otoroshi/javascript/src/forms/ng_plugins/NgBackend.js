@@ -239,18 +239,18 @@ export default {
         },
         timeout: {
           type: 'number',
-          label: 'Timeout'
+          label: 'Timeout',
         },
         healthyStatuses: {
           type: 'number',
           array: true,
-          label: 'Healthy statuses'
-        }, 
+          label: 'Healthy statuses',
+        },
         unhealthyStatuses: {
           type: 'number',
           array: true,
-          label: 'Unhealthy statuses'
-        }
+          label: 'Unhealthy statuses',
+        },
       },
       flow: ['enabled', 'url', 'timeout', 'healthyStatuses', 'unhealthyStatuses'],
     },

@@ -359,7 +359,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       routeCompositions,
       backends,
       wasmPlugins,
-      extensions,
+      extensions
     ).json
   }
 

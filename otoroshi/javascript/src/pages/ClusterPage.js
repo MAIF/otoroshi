@@ -37,11 +37,11 @@ export class ClusterPage extends Component {
       cell: (a, item) => {
         const value = item.time - item.lastSeen;
         if (value < item.timeout / 2) {
-          return <i className="fa fa-heartbeat" style={{ color: "var(--color-green)" }} />;
+          return <i className="fa fa-heartbeat" style={{ color: 'var(--color-green)' }} />;
         } else if (value < 3 * (item.timeout / 3)) {
           return <i className="fa fa-heartbeat" style={{ color: 'orange' }} />;
         } else {
-          return <i className="fa fa-heartbeat" style={{ color: "var(--color-red)" }} />;
+          return <i className="fa fa-heartbeat" style={{ color: 'var(--color-red)' }} />;
         }
       },
     },

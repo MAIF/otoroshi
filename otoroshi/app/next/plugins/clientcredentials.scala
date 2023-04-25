@@ -26,28 +26,28 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util._
 
 case class BiscuitConf(
-  privkey: Option[String] = None,
-  checks: Seq[String] = Seq.empty,
-  facts: Seq[String] = Seq.empty,
-  rules: Seq[String] = Seq.empty
+    privkey: Option[String] = None,
+    checks: Seq[String] = Seq.empty,
+    facts: Seq[String] = Seq.empty,
+    rules: Seq[String] = Seq.empty
 ) {
   def json: JsValue = Json.obj(
     "privkey" -> privkey,
-    "checks" -> checks,
-    "facts" -> facts,
-    "rules" -> rules,
+    "checks"  -> checks,
+    "facts"   -> facts,
+    "rules"   -> rules
   )
 }
 
 object BiscuitConf {
   val format = new Format[BiscuitConf] {
-    override def writes(o: BiscuitConf): JsValue = o.json
+    override def writes(o: BiscuitConf): JsValue             = o.json
     override def reads(json: JsValue): JsResult[BiscuitConf] = Try {
       BiscuitConf(
         privkey = json.select("privkey").asOpt[String],
         checks = json.select("checks").asOpt[Seq[String]].getOrElse(Seq.empty),
         facts = json.select("facts").asOpt[Seq[String]].getOrElse(Seq.empty),
-        rules = json.select("rules").asOpt[Seq[String]].getOrElse(Seq.empty),
+        rules = json.select("rules").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -55,26 +55,26 @@ object BiscuitConf {
     }
   }
 }
-  
+
 case class NgClientCredentialsConfig(
-  expiration: FiniteDuration = 1.hour,
-  defaultKeyPair: String = Cert.OtoroshiJwtSigning,
-  domain: String = "*",
-  secure: Boolean = true,
-  biscuit: Option[BiscuitConf] = None
+    expiration: FiniteDuration = 1.hour,
+    defaultKeyPair: String = Cert.OtoroshiJwtSigning,
+    domain: String = "*",
+    secure: Boolean = true,
+    biscuit: Option[BiscuitConf] = None
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
-    "expiration" -> expiration.toMillis,
+    "expiration"       -> expiration.toMillis,
     "default_key_pair" -> defaultKeyPair,
-    "domain" -> domain,
-    "secure" -> secure,
-    "biscuit" -> biscuit.map(_.json).getOrElse(JsNull).asValue,
+    "domain"           -> domain,
+    "secure"           -> secure,
+    "biscuit"          -> biscuit.map(_.json).getOrElse(JsNull).asValue
   )
 }
 
 object NgClientCredentialsConfig {
   val format = new Format[NgClientCredentialsConfig] {
-    override def writes(o: NgClientCredentialsConfig): JsValue = o.json
+    override def writes(o: NgClientCredentialsConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgClientCredentialsConfig] = Try {
       NgClientCredentialsConfig(
         expiration = json.select("expiration").asOpt[Long].getOrElse(1.hour.toMillis).millis,
@@ -92,14 +92,15 @@ object NgClientCredentialsConfig {
 
 class NgClientCredentials extends NgRequestSink {
 
-  override def name: String = "Client Credential Service"
-  override def description: Option[String] = "This plugin add an an oauth client credentials service (`https://unhandleddomain/.well-known/otoroshi/oauth/token`) to create an access_token given a client id and secret".some
+  override def name: String                                = "Client Credential Service"
+  override def description: Option[String]                 =
+    "This plugin add an an oauth client credentials service (`https://unhandleddomain/.well-known/otoroshi/oauth/token`) to create an access_token given a client id and secret".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgClientCredentialsConfig().some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def steps: Seq[NgStep] = Seq(NgStep.Sink)
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.Sink)
 
   override def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val conf          = NgClientCredentialsConfig.format.reads(ctx.config).getOrElse(NgClientCredentialsConfig())
@@ -112,14 +113,16 @@ class NgClientCredentials extends NgRequestSink {
     )
   }
 
-  private def handleBody(ctx: NgRequestSinkContext)(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  private def handleBody(
+      ctx: NgRequestSinkContext
+  )(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     implicit val mat = env.otoroshiMaterializer
-    val charset = ctx.request.charset.getOrElse("UTF-8")
+    val charset      = ctx.request.charset.getOrElse("UTF-8")
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       ctx.request.headers.get("Content-Type") match {
         case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") => {
-          val urlEncodedString = bodyRaw.utf8String
-          val body = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
+          val urlEncodedString         = bodyRaw.utf8String
+          val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
           val map: Map[String, String] = body ++ ctx.request.headers
             .get("Authorization")
             .filter(_.startsWith("Basic "))
@@ -132,11 +135,11 @@ class NgClientCredentials extends NgRequestSink {
             .getOrElse(Map.empty[String, String])
           f(map)
         }
-        case Some(ctype) if ctype.toLowerCase().contains("application/json") => {
-          val json = Json.parse(bodyRaw.utf8String).as[JsObject]
+        case Some(ctype) if ctype.toLowerCase().contains("application/json")                  => {
+          val json                     = Json.parse(bodyRaw.utf8String).as[JsObject]
           val map: Map[String, String] = json.value.toSeq.collect {
-            case (key, JsString(v)) => (key, v)
-            case (key, JsNumber(v)) => (key, v.toString())
+            case (key, JsString(v))  => (key, v)
+            case (key, JsNumber(v))  => (key, v.toString())
             case (key, JsBoolean(v)) => (key, v.toString)
           }.toMap ++ ctx.request.headers
             .get("Authorization")
@@ -150,7 +153,7 @@ class NgClientCredentials extends NgRequestSink {
             .getOrElse(Map.empty[String, String])
           f(map)
         }
-        case _ =>
+        case _                                                                                =>
           // bad content type
           Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
       }
@@ -158,35 +161,35 @@ class NgClientCredentials extends NgRequestSink {
   }
 
   private def jwks(conf: NgClientCredentialsConfig, ctx: NgRequestSinkContext)(implicit
-                                                                                 env: Env,
-                                                                                 ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[Result] = {
     JWKSHelper.jwks(ctx.request, conf.defaultKeyPair.some.toSeq).map {
-      case Left(body) => Results.NotFound(body)
+      case Left(body)  => Results.NotFound(body)
       case Right(body) => Results.Ok(body)
     }
   }
 
   private def introspect(conf: NgClientCredentialsConfig, ctx: NgRequestSinkContext)(implicit
-                                                                                       env: Env,
-                                                                                       ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[Result] = {
     handleBody(ctx) { body =>
       body.get("token") match {
         case Some(token) => {
-          val decoded = JWT.decode(token)
-          val clientId = Try(decoded.getClaim("clientId").asString()).orElse(Try(decoded.getIssuer())).getOrElse("--")
+          val decoded        = JWT.decode(token)
+          val clientId       = Try(decoded.getClaim("clientId").asString()).orElse(Try(decoded.getIssuer())).getOrElse("--")
           val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
           possibleApiKey.flatMap {
             case Some(apiKey) => {
-              val keyPairId = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
+              val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
               val maybeKeyPair: Option[KeyPair] =
                 env.proxyState.certificate(keyPairId).map(_.cryptoKeyPair)
-              val algo: Algorithm = maybeKeyPair.map { kp =>
+              val algo: Algorithm               = maybeKeyPair.map { kp =>
                 (kp.getPublic, kp.getPrivate) match {
                   case (pub: RSAPublicKey, priv: RSAPrivateKey) => Algorithm.RSA256(pub, priv)
-                  case (pub: ECPublicKey, priv: ECPrivateKey) => Algorithm.ECDSA384(pub, priv)
-                  case _ => Algorithm.HMAC512(apiKey.clientSecret)
+                  case (pub: ECPublicKey, priv: ECPrivateKey)   => Algorithm.ECDSA384(pub, priv)
+                  case _                                        => Algorithm.HMAC512(apiKey.clientSecret)
                 }
               } getOrElse {
                 Algorithm.HMAC512(apiKey.clientSecret)
@@ -199,12 +202,12 @@ class NgClientCredentials extends NgRequestSink {
                 case Success(_) => Results.Ok(apiKey.lightJson ++ Json.obj("access_type" -> "apikey")).future
               }
             }
-            case None =>
+            case None         =>
               // apikey not found
               Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
           }
         }
-        case _ =>
+        case _           =>
           // bad body
           Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
       }
@@ -212,18 +215,18 @@ class NgClientCredentials extends NgRequestSink {
   }
 
   private def handleTokenRequest(
-                                  ccfb: ClientCredentialFlowBody,
-                                  conf: NgClientCredentialsConfig,
-                                  ctx: NgRequestSinkContext
-                                )(implicit env: Env, ec: ExecutionContext): Future[Result] =
+      ccfb: ClientCredentialFlowBody,
+      conf: NgClientCredentialsConfig,
+      ctx: NgRequestSinkContext
+  )(implicit env: Env, ec: ExecutionContext): Future[Result] =
     ccfb match {
       case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope, bearerKind) => {
         val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
         possibleApiKey.flatMap {
           case Some(apiKey)
-            if (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(
-              clientSecret
-            )) && bearerKind == "biscuit" => {
+              if (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(
+                clientSecret
+              )) && bearerKind == "biscuit" => {
 
             import com.clevercloud.biscuit.crypto.KeyPair
             import com.clevercloud.biscuit.token.Biscuit
@@ -234,7 +237,7 @@ class NgClientCredentials extends NgRequestSink {
 
             val biscuitConf: BiscuitConf = conf.biscuit.getOrElse(BiscuitConf())
 
-            val symbols = new SymbolTable()
+            val symbols           = new SymbolTable()
             val authority_builder = new Block(0, symbols)
 
             authority_builder.add_fact(fact("token_id", Seq(s("authority"), string(IdGenerator.uuid)).asJava))
@@ -292,13 +295,13 @@ class NgClientCredentials extends NgRequestSink {
 
             val accessToken: String = {
               val privKeyValue = apiKey.metadata.get("biscuit_pubkey").orElse(biscuitConf.privkey)
-              val keypair = new KeyPair(privKeyValue.get)
-              val rng = new SecureRandom()
+              val keypair      = new KeyPair(privKeyValue.get)
+              val rng          = new SecureRandom()
               Biscuit.make(rng, keypair, symbols, authority_builder.build()).serialize_b64url()
             }
 
             val pass = scope.forall { s =>
-              val scopes = s.split(" ").toSeq
+              val scopes     = s.split(" ").toSeq
               val scopeInter = apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(scopes).nonEmpty)
               scopeInter && apiKey.metadata
                 .get("scope")
@@ -312,8 +315,8 @@ class NgClientCredentials extends NgRequestSink {
                 .Ok(
                   Json.obj(
                     "access_token" -> accessToken,
-                    "token_type" -> "Bearer",
-                    "expires_in" -> conf.expiration.toSeconds
+                    "token_type"   -> "Bearer",
+                    "expires_in"   -> conf.expiration.toSeconds
                   ) ++ scopeObj
                 )
                 .future
@@ -321,7 +324,7 @@ class NgClientCredentials extends NgRequestSink {
               Results
                 .Forbidden(
                   Json.obj(
-                    "error" -> "access_denied",
+                    "error"             -> "access_denied",
                     "error_description" -> s"Client has not been granted scopes: ${scope.get}"
                   )
                 )
@@ -329,15 +332,15 @@ class NgClientCredentials extends NgRequestSink {
             }
           }
           case Some(apiKey)
-            if apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(clientSecret) => {
-            val keyPairId = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
+              if apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(clientSecret) => {
+            val keyPairId                     = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
             val maybeKeyPair: Option[KeyPair] =
               DynamicSSLEngineProvider.certificates.get(keyPairId).map(_.cryptoKeyPair)
-            val algo: Algorithm = maybeKeyPair.map { kp =>
+            val algo: Algorithm               = maybeKeyPair.map { kp =>
               (kp.getPublic, kp.getPrivate) match {
                 case (pub: RSAPublicKey, priv: RSAPrivateKey) => Algorithm.RSA256(pub, priv)
-                case (pub: ECPublicKey, priv: ECPrivateKey) => Algorithm.ECDSA384(pub, priv)
-                case _ => Algorithm.HMAC512(apiKey.clientSecret)
+                case (pub: ECPublicKey, priv: ECPrivateKey)   => Algorithm.ECDSA384(pub, priv)
+                case _                                        => Algorithm.HMAC512(apiKey.clientSecret)
               }
             } getOrElse {
               Algorithm.HMAC512(apiKey.clientSecret)
@@ -358,7 +361,7 @@ class NgClientCredentials extends NgRequestSink {
             // no refresh token possible because of https://tools.ietf.org/html/rfc6749#section-4.4.3
 
             val pass = scope.forall { s =>
-              val scopes = s.split(" ").toSeq
+              val scopes     = s.split(" ").toSeq
               val scopeInter = apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(scopes).nonEmpty)
               scopeInter && apiKey.metadata
                 .get("scope")
@@ -372,8 +375,8 @@ class NgClientCredentials extends NgRequestSink {
                 .Ok(
                   Json.obj(
                     "access_token" -> accessToken,
-                    "token_type" -> "Bearer",
-                    "expires_in" -> conf.expiration.toSeconds
+                    "token_type"   -> "Bearer",
+                    "expires_in"   -> conf.expiration.toSeconds
                   ) ++ scopeObj
                 )
                 .future
@@ -381,7 +384,7 @@ class NgClientCredentials extends NgRequestSink {
               Results
                 .Forbidden(
                   Json.obj(
-                    "error" -> "access_denied",
+                    "error"             -> "access_denied",
                     "error_description" -> s"Client has not been granted scopes: ${scope.get}"
                   )
                 )
@@ -394,21 +397,20 @@ class NgClientCredentials extends NgRequestSink {
               .future
         }
       }
-      case _ =>
+      case _                                                                                         =>
         Results
           .BadRequest(
             Json.obj(
-              "error" -> "unauthorized_client",
+              "error"             -> "unauthorized_client",
               "error_description" -> s"Grant type '${ccfb.grantType}' not supported !"
             )
           )
           .future
     }
 
-
   private def token(conf: NgClientCredentialsConfig, ctx: NgRequestSinkContext)(implicit
-                                                                                  env: Env,
-                                                                                  ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[Result] =
     handleBody(ctx) { body =>
       (
@@ -424,7 +426,7 @@ class NgClientCredentials extends NgRequestSink {
             conf,
             ctx
           )
-        case _ =>
+        case _                                                              =>
           ctx.request.headers
             .get("Authorization")
             .filter(_.startsWith("Basic "))
@@ -455,14 +457,14 @@ class NgClientCredentials extends NgRequestSink {
     }
 
   override def handle(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    val conf = NgClientCredentialsConfig.format.reads(ctx.config).getOrElse(NgClientCredentialsConfig())
+    val conf        = NgClientCredentialsConfig.format.reads(ctx.config).getOrElse(NgClientCredentialsConfig())
     val secureMatch = if (conf.secure) ctx.request.theSecured else true
     if (secureMatch) {
       (ctx.request.method.toLowerCase(), ctx.request.relativeUri) match {
-        case ("get", "/.well-known/otoroshi/oauth/jwks.json") => jwks(conf, ctx)
+        case ("get", "/.well-known/otoroshi/oauth/jwks.json")         => jwks(conf, ctx)
         case ("post", "/.well-known/otoroshi/oauth/token/introspect") => introspect(conf, ctx)
-        case ("post", "/.well-known/otoroshi/oauth/token") => token(conf, ctx)
-        case _ =>
+        case ("post", "/.well-known/otoroshi/oauth/token")            => token(conf, ctx)
+        case _                                                        =>
           Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> s"resource not found")).future
       }
     } else {
@@ -470,4 +472,3 @@ class NgClientCredentials extends NgRequestSink {
     }
   }
 }
-  

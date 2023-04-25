@@ -609,7 +609,7 @@ case class NgTransformerErrorContext(
   )
 }
 
-trait NgFakePlugin extends NgPlugin {}
+trait NgFakePlugin        extends NgPlugin {}
 trait NgFakePluginContext extends NgCachedConfigContext
 
 trait NgRequestTransformer extends NgPlugin {

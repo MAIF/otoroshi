@@ -464,7 +464,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   ): Future[Seq[OtoResHolder[T]]] = {
     asyncSequence(config.namespaces.flatMap { namespace =>
       Seq(
-        fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1", reader, customize),
+        fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1", reader, customize)
         // fetchOtoroshiResourcesForNamespaceAndVersion[T](pluralName, namespace, "v1alpha1", reader, customize)
       )
     }).map(_.flatten.groupBy(_.uid).values.flatMap(_.headOption).toSeq)

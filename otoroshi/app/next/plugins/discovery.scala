@@ -13,30 +13,34 @@ import play.api.mvc.{Result, Results}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._  
+import scala.util._
 
-  
 case class NgDiscoverySelfRegistrationConfig(
-  raw: JsValue = Json.obj()
+    raw: JsValue = Json.obj()
 ) extends NgPluginConfig {
 
   override def json: JsValue = raw
 
   def legacy: SelfRegistrationConfig = SelfRegistrationConfig(raw)
 
-  lazy val hosts: Seq[String] = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty)
-  lazy val targetTemplate: JsObject = raw.select("targetTemplate").asOpt[JsObject]
+  lazy val hosts: Seq[String]              = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val targetTemplate: JsObject        = raw
+    .select("targetTemplate")
+    .asOpt[JsObject]
     .orElse(raw.select("target_template").asOpt[JsObject])
     .getOrElse(Json.obj())
   lazy val registrationTtl: FiniteDuration =
-    raw.select("registrationTtl").asOpt[Long]
+    raw
+      .select("registrationTtl")
+      .asOpt[Long]
       .orElse(raw.select("registration_ttl").asOpt[Long])
-      .map(_.millis).getOrElse(60.seconds)
+      .map(_.millis)
+      .getOrElse(60.seconds)
 }
 
 object NgDiscoverySelfRegistrationConfig {
   val format = new Format[NgDiscoverySelfRegistrationConfig] {
-    override def writes(o: NgDiscoverySelfRegistrationConfig): JsValue = o.json
+    override def writes(o: NgDiscoverySelfRegistrationConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgDiscoverySelfRegistrationConfig] = Try {
       NgDiscoverySelfRegistrationConfig(json)
     } match {
@@ -50,14 +54,15 @@ class NgDiscoverySelfRegistrationSink extends NgRequestSink {
 
   import kaleidoscope._
 
-  override def name: String = "Global self registration endpoints (service discovery)"
-  override def description: Option[String] = "This plugin add support for self registration endpoint on specific hostnames".some
+  override def name: String                                = "Global self registration endpoints (service discovery)"
+  override def description: Option[String]                 =
+    "This plugin add support for self registration endpoint on specific hostnames".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgDiscoverySelfRegistrationConfig().some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.ServiceDiscovery)
-  override def steps: Seq[NgStep] = Seq(NgStep.Sink)
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.ServiceDiscovery)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.Sink)
 
   override def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = NgDiscoverySelfRegistrationConfig(ctx.config)
@@ -81,17 +86,22 @@ class NgDiscoverySelfRegistrationTransformer extends NgRequestTransformer {
 
   import kaleidoscope._
 
-  override def name: String = "Self registration endpoints (service discovery)"
-  override def description: Option[String] = "This plugin add support for self registration endpoint on a specific service".some
+  override def name: String                                = "Self registration endpoints (service discovery)"
+  override def description: Option[String]                 =
+    "This plugin add support for self registration endpoint on a specific service".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgDiscoverySelfRegistrationConfig().some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.ServiceDiscovery)
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest)
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.ServiceDiscovery)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.TransformRequest)
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
-    val config = ctx.cachedConfig(internalName)(NgDiscoverySelfRegistrationConfig.format).getOrElse(NgDiscoverySelfRegistrationConfig())
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+    val config = ctx
+      .cachedConfig(internalName)(NgDiscoverySelfRegistrationConfig.format)
+      .getOrElse(NgDiscoverySelfRegistrationConfig())
     (ctx.request.method.toLowerCase(), ctx.request.thePath) match {
       case ("post", "/discovery/_register")                             =>
         DiscoveryHelper.register(ctx.route.id.some, ctx.otoroshiRequest.body, config.legacy).map(r => Left(r))
@@ -106,17 +116,22 @@ class NgDiscoverySelfRegistrationTransformer extends NgRequestTransformer {
 
 class NgDiscoveryTargetsSelector extends NgPreRouting {
 
-  override def name: String = "Service discovery target selector (service discovery)"
-  override def description: Option[String] = "This plugin select a target in the pool of discovered targets for this service.\nUse in combination with either `DiscoverySelfRegistrationSink` or `DiscoverySelfRegistrationTransformer` to make it work using the `self registration` pattern.\nOr use an implementation of `DiscoveryJob` for the `third party registration pattern`.".some
+  override def name: String                                = "Service discovery target selector (service discovery)"
+  override def description: Option[String]                 =
+    "This plugin select a target in the pool of discovered targets for this service.\nUse in combination with either `DiscoverySelfRegistrationSink` or `DiscoverySelfRegistrationTransformer` to make it work using the `self registration` pattern.\nOr use an implementation of `DiscoveryJob` for the `third party registration pattern`.".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgDiscoverySelfRegistrationConfig().some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.ServiceDiscovery)
-  override def steps: Seq[NgStep] = Seq(NgStep.PreRoute)
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.ServiceDiscovery)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
-    val config = ctx.cachedConfig(internalName)(NgDiscoverySelfRegistrationConfig.format).getOrElse(NgDiscoverySelfRegistrationConfig())
+  override def preRoute(
+      ctx: NgPreRoutingContext
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+    val config = ctx
+      .cachedConfig(internalName)(NgDiscoverySelfRegistrationConfig.format)
+      .getOrElse(NgDiscoverySelfRegistrationConfig())
     DiscoveryHelper.getTargetsFor(ctx.route.id, config.legacy).map {
       case targets if targets.isEmpty => Done.right
       case _targets                   => {
@@ -140,4 +155,3 @@ class NgDiscoveryTargetsSelector extends NgPreRouting {
     }
   }
 }
-  

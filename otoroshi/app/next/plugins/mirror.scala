@@ -22,30 +22,29 @@ import play.api.mvc.{RequestHeader, Result}
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util._  
+import scala.util._
 
-  
 case class NgTrafficMirroringConfig(
-  legacy: MirroringPluginConfig = MirroringPluginConfig(
-    Json.obj(
-      "to" ->  "https://foo.bar.dev",
-      "enabled" -> true,
-      "capture_response" -> false,
-      "generate_events" -> false
+    legacy: MirroringPluginConfig = MirroringPluginConfig(
+      Json.obj(
+        "to"               -> "https://foo.bar.dev",
+        "enabled"          -> true,
+        "capture_response" -> false,
+        "generate_events"  -> false
+      )
     )
-  ),
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
-    "to" -> legacy.to,
-    "enabled" -> legacy.enabled,
+    "to"               -> legacy.to,
+    "enabled"          -> legacy.enabled,
     "capture_response" -> legacy.shouldCaptureResponse,
-    "generate_events" -> legacy.generateEvents,
+    "generate_events"  -> legacy.generateEvents
   )
 }
 
 object NgTrafficMirroringConfig {
   val format = new Format[NgTrafficMirroringConfig] {
-    override def writes(o: NgTrafficMirroringConfig): JsValue = o.json
+    override def writes(o: NgTrafficMirroringConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgTrafficMirroringConfig] = Try {
       NgTrafficMirroringConfig(
         legacy = MirroringPluginConfig(json)
@@ -57,8 +56,12 @@ object NgTrafficMirroringConfig {
   }
 }
 
-case class NgMirroringEvent(`@id`: String, `@env`: String, ctx: NgRequestContext, `@timestamp`: DateTime = DateTime.now())
-  extends AuditEvent {
+case class NgMirroringEvent(
+    `@id`: String,
+    `@env`: String,
+    ctx: NgRequestContext,
+    `@timestamp`: DateTime = DateTime.now()
+) extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
@@ -130,20 +133,20 @@ case class NgMirroringEvent(`@id`: String, `@env`: String, ctx: NgRequestContext
 }
 
 case class NgRequestContext(
-  id: String,
-  request: RequestHeader,
-  started: AtomicBoolean,
-  otoRequest: AtomicReference[NgPluginHttpRequest],
-  mirroredRequest: AtomicReference[NgPluginHttpRequest],
-  otoResponse: AtomicReference[NgPluginHttpResponse],
-  input: AtomicReference[ByteString],
-  output: AtomicReference[ByteString],
-  mirroredBody: AtomicReference[ByteString],
-  mirroredResp: AtomicReference[WSResponse],
-  done: Promise[Unit],
-  mirrorDone: Promise[Unit],
-  route: NgRoute,
-  config: NgTrafficMirroringConfig
+    id: String,
+    request: RequestHeader,
+    started: AtomicBoolean,
+    otoRequest: AtomicReference[NgPluginHttpRequest],
+    mirroredRequest: AtomicReference[NgPluginHttpRequest],
+    otoResponse: AtomicReference[NgPluginHttpResponse],
+    input: AtomicReference[ByteString],
+    output: AtomicReference[ByteString],
+    mirroredBody: AtomicReference[ByteString],
+    mirroredResp: AtomicReference[WSResponse],
+    done: Promise[Unit],
+    mirrorDone: Promise[Unit],
+    route: NgRoute,
+    config: NgTrafficMirroringConfig
 ) {
 
   def generateEvent(env: Env): Unit = {
@@ -236,18 +239,20 @@ case class NgRequestContext(
 
 class NgTrafficMirroring extends NgRequestTransformer {
 
-  override def name: String = "Traffic Mirroring"
-  override def description: Option[String] = "This plugin will mirror every request to other targets".some
+  override def name: String                                = "Traffic Mirroring"
+  override def description: Option[String]                 = "This plugin will mirror every request to other targets".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgTrafficMirroringConfig().some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def steps: Seq[NgStep] = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
 
   private val inFlightRequests = new LegitTrieMap[String, NgRequestContext]()
 
-  override def beforeRequest(ctx: NgBeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  override def beforeRequest(
+      ctx: NgBeforeRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val cfg = ctx.cachedConfig(internalName)(NgTrafficMirroringConfig.format).getOrElse(NgTrafficMirroringConfig())
     if (cfg.legacy.shouldBeMirrored(ctx.request)) {
       val done       = Promise[Unit]
@@ -282,12 +287,16 @@ class NgTrafficMirroring extends NgRequestTransformer {
     ().future
   }
 
-  override def afterRequest(ctx: NgAfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  override def afterRequest(
+      ctx: NgAfterRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     inFlightRequests.remove(ctx.snowflake)
     ().vfuture
   }
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     inFlightRequests.get(ctx.snowflake) match {
       case None          =>
       case Some(context) =>
@@ -301,7 +310,9 @@ class NgTrafficMirroring extends NgRequestTransformer {
     ctx.otoroshiRequest.right.vfuture
   }
 
-  override def transformResponse(ctx: NgTransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponse(
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     inFlightRequests.get(ctx.snowflake) match {
       case None          => ctx.otoroshiResponse.right.future
       case Some(context) =>
@@ -311,19 +322,26 @@ class NgTrafficMirroring extends NgRequestTransformer {
           ec.execute(() => context.runMirrorRequest(env))
         }
         if (cfg.legacy.shouldCaptureResponse) {
-          ctx.otoroshiResponse.copy(body = ctx.otoroshiResponse.body
-            .alsoTo(Sink.foreach(bs => context.output.getAndUpdate(v => v.concat(bs))))
-            .alsoTo(Sink.onComplete { t =>
-              context.otoResponse.set(ctx.otoroshiResponse)
-              context.done.trySuccess(())
-            })).right.future
+          ctx.otoroshiResponse
+            .copy(body =
+              ctx.otoroshiResponse.body
+                .alsoTo(Sink.foreach(bs => context.output.getAndUpdate(v => v.concat(bs))))
+                .alsoTo(Sink.onComplete { t =>
+                  context.otoResponse.set(ctx.otoroshiResponse)
+                  context.done.trySuccess(())
+                })
+            )
+            .right
+            .future
         } else {
           ctx.otoroshiResponse.right.future
         }
     }
   }
 
-  override def transformError(ctx: NgTransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+  override def transformError(
+      ctx: NgTransformerErrorContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     inFlightRequests.get(ctx.snowflake) match {
       case None          =>
       case Some(context) =>
@@ -333,4 +351,3 @@ class NgTrafficMirroring extends NgRequestTransformer {
     ctx.otoroshiResponse.vfuture
   }
 }
-  

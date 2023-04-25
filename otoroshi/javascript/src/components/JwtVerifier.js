@@ -50,7 +50,7 @@ function EntityGraph({ entity, id }) {
       <div className="d-flex justify-content-between flex-column" style={{ flex: 1 }}>
         <div
           style={{
-            color: "var(--color-primary)",
+            color: 'var(--color-primary)',
             fontWeight: 'bold',
             marginLeft: '5px',
             marginTop: '7px',

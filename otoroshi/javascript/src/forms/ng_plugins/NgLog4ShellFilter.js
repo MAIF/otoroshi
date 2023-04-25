@@ -14,9 +14,5 @@ export default {
       label: 'Parse body',
     },
   },
-  config_flow: [
-    'status',
-    'body',
-    'parse_body',
-  ],
+  config_flow: ['status', 'body', 'parse_body'],
 };

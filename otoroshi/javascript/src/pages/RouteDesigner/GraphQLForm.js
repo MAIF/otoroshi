@@ -133,7 +133,9 @@ export default class GraphQLForm extends React.Component {
     if (!route) return null;
 
     return (
-      <div className="graphql-form p-3 pe-2 flex-column" style={{ overflowY: 'scroll', overflowX: 'hidden' }}>
+      <div
+        className="graphql-form p-3 pe-2 flex-column"
+        style={{ overflowY: 'scroll', overflowX: 'hidden' }}>
         <Header
           hide={(e) => {
             this.savePlugin().then(() => hide(e));
@@ -155,7 +157,7 @@ export default class GraphQLForm extends React.Component {
         {this.state.schemaView ? (
           <>
             {this.state.error && (
-              <span className="my-3" style={{ color: "var(--color-red)", fontWeight: 'bold' }}>
+              <span className="my-3" style={{ color: 'var(--color-red)', fontWeight: 'bold' }}>
                 {this.state.error}
               </span>
             )}
@@ -346,7 +348,7 @@ class SideView extends React.Component {
               <span
                 className="my-3"
                 style={{
-                  color: "var(--color-red)",
+                  color: 'var(--color-red)',
                   fontWeight: 'bold',
                 }}>
                 {error}
@@ -577,8 +579,8 @@ class FieldForm extends React.Component {
               label: 'HTTP Method',
               props: {
                 options: [
-                  { value: 'GET', label: 'GET', color: "var(--http_color-get)" },
-                  { value: 'POST', label: 'POST', color: "var(--http_color-post)" },
+                  { value: 'GET', label: 'GET', color: 'var(--http_color-get)' },
+                  { value: 'POST', label: 'POST', color: 'var(--http_color-post)' },
                 ],
               },
             },
@@ -675,7 +677,9 @@ class FieldForm extends React.Component {
     }
 
     return (
-      <div className="p-3" style={{ backgroundColor: "var(--bg-color_level1)", borderRadius: '4px' }}>
+      <div
+        className="p-3"
+        style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}>
         <h4>Field: {field.name}</h4>
         <NgForm
           useBreadcrumb={true}
@@ -733,7 +737,7 @@ const Type = ({
       </div>
       <div
         style={{
-          backgroundColor: "var(--bg-color_level1)",
+          backgroundColor: 'var(--bg-color_level1)',
           border: open ? '1px solid var(--bg-color_level1)' : 'none',
           paddingTop: open ? '4px' : 0,
         }}>
@@ -749,9 +753,7 @@ const Type = ({
                   flex: 0.75,
                   opacity: isSelected(i) !== false ? 1 : 0.5,
                 }}>
-                <span className="me-2 flex">
-                  {field.name}
-                </span>
+                <span className="me-2 flex">{field.name}</span>
                 <span className="badge bg-light ms-2" style={{ color: '#000' }}>
                   {field.fieldType.type}
                 </span>

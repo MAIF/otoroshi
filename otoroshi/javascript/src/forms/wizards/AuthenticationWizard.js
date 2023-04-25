@@ -24,8 +24,8 @@ function WizardStepButton(props) {
       {...props}
       type="save"
       style={{
-        backgroundColor: "var(--color-primary)",
-        borderColor: "var(--color-primary)",
+        backgroundColor: 'var(--color-primary)',
+        borderColor: 'var(--color-primary)',
         padding: '12px 48px',
       }}
     />
@@ -237,8 +237,8 @@ export class AuthenticationWizard extends React.Component {
                 <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
                   <FeedbackButton
                     style={{
-                      backgroundColor: "var(--color-primary)",
-                      borderColor: "var(--color-primary)",
+                      backgroundColor: 'var(--color-primary)',
+                      borderColor: 'var(--color-primary)',
                       padding: '12px 48px',
                     }}
                     onPress={() => BackOfficeServices.updateAuthConfig(authenticationConfig)}
@@ -829,8 +829,8 @@ function OAuth2FastConfiguration({ value, onChange }) {
             <LabelAndInput label=" ">
               <FeedbackButton
                 style={{
-                  backgroundColor: "var(--color-primary)",
-                  borderColor: "var(--color-primary)",
+                  backgroundColor: 'var(--color-primary)',
+                  borderColor: 'var(--color-primary)',
                 }}
                 onPress={
                   'OIDC config' === props.rootValue?.source ? fetchConfig : fetchKeycloakConfig
@@ -1543,8 +1543,8 @@ function SAMLConfiguration({ value, onChange }) {
             <LabelAndInput label=" ">
               <FeedbackButton
                 style={{
-                  backgroundColor: "var(--color-primary)",
-                  borderColor: "var(--color-primary)",
+                  backgroundColor: 'var(--color-primary)',
+                  borderColor: 'var(--color-primary)',
                 }}
                 onPress={'Paste configuration' === value.from ? fetchConfig : fetchFromURL}
                 icon={() => <i className="fas fa-paper-plane" />}

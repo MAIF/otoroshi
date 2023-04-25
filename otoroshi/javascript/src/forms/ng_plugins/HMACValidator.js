@@ -4,7 +4,7 @@ export default {
     secret: {
       label: 'Secret',
       type: 'string',
-    }
+    },
   },
-  config_flow: ['secret']
+  config_flow: ['secret'],
 };

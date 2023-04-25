@@ -129,7 +129,7 @@ class WasmPreRoute extends NgPreRouting {
 
 class WasmBackend extends NgBackendCall {
 
-  private val logger = Logger("otoroshi-plugins-wasm-backend")
+  private val logger                                       = Logger("otoroshi-plugins-wasm-backend")
   override def useDelegates: Boolean                       = false
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
@@ -620,7 +620,8 @@ class WasmJob(config: WasmJobsConfig) extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = config.initialDelay
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration]     = config.interval
   override def cronExpression(ctx: JobContext, env: Env): Option[String]       = config.cronExpression
-  override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None // TODO: make it configurable base on global env ???
+  override def predicate(ctx: JobContext, env: Env): Option[Boolean]           =
+    None // TODO: make it configurable base on global env ???
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
     WasmUtils

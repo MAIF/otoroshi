@@ -1,80 +1,80 @@
 export default {
   id: 'cp:otoroshi.next.plugins.OAuth2Caller',
   config_flow: [
-    "kind",
-    "url",
-    "method",
-    "headerName",
-    "headerValueFormat",
-    "jsonPayload",
-    "clientId",
-    "clientSecret",
-    "scope",
-    "audience",
-    "user",
-    "password",
-    "cacheTokenSeconds",
-    "tlsConfig"
+    'kind',
+    'url',
+    'method',
+    'headerName',
+    'headerValueFormat',
+    'jsonPayload',
+    'clientId',
+    'clientSecret',
+    'scope',
+    'audience',
+    'user',
+    'password',
+    'cacheTokenSeconds',
+    'tlsConfig',
   ],
   config_schema: {
     kind: {
-      label: "Kind",
-      type: "select",
+      label: 'Kind',
+      type: 'select',
       props: {
-        defaultValue: "HmacSHA512",
+        defaultValue: 'HmacSHA512',
         options: [
-          { value: "client_credentials", label: "Client credentials" },
-          { value: "password", label: "Password" }
-        ]
-      }
+          { value: 'client_credentials', label: 'Client credentials' },
+          { value: 'password', label: 'Password' },
+        ],
+      },
     },
     url: {
       type: 'string',
-      label: "URL"
+      label: 'URL',
     },
     method: {
       type: 'string',
-      label: "Method"
+      label: 'Method',
     },
     headerName: {
       type: 'string',
-      label: "Header name"
+      label: 'Header name',
     },
     headerValueFormat: {
       type: 'string',
-      label: "Header value formatter"
+      label: 'Header value formatter',
     },
     jsonPayload: {
       type: 'bool',
-      label: "JSON payload"
+      label: 'JSON payload',
     },
     clientId: {
       type: 'string',
-      label: "Client Id"
+      label: 'Client Id',
     },
     clientSecret: {
       type: 'string',
-      label: "Client secret"
+      label: 'Client secret',
     },
     scope: {
       type: 'string',
-      label: "Scope"
+      label: 'Scope',
     },
     audience: {
       type: 'string',
-      label: "Audience"
+      label: 'Audience',
     },
     user: {
       type: 'string',
-      label: "User"
+      label: 'User',
     },
     password: {
       type: 'string',
-      label: "Password"
+      label: 'Password',
     },
     cacheTokenSeconds: {
       type: 'string',
-      label: "Cache Token Seconds"
+      label: 'Cache Token Seconds',
     },
     tlsConfig: {
       label: 'Tls Config',
@@ -109,17 +109,17 @@ export default {
         },
         mtls: {
           type: 'boolean',
-          label: 'Enable MTls'
+          label: 'Enable MTls',
         },
         loose: {
           type: 'boolean',
-          label: 'Loose'
+          label: 'Loose',
         },
         trustAll: {
           type: 'boolean',
-          label: 'Trust all'
+          label: 'Trust all',
         },
       },
-    }
-  }
+    },
+  },
 };

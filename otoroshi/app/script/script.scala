@@ -769,7 +769,7 @@ class ScriptManager(env: Env) {
     jobNames,
     exporterNames,
     ngNames,
-    adminExtensionNames,
+    adminExtensionNames
   ) =
     Try {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
