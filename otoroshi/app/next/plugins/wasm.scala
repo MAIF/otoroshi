@@ -768,7 +768,17 @@ class WasmOPA extends NgAccessValidator {
           if (canAccess) {
             NgAccess.NgAllowed.vfuture
           } else {
-            NgAccess.NgDenied(Results.Forbidden).vfuture
+            Errors
+              .craftResponseResult(
+                "Forbidden access",
+                Results.Status(403),
+                ctx.request,
+                None,
+                None,
+                attrs = ctx.attrs,
+                maybeRoute = ctx.route.some
+              )
+              .map(r => NgAccess.NgDenied(r))
           }
         case Left(err)  =>
           Errors
