@@ -244,7 +244,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
 
   import Oauth1AuthModule._
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -275,6 +275,8 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
         } else {
           val parameters = strBodyToMap(result.body)
 
+          // TODO - manage isRoute
+
           if (parameters("oauth_callback_confirmed") == "true") {
             val redirect    = request.getQueryString("redirect")
             val hash        = env.sign(s"${authConfig.id}:::backoffice")
@@ -304,7 +306,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
       env: Env
   ) = FastFuture.successful(Right(None))
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[String, PrivateAppsUser]] = callback(request, config, isBoLogin = false, Some(descriptor))

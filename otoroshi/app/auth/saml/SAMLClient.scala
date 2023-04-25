@@ -62,7 +62,8 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
 
   import SAMLModule._
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  // TODO - manage isRoute
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -110,7 +111,8 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  // TODO - manage isRoute
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[String, PrivateAppsUser]] = {

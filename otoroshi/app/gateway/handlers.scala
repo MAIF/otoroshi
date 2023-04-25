@@ -750,13 +750,13 @@ class GatewayRequestHandler(
   }
 
   def withServiceDescriptor(request: RequestHeader, attrs: TypedMap)(
-      f: ServiceDescriptor => Future[Result]
+      f: NgRoute => Future[Result]
   ): Future[Result] = {
     attrs.put(otoroshi.plugins.Keys.SnowFlakeKey -> env.snowflakeGenerator.nextIdStr())
     env.proxyState.findRoute(request, attrs) match {
       case None                                => serviceNotFound(request, attrs)
       case Some(route) if !route.route.enabled => serviceNotFound(request, attrs)
-      case Some(route)                         => f(route.route.legacy)
+      case Some(route)                         => f(route.route)
     }
   }
 
@@ -767,18 +767,18 @@ class GatewayRequestHandler(
 
       withServiceDescriptor(req, attrs) {
         case descriptor
-            if !descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id && descriptor.isUriPublic(
+            if !descriptor.legacy.privateApp && descriptor.id != env.backOfficeDescriptor.id && descriptor.legacy.isUriPublic(
               req.path
             ) => {
           // Public service, no profile but no error either ???
           FastFuture.successful(Ok(Json.obj("access_type" -> "public")))
         }
         case descriptor
-            if !descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id && !descriptor.isUriPublic(
+            if !descriptor.legacy.privateApp && descriptor.id != env.backOfficeDescriptor.id && !descriptor.legacy.isUriPublic(
               req.path
             ) => {
           // ApiKey
-          ApiKeyHelper.extractApiKey(req, descriptor, attrs).flatMap {
+          ApiKeyHelper.extractApiKey(req, descriptor.legacy, attrs).flatMap {
             case None         =>
               Errors
                 .craftResponseResult(
@@ -793,7 +793,7 @@ class GatewayRequestHandler(
               FastFuture.successful(Ok(apiKey.lightJson ++ Json.obj("access_type" -> "apikey")))
           }
         }
-        case descriptor if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
+        case descriptor if descriptor.legacy.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
           GatewayRequestHandler.withAuthConfig(descriptor, req, attrs) { auth =>
             PrivateAppsUserHelper.isPrivateAppsSessionValid(req, descriptor, attrs).flatMap {
               case None          =>

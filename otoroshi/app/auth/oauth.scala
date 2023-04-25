@@ -241,7 +241,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     java.util.Base64.getUrlEncoder.encodeToString(bytes)
   }
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -286,13 +286,13 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
             s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod"
           )
         (
-          s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri&code_challenge=$codeChallenge&code_challenge_method=$codeChallengeMethod",
+          s"${authConfig.loginUrl}?route=${isRoute}&scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri&code_challenge=$codeChallenge&code_challenge_method=$codeChallengeMethod",
           Seq((s"${authConfig.id}-code_verifier" -> codeVerifier))
         )
       case _                          =>
         if (logger.isDebugEnabled) logger.debug(s"not using pkce flow")
         (
-          s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
+          s"${authConfig.loginUrl}?route=${isRoute}&scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
           Seq.empty[(String, String)]
         )
     }
@@ -599,7 +599,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     }
   }
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[String, PrivateAppsUser]] = {

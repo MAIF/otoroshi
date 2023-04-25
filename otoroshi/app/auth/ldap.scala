@@ -687,7 +687,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -717,7 +717,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                   case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
-                      Results.Redirect(s"/privateapps/generic/callback?desc=${descriptor.id}&token=$token&hash=$hash")
+                      Results.Redirect(s"/privateapps/generic/callback?route=${isRoute}&desc=${descriptor.id}&token=$token&hash=$hash")
                     }
                 }
             }
@@ -727,7 +727,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         Results
           .Ok(
             otoroshi.views.html.oto
-              .login(s"/privateapps/generic/callback?desc=${descriptor.id}&hash=$hash", "POST", token, false, env)
+              .login(s"/privateapps/generic/callback?route=${isRoute}&desc=${descriptor.id}&hash=$hash", "POST", token, false, env)
           )
           .addingToSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
@@ -749,7 +749,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       env: Env
   ) = FastFuture.successful(Right(None))
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[String, PrivateAppsUser]] = {

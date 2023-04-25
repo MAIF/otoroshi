@@ -209,45 +209,6 @@ object PrivateAppsUserHelper {
     }
   }
 
-  def isPrivateAppsSessionValidWithMultiAuth(req: RequestHeader, desc: ServiceDescriptor, modules: Seq[AuthModuleConfig])
-                                            (implicit ec: ExecutionContext, env: Env): Future[Option[PrivateAppsUser]] = {
-    val expected = "oto-papps-" + auth.cookieSuffix(desc)
-    req.cookies
-      .get(expected)
-      .flatMap { cookie =>
-        env.extractPrivateSessionId(cookie)
-      }
-      .orElse(
-        req.getQueryString("pappsToken").flatMap(value => env.extractPrivateSessionIdFromString(value))
-      )
-      .orElse(
-        req.headers.get("Otoroshi-Token").flatMap(value => env.extractPrivateSessionIdFromString(value))
-      )
-      .map { id =>
-        if (Cluster.logger.isDebugEnabled) Cluster.logger.debug(s"private apps session checking for $id - from helper")
-        env.datastores.privateAppsUserDataStore.findById(id).flatMap {
-          case Some(user) =>
-            GenericOauth2Module.handleTokenRefresh(auth, user)
-            FastFuture.successful(Some(user))
-          case None if env.clusterConfig.mode == ClusterMode.Worker => {
-            if (Cluster.logger.isDebugEnabled)
-              Cluster.logger.debug(s"private apps session $id not found locally - from helper")
-            env.clusterAgent.isSessionValid(id, Some(req)).map {
-              case Some(user) =>
-                user.save(
-                  Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                )
-                Some(user)
-              case None => None
-            }
-          }
-          case None => FastFuture.successful(None)
-        }
-      } getOrElse {
-      FastFuture.successful(None)
-    }
-  }
-
   def isPrivateAppsSessionValidWithAuth(req: RequestHeader, desc: ServiceDescriptor, auth: AuthModuleConfig)(implicit
       ec: ExecutionContext,
       env: Env

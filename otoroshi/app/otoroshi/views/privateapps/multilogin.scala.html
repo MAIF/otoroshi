@@ -1,0 +1,19 @@
+@import otoroshi.models.PrivateAppsUser
+
+@(_env: otoroshi.env.Env, auths: Seq[(String, String)], redirect: Option[String], route: String)
+
+@main(s"Otoroshi private apps (${_env.env})", _env, None) {
+    <div class="jumbotron">
+        <h3 style="color: white;margin-bottom:40px"><span>おとろし - Private apps</span></h3>
+
+        @for(item <- auths) {
+          @if(redirect.isEmpty) {
+            <a href="/privateapps/generic/login?ref=@item._2&route=@route">@item._1</a>
+          } else {
+            <a href="/privateapps/generic/login?ref=@item._2&route=@route&redirect=@redirect.get">@item._1</a>
+          }
+        }
+
+        <p><img class="logoOtoroshi" src="@(_env.otoroshiLogo)" /></p>
+    </div>
+}

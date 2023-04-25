@@ -330,6 +330,7 @@ case class NgRoute(
       privateApp = plugins
         .getPluginByClass[AuthModule]
         .orElse(plugins.getPluginByClass[NgLegacyAuthModuleCall])
+        .orElse(plugins.getPluginByClass[MultiAuthModule])
         .isDefined,
       authConfigRef = plugins
         .getPluginByClass[AuthModule]

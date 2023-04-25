@@ -1,24 +1,25 @@
 package otoroshi.controllers
 
-import java.net.URLEncoder
-import java.util.concurrent.TimeUnit
-import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
+import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import otoroshi.auth._
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway.Errors
 import otoroshi.models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
-import otoroshi.utils.TypedMap
-import play.api.Logger
-import play.api.libs.json.{JsValue, Json}
-import play.api.mvc._
+import otoroshi.next.models.NgRoute
+import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
 import otoroshi.security.IdGenerator
-
-import javax.crypto.Cipher
+import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
+import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import play.api.mvc._
 
+import java.net.URLEncoder
+import java.util.concurrent.TimeUnit
+import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -53,8 +54,6 @@ class AuthController(
   def verifyHash(descId: String, auth: AuthModuleConfig, req: RequestHeader)(
       f: AuthModuleConfig => Future[Result]
   ): Future[Result] = {
-    import otoroshi.utils.http.RequestImplicits._
-
     val hash: String = auth match {
       case module: GenericOauth2ModuleConfig if module.noWildcardRedirectURI =>
         val unsignedState = decryptState(req)
@@ -79,6 +78,33 @@ class AuthController(
         Some("errors.auth.bad.signature"),
         attrs = TypedMap.empty
       )
+  }
+
+  def withMultiAuthConfig(route: NgRoute, req: RequestHeader)(
+    f: AuthModuleConfig => Future[Result]
+  ): Future[Result] = {
+    lazy val error = Errors.craftResponseResult(
+      "Multi Auth. config. ref not found on the route",
+      Results.InternalServerError,
+      req,
+      None,
+      Some("errors.multi.auth.config.ref.not.found"),
+      maybeRoute = Some(route),
+      attrs = TypedMap.empty
+    )
+    route.plugins.getPluginByClass[MultiAuthModule] match {
+      case None => error
+      case Some(authPlugin) => {
+        req.getQueryString("ref") match {
+          case Some(ref) =>
+            env.proxyState.authModuleAsync(ref).flatMap {
+              case None => error
+              case Some(auth) => f(auth)
+            }
+          case None => error
+        }
+      }
+    }
   }
 
   def withAuthConfig(descriptor: ServiceDescriptor, req: RequestHeader)(
@@ -137,16 +163,149 @@ class AuthController(
       }
     }
 
+  def confidentialAppMultiLoginPage() = PrivateAppsAction.async { ctx =>
+      ctx.request.getQueryString("route") match {
+        case None => NotFound(otoroshi.views.html.oto.error("Route not found", env)).vfuture
+        case Some(routeId) => {
+          env.proxyState.route(routeId).vfuture.flatMap {
+            case None => NotFound(otoroshi.views.html.oto.error("Route not found", env)).vfuture
+            case Some(route) if !route.plugins.hasPlugin[MultiAuthModule] =>
+              NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+            case Some(route) if route.plugins.hasPlugin[MultiAuthModule] && route.id != env.backOfficeDescriptor.id =>
+              route.plugins.getPluginByClass[MultiAuthModule] match {
+                case Some(auth) => NgMultiAuthModuleConfig.format.reads(auth.config.raw) match {
+                  case JsSuccess(config, _) =>
+                    val auths = config.modules.flatMap(module => env.proxyState.authModule(module))
+                      .map(auth => (auth.name, auth.id))
+                    Results
+                      .Ok(otoroshi.views.html.privateapps.multilogin(env,
+                        auths,
+                        ctx.request.getQueryString("redirect"),
+                        route.id
+                      ))
+                      .vfuture
+                  case JsError(errors) =>
+                    logger.error(s"Failed to parse multi auth configuration, $errors")
+                    NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+                }
+                case None =>  NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+              }
+
+            case _ => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+          }
+        }
+      }
+    }
+
   def confidentialAppLoginPage() =
     PrivateAppsAction.async { ctx =>
       import otoroshi.utils.http.RequestImplicits._
-      import otoroshi.utils.future.Implicits._
 
       implicit val req = ctx.request
 
-      ctx.request.getQueryString("desc") match {
-        case None            => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
-        case Some(serviceId) => {
+      val ref = ctx.request.getQueryString("ref")
+
+      (ctx.request.getQueryString("desc"), ctx.request.getQueryString("route")) match {
+        case (None, None)            => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
+        case (_, Some(route)) =>
+          env.proxyState.route(route).vfuture.flatMap {
+            case None => NotFound(otoroshi.views.html.oto.error("Route not found", env)).vfuture
+            case Some(route) if !route.plugins.hasPlugin[MultiAuthModule] =>
+              NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+            case Some(route) if route.plugins.hasPlugin[MultiAuthModule] && route.id != env.backOfficeDescriptor.id => {
+              withMultiAuthConfig(route, ctx.request) { auth =>
+                val expectedCookieName = s"oto-papps-${auth.routeCookieSuffix(route)}"
+                ctx.request.cookies.find(c => c.name == expectedCookieName) match {
+                  case Some(cookie) => {
+                    env.extractPrivateSessionId(cookie) match {
+                      case None =>
+                        auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, route.legacy, true)
+                      case Some(sessionId) => {
+                        env.datastores.privateAppsUserDataStore.findById(sessionId).flatMap {
+                          case None =>
+                            auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, route.legacy, true)
+                          case Some(user) =>
+                            val sec = computeSec(user)
+                            val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
+                            ctx.request
+                              .getQueryString("redirect")
+                              .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
+                              case "urn:ietf:wg:oauth:2.0:oob" => {
+                                val redirection =
+                                  s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${
+                                    auth.routeCookieSuffix(route)
+                                  }&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
+                                val hash = env.sign(redirection)
+                                FastFuture.successful(
+                                  Redirect(s"$redirection&hash=$hash")
+                                    .removingFromSession(
+                                      s"pa-redirect-after-login-${auth.routeCookieSuffix(route)}",
+                                      "desc"
+                                    )
+                                    .withCookies(
+                                      env.createPrivateSessionCookies(
+                                        req.theHost,
+                                        user.randomId,
+                                        route.legacy,
+                                        auth,
+                                        user.some
+                                      ): _*
+                                    )
+                                )
+                              }
+                              case redirectTo => {
+                                // TODO - check if ref is needed
+                                val url = new java.net.URL(redirectTo)
+                                val host = url.getHost
+                                val scheme = url.getProtocol
+                                val setCookiesRedirect = url.getPort match {
+                                  case -1 =>
+                                    val redirection =
+                                      s"$scheme://$host/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${
+                                        auth
+                                          .routeCookieSuffix(route)
+                                      }&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
+                                    val hash = env.sign(redirection)
+                                    s"$redirection&hash=$hash"
+                                  case port =>
+                                    val redirection =
+                                      s"$scheme://$host:$port/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${
+                                        auth
+                                          .routeCookieSuffix(route)
+                                      }&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
+                                    val hash = env.sign(redirection)
+                                    s"$redirection&hash=$hash"
+                                }
+                                FastFuture.successful(
+                                  Redirect(setCookiesRedirect)
+                                    .removingFromSession(
+                                      s"pa-redirect-after-login-${auth.routeCookieSuffix(route)}",
+                                      "desc"
+                                    )
+                                    .withCookies(
+                                      env.createPrivateSessionCookies(
+                                        host,
+                                        user.randomId,
+                                        route.legacy,
+                                        auth,
+                                        user.some
+                                      ): _*
+                                    )
+                                )
+                              }
+                            }
+                        }
+                      }
+                    }
+                  }
+                  case None =>
+                    auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, route.legacy, true)
+                }
+              }
+            }
+            case _ => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+          }
+        case (Some(serviceId), _) => {
           env.datastores.serviceDescriptorDataStore.findOrRouteById(serviceId).flatMap {
             case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
             case Some(descriptor) if !descriptor.privateApp                                                =>
@@ -158,11 +317,11 @@ class AuthController(
                   case Some(cookie) => {
                     env.extractPrivateSessionId(cookie) match {
                       case None            =>
-                        auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor)
+                        auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor, false)
                       case Some(sessionId) => {
                         env.datastores.privateAppsUserDataStore.findById(sessionId).flatMap {
                           case None       =>
-                            auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor)
+                            auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor, false)
                           case Some(user) =>
                             val sec    = computeSec(user)
                             val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
@@ -232,7 +391,7 @@ class AuthController(
                     }
                   }
                   case None         =>
-                    auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor)
+                    auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor, false)
                 }
               }
             }
@@ -268,7 +427,6 @@ class AuthController(
   def confidentialAppCallback() =
     PrivateAppsAction.async { ctx =>
       import otoroshi.utils.http.RequestImplicits._
-      import otoroshi.utils.future.Implicits._
 
       implicit val req = ctx.request
 
@@ -359,7 +517,12 @@ class AuthController(
           }
       }
 
-      var desc = ctx.request.getQueryString("desc").orElse(ctx.request.session.get("desc"))
+      var desc = ctx.request.getQueryString("desc")
+        .orElse(ctx.request.session.get("desc"))
+
+      val isRoute = ctx.request.getQueryString("route")
+        .orElse(ctx.request.session.get("route"))
+        .contains("true")
 
       ctx.request.body.asFormUrlEncoded match {
         case Some(body) =>
@@ -376,7 +539,7 @@ class AuthController(
         case None       =>
       }
 
-      def process(serviceId: String) = {
+      def processService(serviceId: String) = {
         if (logger.isDebugEnabled) logger.debug(s"redirect to service descriptor : $serviceId")
         env.datastores.serviceDescriptorDataStore.findOrRouteById(serviceId).flatMap {
           case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
@@ -410,7 +573,7 @@ class AuthController(
                 case auth                                                                                => {
                   auth
                     .authModule(ctx.globalConfig)
-                    .paCallback(ctx.request, ctx.globalConfig, descriptor)
+                    .paCallback(ctx.request, ctx.globalConfig, descriptor, false)
                     .flatMap {
                       case Left(error) => {
                         BadRequest(
@@ -432,16 +595,74 @@ class AuthController(
         }
       }
 
+      def processRoute(routeId: String) = {
+        if (logger.isDebugEnabled) logger.debug(s"redirect to route : $routeId")
+        env.proxyState.route(routeId).vfuture.flatMap {
+          case None => NotFound(otoroshi.views.html.oto.error("Route not found", env)).vfuture
+          case Some(route) if !route.plugins.hasPlugin[MultiAuthModule] =>
+            NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+          case Some(route) if route.plugins.hasPlugin[MultiAuthModule] && route.id != env.backOfficeDescriptor.id => {
+            withMultiAuthConfig(route, ctx.request) { _auth =>
+              verifyHash(route.id, _auth, ctx.request) {
+                case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn => {
+                  val authModule = auth.authModule(ctx.globalConfig).asInstanceOf[BasicAuthModule]
+                  req.headers.get("WebAuthn-Login-Step") match {
+                    case Some("start") => {
+                      authModule.webAuthnLoginStart(ctx.request.body.asJson.get, route.legacy).map {
+                        case Left(error) => BadRequest(Json.obj("error" -> error))
+                        case Right(reg) => Ok(reg)
+                      }
+                    }
+                    case Some("finish") => {
+                      authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, route.legacy).flatMap {
+                        case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
+                        case Right(user) => saveUser(user, auth, route.legacy, true)(ctx.request)
+                      }
+                    }
+                    case _ =>
+                      BadRequest(
+                        otoroshi.views.html.oto
+                          .error(message = s"Missing step", _env = env, title = "Authorization error")
+                      ).vfuture
+                  }
+                }
+                case auth => {
+                  auth
+                    .authModule(ctx.globalConfig)
+                    .paCallback(ctx.request, ctx.globalConfig, route.legacy, true)
+                    .flatMap {
+                      case Left(error) => {
+                        BadRequest(
+                          otoroshi.views.html.oto
+                            .error(
+                              message = s"You're not authorized here: ${error}",
+                              _env = env,
+                              title = "Authorization error"
+                            )
+                        ).vfuture
+                      }
+                      case Right(user) => saveUser(user, auth, route.legacy, false)(ctx.request)
+                    }
+                }
+              }
+            }
+          }
+          case _ => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+        }
+      }
+
       ((desc, ctx.request.getQueryString("state")) match {
-        case (Some(serviceId), _) => process(serviceId)
+        case (Some(serviceId), _) if !isRoute => processService(serviceId)
+        case (Some(routeId), _) if isRoute => processRoute(routeId)
         case (_, Some(state))     =>
           if (logger.isDebugEnabled) logger.debug(s"Received state : $state")
           val unsignedState = decryptState(ctx.request.requestHeader)
           (unsignedState \ "descriptor").asOpt[String] match {
-            case Some(descriptor) => process(descriptor)
-            case _                => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
+            case Some(route) if isRoute => processRoute(route)
+            case Some(service) if !isRoute => processService(service)
+            case _                => NotFound(otoroshi.views.html.oto.error(s"${if(isRoute) "Route" else "service"} not found", env)).vfuture
           }
-        case (_, _)               => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
+        case (_, _)               => NotFound(otoroshi.views.html.oto.error(s"${if(isRoute) "Route" else "service"} not found", env)).vfuture
       })
         .recover {
           case t: Throwable => {
