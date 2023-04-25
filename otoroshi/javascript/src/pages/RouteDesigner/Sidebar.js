@@ -36,7 +36,7 @@ const LINKS = (entity, route) =>
     },
     {
       to: `/${entity}/${route.id}/apikeys`,
-      icon: 'fa-lock',
+      icon: 'fa-key',
       title: 'API Keys',
       tab: 'apikeys',
       tooltip: { ...createTooltip(`Manage all API keys that can access`) },
