@@ -144,8 +144,8 @@ object HealthCheck {
             res.ignore()
           }
           case Failure(error) => {
-            error.printStackTrace()
-            logger.error(s"Error while checking health of service '${desc.name}' at '${url}'")
+            // error.printStackTrace()
+            logger.error(s"Error while checking health of service '${desc.name}' at '${url}': ${error.getMessage}")
             val hce = HealthCheckEvent(
               `@id` = value,
               `@timestamp` = DateTime.now(),
