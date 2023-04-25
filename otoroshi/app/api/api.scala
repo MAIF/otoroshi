@@ -226,7 +226,7 @@ case class GenericResourceAccessApi[T <: EntityLocationSupport](
     format: Format[T],
     keyf: String => String,
     extractIdf: T => String,
-    tmpl: JsValue = Json.obj(),
+    tmpl: () => JsValue = () => Json.obj(),
     canRead: Boolean = true,
     canCreate: Boolean = true,
     canUpdate: Boolean = true,
@@ -235,7 +235,7 @@ case class GenericResourceAccessApi[T <: EntityLocationSupport](
 ) extends ResourceAccessApi[T] {
   override def key(id: String): String            = keyf.apply(id)
   override def extractId(value: T): String        = value.theId
-  override def template(version: String): JsValue = tmpl
+  override def template(version: String): JsValue = tmpl()
   override def all(): Seq[T]                      = throw new UnsupportedOperationException()
   override def one(id: String): Option[T]         = throw new UnsupportedOperationException()
   override def update(values: Seq[T]): Unit       = throw new UnsupportedOperationException()
@@ -500,7 +500,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
         WasmPlugin.format,
         env.datastores.wasmPluginsDataStore.key,
         env.datastores.wasmPluginsDataStore.extractId,
-        env.datastores.wasmPluginsDataStore.template(env).json
+        () => env.datastores.wasmPluginsDataStore.template(env).json
       )
     ),
     //////
