@@ -318,11 +318,11 @@ object NgCachedConfigContext {
 }
 
 trait NgCachedConfigContext {
-  def id: Int
+  def idx: Int
   def route: NgRoute
   def config: JsValue
   def cachedConfig[A](plugin: String)(reads: Reads[A]): Option[A] = Try {
-    val key = s"${route.cacheableId}::$plugin::$id"
+    val key = s"${route.cacheableId}::$plugin::$idx"
     NgCachedConfigContext.cache.getIfPresent(key) match {
       case None    =>
         reads.reads(config) match {
@@ -336,7 +336,7 @@ trait NgCachedConfigContext {
   }.toOption.flatten
 
   def cachedConfigFn[A](plugin: String)(reads: JsValue => Option[A]): Option[A] = Try {
-    val key = s"${route.cacheableId}::${plugin}::$id"
+    val key = s"${route.cacheableId}::${plugin}::$idx"
     NgCachedConfigContext.cache.getIfPresent(key) match {
       case None    =>
         reads(config) match {
@@ -364,7 +364,7 @@ case class NgPreRoutingContext(
     report: NgExecutionReport,
     sequence: NgReportPluginSequence,
     markPluginItem: Function4[NgReportPluginSequenceItem, NgPreRoutingContext, Boolean, JsValue, Unit],
-    id: Int = 0
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def wasmJson: JsValue = json.asObject ++ Json.obj("route" -> route.json)
   def json: JsValue     = Json.obj(
@@ -465,7 +465,7 @@ case class NgBeforeRequestContext(
     config: JsValue,
     attrs: TypedMap,
     globalConfig: JsValue = Json.obj(),
-    id: Int = 0
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
@@ -484,7 +484,7 @@ case class NgAfterRequestContext(
     config: JsValue,
     attrs: TypedMap,
     globalConfig: JsValue = Json.obj(),
-    id: Int = 0
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
@@ -510,7 +510,7 @@ case class NgTransformerRequestContext(
     report: NgExecutionReport,
     sequence: NgReportPluginSequence,
     markPluginItem: Function4[NgReportPluginSequenceItem, NgTransformerRequestContext, Boolean, JsValue, Unit],
-    id: Int = 0
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"        -> snowflake,
@@ -551,7 +551,7 @@ case class NgTransformerResponseContext(
     report: NgExecutionReport,
     sequence: NgReportPluginSequence,
     markPluginItem: Function4[NgReportPluginSequenceItem, NgTransformerResponseContext, Boolean, JsValue, Unit],
-    id: Int = 0
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"         -> snowflake,
@@ -591,7 +591,7 @@ case class NgTransformerErrorContext(
     globalConfig: JsValue = Json.obj(),
     attrs: TypedMap,
     report: NgExecutionReport,
-    id: Int = 0
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"         -> snowflake,
@@ -672,7 +672,7 @@ case class NgAccessContext(
     report: NgExecutionReport,
     sequence: NgReportPluginSequence,
     markPluginItem: Function4[NgReportPluginSequenceItem, NgAccessContext, Boolean, JsValue, Unit],
-    id: Int = 0
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
@@ -749,7 +749,7 @@ case class NgRouteMatcherContext(
     route: NgRoute,
     config: JsValue,
     attrs: TypedMap,
-    id: Int = 0
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake" -> snowflake,
@@ -811,7 +811,7 @@ case class NgbBackendCallContext(
     config: JsValue,
     globalConfig: JsValue,
     attrs: TypedMap,
-    id: Int = 0
+    idx: Int = 0
 ) extends NgCachedConfigContext {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
@@ -911,7 +911,7 @@ class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrap
             in,
             JsNull
           )
-          Try(wrapper.plugin.transformRequestSync(ctx.copy(id = pluginIndex))) match {
+          Try(wrapper.plugin.transformRequestSync(ctx.copy(idx = pluginIndex))) match {
             case Failure(exception)                            =>
               ctx.markPluginItem(
                 item,
@@ -983,7 +983,7 @@ class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWra
           val pluginConfig: JsValue = wrapper.plugin.defaultConfig
             .map(dc => dc ++ wrapper.instance.config.raw)
             .getOrElse(wrapper.instance.config.raw)
-          val ctx                   = _ctx.copy(config = pluginConfig, id = pluginIndex)
+          val ctx                   = _ctx.copy(config = pluginConfig, idx = pluginIndex)
           val debug                 = ctx.route.debugFlow || wrapper.instance.debug
           val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
           val item                  = NgReportPluginSequenceItem(
@@ -1061,7 +1061,7 @@ class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPr
           val pluginConfig: JsValue = wrapper.plugin.defaultConfig
             .map(dc => dc ++ wrapper.instance.config.raw)
             .getOrElse(wrapper.instance.config.raw)
-          val ctx                   = _ctx.copy(config = pluginConfig, id = pluginIndex)
+          val ctx                   = _ctx.copy(config = pluginConfig, idx = pluginIndex)
           val debug                 = ctx.route.debugFlow || wrapper.instance.debug
           val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
           val item                  = NgReportPluginSequenceItem(
@@ -1141,7 +1141,7 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
           val pluginConfig: JsValue = wrapper.plugin.defaultConfig
             .map(dc => dc ++ wrapper.instance.config.raw)
             .getOrElse(wrapper.instance.config.raw)
-          val ctx                   = _ctx.copy(config = pluginConfig, id = pluginIndex)
+          val ctx                   = _ctx.copy(config = pluginConfig, idx = pluginIndex)
           val debug                 = ctx.route.debugFlow || wrapper.instance.debug
           val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
           val item                  = NgReportPluginSequenceItem(
