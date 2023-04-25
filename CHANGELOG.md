@@ -4,6 +4,85 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [16.3.0] - 2023-04-25
+
+https://github.com/MAIF/otoroshi/milestone/61?closed=1
+https://github.com/MAIF/otoroshi/compare/v16.2.1...v16.3.0
+https://github.com/MAIF/otoroshi/releases/tag/v16.3.0
+
+Major features announcements in this release are 
+
+- all legacy plugins have been migrated to the new plugin model
+- a new kind of plugin has been introduced to extend otoroshi api easily
+- new spring cloud config. vault backend
+- new http vault backend
+- new local vault backend where secrets are stored in the otoroshi global config.
+
+
+### Added
+
+- add the ability to run jobs/data-exporters only on specific network zones with specific configuration per zone (#1472)
+- add a new kind of vault that stores values in otoroshi (#1522)
+- support vaults in EL (#1523)
+- support spring cloud config as a vault backend (#1527)
+- support http as a vault backend (#1528)
+- support memberUid based ldap groups (#1560)
+- provide an admin. extension api to make core contributions easier#1510
+
+### Changed
+
+- enhance the health check possibilities (#1372)
+- remember sidebar state (#1524)
+
+### Fixed
+
+- cannot instantly add and modify an old plugin on a route  (#1511)
+- fix synchronous plugins step merge (#1260)
+- some service-descriptor -> route conversions does not work (#1521)
+- wasmManager : give plugin name as package.json name (#1529)
+- JWT claim extraction may not work  (#1564)
+- can't create a route with multi instance plugins more than one (#1566)
+- prevent chunking response when content length is equal to zero (#1571)
+- can't find my route's apikey in route/apikeys tab (#1570)
+- fix CRDs v1alpha1 served (#1512)
+- rewrite legacy plugins as ng plugins (#1148)
+- rewrite legacy HMAC validator as ng plugins (#1513)
+- rewrite legacy HMAC Caller plugin (#1514)
+- rewrite legacy Basic Auth Caller plugin (#1515)
+- rewrite legacy OAuth 1 Caller plugin (#1516)
+- rewrite legacy OAuth 2 Caller plugin (#1517)
+- rewrite legacy response cache plugin (#1518)
+- rewrite legacy OIDC plugins (#1520)
+- rewrite ClientCertChainHeader (#1531)
+- rewrite HasClientCertMatchingValidator (#1532)
+- rewrite HasClientCertMatchingApikeyValidator (#1533)
+- rewrite HasClientCertValidator (#1534)
+- rewrite CertificateAsApikey (#1535)
+- rewrite BiscuitExtractor (#1536)
+- rewrite BiscuitValidator (#1537)
+- rewrite HasClientCertMatchingHttpValidator (#1538)
+- rewrite HasAllowedUsersValidator (#1539)
+- rewrite UserAgentExtractor (#1540)
+- rewrite UserAgentInfoEndpoint (#1541)
+- rewrite UserAgentInfoHeader (#1542)
+- rewrite SecurityTxt (#1543)
+- rewrite ServiceQuotas (#1544)
+- rewrite MirroringPlugin (#1545)
+- rewrite Log4ShellFilter (#1546)
+- rewrite JwtUserExtractor (#1547)
+- rewrite IzanamiProxy (#1548)
+- rewrite IzanamiCanary (#1549)
+- rewrite HMACValidator (#1550)
+- rewrite MaxMindGeolocationInfoExtractor (#1551)
+- rewrite IpStackGeolocationInfoExtractor (#1552)
+- rewrite GeolocationInfoHeader (#1553)
+- rewrite GeolocationInfoEndpoint (#1554)
+- rewrite DiscoverySelfRegistrationSink (#1555)
+- rewrite DiscoverySelfRegistrationTransformer (#1556)
+- rewrite DiscoveryTargetsSelector (#1557)
+- rewrite DeferPlugin (#1558)
+- rewrite ClientCredentialService (#1559)
+
 ## [16.2.1] - 2023-04-03
 
 https://github.com/MAIF/otoroshi/milestone/62?closed=1
