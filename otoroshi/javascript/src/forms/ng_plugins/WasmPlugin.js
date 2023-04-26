@@ -83,6 +83,13 @@ const schema = {
       description: 'Doesnt stop the wasm vm during a request',
     },
   },
+  opa: {
+    type: 'box-bool',
+    label: 'OPA',
+    props: {
+      description: 'The WASM source is an OPA rego policy compiled to WASM',
+    },
+  },
   authorizations: {
     label: 'Host functions authorizations',
     type: 'form',

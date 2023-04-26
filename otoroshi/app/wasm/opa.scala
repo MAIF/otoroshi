@@ -223,7 +223,7 @@ object OPA extends AwaitCapable {
     }
   }
 
-  def evalute(plugin: Plugin, input: String): String = {
+  def evaluate(plugin: Plugin, input: String): String = {
     val entrypoint = 0
 
     // TODO - read and load builtins functions by calling dumpJSON

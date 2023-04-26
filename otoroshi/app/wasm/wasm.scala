@@ -466,9 +466,8 @@ object WasmUtils {
       attrsOpt match {
         case None        => {
           val slot = createPlugin()
-
           val output = if (config.opa) {
-            OPA.evalute(slot.plugin, input.stringify)
+            OPA.evaluate(slot.plugin, input.stringify)
           } else {
             slot.plugin.call(functionName, input.stringify)
           }
@@ -489,7 +488,7 @@ object WasmUtils {
               val slot   = createPlugin()
               if (config.preserve) context.put(config.source.cacheKey, slot)
               val output = if (config.opa) {
-                OPA.evalute(slot.plugin, input.stringify)
+                OPA.evaluate(slot.plugin, input.stringify)
               } else {
                 slot.plugin.call(functionName, input.stringify)
               }
