@@ -104,6 +104,7 @@ case class NgPluginHttpRequest(
       "url"               -> url,
       "method"            -> method,
       "headers"           -> headers,
+      "query"             -> uri.query().toMultiMap,
       "version"           -> version,
       "client_cert_chain" -> JsonHelpers.clientCertChainToJson(certs),
       "backend"           -> backend.map(_.json).getOrElse(JsNull).asValue,
