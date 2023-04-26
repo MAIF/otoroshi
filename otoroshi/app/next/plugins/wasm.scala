@@ -30,16 +30,16 @@ object BodyHelper {
   def extractBodyFrom(doc: JsValue): ByteString = extractBodyFromOpt(doc).getOrElse(ByteString.empty)
   def extractBodyFromOpt(doc: JsValue): Option[ByteString] = {
     val bodyAsBytes = doc.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
-    val bodyBase64 = doc.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
-    val bodyJson = doc
+    val bodyBase64  = doc.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
+    val bodyJson    = doc
       .select("body_json")
       .asOpt[JsValue]
       .filter {
         case JsNull => false
-        case _ => true
+        case _      => true
       }
       .map(str => ByteString(str.stringify))
-    val bodyStr = doc
+    val bodyStr     = doc
       .select("body_str")
       .asOpt[String]
       .orElse(doc.select("body").asOpt[String])
@@ -111,7 +111,7 @@ class WasmPreRoute extends NgPreRouting {
           case Success(response) => {
             val error = response.select("error").asOpt[Boolean].getOrElse(false)
             if (error) {
-              val body = BodyHelper.extractBodyFrom(response)
+              val body                         = BodyHelper.extractBodyFrom(response)
               val headers: Map[String, String] = response
                 .select("headers")
                 .asOpt[Map[String, String]]
@@ -165,7 +165,7 @@ class WasmBackend extends NgBackendCall {
       .flatMap(input => WasmUtils.execute(config, "call_backend", input, ctx.some, ctx.attrs.some))
       .map {
         case Right(output) =>
-          val response                    =
+          val response =
             try {
               Json.parse(output)
             } catch {
@@ -173,7 +173,7 @@ class WasmBackend extends NgBackendCall {
                 logger.error("error during json parsing", e)
                 Json.obj()
             }
-          val body = BodyHelper.extractBodyFrom(response)
+          val body     = BodyHelper.extractBodyFrom(response)
           bodyResponse(
             status = response.select("status").asOpt[Int].getOrElse(200),
             headers = response
@@ -279,13 +279,14 @@ class WasmRequestTransformer extends NgRequestTransformer {
             case Right(res)  =>
               val response = Json.parse(res)
               if (response.select("error").asOpt[Boolean].getOrElse(false)) {
-                val status = response.select("status").asOpt[Int].getOrElse(500)
-                val headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-                val cookies = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
+                val status      = response.select("status").asOpt[Int].getOrElse(500)
+                val headers     = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+                val cookies     = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
                 val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/octet-stream")
-                val body = BodyHelper.extractBodyFrom(response)
+                val body        = BodyHelper.extractBodyFrom(response)
                 Left(
-                  Results.Status(status)(body)
+                  Results
+                    .Status(status)(body)
                     .withCookies(cookies: _*)
                     .withHeaders(headers.toSeq: _*)
                     .as(contentType)
@@ -299,7 +300,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
                     url = (response \ "url").asOpt[String].getOrElse(ctx.otoroshiRequest.url),
                     headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiRequest.headers),
                     cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiRequest.cookies),
-                    body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiRequest.body),
+                    body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiRequest.body)
                   )
                 )
               }
@@ -342,13 +343,14 @@ class WasmResponseTransformer extends NgRequestTransformer {
             case Right(res)  =>
               val response = Json.parse(res)
               if (response.select("error").asOpt[Boolean].getOrElse(false)) {
-                val status = response.select("status").asOpt[Int].getOrElse(500)
-                val headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-                val cookies = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
+                val status      = response.select("status").asOpt[Int].getOrElse(500)
+                val headers     = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+                val cookies     = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
                 val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/octet-stream")
-                val body = BodyHelper.extractBodyFrom(response)
+                val body        = BodyHelper.extractBodyFrom(response)
                 Left(
-                  Results.Status(status)(body)
+                  Results
+                    .Status(status)(body)
                     .withCookies(cookies: _*)
                     .withHeaders(headers.toSeq: _*)
                     .as(contentType)
@@ -360,8 +362,9 @@ class WasmResponseTransformer extends NgRequestTransformer {
                     headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiResponse.headers),
                     status = (response \ "status").asOpt[Int].getOrElse(200),
                     cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiResponse.cookies),
-                    body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiResponse.body),
-                  ).right
+                    body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiResponse.body)
+                  )
+                  .right
               }
             case Left(value) => Left(Results.BadRequest(value))
           }

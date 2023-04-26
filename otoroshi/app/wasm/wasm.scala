@@ -485,7 +485,7 @@ object WasmUtils {
 
       attrsOpt match {
         case None        => {
-          val slot = createPlugin()
+          val slot   = createPlugin()
           val output = if (config.opa) {
             OPA.evaluate(slot.plugin, input.stringify)
           } else {
