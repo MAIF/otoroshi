@@ -16,6 +16,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v16.3.2
 - wasm plugin can be an OPA policy (#1579)
 - add query params in plugin http request json representation (#1580)
 - wasm request transformer is never called (#1581)
+- handle left case or request/response transformers when using wasm (#1582)
 
 ## [16.3.1] - 2023-04-25
 

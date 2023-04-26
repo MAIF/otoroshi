@@ -26,6 +26,31 @@ import scala.concurrent.duration.{DurationInt, DurationLong, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+object BodyHelper {
+  def extractBodyFrom(doc: JsValue): ByteString = extractBodyFromOpt(doc).getOrElse(ByteString.empty)
+  def extractBodyFromOpt(doc: JsValue): Option[ByteString] = {
+    val bodyAsBytes = doc.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
+    val bodyBase64 = doc.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
+    val bodyJson = doc
+      .select("body_json")
+      .asOpt[JsValue]
+      .filter {
+        case JsNull => false
+        case _ => true
+      }
+      .map(str => ByteString(str.stringify))
+    val bodyStr = doc
+      .select("body_str")
+      .asOpt[String]
+      .orElse(doc.select("body").asOpt[String])
+      .map(str => ByteString(str))
+    bodyStr
+      .orElse(bodyJson)
+      .orElse(bodyBase64)
+      .orElse(bodyAsBytes)
+  }
+}
+
 class WasmRouteMatcher extends NgRouteMatcher {
 
   private val logger = Logger("otoroshi-plugins-wasm-route-matcher")
@@ -86,23 +111,7 @@ class WasmPreRoute extends NgPreRouting {
           case Success(response) => {
             val error = response.select("error").asOpt[Boolean].getOrElse(false)
             if (error) {
-              val bodyAsBytes                  = response.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
-              val bodyBase64                   = response.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
-              val bodyJson                     = response
-                .select("body_json")
-                .asOpt[JsValue]
-                .filter {
-                  case JsNull => false
-                  case _      => true
-                }
-                .map(str => ByteString(str.stringify))
-              val bodyStr                      = response
-                .select("body_str")
-                .asOpt[String]
-                .orElse(response.select("body").asOpt[String])
-                .map(str => ByteString(str))
-              val body: ByteString             =
-                bodyStr.orElse(bodyJson).orElse(bodyBase64).orElse(bodyAsBytes).getOrElse(ByteString.empty)
+              val body = BodyHelper.extractBodyFrom(response)
               val headers: Map[String, String] = response
                 .select("headers")
                 .asOpt[Map[String, String]]
@@ -164,34 +173,14 @@ class WasmBackend extends NgBackendCall {
                 logger.error("error during json parsing", e)
                 Json.obj()
             }
-          val bodyAsBytes                 = response.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
-          val bodyBase64                  = response.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
-          val bodyJson                    = response
-            .select("body_json")
-            .asOpt[JsValue]
-            .filter {
-              case JsNull => false
-              case _      => true
-            }
-            .map(str => ByteString(str.stringify))
-          val bodyStr                     = response
-            .select("body_str")
-            .asOpt[String]
-            .orElse(response.select("body").asOpt[String])
-            .map(str => ByteString(str))
-          val body: Source[ByteString, _] = bodyStr
-            .orElse(bodyJson)
-            .orElse(bodyBase64)
-            .orElse(bodyAsBytes)
-            .getOrElse(ByteString.empty)
-            .chunks(16 * 1024)
+          val body = BodyHelper.extractBodyFrom(response)
           bodyResponse(
             status = response.select("status").asOpt[Int].getOrElse(200),
             headers = response
               .select("headers")
               .asOpt[Map[String, String]]
               .getOrElse(Map("Content-Type" -> "application/json")),
-            body = body
+            body = body.chunks(16 * 1024)
           )
         case Left(value)   =>
           bodyResponse(
@@ -289,19 +278,31 @@ class WasmRequestTransformer extends NgRequestTransformer {
           .map {
             case Right(res)  =>
               val response = Json.parse(res)
-              Right(
-                ctx.otoroshiRequest.copy(
-                  // TODO: handle client cert chain and backend
-                  method = (response \ "method").asOpt[String].getOrElse(ctx.otoroshiRequest.method),
-                  url = (response \ "url").asOpt[String].getOrElse(ctx.otoroshiRequest.url),
-                  headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiRequest.headers),
-                  cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiRequest.cookies),
-                  body = response.select("body").asOpt[String].map(b => ByteString(b)) match {
-                    case None    => ctx.otoroshiRequest.body
-                    case Some(b) => Source.single(b)
-                  }
+              if (response.select("error").asOpt[Boolean].getOrElse(false)) {
+                val status = response.select("status").asOpt[Int].getOrElse(500)
+                val headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+                val cookies = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
+                val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/octet-stream")
+                val body = BodyHelper.extractBodyFrom(response)
+                Left(
+                  Results.Status(status)(body)
+                    .withCookies(cookies: _*)
+                    .withHeaders(headers.toSeq: _*)
+                    .as(contentType)
                 )
-              )
+              } else {
+                val body = BodyHelper.extractBodyFromOpt(response)
+                Right(
+                  ctx.otoroshiRequest.copy(
+                    // TODO: handle client cert chain and backend
+                    method = (response \ "method").asOpt[String].getOrElse(ctx.otoroshiRequest.method),
+                    url = (response \ "url").asOpt[String].getOrElse(ctx.otoroshiRequest.url),
+                    headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiRequest.headers),
+                    cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiRequest.cookies),
+                    body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiRequest.body),
+                  )
+                )
+              }
             case Left(value) => Left(Results.BadRequest(value))
           }
       })
@@ -340,17 +341,28 @@ class WasmResponseTransformer extends NgRequestTransformer {
           .map {
             case Right(res)  =>
               val response = Json.parse(res)
-              ctx.otoroshiResponse
-                .copy(
-                  headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiResponse.headers),
-                  status = (response \ "status").asOpt[Int].getOrElse(200),
-                  cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiResponse.cookies),
-                  body = response.select("body").asOpt[String].map(b => ByteString(b)) match {
-                    case None    => ctx.otoroshiResponse.body
-                    case Some(b) => Source.single(b)
-                  }
+              if (response.select("error").asOpt[Boolean].getOrElse(false)) {
+                val status = response.select("status").asOpt[Int].getOrElse(500)
+                val headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
+                val cookies = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
+                val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/octet-stream")
+                val body = BodyHelper.extractBodyFrom(response)
+                Left(
+                  Results.Status(status)(body)
+                    .withCookies(cookies: _*)
+                    .withHeaders(headers.toSeq: _*)
+                    .as(contentType)
                 )
-                .right
+              } else {
+                val body = BodyHelper.extractBodyFromOpt(response)
+                ctx.otoroshiResponse
+                  .copy(
+                    headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiResponse.headers),
+                    status = (response \ "status").asOpt[Int].getOrElse(200),
+                    cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiResponse.cookies),
+                    body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiResponse.body),
+                  ).right
+              }
             case Left(value) => Left(Results.BadRequest(value))
           }
       })
@@ -435,23 +447,7 @@ class WasmSink extends NgRequestSink {
             val headers = _headers
               .filterNot(_._1.toLowerCase() == "content-type")
 
-            val bodyAsBytes      = response.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
-            val bodyBase64       = response.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
-            val bodyJson         = response
-              .select("body_json")
-              .asOpt[JsValue]
-              .filter {
-                case JsNull => false
-                case _      => true
-              }
-              .map(str => ByteString(str.stringify))
-            val bodyStr          = response
-              .select("body_str")
-              .asOpt[String]
-              .orElse(response.select("body").asOpt[String])
-              .map(str => ByteString(str))
-            val body: ByteString =
-              bodyStr.orElse(bodyJson).orElse(bodyBase64).orElse(bodyAsBytes).getOrElse(ByteString.empty)
+            val body = BodyHelper.extractBodyFrom(response)
 
             Results
               .Status(status)(body)

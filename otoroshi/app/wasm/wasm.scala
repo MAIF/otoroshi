@@ -15,6 +15,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
+import play.api.mvc.Cookie
 
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.atomic.AtomicReference
@@ -424,6 +425,25 @@ object WasmUtils {
             domain = c.select("domain").asOpt[String],
             secure = c.select("secure").asOpt[Boolean].getOrElse(false),
             httpOnly = c.select("httpOnly").asOpt[Boolean].getOrElse(false)
+          )
+        }
+      }
+
+  def convertJsonPlayCookies(wasmResponse: JsValue): Option[Seq[Cookie]] =
+    wasmResponse
+      .select("cookies")
+      .asOpt[Seq[JsObject]]
+      .map { arr =>
+        arr.map { c =>
+          Cookie(
+            name = c.select("name").asString,
+            value = c.select("value").asString,
+            maxAge = c.select("maxAge").asOpt[Int],
+            path = c.select("path").asOpt[String].getOrElse("/"),
+            domain = c.select("domain").asOpt[String],
+            secure = c.select("secure").asOpt[Boolean].getOrElse(false),
+            httpOnly = c.select("httpOnly").asOpt[Boolean].getOrElse(false),
+            sameSite = c.select("domain").asOpt[String].flatMap(Cookie.SameSite.parse)
           )
         }
       }
