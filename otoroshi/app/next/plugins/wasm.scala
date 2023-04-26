@@ -271,8 +271,6 @@ class WasmRequestTransformer extends NgRequestTransformer {
   override def transformsRequest: Boolean                  = true
   override def transformsResponse: Boolean                 = false
   override def transformsError: Boolean                    = false
-  override def isTransformRequestAsync: Boolean            = false
-  override def isTransformResponseAsync: Boolean           = false
   override def name: String                                = "Wasm Request Transformer"
   override def description: Option[String]                 =
     "Transform the content of the request with a wasm plugin".some
@@ -291,9 +289,11 @@ class WasmRequestTransformer extends NgRequestTransformer {
           .map {
             case Right(res)  =>
               val response = Json.parse(res)
-
               Right(
                 ctx.otoroshiRequest.copy(
+                  // TODO: handle client cert chain and backend
+                  method = (response \ "method").asOpt[String].getOrElse(ctx.otoroshiRequest.method),
+                  url = (response \ "url").asOpt[String].getOrElse(ctx.otoroshiRequest.url),
                   headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiRequest.headers),
                   cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiRequest.cookies),
                   body = response.select("body").asOpt[String].map(b => ByteString(b)) match {
@@ -333,7 +333,6 @@ class WasmResponseTransformer extends NgRequestTransformer {
     val config = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
-
     ctx.wasmJson
       .flatMap(input => {
         WasmUtils
@@ -341,7 +340,6 @@ class WasmResponseTransformer extends NgRequestTransformer {
           .map {
             case Right(res)  =>
               val response = Json.parse(res)
-
               ctx.otoroshiResponse
                 .copy(
                   headers = (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiResponse.headers),
