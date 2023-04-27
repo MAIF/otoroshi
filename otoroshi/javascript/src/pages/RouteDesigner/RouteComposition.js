@@ -139,7 +139,7 @@ class RouteForms extends React.Component {
                 `${this.props.url.split('?')[0]}?tab=route_plugins&view_plugins=${this.props.index}`
               );
             }}>
-            <i className="fas fa-pencil-ruler" />
+            <i className="fas fa-edit" />
           </button>
           <button
             className="btn btn-sm btn-danger me-1"
