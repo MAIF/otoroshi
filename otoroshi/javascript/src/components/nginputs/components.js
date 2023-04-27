@@ -231,7 +231,8 @@ export class NgFormRenderer extends Component {
               margin: clickable ? '5px 0' : '',
               display: 'flex',
               flexDirection: 'column',
-              width: 'calc(100% - 1px)',
+              width: 'calc(100% - 2px)',
+              marginLeft: '1px',
               ...(this.props.style || {}),
               ...(rawSchema.style || {}),
             }}
