@@ -100,6 +100,7 @@ export class AuthModuleConfigsPage extends Component {
                   <button
                     className="btn btn-primary"
                     type="button"
+                    title="Duplicate auth. module"
                     style={{ marginRight: 20 }}
                     onClick={(e) => this.duplicate(s, ss, e)}>
                     <i className="far fa-copy" aria-hidden="true" />
