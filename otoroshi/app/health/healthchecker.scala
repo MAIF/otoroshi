@@ -37,8 +37,8 @@ object HealthCheck {
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
-  ): Future[Unit] =
-    Retry.retry(times = 3, delay = 20, ctx = "leader-session-valid") { tryCount =>
+  ): Future[Unit] = {
+    Retry.retry(times = 3, delay = 20, ctx = "check-target-health") { tryCount =>
       val url        = s"${target.scheme}://${target.host}${desc.healthCheck.url}"
       val start      = System.currentTimeMillis()
       val stateValue = IdGenerator.extendedToken(128)
@@ -71,7 +71,7 @@ object HealthCheck {
         .serialize(desc.algoInfoFromOtoToBack)(env)
       env.MtlsWs
         .url(url, target.mtlsConfig)
-        .withRequestTimeout(Duration(5, TimeUnit.SECONDS)) // TODO: from config
+        .withRequestTimeout(Duration(desc.healthCheck.timeout, TimeUnit.MILLISECONDS))
         .withHttpHeaders(
           env.Headers.OtoroshiState                -> state,
           env.Headers.OtoroshiClaim                -> claim,
@@ -82,16 +82,36 @@ object HealthCheck {
         )
         .get()
         .andThen {
-          case Success(res) => {
-
+          case Success(res)   => {
             val checkDone =
               res.header(env.Headers.OtoroshiHealthCheckLogicTestResult).exists(_.toLong == value.toLong + 42L)
-            val health    = (res.status, checkDone) match {
+
+            val useDefaultConfiguration =
+              desc.healthCheck.healthyStatuses.isEmpty && desc.healthCheck.unhealthyStatuses.isEmpty
+
+            val rawHealth = (res.status, checkDone) match {
               case (a, true) if a > 199 && a < 500  => Some("GREEN")
               case (a, false) if a > 199 && a < 500 => Some("YELLOW")
               case _                                => Some("RED")
             }
-            val hce       = HealthCheckEvent(
+
+            val health = if (useDefaultConfiguration) {
+              rawHealth
+            } else {
+              if (desc.healthCheck.unhealthyStatuses.contains(res.status)) {
+                Some("RED")
+              } else if (desc.healthCheck.healthyStatuses.contains(res.status)) {
+                if (checkDone) {
+                  Some("GREEN")
+                } else {
+                  Some("YELLOW")
+                }
+              } else { // if not contains in both list, just resolve with error
+                Some("RED")
+              }
+            }
+
+            val hce = HealthCheckEvent(
               `@id` = value,
               `@timestamp` = DateTime.now(),
               `@serviceId` = desc.id,
@@ -124,8 +144,8 @@ object HealthCheck {
             res.ignore()
           }
           case Failure(error) => {
-            error.printStackTrace()
-            logger.error(s"Error while checking health of service '${desc.name}' at '${url}'")
+            // error.printStackTrace()
+            logger.error(s"Error while checking health of service '${desc.name}' at '${url}': ${error.getMessage}")
             val hce = HealthCheckEvent(
               `@id` = value,
               `@timestamp` = DateTime.now(),
@@ -157,6 +177,7 @@ object HealthCheck {
           ()
         }
     }(ec, env.otoroshiActorSystem.scheduler)
+  }
 }
 
 object HealthCheckerActor {
@@ -258,7 +279,7 @@ class HealthCheckJob extends Job {
 
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
-  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 

@@ -1764,7 +1764,7 @@ class BackOfficeController(
           env.datastores.apiKeyDataStore.findAll().map { apikeys =>
             val filtered = apikeys
               .filter(ctx.canUserRead)
-              .filter(apk => apk.authorizedOnOneGroupFrom(service.groups) || apk.authorizedOnService(service.id))
+              .filter(_.authorizedOnServiceOrGroups(service.id, service.groups))
             Ok(JsArray(filtered.map(_.toJson)))
           }
         }

@@ -149,7 +149,11 @@ export class JwtVerifiersPage extends Component {
                   showWizard: true,
                 });
               }}
-              style={{ _backgroundColor: "var(--color-primary)", _borderColor: "var(--color-primary)", marginLeft: 5 }}>
+              style={{
+                _backgroundColor: 'var(--color-primary)',
+                _borderColor: 'var(--color-primary)',
+                marginLeft: 5,
+              }}>
               <i className="fas fa-hat-wizard" /> Create with wizard
             </Button>
           )}

@@ -219,7 +219,7 @@ export default {
       ],
     },
     health_check: {
-      label: 'health_check',
+      label: 'Health check',
       type: 'form',
       collapsable: true,
       collapsed: true,
@@ -237,8 +237,22 @@ export default {
           help:
             "The URL to check. Should return an HTTP 200 response. You can also respond with an 'Opun-Health-Check-Logic-Test-Result' header set to the value of the 'Opun-Health-Check-Logic-Test' request header + 42. to make the healthcheck complete.",
         },
+        timeout: {
+          type: 'number',
+          label: 'Timeout',
+        },
+        healthyStatuses: {
+          type: 'number',
+          array: true,
+          label: 'Healthy statuses',
+        },
+        unhealthyStatuses: {
+          type: 'number',
+          array: true,
+          label: 'Unhealthy statuses',
+        },
       },
-      flow: ['enabled', 'url'],
+      flow: ['enabled', 'url', 'timeout', 'healthyStatuses', 'unhealthyStatuses'],
     },
     targets: {
       array: true,
@@ -528,8 +542,8 @@ export default {
       {
         type: 'group',
         name: 'Targets',
-        fields: ['targets'],
-        summaryFields: ['targets.hostname'],
+        fields: ['targets', 'health_check'],
+        summaryFields: ['targets.hostname', 'health_check.url', 'health_check.enabled'],
       },
     ],
   },

@@ -87,8 +87,8 @@ function BackToRouteTab({ history, routeId, viewPlugins }) {
         className="btn btn-sm toggle-form-buttons d-flex align-items-center h-100"
         onClick={() => history.replace(`${routeId}?tab=routes&view_plugins=${viewPlugins}`)}
         style={{
-          backgroundColor: "var(--bg-color_level2)",
-          color: "var(--color_level2)",
+          backgroundColor: 'var(--bg-color_level2)',
+          color: 'var(--color_level2)',
         }}>
         <i className="fas fa-arrow-left me-2" style={{ fontSize: '1.33333em' }} />
         Back to route
@@ -116,8 +116,8 @@ function InformationsTab({ isActive, entity, value, history }) {
         style={{
           borderBottomLeftRadius: 0,
           borderBottomRightRadius: 0,
-          backgroundColor: isActive ? "var(--color-primary)" : "var(--bg-color_level2)",
-          color: isActive ? "var(--color-white)" : "var(--color_level2)",
+          backgroundColor: isActive ? 'var(--color-primary)' : 'var(--bg-color_level2)',
+          color: isActive ? 'var(--color-white)' : 'var(--color_level2)',
         }}>
         <i className="fas fa-file-alt me-2" style={{ fontSize: '1.33333em' }} />
         Informations
@@ -143,8 +143,8 @@ function RoutesTab({ isActive, entity, value, history }) {
             });
         }}
         style={{
-          backgroundColor: isActive ? "var(--color-primary)" : "var(--bg-color_level2)",
-          color: isActive ? "var(--color-white)" : "var(--color_level2)",
+          backgroundColor: isActive ? 'var(--color-primary)' : 'var(--bg-color_level2)',
+          color: isActive ? 'var(--color-white)' : 'var(--color_level2)',
         }}>
         <i className="fas fa-road me-2" style={{ fontSize: '1.33333em' }} />
         Routes
@@ -172,8 +172,8 @@ function DesignerTab({ isActive, entity, value, history }) {
         style={{
           borderBottomLeftRadius: 0,
           borderBottomRightRadius: 0,
-          backgroundColor: isActive ? "var(--color-primary)" : "var(--bg-color_level2)",
-          color: isActive ? "var(--color-white)" : "var(--color_level2)",
+          backgroundColor: isActive ? 'var(--color-primary)' : 'var(--bg-color_level2)',
+          color: isActive ? 'var(--color-white)' : 'var(--color_level2)',
         }}>
         <i className="fas fa-pencil-ruler me-2" style={{ fontSize: '1.33333em' }} />
         Designer
@@ -215,8 +215,8 @@ function TesterButton({
           style={{
             marginLeft: 20,
             borderRadius: '.2rem !important',
-            backgroundColor: "var(--bg-color_level2)",
-            color: "var(--color_level2)",
+            backgroundColor: 'var(--bg-color_level2)',
+            color: 'var(--color_level2)',
           }}>
           <i className="fas fa-vials" style={{ fontSize: '1.33333em' }} />
           Tester
@@ -227,15 +227,17 @@ function TesterButton({
 }
 
 function MoreActionsButton({ value, menu, history, globalEnv }) {
-  return <div className='mb-1'>
-    <Dropdown className="ms-2" style={{ height: '100%' }}>
-      <DuplicateButton value={value} history={history} />
-      <JsonExportButton value={value} />
-      <YAMLExportButton value={value} />
-      <DeleteRouteButton globalEnv={globalEnv} history={history} />
-      {menu}
-    </Dropdown>
-  </div>
+  return (
+    <div className="mb-1">
+      <Dropdown className="ms-2" style={{ height: '100%' }}>
+        <DuplicateButton value={value} history={history} />
+        <JsonExportButton value={value} />
+        <YAMLExportButton value={value} />
+        <DeleteRouteButton globalEnv={globalEnv} history={history} />
+        {menu}
+      </Dropdown>
+    </div>
+  );
 }
 
 function ManagerTitle({
@@ -564,13 +566,21 @@ const RoutesView = ({ history, globalEnv }) => {
               <button
                 onClick={() => setCreation(true)}
                 className="btn btn-primary"
-                style={{ _backgroundColor: "var(--color-primary)", _borderColor: "var(--color-primary)", marginLeft: 5 }}>
+                style={{
+                  _backgroundColor: 'var(--color-primary)',
+                  _borderColor: 'var(--color-primary)',
+                  marginLeft: 5,
+                }}>
                 <i className="fas fa-hat-wizard" /> Create with wizard
               </button>
               <button
                 onClick={() => setImportServiceDescriptor(true)}
                 className="btn btn-primary"
-                style={{ _backgroundColor: "var(--color-primary)", _borderColor: "var(--color-primary)", marginLeft: 5 }}>
+                style={{
+                  _backgroundColor: 'var(--color-primary)',
+                  _borderColor: 'var(--color-primary)',
+                  marginLeft: 5,
+                }}>
                 <i className="fas fas fa-exchange-alt" /> Convert a service descriptor
               </button>
             </>

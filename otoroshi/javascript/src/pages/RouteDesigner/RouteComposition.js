@@ -11,13 +11,13 @@ import { Backend, Frontend } from '../../forms/ng_plugins';
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
 export const HTTP_COLORS = {
-  GET: "var(--http_color-get)",
-  POST: "var(--http_color-post)",
-  DELETE: "var(--http_color-delete)",
-  PUT: "var(--http_color-put)",
-  HEAD: "var(--http_color-others)",
-  PATCH: "var(--http_color-others)",
-  OPTIONS: "var(--http_color-others)",
+  GET: 'var(--http_color-get)',
+  POST: 'var(--http_color-post)',
+  DELETE: 'var(--http_color-delete)',
+  PUT: 'var(--http_color-put)',
+  HEAD: 'var(--http_color-others)',
+  PATCH: 'var(--http_color-others)',
+  OPTIONS: 'var(--http_color-others)',
 };
 
 function Methods({ frontend }) {
@@ -154,7 +154,7 @@ class RouteForms extends React.Component {
           </button>
           <button
             className="btn btn-sm me-3"
-            style={{ backgroundColor: "var(--color-primary)", color: '#fff' }}
+            style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}
             title="Switch Form view / Json view"
             onClick={(e) => {
               e.stopPropagation();
@@ -254,7 +254,7 @@ const Route = (props) => {
           {plugins?.length > 0 && <span className="badge bg-dark me-2">custom plugins</span>}
           <button
             className="btn btn-sm"
-            style={{ background: "var(--color-primary)", borderColor: "var(--color-primary)" }}
+            style={{ background: 'var(--color-primary)', borderColor: 'var(--color-primary)' }}
             onClick={onClick}>
             <i className={`fas fa-chevron-${open ? 'up' : 'down'}`} />
           </button>

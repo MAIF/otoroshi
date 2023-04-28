@@ -227,7 +227,9 @@ class PluginsDescription extends Component {
                           justifyContent: 'space-between',
                           alignItems: 'center',
                         }}>
-                        <div style={{ fontSize: 24, color: "var(--color-primary)" }}>{script.name}</div>
+                        <div style={{ fontSize: 24, color: 'var(--color-primary)' }}>
+                          {script.name}
+                        </div>
                       </div>
                       <p
                         style={{ textAlign: 'justify', marginBottom: 10 }}

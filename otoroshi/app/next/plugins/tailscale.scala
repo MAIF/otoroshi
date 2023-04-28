@@ -228,9 +228,9 @@ class TailscaleTargetsJob extends Job {
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
     val config = currentConfig("TailscaleTargetsJob", ctx, env)
     config.map(_.select("predicates").isDefined) match {
-      case None => None
+      case None        => None
       case Some(false) => None
-      case Some(true) => Some(true)
+      case Some(true)  => Some(true)
     }
   }
 
@@ -393,9 +393,9 @@ class TailscaleCertificatesFetcherJob extends Job {
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
     val config = currentConfig("TailscaleCertificatesFetcherJob", ctx, env)
     config.map(_.select("predicates").isDefined) match {
-      case None => None
+      case None        => None
       case Some(false) => None
-      case Some(true) => Some(true)
+      case Some(true)  => Some(true)
     }
   }
 

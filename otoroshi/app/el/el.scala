@@ -176,15 +176,31 @@ object GlobalExpressionLanguage {
                 .orElse(lookup.asOpt[Double].map(_.toString))
                 .orElse(lookup.asOpt[Boolean].map(_.toString))
                 .getOrElse(s"no-ctx-$field")
-            case r"vault://$path@(.*)" => Await.result(env.vaults.fillSecretsAsync("el-exp", s"vault://$path")(env.otoroshiExecutionContext), 5.seconds)
-            case r"global_config.metadata.$name@(.*)" => env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).metadata.get(name).getOrElse(s"no-metadata-${name}")
-            case r"global_config.env.$path@(.*)" => env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).env.at(path).asOpt[JsValue].map {
-              case JsString(str) => str
-              case JsNumber(nbr) => nbr.toString()
-              case JsBoolean(bool) => bool.toString
-              case JsNull => "null"
-              case o => o.stringify
-            }.getOrElse(s"no-global-env-at-$path")
+            case r"vault://$path@(.*)"                                      =>
+              Await.result(
+                env.vaults.fillSecretsAsync("el-exp", s"vault://$path")(env.otoroshiExecutionContext),
+                5.seconds
+              )
+            case r"global_config.metadata.$name@(.*)"                       =>
+              env.datastores.globalConfigDataStore
+                .latest()(env.otoroshiExecutionContext, env)
+                .metadata
+                .get(name)
+                .getOrElse(s"no-metadata-${name}")
+            case r"global_config.env.$path@(.*)"                            =>
+              env.datastores.globalConfigDataStore
+                .latest()(env.otoroshiExecutionContext, env)
+                .env
+                .at(path)
+                .asOpt[JsValue]
+                .map {
+                  case JsString(str)   => str
+                  case JsNumber(nbr)   => nbr.toString()
+                  case JsBoolean(bool) => bool.toString
+                  case JsNull          => "null"
+                  case o               => o.stringify
+                }
+                .getOrElse(s"no-global-env-at-$path")
             case "user.name" if user.isDefined                              => user.get.name
             case "user.email" if user.isDefined                             => user.get.email
             case "user.tokens.id_token" if user.isDefined                   =>

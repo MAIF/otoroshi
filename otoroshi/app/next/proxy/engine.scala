@@ -1119,7 +1119,7 @@ class ProxyEngine() extends RequestHandler {
               val pluginConfig: JsValue = wrapper.plugin.defaultConfig
                 .map(dc => dc ++ wrapper.instance.config.raw)
                 .getOrElse(wrapper.instance.config.raw)
-              val ctx                   = _ctx.copy(config = pluginConfig)
+              val ctx                   = _ctx.copy(config = pluginConfig, idx = wrapper.instance.instanceId)
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
               val item                  = NgReportPluginSequenceItem(
@@ -1292,7 +1292,7 @@ class ProxyEngine() extends RequestHandler {
               val pluginConfig: JsValue = wrapper.plugin.defaultConfig
                 .map(dc => dc ++ wrapper.instance.config.raw)
                 .getOrElse(wrapper.instance.config.raw)
-              val ctx                   = _ctx.copy(config = pluginConfig)
+              val ctx                   = _ctx.copy(config = pluginConfig, idx = wrapper.instance.instanceId)
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
               val item                  = NgReportPluginSequenceItem(
@@ -1672,7 +1672,8 @@ class ProxyEngine() extends RequestHandler {
               val ctx                   = _ctx.copy(
                 config = pluginConfig,
                 apikey = _ctx.apikey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
-                user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey))
+                user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+                idx = wrapper.instance.instanceId
               )
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
@@ -2475,6 +2476,7 @@ class ProxyEngine() extends RequestHandler {
         sequence = sequence,
         markPluginItem = markPluginItem
       )
+
       if (all_plugins.size == 1) {
         val wrapper               = all_plugins.head
         val pluginConfig: JsValue = wrapper.plugin.defaultConfig
@@ -2541,7 +2543,8 @@ class ProxyEngine() extends RequestHandler {
               val ctx                   = _ctx.copy(
                 config = pluginConfig,
                 apikey = _ctx.apikey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
-                user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey))
+                user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+                idx = wrapper.instance.instanceId
               )
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
@@ -3002,7 +3005,8 @@ class ProxyEngine() extends RequestHandler {
               val ctx                   = _ctx.copy(
                 config = pluginConfig,
                 apikey = _ctx.apikey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
-                user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey))
+                user = _ctx.user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
+                idx = wrapper.instance.instanceId
               )
               val debug                 = route.debugFlow || wrapper.instance.debug
               val in: JsValue           = if (debug) Json.obj("ctx" -> ctx.json) else JsNull
@@ -3158,24 +3162,28 @@ class ProxyEngine() extends RequestHandler {
         )
       }
     }
+    val isContentLengthZero: Boolean   = response.headers.getIgnoreCase("Content-Length").contains("0")
     val noContentLengthHeader: Boolean = !response.hasLength // rawResponse.contentLength.isEmpty
     val hasChunkedHeader: Boolean      = response.isChunked /*rawResponse
       .header("Transfer-Encoding")
       .orElse(response.headers.get("Transfer-Encoding"))
       .exists(h => h.toLowerCase().contains("chunked"))*/
+
     val isChunked: Boolean             = rawResponse.isChunked() match { // don't know if actualy legit ...
-      case Some(true)                                                                                   => true
-      case Some(false) if !env.emptyContentLengthIsChunked                                              => hasChunkedHeader
-      case Some(false) if env.emptyContentLengthIsChunked && noContentLengthHeader                      => true
-      case Some(false) if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader => true
-      case Some(false)                                                                                  => false
-      case None if !env.emptyContentLengthIsChunked                                                     =>
+      case _ if isContentLengthZero                                                              => false
+//      case Some(true)                                                                                   => true
+//      case Some(false) if !env.emptyContentLengthIsChunked                                              => hasChunkedHeader
+//      case Some(false) if env.emptyContentLengthIsChunked && noContentLengthHeader                      => true
+//      case Some(false) if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader => true
+//      case Some(false)                                                                                  => false
+      case Some(chunked)                                                                         => chunked
+      case None if !env.emptyContentLengthIsChunked                                              =>
         hasChunkedHeader // false
-      case None if env.emptyContentLengthIsChunked && hasChunkedHeader                                  =>
+      case None if env.emptyContentLengthIsChunked && hasChunkedHeader                           =>
         true
-      case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader        =>
+      case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader =>
         true
-      case _                                                                                            => false
+      case _                                                                                     => false
     }
     val status                         = attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(response.status)
     val isHttp10                       = rawRequest.version == "HTTP/1.0"
@@ -3436,7 +3444,9 @@ class ProxyEngine() extends RequestHandler {
       val hasChunkedHeader: Boolean      = rawResponse
         .header("Transfer-Encoding")
         .exists(h => h.toLowerCase().contains("chunked"))
+      val isContentLengthZero: Boolean   = rawResponse.header("Content-Length").contains("0")
       val isChunked: Boolean             = rawResponse.isChunked() match {
+        case _ if isContentLengthZero                                                              => false
         case Some(chunked)                                                                         => chunked
         case None if !env.emptyContentLengthIsChunked                                              =>
           hasChunkedHeader // false

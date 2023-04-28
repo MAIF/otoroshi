@@ -30,7 +30,7 @@ trait ApiActionContextCapable {
   def apiKey: ApiKey
   def request: RequestHeader
 
-  lazy val forbidden = ApiActionContext.forbidden
+  lazy val forbidden  = ApiActionContext.forbidden
   lazy val fforbidden = ApiActionContext.fforbidden
 
   def user(implicit env: Env): Option[JsValue] =
@@ -50,8 +50,8 @@ trait ApiActionContextCapable {
 
   def userIsSuperAdmin(implicit env: Env): Boolean = {
     backOfficeUser match {
-      case Left(_) => false
-      case Right(None) => false
+      case Left(_)           => false
+      case Right(None)       => false
       case Right(Some(user)) => user.rights.superAdmin
     }
   }
@@ -69,14 +69,14 @@ trait ApiActionContextCapable {
           Right(None)
         } else {
           request.headers.get("Otoroshi-BackOffice-User") match {
-            case None =>
+            case None          =>
               val tenantAccess = apiKey.metadata
                 .get("otoroshi-access-rights")
                 .map(Json.parse)
                 .flatMap(_.asOpt[JsArray])
                 .map(UserRights.readFromArray)
               tenantAccess match {
-                case None => Right(None)
+                case None             => Right(None)
                 case Some(userRights) =>
                   val user = BackOfficeUser(
                     randomId = IdGenerator.token,
@@ -91,25 +91,25 @@ trait ApiActionContextCapable {
                     location = EntityLocation(currentTenant, teams = Seq(TeamId.all))
                   )
                   Right(user.some)
-                case _ => Left("You're not authorized here (invalid setup) ! ")
+                case _                => Left("You're not authorized here (invalid setup) ! ")
               }
             case Some(userJwt) =>
               Try(JWT.require(Algorithm.HMAC512(apiKey.clientSecret)).build().verify(userJwt)) match {
-                case Failure(e) =>
+                case Failure(e)       =>
                   Left("You're not authorized here !")
                 case Success(decoded) => {
                   Option(decoded.getClaim("user"))
                     .flatMap(c => Try(c.asString()).toOption)
                     .flatMap(u => Try(Json.parse(u)).toOption)
                     .flatMap(u => BackOfficeUser.fmt.reads(u).asOpt) match {
-                    case None => Left("You're not authorized here !")
+                    case None       => Left("You're not authorized here !")
                     case Some(user) => Right(user.some)
                   }
                 }
               }
           }
         }
-        ).debug { either =>
+      ).debug { either =>
         bouRef.set(either)
       }
     }
@@ -129,14 +129,14 @@ trait ApiActionContextCapable {
 
   def canUserRead[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
     backOfficeUser match {
-      case Left(_) => false
-      case Right(None) => true
+      case Left(_)           => false
+      case Right(None)       => true
       case Right(Some(user)) =>
         rootOrTenantAdmin(user) {
           item match {
             case _: Tenant =>
               user.rights.canReadTenant(item.location.tenant)
-            case _ =>
+            case _         =>
               (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
                 .canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
           }
@@ -150,15 +150,15 @@ trait ApiActionContextCapable {
 
   def canUserWrite[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
     backOfficeUser match {
-      case Left(_) => false
-      case Right(None) => true
+      case Left(_)           => false
+      case Right(None)       => true
       case Right(Some(user)) =>
         rootOrTenantAdmin(user) {
           item match {
             case _: Tenant =>
               (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
                 .canWriteTenant(item.location.tenant)
-            case _ =>
+            case _         =>
               (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights
                 .canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
           }
@@ -171,8 +171,8 @@ trait ApiActionContextCapable {
       f
     } else {
       backOfficeUser match {
-        case Left(error) => Results.Forbidden(Json.obj("error" -> error)).future
-        case Right(None) => f // standard api usage without limitations
+        case Left(error)       => Results.Forbidden(Json.obj("error" -> error)).future
+        case Right(None)       => f // standard api usage without limitations
         case Right(Some(user)) =>
           if (rc.canPerform(user, currentTenant)) {
             f
@@ -184,17 +184,17 @@ trait ApiActionContextCapable {
   }
 
   private def findServiceById(
-                               serviceId: String
-                             )(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]] = {
+      serviceId: String
+  )(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]] = {
     env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
       case Some(service) => service.some.vfuture
-      case None =>
+      case None          =>
         env.datastores.routeDataStore.findById(serviceId) flatMap {
           case Some(service) => service.legacy.some.vfuture
-          case None =>
+          case None          =>
             env.datastores.routeCompositionDataStore.findById(serviceId) map {
               case Some(service) => service.toRoutes.head.legacy.some
-              case None => None
+              case None          => None
             }
         }
     }
@@ -207,7 +207,7 @@ trait ApiActionContextCapable {
     } else {
       findServiceById(id).flatMap {
         case Some(service) if canUserRead(service) => f
-        case _ => fforbidden
+        case _                                     => fforbidden
       }
     }
   }
@@ -215,35 +215,35 @@ trait ApiActionContextCapable {
   def canWriteService(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     findServiceById(id).flatMap {
       case Some(service) if canUserWrite(service) => f
-      case _ => fforbidden
+      case _                                      => fforbidden
     }
   }
 
   def canReadApikey(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.apiKeyDataStore.findById(id).flatMap {
       case Some(service) if canUserRead(service) => f
-      case _ => fforbidden
+      case _                                     => fforbidden
     }
   }
 
   def canWriteApikey(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.apiKeyDataStore.findById(id).flatMap {
       case Some(service) if canUserWrite(service) => f
-      case _ => fforbidden
+      case _                                      => fforbidden
     }
   }
 
   def canReadGroup(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.serviceGroupDataStore.findById(id).flatMap {
       case Some(service) if canUserRead(service) => f
-      case _ => fforbidden
+      case _                                     => fforbidden
     }
   }
 
   def canWriteGroup(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.serviceGroupDataStore.findById(id).flatMap {
       case Some(service) if canUserWrite(service) => f
-      case _ => fforbidden
+      case _                                      => fforbidden
     }
   }
 
@@ -251,14 +251,12 @@ trait ApiActionContextCapable {
     // env.datastores.authConfigsDataStore.findById(id).flatMap {
     env.proxyState.authModuleAsync(id).flatMap {
       case Some(mod) if canUserWrite(mod) => f
-      case _ => fforbidden
+      case _                              => fforbidden
     }
   }
 }
 
-case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) extends ApiActionContextCapable {
-
-}
+case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) extends ApiActionContextCapable {}
 
 class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
     extends ActionBuilder[ApiActionContext, AnyContent]

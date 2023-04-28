@@ -14,7 +14,7 @@ const CodeInput = React.lazy(() => Promise.resolve(require('../inputs/CodeInput'
 const ReadOnlyField = ({ value, pre }) => {
   if (pre) {
     return (
-      <pre className="d-flex align-items-center" style={{ height: '100%'}}>
+      <pre className="d-flex align-items-center" style={{ height: '100%' }}>
         {value}
       </pre>
     );
@@ -122,14 +122,13 @@ export class NgDotsRenderer extends Component {
               let opacityFromOption = 1;
               // let btnBackground = '';
 
-              if (option.color)
-                backgroundColorFromOption = `${option.color}`;
-                opacityFromOption= `${selected ? 1 : 0.45}`;
+              if (option.color) backgroundColorFromOption = `${option.color}`;
+              opacityFromOption = `${selected ? 1 : 0.45}`;
 
               let style = {
                 borderRadius: '24px',
                 backgroundColor: backgroundColorFromOption,
-                opacity:opacityFromOption
+                opacity: opacityFromOption,
               };
 
               if (backgroundColorFromOption) {
@@ -265,9 +264,7 @@ export function LabelAndInput(_props) {
         {label.replace(/_/g, ' ')}{' '}
         {_props.help && (
           <span>
-            <i 
-            className="far fa-question-circle"
-            data-tip={_props.help} />
+            <i className="far fa-question-circle" data-tip={_props.help} />
             <ReactTooltip />
           </span>
         )}

@@ -469,10 +469,10 @@ const ExporterTryIt = ({ exporter }) => {
               style={{
                 color:
                   status === 'Successful'
-                    ? "var(--color-green)"
+                    ? 'var(--color-green)'
                     : status === 'Not tested'
                     ? '#f39c12'
-                    : "var(--color-red)",
+                    : 'var(--color-red)',
                 display: 'flex',
                 alignItems: 'center',
                 width: 'fit-content',

@@ -1204,7 +1204,9 @@ class ClientCredentialService extends RequestSink {
               val privKeyValue = apiKey.metadata.get("biscuit_pubkey").orElse(biscuitConf.privkey)
               val keypair      = new KeyPair(privKeyValue.get)
               val rng          = new SecureRandom()
-              Biscuit.make(rng, keypair, io.vavr.control.Option.none(), symbols, authority_builder.build()).serialize_b64url()
+              Biscuit
+                .make(rng, keypair, io.vavr.control.Option.none(), symbols, authority_builder.build())
+                .serialize_b64url()
             }
 
             val pass = scope.forall { s =>

@@ -48,7 +48,7 @@
       formFlow = ['_loc', 'id', 'name', 'description', 'tags', 'metadata'];
     
       componentDidMount() {
-        this.props.setTitle(`All service groups`);
+        this.props.setTitle(`All foos`);
       }
 
       client = BackOfficeServices.apisClient('foo.extensions.otoroshi.io', 'v1', 'foos');

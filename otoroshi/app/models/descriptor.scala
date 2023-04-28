@@ -41,7 +41,7 @@ import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
 import otoroshi.utils.infotoken.InfoTokenHelper
 
 case class ServiceDescriptorQuery(
@@ -689,12 +689,39 @@ object IpFiltering {
   }
 }
 
-case class HealthCheck(enabled: Boolean, url: String) {
-  def toJson = HealthCheck.format.writes(this)
+case class HealthCheck(
+    enabled: Boolean,
+    url: String,
+    timeout: Int = 5000,
+    healthyStatuses: Seq[Int] = Seq.empty,
+    unhealthyStatuses: Seq[Int] = Seq.empty
+) {
+  def toJson = Json.obj(
+    "enabled"           -> enabled,
+    "url"               -> url,
+    "timeout"           -> timeout,
+    "healthyStatuses"   -> healthyStatuses,
+    "unhealthyStatuses" -> unhealthyStatuses
+  )
 }
 
 object HealthCheck {
-  implicit val format = Json.format[HealthCheck]
+  implicit val format = new Format[HealthCheck] {
+    override def reads(json: JsValue): JsResult[HealthCheck] = Try {
+      HealthCheck(
+        enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
+        url = json.select("url").asOpt[String].getOrElse(""),
+        timeout = json.select("timeout").asOpt[Int].getOrElse(5000),
+        healthyStatuses = json.select("healthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty),
+        unhealthyStatuses = json.select("unhealthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+      )
+    } match {
+      case Failure(exception) => JsError(exception.getMessage)
+      case Success(value)     => JsSuccess(value)
+    }
+
+    override def writes(o: HealthCheck): JsValue = o.toJson
+  }
   val empty           = HealthCheck(false, "/")
 }
 

@@ -26,10 +26,10 @@ import scala.util.{Failure, Success, Try}
 
 class NgHasClientCertValidator extends NgAccessValidator {
 
-  override def name: String = "Client Certificate Only"
-  override def description: Option[String] = "Check if a client certificate is present in the request".some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
+  override def name: String                                = "Client Certificate Only"
+  override def description: Option[String]                 = "Check if a client certificate is present in the request".some
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
@@ -39,33 +39,34 @@ class NgHasClientCertValidator extends NgAccessValidator {
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.request.clientCertificateChain match {
       case Some(_) => NgAccess.NgAllowed.vfuture
-      case _ => Errors
-        .craftResponseResult(
-          "forbidden",
-          Results.Forbidden,
-          ctx.request,
-          None,
-          None,
-          duration = ctx.report.getDurationNow(),
-          overhead = ctx.report.getOverheadInNow(),
-          attrs = ctx.attrs,
-          maybeRoute = ctx.route.some
-        )
-        .map(r => NgAccess.NgDenied(r))
+      case _       =>
+        Errors
+          .craftResponseResult(
+            "forbidden",
+            Results.Forbidden,
+            ctx.request,
+            None,
+            None,
+            duration = ctx.report.getDurationNow(),
+            overhead = ctx.report.getOverheadInNow(),
+            attrs = ctx.attrs,
+            maybeRoute = ctx.route.some
+          )
+          .map(r => NgAccess.NgDenied(r))
     }
   }
 }
 
 class NgHasClientCertMatchingApikeyValidator extends NgAccessValidator {
 
-  override def name: String = "Client Certificate + Api Key only"
+  override def name: String                = "Client Certificate + Api Key only"
   override def description: Option[String] =
-      """Check if a client certificate is present in the request and that the apikey used matches the client certificate.
+    """Check if a client certificate is present in the request and that the apikey used matches the client certificate.
         |You can set the client cert. DN in an apikey metadata named `allowed-client-cert-dn`
         |""".stripMargin.some
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
@@ -98,19 +99,20 @@ class NgHasClientCertMatchingApikeyValidator extends NgAccessValidator {
                 ctx.request.clientCertificateChain match {
                   case Some(chain) =>
                     chain.headOption match {
-                      case Some(cert) => RegexPool(dn).matches(DN(cert.getIssuerDN.getName).stringify) match {
-                        case false => forbidden(ctx)
-                        case true => NgAccess.NgAllowed.vfuture
-                      }
-                      case None => forbidden(ctx)
+                      case Some(cert) =>
+                        RegexPool(dn).matches(DN(cert.getIssuerDN.getName).stringify) match {
+                          case false => forbidden(ctx)
+                          case true  => NgAccess.NgAllowed.vfuture
+                        }
+                      case None       => forbidden(ctx)
                     }
-                  case None => forbidden(ctx)
+                  case None        => forbidden(ctx)
                 }
-              case None => forbidden(ctx)
+              case None     => forbidden(ctx)
             }
-          case None => forbidden(ctx)
+          case None         => forbidden(ctx)
         }
-      case _ => forbidden(ctx)
+      case _       => forbidden(ctx)
     }
   }
 }
@@ -118,31 +120,31 @@ class NgHasClientCertMatchingApikeyValidator extends NgAccessValidator {
 case class SubIss(sn: String, subject: DN, issuer: DN)
 
 case class NgHasClientCertMatchingValidatorConfig(
-  serialNumbers: Seq[String] = Seq.empty,
-  subjectDNs: Seq[String] = Seq.empty,
-  issuerDNs: Seq[String] = Seq.empty,
-  regexSubjectDNs: Seq[String] = Seq.empty,
-  regexIssuerDNs: Seq[String] = Seq.empty,
+    serialNumbers: Seq[String] = Seq.empty,
+    subjectDNs: Seq[String] = Seq.empty,
+    issuerDNs: Seq[String] = Seq.empty,
+    regexSubjectDNs: Seq[String] = Seq.empty,
+    regexIssuerDNs: Seq[String] = Seq.empty
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
-    "serial_numbers" -> serialNumbers,
-    "subject_dns" -> subjectDNs,
-    "issuer_dns" -> issuerDNs,
+    "serial_numbers"    -> serialNumbers,
+    "subject_dns"       -> subjectDNs,
+    "issuer_dns"        -> issuerDNs,
     "regex_subject_dns" -> regexSubjectDNs,
-    "regex_issuer_dns" -> regexIssuerDNs,
+    "regex_issuer_dns"  -> regexIssuerDNs
   )
 }
 
 object NgHasClientCertMatchingValidatorConfig {
   val format = new Format[NgHasClientCertMatchingValidatorConfig] {
-    override def writes(o: NgHasClientCertMatchingValidatorConfig): JsValue = o.json
+    override def writes(o: NgHasClientCertMatchingValidatorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgHasClientCertMatchingValidatorConfig] = Try {
       NgHasClientCertMatchingValidatorConfig(
         serialNumbers = json.select("serial_numbers").asOpt[Seq[String]].getOrElse(Seq.empty),
         subjectDNs = json.select("subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
         issuerDNs = json.select("issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
         regexSubjectDNs = json.select("regex_subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
-        regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
+        regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -153,14 +155,14 @@ object NgHasClientCertMatchingValidatorConfig {
 
 class NgHasClientCertMatchingValidator extends NgAccessValidator {
 
-  override def name: String = "Client certificate matching"
-  override def description: Option[String] = "Check if client certificate matches the following configuration".some
+  override def name: String                                = "Client certificate matching"
+  override def description: Option[String]                 = "Check if client certificate matches the following configuration".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHasClientCertMatchingValidatorConfig().some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
   def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
@@ -186,14 +188,16 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
         )
       ) match {
       case Some(certs) => {
-        val config = context.cachedConfig(internalName)(NgHasClientCertMatchingValidatorConfig.format).getOrElse(NgHasClientCertMatchingValidatorConfig())
+        val config = context
+          .cachedConfig(internalName)(NgHasClientCertMatchingValidatorConfig.format)
+          .getOrElse(NgHasClientCertMatchingValidatorConfig())
         if (
           certs.exists(cert => config.serialNumbers.contains(cert.sn)) ||
-            certs.exists(cert => config.subjectDNs.exists(s => RegexPool(s).matches(cert.subject.stringify))) ||
-            certs.exists(cert => config.issuerDNs.exists(s => RegexPool(s).matches(cert.issuer.stringify))) ||
-            certs
-              .exists(cert => config.regexSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.subject.stringify))) ||
-            certs.exists(cert => config.regexIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.issuer.stringify)))
+          certs.exists(cert => config.subjectDNs.exists(s => RegexPool(s).matches(cert.subject.stringify))) ||
+          certs.exists(cert => config.issuerDNs.exists(s => RegexPool(s).matches(cert.issuer.stringify))) ||
+          certs
+            .exists(cert => config.regexSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.subject.stringify))) ||
+          certs.exists(cert => config.regexIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.issuer.stringify)))
         ) {
           NgAccess.NgAllowed.vfuture
         } else {
@@ -211,21 +215,21 @@ case class NgClientCertChainHeaderConfig(
     sendDns: Boolean = false,
     dnsHeaderName: String = "X-Client-Cert-DNs",
     sendChain: Boolean = false,
-    chainHeaderName: String = "X-Client-Cert-Chain",
+    chainHeaderName: String = "X-Client-Cert-Chain"
 ) extends NgPluginConfig {
   def json: JsValue = Json.obj(
-    "send_pem" -> sendPem,
-    "pem_header_name" -> pemHeaderName,
-    "send_dns" -> sendDns,
-    "dns_header_name" -> dnsHeaderName,
-    "send_chain" -> sendChain,
-    "chain_header_name" -> chainHeaderName,
+    "send_pem"          -> sendPem,
+    "pem_header_name"   -> pemHeaderName,
+    "send_dns"          -> sendDns,
+    "dns_header_name"   -> dnsHeaderName,
+    "send_chain"        -> sendChain,
+    "chain_header_name" -> chainHeaderName
   )
 }
 
 object NgClientCertChainHeaderConfig {
   val format = new Format[NgClientCertChainHeaderConfig] {
-    override def writes(o: NgClientCertChainHeaderConfig): JsValue = o.json
+    override def writes(o: NgClientCertChainHeaderConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgClientCertChainHeaderConfig] = Try {
       NgClientCertChainHeaderConfig(
         sendPem = json.select("send_pem").asOpt[Boolean].getOrElse(false),
@@ -233,7 +237,7 @@ object NgClientCertChainHeaderConfig {
         sendDns = json.select("send_dns").asOpt[Boolean].getOrElse(false),
         dnsHeaderName = json.select("dns_header_name").asOpt[String].getOrElse("X-Client-Cert-DNs"),
         sendChain = json.select("send_chain").asOpt[Boolean].getOrElse(false),
-        chainHeaderName = json.select("chain_header_name").asOpt[String].getOrElse("X-Client-Cert-Chain"),
+        chainHeaderName = json.select("chain_header_name").asOpt[String].getOrElse("X-Client-Cert-Chain")
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -244,31 +248,32 @@ object NgClientCertChainHeaderConfig {
 
 class NgClientCertChainHeader extends NgRequestTransformer {
 
-  override def name: String = "Client certificate header"
-  override def description: Option[String] = "This plugin pass client certificate informations to the target in headers".some
+  override def name: String                = "Client certificate header"
+  override def description: Option[String] =
+    "This plugin pass client certificate informations to the target in headers".some
 
   override def defaultConfigObject: Option[NgPluginConfig] = NgClientCertChainHeaderConfig().some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
-  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Headers)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.TransformRequest)
 
   private def jsonChain(chain: Seq[X509Certificate]): JsArray = {
     JsArray(
       chain.map(c =>
         Json.obj(
-          "subjectDN" -> DN(c.getSubjectDN.getName).stringify,
-          "issuerDN" -> DN(c.getIssuerDN.getName).stringify,
-          "notAfter" -> c.getNotAfter.getTime,
-          "notBefore" -> c.getNotBefore.getTime,
+          "subjectDN"    -> DN(c.getSubjectDN.getName).stringify,
+          "issuerDN"     -> DN(c.getIssuerDN.getName).stringify,
+          "notAfter"     -> c.getNotAfter.getTime,
+          "notBefore"    -> c.getNotBefore.getTime,
           "serialNumber" -> c.getSerialNumber.toString(16),
-          "subjectCN" -> Option(DN(c.getSubjectDN.getName).stringify)
+          "subjectCN"    -> Option(DN(c.getSubjectDN.getName).stringify)
             .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
             .map(_.replace("CN=", "").replace("cn=", ""))
             .getOrElse(DN(c.getSubjectDN.getName).stringify)
             .asInstanceOf[String],
-          "issuerCN" -> Option(DN(c.getIssuerDN.getName).stringify)
+          "issuerCN"     -> Option(DN(c.getIssuerDN.getName).stringify)
             .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
             .map(_.replace("CN=", "").replace("cn=", ""))
             .getOrElse(DN(c.getIssuerDN.getName).stringify)
@@ -278,16 +283,27 @@ class NgClientCertChainHeader extends NgRequestTransformer {
     )
   }
 
-  override def transformRequest(ctx: NgTransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     ctx.request.clientCertificateChain match {
       case None        => Right(ctx.otoroshiRequest).future
       case Some(chain) => {
-        val config = ctx.cachedConfig(internalName)(NgClientCertChainHeaderConfig.format).getOrElse(NgClientCertChainHeaderConfig())
-        val pemMap = if (config.sendPem) Map(config.pemHeaderName -> ctx.request.clientCertChainPemString) else Map.empty
-        val dnsMap =
-          if (config.sendDns) Map(config.dnsHeaderName -> Json.stringify(JsArray(chain.map(c => JsString(DN(c.getSubjectDN.getName).stringify)))))
+        val config   = ctx
+          .cachedConfig(internalName)(NgClientCertChainHeaderConfig.format)
+          .getOrElse(NgClientCertChainHeaderConfig())
+        val pemMap   =
+          if (config.sendPem) Map(config.pemHeaderName -> ctx.request.clientCertChainPemString) else Map.empty
+        val dnsMap   =
+          if (config.sendDns)
+            Map(
+              config.dnsHeaderName -> Json.stringify(
+                JsArray(chain.map(c => JsString(DN(c.getSubjectDN.getName).stringify)))
+              )
+            )
           else Map.empty
-        val chainMap = if (config.sendChain) Map(config.chainHeaderName -> Json.stringify(jsonChain(chain))) else Map.empty
+        val chainMap =
+          if (config.sendChain) Map(config.chainHeaderName -> Json.stringify(jsonChain(chain))) else Map.empty
         Right(
           ctx.otoroshiRequest.copy(
             headers = ctx.otoroshiRequest.headers ++ pemMap ++ dnsMap ++ chainMap
@@ -299,30 +315,30 @@ class NgClientCertChainHeader extends NgRequestTransformer {
 }
 
 case class NgCertificateAsApikeyConfig(
-  readOnly: Boolean = false,
-  allowClientIdOnly: Boolean = false,
-  throttlingQuota: Long = 100,
-  dailyQuota: Long = RemainingQuotas.MaxValue,
-  monthlyQuota: Long = RemainingQuotas.MaxValue,
-  constrainedServicesOnly: Boolean = false,
-  tags: Seq[String] = Seq.empty,
-  metadata: Map[String, String] = Map.empty,
+    readOnly: Boolean = false,
+    allowClientIdOnly: Boolean = false,
+    throttlingQuota: Long = 100,
+    dailyQuota: Long = RemainingQuotas.MaxValue,
+    monthlyQuota: Long = RemainingQuotas.MaxValue,
+    constrainedServicesOnly: Boolean = false,
+    tags: Seq[String] = Seq.empty,
+    metadata: Map[String, String] = Map.empty
 ) extends NgPluginConfig {
   def json: JsValue = Json.obj(
-    "read_only" -> readOnly,
-    "allow_client_id_only" -> allowClientIdOnly,
-    "throttling_quota" -> throttlingQuota,
-    "daily_quota" -> dailyQuota,
-    "monthly_quota" -> monthlyQuota,
+    "read_only"                 -> readOnly,
+    "allow_client_id_only"      -> allowClientIdOnly,
+    "throttling_quota"          -> throttlingQuota,
+    "daily_quota"               -> dailyQuota,
+    "monthly_quota"             -> monthlyQuota,
     "constrained_services_only" -> constrainedServicesOnly,
-    "tags" -> tags,
-    "metadata" -> metadata,
+    "tags"                      -> tags,
+    "metadata"                  -> metadata
   )
 }
 
 object NgCertificateAsApikeyConfig {
   val format = new Format[NgCertificateAsApikeyConfig] {
-    override def writes(o: NgCertificateAsApikeyConfig): JsValue = o.json
+    override def writes(o: NgCertificateAsApikeyConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgCertificateAsApikeyConfig] = Try {
       NgCertificateAsApikeyConfig(
         readOnly = json.select("read_only").asOpt[Boolean].getOrElse(false),
@@ -332,7 +348,7 @@ object NgCertificateAsApikeyConfig {
         monthlyQuota = json.select("monthly_quota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
         constrainedServicesOnly = json.select("constrained_services_only").asOpt[Boolean].getOrElse(false),
         tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
-        metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -343,29 +359,33 @@ object NgCertificateAsApikeyConfig {
 
 class NgCertificateAsApikey extends NgPreRouting {
 
-  override def name: String = "Client certificate as apikey"
-  override def description: Option[String] = "This plugin uses client certificate as an apikey. The apikey will be stored for classic apikey usage".some
+  override def name: String                                = "Client certificate as apikey"
+  override def description: Option[String]                 =
+    "This plugin uses client certificate as an apikey. The apikey will be stored for classic apikey usage".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgCertificateAsApikeyConfig().some
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
+  override def multiInstance: Boolean            = true
+  override def core: Boolean                     = true
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  override def preRoute(
+      ctx: NgPreRoutingContext
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     ctx.request.clientCertificateChain.flatMap(_.headOption) match {
-      case None => Done.rightf
+      case None       => Done.rightf
       case Some(cert) => {
-        val config = ctx.cachedConfig(internalName)(NgCertificateAsApikeyConfig.format).getOrElse(NgCertificateAsApikeyConfig())
+        val config       =
+          ctx.cachedConfig(internalName)(NgCertificateAsApikeyConfig.format).getOrElse(NgCertificateAsApikeyConfig())
         val serialNumber = cert.getSerialNumber.toString
-        val subjectDN = DN(cert.getSubjectDN.getName).stringify
-        val clientId = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
+        val subjectDN    = DN(cert.getSubjectDN.getName).stringify
+        val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
         env.datastores.apiKeyDataStore
           .findById(clientId)
           .flatMap {
             case Some(apikey) => apikey.vfuture
-            case None => {
+            case None         => {
               val apikey = ApiKey(
                 clientId = clientId,
                 clientSecret = IdGenerator.token(128),
@@ -379,7 +399,7 @@ class NgCertificateAsApikey extends NgPreRouting {
                 monthlyQuota = config.monthlyQuota,
                 constrainedServicesOnly = config.constrainedServicesOnly,
                 tags = config.tags,
-                metadata = config.metadata,
+                metadata = config.metadata
               )
               if (env.clusterConfig.mode.isWorker) {
                 ClusterAgent.clusterSaveApikey(env, apikey)(ec, env.otoroshiMaterializer)
@@ -397,31 +417,35 @@ class NgCertificateAsApikey extends NgPreRouting {
 }
 
 case class NgHasClientCertMatchingHttpValidatorConfig(
- url: String = "https://validate.foo.bar",
- method: String = "GET",
- timeout: Long = 2000,
- headers: Map[String, String] = Map.empty,
- tls: NgTlsConfig = NgTlsConfig.default,
+    url: String = "https://validate.foo.bar",
+    method: String = "GET",
+    timeout: Long = 2000,
+    headers: Map[String, String] = Map.empty,
+    tls: NgTlsConfig = NgTlsConfig.default
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
-    "url" -> url,
-    "method" -> method,
+    "url"     -> url,
+    "method"  -> method,
     "timeout" -> timeout,
     "headers" -> headers,
-    "tls" -> tls.json,
+    "tls"     -> tls.json
   )
 }
 
 object NgHasClientCertMatchingHttpValidatorConfig {
   val format = new Format[NgHasClientCertMatchingHttpValidatorConfig] {
-    override def writes(o: NgHasClientCertMatchingHttpValidatorConfig): JsValue = o.json
+    override def writes(o: NgHasClientCertMatchingHttpValidatorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgHasClientCertMatchingHttpValidatorConfig] = Try {
       NgHasClientCertMatchingHttpValidatorConfig(
         url = json.select("url").asString,
         method = json.select("method").asOpt[String].getOrElse("GET"),
         timeout = json.select("timeout").asOpt[Long].getOrElse(2000),
         headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tls = json.select("tls").asOpt[JsValue].flatMap(json => NgTlsConfig.format.reads(json).asOpt).getOrElse(NgTlsConfig.default),
+        tls = json
+          .select("tls")
+          .asOpt[JsValue]
+          .flatMap(json => NgTlsConfig.format.reads(json).asOpt)
+          .getOrElse(NgTlsConfig.default)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -432,15 +456,16 @@ object NgHasClientCertMatchingHttpValidatorConfig {
 
 class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
 
-  override def name: String = "Client certificate matching (over http)"
-  override def description: Option[String] = "Check if client certificate matches the following fetched from an http endpoint".some
+  override def name: String                                = "Client certificate matching (over http)"
+  override def description: Option[String]                 =
+    "Check if client certificate matches the following fetched from an http endpoint".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgHasClientCertMatchingValidatorConfig().some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
-  private val cache = new LegitTrieMap[String, (Long, JsValue)]
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  private val cache                                        = new LegitTrieMap[String, (Long, JsValue)]
 
   def forbidden(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
@@ -458,29 +483,32 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
       .map(r => NgAccess.NgDenied(r))
   }
 
-  private def validate(certs: Seq[X509Certificate], values: JsValue, ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val allowedSerialNumbers =
+  private def validate(certs: Seq[X509Certificate], values: JsValue, ctx: NgAccessContext)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[NgAccess] = {
+    val allowedSerialNumbers   =
       (values \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-    val allowedSubjectDNs =
+    val allowedSubjectDNs      =
       (values \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-    val allowedIssuerDNs =
+    val allowedIssuerDNs       =
       (values \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
     val regexAllowedSubjectDNs =
       (values \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-    val regexAllowedIssuerDNs =
+    val regexAllowedIssuerDNs  =
       (values \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
     if (
       certs.exists(cert => allowedSerialNumbers.exists(s => s == cert.getSerialNumber.toString(16))) ||
-        certs
-          .exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(DN(cert.getSubjectDN.getName).stringify))) ||
-        certs
-          .exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(DN(cert.getIssuerDN.getName).stringify))) ||
-        certs.exists(cert =>
-          regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getSubjectDN.getName).stringify))
-        ) ||
-        certs.exists(cert =>
-          regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getIssuerDN.getName).stringify))
-        )
+      certs
+        .exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(DN(cert.getSubjectDN.getName).stringify))) ||
+      certs
+        .exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(DN(cert.getIssuerDN.getName).stringify))) ||
+      certs.exists(cert =>
+        regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getSubjectDN.getName).stringify))
+      ) ||
+      certs.exists(cert =>
+        regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getIssuerDN.getName).stringify))
+      )
     ) {
       NgAccess.NgAllowed.vfuture
     } else {
@@ -489,8 +517,8 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
   }
 
   private def fetch(method: String, url: String, headers: Map[String, String], timeout: Long, tls: NgTlsConfig)(implicit
-                                                                                                  env: Env,
-                                                                                                  ec: ExecutionContext
+      env: Env,
+      ec: ExecutionContext
   ): Future[JsValue] = {
     env.MtlsWs
       .url(url, tls.legacy)
@@ -502,7 +530,7 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
         case r if r.status == 200 =>
           cache.put(url, (System.currentTimeMillis(), r.json))
           r.json
-        case _ =>
+        case _                    =>
           cache.put(url, (System.currentTimeMillis(), Json.obj()))
           Json.obj()
       }
@@ -516,19 +544,23 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     ctx.request.clientCertificateChain match {
       case Some(certs) => {
-        val config = ctx.cachedConfig(internalName)(NgHasClientCertMatchingHttpValidatorConfig.format).getOrElse(NgHasClientCertMatchingHttpValidatorConfig())
-        val start = System.currentTimeMillis()
+        val config = ctx
+          .cachedConfig(internalName)(NgHasClientCertMatchingHttpValidatorConfig.format)
+          .getOrElse(NgHasClientCertMatchingHttpValidatorConfig())
+        val start  = System.currentTimeMillis()
         cache.get(config.url) match {
-          case None =>
-            fetch(config.method, config.url, config.headers, config.timeout, config.tls).flatMap(b => validate(certs, b, ctx))
+          case None                                                   =>
+            fetch(config.method, config.url, config.headers, config.timeout, config.tls).flatMap(b =>
+              validate(certs, b, ctx)
+            )
           case Some((time, values)) if start - time <= config.timeout =>
             validate(certs, values, ctx)
-          case Some((time, values)) if start - time > config.timeout =>
+          case Some((time, values)) if start - time > config.timeout  =>
             fetch(config.method, config.url, config.headers, config.timeout, config.tls)
             validate(certs, values, ctx)
         }
       }
-      case _ => forbidden(ctx)
+      case _           => forbidden(ctx)
     }
   }
 }

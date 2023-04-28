@@ -36,7 +36,7 @@ const LINKS = (entity, route) =>
     },
     {
       to: `/${entity}/${route.id}/apikeys`,
-      icon: 'fa-lock',
+      icon: 'fa-key',
       title: 'API Keys',
       tab: 'apikeys',
       tooltip: { ...createTooltip(`Manage all API keys that can access`) },
@@ -60,23 +60,37 @@ export default ({ route, setSidebarContent }) => {
     <div
       className="d-flex"
       style={{
-        flexDirection: 'column',
-        position: 'relative',
-        borderBottom: `${!openedSidebar ? '1px solid #fff' : 'none'}`,
-        padding: openedSidebar ? 'inherit' : '12px 0 6px'
+        // flexDirection: 'column',
+        // position: 'relative',
+        // borderBottom: `${!openedSidebar ? '1px solid #fff' : 'none'}`,
+        padding: openedSidebar ? 'inherit' : '12px 0 6px',
       }}>
       <ul className="nav flex-column nav-sidebar">
         <li className="nav-item mb-1">
-          <Link to={`/${entity.link}/${route.id}?tab=flow`} className='p-2 m-0'>
-            <i className="fas fa-road" /> {openedSidebar ? route.name : ''}
+          <Link
+            to={`/${entity.link}/${route.id}?tab=flow`}
+            className="d-flex align-items-center m-0 p-2 nav-link">
+            <div style={{ width: '20px' }} className="d-flex justify-content-center">
+              <i className="fas fa-road"></i>
+            </div>
+            <div className="title" style={{ marginLeft: '4px' }}>
+              {' '}
+              {openedSidebar ? route.name : ''}
+            </div>
           </Link>
         </li>
         {LINKS(entity.link, route).map(({ to, icon, title, tooltip, tab }) => (
           <li className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`} key={title}>
             <Link
-              to={to} {...(tooltip || {})}
-              className={`nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''} p-2 m-0 ${isActive(tab)}`}>
-              <i className={`fas ${icon}`} /> {openedSidebar ? title : ''}
+              to={to}
+              {...(tooltip || {})}
+              className={`d-flex align-items-center nav-link ${isActive(tab)} ${
+                openedSidebar ? 'ms-3' : ''
+              } m-0 ${isActive(tab)}`}>
+              <div style={{ width: '20px' }} className="d-flex justify-content-center">
+                <i className={`fas ${icon}`} />
+              </div>
+              <div className="title"> {openedSidebar ? title : ''}</div>
             </Link>
           </li>
         ))}

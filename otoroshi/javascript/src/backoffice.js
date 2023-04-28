@@ -206,7 +206,7 @@ export function registerExtension(name, thunk) {
       lodash,
       moment,
       uuid,
-    }
+    },
   };
   _extensions[name] = thunk(ctx);
 }

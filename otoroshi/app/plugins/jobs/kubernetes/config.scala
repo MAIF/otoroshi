@@ -77,37 +77,41 @@ object KubernetesConfig {
   import collection.JavaConverters._
   def theConfig(ctx: ContextWithConfig)(implicit env: Env, ec: ExecutionContext): KubernetesConfig = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
-    val conf = ctx
+    val conf         = ctx
       .configForOpt("KubernetesConfig")
       .orElse((globalConfig.scripts.jobConfig \ "KubernetesConfig").asOpt[JsValue])
       .orElse((globalConfig.plugins.config \ "KubernetesConfig").asOpt[JsValue])
       .getOrElse(Json.obj())
     conf match {
-      case JsArray(values) => {
+      case JsArray(values)                                                              => {
         val context = Json.obj(
-          "env" -> globalConfig.env,
+          "env"      -> globalConfig.env,
           "instance" -> env.configurationJson.select("otoroshi").select("instance").asValue
         )
-        val cfg = values.find { value =>
-          value.select("predicates").asOpt[Seq[JsObject]] match {
-            case None => false
-            case Some(predicates) => {
-              val validators = predicates.map(v => JsonPathValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
-              validators.forall(_.validate(context))
+        val cfg     = values
+          .find { value =>
+            value.select("predicates").asOpt[Seq[JsObject]] match {
+              case None             => false
+              case Some(predicates) => {
+                val validators =
+                  predicates.map(v => JsonPathValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
+                validators.forall(_.validate(context))
+              }
             }
           }
-        }.getOrElse {
-          throw new RuntimeException("Unable to read kubernetes config on this instance !")
-        }
+          .getOrElse {
+            throw new RuntimeException("Unable to read kubernetes config on this instance !")
+          }
         theConfig(cfg)
       }
       case obj @ JsObject(_) if obj.select("predicates").asOpt[Seq[JsObject]].isDefined => {
         obj.select("predicates").asOpt[Seq[JsObject]] match {
-          case None => theConfig(obj)
+          case None             => theConfig(obj)
           case Some(predicates) => {
-            val validators = predicates.map(v => JsonPathValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
-            val context = Json.obj(
-              "env" -> globalConfig.env,
+            val validators =
+              predicates.map(v => JsonPathValidator.format.reads(v)).collect { case JsSuccess(value, _) => value }
+            val context    = Json.obj(
+              "env"      -> globalConfig.env,
               "instance" -> env.configurationJson.select("otoroshi").select("instance").asValue
             )
             if (validators.forall(_.validate(context))) {
@@ -118,8 +122,8 @@ object KubernetesConfig {
           }
         }
       }
-      case JsObject(_) => theConfig(conf)
-      case _ => theConfig(conf)
+      case JsObject(_)                                                                  => theConfig(conf)
+      case _                                                                            => theConfig(conf)
     }
 
   }

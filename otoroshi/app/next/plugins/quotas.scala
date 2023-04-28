@@ -173,25 +173,25 @@ class ApikeyQuotas extends NgAccessValidator {
 }
 
 case class NgServiceQuotasConfig(
-                                  throttlingQuota: Long = RemainingQuotas.MaxValue,
-                                  dailyQuota: Long = RemainingQuotas.MaxValue,
-                                  monthlyQuota: Long = RemainingQuotas.MaxValue
-                                ) extends NgPluginConfig {
+    throttlingQuota: Long = RemainingQuotas.MaxValue,
+    dailyQuota: Long = RemainingQuotas.MaxValue,
+    monthlyQuota: Long = RemainingQuotas.MaxValue
+) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
     "throttling_quota" -> throttlingQuota,
-    "daily_quota" -> dailyQuota,
-    "monthly_quota" -> monthlyQuota,
+    "daily_quota"      -> dailyQuota,
+    "monthly_quota"    -> monthlyQuota
   )
 }
 
 object NgServiceQuotasConfig {
   val format = new Format[NgServiceQuotasConfig] {
-    override def writes(o: NgServiceQuotasConfig): JsValue = o.json
+    override def writes(o: NgServiceQuotasConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgServiceQuotasConfig] = Try {
       NgServiceQuotasConfig(
         throttlingQuota = json.select("throttling_quota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
         dailyQuota = json.select("daily_quota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
-        monthlyQuota = json.select("monthly_quota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+        monthlyQuota = json.select("monthly_quota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -202,14 +202,14 @@ object NgServiceQuotasConfig {
 
 class NgServiceQuotas extends NgAccessValidator {
 
-  override def name: String = "Public quotas"
-  override def description: Option[String] = "This plugin will enforce public quotas on the current route".some
+  override def name: String                                = "Public quotas"
+  override def description: Option[String]                 = "This plugin will enforce public quotas on the current route".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgServiceQuotasConfig().some
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
 
   private def totalCallsKey(name: String)(implicit env: Env): String =
     s"${env.storageRoot}:plugins:services-public-quotas:global:$name"
@@ -224,34 +224,34 @@ class NgServiceQuotas extends NgAccessValidator {
     s"${env.storageRoot}:plugins:services-public-quotas:second:$name"
 
   private def updateQuotas(route: NgRoute, qconf: NgServiceQuotasConfig, increment: Long = 1L)(implicit
-                                                                                               ec: ExecutionContext,
-                                                                                               env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Unit] = {
-    val dayEnd = DateTime.now().secondOfDay().withMaximumValue()
-    val toDayEnd = dayEnd.getMillis - DateTime.now().getMillis
-    val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
+    val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
+    val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
+    val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
     val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
     env.clusterAgent.incrementApi(route.id, increment)
     for {
-      _ <- env.datastores.rawDataStore.incrby(totalCallsKey(route.id), increment)
-      secCalls <- env.datastores.rawDataStore.incrby(throttlingKey(route.id), increment)
-      secTtl <- env.datastores.rawDataStore.pttl(throttlingKey(route.id)).filter(_ > -1).recoverWith { case _ =>
-        env.datastores.rawDataStore.pexpire(throttlingKey(route.id), env.throttlingWindow * 1000)
-      }
-      dailyCalls <- env.datastores.rawDataStore.incrby(dailyQuotaKey(route.id), increment)
-      dailyTtl <- env.datastores.rawDataStore.pttl(dailyQuotaKey(route.id)).filter(_ > -1).recoverWith { case _ =>
-        env.datastores.rawDataStore.pexpire(dailyQuotaKey(route.id), toDayEnd.toInt)
-      }
+      _            <- env.datastores.rawDataStore.incrby(totalCallsKey(route.id), increment)
+      secCalls     <- env.datastores.rawDataStore.incrby(throttlingKey(route.id), increment)
+      secTtl       <- env.datastores.rawDataStore.pttl(throttlingKey(route.id)).filter(_ > -1).recoverWith { case _ =>
+                        env.datastores.rawDataStore.pexpire(throttlingKey(route.id), env.throttlingWindow * 1000)
+                      }
+      dailyCalls   <- env.datastores.rawDataStore.incrby(dailyQuotaKey(route.id), increment)
+      dailyTtl     <- env.datastores.rawDataStore.pttl(dailyQuotaKey(route.id)).filter(_ > -1).recoverWith { case _ =>
+                        env.datastores.rawDataStore.pexpire(dailyQuotaKey(route.id), toDayEnd.toInt)
+                      }
       monthlyCalls <- env.datastores.rawDataStore.incrby(monthlyQuotaKey(route.id), increment)
-      monthlyTtl <- env.datastores.rawDataStore.pttl(monthlyQuotaKey(route.id)).filter(_ > -1).recoverWith {
-        case _ => env.datastores.rawDataStore.pexpire(monthlyQuotaKey(route.id), toMonthEnd.toInt)
-      }
+      monthlyTtl   <- env.datastores.rawDataStore.pttl(monthlyQuotaKey(route.id)).filter(_ > -1).recoverWith { case _ =>
+                        env.datastores.rawDataStore.pexpire(monthlyQuotaKey(route.id), toMonthEnd.toInt)
+                      }
     } yield ()
   }
 
   private def withingQuotas(route: NgRoute, qconf: NgServiceQuotasConfig)(implicit
-                                                                          ec: ExecutionContext,
-                                                                          env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] =
     for {
       sec <- withinThrottlingQuota(route, qconf)
@@ -260,24 +260,24 @@ class NgServiceQuotas extends NgAccessValidator {
     } yield sec && day && mon
 
   private def withinThrottlingQuota(
-                                     route: NgRoute,
-                                     qconf: NgServiceQuotasConfig
-                                   )(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+      route: NgRoute,
+      qconf: NgServiceQuotasConfig
+  )(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.rawDataStore
       .get(throttlingKey(route.id))
       .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (qconf.throttlingQuota * env.throttlingWindow))
 
   private def withinDailyQuota(route: NgRoute, qconf: NgServiceQuotasConfig)(implicit
-                                                                             ec: ExecutionContext,
-                                                                             env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] =
     env.datastores.rawDataStore
       .get(dailyQuotaKey(route.id))
       .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.dailyQuota)
 
   private def withinMonthlyQuota(route: NgRoute, qconf: NgServiceQuotasConfig)(implicit
-                                                                               ec: ExecutionContext,
-                                                                               env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] =
     env.datastores.rawDataStore
       .get(monthlyQuotaKey(route.id))

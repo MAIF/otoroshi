@@ -2,26 +2,21 @@ export default {
   id: 'cp:otoroshi.next.plugins.BasicAuthCaller',
   config_schema: {
     username: {
-      type: "string",
-      label: 'Username'
+      type: 'string',
+      label: 'Username',
     },
     password: {
-      type: "string",
-      label: 'Password'
+      type: 'string',
+      label: 'Password',
     },
     headerName: {
-      type: "string",
-      label: 'Header name'
+      type: 'string',
+      label: 'Header name',
     },
     headerValueFormat: {
-      type: "string",
-      label: 'Header value formatter'
+      type: 'string',
+      label: 'Header value formatter',
     },
   },
-  config_flow: [
-    "username",
-    "password",
-    "headerName",
-    "headerValueFormat"
-  ]
+  config_flow: ['username', 'password', 'headerName', 'headerValueFormat'],
 };

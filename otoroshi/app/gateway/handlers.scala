@@ -439,7 +439,8 @@ class GatewayRequestHandler(
           }
         }
         host match {
-          case _ if relativeUri.contains("__otoroshi_assets")                 => super.routeRequest(request) // TODO additional assets routes
+          case _ if relativeUri.contains("__otoroshi_assets")                 =>
+            super.routeRequest(request) // TODO additional assets routes
           case _ if relativeUri.startsWith("/__otoroshi_private_apps_login")  => Some(setPrivateAppsCookies())
           case _ if relativeUri.startsWith("/__otoroshi_private_apps_logout") => Some(removePrivateAppsCookies())
 
@@ -479,9 +480,18 @@ class GatewayRequestHandler(
 
           case env.adminApiExposedHost if monitoring          => super.routeRequest(request)
           case env.backOfficeHost if monitoring               => super.routeRequest(request)
-          case env.adminApiHost if env.exposeAdminApi         => env.adminExtensions.handleAdminApiCall(request, actionBuilder, apiActionBuilder, sourceBodyParser)(super.routeRequest(request))
-          case env.backOfficeHost if env.exposeAdminDashboard => env.adminExtensions.handleBackofficeCall(request, actionBuilder, backofficeActionBuilder, sourceBodyParser)(super.routeRequest(request))
-          case env.privateAppsHost                            => env.adminExtensions.handlePrivateAppsCall(request, actionBuilder, privateActionBuilder, sourceBodyParser)(super.routeRequest(request))
+          case env.adminApiHost if env.exposeAdminApi         =>
+            env.adminExtensions.handleAdminApiCall(request, actionBuilder, apiActionBuilder, sourceBodyParser)(
+              super.routeRequest(request)
+            )
+          case env.backOfficeHost if env.exposeAdminDashboard =>
+            env.adminExtensions.handleBackofficeCall(request, actionBuilder, backofficeActionBuilder, sourceBodyParser)(
+              super.routeRequest(request)
+            )
+          case env.privateAppsHost                            =>
+            env.adminExtensions.handlePrivateAppsCall(request, actionBuilder, privateActionBuilder, sourceBodyParser)(
+              super.routeRequest(request)
+            )
 
           case env.adminApiHost if !env.exposeAdminApi && relativeUri.startsWith("/api/cluster/") =>
             super.routeRequest(request)
@@ -506,12 +516,23 @@ class GatewayRequestHandler(
           case h if env.privateAppsDomains.contains(h) && monitoring                                               => Some(forbidden())
           case h if env.adminApiExposedDomains.contains(h) && monitoring                                           => super.routeRequest(request)
           case h if env.backofficeDomains.contains(h) && monitoring                                                => super.routeRequest(request)
-          case h if env.adminApiDomains.contains(h) && env.exposeAdminApi                                          => env.adminExtensions.handleAdminApiCall(request, actionBuilder, apiActionBuilder, sourceBodyParser)(super.routeRequest(request))
-          case h if env.backofficeDomains.contains(h) && env.exposeAdminDashboard                                  => env.adminExtensions.handleBackofficeCall(request, actionBuilder, backofficeActionBuilder, sourceBodyParser)(super.routeRequest(request))
-          case h if env.privateAppsDomains.contains(h)                                                             => env.adminExtensions.handlePrivateAppsCall(request, actionBuilder, privateActionBuilder, sourceBodyParser)(super.routeRequest(request))
+          case h if env.adminApiDomains.contains(h) && env.exposeAdminApi                                          =>
+            env.adminExtensions.handleAdminApiCall(request, actionBuilder, apiActionBuilder, sourceBodyParser)(
+              super.routeRequest(request)
+            )
+          case h if env.backofficeDomains.contains(h) && env.exposeAdminDashboard                                  =>
+            env.adminExtensions.handleBackofficeCall(request, actionBuilder, backofficeActionBuilder, sourceBodyParser)(
+              super.routeRequest(request)
+            )
+          case h if env.privateAppsDomains.contains(h)                                                             =>
+            env.adminExtensions.handlePrivateAppsCall(request, actionBuilder, privateActionBuilder, sourceBodyParser)(
+              super.routeRequest(request)
+            )
           case _                                                                                                   => {
             if (relativeUri.startsWith("/.well-known/otoroshi/extensions/")) {
-              env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser)(reverseProxyCall(request, config))
+              env.adminExtensions.handleWellKnownCall(request, actionBuilder, sourceBodyParser)(
+                reverseProxyCall(request, config)
+              )
             } else {
               reverseProxyCall(request, config)
             }

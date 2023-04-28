@@ -35,7 +35,7 @@
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.2.1
+16.3.0
 </div>
 </div>
 <div class="nav-toc">
@@ -165,7 +165,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <span class="home-icon">⌂</span>Otoroshi
 </a>
 <div class="version-number">
-16.2.1
+16.3.0
 </div>
 </div>
 <div class="nav-toc">
@@ -2295,6 +2295,8 @@ otoroshi {
     enabled = ${?OTOROSHI_VAULTS_ENABLED}
     secrets-ttl = 300000 # 5 minutes between each secret read
     secrets-ttl = ${?OTOROSHI_VAULTS_SECRETS_TTL}
+    secrets-error-ttl = 20000 # wait 20000 before retrying on error
+    secrets-error-ttl = ${?OTOROSHI_VAULTS_SECRETS_ERROR_TTL}
     cached-secrets = 10000
     cached-secrets = ${?OTOROSHI_VAULTS_CACHED_SECRETS}
 		read-ttl = 10000 # 10 seconds
@@ -2311,6 +2313,10 @@ otoroshi {
     env {
       type = &quot;env&quot;
       prefix = ${?OTOROSHI_VAULTS_ENV_PREFIX}
+    }
+    local {
+    	type = &quot;local&quot;
+    	root = ${?OTOROSHI_VAULTS_LOCAL_ROOT}
     }
     # hashicorpvault {
     #   type = &quot;hashicorp-vault&quot;
@@ -2356,6 +2362,15 @@ otoroshi {
         nonProxyHosts = []
       }
     }
+  }
+  admin-extensions {
+  	enabled = true
+  	enabled = ${?OTOROSHI_ADMIN_EXTENSIONS_ENABLED}
+  	configurations {
+  		otoroshi_extensions_foo {
+  			enabled = false
+  		}
+  	}
   }
 }
 
@@ -3415,6 +3430,7 @@ otoroshi {
   vaults {
     enabled = ${?OTOROSHI_VAULTS_ENABLED}
     secrets-ttl = ${?OTOROSHI_VAULTS_SECRETS_TTL}
+    secrets-error-ttl = ${?OTOROSHI_VAULTS_SECRETS_ERROR_TTL}
     cached-secrets = ${?OTOROSHI_VAULTS_CACHED_SECRETS}
     read-timeout = ${?otoroshi.vaults.read-ttl}
 		read-timeout = ${?OTOROSHI_VAULTS_READ_TTL}
@@ -3423,6 +3439,9 @@ otoroshi {
     leader-fetch-only = ${?OTOROSHI_VAULTS_LEADER_FETCH_ONLY}
     env {
       prefix = ${?OTOROSHI_VAULTS_ENV_PREFIX}
+    }
+    local {
+    	root = ${?OTOROSHI_VAULTS_LOCAL_ROOT}
     }
     # hashicorpvault {
     # }
@@ -3445,6 +3464,13 @@ otoroshi {
       proxy {
       }
     }
+  }
+  admin-extensions {
+  	enabled = ${?OTOROSHI_ADMIN_EXTENSIONS_ENABLED}
+  	configurations {
+  		otoroshi_extensions_foo {
+  		}
+  	}
   }
 }
 http.port = ${?otoroshi.http.port}     # the main http port for the otoroshi server

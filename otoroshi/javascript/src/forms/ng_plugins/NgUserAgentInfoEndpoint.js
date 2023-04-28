@@ -1,9 +1,5 @@
 export default {
   id: 'cp:otoroshi.next.plugins.NgUserAgentInfoEndpoint',
-  config_schema: {
-
-  },
-  config_flow: [
-
-  ],
+  config_schema: {},
+  config_flow: [],
 };

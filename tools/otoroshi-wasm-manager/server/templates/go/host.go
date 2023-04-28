@@ -2,9 +2,6 @@ package main
 
 import (
   "github.com/extism/go-pdk"
-  "strconv"
-  "github.com/buger/jsonparser"
-   b64 "encoding/base64"
 )
 
 func StringBytePtr(msg string) uint64 {
@@ -166,6 +163,3 @@ func _ProxyGlobalMapSet(context uint64, contextSize uint64) uint64
 func _ProxyGlobalMapGet(context uint64, contextSize uint64) uint64
 //export proxy_global_map
 func _ProxyGlobalMap(_requiredUInt64 uint64) uint64
-
-
-func main() {}

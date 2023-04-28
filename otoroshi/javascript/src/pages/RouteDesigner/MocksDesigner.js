@@ -143,7 +143,7 @@ function PushView({ endpoints, resources }) {
                     {!endpoint.body && !endpoint.model && (
                       <div className="mx-1 d-flex-between endpoint-helper">
                         <span
-                          style={{ color: "var(--color-red)" }}
+                          style={{ color: 'var(--color-red)' }}
                           {...createTooltip('Missing raw body or model')}>
                           <i className="fas fa-exclamation-triangle" />
                         </span>
@@ -213,7 +213,9 @@ function CharlatanResourcesList({ showResourceForm, resources, removeResource, e
                   !resources.find((e) =>
                     e.schema?.find((f) => f.field_type === 'Model' && f.value === resource.name)
                   ) && (
-                    <span style={{ color: "var(--color-red)" }} {...createTooltip('Model not used')}>
+                    <span
+                      style={{ color: 'var(--color-red)' }}
+                      {...createTooltip('Model not used')}>
                       <i className="fas fa-exclamation-triangle" />
                     </span>
                   )}
@@ -259,7 +261,7 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
           className="d-flex-between mb-2 endpoint"
           style={{
             border: `1px solid rgba(25, 25, 25, .25)`,
-            backgroundColor: "var(--bg-color_level2)",
+            backgroundColor: 'var(--bg-color_level2)',
           }}>
           <div className="d-flex-between flex">
             <div style={{ minWidth: '90px', textAlign: 'center' }} className="d-flex me-3">
@@ -328,7 +330,7 @@ function CharlatanEndpointsList({ showEndpointForm, endpoints, removeEndpoint, o
                   {!endpoint.body && !endpoint.model && (
                     <div className="mx-1 d-flex-between endpoint-helper">
                       <span
-                        style={{ color: "var(--color-red)" }}
+                        style={{ color: 'var(--color-red)' }}
                         {...createTooltip('Missing raw body or model')}>
                         <i className="fas fa-exclamation-triangle" />
                       </span>
@@ -639,7 +641,9 @@ export default class MocksDesigner extends React.Component {
 function OpenAPIParameters({ resources, ...props }) {
   const model = resources.find((r) => r.name === props.model);
   return (
-    <div className="designer p-3" style={{ backgroundColor:"var(--bg-color_level1)", borderRadius: '4px' }}>
+    <div
+      className="designer p-3"
+      style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}>
       <h4>Parameters</h4>
       <div className="d-flex" style={{ borderBottom: '1px solid' }}>
         <p style={{ minWidth: '120px' }} className="me-3">
@@ -670,7 +674,9 @@ function OpenAPIParameters({ resources, ...props }) {
 
 function OpenAPIResponse({ body, status, description, model, resource_list }) {
   return (
-    <div className="designer p-3" style={{ backgroundColor:"var(--bg-color_level1)", borderRadius: '4px' }}>
+    <div
+      className="designer p-3"
+      style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}>
       <h4>Responses</h4>
       <div className="d-flex" style={{ borderBottom: '1px solid' }}>
         <p className="me-3">Code</p>
@@ -718,7 +724,9 @@ class NewResource extends React.Component {
 
   render() {
     return (
-      <div className="designer p-3" style={{ backgroundColor : "var(--bg-color_level1)", borderRadius: '4px' }}>
+      <div
+        className="designer p-3"
+        style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}>
         <NgForm
           value={this.state}
           schema={this.schema}
@@ -1083,7 +1091,9 @@ class NewEndpoint extends React.Component {
 
   render() {
     return (
-      <div className="designer p-3" style={{ backgroundColor:"var(--bg-color_level1)", borderRadius: '4px' }}>
+      <div
+        className="designer p-3"
+        style={{ backgroundColor: 'var(--bg-color_level1)', borderRadius: '4px' }}>
         <NgForm
           value={this.state}
           flow={this.flow}
@@ -1133,13 +1143,13 @@ function Header({ hide, onDesigner, setDesigner }) {
 }
 
 export const HTTP_COLORS = {
-  GET: "var(--http_color-get)",
-  POST: "var(--http_color-post)",
-  DELETE: "var(--http_color-delete)",
-  PUT: "var(--http_color-put)",
-  HEAD: "var(--http_color-others)",
-  PATCH: "var(--http_color-others)",
-  OPTIONS: "var(--http_color-others)",
+  GET: 'var(--http_color-get)',
+  POST: 'var(--http_color-post)',
+  DELETE: 'var(--http_color-delete)',
+  PUT: 'var(--http_color-put)',
+  HEAD: 'var(--http_color-others)',
+  PATCH: 'var(--http_color-others)',
+  OPTIONS: 'var(--http_color-others)',
 };
 
 const FakerOptions = [

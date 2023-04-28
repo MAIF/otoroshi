@@ -16,13 +16,13 @@ export function FakeLoader({ text, timeout, started }) {
       style={{
         gridTemplateColumns: '42px 1fr',
         minHeight: '42px',
-        backgroundColor:"var(--bg-color_level2)",
-        borderRadius:'5px',
+        backgroundColor: 'var(--bg-color_level2)',
+        borderRadius: '5px',
       }}
       className="d-grid align-items-center justify-content-start mt-3 mb-2 p-3">
       {started && (
         <Loader loading={loading} minLoaderTime={timeout}>
-          <i className="fas fa-check fa-2x" style={{ color: "var(--color-primary)" }} />
+          <i className="fas fa-check fa-2x" style={{ color: 'var(--color-primary)' }} />
         </Loader>
       )}
       {!started && <i className="fas fa-square fa-2x" />}

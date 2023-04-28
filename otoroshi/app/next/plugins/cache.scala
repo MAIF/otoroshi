@@ -137,53 +137,58 @@ class NgHttpClientCache extends NgRequestTransformer {
   }
 }
 
-
 case class NgResponseCacheFilterConfig(
-  statuses: Seq[Int] = Seq(200),
-  methods: Seq[String] = Seq("GET"),
-  paths: Seq[String] = Seq("/.*"),
-  notStatuses: Seq[Int] = Seq.empty,
-  notMethods: Seq[String] = Seq.empty,
-  notPaths: Seq[String] = Seq.empty)
+    statuses: Seq[Int] = Seq(200),
+    methods: Seq[String] = Seq("GET"),
+    paths: Seq[String] = Seq("/.*"),
+    notStatuses: Seq[Int] = Seq.empty,
+    notMethods: Seq[String] = Seq.empty,
+    notPaths: Seq[String] = Seq.empty
+)
 
 object NgResponseCacheFilterConfig {
   val format = new Format[NgResponseCacheFilterConfig] {
     override def reads(json: JsValue): JsResult[NgResponseCacheFilterConfig] = Try {
       NgResponseCacheFilterConfig(
-        statuses = json.select("statuses")
+        statuses = json
+          .select("statuses")
           .asOpt[Seq[Int]]
           .orElse((json \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
           .getOrElse(Seq(200)),
         methods = json.select("methods").asOpt[Seq[String]].getOrElse(Seq("GET")),
         paths = json.select("paths").asOpt[Seq[String]].getOrElse(Seq.empty),
-        notStatuses = json.select("notStatuses")
+        notStatuses = json
+          .select("notStatuses")
           .asOpt[Seq[Int]]
           .orElse((json \ "not" \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
           .getOrElse(Seq.empty),
-        notMethods = json.select("notMethods")
-          .asOpt[Seq[String]].getOrElse(Seq.empty)
+        notMethods = json
+          .select("notMethods")
+          .asOpt[Seq[String]]
+          .getOrElse(Seq.empty)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
-      case Success(value) => JsSuccess(value)
+      case Success(value)     => JsSuccess(value)
     }
 
     override def writes(o: NgResponseCacheFilterConfig): JsValue = Json.obj(
-      "statuses" -> o.statuses,
-      "methods" -> o.methods,
-      "paths" -> o.paths,
+      "statuses"    -> o.statuses,
+      "methods"     -> o.methods,
+      "paths"       -> o.paths,
       "notStatuses" -> o.notStatuses,
-      "notMethods" -> o.notMethods,
-      "notPaths" -> o.notPaths
+      "notMethods"  -> o.notMethods,
+      "notPaths"    -> o.notPaths
     )
   }
 }
 
-case class NgResponseCacheConfig (
-  ttl: Long = 60.minutes.toMillis,
-  maxSize: Long = 50L * 1024L * 1024L,
-  autoClean: Boolean = true,
-  filter: Option[NgResponseCacheFilterConfig] = None) extends NgPluginConfig {
+case class NgResponseCacheConfig(
+    ttl: Long = 60.minutes.toMillis,
+    maxSize: Long = 50L * 1024L * 1024L,
+    autoClean: Boolean = true,
+    filter: Option[NgResponseCacheFilterConfig] = None
+) extends NgPluginConfig {
   override def json: JsValue = NgResponseCacheConfig.format.writes(this)
 }
 
@@ -198,14 +203,14 @@ object NgResponseCacheConfig {
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
-      case Success(value) => JsSuccess(value)
+      case Success(value)     => JsSuccess(value)
     }
 
     override def writes(o: NgResponseCacheConfig): JsValue = Json.obj(
-      "ttl" -> o.ttl,
-      "maxSize" -> o.maxSize,
+      "ttl"       -> o.ttl,
+      "maxSize"   -> o.maxSize,
       "autoClean" -> o.autoClean,
-      "filter" -> o.filter.map(NgResponseCacheFilterConfig.format.writes)
+      "filter"    -> o.filter.map(NgResponseCacheFilterConfig.format.writes)
     )
   }
 }
@@ -218,7 +223,7 @@ object NgResponseCache {
 
 class NgResponseCache extends NgRequestTransformer {
 
-  override def name: String = "Response Cache"
+  override def name: String                                = "Response Cache"
   override def defaultConfigObject: Option[NgPluginConfig] = NgResponseCacheConfig().some
 
   override def description: Option[String] =
@@ -230,13 +235,13 @@ class NgResponseCache extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest, NgStep.TransformResponse)
 
-  override def multiInstance: Boolean = true
-  override def core: Boolean = true
-  override def usesCallbacks: Boolean = false
-  override def transformsError: Boolean = false
-  override def transformsRequest: Boolean = true
-  override def transformsResponse: Boolean = true
-  override def isTransformRequestAsync: Boolean = true
+  override def multiInstance: Boolean            = true
+  override def core: Boolean                     = true
+  override def usesCallbacks: Boolean            = false
+  override def transformsError: Boolean          = false
+  override def transformsRequest: Boolean        = true
+  override def transformsResponse: Boolean       = true
+  override def isTransformRequestAsync: Boolean  = true
   override def isTransformResponseAsync: Boolean = true
 
   private val ref    = new AtomicReference[(RedisClientMasterSlaves, ActorSystem)]()
@@ -287,8 +292,8 @@ class NgResponseCache extends NgRequestTransformer {
   }
 
   private def set(key: String, value: ByteString, ttl: Option[Long])(implicit
-                                                                     ec: ExecutionContext,
-                                                                     env: Env
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] = {
     ref.get() match {
       case null  => env.datastores.rawDataStore.set(key, value, ttl)
@@ -345,9 +350,9 @@ class NgResponseCache extends NgRequestTransformer {
   }
 
   private def cachedResponse(
-                              ctx: NgTransformerRequestContext,
-                              config: NgResponseCacheConfig
-                            )(implicit env: Env, ec: ExecutionContext): Future[Either[Unit, Option[JsValue]]] = {
+      ctx: NgTransformerRequestContext,
+      config: NgResponseCacheConfig
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[Unit, Option[JsValue]]] = {
     if (filter(ctx.request, config)) {
       get(
         s"${env.storageRoot}:noclustersync:cache:${ctx.route.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}"
@@ -360,8 +365,9 @@ class NgResponseCache extends NgRequestTransformer {
     }
   }
 
-  override def transformRequest(ctx: NgTransformerRequestContext)
-                               (implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(NgResponseCacheConfig.format).getOrElse(NgResponseCacheConfig())
 
     cachedResponse(ctx, config).map {
@@ -386,60 +392,59 @@ class NgResponseCache extends NgRequestTransformer {
     }
   }
 
-  override def transformResponse(ctx: NgTransformerResponseContext)
-                                    (implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  override def transformResponse(
+      ctx: NgTransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(NgResponseCacheConfig.format).getOrElse(NgResponseCacheConfig())
 
     if (couldCacheResponse(ctx, config)) {
       val size = new AtomicLong(0L)
       val ref  = new AtomicReference[ByteString](ByteString.empty)
       ctx.otoroshiResponse
-        .copy(body = ctx.otoroshiResponse.body
-        .wireTap(bs =>
-          ref.updateAndGet { (t: ByteString) =>
-            val currentSize = size.addAndGet(bs.size.toLong)
-            if (currentSize <= config.maxSize) {
-              t ++ bs
-            } else {
-              t
-            }
-          }
-        )
-        .alsoTo(Sink.onComplete {
-          case _ =>
-            if (size.get() < config.maxSize) {
-              val ctype: String                = ctx.rawResponse.headers
-                .get("Content-Type")
-                .orElse(ctx.rawResponse.headers.get("content-type"))
-                .getOrElse("text/plain")
-              val headers: Map[String, String] = ctx.rawResponse.headers.filterNot { tuple =>
-                val name = tuple._1.toLowerCase()
-                name == "content-type" || name == "transfer-encoding" || name == "content-length"
+        .copy(body =
+          ctx.otoroshiResponse.body
+            .wireTap(bs =>
+              ref.updateAndGet { (t: ByteString) =>
+                val currentSize = size.addAndGet(bs.size.toLong)
+                if (currentSize <= config.maxSize) {
+                  t ++ bs
+                } else {
+                  t
+                }
               }
-              val event                        = Json.obj(
-                "status"  -> ctx.rawResponse.status,
-                "headers" -> headers,
-                "ctype"   -> ctype,
-                "body"    -> NgResponseCache.base64Encoder.encodeToString(ref.get().toArray)
-              )
-              if (NgResponseCache.logger.isDebugEnabled)
-                NgResponseCache.logger.debug(
-                  s"Storing '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' in cache for the next ${config.ttl} ms."
+            )
+            .alsoTo(Sink.onComplete { case _ =>
+              if (size.get() < config.maxSize) {
+                val ctype: String                = ctx.rawResponse.headers
+                  .get("Content-Type")
+                  .orElse(ctx.rawResponse.headers.get("content-type"))
+                  .getOrElse("text/plain")
+                val headers: Map[String, String] = ctx.rawResponse.headers.filterNot { tuple =>
+                  val name = tuple._1.toLowerCase()
+                  name == "content-type" || name == "transfer-encoding" || name == "content-length"
+                }
+                val event                        = Json.obj(
+                  "status"  -> ctx.rawResponse.status,
+                  "headers" -> headers,
+                  "ctype"   -> ctype,
+                  "body"    -> NgResponseCache.base64Encoder.encodeToString(ref.get().toArray)
                 )
-              set(
-                s"${env.storageRoot}:noclustersync:cache:${ctx.route.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}",
-                ByteString(Json.stringify(event)),
-                Some(config.ttl)
-              )
-            }
-        }))
+                if (NgResponseCache.logger.isDebugEnabled)
+                  NgResponseCache.logger.debug(
+                    s"Storing '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' in cache for the next ${config.ttl} ms."
+                  )
+                set(
+                  s"${env.storageRoot}:noclustersync:cache:${ctx.route.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}",
+                  ByteString(Json.stringify(event)),
+                  Some(config.ttl)
+                )
+              }
+            })
+        )
         .right
         .vfuture
     } else {
-      ctx
-        .otoroshiResponse
-        .right
-        .vfuture
+      ctx.otoroshiResponse.right.vfuture
     }
   }
 }
@@ -472,53 +477,52 @@ class NgResponseCacheCleanupJob extends Job {
   }
 
   private def cleanCache(env: Env): Future[Unit] = {
-    implicit val ev = env
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ev  = env
+    implicit val ec  = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
-    val functions = env.proxyState.allRoutes().map { route =>
+    val functions    = env.proxyState.allRoutes().map { route =>
       (route, route.plugins.getPluginByClass[NgResponseCache])
-    } collect {
-      case (route, Some(plugin)) => (route, plugin)
+    } collect { case (route, Some(plugin)) =>
+      (route, plugin)
     } map {
       case (route, plugin) => { () =>
-        val config = NgResponseCacheConfig.format.reads(plugin.config.raw.asValue).get
+        val config  = NgResponseCacheConfig.format.reads(plugin.config.raw.asValue).get
         val maxSize = config.maxSize
         if (config.autoClean) {
-          env.datastores.rawDataStore.keys(s"${env.storageRoot}:noclustersync:cache:${route.id}:*").flatMap {
-            keys =>
-              if (keys.nonEmpty) {
-                Source(keys.toList)
-                  .mapAsync(1) { key =>
-                    for {
-                      size <- env.datastores.rawDataStore.strlen(key).map(_.getOrElse(0L))
-                      pttl <- env.datastores.rawDataStore.pttl(key)
-                    } yield (key, size, pttl)
-                  }
-                  .runWith(Sink.seq)
-                  .flatMap { values =>
-                    val globalSize = values.foldLeft(0L)((a, b) => a + b._2)
-                    if (globalSize > maxSize) {
-                      var acc = 0L
-                      val sorted = values
-                        .sortWith((a, b) => a._3.compareTo(b._3) < 0)
-                        .filter { t =>
-                          if ((globalSize - acc) < maxSize) {
-                            acc = acc + t._2
-                            false
-                          } else {
-                            acc = acc + t._2
-                            true
-                          }
+          env.datastores.rawDataStore.keys(s"${env.storageRoot}:noclustersync:cache:${route.id}:*").flatMap { keys =>
+            if (keys.nonEmpty) {
+              Source(keys.toList)
+                .mapAsync(1) { key =>
+                  for {
+                    size <- env.datastores.rawDataStore.strlen(key).map(_.getOrElse(0L))
+                    pttl <- env.datastores.rawDataStore.pttl(key)
+                  } yield (key, size, pttl)
+                }
+                .runWith(Sink.seq)
+                .flatMap { values =>
+                  val globalSize = values.foldLeft(0L)((a, b) => a + b._2)
+                  if (globalSize > maxSize) {
+                    var acc    = 0L
+                    val sorted = values
+                      .sortWith((a, b) => a._3.compareTo(b._3) < 0)
+                      .filter { t =>
+                        if ((globalSize - acc) < maxSize) {
+                          acc = acc + t._2
+                          false
+                        } else {
+                          acc = acc + t._2
+                          true
                         }
-                        .map(_._1)
-                      env.datastores.rawDataStore.del(sorted).map(_ => ())
-                    } else {
-                      ().future
-                    }
+                      }
+                      .map(_._1)
+                    env.datastores.rawDataStore.del(sorted).map(_ => ())
+                  } else {
+                    ().future
                   }
-              } else {
-                ().future
-              }
+                }
+            } else {
+              ().future
+            }
           }
         } else {
           ().future
@@ -532,4 +536,3 @@ class NgResponseCacheCleanupJob extends Job {
   }
 
 }
-

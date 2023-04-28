@@ -2313,7 +2313,7 @@ class SwappableInMemoryDataStores(
   private val materializer       = Materializer(actorSystem)
   val _optimized                 = configuration.betterGetOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
   val _modern                    = configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
-  lazy val swredis                 = if (_modern) {
+  lazy val swredis               = if (_modern) {
     new ModernSwappableInMemoryRedis(_optimized, env, actorSystem)
   } else {
     new SwappableInMemoryRedis(_optimized, env, actorSystem)

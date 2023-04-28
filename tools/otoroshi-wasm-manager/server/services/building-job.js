@@ -126,6 +126,10 @@ const addChildListener = (plugin, child, stdoutStream, stderrStream, release) =>
   });
 }
 
+const removeAfterLastHyphen = (str) => {
+  return str.substring(0, str.lastIndexOf('-'))
+}
+
 const onSuccessProcess = (plugin, user, buildFolder, logsFolder, wasmName, zipHash, resolve, reject, code, isRustBuild, release) => {
   WebSocket.emit(plugin, release, "Build done.\n")
   try {
@@ -136,7 +140,11 @@ const onSuccessProcess = (plugin, user, buildFolder, logsFolder, wasmName, zipHa
         plugin,
         newFilename,
         isRustBuild ?
-          path.join(buildFolder, 'target', 'wasm32-unknown-unknown', 'release', `${wasmName.substring(0, wasmName.lastIndexOf('-'))}.wasm`) :
+          path.join(buildFolder, 'target', 'wasm32-unknown-unknown', 'release',
+            (release ?
+              `${removeAfterLastHyphen(wasmName)}.wasm` :
+              `${removeAfterLastHyphen(removeAfterLastHyphen(wasmName))}.wasm`).replace(/-/g, "_")
+          ) :
           //path.join(buildFolder, 'target', 'wasm32-wasi', 'release', `${wasmName.substring(0, wasmName.lastIndexOf('-'))}.wasm`) :
           path.join(buildFolder, `${wasmName}.wasm`)
       ),

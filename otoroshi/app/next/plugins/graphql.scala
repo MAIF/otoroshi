@@ -24,7 +24,29 @@ import sangria.ast._
 import sangria.execution.deferred.DeferredResolver
 import sangria.execution.{ExceptionHandler, Executor, HandledException, QueryReducer}
 import sangria.parser.QueryParser
-import sangria.schema.{Action, AdditionalTypes, AnyFieldResolver, Argument, AstDirectiveContext, AstSchemaBuilder, AstSchemaMaterializer, BooleanType, DefaultAstSchemaBuilder, Directive, DirectiveResolver, FieldResolver, InstanceCheck, IntType, IntrospectionSchemaBuilder, ListInputType, OptionInputType, ResolverBasedAstSchemaBuilder, ScalarType, Schema, StringType}
+import sangria.schema.{
+  Action,
+  AdditionalTypes,
+  AnyFieldResolver,
+  Argument,
+  AstDirectiveContext,
+  AstSchemaBuilder,
+  AstSchemaMaterializer,
+  BooleanType,
+  DefaultAstSchemaBuilder,
+  Directive,
+  DirectiveResolver,
+  FieldResolver,
+  InstanceCheck,
+  IntType,
+  IntrospectionSchemaBuilder,
+  ListInputType,
+  OptionInputType,
+  ResolverBasedAstSchemaBuilder,
+  ScalarType,
+  Schema,
+  StringType
+}
 import sangria.util.tag.@@
 import sangria.validation.{QueryValidator, ValueCoercionViolation, Violation}
 

@@ -1,5 +1,5 @@
 
 dependencies {
-  compile group: 'fr.maif', name: 'otoroshi_2.12', version: '16.2.1'
-  compile group: 'fr.maif', name: 'otoroshi_2.12', version: '16.2.1', classifier 'assets'
+  compile group: 'fr.maif', name: 'otoroshi_2.12', version: '16.3.0'
+  compile group: 'fr.maif', name: 'otoroshi_2.12', version: '16.3.0', classifier 'assets'
 }

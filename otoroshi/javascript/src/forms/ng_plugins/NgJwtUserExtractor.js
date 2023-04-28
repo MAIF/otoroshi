@@ -26,12 +26,5 @@ export default {
       label: 'Path to extract user metadata',
     },
   },
-  config_flow: [
-    'verifier',
-    'strict',
-    'strip',
-    'name_path',
-    'email_path',
-    'meta_path',
-  ],
+  config_flow: ['verifier', 'strict', 'strip', 'name_path', 'email_path', 'meta_path'],
 };

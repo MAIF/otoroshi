@@ -21,7 +21,7 @@ import scala.util.{Failure, Success, Try}
 class ServiceMetrics extends RequestTransformer {
 
   override def deprecated: Boolean = true
-  override def name: String = "[DEPRECATED] Service Metrics"
+  override def name: String        = "[DEPRECATED] Service Metrics"
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)
@@ -202,7 +202,7 @@ class PrometheusEndpoint extends RequestSink {
   )
 
   override def deprecated: Boolean = true
-  override def name: String = "[DEPRECATED] Prometheus Endpoint"
+  override def name: String        = "[DEPRECATED] Prometheus Endpoint"
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Monitoring)
@@ -341,7 +341,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
   )
 
   override def deprecated: Boolean = true
-  override def name: String = "[DEPRECATED] Prometheus Service Metrics"
+  override def name: String        = "[DEPRECATED] Prometheus Service Metrics"
 
   override def defaultConfig: Option[JsObject] =
     Some(

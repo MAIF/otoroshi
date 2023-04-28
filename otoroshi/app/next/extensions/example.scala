@@ -12,23 +12,30 @@ import play.api.mvc.Results
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-case class Foo(location: EntityLocation, id: String, name: String, description: String, tags: Seq[String], metadata: Map[String, String]) extends EntityLocationSupport {
-  override def internalId: String = id
-  override def json: JsValue = Foo.format.writes(this)
-  override def theName: String = name
-  override def theDescription: String = description
-  override def theTags: Seq[String] = tags
+case class Foo(
+    location: EntityLocation,
+    id: String,
+    name: String,
+    description: String,
+    tags: Seq[String],
+    metadata: Map[String, String]
+) extends EntityLocationSupport {
+  override def internalId: String               = id
+  override def json: JsValue                    = Foo.format.writes(this)
+  override def theName: String                  = name
+  override def theDescription: String           = description
+  override def theTags: Seq[String]             = tags
   override def theMetadata: Map[String, String] = metadata
 }
 
 object Foo {
   val format = new Format[Foo] {
-    override def writes(o: Foo): JsValue = o.location.jsonWithKey ++ Json.obj(
-      "id" -> o.id,
-      "name" -> o.name,
+    override def writes(o: Foo): JsValue             = o.location.jsonWithKey ++ Json.obj(
+      "id"          -> o.id,
+      "name"        -> o.name,
       "description" -> o.description,
-      "metadata" -> o.metadata,
-      "tags" -> JsArray(o.tags.map(JsString.apply))
+      "metadata"    -> o.metadata,
+      "tags"        -> JsArray(o.tags.map(JsString.apply))
     )
     override def reads(json: JsValue): JsResult[Foo] = Try {
       Foo(
@@ -40,7 +47,7 @@ object Foo {
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
       )
     } match {
-      case Failure(ex) => JsError(ex.getMessage)
+      case Failure(ex)    => JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
   }
@@ -49,12 +56,12 @@ object Foo {
 trait FooDataStore extends BasicStore[Foo]
 
 class KvFooDataStore(extensionId: AdminExtensionId, redisCli: RedisLike, _env: Env)
-  extends FooDataStore
+    extends FooDataStore
     with RedisLikeStore[Foo] {
-  override def fmt: Format[Foo]                 = Foo.format
+  override def fmt: Format[Foo]                        = Foo.format
   override def redisLike(implicit env: Env): RedisLike = redisCli
-  override def key(id: String): String          = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:foos:$id"
-  override def extractId(value: Foo): String    = value.id
+  override def key(id: String): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:foos:$id"
+  override def extractId(value: Foo): String           = value.id
 }
 
 class FooAdminExtensionDatastores(env: Env, extensionId: AdminExtensionId) {
@@ -66,7 +73,7 @@ class FooAdminExtensionState(env: Env) {
   private val foos = new LegitTrieMap[String, Foo]()
 
   def foo(id: String): Option[Foo] = foos.get(id)
-  def allFoos(): Seq[Foo] = foos.values.toSeq
+  def allFoos(): Seq[Foo]          = foos.values.toSeq
 
   private[extensions] def updateFoos(values: Seq[Foo]): Unit = {
     foos.addAll(values.map(v => (v.id, v))).remAll(foos.keySet.toSeq.diff(values.map(_.id)))
@@ -76,7 +83,7 @@ class FooAdminExtensionState(env: Env) {
 class FooAdminExtension(val env: Env) extends AdminExtension {
 
   private lazy val datastores = new FooAdminExtensionDatastores(env, id)
-  private lazy val states = new FooAdminExtensionState(env)
+  private lazy val states     = new FooAdminExtensionState(env)
 
   override def id: AdminExtensionId = AdminExtensionId("otoroshi.extensions.Foo")
 
@@ -84,7 +91,7 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
 
   override def description: Option[String] = "Foo".some
 
-  override def enabled: Boolean = env.isDev // configuration.getOptional[Boolean]("enabled").getOrElse(false)
+  override def enabled: Boolean = env.isDev || configuration.getOptional[Boolean]("enabled").getOrElse(false)
 
   override def start(): Unit = {
     "start example extension".debugPrintln
@@ -112,18 +119,33 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
   }
 
   override def wellKnownRoutes(): Seq[AdminExtensionWellKnownRoute] = Seq(
-    AdminExtensionWellKnownRoute("GET", "/.well-known/otoroshi/extensions/foo/bars/:id", false, (ctx, request, body) => {
-      Results.Ok(Json.obj("id" -> ctx.named("id").map(JsString.apply).getOrElse(JsNull).asValue)).vfuture
-    }),
-    AdminExtensionWellKnownRoute("GET", "/.well-known/otoroshi/extensions/foo/check", false, (ctx, request, body) => {
-      Results.Ok(Json.obj("check" -> true)).vfuture
-    }),
+    AdminExtensionWellKnownRoute(
+      "GET",
+      "/.well-known/otoroshi/extensions/foo/bars/:id",
+      false,
+      (ctx, request, body) => {
+        Results.Ok(Json.obj("id" -> ctx.named("id").map(JsString.apply).getOrElse(JsNull).asValue)).vfuture
+      }
+    ),
+    AdminExtensionWellKnownRoute(
+      "GET",
+      "/.well-known/otoroshi/extensions/foo/check",
+      false,
+      (ctx, request, body) => {
+        Results.Ok(Json.obj("check" -> true)).vfuture
+      }
+    )
   )
 
   override def adminApiRoutes(): Seq[AdminExtensionAdminApiRoute] = Seq(
-    AdminExtensionAdminApiRoute("GET", "/api/extensions/foo/foos/:id", false, (ctx, request, apk, _) => {
-      Results.Ok(Json.obj("foo_id" -> ctx.named("id").map(JsString.apply).getOrElse(JsNull).asValue)).vfuture
-    })
+    AdminExtensionAdminApiRoute(
+      "GET",
+      "/api/extensions/foo/foos/:id",
+      false,
+      (ctx, request, apk, _) => {
+        Results.Ok(Json.obj("foo_id" -> ctx.named("id").map(JsString.apply).getOrElse(JsNull).asValue)).vfuture
+      }
+    )
   )
 
   override def entities(): Seq[AdminExtensionEntity[EntityLocationSupport]] = {
@@ -140,8 +162,8 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
             id => datastores.fooDatastore.key(id),
             c => datastores.fooDatastore.extractId(c),
             stateAll = () => states.allFoos(),
-            stateOne = (id) => states.foo(id),
-            stateUpdate = (values) => states.updateFoos(values)
+            stateOne = id => states.foo(id),
+            stateUpdate = values => states.updateFoos(values)
           )
         )
       )
