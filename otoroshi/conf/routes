@@ -133,6 +133,8 @@ GET     /privateapps/generic/callback                         otoroshi.controlle
 POST    /privateapps/generic/callback                         otoroshi.controllers.AuthController.confidentialAppCallback()
 GET     /privateapps/generic/choose-provider                  otoroshi.controllers.AuthController.confidentialAppMultiLoginPage()
 POST    /privateapps/generic/choose-provider                  otoroshi.controllers.AuthController.confidentialAppMultiLoginPage()
+GET     /privateapps/generic/simple-login                     otoroshi.controllers.AuthController.confidentialAppSimpleLoginPage()
+POST    /privateapps/generic/simple-login                     otoroshi.controllers.AuthController.confidentialAppSimpleLoginPage()
 
 
 GET     /backoffice/auth0/login                               otoroshi.controllers.AuthController.backOfficeLogin()

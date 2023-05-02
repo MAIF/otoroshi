@@ -2,7 +2,7 @@ package otoroshi.controllers
 
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
+import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction, PrivateAppsActionContext}
 import otoroshi.auth._
 import otoroshi.env.Env
 import otoroshi.events._
@@ -14,7 +14,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import play.api.libs.json.{JsError, JsObject, JsSuccess, JsValue, Json}
 import play.api.mvc._
 
 import java.net.URLEncoder
@@ -101,7 +101,15 @@ class AuthController(
               case None => error
               case Some(auth) => f(auth)
             }
-          case None => error
+          case None => req.getQueryString("email") match {
+              case None => error
+              case Some(email) => NgMultiAuthModuleConfig.format.reads(authPlugin.config.raw) match {
+                case JsSuccess(config, _) =>
+              // TODO - pour mardi
+//                  config.usersGroups
+                case JsError(errors) => error
+              })
+            }
         }
       }
     }
@@ -163,39 +171,55 @@ class AuthController(
       }
     }
 
-  def confidentialAppMultiLoginPage() = PrivateAppsAction.async { ctx =>
-      ctx.request.getQueryString("route") match {
-        case None => NotFound(otoroshi.views.html.oto.error("Route not found", env)).vfuture
-        case Some(routeId) => {
-          env.proxyState.route(routeId).vfuture.flatMap {
-            case None => NotFound(otoroshi.views.html.oto.error("Route not found", env)).vfuture
-            case Some(route) if !route.plugins.hasPlugin[MultiAuthModule] =>
-              NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
-            case Some(route) if route.plugins.hasPlugin[MultiAuthModule] && route.id != env.backOfficeDescriptor.id =>
-              route.plugins.getPluginByClass[MultiAuthModule] match {
-                case Some(auth) => NgMultiAuthModuleConfig.format.reads(auth.config.raw) match {
-                  case JsSuccess(config, _) =>
-                    val auths = config.modules.flatMap(module => env.proxyState.authModule(module))
-                      .map(auth => (auth.name, auth.id))
-                    Results
-                      .Ok(otoroshi.views.html.privateapps.multilogin(env,
-                        auths,
-                        ctx.request.getQueryString("redirect"),
-                        route.id
-                      ))
-                      .vfuture
-                  case JsError(errors) =>
-                    logger.error(s"Failed to parse multi auth configuration, $errors")
-                    NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
-                }
-                case None =>  NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
-              }
+  def confidentialAppSimpleLoginPage() = multiLoginPage()(
+    (auths: JsObject, route: NgRoute, redirect: Option[String]) => {
+      Results
+        .Ok(otoroshi.views.html.privateapps.simplelogin(env,
+          redirect,
+          route.id
+        ))
+        .vfuture
+    })
 
-            case _ => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
-          }
+  def confidentialAppMultiLoginPage() = multiLoginPage()(
+    (auths: JsObject, route: NgRoute, redirect: Option[String]) => {
+      Results
+        .Ok(otoroshi.views.html.privateapps.multilogin(env,
+          Json.stringify(auths),
+          redirect,
+          route.id
+        ))
+        .vfuture
+    })
+
+  private def multiLoginPage()(f: (JsObject, NgRoute, Option[String]) => Future[Result]) = PrivateAppsAction.async { ctx =>
+    ctx.request.getQueryString("route") match {
+      case None => NotFound(otoroshi.views.html.oto.error("Route not found", env)).vfuture
+      case Some(routeId) =>
+        env.proxyState.route(routeId).vfuture.flatMap {
+          case None => NotFound(otoroshi.views.html.oto.error("Route not found", env)).vfuture
+          case Some(route) if !route.plugins.hasPlugin[MultiAuthModule] =>
+            NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+          case Some(route) if route.plugins.hasPlugin[MultiAuthModule] && route.id != env.backOfficeDescriptor.id =>
+            route.plugins.getPluginByClass[MultiAuthModule] match {
+              case Some(auth) => NgMultiAuthModuleConfig.format.reads(auth.config.raw) match {
+                case JsSuccess(config, _) =>
+                  val auths = config.modules.flatMap(module => env.proxyState.authModule(module))
+                    .foldLeft(Json.obj()) {
+                      case (acc, auth) => acc ++ Json.obj(auth.id -> auth.name)
+                    }
+                  f(auths, route, ctx.request.getQueryString("redirect"))
+                case JsError(errors) =>
+                  logger.error(s"Failed to parse multi auth configuration, $errors")
+                  NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+              }
+              case None => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+            }
+
+          case _ => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
         }
-      }
     }
+  }
 
   def confidentialAppLoginPage() =
     PrivateAppsAction.async { ctx =>
@@ -465,6 +489,8 @@ class AuthController(
                   )
 
               case _ =>
+                println(ctx.request.session
+                  .get(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}"))
                 ctx.request.session
                   .get(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
                   .getOrElse(

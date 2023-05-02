@@ -340,6 +340,11 @@ case class NgRoute(
             .getPluginByClass[NgLegacyAuthModuleCall]
             .flatMap(p => NgLegacyAuthModuleCallConfig.format.reads(p.config.raw).asOpt.flatMap(_.config.module))
         ),
+//        .orElse(
+//          plugins
+//            .getPluginByClass[MultiAuthModule]
+//            .flatMap(p => NgMultiAuthModuleConfig.format.reads(p.config.raw).asOpt.flatMap(a => a.modules))
+//        ),
       securityExcludedPatterns = plugins
         .getPluginByClass[AuthModule]
         .map(_.exclude)

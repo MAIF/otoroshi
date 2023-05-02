@@ -2,12 +2,10 @@ package otoroshi.next.plugins
 
 import akka.stream.Materializer
 import akka.util.ByteString
-import otoroshi.auth.AuthModule
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.PrivateAppsUserHelper
 import otoroshi.next.plugins.api._
-import otoroshi.security.IdGenerator
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -118,7 +116,10 @@ object NgAuthModuleConfig {
 }
 
 case class NgMultiAuthModuleConfig(modules: Seq[String] = Seq.empty,
-                                   passWithApikey: Boolean = false) extends NgPluginConfig {
+                                   passWithApikey: Boolean = false,
+                                   useEmailPrompt: Boolean = false,
+                                   usersGroups: JsObject = Json.obj()
+                                  ) extends NgPluginConfig {
   def json: JsValue = NgMultiAuthModuleConfig.format.writes(this)
 }
 
@@ -132,7 +133,13 @@ object NgMultiAuthModuleConfig {
           .filter(_.nonEmpty),
         passWithApikey = json.select("pass_with_apikey")
           .asOpt[Boolean]
-          .getOrElse(false)
+          .getOrElse(false),
+        useEmailPrompt = json.select("use_email_prompt")
+          .asOpt[Boolean]
+          .getOrElse(false),
+        usersGroups = json.select("users_groups")
+          .asOpt[JsObject]
+          .getOrElse(Json.obj())
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -170,7 +177,7 @@ class MultiAuthModule extends NgAccessValidator {
   override def isAccessAsync: Boolean = true
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val NgMultiAuthModuleConfig(modules, passWithApikey) =
+    val NgMultiAuthModuleConfig(modules, passWithApikey, useEmailPrompt, usersGroups) =
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgMultiAuthModuleConfig())
 
     val maybeApikey = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
@@ -202,19 +209,33 @@ class MultiAuthModule extends NgAccessValidator {
                 .flatMap(module => env.proxyState.authModule(module))
                 .find(module => cookies.exists(cookie => cookie.name == s"oto-papps-${module.routeCookieSuffix(ctx.route)}")) match {
                 case Some(module) => passWithAuthModule(module.id, ctx)
-                case None =>
-                  NgAccess.NgDenied(
-                    Results.Redirect(s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/choose-provider?route=${ctx.route.id}")
-                  )
-                  .vfuture
+                case None => redirectToAuthModule(ctx, useEmailPrompt)
               }
-            case _ => NgAccess.NgDenied(
-              Results.Redirect(s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/choose-provider?route=${ctx.route.id}")
-            )
-              .vfuture
+            case _ => redirectToAuthModule(ctx, useEmailPrompt)
           }
         }
       case _ => NgAccess.NgAllowed.vfuture
+    }
+  }
+
+  private def redirectToAuthModule(ctx: NgAccessContext, useEmailPrompt: Boolean)
+                                  (implicit env: Env) = {
+    val redirect = ctx.request
+      .getQueryString("redirect")
+      .getOrElse(s"${ctx.request.theProtocol}://${ctx.request.theHost}${ctx.request.relativeUri}")
+
+    if (useEmailPrompt) {
+      NgAccess.NgDenied(
+        Results.Redirect(
+          s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/simple-login?route=${ctx.route.id}&redirect=${redirect}"
+        )
+      ).vfuture
+    } else {
+      NgAccess
+        .NgDenied(Results.Redirect(
+          s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/choose-provider?route=${ctx.route.id}&redirect=${redirect}"
+        )
+      ).vfuture
     }
   }
 
@@ -234,7 +255,6 @@ class MultiAuthModule extends NgAccessValidator {
           )
           .map(NgAccess.NgDenied.apply)
       case Some(auth) => {
-        println("passWithAuthModule")
         // here there is a datastore access (by key) to get the user session
         PrivateAppsUserHelper.isPrivateAppsSessionValidWithAuth(ctx.request, ctx.route.legacy, auth).flatMap {
           case Some(paUsr) =>
