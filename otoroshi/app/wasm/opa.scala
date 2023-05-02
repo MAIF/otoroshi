@@ -290,13 +290,13 @@ object LinearMemories {
       env: Env,
       executionContext: ExecutionContext
   ): Array[LinearMemory] = {
-    implicit val mat = env.otoroshiMaterializer
-    if (memories.get.isEmpty) {
-      memories.set(
-        OPA.getLinearMemories(config, ctx)
-      )
-    }
     if (config.opa) {
+      implicit val mat = env.otoroshiMaterializer
+      if (memories.get.isEmpty) {
+        memories.set(
+          OPA.getLinearMemories(config, ctx)
+        )
+      }
       memories.get().toArray
     } else {
       Array.empty
