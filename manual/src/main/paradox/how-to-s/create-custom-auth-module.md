@@ -1,3 +1,25 @@
+# Create your Authentication module
+
+Authentication modules can be used to protect routes. In some cases, you need to create your own custom authentication module to create a new one or simply inherit and extend an exiting module.
+
+You can write your own authentication using your favorite IDE. Just create an SBT project with the following dependencies. It can be quite handy to manage the source code like any other piece of code, and it avoid the compilation time for the script at Otoroshi startup.
+
+```scala
+lazy val root = (project in file(".")).
+  settings(
+    inThisBuild(List(
+      organization := "com.example",
+      scalaVersion := "2.12.7",
+      version      := "0.1.0-SNAPSHOT"
+    )),
+    name := "my-custom-auth-module",
+    libraryDependencies += "fr.maif" %% "otoroshi" % "1.x.x"
+  )
+```
+
+Just below, you can find an example of Custom Auth. module. 
+
+```scala
 package otoroshi.auth.custom
 
 import akka.http.scaladsl.util.FastFuture
@@ -156,3 +178,51 @@ case class CustomAuthModule(authConfig: CustomModuleConfig) extends AuthModule {
 
   override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Either[String, BackOfficeUser]] = ???
 }
+```
+
+This custom Auth. module inherits from AuthModule (the Auth module have to inherit from the AuthModule trait to be found by Otoroshi). It exposes a simple UI to login, and create an user for each callback request without any verification. Methods starting with bo will be called in case that the auth. module is used on the back office and in other cases, the pa methods (pa for Private App) will be called to protect a route.
+
+This custom Auth. module uses a [Play template](https://www.playframework.com/documentation/2.8.x/ScalaTemplates) to display the login page. It's not required by Otoroshi but it's a easy way to create a login form.
+
+```html 
+@import otoroshi.env.Env
+
+@(action: String, token: String)
+
+<div id="app">
+    <h2>Login page</h2>
+
+    <form method="POST" action="@Html(action)">
+    <input type="hidden" name="token" className="form-control" value="@token" />
+    <button
+        type="submit">
+        Login
+    </button>
+    </form>
+</div>
+```
+
+Your hierarchy files should be something like:
+
+```
+otoroshi
+| auth
+  | custom
+      |customModule.scala
+      | views
+        | login.scala.html
+```
+
+When your code is ready, create a jar file 
+
+```
+sbt package
+```
+
+and add the jar file to the Otoroshi classpath
+
+```sh
+java -cp "/path/to/customModule.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
+```
+
+then, in the authentication modules, you can chose your custom module in the list.
