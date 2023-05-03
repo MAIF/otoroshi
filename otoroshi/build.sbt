@@ -164,7 +164,7 @@ libraryDependencies ++= Seq(
   "org.sangria-graphql"             %% "sangria"                                   % "3.4.0",
   "org.bigtesting"                   % "routd"                                     % "1.0.7",
   // using a custom one right now as current build is broken
-   "org.extism.sdk"                   % "extism"                                    % "0.3.0",
+//   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
   if (scalaLangVersion.startsWith("2.12")) {
     "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
   } else {
