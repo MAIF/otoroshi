@@ -44,7 +44,7 @@ trait AuthModule {
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]]
-  def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)(implicit
+  def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[String, PrivateAppsUser]]
@@ -293,9 +293,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
       .map { template =>
         AuthModuleConfig._fmt(env).reads(defaultModule.json.asObject.deepMerge(template)) match {
           case JsSuccess(value, _) => value
-          case JsError(errors) =>
-            println(errors)
-            defaultModule
+          case JsError(errors) => defaultModule
         }
       }
       .getOrElse {

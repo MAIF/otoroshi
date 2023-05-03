@@ -108,14 +108,16 @@ object CustomAuthModule {
 case class CustomAuthModule(authConfig: CustomModuleConfig) extends AuthModule {
   def this() = this(CustomAuthModule.defaultConfig)
 
-  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor, isRoute: Boolean)
+                          (implicit ec: ExecutionContext, env: Env): Future[Result] = {
     val redirect = request.getQueryString("redirect")
     val hash = env.sign(s"${authConfig.id}:::${descriptor.id}")
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
       Results
-        .Ok(auth.custom.views.html.login(s"/privateapps/generic/callback?desc=${descriptor.id}&hash=$hash", token))
+        .Ok(auth.custom.views.html.login(s"/privateapps/generic/callback?desc=${descriptor.id}&hash=$hash&route=${isRoute}", token))
         .as(MimeTypes.HTML)
         .addingToSession(
+          "ref"                                                     -> authConfig.id,
           s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
             routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)(request)
           )

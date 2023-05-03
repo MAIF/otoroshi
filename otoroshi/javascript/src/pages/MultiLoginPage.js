@@ -1,20 +1,32 @@
 import React, { Component } from 'react';
 
-function Provider({ name, link }) {
+const COLORS = {
+  basic: '#2980b9',
+  saml: '#c0392b',
+  oauth1: '#16a085',
+  oauth2: '#f39c12',
+  ldap: '#27ae60',
+  custom: '#f9b000',
+}
+
+function Provider({ name, link, type }) {
+
   return <a style={{
     textDecoration: 'none',
     cursor: 'pointer'
   }} href={link}>
     <div style={{
-      background: '#f9b000',
+      background: COLORS[type] || '#f9b000',
       minHeight: 46,
       display: 'flex',
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
+      alignItems: 'center',
       color: '#fff',
       textTransform: 'uppercase'
     }}>
       <div style={{
         minWidth: 46,
+        minHeight: 46,
         background: '#fff',
         color: '#000',
         display: 'flex',
@@ -23,9 +35,14 @@ function Provider({ name, link }) {
       }}>
         {name.substring(0, 1)}
       </div>
-      <p style={{ margin: 'auto', padding: '0 .5em' }}>LOG IN WITH {name}</p>
+      <p style={{
+        margin: 0, padding: '0 .5em 0 1em',
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis'
+      }}>LOG IN WITH {name}</p>
     </div>
-  </a>
+  </a >
 }
 
 export class MultiLoginPage extends Component {
@@ -41,8 +58,10 @@ export class MultiLoginPage extends Component {
   render() {
     const auths = JSON.parse(this.props.auths);
 
+    const { types, ...authenticationModules } = auths;
+
     return (
-      <div style={{        
+      <div style={{
         background: '#494948',
         border: '5px solid #fff',
         borderRadius: 12,
@@ -67,8 +86,8 @@ export class MultiLoginPage extends Component {
           width: '100%',
           gap: 12
         }}>
-          {Object.entries(auths).map(([id, name]) => {
-            return <Provider name={name} link={this.getLink(id)} key={id} />
+          {Object.entries(authenticationModules).map(([id, name]) => {
+            return <Provider name={name} link={this.getLink(id)} key={id} type={types[id]} />
           })}
         </div>
       </div>

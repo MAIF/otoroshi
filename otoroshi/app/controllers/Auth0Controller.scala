@@ -220,8 +220,12 @@ class AuthController(
               case Some(auth) => NgMultiAuthModuleConfig.format.reads(auth.config.raw) match {
                 case JsSuccess(config, _) =>
                   val auths = config.modules.flatMap(module => env.proxyState.authModule(module))
-                    .foldLeft(Json.obj()) {
-                      case (acc, auth) => acc ++ Json.obj(auth.id -> auth.name)
+                    .foldLeft(Json.obj("types" -> Json.obj())) {
+                      case (acc, auth) => (acc ++ Json.obj(auth.id -> auth.name)).deepMerge(Json.obj(
+                        "types" -> Json.obj(
+                          auth.id -> auth.`type`
+                        )
+                      ))
                     }
                   f(auths, route, ctx.request.getQueryString("redirect"))
                 case JsError(errors) =>
@@ -614,7 +618,7 @@ class AuthController(
                 case auth                                                                                => {
                   auth
                     .authModule(ctx.globalConfig)
-                    .paCallback(ctx.request, ctx.globalConfig, descriptor, false)
+                    .paCallback(ctx.request, ctx.globalConfig, descriptor)
                     .flatMap {
                       case Left(error) => {
                         BadRequest(
@@ -670,7 +674,7 @@ class AuthController(
                 case auth => {
                   auth
                     .authModule(ctx.globalConfig)
-                    .paCallback(ctx.request, ctx.globalConfig, route.legacy, true)
+                    .paCallback(ctx.request, ctx.globalConfig, route.legacy)
                     .flatMap {
                       case Left(error) => {
                         BadRequest(

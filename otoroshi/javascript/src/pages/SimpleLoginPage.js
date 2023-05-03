@@ -18,20 +18,30 @@ export class SimpleLoginPage extends Component {
     e.preventDefault();
 
     const loginPage = this.getLink(this.state.email);
-    fetch(loginPage, {
-      credentials: 'include',
-      redirect: 'follow'
-    })
-      .then(r => {
-        if (r.status === 500) {
-          return { 'Otoroshi-Error': 'Something wrong happened, try again.' };
-        } else if (r.headers.get('Content-Type') === 'application/json') {
-          return r.json();
-        } else {
-          window.location.replace(loginPage)
-        }
+    console.log(loginPage)
+    try {
+      fetch(loginPage, {
+        credentials: 'include',
+        redirect: 'manual'
       })
-      .then(error => this.setState({ error }))
+        .then(r => {
+          if (r.status === 500) {
+            return { 'Otoroshi-Error': 'Something wrong happened, try again.' };
+          } else if (r.status > 300 && r.status < 400) {
+            window.location.replace(r.response.Location)
+          } else if (r.headers.get('Content-Type') === 'application/json') {
+            return r.json();
+          } else {
+            window.location.replace(loginPage)
+          }
+        })
+        .then(error => {
+          console.log("ERROR")
+          this.setState({ error })
+        })
+    } catch (err) {
+      console.log("ERROROROR")
+    }
   }
 
   render() {

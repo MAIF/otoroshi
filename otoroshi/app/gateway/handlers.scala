@@ -168,7 +168,6 @@ object GatewayRequestHandler {
     val request = req
 
     withAuthConfig(route, req, attrs) { auth =>
-      println(auth)
       val u: Future[Option[PrivateAppsUser]] = auth match {
         case _: SamlAuthModuleConfig =>
           request.cookies

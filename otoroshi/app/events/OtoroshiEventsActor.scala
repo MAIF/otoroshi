@@ -1149,7 +1149,6 @@ object Exporters {
       selector match {
         case None       => ()
         case Some(path) =>
-          println(selector, JsonOperationsHelper.getValueAtPath(path, event)._2)
           JsonOperationsHelper.getValueAtPath(path, event)._2.asOpt[Long] match {
             case None        => f(1)
             case Some(value) => f(value)
@@ -1179,7 +1178,6 @@ object Exporters {
               (event \ "@type").asOpt[String] == metric.eventType ||
               (event \ "alert").asOpt[String] == metric.eventType
             ) {
-              println(event)
               metric.kind match {
                 case MetricSettingsKind.Counter if metric.selector.isEmpty   =>
                   env.metrics.counterInc(id)
