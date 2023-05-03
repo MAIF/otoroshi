@@ -559,7 +559,7 @@ class AuthController(
         .orElse(ctx.request.session.get("route"))
         .contains("true")
 
-      var refFromRelayState: Option[String] = None
+      var refFromRelayState: Option[String] = ctx.request.session.get("ref")
 
       ctx.request.body.asFormUrlEncoded match {
         case Some(body) =>
