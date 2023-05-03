@@ -720,7 +720,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                   case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
-                      Results.Redirect(s"/privateapps/generic/callback?route=${isRoute}&desc=${descriptor.id}&token=$token&hash=$hash")
+                      Results.Redirect(s"/privateapps/generic/callback?route=$isRoute&desc=${descriptor.id}&token=$token&hash=$hash&ref=${authConfig.id}")
                     }
                 }
             }
@@ -730,7 +730,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         Results
           .Ok(
             otoroshi.views.html.oto
-              .login(s"/privateapps/generic/callback?route=${isRoute}&desc=${descriptor.id}&hash=$hash", "POST", token, false, env)
+              .login(s"/privateapps/generic/callback?route=${isRoute}&desc=${descriptor.id}&hash=$hash&ref=${authConfig.id}", "POST", token, false, env)
           )
           .addingToSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
