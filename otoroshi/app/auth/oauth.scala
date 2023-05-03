@@ -286,13 +286,13 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
             s"using pkce flow with code_verifier = $codeVerifier, code_challenge = $codeChallenge and code_challenge_method = $codeChallengeMethod"
           )
         (
-          s"${authConfig.loginUrl}?route=${isRoute}&scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri&code_challenge=$codeChallenge&code_challenge_method=$codeChallengeMethod",
+          s"${authConfig.loginUrl}?&scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri&code_challenge=$codeChallenge&code_challenge_method=$codeChallengeMethod",
           Seq((s"${authConfig.id}-code_verifier" -> codeVerifier))
         )
       case _                          =>
         if (logger.isDebugEnabled) logger.debug(s"not using pkce flow")
         (
-          s"${authConfig.loginUrl}?route=${isRoute}&scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
+          s"${authConfig.loginUrl}?&scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri",
           Seq.empty[(String, String)]
         )
     }
@@ -302,6 +302,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     ).addingToSession(
       sessionParams ++ Map(
         // s"${authConfig.id}-desc"                                          -> descriptor.id,
+        "route"                                                           -> s"$isRoute",
+        "ref"                                                             -> authConfig.id,
         "hash"                                                            -> hash,
         s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
           routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
