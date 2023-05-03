@@ -76,11 +76,18 @@ const schema = {
         'Plugin is compiled targeting WASI (checked if you use Go or JS/TS as plugin language).',
     },
   },
-  preserve: {
-    type: 'box-bool',
-    label: 'Preserve VMs',
+  lifetime: {
+    type: 'select',
+    label: 'VM lifetime',
     props: {
+      label: 'VM lifetime',
       description: 'Doesnt stop the wasm vm during a request',
+      help: 'Doesnt stop the wasm vm during a request',
+      options: [
+        'Invocation',
+        'Request',
+        'Forever',
+      ].map((v) => ({ label: v, value: v }))
     },
   },
   opa: {
@@ -209,7 +216,7 @@ export default {
       'source',
       'functionName',
       v.source.kind.toLowerCase() !== 'local' && 'wasi',
-      v.source.kind.toLowerCase() !== 'local' && 'preserve',
+      v.source.kind.toLowerCase() !== 'local' && 'lifetime',
       v.source.kind.toLowerCase() !== 'local' && 'authorizations',
       v.source.kind.toLowerCase() !== 'local' && {
         type: 'group',
