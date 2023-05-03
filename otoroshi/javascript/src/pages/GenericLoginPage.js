@@ -108,7 +108,7 @@ function responseToObject(response) {
 
 export class GenericLoginPage extends Component {
   state = {
-    username: '',
+    username: new URLSearchParams(window.location.search).get('email') || this.props.username,
     password: '',
     error: null,
     message: null,
@@ -143,7 +143,7 @@ export class GenericLoginPage extends Component {
                 type="text"
                 name="username"
                 className="form-control"
-                value={this.props.username}
+                value={this.state.username}
                 onChange={this.onChange}
               />
             </div>

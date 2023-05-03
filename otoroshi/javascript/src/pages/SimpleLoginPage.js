@@ -15,12 +15,22 @@ export class SimpleLoginPage extends Component {
   }
 
   redirect = e => {
-    e.preventDefault()
-    fetch(this.getLink(this.state.email), {
+    e.preventDefault();
+
+    const loginPage = this.getLink(this.state.email);
+    fetch(loginPage, {
       credentials: 'include',
       redirect: 'follow'
     })
-      .then(r => r.json())
+      .then(r => {
+        if (r.status === 500) {
+          return { 'Otoroshi-Error': 'Something wrong happened, try again.' };
+        } else if (r.headers.get('Content-Type') === 'application/json') {
+          return r.json();
+        } else {
+          window.location.replace(loginPage)
+        }
+      })
       .then(error => this.setState({ error }))
   }
 

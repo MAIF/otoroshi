@@ -243,9 +243,9 @@ object GatewayRequestHandler {
     route.legacy.authConfigRef match {
       case None =>
         route.plugins.getPluginByClass[MultiAuthModule]
-          .map(multiAuth => NgMultiAuthModuleConfig.format.reads(multiAuth.config.raw))
-          .collect { case JsSuccess(config, _) =>
-            req.cookies.filter(cookie => cookie.name.startsWith("oto-papps")) match {
+          .map(multiAuth => NgMultiAuthModuleConfig.format.reads(multiAuth.config.raw) match {
+            case JsSuccess(config, _) => req.cookies.filter(cookie => cookie.name.startsWith("oto-papps")) match {
+              case Nil => missingAuthRefError
               case cookies if cookies.nonEmpty =>
                 config.modules
                   .flatMap(module => env.proxyState.authModule(module))
@@ -254,7 +254,8 @@ object GatewayRequestHandler {
                   case None => missingAuthRefError
                 }
             }
-          }
+            case JsError(_) => missingAuthRefError
+          })
           .getOrElse(missingAuthRefError)
       case Some(ref) =>
         env.proxyState.authModuleAsync(ref).flatMap {

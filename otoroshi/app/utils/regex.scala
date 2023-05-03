@@ -35,6 +35,14 @@ object RegexPool {
     }
     pool.get(originalPattern)
   }
+
+  def theRegex(originalPattern: String): Option[Regex] = {
+    originalPattern match {
+      case value if value.startsWith("Regex(") => regex(value).some
+      case value if value.startsWith("Wildcard(") => apply(value).some
+      case _ => None
+    }
+  }
 }
 
 object ReplaceAllWith {

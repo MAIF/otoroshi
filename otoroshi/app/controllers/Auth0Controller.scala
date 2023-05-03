@@ -11,10 +11,10 @@ import otoroshi.models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDe
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
 import otoroshi.security.IdGenerator
-import otoroshi.utils.TypedMap
+import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsError, JsObject, JsSuccess, JsValue, Json}
+import play.api.libs.json.{JsArray, JsError, JsObject, JsSuccess, JsValue, Json}
 import play.api.mvc._
 
 import java.net.URLEncoder
@@ -80,7 +80,7 @@ class AuthController(
       )
   }
 
-  def withMultiAuthConfig(route: NgRoute, req: RequestHeader)(
+  def withMultiAuthConfig(route: NgRoute, req: RequestHeader, refFromRelayState: Option[String] = None)(
     f: AuthModuleConfig => Future[Result]
   ): Future[Result] = {
     lazy val error = Errors.craftResponseResult(
@@ -92,23 +92,38 @@ class AuthController(
       maybeRoute = Some(route),
       attrs = TypedMap.empty
     )
+
     route.plugins.getPluginByClass[MultiAuthModule] match {
       case None => error
       case Some(authPlugin) => {
-        req.getQueryString("ref") match {
-          case Some(ref) =>
-            env.proxyState.authModuleAsync(ref).flatMap {
+        (req.getQueryString("ref"), refFromRelayState) match {
+          case (Some(ref), _) => env.proxyState.authModuleAsync(ref).flatMap {
               case None => error
               case Some(auth) => f(auth)
             }
-          case None => req.getQueryString("email") match {
+          case (_, Some(ref)) => env.proxyState.authModuleAsync(ref).flatMap {
+              case None => error
+              case Some(auth) => f(auth)
+            }
+          case (_, _) => req.getQueryString("email") match {
               case None => error
               case Some(email) => NgMultiAuthModuleConfig.format.reads(authPlugin.config.raw) match {
-                case JsSuccess(config, _) =>
-              // TODO - pour mardi
-//                  config.usersGroups
-                case JsError(errors) => error
-              })
+                case JsSuccess(config, _) => config.usersGroups
+                  .value
+                  .find(p => p._2.asOpt[Seq[String]].getOrElse(Seq.empty)
+                    .exists(em => RegexPool.theRegex(em).map(e => e.matches(email)).getOrElse(email == em))) match {
+                  case Some(auth) => env.proxyState.authModuleAsync(auth._1).flatMap {
+                    case None => error
+                    case Some(auth) => f(auth)
+                  }
+                  case None =>
+                    logger.error(s"Email does not match any groups")
+                    error
+                }
+                case JsError(_) =>
+                  logger.error(s"Failed to read auth module configuration")
+                  error
+              }
             }
         }
       }
@@ -224,12 +239,9 @@ class AuthController(
   def confidentialAppLoginPage() =
     PrivateAppsAction.async { ctx =>
       import otoroshi.utils.http.RequestImplicits._
-
       implicit val req = ctx.request
 
-      val ref = ctx.request.getQueryString("ref")
-
-      (ctx.request.getQueryString("desc"), ctx.request.getQueryString("route")) match {
+      (req.getQueryString("desc"), req.getQueryString("route")) match {
         case (None, None)            => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
         case (_, Some(route)) =>
           env.proxyState.route(route).vfuture.flatMap {
@@ -237,21 +249,21 @@ class AuthController(
             case Some(route) if !route.plugins.hasPlugin[MultiAuthModule] =>
               NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
             case Some(route) if route.plugins.hasPlugin[MultiAuthModule] && route.id != env.backOfficeDescriptor.id => {
-              withMultiAuthConfig(route, ctx.request) { auth =>
+              withMultiAuthConfig(route, req) { auth =>
                 val expectedCookieName = s"oto-papps-${auth.routeCookieSuffix(route)}"
-                ctx.request.cookies.find(c => c.name == expectedCookieName) match {
+                req.cookies.find(c => c.name == expectedCookieName) match {
                   case Some(cookie) => {
                     env.extractPrivateSessionId(cookie) match {
                       case None =>
-                        auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, route.legacy, true)
-                      case Some(sessionId) => {
+                        auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, route.legacy, true)
+                      case Some(sessionId) =>
                         env.datastores.privateAppsUserDataStore.findById(sessionId).flatMap {
                           case None =>
-                            auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, route.legacy, true)
+                            auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, route.legacy, true)
                           case Some(user) =>
                             val sec = computeSec(user)
                             val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
-                            ctx.request
+                            req
                               .getQueryString("redirect")
                               .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
                               case "urn:ietf:wg:oauth:2.0:oob" => {
@@ -319,11 +331,10 @@ class AuthController(
                               }
                             }
                         }
-                      }
                     }
                   }
                   case None =>
-                    auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, route.legacy, true)
+                    auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, route.legacy, true)
                 }
               }
             }
@@ -335,21 +346,21 @@ class AuthController(
             case Some(descriptor) if !descriptor.privateApp                                                =>
               NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
             case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
-              withAuthConfig(descriptor, ctx.request) { auth =>
+              withAuthConfig(descriptor, req) { auth =>
                 val expectedCookieName = s"oto-papps-${auth.cookieSuffix(descriptor)}"
-                ctx.request.cookies.find(c => c.name == expectedCookieName) match {
+                req.cookies.find(c => c.name == expectedCookieName) match {
                   case Some(cookie) => {
                     env.extractPrivateSessionId(cookie) match {
                       case None            =>
-                        auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor, false)
+                        auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, descriptor, false)
                       case Some(sessionId) => {
                         env.datastores.privateAppsUserDataStore.findById(sessionId).flatMap {
                           case None       =>
-                            auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor, false)
+                            auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, descriptor, false)
                           case Some(user) =>
                             val sec    = computeSec(user)
                             val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
-                            ctx.request
+                            req
                               .getQueryString("redirect")
                               .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
                               case "urn:ietf:wg:oauth:2.0:oob" => {
@@ -415,7 +426,7 @@ class AuthController(
                     }
                   }
                   case None         =>
-                    auth.authModule(ctx.globalConfig).paLoginPage(ctx.request, ctx.globalConfig, descriptor, false)
+                    auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, descriptor, false)
                 }
               }
             }
@@ -489,8 +500,6 @@ class AuthController(
                   )
 
               case _ =>
-                println(ctx.request.session
-                  .get(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}"))
                 ctx.request.session
                   .get(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
                   .getOrElse(
@@ -546,9 +555,11 @@ class AuthController(
       var desc = ctx.request.getQueryString("desc")
         .orElse(ctx.request.session.get("desc"))
 
-      val isRoute = ctx.request.getQueryString("route")
+      var isRoute = ctx.request.getQueryString("route")
         .orElse(ctx.request.session.get("route"))
         .contains("true")
+
+      var refFromRelayState: Option[String] = None
 
       ctx.request.body.asFormUrlEncoded match {
         case Some(body) =>
@@ -559,8 +570,12 @@ class AuthController(
 
             if (!params.contains("hash") || !params.contains("redirect_uri") || !params.contains("desc"))
               NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
-            else
+            else {
               desc = params("desc").some
+              refFromRelayState = params.get("ref")
+              if (!isRoute)
+                isRoute = params.get("route").forall(_ == "true")
+            }
           }
         case None       =>
       }
@@ -628,7 +643,7 @@ class AuthController(
           case Some(route) if !route.plugins.hasPlugin[MultiAuthModule] =>
             NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
           case Some(route) if route.plugins.hasPlugin[MultiAuthModule] && route.id != env.backOfficeDescriptor.id => {
-            withMultiAuthConfig(route, ctx.request) { _auth =>
+            withMultiAuthConfig(route, ctx.request, refFromRelayState) { _auth =>
               verifyHash(route.id, _auth, ctx.request) {
                 case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn => {
                   val authModule = auth.authModule(ctx.globalConfig).asInstanceOf[BasicAuthModule]
