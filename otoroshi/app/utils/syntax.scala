@@ -332,6 +332,17 @@ object implicits {
   implicit class BetterJsLookupResult(private val obj: JsLookupResult) extends AnyVal {
     def select(name: String): JsLookupResult = obj \ name
     def select(index: Int): JsLookupResult   = obj \ index
+    def strConvert(): Option[String] = {
+      obj.asOpt[JsValue].getOrElse(JsNull) match {
+        case JsNull => "null".some
+        case JsNumber(v) => v.toString().some
+        case JsString(v) => v.some
+        case JsBoolean(v) => v.toString.some
+        case o @ JsObject(_) => o.stringify.some
+        case a @ JsArray(_) => a.stringify.some
+        case _ => None
+      }
+    }
   }
   implicit class BetterJsReadable(private val obj: JsReadable)         extends AnyVal {
     def asString: String              = obj.as[String]

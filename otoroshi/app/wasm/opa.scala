@@ -223,7 +223,7 @@ object OPA extends AwaitCapable {
     }
   }
 
-  def evalute(plugin: Plugin, input: String): String = {
+  def evaluate(plugin: Plugin, input: String): String = {
     val entrypoint = 0
 
     // TODO - read and load builtins functions by calling dumpJSON
@@ -290,13 +290,13 @@ object LinearMemories {
       env: Env,
       executionContext: ExecutionContext
   ): Array[LinearMemory] = {
-    implicit val mat = env.otoroshiMaterializer
-    if (memories.get.isEmpty) {
-      memories.set(
-        OPA.getLinearMemories(config, ctx)
-      )
-    }
     if (config.opa) {
+      implicit val mat = env.otoroshiMaterializer
+      if (memories.get.isEmpty) {
+        memories.set(
+          OPA.getLinearMemories(config, ctx)
+        )
+      }
       memories.get().toArray
     } else {
       Array.empty

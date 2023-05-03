@@ -86,7 +86,11 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
           Ok(otoroshi.views.html.oto.saml(encoded, authConfig.singleSignOnUrl, env, Some(relayState)))
         else
           Redirect(
+<<<<<<< HEAD
             s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}&RelayState=$relayState"
+=======
+            s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}&RelayState=${relayState}"
+>>>>>>> master
           )
             .addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))
     }

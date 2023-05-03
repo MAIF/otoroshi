@@ -20,6 +20,10 @@ export default {
         suffix: 'seconds',
       },
     },
+    add_fields: {
+      type: 'object',
+      label: 'add fields'
+    },
     algo: {
       type: 'form',
       collapsable: true,
@@ -216,5 +220,5 @@ export default {
       },
     },
   },
-  config_flow: ['version', 'ttl', 'header_name', 'algo'],
+  config_flow: ['version', 'ttl', 'header_name', 'add_fields', 'algo'],
 };

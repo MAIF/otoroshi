@@ -209,6 +209,7 @@ export class WasmPluginsPage extends Component {
       'config.functionName',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.config',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.preserve',
+      value.config.source.kind.toLowerCase() !== 'local' && 'config.opa',
       value.config.source.kind.toLowerCase() !== 'local' && '<<<Wasm host function authorizations',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.wasi',
       value.config.source.kind.toLowerCase() !== 'local' && 'config.allowedPaths',
@@ -389,6 +390,12 @@ export class WasmPluginsPage extends Component {
       type: 'bool',
       props: {
         label: 'WASI',
+      },
+    },
+    'config.opa': {
+      type: 'bool',
+      props: {
+        label: 'OPA rego policy',
       },
     },
     'config.authorizations.httpAccess': {

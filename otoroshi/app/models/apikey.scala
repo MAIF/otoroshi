@@ -904,7 +904,9 @@ object ApiKeyHelper {
                             true
                           }
                         } match {
-                        case Success(_) => FastFuture.successful(Some(apiKey))
+                        case Success(_) =>
+                          attrs.put(otoroshi.plugins.Keys.ApiKeyJwtKey -> Json.parse(jwt.getPayload.byteString.decodeBase64.utf8String))
+                          FastFuture.successful(Some(apiKey))
                         case Failure(e) => FastFuture.successful(None)
                       }
                     }
@@ -1440,6 +1442,7 @@ object ApiKeyHelper {
                               rotationInfos.foreach { i =>
                                 attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
                               }
+                              attrs.put(otoroshi.plugins.Keys.ApiKeyJwtKey -> Json.parse(jwt.getPayload.byteString.decodeBase64.utf8String))
                               attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
                               sendQuotasAlmostExceededError(apiKey, quotas)
                               callDownstream(config, Some(apiKey), None)
@@ -1813,7 +1816,9 @@ object ApiKeyHelper {
                           true
                         }
                       } match {
-                      case Success(_) => apikey.right
+                      case Success(_) =>
+                        attrs.put(otoroshi.plugins.Keys.ApiKeyJwtKey -> Json.parse(jwt.getPayload.byteString.decodeBase64.utf8String))
+                        apikey.right
                       case Failure(e) => apikey.some.left
                     }
                   }

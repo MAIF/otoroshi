@@ -15,6 +15,7 @@ case class AttributeSetter[A](key: play.api.libs.typedmap.TypedKey[_ <: A], f: J
 object Keys {
   val OtoTokenKey              = TypedKey[JsObject]("otoroshi.core.OtoToken")
   val ApiKeyKey                = TypedKey[ApiKey]("otoroshi.core.ApiKey")
+  val ApiKeyJwtKey             = TypedKey[JsValue]("otoroshi.core.ApiKeyJwt")
   val ApiKeyRotationKey        = TypedKey[ApiKeyRotationInfo]("otoroshi.core.ApiKeyRotationInfo")
   val ApiKeyRemainingQuotasKey = TypedKey[RemainingQuotas]("otoroshi.core.RemainingQuotas")
   val UserKey                  = TypedKey[PrivateAppsUser]("otoroshi.core.UserKey")
