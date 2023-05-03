@@ -16,7 +16,7 @@ class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
     with RedisLikeStore[AuthModuleConfig] {
 
   override def redisLike(implicit env: Env): RedisLike    = redisCli
-  override def fmt: Format[AuthModuleConfig]              = AuthModuleConfig._fmt
+  override def fmt: Format[AuthModuleConfig]              = AuthModuleConfig._fmt(_env)
   override def key(id: String): String                    = s"${_env.storageRoot}:auth:configs:${id}"
   override def extractId(value: AuthModuleConfig): String = value.id
 

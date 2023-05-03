@@ -366,6 +366,7 @@ GET     /api/client-validators                                otoroshi.controlle
 POST    /api/client-validators                                otoroshi.controllers.adminapi.ClientValidatorsController.createAction()
 
 GET     /api/auths/_template                                  otoroshi.controllers.adminapi.TemplatesController.initiateAuthModule()
+GET     /api/auths/templates                                  otoroshi.controllers.adminapi.TemplatesController.findAllTemplates()
 POST    /api/auths/:id/register/start                         otoroshi.controllers.adminapi.AuthModulesController.startRegistration(id)
 POST    /api/auths/:id/register/finish                        otoroshi.controllers.adminapi.AuthModulesController.finishRegistration(id)
 # GET     /api/auths/:id                                        otoroshi.controllers.adminapi.AuthModulesController.findGlobalAuthModuleById(id)

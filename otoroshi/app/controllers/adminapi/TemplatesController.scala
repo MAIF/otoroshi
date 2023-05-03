@@ -147,20 +147,23 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def initiateAuthModule() =
     ApiAction.async { ctx =>
       ctx.checkRights(RightsChecker.Anyone) {
-        val module = env.datastores.authConfigsDataStore.template(ctx.request.getQueryString("mod-type"), env).applyOn {
-          case c: LdapAuthModuleConfig      =>
-            c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-          case c: BasicAuthModuleConfig     =>
-            c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-          case c: GenericOauth2ModuleConfig =>
-            c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-          case c: SamlAuthModuleConfig      =>
-            c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-          case c: Oauth1ModuleConfig        =>
-            c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-        }
+        val module = env.datastores.authConfigsDataStore
+          .template(ctx.request.getQueryString("mod-type"), env)
+          .applyOn(c => c.withLocation(c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam))))
         Ok(
           process(module.asJson, ctx.request)
+        ).future
+      }
+    }
+
+  def findAllTemplates() =
+    ApiAction.async { ctx =>
+      ctx.checkRights(RightsChecker.Anyone) {
+        Ok(process(Json.obj("templates" -> env.datastores.authConfigsDataStore.templates()
+          .map(template => Json.obj(
+            "type" ->template.`type`,
+            "label" -> template.humanName
+          ))), ctx.request)
         ).future
       }
     }
@@ -355,21 +358,10 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             patchTemplate[AuthModuleConfig](
               env.datastores.authConfigsDataStore
                 .template(ctx.request.getQueryString("mod-type"), env)
-                .applyOn {
-                  case c: LdapAuthModuleConfig      =>
-                    c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-                  case c: BasicAuthModuleConfig     =>
-                    c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-                  case c: GenericOauth2ModuleConfig =>
-                    c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-                  case c: SamlAuthModuleConfig      =>
-                    c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-                  case c: Oauth1ModuleConfig        =>
-                    c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-                }
+                .applyOn(c => c.withLocation(c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam))))
                 .asJson,
               patch,
-              AuthModuleConfig._fmt,
+              AuthModuleConfig._fmt(env),
               _.save()
             )
           case "scripts"      =>

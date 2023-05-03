@@ -1074,7 +1074,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   def crdsFetchAuthModules(modules: Seq[AuthModuleConfig]): Future[Seq[OtoResHolder[AuthModuleConfig]]]         =
     client.fetchOtoroshiResources[AuthModuleConfig](
       "auth-modules",
-      AuthModuleConfig._fmt,
+      AuthModuleConfig._fmt(env),
       (a, b) => customizeAuthModule(a, b, modules)
     )
   def crdsFetchScripts(scripts: Seq[Script]): Future[Seq[OtoResHolder[Script]]]                                 =

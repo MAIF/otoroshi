@@ -1094,6 +1094,16 @@ export function createAuthConfig(ak) {
   }).then((r) => r.json());
 }
 
+export function getAuthModuleTypes() {
+  return fetch('/bo/api/proxy/api/auths/templates', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}
+
 export function createNewAuthConfig(kind) {
   return fetch(`/bo/api/proxy/api/auths/_template?mod-type=${kind}`, {
     method: 'GET',
