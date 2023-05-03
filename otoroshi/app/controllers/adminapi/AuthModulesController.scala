@@ -37,12 +37,12 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
   override def extractId(entity: AuthModuleConfig): String = entity.id
 
   override def readEntity(json: JsValue): Either[String, AuthModuleConfig] =
-    AuthModuleConfig._fmt.reads(json).asEither match {
+    AuthModuleConfig._fmt(env).reads(json).asEither match {
       case Left(e)  => Left(e.toString())
       case Right(r) => Right(r)
     }
 
-  override def writeEntity(entity: AuthModuleConfig): JsValue = AuthModuleConfig._fmt.writes(entity)
+  override def writeEntity(entity: AuthModuleConfig): JsValue = AuthModuleConfig._fmt(env).writes(entity)
 
   override def findByIdOps(id: String, req: RequestHeader)(implicit
       env: Env,

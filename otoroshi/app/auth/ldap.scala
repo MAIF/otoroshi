@@ -236,14 +236,18 @@ case class LdapAuthModuleConfig(
     dataOverride: Map[String, JsObject] = Map.empty,
     groupRights: Map[String, GroupRights] = Map.empty
 ) extends AuthModuleConfig {
-  def `type`: String = "ldap"
+  def `type`: String                   = "ldap"
+  def humanName: String                = "Ldap auth. provider"
 
   def theDescription: String           = desc
   def theMetadata: Map[String, String] = metadata
   def theName: String                  = name
   def theTags: Seq[String]             = tags
 
+  override def form: Option[Form]                           = None
   override def authModule(config: GlobalConfig): AuthModule = LdapAuthModule(this)
+  override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
+  override def _fmt()(implicit env: Env): Format[AuthModuleConfig] = AuthModuleConfig._fmt(env)
 
   override def asJson =
     location.jsonWithKey ++ Json.obj(
@@ -594,9 +598,28 @@ case class LdapAuthModuleConfig(
   }
 }
 
+object LdapAuthModule {
+  def defaultConfig = LdapAuthModuleConfig(
+    id = IdGenerator.namedId("auth_mod", IdGenerator.uuid),
+    name = "New auth. module",
+    desc = "New auth. module",
+    serverUrls = Seq("ldap://ldap.forumsys.com:389"),
+    searchBase = "dc=example,dc=com",
+    searchFilter = "(uid=${username})",
+    adminUsername = Some("cn=read-only-admin,dc=example,dc=com"),
+    adminPassword = Some("password"),
+    tags = Seq.empty,
+    metadata = Map.empty,
+    sessionCookieValues = SessionCookieValues(),
+    clientSideSessionEnabled = true
+  )
+}
+
 case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
 
   import otoroshi.utils.future.Implicits._
+
+  def this() = this(LdapAuthModule.defaultConfig)
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 

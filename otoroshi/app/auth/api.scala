@@ -28,6 +28,7 @@ trait ValidableUser { self =>
 }
 
 trait AuthModule {
+  def authConfig: AuthModuleConfig
 
   def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
       ec: ExecutionContext,
@@ -131,7 +132,9 @@ object UserValidator {
  */
 
 trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport {
+  def _fmt()(implicit env: Env): Format[AuthModuleConfig]
   def `type`: String
+  def humanName: String
   def id: String
   def name: String
   def desc: String
@@ -143,17 +146,70 @@ trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport
   def clientSideSessionEnabled: Boolean
   def userValidators: Seq[JsonPathValidator]
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def withLocation(location: EntityLocation): AuthModuleConfig
   override def internalId: String = id
   override def json: JsValue      = asJson
+
+  def form: Option[Form]
+  def loginHTMLPage: String = "otoroshi.view.oto.login.scala.html"
+}
+
+
+case class Form(schema: JsValue, flow: Seq[String] = Seq.empty) extends AsJson {
+  def asJson: JsValue = Json.obj(
+    "schema" -> schema,
+    "flow"   -> flow
+  )
+}
+
+object Form {
+  val _fmt = new Format[Form] {
+    override def writes(o: Form): JsValue = o.asJson
+
+    override def reads(json: JsValue): JsResult[Form] = Try {
+
+        Form(
+          flow = (json \ "flow").asOpt[Seq[String]].getOrElse(Seq.empty),
+          schema = (json \ "schema").asOpt[JsValue].getOrElse(Json.obj()),
+        )
+      } match {
+        case Failure(exception) => JsError(exception.getMessage)
+        case Success(value) => JsSuccess(value)
+      }
+  }
+}
+
+
+case class AuthModuleConfigFormat(env: Env) extends Format[AuthModuleConfig] {
+
+  lazy val unknownConfigTypeError = JsError("Unknown auth. config type")
+
+  override def reads(json: JsValue): JsResult[AuthModuleConfig] = {
+    (json \ "type").as[String] match {
+      case "oauth2" => GenericOauth2ModuleConfig._fmt.reads(json)
+      case "oauth2-global" => GenericOauth2ModuleConfig._fmt.reads(json)
+      case "basic" => BasicAuthModuleConfig._fmt.reads(json)
+      case "ldap" => LdapAuthModuleConfig._fmt.reads(json)
+      case "saml" => SamlAuthModuleConfig._fmt.reads(json)
+      case "oauth1" => Oauth1ModuleConfig._fmt.reads(json)
+      case ref       => env.datastores.authConfigsDataStore.templates()(env)
+        .find(config => config.`type` == ref) match {
+        case Some(config) => config._fmt()(env).reads(json)
+        case None => unknownConfigTypeError
+      }
+    }
+  }
+
+  override def writes(o: AuthModuleConfig): JsValue = o.asJson
 }
 
 object AuthModuleConfig {
 
   lazy val logger = Logger("otoroshi-auth-module-config")
 
-  def fromJsons(value: JsValue) =
+  def fromJsons(value: JsValue)(implicit env: Env) =
     try {
-      _fmt.reads(value).get
+      _fmt(env).reads(value).get
     } catch {
       case e: Throwable => {
         logger.error(s"Try to deserialize ${Json.prettyPrint(value)}")
@@ -161,19 +217,7 @@ object AuthModuleConfig {
       }
     }
 
-  val _fmt: Format[AuthModuleConfig] = new Format[AuthModuleConfig] {
-    override def reads(json: JsValue): JsResult[AuthModuleConfig] =
-      (json \ "type").as[String] match {
-        case "oauth2"        => GenericOauth2ModuleConfig._fmt.reads(json)
-        case "oauth2-global" => GenericOauth2ModuleConfig._fmt.reads(json)
-        case "basic"         => BasicAuthModuleConfig._fmt.reads(json)
-        case "ldap"          => LdapAuthModuleConfig._fmt.reads(json)
-        case "saml"          => SamlAuthModuleConfig._fmt.reads(json)
-        case "oauth1"        => Oauth1ModuleConfig._fmt.reads(json)
-        case _               => JsError("Unknown auth. config type")
-      }
-    override def writes(o: AuthModuleConfig): JsValue             = o.asJson
-  }
+  def _fmt(env: Env): Format[AuthModuleConfig] = AuthModuleConfigFormat(env)
 }
 
 trait OAuth2ModuleConfig extends AuthModuleConfig {
@@ -219,100 +263,38 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
   def setUserForToken(token: String, user: JsValue)(implicit ec: ExecutionContext): Future[Unit]
   def getUserForToken(token: String)(implicit ec: ExecutionContext): Future[Option[JsValue]]
 
-  def template(modType: Option[String], env: Env): AuthModuleConfig = {
+  def templates()(implicit env: Env): Seq[AuthModuleConfig] = env.scriptManager.authModules
+
+  def template(modType: Option[String], env: Env)(implicit ec: ExecutionContext): AuthModuleConfig = {
+
+    val defaultValue = BasicAuthModuleConfig(
+      id = IdGenerator.namedId("auth_mod", env),
+      name = "New auth. module",
+      desc = "New auth. module",
+      tags = Seq.empty,
+      metadata = Map.empty,
+      sessionCookieValues = SessionCookieValues(),
+      clientSideSessionEnabled = true
+    )
+
     val defaultModule = modType match {
-      case Some("oauth2")        =>
-        GenericOauth2ModuleConfig(
-          id = IdGenerator.namedId("auth_mod", env),
-          name = "New auth. module",
-          desc = "New auth. module",
-          tags = Seq.empty,
-          metadata = Map.empty,
-          sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true
-        )
-      case Some("oauth2-global") =>
-        GenericOauth2ModuleConfig(
-          id = IdGenerator.namedId("auth_mod", env),
-          name = "New auth. module",
-          desc = "New auth. module",
-          tags = Seq.empty,
-          metadata = Map.empty,
-          sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true
-        )
-      case Some("basic")         =>
-        BasicAuthModuleConfig(
-          id = IdGenerator.namedId("auth_mod", env),
-          name = "New auth. module",
-          desc = "New auth. module",
-          tags = Seq.empty,
-          metadata = Map.empty,
-          sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true
-        )
-      case Some("ldap")          =>
-        LdapAuthModuleConfig(
-          id = IdGenerator.namedId("auth_mod", env),
-          name = "New auth. module",
-          desc = "New auth. module",
-          serverUrls = Seq("ldap://ldap.forumsys.com:389"),
-          searchBase = "dc=example,dc=com",
-          searchFilter = "(uid=${username})",
-          adminUsername = Some("cn=read-only-admin,dc=example,dc=com"),
-          adminPassword = Some("password"),
-          tags = Seq.empty,
-          metadata = Map.empty,
-          sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true
-        )
-      case Some("saml")          =>
-        SamlAuthModuleConfig(
-          id = IdGenerator.namedId("auth_mod", env),
-          name = "New auth. module",
-          desc = "New auth. module",
-          tags = Seq.empty,
-          metadata = Map.empty,
-          singleSignOnUrl = "",
-          singleLogoutUrl = "",
-          issuer = "",
-          sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true
-        )
-      case Some("oauth1")        =>
-        Oauth1ModuleConfig(
-          id = IdGenerator.namedId("auth_mod", env),
-          name = "New OAuth 1.0 module",
-          desc = "New OAuth 1.0 module",
-          consumerKey = "",
-          consumerSecret = "",
-          requestTokenURL = "",
-          authorizeURL = "",
-          accessTokenURL = "",
-          profileURL = "",
-          callbackURL = "",
-          tags = Seq.empty,
-          metadata = Map.empty,
-          sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true
-        )
-      case _                     =>
-        BasicAuthModuleConfig(
-          id = IdGenerator.namedId("auth_mod", env),
-          name = "New auth. module",
-          desc = "New auth. module",
-          tags = Seq.empty,
-          metadata = Map.empty,
-          sessionCookieValues = SessionCookieValues(),
-          clientSideSessionEnabled = true
-        )
+      case Some(ref)             => templates()(env)
+        .find(config => config.`type` == ref)
+        .getOrElse(defaultValue)
+      case _                     => defaultValue
     }
+
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates
       .authConfig
       .map { template =>
-        AuthModuleConfig._fmt.reads(defaultModule.json.asObject.deepMerge(template)).get
+        AuthModuleConfig._fmt(env).reads(defaultModule.json.asObject.deepMerge(template)) match {
+          case JsSuccess(value, _) => value
+          case JsError(errors) =>
+            println(errors)
+            defaultModule
+        }
       }
       .getOrElse {
         defaultModule

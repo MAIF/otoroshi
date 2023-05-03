@@ -162,9 +162,12 @@ case class BasicAuthModuleConfig(
     tags: Seq[String],
     metadata: Map[String, String],
     sessionCookieValues: SessionCookieValues,
-    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
 ) extends AuthModuleConfig {
   def `type`: String                                                   = "basic"
+  def humanName: String                                                = "In memory auth. provider"
+  override def form: Option[Form]                                      = None
+  override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
   override def authModule(config: GlobalConfig): AuthModule            = BasicAuthModule(this)
   override def asJson                                                  =
     location.jsonWithKey ++ Json.obj(
@@ -188,9 +191,26 @@ case class BasicAuthModuleConfig(
   def theMetadata: Map[String, String]                                 = metadata
   def theName: String                                                  = name
   def theTags: Seq[String]                                             = tags
+
+  override def _fmt()(implicit env: Env): Format[AuthModuleConfig] = AuthModuleConfig._fmt(env)
+}
+
+object BasicAuthModule {
+  def defaultConfig = BasicAuthModuleConfig(
+    id = IdGenerator.namedId("auth_mod", IdGenerator.uuid),
+    name = "New auth. module",
+    desc = "New auth. module",
+    tags = Seq.empty,
+    metadata = Map.empty,
+    sessionCookieValues = SessionCookieValues(),
+    clientSideSessionEnabled = true
+  )
+//  def apply(): BasicAuthModule = BasicAuthModule(defaultConfig)
 }
 
 case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule {
+
+  def this() = this(BasicAuthModule.defaultConfig)
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
