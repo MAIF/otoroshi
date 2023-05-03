@@ -13,14 +13,14 @@ lazy val root = (project in file(".")).
       version      := "0.1.0-SNAPSHOT"
     )),
     name := "my-custom-auth-module",
-    libraryDependencies += "fr.maif" %% "otoroshi" % "1.x.x"
+    libraryDependencies += "fr.maif" %% "otoroshi" % "1x.x.x"
   )
 ```
 
 Just below, you can find an example of Custom Auth. module. 
 
 ```scala
-package otoroshi.auth.custom
+package auth.custom
 
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthModule, AuthModuleConfig, Form, SessionCookieValues}
@@ -205,12 +205,11 @@ This custom Auth. module uses a [Play template](https://www.playframework.com/do
 Your hierarchy files should be something like:
 
 ```
-otoroshi
-| auth
-  | custom
-      |customModule.scala
-      | views
-        | login.scala.html
+auth
+| custom
+    |customModule.scala
+    | views
+      | login.scala.html
 ```
 
 When your code is ready, create a jar file 
